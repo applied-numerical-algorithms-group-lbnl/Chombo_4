@@ -1,0 +1,4 @@
+#
+# These are the file names (minus .H extension) that can be
+# #include'd twice, i.e. they pass the build.sh test.
+#
