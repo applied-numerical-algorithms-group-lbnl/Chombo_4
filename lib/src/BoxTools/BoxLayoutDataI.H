@@ -21,7 +21,6 @@
 #include "Misc.H"
 #include "CH_Timer.H"
 #include "NamespaceHeader.H"
-#include "BaseFabMacros.H"
 
 using std::sort;
 
@@ -974,12 +973,15 @@ public:
   {
     Real* buffer = (Real*)buf;
 
-    ForAllXBNNnoindx(Real, arg, R, comps.begin(), comps.size())
+    for (int icomp = comps.begin(); icomp <= comps.end(); icomp++)
+    {
+      for (BoxIterator bit(R); bit.ok(); ++bit)
       {
-        argR+=*buffer;
-        buffer++;
-      } EndFor
-
+        IntVect iv = bit();
+        (*this)(iv, icomp) += *buffer;
+        ++buffer;
+      }
+    }
   }
 
   virtual bool threadSafe() const

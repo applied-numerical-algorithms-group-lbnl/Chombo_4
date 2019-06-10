@@ -531,11 +531,16 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
 {
   T* buffer = (T*)a_buf;
 
-  ForAllThisCBNN(T,a_R,a_comps.begin(),a_comps.size())
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
   {
-    *buffer = thisR;
-    ++buffer;
-  } EndFor;
+    for (BoxIterator bit(a_R); bit.ok(); ++bit)
+    {
+      IntVect iv = bit();
+      (*this)(iv, icomp) = *buffer;
+      ++buffer;
+    }
+  }
+
   return (void*)buffer;
 }
 
@@ -544,23 +549,18 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
                                                     const Interval& a_comps)
 {
   //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
-  linearIn2(a_buf, a_R, a_comps);
+  T* buffer = (T*)bufptr;
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+    {
+      for (BoxIterator bit(a_R); bit.ok(); ++bit)
+        {
+          IntVect iv = bit();
+          (*this)(iv, icomp) = *buffer;
+          ++buffer;
+        }
+    }
 }
 
-template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
-                                                     const Box&      a_R,
-                                                     const Interval& a_comps)
-{
-  T* buffer = (T*)a_buf;
-
-  ForAllThisBNN(T,a_R,a_comps.begin(),a_comps.size())
-  {
-    thisR = *buffer;
-    ++buffer;
-  } EndFor;
-
-  return (void*) buffer;
-}
 
 // ---------------------------------------------------------
 // this is for broadcast & gather; the Box is in the msg
@@ -608,12 +608,6 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
         }
     }
 
-  //  ForAllThisBNN(T,m_domain,0,ncomps)
-  //  {
-  //    thisR = *buffer;
-  //    ++buffer;
-  //  } EndFor;
-  // return (void*) buffer;
 }
 
 // ---------------------------------------------------------
@@ -725,8 +719,8 @@ template <class T>
 inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
                                     const Box&        a_srcbox,
                                     int               a_srccomp,
-                                    const Box&        a_destbox,
-                                    int               a_destcomp,
+                                    const Box&        a_dstbox,
+                                    int               a_dstcomp,
                                     int               a_numcomp)
 {
   CH_assert(a_src.box().contains(a_srcbox));
@@ -734,11 +728,18 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_destbox.sameSize(a_srcbox));
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
   CH_assert(a_destcomp >= 0 && a_destcomp + a_numcomp <= nComp());
-  // CH_TIME("BaseFab::performCopy")
-  ForAllThisBNNXCBN(T, a_destbox, a_destcomp, a_numcomp, a_src, a_srcbox, a_srccomp)
+  CH_TIME("BaseFab::performCopy");
+
+  for (int icomp = 0; icomp < a_numcomp; icomp++)
   {
-    thisR = a_srcR;
-  } EndForTX
+    int srccomp = a_srccomp + icomp;
+    int dstcomp = a_dstcomp + icomp;
+    for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
+    {
+      IntVect iv = bit();
+      (*this)(iv, dstcomp) = a_src(iv, srccomp);
+    }
+  }
 }
 
 template <class T> inline void BaseFab<T>::performSetVal(T          a_x,
@@ -760,10 +761,16 @@ template <class T> inline void BaseFab<T>::performSetVal(T          a_x,
   }
   else
     {
-      ForAllThisBNN(T,a_bx,a_nstart,a_numcomp)
+      for (int icomp = 0; icomp < a_numcomp; icomp++)
       {
-        thisR = a_x;
-      } EndFor
+        int comp = a_nstart + icomp;
+        for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
+        {
+          IntVect iv = bit();
+          (*this)(iv, dstcomp) = a_x;
+        }
+      }
+
     }
 }
 
