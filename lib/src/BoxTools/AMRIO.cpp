@@ -8,7 +8,6 @@
  */
 #endif
 
-// DTGraves, Fri, Dec 3, 1999
 
 #include <fstream>
 #include <cstdio>
