@@ -33,12 +33,12 @@ using std::fstream;
 
 // local prototypes
 int
-min_element( const Vector<long>& Vect );
+min_element( const vector<long>& Vect );
 void
-min_max_elements( int& imin ,int& imax ,const Vector<long>& Vect );
+min_max_elements( int& imin ,int& imax ,const vector<long>& Vect );
 
 void
-min_max_elements( int& imin ,int& imax ,const Vector<long long>& Vect );
+min_max_elements( int& imin ,int& imax ,const vector<long long>& Vect );
 
 // Local class definition (needed to sort loads)
 class Load
@@ -60,19 +60,19 @@ public:
 // Code:
 
 ///
-// This version takes a Vector<BoxLayout> and builds a matching Vector of
-// Vector<Box> and uses it to call the full version.
+// This version takes a vector<BoxLayout> and builds a matching vector of
+// vector<Box> and uses it to call the full version.
 ///
 int
-LoadBalance( Vector<BoxLayout>&    Grids            //in-out: input grids to balance
+LoadBalance( vector<BoxLayout>&    Grids            //in-out: input grids to balance
              ,Real&                 effRatio         //output: ratio of min load
-             ,const Vector<Vector<long> >&  ComputeLoads     //input: computational cost
-             ,const Vector<int>&           RefRatios        //input: refinement ratio
+             ,const vector<vector<long> >&  ComputeLoads     //input: computational cost
+             ,const vector<int>&           RefRatios        //input: refinement ratio
              ,int nProc
              )
 {
-  CH_TIME("LoadBalance:VectorBoxLayout");
-  Vector<Vector<Box> > boxes( Grids.size() );
+  CH_TIME("LoadBalance:vectorBoxLayout");
+  vector<vector<Box> > boxes( Grids.size() );
 
   for ( int i = 0; i < Grids.size(); ++i )
     {
@@ -82,7 +82,7 @@ LoadBalance( Vector<BoxLayout>&    Grids            //in-out: input grids to bal
         }
     }
 
-  Vector<Vector<int> > procIDs( Grids.size() );
+  vector<vector<int> > procIDs( Grids.size() );
   int status = LoadBalance( procIDs ,effRatio
                             ,boxes ,ComputeLoads ,RefRatios, nProc );
 
@@ -107,11 +107,11 @@ LoadBalance( Vector<BoxLayout>&    Grids            //in-out: input grids to bal
 // and calls the full version.
 // a_LBnumProc specifies number of procs to use in LoadBalancing. defaults to numProc().
 ///
-int LoadBalance(Vector<int>& a_procAssignments, const Vector<Box>& a_boxes,
+int LoadBalance(vector<int>& a_procAssignments, const vector<Box>& a_boxes,
                 const int a_LBnumProc)
 {
-  CH_TIME("LoadBalance:VectorBoxEntry");
-  Vector<long long> computeLoads(a_boxes.size());
+  CH_TIME("LoadBalance:vectorBoxEntry");
+  vector<long long> computeLoads(a_boxes.size());
 
   for (int i = 0; i < a_boxes.size(); ++i)
     {
@@ -122,10 +122,10 @@ int LoadBalance(Vector<int>& a_procAssignments, const Vector<Box>& a_boxes,
   status = LoadBalance(a_procAssignments, computeLoads, a_boxes, a_LBnumProc);
 
   // save this older commented code
-  //   Vector<Vector<Box> > layouts(1, boxes);
-  //   Vector<Vector<long> > computeLoads(1, Vector<long>(boxes.size()));
-  //   Vector<int> refRatios(1,1);
-  //   Vector<Vector<int> > assignments(1,Vector<int>(boxes.size(), -1));
+  //   vector<vector<Box> > layouts(1, boxes);
+  //   vector<vector<long> > computeLoads(1, vector<long>(boxes.size()));
+  //   vector<int> refRatios(1,1);
+  //   vector<vector<int> > assignments(1,vector<int>(boxes.size(), -1));
   //   Real effRatio;
 
   //   for (int index = 0; index < boxes.size(); ++index)
@@ -144,12 +144,12 @@ int LoadBalance(Vector<int>& a_procAssignments, const Vector<Box>& a_boxes,
 ///
 // Accepts "long int" computeLoads and then just calls the "long long" version.
 ///
-int LoadBalance(Vector<int>&             a_procAssignments,
-                const Vector<long int>&  a_computeLoads,
-                const Vector<Box>&       a_boxes,
+int LoadBalance(vector<int>&             a_procAssignments,
+                const vector<long int>&  a_computeLoads,
+                const vector<Box>&       a_boxes,
                 const int                a_LBnumProc)
 {
-  Vector<long long> cloads(a_computeLoads.size());
+  vector<long long> cloads(a_computeLoads.size());
   for (int i=0; i<a_computeLoads.size(); i++)
     {
       cloads[i] = (long long)a_computeLoads[i];
@@ -176,8 +176,8 @@ static unsigned int mylog2 (unsigned int val) {
     return ret;
 }
 
-void split_load(Vector<int>& procs, Vector<long long>& loads,
-                Vector<long long>& sum, int p0, int p1, int start, int end)
+void split_load(vector<int>& procs, vector<long long>& loads,
+                vector<long long>& sum, int p0, int p1, int start, int end)
 {
   if(p0==(p1-1))
     {
@@ -212,12 +212,12 @@ void split_load(Vector<int>& procs, Vector<long long>& loads,
   split_load(procs, loads, sum, p ,   p1, scan,    end);
 }
   
-int LoadBalance(Vector<int>&             a_procAssignments,
-                const Vector<long long>& a_computeLoads,
-                const Vector<Box>&       a_boxes,
+int LoadBalance(vector<int>&             a_procAssignments,
+                const vector<long long>& a_computeLoads,
+                const vector<Box>&       a_boxes,
                 const int                a_LBnumProc)
 {
-  CH_TIME("LoadBalance:VectorBoxSimple");
+  CH_TIME("LoadBalance:vectorBoxSimple");
   // Phase 1  modified knapsack algorithm.  this one doesn't use
   // load sorting followed by round robin.  This one does bin packing
   // first by finding vector divisors, then does regular knapsack
@@ -242,10 +242,10 @@ int LoadBalance(Vector<int>&             a_procAssignments,
     }
 
  
-  Vector<long long> loads(a_LBnumProc, 0);
+  vector<long long> loads(a_LBnumProc, 0);
   /*
   //still serial version based on prefix sum   (bvs)
-  Vector<long long> sum(a_computeLoads.size());
+  vector<long long> sum(a_computeLoads.size());
   sum[0]=a_computeLoads[0];
   for(int i=1; i<sum.size(); i++) sum[i]=sum[i-1]+a_computeLoads[i];
   // recursive function calls for splitting
@@ -481,7 +481,7 @@ int LoadBalance(Vector<int>&             a_procAssignments,
     {
       if (a_boxes[i] < a_boxes[i-1]) sorted = false;
     }
-  Vector<std::list<int> > neighbours(Nboxes);
+  vector<std::list<int> > neighbours(Nboxes);
 
   for (int i=0; i<Nboxes; i++)
     {
@@ -574,14 +574,14 @@ int LoadBalance(Vector<int>&             a_procAssignments,
 // is enabled
 // I think we can remove this as it simply calls the above LoadBalance() (ndk 8.4.2008)
 ///
-int UnLongLongLoadBalance(Vector<int>&                      a_procAssignments,
-                          const Vector<unsigned long long>& a_computeLoads,
-                          const Vector<Box>&                a_boxes,
+int UnLongLongLoadBalance(vector<int>&                      a_procAssignments,
+                          const vector<unsigned long long>& a_computeLoads,
+                          const vector<Box>&                a_boxes,
                           const int                         a_LBnumProc)
 {
-  CH_TIME("UnLongLongLoadBalance:VectorBoxSimple");
+  CH_TIME("UnLongLongLoadBalance:vectorBoxSimple");
 
-  Vector<long long> cloads(a_computeLoads.size());
+  vector<long long> cloads(a_computeLoads.size());
   for (int i=0; i<a_computeLoads.size(); i++)
     {
       cloads[i] = (long long)a_computeLoads[i];
@@ -594,16 +594,16 @@ int UnLongLongLoadBalance(Vector<int>&                      a_procAssignments,
 // This version does the real work.
 ///
 int
-LoadBalance(Vector<int>&          a_procAssignments
+LoadBalance(vector<int>&          a_procAssignments
             ,Real&                a_effRatio
-            ,const Vector<Box>&   a_grids
-            ,const Vector<long>&  a_computeLoads)
+            ,const vector<Box>&   a_grids
+            ,const vector<long>&  a_computeLoads)
 {
-  CH_TIME("LoadBalance:VectorBoxWork");
-  Vector<Vector<Box> >   grids(1, a_grids);
-  Vector<Vector<long> >  computeLoads(1, a_computeLoads);
-  Vector<int>            refRatios(1,2);
-  Vector<Vector<int> > procs;
+  CH_TIME("LoadBalance:vectorBoxWork");
+  vector<vector<Box> >   grids(1, a_grids);
+  vector<vector<long> >  computeLoads(1, a_computeLoads);
+  vector<int>            refRatios(1,2);
+  vector<vector<int> > procs;
   int nproc = numProc();
   int retval = LoadBalance(procs, a_effRatio, grids, computeLoads,
                            refRatios, nproc);
@@ -613,15 +613,15 @@ LoadBalance(Vector<int>&          a_procAssignments
 }
 
 int
-LoadBalance(Vector<Vector<int> >& procAssignments  //output: processor number
+LoadBalance(vector<vector<int> >& procAssignments  //output: processor number
             ,Real&                 effRatio         //output: ratio of min load
-            ,const Vector<Vector<Box> >&  Grids            //input: meshes to balance
-            ,const Vector<Vector<long> >& ComputeLoads     //input: computational cost
-            ,const Vector<int>&           RefRatios        //input: refinement ratio
+            ,const vector<vector<Box> >&  Grids            //input: meshes to balance
+            ,const vector<vector<long> >& ComputeLoads     //input: computational cost
+            ,const vector<int>&           RefRatios        //input: refinement ratio
             ,int nProc                            // number of procs to assugn to
             )
 {
-  CH_TIME("LoadBalance:VectorBoxRealWork");
+  CH_TIME("LoadBalance:vectorBoxRealWork");
   // local variables
   Real eff_ratio; // efficiency ratio on a level
   int status = 0; // return code
@@ -669,7 +669,7 @@ LoadBalance(Vector<Vector<int> >& procAssignments  //output: processor number
       for ( int lvl=0; lvl<Grids.size(); ++lvl )
         {
           // first, build the load structure and sort by compute_load
-          Vector<Load> loads( Grids[lvl].size() );
+          vector<Load> loads( Grids[lvl].size() );
           for ( int i=0; i<Grids[lvl].size(); ++i )
             {
               loads[i].load = ComputeLoads[lvl][i];
@@ -679,8 +679,8 @@ LoadBalance(Vector<Vector<int> >& procAssignments  //output: processor number
           loads.sort();
           // do the initial assignments by sequentially
           // `handing out' the loads from largest to smallest
-          Vector<long> total_loads( nProc,0 ); //total load per processor
-          Vector<Vector<Load> > proc_loads( nProc ); //loads per processor
+          vector<long> total_loads( nProc,0 ); //total load per processor
+          vector<vector<Load> > proc_loads( nProc ); //loads per processor
           int iproc_minload = 0; //processor with lowest load
           // loads are sorted in increasing order, so work backwards through the vector
           for ( int i=loads.size()-1; i>=0; --i )
@@ -823,8 +823,8 @@ LoadBalance(Vector<Vector<int> >& procAssignments  //output: processor number
 /// convenience function to gather a distributed set of Boxes with their corresponding processor assignment
 /** Assumption is that each processor has at most one valid box. This is useful when interacting with other distributed codes which might not have the entire set of distributed boxes on all processors.
  */
-int LoadBalance(Vector<int>& a_procAssignments, 
-                Vector<Box>& a_boxes,
+int LoadBalance(vector<int>& a_procAssignments, 
+                vector<Box>& a_boxes,
                 const Box&   a_localGridBox,
                 const int    a_numProc)
 {
@@ -832,8 +832,8 @@ int LoadBalance(Vector<int>& a_procAssignments,
 
   const int numBox = numProc();
 
-  Vector<Box> tempBoxes;
-  Vector<int> tempProcAssign;
+  vector<Box> tempBoxes;
+  vector<int> tempProcAssign;
   tempBoxes.resize(numBox);
 
   if (numBox == 1) tempBoxes[0] = a_localGridBox;
@@ -870,7 +870,7 @@ int LoadBalance(Vector<int>& a_procAssignments,
   return status;
 }
 
-int basicLoadBalance(Vector<int>& a_procAssignments, int a_numBoxes, int a_numProc)
+int basicLoadBalance(vector<int>& a_procAssignments, int a_numBoxes, int a_numProc)
 {
   CH_TIME("basicLoadBalance");
   a_procAssignments.resize(a_numBoxes);
@@ -904,10 +904,10 @@ int basicLoadBalance(Vector<int>& a_procAssignments, int a_numBoxes, int a_numPr
 ////////////////////////////////////////////////////////////////
 
 //
-// Find the index of the small value in a non-empty (long) Vector
+// Find the index of the small value in a non-empty (long) vector
 //
 int
-min_element( const Vector<long>& Vect )
+min_element( const vector<long>& Vect )
 {
   CH_assert( Vect.size() > 0 );
   int imin = 0;
@@ -919,10 +919,10 @@ min_element( const Vector<long>& Vect )
 }
 
 //
-// Find the indices of the smallest and largest values in a non-empty (long) Vector
+// Find the indices of the smallest and largest values in a non-empty (long) vector
 //
 void
-min_max_elements( int& imin ,int& imax ,const Vector<long>& Vect )
+min_max_elements( int& imin ,int& imax ,const vector<long>& Vect )
 {
   CH_assert( Vect.size() > 0 );
   imin = 0; imax = 0;
@@ -934,7 +934,7 @@ min_max_elements( int& imin ,int& imax ,const Vector<long>& Vect )
   return;
 }
 void
-min_max_elements( int& imin ,int& imax ,const Vector<long long>& Vect )
+min_max_elements( int& imin ,int& imax ,const vector<long long>& Vect )
 {
   CH_assert( Vect.size() > 0 );
   imin = 0; imax = 0;

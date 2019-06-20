@@ -24,6 +24,8 @@
 // BaseFab<Real> specializations
 //
 
+using std::endl;
+
 template < > void BaseFab<Real>::define();
 
 template < > void BaseFab<Real>::undefine();
@@ -236,7 +238,6 @@ template <class T> inline int BaseFab<T>::nComp() const
   return m_nvar;
 }
 
-template <class T> Arena* BaseFab<T>::s_Arena = NULL;
 
 template <class T> inline const Box& BaseFab<T>::box() const
 {
@@ -549,7 +550,7 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
                                                     const Interval& a_comps)
 {
   //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
-  T* buffer = (T*)bufptr;
+  T* buffer = (T*) a_buf;
   for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
     {
       for (BoxIterator bit(a_R); bit.ok(); ++bit)
@@ -623,39 +624,12 @@ template <class T> inline void BaseFab<T>::define()
   CH_assert(m_dptr == 0);
   // CH_assert(m_numpts > 0); // OK if box is empty
   CH_assert(!m_aliased);
-  //CH_assert(!(The_FAB_Arena == 0));// not a sufficient test !!!
 
-#ifdef CH_USE_MEMORY_TRACKING
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena(name().c_str());
-  }
-#else
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena("");
-  }
-#endif
-
-  if (s_Arena == NULL)
-  {
-    MayDay::Error("malloc in basefab failed");
-  }
 
   m_truesize = m_nvar * m_numpts;
   if (m_truesize > 0)
     {
-      m_dptr     = static_cast<T*>(s_Arena->alloc(m_truesize * sizeof(T)));
-
-#ifdef CH_USE_MEMORY_TRACKING
-      ch_memcount+=m_truesize * sizeof(T) + sizeof(BaseFab<T>);
-      s_Arena->bytes += m_truesize * sizeof(T) + sizeof(BaseFab<T>);
-      CH_assert(s_Arena->bytes > 0);
-      if (s_Arena->bytes > s_Arena->peak)
-        {
-          s_Arena->peak = s_Arena->bytes;
-        }
-#endif
+      m_dptr     = static_cast<T*>(malloc(m_truesize * sizeof(T)));
     }
   else
     { // m_truesize == 0: allocating no space
@@ -675,10 +649,7 @@ template <class T> inline void BaseFab<T>::define()
 
 template <class T> inline void BaseFab<T>::undefine()
 {
-  //CH_assert(!(The_FAB_Arena == 0));
-  //
-  // Call T::~T() on the to-be-destroyed memory.
-  //
+
   if (m_aliased)
   {
     m_dptr = 0;
@@ -697,13 +668,8 @@ template <class T> inline void BaseFab<T>::undefine()
     ptr->~T();
   }
 
-  s_Arena->free(m_dptr);
+  free(m_dptr);
 
-#ifdef CH_USE_MEMORY_TRACKING
-  ch_memcount -= m_truesize * sizeof(T) + sizeof(BaseFab<T>);
-  s_Arena->bytes -= m_truesize * sizeof(T) + sizeof(BaseFab<T>);
-  CH_assert(s_Arena->bytes >= 0);
-#endif
 
   m_dptr = 0;
 }
@@ -724,10 +690,10 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
                                     int               a_numcomp)
 {
   CH_assert(a_src.box().contains(a_srcbox));
-  CH_assert(box().contains(a_destbox));
-  CH_assert(a_destbox.sameSize(a_srcbox));
+  CH_assert(box().contains(a_dstbox));
+  CH_assert(a_dstbox.sameSize(a_srcbox));
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
-  CH_assert(a_destcomp >= 0 && a_destcomp + a_numcomp <= nComp());
+  CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
 
   for (int icomp = 0; icomp < a_numcomp; icomp++)

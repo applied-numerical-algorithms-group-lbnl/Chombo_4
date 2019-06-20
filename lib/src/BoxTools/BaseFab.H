@@ -18,7 +18,6 @@
 #include <cmath>
 
 #include "Box.H"
-#include "Arena.H"
 #include "Interval.H"
 #include "REAL.H"
 #include "NamespaceHeader.H"
@@ -596,7 +595,6 @@ protected:
   // work with all compilers.  It has been in the draft standard
   // for some time
   //
-  static Arena* s_Arena;
 
   Box  m_domain;   // My index space.
   int  m_nvar;     // Number components.

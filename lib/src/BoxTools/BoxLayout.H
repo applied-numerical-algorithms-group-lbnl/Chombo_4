@@ -12,8 +12,8 @@
 #define _BOXLAYOUT_H_
 
 #include "Box.H"
-#include "Vector.H"
-#include "RefCountedPtr.H"
+#include <vector>
+
 #include "DataIndex.H"
 #include "SPMD.H"
 #include "LoHiSide.H"
@@ -25,6 +25,8 @@ class TimedDataIterator;
 class LayoutIterator;
 template<class T> class LayoutData;
 
+template<class T> 
+typedef std::shared_ptr<T> RefCountedPtr<T>;
 ///Base class to transform boxes in an existing layout
 /**
    If you want to do something esoteric to each box in a layout and preserve
@@ -158,11 +160,11 @@ public:
   BoxLayout();
 
   ///
-  /** Construct from a Vector of Boxes and a Vector of
+  /** Construct from a vector of Boxes and a vector of
       processor assignments.  On exit, the BoxLayout will be closed.
   */
-  BoxLayout(const Vector<Box>& a_boxes,
-            const Vector<int>& a_procIDs);
+  BoxLayout(const vector<Box>& a_boxes,
+            const vector<int>& a_procIDs);
 
   ///
   /** Construct from a LayoutData<Box>.
@@ -189,15 +191,15 @@ public:
   BoxLayout& operator=(const BoxLayout& a_rhs);
 
   ///
-  /** Define this BoxLayout from a Vector of Boxes and a
-      Vector of processor assignments.  Any pre-existing layout will
-      be lost (ref-count dropped by one).  The processor assignment Vector
+  /** Define this BoxLayout from a vector of Boxes and a
+      vector of processor assignments.  Any pre-existing layout will
+      be lost (ref-count dropped by one).  The processor assignment vector
       must be the same length
-      as the Box Vector.  On exit, the BoxLayout will be closed.
+      as the Box vector.  On exit, the BoxLayout will be closed.
   */
   virtual void
-  define(const Vector<Box>& a_boxes,
-         const Vector<int>& a_procIDs);
+  define(const vector<Box>& a_boxes,
+         const vector<int>& a_procIDs);
 
   ///
   /** Define this BoxLayout from a LayoutData<Box>.
@@ -314,7 +316,7 @@ public:
   */
   int refCount() const
   {
-    return m_boxes.refCount();
+    return m_boxes.use_count();
   }
   ///
   /** Refcounted pointer check.  Return <tt>true</tt> if these two objects
@@ -626,16 +628,16 @@ public:
   /*@}*/
 
   /* Return all the constituent boxes. */
-  Vector<Box> boxArray() const;
+  vector<Box> boxArray() const;
 
   /** Return the processor id numbers corresponding to the boxes as returned by
    *  this->boxArray().
   */
-  Vector<int> procIDs() const;
+  vector<int> procIDs() const;
 
   inline unsigned int indexI(const LayoutIndex&) const;
 
-  const Vector<Entry>* rawPtr() const
+  const vector<Entry>* rawPtr() const
   {
     return m_boxes;
   }
@@ -645,18 +647,18 @@ protected:
   friend class LayoutIterator;
   friend class DataIterator;
 
-  RefCountedPtr<Vector<Entry> >        m_boxes;
+  RefCountedPtr<vector<Entry> >        m_boxes;
   RefCountedPtr<int>                   m_layout;
   RefCountedPtr<bool>                  m_closed;
   RefCountedPtr<bool>                  m_sorted;
   RefCountedPtr<DataIterator>          m_dataIterator;
-  RefCountedPtr<Vector<LayoutIndex> >  m_indicies;
+  RefCountedPtr<vector<LayoutIndex> >  m_indicies;
 
 #ifdef CH_MPI
-  RefCountedPtr<Vector<DataIndex> >    m_dataIndex;
+  RefCountedPtr<vector<DataIndex> >    m_dataIndex;
 #endif
 
-  void checkDefine(const Vector<Box>& a_boxes, const Vector<int>& procIDs);
+  void checkDefine(const vector<Box>& a_boxes, const vector<int>& procIDs);
 private:
 
 };
@@ -677,8 +679,8 @@ void refine_bl(BoxLayout& output, const BoxLayout& input, int refinement)
   refine(output, input, refinement);
 }
 
-void mortonOrdering(Vector<Box>& a_boxes);
-void serialMortonOrdering(Vector<Box>& a_boxes);
+void mortonOrdering(vector<Box>& a_boxes);
+void serialMortonOrdering(vector<Box>& a_boxes);
 
 //========================================================
 

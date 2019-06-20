@@ -18,7 +18,6 @@ using std::ws;
 #include "Misc.H"
 #include "IntVect.H"
 #include "parstream.H"
-#include "IndexTM.H"
 
 #include "NamespaceHeader.H"
 
@@ -105,11 +104,6 @@ IntVect::p() const
     pout() << *this << '\n';
 }
 
-IntVect::IntVect(const IndexTM<int, CH_SPACEDIM>& a_tm)
-{
-  D_EXPR6(vect[0] = a_tm[0], vect[1] = a_tm[1], vect[2] = a_tm[2],
-          vect[3] = a_tm[3], vect[4] = a_tm[4], vect[5] = a_tm[5]);
-}
 
 void
 IntVect::dumpOn (ostream& os) const
@@ -179,30 +173,30 @@ void linearOut(void* a_outBuf, const IntVect& a_iv)
   memcpy(bob, from + IntVect::io_offset, SpaceDim*sizeof(int));
 }
 
-//Vector<IntVect>  specialization
-template < > int linearSize(const Vector<IntVect>& a_input)
+//vector<IntVect>  specialization
+template < > int linearSize(const vector<IntVect>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
+template < > void linearIn(vector<IntVect>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
+template < > void linearOut(void* const a_outBuf, const vector<IntVect>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
 
-//Vector<Vector<IntVect> >  specialization
-template < > int linearSize(const Vector<Vector<IntVect> >& a_input)
+//vector<vector<IntVect> >  specialization
+template < > int linearSize(const vector<vector<IntVect> >& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf)
+template < > void linearIn(vector<vector<IntVect> >& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT)
+template < > void linearOut(void* const a_outBuf, const vector<vector<IntVect> >& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }

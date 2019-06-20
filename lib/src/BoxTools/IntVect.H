@@ -16,11 +16,11 @@
 #include <cstring>
 #include <iostream>
 #include "SPACE.H"
-#include "Vector.H"
-#include "IndexTM.H"
+#include <vector>
+
 #include <cstdint>
 #include "SPMD.H"
-#include "Misc.H"
+
 #include <functional>
 
 #ifdef USE_PROTO
@@ -33,14 +33,12 @@ namespace BLfacade
 }
 
 #include "NamespaceHeader.H"
-
-
+using std::vector;
 //template<typename T, int n>
-//class IndexTM;
 
 class HDF5Handle;
 
-/// An integer Vector in SpaceDim-dimensional space
+/// An integer vector in SpaceDim-dimensional space
 /**
   The class IntVect is an implementation of an integer vector in a
   SpaceDim-dimensional space.  It represents a point in a discrete space.
@@ -67,7 +65,7 @@ public:
   IntVect()
   {}
 
-  explicit IntVect( const Vector<int>& vi)
+  explicit IntVect( const vector<int>& vi)
   {
     D_EXPR6(vect[0]=vi[0], vect[1]=vi[1], vect[2] = vi[2],
             vect[3]=vi[3], vect[4]=vi[4], vect[5] = vi[5]);
@@ -102,7 +100,6 @@ public:
   */
   //  IntVect (const IntVect& rhs);
 
-  IntVect (const IndexTM<int, CH_SPACEDIM>& a_tm);
 
   IntVect copy() const
   {
@@ -477,7 +474,7 @@ public:
     int retval = vect[0];
     for(int idir = 1; idir < SpaceDim; idir++)
       {
-        retval = Max(retval, vect[idir]);
+        retval = std::max(retval, vect[idir]);
       }
     return retval;
   }
@@ -488,7 +485,7 @@ public:
     int retval = vect[0];
     for(int idir = 1; idir < SpaceDim; idir++)
       {
-        retval = Min(retval, vect[idir]);
+        retval = std::min(retval, vect[idir]);
       }
     return retval;
   }
@@ -733,21 +730,21 @@ void linearIn(CH_XDIR::IntVect& a_iv, const void* a_inBuf);
 template < >
 void linearOut(void* a_outBuf, const CH_XDIR::IntVect& a_iv);
 
-//Vector<IntVect>  specialization
+//vector<IntVect>  specialization
 template < >
-int linearSize(const Vector<CH_XDIR::IntVect>& a_input);
+int linearSize(const vector<CH_XDIR::IntVect>& a_input);
 template < >
-void linearIn(Vector<CH_XDIR::IntVect>& a_outputT, const void* const inBuf);
+void linearIn(vector<CH_XDIR::IntVect>& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const Vector<CH_XDIR::IntVect>& a_inputT);
+void linearOut(void* const a_outBuf, const vector<CH_XDIR::IntVect>& a_inputT);
 
-//Vector<Vector<IntVect> > specialization
+//vector<vector<IntVect> > specialization
 template < >
-int linearSize(const Vector<Vector<CH_XDIR::IntVect> >& a_input);
+int linearSize(const vector<vector<CH_XDIR::IntVect> >& a_input);
 template < >
-void linearIn(Vector<Vector<CH_XDIR::IntVect> >& a_outputT, const void* const inBuf);
+void linearIn(vector<vector<CH_XDIR::IntVect> >& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const Vector<Vector<CH_XDIR::IntVect> >& a_inputT);
+void linearOut(void* const a_outBuf, const vector<vector<CH_XDIR::IntVect> >& a_inputT);
 
 #include "BaseNamespaceFooter.H"
 
@@ -1133,12 +1130,12 @@ inline
 IntVect&
 IntVect::min (const IntVect& p)
 {
-  D_EXPR6(vect[0] = Min(vect[0], p.vect[0]),
-          vect[1] = Min(vect[1], p.vect[1]),
-          vect[2] = Min(vect[2], p.vect[2]),
-          vect[3] = Min(vect[3], p.vect[3]),
-          vect[4] = Min(vect[4], p.vect[4]),
-          vect[5] = Min(vect[5], p.vect[5]));
+  D_EXPR6(vect[0] = std::min(vect[0], p.vect[0]),
+          vect[1] = std::min(vect[1], p.vect[1]),
+          vect[2] = std::min(vect[2], p.vect[2]),
+          vect[3] = std::min(vect[3], p.vect[3]),
+          vect[4] = std::min(vect[4], p.vect[4]),
+          vect[5] = std::min(vect[5], p.vect[5]));
   return *this;
 }
 
@@ -1146,12 +1143,12 @@ inline
 IntVect&
 IntVect::max (const IntVect& p)
 {
-  D_EXPR6(vect[0] = Max(vect[0], p.vect[0]),
-          vect[1] = Max(vect[1], p.vect[1]),
-          vect[2] = Max(vect[2], p.vect[2]),
-          vect[3] = Max(vect[3], p.vect[3]),
-          vect[4] = Max(vect[4], p.vect[4]),
-          vect[5] = Max(vect[5], p.vect[5]));
+  D_EXPR6(vect[0] = std::max(vect[0], p.vect[0]),
+          vect[1] = std::max(vect[1], p.vect[1]),
+          vect[2] = std::max(vect[2], p.vect[2]),
+          vect[3] = std::max(vect[3], p.vect[3]),
+          vect[4] = std::max(vect[4], p.vect[4]),
+          vect[5] = std::max(vect[5], p.vect[5]));
   return *this;
 }
 

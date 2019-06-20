@@ -17,7 +17,7 @@
 #include "DisjointBoxLayout.H"
 #include "Copier.H"
 #include "SPMD.H"
-#include "memtrack.H"
+
 #include "NamespaceHeader.H"
 
 //--Forward declarations

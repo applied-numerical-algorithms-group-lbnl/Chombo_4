@@ -11,7 +11,6 @@
 #ifndef _SPMDI_H_
 #define _SPMDI_H_
 
-#include "memtrack.H"
 #include "parstream.H"
 #include "BaseNamespaceHeader.H"
 
@@ -43,7 +42,7 @@ extern void AttachDebugger(int);
 /*****************************/
 template <class T>
 inline void
-gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   CH_assert (a_dest >= 0);
   CH_assert(a_dest <  numProc());
@@ -194,7 +193,7 @@ barrier(void)
 /*****************************/
 template <class T>
 inline void
-gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   a_outVec.resize(1);
   a_outVec[0] = a_input;
@@ -223,15 +222,15 @@ barrier(void)
 //These should work independent of MPI
 //*************************************
 
-//Vector<T> specialization of linearIn
+//vector<T> specialization of linearIn
 template <class T>
 void
-linearListIn(Vector<T>& a_outputT, const void* const a_inBuf)
+linearListIn(vector<T>& a_outputT, const void* const a_inBuf)
 {
   //first entry is the size of the vector
   const int* const intBuf = (int*)a_inBuf;
   int vecsize = intBuf[0];
-  Vector<int> vecOffset(vecsize);
+  vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   for (int ivec = 0; ivec < vecsize; ivec++)
     {
@@ -252,16 +251,16 @@ linearListIn(Vector<T>& a_outputT, const void* const a_inBuf)
     }
 }
 
-//Vector<T> specialization of linearOut
+//vector<T> specialization of linearOut
 template <class T>
 void
-linearListOut(void* const a_outBuf, const Vector<T>& a_input)
+linearListOut(void* const a_outBuf, const vector<T>& a_input)
 {
   //first entry is the size of the vector
   int* const intBuf = (int*)a_outBuf;
   intBuf[0] = a_input.size();
   int vecsize = intBuf[0];
-  Vector<int> vecOffset(vecsize);
+  vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   //next vecsize entries are the actual data
   int ioffset = (vecsize+1)*sizeof(int);
@@ -284,10 +283,10 @@ linearListOut(void* const a_outBuf, const Vector<T>& a_input)
     }
 }
 
-//Vector<T> specialization of linearSize
+//vector<T> specialization of linearSize
 template <class T>
 int
-linearListSize(const Vector<T>& a_input)
+linearListSize(const vector<T>& a_input)
 {
   //first entry is the size of the vector (int)
   //next vecsize entries are offsets of data into buffer (int)

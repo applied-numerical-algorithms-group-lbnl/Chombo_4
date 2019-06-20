@@ -100,7 +100,7 @@
 #include "SPACE.H"
 #include "REAL.H"
 #include "Box.H"
-#include "Vector.H"
+#include <vector>
 #include "BoxLayout.H"
 #include "SPMD.H"
 #include "NamespaceHeader.H"
@@ -114,11 +114,11 @@
    RefRatios        input: refinement ratio for each level
 */
 int
-LoadBalance( Vector<Vector<int> >&         a_procAssignments
+LoadBalance( vector<vector<int> >&         a_procAssignments
              ,Real&                        a_effRatio
-             ,const Vector<Vector<Box> >&  a_Grids
-             ,const Vector<Vector<long> >& a_ComputeLoads
-             ,const Vector<int>&           a_RefRatios
+             ,const vector<vector<Box> >&  a_Grids
+             ,const vector<vector<long> >& a_ComputeLoads
+             ,const vector<int>&           a_RefRatios
              ,int a_nProc = numProc()
              ) ;
 
@@ -131,32 +131,32 @@ ComputeLoads     input: computational cost of each box
 RefRatios        input: refinement ratio for each level
 */
 int
-LoadBalance( Vector<BoxLayout>&    Grids
+LoadBalance( vector<BoxLayout>&    Grids
              ,Real&                 effRatio
-             ,const Vector<Vector<long> >& ComputeLoads
-             ,const Vector<int>&           RefRatios
+             ,const vector<vector<long> >& ComputeLoads
+             ,const vector<int>&           RefRatios
              ,int nProc = numProc()
              ) ;
 
 ///
-/** convenience function to load balance a Vector of Boxes based
+/** convenience function to load balance a vector of Boxes based
     on load=box.numPts() */
-int LoadBalance(Vector<int>& a_procAssignments, const Vector<Box>& a_boxes,
+int LoadBalance(vector<int>& a_procAssignments, const vector<Box>& a_boxes,
                 const int a_LBnumProc = numProc());
 
 ///
-/** convenience function to load balance a Vector of Loads based
+/** convenience function to load balance a vector of Loads based
     on load.  boxes also passed in for possible use with box-swapping code */
-int LoadBalance(Vector<int>&             a_procAssignments,
-                const Vector<long long>& a_computeLoads,
-                const Vector<Box>&       a_boxes,
+int LoadBalance(vector<int>&             a_procAssignments,
+                const vector<long long>& a_computeLoads,
+                const vector<Box>&       a_boxes,
                 const int                a_LBnumProc = numProc());
 
 ///
 /** Accepts "long int" computeLoads and then just calls the "long long" version. */
-int LoadBalance(Vector<int>&             a_procAssignments,
-                const Vector<long int>&  a_computeLoads,
-                const Vector<Box>&       a_boxes,
+int LoadBalance(vector<int>&             a_procAssignments,
+                const vector<long int>&  a_computeLoads,
+                const vector<Box>&       a_boxes,
                 const int                a_LBnumProc = numProc());
 
 //
@@ -164,29 +164,29 @@ int LoadBalance(Vector<int>&             a_procAssignments,
    This is experimental and to keep me from doing long long <-> long conversions. (dtg)
    I think we can remove this as it simply calls the above LoadBalance() (ndk 8.4.2008)
  */
-int UnLongLongLoadBalance(Vector<int>&                      a_procAssignments,
-                          const Vector<unsigned long long>& a_computeLoads,
-                          const Vector<Box>&                a_boxes,
+int UnLongLongLoadBalance(vector<int>&                      a_procAssignments,
+                          const vector<unsigned long long>& a_computeLoads,
+                          const vector<Box>&                a_boxes,
                           const int                         a_numProc = numProc());
 
 ///
 /* Even simpler load balance scheme that just dices vector to give as close to the same number
 of boxes to each rank.  
 */
-int basicLoadBalance(Vector<int>& a_procAssignments, int numBoxes, int a_numProc = numProc());
+int basicLoadBalance(vector<int>& a_procAssignments, int numBoxes, int a_numProc = numProc());
 
 ///
 int
-LoadBalance(Vector<int>& procAssignments
+LoadBalance(vector<int>& procAssignments
             ,Real&                 effRatio
-            ,const Vector<Box>&  Grids
-            ,const Vector<long>& ComputeLoads);
+            ,const vector<Box>&  Grids
+            ,const vector<long>& ComputeLoads);
 
 /// convenience function to gather a distributed set of Boxes with their corresponding processor assignment
 /** Assumption is that each processor has at most one valid box. This is useful when interacting with other distributed codes which might not have the entire set of distributed boxes on all processors.
  */
-int LoadBalance(Vector<int>& a_procAssignments, 
-                Vector<Box>& a_boxes,
+int LoadBalance(vector<int>& a_procAssignments, 
+                vector<Box>& a_boxes,
                 const Box&   a_localGridBox,
                 const int    a_numProc = numProc());
 

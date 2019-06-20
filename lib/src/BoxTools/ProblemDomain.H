@@ -14,10 +14,10 @@
 #ifndef WRAPPER
 #include <iostream>
 
-#include "Vector.H"
+#include <vector>
 #include "IntVect.H"
 #include "Box.H"
-#include "Misc.H"
+
 #endif
 
 #include "SPACE.H"
@@ -112,7 +112,7 @@ private:
 
   unsigned int m_index;
 
-  Vector<IntVect> m_shift_vectors;
+  vector<IntVect> m_shift_vectors;
 
 };
 
