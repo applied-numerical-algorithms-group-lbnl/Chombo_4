@@ -23,6 +23,7 @@
 #include "IntVect.H"
 #include <vector>
 #include "SPMD.H"
+#include "Proto_RealVect.H"
 
 #include "NamespaceHeader.H"
 

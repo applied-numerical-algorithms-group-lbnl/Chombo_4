@@ -34,7 +34,7 @@
 
 #include "CH_assert.H"
 #include "MayDay.H"
-#include "Misc.H"
+
 #include "Vector.H"
 #include "BaseNamespaceHeader.H"
 using std::cout;
@@ -2540,7 +2540,7 @@ PP_Array<T>::resize (long newlen)
       return;
     }
   T* newvp = new T[newlen];
-  long len = Min(newlen,nelem);
+  long len = std::min(newlen,nelem);
   for (long i = 0; i < len; i++)
     newvp[i] = vp[i];
   delete [] vp;
@@ -2564,7 +2564,7 @@ void PP_Array<T>::resize (long     newlen,
       return;
     }
   T* newvp = new T[newlen];
-  long len = Min(newlen,nelem);
+  long len = std::min(newlen,nelem);
   long i;
   for (i = 0; i < len; i++)
     newvp[i] = vp[i];

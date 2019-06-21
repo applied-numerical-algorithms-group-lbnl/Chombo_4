@@ -13,7 +13,7 @@
 
 #include "DisjointBoxLayout.H"
 #include "Pool.H"
-#include <vector>
+#include "Vector.H"
 #include "ProblemDomain.H"
 #include <unordered_map>
 #include <cstdint>
@@ -113,13 +113,13 @@ public:
   };
 
 #endif
-  mutable std::vector<bufEntry> m_fromMe;
-  mutable std::vector<bufEntry> m_toMe;
-  mutable std::vector<std::vector<bufEntry> > m_toMeUnpack;
+  mutable Vector<bufEntry> m_fromMe;
+  mutable Vector<bufEntry> m_toMe;
+  mutable Vector<Vector<bufEntry> > m_toMeUnpack;
 
 #ifdef CH_MPI
-  mutable vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
-  mutable vector<MPI_Status>   m_receiveStatus, m_sendStatus;
+  mutable Vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
+  mutable Vector<MPI_Status>   m_receiveStatus, m_sendStatus;
 #endif
   mutable int numSends, numReceives;
 
@@ -315,15 +315,15 @@ public:
 
   CopierBuffer  m_buffers;
 
-  std::vector<IndexTM<int,2> >  m_range;
+
 protected:
 
   friend class CopyIterator;
 
 
-  vector<MotionItem*>   m_localMotionPlan;
-  vector<MotionItem*> m_fromMotionPlan;
-  vector<MotionItem*> m_toMotionPlan;
+  Vector<MotionItem*> m_localMotionPlan;
+  Vector<MotionItem*> m_fromMotionPlan;
+  Vector<MotionItem*> m_toMotionPlan;
 
   friend void dumpmemoryatexit();
   static Pool s_motionItemPool;
@@ -337,7 +337,7 @@ protected:
   bool m_isDefined;
 
   void trimMotion(const DisjointBoxLayout& a_exchangedLayout, const IntVect& a_ghost,
-                  const vector<MotionItem*>& a_oldItems, vector<MotionItem*>& a_newItems);
+                  const Vector<MotionItem*>& a_oldItems, Vector<MotionItem*>& a_newItems);
 
   void sort();
 
@@ -404,7 +404,7 @@ public:
   inline size_t size(){ return m_motionplanPtr->size();}
 
 private:
-  const vector<MotionItem*>* m_motionplanPtr;
+  const Vector<MotionItem*>* m_motionplanPtr;
   unsigned int  m_current;
 };
 

@@ -12,7 +12,6 @@
 #include "SPACE.H"
 
 #include "MayDay.H"
-#include "Misc.H"
 #include "Box.H"
 #include "parstream.H"
 #include "SliceSpec.H"
@@ -71,8 +70,8 @@ convertOldToNew(const IntVect& a_permutation,
   IntVect ivNewHi = CH_XDIR::convertOldToNew(bigEnd()  , a_permutation, a_sign, a_translation);
   for (int idir = 0; idir < SpaceDim; idir++)
     {
-      int iLo = Min(ivNewLo[idir], ivNewHi[idir]);
-      int iHi = Max(ivNewLo[idir], ivNewHi[idir]);
+      int iLo = std::min(ivNewLo[idir], ivNewHi[idir]);
+      int iHi = std::max(ivNewLo[idir], ivNewHi[idir]);
       ivNewLo[idir] = iLo;
       ivNewHi[idir] = iHi;
     }
@@ -93,8 +92,8 @@ convertNewToOld(const IntVect& a_permutation,
   IntVect ivOldHi = CH_XDIR::convertNewToOld(bigEnd()  , a_permutation, a_sign, a_translation);
   for (int idir = 0; idir < SpaceDim; idir++)
     {
-      int iLo = Min(ivOldLo[idir], ivOldHi[idir]);
-      int iHi = Max(ivOldLo[idir], ivOldHi[idir]);
+      int iLo = std::min(ivOldLo[idir], ivOldHi[idir]);
+      int iHi = std::max(ivOldLo[idir], ivOldHi[idir]);
       ivOldLo[idir] = iLo;
       ivOldHi[idir] = iHi;
     }

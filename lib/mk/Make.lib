@@ -1,5 +1,3 @@
-# -*- Mode: Makefile;  -*-
-
 makefiles+=lib_src_$(lbase)
 
 usage:

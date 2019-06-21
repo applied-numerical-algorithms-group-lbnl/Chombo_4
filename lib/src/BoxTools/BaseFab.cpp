@@ -64,36 +64,9 @@ template < > void BaseFab<Real>::define()
   // petermc, 8 Dec 2010:  Allow empty BaseFab<Real>.
   if (m_numpts == 0) return;
   CH_assert(!m_aliased);
-  //CH_assert(!(The_FAB_Arena == 0)); // not a sufficient test!!!
-
-#ifdef CH_USE_MEMORY_TRACKING
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena(name().c_str());
-  }
-#else
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena("");
-  }
-#endif
-
-  // if (s_Arena == NULL)
-  // {
-  //   MayDay::Error("malloc in basefab failed");
-  // }
 
   m_truesize = m_nvar * m_numpts;
-  m_dptr     = static_cast<Real*>(s_Arena->alloc(m_truesize * sizeof(Real)));
-
-#ifdef CH_USE_MEMORY_TRACKING
-  s_Arena->bytes += m_truesize * sizeof(Real) + sizeof(BaseFab<Real>);
-  CH_assert(s_Arena->bytes >= 0);
-  if (s_Arena->bytes > s_Arena->peak)
-  {
-    s_Arena->peak = s_Arena->bytes;
-  }
-#endif
+  m_dptr     = static_cast<Real*>(malloc(m_truesize * sizeof(Real)));
 
 #ifdef CH_USE_SETVAL
   setVal(BaseFabRealSetVal);
@@ -107,36 +80,10 @@ template < > void BaseFab<int>::define()
   // CH_assert(m_numpts > 0);
   // petermc, 10 Apr 2012:  Allow empty BaseFab<int>.
   CH_assert(!m_aliased);
-  //CH_assert(!(The_FAB_Arena == 0)); // not a sufficient test!!!
 
-#ifdef CH_USE_MEMORY_TRACKING
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena(name().c_str());
-  }
-#else
-  if (s_Arena == NULL)
-  {
-    s_Arena = new BArena("");
-  }
-#endif
-
-  // if (s_Arena == NULL)
-  // {
-  //   MayDay::Error("malloc in basefab failed");
-  // }
 
   m_truesize = m_nvar * m_numpts;
-  m_dptr     = static_cast<int*>(s_Arena->alloc(m_truesize * sizeof(int)));
-
-#ifdef CH_USE_MEMORY_TRACKING
-  s_Arena->bytes += m_truesize * sizeof(int) + sizeof(BaseFab<int>);
-  CH_assert(s_Arena->bytes >= 0);
-  if (s_Arena->bytes > s_Arena->peak)
-  {
-    s_Arena->peak = s_Arena->bytes;
-  }
-#endif
+  m_dptr     = static_cast<int*>(malloc(m_truesize * sizeof(int)));
 }
 
 template < > void BaseFab<Real>::undefine()
@@ -152,12 +99,8 @@ template < > void BaseFab<Real>::undefine()
     return;
   }
 
-  s_Arena->free(m_dptr);
+  free(m_dptr);
 
-#ifdef CH_USE_MEMORY_TRACKING
-  s_Arena->bytes -= m_truesize * sizeof(Real) + sizeof(BaseFab<Real>);
-  CH_assert(s_Arena->bytes >= 0);
-#endif
 
   m_dptr = 0;
 }
@@ -175,12 +118,7 @@ template < > void BaseFab<int>::undefine()
     return;
   }
 
-  s_Arena->free(m_dptr);
-
-#ifdef CH_USE_MEMORY_TRACKING
-  s_Arena->bytes -= m_truesize * sizeof(int) + sizeof(BaseFab<int>);
-  CH_assert(s_Arena->bytes >= 0);
-#endif
+  free(m_dptr);
 
   m_dptr = 0;
 }

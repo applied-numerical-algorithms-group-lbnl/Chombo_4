@@ -1,5 +1,3 @@
-# -*- Mode: Makefile; -*-
-
 ################################################################
 ###
 ### This makefile defines all the default rules for Chombo.
@@ -12,7 +10,7 @@
 ### This file expects certain variables to be defined before it is `include'd.
 ### The library- or application-specific makefile should set either $(lbase) or $(ebase).
 ### The `Make.defs.defaults' file or the user should set:
-###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX FC MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
+###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
 ### The user may also set:
 ###        CXXFLAGS     CPPFLAGS     FFLAGS     LDFLAGS     LIBFLAGS
 ###    XTRACXXFLAGS XTRACPPFLAGS XTRAFFLAGS XTRAF90FLAGS XTRALDFLAGS
@@ -92,7 +90,6 @@ export PRECISION
 export PROFILE
 export NAMESPACE
 export CXX
-export FC
 export MPICXX
 export MPI
 export ROSE
@@ -145,11 +142,10 @@ export USE_PETSC
 export PETSC_DIR
 export PETSC_ARCH
 export OPENMPCC
-export OPENMPFC
 export USE_PROTO
 
 ifeq ($(USE_PROTO),TRUE)
- XTRACPPFLAGS += -I$(PROTO_HOME)/include -DDIM=$(DIM) -DUSE_PROTO=1
+ XTRACPPFLAGS += -I$(PROTO_HOME)/include -I$(PROTO_HOME)/EBProto/include -DDIM=$(DIM) -DUSE_PROTO=1
 endif
 
 
@@ -184,7 +180,7 @@ CSHELLCMD=/bin/csh -f -c
 
 # wildcard patterns for source files that Chombo can build.
 # The .BL_F prefix is for CCSE .F files.
-src_wildcard := *.cpp *.F90 *.f90 *.ChF *.F *.f *.BL_F 
+src_wildcard := *.cpp *.F90 *.f90 *.F *.f *.BL_F 
 
 # if OUTPUT=LIB, this is an application that needs to be compiled into a library
 ifeq ($(OUTPUT),LIB)
@@ -224,6 +220,8 @@ else
 endif
 
 # Chombo library filenames are lower case, regardless of the src
+
+# file: Make.printVariables
 # subdirectory name.  Also note that we automatically add BaseTools to LibNames,
 # unless we're either building the BaseTools library itself, or BaseTools already 
 # appears in LibNames
@@ -254,9 +252,6 @@ openintcc = 1
 endif
 
 openmpflag = 
-ifeq ($(OPENMPFC),TRUE)
-openmpflag = -P
-endif
 
 CPPFLAGS := -DCH_SPACEDIM=$(DIM)\
 -DCH_$(system)\
@@ -295,15 +290,6 @@ $(cxxcomflags)\
 $(subst FALSE,,$(subst TRUE,$(cxxprofflags),$(PROFILE)))
 
 
-CHFFLAGS := \
-$(subst FALSE,,$(subst TRUE,-m,$(MULTIDIM)))
-
-FFLAGS := \
-$(subst FALSE,,$(subst TRUE,$(fdbgflags),$(DEBUG)))\
-$(subst FALSE,,$(subst TRUE,$(foptflags),$(subst HIGH,$(foptflags),$(OPT))))\
-$(fcomflags)\
-$(subst FALSE,,$(subst TRUE,$(fprofflags),$(PROFILE)))
-
 LDFLAGS := \
 $(subst FALSE,,$(subst TRUE,$(lddbgflags),$(DEBUG)))\
 $(subst FALSE,,$(subst TRUE,$(ldoptflags),$(subst HIGH,$(ldoptflags),$(OPT))))\
@@ -335,24 +321,24 @@ SUFFIXES =
 #       So put the dirs here so they get created but otherwise don't
 #       affect the up-to-date-ness of the library.]
 
-all-lib: $(CHOMBO_HOME)/mk/.check.$(config) $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames)) lib-only
+all-lib: $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames)) lib-only
 
-lib-only: $(CHOMBO_HOME)/mk/.check.$(config) $(_lib_config)
+lib-only: $(_lib_config)
 
 # all-example: $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames)) example-only
 
-all-example: $(CHOMBO_HOME)/mk/.check.$(config) $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames))
+all-example:  $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames))
 	+$(ECHO)$(MAKE) --no-print-directory $(_app_configs)
 
 # all-test:    $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames)) test-only
 
-all-test:  $(CHOMBO_HOME)/mk/.check.$(config)  $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames))
+all-test:   $(shell $(CHOMBO_HOME)/mk/reverse $(LibNames))
 	+$(ECHO)$(MAKE) --no-print-directory $(_app_configs)
 
-example-only test-only: $(CHOMBO_HOME)/mk/.check.$(config) $(_app_configs)
+example-only test-only:  $(_app_configs)
 	@echo done building $(ebase)
 
-all-run: $(CHOMBO_HOME)/mk/.check.$(config) all-test run-only
+all-run:  all-test run-only
 
 ifndef INPUT
   INPUT = $i.inputs
@@ -368,7 +354,7 @@ clean::
 	-$(RM) -r [odftp]/$(config) $(_lib_config) *$(config).ex core *.tmp[12]
 
 realclean:
-	-$(RM) -r [odftp] cubin rose *.exe *.o SunWS_cache *.stb *.ii cxx_repository *_F.H *_CUX.H $(addsuffix /*_CUX.H, $(src_dirs)) *.mod core.* .\#* *.h5 *.hdf5 pout.* leak.out* .dummy time.table* .check.* *.a
+	-$(RM) -r [odftp] cubin rose *.exe *.o SunWS_cache *.stb *.ii cxx_repository *_F.H *_CUX.H $(addsuffix /*_CUX.H, $(src_dirs)) *.mod core.* .\#* *.h5 *.hdf5 pout.* leak.out* .dummy time.table*  *.a
 ifdef ebase
 	-$(RM) *.ex
 endif
@@ -416,11 +402,11 @@ $(MULTIDIM_INCLUDE_DIR) : $(CHOMBO_HOME)/include
 # be used only from the command line.
 ifdef ebase
   ifeq ($(OUTPUT),LIB)
-$(ebase): $(CHOMBO_HOME)/mk/.check.$(config)
+$(ebase): 
 	+$(ECHO)$(MAKE) $@$(_lib_config)
 $(ebaseobject): d/$(config)/.lib_output
   else
-$(ebase): $(CHOMBO_HOME)/mk/.check.$(config)
+$(ebase):
 	+$(ECHO)$(MAKE) $@$(config).ex
 $(ebaseobject): d/$(config)/.exe_output
   endif
@@ -433,8 +419,8 @@ endif
 #[NOTE: reverse the order of the libraries so they get built in the opposite order
 #       the linker searches them.]
 #[NOTE: the .o for the main has to go first so the $< in the link command will have the right value.]
-# also make executable dependent on check, just in case...
-%$(config).ex: .check.$(config)
+
+%$(config).ex: 
 %$(config).ex:  o/$(config)/%.o $(shell $(CHOMBO_HOME)/mk/reverse $(_libs)) $(_other_app_objects)
 	$(QUIET)$(CSHELLCMD) "$(LD) $(CXXFLAGS) $(XTRACXXFLAGS) $(LDFLAGS) $(XTRALDFLAGS) $< $(_other_app_objects) $(XTRALIBFLAGS) $(LIBFLAGS) $(cxxexeflag)$@ |&  awk -f $(CHOMBO_HOME)/mk/tempnam.awk"
 
@@ -444,7 +430,7 @@ endif
 
 # given a generic library name, build the specific name
 ifdef lbase
-$(lbase): $(CHOMBO_HOME)/mk/.check.$(config)
+$(lbase): 
 	+$(ECHO)$(MAKE) --no-print-directory $(CHOMBO_HOME)/lib$(lbase)$(config).a
 endif
 
@@ -503,7 +489,7 @@ d/$(config)/.exe_output: d/$(config)/.dummy
 
 # rules to build objects for executable programs and libraries
 
-.PRECIOUS: $(CHOMBO_HOME)/mk/.check.$(config) o/$(config)/%.o d/$(config)/.dummy
+.PRECIOUS:  o/$(config)/%.o d/$(config)/.dummy
 
 ifeq ($(ROSE),TRUE)
 # Preprocess with Rose
@@ -516,61 +502,7 @@ o/$(config)/%.o : %.cpp   d/$(config)/%.d
 	$(QUIET)$(cxxc) $(CXXFLAGS) $(XTRACXXFLAGS) $(pic) $(CPPFLAGS) $(XTRACPPFLAGS) -DCH_LANG_CC $(cxxcompflag) $< $(cxxobjflag)$@
 endif
 
-o/$(config)/%.o : %.f90  d/$(config)/%.d
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAF90FLAGS) $(fcompflag) $< $(fobjflag)$@
 
-o/$(config)/%.o : %.ChF  d/$(config)/%.d
-	$(QUIET)$(chfpp_src) -f $< $(CHFFLAGS) -p p/$(config)/$(notdir $*.C) -c /dev/null -D $(DIM)
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) $(CPPFLAGS) -I. $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT p/$(config)/$(notdir $*.C) | awk 'NF>0' > p/$(config)/$(notdir $*.cpre)"
-	$(QUIET)$(CSHELLCMD) "cat p/$(config)/$(notdir $*.cpre) | $(stripsharp_src)  | $(fortpost)  > f/$(config)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(config)/$*.f $(fobjflag)$@
-
-o/$(config)/%.o: %.F  d/$(config)/%.d
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) $(CPPFLAGS) $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT $< | $(fortpost) | awk 'NF>0' > f/$(config)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(config)/$*.f $(fobjflag)$(patsubst %.mod,o/$(config)/%.o,$@)
-
-%.mod: %.F
-	@if [ x"$(QUIET)" != x"@" ]; then echo Creating $*.mod ...; fi
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) $(CPPFLAGS) $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT $< | $(fortpost) | awk 'NF>0' > f/$(config)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(config)/$*.f $(fobjflag)$(patsubst %.mod,o/$(config)/%.o,$@)
-
-o/$(config)/%.o: %.F90  d/$(config)/%.d
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAF90FLAGS) $(fcompflag) $< $(fobjflag)$(patsubst %.mod,o/$(config)/%.o,$@)
-
-%.mod: %.F90
-	@if [ x"$(QUIET)" != x"@" ]; then echo Creating $*.mod ...; fi
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAF90FLAGS) $(fcompflag) $< $(fobjflag)$(patsubst %.mod,o/$(config)/%.o,$@)
-
-o/$(config)/%.o : %.f  d/$(config)/%.d
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) $< $(fobjflag)$@
-
-%.$(CUBIN) : %.cu
-	$(QUIET)$(NVCC) $(NVCCFLAGS) -o $@ -$(CUBIN) $< $(PTXASFLAGS)
-
-##
-## Rules to build ChomboFortran header files
-##
-%_F.H: %.ChF
-	@if [ x"$(QUIET)" != x"@" ]; then echo Creating $*_F.H ...; fi
-	$(chfpp_src) -f $< $(CHFFLAGS) -p /dev/null -c $*_F.H -D $(DIM)
-
-##
-## Rules to build Cuda cubin or fatbinary embedded in header files
-##
-.SECONDARY: %.$(CUBIN)
-%_CUX.H: %.$(CUBIN)
-	@if [ x"$(QUIET)" != x"@" ]; then echo Creating $*_CUX.H ...; fi
-	$(ECHO)$(cupp_src) $< $*
-	mv $< cubin/$(config)
-
-#
-
-%.1D.ChF : %.ChF
-	cp $< $@
-%.2D.ChF : %.ChF
-	cp $< $@
-%.3D.ChF : %.ChF
-	cp $< $@
 
 ##
 ## Rules to make dependency files.
@@ -593,15 +525,6 @@ endif
 #	# if $(mkdep) failed, sed will still make the output file so delete it if it is empty
 	$(ECHO)if [ ! -s $@ ]; then $(RM) $@; fi
 
-d/$(config)/%.d : %.ChF d/$(config)/.dummy
-	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
-ifdef lbase
-	$(ECHO)$(CSHELLCMD) "$(mkdep) $(CPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%[^ ]*\($*\)\.o[ :]*%$(_lib_config)(\1.o) $@ : %g' > $@"
-else
-	$(ECHO)$(CSHELLCMD) "$(mkdep) $(CPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%[^ ]*\($*\)\.o[ :]*%o/$(config)/\1.o $@ : %g' > $@"
-endif
-#	# if $(mkdep) failed, sed will still make the output file so delete it if it is empty
-	$(ECHO)if [ ! -s $@ ]; then $(RM) $@; fi
 
 d/$(config)/%.d : %.F d/$(config)/.dummy
 	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
@@ -674,30 +597,6 @@ endif
 #XXXo/$(config) f/$(config) d/$(config) p/$(config):
 #XXX	mkdir -p $@
 
-# Special target to run some basic checks that the customization variables are correct.
-# The '.check.$(config)' file is a real file, not a phony target.
-# It depends on the Make.defs.local customization file so the checks will be rerun
-# whenever the customizations change.
-##[NOTE: it would be better if it depended on the Make.defs.local.<hostname> file too,
-##       but that doesn't have to exist, so it can't depend on it. <dbs>]
-check: $(CHOMBO_HOME)/mk/.check.$(config)
-
-$(CHOMBO_HOME)/mk/.check.$(config): $(CHOMBO_HOME)/mk/Make.defs.local
-ifeq ($(USE_HDF),TRUE)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) HDFINCFLAGS $(HDFINCFLAGS)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) HDFLIBFLAGS $(HDFLIBFLAGS)
-ifdef MPI
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) HDFMPIINCFLAGS $(HDFMPIINCFLAGS)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) HDFMPILIBFLAGS $(HDFMPILIBFLAGS)
-endif
-endif
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) PERL $(PERL)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) CXX $(CXX) $(cxxdbgflags) $(cxxcompflag)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) CXX $(CXX) $(cxxoptflags) $(cxxcompflag)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) FC $(FC) $(fdbgflags) $(fcompflag)
-	@$(CHOMBO_HOME)/mk/check $(VERBOSE) FC $(FC) $(foptflags) $(fcompflag)
-
-	@touch $(CHOMBO_HOME)/mk/.check.$(config)
 
 
 ##

@@ -78,9 +78,6 @@ Pool::Pool(int         a_ptrSize,
 
 Pool::~Pool()
 {
-#ifdef CH_USE_MEMORY_TRACKING
-  ch_memcount-=memUsage();
-#endif
   for (int i = 0; i < m_pool_.size(); i++)
   {
     delete [] m_pool_[i];
@@ -151,9 +148,6 @@ long Pool::memUsage() const
 
 void Pool::clear()
 {
-#ifdef CH_USE_MEMORY_TRACKING
-  ch_memcount-=memUsage();
-#endif
   for (int i = 0; i < m_pool_.size(); i++)
   {
     delete [] m_pool_[i];
@@ -228,9 +222,7 @@ void* Pool::getMore()
     *(char**)p = p + m_ptrSize_;  // Chunk at i points to chunk at i+1.
     p += m_ptrSize_;
   }
-#ifdef CH_USE_MEMORY_TRACKING
-  ch_memcount += m_ptrSize_*m_poolSize_;
-#endif
+
 
   *(char**)p = 0;  // Chunk at end of list points to null
   return po;       // return first chunk.

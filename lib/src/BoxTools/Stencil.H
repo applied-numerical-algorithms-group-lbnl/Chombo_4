@@ -12,6 +12,7 @@
 #define _STENCIL_H_
 
 #include "ProblemDomain.H"
+#include "Vector.H"
 #include <map>
 
 //

@@ -11,9 +11,11 @@
 #include "ProblemDomain.H"
 #include "MayDay.H"
 #include <list>
+#include <iostream>
 #include "NamespaceHeader.H"
 
 using std::istream;
+using std::ostream;
 using std::ws;
 
 ShiftIterator::ShiftIterator(const bool* a_isPeriodic)

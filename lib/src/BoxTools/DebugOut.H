@@ -15,10 +15,10 @@
 #include "BoxLayout.H"
 #include "Vector.H"
 #include "Box.H"
-#include "IVSFAB.H"
+
 #include "IntVectSet.H"
 #include "FArrayBox.H"
-#include "NodeFArrayBox.H"
+
 #include "LevelData.H"
 #include "LayoutIterator.H"
 #include "BoxIterator.H"
@@ -35,19 +35,11 @@
    */
   void dumpLDFLoc(const LevelData<FArrayBox>* a_ldfabPtr);
 
-  void dumpMaxMin(const LevelData<FArrayBox>* a_ldfabPtr);
 
   /// does a copy first
   void dumpLDFPar(const LevelData<FArrayBox>* a_ldfabPtr);
 
-  /// does a copy first
-  void dumpNodeLDFPar(const LevelData<NodeFArrayBox>* a_ldfabPtr);
 
-  /// dumps points on this proc
-  void dumpNodeLDFLoc(const LevelData<NodeFArrayBox>* a_ldfabPtr);
-
-  ///
-  void dumpNodeFAB(const NodeFArrayBox* a_fabPtr);
 
   ///
   void dumpFAB(const FArrayBox* a_fabPtr);
@@ -86,11 +78,6 @@
                             const int              a_prec = 2,
                             std::ostream&          a_out = pout());
 
-  ///
-  /**
-     Dump boxlayout of inputs to standard out.  For use inside debuggers.
-   */
-  void dumpIVSFAB(const IVSFAB<Real>* a_ivsfabPtr);
 
   ///
   /**
@@ -134,11 +121,6 @@
    */
   void dumpLDDBL(const LevelData<FArrayBox>* a_ldfabPtr);
 
-  ///
-  /**
-     Dump inputs to standard out.  For use inside debuggers.
-   */
-  void dumpNodeLDDBL(const LevelData<NodeFArrayBox>* a_ldfabPtr);
 
 #include "NamespaceFooter.H"
 

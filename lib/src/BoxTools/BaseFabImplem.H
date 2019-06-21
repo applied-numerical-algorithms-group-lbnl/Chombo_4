@@ -537,7 +537,7 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
     for (BoxIterator bit(a_R); bit.ok(); ++bit)
     {
       IntVect iv = bit();
-      (*this)(iv, icomp) = *buffer;
+      *buffer = (*this)(iv, icomp);
       ++buffer;
     }
   }
@@ -730,10 +730,10 @@ template <class T> inline void BaseFab<T>::performSetVal(T          a_x,
       for (int icomp = 0; icomp < a_numcomp; icomp++)
       {
         int comp = a_nstart + icomp;
-        for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
+        for (BoxIterator bit(a_bx); bit.ok(); ++bit)
         {
           IntVect iv = bit();
-          (*this)(iv, dstcomp) = a_x;
+          (*this)(iv, comp) = a_x;
         }
       }
 

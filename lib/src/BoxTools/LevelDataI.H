@@ -21,9 +21,7 @@ using std::sort;
 #include "NamespaceHeader.H"
 
 // 
-// LevelData<FluxBox> specializations
 
-template < > void LevelData<FluxBox>::degenerateLocalOnly( LevelData<FluxBox>& a_to, const SliceSpec& a_ss ) const;
 
 //-----------------------------------------------------------------------
 template<class T>

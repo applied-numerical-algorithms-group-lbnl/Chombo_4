@@ -10,7 +10,7 @@
 
 #include "TreeIntVectSet.H"
 #include "Vector.H"
-#include "Arena.H"
+
 #include "RefCountedPtr.H"
 #include "DisjointBoxLayout.H"
 #include "ProblemDomain.H"

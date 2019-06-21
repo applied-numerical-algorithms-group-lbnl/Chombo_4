@@ -63,12 +63,12 @@ BoxLayout::~BoxLayout()
 }
 
 BoxLayout::BoxLayout()
-  :m_boxes(new vector<Entry>()),
+  :m_boxes(new Vector<Entry>()),
    m_layout(new int),
    m_closed(new bool(false)),
    m_sorted(new bool(false)),
    m_dataIterator(RefCountedPtr<DataIterator>()),
-   m_indicies(new vector<LayoutIndex>())
+   m_indicies(new Vector<LayoutIndex>())
 {
 }
 
@@ -103,7 +103,7 @@ void BoxLayout::closeNoSort()
       *m_sorted = false;
       *m_closed = true;
       buildDataIndex();
-      m_dataIterator = RefCountedPtr<DataIterator>(new DataIterator(*this, m_layout));
+      m_dataIterator = RefCountedPtr<DataIterator>(new DataIterator(*this, &(*m_layout)));
     }
 }
 
@@ -114,7 +114,7 @@ void BoxLayout::close()
       sort();
       *m_closed = true;
       buildDataIndex();
-      m_dataIterator = RefCountedPtr<DataIterator>(new DataIterator(*this, m_layout));
+      m_dataIterator = RefCountedPtr<DataIterator>(new DataIterator(*this, &(*m_layout)));
     }
 }
 
@@ -141,7 +141,7 @@ void BoxLayout::buildDataIndex()
       ++index;
     }
 
-  m_dataIndex = RefCountedPtr<vector<DataIndex> >(new vector<DataIndex>(count));
+  m_dataIndex = RefCountedPtr<Vector<DataIndex> >(new Vector<DataIndex>(count));
   std::list<DataIndex>::iterator b=dlist.begin();
   for (int i=0; i<count; ++i, ++b)
     {
@@ -178,36 +178,36 @@ DataIterator BoxLayout::dataIterator() const
 TimedDataIterator BoxLayout::timedDataIterator() const
 {
   CH_assert(*m_closed);
-  TimedDataIterator rtn(*this, m_layout);
+  TimedDataIterator rtn(*this, &(*m_layout));
   return rtn;
 }
 
 LayoutIterator BoxLayout::layoutIterator() const
 {
-  return LayoutIterator(*this, m_layout);
+  return LayoutIterator(*this, &(*m_layout));
 }
 
-BoxLayout::BoxLayout(const vector<Box>& a_boxes, const vector<int>& assignments)
-  :m_boxes( new vector<Entry>()),
+BoxLayout::BoxLayout(const Vector<Box>& a_boxes, const Vector<int>& assignments)
+  :m_boxes( new Vector<Entry>()),
    m_layout(new int),
    m_closed(new bool(false)),
    m_sorted(new bool(false)),
-   m_indicies(new vector<LayoutIndex>())
+   m_indicies(new Vector<LayoutIndex>())
 {
   define(a_boxes, assignments);
 }
 
 BoxLayout::BoxLayout(const LayoutData<Box>& a_newLayout)
-  :m_boxes( new vector<Entry>()),
+  :m_boxes( new Vector<Entry>()),
    m_layout(new int),
    m_closed(new bool(false)),
    m_sorted(new bool(false)),
-   m_indicies(new vector<LayoutIndex>())
+   m_indicies(new Vector<LayoutIndex>())
 {
   define(a_newLayout);
 }
 
-void BoxLayout::checkDefine(const vector<Box>& a_boxes, const vector<int>& a_procIDs)
+void BoxLayout::checkDefine(const Vector<Box>& a_boxes, const Vector<int>& a_procIDs)
 {
 
   if (*m_closed)
@@ -235,7 +235,7 @@ void BoxLayout::checkDefine(const vector<Box>& a_boxes, const vector<int>& a_pro
 }
 
 void
-BoxLayout::define(const vector<Box>& a_boxes, const vector<int>& a_procIDs)
+BoxLayout::define(const Vector<Box>& a_boxes, const Vector<int>& a_procIDs)
 {
   checkDefine(a_boxes, a_procIDs);
   const int num_boxes = a_boxes.size();
@@ -262,42 +262,42 @@ BoxLayout::define(const LayoutData<Box>& a_newLayout)
   const BoxLayout& baseLayout = a_newLayout.boxLayout();
 
   // First copy from the base layout.
-  m_boxes =  RefCountedPtr<vector<Entry> >(
-               new vector<Entry>(*(baseLayout.m_boxes)));
+  m_boxes =  RefCountedPtr<Vector<Entry> >(
+               new Vector<Entry>(*(baseLayout.m_boxes)));
   m_layout = baseLayout.m_layout;
 #ifdef CH_MPI
   m_dataIndex = baseLayout.m_dataIndex;
 #endif
   // Now replace each box with the new box.
 
-  // This is vector<Box*> because a_newLayout is LayoutData<Box>.
+  // This is Vector<Box*> because a_newLayout is LayoutData<Box>.
   // It is LOCAL only.
-  const vector<Box*>& ptrNewBoxes = a_newLayout.m_vector;
+  const Vector<Box*>& ptrNewBoxes = a_newLayout.m_vector;
 
 #ifdef CH_MPI
   int len = ptrNewBoxes.size();
-  vector<Box> localNewBoxes(len);
+  Vector<Box> localNewBoxes(len);
   for (int ivec = 0; ivec < len; ivec++)
     {
       localNewBoxes[ivec] = Box(*(ptrNewBoxes[ivec]));
     }
-  vector< vector<Box> > gatheredNewBoxes;
+  Vector< Vector<Box> > gatheredNewBoxes;
   int iprocdest = 0;
   gather(gatheredNewBoxes, localNewBoxes, iprocdest);
 
   // Now iprocdest has every Box gatheredNewBoxes[iproc][ivec].
   // We want to broadcast gatheredNewBoxes to allNewBoxes,
-  // but we have to do it one vector<Box> at a time.
-  vector< vector<Box> > allNewBoxes;
+  // but we have to do it one Vector<Box> at a time.
+  Vector< Vector<Box> > allNewBoxes;
   allNewBoxes.resize(numProc());
   if (CHprocID() == iprocdest)
     {
       for (int iproc = 0; iproc < numProc(); iproc++)
         {
-          allNewBoxes[iproc] = vector<Box>(gatheredNewBoxes[iproc]);
+          allNewBoxes[iproc] = Vector<Box>(gatheredNewBoxes[iproc]);
         }
     }
-  // Processor iprocdest knows vector< vector<Box> > allNewBoxes.
+  // Processor iprocdest knows Vector< Vector<Box> > allNewBoxes.
   // Now broadcast it.
   for (int iproc = 0; iproc < numProc(); iproc++)
     {
@@ -305,10 +305,10 @@ BoxLayout::define(const LayoutData<Box>& a_newLayout)
       // linearSize<T>, linearIn<T>, linearOut<T>.
       broadcast(allNewBoxes[iproc], iprocdest);
     }
-  // Now every processor knows vector< vector<Box> > allNewBoxes.
+  // Now every processor knows Vector< Vector<Box> > allNewBoxes.
 
   // indexProc[proc] is current index within proc.
-  vector<unsigned int> indexProc(numProc(), 0);
+  Vector<unsigned int> indexProc(numProc(), 0);
   unsigned int proc;
   unsigned int indexLocal;
   for (int ivec = 0; ivec < m_boxes->size(); ivec++)
@@ -334,8 +334,8 @@ BoxLayout::define(const LayoutData<Box>& a_newLayout)
 void
 BoxLayout::deepCopy(const BoxLayout& a_source)
 {
-  m_boxes =  RefCountedPtr<vector<Entry> >(
-                new vector<Entry>(*(a_source.m_boxes)));
+  m_boxes =  RefCountedPtr<Vector<Entry> >(
+                new Vector<Entry>(*(a_source.m_boxes)));
   m_layout = a_source.m_layout;
 #ifdef CH_MPI
   m_dataIndex = a_source.m_dataIndex;
@@ -353,7 +353,7 @@ bool BoxLayout::sameBoxes(const BoxLayout& a_layout) const
 
       for (int iBox = 0; iBox < size(); ++iBox)
         {
-          //RefCountedPtr<vector<Entry> > m_boxes;
+          //RefCountedPtr<Vector<Entry> > m_boxes;
           if ((*m_boxes)[iBox].box != (*a_layout.m_boxes)[iBox].box)
             {
               retval = false;
@@ -386,7 +386,7 @@ coarsen(BoxLayout& a_output, const BoxLayout& a_input, int a_refinement)
       MayDay::Error("output of coarsen must be called on open BoxLayout");
     }
   //a_output.deepCopy(a_input);
-  a_output.m_boxes      = RefCountedPtr<vector<Entry> >(new vector<Entry>(*(a_input.m_boxes)));
+  a_output.m_boxes      = RefCountedPtr<Vector<Entry> >(new Vector<Entry>(*(a_input.m_boxes)));
   a_output.m_layout     = a_input.m_layout;
 #ifdef CH_MPI
   a_output.m_dataIndex  = a_input.m_dataIndex;
@@ -411,7 +411,7 @@ coarsen(BoxLayout& a_output, const BoxLayout& a_input, const IntVect& a_refineme
       MayDay::Error("output of coarsen must be called on open BoxLayout");
     }
   //a_output.deepCopy(a_input);
-  a_output.m_boxes      = RefCountedPtr<vector<Entry> >(new vector<Entry>(*(a_input.m_boxes)));
+  a_output.m_boxes      = RefCountedPtr<Vector<Entry> >(new Vector<Entry>(*(a_input.m_boxes)));
   a_output.m_layout     = a_input.m_layout;
 #ifdef CH_MPI
   a_output.m_dataIndex  = a_input.m_dataIndex;
@@ -680,7 +680,7 @@ int BoxLayout::numBoxes(const int procID) const
 long long  BoxLayout::numCells() const
 {
   long long rtn = 0;
-  const std::vector<Entry>& v = m_boxes->constStdvector();
+  const std::vector<Entry>& v = m_boxes->constStdVector();
   for (std::vector<Entry>::const_iterator i=v.begin(); i!=v.end(); ++i)
     {
       rtn += (*i).box.numPts();
@@ -697,9 +697,9 @@ BoxLayout::size() const
   return m_boxes->size();
 }
 
-vector<Box> BoxLayout::boxArray() const
+Vector<Box> BoxLayout::boxArray() const
 {
-  vector<Box> result( m_boxes->size() );
+  Vector<Box> result( m_boxes->size() );
 
   for ( int i=0;i<m_boxes->size();++i )
   {
@@ -708,9 +708,9 @@ vector<Box> BoxLayout::boxArray() const
   return result;
 }
 
-vector<int> BoxLayout::procIDs() const
+Vector<int> BoxLayout::procIDs() const
 {
-  vector<int> result( m_boxes->size() );
+  Vector<int> result( m_boxes->size() );
   for ( int i=0;i<m_boxes->size();++i )
   {
     result[i] = (*m_boxes)[i].m_procID;
@@ -758,12 +758,12 @@ int maxBits(std::vector<Box>::iterator a_first, std::vector<Box>::iterator a_las
   for (std::vector<Box>::iterator p= a_first; p<a_last; ++p)
     {
       IntVect small = p->smallEnd();
-      D_EXPR6( maxSize = Max(maxSize, Abs(small[0])),
-               maxSize = Max(maxSize, Abs(small[1])),
-               maxSize = Max(maxSize, Abs(small[2])),
-               maxSize = Max(maxSize, Abs(small[3])),
-               maxSize = Max(maxSize, Abs(small[4])),
-               maxSize = Max(maxSize, Abs(small[5])));
+      D_EXPR6( maxSize = std::max(maxSize, std::abs(small[0])),
+               maxSize = std::max(maxSize, std::abs(small[1])),
+               maxSize = std::max(maxSize, std::abs(small[2])),
+               maxSize = std::max(maxSize, std::abs(small[3])),
+               maxSize = std::max(maxSize, std::abs(small[4])),
+               maxSize = std::max(maxSize, std::abs(small[5])));
     }
   int bits;
   for (bits=8*sizeof(int)-2; bits>0; bits--)
@@ -896,15 +896,15 @@ void parallelMortonOrdering(std::vector<Box>::iterator a_first, std::vector<Box>
 #endif
 
 // testing version that runs both the serial and parallel versions and compares.
-// void mortonOrdering(vector<Box>& a_boxes)
+// void mortonOrdering(Vector<Box>& a_boxes)
 // {
 //   int bits;
 // #ifdef CH_MPI
-//   vector<Box> tmp(a_boxes);
-//   std::vector<Box>& a = tmp.stdvector();
+//   Vector<Box> tmp(a_boxes);
+//   std::vector<Box>& a = tmp.stdVector();
 //   parallelMortonOrdering(a.begin(), a.end(), bits, Chombo_MPI::comm);
 // #endif
-//   std::vector<Box>& b = a_boxes.stdvector();
+//   std::vector<Box>& b = a_boxes.stdVector();
 
 //   bits = maxBits(b.begin(), b.end());
 //   std::sort(b.begin(), b.end(), MortonOrdering(bits));
@@ -918,10 +918,10 @@ void parallelMortonOrdering(std::vector<Box>::iterator a_first, std::vector<Box>
 // #endif
 // }
 
-void mortonOrdering(vector<Box>& a_boxes)
+void mortonOrdering(Vector<Box>& a_boxes)
 {
   CH_TIME("mortonOrdering");
-  std::vector<Box>& b = a_boxes.stdvector();
+  std::vector<Box>& b = a_boxes.stdVector();
   int bits;
 #ifdef CH_MPI
   parallelMortonOrdering(b.begin(), b.end(), bits, Chombo_MPI::comm);
@@ -931,10 +931,10 @@ void mortonOrdering(vector<Box>& a_boxes)
 #endif
 
 }
-void serialMortonOrdering(vector<Box>& a_boxes)
+void serialMortonOrdering(Vector<Box>& a_boxes)
 {
   int bits;
-  std::vector<Box>& b = a_boxes.stdvector();
+  std::vector<Box>& b = a_boxes.stdVector();
   bits = maxBits(b.begin(), b.end());
   std::sort(b.begin(), b.end(), MortonOrdering(bits));
 }

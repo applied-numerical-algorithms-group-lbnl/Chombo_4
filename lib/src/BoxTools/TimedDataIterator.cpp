@@ -10,7 +10,7 @@
 
 #include "TimedDataIterator.H"
 #include "parstream.H"
-#include "ClockTicks.H"
+#include "Proto_ClockTicks.H"
 #ifdef CH_MPI
 #include "SPMD.H"
 #endif
@@ -18,7 +18,7 @@
 #include "NamespaceHeader.H"
 inline unsigned long long  getTimeTDI()
 {
-  return ch_ticks();
+  return PR_ticks();
 }
 
 TimedDataIterator::TimedDataIterator(const BoxLayout& boxlayout, const int* layoutID)

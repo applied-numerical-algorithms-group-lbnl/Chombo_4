@@ -1,4 +1,3 @@
-# -*- Mode: Makefile; -*-
 
 ################################################################
 ###
@@ -16,7 +15,7 @@
 ### This file expects certain variables to be defined before it is `include'd.
 ### The library- or application-specific makefile should set either $(lbase) or $(ebase).
 ### The `Make.defs.defaults' file or the user should set:
-###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX FC MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
+###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
 ### The user may also set:
 ###        CXXFLAGS     CPPFLAGS     FFLAGS     LDFLAGS     LIBFLAGS
 ###    XTRACXXFLAGS XTRACPPFLAGS XTRAFFLAGS XTRALDFLAGS XTRALIBFLAGS
@@ -90,19 +89,6 @@ makefiles+=Make.rules.md
 o/$(1dconfig)/%.o : %.cpp   d/$(1dconfig)/%.d
 	$(QUIET)$(cxxc) $(CXXFLAGS) $(XTRACXXFLAGS) $(pic) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) -DCH_LANG_CC $(cxxcompflag) $< $(cxxobjflag)$@
 
-o/$(1dconfig)/%.o : %.ChF  d/$(1dconfig)/%.d
-	$(QUIET)$(chfpp_src) -f $< $(CHFFLAGS) -p p/$(1dconfig)/$(notdir $*.C) -c /dev/null -D 1
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) -DCH_SPACEDIM=1 $(MDCPPFLAGS) -I. $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT p/$(1dconfig)/$(notdir $*.C) | awk 'NF>0' > p/$(1dconfig)/$(notdir $*.cpre)"
-	$(QUIET)$(CSHELLCMD) "cat p/$(1dconfig)/$(notdir $*.cpre) | $(stripsharp_src)  | $(fortpost)  > f/$(1dconfig)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(1dconfig)/$*.f $(fobjflag)$@
-
-o/$(1dconfig)/%.o : %.F  d/$(1dconfig)/%.d
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT $< | $(fortpost) | awk 'NF>0' > f/$(1dconfig)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(1dconfig)/$*.f $(fobjflag)$@
-
-o/$(1dconfig)/%.o : %.f  d/$(1dconfig)/%.d
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) $< $(fobjflag)$@
-
 ##
 ## Rules to make dependency files.
 ## The dependency file is modified always to include the dependency file itself as a dependent.
@@ -113,38 +99,6 @@ o/$(1dconfig)/%.o : %.f  d/$(1dconfig)/%.d
 ##  is created before doing anything else.  This only matters when running make in parallel.
 
 d/$(1dconfig)/%.d : %.cpp d/$(1dconfig)/.dummy
-	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
-ifdef lbase
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%$(_lib_1dconfig)(\1.o) $@ : %g' > $@"
-else
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%o/$(1dconfig)/\1.o $@ : %g' > $@"
-endif
-#	# if $(mkdep) failed, sed will still make the output file so delete it if it is empty
-	$(ECHO)if [ ! -s $@ ]; then $(RM) $@; fi
-
-d/$(1dconfig)/%.d : %.ChF d/$(1dconfig)/.dummy
-	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
-ifdef lbase
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%$(_lib_1dconfig)(\1.o) $@ : %g' > $@"
-else
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%o/$(1dconfig)/\1.o $@ : %g' > $@"
-endif
-#	# if $(mkdep) failed, sed will still make the output file so delete it if it is empty
-	$(ECHO)if [ ! -s $@ ]; then $(RM) $@; fi
-
-d/$(1dconfig)/%.d : %.F d/$(1dconfig)/.dummy
-	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
-ifdef lbase
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%$(_lib_1dconfig)(\1.o) $@ : %g' > $@"
-else
-	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%o/$(1dconfig)/\1.o $@ : %g' > $@"
-endif
-#	# if $(mkdep) failed, sed will still make the output file so delete it if it is empty
-	$(ECHO)if [ ! -s $@ ]; then $(RM) $@; fi
-
-d/$(1dconfig)/%.d : %.f d/$(1dconfig)/.dummy
-#	$(ECHO) $< dependency rule
-#	$(QUIET)touch $<
 	@if [ x"$(QUIET)" != x"@" ]; then echo Depending $< ...; fi
 ifdef lbase
 	$(ECHO)$(CSHELLCMD) "$(mkdep) -DCH_SPACEDIM=1 $(MDCPPFLAGS) $(XTRACPPFLAGS) $< | sed 's%\($*\)\.o[ :]*%$(_lib_1dconfig)(\1.o) $@ : %g' > $@"

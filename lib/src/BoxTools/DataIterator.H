@@ -11,7 +11,7 @@
 #ifndef _DATAITERATOR_H_
 #define _DATAITERATOR_H_
 
-#include <vector>
+#include "Vector.H"
 #include "DataIndex.H"
 #include "BoxLayout.H"
 #include "SPMD.H"
@@ -105,18 +105,18 @@ public:
   void clearPeak();
 
   ///gets current time data
-  vector<unsigned long long> getTime() const
+  Vector<unsigned long long> getTime() const
   {
     return m_time;
   }
 
   ///gets current memory data
-  vector<unsigned long long> getPeak() const
+  Vector<unsigned long long> getPeak() const
   {
     return m_peak;
   }
 
-  vector<Box> getBoxes()
+  Vector<Box> getBoxes()
   {
     return m_layout.boxArray();
   }
@@ -164,17 +164,17 @@ private:
   DataIterator(const BoxLayout& boxlayout, const int* layoutID);
 
   BoxLayout  m_layout;
-  //  RefCountedPtr<vector<DataIndex> > m_indices;
+  //  RefCountedPtr<Vector<DataIndex> > m_indices;
 protected:
-  const vector<DataIndex>* m_indices;
+  const Vector<DataIndex>* m_indices;
 
   int m_current;
 
   void defineTime();
   void definePeak();
 
-  vector<unsigned long long> m_time;
-  vector<unsigned long long> m_peak;
+  Vector<unsigned long long> m_time;
+  Vector<unsigned long long> m_peak;
 
   bool m_timeEnabled;
   bool m_timeDefined;
@@ -237,19 +237,21 @@ public:
   }
 
   ///load balancing function.  no-op in serial
-  vector<unsigned long long> getTime() const
+  Vector<unsigned long long> getTime() const
   {
-    vector<unsigned long long> retval(m_layout.size(), 1.);
+    unsigned long long val = 1;
+    Vector<unsigned long long> retval(m_layout.size(), val);
     return retval;
   }
 
-  vector<unsigned long long> getPeak() const
+  Vector<unsigned long long> getPeak() const
   {
-    vector<unsigned long long> retval(m_layout.size(), 1.);
+    unsigned long long val = 1;
+    Vector<unsigned long long> retval(m_layout.size(), val);
     return retval;
   }
 
-  vector<Box> getBoxes()
+  Vector<Box> getBoxes() const
   {
     return m_layout.boxArray();
   }

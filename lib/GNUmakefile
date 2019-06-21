@@ -60,7 +60,6 @@
 ###   target:    purpose:
 ###   -------    ----------
 ###   all        build all libraries and tests for this configuration
-###   check      check the user-customizable variables are correct
 ###   clean      delete all built files for this configuration
 ###   defs       print values of user-customizable variables
 ###   dist       build a tar file of the whole dir. tree (does a "realclean" first)
@@ -185,7 +184,7 @@ today  := $(shell date +%d%b%Y)
 ###
 
 .PHONY: usage all lib lib-only test defs doc example example-only tags clean realclean realclean-example \
-  check dist distclean dist-noclean doxygen setup vars .vars \
+  dist distclean dist-noclean doxygen setup vars .vars \
   $(test_targets) $(run_targets) $(lib_targets) run run-tests run-only include regression
 
 
@@ -203,9 +202,9 @@ usage:
 
 # This is the primary target that most users will use.
 
-all: .check libtest
+all: libtest
 
-test: .check libtest
+test: libtest
 
 libtest:
 	+$(ECHO)$(MAKE) --no-print-directory lib
@@ -214,10 +213,10 @@ libtest:
 # These targets are included for convenience.  They just invoke other targets.
 
 #NOTE: the include is done recursively to allow parallel makes
-lib: .check $(lib_targets)
+lib:  $(lib_targets)
 	+@$(MAKE) --no-print-directory include
 
-run: .check testrun
+run: testrun
 
 testrun:
 	+$(ECHO)$(MAKE) --no-print-directory test
@@ -226,13 +225,13 @@ testrun:
 run-tests run-only: 
 	+$(ECHO)$(MAKE) --no-print-directory $(run_targets)
 
-example: .check
+example: 
 	+$(MAKE) --no-print-directory --directory=../example all
 
-example-only: .check
+example-only: 
 	+$(MAKE) --no-print-directory --directory=../example example-only
 
-MF: .check $(lib_ch_targets) $(lib_eb_targets) $(lib_mf_targets) $(test_mf_targets) include
+MF: $(lib_ch_targets) $(lib_eb_targets) $(lib_mf_targets) $(test_mf_targets) include
 
 # This target can be run after unpacking the distribution tar file
 setup:
@@ -290,8 +289,7 @@ endif
 	-find . -depth -type d \( -name d -o -name \*.dSYM -o -name p -o -name f -o -name o -o -name cubin -o -name rose \) -exec $(RM) -r {} \;
 	-find . \( -name \*.ex -o -name \*.a -o -name \*_F.H -o -name \*.hdf5 -o -name \*.h5 -o -name pout.\[0-9\]\* -o -name \*PROF.prof \) -a \( ! -path './src/CCSE/*' \) -exec $(RM) {} \;
 	-find . \( -name \*.tmp\? -o -name core -o -name \*.stackdump -o -name \*~ -o -name work.pc\* -o -name gmon.out -o -name leak.out\* -o -name .\#\* \) -exec $(RM) {} \;
-	-find . -depth  \( -name .check.*  \) -exec $(RM) -r {} \;
-	-$(RM)  .check
+	-find . -depth  \( -name   \) -exec $(RM) -r {} \;
 	-$(RM) installed_multidim.flag
 
 realclean-example:
@@ -359,17 +357,6 @@ endif
 endif
 	@echo "" ; echo "point browser at $(CHOMBO_HOME)/doc/doxygen/html/index.html" ; echo ""
 
-# Special target to run some basic checks that the customization variables are correct.
-# The '.check' file is a real file, not a phony target.
-# It depends on the Make.defs.local customization file so the checks will be rerun
-# whenever the customizations change.
-##[NOTE: it would be better if it depended on the Make.defs.local.<hostname> file too,
-##       but that doesn't have to exist, so it can't depend on it. <dbs>]
-check: .check
-
-.check: mk/Make.defs.local
-	@$(MAKE) --no-print-directory --directory $(CHOMBO_HOME) -f mk/Make.check check
-	@touch .check
 
 # print out a helpful error message if Make.defs.local isn't found and exit
 mk/Make.defs.local:

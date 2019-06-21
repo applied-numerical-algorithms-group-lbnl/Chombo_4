@@ -178,9 +178,9 @@ DenseIntVectSet& DenseIntVectSet::operator&=(const Box& b)
   return *this;
 }
 
-vector<Box> DenseIntVectSet::createBoxes() const
+Vector<Box> DenseIntVectSet::createBoxes() const
 {
-  vector<Box> boxes;
+  Vector<Box> boxes;
   DenseIntVectSetIterator it(*this);
   for (it.begin(); it.ok(); ++it)
   {

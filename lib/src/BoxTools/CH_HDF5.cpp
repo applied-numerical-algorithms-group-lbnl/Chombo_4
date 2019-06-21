@@ -51,7 +51,11 @@ void OffsetBuffer::operator=(const OffsetBuffer& rhs)
 
 ostream&  operator<<(ostream& os, const OffsetBuffer& ob)
 {
-  os << ob.index <<"|"<<ob.offsets<<"\n";
+//  os << ob.index <<"|";
+//  for(int iob = 0; iob << ob.offsets.size(); iob++)
+//  {
+//    os << ob.offsets[iob] << " ";
+//  }
   return os;
 }
 

@@ -14,7 +14,7 @@
 #include "MeshRefine.H"
 #include "BoxIterator.H"
 #include "MayDay.H"
-#include "Misc.H"
+
 #include "SPMD.H"
 #include "CH_Timer.H"
 #include "NamespaceHeader.H"
@@ -460,7 +460,7 @@ MeshRefine::regrid(Vector<Vector<Box> >&   a_newmeshes,
   int new_finest_level;
   int isize = a_tags.size();
   int level;
-  for (level = Min(a_topLevel, isize-1); level >= a_baseLevel; --level)
+  for (level = std::min(a_topLevel, isize-1); level >= a_baseLevel; --level)
     {
       if (!a_tags[level].isEmpty()) break;
     }
@@ -772,6 +772,14 @@ void MeshRefine::buildSupport(const ProblemDomain& lvldomain, Vector<Box>& lvlbo
     }
 }
 
+  bool isPowerOfTwoMR(int x)
+  {
+    while (((x % 2) == 0) && (x > 1)) /* While x is even and > 1 */
+    {
+      x /= 2;
+    }
+    return (x == 1);
+  }
 void
 MeshRefine::computeLocalBlockFactors()
 {
@@ -786,13 +794,16 @@ MeshRefine::computeLocalBlockFactors()
   // the (lvl+1) grids which will be generated.  If m_BlockFactor
   // is less than the refinement ratio between levels (lvl) and (lvl+1),
   // then no coarsening needs to be done, so we default to one, in that case.
+///
+
   for (int lev=0; lev<(m_level_blockfactors.size()); lev++)
     {
       // This is simply ceil(m_blockFactor / m_nRefVect[lev]).
       m_level_blockfactors[lev] = (m_blockFactor + m_nRefVect[lev] -1)/m_nRefVect[lev];
       // The coarsening ratio due to blocking needs to be a power of 2 otherwise
       // IntVectSet will complain.  Catch here to better describe the error.
-      if (!Misc::isPower2(m_level_blockfactors[lev]))
+
+      if (!isPowerOfTwoMR(m_level_blockfactors[lev]))
         {
           pout() << "Unable to implement blocking for level " << lev+1 << ".  "
             "Blocking requires ceil(blockFactor/nRef) to be a power of 2 but "

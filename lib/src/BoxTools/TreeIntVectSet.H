@@ -13,6 +13,7 @@
 
 #include "Box.H"
 #include "Pool.H"
+#include "Vector.H"
 #include "NamespaceHeader.H"
 
 class IntVectSet;

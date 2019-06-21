@@ -1,5 +1,3 @@
-# -*- Mode: Makefile;  -*-
-# file: Make.printVariables
 
 # Simple makefile to print out some interesting make variables.
 
@@ -59,12 +57,8 @@ vars: defs
 	@echo "defldprofflags=$(defldprofflags)"
 	@echo "dirs=$(dirs)"
 	@echo "ebase=$(ebase)"
-	@echo "fcompflag=$(fcompflag)"
 	@echo "fftincflags=$(fftincflags)"
 	@echo "fftlibflags=$(fftlibflags)"
-	@echo "fname=$(fname)"
-	@echo "fobjflag=$(fobjflag)"
-	@echo "fortpost=$(fortpost)"
 	@echo "lbase=$(lbase)"
 	@echo "lib_names=$(lib_names)"
 	@echo "makefiles=$(makefiles)"
@@ -86,7 +80,6 @@ defs:
 	@echo "DIM=$(DIM)"
 	@echo "DEBUG=$(DEBUG)"
 	@echo "OPT=$(OPT)"
-	@echo "FC=$(FC)"
 	@echo "PRECISION=$(PRECISION)"
 	@echo "PROFILE=$(PROFILE)"
 	@echo "MPI=$(MPI)"
@@ -137,11 +130,6 @@ defs:
 	@echo "cxxdbgflags=$(cxxdbgflags)"
 	@echo "cxxoptflags=$(cxxoptflags)"
 	@echo "cxxprofflags=$(cxxprofflags)"
-	@echo "fcppflags=$(fcppflags)"
-	@echo "fdbgflags=$(fdbgflags)"
-	@echo "foptflags=$(foptflags)"
-	@echo "fprofflags=$(fprofflags)"
-	@echo "flibflags=$(flibflags)"
 	@echo "lddbgflags=$(lddbgflags)"
 	@echo "ldoptflags=$(ldoptflags)"
 	@echo "ldprofflags=$(ldprofflags)"

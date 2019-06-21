@@ -19,7 +19,6 @@
 #  NAMESPACE    :(TRUE,FALSE) put Chombo:: in front of everything C++
 #  USE_SETVAL   :(TRUE,FALSE) use setVal in initialize all BaseFab<Real>
 #  CXX          : command to compile/link C++ code
-#  FC           : command to compile Fortran code
 #  MPI          :(TRUE,FALSE) compile for parallel if TRUE, else serial
 #  MPICXX       : command to compile/link C++ code in parallel
 #  USE_64       :(TRUE,FALSE) compile for 64bit pointers if TRUE
@@ -55,13 +54,8 @@
 #  cxxdbgflags : debug options for the C++ and MPIC++ compilers
 #  cxxoptflags : optimization options for the C++ and MPIC++ compilers
 #  cxxprofflags: profiling options for the C++ and MPIC++ compilers
-#  fcppflags   : C-preprocessor flags for Fortran compiles only
-#  fdbgflags   : debug options for the Fortran compiler #  foptflags   : optimization options for the Fortran compiler #  fprofflags  : profiling options for the Fortran compiler #  lddbgflags  : debug options for the linker
 #  ldoptflags  : optimization options for the linker
 #  ldprofflags : profiling options for the linker
-#  flibflags   : options for the linker to specify the Fortran libraries
-#                (this usually is needed only when mixing C++ and
-#                 Fortran compilers from different vendors)
 # Notes:
 # 1) The linker command always uses the CXX options in addition to its own variables,
 #    so options that are common to both do not need to be repeated in the ld*flags vars
@@ -75,7 +69,6 @@
 makefiles+=local/Make.defs.ANAG
 USE_PROTO=TRUE
 CXX:=g++
-FC:=gfortran
 MPICXX=mpiCC
 
 ifeq ($(OPENMPCC),TRUE)
@@ -98,19 +91,6 @@ ifneq ($(USE_HDF),FALSE)
     # For serial:   do  'module load hdf5/serial'
     # For parallel: do  'module load hdf5/parallel'
     _hdf_root=$(ANAG_HDF5_DIR)
-    # check that the hdf module is consistent with parallel
-    ifeq ($(MPI),TRUE)
-      ifeq ($(findstring par,$(_hdf_root))$(findstring mpich,$(_hdf_root)),)
-        $(error HDF5 directory [$(_hdf_root)] is not parallel but MPI is TRUE.  Are you using the right library?)
-      endif
-    else
-      ifeq ($(findstring par,$(_hdf_root)),par)
-        $(error HDF5 directory [$(_hdf_root)] is parallel but MPI is FALSE.  Are you using the right library?)
-      endif
-      ifeq ($(findstring mpich,$(_hdf_root)),mpich)
-        $(error HDF5 directory [$(_hdf_root)] is parallel but MPI is FALSE.  Are you using the right library?)
-      endif
-    endif
 
     HDFINCFLAGS=-I$(_hdf_root)/include 
     HDFLIBFLAGS=-L$(_hdf_root)/lib -lhdf5_hl -lhdf5 -lz 
@@ -173,22 +153,6 @@ endif
 
 XTRALDFLAGS += -Wl,-zmuldefs
 
-# The Intel version 7.0 compiler installation is broken on most ANAG
-# systems.  The Fortran compiler is in a different directory from the C++
-# compiler, so you have to specify the library directory for the Fortran
-# libs explicitly even when using the Intel C++ and Fortran compilers
-# together.
-ifeq ($(fname),ifc)
-  _ifcversion := $(shell $(FC) -V 2>&1 | awk '/^Intel.*Version/{print $$8}')
-  ifeq ($(_ifcversion),7.0)
-    ifneq ($(wildcard /opt/intel/if7/compiler70),)
-      flibflags := -L/opt/intel/if7/compiler70/ia32/lib -lCEPCF90 -lF90 -lPEPCF90 -lintrins -lcxa -lcprts
-    else
-      flibflags := -L/opt/intel/compiler70/ia32/lib     -lCEPCF90 -lF90 -lPEPCF90 -lintrins -lcxa -lcprts
-    endif
-  endif
-endif
-
 ifeq ($(USE_PETSC),TRUE)
   # if an ANAG PETSC module is loaded, use its variables
   ifneq ($(ANAG_PETSC_DIR),)
@@ -196,17 +160,6 @@ ifeq ($(USE_PETSC),TRUE)
     # For parallel: do  'module load petsc/parallel'
     _petsc_root=$(ANAG_PETSC_DIR)
     _petsc_arch=$(ANAG_PETSC_ARCH)
-    # check that the petsc module is consistent with parallel
-    PETSCTESTER=${shell fgrep  PETSC_HAVE_MPIUNI $(_petsc_root)/$(_petsc_arch)/include/petscconf.h}
-    ifeq ($(MPI),TRUE)
-      ifneq ($(PETSCTESTER),)
-        $(error PETSC installation in  [$(_petsc_root)/$(_petsc_arch)] is not parallel but MPI is TRUE.  Are you using the right library?)
-      endif
-    else
-      ifeq ($(PETSCTESTER),)
-        $(error PETSC installation in [$(_petsc_root)/$(_petsc_arch)] is parallel but MPI is FALSE.  Are you using the right library?)
-      endif
-    endif
 
     PETSC_DIR = $(_petsc_root)
     PETSC_ARCH = $(_petsc_arch)
@@ -216,7 +169,5 @@ ifeq ($(USE_PETSC),TRUE)
 
 endif
 
-ifeq ($(USE_PROTO),TRUE)
- XTRACPPFLAGS += -I$(PROTO_HOME)/include -DDIM=$(DIM) -DUSE_PROTO=1 -DPR_TURN_OFF_TIMERS=1
-endif
+XTRACPPFLAGS += -I$(PROTO_HOME)/include -DDIM=$(DIM) -DUSE_PROTO=1 -DPR_TURN_OFF_TIMERS=1
 

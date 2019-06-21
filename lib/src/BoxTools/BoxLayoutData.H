@@ -22,7 +22,6 @@
 
 //--Forward declarations
 
-class FluxBox;
 
 extern int LinearizationTest;
 
@@ -119,30 +118,6 @@ protected:
   Interval          m_interval;
 };
 
-//--For aliasing a LevelData<FArrayBox> to a LevelData<FluxBox>
-
-class FABAliasFlBxDataFactory : public DataFactory<FArrayBox>
-{
-public:
-  virtual ~FABAliasFlBxDataFactory()
-  {}
-
-  FABAliasFlBxDataFactory(BoxLayoutData<FluxBox>* a_original,
-                          const Interval&         a_interval,
-                          const int               a_dir);
-  void define(BoxLayoutData<FluxBox>* a_original,
-              const Interval&         a_interval,
-              const int               a_dir);
-  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
-      for calling operator 'delete' on this pointer is passed to the user. */
-  virtual FArrayBox* create(const Box&       a_box,
-                            int              a_ncomps,
-                            const DataIndex& a_datInd) const;
-protected:
-  BoxLayoutData<FluxBox> *m_origPointer;
-  Interval                m_interval;
-  int                     m_dir;
-};
 
 //new code
 //--For aliasing a LevelData<FArrayBox> to a LevelData<FluxBox>
@@ -495,29 +470,6 @@ protected:
 
 };
 
-///
-/** not actually L-p norms, since it doesn't take into
-  account the dx of the system.  A user can take that
-  into account or not.
-
-  For p != 0, returns pth root of sum of pth powers over all
-  points in all fabs and all components in the interval:
-
-  ( sum [ |A[i][pt,var]|^p : FArrayBox A[i], point pt in A[i].box(), var in interval ] )^(1/p)
-
-  To turn into an L-p norm, one needs to multiply this by dx^(SpaceDim/p).
-
-  For p == 0, returns global max over all points in all fabs and all
-  components in the interval:
-
-  max [ |A[i][pt,var]| : FArrayBox A[i], point pt in A[i].box(), var in interval ]
-
-  Some people don't like that this norm is not normalized based on
-  number of points in A.  Normalization is your problem.
-  */
-Real norm(const BoxLayoutData<FArrayBox>& A,
-          const Interval& interval,
-          const int& p = 2);
 
 //======================================================================
 template < >

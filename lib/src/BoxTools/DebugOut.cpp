@@ -17,88 +17,6 @@
 
 static const char* indent2 = "      " ;
 
-void dumpNodeLDFPar(const LevelData<NodeFArrayBox>* a_ldfabPtr)
-{
-  const LevelData<NodeFArrayBox>& ldfab = *a_ldfabPtr;
-  Vector<Box> boxes;
-
-  const DisjointBoxLayout& memDBL = ldfab.getBoxes();
-  LayoutIterator lit  = memDBL.layoutIterator();
-  for (lit.reset(); lit.ok(); ++lit)
-  {
-    boxes.push_back(memDBL.get(lit()));
-  }
-
-  Vector<int> assign(boxes.size(), 0);
-
-  DisjointBoxLayout locDBL(boxes, assign);
-  locDBL.close();
-
-  LevelData<NodeFArrayBox> locLDF(locDBL,
-                                  ldfab.nComp(),
-                                  ldfab.ghostVect());
-
-  const Interval& interv = ldfab.interval();
-  ldfab.copyTo(interv,
-               locLDF,
-               interv);
-
-  DataIterator dit = locLDF.dataIterator();
-  for (dit.reset(); dit.ok(); ++dit)
-  {
-    const FArrayBox& fab = locLDF[dit()].getFab();
-    Box nodeGrid = surroundingNodes(locDBL.get(dit()));
-    BoxIterator bit(nodeGrid);
-    for (bit.reset(); bit.ok(); ++bit)
-    {
-      pout() << "\t" << bit();
-      for (int ivar = 0; ivar < fab.nComp(); ivar++)
-        {
-          pout() << "\t" << fab(bit(),ivar);
-        }
-      pout() << endl;
-    }
-  }
-}
-
-void dumpNodeLDFLoc(const LevelData<NodeFArrayBox>* a_ldfabPtr)
-{
-  const LevelData<NodeFArrayBox>& locLDF = *a_ldfabPtr;
-
-  DataIterator dit = locLDF.dataIterator();
-  for (dit.reset(); dit.ok(); ++dit)
-  {
-    const FArrayBox& fab = locLDF[dit()].getFab();
-
-    DisjointBoxLayout dbl =  locLDF.disjointBoxLayout();
-    Box nodeGrid = surroundingNodes(dbl.get(dit()));
-    BoxIterator bit(nodeGrid);
-    for (bit.reset(); bit.ok(); ++bit)
-    {
-      pout() << "\t" << bit() ;
-      for (int ivar = 0; ivar < fab.nComp(); ivar++)
-        {
-          pout() << "\t" << fab(bit(),ivar);
-        }
-      pout() << endl;
-    }
-  }
-}
-
-void dumpNodeFAB(const NodeFArrayBox* a_fabPtr)
-{
-  const FArrayBox& fab = a_fabPtr->getFab();
-  BoxIterator bit(fab.box());
-  for (bit.reset(); bit.ok(); ++bit)
-    {
-      pout() << "\t" << bit() ;
-      for (int ivar = 0; ivar < fab.nComp(); ivar++)
-        {
-          pout() << "\t" << fab(bit(),ivar);
-        }
-      pout() << endl;
-    }
-}
 void dumpFAB(const FArrayBox* a_fabPtr)
 {
   const FArrayBox& fab = *a_fabPtr;
@@ -205,27 +123,6 @@ void dumpFAB2DSlicePretty(const FArrayBox *const a_fabPtr,
   a_out.precision(oldPrec);
 }
 
-void dumpMaxMin(const LevelData<FArrayBox>* a_ldfabPtr)
-{
-  for (int icomp = 0; icomp < a_ldfabPtr->nComp(); icomp++)
-    {
-      Real glomax = -1.0e20;
-      Real glomin = 1.0e20;
-      for (DataIterator dit = a_ldfabPtr->dataIterator(); dit.ok(); ++dit)
-        {
-          Real locmax = (*a_ldfabPtr)[dit()].max(icomp);
-          Real locmin = (*a_ldfabPtr)[dit()].min(icomp);
-          glomax = Max(glomax, locmax);
-          glomin = Min(glomin, locmin);
-        }
-      pout() << setprecision(4) 
-             << setiosflags(ios::showpoint) 
-             << setiosflags(ios::scientific)
-             << "for component " << icomp 
-             << ", max = " << glomax 
-             << ", min = " << glomin << endl;
-    }
-}
 
 void dumpLDFPar(const LevelData<FArrayBox>* a_ldfabPtr)
 {
@@ -292,20 +189,6 @@ void dumpLDFLoc(const LevelData<FArrayBox>* a_ldfabPtr)
   }
 }
 
-void dumpIVSFAB(const IVSFAB<Real>* a_ivsfabPtr)
-{
-  const IVSFAB<Real>& ivsfab = *a_ivsfabPtr;
-  const IntVectSet& ivs = ivsfab.getIVS();
-  for (IVSIterator ivsit(ivs); ivsit.ok(); ++ivsit)
-  {
-    const IntVect& iv = ivsit();
-
-    for (int icomp = 0; icomp < ivsfab.nComp(); icomp++)
-    {
-      pout() << ivsfab(iv, icomp) << "  " << endl;
-    }
-  }
-}
 
 void dumpDBL(const DisjointBoxLayout* a_dblInPtr)
 {
@@ -390,9 +273,5 @@ void dumpLDDBL(const LevelData<FArrayBox>* a_ldfabPtr)
   const DisjointBoxLayout& dbl = a_ldfabPtr->disjointBoxLayout();
   dumpDBL(&dbl);
 }
-void dumpNodeLDDBL(const LevelData<NodeFArrayBox>* a_ldfabPtr)
-{
-  const DisjointBoxLayout& dbl = a_ldfabPtr->disjointBoxLayout();
-  dumpDBL(&dbl);
-}
+
 #include "NamespaceFooter.H"

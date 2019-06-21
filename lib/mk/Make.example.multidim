@@ -1,5 +1,3 @@
-# -*- Mode: Makefile -*-
-
 ###
 ### This is the standard include file for building example programs.
 ### Any makefile that includes this one must define the following

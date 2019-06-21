@@ -1,5 +1,3 @@
-# -*- Mode: Makefile; -*-
-
 ################################################################
 ###
 ### This makefile defines all the  default multidim rules for Chombo.
@@ -16,7 +14,7 @@
 ### This file expects certain variables to be defined before it is `include'd.
 ### The library- or application-specific makefile should set either $(lbase) or $(ebase).
 ### The `Make.defs.defaults' file or the user should set:
-###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX FC MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
+###    DIM DEBUG OPT PRECISION PROFILE NAMESPACE CXX  MPICXX MPI PROF USE_SETVAL OBJMODEL XTRACONFIG MULTIDIM
 ### The user may also set:
 ###        CXXFLAGS     CPPFLAGS     FFLAGS     LDFLAGS     LIBFLAGS
 ###    XTRACXXFLAGS XTRACPPFLAGS XTRAFFLAGS XTRALDFLAGS XTRALIBFLAGS
@@ -90,21 +88,6 @@ makefiles+=Make.rules.md
 
 o/$(newconfig)/%.o : %.cpp   d/$(newconfig)/%.d
 	$(QUIET)$(cxxc) $(CXXFLAGS) $(XTRACXXFLAGS) $(pic) $(MDCPPFLAGS) $(XTRACPPFLAGS) -DCH_LANG_CC $(cxxcompflag) $< $(cxxobjflag)$@
-
-o/$(newconfig)/%.o : %.ChF  d/$(newconfig)/%.d
-	$(QUIET)$(chfpp_src) -f $< $(CHFFLAGS) -p p/$(newconfig)/$(notdir $*.C) -c /dev/null -D $(DIM)
-#       this is not as stupid as it looks---see comment below
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) $(MDCPPFLAGS) -I. $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT p/$(newconfig)/$(notdir $*.C) | awk 'NF>0' > p/$(newconfig)/$(notdir $*.cpre)"
-	$(QUIET)$(CSHELLCMD) "cat p/$(newconfig)/$(notdir $*.cpre) | $(stripsharp_src)  | $(fortpost)  > f/$(newconfig)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(newconfig)/$*.f $(fobjflag)$@
-
-o/$(newconfig)/%.o : %.F  d/$(newconfig)/%.d
-	$(QUIET)$(CSHELLCMD) "$(CH_CPP) $(MDCPPFLAGS) $(XTRACPPFLAGS) $(fcppflags) -DCH_LANG_FORT $< | $(fortpost) | awk 'NF>0' > f/$(newconfig)/$*.f"
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) f/$(newconfig)/$*.f $(fobjflag)$@
-
-o/$(newconfig)/%.o : %.f  d/$(newconfig)/%.d
-	$(QUIET)$(FC) $(FFLAGS) $(XTRAFFLAGS) $(fcompflag) $< $(fobjflag)$@
-
 
 ##
 ## Rules to make dependency files.

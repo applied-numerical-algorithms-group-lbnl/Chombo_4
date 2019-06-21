@@ -33,7 +33,6 @@ makefiles+=Make.defs.local
 #  PRECISION    :(FLOAT,DOUBLE) size of floating point variables
 #  PROFILE      :(TRUE,FALSE) compile for performance profiling or not
 #  CXX          : command to compile/link C++ code
-#  FC           : command to compile Fortran code
 #  MPI          :(TRUE,FALSE) compile for parallel if TRUE, else serial
 #  OPENMPCC     : TRUE for threading with OpenMP, FALSE without OpenMP
 #  MPICXX       : command to compile/link C++ code in parallel
@@ -99,10 +98,8 @@ makefiles+=Make.defs.local
 # 2) The compiler options can be set on the command line using the
 #    variables: CPPFLAGS CXXFLAGS FFLAGS LDFLAGS.
 #    These variables supercede any settings in the makefiles.
-# 3) The GNUmakefile in "Chombo/lib" will check these variables and complain if
 #    they have invalid values.  On systems that don't have MPI installed, the
 #    various MPI variables should not be set (or should be set to empty strings)
-#    to prevent the checker from complaining.
 
 #begin  -- dont change this line
 
@@ -115,7 +112,7 @@ makefiles+=Make.defs.local
 #PRECISION     =
 #PROFILE       =
 #CXX           =
-#FC            =
+
 #MPI           =
 ## Note: don't set the MPICXX variable if you don't have MPI installed
 #MPICXX        =

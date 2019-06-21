@@ -14,6 +14,7 @@
 #include "DataIndex.H"
 #include "BoxLayout.H"
 #include "SPMD.H"
+#include "Vector.H"
 #include "LayoutIterator.H"
 #include "DataIterator.H"
 

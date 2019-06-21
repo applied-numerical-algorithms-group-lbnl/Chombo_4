@@ -16,15 +16,11 @@
 
 void DontYouDareCallMe()
 {
-  dumpMaxMin(NULL);
   dumpIVS(NULL);
   dumpIVSFAB(NULL);
   dumpBL(NULL);
   dumpLDFLoc(NULL);
   dumpLDFPar(NULL);
-  dumpNodeLDFLoc(NULL);
-  dumpNodeLDFPar(NULL);
-  dumpNodeFAB(NULL);
   dumpFAB(NULL);
   dumpDBL(NULL);
   dumpBox(NULL);
@@ -33,7 +29,6 @@ void DontYouDareCallMe()
   dumpLDDBL(NULL);
   dumpBFR(NULL);
   dumpBFI(NULL);
-  dumpNodeLDDBL(NULL);
 }
 
 #include "NamespaceFooter.H"

@@ -12,7 +12,7 @@
 ##  PRECISION       size of floating point variables (SINGLE or DOUBLE)
 ##  PROFILE         compile for performance profiling or not (TRUE or FALSE)
 ##  CXX             command to compile C++ code and link programs
-##  FC              command to compile Fortran code
+
 ##  MPI             compile for parallel (TRUE or FALSE)
 ##  OPENMPCC        compile for hybrid parallelism with OpenMP (TRUE or FALSE)
 ##  MPICXX          command to compile C++ code and link programs for parallel execution
@@ -85,11 +85,9 @@ ROSE?=FALSE
 GPU?=FALSE
 PIC?=FALSE
 OPENMPCC?=FALSE
-OPENMPFC?=FALSE
 USE_PAPI?=FALSE
 
 #CXX?=g++
-FC?=gfortran#
 # Note: if MPI=TRUE, MPICXX is used to compile but CXX is used to
 #       determine the type of the base C++ compiler
 MPICXX?=mpiCC
@@ -117,9 +115,9 @@ ifeq ($(USE_HDF),TRUE)
 endif
 HDFMPIINCFLAGS?=
 HDFMPILIBFLAGS?=
+USE_PROTO?=TRUE
 
 USE_PETSC?=FALSE 
-USE_PROTO?=FALSE 
 
 USE_LAPACK?=TRUE
 

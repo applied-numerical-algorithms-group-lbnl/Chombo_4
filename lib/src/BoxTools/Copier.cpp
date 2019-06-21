@@ -17,7 +17,7 @@
 #include "BoxIterator.H"
 #include "SPMD.H"
 #include "CH_Timer.H"
-#include "memtrack.H"
+
 #include "parstream.H"
 #include <chrono>
 
@@ -35,8 +35,8 @@ CopierBuffer::~CopierBuffer()
 
 void CopierBuffer::clear()
 {
-  if (m_sendbuffer != NULL) freeMT(m_sendbuffer);
-  if (m_recbuffer  != NULL) freeMT(m_recbuffer);
+  if (m_sendbuffer != NULL) free(m_sendbuffer);
+  if (m_recbuffer  != NULL) free(m_recbuffer);
   m_sendbuffer = NULL;
   m_recbuffer  = NULL;
   m_sendcapacity = 0;
@@ -258,9 +258,9 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
                                 bool  a_includeSelf,
                                 bool  a_reverse)
 {
-  auto t0 = ch_ticks();
-  auto th = ch_ticks();
-  auto ti = ch_ticks();
+  auto t0 = PR_ticks();
+  auto th = PR_ticks();
+  auto ti = PR_ticks();
   auto ts = std::chrono::system_clock::now();
   th=0; ti=0;
   clear();
@@ -294,9 +294,9 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
       CH_assert(loEnd*fsize == b.smallEnd());// verify coarsen-refine is grid aligned
  
       // verify the hash retrieves this box from the layout
-      auto th0 = ch_ticks();
+      auto th0 = PR_ticks();
       auto m = a_lmap.find(hash);
-      th += ch_ticks()-th0;
+      th += PR_ticks()-th0;
       auto e = a_lmap.end();
       CH_assert(m != e && dit() == m->second);
       BoxIterator bit(Box(loEnd-hghost, loEnd+hghost));
@@ -314,9 +314,9 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
               }}
             else
               {
-                th0=ch_ticks();
+                th0=PR_ticks();
                 auto index = a_lmap.find(h);
-                th+=ch_ticks()-th0;
+                th+=PR_ticks()-th0;
                 if(index != e) // got a hit
                   {
                     Box d = a_src[index->second];
@@ -327,9 +327,9 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
                         int proc = a_src.procID(index->second);
                         if(myprocID == proc) // local copy operation
                           {
-                            auto ti0=ch_ticks();
+                            auto ti0=PR_ticks();
                             void* spot = s_motionItemPool.getPtr();
-                            ti+=ch_ticks()-ti0;
+                            ti+=PR_ticks()-ti0;
                             MotionItem* item = new (spot)
                               MotionItem(dit(), DataIndex(index->second), b & dghost);
         
@@ -338,16 +338,16 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
                           }
                         else
                           {
-                            auto ti0 = ch_ticks();
+                            auto ti0 = PR_ticks();
                             auto spot = s_motionItemPool.getPtr();
-                            ti+= ch_ticks() - ti0;
+                            ti+= PR_ticks() - ti0;
                             MotionItem* item1 = new (spot)
                               MotionItem(dit(), DataIndex(index->second), b & dghost);
                             item1->procID=proc;
                             m_fromMotionPlan.push_back(item1);
-                            ti0 = ch_ticks();
+                            ti0 = PR_ticks();
                             spot = s_motionItemPool.getPtr();
-                            ti+= ch_ticks() - ti0;
+                            ti+= PR_ticks() - ti0;
                             MotionItem* item2 = new (spot)
                               MotionItem(DataIndex(index->second), dit(), d & bghost);
                             item2->procID=proc;
@@ -363,9 +363,9 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
     {
       reverse();
     }
-  auto t1 = ch_ticks();
+  auto t1 = PR_ticks();
   sort();
-  auto t2 = ch_ticks();
+  auto t2 = PR_ticks();
   std::chrono::duration<double> diff = std::chrono::system_clock::now()-ts;
   double rate = diff.count()/(t2-t1);
   pout()<<"total:"<<(t2-t0)*rate<<" sort:"<<(t2-t1)*rate<<" map.find:"<<th*rate
@@ -856,7 +856,7 @@ void Copier::define(const BoxLayout& a_level,
 	  // our domains are very lopsided
 	  for (int dir=0; dir<SpaceDim; dir++)
 	    {
-	      numWraps[dir] = Max(numWraps[dir], periodicCheckRadius/shiftMult[dir]);
+	      numWraps[dir] = std::max(numWraps[dir], periodicCheckRadius/shiftMult[dir]);
 	      // if we have boxes in the negative plane, need to add an extra wrap
 	      if (negativeStretch[dir]) numWraps[dir] += 1;
 	    }

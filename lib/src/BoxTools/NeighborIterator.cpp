@@ -12,7 +12,7 @@
 #include "NamespaceHeader.H"
 
 NeighborIterator::NeighborIterator(const DisjointBoxLayout& dbl)
-  :m_dblPtr(&dbl), m_lindex(-1, -1, dbl.m_layout)
+  :m_dblPtr(&dbl), m_lindex(-1, -1, &(*dbl.m_layout))
 {
 }
 

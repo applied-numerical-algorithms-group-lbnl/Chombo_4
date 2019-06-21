@@ -14,7 +14,7 @@
 #include "BitSet.H"
 #include "IntVect.H"
 #include "Box.H"
-#include <vector>
+#include "Vector.H"
 #include "ProblemDomain.H"
 #include "NamespaceHeader.H"
 
@@ -228,7 +228,7 @@ public:
   /**
          turn DenseIntVectSet into a Vector of Boxes
   */
-  vector<Box> createBoxes() const;
+  Vector<Box> createBoxes() const;
   ///
   /**
      set object to its minimum representation.  changes data, but

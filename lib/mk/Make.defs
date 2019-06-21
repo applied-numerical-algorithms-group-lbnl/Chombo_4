@@ -74,9 +74,8 @@ include $(CHOMBO_HOME)/mk/Make.defs.defaults
 #[NOTE: these use "=" instead of ":=" to delay rhs expansion
 #       until the variable names are used.  This may not be best.]
 #cxxname = $(notdir $(firstword $(CXX --version)))
-#fname   = $(notdir $(firstword $(FC --version)))
+
 cxxname := $(firstword $(shell $(CXX) --version))
-fname   := $(firstword $(shell $(FC) --version))
 
 # default the linker to be the same as the C++ compiler (serial or parallel)
 ifeq ($(words $(LD)),0)
