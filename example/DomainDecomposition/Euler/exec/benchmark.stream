@@ -1,0 +1,34 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+import datetime
+
+top = os.getcwd()
+now = datetime.datetime.now()
+
+default_directory= top + '/_bench.'+ str(now.month) + "." + str(now.day) + "." + str(now.year)
+parser = ArgumentParser()
+parser.add_argument('--dir'   , help='Directory in which to put results', default=default_directory)
+args = parser.parse_args()
+
+resultsdir = args.dir
+
+print "putting benchmark results in " + resultsdir
+if not(os.path.isdir(resultsdir)):
+  os.mkdir(resultsdir)
+
+streams=[1, 2, 4, 8]
+resolutions=[32, 64, 128]
+
+for nx in resolutions:
+  for st in streams: 
+    commname = "./streams.exe -nx " + str(nx)  + " -nstream " + str(st)
+    print commname
+    os.system(commname);
+    timename   = resultsdir + "/time.table.nx" + str(nx) + ".nstream" + str(st) + ".out"
+    commname = "mv proto.time.table " + timename
+    print commname
+    os.system(commname);
+    

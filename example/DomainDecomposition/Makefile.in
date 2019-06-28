@@ -1,0 +1,105 @@
+VARS_OLD := $(.VARIABLES)
+PROTO_HOME = ../../../../../../_proto/proto
+CHOMBO_HOME = ../../../..
+
+#begin mach  dependent
+#include $(CHOMBO_HOME)/mk/Make.defs.local
+PROTO_HOME =$(HOME)/_proto/proto
+DEPXX=g++
+CXX=g++
+DIM=2
+CXXDBGFLAGS=-g -pedantic -Wall
+CXXOPTFLAGS=-O3
+
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
+#end mach dependent
+
+DEPXX=g++
+CXX=g++
+DIM=2
+PROTO=../../..
+
+
+TARGET:=Euler.exe
+
+SRC := $(wildcard *.cpp) 
+SRC += $(wildcard ../src/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
+
+NODIRSRC = $(notdir $(SRC))
+NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
+OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
+
+NODIRDEP = $(subst .cpp,.d,$(NODIRSRC))
+DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
+
+VPATH=o. ../src  ../../common
+
+
+CPPFLAGS:=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
+CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 -DCH_USE_DOUBLE -DCH_USE_HDF5 -DCH_USE_LAPACK 
+CPPFLAGS += -I$(HDFINCFLAGS)
+
+#begin depends on debug or not
+CXXFLAGS:= $(CXXOPTFLAGS) -std=c++11
+#end depends on debug or not
+
+ifdef FFTW3_DIR
+LIBS+= -L$(FFTW3_DIR)/lib -lfftw3
+CPPFLAGS+= -I$(FFTW3_DIR)/include
+endif
+
+LIBS     += -L$(HDF5LIBFLAGS)
+
+DEP=$(DEPXX) -MM $(CXXFLAGS)
+ifeq ($(DEPXX),nvcc)
+DEP=$(DEPXX) -M $(CXXFLAGS)
+LIBS+= -lnvToolsExt
+endif
+
+LINK=$(CXX)
+OBJDIR = o
+DEPDIR = d
+
+
+$(TARGET): $(OBJ)
+	$(LINK) -o $(TARGET) $(OBJ) $(LIBS)
+
+$(OBJDIR):
+	if [ ! -d "./$(OBJDIR)" ];then     \
+		mkdir $(OBJDIR);           \
+	fi
+
+$(DEPDIR):
+	if [ ! -d "./$(DEPDIR)" ];then     \
+		mkdir $(DEPDIR);           \
+	fi
+
+#compile non-main sources
+$(OBJDIR)/%.o : %.cpp   $(OBJDIR) $(DEPDIR)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS)
+	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
+
+
+
+.PHONY: clean realclean print dirs
+
+
+print-%: ; @echo $* = $($*)
+
+-include $(DEPENDS)
+
+vars:
+	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
+
+clean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+
+
