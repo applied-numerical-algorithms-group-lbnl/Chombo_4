@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include "SPMD.H"
+#include "CH_assert.H"
 
 #include <functional>
 

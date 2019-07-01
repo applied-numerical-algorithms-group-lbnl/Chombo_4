@@ -27,6 +27,7 @@
 
 #include "ParmParse.H"
 #include "LoadBalance.H"
+#include "ProtoInterface.H"
 #include "BRMeshRefine.H"
 #include "Box.H"
 
@@ -41,6 +42,10 @@ using   Proto::Point;
 using   Proto::BoxData;
 using   Proto::Stencil;
 using   Proto::RK4;
+using   ProtoCh::getPoint;
+using   ProtoCh::getProtoBox;
+using   ProtoCh::getIntVect;
+using   ProtoCh::getBox;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
@@ -50,7 +55,7 @@ class RunParams
 public:
   RunParams()
   {
-gamma    = 1.4;
+    gamma    = 1.4;
     nstepmax = 0;
     nx       = 64;
     outinterv= 10;
@@ -61,6 +66,7 @@ gamma    = 1.4;
     resetDx();
   }
 
+  int numstream;
   int nstepmax;
   int maxgrid;
   int nx;
@@ -192,7 +198,7 @@ void eulerRun(const RunParams& a_params)
   EulerOp::s_dx    = a_params.dx;
   EulerOp::s_gamma = a_params.gamma;
 
-  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > Uptr(new LevelData<BoxData<NUMCOMPS> >(grids, NUMCOMPS, nGhost*IntVect::Unit));
+  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > Uptr(new LevelData<BoxData<double, NUMCOMPS> >(grids, NUMCOMPS, nGhost*IntVect::Unit));
   LevelData< BoxData<double, NUMCOMPS> >&  U = *Uptr;
 
   EulerState state(Uptr);
@@ -207,9 +213,8 @@ void eulerRun(const RunParams& a_params)
   {
 
     Box grid = grids[dit[ibox]];
-    Box grownBox = U[dit[ibox]].box();
     Bx valid = getProtoBox(grid);
-    Bx grnbx = getProtoBox(grownBox);
+    Bx grnbx = U[dit[ibox]].box();
     BoxData<double, DIM> x(grnbx);
     forallInPlace_p(iotaFunc, grnbx, x, EulerOp::s_dx);
     BoxData<double, NUMCOMPS>& ubd = U[dit[ibox] ];
@@ -248,7 +253,7 @@ void eulerRun(const RunParams& a_params)
     time += dt;
 
     double dtnew = a_params.cfl*a_params.dx/maxwave; double dtold = dt;
-    dt = min(1.1*dtold, dtnew);
+    dt = std::min(1.1*dtold, dtnew);
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))

@@ -29,7 +29,7 @@ public:
   void increment(const EulerDX& a_DX);
   //for max wave speeds
   double m_velSave;
-  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > m_U;
+  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > m_U;
   DisjointBoxLayout m_grids;
   Copier m_exchangeCopier;
 };
@@ -40,7 +40,7 @@ class EulerDX
 public:
   EulerDX(){};
   ~EulerDX(){};
-  shared_ptr<LevelData<double, NUMCOMPS> > m_DU;
+  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > m_DU;
   DisjointBoxLayout m_grids;
 
   void increment(double& a_weight,const EulerDX& a_incr);
