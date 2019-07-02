@@ -14,7 +14,7 @@
 #pragma once
 
 #include "Proto.H"
-#include "LevelData.H"
+#include "LevelBoxData.H"
 #include "BaseFab.H"
 #include "Copier.H"
 
@@ -33,23 +33,23 @@ class EulerOp
 
 public:
 
-  static double s_dx;
-  static double s_gamma;
+  static Real s_dx;
+  static Real s_gamma;
 
   /// Compute the Right-Hand side, conforming to the RK4 interface.
-  static double step(LevelData<BoxData<double, NUMCOMPS> > & a_Rhs,
-                     LevelData<BoxData<double, NUMCOMPS> > & a_U);
+  static Real step(LevelBoxData<NUMCOMPS>& a_Rhs,
+                   LevelBoxData<NUMCOMPS>& a_U);
 
   //for initial time step
-  static double maxWave(LevelData<BoxData<double, NUMCOMPS> > & a_U);
+  static Real maxWave(LevelBoxData<NUMCOMPS>& a_U);
 
   EulerOp(){};
   ~EulerOp(){};
 
 private:
   // all the messy internals.
-  static double proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
-                           const BoxData<double,NUMCOMPS>& a_U,
+  static Real proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
+                           const BoxData<Real,NUMCOMPS>& a_U,
                            const Bx& a_dbx0);
 
   /// called internally from step
@@ -57,13 +57,13 @@ private:
                      const IntVect          & a_ghostVect) ;
   
 
-  static Stencil<double> s_laplacian;
-  static Stencil<double> s_deconvolve;
-  static Stencil<double> s_laplacian_f[DIM];
-  static Stencil<double> s_deconvolve_f[DIM];
-  static Stencil<double> s_interp_H[DIM];
-  static Stencil<double> s_interp_L[DIM];
-  static Stencil<double> s_divergence[DIM];
+  static Stencil<Real> s_laplacian;
+  static Stencil<Real> s_deconvolve;
+  static Stencil<Real> s_laplacian_f[DIM];
+  static Stencil<Real> s_deconvolve_f[DIM];
+  static Stencil<Real> s_interp_H[DIM];
+  static Stencil<Real> s_interp_L[DIM];
+  static Stencil<Real> s_divergence[DIM];
   static Copier          s_exchangeCopier;
 
 };

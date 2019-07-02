@@ -13,7 +13,7 @@
 
 #include "EulerOp.H"
 #include "Proto.H"
-#include "LevelData.H"
+#include "LevelBoxData.H"
 
 
 class EulerDX;
@@ -25,11 +25,11 @@ class EulerState
 public:
   EulerState(){};
   ~EulerState(){};
-  EulerState(shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > a_U);
+  EulerState(shared_ptr<LevelBoxData<NUMCOMPS> a_U);
   void increment(const EulerDX& a_DX);
   //for max wave speeds
-  double m_velSave;
-  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > m_U;
+  Real m_velSave;
+  shared_ptr<LevelBoxData<NUMCOMPS> > m_U;
   DisjointBoxLayout m_grids;
   Copier m_exchangeCopier;
 };
@@ -40,12 +40,12 @@ class EulerDX
 public:
   EulerDX(){};
   ~EulerDX(){};
-  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > m_DU;
+  shared_ptr<LevelBoxData<NUMCOMPS> > m_DU;
   DisjointBoxLayout m_grids;
 
-  void increment(double& a_weight,const EulerDX& a_incr);
+  void increment(Real& a_weight,const EulerDX& a_incr);
   void init(const EulerState& a_State);
-  void operator*=(const double& a_weight);
+  void operator*=(const Real& a_weight);
 
 };
 
@@ -55,11 +55,11 @@ class EulerRK4Op
 
 public:
   void operator()(EulerDX& a_DX,
-                  double a_time,
-                  double a_dt,
+                  Real a_time,
+                  Real a_dt,
                   EulerState& a_State) const;
   
-  static double maxWave(EulerState& a_State);
+  static Real maxWave(EulerState& a_State);
 };
 
 #endif

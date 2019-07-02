@@ -22,6 +22,7 @@
 
 #include "Proto.H"
 #include "EulerRK4.H"
+#include "LevelBoxData.H"
 #include "LevelData.H"
 #include "BaseFab.H"
 
@@ -34,8 +35,8 @@
 #define PI 3.141592653589793
 #define NUMCOMPS DIM+2
 
-typedef Proto::Var<double,DIM> V;
-typedef Proto::Var<double,NUMCOMPS> State;
+typedef Proto::Var<Real,DIM> V;
+typedef Proto::Var<Real,NUMCOMPS> State;
 
 typedef Proto::Box Bx;
 using   Proto::Point;
@@ -71,11 +72,11 @@ public:
   int maxgrid;
   int nx;
   int outinterv;
-  double tmax;
-  double domsize;
-  double gamma;
-  double dx;
-  double cfl;
+  Real tmax;
+  Real domsize;
+  Real gamma;
+  Real dx;
+  Real cfl;
   void resetDx()
   {
     dx = domsize/nx;
@@ -125,18 +126,18 @@ PROTO_KERNEL_START
 unsigned int InitializeStateF(State& a_U,
                               const V& a_x)
 {
-  double gamma = 1.4;
-  double rho0 = gamma;
-  double p0 = 1.;
-  double umag = .5/sqrt(1.*(DIM));
-  double rho = rho0;
+  Real gamma = 1.4;
+  Real rho0 = gamma;
+  Real p0 = 1.;
+  Real umag = .5/sqrt(1.*(DIM));
+  Real rho = rho0;
   for (int dir = 0; dir < DIM; dir++)
   {
     rho += .1*rho0*sin(2*2*PI*a_x(0));
   }
-  double p = p0 + (rho - rho0)*gamma*p0/rho0;
+  Real p = p0 + (rho - rho0)*gamma*p0/rho0;
   a_U(0) = rho;
-  double ke = 0.;
+  Real ke = 0.;
   for (int dir = 1; dir <= DIM; dir++)
   {
     ke += umag*umag;
@@ -152,7 +153,7 @@ PROTO_KERNEL_END(InitializeStateF, InitializeState)
 PROTO_KERNEL_START
 void iotaFuncF(Point           & a_p,
                V               & a_X,
-               double            a_h)
+               Real            a_h)
 {
   for (int ii = 0; ii < DIM; ii++)
   {
@@ -163,7 +164,7 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 
 /***/
 void 
-writeData(int step,LevelData<BoxData<double, NUMCOMPS> > & a_U)
+writeData(int step, LevelBoxData<NUMCOMPS> & a_U)
 {
 //  char filename[1024];
 //  sprintf(filename, "state.step%d.%d.hdf5",step, DIM);
@@ -173,7 +174,7 @@ writeData(int step,LevelData<BoxData<double, NUMCOMPS> > & a_U)
 void eulerRun(const RunParams& a_params)
 {
   CH_TIME("eulerRun");
-  double tstop = a_params.tmax;
+  Real tstop = a_params.tmax;
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
 
@@ -198,13 +199,13 @@ void eulerRun(const RunParams& a_params)
   EulerOp::s_dx    = a_params.dx;
   EulerOp::s_gamma = a_params.gamma;
 
-  shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > Uptr(new LevelData<BoxData<double, NUMCOMPS> >(grids, NUMCOMPS, nGhost*IntVect::Unit));
-  LevelData< BoxData<double, NUMCOMPS> >&  U = *Uptr;
+  shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelData<BoxData<Real, NUMCOMPS> >(grids, NUMCOMPS, nGhost*IntVect::Unit));
+  LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
   EulerState state(Uptr);
   RK4<EulerState,EulerRK4Op,EulerDX> rk4;
   
-  Stencil<double> Lap2nd = Stencil<double>::Laplacian();
+  Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
 
   pout() << "before initializestate"<< endl;
   DataIterator dit = grids.dataIterator();
@@ -215,25 +216,25 @@ void eulerRun(const RunParams& a_params)
     Box grid = grids[dit[ibox]];
     Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
-    BoxData<double, DIM> x(grnbx);
+    BoxData<Real, DIM> x(grnbx);
     forallInPlace_p(iotaFunc, grnbx, x, EulerOp::s_dx);
-    BoxData<double, NUMCOMPS>& ubd = U[dit[ibox] ];
+    BoxData<Real, NUMCOMPS>& ubd = U[dit[ibox] ];
     
     forallInPlace(InitializeState,grnbx,ubd,x);
 
     //smooth initial data
-    BoxData<double, NUMCOMPS> lapu = Lap2nd(ubd, 1.0/24.0);
+    BoxData<Real, NUMCOMPS> lapu = Lap2nd(ubd, 1.0/24.0);
     ubd += lapu;
   }
 
-  double maxwave = EulerOp::maxWave(*state.m_U);
-  double dt = .25*a_params.cfl*a_params.dx/maxwave;
+  Real maxwave = EulerOp::maxWave(*state.m_U);
+  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
 
   pout() << "after initializestate"<< endl;
   U.exchange(state.m_exchangeCopier);
 
-  double time = 0.;
+  Real time = 0.;
 
   pout() << "starting time loop"<< endl;
   if(a_params.outinterv > 0)
@@ -252,7 +253,7 @@ void eulerRun(const RunParams& a_params)
 
     time += dt;
 
-    double dtnew = a_params.cfl*a_params.dx/maxwave; double dtold = dt;
+    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
     dt = std::min(1.1*dtold, dtnew);
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;

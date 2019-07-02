@@ -18,36 +18,36 @@ using     Proto::Point;
 using     Proto::Shift;
 using     Proto::forall;
 using     Proto::forall_p;
-typedef   Proto::Var<double,NUMCOMPS> State;
+typedef   Proto::Var<REAL,NUMCOMPS> State;
 
-double EulerOp::s_gamma = 1.4;
-double EulerOp::s_dx = 1.0;
-Stencil<double> EulerOp::s_laplacian;
-Stencil<double> EulerOp::s_deconvolve;
-Stencil<double> EulerOp::s_laplacian_f[DIM];
-Stencil<double> EulerOp::s_deconvolve_f[DIM];
-Stencil<double> EulerOp::s_interp_H[DIM];
-Stencil<double> EulerOp::s_interp_L[DIM];
-Stencil<double> EulerOp::s_divergence[DIM];
+Real EulerOp::s_gamma = 1.4;
+Real EulerOp::s_dx = 1.0;
+Stencil<Real> EulerOp::s_laplacian;
+Stencil<Real> EulerOp::s_deconvolve;
+Stencil<Real> EulerOp::s_laplacian_f[DIM];
+Stencil<Real> EulerOp::s_deconvolve_f[DIM];
+Stencil<Real> EulerOp::s_interp_H[DIM];
+Stencil<Real> EulerOp::s_interp_L[DIM];
+Stencil<Real> EulerOp::s_divergence[DIM];
 Copier          EulerOp::s_exchangeCopier;
 
-typedef BoxData<double,1,1,1> PScalar;
-typedef BoxData<double,NUMCOMPS,1,1> PVector;
+typedef BoxData<Real,1,1,1> PScalar;
+typedef BoxData<Real,NUMCOMPS,1,1> PVector;
 
 PROTO_KERNEL_START
 void 
 consToPrimF(State&         a_W, 
             const State&   a_U,
-            double         a_gamma)
+            Real         a_gamma)
 {
-  double rho = a_U(0);
-  double v2 = 0.0;
-  double gamma = a_gamma;
+  Real rho = a_U(0);
+  Real v2 = 0.0;
+  Real gamma = a_gamma;
   a_W(0) = rho;
     
   for (int i = 1; i <= DIM; i++)
   {
-    double v;
+    Real v;
     v = a_U(i) / rho;
         
     a_W(i) = v;
@@ -63,21 +63,21 @@ void upwindStateF(State& a_out,
                   const State& a_low,
                   const State& a_high,
                   int   a_dir,
-                  double a_gamma)
+                  Real a_gamma)
 {
-  const double& rhol = a_low(0);
-  const double& rhor = a_high(0);
-  const double& ul = a_low(a_dir+1);
-  const double& ur = a_high(a_dir+1);
-  const double& pl = a_low(NUMCOMPS-1);
-  const double& pr = a_high(NUMCOMPS-1);
-  double gamma = a_gamma;
-  double rhobar = (rhol + rhor)*.5;
-  double pbar = (pl + pr)*.5;
-  double ubar = (ul + ur)*.5;
-  double cbar = sqrt(gamma*pbar/rhobar);
-  double pstar = (pl + pr)*.5 + rhobar*cbar*(ul - ur)*.5;
-  double ustar = (ul + ur)*.5 + (pl - pr)/(2*rhobar*cbar);
+  const Real& rhol = a_low(0);
+  const Real& rhor = a_high(0);
+  const Real& ul = a_low(a_dir+1);
+  const Real& ur = a_high(a_dir+1);
+  const Real& pl = a_low(NUMCOMPS-1);
+  const Real& pr = a_high(NUMCOMPS-1);
+  Real gamma = a_gamma;
+  Real rhobar = (rhol + rhor)*.5;
+  Real pbar = (pl + pr)*.5;
+  Real ubar = (ul + ur)*.5;
+  Real cbar = sqrt(gamma*pbar/rhobar);
+  Real pstar = (pl + pr)*.5 + rhobar*cbar*(ul - ur)*.5;
+  Real ustar = (ul + ur)*.5 + (pl - pr)/(2*rhobar*cbar);
   int sign;
   if (ustar > 0) 
   {
@@ -107,17 +107,17 @@ PROTO_KERNEL_END(upwindStateF, upwindState)
 PROTO_KERNEL_START
 void getFluxF(State& a_F, const State& a_W, 
               int    a_d,
-              double a_gamma)
+              Real a_gamma)
 {
-  double F0 = a_W(a_d+1)*a_W(0);
-  double W2 = 0.0;
-  double gamma = a_gamma;
+  Real F0 = a_W(a_d+1)*a_W(0);
+  Real W2 = 0.0;
+  Real gamma = a_gamma;
 
   a_F(0) = F0;
 
   for (int d = 1; d <= DIM; d++)
   {
-    double Wd = a_W(d);
+    Real Wd = a_W(d);
 
     a_F(d) = Wd*F0;
     W2 += Wd*Wd;
@@ -129,11 +129,11 @@ void getFluxF(State& a_F, const State& a_W,
 PROTO_KERNEL_END(getFluxF, getFlux)
 
 PROTO_KERNEL_START
-void waveSpeedBoundF(Var<double,1>& a_speed,
+void waveSpeedBoundF(Var<Real,1>& a_speed,
                      const State& a_W,
-                     double       a_gamma)
+                     Real       a_gamma)
 {
-  double gamma = a_gamma;
+  Real gamma = a_gamma;
   a_speed(0) = DIM*sqrt(gamma*a_W(NUMCOMPS-1)/a_W(0));
   for (int dir = 1 ; dir <= DIM; dir++)
   {
@@ -149,25 +149,25 @@ define(const DisjointBoxLayout& a_grids,
        const IntVect          & a_ghostVect) 
 {
   CH_TIME("EulerOp::define");
-  s_laplacian = Stencil<double>::Laplacian();
+  s_laplacian = Stencil<Real>::Laplacian();
   s_deconvolve = (-1.0/24.0)*s_laplacian + (1.0)*Shift(Point::Zeros());
   for (int dir = 0; dir < DIM; dir++)
   {
-    s_laplacian_f[dir] = Stencil<double>::LaplacianFace(dir);
+    s_laplacian_f[dir] = Stencil<Real>::LaplacianFace(dir);
     s_deconvolve_f[dir] = (-1.0/24.0)*s_laplacian_f[dir] + 1.0*Shift(Point::Zeros());
-    s_interp_H[dir] = Stencil<double>::CellToEdgeH(dir);
-    s_interp_L[dir] = Stencil<double>::CellToEdgeL(dir);
-    s_divergence[dir] = Stencil<double>::FluxDivergence(dir);
+    s_interp_H[dir] = Stencil<Real>::CellToEdgeH(dir);
+    s_interp_L[dir] = Stencil<Real>::CellToEdgeL(dir);
+    s_divergence[dir] = Stencil<Real>::FluxDivergence(dir);
   }
   s_exchangeCopier.exchangeDefine(a_grids, a_ghostVect);
 }
 
 
 
-double 
+Real 
 EulerOp::
-proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
-           const BoxData<double,NUMCOMPS>& a_U,
+proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
+           const BoxData<Real,NUMCOMPS>& a_U,
            const Bx& a_rangeBox)
 {
 
@@ -182,13 +182,13 @@ proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
   CH_TIMER("divide_by_dx", tdx);
   a_Rhs.setVal(0.0);
 
-  double gamma = s_gamma;
-  double retval;
+  Real gamma = s_gamma;
+  Real retval;
 
-  PVector W_bar = forall<double,NUMCOMPS>(consToPrim,a_U, gamma);
+  PVector W_bar = forall<Real,NUMCOMPS>(consToPrim,a_U, gamma);
   PVector U = s_deconvolve(a_U);
-  PVector W = forall<double,NUMCOMPS>(consToPrim,U, gamma);
-  PScalar umax = forall<double>(waveSpeedBound,a_rangeBox,W, gamma);
+  PVector W = forall<Real,NUMCOMPS>(consToPrim,U, gamma);
+  PScalar umax = forall<Real>(waveSpeedBound,a_rangeBox,W, gamma);
   retval = umax.absMax();
   PVector W_ave = s_laplacian(W_bar,1.0/24.0);
   W_ave += W;
@@ -199,12 +199,12 @@ proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
     PVector W_ave_high = s_interp_H[d](W_ave);
     CH_STOP(tint);
     CH_START(trie);
-    PVector W_ave_f = forall<double,NUMCOMPS>(
+    PVector W_ave_f = forall<Real,NUMCOMPS>(
       upwindState,W_ave_low, W_ave_high,d,  gamma);
     CH_STOP(trie);
     CH_START(tgf);
 #if DIM>1
-    PVector F_bar_f = forall<double,NUMCOMPS>(getFlux, W_ave_f, d,  gamma);
+    PVector F_bar_f = forall<Real,NUMCOMPS>(getFlux, W_ave_f, d,  gamma);
 #endif
     CH_STOP(tgf);
     CH_START(tdcv);
@@ -215,7 +215,7 @@ proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
 #endif
     CH_STOP(tdcv);
     CH_START(tgf2);
-    PVector F_ave_f = forall<double,NUMCOMPS>(getFlux, W_f, d, gamma);
+    PVector F_ave_f = forall<Real,NUMCOMPS>(getFlux, W_f, d, gamma);
     CH_STOP(tgf2);
     CH_START(tlap);
 #if DIM>1
@@ -233,12 +233,12 @@ proto_step(BoxData<double,NUMCOMPS>& a_Rhs,
   return retval;
 }
 
-double gatherMaxWave(double maxwaveproc)
+Real gatherMaxWave(Real maxwaveproc)
 {
-  double maxwaveall = maxwaveproc;
+  Real maxwaveall = maxwaveproc;
 #ifdef CH_MPI
-  double sendBuf = maxwaveall;
-  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_DOUBLE, MPI_MAX, Chombo_MPI::comm);
+  Real sendBuf = maxwaveall;
+  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_REAL, MPI_MAX, Chombo_MPI::comm);
 
   if (result != MPI_SUCCESS)
   {
@@ -249,10 +249,10 @@ double gatherMaxWave(double maxwaveproc)
   return maxwaveall;
 
 }
-double 
+Real 
 EulerOp::
-step(LevelData<BoxData<double, NUMCOMPS> > & a_Rhs,
-     LevelData<BoxData<double, NUMCOMPS> > & a_U)
+step(LevelBoxData<NUMCOMPS> & a_Rhs,
+     LevelBoxData<NUMCOMPS> & a_U)
 {
   CH_TIME("EulerOp::step(leveldata)");
   static bool initCalled =false;
@@ -265,7 +265,7 @@ step(LevelData<BoxData<double, NUMCOMPS> > & a_Rhs,
     initCalled = true;
   }
   a_U.exchange(s_exchangeCopier);
-  double maxwaveproc = 0;
+  Real maxwaveproc = 0;
   {
     CH_TIME("step_no_gather");
     DataIterator dit = grids.dataIterator();
@@ -274,14 +274,14 @@ step(LevelData<BoxData<double, NUMCOMPS> > & a_Rhs,
     {
       Box grid = grids[dit[ibox]];
       Bx  pgrid = getProtoBox(grid);
-      BoxData<double, NUMCOMPS>& ubd   =   a_U[dit[ibox]];
-      BoxData<double, NUMCOMPS>& rhsbd = a_Rhs[dit[ibox]];
+      BoxData<Real, NUMCOMPS>& ubd   =   a_U[dit[ibox]];
+      BoxData<Real, NUMCOMPS>& rhsbd = a_Rhs[dit[ibox]];
 
-      double maxwavegrid = proto_step(rhsbd, ubd, pgrid);
+      Real maxwavegrid = proto_step(rhsbd, ubd, pgrid);
       maxwaveproc = std::max(maxwavegrid, maxwaveproc);
     }
   }
-  double maxwaveall;
+  Real maxwaveall;
   {
     CH_TIME("gatherMaxWaveSpeed");
     maxwaveall = gatherMaxWave(maxwaveproc);
@@ -290,9 +290,9 @@ step(LevelData<BoxData<double, NUMCOMPS> > & a_Rhs,
 }
 
 
-double 
+Real 
 EulerOp::
-maxWave(LevelData<BoxData<double, NUMCOMPS> > & a_U)
+maxWave(LevelBoxData<NUMCOMPS> & a_U)
 {
   static bool initCalled =false;
   DisjointBoxLayout grids = a_U.disjointBoxLayout();
@@ -303,23 +303,23 @@ maxWave(LevelData<BoxData<double, NUMCOMPS> > & a_U)
     initCalled = true;
   }
   a_U.exchange(s_exchangeCopier);
-  double maxwaveproc = 0;
+  Real maxwaveproc = 0;
 
-  double gamma = s_gamma;
+  Real gamma = s_gamma;
   DataIterator dit = grids.dataIterator();
 #pragma omp parallel for
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box grid = grids[dit[ibox]];
     Bx  pgrid = getProtoBox(grid);
-    BoxData<double, NUMCOMPS>& ubd =  a_U[dit[ibox]];
+    BoxData<Real, NUMCOMPS>& ubd =  a_U[dit[ibox]];
     PVector U = s_deconvolve(ubd);
-    PVector W = forall<double,NUMCOMPS>(consToPrim,ubd, gamma);
-    PScalar umax = forall<double>(waveSpeedBound,pgrid,W, gamma);
-    double maxwavegrid = umax.absMax();
+    PVector W = forall<Real,NUMCOMPS>(consToPrim,ubd, gamma);
+    PScalar umax = forall<Real>(waveSpeedBound,pgrid,W, gamma);
+    Real maxwavegrid = umax.absMax();
     maxwaveproc = std::max(maxwavegrid, maxwaveproc);
   }
-  double maxwaveall = gatherMaxWave(maxwaveproc);
+  Real maxwaveall = gatherMaxWave(maxwaveproc);
 
   return maxwaveall;
 }

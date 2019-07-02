@@ -17,7 +17,7 @@ typedef Proto::Box Bx;
 
 /****/
 EulerState::
-EulerState(shared_ptr<LevelData<BoxData<double, NUMCOMPS> > > a_U)
+EulerState(shared_ptr<LevelBoxData<NUMCOMPS> > a_U)
 {
   m_U     = a_U;
   m_grids = m_U->disjointBoxLayout();
@@ -28,8 +28,8 @@ EulerState::
 increment(const EulerDX & a_DX)
 {
   CH_TIME("EulerState::increment");
-  LevelData<BoxData<double, NUMCOMPS> > & data  = *m_U;
-  LevelData<BoxData<double, NUMCOMPS> > & delta = *(a_DX.m_DU);
+  LevelBoxData<NUMCOMPS> & data  = *m_U;
+  LevelBoxData<NUMCOMPS> & delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
 #pragma omp parallel
@@ -41,18 +41,18 @@ increment(const EulerDX & a_DX)
 /****/
 void 
 EulerDX::
-increment(double        & a_weight,
+increment(Real        & a_weight,
           const EulerDX & a_DX)
 {
   CH_TIME("EulerDX::increment");
-  LevelData<BoxData<double, NUMCOMPS> >& data  = *m_DU;
-  LevelData<BoxData<double, NUMCOMPS> >& delta = *(a_DX.m_DU);
+  LevelBoxData<NUMCOMPS>& data  = *m_DU;
+  LevelBoxData<NUMCOMPS>& delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
 #pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    BoxData<double, NUMCOMPS> incr = delta[dit[ibox]];
+    BoxData<Real, NUMCOMPS> incr = delta[dit[ibox]];
     incr *= a_weight;
     data[dit[ibox]] += incr;
   }
@@ -65,7 +65,7 @@ init(const EulerState& a_State)
 {
   CH_TIME("EulerDX::init");
   m_grids = a_State.m_grids;
-  m_DU = shared_ptr<LevelData<BoxData<double, NUMCOMPS> > >(new LevelData<BoxData<double, NUMCOMPS> >(m_grids, a_State.m_U->nComp(), a_State.m_U->ghostVect()));
+  m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->nComp(), a_State.m_U->ghostVect()));
 
   DataIterator dit = m_grids.dataIterator();
 #pragma omp parallel
@@ -78,7 +78,7 @@ init(const EulerState& a_State)
 /****/
 void 
 EulerDX::
-operator*=(const double& a_weight)
+operator*=(const Real& a_weight)
 {
   CH_TIME("EulerDX::operator*=");
   DataIterator dit = m_grids.dataIterator();
@@ -93,8 +93,8 @@ operator*=(const double& a_weight)
 void 
 EulerRK4Op::
 operator()(EulerDX& a_DX,
-           double a_time,
-           double a_dt,
+           Real a_time,
+           Real a_dt,
            EulerState& a_State) const
 {
   CH_TIMERS("EulerRKOp::operator()");
@@ -106,8 +106,8 @@ operator()(EulerDX& a_DX,
   int ncomp  =  a_State.m_U->nComp();
   IntVect gv =  a_State.m_U->ghostVect();
   DisjointBoxLayout grids = a_State.m_grids;
-  LevelData<BoxData<double, NUMCOMPS> >  U_ave(grids, ncomp, gv);
-  LevelData<BoxData<double, NUMCOMPS> >&  delta = *(a_DX.m_DU);
+  LevelBoxData<NUMCOMPS>  U_ave(grids, ncomp, gv);
+  LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);
   CH_STOP(tdef);
 
   CH_START(tcop);
@@ -124,7 +124,7 @@ operator()(EulerDX& a_DX,
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  double velmax = EulerOp::step(*a_DX.m_DU, U_ave);
+  Real velmax = EulerOp::step(*a_DX.m_DU, U_ave);
   a_State.m_velSave = std::max(a_State.m_velSave,velmax);
 
 #pragma omp parallel
@@ -136,13 +136,13 @@ operator()(EulerDX& a_DX,
 }
 
 
-double
+Real
 EulerRK4Op::
 maxWave(EulerState& a_State)
 {
   CH_TIME("EulerRKOp::maxwave_init");
   EulerDX DX;
   DX.init(a_State);
-  double velmax = EulerOp::step(*(DX.m_DU),*(a_State.m_U));
+  Real velmax = EulerOp::step(*(DX.m_DU),*(a_State.m_U));
   return velmax;
 }

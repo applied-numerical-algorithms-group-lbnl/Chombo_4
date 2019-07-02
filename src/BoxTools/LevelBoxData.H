@@ -20,13 +20,14 @@ using Proto::BoxData;
 /**
 */
 template<int NUMCOMPS>
-class LevelBoxData: public LevelData<BoxData<double, NUMCOMPS> >
+class LevelBoxData: public LevelData<BoxData<REAL, NUMCOMPS> >
 {
 public:
 
-  typedef DefaultDataFactory<BoxData<double, NUMCOMPS> > factory_t;
+  typedef DefaultDataFactory<BoxData<REAL, NUMCOMPS> > factory_t;
+  typedef BoxLayoutData<BoxData<REAL, NUMCOMPS> > boxlayoutdata_t;
   ///
-  LevelBoxData(): LevelData<BoxData<double, NUMCOMPS> >()
+  LevelBoxData(): LevelData<BoxData<REAL, NUMCOMPS> >()
   {
   }
 
@@ -34,7 +35,7 @@ public:
   LevelBoxData(const DisjointBoxLayout & a_dp, 
                const IntVect           & a_ghost   = IntVect::Zero,
                const DataFactory<T>    & a_factory = factory_t())
-    : LevelData<BoxData<double, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, a_factory)
+    : LevelData<BoxData<REAL, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, a_factory)
   {
   }
 
@@ -49,147 +50,94 @@ public:
                       const DataFactory<T>   & a_factory = factory_t())
 
   {
-    LevelData<BoxData<double, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, a_factory);
+    LevelData<BoxData<REAL, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, a_factory);
   }
 
 
   ///
-  virtual void copyTo(const Interval&         a_srcComps,
-                      LevelBoxData<NUMCOMPS>& a_dst,
-                      const Interval&         a_dstComps) const
-
+  virtual void copyTo(const Interval &            a_srcComps,
+                      boxlayoutdata_t &           a_dst,
+                      const Interval &            a_dstComps,
+                      const Copier   &            a_copier,
+                      const LDOperator<T>&        a_op = LDOperator<T>()) const
   {
-    LevelData<FArrayBox> hostdataSrc(      m_disjointBoxLayout, NUMCOMPS,        m_ghost, factory_t());
-    LevelData<FArrayBox> hostdataDst(a_dst.m_disjointBoxLayout, NUMCOMPS, a_dst.m_ghost, factory_t());
-    this->copyToHost( hostdataSrc);
-    a_dst->copyToHost(hostdataDst);
+
+    LevelData<FArrayBox>     hostdataSrc(      m_disjointBoxLayout, NUMCOMPS,        m_ghost, factory_t());
+    BoxLayoutData<FArrayBox> hostdataDst(a_dst.m_boxLayout        , NUMCOMPS,                 factory_t());
+
+    copyToHost( hostdataSrc, *this);
+    copyToHost(hostdataDst,  a_dst);
     
-    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps);
+    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier, a_op);
     
-    hostDataDst.copyToDevice(a_dst);
+    copyToDevice(a_dst, hostDataDst);
   }
 
 
-  /// Simplest case -- assumes source and dst have same interval
-  virtual void copyTo(LevelBoxData<NUMCOMPS>& a_dst) const
+  /// 
+  virtual void exchange(const Copier& copier)
   {
-    Interval interv(0, NUMCOMPS-1);
-    copyTo(interv, a_dst, interv);
+    LevelData<FArrayBox> hostdata(m_disjointBoxLayout, NUMCOMPS,        m_ghost, factory_t());
+    copyToHost(hostdata, *this);
+    hostdata.exchange(copier);
+    copyToDevice(*this, hostdata);
   }
+    
 
-  /*
-  ///
-  virtual void copyTo(const Interval& srcComps,
-                      BoxLayoutData<T>& dst,
-                      const Interval& dstComps,
-                      const Copier& copier) const;
 
-  /// Simplest case -- assumes source and dst have same interval
-  virtual void copyTo(BoxLayoutData<T>& dst,
-                      const Copier& copier) const;
-  */
-  ////////////////////////////// FM MOD START //////////////////////////
-   ///
-  /** same as copyTo that takes a BoxLayoutData, except that it fills the
-    ghost cells of 'dst' with data from 'this' also. USer passes in
-    a prebuilt Copier object*/
-  virtual void copyTo(const Interval& srcComps,
-                      BoxLayoutData<T>& dst,
-                      const Interval& dstComps,
-                      const Copier& copier,
-                      const LDOperator<T>& a_op = LDOperator<T>()) const;
-
-  /// Simplest case -- assumes source and dst have same interval
-  virtual void copyTo(BoxLayoutData<T>& dst,
-                      const Copier& copier,
-                      const LDOperator<T>& a_op = LDOperator<T>()) const;
-
-  ////////////////////////////// FM MOD. END ////////////////////////////
-  ///
-  /** same as copyTo that takes a BoxLayoutData, except that it fills the
-    ghost cells of 'dst' with data from 'this' also. */
-  virtual void copyTo(const Interval& srcComps,
-                      LevelData<T>& dst,
-                      const Interval& dstComps) const;
-
-  /// Simplest case -- assumes source and dst have same interval
-  virtual void copyTo(LevelData<T>& dst) const;
-
-   ///
-  /** same as copyTo that takes a BoxLayoutData, except that it fills the
-    ghost cells of 'dst' with data from 'this' also. USer passes in
-    a prebuilt Copier object*/
-  virtual void copyTo(const Interval& srcComps,
-                      LevelData<T>& dst,
-                      const Interval& dstComps,
-                      const Copier& copier,
-                      const LDOperator<T>& a_op = LDOperator<T>()) const;
-
-  /// Simplest case -- assumes source and dst have same interval
-  virtual void copyTo(LevelData<T>& dst,
-                      const Copier& copier,
-                      const LDOperator<T>& a_op = LDOperator<T>()) const;
-
-  /// Simplest case -- do all components
-  virtual void exchange(void);
-
-  /// Simplest case -- do all components. Accepts a pre-built copier.
-  virtual void exchange(const Copier& copier);
-
-  /// Accepts an arbitrary component range
-  virtual void exchange(const Interval& comps);
-
-  /// The most general case -- can accept an arbitrary component range,
-  /// a pre-built Copier object, and an arbitrary accumulation operator.
-  virtual void exchange(const Interval& comps,
-			const Copier& copier,
-			const LDOperator<T>& a_op = LDOperator<T>());
-
-  /// asynchronous exchange start.  load and fire off messages.
-  virtual void exchangeBegin(const Copier& copier);
-  /// finish asynchronous exchange
-  virtual void exchangeEnd();
-
-  virtual void exchangeNoOverlap(const Copier& copier);
+private:
 
   ///
-  const IntVect& ghostVect() const
+  void copyToHost(BoxLayoutData<FArrayBox>                      & a_hostDat,
+                  const BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviDat)
   {
-    return m_ghost;
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      FArrayBox & hostfab                     = a_hostDat[dit[ibox]];
+      const BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
+      size_t datSize = sizeof(Real)*devifab.size();
+      Real*       hostPtr = hostfab.dataPtr(0);
+      const Real* deviPtr = devifab.dataPtr(0);
+#ifdef PROTO_CUDA
+      cudaMemcpy(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost);
+      cudaError err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, cudaGetErrorString(err));
+      }
+#else
+      memcpy(hostPtr, deviPtr, datSize);
+#endif  
+    }
   }
 
-  /**
-     \name overidden virtual functions
-
-    These functions will invoke error messages when invoked.
-    C++ will ensure that constructors are not called for the
-    base class by a user, but a 'define' function has no such protection,
-    hence the need to prevent such usage.  A runtime error is not
-    a perfect solution...(strong construction gets around this  *sigh*).
-    classes that derive from LevelData will have to turn its valid
-    defines into runtime errors also and make its own defines.  Thus
-    taking over the job of the compiler.
-    */
-  /*@{*/
-  virtual void define(const BoxLayout& dp, int comps,
-                      const DataFactory<T>& factory);
-
   ///
-  virtual void define(const BoxLayoutData<T>& da,
-                      const DataFactory<T>& factory = DefaultDataFactory<T>());
-
-  ///
-  virtual void define(const BoxLayoutData<T>& da, const Interval& comps,
-                      const DataFactory<T>& factory = DefaultDataFactory<T>());
-
-  virtual void define(const BoxLayout& deadFunction);
-
-protected:
-  DisjointBoxLayout m_disjointBoxLayout;
-
-  IntVect   m_ghost;
-
-  Copier m_exchangeCopier;
+  void copyToDevice(BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviceDat,
+                    const BoxLayoutData<FArrayBox>          & a_hostDat)
+  {
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      FArrayBox & hostfab                     = a_hostDat[dit[ibox]];
+      const BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
+      size_t datSize = sizeof(Real)*devifab.size();
+      const Real* hostPtr = hostfab.dataPtr(0);
+      Real*       deviPtr = devifab.dataPtr(0);
+#ifdef PROTO_CUDA
+      cudaMemcpy(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice);
+      cudaError err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, cudaGetErrorString(err));
+      }
+#else
+      memcpy(deviPtr, hostPtr, datSize);
+#endif  
+    }
+  }
 };
 
 
