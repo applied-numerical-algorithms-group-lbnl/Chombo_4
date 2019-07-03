@@ -33,7 +33,7 @@
 #include "Box.H"
 
 #define PI 3.141592653589793
-#define NUMCOMPS DIM+2
+
 
 typedef Proto::Var<Real,DIM> V;
 typedef Proto::Var<Real,NUMCOMPS> State;
@@ -199,7 +199,7 @@ void eulerRun(const RunParams& a_params)
   EulerOp::s_dx    = a_params.dx;
   EulerOp::s_gamma = a_params.gamma;
 
-  shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelData<BoxData<Real, NUMCOMPS> >(grids, NUMCOMPS, nGhost*IntVect::Unit));
+  shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
   EulerState state(Uptr);

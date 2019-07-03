@@ -12,9 +12,13 @@
 #define _PARSTREAM_H_
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include "BaseNamespaceHeader.H"
-
+using std::setprecision;
+using std::setiosflags;
+using std::endl;
+using std::ios;
 /// Use this in place of std::cout for program output.
 /**
  * Replaces std::cout in most of the Chombo code.  In serial this just

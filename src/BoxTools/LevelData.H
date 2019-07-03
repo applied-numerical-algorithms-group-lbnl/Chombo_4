@@ -53,16 +53,16 @@ public:
   virtual ~LevelData();
 
   ///
-  virtual void define(const DisjointBoxLayout& dp, int comps,
-                      const IntVect& ghost = IntVect::Zero,
-                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+  void define(const DisjointBoxLayout& dp, int comps,
+              const IntVect& ghost = IntVect::Zero,
+              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
   /**
     copy definer.  this LevelData thrown away and da's LevelData copied
     */
-  virtual void define(const LevelData<T>& da,
-                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+  void define(const LevelData<T>& da,
+              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
   /**
@@ -70,26 +70,26 @@ public:
     This LevelData is now defined for the range [0, comps.size()] and filled
     with the data in da from [comps.begin(), comps.end()]
     */
-  virtual void define(const LevelData<T>& da, const Interval& comps,
-                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+  void define(const LevelData<T>& da, const Interval& comps,
+              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
-  virtual void copyTo(const Interval& srcComps,
+  void copyTo(const Interval& srcComps,
                       BoxLayoutData<T>& dest,
                       const Interval& destComps) const;
 
 
   ///only works if source and dest have the same disjointboxlayout
-  virtual void localCopyTo(const Interval& srcComps,
+  void localCopyTo(const Interval& srcComps,
                            LevelData<T>  & dest,
                            const Interval& destComps) const;
 
   /// assumes source and dest have same interval
-  virtual void localCopyTo(LevelData<T>  & dest) const;
+  void localCopyTo(LevelData<T>  & dest) const;
 
 
   /// Simplest case -- assumes source and dest have same interval
-  virtual void copyTo(BoxLayoutData<T>& dest) const;
+  void copyTo(BoxLayoutData<T>& dest) const;
 
   /*
   ///
@@ -107,14 +107,14 @@ public:
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. USer passes in
     a prebuilt Copier object*/
-  virtual void copyTo(const Interval& srcComps,
+  void copyTo(const Interval& srcComps,
                       BoxLayoutData<T>& dest,
                       const Interval& destComps,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  virtual void copyTo(BoxLayoutData<T>& dest,
+  void copyTo(BoxLayoutData<T>& dest,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
@@ -122,49 +122,49 @@ public:
   ///
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. */
-  virtual void copyTo(const Interval& srcComps,
+  void copyTo(const Interval& srcComps,
                       LevelData<T>& dest,
                       const Interval& destComps) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  virtual void copyTo(LevelData<T>& dest) const;
+  void copyTo(LevelData<T>& dest) const;
 
    ///
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. USer passes in
     a prebuilt Copier object*/
-  virtual void copyTo(const Interval& srcComps,
-                      LevelData<T>& dest,
-                      const Interval& destComps,
-                      const Copier& copier,
-                      const LDOperator<T>& a_op = LDOperator<T>()) const;
+  void copyTo(const Interval& srcComps,
+              LevelData<T>& dest,
+              const Interval& destComps,
+              const Copier& copier,
+              const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  virtual void copyTo(LevelData<T>& dest,
+  void copyTo(LevelData<T>& dest,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- do all components
-  virtual void exchange(void);
+  void exchange(void);
 
   /// Simplest case -- do all components. Accepts a pre-built copier.
-  virtual void exchange(const Copier& copier);
+  void exchange(const Copier& copier);
 
   /// Accepts an arbitrary component range
-  virtual void exchange(const Interval& comps);
+  void exchange(const Interval& comps);
 
   /// The most general case -- can accept an arbitrary component range,
   /// a pre-built Copier object, and an arbitrary accumulation operator.
-  virtual void exchange(const Interval& comps,
+  void exchange(const Interval& comps,
 			const Copier& copier,
 			const LDOperator<T>& a_op = LDOperator<T>());
 
   /// asynchronous exchange start.  load and fire off messages.
-  virtual void exchangeBegin(const Copier& copier);
+  void exchangeBegin(const Copier& copier);
   /// finish asynchronous exchange
-  virtual void exchangeEnd();
+  void exchangeEnd();
 
-  virtual void exchangeNoOverlap(const Copier& copier);
+  void exchangeNoOverlap(const Copier& copier);
 
   ///
   const IntVect& ghostVect() const
@@ -185,18 +185,18 @@ public:
     taking over the job of the compiler.
     */
   /*@{*/
-  virtual void define(const BoxLayout& dp, int comps,
-                      const DataFactory<T>& factory);
+  void define(const BoxLayout& dp, int comps,
+              const DataFactory<T>& factory);
 
   ///
-  virtual void define(const BoxLayoutData<T>& da,
+  void define(const BoxLayoutData<T>& da,
                       const DataFactory<T>& factory = DefaultDataFactory<T>());
 
   ///
-  virtual void define(const BoxLayoutData<T>& da, const Interval& comps,
+  void define(const BoxLayoutData<T>& da, const Interval& comps,
                       const DataFactory<T>& factory = DefaultDataFactory<T>());
 
-  virtual void define(const BoxLayout& deadFunction);
+  void define(const BoxLayout& deadFunction);
   /*@}*/
 
   ///
@@ -242,7 +242,7 @@ public:
   data.apply(val::set1);
   \endcode
 */
-  virtual void apply( void (*a_Function)(const Box&, int, T&) );
+  void apply( void (*a_Function)(const Box&, int, T&) );
 
   /** For use with apply( const ApplyFunctor& ) */
   struct ApplyFunctor
@@ -284,7 +284,7 @@ public:
   \endcode
 
 */
-  virtual void apply( const ApplyFunctor& );
+  void apply( const ApplyFunctor& );
 
   void degenerate( LevelData<T>& a_to, const SliceSpec& a_ss ) const;
 

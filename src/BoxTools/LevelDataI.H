@@ -64,7 +64,7 @@ LevelData<T>::LevelData(const DisjointBoxLayout& dp, int comps, const IntVect& g
 
   Interval interval(0, comps-1);
   this->allocateGhostVector(a_factory, ghost);
-  this->setVector(*this, interval, interval); // Does nothing.
+//  this->setVector(*this, interval, interval); // Does nothing.
 }
 //-----------------------------------------------------------------------
 

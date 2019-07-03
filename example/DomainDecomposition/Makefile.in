@@ -36,7 +36,7 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 NODIRDEP = $(subst .cpp,.d,$(NODIRSRC))
 DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 
-VPATH=o. ../src  ../../common
+VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 
 
 CPPFLAGS:=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
@@ -99,6 +99,9 @@ vars:
 	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
 
 clean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+realclean:
 	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
 
 

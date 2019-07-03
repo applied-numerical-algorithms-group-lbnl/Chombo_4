@@ -77,7 +77,7 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da, const Interval&
   
   Interval dest(0, m_comps-1);
   allocateGhostVector(factory);
-  setVector(da, comps, dest);
+//  setVector(da, comps, dest);
 }
 
 template<class T>
@@ -142,7 +142,7 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da,
     //this->m_threadSafe = false;
     Interval srcAnddest(0, m_comps-1);
     allocateGhostVector(factory);
-    setVector(da, srcAnddest, srcAnddest);
+//    setVector(da, srcAnddest, srcAnddest);
   }
 
 }

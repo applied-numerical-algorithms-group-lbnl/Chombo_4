@@ -18,7 +18,7 @@ using     Proto::Point;
 using     Proto::Shift;
 using     Proto::forall;
 using     Proto::forall_p;
-typedef   Proto::Var<REAL,NUMCOMPS> State;
+typedef   Proto::Var<Real,NUMCOMPS> State;
 
 Real EulerOp::s_gamma = 1.4;
 Real EulerOp::s_dx = 1.0;
@@ -238,7 +238,7 @@ Real gatherMaxWave(Real maxwaveproc)
   Real maxwaveall = maxwaveproc;
 #ifdef CH_MPI
   Real sendBuf = maxwaveall;
-  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_REAL, MPI_MAX, Chombo_MPI::comm);
+  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_Real, MPI_MAX, Chombo_MPI::comm);
 
   if (result != MPI_SUCCESS)
   {
@@ -273,7 +273,7 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       Box grid = grids[dit[ibox]];
-      Bx  pgrid = getProtoBox(grid);
+      Bx  pgrid = ProtoCh::getProtoBox(grid);
       BoxData<Real, NUMCOMPS>& ubd   =   a_U[dit[ibox]];
       BoxData<Real, NUMCOMPS>& rhsbd = a_Rhs[dit[ibox]];
 
@@ -311,7 +311,7 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U)
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box grid = grids[dit[ibox]];
-    Bx  pgrid = getProtoBox(grid);
+    Bx  pgrid = ProtoCh::getProtoBox(grid);
     BoxData<Real, NUMCOMPS>& ubd =  a_U[dit[ibox]];
     PVector U = s_deconvolve(ubd);
     PVector W = forall<Real,NUMCOMPS>(consToPrim,ubd, gamma);

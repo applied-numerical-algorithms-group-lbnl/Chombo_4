@@ -19,6 +19,7 @@
 #include "Copier.H"
 
 constexpr unsigned int NUMCOMPS=DIM+2;
+
 #define NGHOST 4
 typedef Proto::Box Bx;
 using   Proto::Point;

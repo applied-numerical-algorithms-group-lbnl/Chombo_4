@@ -11,8 +11,11 @@
 #include <iomanip>
 #include "parstream.H"
 #include "Lapack.H"
+#include "MayDay.H"
+#include <cmath>
 #include "CH_Timer.H"
-#include "Misc.H"
+#include "CH_assert.H"
+
 #include <cstddef> 
 #include "BaseNamespaceHeader.H"
 
@@ -164,7 +167,7 @@ maxNorm() const
     {
       for(int icol = 0; icol < m_ncol; icol++)
         {
-          maxval = Max(maxval, (*this)(irow, icol));
+          maxval = std::max(maxval, (*this)(irow, icol));
         }
     }
   return maxval;
@@ -688,9 +691,9 @@ Real getInverseOfConditionNumber(const LAPACKMatrix& A)
       Real colsum = 0;
       for(int irow = 0; irow < M; irow++)
         {
-          colsum += Abs(tempA(irow, icol));
+          colsum += std::abs(tempA(irow, icol));
         }
-      ANORM = Max(ANORM, colsum);
+      ANORM = std::max(ANORM, colsum);
     }
       
   const int minMN = 20;
@@ -755,7 +758,7 @@ int solveLeastSquares(LAPACKMatrix& A, LAPACKMatrix& B)
   int N = A.m_ncol;
   int NRHS = B.m_ncol;
   int LDA = M;
-  int LDB = Max(M,N);
+  int LDB = std::max(M,N);
   CH_assert(B.m_nrow == M);
 
   int LWORK[2] = {1,1};
@@ -802,7 +805,7 @@ int solveLeastSquaresTranspose(LAPACKMatrix& A, LAPACKMatrix& B)
   int N = A.m_ncol;
   int NRHS = B.m_ncol;
   int LDA = A.m_nrow;
-  int LDB = Max(M, N);
+  int LDB = std::max(M, N);
   int LWORK[2] = {1,1};
   LWORK[0] = 2*M*N;
   LAPACKMatrix WORK(2*M, N);
@@ -896,7 +899,7 @@ int solveLSTSVDOnce(LAPACKMatrix& A, LAPACKMatrix& B)
   int N = A.m_ncol;
   int NRHS = B.m_ncol;
   int LDA = N;
-  int LDB = Max(M,N);
+  int LDB = std::max(M,N);
 
   // Scratch and output allocated via high-water mark
   const int maxMxN = 4000;
@@ -1045,11 +1048,11 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   int N = A.m_ncol;
   int NRHS = B.m_ncol;
   int LDA = M;
-  int LDB = Max(M,N);
+  int LDB = std::max(M,N);
 
   int maxMxN = 40000;
 
-  int minMN = Min(M,N);
+  int minMN = std::min(M,N);
   //int LWORK = maxMxN;
     int LWORK[2] = {1,1};
    LWORK[0] = maxMxN;

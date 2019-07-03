@@ -8,8 +8,8 @@
  */
 #endif
 
-#ifndef _LEVELBoxDATA_H__
-#define _LEVELBoxDATA_H__
+#ifndef _LEVELBoxDATA_H____
+#define _LEVELBoxDATA_H____
 
 #include "LevelData.H"
 #include "Proto.H"
@@ -19,23 +19,23 @@ using Proto::BoxData;
 ///
 /**
 */
-template<int NUMCOMPS>
-class LevelBoxData: public LevelData<BoxData<REAL, NUMCOMPS> >
+
+template<int  NUMCOMPS>
+class LevelBoxData: public LevelData<BoxData<Real, NUMCOMPS> >
 {
 public:
 
-  typedef DefaultDataFactory<BoxData<REAL, NUMCOMPS> > factory_t;
-  typedef BoxLayoutData<BoxData<REAL, NUMCOMPS> > boxlayoutdata_t;
+  typedef BoxLayoutData<BoxData<Real, NUMCOMPS> > boxlayoutdata_t;
+
   ///
-  LevelBoxData(): LevelData<BoxData<REAL, NUMCOMPS> >()
+  LevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
   {
   }
 
   ///
   LevelBoxData(const DisjointBoxLayout & a_dp, 
-               const IntVect           & a_ghost   = IntVect::Zero,
-               const DataFactory<T>    & a_factory = factory_t())
-    : LevelData<BoxData<REAL, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, a_factory)
+               const IntVect           & a_ghost   = IntVect::Zero)
+    : LevelData<BoxData<Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>())
   {
   }
 
@@ -45,39 +45,35 @@ public:
   }
 
   ///
-  virtual void define(const DisjointBoxLayout& a_dp, 
-                      const IntVect          & a_ghost = IntVect::Zero,
-                      const DataFactory<T>   & a_factory = factory_t())
-
+  void define(const DisjointBoxLayout& a_dp, 
+              const IntVect          & a_ghost = IntVect::Zero)
   {
-    LevelData<BoxData<REAL, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, a_factory);
+    LevelData<BoxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>());
   }
 
 
   ///
-  virtual void copyTo(const Interval &            a_srcComps,
-                      boxlayoutdata_t &           a_dst,
-                      const Interval &            a_dstComps,
-                      const Copier   &            a_copier,
-                      const LDOperator<T>&        a_op = LDOperator<T>()) const
+  void copyTo(const Interval &            a_srcComps,
+              boxlayoutdata_t &           a_dst,
+              const Interval &            a_dstComps,
+              const Copier   &            a_copier) const
   {
+    LevelData<FArrayBox>     hostdataSrc(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+    BoxLayoutData<FArrayBox> hostdataDst(a_dst.boxLayout()        , NUMCOMPS               );
 
-    LevelData<FArrayBox>     hostdataSrc(      m_disjointBoxLayout, NUMCOMPS,        m_ghost, factory_t());
-    BoxLayoutData<FArrayBox> hostdataDst(a_dst.m_boxLayout        , NUMCOMPS,                 factory_t());
-
-    copyToHost( hostdataSrc, *this);
+    copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
     
-    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier, a_op);
+    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
     
-    copyToDevice(a_dst, hostDataDst);
+    copyToDevice(a_dst, hostdataDst);
   }
 
 
   /// 
   virtual void exchange(const Copier& copier)
   {
-    LevelData<FArrayBox> hostdata(m_disjointBoxLayout, NUMCOMPS,        m_ghost, factory_t());
+    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
     copyToHost(hostdata, *this);
     hostdata.exchange(copier);
     copyToDevice(*this, hostdata);
@@ -85,9 +81,9 @@ public:
     
 
 
-private:
 
   ///
+  static 
   void copyToHost(BoxLayoutData<FArrayBox>                      & a_hostDat,
                   const BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviDat)
   {
@@ -114,14 +110,15 @@ private:
   }
 
   ///
-  void copyToDevice(BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviceDat,
-                    const BoxLayoutData<FArrayBox>          & a_hostDat)
+  static 
+  void copyToDevice(BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviDat,
+                    const BoxLayoutData<FArrayBox>          & a_hostDat) 
   {
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      FArrayBox & hostfab                     = a_hostDat[dit[ibox]];
-      const BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
+      const FArrayBox & hostfab         = a_hostDat[dit[ibox]];
+      BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
       size_t datSize = sizeof(Real)*devifab.size();
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);

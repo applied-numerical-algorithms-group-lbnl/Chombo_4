@@ -17,6 +17,7 @@
 #include "DisjointBoxLayout.H"
 #include "Copier.H"
 #include "SPMD.H"
+#include "ProtoInterface.H"
 
 #include "NamespaceHeader.H"
 
@@ -24,7 +25,7 @@
 
 
 extern int LinearizationTest;
-
+using Proto::BoxData;
 /// Factory object to data members of a BoxLayoutData container
 template <class T> class DataFactory
 {
@@ -73,6 +74,21 @@ public:
   /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
       for calling operator 'delete' on this pointer is passed to the user. */
   virtual T* create(const Box& box, int ncomps, const DataIndex& a_datInd) const;
+
+};
+
+
+template <int NUMCOMPS> class DefaultBoxDataFactory : public DataFactory<BoxData<Real, NUMCOMPS> >
+{
+public:
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
+      for calling operator 'delete' on this pointer is passed to the user. */
+  virtual BoxData<Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
+  {
+    Proto::Box bx  = ProtoCh::getProtoBox(box);
+    return new BoxData<Real, NUMCOMPS>(bx);
+  }
 
 };
 

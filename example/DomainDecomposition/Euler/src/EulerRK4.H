@@ -19,13 +19,14 @@
 class EulerDX;
 using std::shared_ptr;
 using Proto::BoxData;
+
 ///
 class EulerState
 {
 public:
   EulerState(){};
   ~EulerState(){};
-  EulerState(shared_ptr<LevelBoxData<NUMCOMPS> a_U);
+  EulerState(shared_ptr<LevelBoxData<NUMCOMPS> >a_U);
   void increment(const EulerDX& a_DX);
   //for max wave speeds
   Real m_velSave;

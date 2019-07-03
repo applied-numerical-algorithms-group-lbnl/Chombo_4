@@ -65,7 +65,7 @@ init(const EulerState& a_State)
 {
   CH_TIME("EulerDX::init");
   m_grids = a_State.m_grids;
-  m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->nComp(), a_State.m_U->ghostVect()));
+  m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
 
   DataIterator dit = m_grids.dataIterator();
 #pragma omp parallel
@@ -106,13 +106,14 @@ operator()(EulerDX& a_DX,
   int ncomp  =  a_State.m_U->nComp();
   IntVect gv =  a_State.m_U->ghostVect();
   DisjointBoxLayout grids = a_State.m_grids;
-  LevelBoxData<NUMCOMPS>  U_ave(grids, ncomp, gv);
+  LevelBoxData<NUMCOMPS>  U_ave(grids, gv);
   LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);
   CH_STOP(tdef);
 
   CH_START(tcop);
   Interval interv(0, ncomp-1);
-  a_State.m_U->copyTo(interv, U_ave, interv);
+  Copier copier(grids, grids);
+  a_State.m_U->copyTo(interv, U_ave, interv, copier);
   CH_STOP(tcop);
 
 
