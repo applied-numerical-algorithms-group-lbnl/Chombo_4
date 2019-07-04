@@ -11,7 +11,8 @@
 #ifndef _REFCOUNTEDPTR___H_
 #define _REFCOUNTEDPTR___H_
 #include "BaseNamespaceHeader.H"
-
+#include <memory>
+using std::shared_ptr;
 template<class T>
 class RefCountedPtr: public std::shared_ptr<T>
 {

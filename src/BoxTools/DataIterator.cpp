@@ -10,12 +10,19 @@
 
 #include "Proto_ClockTicks.H"
 #include "DataIterator.H"
-
+#include "Proto_DisjointBoxLayout.H"
 #include "NamespaceHeader.H"
 
 #ifdef CH_MPI
 
 bool stupidVerbose = false;
+
+DataIterator::
+DataIndex operator[](int ivec) const
+{
+Proto::DisjointBoxLayout::activeBox(ivec);
+return (DataIndex)((*m_indices)[ivec]);
+}
 
 inline unsigned long long  getTimeTDC()
 {

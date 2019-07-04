@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include <vector>
+#include <list>
 #include "IntVect.H"
 #include "Box.H"
 
@@ -22,7 +23,7 @@
 
 #include "SPACE.H"
 #include "NamespaceHeader.H"
-
+using std::list;
 /// Class to manage box-shifting used to enforce periodic BC's
 /** The ShiftIterator class contains a list of shift vectors necessary
     to enforce periodic boundary conditions (enforced by shifting the

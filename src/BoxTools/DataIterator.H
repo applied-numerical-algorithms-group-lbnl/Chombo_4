@@ -16,7 +16,7 @@
 #include "BoxLayout.H"
 #include "SPMD.H"
 #include "LayoutIterator.H"
-#include "Proto_DisjointBoxLayout.H"
+
 #include "NamespaceHeader.H"
 
 
@@ -64,12 +64,7 @@ public:
     return this->operator()();
   }
 
-  DataIndex operator[](int ivec) const
-  {
-    Proto::DisjointBoxLayout::activeBox(ivec);
-    return (DataIndex)((*m_indices)[ivec]);
-  }
-
+  DataIndex operator[](int ivec) const;
 
   /// move the iterator to the next index in the layout
   virtual void operator++();
