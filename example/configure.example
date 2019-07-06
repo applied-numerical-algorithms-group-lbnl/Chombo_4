@@ -1,0 +1,71 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+
+parser = ArgumentParser()
+
+parser.add_argument('--dim', type=int, help='dimensionality to build executables [1,2,3]',default='2')
+parser.add_argument('--opt',  choices=['DEBUG', 'TRUE'],help='compiler optimization [DEBUG]',default='DEBUG')
+parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
+parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [FALSE]',default='TRUE')
+parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
+parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+
+args = parser.parse_args()
+
+print args
+
+f_pref = open('Makefile.prefix','r')
+f_post = open('Makefile.postfix','r')
+makefile_pref = f_pref.read()
+makefile_post = f_post.read()
+f_pref.close()
+f_post.close()
+
+targets=['DomainDecomposition/Euler', 'DomainDecomposition/Poisson']
+
+top = os.getcwd()
+chombo_home = top + '/..'
+os.chdir(chombo_home+'/mk')
+f_mach_dep = open('Make.defs.local','r')
+mach_dep = f_mach_dep.read()
+f_mach_dep.close()
+os.chdir(top)
+
+for t in targets:
+    d= t+'/exec'
+    print d
+    os.chdir(d)
+    f = open('GNUmakefile','w')
+    f.write('\nCHOMBO_HOME := ' + chombo_home)
+    f.write('\nDIM := ' + str(args.dim)+"\n")
+    f.write(makefile_pref);
+
+    f.write(mach_dep);
+
+    if(args.hdf5 == 'TRUE'):
+        f.write('\nCXXFLAGS += -DCH_USE_HDF5')
+
+    if(args.prec == 'DOUBLE'):
+        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
+
+    if args.opt == 'DEBUG':
+        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) ')
+    else:
+        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
+   
+    if args.mpi == 'TRUE':
+        f.write('\nCXXFLAGS += -DCH_USE_MPI')
+
+    if args.cuda == 'TRUE':
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')
+        if args.opt == 'DEBUG':
+            f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG')
+
+    f.write(makefile_post);
+ 
+    os.chdir(top)
+    f.close()
+

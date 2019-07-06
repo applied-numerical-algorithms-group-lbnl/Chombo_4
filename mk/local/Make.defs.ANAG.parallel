@@ -1,16 +1,15 @@
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=g++
-CXX=g++
+DEPXX=mpiCC
+CXX=mpiCC
 DIM=2
 CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
-#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
-HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.parallel/include
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.parallel/lib -lhdf5 -lz
 #end mach dependent
 
 

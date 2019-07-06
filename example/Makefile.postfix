@@ -1,0 +1,52 @@
+
+LIBS     += $(HDFLIBFLAGS) $(LAPACKLIBS)
+
+DEP=$(DEPXX) -MM $(CXXFLAGS)
+ifeq ($(DEPXX),nvcc)
+DEP=$(DEPXX) -M $(CXXFLAGS)
+LIBS+= -lnvToolsExt
+endif
+
+LINK=$(CXX)
+OBJDIR = o
+DEPDIR = d
+TARGET = main.exe
+
+$(TARGET): $(OBJ)
+	$(LINK) -o $(TARGET) $(OBJ) $(LIBS)
+
+$(OBJDIR):
+	if [ ! -d "./$(OBJDIR)" ];then     \
+		mkdir $(OBJDIR);           \
+	fi
+
+$(DEPDIR):
+	if [ ! -d "./$(DEPDIR)" ];then     \
+		mkdir $(DEPDIR);           \
+	fi
+
+#compile non-main sources
+$(OBJDIR)/%.o : %.cpp   $(OBJDIR) $(DEPDIR)
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS)
+	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
+
+all: $(TARGET)
+
+.PHONY: clean realclean print dirs
+
+
+print-%: ; @echo $* = $($*)
+
+-include $(DEPENDS)
+
+vars:
+	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
+
+clean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+realclean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+
+
