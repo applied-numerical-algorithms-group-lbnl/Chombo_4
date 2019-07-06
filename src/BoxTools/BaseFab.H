@@ -523,11 +523,6 @@ public:
                         const Box&      a_R,
                         const Interval& a_comps);
 
-  /// same as linearIn, but returns the current location in the buffer
-  virtual void* linearIn2(void*           a_buf,
-                          const Box&      a_R,
-                          const Interval& a_comps);
-
   /// These functions are required for broadcast & gather.
 
   void linearOut(void* a_buf) const;

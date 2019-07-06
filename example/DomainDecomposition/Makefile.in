@@ -8,9 +8,12 @@ PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=g++
 CXX=g++
 DIM=2
-CXXDBGFLAGS=-g -pedantic -Wall
-CXXOPTFLAGS=-O3
+CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
 HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
 #end mach dependent
@@ -39,23 +42,19 @@ DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 
 
-CPPFLAGS:=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
+CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
 CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 -DCH_USE_DOUBLE -DCH_USE_HDF5 -DCH_USE_LAPACK 
-CPPFLAGS += -I$(HDFINCFLAGS)
+CPPFLAGS += -I$(HDFINCFLAGS) 
 
 #begin depends on debug or not
 CXXFLAGS:= $(CXXOPTFLAGS) -std=c++11
 #end depends on debug or not
 
-ifdef FFTW3_DIR
-LIBS+= -L$(FFTW3_DIR)/lib -lfftw3
-CPPFLAGS+= -I$(FFTW3_DIR)/include
-endif
 
-LIBS     += -L$(HDF5LIBFLAGS)
+LIBS     += $(HDFLIBFLAGS) $(LAPACKLIBS)
 
 DEP=$(DEPXX) -MM $(CXXFLAGS)
 ifeq ($(DEPXX),nvcc)
