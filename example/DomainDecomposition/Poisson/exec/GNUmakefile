@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
 DIM := 2
 
 SRC := $(wildcard *.cpp) 
@@ -18,27 +18,23 @@ DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 
 
-CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
-CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
-CPPFLAGS += -I$(HDFINCFLAGS) 
+
 
 
 
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=mpiCC
-CXX=mpiCC
+DEPXX=g++
+CXX=g++
 DIM=2
 CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
-LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.parallel/include
-HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.parallel/lib -lhdf5 -lz
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
+HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
 #end mach dependent
 
 
@@ -48,8 +44,14 @@ HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.parallel/lib -lhdf5 -lz
 CXXFLAGS += -DCH_USE_HDF5
 CXXFLAGS += -DCH_USE_DOUBLE
 CXXFLAGS+=$(CXXDBGFLAGS) 
-CXXFLAGS += -DCH_USE_MPI
-LIBS     += $(HDFLIBFLAGS) $(LAPACKLIBS)
+CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
+CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+CPPFLAGS += $(HDFINCFLAGS) 
+
+LIBS     += $(HDFLIBFLAGS) 
 
 DEP=$(DEPXX) -MM $(CXXFLAGS)
 ifeq ($(DEPXX),nvcc)
