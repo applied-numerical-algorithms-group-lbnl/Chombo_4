@@ -23,8 +23,9 @@ using std::cout;
 #include "LayoutIterator.H"
 #include "LoadBalance.H"
 #include "CH_Timer.H"
-
+#include <cmath>
 #include "NamespaceHeader.H"
+using std::abs;
 /////================================///////
 void
 setCircleTags(IntVectSet& ivs, int circleR, int thickness,
