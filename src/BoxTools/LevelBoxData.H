@@ -13,24 +13,39 @@
 
 #include "LevelData.H"
 #include "Proto.H"
+#include "ProtoInterface.H"
 #include "NamespaceHeader.H"
 
 using Proto::BoxData;
 ///
 /**
 */
+template <int NUMCOMPS> class DefaultBoxDataFactory : public DataFactory<BoxData<Real, NUMCOMPS> >
+{
+public:
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
+      for calling operator 'delete' on this pointer is passed to the user. */
+  virtual BoxData<Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
+  {
+    Proto::Box bx = ProtoCh::getProtoBox(box);
+    return new BoxData<Real, NUMCOMPS>(bx);
+  }
+};
 
+///
+/**
+*/
 template<int  NUMCOMPS>
 class LevelBoxData: public LevelData<BoxData<Real, NUMCOMPS> >
 {
 public:
 
-  typedef BoxLayoutData<BoxData<Real, NUMCOMPS> > boxlayoutdata_t;
-
   ///
   LevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
   {
   }
+
 
   ///
   LevelBoxData(const DisjointBoxLayout & a_dp, 
@@ -53,13 +68,13 @@ public:
 
 
   ///
-  void copyTo(const Interval &            a_srcComps,
-              boxlayoutdata_t &           a_dst,
+  void copyTo(const Interval                      &            a_srcComps,
+              LevelData<BoxData<Real, NUMCOMPS> > &           a_dst,
               const Interval &            a_dstComps,
               const Copier   &            a_copier) const
   {
-    LevelData<FArrayBox>     hostdataSrc(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
-    BoxLayoutData<FArrayBox> hostdataDst(a_dst.boxLayout()        , NUMCOMPS               );
+    LevelData<FArrayBox> hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost);
+    LevelData<FArrayBox> hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect());
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
@@ -75,7 +90,7 @@ public:
   {
     LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
     copyToHost(hostdata, *this);
-    hostdata.exchange(copier);
+    hostdata.exchange();
     copyToDevice(*this, hostdata);
   }
     
@@ -84,8 +99,8 @@ public:
 
   ///
   static 
-  void copyToHost(BoxLayoutData<FArrayBox>                      & a_hostDat,
-                  const BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviDat)
+  void copyToHost(LevelData<FArrayBox>                      & a_hostDat,
+                  const LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat)
   {
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
@@ -111,8 +126,8 @@ public:
 
   ///
   static 
-  void copyToDevice(BoxLayoutData<BoxData<Real, NUMCOMPS> > & a_deviDat,
-                    const BoxLayoutData<FArrayBox>          & a_hostDat) 
+  void copyToDevice(LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat,
+                    const LevelData<FArrayBox>          & a_hostDat) 
   {
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)

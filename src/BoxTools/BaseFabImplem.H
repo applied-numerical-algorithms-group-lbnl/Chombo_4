@@ -563,6 +563,25 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
 }
 
 
+template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
+                                                      const Box&      a_R,
+                                                      const Interval& a_comps)
+{
+  //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
+  T* buffer = (T*) a_buf;
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+    {
+      for (BoxIterator bit(a_R); bit.ok(); ++bit)
+        {
+          IntVect iv = bit();
+          (*this)(iv, icomp) = *buffer;
+          ++buffer;
+        }
+    }
+  return buffer;
+}
+
+
 // ---------------------------------------------------------
 // this is for broadcast & gather; the Box is in the msg
 template <class T> inline void BaseFab<T>::linearOut(void* a_outBuf) const
@@ -577,6 +596,9 @@ template <class T> inline void BaseFab<T>::linearOut(void* a_outBuf) const
 
   linearOut( bufptr ,m_domain ,interval() );
 }
+
+// ---------------------------------------------------------
+
 
 // ---------------------------------------------------------
 // this is for broadcast & gather; the Box is in the msg
@@ -695,15 +717,16 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
   CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
-
+  IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
   for (int icomp = 0; icomp < a_numcomp; icomp++)
   {
     int srccomp = a_srccomp + icomp;
     int dstcomp = a_dstcomp + icomp;
     for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
     {
-      IntVect iv = bit();
-      (*this)(iv, dstcomp) = a_src(iv, srccomp);
+      IntVect dstiv = bit();
+      IntVect srciv = dstiv + shiftiv;
+      (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
     }
   }
 }

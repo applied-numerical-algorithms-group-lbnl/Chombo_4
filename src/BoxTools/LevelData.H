@@ -53,16 +53,16 @@ public:
   virtual ~LevelData();
 
   ///
-  void define(const DisjointBoxLayout& dp, int comps,
-              const IntVect& ghost = IntVect::Zero,
-              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+   void define(const DisjointBoxLayout& dp, int comps,
+                      const IntVect& ghost = IntVect::Zero,
+                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
   /**
     copy definer.  this LevelData thrown away and da's LevelData copied
     */
-  void define(const LevelData<T>& da,
-              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+   void define(const LevelData<T>& da,
+                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
   /**
@@ -70,36 +70,36 @@ public:
     This LevelData is now defined for the range [0, comps.size()] and filled
     with the data in da from [comps.begin(), comps.end()]
     */
-  void define(const LevelData<T>& da, const Interval& comps,
-              const DataFactory<T>& a_factory = DefaultDataFactory<T>());
+   void define(const LevelData<T>& da, const Interval& comps,
+                      const DataFactory<T>& a_factory = DefaultDataFactory<T>());
 
   ///
-  void copyTo(const Interval& srcComps,
+   void copyTo(const Interval& srcComps,
                       BoxLayoutData<T>& dest,
                       const Interval& destComps) const;
 
 
   ///only works if source and dest have the same disjointboxlayout
-  void localCopyTo(const Interval& srcComps,
+   void localCopyTo(const Interval& srcComps,
                            LevelData<T>  & dest,
                            const Interval& destComps) const;
 
   /// assumes source and dest have same interval
-  void localCopyTo(LevelData<T>  & dest) const;
+   void localCopyTo(LevelData<T>  & dest) const;
 
 
   /// Simplest case -- assumes source and dest have same interval
-  void copyTo(BoxLayoutData<T>& dest) const;
+   void copyTo(BoxLayoutData<T>& dest) const;
 
   /*
   ///
-  virtual void copyTo(const Interval& srcComps,
+   void copyTo(const Interval& srcComps,
                       BoxLayoutData<T>& dest,
                       const Interval& destComps,
                       const Copier& copier) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  virtual void copyTo(BoxLayoutData<T>& dest,
+   void copyTo(BoxLayoutData<T>& dest,
                       const Copier& copier) const;
   */
   ////////////////////////////// FM MOD START //////////////////////////
@@ -107,14 +107,14 @@ public:
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. USer passes in
     a prebuilt Copier object*/
-  void copyTo(const Interval& srcComps,
+   void copyTo(const Interval& srcComps,
                       BoxLayoutData<T>& dest,
                       const Interval& destComps,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  void copyTo(BoxLayoutData<T>& dest,
+   void copyTo(BoxLayoutData<T>& dest,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
@@ -122,49 +122,49 @@ public:
   ///
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. */
-  void copyTo(const Interval& srcComps,
+   void copyTo(const Interval& srcComps,
                       LevelData<T>& dest,
                       const Interval& destComps) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  void copyTo(LevelData<T>& dest) const;
+   void copyTo(LevelData<T>& dest) const;
 
    ///
   /** same as copyTo that takes a BoxLayoutData, except that it fills the
     ghost cells of 'dest' with data from 'this' also. USer passes in
     a prebuilt Copier object*/
-  void copyTo(const Interval& srcComps,
-              LevelData<T>& dest,
-              const Interval& destComps,
-              const Copier& copier,
-              const LDOperator<T>& a_op = LDOperator<T>()) const;
+   void copyTo(const Interval& srcComps,
+                      LevelData<T>& dest,
+                      const Interval& destComps,
+                      const Copier& copier,
+                      const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- assumes source and dest have same interval
-  void copyTo(LevelData<T>& dest,
+   void copyTo(LevelData<T>& dest,
                       const Copier& copier,
                       const LDOperator<T>& a_op = LDOperator<T>()) const;
 
   /// Simplest case -- do all components
-  void exchange(void);
+   void exchange(void);
 
   /// Simplest case -- do all components. Accepts a pre-built copier.
-  void exchange(const Copier& copier);
+   void exchange(const Copier& copier);
 
   /// Accepts an arbitrary component range
-  void exchange(const Interval& comps);
+   void exchange(const Interval& comps);
 
   /// The most general case -- can accept an arbitrary component range,
   /// a pre-built Copier object, and an arbitrary accumulation operator.
-  void exchange(const Interval& comps,
-			const Copier& copier,
-			const LDOperator<T>& a_op = LDOperator<T>());
+   void exchange(const Interval& comps,
+                        const Copier& copier,
+                        const LDOperator<T>& a_op = LDOperator<T>());
 
   /// asynchronous exchange start.  load and fire off messages.
-  void exchangeBegin(const Copier& copier);
+   void exchangeBegin(const Copier& copier);
   /// finish asynchronous exchange
-  void exchangeEnd();
+   void exchangeEnd();
 
-  void exchangeNoOverlap(const Copier& copier);
+   void exchangeNoOverlap(const Copier& copier);
 
   ///
   const IntVect& ghostVect() const
@@ -173,7 +173,7 @@ public:
   }
 
   /**
-     \name overidden virtual functions
+     \name overidden  functions
 
     These functions will invoke error messages when invoked.
     C++ will ensure that constructors are not called for the
@@ -185,18 +185,18 @@ public:
     taking over the job of the compiler.
     */
   /*@{*/
-  void define(const BoxLayout& dp, int comps,
-              const DataFactory<T>& factory);
+   void define(const BoxLayout& dp, int comps,
+                      const DataFactory<T>& factory);
 
   ///
-  void define(const BoxLayoutData<T>& da,
+   void define(const BoxLayoutData<T>& da,
                       const DataFactory<T>& factory = DefaultDataFactory<T>());
 
   ///
-  void define(const BoxLayoutData<T>& da, const Interval& comps,
+   void define(const BoxLayoutData<T>& da, const Interval& comps,
                       const DataFactory<T>& factory = DefaultDataFactory<T>());
 
-  void define(const BoxLayout& deadFunction);
+   void define(const BoxLayout& deadFunction);
   /*@}*/
 
   ///
@@ -242,21 +242,21 @@ public:
   data.apply(val::set1);
   \endcode
 */
-  void apply( void (*a_Function)(const Box&, int, T&) );
+   void apply( void (*a_Function)(const Box&, int, T&) );
 
   /** For use with apply( const ApplyFunctor& ) */
   struct ApplyFunctor
   {
-    virtual ~ApplyFunctor()
+     ~ApplyFunctor()
     {
     }
 
-    virtual void operator()( const Box&, int, T& ) const = 0;
+     void operator()( const Box&, int, T& ) const = 0;
   };
 
 /** Like the other apply(), but here the argument is an instance of a class
     derived from LevelData::ApplyFunctor, and which implements ApplyFunctor's
-    pure virtual  void operator()(const Box& box, int n_comps, T& t) const.
+    pure   void operator()(const Box& box, int n_comps, T& t) const.
 
     Going with an instance of such a class is more convenient if you want
     the thing you pass to apply() to have state.
@@ -270,7 +270,7 @@ public:
         {
           ...
         }
-        virtual void operator()(const Box& box, int n_comps, FArrayBox& fab) const
+         void operator()(const Box& box, int n_comps, FArrayBox& fab) const
         {
           fab.setVal( m_x, box, 0, n_comps );
         }
@@ -284,7 +284,7 @@ public:
   \endcode
 
 */
-  void apply( const ApplyFunctor& );
+   void apply( const ApplyFunctor& );
 
   void degenerate( LevelData<T>& a_to, const SliceSpec& a_ss ) const;
 

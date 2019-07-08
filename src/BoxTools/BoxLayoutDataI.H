@@ -18,8 +18,10 @@
 #include "CH_OpenMP.H"
 #include "parstream.H"
 
+
 #include "CH_Timer.H"
 #include "NamespaceHeader.H"
+
 
 using std::sort;
 
@@ -49,10 +51,10 @@ inline void BoxLayoutData<T>::setVector(const BoxLayoutData<T>& da,
       int nbox=it.size();
 #pragma omp parallel for if(this->m_threadSafe)
       for(int box=0; box<nbox; box++)
-	{
-	  this->m_vector[it[box].datInd()]->copy( this->box(it[box]), destComps,
-					       this->box(it[box]), da[it[box]], srcComps);
-	}
+        {
+          this->m_vector[it[box].datInd()]->copy( this->box(it[box]), destComps,
+                                               this->box(it[box]), da[it[box]], srcComps);
+        }
     }
 }
 
@@ -271,7 +273,7 @@ void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
 
     if (this->m_buff->numReceives > 0)
       {
-	postReceivesToMe(); // all non-blocking
+        postReceivesToMe(); // all non-blocking
       }
   
 
@@ -970,17 +972,15 @@ public:
   virtual void linearIn(T& arg,  void* buf, const Box& R,
                         const Interval& comps) const
   {
-    Real* buffer = (Real*)buf;
+    MayDay::Error("not implemented");
+//    Real* buffer = (Real*)buf;
+//
+//    ForAllXBNNnoindx(Real, arg, R, comps.begin(), comps.size())
+//      {
+//        argR+=*buffer;
+//        buffer++;
+//      } EndFor
 
-    for (int icomp = comps.begin(); icomp <= comps.end(); icomp++)
-    {
-      for (BoxIterator bit(R); bit.ok(); ++bit)
-      {
-        IntVect iv = bit();
-        (*this)(iv, icomp) += *buffer;
-        ++buffer;
-      }
-    }
   }
 
   virtual bool threadSafe() const

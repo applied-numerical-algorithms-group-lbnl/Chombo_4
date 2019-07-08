@@ -194,6 +194,9 @@ void eulerRun(const RunParams& a_params)
   Vector<int> procs;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
+//  LevelData<FArrayBox> fabdata(grids, NUMCOMPS, 4*IntVect::Unit);
+//  fabdata.exchange();
+
   //this sneaks in parameters not covered by the RK4 template class
   //not the most elegant solution but it works for single level
   EulerOp::s_dx    = a_params.dx;
@@ -208,6 +211,7 @@ void eulerRun(const RunParams& a_params)
   Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
 
   pout() << "before initializestate"<< endl;
+
   DataIterator dit = grids.dataIterator();
 #pragma omp parallel for
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -226,6 +230,7 @@ void eulerRun(const RunParams& a_params)
     BoxData<Real, NUMCOMPS> lapu = Lap2nd(ubd, 1.0/24.0);
     ubd += lapu;
   }
+
 
   Real maxwave = EulerOp::maxWave(*state.m_U);
   Real dt = .25*a_params.cfl*a_params.dx/maxwave;

@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
 DIM := 2
 
 SRC := $(wildcard *.cpp) 
@@ -32,9 +32,9 @@ CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
-HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
+LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
 #end mach dependent
 
 

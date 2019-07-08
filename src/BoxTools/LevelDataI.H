@@ -21,7 +21,9 @@ using std::sort;
 #include "NamespaceHeader.H"
 
 // 
+// LevelData<FluxBox> specializations
 
+template < > void LevelData<FluxBox>::degenerateLocalOnly( LevelData<FluxBox>& a_to, const SliceSpec& a_ss ) const;
 
 //-----------------------------------------------------------------------
 template<class T>
@@ -64,7 +66,7 @@ LevelData<T>::LevelData(const DisjointBoxLayout& dp, int comps, const IntVect& g
 
   Interval interval(0, comps-1);
   this->allocateGhostVector(a_factory, ghost);
-//  this->setVector(*this, interval, interval); // Does nothing.
+  //this->setVector(*this, interval, interval); // Does nothing.
 }
 //-----------------------------------------------------------------------
 
@@ -418,8 +420,8 @@ void LevelData<T>::exchange(void)
 //-----------------------------------------------------------------------
 template<class T>
 void LevelData<T>::exchange(const Interval& comps,
-			    const Copier& copier,
-			    const LDOperator<T>& a_op)
+                            const Copier& copier,
+                            const LDOperator<T>& a_op)
 {
   CH_TIME("exchange");
 #ifdef CH_MPI
