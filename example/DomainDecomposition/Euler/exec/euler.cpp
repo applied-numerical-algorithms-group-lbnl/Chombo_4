@@ -275,8 +275,9 @@ int main(int a_argc, char* a_argv[])
 
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  CH_TIMER_SETFILE("euler.time.table");
 #endif
+  //needs to be called after MPI_Init
+  CH_TIMER_SETFILE("euler.time.table");
 
   {
     if (a_argc < 2)
@@ -288,14 +289,14 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
 
     RunParams params;
-    std::cout << " parsing inputs " << std::endl;
+    //std::cout << " parsing inputs " << std::endl;
     parseInputs(params);
-    std::cout << " running euler exmaple " << std::endl;
+    //std::cout << " running euler exmaple " << std::endl;
     eulerRun(params);
   }
   
 #ifdef CH_MPI
-  std::cout << "about to write timer report " << std::endl;
+  //std::cout << "about to write timer report " << std::endl;
   CH_TIMER_REPORT();
   MPI_Finalize();
 #endif
