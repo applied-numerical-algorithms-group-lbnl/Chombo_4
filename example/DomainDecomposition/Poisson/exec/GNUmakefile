@@ -28,8 +28,8 @@ DEPXX=mpiCC
 CXX=mpiCC
 DIM=2
 CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
-CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)
+CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 
 LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.parallel/include
@@ -40,7 +40,7 @@ HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.parallel/lib -lhdf5 -lz
 
 
 
-CPPFLAGS += -DCH_USE_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
+CPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
 CPPFLAGS += -DCH_USE_HDF5
 CXXFLAGS += -DCH_USE_DOUBLE
 CXXFLAGS+=$(CXXDBGFLAGS) 
@@ -65,7 +65,7 @@ DEPDIR = d
 TARGET = main.exe
 
 $(TARGET): $(OBJ)
-	$(LINK) -o $(TARGET) $(OBJ) $(LIBS)
+	$(LINK)  $(OBJ) $(LIBS) $(LAPACKLIBS) -o $(TARGET)
 
 $(OBJDIR):
 	if [ ! -d "./$(OBJDIR)" ];then     \
@@ -79,8 +79,8 @@ $(DEPDIR):
 
 #compile non-main sources
 $(OBJDIR)/%.o : %.cpp   $(OBJDIR) $(DEPDIR)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS)
-	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
+#	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
 
 all: $(TARGET)
 

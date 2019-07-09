@@ -46,7 +46,7 @@ for t in targets:
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_USE_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
 
     if(args.hdf5 == 'TRUE'):
         f.write('\nCPPFLAGS += -DCH_USE_HDF5')

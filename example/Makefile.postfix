@@ -20,7 +20,7 @@ DEPDIR = d
 TARGET = main.exe
 
 $(TARGET): $(OBJ)
-	$(LINK) -o $(TARGET) $(OBJ) $(LIBS)
+	$(LINK)  $(OBJ) $(LIBS) $(LAPACKLIBS) -o $(TARGET)
 
 $(OBJDIR):
 	if [ ! -d "./$(OBJDIR)" ];then     \
@@ -34,8 +34,8 @@ $(DEPDIR):
 
 #compile non-main sources
 $(OBJDIR)/%.o : %.cpp   $(OBJDIR) $(DEPDIR)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS)
-	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
+#	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
 
 all: $(TARGET)
 
