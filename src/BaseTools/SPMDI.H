@@ -11,7 +11,9 @@
 #ifndef _SPMDI_H_
 #define _SPMDI_H_
 
+
 #include "parstream.H"
+#include "CH_assert.H"
 #include "BaseNamespaceHeader.H"
 
 // default implementations for linearization routines.
@@ -42,7 +44,7 @@ extern void AttachDebugger(int);
 /*****************************/
 template <class T>
 inline void
-gather(vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   CH_assert (a_dest >= 0);
   CH_assert(a_dest <  numProc());
@@ -50,7 +52,7 @@ gather(vector<T>& a_outVec, const T& a_input, int a_dest)
   int isize = linearSize(a_input);
 
   //make stuff for linearout
-  void* loclBuf = mallocMT(isize);
+  void* loclBuf = malloc(isize);
   if (loclBuf == NULL)
     MayDay::Error("out of memory in gather 1");
 
@@ -89,11 +91,11 @@ gather(vector<T>& a_outVec, const T& a_input, int a_dest)
           vectDisp[iproc] = itotsize;
           itotsize += vectSize[iproc];
         }
-      recdBuf = mallocMT(itotsize);
+      recdBuf = malloc(itotsize);
       if (recdBuf == NULL)
-	{
-	  MayDay::Error("out of memory in gather 2");
-	}
+        {
+          MayDay::Error("out of memory in gather 2");
+        }
     }
 
   //gather data
@@ -120,11 +122,11 @@ gather(vector<T>& a_outVec, const T& a_input, int a_dest)
       //delete memory for dest-specific arrays
       delete[] vectSize;
       delete[] vectDisp;
-      freeMT(recdBuf);
+      free(recdBuf);
     }
 
   //delete memory for local buffer
-  freeMT(loclBuf);
+  free(loclBuf);
 }
 
 /*****************************/
@@ -144,7 +146,7 @@ broadcast(T& a_inAndOut,  int a_src)
 
   MPI_Bcast(&isize, 1, MPI_INT, a_src, Chombo_MPI::comm);
 
-  void* broadBuf = mallocMT(isize);
+  void* broadBuf = malloc(isize);
 
   if (broadBuf == NULL)
   {
@@ -162,11 +164,11 @@ broadcast(T& a_inAndOut,  int a_src)
 
   if (procID()==a_src)
   {
-    CH_MaxMPISendSize = Max<long long>(CH_MaxMPISendSize, isize);
+    CH_MaxMPISendSize = std::max<long long>(CH_MaxMPISendSize, isize);
   }
   else
   {
-    CH_MaxMPIRecvSize = Max<long long>(CH_MaxMPIRecvSize, isize);
+    CH_MaxMPIRecvSize = std::max<long long>(CH_MaxMPIRecvSize, isize);
   }
   //take broadBuf and put back into inAndOut if not src
   if (procID() != a_src)
@@ -175,7 +177,7 @@ broadcast(T& a_inAndOut,  int a_src)
   }
 
   //delete memory for buffer
-  freeMT(broadBuf);
+  free(broadBuf);
 }
 
 /*****************************/
@@ -193,7 +195,7 @@ barrier(void)
 /*****************************/
 template <class T>
 inline void
-gather(vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   a_outVec.resize(1);
   a_outVec[0] = a_input;
@@ -222,15 +224,15 @@ barrier(void)
 //These should work independent of MPI
 //*************************************
 
-//vector<T> specialization of linearIn
+//Vector<T> specialization of linearIn
 template <class T>
 void
-linearListIn(vector<T>& a_outputT, const void* const a_inBuf)
+linearListIn(Vector<T>& a_outputT, const void* const a_inBuf)
 {
   //first entry is the size of the vector
   const int* const intBuf = (int*)a_inBuf;
   int vecsize = intBuf[0];
-  vector<int> vecOffset(vecsize);
+  Vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   for (int ivec = 0; ivec < vecsize; ivec++)
     {
@@ -251,16 +253,16 @@ linearListIn(vector<T>& a_outputT, const void* const a_inBuf)
     }
 }
 
-//vector<T> specialization of linearOut
+//Vector<T> specialization of linearOut
 template <class T>
 void
-linearListOut(void* const a_outBuf, const vector<T>& a_input)
+linearListOut(void* const a_outBuf, const Vector<T>& a_input)
 {
   //first entry is the size of the vector
   int* const intBuf = (int*)a_outBuf;
   intBuf[0] = a_input.size();
   int vecsize = intBuf[0];
-  vector<int> vecOffset(vecsize);
+  Vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   //next vecsize entries are the actual data
   int ioffset = (vecsize+1)*sizeof(int);
@@ -283,10 +285,10 @@ linearListOut(void* const a_outBuf, const vector<T>& a_input)
     }
 }
 
-//vector<T> specialization of linearSize
+//Vector<T> specialization of linearSize
 template <class T>
 int
-linearListSize(const vector<T>& a_input)
+linearListSize(const Vector<T>& a_input)
 {
   //first entry is the size of the vector (int)
   //next vecsize entries are offsets of data into buffer (int)

@@ -17,40 +17,30 @@
 
 bool stupidVerbose = false;
 
+DataIndex 
 DataIterator::
-DataIndex operator[](int ivec) const
+operator[](int ivec) const
 {
-Proto::DisjointBoxLayout::activeBox(ivec);
-return (DataIndex)((*m_indices)[ivec]);
+  Proto::DisjointBoxLayout::activeBox(ivec);
+  return (DataIndex)((*m_indices)[ivec]);
 }
 
 inline unsigned long long  getTimeTDC()
 {
-  return ch_ticks();
+  return PR_ticks();
 }
 
-#ifdef CH_USE_MEMORY_TRACKING
-inline unsigned long long  getPeakTDC()
-{
-  if(stupidVerbose)
-    {
-      long long current, peak;
-      overallMemoryUsage(current, peak);
-      pout() << "ch_memcount = " << ch_memcount << ", current = " << current << ", peak = " << peak << endl;
-    }
-  return ch_memcount;
-}
-#else
+
 inline unsigned long long  getPeakTDC()
 {
   //MayDay::Error("calling memory function when none is available");
   return 0;
 }
-#endif
+
 DataIterator::
 DataIterator(const BoxLayout& plan,
              const int* layoutID)
-  :m_layout(plan), m_indices(plan.m_dataIndex), m_current(0)
+  :m_layout(plan), m_indices(&(*plan.m_dataIndex)), m_current(0)
 {
   m_timeEnabled = false;
   m_timeDefined = false;

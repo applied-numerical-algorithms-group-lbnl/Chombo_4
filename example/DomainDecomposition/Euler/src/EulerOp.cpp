@@ -239,7 +239,7 @@ Real gatherMaxWave(Real maxwaveproc)
   Real maxwaveall = maxwaveproc;
 #ifdef CH_MPI
   Real sendBuf = maxwaveall;
-  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_Real, MPI_MAX, Chombo_MPI::comm);
+  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
 
   if (result != MPI_SUCCESS)
   {

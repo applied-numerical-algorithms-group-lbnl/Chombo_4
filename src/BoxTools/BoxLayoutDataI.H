@@ -587,9 +587,9 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (sendBufferSize > m_buff->m_sendcapacity)
     {
-      freeMT((m_buff->m_sendbuffer));
+      free((m_buff->m_sendbuffer));
       if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
-      (m_buff->m_sendbuffer) = mallocMT(sendBufferSize);
+      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
       if ((m_buff->m_sendbuffer) == NULL)
         {
           MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
@@ -599,9 +599,9 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (recBufferSize > m_buff->m_reccapacity)
     {
-      freeMT(m_buff->m_recbuffer);
+      free(m_buff->m_recbuffer);
       if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
-      m_buff->m_recbuffer = mallocMT(recBufferSize);
+      m_buff->m_recbuffer = malloc(recBufferSize);
       if (m_buff->m_recbuffer == NULL)
         {
           MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
@@ -713,7 +713,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
         MPI_Isend(buffer, bsize, MPI_BYTE, entry.procID,
                 idtag, Chombo_MPI::comm, &(m_buff->m_sendRequests[i]));
       }
-      maxSize = Max<long long>(bsize, maxSize);
+      maxSize = std::max<long long>(bsize, maxSize);
       ++next;
       while (next < m_buff->m_fromMe.size() && m_buff->m_fromMe[next].size == 0) ++next;
     }
@@ -723,7 +723,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   }
   this->m_buff->numSends = m_buff->m_sendRequests.size();
 
-  CH_MaxMPISendSize = Max<long long>(CH_MaxMPISendSize, maxSize);
+  CH_MaxMPISendSize = std::max<long long>(CH_MaxMPISendSize, maxSize);
 
 }
 
@@ -775,7 +775,7 @@ void BoxLayoutData<T>::postReceivesToMe() const
                   idtag, Chombo_MPI::comm, &(m_buff->m_receiveRequests[i]));
       }
       ++next;
-      maxSize = Max<long long>(bsize, maxSize);
+      maxSize = std::max<long long>(bsize, maxSize);
       while (next < m_buff->m_toMe.size() && m_buff->m_toMe[next].size == 0) ++next;
     }
   for (std::list<MPI_Request>::iterator it = extraRequests.begin(); it != extraRequests.end(); ++it)
@@ -784,7 +784,7 @@ void BoxLayoutData<T>::postReceivesToMe() const
   }
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
-  CH_MaxMPIRecvSize = Max<long long>(CH_MaxMPIRecvSize, maxSize);
+  CH_MaxMPIRecvSize = std::max<long long>(CH_MaxMPIRecvSize, maxSize);
   //pout()<<"maxSize="<<maxSize<<" posted "<<this->m_buff->numReceives<<" receives\n";
 
 }

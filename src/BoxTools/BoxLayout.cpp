@@ -133,7 +133,7 @@ void BoxLayout::buildDataIndex()
       box = &(*(m_boxes))[index];
       if (box->m_procID == p)
         {
-          DataIndex current(index, datIn, m_layout);
+          DataIndex current(index, datIn, &(*m_layout));
           dlist.push_back(current);
           count++;
           datIn++;

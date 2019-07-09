@@ -292,7 +292,6 @@ int main(int a_argc, char* a_argv[])
   }
   
 #ifdef CH_MPI
-  dumpmemoryatexit();
   CH_TIMER_REPORT();
   MPI_Finalize();
 #endif

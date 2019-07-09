@@ -24,9 +24,8 @@
 
 #include <functional>
 
-#ifdef USE_PROTO
 #include "Proto.H"
-#endif
+
 
 namespace BLfacade
 {
@@ -66,7 +65,7 @@ public:
   IntVect()
   {}
 
-  explicit IntVect( const vector<int>& vi)
+  explicit IntVect( const Vector<int>& vi)
   {
     D_EXPR6(vect[0]=vi[0], vect[1]=vi[1], vect[2] = vi[2],
             vect[3]=vi[3], vect[4]=vi[4], vect[5] = vi[5]);

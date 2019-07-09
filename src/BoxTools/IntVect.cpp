@@ -174,29 +174,29 @@ void linearOut(void* a_outBuf, const IntVect& a_iv)
 }
 
 //vector<IntVect>  specialization
-template < > int linearSize(const vector<IntVect>& a_input)
+template < > int linearSize(const Vector<IntVect>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(vector<IntVect>& a_outputT, const void* const inBuf)
+template < > void linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const vector<IntVect>& a_inputT)
+template < > void linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
 
-//vector<vector<IntVect> >  specialization
-template < > int linearSize(const vector<vector<IntVect> >& a_input)
+//Vector<Vector<IntVect> >  specialization
+template < > int linearSize(const Vector<Vector<IntVect> >& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(vector<vector<IntVect> >& a_outputT, const void* const inBuf)
+template < > void linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const vector<vector<IntVect> >& a_inputT)
+template < > void linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }

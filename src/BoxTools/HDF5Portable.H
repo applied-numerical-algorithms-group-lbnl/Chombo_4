@@ -11,7 +11,7 @@
 #ifndef _HDF5PORTABLE_H_
 #define _HDF5PORTABLE_H_
 
-#include <vector>
+#include "Vector.H"
 extern "C"
 {
 #ifdef CH_USE_HDF5
@@ -25,21 +25,21 @@ extern "C"
 #include "Interval.H"
 #include "NamespaceHeader.H"
 
-template <class T> void dataTypes(vector<hid_t>& a_types,
+template <class T> void dataTypes(Vector<hid_t>& a_types,
                                   const T&       a_dummySpecializationArg);
 
 template <class T> void dataSize(const T&        a_item,
-                                 vector<int>&    a_sizes,
+                                 Vector<int>&    a_sizes,
                                  const Box&      a_box,
                                  const Interval& a_comps);
 
 template <class T> void write(const T&        a_item,
-                              vector<void*>&  a_allocatedBuffers,
+                              Vector<void*>&  a_allocatedBuffers,
                               const Box&      a_box,
                               const Interval& a_comps);
 
 template <class T> void read(T&              a_item,
-                             vector<void*>&  a_allocatedBuffers,
+                             Vector<void*>&  a_allocatedBuffers,
                              const Box&      a_box,
                              const Interval& a_comps);
 

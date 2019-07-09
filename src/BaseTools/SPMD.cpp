@@ -16,8 +16,6 @@
 
 #include "SPMD.H"
 #include "parstream.H"
-#include "CH_assert.H"
-#include "Vector.H"
 #include "BaseNamespaceHeader.H"
 
 

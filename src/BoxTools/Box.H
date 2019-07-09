@@ -1671,19 +1671,19 @@ void linearOut(void* const a_outBuf, const CH_XDIR::Box& a_inputT);
 
 //vector<Box>  specialization
 template < >
-int linearSize(const vector<CH_XDIR::Box>& a_input);
+int linearSize(const Vector<CH_XDIR::Box>& a_input);
 template < >
-void linearIn(vector<CH_XDIR::Box>& a_outputT, const void* const inBuf);
+void linearIn(Vector<CH_XDIR::Box>& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const vector<CH_XDIR::Box>& a_inputT);
+void linearOut(void* const a_outBuf, const Vector<CH_XDIR::Box>& a_inputT);
 
 //vector<vector<Box> > specialization
 template < >
-int linearSize(const vector<vector<CH_XDIR::Box> >& a_input);
+int linearSize(const Vector<Vector<CH_XDIR::Box> >& a_input);
 template < >
-void linearIn(vector<vector<CH_XDIR::Box> >& a_outputT, const void* const inBuf);
+void linearIn(Vector<Vector<CH_XDIR::Box> >& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const vector<vector<CH_XDIR::Box> >& a_inputT);
+void linearOut(void* const a_outBuf, const Vector<Vector<CH_XDIR::Box> >& a_inputT);
 
 #include "BaseNamespaceFooter.H"
 #include "NamespaceHeader.H"

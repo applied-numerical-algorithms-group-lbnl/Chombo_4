@@ -45,8 +45,11 @@ for t in targets:
 
     f.write(mach_dep);
 
+    if args.mpi == 'TRUE':
+        f.write('\nCPPFLAGS += -DCH_USE_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+
     if(args.hdf5 == 'TRUE'):
-        f.write('\nCXXFLAGS += -DCH_USE_HDF5')
+        f.write('\nCPPFLAGS += -DCH_USE_HDF5')
 
     if(args.prec == 'DOUBLE'):
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
@@ -56,8 +59,6 @@ for t in targets:
     else:
         f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
    
-    if args.mpi == 'TRUE':
-        f.write('\nCXXFLAGS += -DCH_USE_MPI')
 
     if args.cuda == 'TRUE':
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')

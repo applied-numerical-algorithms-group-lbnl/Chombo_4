@@ -22,7 +22,7 @@ using std::cerr;
 
 //----------------------------------------------------------
 // template <class T>
-// ostream& operator<<(ostream& os, const vector<T>& vec)
+// ostream& operator<<(ostream& os, const Vector<T>& vec)
 // {
 //   for (int i=0; i<vec.size(); i++) os<<vec[i]<<" ";
 //   return os;
@@ -38,7 +38,7 @@ void OffsetBuffer::operator=(const OffsetBuffer& rhs)
     }
   index.resize(rhs.index.size());
   int types = rhs.offsets[0].size();
-  offsets.resize(rhs.offsets.size(), vector<int>(types, 0));
+  offsets.resize(rhs.offsets.size(), Vector<int>(types, 0));
   for (int i=0; i<rhs.index.size(); i++)
     {
       index[i] = rhs.index[i];
@@ -51,11 +51,7 @@ void OffsetBuffer::operator=(const OffsetBuffer& rhs)
 
 ostream&  operator<<(ostream& os, const OffsetBuffer& ob)
 {
-//  os << ob.index <<"|";
-//  for(int iob = 0; iob << ob.offsets.size(); iob++)
-//  {
-//    os << ob.offsets[iob] << " ";
-//  }
+  os << ob.index <<"|"<<ob.offsets<<"\n";
   return os;
 }
 
@@ -87,12 +83,12 @@ void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf)
   const int* data = (const int*) a_inBuf;
   int num = data[0],  numTypes = data[1];
   a_outputT.index.resize(data[0]);
-  a_outputT.offsets.resize(data[0], vector<int>(data[1]));
+  a_outputT.offsets.resize(data[0], Vector<int>(data[1]));
   const int* off = data+2+num;
   for (int i=0; i<num; i++)
     {
       a_outputT.index[i] = data[i+2];
-      vector<int>& offsets = a_outputT.offsets[i];
+      Vector<int>& offsets = a_outputT.offsets[i];
       for (int j=0; j<numTypes; j++)
         {
           offsets[j] = off[j];
@@ -125,7 +121,7 @@ void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
 
   for (int i=0; i<a_inputT.offsets.size(); ++i)
     {
-      const vector<int>& offset = a_inputT.offsets[i];
+      const Vector<int>& offset = a_inputT.offsets[i];
       for (int t=0; t < offset.size(); ++t, ++data)
         {
           *data = offset[t];
@@ -135,16 +131,16 @@ void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
 
   // pout() << endl;
 }
-//vector<OffsetBuffer>  specialization
-template < > int linearSize(const vector<OffsetBuffer>& a_input)
+//Vector<OffsetBuffer>  specialization
+template < > int linearSize(const Vector<OffsetBuffer>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(vector<OffsetBuffer>& a_outputT, const void* const inBuf)
+template < > void linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const vector<OffsetBuffer>& a_inputT)
+template < > void linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
@@ -173,7 +169,7 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   H5Eset_auto(efunc, edata);
   
   hid_t boxdataset   = H5Dcreate(a_handle.groupID(), name.c_str(),  
-				 a_handle.box_id,
+                                 a_handle.box_id,
                                  boxdataspace, H5P_DEFAULT);
 #else
   H5Eget_auto2(H5E_DEFAULT,&efunc, &edata);
@@ -183,9 +179,9 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   H5Eset_auto2(H5E_DEFAULT,efunc, edata);
 
   hid_t boxdataset   = H5Dcreate2(a_handle.groupID(), name.c_str(),  
-				  a_handle.box_id,
-				  boxdataspace, H5P_DEFAULT,
-				  H5P_DEFAULT,H5P_DEFAULT);
+                                  a_handle.box_id,
+                                  boxdataspace, H5P_DEFAULT,
+                                  H5P_DEFAULT,H5P_DEFAULT);
 #endif
   if (boxdataset < 0) return boxdataset;
 
@@ -221,8 +217,8 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   //instead, write boxes serially from proc 0
   if (proc == 0)
   {
-    vector<Box> vbox(a_layout.size());
-    vector<int> pid(a_layout.size());
+    Vector<Box> vbox(a_layout.size());
+    Vector<int> pid(a_layout.size());
     count[0]=a_layout.size();
     int b=0;
     hid_t memdataspace = H5Screate_simple(1, count, NULL);
@@ -258,13 +254,13 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   return 0;
 }
 
-int read(HDF5Handle& a_handle, vector<Box>& boxes, const std::string& name)
+int read(HDF5Handle& a_handle, Vector<Box>& boxes, const std::string& name)
 {
 #ifdef H516
   hid_t  boxdataset = H5Dopen(a_handle.groupID(), name.c_str());
 #else
   hid_t  boxdataset = H5Dopen2(a_handle.groupID(), name.c_str(), 
-			       H5P_DEFAULT);
+                               H5P_DEFAULT);
 #endif
   if (boxdataset < 0) return boxdataset;
   hid_t boxdataspace =  H5Dget_space(boxdataset);
@@ -276,7 +272,7 @@ int read(HDF5Handle& a_handle, vector<Box>& boxes, const std::string& name)
 
   Box* rawboxes = new Box[dims[0]];
   if (rawboxes == NULL)
-    MayDay::Error("out of memory in read(HDF5Handle&, vector<Box>&, string)");
+    MayDay::Error("out of memory in read(HDF5Handle&, Vector<Box>&, string)");
 
   herr_t error = H5Dread(boxdataset, a_handle.box_id, memdataspace, boxdataspace,
                          H5P_DEFAULT, rawboxes);
@@ -296,7 +292,7 @@ int read(HDF5Handle& a_handle, vector<Box>& boxes, const std::string& name)
   return 0;
 }
 
-int readBoxes(HDF5Handle& a_handle, vector<vector<Box> >& boxes)
+int readBoxes(HDF5Handle& a_handle, Vector<Vector<Box> >& boxes)
 {
   int error;
   char levelName[100];
@@ -713,7 +709,7 @@ int HDF5Handle::open(
     group = H5Gcreate(m_fileID, a_globalGroupName, 0);
 #else
     group = H5Gcreate2(m_fileID, a_globalGroupName, H5P_DEFAULT,
-		       H5P_DEFAULT,H5P_DEFAULT);
+                       H5P_DEFAULT,H5P_DEFAULT);
 #endif
     info.m_int["SpaceDim"] = SpaceDim;
     info.m_real["testReal"] = 0.0;
@@ -832,7 +828,7 @@ int HDF5Handle::setGroup(const std::string& group)
       H5Eset_auto2(H5E_DEFAULT, efunc, edata); //turn error messaging back on.
       //open failed, go to group creation
       m_currentGroupID = H5Gcreate2(m_fileID, group.c_str(),H5P_DEFAULT, 
-				    H5P_DEFAULT,H5P_DEFAULT);
+                                    H5P_DEFAULT,H5P_DEFAULT);
     }
   H5Eset_auto2(H5E_DEFAULT, efunc, edata); //turn error messaging back on.
   // DFM (11/14/15) -- if new group is invalid, put things back the 
@@ -966,20 +962,20 @@ int HDF5HeaderData::writeToLocation(hid_t loc_id) const
       p!= mapName.end(); ++p)                                             \
     {                                                                     \
       hid_t aid  = H5Screate(H5S_SCALAR);                                 \
-      H5Eset_auto2(H5E_DEFAULT, NULL, NULL);				\
+      H5Eset_auto2(H5E_DEFAULT, NULL, NULL);                            \
       hid_t attr = H5Acreate2(loc_id, p->first.c_str(), H5Ttype,           \
-			      aid, H5P_DEFAULT, H5P_DEFAULT);			\
+                              aid, H5P_DEFAULT, H5P_DEFAULT);                   \
       if (attr < 0)                                                        \
         {                                                                 \
           H5Adelete(loc_id, p->first.c_str());                            \
           attr = H5Acreate2(loc_id, p->first.c_str(), H5Ttype,             \
-			    aid, H5P_DEFAULT, H5P_DEFAULT);			          if (attr < 0)                                                    \
+                            aid, H5P_DEFAULT, H5P_DEFAULT);                               if (attr < 0)                                                    \
             {                                                             \
               sprintf(messg," Problem writing attribute %s",p->first.c_str());  \
               MayDay::Warning(messg);                                     \
             }                                                             \
         }                                                                 \
-      H5Eset_auto2(H5E_DEFAULT, efunc, edata);				\
+      H5Eset_auto2(H5E_DEFAULT, efunc, edata);                          \
       Ttype tmp = p->second;                                              \
       ret = H5Awrite(attr, H5Ttype, &tmp);                                \
       if (ret < 0) return ret;                                             \
@@ -1015,7 +1011,7 @@ int HDF5HeaderData::writeToLocation(hid_t loc_id) const
 #else
       H5Eset_auto2(H5E_DEFAULT,NULL, NULL);
       hid_t attr = H5Acreate2(loc_id, p->first.c_str(), s_type,
-			      aid, H5P_DEFAULT, H5P_DEFAULT);
+                              aid, H5P_DEFAULT, H5P_DEFAULT);
 #endif
       if (attr < 0)
         {
@@ -1025,7 +1021,7 @@ int HDF5HeaderData::writeToLocation(hid_t loc_id) const
                            aid, H5P_DEFAULT);
 #else
           attr = H5Acreate2(loc_id, p->first.c_str(), s_type,
-			    aid, H5P_DEFAULT,H5P_DEFAULT);
+                            aid, H5P_DEFAULT,H5P_DEFAULT);
 #endif
           if (attr < 0)
             {
@@ -1262,7 +1258,7 @@ void createData(hid_t& a_dataset,
   H5Eset_auto2(H5E_DEFAULT,efunc, edata);
   a_dataspace = H5Screate_simple(1, flatdims, NULL);
   a_dataset   = H5Dcreate2(handle.groupID(), name.c_str(),  type,
-			   a_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                           a_dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #endif
 
 }
