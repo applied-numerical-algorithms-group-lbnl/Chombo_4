@@ -12,6 +12,7 @@
 #define _CH_TIMER_H_
 
 #include "Proto_Timer.H"
+#include "SPMD.H"
 
 
 
@@ -25,8 +26,34 @@
 #define CH_TIMER_REPORT()          PR_TIMER_REPORT()
 #define CH_TIMER_RESET()           PR_TIMER_RESET() 
 #define CH_TIMER_PRUNE(threshold)  PR_TIMER_PRUNE(threshold)
-#define CH_TIMER_SETFILE(filename) PR_TIMER_SETFILE(filename)
 
+inline void CH_TIMER_SETFILE(const char* a_prefix_string = "chombo.time.table")
+{
+#ifndef CH_MPI
+  std::string name(a_prefix_string);
+#else
+  char char_str[1024];
+
+  int outInterv = 1;
+  char* charInterv = getenv("CH_OUTPUT_INTERVAL");
+  if (charInterv != NULL)
+  {
+    outInterv =  atoi(charInterv);
+  }
+  int thisProc = procID();
+  if ((thisProc % outInterv) != 0)
+  {
+    sprintf(char_str,"/dev/null");
+  }
+  else
+  {
+    sprintf(char_str, "%s.%d",a_prefix_string, procID());
+  }
+
+  std::string name(char_str);
+#endif
+  PR_TIMER_SETFILE(name.c_str());
+}
 
 
 
