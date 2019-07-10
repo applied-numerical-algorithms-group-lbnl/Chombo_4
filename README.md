@@ -16,9 +16,11 @@ handles all MPI and HDF5 interactions.
      - Specify your PROTO location.
 3. Configure the examples using Chobmo_4/examples/configure.example
    - For example type 
-   ```
+
+```
 <unix prompt>   ./configure --opt TRUE --mpi  FALSE --dim 3 --cuda TRUE 
 ```
+
    - The configuration parameters are given by:
 ```
 <unix prompt>  ./configure.example --help
