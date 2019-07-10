@@ -1,3 +1,5 @@
+VARS_OLD := $(.VARIABLES)
+PROTO_HOME = $(HOME)/_proto/proto
 
 PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=g++
