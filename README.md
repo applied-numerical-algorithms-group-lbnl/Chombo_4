@@ -17,7 +17,7 @@ handles all MPI and HDF5 interactions.
 3. Configure the examples using Chobmo_4/examples/configure.example
    - For example type ./configure --opt TRUE --mpi  FALSE --dim 3 --cuda TRUE
    - The configuration parameters are given by:
-...
+```
 <unix prompt>  ./configure.example --help
 usage: configure.example [-h] [--dim DIM] [--opt {DEBUG,TRUE}] [--mpi {TRUE,FALSE}] [--hdf5 {TRUE,FALSE}] [--prec {SINGLE,DOUBLE}] [--cuda {TRUE,FALSE}]
 
@@ -29,6 +29,6 @@ optional arguments:
   --hdf5 {TRUE,FALSE}     HDF5 on or off [FALSE]
   --prec {SINGLE,DOUBLE}  precision [DOUBLE]
   --cuda {TRUE,FALSE}     CUDA on or off [FALSE]
-...
+```
 4.  This will create a GNUmakefile in each example directory.
 5.  Go into the example dirctory and type 'make'
