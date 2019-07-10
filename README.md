@@ -10,10 +10,10 @@ handles all MPI and HDF5 interactions.
    - cp Make.defs.local.template Make.defs.local*
      - There are other examples of configuration files in Chombo_4/mk/local
    - Edit the configuration file 
-     -specify your HDF5 location
-     -specify your c++ compiler
-     -specify your flags
-     -specify your PROTO location
+     - Specify your HDF5 location.
+     - Specify your c++ compiler.
+     - Specify your compiler flags.
+     - Specify your PROTO location.
 3. Configure the examples using Chobmo_4/examples/configure.example
    - For example type ./configure --opt TRUE --mpi  FALSE --dim 3 --cuda TRUE
    - The configuration parameters are given by:
