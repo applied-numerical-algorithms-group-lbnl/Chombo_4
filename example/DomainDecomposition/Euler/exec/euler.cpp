@@ -30,6 +30,10 @@
 #include "LoadBalance.H"
 #include "ProtoInterface.H"
 #include "BRMeshRefine.H"
+#include <string>
+#include <iostream>
+#include <sstream>
+
 #include "Box.H"
 
 #define PI 3.141592653589793
@@ -50,6 +54,13 @@ using   ProtoCh::getBox;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
+
+string convertInt(int number)
+{
+  std::stringstream ss;//create a stringstream
+  ss << number;//add number to the stream
+  return ss.str();//return a string with the contents of the stream
+}
 
 class RunParams
 {
@@ -166,9 +177,8 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 void 
 writeData(int step, LevelBoxData<NUMCOMPS> & a_U)
 {
-//  char filename[1024];
-//  sprintf(filename, "state.step%d.%d.hdf5",step, DIM);
-//  writeLevelBoxData(a_U, filename);
+  string filename = string("state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
+  a_U.writeToFileHDF5(filename);
 }
 /***/
 void eulerRun(const RunParams& a_params)
