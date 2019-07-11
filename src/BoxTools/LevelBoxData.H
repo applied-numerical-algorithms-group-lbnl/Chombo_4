@@ -13,6 +13,7 @@
 
 #include "LevelData.H"
 #include "Proto.H"
+#include "AMRIO.H"
 #include "ProtoInterface.H"
 #include "NamespaceHeader.H"
 
@@ -95,7 +96,13 @@ public:
   }
     
 
-
+  void 
+  writeToFileHDF5(const string& a_filename) const
+  {
+    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+    copyToHost(hostdata, *this);
+    writeLevelname(&hostdata, a_filename.c_str());
+  }
 
   ///
   static 
