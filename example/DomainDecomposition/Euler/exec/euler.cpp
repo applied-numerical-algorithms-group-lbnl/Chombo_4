@@ -294,12 +294,10 @@ int main(int a_argc, char* a_argv[])
     //std::cout << " running euler exmaple " << std::endl;
     eulerRun(params);
   }
-  
-#ifdef CH_MPI
-  //std::cout << "about to write timer report " << std::endl;
   CH_TIMER_REPORT();
+#ifdef CH_MPI
+  //std::cout << "about to write timer report " << std::endl;  
   MPI_Finalize();
 #endif
-
   return 0;
 }
