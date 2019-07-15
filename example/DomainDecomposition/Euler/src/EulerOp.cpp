@@ -34,6 +34,8 @@ Copier          EulerOp::s_exchangeCopier;
 
 typedef BoxData<Real,1,1,1> PScalar;
 typedef BoxData<Real,NUMCOMPS,1,1> PVector;
+using Proto::forall;
+using Proto::forallOp;
 
 PROTO_KERNEL_START
 void 
@@ -185,11 +187,16 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
 
   Real gamma = s_gamma;
   Real retval;
+  unsigned long long int sqrtnum = 10;  //this one is just a guess
+  unsigned long long int ctoprmnum  = 4*DIM + 5;
+  unsigned long long int upwindnum  = sqrtnum + 25;
+  unsigned long long int getfluxnum = 9 + DIM*3;
+  unsigned long long int wavespdnum = sqrtnum +3 + DIM;
 
-  PVector W_bar = forall<Real,NUMCOMPS>(consToPrim,a_U, gamma);
+  PVector W_bar = forallOp<Real,NUMCOMPS>(ctoprmnum, string("consToPrim"), consToPrim,a_U, gamma);
   PVector U = s_deconvolve(a_U);
-  PVector W = forall<Real,NUMCOMPS>(consToPrim,U, gamma);
-  PScalar umax = forall<Real>(waveSpeedBound,a_rangeBox,W, gamma);
+  PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, string("consToPrim"), consToPrim,U, gamma);
+  PScalar umax = forallOp<Real>(wavespdnum, string("wavespeed"),waveSpeedBound,a_rangeBox,W, gamma);
   retval = umax.absMax();
   PVector W_ave = s_laplacian(W_bar,1.0/24.0);
   W_ave += W;
@@ -200,12 +207,12 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
     PVector W_ave_high = s_interp_H[d](W_ave);
     CH_STOP(tint);
     CH_START(trie);
-    PVector W_ave_f = forall<Real,NUMCOMPS>(
+    PVector W_ave_f = forallOp<Real,NUMCOMPS>(upwindnum, string("upwind"),
       upwindState,W_ave_low, W_ave_high,d,  gamma);
     CH_STOP(trie);
     CH_START(tgf);
 #if DIM>1
-    PVector F_bar_f = forall<Real,NUMCOMPS>(getFlux, W_ave_f, d,  gamma);
+    PVector F_bar_f = forallOp<Real,NUMCOMPS>(getfluxnum, string("getflux"),getFlux, W_ave_f, d,  gamma);
 #endif
     CH_STOP(tgf);
     CH_START(tdcv);
@@ -216,7 +223,7 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
 #endif
     CH_STOP(tdcv);
     CH_START(tgf2);
-    PVector F_ave_f = forall<Real,NUMCOMPS>(getFlux, W_f, d, gamma);
+    PVector F_ave_f = forallOp<Real,NUMCOMPS>(getfluxnum, string("getflux"),getFlux, W_f, d, gamma);
     CH_STOP(tgf2);
     CH_START(tlap);
 #if DIM>1
@@ -305,6 +312,9 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U)
   }
   a_U.exchange(s_exchangeCopier);
   Real maxwaveproc = 0;
+  unsigned long long int ctoprmnum  = 4*DIM + 5;
+  unsigned long long int sqrtnum = 10;  //this one is just a guess
+  unsigned long long int wavespdnum = sqrtnum +3 + DIM;
 
   Real gamma = s_gamma;
   DataIterator dit = grids.dataIterator();
@@ -315,8 +325,8 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U)
     Bx  pgrid = ProtoCh::getProtoBox(grid);
     BoxData<Real, NUMCOMPS>& ubd =  a_U[dit[ibox]];
     PVector U = s_deconvolve(ubd);
-    PVector W = forall<Real,NUMCOMPS>(consToPrim,ubd, gamma);
-    PScalar umax = forall<Real>(waveSpeedBound,pgrid,W, gamma);
+    PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, string("consToPrim"),consToPrim,ubd, gamma);
+    PScalar umax = forallOp<Real>(wavespdnum, string("wavespeed"),waveSpeedBound,pgrid,W, gamma);
     Real maxwavegrid = umax.absMax();
     maxwaveproc = std::max(maxwavegrid, maxwaveproc);
   }
