@@ -102,7 +102,7 @@ public:
                shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
     m_graphs = a_graphs;
-    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, EBBoxDataFactory<cent, NUMCOMPS>(a_graphs));nn
+    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, EBBoxDataFactory<cent, NUMCOMPS>(a_graphs));
   }
 
 
@@ -144,56 +144,74 @@ public:
 
   ///
   static 
-  void copyToHost(LevelData<FArrayBox>                      & a_hostDat,
-                  const LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat)
+  void copyToHost(LevelData<      EBHostData<cent, NUMCOMPS> > & a_hostDat,
+                  const LevelData< EBBoxData<cent, NUMCOMPS> > & a_deviDat)
   {
+    LevelData< EBBoxData<cent, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, NUMCOMPS> > &> (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      FArrayBox & hostfab                     = a_hostDat[dit[ibox]];
-      const BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
-      size_t datSize = sizeof(Real)*devifab.size();
-      Real*       hostPtr = hostfab.dataPtr(0);
-      const Real* deviPtr = devifab.dataPtr(0);
-#ifdef PROTO_CUDA
-      cudaMemcpy(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost);
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      EBHostData<cent, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData< cent, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
-      }
+        size_t fabsizeHost, fabsizeDevi; 
+        Real*  dataptrHost, dataptrDevi;
+        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
+        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+
+        size_t datSize = sizeof(Real)*fabsizedevi;
+
+#ifdef PROTO_CUDA
+        cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
+        cudaError err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, cudaGetErrorString(err));
+        }
 #else
-      memcpy(hostPtr, deviPtr, datSize);
+        memcpy(dataptrHost, dataptrDevi, datSize);
 #endif  
+      }
     }
   }
 
   ///
+  ///
   static 
-  void copyToDevice(LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat,
-                    const LevelData<FArrayBox>          & a_hostDat) 
+  void copyToDevice(LevelData<        EBBoxData<cent, NUMCOMPS> > & a_deviDat,
+                    const LevelData< EBHostData<cent, NUMCOMPS> > & a_hostDat)
   {
+    LevelData< EBBoxData<cent, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, NUMCOMPS> > &> (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      const FArrayBox & hostfab         = a_hostDat[dit[ibox]];
-      BoxData<Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
-      size_t datSize = sizeof(Real)*devifab.size();
-      const Real* hostPtr = hostfab.dataPtr(0);
-      Real*       deviPtr = devifab.dataPtr(0);
-#ifdef PROTO_CUDA
-      cudaMemcpy(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice);
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      EBHostData<cent, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData< cent, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
-      }
+        size_t fabsizeHost, fabsizeDevi; 
+        Real*  dataptrHost, dataptrDevi;
+        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
+        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+
+        size_t datSize = sizeof(Real)*fabsizedevi;
+
+#ifdef PROTO_CUDA
+        cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
+        cudaError err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, cudaGetErrorString(err));
+        }
 #else
-      memcpy(deviPtr, hostPtr, datSize);
+        memcpy(dataptrDevi, dataptrHost, datSize);
 #endif  
+      }
     }
+  }
 
 
   private:

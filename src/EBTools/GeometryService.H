@@ -1,245 +1,320 @@
+#ifdef CH_LANG_CC
+/*
+ *      _______              __
+ *     / ___/ /  ___  __ _  / /  ___
+ *    / /__/ _ \/ _ \/  V \/ _ \/ _ \
+ *    \___/_//_/\___/_/_/_/_.__/\___/
+ *    Please refer to Copyright.txt, in Chombo's root directory.
+ */
+#endif
+
 
 #ifndef _Proto_GeometryService_H_
 #define _Proto_GeometryService_H_
 
 
+#include "LevelData.H"
+#include "Proto.H"
+#include "AMRIO.H"
+#include "ProtoInterface.H"
 #include "EBProto.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
-#include "Proto_LSquares.H"
-#include "Proto_BaseIF.H"
-#include "Proto_IrregNode.H"
-#include "Proto_IrregData.H"
-#include "Proto_CutCellMoments.H"
-#include "Proto_HostBoxData.H"
-#include "Proto_HostIrregData.H"
-#include "Proto_PointSet.H"
+#include "NamespaceHeader.H"
+
 using std::shared_ptr;
 using std::vector;
 
-namespace Proto
+///
+/**
+   makes geometric description from an implicit function.
+*/
+template <int order>
+class LevelGeometryService
 {
+
+public:
+
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  typedef IrregNode<order> inode;
+  typedef HostIrregData<CELL,  IndMomDIM     , 1>  VoluData;
+  typedef HostIrregData<CELL,  IndMomDIM     , 1>  EBFaData;
+  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
 
   ///
   /**
-     makes geometric description from an implicit function.
+     basif      :  implicit function
+     origin     :  location of the lower left corner of the domain
+     dx         :  grid spacing
+     domain     :  finest domain in the calculation
+     finestGrids:  layout of the finest domain
+     ghost      :  maximum number of ghost cells needed in calculation
+     maxCoarsen :  maximum level of coarsening 
   */
-  template <int order>
-  class GeometryService
+  GeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
+                  const RealVect               &      a_origin,
+                  const double                 &      a_dx,
+                  const Box                    &      a_domain,
+                  const DisjointBoxLayout      &      a_grids,
+                  const Point                  &      a_ghost,
+                  int                                 a_maxCoarsen);
+
+
+
+  ///
+  /**
+     Define the internals of the input ebisRegion.   Public for testing.
+  */
+  inline void fillGraph(HostBoxData<int>          &   a_regIrregCovered,
+                        vector<inode>             &   a_nodes,
+                        const Box                 &   a_validRegion,
+                        const Box                 &   a_ghostRegion,
+                        const Box                 &   a_domain) const;
+
+
+  inline int getLevel(const Box & a_domain)
   {
-
-  public:
-
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef MomentIterator<DIM  , order> MomItDIM;
-    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
-    typedef IrregNode<order> inode;
-    typedef HostIrregData<CELL,  IndMomDIM     , 1>  VoluData;
-    typedef HostIrregData<CELL,  IndMomDIM     , 1>  EBFaData;
-    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-
-    ///
-    /**
-       basif      :  implicit function
-       origin     :  location of the lower left corner of the domain
-       dx         :  grid spacing
-       domain     :  finest domain in the calculation
-       finestGrids:  layout of the finest domain
-       ghost      :  maximum number of ghost cells needed in calculation
-       maxCoarsen :  maximum level of coarsening 
-    */
-    GeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
-                    const RealVect               &      a_origin,
-                    const double                 &      a_dx,
-                    const Box                    &      a_domain,
-                    const DisjointBoxLayout      &      a_finestGrids,
-                    const Point                  &      a_ghost,
-                    int                                 a_maxCoarsen);
-
-
-
-    ///
-    /**
-       Define the internals of the input ebisRegion.   Public for testing.
-    */
-    inline void fillGraph(HostBoxData<int>          &   a_regIrregCovered,
-                          vector<inode>             &   a_nodes,
-                          const Box                 &   a_validRegion,
-                          const Box                 &   a_ghostRegion,
-                          const Box                 &   a_domain) const;
-
-
-    inline int getLevel(const Box & a_domain)
+    int retval = -1;
+    bool found = false;
+    for(int ilev = 0; ilev < m_domains.size(); ilev++)
     {
-      int retval = -1;
-      bool found = false;
-      for(int ilev = 0; ilev < m_domains.size(); ilev++)
+      if(m_domains[ilev] == a_domain)
       {
-        if(m_domains[ilev] == a_domain)
-        {
-          retval = ilev;
-          found = true;
-          break;
-        }
+        retval = ilev;
+        found = true;
+        break;
       }
-      PROTO_ASSERT(found, "did not find asked-for domain");
-      if(!found)
-      {
-        std::cout<< "did not find asked-for domain" << std::endl;
-        abort();
-      }
-      return retval;
     }
+    PROTO_ASSERT(found, "did not find asked-for domain");
+    if(!found)
+    {
+      std::cout<< "did not find asked-for domain" << std::endl;
+      abort();
+    }
+    return retval;
+  }
     
-    ///
-    inline shared_ptr<LevelData<EBGraph>  >
-    getGraphs(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return   m_graphs[lev];
-    }
-    ///
-    inline shared_ptr<LevelData<VoluData> >
-    getVoluData(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return m_voludata[lev];
-    }
-    ///
-    inline shared_ptr<LevelData<EBFaData> >
-    getEBFaceData(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return m_ebfadata[lev];
-    }
-    ///
-    inline shared_ptr<LevelData<XFacData> >
-    getXFaceData(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return m_xfacdata[lev];
-    }
-    ///
-    inline shared_ptr<LevelData<YFacData> >
-    getYFaceData(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return m_yfacdata[lev];
-    }
-    ///
-    inline shared_ptr<LevelData<ZFacData> >
-    getZFaceData(const Box& a_domain)
-    {
-      int lev = getLevel(a_domain);
-      return m_zfacdata[lev];
-    }
+  ///
+  inline shared_ptr<LevelData<EBGraph>  >
+  getGraphs(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return   m_graphs[lev];
+  }
+  ///
+  inline shared_ptr<LevelData<VoluData> >
+  getVoluData(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return m_voludata[lev];
+  }
+  ///
+  inline shared_ptr<LevelData<EBFaData> >
+  getEBFaceData(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return m_ebfadata[lev];
+  }
+  ///
+  inline shared_ptr<LevelData<XFacData> >
+  getXFaceData(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return m_xfacdata[lev];
+  }
+  ///
+  inline shared_ptr<LevelData<YFacData> >
+  getYFaceData(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return m_yfacdata[lev];
+  }
+  ///
+  inline shared_ptr<LevelData<ZFacData> >
+  getZFaceData(const Box& a_domain)
+  {
+    int lev = getLevel(a_domain);
+    return m_zfacdata[lev];
+  }
 
-  protected:
+protected:
 
-    void
-    defineFinestLevel(const RealVect               & a_origin,
-                      const double                 & a_dx );
-
-
-    bool onBoxBoundary(const Point        & a_iv, 
-                       const Box            & a_box,
-                       const int            & a_dir,
-                       const Side::LoHiSide & a_sd) const;
+  void
+  defineFinestLevel(const RealVect               & a_origin,
+                    const double                 & a_dx );
 
 
-
-    //converts a RealVect in physical coordinates to a RealVect in coordinates relative to a cell center
-    inline RealVect convert2RelativeCoord(const RealVect& a_rVect)const;
-
-    //converts a IndexTM<double,DIM> in physical coordinates to a
-    //RealVect in coordinates relative to a cell center
-    inline RealVect convert2RelativeCoord(const IndexTM<double,DIM>& a_rVect)const;
-
-    inline void
-    fillNewNode(inode                    &     a_node,
-                const PointSet           &     a_ivsIrreg,
-                const Point              &     a_iv) const;
+  bool onBoxBoundary(const Point        & a_iv, 
+                     const Box            & a_box,
+                     const int            & a_dir,
+                     const Side::LoHiSide & a_sd) const;
 
 
-    inline shared_ptr<BaseIF> getBaseIF() const
-    {
-      return m_baseIF;
-    }
 
-  private:
-    inline void
-    fixRegularCellsNextToCovered(vector<inode>       & a_nodes, 
-                                 HostBoxData<int>    & a_regIrregCovered,
-                                 const Box           & a_validRegion,
-                                 const Point         & a_iv) const;
-    inline void
-    getFullNodeWithCoveredFace(inode                   & a_newNode, 
-                               const HostBoxData<int>  & a_regIrregCovered,
-                               const Point             & a_iv) const;
+  //converts a RealVect in physical coordinates to a RealVect in coordinates relative to a cell center
+  inline RealVect convert2RelativeCoord(const RealVect& a_rVect)const;
+
+  //converts a IndexTM<double,DIM> in physical coordinates to a
+  //RealVect in coordinates relative to a cell center
+  inline RealVect convert2RelativeCoord(const IndexTM<double,DIM>& a_rVect)const;
+
+  inline void
+  fillNewNode(inode                    &     a_node,
+              const PointSet           &     a_ivsIrreg,
+              const Point              &     a_iv) const;
+
+
+  inline shared_ptr<BaseIF> getBaseIF() const
+  {
+    return m_baseIF;
+  }
+
+private:
+  inline void
+  fixRegularCellsNextToCovered(vector<inode>       & a_nodes, 
+                               HostBoxData<int>    & a_regIrregCovered,
+                               const Box           & a_validRegion,
+                               const Point         & a_iv) const;
+  inline void
+  getFullNodeWithCoveredFace(inode                   & a_newNode, 
+                             const HostBoxData<int>  & a_regIrregCovered,
+                             const Point             & a_iv) const;
 
   
   
-    ///these vectors are of the length of number of coarsenings
+  ///these vectors are of the length of number of coarsenings
 
-    ///
-    vector<Box>                                     m_domains;
+  ///
+  vector<Box>                                     m_domains;
     
-    ///
-    vector<DisjointBoxLayout>                       m_grids;
+  ///
+  vector<DisjointBoxLayout>                       m_grids;
                                                     
-    ///                                             
-    vector<shared_ptr<LevelData<EBGraph> >  >       m_graphs;
+  ///                                             
+  vector<shared_ptr<LevelData<EBGraph> >  >       m_graphs;
 
-    ///
-    vector<shared_ptr<LevelData<VoluData> > >       m_voludata;
+  ///
+  vector<shared_ptr<LevelData<VoluData> > >       m_voludata;
 
-    ///
-    vector<shared_ptr<LevelData<EBFaData> > >       m_ebfadata;
+  ///
+  vector<shared_ptr<LevelData<EBFaData> > >       m_ebfadata;
 
-    ///
-    vector<shared_ptr<LevelData<XFacData> > >       m_xfacdata;
+  ///
+  vector<shared_ptr<LevelData<XFacData> > >       m_xfacdata;
 
-    ///
-    vector<shared_ptr<LevelData<YFacData> > >       m_yfacdata;
+  ///
+  vector<shared_ptr<LevelData<YFacData> > >       m_yfacdata;
 
-    ///
-    vector<shared_ptr<LevelData<ZFacData> > >       m_zfacdata;
+  ///
+  vector<shared_ptr<LevelData<ZFacData> > >       m_zfacdata;
     
-    double                m_threshold;
+  double                m_threshold;
 
-    //origin
-    RealVect            m_origin;
+  //origin
+  RealVect            m_origin;
 
-    int                 m_order;
-    int                 m_degreeP;
-    double              m_dx;
+  int                 m_order;
+  int                 m_degreeP;
+  double              m_dx;
 
-    Box m_domain;
-    Point m_geomgrow;
+  Box m_domain;
+  Point m_geomgrow;
 
-    shared_ptr<BaseIF>       m_baseIF;
+  shared_ptr<BaseIF>       m_baseIF;
   
 
-    inline void fillArc(vector<int>                          a_arc[DIM],
-                        CutCellMoments<DIM>            &     a_cutCellMoments,
-                        const int                      &     a_hilo,
-                        const PointSet                 &     a_ivsIrreg,
-                        const Point                    &     a_curriv) const;
+  inline void fillArc(vector<int>                          a_arc[DIM],
+                      CutCellMoments<DIM>            &     a_cutCellMoments,
+                      const int                      &     a_hilo,
+                      const PointSet                 &     a_ivsIrreg,
+                      const Point                    &     a_curriv) const;
 
 
-    //stuff disallowed for all the usual reasons.
-  private:
-    GeometryService();
+  //stuff disallowed for all the usual reasons.
+private:
+  LevelGeometryService();
 
-    GeometryService(const GeometryService& a_workshopin);
+  LevelGeometryService(const GeometryService& a_workshopin);
 
-    void operator=(const GeometryService& a_workshopin);
+  void operator=(const LeveleometryService& a_workshopin);
 
 
-  };
-}
-#include "Proto_GeometryServiceImplem.H"
+};
+
+
+
+
+///
+/**
+   makes geometric description from an implicit function.
+*/
+template <int order>
+class GeometryService
+{
+
+public:
+
+
+  ///
+  /**
+     basif      :  implicit function
+     origin     :  location of the lower left corner of the domain
+     dx         :  grid spacing
+     domain     :  finest domain in the calculation
+     finestGrids:  layout of the finest domain
+     ghost      :  maximum number of ghost cells needed in calculation
+  */
+  GeometryService(const shared_ptr<BaseIF>          &      a_baseIF,
+                  const RealVect                    &      a_origin,
+                  const double                      &      a_dx,
+                  const Box                         &      a_finestDomain,
+                  const Vector<DisjointBoxLayout>   &      a_finestGrids,
+                  const Point                       &      a_ghost);
+
+
+
+
+  inline shared_ptr<LevelGeometryService> operator[](const Box& a_domain)
+  {
+    int ilev = getLevel(a_domain);
+    return m_levels[ilev];
+  }
+
+protected:
+
+  inline int getLevel(const Box & a_domain)
+  {
+    int retval = -1;
+    bool found = false;
+    for(int ilev = 0; ilev < m_domains.size(); ilev++)
+    {
+      if(m_domains[ilev] == a_domain)
+      {
+        retval = ilev;
+        found = true;
+        break;
+      }
+    }
+
+    PROTO_ASSERT(found, "did not find asked-for domain");
+
+    return retval;
+  }
+
+
+  //stuff disallowed for all the usual reasons.
+private:
+  GeometryService();
+
+  GeometryService(const GeometryService& a_workshopin);
+
+  void operator=(const GeometryService& a_workshopin);
+
+
+};
+#include "NamespaceFooter.H"
+#include "GeometryServiceImplem.H"
 #endif
