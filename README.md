@@ -7,7 +7,7 @@ handles all MPI and HDF5 interactions.
 
 ## Build instructions:
 1. Create the configuration file (Chombo_4/mk/Make.defs.local)
-   - cp Make.defs.local.template Make.defs.local*
+   - cp Make.defs.local.template Make.defs.local
      - There are other examples of configuration files in Chombo_4/mk/local
    - Edit the configuration file 
      - Specify your HDF5 location.
