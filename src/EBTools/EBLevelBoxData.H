@@ -19,6 +19,10 @@
 #include "NamespaceHeader.H"
 
 using Proto::BoxData;
+using Proto::CENTERING;
+using Proto::EBBoxData;
+using Proto::EBHostData;
+using Proto::EBGraph;
 ///
 /**
 */
@@ -31,7 +35,7 @@ public:
   virtual EBBoxData<cent, Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
   {
     Proto::Box bx = ProtoCh::getProtoBox(box);
-    return new EBBoxData<cent Real, NUMCOMPS>(bx, (*m_graphs)[a_datInd]);
+    return new EBBoxData<cent, Real, NUMCOMPS>(bx, (*m_graphs)[a_datInd]);
   }
   
   EBBoxDataFactory(shared_ptr<LevelData<EBGraph>  > a_graphs)

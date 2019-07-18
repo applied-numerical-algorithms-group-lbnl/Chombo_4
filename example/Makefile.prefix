@@ -4,6 +4,7 @@ SRC += $(wildcard ../src/*.cpp)
 SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
 
 NODIRSRC = $(notdir $(SRC))
 NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
@@ -12,7 +13,7 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 NODIRDEP = $(subst .cpp,.d,$(NODIRSRC))
 DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 
-VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
+VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools $(CHOMBO_HOME)/src/EBTools 
 
 
 

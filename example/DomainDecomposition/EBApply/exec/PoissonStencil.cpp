@@ -105,7 +105,7 @@ runTest(int a_argc, char* a_argv[])
   RealVect origin = RealVect::Zero();
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain, grids, geomGhost, 0));
-
+#if 0
   EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhost, dataGhost, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
@@ -137,6 +137,7 @@ runTest(int a_argc, char* a_argv[])
       stencil->apply(dstData[ibox], srcData[ibox]);
     }
   }
+#endif
   return 0;
 }
 

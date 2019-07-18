@@ -1,12 +1,13 @@
 
-CHOMBO_HOME := /autofs/nccs-svm1_home1/dtgraves/_chombo4/Chombo_4/example/..
-DIM := 3
+CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
+DIM := 2
 
 SRC := $(wildcard *.cpp) 
 SRC += $(wildcard ../src/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
 
 NODIRSRC = $(notdir $(SRC))
 NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
@@ -15,32 +16,34 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 NODIRDEP = $(subst .cpp,.d,$(NODIRSRC))
 DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 
-VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
+VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools $(CHOMBO_HOME)/src/EBTools 
 
 
 
 
 
 
+VARS_OLD := $(.VARIABLES)
+PROTO_HOME = $(HOME)/_proto/proto
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=mpiCC
-CXX=mpiCC
+DEPXX=g++
+CXX=g++
 
-CXXALLFLAGS := -std=c++11 -Wno-variadic-macros -Wno-mismatched-tags -Wno-unused-variable -Wno-overloaded-virtual
-CXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)
-CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
+CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
-LAPACKLIBS =  -lgfortran -lm  
-HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
-HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
 #end mach dependent
 
 
 
 
 
-CPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
 CPPFLAGS += -DCH_USE_HDF5
 CXXFLAGS += -DCH_USE_DOUBLE
 CXXFLAGS+=$(CXXDBGFLAGS) 
@@ -48,6 +51,7 @@ CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
+CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools
 CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
 CPPFLAGS += $(HDFINCFLAGS) 
 

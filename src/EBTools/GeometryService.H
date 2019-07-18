@@ -54,13 +54,20 @@ public:
      ghost      :  maximum number of ghost cells needed in calculation
      maxCoarsen :  maximum level of coarsening 
   */
-  GeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
-                  const RealVect               &      a_origin,
-                  const double                 &      a_dx,
-                  const Box                    &      a_domain,
-                  const DisjointBoxLayout      &      a_grids,
-                  const Point                  &      a_ghost,
-                  int                                 a_maxCoarsen);
+  LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
+                       const RealVect               &      a_origin,
+                       const double                 &      a_dx,
+                       const Box                    &      a_domain,
+                       const DisjointBoxLayout      &      a_grids,
+                       const Point                  &      a_ghost);
+
+
+
+  LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
+                       const DisjointBoxLayout      &      a_grids)
+  {
+    MayDay::Error("not implemented");
+  }
 
 
 
@@ -75,76 +82,54 @@ public:
                         const Box                 &   a_domain) const;
 
 
-  inline int getLevel(const Box & a_domain)
-  {
-    int retval = -1;
-    bool found = false;
-    for(int ilev = 0; ilev < m_domains.size(); ilev++)
-    {
-      if(m_domains[ilev] == a_domain)
-      {
-        retval = ilev;
-        found = true;
-        break;
-      }
-    }
-    PROTO_ASSERT(found, "did not find asked-for domain");
-    if(!found)
-    {
-      std::cout<< "did not find asked-for domain" << std::endl;
-      abort();
-    }
-    return retval;
-  }
     
   ///
-  inline shared_ptr<LevelData<EBGraph>  >
-  getGraphs(const Box& a_domain)
+  inline const shared_ptr<LevelData<EBGraph>  >
+  getGraphs() const
   {
-    int lev = getLevel(a_domain);
-    return   m_graphs[lev];
+    return   m_graphS;
   }
+
   ///
-  inline shared_ptr<LevelData<VoluData> >
-  getVoluData(const Box& a_domain)
+  inline const shared_ptr<LevelData<VoluData> >
+  getVoluData() const
   {
-    int lev = getLevel(a_domain);
-    return m_voludata[lev];
+    return m_voludata;
   }
+
   ///
-  inline shared_ptr<LevelData<EBFaData> >
-  getEBFaceData(const Box& a_domain)
+  inline const shared_ptr<LevelData<EBFaData> >
+  getEBFaceData() const
   {
-    int lev = getLevel(a_domain);
-    return m_ebfadata[lev];
+    return m_ebfadata;
   }
+
   ///
-  inline shared_ptr<LevelData<XFacData> >
-  getXFaceData(const Box& a_domain)
+  inline const shared_ptr<LevelData<XFacData> >
+  getXFaceData() const
   {
-    int lev = getLevel(a_domain);
-    return m_xfacdata[lev];
+    return m_xfacdata;
   }
+
   ///
-  inline shared_ptr<LevelData<YFacData> >
-  getYFaceData(const Box& a_domain)
+  inline const shared_ptr<LevelData<YFacData> >
+  getYFaceData() const
   {
-    int lev = getLevel(a_domain);
-    return m_yfacdata[lev];
+    return m_yfacdata;
   }
+
   ///
-  inline shared_ptr<LevelData<ZFacData> >
-  getZFaceData(const Box& a_domain)
+  inline const shared_ptr<LevelData<ZFacData> > const
+  getZFaceData()
   {
-    int lev = getLevel(a_domain);
-    return m_zfacdata[lev];
+    return m_zfacdata;
   }
 
 protected:
 
   void
-  defineFinestLevel(const RealVect               & a_origin,
-                    const double                 & a_dx );
+  define(const RealVect               & a_origin,
+         const double                 & a_dx );
 
 
   bool onBoxBoundary(const Point        & a_iv, 
@@ -185,31 +170,29 @@ private:
 
   
   
-  ///these vectors are of the length of number of coarsenings
-
   ///
-  vector<Box>                                     m_domains;
+  Box                                     m_domain;
     
   ///
-  vector<DisjointBoxLayout>                       m_grids;
+  DisjointBoxLayout                       m_grids;
                                                     
   ///                                             
-  vector<shared_ptr<LevelData<EBGraph> >  >       m_graphs;
+  shared_ptr<LevelData<EBGraph> >         m_graphs;
 
   ///
-  vector<shared_ptr<LevelData<VoluData> > >       m_voludata;
+  shared_ptr<LevelData<VoluData> >        m_voludata;
 
   ///
-  vector<shared_ptr<LevelData<EBFaData> > >       m_ebfadata;
+  shared_ptr<LevelData<EBFaData> >        m_ebfadata;
 
   ///
-  vector<shared_ptr<LevelData<XFacData> > >       m_xfacdata;
+  shared_ptr<LevelData<XFacData> >        m_xfacdata;
 
   ///
-  vector<shared_ptr<LevelData<YFacData> > >       m_yfacdata;
+  shared_ptr<LevelData<YFacData> >        m_yfacdata;
 
   ///
-  vector<shared_ptr<LevelData<ZFacData> > >       m_zfacdata;
+  shared_ptr<LevelData<ZFacData> >        m_zfacdata;
     
   double                m_threshold;
 
@@ -257,6 +240,18 @@ class GeometryService
 
 public:
 
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  typedef IrregNode<order> inode;
+  typedef HostIrregData<CELL,  IndMomDIM     , 1>  VoluData;
+  typedef HostIrregData<CELL,  IndMomDIM     , 1>  EBFaData;
+  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+
+
 
   ///
   /**
@@ -269,14 +264,91 @@ public:
   */
   GeometryService(const shared_ptr<BaseIF>          &      a_baseIF,
                   const RealVect                    &      a_origin,
+                  const double                      &      a_finestDx,
+                  const Box                         &      a_finestDomain,
+                  const Vector<DisjointBoxLayout>   &      a_grids,
+                  const Point                       &      a_ghost)
+  {
+    int numLevels = a_grids.size();
+    m_levels.resize( numLevels);
+    m_domains.resize(numLevels);
+    m_levels[0] = shared_ptr<LevelGeometryService(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
+
+  }
+
+  ///
+  /**
+     single level define.
+     basif      :  implicit function
+     origin     :  location of the lower left corner of the domain
+     dx         :  grid spacing
+     domain     :  finest domain in the calculation
+     finestGrids:  layout of the finest domain
+     ghost      :  maximum number of ghost cells needed in calculation
+  */
+  GeometryService(const shared_ptr<BaseIF>          &      a_baseIF,
+                  const RealVect                    &      a_origin,
                   const double                      &      a_dx,
                   const Box                         &      a_finestDomain,
-                  const Vector<DisjointBoxLayout>   &      a_finestGrids,
-                  const Point                       &      a_ghost);
+                  const DisjointBoxLayout           &      a_grids,
+                  const Point                       &      a_ghost)
+  {
+    int numLevels = a_grids.size();
+    m_levels.resize( numLevels);
+    m_domains.resize(numLevels);
+    m_levels[0] = shared_ptr<LevelGeometryService(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
+    for(int ilev = 1; ilev < numLevels-1; ilev++)
+    {
+      m_levels[ilev] = shared_ptr<LevelGeometryService(m_levels[i-1], a_grids[i]);
+    }
+  }
 
 
 
 
+  ///
+  inline shared_ptr<LevelData<EBGraph>  >
+  getGraphs(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getGraphs();
+  }
+
+  ///
+  inline shared_ptr<LevelData<VoluData> >
+  getVoluData(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getVoluData();
+  }
+
+  ///
+  inline shared_ptr<LevelData<EBFaData> >
+  getEBFaceData(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getEBFaceData();
+  }
+
+  ///
+  inline shared_ptr<LevelData<XFacData> >
+  getXFaceData(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getXFaceData();
+  }
+
+  ///
+  inline shared_ptr<LevelData<YFacData> >
+  getYFaceData(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getYFaceData();
+  }
+
+  ///
+  inline shared_ptr<LevelData<ZFacData> >
+  getZFaceData(const Box& a_domain)
+  {
+    return   (*m_levels)[a_domain].getZFaceData();
+  }
+
+  ///
   inline shared_ptr<LevelGeometryService> operator[](const Box& a_domain)
   {
     int ilev = getLevel(a_domain);
@@ -284,6 +356,12 @@ public:
   }
 
 protected:
+
+  vector<Box>                               m_domains;
+  vector<shared_ptr<LevelGeometryService> > m_levels;
+
+
+private:
 
   inline int getLevel(const Box & a_domain)
   {
@@ -305,8 +383,7 @@ protected:
   }
 
 
-  //stuff disallowed for all the usual reasons.
-private:
+
   GeometryService();
 
   GeometryService(const GeometryService& a_workshopin);
@@ -315,6 +392,6 @@ private:
 
 
 };
-#include "NamespaceFooter.H"
 #include "GeometryServiceImplem.H"
+#include "NamespaceFooter.H"
 #endif
