@@ -12,7 +12,8 @@
 #include "LoadBalance.H"
 #include "ProtoInterface.H"
 #include "BRMeshRefine.H"
-
+#include "GeometryService.H"
+#include "EBChombo.H"
 #include <iomanip>
 
 #define MAX_ORDER 2
@@ -34,7 +35,8 @@ using     std::endl;
 using     std::shared_ptr;
 using   Proto::BaseIF;
 using   Proto::SimpleEllipsoidIF;
-
+using   Proto::CENTERING;
+using   Proto::CELL;
 int
 runTest(int a_argc, char* a_argv[])
 {
@@ -102,11 +104,13 @@ runTest(int a_argc, char* a_argv[])
   DisjointBoxLayout grids(boxes, procs, domain);
 
   IntVect dataGhost =   IntVect::Unit;
-  IntVect geomGhost = 2*IntVect::Unit;
+  int geomGhost = 2;
   RealVect origin = RealVect::Zero();
+  Real dx = 1.0/nx;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
+  Bx domainpr = getProtoBox(domain.domainBox());
+  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 #if 0
-  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain, grids, geomGhost, 0));
   EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhost, dataGhost, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
@@ -115,10 +119,10 @@ runTest(int a_argc, char* a_argv[])
 
   dictionary.registerStencil(stenname, dombcname, ebbcname);
 
-//  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(grids, domain);
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(grids, domain);
+  EBLevelBoxData<CELL,   1>  srcData(grids, dataGhost, graphs);
+  EBLevelBoxData<CELL,   1>  dstData(grids, dataGhost, graphs);
 
-  EBLevelBoxData<CELL,  Real, 1>  srcData(grids, dataGhost);
-  EBLevelBoxData<CELL,  Real, 1>  dstData(grids, dataGhost);
   DataIterator dit = grids.dataIterator();
 #pragma omp parallel for
   for(int ibox = 0; ibox < dit.size(); ibox++)

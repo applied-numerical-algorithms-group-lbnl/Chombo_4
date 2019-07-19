@@ -9,7 +9,7 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
                      const double                 &      a_dx,
                      const Box                    &      a_domain,
                      const DisjointBoxLayout      &      a_grids,
-                     const Point                  &      a_ghost)
+                     const int                    &      a_ghost)
 {
   PR_TIME("LevelGeometryService::LevelGeometryService");
 
@@ -24,16 +24,16 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
   m_grids  = a_grids;
   m_domain = a_domain;
 
-  m_graphs   = shared_ptr<LevelData<EBGraph>  > ( new LevelData<EBGraph> (m_grids[ilev], m_geomgrow));
-  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids[ilev], m_geomgrow));
-  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids[ilev], m_geomgrow));
-  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids[ilev], m_geomgrow));
-  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids[ilev], m_geomgrow));
-  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids[ilev], m_geomgrow));
+  m_graphs   = shared_ptr<LevelData<EBGraph>  > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow));
+  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow));
+  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow));
+  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow));
+  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow));
+  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow));
 
 //finest level of moment data comes from the geometry service
 //typically, you need graphs to be a bit bigger than the actual stencil
-  m_geomgrow = a_ghost + Point::Ones(1);
+  m_geomgrow = a_ghost*IntVect::Unit;
 
   defineFinestLevel(a_origin, a_dx);
 }
@@ -44,29 +44,32 @@ void LevelGeometryService<order>::
 defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
+  using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box validBox = m_grids[dit[ibox]];
     Box grownBox = validBox.grow(m_geomgrow);
-    Box interBox = grownBox & m_domains[0];
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    Bx domain   = getProtoBox(m_domain);
     if(m_baseIF->entireBoxRegular(interBox, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllRegular(interBox, m_domains[0]);
+      (*m_graphs)[dit[ibox]].defineAsAllRegular(interBox, domain);
     }
     else if(m_baseIF->entireBoxCovered(interBox, a_origin, a_dx))
     {
-      (*m_graphs)dit[[ibox]].defineAsAllCovered(interBox, m_domains[0]);
+      (*m_graphs)[dit[ibox]].defineAsAllCovered(interBox, domain);
     }
     else
     {
       HostBoxData<int> regIrregCovered;
       vector< IrregNode<order> > nodes;
-      fillGraph(regIrregCovered, nodes, validBox, interBox, m_domains[0]);
+      fillGraph(regIrregCovered, nodes, validBox, interBoxCh, m_domain);
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
-      (*m_graphs  )[dit[ibox]].defineFromPrimitives(regIrregCovered, irrgraph, interBox, m_domains[0]);
+      (*m_graphs  )[dit[ibox]].defineFromPrimitives(regIrregCovered, irrgraph, interBox, domain);
 //now fill in the moditment information
       (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
       (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
@@ -119,13 +122,15 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
   PR_TIME("LevelGeometryService::fillGraph");
 
   PR_assert(m_domain.contains(a_ghostRegion));
-  a_regIrregCovered.define(a_ghostRegion);
+  Bx ghostRegion = ProtoCh::getProtoBox(a_ghostRegion);
+  Bx validRegion = ProtoCh::getProtoBox(a_validRegion);
+  a_regIrregCovered.define(ghostRegion);
 
   PointSet ivsirreg;
   double thrshd = 1.0e-10;
   {
     PR_TIME("boxiterator loop");
-    for (auto bit = a_ghostRegion.begin(); bit != a_ghostRegion.end(); ++bit)
+    for (auto bit = ghostRegion.begin(); bit != ghostRegion.end(); ++bit)
     {
       const Point iv =*bit;
       RvgDim cellCenter;
@@ -161,7 +166,7 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
         //set irregular cells to 0
         //irregular if any face coincides with interface and edgeData.m_allVerticesIn = true
         a_regIrregCovered(iv, 0) =  0;
-        if (a_ghostRegion.contains(iv))
+        if (ghostRegion.contains(iv))
         {
           ivsirreg |= iv;
         }
@@ -169,7 +174,7 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
     }
   }
 //if a regular is next to a  covered, change to irregular with correct arcs and so on.
-  for (BoxIterator bit = a_ghostRegion.begin(); bit != a_ghostRegion.end() ; ++bit)
+  for (auto bit = ghostRegion.begin(); bit != ghostRegion.end() ; ++bit)
   {
     const Point iv =*bit;
 
@@ -217,7 +222,7 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
       {
         int isign = sign(sit());
         Point otherIV = iv + isign*Point::Basis(faceDir);
-        if (a_ghostRegion.contains(otherIV))
+        if (ghostRegion.contains(otherIV))
         {
           if (a_regIrregCovered(otherIV,0) == 0)
           {
@@ -235,7 +240,7 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
                 found = true;
               }
             }
-            if (!found && a_validRegion.contains(otherIV))
+            if (!found && validRegion.contains(otherIV))
             {
               PR_error("something wrong in our logic2");
             }
@@ -265,12 +270,14 @@ fixRegularCellsNextToCovered(vector<inode>       & a_nodes,
                              const Point         & a_iv) const
 
 {
-  Box ivbox(a_iv, a_iv);
-  Box grownBox = ivbox.grow(1) & m_domain;
+  Bx domain = getProtoBox(m_domain);
+  Bx ivbox(a_iv, a_iv);
+  Bx grownBox = ivbox.grow(1) & domain;
 
   PointSet ivstocheck(grownBox);
   ivstocheck -= a_iv;
-  Box ghostRegion = a_regIrregCovered.box();
+  Bx  ghostRegion   = a_regIrregCovered.box();
+  Bx  validRegion = getProtoBox(a_validRegion);
   //first check neighbors in each direction.  
   //If any of these are regular, they are replaced 
   //by irregular cells with a boundary face facing the covered cell.
@@ -290,7 +297,7 @@ fixRegularCellsNextToCovered(vector<inode>       & a_nodes,
       {
         a_regIrregCovered(ivshift, 0) =  0;
 
-        if(a_validRegion.contains(ivshift))
+        if(validRegion.contains(ivshift))
         {
           inode newNode;
           getFullNodeWithCoveredFace(newNode, 
@@ -337,6 +344,7 @@ getFullNodeWithCoveredFace(inode                   & a_newNode,
 //    Side::LoHiSide coveredSide;
 //    bool found = false;
 
+  Bx domain = getProtoBox(m_domain);
   for (int faceDir = 0; faceDir < DIM; faceDir++)
   {
     for(SideIterator sit; sit.ok(); ++sit)
@@ -345,7 +353,7 @@ getFullNodeWithCoveredFace(inode                   & a_newNode,
       int nodeInd = ebp_index(faceDir, sit());
       Point ivshift = a_iv + ishift*Point::Basis(faceDir);
       vector<int> arc;
-      if(!m_domain.contains(ivshift))
+      if(!domain.contains(ivshift))
       {
         // boundary arcs always -1
         arc.resize(1,-1);
@@ -503,6 +511,7 @@ fillArc(vector<int>                     a_arc[DIM],
   Iv2 bdId;
   //a_hilo is 0 or 1
   bdId[BDID_HILO] = a_hilo;
+  Bx domain = getProtoBox(m_domain);
   for (int idir = 0; idir < DIM; ++idir)
   {
     bdId[BDID_DIR] = idir;
@@ -520,7 +529,7 @@ fillArc(vector<int>                     a_arc[DIM],
       Point otherIV = a_curriv;
       otherIV[idir] += (a_hilo*2) - 1;
 
-      if (m_domain.contains(otherIV))
+      if (domain.contains(otherIV))
       {
         int otherCellIndex;
         if (a_ivsIrreg.contains(otherIV))
@@ -534,7 +543,7 @@ fillArc(vector<int>                     a_arc[DIM],
         }
         a_arc[idir][0]=otherCellIndex;
       }
-      else if (!m_domain.contains(otherIV))
+      else if (!domain.contains(otherIV))
       {
         //boundary arcs always -1
         a_arc[idir][0] = -1;

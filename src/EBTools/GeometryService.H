@@ -9,8 +9,8 @@
 #endif
 
 
-#ifndef _Proto_GeometryService_H_
-#define _Proto_GeometryService_H_
+#ifndef _Chombo_GeometryService_H_
+#define _Chombo_GeometryService_H_
 
 
 #include "LevelData.H"
@@ -18,10 +18,8 @@
 #include "AMRIO.H"
 #include "ProtoInterface.H"
 #include "EBProto.H"
+#include "EBChombo.H"
 #include "NamespaceHeader.H"
-
-using std::shared_ptr;
-using std::vector;
 
 ///
 /**
@@ -59,7 +57,7 @@ public:
                        const double                 &      a_dx,
                        const Box                    &      a_domain,
                        const DisjointBoxLayout      &      a_grids,
-                       const Point                  &      a_ghost);
+                       const int                    &      a_ghost);
 
 
 
@@ -87,7 +85,7 @@ public:
   inline const shared_ptr<LevelData<EBGraph>  >
   getGraphs() const
   {
-    return   m_graphS;
+    return   m_graphs;
   }
 
   ///
@@ -119,14 +117,17 @@ public:
   }
 
   ///
-  inline const shared_ptr<LevelData<ZFacData> > const
-  getZFaceData()
+  inline const shared_ptr<LevelData<ZFacData> > 
+  getZFaceData() const
   {
     return m_zfacdata;
   }
 
 protected:
-
+  void
+  defineFinestLevel(const RealVect               & a_origin,
+                    const double                 & a_dx );
+  
   void
   define(const RealVect               & a_origin,
          const double                 & a_dx );
@@ -171,42 +172,41 @@ private:
   
   
   ///
-  Box                                     m_domain;
+  Box                                 m_domain;
     
   ///
-  DisjointBoxLayout                       m_grids;
-                                                    
-  ///                                             
-  shared_ptr<LevelData<EBGraph> >         m_graphs;
+  DisjointBoxLayout                   m_grids;
+                                                
+  ///                                         
+  shared_ptr<LevelData<EBGraph> >     m_graphs;
 
   ///
-  shared_ptr<LevelData<VoluData> >        m_voludata;
+  shared_ptr<LevelData<VoluData> >    m_voludata;
 
   ///
-  shared_ptr<LevelData<EBFaData> >        m_ebfadata;
+  shared_ptr<LevelData<EBFaData> >    m_ebfadata;
 
   ///
-  shared_ptr<LevelData<XFacData> >        m_xfacdata;
+  shared_ptr<LevelData<XFacData> >    m_xfacdata;
 
   ///
-  shared_ptr<LevelData<YFacData> >        m_yfacdata;
+  shared_ptr<LevelData<YFacData> >    m_yfacdata;
 
   ///
-  shared_ptr<LevelData<ZFacData> >        m_zfacdata;
+  shared_ptr<LevelData<ZFacData> >    m_zfacdata;
     
-  double                m_threshold;
-
-  //origin
-  RealVect            m_origin;
-
-  int                 m_order;
-  int                 m_degreeP;
-  double              m_dx;
-
-  Box m_domain;
-  Point m_geomgrow;
-
-  shared_ptr<BaseIF>       m_baseIF;
+  double                              m_threshold;
+                                      
+  //origin                            
+  RealVect                            m_origin;
+                                      
+  int                                 m_order;
+  int                                 m_degreeP;
+  double                              m_dx;
+                                      
+  IntVect                             m_geomgrow;
+                                      
+  shared_ptr<BaseIF>                  m_baseIF;
   
 
   inline void fillArc(vector<int>                          a_arc[DIM],
@@ -216,13 +216,11 @@ private:
                       const Point                    &     a_curriv) const;
 
 
-  //stuff disallowed for all the usual reasons.
 private:
+  //stuff disallowed for all the usual reasons.
   LevelGeometryService();
-
-  LevelGeometryService(const GeometryService& a_workshopin);
-
-  void operator=(const LeveleometryService& a_workshopin);
+  LevelGeometryService(const LevelGeometryService& a_workshopin);
+  void operator=(const LevelGeometryService& a_workshopin);
 
 
 };
@@ -267,13 +265,18 @@ public:
                   const double                      &      a_finestDx,
                   const Box                         &      a_finestDomain,
                   const Vector<DisjointBoxLayout>   &      a_grids,
-                  const Point                       &      a_ghost)
+                  const int                         &      a_ghost)
   {
     int numLevels = a_grids.size();
     m_levels.resize( numLevels);
     m_domains.resize(numLevels);
-    m_levels[0] = shared_ptr<LevelGeometryService(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
-
+    m_levels[0]  = shared_ptr<LevelGeometryService<order> >(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
+    m_domains[0] = a_finestDomain;
+    for(int ilev = 1; ilev < numLevels-1; ilev++)
+    {
+      m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(m_levels[ilev-1], a_grids[ilev]);
+      m_domains[ilev] = coarsen(m_domains[ilev-1], 2);
+    }
   }
 
   ///
@@ -286,21 +289,18 @@ public:
      finestGrids:  layout of the finest domain
      ghost      :  maximum number of ghost cells needed in calculation
   */
-  GeometryService(const shared_ptr<BaseIF>          &      a_baseIF,
-                  const RealVect                    &      a_origin,
-                  const double                      &      a_dx,
-                  const Box                         &      a_finestDomain,
-                  const DisjointBoxLayout           &      a_grids,
-                  const Point                       &      a_ghost)
+  GeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
+                  const RealVect               &      a_origin,
+                  const double                 &      a_dx,
+                  const Box                    &      a_finestDomain,
+                  const DisjointBoxLayout      &      a_grids,
+                  const int                    &      a_ghost)
   {
-    int numLevels = a_grids.size();
+    int numLevels = 1;
     m_levels.resize( numLevels);
     m_domains.resize(numLevels);
-    m_levels[0] = shared_ptr<LevelGeometryService(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
-    for(int ilev = 1; ilev < numLevels-1; ilev++)
-    {
-      m_levels[ilev] = shared_ptr<LevelGeometryService(m_levels[i-1], a_grids[i]);
-    }
+    m_levels[0] = shared_ptr<LevelGeometryService<order> >
+      (new LevelGeometryService<order>(a_baseIF, a_origin, a_dx, a_finestDomain, a_grids, a_ghost));
   }
 
 
@@ -349,7 +349,7 @@ public:
   }
 
   ///
-  inline shared_ptr<LevelGeometryService> operator[](const Box& a_domain)
+  inline shared_ptr<LevelGeometryService<order> > operator[](const Box& a_domain)
   {
     int ilev = getLevel(a_domain);
     return m_levels[ilev];
@@ -358,11 +358,11 @@ public:
 protected:
 
   vector<Box>                               m_domains;
-  vector<shared_ptr<LevelGeometryService> > m_levels;
+  vector<shared_ptr<LevelGeometryService<order> > > m_levels;
 
 
 private:
-
+  
   inline int getLevel(const Box & a_domain)
   {
     int retval = -1;

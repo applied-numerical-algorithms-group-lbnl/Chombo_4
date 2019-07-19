@@ -16,13 +16,9 @@
 #include "AMRIO.H"
 #include "ProtoInterface.H"
 #include "EBProto.H"
+#include "EBChombo.H"
 #include "NamespaceHeader.H"
 
-using Proto::BoxData;
-using Proto::CENTERING;
-using Proto::EBBoxData;
-using Proto::EBHostData;
-using Proto::EBGraph;
 ///
 /**
 */
