@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
 DIM := 2
 
 SRC := $(wildcard *.cpp) 
@@ -23,21 +23,19 @@ VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/Bo
 
 
 
-VARS_OLD := $(.VARIABLES)
-PROTO_HOME = $(HOME)/_proto/proto
 
 PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=g++
 CXX=g++
-
+DIM=2
 CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
-HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
+HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
 #end mach dependent
 
 
@@ -69,7 +67,7 @@ DEPDIR = d
 TARGET = main.exe
 
 $(TARGET): $(OBJ)
-	$(LINK)  $(OBJ) $(LIBS) $(LAPACKLIBS) -o $(TARGET)
+	$(LINK)  $(OBJ) $(LIBS) -o $(TARGET)
 
 $(OBJDIR):
 	if [ ! -d "./$(OBJDIR)" ];then     \

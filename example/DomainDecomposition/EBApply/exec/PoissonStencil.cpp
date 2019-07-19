@@ -32,7 +32,8 @@ using   ProtoCh::getBox;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
-
+using   Proto::BaseIF;
+using   Proto::SimpleEllipsoidIF;
 
 int
 runTest(int a_argc, char* a_argv[])
@@ -95,7 +96,7 @@ runTest(int a_argc, char* a_argv[])
 
   Vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, a_params.maxgrid, blockfactor);
+  domainSplit(domain, boxes, maxGrid, blockfactor);
   Vector<int> procs;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
@@ -104,8 +105,8 @@ runTest(int a_argc, char* a_argv[])
   IntVect geomGhost = 2*IntVect::Unit;
   RealVect origin = RealVect::Zero();
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
-  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain, grids, geomGhost, 0));
 #if 0
+  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain, grids, geomGhost, 0));
   EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhost, dataGhost, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");

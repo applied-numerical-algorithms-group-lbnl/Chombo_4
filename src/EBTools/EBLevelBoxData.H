@@ -82,21 +82,21 @@ class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
 public:
 
   ///
-  EBLevelBoxData(): EBLevelData<BoxData<Real, NUMCOMPS> >()
+  EBLevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
   {
   }
 
 
   ///
-  LevelBoxData(const DisjointBoxLayout        & a_dp, 
-               const IntVect                  & a_ghost,
-               shared_ptr<LevelData<EBGraph>  > a_graphs)
+  EBLevelBoxData(const DisjointBoxLayout        & a_dp, 
+                 const IntVect                  & a_ghost,
+                 shared_ptr<LevelData<EBGraph>  > a_graphs)
     : LevelData<EBBoxData<cent, Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, EBBoxDataFactory<cent, NUMCOMPS>(a_graphs)), m_graphs(a_graphs)
   {
   }
 
   ///
-  virtual ~LevelBoxData()
+  virtual ~EBLevelBoxData()
   {
   }
 
@@ -116,8 +116,8 @@ public:
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {
-    LevelData<EBHostData<cent, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
-    LevelData<EBHostData<cent, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), EBHostDataFactory<cent, NUMCOMPS>(a_dst.m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), EBHostDataFactory<cent, NUMCOMPS>(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
@@ -131,7 +131,7 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
-    LevelData<EBHostData<cent, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
     copyToHost(hostdata, *this);
     hostdata.exchange();
     copyToDevice(*this, hostdata);
@@ -148,23 +148,24 @@ public:
 
   ///
   static 
-  void copyToHost(LevelData<      EBHostData<cent, NUMCOMPS> > & a_hostDat,
-                  const LevelData< EBBoxData<cent, NUMCOMPS> > & a_deviDat)
+  void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
+                  const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
   {
-    LevelData< EBBoxData<cent, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, NUMCOMPS> > &> (a_deviDat);
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> > &> (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
-      EBBoxData< cent, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
       for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {
         size_t fabsizeHost, fabsizeDevi; 
-        Real*  dataptrHost, dataptrDevi;
+        Real*  dataptrHost;
+        Real*  dataptrDevi;
         hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
         devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
 
-        size_t datSize = sizeof(Real)*fabsizedevi;
+        size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
         cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
@@ -184,23 +185,23 @@ public:
   ///
   ///
   static 
-  void copyToDevice(LevelData<        EBBoxData<cent, NUMCOMPS> > & a_deviDat,
-                    const LevelData< EBHostData<cent, NUMCOMPS> > & a_hostDat)
+  void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
+                    const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
   {
-    LevelData< EBBoxData<cent, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, NUMCOMPS> > &> (a_deviDat);
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> > &> (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
-      EBBoxData< cent, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
       for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {
         size_t fabsizeHost, fabsizeDevi; 
-        Real*  dataptrHost, dataptrDevi;
+        Real*  dataptrHost, *dataptrDevi;
         hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
         devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
 
-        size_t datSize = sizeof(Real)*fabsizedevi;
+        size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
         cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
