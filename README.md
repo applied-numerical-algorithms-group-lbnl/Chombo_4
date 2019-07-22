@@ -14,7 +14,7 @@ handles all MPI and HDF5 interactions.
      - Specify your c++ compiler.
      - Specify your compiler flags.
      - Specify your PROTO location.
-3. Configure the examples using Chobmo_4/examples/configure.example
+3. Configure the examples using Chombo_4/examples/configure.example
    - For example type 
 
 ```
