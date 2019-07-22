@@ -15,8 +15,10 @@
 
 #include "Proto.H"
 #include "EBProto.H"
+#include "Proto_EBGraph.H"
 #include "Proto_Notation.H"
 #include "ProtoInterface.H"
+#include "ProtoFactories.H"
 
 using std::shared_ptr;
 using std::vector;
