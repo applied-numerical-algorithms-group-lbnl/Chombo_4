@@ -144,7 +144,7 @@ inline void LayoutData<T>::allocate()
     unsigned int index = it().datInd();
     if (m_vector[index] == NULL)
     {
-      m_vector[index] = new T;
+      m_vector[index] = new T();
       if (m_vector[index] == NULL)
       {
         MayDay::Error("OutOfMemory in LayoutData::allocate");

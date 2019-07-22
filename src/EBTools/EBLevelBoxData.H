@@ -17,57 +17,9 @@
 #include "ProtoInterface.H"
 #include "EBProto.H"
 #include "EBChombo.H"
+#include "ProtoFactories.H"
 #include "NamespaceHeader.H"
 
-///
-/**
-*/
-template <CENTERING cent, int NUMCOMPS> class EBBoxDataFactory : public DataFactory<EBBoxData<cent, Real, NUMCOMPS> >
-{
-public:
-  /// factory function.  creates a new 'T' object
-  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
-      for calling operator 'delete' on this pointer is passed to the user. */
-  virtual EBBoxData<cent, Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
-  {
-    Proto::Box bx = ProtoCh::getProtoBox(box);
-    return new EBBoxData<cent, Real, NUMCOMPS>(bx, (*m_graphs)[a_datInd]);
-  }
-  
-  EBBoxDataFactory(shared_ptr<LevelData<EBGraph>  > a_graphs)
-  {
-    m_graphs = a_graphs;
-  }
-    
-
-private:
-  EBBoxDataFactory();
-  shared_ptr<LevelData<EBGraph>  > m_graphs;
-};
-
-
-template <CENTERING cent, int NUMCOMPS> class EBHostDataFactory : public DataFactory<EBHostData<cent, Real, NUMCOMPS> >
-{
-public:
-  /// factory function.  creates a new 'T' object
-  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
-      for calling operator 'delete' on this pointer is passed to the user. */
-  virtual EBHostData<cent, Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
-  {
-    Proto::Box bx = ProtoCh::getProtoBox(box);
-    return new EBHostData<cent, Real, NUMCOMPS>(bx, (*m_graphs)[a_datInd]);
-  }
-  
-  EBHostDataFactory(shared_ptr<LevelData<EBGraph>  > a_graphs)
-  {
-    m_graphs = a_graphs;
-  }
-    
-
-private:
-  EBHostDataFactory();
-  shared_ptr<LevelData<EBGraph>  > m_graphs;
-};
 
 ///
 /**
@@ -77,6 +29,8 @@ class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
 {
 public:
 
+  typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
+  typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
   ///
   EBLevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
   {
@@ -87,7 +41,7 @@ public:
   EBLevelBoxData(const DisjointBoxLayout        & a_dp, 
                  const IntVect                  & a_ghost,
                  shared_ptr<LevelData<EBGraph>  > a_graphs)
-    : LevelData<EBBoxData<cent, Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, EBBoxDataFactory<cent, NUMCOMPS>(a_graphs)), m_graphs(a_graphs)
+    : LevelData<EBBoxData<cent, Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
 
@@ -99,10 +53,10 @@ public:
   ///
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
-               shared_ptr<LevelData<EBGraph>  > a_graphs)
+              shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
     m_graphs = a_graphs;
-    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, EBBoxDataFactory<cent, NUMCOMPS>(a_graphs));
+    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
 
@@ -112,8 +66,8 @@ public:
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), EBHostDataFactory<cent, NUMCOMPS>(a_dst.m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
@@ -127,7 +81,7 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , EBHostDataFactory<cent, NUMCOMPS>(m_graphs));
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
     copyToHost(hostdata, *this);
     hostdata.exchange();
     copyToDevice(*this, hostdata);
@@ -147,7 +101,7 @@ public:
   void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
                   const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
   {
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> > &> (a_deviDat);
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = (LevelData< EBBoxData<cent, Real, NUMCOMPS> >&) (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
@@ -184,11 +138,12 @@ public:
   void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
                     const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
   {
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> > deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> > &> (a_deviDat);
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> >  &> (a_deviDat);
+    LevelData<EBHostData<cent, Real, NUMCOMPS> >& hostDat = const_cast<LevelData< EBHostData<cent, Real, NUMCOMPS> > &> (a_hostDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
       EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
       for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {

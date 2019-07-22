@@ -48,6 +48,7 @@ using Proto::IFData;
 using Proto::MinimalCCCM;
 using Proto::NormalDerivativeNew;
 using Proto::IFSlicer;
+using Proto::EBStencil;
 typedef Proto::Box Bx;
 using ProtoCh::getProtoBox;
 typedef Proto::IndexTM<int,2>      Iv2;

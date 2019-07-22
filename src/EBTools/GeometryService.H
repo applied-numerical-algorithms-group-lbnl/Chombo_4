@@ -310,42 +310,42 @@ public:
   inline shared_ptr<LevelData<EBGraph>  >
   getGraphs(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getGraphs();
+    return   (*this)[a_domain]->getGraphs();
   }
 
   ///
   inline shared_ptr<LevelData<VoluData> >
   getVoluData(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getVoluData();
+    return   (*this)[a_domain]->getVoluData();
   }
 
   ///
   inline shared_ptr<LevelData<EBFaData> >
   getEBFaceData(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getEBFaceData();
+    return   (*this)[a_domain]->getEBFaceData();
   }
 
   ///
   inline shared_ptr<LevelData<XFacData> >
   getXFaceData(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getXFaceData();
+    return   (*this)[a_domain]->getXFaceData();
   }
 
   ///
   inline shared_ptr<LevelData<YFacData> >
   getYFaceData(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getYFaceData();
+    return   (*this)[a_domain]->getYFaceData();
   }
 
   ///
   inline shared_ptr<LevelData<ZFacData> >
   getZFaceData(const Box& a_domain)
   {
-    return   (*m_levels)[a_domain].getZFaceData();
+    return   (*this)[a_domain]->getZFaceData();
   }
 
   ///

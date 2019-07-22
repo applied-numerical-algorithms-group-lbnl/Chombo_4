@@ -14,14 +14,10 @@
 #include "Proto.H"
 #include "IntVect.H"
 #include "Box.H"
-#include "BaseFab.H"
 
 using Proto::Point;
-using Proto::BoxData;
-using Proto::Var;
 using CH_XD::IntVect;
 using CH_XD::Box;
-using CH_XD::BaseFab;
 ///these functions are meant to interface with the Proto language.
 namespace ProtoCh
 {

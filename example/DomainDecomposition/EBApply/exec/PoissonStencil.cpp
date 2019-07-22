@@ -13,6 +13,7 @@
 #include "ProtoInterface.H"
 #include "BRMeshRefine.H"
 #include "GeometryService.H"
+#include "EBDictionary.H"
 #include "EBChombo.H"
 #include <iomanip>
 
@@ -103,15 +104,16 @@ runTest(int a_argc, char* a_argv[])
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
 
-  IntVect dataGhost =   IntVect::Unit;
+  IntVect dataGhostIV =   IntVect::Unit;
+  Point   dataGhostPt = getPoint(dataGhostIV); 
   int geomGhost = 2;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
-#if 0
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhost, dataGhost, dx, true);
+#if 1
+  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhostPt, dataGhostPt, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Periodic");
@@ -119,9 +121,9 @@ runTest(int a_argc, char* a_argv[])
 
   dictionary.registerStencil(stenname, dombcname, ebbcname);
 
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(grids, domain);
-  EBLevelBoxData<CELL,   1>  srcData(grids, dataGhost, graphs);
-  EBLevelBoxData<CELL,   1>  dstData(grids, dataGhost, graphs);
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  EBLevelBoxData<CELL,   1>  srcData(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  dstData(grids, dataGhostIV, graphs);
 
   DataIterator dit = grids.dataIterator();
 #pragma omp parallel for
@@ -136,10 +138,10 @@ runTest(int a_argc, char* a_argv[])
   for(int iiter = 0; iiter < nIter; iiter++)
   {    
 #pragma omp parallel for
-    for(int ibox = 0; ibox < grids.size(); ibox++)
+    for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, ibox);
-      stencil->apply(dstData[ibox], srcData[ibox]);
+      stencil->apply(dstData[dit[ibox]], srcData[dit[ibox]]);
     }
   }
 #endif

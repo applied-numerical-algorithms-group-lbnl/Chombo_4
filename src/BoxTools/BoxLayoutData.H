@@ -17,7 +17,7 @@
 #include "DisjointBoxLayout.H"
 #include "Copier.H"
 #include "SPMD.H"
-
+#include "ProtoInterface.H"
 #include "NamespaceHeader.H"
 
 //--Forward declarations
@@ -210,7 +210,13 @@ public:
   {
     if (LinearizationTest == 0)
     {
-      dest.copy(RegionFrom, Cdest,RegionTo, src, Csrc);
+      Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);
+      Proto::Box bxTo = ProtoCh::getProtoBox(RegionTo);
+      int isrc =  Csrc.begin();
+      int idst = Cdest.begin();
+      int inco = Csrc.size();
+//      dest.copy(RegionFrom, Cdest,RegionTo, src, Csrc);
+      dest.copy(src, bxFr, isrc, bxTo, idst, inco);
     }
     else
     {

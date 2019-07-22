@@ -20,6 +20,7 @@
 #include "Box.H"
 #include "Interval.H"
 #include "REAL.H"
+#include "ProtoInterface.H"
 #include "NamespaceHeader.H"
 
 #ifdef USE_PROTO
@@ -408,6 +409,20 @@ public:
                    const Box&        a_destbox,
                    int               a_destcomp,
                    int               a_numcomp);
+
+
+
+  BaseFab<T>& copy(const BaseFab<T>&  a_src,
+                   const Proto::Box&  a_srcbox,
+                   int                a_srccomp,
+                   const Proto::Box&  a_dstbox,
+                   int                a_dstcomp,
+                   int                a_numcomp)
+  {
+    Box srcbox = ProtoCh::getBox(a_srcbox);
+    Box dstbox = ProtoCh::getBox(a_dstbox);
+    return copy(a_src, srcbox, a_srccomp, dstbox, a_dstcomp, a_numcomp);
+  }
 
   /**
      Modifies this BaseFab by copying the contents of the argument BaseFab

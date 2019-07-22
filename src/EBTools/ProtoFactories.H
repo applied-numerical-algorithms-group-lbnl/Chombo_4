@@ -15,7 +15,9 @@
 
 #include "LevelData.H"
 #include "Proto.H"
+#include "EBChombo.H"
 #include "Proto_EBGraph.H"
+#include "ProtoInterface.H"
 #include "NamespaceHeader.H"
 
 /// factory where constructor called is the null constructor
@@ -73,9 +75,10 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual DataHolder * create(const Box& box, int ncomps, const DataIndex& a_datInd) const
+  virtual DataHolder * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
-    return new DataHolder(box, (*m_graphs)[a_datInd]);
+    Proto::Box bx = ProtoCh::getProtoBox(a_box);
+    return new DataHolder(bx, (*m_graphs)[a_datInd]);
   }
 
   virtual bool callDelete() const
