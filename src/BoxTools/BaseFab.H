@@ -513,10 +513,21 @@ public:
      Returns the size, in number of bytes, of a flat linear
      representation of the data in this object in the area defined
      by the input Box a_box and the component Interval a_comps.  The size
-     does not include the size of a_box and a_comps.
+     does not include the size of a_box and a_comps.   This means sizeof(T) is included in the calc.
   */
   virtual size_t size(const Box&      a_box,
                       const Interval& a_comps) const;
+
+
+  ///this DOES include sizeof(T)
+  virtual size_t charsize(const Proto::Box&      a_bx,
+                          unsigned int a_startcomp,
+                          unsigned int a_numcomps) const
+  {
+    Interval interv(a_startcomp, a_startcomp + a_numcomps - 1);
+    Box chbox = ProtoCh::getBox(a_bx);
+    return size(chbox, interv);
+  }
 
   ///
   /**
@@ -528,6 +539,16 @@ public:
                          const Box&      a_R,
                          const Interval& a_comps) const;
 
+  virtual void linearOut(void*                  a_buf,
+                         const Proto::Box&      a_bx,
+                         unsigned int a_startcomp,
+                         unsigned int a_numcomps) const
+  {
+    Interval interv(a_startcomp, a_startcomp + a_numcomps - 1);
+    Box chbox = ProtoCh::getBox(a_bx);
+    linearOut(a_buf, chbox, interv);
+  }
+
   /// Same as linearOut, but returns the current location in the buffer
   virtual void* linearOut2(void*           a_buf,
                            const Box&      a_R,
@@ -538,6 +559,16 @@ public:
                         const Box&      a_R,
                         const Interval& a_comps);
 
+
+  virtual void linearIn(void*                  a_buf,
+                        const Proto::Box&      a_bx,
+                        unsigned int a_startcomp,
+                        unsigned int a_numcomps)
+  {
+    Interval interv(a_startcomp, a_startcomp + a_numcomps - 1);
+    Box chbox = ProtoCh::getBox(a_bx);
+    linearIn(a_buf, chbox, interv);
+  }
 
   virtual void* linearIn2(void*           a_buf,
                           const Box&      a_R,

@@ -179,17 +179,27 @@ public:
   }
   virtual int size(const T& arg, const Box& b, const Interval& comps) const
   {
-    return arg.size(b, comps);
+//    return arg.size(b, comps);
+    Proto::Box bx = ProtoCh::getProtoBox(b);
+    return arg.charsize(bx, comps.begin(), comps.size());
   }
   virtual void linearOut(const T& arg, void* buf, const Box& R,
                          const Interval& comps) const
   {
-    arg.linearOut(buf, R, comps);
+//    arg.linearOut(buf, R, comps);
+    Proto::Box bx = ProtoCh::getProtoBox(R);
+    unsigned int start = comps.begin();
+    unsigned int ncomp = comps.size();
+    arg.linearOut(buf, bx, start, ncomp);
   }
   virtual void linearIn(T& arg,  void* buf, const Box& R,
                         const Interval& comps)const
   {
-    arg.linearIn(buf, R, comps);
+//    arg.linearIn(buf, R, comps);
+    Proto::Box bx = ProtoCh::getProtoBox(R);
+    unsigned int start = comps.begin();
+    unsigned int ncomp = comps.size();
+    arg.linearIn(buf, bx, start, ncomp);
   }
 
   ///this boolean only has to do with whether the op(...) function is thread safe
