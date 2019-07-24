@@ -113,7 +113,7 @@ runTest(int a_argc, char* a_argv[])
   Bx domainpr = getProtoBox(domain.domainBox());
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 #if 1
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, dataGhostPt, dataGhostPt, dx, true);
+  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Periodic");

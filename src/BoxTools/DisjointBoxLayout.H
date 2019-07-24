@@ -329,6 +329,11 @@ public:
 
   const ProblemDomain& physDomain() const;
 
+  const Box& getDomain() const
+  {
+    return physDomain().domainBox();
+  }
+
   virtual void closeNoSort(); // close without sorting; used by AdjCellHi, etc.
 
 protected:

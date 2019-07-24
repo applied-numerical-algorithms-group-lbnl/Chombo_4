@@ -39,6 +39,7 @@ public:
   */
   EBDictionary(const shared_ptr<GeometryService<order> >  & a_geoserv,
                const DisjointBoxLayout                    & a_grids,
+               const Box                                  & a_domain,
                Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx,
                bool a_periodiconly);
 
@@ -95,6 +96,7 @@ protected:
   Point                               m_dstGhost;
   DisjointBoxLayout                   m_grids;
   bool                                m_isClosed;
+  Box                                 m_domain;
   data_t m_dx;
   bool   m_periodiconly;
 private:
