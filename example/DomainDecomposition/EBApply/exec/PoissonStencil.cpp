@@ -38,6 +38,19 @@ using   Proto::BaseIF;
 using   Proto::SimpleEllipsoidIF;
 using   Proto::CENTERING;
 using   Proto::CELL;
+using Proto::PointSet;
+using Proto::PointSetIterator;
+
+void
+dumpPPS(const PointSet* a_ivs)
+{
+  for(PointSetIterator ivsit(*a_ivs);  ivsit.ok(); ++ivsit)
+  {
+    std::cout << ivsit() << " " ;
+  }
+  std::cout << std::endl;
+}
+
 int
 runTest(int a_argc, char* a_argv[])
 {
@@ -106,7 +119,7 @@ runTest(int a_argc, char* a_argv[])
 
   IntVect dataGhostIV =   IntVect::Unit;
   Point   dataGhostPt = getPoint(dataGhostIV); 
-  int geomGhost = 2;
+  int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
@@ -167,6 +180,7 @@ int main(int a_argc, char* a_argv[])
     runTest(a_argc, a_argv);
   }
 
+  cout << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
   MPI_Finalize();

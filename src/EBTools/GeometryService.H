@@ -299,6 +299,7 @@ public:
     int numLevels = 1;
     m_levels.resize( numLevels);
     m_domains.resize(numLevels);
+    m_domains[0] = a_finestDomain;
     m_levels[0] = shared_ptr<LevelGeometryService<order> >
       (new LevelGeometryService<order>(a_baseIF, a_origin, a_dx, a_finestDomain, a_grids, a_ghost));
   }
