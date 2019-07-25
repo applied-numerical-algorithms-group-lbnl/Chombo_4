@@ -54,6 +54,7 @@ dumpPPS(const PointSet* a_ivs)
 int
 runTest(int a_argc, char* a_argv[])
 {
+  Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
   Real x0 = 0.5;
@@ -78,6 +79,7 @@ runTest(int a_argc, char* a_argv[])
   pp.get("B"      , B);
   pp.get("C"      , C);
   pp.get("R"      , R);         
+  pp.get("coveredval"      , coveredval);         
 
   pout() << "nx      = " << nx       << endl;
   pout() << "maxGrid = " << maxGrid  << endl;
@@ -125,7 +127,7 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
-#if 1
+
   EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
@@ -157,7 +159,8 @@ runTest(int a_argc, char* a_argv[])
       stencil->apply(dstData[dit[ibox]], srcData[dit[ibox]]);
     }
   }
-#endif
+  srcData.writeToFileHDF5("srcData.hdf5", -1.0);
+  dstData.writeToFileHDF5("dstData.hdf5", -1.0);
   return 0;
 }
 
@@ -168,7 +171,7 @@ int main(int a_argc, char* a_argv[])
   MPI_Init(&a_argc, &a_argv);
 #endif
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("euler.time.table");
+  CH_TIMER_SETFILE("ebapply.time.table");
   {
     if (a_argc < 2)
     {

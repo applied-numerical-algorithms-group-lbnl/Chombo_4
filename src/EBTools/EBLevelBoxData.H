@@ -18,6 +18,7 @@
 #include "EBProto.H"
 #include "EBChombo.H"
 #include "ProtoFactories.H"
+#include "LevelBoxData.H"
 #include "NamespaceHeader.H"
 
 
@@ -89,14 +90,57 @@ public:
     
 
   void 
-  writeToFileHDF5(const string& a_filename) const
+  writeToFileHDF5(const string& a_filename, const Real& a_coveredval) const
   {
-//    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
-//    copyToHost(hostdata, *this);
-//    writeLevelname(&hostdata, a_filename.c_str());
+    LevelData<FArrayBox>                         hostfabs(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    copyHostToFAB(  hostfabs, hostdata, a_coveredval);
+    writeLevelname(&hostfabs, a_filename.c_str());
   }
 
-  ///
+  /// this is for hdf5 stuff as multivalued stuff will be lost
+  static 
+  void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
+                     const LevelData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
+                     const Real& a_coveredval)
+  {
+    LevelData< EBHostData<cent, Real, NUMCOMPS> >& hostDat = (LevelData< EBHostData<cent, Real, NUMCOMPS> >&) (a_hostDat);
+    DisjointBoxLayout dbl = a_fabxDat.disjointBoxLayout();
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      EBHostData<cent, Real, NUMCOMPS> & hostdat =    hostDat[dit[ibox]];
+      FArrayBox                        & fabxdat =  a_fabxDat[dit[ibox]];
+      fabxdat.setVal(a_coveredval);
+      Box chbox = dbl[dit[ibox]];
+      Proto::Box prbox = ProtoCh::getProtoBox(chbox);
+      PointSet allivs(prbox);
+      const EBGraph& ebgraph = hostdat.ebgraph();
+      
+      for(PointSetIterator ivsit(allivs); ivsit.ok(); ++ivsit)
+      {
+        Point pt = ivsit();
+        IntVect iv = ProtoCh::getIntVect(pt);
+        if(!ebgraph.isCovered(pt))
+        {
+          //might just work for cell centered data
+          EBIndex<cent> ebind;
+          ebind.m_pt = pt;
+          ebind.m_vofIDMe = 0;
+          ebind.m_vofIDLo = 0;
+          ebind.m_isBoundary = false;
+          for(int icomp = 0; icomp < NUMCOMPS; icomp++)
+          {
+            fabxdat(iv, icomp) = hostdat(ebind, icomp);
+          }
+        }
+      }
+    }
+  }
+
+
+  /// this is for mpi stuff
   static 
   void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
                   const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
@@ -131,7 +175,9 @@ public:
       }
     }
   }
+  
 
+  
   ///
   ///
   static 

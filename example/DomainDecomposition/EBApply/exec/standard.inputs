@@ -16,3 +16,5 @@ B=        1.0
 C=        1.0
 # radius of ellipsoid
 R=        0.25
+#value in hdf5 file of  covered data
+coveredval = -1
