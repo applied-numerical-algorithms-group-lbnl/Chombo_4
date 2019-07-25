@@ -552,14 +552,17 @@ operator>> (istream& is, ProblemDomain& a_probdomain)
           is >> a_probdomain.m_isPeriodic[dir];
         }
     }
-
   else
+  {
     MayDay::Error("operator>>(istream&,ProblemDomain&): expected \',\'");
+  }
 
   if (is.fail())
+  {
     MayDay::Error("operator>>(istream&,ProblemDomain&) failed");
+  }
 
-    return is;
+  return is;
 }
 
 void
