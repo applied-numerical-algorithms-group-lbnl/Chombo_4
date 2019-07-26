@@ -17,6 +17,7 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
   m_domain  = a_domain;
   m_origin  = a_origin;
   m_dx = a_dx;
+  m_geomgrow = a_ghost*IntVect::Unit;
 
   m_degreeP = order + 1;
 
@@ -33,7 +34,6 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
 
 //finest level of moment data comes from the geometry service
 //typically, you need graphs to be a bit bigger than the actual stencil
-  m_geomgrow = a_ghost*IntVect::Unit;
 
   defineFinestLevel(a_origin, a_dx);
 }
