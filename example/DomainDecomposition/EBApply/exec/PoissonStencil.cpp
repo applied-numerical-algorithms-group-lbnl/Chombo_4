@@ -49,7 +49,7 @@ dumpPPS(const PointSet* a_ivs)
     std::cout << ivsit() << " " ;
   }
   std::cout << std::endl;
-}
+ }
 
 int
 runTest(int a_argc, char* a_argv[])
@@ -183,7 +183,7 @@ int main(int a_argc, char* a_argv[])
     runTest(a_argc, a_argv);
   }
 
-  cout << "printing time table " << endl;
+  pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
   MPI_Finalize();
