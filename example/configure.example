@@ -24,7 +24,7 @@ makefile_post = f_post.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler', 'DomainDecomposition/Poisson', 'DomainDecomposition/EBApply']
+targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply']
 
 top = os.getcwd()
 chombo_home = top + '/..'
