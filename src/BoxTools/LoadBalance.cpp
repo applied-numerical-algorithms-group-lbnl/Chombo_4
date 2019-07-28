@@ -491,7 +491,7 @@ LoadBalance(Vector<Vector<int> >& procAssignments  //output: processor number
           int iter_count = 0, swap_count = 0;
           int iproc_maxload;
           long max_change; //largest change in load balance
-          int ibmax,jbmax,ipmax,jpmax;  //box and processor indices corresponding to max_change
+          int ibmax=0,jbmax=0,ipmax=0,jpmax=0;  //box and processor indices corresponding to max_change
 
           while ( 1 )
             {
