@@ -149,6 +149,10 @@ runTest(int a_argc, char* a_argv[])
     srcebbd.setVal(0.0);
     dstebbd.setVal(0.0);
   }
+  //not really necessary but I wanted to see if it would work
+  Copier exchangeCopier;
+  exchangeCopier.exchangeDefine(grids, dataGhostIV);
+  srcData.exchange(exchangeCopier);
 
   for(int iiter = 0; iiter < nIter; iiter++)
   {    
