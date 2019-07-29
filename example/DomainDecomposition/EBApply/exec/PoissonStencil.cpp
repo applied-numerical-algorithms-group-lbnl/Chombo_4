@@ -109,15 +109,18 @@ runTest(int a_argc, char* a_argv[])
 #endif
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
-  constexpr bool is_periodic[] = {true, true, true};
-  ProblemDomain domain(domLo, domHi, is_periodic);
+
+// EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
 
   Vector<Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, maxGrid, blockfactor);
+  
   Vector<int> procs;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
+//  pout() << "grids = " << grids << std::endl;
 
   IntVect dataGhostIV =   IntVect::Unit;
   Point   dataGhostPt = getPoint(dataGhostIV); 

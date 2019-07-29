@@ -44,6 +44,7 @@ public:
                  shared_ptr<LevelData<EBGraph>  > a_graphs)
     : LevelData<EBBoxData<cent, Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
+    checkIfPeriodic(a_dp);
   }
 
   ///
@@ -52,10 +53,20 @@ public:
   }
 
   ///
+  void checkIfPeriodic(const DisjointBoxLayout & a_dp) const
+  {
+    if(a_dp.physDomain().isPeriodic())
+    {
+      MayDay::Error("EB applications do not support periodic boundary conditions yet.");
+    }
+  }
+
+  ///
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
+    checkIfPeriodic(a_dp);
     m_graphs = a_graphs;
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
@@ -82,9 +93,13 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
+
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+
     copyToHost(hostdata, *this);
+
     hostdata.exchange();
+
     copyToDevice(*this, hostdata);
   }
     
