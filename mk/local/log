@@ -1,0 +1,5 @@
+commit 1da8baff39be5f8f4fe534517ac66f215c7a1dac
+Author: Dan Graves <dtgraves@lbl.gov>
+Date:   Wed Jul 10 15:27:19 2019 -0400
+
+    Chombo4 now compiles on summit
