@@ -12,10 +12,10 @@ parser.add_argument('--max_stream',  type=int, help='minimum number of streams' 
 parser.add_argument('--min_grid' ,  type=int, help='minimum max box size '  , default='8')
 parser.add_argument('--max_grid' ,  type=int, help='maximum max box size '  , default='64')
 
-parser.add_argument('--input'               ,  help='input file prefix'         , default='./inputs.prefix')
+parser.add_argument('--input'               ,  help='input file prefix'         , default='./inputs')
 parser.add_argument('--batch'               ,  help='batch file name'           , default='./batch')
 parser.add_argument('--dir'                 ,  help='directory prefix'          , default='_benchmark_')
-parser.add_argument('--subcomm'             ,  help='submission script command' , default='source')
+parser.add_argument('--subcomm'             ,  help='submission script command' , default='bsub')
 args = parser.parse_args()
 
 print args
