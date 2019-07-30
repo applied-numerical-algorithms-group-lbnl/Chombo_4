@@ -1,0 +1,3 @@
+#!/bin/csh
+
+mpirun -np 4 ../../../exec/main.exe inputs

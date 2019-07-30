@@ -6,23 +6,38 @@ import platform
 
 parser = ArgumentParser()
 
-parser.add_argument('--input' ,  help='input file prefix',default='_summit/inputs.prefix')
-parser.add_argument('--batch' ,  help='batch file prefix',default='_summit/batch.prefix')
-parser.add_argument('--system',  help='batch submission system',default='_summit/batch.prefix')
-parser.add_argument('--dir'   ,  help='directory prefix' ,default='_benchmark')
+parser.add_argument('--minstream',  type=int, help='minimum number of streams'  , default='1')
+parser.add_argument('--maxstream',  type=int, help='minimum number of streams'  , default='16')
+parser.add_argument('--min_grid' ,  type=int, help='minimum max box size '  , default='8')
+parser.add_argument('--max_grid' ,  type=int, help='maximum max box size '  , default='8')
+parser.add_argument('--maxstream',  type=int, help='minimum number of streams'  , default='16')
+
+parser.add_argument('--input'               ,  help='input file prefix'         , default='./inputs.prefix')
+parser.add_argument('--batch'               ,  help='batch file name'           , default='./batch')
+parser.add_argument('--dir'                 ,  help='directory prefix'          , default='_benchmark')
+parser.add_argument('--subcomm'             ,  help='submission script command' , default='source')
 args = parser.parse_args()
 
 print args
 inputsname = args.input
 batchname  = args.input
-f_pref = open('Makefile.prefix','r')
-f_post = open('Makefile.postfix','r')
-makefile_pref = f_pref.read()
-makefile_post = f_post.read()
-f_pref.close()
-f_post.close()
+dirname    = args.dir
+commname   = args.subcomm
+mingrid    = args.min_grid
+maxgrid    = args.max_grid
+
+f_input = open(inputsname,'r')
+f_batch = open(batchname, 'r')
+inputs_prefix  = f_input.read()
+batch_template = f_batch.read()
+
+f_input.close()
+f_batch.close()
 
 targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply']
+
+now = datetime.datetime.now()
+start_directory= top + nch.'+ str(now.month) + "." + str(now.day) + "." + str(now.year)
 
 top = os.getcwd()
 chombo_home = top + '/..'

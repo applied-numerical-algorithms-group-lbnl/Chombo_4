@@ -2,14 +2,11 @@
 # Begin LSF Directives
 #BSUB -P GEO127
 #BSUB -W 3:00
-#BSUB -nnodes 2048
+#BSUB -nnodes 128
 #BSUB -alloc_flags gpumps
-#BSUB -J RunSim123
-#BSUB -o RunSim123.%J
-#BSUB -e RunSim123.%J
+#BSUB -J bench
+#BSUB -o bench.%J
+#BSUB -e bench.%J
 
-cd $MEMBERWORK/abc123
-cp $PROJWORK/abc123/RunData/Input.123 ./Input.123
 date
-jsrun -n 4092 -r 2 -a 12 -g 3 ./a.out
-cp my_output_file /ccs/proj/abc123/Output.123
+jsrun -n 256  -r 2 -a 12 -g 3 ../../../exec/main.exe ./bench.inputs
