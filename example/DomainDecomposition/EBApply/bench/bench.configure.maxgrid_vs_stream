@@ -1,0 +1,70 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+
+parser = ArgumentParser()
+
+parser.add_argument('--input' ,  help='input file prefix',default='_summit/inputs.prefix')
+parser.add_argument('--batch' ,  help='batch file prefix',default='_summit/batch.prefix')
+parser.add_argument('--system',  help='batch submission system',default='_summit/batch.prefix')
+parser.add_argument('--dir'   ,  help='directory prefix' ,default='_benchmark')
+args = parser.parse_args()
+
+print args
+inputsname = args.input
+batchname  = args.input
+f_pref = open('Makefile.prefix','r')
+f_post = open('Makefile.postfix','r')
+makefile_pref = f_pref.read()
+makefile_post = f_post.read()
+f_pref.close()
+f_post.close()
+
+targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply']
+
+top = os.getcwd()
+chombo_home = top + '/..'
+os.chdir(chombo_home+'/mk')
+f_mach_dep = open('Make.defs.local','r')
+mach_dep = f_mach_dep.read()
+f_mach_dep.close()
+os.chdir(top)
+
+for t in targets:
+    d= t+'/exec'
+    print d
+    os.chdir(d)
+    f = open('GNUmakefile','w')
+    f.write('\nCHOMBO_HOME := ' + chombo_home)
+    f.write('\nDIM := ' + str(args.dim)+"\n")
+    f.write(makefile_pref);
+
+    f.write(mach_dep);
+
+    if args.mpi == 'TRUE':
+        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+
+    if(args.hdf5 == 'TRUE'):
+        f.write('\nCPPFLAGS += -DCH_USE_HDF5')
+
+    if(args.prec == 'DOUBLE'):
+        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
+
+    if args.opt == 'DEBUG':
+        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) ')
+    else:
+        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
+   
+
+    if args.cuda == 'TRUE':
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')
+        if args.opt == 'DEBUG':
+            f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG')
+
+    f.write(makefile_post);
+ 
+    os.chdir(top)
+    f.close()
+
