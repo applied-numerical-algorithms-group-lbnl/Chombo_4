@@ -2,10 +2,6 @@
 nx=       64
 #number of applies
 niter=    10
-#number of cuda streams (if used)
-nstream=  8
-#max grid size in domain decomposition
-maxGrid=  32
 # center coordinates
 x0=       0.5
 y0=       0.5
@@ -18,3 +14,6 @@ C=        1.0
 R=        0.25
 #value in hdf5 file of  covered data
 coveredval = -1
+
+#number of cuda streams (if used) and
+#max grid size in domain decomposition  both set by configure script

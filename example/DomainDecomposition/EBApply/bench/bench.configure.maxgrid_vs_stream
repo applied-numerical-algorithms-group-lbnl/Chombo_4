@@ -3,28 +3,30 @@ from argparse import *
 import os
 import glob
 import platform
+import datetime
 
 parser = ArgumentParser()
 
-parser.add_argument('--minstream',  type=int, help='minimum number of streams'  , default='1')
-parser.add_argument('--maxstream',  type=int, help='minimum number of streams'  , default='16')
+parser.add_argument('--min_stream',  type=int, help='minimum number of streams'  , default='1')
+parser.add_argument('--max_stream',  type=int, help='minimum number of streams'  , default='16')
 parser.add_argument('--min_grid' ,  type=int, help='minimum max box size '  , default='8')
-parser.add_argument('--max_grid' ,  type=int, help='maximum max box size '  , default='8')
-parser.add_argument('--maxstream',  type=int, help='minimum number of streams'  , default='16')
+parser.add_argument('--max_grid' ,  type=int, help='maximum max box size '  , default='64')
 
 parser.add_argument('--input'               ,  help='input file prefix'         , default='./inputs.prefix')
 parser.add_argument('--batch'               ,  help='batch file name'           , default='./batch')
-parser.add_argument('--dir'                 ,  help='directory prefix'          , default='_benchmark')
+parser.add_argument('--dir'                 ,  help='directory prefix'          , default='_benchmark_')
 parser.add_argument('--subcomm'             ,  help='submission script command' , default='source')
 args = parser.parse_args()
 
 print args
 inputsname = args.input
-batchname  = args.input
+batchname  = args.batch
 dirname    = args.dir
 commname   = args.subcomm
 mingrid    = args.min_grid
 maxgrid    = args.max_grid
+minstream    = args.min_stream
+maxstream    = args.max_stream
 
 f_input = open(inputsname,'r')
 f_batch = open(batchname, 'r')
@@ -36,50 +38,48 @@ f_batch.close()
 
 targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply']
 
-now = datetime.datetime.now()
-start_directory= top + nch.'+ str(now.month) + "." + str(now.day) + "." + str(now.year)
-
 top = os.getcwd()
-chombo_home = top + '/..'
-os.chdir(chombo_home+'/mk')
-f_mach_dep = open('Make.defs.local','r')
-mach_dep = f_mach_dep.read()
-f_mach_dep.close()
-os.chdir(top)
+now = datetime.datetime.now()
+start_dir = top + "/"  + dirname + str(now.month) + "." + str(now.day) + "." + str(now.year)
+if not(os.path.isdir(start_dir)):
+    print "creating " + start_dir
+    os.mkdir(start_dir)
 
-for t in targets:
-    d= t+'/exec'
-    print d
-    os.chdir(d)
-    f = open('GNUmakefile','w')
-    f.write('\nCHOMBO_HOME := ' + chombo_home)
-    f.write('\nDIM := ' + str(args.dim)+"\n")
-    f.write(makefile_pref);
+frunscript = open("runscript.sh", 'w')
+frunscript.write("#!/bin/csh\n");
 
-    f.write(mach_dep);
+grid   = mingrid
+while grid <= maxgrid:
+    stream = minstream 
+    while stream <= maxstream:
+        print "stream =  " + str(stream) + ", maxGrid = " + str(grid)
+        bench_dir = start_dir + "/_maxgrid" + str(grid) + "_nstream" + str(stream)
+        if not(os.path.isdir(bench_dir)):
+            print "creating " + bench_dir
+            os.mkdir(bench_dir)
+        inputfilename = bench_dir + "/inputs"
+        finputs = open(inputfilename,'w')
+        finputs.write(inputs_prefix)
+        finputs.write("\n#input by configure script\n")
+        maxgridstring = "maxGrid = " + str(grid)+ "\n"
+        finputs.write(maxgridstring)
+        streamstring = "nstream = " + str(stream) + "\n"
+        finputs.write(streamstring)
+        finputs.close()
+        batchfilename = bench_dir + "/batch"
+        fbatch = open(batchfilename, 'w')
+        fbatch.write(batch_template)
 
-    if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        runcomm = "cd " + bench_dir + "; "
+        frunscript.write(runcomm);
+        runcomm =  commname + " batch \n"
+        frunscript.write(runcomm);
+        runcomm =  "cd " + top + "\n"
+        frunscript.write(runcomm);
+        stream *= 2
+    grid *= 2
+    
+frunscript.close()
 
-    if(args.hdf5 == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_HDF5')
 
-    if(args.prec == 'DOUBLE'):
-        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
-
-    if args.opt == 'DEBUG':
-        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) ')
-    else:
-        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
-   
-
-    if args.cuda == 'TRUE':
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')
-        if args.opt == 'DEBUG':
-            f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG')
-
-    f.write(makefile_post);
- 
-    os.chdir(top)
-    f.close()
 
