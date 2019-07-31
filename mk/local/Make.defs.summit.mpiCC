@@ -5,7 +5,7 @@ CXX=mpiCC
 
 export OMPI_CXX=nvcc
 
-CXXALLFLAGS := -std=c++11 -x cu --expt-extended-lambda
+CXXALLFLAGS := -std=c++11 
 CXXDBGFLAGS:= -g -G -DTHRUST_DEBUG $(CXXALLFLAGS)
 CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 

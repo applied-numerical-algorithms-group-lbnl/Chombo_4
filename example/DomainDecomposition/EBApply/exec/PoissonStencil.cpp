@@ -153,9 +153,9 @@ runTest(int a_argc, char* a_argv[])
     dstebbd.setVal(0.0);
   }
   //not really necessary but I wanted to see if it would work
-  Copier exchangeCopier;
-  exchangeCopier.exchangeDefine(grids, dataGhostIV);
-  srcData.exchange(exchangeCopier);
+//  Copier exchangeCopier;
+//  exchangeCopier.exchangeDefine(grids, dataGhostIV);
+//  srcData.exchange(exchangeCopier);
 
   for(int iiter = 0; iiter < nIter; iiter++)
   {    
@@ -166,8 +166,8 @@ runTest(int a_argc, char* a_argv[])
       stencil->apply(dstData[dit[ibox]], srcData[dit[ibox]]);
     }
   }
-  srcData.writeToFileHDF5("srcData.hdf5", -1.0);
-  dstData.writeToFileHDF5("dstData.hdf5", -1.0);
+//  srcData.writeToFileHDF5("srcData.hdf5", -1.0);
+//  dstData.writeToFileHDF5("dstData.hdf5", -1.0);
   return 0;
 }
 
@@ -176,6 +176,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
+  pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
@@ -193,6 +194,7 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+  pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

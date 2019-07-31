@@ -2,11 +2,13 @@
 # Begin LSF Directives
 #BSUB -P GEO127
 #BSUB -W 0:10
-#BSUB -nnodes 2
+#BSUB -nnodes 1
 #BSUB -alloc_flags gpumps
 #BSUB -J bench
 #BSUB -o bench.%J
 #BSUB -e bench.%J
 
+module load cuda
+module load hdf5
 date
-jsrun -n 4  -r 1 -a 1 -g 1 ../../../exec/main.exe ./inputs
+jsrun -n 1  -r 1 -a 1 -g 1 ./main.exe ./inputs
