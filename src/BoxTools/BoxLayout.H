@@ -276,6 +276,14 @@ public:
    */
   int numBoxes(const int procID) const;
 
+  void printBalance() const
+  {
+    for(int iproc = 0; iproc < numProc(); iproc++)
+    {
+      pout() << "bl: number of boxes on proc " << iproc << " = " << numBoxes(iproc) << std::endl;
+    }
+  }
+
   /// Return number of cells in all boxes of entire box layout
   long long numCells() const;
 

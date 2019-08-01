@@ -118,9 +118,10 @@ runTest(int a_argc, char* a_argv[])
   domainSplit(domain, boxes, maxGrid, blockfactor);
   
   Vector<int> procs;
+  pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
-//  pout() << "grids = " << grids << std::endl;
+  grids.printBalance();
 
   IntVect dataGhostIV =   IntVect::Unit;
   Point   dataGhostPt = getPoint(dataGhostIV); 
@@ -129,22 +130,28 @@ runTest(int a_argc, char* a_argv[])
   Real dx = 1.0/nx;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
+  pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 
+  pout() << "making dictionary" << endl;
   EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx, true);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Periodic");
   string  ebbcname("Neumann");
 
+  pout() << "registering stencil" << endl;
   dictionary.registerStencil(stenname, dombcname, ebbcname);
 
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+
+  pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  srcData(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  dstData(grids, dataGhostIV, graphs);
 
   DataIterator dit = grids.dataIterator();
-#pragma omp parallel for
+  pout() << "setting values" << endl;
+//#pragma omp parallel for
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     EBBoxData<CELL, Real, 1>& srcebbd = srcData[dit[ibox]];
@@ -157,9 +164,10 @@ runTest(int a_argc, char* a_argv[])
 //  exchangeCopier.exchangeDefine(grids, dataGhostIV);
 //  srcData.exchange(exchangeCopier);
 
+  pout() << "applying stencil" << endl;
   for(int iiter = 0; iiter < nIter; iiter++)
   {    
-#pragma omp parallel for
+//#pragma omp parallel for
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, ibox);
@@ -168,6 +176,7 @@ runTest(int a_argc, char* a_argv[])
   }
 //  srcData.writeToFileHDF5("srcData.hdf5", -1.0);
 //  dstData.writeToFileHDF5("dstData.hdf5", -1.0);
+  pout() << "exiting runtest" << endl;
   return 0;
 }
 

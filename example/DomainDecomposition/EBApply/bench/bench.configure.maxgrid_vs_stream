@@ -45,7 +45,8 @@ if not(os.path.isdir(start_dir)):
     print "creating " + start_dir
     os.mkdir(start_dir)
 
-frunscript = open("runscript.sh", 'w')
+runscriptname = "runscript.sh"
+frunscript = open(runscriptname, 'w')
 frunscript.write("#!/bin/csh\n");
 
 grid   = mingrid
@@ -80,6 +81,8 @@ while grid <= maxgrid:
     grid *= 2
     
 frunscript.close()
-
+runcomm = "chmod +x " + runscriptname
+print runcomm + "\n"
+os.system(runcomm)
 
 
