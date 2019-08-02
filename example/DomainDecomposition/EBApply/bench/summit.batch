@@ -1,16 +1,18 @@
-#!/bin/bash
-# Begin LSF Directives
+#!/bin/tcsh
+### Begin LSF directives
 #BSUB -P GEO127
-#BSUB -W 0:10
-#BSUB -nnodes 2
-#BSUB -alloc_flags gpumps
-#BSUB -J bench
-#BSUB -o bench.%J
-#BSUB -e bench.%J
+#BSUB -J benchtest
+#BSUB -o benchtest.out 
+#BSUB -W 0:20
+#BSUB -nnodes 1
+### End LSF directives and begin shell commands
 
-export CH_OUTPUT_INTERVAL=1
-export CH_TIMER=1
+
+setenv CH_OUTPUT_INTERVAL 1
+setenv CH_TIMER 1
 module load cuda
 module load hdf5
 date
-jsrun -n 2  -r 1 -a 1 -g 1 ../../../exec/main.exe ./inputs
+jsrun -n2 -a1 -g1 ../../../exec/main.exe ./inputs
+
+
