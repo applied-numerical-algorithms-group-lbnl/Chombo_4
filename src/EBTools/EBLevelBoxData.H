@@ -33,7 +33,7 @@ public:
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
   ///
-  EBLevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
+  EBLevelBoxData(): LevelData<EBBoxData<cent, Real, NUMCOMPS> >()
   {
   }
 
@@ -72,6 +72,15 @@ public:
   }
 
 
+  void setVal(Real a_value)
+  {
+    DataIterator dit = this->dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]].setVal(a_value);
+    }
+  }
+  
   ///
   void copyTo(const Interval                      &            a_srcComps,
               LevelData<BoxData<Real, NUMCOMPS> > &            a_dst,
@@ -102,8 +111,48 @@ public:
 
     copyToDevice(*this, hostdata);
   }
-    
 
+  ///
+  Real maxNorm(int a_icomp) const
+  {
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real maxval = 0; 
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid     =         dbl[dit[ibox]];
+      const EBGraph& graph = (*m_graphs)[dit[ibox]];
+      for(BoxIterator bit(grid); bit.ok(); ++bit)
+      {
+        Point pt = ProtoCh::getPoint(bit());
+        vector<EBIndex<CELL> > vofspt = graph.getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofspt[ivec];
+          Real absval = std::abs(hostdata[dit[ibox]](vof, a_icomp));
+          if(absval > maxval)
+          {
+            maxval = absval;
+          }
+        }
+      }
+    }
+
+#ifdef CH_MPI    
+    Real sendBuf = maxval;
+    int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL,MPI_MAX, Chombo_MPI::comm);
+
+    if (result != MPI_SUCCESS)
+    {
+      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+    }
+#endif
+    return maxval;
+  }
+
+  ///
   void 
   writeToFileHDF5(const string& a_filename, const Real& a_coveredval) const
   {

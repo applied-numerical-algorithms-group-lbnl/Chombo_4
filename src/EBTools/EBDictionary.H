@@ -7,6 +7,8 @@
 #include "Proto.H"
 #include "EBProto.H"
 #include "EBChombo.H"
+#include "GeometryService.H"
+
 #include "NamespaceHeader.H"
 
 

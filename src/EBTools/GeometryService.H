@@ -19,6 +19,8 @@
 #include "ProtoInterface.H"
 #include "EBProto.H"
 #include "EBChombo.H"
+#include "BRMeshRefine.H"
+#include "LoadBalance.H"
 #include "NamespaceHeader.H"
 
 ///
@@ -48,7 +50,7 @@ public:
      origin     :  location of the lower left corner of the domain
      dx         :  grid spacing
      domain     :  finest domain in the calculation
-     finestGrids:  layout of the finest domain
+     grids      :  layout of the  domain
      ghost      :  maximum number of ghost cells needed in calculation
      maxCoarsen :  maximum level of coarsening 
   */
@@ -62,12 +64,7 @@ public:
 
 
   LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
-                       const DisjointBoxLayout      &      a_grids)
-  {
-    MayDay::Error("not implemented");
-  }
-
-
+                       const DisjointBoxLayout      &      a_grids);
 
   ///
   /**
@@ -127,6 +124,14 @@ protected:
   void
   defineFinestLevel(const RealVect               & a_origin,
                     const double                 & a_dx );
+
+  void
+  defineData();
+  void
+  coarsenGraph(LevelGeometryService&      a_finerLevel);
+  void
+  coarsenData( LevelGeometryService&      a_finerLevel);
+
   
   void
   define(const RealVect               & a_origin,
@@ -169,7 +174,24 @@ private:
                              const HostBoxData<int>  & a_regIrregCovered,
                              const Point             & a_iv) const;
 
-  
+  ///funny constructor for when grids change and we have to copy data over
+  /// to do coarsening
+  LevelGeometryService(const Box                               &  a_domain,
+                       const DisjointBoxLayout                 &  a_grids,          
+                       const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
+                       const shared_ptr<LevelData<VoluData> >  &  a_voludata,
+                       const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
+                       const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
+                       const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
+                       const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
+                       const RealVect                          &  a_origin,         
+                       const int                               &  a_order,          
+                       const int                               &  a_degreeP,
+                       const double                            &  a_dx,             
+                       const IntVect                           &  a_geomgrow,       
+                       const shared_ptr<BaseIF>                &  a_baseIF);         
+
+    
   
   ///
   Box                                 m_domain;
@@ -195,8 +217,6 @@ private:
   ///
   shared_ptr<LevelData<ZFacData> >    m_zfacdata;
     
-  double                              m_threshold;
-                                      
   //origin                            
   RealVect                            m_origin;
                                       
@@ -206,7 +226,7 @@ private:
                                       
   IntVect                             m_geomgrow;
                                       
-  shared_ptr<BaseIF>                  m_baseIF;
+  shared_ptr<BaseIF>                  m_baseIF;         
   
 
   inline void fillArc(vector<int>                          a_arc[DIM],
@@ -279,6 +299,53 @@ public:
     }
   }
 
+  ///
+  /**
+     make vector of grids that cover the domain at various coarsenings
+     This coarsens grids if it can, rebuilds them if it has to for coarser grids
+     maxGridSize: maximum size of boxes on coarser grids
+     maxCoarsen : maximum times the service coarsens (-1 means coarsen down to 2x2)
+  */
+  static void
+  generateGrids(Vector<DisjointBoxLayout> & a_grids,
+                const Box                 & a_domain,
+                int a_maxGridSize =  32,
+                int a_maxCoarsen  = -1)
+  {
+    int numLevels = 1;
+    Box domlev = a_domain;
+    int numCoarsen = 0;
+    int minDomainSize = 2;
+    int nref = 2;
+    Vector<Box> domains(1, a_domain);
+    while(domlev.coarsenable(nref*minDomainSize) && (a_maxCoarsen > 0) && (numCoarsen > a_maxCoarsen))
+    {
+      numLevels++;
+      numCoarsen++;
+      domlev.coarsen(nref);
+      domains.push_back(domlev);
+    }
+    a_grids.resize(numLevels);
+    Vector<Box> boxes;
+    Vector<int> procs;
+    domainSplit(domains[0], boxes, a_maxGridSize);
+    LoadBalance(procs, boxes);
+    a_grids[0].define(boxes, procs);
+    for(int ilev = 1; ilev < numLevels-1; ilev++)
+    {
+      if(a_grids[ilev-1].coarsenable(2))
+      {
+        coarsen(a_grids[ilev-1], a_grids[ilev], 2);
+      }
+      else
+      {
+        domainSplit(domains[ilev], boxes, a_maxGridSize);
+        LoadBalance(procs, boxes);
+        a_grids[ilev].define(boxes, procs);
+      }
+    }
+  }
+                
   ///
   /**
      single level define.

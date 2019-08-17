@@ -20,6 +20,7 @@
 #include "ProtoInterface.H"
 #include "ProtoFactories.H"
 
+
 using std::shared_ptr;
 using std::vector;
 using Proto::IndexedMoments;

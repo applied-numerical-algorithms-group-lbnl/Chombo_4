@@ -25,20 +25,25 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
   m_grids  = a_grids;
   m_domain = a_domain;
 
+  defineData();
+//finest level of moment data comes from the geometry service
+//typically, you need graphs to be a bit bigger than the actual stencil
+
+  defineFinestLevel(a_origin, a_dx);
+}
+/*********************************************/
+template<int order>
+void LevelGeometryService<order>::
+defineData()
+{
   m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBGraph >()));
   m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<VoluData>()));
   m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBFaData>()));
   m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
   m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
   m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
-
-//finest level of moment data comes from the geometry service
-//typically, you need graphs to be a bit bigger than the actual stencil
-
-  defineFinestLevel(a_origin, a_dx);
 }
-
-
+/*********************************************/
 template<int order>
 void LevelGeometryService<order>::
 defineFinestLevel(const RealVect               & a_origin,
@@ -108,6 +113,132 @@ defineFinestLevel(const RealVect               & a_origin,
       }
     }
   }
+}
+/*********************************************/
+/// Funny private constructor for when grids change and we have to copy data over
+/// to do coarsening
+/*********************************************/
+template <int order>
+LevelGeometryService<order>::
+LevelGeometryService(const Box                               &  a_domain,
+                     const DisjointBoxLayout                 &  a_grids,          
+                     const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
+                     const shared_ptr<LevelData<VoluData> >  &  a_voludata,
+                     const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
+                     const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
+                     const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
+                     const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
+                     const RealVect                          &  a_origin,         
+                     const int                               &  a_order,          
+                     const int                               &  a_degreeP,
+                     const double                            &  a_dx,             
+                     const IntVect                           &  a_geomgrow,       
+                     const shared_ptr<BaseIF>                &  a_baseIF)              
+{
+
+  m_domain    =  a_domain;         
+  m_grids     =  a_grids;          
+  m_origin    =  a_origin;         
+  m_order     =  a_order;          
+  m_degreeP   =  a_degreeP;
+  m_dx        =  a_dx;             
+  m_geomgrow  =  a_geomgrow;
+  m_baseIF    =  a_baseIF;         
+
+  defineData();
+  
+  Interval interv(0,0);
+  a_graphs  ->copyTo(interv, (*m_graphs  ), interv);       
+  a_voludata->copyTo(interv, (*m_voludata), interv);       
+  a_ebfadata->copyTo(interv, (*m_ebfadata), interv);       
+  a_xfacdata->copyTo(interv, (*m_xfacdata), interv);       
+  a_yfacdata->copyTo(interv, (*m_yfacdata), interv);       
+  a_zfacdata->copyTo(interv, (*m_zfacdata), interv);
+  
+}
+  
+/*********************************************/
+template <int order>
+LevelGeometryService<order>::
+LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
+                     const DisjointBoxLayout      &      a_grids)
+{
+  m_baseIF   = a_finerLevel.m_baseIF;
+  m_domain   = coarsen(a_finerLevel.m_domain,2);
+  m_origin   =         a_finerLevel.m_origin;
+  m_dx       =      2.*a_finerLevel.m_dx;
+  m_geomgrow =         a_finerLevel.m_geomgrow;
+  m_degreeP =          a_finerLevel.m_degreeP;
+
+  m_grids  = a_grids;
+
+  defineData();
+  LevelGeometryService* finerPtr = &a_finerLevel;
+  bool deleteptr = false;
+  if(!a_grids.compatible(a_finerLevel.m_grids))
+  {
+    DisjointBoxLayout refCoarGrids;
+    refine(refCoarGrids, m_grids, 2);
+    finerPtr = new LevelGeometryService(a_finerLevel.m_domain,          
+                                        refCoarGrids,           
+                                        a_finerLevel.m_graphs,          
+                                        a_finerLevel.m_voludata,        
+                                        a_finerLevel.m_ebfadata,        
+                                        a_finerLevel.m_xfacdata,        
+                                        a_finerLevel.m_yfacdata,        
+                                        a_finerLevel.m_zfacdata,        
+                                        a_finerLevel.m_origin,          
+                                        a_finerLevel.m_order,           
+                                        a_finerLevel.m_degreeP,         
+                                        a_finerLevel.m_dx,              
+                                        a_finerLevel.m_geomgrow,        
+                                        a_finerLevel.m_baseIF);         
+
+      
+    deleteptr = true;
+  }
+  
+  coarsenGraph(*finerPtr);
+  coarsenData( *finerPtr);
+  if(deleteptr)
+  {
+    //this deals with the fix fine to coarse thing
+    Interval interv(0,0);
+    finerPtr->copyTo(interv, *a_finerLevel.m_graphs, interv);
+    delete finerPtr;
+  }
+}
+/*********************************************/
+template <int order>
+void
+LevelGeometryService<order>::
+coarsenGraph(LevelGeometryService&      a_finerLevel)
+{
+  DataIterator dit = m_grids.dataIterator();
+  for (int ibox = 0; ibox < dit.size(); ibox++)
+  { 
+    EBGraph & fineEBGraph = (*a_finerLevel.m_graphs)[dit[ibox]];
+    Box        vofRegion       = m_grids[dit[ibox]];
+    Box        facRegion       = m_grids[dit[ibox]];
+    vofRegion.grow(m_geomgrow);
+    facRegion.grow(m_geomgrow-1);
+    vofRegion &= m_domain;
+    facRegion &= m_domain;
+    EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
+    //this deals with the fine to coarse thing
+    Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
+    Bx facRegionBx = ProtoCh::getProtoBox(facRegion);
+    coarEBGraph.coarsenVoFs( fineEBGraph, vofRegionBx);
+    coarEBGraph.coarsenFaces(fineEBGraph, facRegionBx);
+  }
+}
+/*********************************************/
+template <int order>
+void
+LevelGeometryService<order>::
+coarsenData(LevelGeometryService&      a_finerLevel)
+{
+  MayDay::Error("not implemented");
 }
 /*********************************************/
 template <int order>
