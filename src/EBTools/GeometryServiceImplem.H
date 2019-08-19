@@ -221,15 +221,13 @@ coarsenGraph(LevelGeometryService&      a_finerLevel)
     Box        vofRegion       = m_grids[dit[ibox]];
     Box        facRegion       = m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
-    facRegion.grow(m_geomgrow-1);
     vofRegion &= m_domain;
     facRegion &= m_domain;
     EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
     Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
-    Bx facRegionBx = ProtoCh::getProtoBox(facRegion);
     coarEBGraph.coarsenVoFs( fineEBGraph, vofRegionBx);
-    coarEBGraph.coarsenFaces(fineEBGraph, facRegionBx);
+    coarEBGraph.coarsenFaces(fineEBGraph, vofRegionBx);
   }
 }
 /*********************************************/
