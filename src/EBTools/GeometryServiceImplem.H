@@ -30,18 +30,21 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
 //typically, you need graphs to be a bit bigger than the actual stencil
 
   defineFinestLevel(a_origin, a_dx);
+  
 }
 /*********************************************/
 template<int order>
 void LevelGeometryService<order>::
 defineData()
 {
-  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBGraph >()));
-  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<VoluData>()));
-  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBFaData>()));
-  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
-  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
-  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
+  //the 2* is because of coarsening means ghost cells need to be more numerous on finer levels than coarser levels
+  m_exchangeCopier.exchangeDefine(m_grids, 2*m_geomgrow);
+  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<EBGraph >()));
+  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<VoluData>()));
+  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<EBFaData>()));
+  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<XFacData>()));
+  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<YFacData>()));
+  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<ZFacData>()));
 }
 /*********************************************/
 template<int order>
@@ -113,6 +116,23 @@ defineFinestLevel(const RealVect               & a_origin,
       }
     }
   }
+  exchange();
+}
+/*********************************************/
+template <int order>
+void
+LevelGeometryService<order>::
+exchange()
+{
+  Interval interv(0,0);
+  m_graphs  ->exchange(m_exchangeCopier);       
+  m_voludata->exchange(m_exchangeCopier);       
+  m_ebfadata->exchange(m_exchangeCopier);       
+  m_xfacdata->exchange(m_exchangeCopier);       
+  m_yfacdata->exchange(m_exchangeCopier);       
+#if DIM==3
+  m_zfacdata->exchange(m_exchangeCopier);
+#endif
 }
 /*********************************************/
 /// Funny private constructor for when grids change and we have to copy data over
@@ -207,6 +227,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
     finerPtr->copyTo(interv, *a_finerLevel.m_graphs, interv);
     delete finerPtr;
   }
+  exchange();
 }
 /*********************************************/
 template <int order>
@@ -214,6 +235,7 @@ void
 LevelGeometryService<order>::
 coarsenGraph(LevelGeometryService&      a_finerLevel)
 {
+  //fills finer level ghost cells 
   DataIterator dit = m_grids.dataIterator();
   for (int ibox = 0; ibox < dit.size(); ibox++)
   { 

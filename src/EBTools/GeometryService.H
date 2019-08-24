@@ -191,7 +191,12 @@ private:
                        const IntVect                           &  a_geomgrow,       
                        const shared_ptr<BaseIF>                &  a_baseIF);         
 
-    
+
+  ///calls exchange on everything
+  void exchange();
+
+  ///
+  Copier m_exchangeCopier;
   
   ///
   Box                                 m_domain;
