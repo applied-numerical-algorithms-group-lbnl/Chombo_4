@@ -121,6 +121,24 @@ public:
   }
 
 protected:
+  void 
+  coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
+                 const LevelGeometryService     & a_finerLevel);
+
+  void 
+  coarsenXFaceData(const vector< EBIndex<XFACE> > & a_faces,
+                   const LevelGeometryService     & a_finerLevel);
+
+  void 
+  coarsenYFaceData(const vector< EBIndex<YFACE> > & a_faces,
+                   const LevelGeometryService     & a_finerLevel);
+
+#if DIM==3
+  void 
+  coarsenZFaceData(const vector< EBIndex<ZFACE> > & a_faces,
+                   const LevelGeometryService     & a_finerLevel);
+#endif
+
   void
   defineFinestLevel(const RealVect               & a_origin,
                     const double                 & a_dx );

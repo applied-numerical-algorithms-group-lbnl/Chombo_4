@@ -222,9 +222,10 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   coarsenData( *finerPtr);
   if(deleteptr)
   {
-    //this deals with the fix fine to coarse thing
+    //if we had to copy the fine stuff to a refcoar layout, we need to copy it back
+    //because the fine to coarse thing changed the fine graph
     Interval interv(0,0);
-    finerPtr->copyTo(interv, *a_finerLevel.m_graphs, interv);
+    finerPtr->m_graphs->copyTo(interv, *a_finerLevel.m_graphs, interv);
     delete finerPtr;
   }
   exchange();
@@ -241,10 +242,8 @@ coarsenGraph(LevelGeometryService&      a_finerLevel)
   { 
     EBGraph & fineEBGraph = (*a_finerLevel.m_graphs)[dit[ibox]];
     Box        vofRegion       = m_grids[dit[ibox]];
-    Box        facRegion       = m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
     vofRegion &= m_domain;
-    facRegion &= m_domain;
     EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
     Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
@@ -258,8 +257,110 @@ void
 LevelGeometryService<order>::
 coarsenData(LevelGeometryService&      a_finerLevel)
 {
-  MayDay::Error("not implemented");
+  DataIterator dit = m_grids.dataIterator();
+  for (int ibox = 0; ibox < dit.size(); ibox++)
+  { 
+    const EBGraph& ebgraph = (*m_graphs)[dit[ibox]];
+    Box          vofRegion =     m_grids[dit[ibox]];
+    vofRegion.grow(m_geomgrow);
+    vofRegion &= m_domain;
+    EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
+    //this deals with the fine to coarse thing
+    Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
+    for(auto bit = vofRegionBx.begin(); bit != vofRegionBx.end(); ++bit)
+    {
+      const Point& pt = *bit;
+      if(ebgraph.isIrregular(pt))
+      {
+        vector<EBIndex<CELL> > vofs = ebgraph.getVoFs(pt);
+        coarsenVoFData(vofs, a_finerLevel);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          const EBIndex<CELL>& vof = vofs[ivof];
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            for(SideIterator sit; sit.ok(); ++sit)
+            {
+              Point otherpt = pt + sign(sit())*Point::Basis(idir);
+              Bx domainbx = getProtoBox(m_domain);
+              Bx regionbx = getProtoBox(vofRegion);
+              ///boundary faces are coarsenable.
+              ///faces one in from vof boundary are coarsenable.
+              if( (!domainbx.contains(otherpt)) || (regionbx.contains(otherpt)))
+              {
+                if(idir == 0)
+                {
+                  vector<EBIndex<XFACE> > xfaces = ebgraph.getXFaces(vof, sit());
+                  coarsenXFaceData(xfaces, a_finerLevel);
+                }
+                else if(idir == 1)
+                {
+                  vector<EBIndex<YFACE> > yfaces = ebgraph.getYFaces(vof, sit());
+                  coarsenYFaceData(yfaces, a_finerLevel);
+                }
+#if DIM==3
+                else if(idir == 2)
+                {
+                  vector<EBIndex<ZFACE> > zfaces = ebgraph.getZFaces(vof, sit());
+                  coarsenZFaceDAta(zfaces, a_finerLevel);
+                }
+#endif
+                else
+                {
+                  PROTO_ASSERT(false, "bad idir in coarsening");
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
+
+/*********************************************/
+template <int order>
+void 
+LevelGeometryService<order>::
+coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
+               const LevelGeometryService     & a_finerLevel)
+{
+  PROTO_ASSERT(false, "not implemented");
+}
+
+/*********************************************/
+template <int order>
+void 
+LevelGeometryService<order>::
+coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_faces,
+                 const LevelGeometryService      & a_finerLevel)
+{
+  PROTO_ASSERT(false, "not implemented");
+}
+
+/*********************************************/
+template <int order>
+void 
+LevelGeometryService<order>::
+coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_faces,
+                 const LevelGeometryService      & a_finerLevel)
+
+{
+  PROTO_ASSERT(false, "not implemented");
+}
+/*********************************************/
+#if DIM==3
+template <int order>
+void 
+LevelGeometryService<order>::
+coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_faces,
+                 const LevelGeometryService      & a_finerLevel)
+{
+  PROTO_ASSERT(false, "not implemented");
+}
+#endif
+
+               
 /*********************************************/
 template <int order>
 void 
