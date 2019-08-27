@@ -291,29 +291,53 @@ coarsenData(LevelGeometryService&      a_finerLevel)
                 if(idir == 0)
                 {
                   vector<EBIndex<XFACE> > xfaces = ebgraph.getXFaces(vof, sit());
-                  coarsenXFaceData(xfaces, a_finerLevel);
+                  coarsenXFaceData(xfaces, a_finerLevel, dit[ibox]);
                 }
                 else if(idir == 1)
                 {
                   vector<EBIndex<YFACE> > yfaces = ebgraph.getYFaces(vof, sit());
-                  coarsenYFaceData(yfaces, a_finerLevel);
+                  coarsenYFaceData(yfaces, a_finerLevel, dit[ibox]);
                 }
 #if DIM==3
                 else if(idir == 2)
                 {
                   vector<EBIndex<ZFACE> > zfaces = ebgraph.getZFaces(vof, sit());
-                  coarsenZFaceDAta(zfaces, a_finerLevel);
+                  coarsenZFaceData(zfaces, a_finerLevel, dit[ibox]);
                 }
 #endif
                 else
                 {
                   PROTO_ASSERT(false, "bad idir in coarsening");
                 }
-              }
-            }
-          }
-        }
-      }
+              } //end check to see if we are in coarsening range
+            }  //end loop over sides
+          }   //end loop over directions
+        }    //end loop over vofs in a ce3ll
+      }     //end irregular check
+    }      //end loop over cells
+  }       //Attention, all planets of the solar federation:
+}        //We have assumed control.
+
+/*********************************************/
+template <int order>
+void 
+LevelGeometryService<order>::
+coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
+               const LevelGeometryService     & a_finerLevel,
+               const DataIndex                & a_dit)
+{
+  const EBGraph& coarEBGraph = (*m_graphs)[a_dit];
+  for(int ivof = 0; ivof < a_coarVoFs.size(); ivof++)
+  {
+    const EBIndex<CELL> & coarVoF = a_coarVoFs[ivof];
+    IndMomDIM& coarMom  = (*m_voludata)[a_dit](coarVoF, 0);
+    vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
+    coarMom.setToZero();
+    for(int ifine = 0; ifine < fineVoFs.size(); ivof++)
+    {
+      const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
+      const IndMomDIM     & fineMom = (*(a_finerLevel->m_voludata))[a_dit](fineVoF, 0);
+      coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
 }
@@ -322,41 +346,77 @@ coarsenData(LevelGeometryService&      a_finerLevel)
 template <int order>
 void 
 LevelGeometryService<order>::
-coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
-               const LevelGeometryService     & a_finerLevel)
+coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
+                 const LevelGeometryService      & a_finerLevel,
+                 const DataIndex                 & a_dit)
 {
-  PROTO_ASSERT(false, "not implemented");
+  const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
+  const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
+  for(int iface = 0; iface < a_coarFaces.size(); iface++)
+  {
+    const EBIndex<XFACE> & coarFace = a_coarFaces[iface];
+    IndMomSDMinOne & coarMom  = (*m_xfacdata)[a_dit](coarFace, 0);
+    vector< EBIndex<XFACE> > fineFaces = coarEBGraph.refine<XFACE>(coarFace, fineEBGraph);
+    coarMom.setToZero();
+    for(int ifine = 0; ifine < fineFaces.size(); ifine++)
+    {
+      const EBIndex<XFACE> & fineFace = fineFaces[ifine];
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_xfacdata))[a_dit](fineFace, 0);
+      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+    }
+  }
 }
+
 
 /*********************************************/
 template <int order>
 void 
 LevelGeometryService<order>::
-coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_faces,
-                 const LevelGeometryService      & a_finerLevel)
-{
-  PROTO_ASSERT(false, "not implemented");
-}
-
-/*********************************************/
-template <int order>
-void 
-LevelGeometryService<order>::
-coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_faces,
-                 const LevelGeometryService      & a_finerLevel)
+coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
+                 const LevelGeometryService      & a_finerLevel,
+                 const DataIndex                 & a_dit)
 
 {
-  PROTO_ASSERT(false, "not implemented");
+  const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
+  const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
+  for(int iface = 0; iface < a_coarFaces.size(); iface++)
+  {
+    const EBIndex<YFACE> & coarFace = a_coarFaces[iface];
+    IndMomSDMinOne & coarMom  = (*m_yfacdata)[a_dit](coarFace, 0);
+    vector< EBIndex<YFACE> > fineFaces = coarEBGraph.refine<YFACE>(coarFace, fineEBGraph);
+    coarMom.setToZero();
+    for(int ifine = 0; ifine < fineFaces.size(); ifine++)
+    {
+      const EBIndex<YFACE> & fineFace = fineFaces[ifine];
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_yfacdata))[a_dit](fineFace, 0);
+      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+    }
+  }
 }
 /*********************************************/
 #if DIM==3
 template <int order>
 void 
 LevelGeometryService<order>::
-coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_faces,
+coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
                  const LevelGeometryService      & a_finerLevel)
+                 const DataIndex                 & a_dit)
 {
-  PROTO_ASSERT(false, "not implemented");
+  const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
+  const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
+  for(int iface = 0; iface < a_coarFaces.size(); iface++)
+  {
+    const EBIndex<ZFACE> & coarFace = a_coarFaces[iface];
+    IndMomSDMinOne & coarMom  = (*m_zfacdata)[a_dit](coarFace, 0);
+    vector< EBIndex<ZFACE> > fineFaces = coarEBGraph.refine<ZFACE>(coarFace, fineEBGraph);
+    coarMom.setToZero();
+    for(int ifine = 0; ifine < fineFaces.size(); ifine++)
+    {
+      const EBIndex<ZFACE> & fineFace = fineFaces[ifine];
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_zfacdata))[a_dit](fineFace, 0);
+      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+    }
+  }
 }
 #endif
 

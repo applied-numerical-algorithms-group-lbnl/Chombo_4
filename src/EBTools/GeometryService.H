@@ -123,20 +123,26 @@ public:
 protected:
   void 
   coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
-                 const LevelGeometryService     & a_finerLevel);
+                 const LevelGeometryService     & a_finerLevel,
+                 const DataIndex                 & a_dit);
 
   void 
   coarsenXFaceData(const vector< EBIndex<XFACE> > & a_faces,
-                   const LevelGeometryService     & a_finerLevel);
+                   const LevelGeometryService     & a_finerLevel,
+                   const DataIndex                & a_dit);
+  
 
   void 
   coarsenYFaceData(const vector< EBIndex<YFACE> > & a_faces,
-                   const LevelGeometryService     & a_finerLevel);
+                   const LevelGeometryService     & a_finerLevel,
+                   const DataIndex                & a_dit);
+                   
 
 #if DIM==3
   void 
   coarsenZFaceData(const vector< EBIndex<ZFACE> > & a_faces,
-                   const LevelGeometryService     & a_finerLevel);
+                   const LevelGeometryService     & a_finerLevel,
+                   const DataIndex                & a_dit);
 #endif
 
   void
