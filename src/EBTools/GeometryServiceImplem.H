@@ -399,7 +399,7 @@ template <int order>
 void 
 LevelGeometryService<order>::
 coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
-                 const LevelGeometryService      & a_finerLevel)
+                 const LevelGeometryService      & a_finerLevel,
                  const DataIndex                 & a_dit)
 {
   const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
