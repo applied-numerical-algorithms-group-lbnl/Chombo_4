@@ -26,29 +26,6 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   return m_finest->applyOp(a_lph, a_phi);
 }
 /***/
-EBMultigrid::
-EBMultigrid(dictionary_t                      & a_dictionary,
-            const Real                        & a_alpha,
-            const Real                        & a_beta,
-            const Real                        & a_dx,
-            const DisjointBoxLayout           & a_grids,
-            const string                      & a_stenname,
-            const string                      & a_dombcname,
-            const string                      & a_ebbcname,
-            const Box                         & a_domain)     
-{
-//  m_finest = std::shared_ptr<EBMultigridLevel>(
-//    new EBMultigridLevel(a_dictionary, 
-//                         a_alpha,      
-//                         a_beta,       
-//                         a_dx,         
-//                         a_grids,      
-//                         a_stenname,   
-//                         a_dombcname,  
-//                         a_ebbcname,   
-//                         a_domain);     
-}
-/***/
 void
 EBMultigrid::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
@@ -58,7 +35,6 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   PR_TIME("sgmg::resid");
   return m_finest->residual(a_res, a_phi, a_rhs);
 }
-/***/
 /***/
 void
 EBMultigrid::

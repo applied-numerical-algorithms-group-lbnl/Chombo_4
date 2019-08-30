@@ -120,8 +120,20 @@ public:
               const string                      & a_stenname,
               const string                      & a_dombcname,
               const string                      & a_ebbcname,
-              const Box                         & a_domain);
-
+              const Box                         & a_domain)
+  {
+    m_finest = std::shared_ptr<EBMultigridLevel>(
+      new EBMultigridLevel(a_dictionary, 
+                           a_alpha,      
+                           a_beta,       
+                           a_dx,         
+                           a_grids,      
+                           a_stenname,   
+                           a_dombcname,  
+                           a_ebbcname,   
+                           a_domain));     
+  }
+      
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,

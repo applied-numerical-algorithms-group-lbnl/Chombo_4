@@ -57,7 +57,7 @@ defineFinestLevel(const RealVect               & a_origin,
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box validBox = m_grids[dit[ibox]];
-    Box grownBox = validBox.grow(m_geomgrow);
+    Box grownBox = validBox.grow(2*m_geomgrow);
     Box interBoxCh = grownBox & m_domain;
     Bx interBox = getProtoBox(interBoxCh);
     Bx domain   = getProtoBox(m_domain);
