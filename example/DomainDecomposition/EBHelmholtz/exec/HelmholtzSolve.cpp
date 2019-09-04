@@ -149,7 +149,7 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "making dictionary" << endl;
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx, true));
+    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx));
   
 //  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");

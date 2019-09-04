@@ -28,8 +28,8 @@ public:
   typedef MomentIterator<DIM  , order> MomItDIM;
   typedef MomentIterator<DIM-1, order> MomItSDMinOne;
   typedef IrregNode<order> inode;
-  typedef HostIrregData<CELL,  IndMomDIM     , 1>  VoluData;
-  typedef HostIrregData<CELL,  IndMomDIM     , 1>  EBFaData;
+  typedef HostIrregData<CELL,      IndMomDIM     , 1>  VoluData;
+  typedef HostIrregData<BOUNDARY,  IndMomDIM     , 1>  EBFaData;
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
@@ -42,8 +42,7 @@ public:
   EBDictionary(const shared_ptr<GeometryService<order> >  & a_geoserv,
                const DisjointBoxLayout                    & a_grids,
                const Box                                  & a_domain,
-               Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx,
-               bool a_periodiconly);
+               Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx);
 
 
   inline void registerStencil(string a_stencilName,
@@ -100,7 +99,6 @@ protected:
   bool                                m_isClosed;
   Box                                 m_domain;
   data_t m_dx;
-  bool   m_periodiconly;
 private:
   EBDictionary();
   EBDictionary(  const EBDictionary<order, data_t, srcCenter, dstCenter>& a_inp);

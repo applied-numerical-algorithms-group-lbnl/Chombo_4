@@ -89,9 +89,10 @@ defineFinestLevel(const RealVect               & a_origin,
       for(int inode = 0; inode < nodes.size(); inode++)
       {
         const IrregNode<order>& node = nodes[inode];
-        EBIndex<CELL> vof(node.m_cell, node.m_cellIndex);
+        EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
+        EBIndex<BOUNDARY> ebf = vof.getCutFace();
         (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
-        (*m_ebfadata)[dit[ibox]](vof, 0)  = node.m_EBMoments;
+        (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
         for(SideIterator sit; sit.ok(); ++sit)
         {
           vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());

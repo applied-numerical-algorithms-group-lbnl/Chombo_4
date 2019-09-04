@@ -14,8 +14,7 @@ EBDictionary<order, data_t, srcCenter, dstCenter>::
 EBDictionary(const shared_ptr<GeometryService<order> >    & a_geoserv,
              const DisjointBoxLayout                      & a_grids,
              const Box                                   & a_domain,
-             Point  a_srcGhost,  Point  a_dstGhost,
-             data_t a_dx,  bool a_periodiconly)
+             Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx)
 {
   m_geoserv  = a_geoserv;
   m_grids    = a_grids;
@@ -23,7 +22,6 @@ EBDictionary(const shared_ptr<GeometryService<order> >    & a_geoserv,
   m_srcGhost = a_srcGhost;
   m_dstGhost = a_dstGhost;
   m_dx       = a_dx;
-  m_periodiconly     = a_periodiconly;
   m_isClosed = false;
 
   DataIterator dit = m_grids.dataIterator();
@@ -61,7 +59,7 @@ registerStencil(string a_stencilName,
                               gridbx, domainbx, m_srcGhost, m_dstGhost,
                               (*graphs)[dit[ibox]], (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
-                              m_dx, m_periodiconly));
+                              m_dx, false));  //false is to turn off periodic
     std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[ibox];
     boxmap[key] = newsten;
   }
