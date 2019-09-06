@@ -16,6 +16,19 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
         const EBLevelBoxData<CELL, 1> & a_phi)
                     
 {
+  EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
+  phi.exchange(m_exchangeCopier);
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    string stenname("Second_Order_Poisson");
+
+    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(stenname, m_ebbcname, ibox);
+    //set lphi = beta * div(F)
+    stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, m_beta);
+///HERE
+///     ebforall(...);
+  }
 }
 /****/
 void
@@ -79,7 +92,9 @@ EBMultigridLevel(dictionary_t                      & a_dictionary,
                  const string                      & a_stenname,
                  const string                      & a_dombcname,
                  const string                      & a_ebbcname,
-                 const Box                         & a_domain)
+                 const Box                         & a_domain,
+                 const IntVect                     & a_nghostsrc, 
+                 const IntVect                     & a_nghostdst)
 {
   m_dictionary = a_dictionary; 
   m_alpha      = a_alpha;      
@@ -90,7 +105,8 @@ EBMultigridLevel(dictionary_t                      & a_dictionary,
   m_dombcname  = a_dombcname;  
   m_ebbcname   = a_ebbcname;   
   m_domain     = a_domain;     
-  
+  m_nghostSrc  = a_nghostsrc;
+  m_nghostDst  = a_nghostdst;
   defineStencils();
 
   defineCoarserObjects();
@@ -116,13 +132,10 @@ defineStencils()
 {
   PR_TIME("sgmglevel::definestencils");
   getMultiColors();
-
-}
-/****/
-void
-EBMultigridLevel::
-enforceBoundaryConditions(EBLevelBoxData<CELL, 1>& a_phi,int a_ghost)
-{
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+  //register stencil for apply op
+  string stenname("Second_Order_Poisson");
+  m_dictionary->registerStencil(stenname, m_dombcname, m_ebbcname);
 }
 /****/
 void

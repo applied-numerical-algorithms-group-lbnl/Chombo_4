@@ -183,7 +183,7 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox());
+  EBMultigrid solver(dictionary, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox(), dataGhostIV, dataGhostIV);
   DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)

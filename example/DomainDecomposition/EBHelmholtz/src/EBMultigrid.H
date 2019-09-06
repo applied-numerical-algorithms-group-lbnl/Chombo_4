@@ -18,6 +18,7 @@ using std::array;
 class EBMultigridLevel
 {
 public:
+  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
   
   ///
@@ -29,7 +30,9 @@ public:
                    const string                      & a_stenname,
                    const string                      & a_dombcname,
                    const string                      & a_ebbcname,
-                   const Box                         & a_domain);
+                   const Box                         & a_domain,
+                   const IntVect                     & a_nghostsrc, 
+                   const IntVect                     & a_nghostdst);
 
   ///make coarse from fine 
   EBMultigridLevel(const EBMultigridLevel& a_finerLevel);
@@ -68,9 +71,6 @@ public:
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
               const EBLevelBoxData<CELL, 1>& a_rhs);
 
-  void
-  enforceBoundaryConditions(EBLevelBoxData<CELL, 1>& a_phi, int a_ghost = 1);
-
   std::shared_ptr<EBMultigridLevel> m_coarser;
 private:
   void defineStencils();
@@ -99,7 +99,8 @@ private:
   EBLevelBoxData<CELL, 1>           m_lphi;
   EBLevelBoxData<CELL, 1>           m_deltaC;
   EBLevelBoxData<CELL, 1>           m_residC;
-  
+  IntVect m_nghostSrc, m_nghostDst;
+  Copier                            m_exchangeCopier;
 };
 
 
@@ -120,7 +121,9 @@ public:
               const string                      & a_stenname,
               const string                      & a_dombcname,
               const string                      & a_ebbcname,
-              const Box                         & a_domain)
+              const Box                         & a_domain,
+              const IntVect                     & a_nghostsrc, 
+              const IntVect                     & a_nghostdst)
   {
     m_finest = std::shared_ptr<EBMultigridLevel>(
       new EBMultigridLevel(a_dictionary, 
@@ -131,7 +134,9 @@ public:
                            a_stenname,   
                            a_dombcname,  
                            a_ebbcname,   
-                           a_domain));     
+                           a_domain, 
+                           a_nghostsrc,
+                           a_nghostdst));     
   }
       
   /// 
@@ -168,12 +173,6 @@ public:
              const EBLevelBoxData<CELL, 1>& a_rhs)
   {
     m_finest->relax(a_phi, a_rhs);
-  }
-  ///
-  void
-  enforceBoundaryConditions(EBLevelBoxData<CELL, 1>& a_phi)
-  {
-    m_finest->enforceBoundaryConditions(a_phi);
   }
 private:
   /// weak construction introduces unnecessary complications
