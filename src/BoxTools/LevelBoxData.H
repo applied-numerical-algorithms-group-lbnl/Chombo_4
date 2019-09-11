@@ -99,9 +99,13 @@ public:
   void 
   writeToFileHDF5(const string& a_filename) const
   {
+#ifdef CH_USE_HDF5
     LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
     copyToHost(hostdata, *this);
     writeLevelname(&hostdata, a_filename.c_str());
+#else
+    printf("hdf5 not enabled");
+#endif
   }
 
   ///
