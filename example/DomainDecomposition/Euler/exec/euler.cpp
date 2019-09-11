@@ -177,8 +177,10 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 void 
 writeData(int step, LevelBoxData<NUMCOMPS> & a_U)
 {
+#ifdef CH_USE_HDF5
   string filename = string("state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
   a_U.writeToFileHDF5(filename);
+#endif
 }
 /***/
 void eulerRun(const RunParams& a_params)
