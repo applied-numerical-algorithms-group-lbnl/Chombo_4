@@ -52,7 +52,7 @@ increment(Real        & a_weight,
 #pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    BoxData<Real, NUMCOMPS> incr = delta[dit[ibox]];
+    BoxData<Real, NUMCOMPS>& incr = delta[dit[ibox]];
     incr *= a_weight;
     data[dit[ibox]] += incr;
   }
