@@ -51,6 +51,7 @@ for t in targets:
     if(args.hdf5 == 'TRUE'):
         f.write('\nCPPFLAGS += -DCH_USE_HDF5')
         f.write('\nCPPFLAGS += $(HDFINCFLAGS)')
+        f.write('\nLIBS     += $(HDFLIBFLAGS) ')
 
     if(args.prec == 'DOUBLE'):
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
