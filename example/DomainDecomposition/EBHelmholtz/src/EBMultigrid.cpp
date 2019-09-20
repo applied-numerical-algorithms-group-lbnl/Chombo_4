@@ -32,6 +32,28 @@ void  subtractRHSF(Sca     a_res,
 }
 PROTO_KERNEL_END(subtractRHSF, subtractRHS)
 
+
+PROTO_KERNEL_START 
+void  gsrbResidF(int     a_pt[DIM],
+                 Sca     a_phi,
+                 Sca     a_res,
+                 Sca     a_diag,
+                 int     a_iredBlack)
+{
+  int sumpt = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    sumpt += a_pt[idir];
+  }
+  if(sumpt%2 == a_iredBlack)
+  {
+    static const Real safety = 0.99;
+    Real lambda = safety/a_diag(0); 
+    a_phi(0) = a_phi(0) - lambda*a_res(0);
+  }
+}
+PROTO_KERNEL_END(gsrbResidF, gsrbResid)
+
 /****/
 void
 EBMultigridLevel::
@@ -83,17 +105,18 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
 }
 /***/
 EBMultigridLevel::
-EBMultigridLevel(dictionary_t                      & a_dictionary,
-                 const Real                        & a_alpha,
-                 const Real                        & a_beta,
-                 const Real                        & a_dx,
-                 const DisjointBoxLayout           & a_grids,
-                 const string                      & a_stenname,
-                 const string                      & a_dombcname,
-                 const string                      & a_ebbcname,
-                 const Box                         & a_domain,
-                 const IntVect                     & a_nghostsrc, 
-                 const IntVect                     & a_nghostdst)
+EBMultigridLevel(dictionary_t                            & a_dictionary,
+                 shared_ptr<GeometryService<2> >         & a_geoserv,
+                 const Real                              & a_alpha,
+                 const Real                              & a_beta,
+                 const Real                              & a_dx,
+                 const DisjointBoxLayout                 & a_grids,
+                 const string                            & a_stenname,
+                 const string                            & a_dombcname,
+                 const string                            & a_ebbcname,
+                 const Box                               & a_domain,
+                 const IntVect                           & a_nghostsrc, 
+                 const IntVect                           & a_nghostdst)
 {
   m_dictionary = a_dictionary; 
   m_alpha      = a_alpha;      
@@ -106,6 +129,9 @@ EBMultigridLevel(dictionary_t                      & a_dictionary,
   m_domain     = a_domain;     
   m_nghostSrc  = a_nghostsrc;
   m_nghostDst  = a_nghostdst;
+  m_graphs     = a_geoserv->getGraphs(a_domain);
+  m_resid.define(m_grids, m_nghostSrc, m_graphs);
+
   defineStencils();
 
   defineCoarserObjects();
@@ -168,11 +194,20 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
-    unsigned long long int numflopspt = 2;
+    shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
+    shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+    const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+    for(int iredblack = 0; iredblack < 2; iredblack++)
+    {
+      //lambda = safety/diag
+      //phi = phi - lambda*(res)
+      //also does an integer check for red/black but I am not sure what to do with that
+      unsigned long long int numflopspt = 3;
+      ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
+                        a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag, iredblack);
+    }
   }
 }
 /****/
@@ -204,14 +239,14 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); //don't do it
   }
 
-  if (m_hasCoarser)
-  {
-    residual(m_resid,a_phi,a_rhs);                      
-    m_coarser->restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    m_coarser->prolongIncrement(a_phi,m_deltaC);
-  }
+//  if (m_hasCoarser)
+//  {
+//    residual(m_resid,a_phi,a_rhs);                      
+//    m_coarser->restrictResidual(m_residC,m_resid);
+//    m_deltaC.setVal(0.);
+//    m_coarser->vCycle(m_deltaC,m_residC);
+//    m_coarser->prolongIncrement(a_phi,m_deltaC);
+//  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {

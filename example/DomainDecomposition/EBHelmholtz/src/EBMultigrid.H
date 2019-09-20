@@ -23,6 +23,7 @@ public:
   
   ///
   EBMultigridLevel(dictionary_t                      & a_dictionary,
+                   shared_ptr<GeometryService<2> >   & a_geoserv,
                    const Real                        & a_alpha,
                    const Real                        & a_beta,
                    const Real                        & a_dx,
@@ -94,10 +95,7 @@ private:
   string                            m_ebbcname;
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
-  EBLevelBoxData<CELL, 1>           m_relCoef;
-  EBLevelBoxData<CELL, 1>           m_lphi;
-  EBLevelBoxData<CELL, 1>           m_deltaC;
-  EBLevelBoxData<CELL, 1>           m_residC;
+  shared_ptr<LevelData<EBGraph> >   m_graphs;
   IntVect m_nghostSrc, m_nghostDst;
   Copier                            m_exchangeCopier;
 };
@@ -113,6 +111,7 @@ public:
 
   /// 
   EBMultigrid(dictionary_t                      & a_dictionary,
+              shared_ptr<GeometryService<2> >   & a_geoserv,
               const Real                        & a_alpha,
               const Real                        & a_beta,
               const Real                        & a_dx,
@@ -126,6 +125,7 @@ public:
   {
     m_finest = std::shared_ptr<EBMultigridLevel>(
       new EBMultigridLevel(a_dictionary, 
+                           a_geoserv,
                            a_alpha,      
                            a_beta,       
                            a_dx,         
