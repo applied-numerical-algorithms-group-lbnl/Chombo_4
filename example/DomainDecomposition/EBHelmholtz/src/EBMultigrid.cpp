@@ -5,9 +5,32 @@
 
 
 
-
 int  EBMultigrid::s_numSmoothDown = 2;
 int  EBMultigrid::s_numSmoothUp   = 2;
+
+typedef Proto::Var<Real, 1> Sca;
+
+/****/
+//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
+PROTO_KERNEL_START 
+void  addAlphaPhiF(Sca     a_lph,
+                   Sca     a_phi,
+                   Real    a_alpha)
+{
+  Real betadivF = a_lph(0);
+
+  a_lph(0) = a_alpha*a_phi(0) + betadivF;
+}
+PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
+
+//res comes in holding lphi.   leaves holding res= lphi-rhs
+PROTO_KERNEL_START 
+void  subtractRHSF(Sca     a_res,
+                   Sca     a_phi)
+{
+  a_res(0) = a_res(0) - a_phi(0);
+}
+PROTO_KERNEL_END(subtractRHSF, subtractRHS)
 
 /****/
 void
@@ -21,13 +44,14 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    string stenname("Second_Order_Poisson");
-
-    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(stenname, m_ebbcname, ibox);
+    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
     //set lphi = beta * div(F)
     stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, m_beta);
-///HERE
-///     ebforall(...);
+    //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
+    unsigned long long int numflopspt = 2;
+    Box grid =m_grids[dit[ibox]];
+    Bx  grbx = getProtoBox(grid);
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_alpha);
   }
 }
 /****/
@@ -56,31 +80,6 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
 {
   PR_TIME("sgmg::vcycle");
   return m_finest->vCycle(a_phi, a_rhs);
-}
-/***/
-void
-EBMultigridLevel::
-getMultiColors()
-{
-// Color offsets are grouped into "red"=even number of nonzeros (first 2^(DIM-1)) 
-// and "black= odd number of nonzeros (the rest).
-#if DIM==2
-  m_colors[0] = Point::Zeros();//(0,0)
-  m_colors[1] = Point::Ones();//(1,1)
-  m_colors[2] = Point::Zeros() + Point::Basis(1);//(0,1)
-  m_colors[3] = Point::Zeros() + Point::Basis(0);//(1,0)
-#elif DIM==3
-  m_colors[0] = Point::Zeros();//(0,0,0)
-  m_colors[1] = Point::Zeros() + Point::Basis(0) + Point::Basis(1);//(1,1,0)
-  m_colors[2] = Point::Zeros() + Point::Basis(1) + Point::Basis(2);//(0,1,1)
-  m_colors[3] = Point::Zeros() + Point::Basis(0) + Point::Basis(2);//(1,0,1)
-  m_colors[4] = Point::Zeros() + Point::Basis(1);//(0,1,0)
-  m_colors[5] = Point::Zeros() + Point::Basis(0);//(1,0,0)
-  m_colors[6] = Point::Zeros() + Point::Basis(2);//(0,0,1)
-  m_colors[7] = Point::Ones();//(1,1,1)
-#else
-  compiler_error_this_code_is_only_written_for_dim_2_or_3();
-#endif
 }
 /***/
 EBMultigridLevel::
@@ -131,11 +130,10 @@ EBMultigridLevel::
 defineStencils()
 {
   PR_TIME("sgmglevel::definestencils");
-  getMultiColors();
+
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
-  string stenname("Second_Order_Poisson");
-  m_dictionary->registerStencil(stenname, m_dombcname, m_ebbcname);
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname);
 }
 /****/
 void
@@ -145,6 +143,18 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_rhs)
                     
 {
+  //this puts lphi into a_res
+  applyOp(a_res, a_phi);
+  //subtract off rhs so res = lphi - rhs
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
+    unsigned long long int numflopspt = 2;
+    Box grid = m_grids[dit[ibox]];
+    Bx  grbx = getProtoBox(grid);
+    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+  }
 }
 /****/
 void
@@ -153,6 +163,17 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs)
 {
   PR_TIME("sgmglevel::relax");
+  residual(m_resid, a_phi, a_rhs);
+  //
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
+    unsigned long long int numflopspt = 2;
+    Box grid = m_grids[dit[ibox]];
+    Bx  grbx = getProtoBox(grid);
+    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+  }
 }
 /****/
 void

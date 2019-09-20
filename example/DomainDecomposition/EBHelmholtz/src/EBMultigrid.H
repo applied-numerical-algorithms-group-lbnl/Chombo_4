@@ -75,7 +75,7 @@ public:
 private:
   void defineStencils();
   void defineCoarserObjects();
-  void getMultiColors();
+
 
   /// weak construction introduces unnecessary complications
   EBMultigridLevel()
@@ -84,7 +84,6 @@ private:
 
   bool   m_hasCoarser; 
 
-  array<Point,MG_NUM_COLORS>        m_colors;
   dictionary_t                      m_dictionary;
   Real                              m_alpha;   
   Real                              m_beta;    
