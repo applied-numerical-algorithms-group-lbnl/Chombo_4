@@ -74,7 +74,9 @@ public:
 
   std::shared_ptr<EBMultigridLevel> m_coarser;
 private:
-  void defineStencils();
+  void defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
+                      const shared_ptr<LevelData<EBGraph> >   & a_graphs);
+
   void defineCoarserObjects();
 
 
@@ -95,7 +97,8 @@ private:
   string                            m_ebbcname;
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
-  shared_ptr<LevelData<EBGraph> >   m_graphs;
+  EBLevelBoxData<CELL, 1>           m_kappa;
+
   IntVect m_nghostSrc, m_nghostDst;
   Copier                            m_exchangeCopier;
 };

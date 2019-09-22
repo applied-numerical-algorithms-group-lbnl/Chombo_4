@@ -10,50 +10,23 @@ int  EBMultigrid::s_numSmoothUp   = 2;
 
 typedef Proto::Var<Real, 1> Sca;
 
+
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
 void  addAlphaPhiF(Sca     a_lph,
                    Sca     a_phi,
+                   Sca     a_kappa,
                    Real    a_alpha)
 {
-  Real betadivF = a_lph(0);
+  //kappa and beta are already in lph
+  //kappa because we did not divide by kappa
+  //beta was sent in to ebstencil::apply
+  Real betakappadivF = a_lph(0);
 
-  a_lph(0) = a_alpha*a_phi(0) + betadivF;
+  a_lph(0) = a_alpha*a_phi(0)*a_kappa(0) + betakappadivF;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
-
-//res comes in holding lphi.   leaves holding res= lphi-rhs
-PROTO_KERNEL_START 
-void  subtractRHSF(Sca     a_res,
-                   Sca     a_phi)
-{
-  a_res(0) = a_res(0) - a_phi(0);
-}
-PROTO_KERNEL_END(subtractRHSF, subtractRHS)
-
-
-PROTO_KERNEL_START 
-void  gsrbResidF(int     a_pt[DIM],
-                 Sca     a_phi,
-                 Sca     a_res,
-                 Sca     a_diag,
-                 int     a_iredBlack)
-{
-  int sumpt = 0;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    sumpt += a_pt[idir];
-  }
-  if(sumpt%2 == a_iredBlack)
-  {
-    static const Real safety = 0.99;
-    Real lambda = safety/a_diag(0); 
-    a_phi(0) = a_phi(0) - lambda*a_res(0);
-  }
-}
-PROTO_KERNEL_END(gsrbResidF, gsrbResid)
-
 /****/
 void
 EBMultigridLevel::
@@ -67,13 +40,13 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
-    //set lphi = beta * div(F)
+    //set lphi = kappa*beta * div(F)
     stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, m_beta);
-    //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
-    unsigned long long int numflopspt = 2;
+    //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
+    unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_alpha);
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
   }
 }
 /****/
@@ -129,10 +102,11 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_domain     = a_domain;     
   m_nghostSrc  = a_nghostsrc;
   m_nghostDst  = a_nghostdst;
-  m_graphs     = a_geoserv->getGraphs(a_domain);
-  m_resid.define(m_grids, m_nghostSrc, m_graphs);
+  const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
+  m_resid.define(m_grids, m_nghostSrc  , graphs);
+  m_kappa.define(m_grids, IntVect::Zero, graphs);
 
-  defineStencils();
+  defineStencils(a_geoserv, graphs);
 
   defineCoarserObjects();
 }
@@ -153,15 +127,67 @@ EBMultigridLevel(const EBMultigridLevel& a_finerLevel)
 /***/
 void
 EBMultigridLevel::
-defineStencils()
+defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
+               const shared_ptr<LevelData<EBGraph> >   & a_graphs)
 {
   PR_TIME("sgmglevel::definestencils");
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname);
+
+  //need the volume fraction in a data holder so we can evaluate kappa*alpha I +... HERE
+  typedef IndexedMoments<DIM  , 2> IndMomDIM;
+  typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
+  const shared_ptr<LevelData<VoluData> > volmomld = a_geoserv->getVoluData(m_domain);
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    Box grid =m_grids[dit[ibox]];
+    Bx  grbx = getProtoBox(grid);
+    const EBGraph  & graph = (*a_graphs)[dit[ibox]];
+    EBHostData<CELL, Real, 1> hostdat(grbx, graph);
+    //fill kappa on the host then copy to the device
+    HostBoxData<        Real, 1>& reghost = hostdat.getRegData();
+    HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
+    const VoluData & volmo = (*volmomld)[dit[ibox]];
+    for(auto bit = grbx.begin(); bit != grbx.end();  ++bit)
+    {
+      if(graph.isRegular(*bit))
+      {
+        reghost(*bit, 0) = 1.0;
+      }
+      else if(graph.isCovered(*bit))
+      {
+        reghost(*bit, 0) = 0.0;
+      }
+      else
+      {
+        vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
+        for(int ivec = 0; ivec < vofs.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofs[ivec];
+          const IndMomDIM&  momspt = volmo(vof, 0);
+          double kappavof = momspt[0];
+          reghost(*bit, 0) = kappavof;
+          irrhost( vof, 0) = kappavof;
+        }
+      }
+    }
+    // now copy to the device
+    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
+  }
 }
 /****/
+//res comes in holding lphi.   leaves holding res= lphi-rhs
+PROTO_KERNEL_START 
+void  subtractRHSF(Sca     a_res,
+                   Sca     a_phi)
+{
+  a_res(0) = a_res(0) - a_phi(0);
+}
+/****/
+PROTO_KERNEL_END(subtractRHSF, subtractRHS)
 void
 EBMultigridLevel::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
@@ -183,30 +209,57 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   }
 }
 /****/
+PROTO_KERNEL_START 
+void  gsrbResidF(int     a_pt[DIM],
+                 Sca     a_phi,
+                 Sca     a_res,
+                 Sca     a_diag,
+                 Sca     a_kappa,
+                 Real    a_alpha,
+                 Real    a_beta,
+                 int     a_iredBlack)
+{
+  int sumpt = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    sumpt += a_pt[idir];
+  }
+  if(sumpt%2 == a_iredBlack)
+  {
+    static const Real safety = 0.99;
+    Real realdiag = a_kappa(0)*a_alpha + a_beta*a_diag(0);
+    Real lambda = safety/realdiag;
+    a_phi(0) = a_phi(0) - lambda*a_res(0);
+  }
+}
+PROTO_KERNEL_END(gsrbResidF, gsrbResid)
+/****/
 void
 EBMultigridLevel::
 relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs)
 {
   PR_TIME("sgmglevel::relax");
-  residual(m_resid, a_phi, a_rhs);
   //
   DataIterator dit = m_grids.dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  for(int iredblack = 0; iredblack < 2; iredblack++)
   {
-    shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
-    shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
-    const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
-    Box grid = m_grids[dit[ibox]];
-    Bx  grbx = getProtoBox(grid);
-    for(int iredblack = 0; iredblack < 2; iredblack++)
+    residual(m_resid, a_phi, a_rhs);
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
+      shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
+      shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+      const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
+      Box grid = m_grids[dit[ibox]];
+      Bx  grbx = getProtoBox(grid);
       //lambda = safety/diag
       //phi = phi - lambda*(res)
+      ///lambda takes floating point to calculate
       //also does an integer check for red/black but I am not sure what to do with that
-      unsigned long long int numflopspt = 3;
+      unsigned long long int numflopspt = 6;
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                        a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag, iredblack);
+                        a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag,
+                        m_kappa[dit[ibox]], m_alpha, m_beta, iredblack);
     }
   }
 }

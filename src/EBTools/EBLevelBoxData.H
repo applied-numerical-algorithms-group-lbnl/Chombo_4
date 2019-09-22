@@ -239,10 +239,41 @@ public:
       }
     }
   }
+
+
+  /// 
+  static 
+  void copyToHost(EBHostData<cent, Real, NUMCOMPS> & hostfab,
+                  EBBoxData< cent, Real, NUMCOMPS> & devifab)
+  {
+
+    for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
+    {
+      size_t fabsizeHost, fabsizeDevi; 
+      Real*  dataptrHost;
+      Real*  dataptrDevi;
+      hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
+      devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+
+      size_t datSize = sizeof(Real)*fabsizeDevi;
+
+#ifdef PROTO_CUDA
+      cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
+      cudaError err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, cudaGetErrorString(err));
+      }
+#else
+      memcpy(dataptrHost, dataptrDevi, datSize);
+#endif  
+    }
+
+  }
   
 
   
-  ///
   ///
   static 
   void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
@@ -255,32 +286,40 @@ public:
     {
       EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
       EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
-      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
-      {
-        size_t fabsizeHost, fabsizeDevi; 
-        Real*  dataptrHost, *dataptrDevi;
-        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
-        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+      copyToDevice(hostfab, devifab);
+    }
+  }
 
-        size_t datSize = sizeof(Real)*fabsizeDevi;
+  ///
+  static 
+  void copyToDevice( EBHostData<cent, Real, NUMCOMPS> & hostfab,
+                     EBBoxData< cent, Real, NUMCOMPS> & devifab)
+  {
+    for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
+    {
+      size_t fabsizeHost, fabsizeDevi; 
+      Real*  dataptrHost, *dataptrDevi;
+      hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
+      devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+
+      size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-        cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
-        cudaError err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, cudaGetErrorString(err));
-        }
-#else
-        memcpy(dataptrDevi, dataptrHost, datSize);
-#endif  
+      cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
+      cudaError err = cudaGetLastError();
+      if (err != cudaSuccess)
+      {
+        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, cudaGetErrorString(err));
       }
+#else
+      memcpy(dataptrDevi, dataptrHost, datSize);
+#endif  
     }
   }
 
 
-  private:
+private:
     shared_ptr<LevelData<EBGraph>  > m_graphs;
 };
 
