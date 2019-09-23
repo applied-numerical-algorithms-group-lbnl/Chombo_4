@@ -5,7 +5,7 @@ maxIter=    10
 #number of cuda streams (if used)
 nStream=  8
 alpha = 1.0
-beta = -1.0e-2
+beta = -1.0e-1
 tolerance = 1.0e-6
 #max grid size in domain decomposition
 maxGrid=  32
@@ -13,6 +13,9 @@ maxGrid=  32
 x0=       0.5
 y0=       0.5
 z0=       0.5
+#x0=       50.
+#y0=       50.
+#z0=       50.
 # ellipsoid denominators
 A=        1.0
 B=        1.0
@@ -23,4 +26,4 @@ R=        0.25
 coveredval = -1
 # 0 neumann, 1 dirichlet
 domainBC     = 1
-EBBC         = 1
+EBBC         = 0

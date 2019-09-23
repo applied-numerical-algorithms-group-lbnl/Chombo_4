@@ -142,6 +142,7 @@ runTest(int a_argc, char* a_argv[])
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
+
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
   pout() << "defining geometry" << endl;

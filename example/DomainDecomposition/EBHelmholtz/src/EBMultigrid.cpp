@@ -217,6 +217,7 @@ void  gsrbResidF(int     a_pt[DIM],
                  Sca     a_kappa,
                  Real    a_alpha,
                  Real    a_beta,
+                 Real    a_dx,
                  int     a_iredBlack)
 {
   int sumpt = 0;
@@ -228,7 +229,10 @@ void  gsrbResidF(int     a_pt[DIM],
   {
     static const Real safety = 0.99;
     Real realdiag = a_kappa(0)*a_alpha + a_beta*a_diag(0);
+    Real regudiag = a_alpha + 2*DIM*a_beta*a_dx*a_dx;
     Real lambda = safety/realdiag;
+    Real reglam = safety/regudiag;
+    if(lambda > reglam) lambda= reglam;
     a_phi(0) = a_phi(0) - lambda*a_res(0);
   }
 }
@@ -256,10 +260,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       //phi = phi - lambda*(res)
       ///lambda takes floating point to calculate
       //also does an integer check for red/black but I am not sure what to do with that
-      unsigned long long int numflopspt = 6;
+      unsigned long long int numflopspt = 10;
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                         a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag,
-                        m_kappa[dit[ibox]], m_alpha, m_beta, iredblack);
+                        m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
     }
   }
 }
