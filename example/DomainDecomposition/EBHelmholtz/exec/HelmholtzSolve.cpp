@@ -51,6 +51,15 @@ dumpPPS(const PointSet* a_ivs)
   std::cout << std::endl;
  }
 
+typedef Proto::Var<Real, 1> Sca;
+PROTO_KERNEL_START 
+void  addCorToPhiF(Sca     a_phi,
+                   Sca     a_cor)
+{
+  a_phi(0) = a_phi(0) + a_cor(0);
+}
+PROTO_KERNEL_END(addCorToPhiF, addCorToPhi)
+
 int
 runTest(int a_argc, char* a_argv[])
 {
@@ -142,7 +151,7 @@ runTest(int a_argc, char* a_argv[])
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
-
+//  Real dx = 1.0;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
   pout() << "defining geometry" << endl;
@@ -183,6 +192,7 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox(), dataGhostIV, dataGhostIV);
   DataIterator dit = grids.dataIterator();
@@ -191,8 +201,10 @@ runTest(int a_argc, char* a_argv[])
   {
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
     EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
-    phibd.setVal(0.0);
-    rhsbd.setVal(-1.0);
+    EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+    phibd.setVal(1.0);
+    rhsbd.setVal(0.0);
+    corbd.setVal(0.0);
   }
 
   solver.residual(res, phi, rhs);
@@ -202,10 +214,22 @@ runTest(int a_argc, char* a_argv[])
   Real resnorm = initres;
   while((iter < maxIter) && (resnorm > tol*initres))
   {
-    solver.vCycle(phi,rhs);
     solver.residual(res, phi, rhs);
     resnorm = res.maxNorm(0);
     pout() << "iter = " << iter << ", |resid| = " << resnorm << endl;
+    solver.vCycle(cor,res);
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+      unsigned long long int numflopspt = 1;
+      Bx phibx = phibd.box();
+      ebforallInPlace(numflopspt, "addCorToPhi", addCorToPhi, phibx,  phibd, corbd);
+
+
+      corbd.setVal(0.0);
+    }
+    
     iter++;
   }
 

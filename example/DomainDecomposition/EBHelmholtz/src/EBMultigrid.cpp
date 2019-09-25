@@ -16,17 +16,42 @@ typedef Proto::Var<Real, 1> Sca;
 PROTO_KERNEL_START 
 void  addAlphaPhiF(Sca     a_lph,
                    Sca     a_phi,
-                   Sca     a_kappa,
+                   Sca     a_kap,
                    Real    a_alpha)
 {
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  Real betakappadivF = a_lph(0);
-
-  a_lph(0) = a_alpha*a_phi(0)*a_kappa(0) + betakappadivF;
+  Real bkdivF = a_lph(0);
+  Real phival  = a_phi(0);
+  Real kapval  = a_kap(0);
+  a_lph(0) = a_alpha*phival*kapval + bkdivF;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
+
+
+/****/
+PROTO_KERNEL_START 
+void  addAlphaPhiPtF(int a_pt[DIM],
+                     Sca     a_lph,
+                     Sca     a_phi,
+                     Sca     a_kap,
+                     Real    a_alpha)
+{
+  //kappa and beta are already in lph
+  //kappa because we did not divide by kappa
+  //beta was sent in to ebstencil::apply
+  Real bkdivF = a_lph(0);
+  Real phival  = a_phi(0);
+  Real kapval  = a_kap(0);
+  if((a_pt[0] == 26) && (a_pt[1]==16))
+  {
+    Point debpt(a_pt[0], a_pt[1]);
+//    cout << debpt << "addphipt: bkdivf = " << bkdivF << endl;
+  }
+  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+}
+PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
 /****/
 void
 EBMultigridLevel::
@@ -46,7 +71,8 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
+    //ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
+    ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
   }
 }
 /****/
@@ -135,7 +161,11 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname);
-
+  Real cellVol = 1;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    cellVol *= m_dx;
+  }
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I +... HERE
   typedef IndexedMoments<DIM  , 2> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
@@ -168,7 +198,8 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
         {
           const EBIndex<CELL>& vof = vofs[ivec];
           const IndMomDIM&  momspt = volmo(vof, 0);
-          double kappavof = momspt[0];
+          double kappavof = momspt[0]/cellVol;
+
           reghost(*bit, 0) = kappavof;
           irrhost( vof, 0) = kappavof;
         }
@@ -186,8 +217,8 @@ void  subtractRHSF(Sca     a_res,
 {
   a_res(0) = a_res(0) - a_phi(0);
 }
-/****/
 PROTO_KERNEL_END(subtractRHSF, subtractRHS)
+/****/
 void
 EBMultigridLevel::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
@@ -227,13 +258,23 @@ void  gsrbResidF(int     a_pt[DIM],
   }
   if(sumpt%2 == a_iredBlack)
   {
-    static const Real safety = 0.99;
-    Real realdiag = a_kappa(0)*a_alpha + a_beta*a_diag(0);
+    static const Real safety = 1.0;
+    Real diagval = a_diag(0);
+    Real kappval = a_kappa(0);
+    if((a_pt[0] == 26) && (a_pt[1]==16))
+    {
+      Point debpt(a_pt[0], a_pt[1]);
+//      cout << debpt << "grb: devi diag = " << diagval << endl;
+    }
+    
+    Real realdiag = kappval*a_alpha + a_beta*diagval;
     Real regudiag = a_alpha + 2*DIM*a_beta*a_dx*a_dx;
     Real lambda = safety/realdiag;
     Real reglam = safety/regudiag;
+    Real phival = a_phi(0);
+    Real resval = a_res(0);
     if(lambda > reglam) lambda= reglam;
-    a_phi(0) = a_phi(0) - lambda*a_res(0);
+    a_phi(0) = phival - lambda*resval;
   }
 }
 PROTO_KERNEL_END(gsrbResidF, gsrbResid)
@@ -253,6 +294,12 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
     {
       shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
       shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+//
+      Point debpt(26, 16);
+      EBIndex<CELL> debvof(debpt, 0);
+      cout << debpt << "rel: devi diag = " << (*diagptr)(debvof, 0) << endl;
+      
+//      
       const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
       Box grid = m_grids[dit[ibox]];
       Bx  grbx = getProtoBox(grid);
@@ -264,6 +311,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                         a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+      cout << "out of gsrb" << endl;
     }
   }
 }
