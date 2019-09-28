@@ -40,7 +40,38 @@ using   Proto::CENTERING;
 using   Proto::CELL;
 using Proto::PointSet;
 using Proto::PointSetIterator;
-
+void 
+dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(9)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+    typedef EBIndex<CELL> VolIndex;
+    IntVect iv(26, 16);
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    EBGraph  ebgraph = data.ebgraph();
+    Box region = grow(Box(iv, iv), 2);
+    IntVect lo = region.smallEnd();
+    IntVect hi = region.bigEnd();
+    cout << "data region contains:" << endl;
+    for(int j = lo[1]; j <= hi[1]; j++)
+    {
+      for(int i = lo[0]; i <= hi[0]; i++)
+      {
+        Point pt(i,j);
+        vector<VolIndex> vofs = ebgraph.getVoFs(pt);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          VolIndex vof = vofs[ivof];
+          cout << pt << ":" << data(vof, 0) << "  ";
+        }
+      }
+      cout << endl;
+    }
+  }
+}
 void
 dumpPPS(const PointSet* a_ivs)
 {
@@ -63,6 +94,8 @@ PROTO_KERNEL_END(addCorToPhiF, addCorToPhi)
 int
 runTest(int a_argc, char* a_argv[])
 {
+  dumpArea(NULL);
+
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
