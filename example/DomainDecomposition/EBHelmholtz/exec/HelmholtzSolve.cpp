@@ -45,11 +45,11 @@ dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(9)
+    cout    << setprecision(6)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
     typedef EBIndex<CELL> VolIndex;
-    IntVect iv(26, 16);
+    IntVect iv(26, 17);
     EBBoxData<CELL, Real, 1> & data = *dataPtr;
     EBGraph  ebgraph = data.ebgraph();
     Box region = grow(Box(iv, iv), 2);

@@ -17,12 +17,14 @@ PROTO_KERNEL_START
 void  addAlphaPhiF(Sca     a_lph,
                    Sca     a_phi,
                    Sca     a_kap,
-                   Real    a_alpha)
+                   Real    a_alpha,
+                   Real    a_beta)
 {
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  Real bkdivF = a_lph(0);
+  Real kappdiv = a_lph(0);
+  Real bkdivF  = a_beta*kappdiv;
   Real phival  = a_phi(0);
   Real kapval  = a_kap(0);
   a_lph(0) = a_alpha*phival*kapval + bkdivF;
@@ -36,15 +38,18 @@ void  addAlphaPhiPtF(int a_pt[DIM],
                      Sca     a_lph,
                      Sca     a_phi,
                      Sca     a_kap,
-                     Real    a_alpha)
+                     Real    a_alpha,
+                     Real    a_beta)
 {
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  Real bkdivF = a_lph(0);
+  Real kappdiv = a_lph(0);
+  Real bkdivF  = a_beta*kappdiv;
+
   Real phival  = a_phi(0);
   Real kapval  = a_kap(0);
-  if((a_pt[0] == 26) && (a_pt[1]==16))
+  if((a_pt[0] == 26) && (a_pt[1]==17))
   {
     Point debpt(a_pt[0], a_pt[1]);
 //    cout << debpt << "addphipt: bkdivf = " << bkdivF << endl;
@@ -65,14 +70,14 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
-    //set lphi = kappa*beta * div(F)
-    stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, m_beta);
+    //set lphi = kappa* div(F)
+    stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    //ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
-    ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha);
+    //ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
+    ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
   }
 }
 /****/
@@ -225,7 +230,7 @@ void  subtractRHSFptF(int     a_pt[DIM],
                       Sca     a_res,
                       Sca     a_rhs)
 {
-  if((a_pt[0] == 26) && (a_pt[1]==16))
+  if((a_pt[0] == 26) && (a_pt[1]==17))
   {
     Point debpt(a_pt[0], a_pt[1]);
 //      cout << debpt << "grb: devi diag = " << diagval << endl;
@@ -280,7 +285,7 @@ void  gsrbResidF(int     a_pt[DIM],
     static const Real safety = 1.0;
     Real diagval = a_diag(0);
     Real kappval = a_kappa(0);
-    if((a_pt[0] == 26) && (a_pt[1]==16))
+    if((a_pt[0] == 26) && (a_pt[1]==17))
     {
       Point debpt(a_pt[0], a_pt[1]);
 //      cout << debpt << "grb: devi diag = " << diagval << endl;
@@ -308,13 +313,13 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   DataIterator dit = m_grids.dataIterator();
   for(int iredblack = 0; iredblack < 2; iredblack++)
   {
-    Point debpt(26, 16);
+    Point debpt(26, 17);
     EBIndex<CELL> debvof(debpt, 0);
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       auto& phifab = a_phi[dit[ibox]];
       auto& rhsfab = a_rhs[dit[ibox]];
-      cout << "gsrb before redblack = " << iredblack << ", phi(26,16) = "<< phifab(debvof, 0) << endl;
+      cout << "gsrb before redblack = " << iredblack << ", phi(26,17) = "<< phifab(debvof, 0) << endl;
     }
 
     residual(m_resid, a_phi, a_rhs);
@@ -333,12 +338,14 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       //phi = phi - lambda*(res)
       ///lambda takes floating point to calculate
       //also does an integer check for red/black but I am not sure what to do with that
+      auto& phifab =   a_phi[dit[ibox]];
+      auto& resfab = m_resid[dit[ibox]];
       unsigned long long int numflopspt = 10;
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                        a_phi[dit[ibox]], m_resid[dit[ibox]], stendiag,
+                        phifab, resfab, stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
-      cout << "gsrb after redblack = " << iredblack << ", phi(26,16) = "<< a_phi[dit[ibox]](debvof, 0) << endl;
+      cout << "gsrb after redblack = " << iredblack << ", phi(26,17) = "<< a_phi[dit[ibox]](debvof, 0) << endl;
       numflopspt++;
     }
   }
