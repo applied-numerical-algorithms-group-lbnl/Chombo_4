@@ -4,6 +4,37 @@
 #include "NamespaceHeader.H"
 
 
+void 
+EBMultigrid::
+solve(EBLevelBoxData<CELL, 1>       & a_phi,
+      const EBLevelBoxData<CELL, 1> & a_rhs,
+      const Real                    & a_tol,
+      const unsigned int            & a_maxIter)
+{
+  EBLevelBoxData<CELL, 1>& res =  m_finest->m_resid;
+
+  residual(res, a_phi, a_rhs);
+  Real initres = res.maxNorm(0);
+  int iter = 0;
+  pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
+  Real resnorm = initres;
+  while((iter < a_maxIter) && (resnorm > a_tol*initres))
+  {
+    pout() << setprecision(3)
+           << setiosflags(ios::showpoint)
+           << setiosflags(ios::scientific);
+
+    pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm << endl;
+
+    vCycle(a_phi, a_rhs);
+
+    residual(res, a_phi, a_rhs);
+    resnorm = res.maxNorm(0);
+
+    iter++;
+  }
+}
+
 
 int  EBMultigrid::s_numSmoothDown = 2;
 int  EBMultigrid::s_numSmoothUp   = 2;

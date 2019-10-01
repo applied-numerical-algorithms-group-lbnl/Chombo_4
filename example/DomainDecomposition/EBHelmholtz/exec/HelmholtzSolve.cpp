@@ -273,36 +273,7 @@ runTest(int a_argc, char* a_argv[])
     corbd.setVal(0.0);
   }
 
-  solver.residual(res, phi, rhs);
-  Real initres = res.maxNorm(0);
-  int iter = 0;
-  pout() << "solving with initial residual = " << initres << endl;
-  Real resnorm = initres;
-  while((iter < maxIter) && (resnorm > tol*initres))
-  {
-    pout() << setprecision(6)
-           << setiosflags(ios::showpoint)
-           << setiosflags(ios::scientific);
-    solver.residual(res, phi, rhs);
-    resnorm = res.maxNorm(0);
-    pout() << "iter = " << iter << ", |resid| = " << resnorm << endl;
-    solver.vCycle(phi, rhs);
-//    solver.vCycle(cor,res);
-//    for(int ibox = 0; ibox < dit.size(); ibox++)
-//    {
-//      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-//      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-//      unsigned long long int numflopspt = 1;
-//      Bx phibx = phibd.box();
-//      ebforallInPlace(numflopspt, "addCorToPhi", addCorToPhi, phibx,  phibd, corbd);
-//
-//
-//      corbd.setVal(0.0);
-//
-//    }
-    
-    iter++;
-  }
+  solver.solve(phi, rhs, tol, maxIter);
 
   pout() << "writing to file " << endl;
   

@@ -14,10 +14,13 @@
 #endif
 
 using std::array;
+class EBMultigrid;
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
 class EBMultigridLevel
 {
 public:
+  friend class EBMultigrid;
+
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
   
@@ -73,6 +76,8 @@ public:
               const EBLevelBoxData<CELL, 1>& a_rhs);
 
   std::shared_ptr<EBMultigridLevel> m_coarser;
+
+  
 private:
   void defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
                       const shared_ptr<LevelData<EBGraph> >   & a_graphs);
@@ -140,7 +145,15 @@ public:
                            a_nghostsrc,
                            a_nghostdst));     
   }
-      
+
+  ///
+  void 
+  solve(EBLevelBoxData<CELL, 1>       & a_phi,
+        const EBLevelBoxData<CELL, 1> & a_rhs,
+        const Real                    & a_tolerance,
+        const unsigned int            & a_maxIterations);
+
+private:
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
@@ -176,7 +189,7 @@ public:
   {
     m_finest->relax(a_phi, a_rhs);
   }
-private:
+
   /// weak construction introduces unnecessary complications
   EBMultigrid()
   {
