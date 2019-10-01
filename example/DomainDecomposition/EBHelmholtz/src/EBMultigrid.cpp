@@ -69,9 +69,11 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
+    auto& phifab = a_phi[dit[ibox]];
+    auto& lphfab = a_lph[dit[ibox]];
     shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
     //set lphi = kappa* div(F)
-    stencil->apply(a_lph[dit[ibox]], a_phi[dit[ibox]], true, 1.0);
+    stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
@@ -315,12 +317,12 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   {
     Point debpt(26, 17);
     EBIndex<CELL> debvof(debpt, 0);
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      auto& phifab = a_phi[dit[ibox]];
-      auto& rhsfab = a_rhs[dit[ibox]];
-      cout << "gsrb before redblack = " << iredblack << ", phi(26,17) = "<< phifab(debvof, 0) << endl;
-    }
+//    for(int ibox = 0; ibox < dit.size(); ++ibox)
+//    {
+//      auto& phifab = a_phi[dit[ibox]];
+//      auto& rhsfab = a_rhs[dit[ibox]];
+//      cout << "gsrb before redblack = " << iredblack << ", phi(26,17) = "<< phifab(debvof, 0) << endl;
+//    }
 
     residual(m_resid, a_phi, a_rhs);
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -345,7 +347,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
                         phifab, resfab, stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
-      cout << "gsrb after redblack = " << iredblack << ", phi(26,17) = "<< a_phi[dit[ibox]](debvof, 0) << endl;
+//      cout << "gsrb after redblack = " << iredblack << ", phi(26,17) = "<< a_phi[dit[ibox]](debvof, 0) << endl;
       numflopspt++;
     }
   }

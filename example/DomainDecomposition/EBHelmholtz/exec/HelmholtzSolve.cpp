@@ -41,6 +41,34 @@ using   Proto::CELL;
 using Proto::PointSet;
 using Proto::PointSetIterator;
 void 
+dumpOrigin(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+    typedef EBIndex<CELL> VolIndex;
+    IntVect iv(1, 1);
+    BoxData<Real, 1> & data = dataPtr->getRegData();
+    Box region = grow(Box(iv, iv), 2);
+    IntVect lo = region.smallEnd();
+    IntVect hi = region.bigEnd();
+    cout << "data region contains:" << endl;
+    for(int j = lo[1]; j <= hi[1]; j++)
+    {
+      for(int i = lo[0]; i <= hi[0]; i++)
+      {
+        Point pt(i,j);
+        cout << pt << ":" << data(pt, 0) << "  ";
+      }
+      cout << endl;
+    }
+  }
+}
+
+
+void 
 dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
@@ -112,6 +140,7 @@ runTest(int a_argc, char* a_argv[])
     
   int  maxIter = 10;
   int nStream    = 8;
+  int numSmooth  = 2;
   int dombc = 1;
   int ebbc  = 1;
   ParmParse pp;
@@ -133,6 +162,7 @@ runTest(int a_argc, char* a_argv[])
   pp.get("C"         , C);
   pp.get("R"         , R);         
   pp.get("coveredval", coveredval);         
+  pp.get("numSmooth" , numSmooth);         
 
   pout() << "nx        = " << nx       << endl;
   pout() << "maxGrid   = " << maxGrid  << endl;
@@ -146,6 +176,7 @@ runTest(int a_argc, char* a_argv[])
   pout() << "alpha     = " << alpha    << endl;
   pout() << "beta      = " << beta    << endl;
   pout() << "tolerance = " << tol    << endl;
+  pout() << "numSmooth = " << numSmooth    << endl;
 
   pout() << "maxIter   = " << maxIter    << endl;
   pout() << "nstream = " << nStream  << endl;
@@ -228,6 +259,8 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox(), dataGhostIV, dataGhostIV);
+  EBMultigrid::s_numSmoothUp   = numSmooth;
+  EBMultigrid::s_numSmoothDown = numSmooth;
   DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -247,21 +280,26 @@ runTest(int a_argc, char* a_argv[])
   Real resnorm = initres;
   while((iter < maxIter) && (resnorm > tol*initres))
   {
+    pout() << setprecision(6)
+           << setiosflags(ios::showpoint)
+           << setiosflags(ios::scientific);
     solver.residual(res, phi, rhs);
     resnorm = res.maxNorm(0);
     pout() << "iter = " << iter << ", |resid| = " << resnorm << endl;
-    solver.vCycle(cor,res);
-    for(int ibox = 0; ibox < dit.size(); ibox++)
-    {
-      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-      unsigned long long int numflopspt = 1;
-      Bx phibx = phibd.box();
-      ebforallInPlace(numflopspt, "addCorToPhi", addCorToPhi, phibx,  phibd, corbd);
-
-
-      corbd.setVal(0.0);
-    }
+    solver.vCycle(phi, rhs);
+//    solver.vCycle(cor,res);
+//    for(int ibox = 0; ibox < dit.size(); ibox++)
+//    {
+//      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
+//      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+//      unsigned long long int numflopspt = 1;
+//      Bx phibx = phibd.box();
+//      ebforallInPlace(numflopspt, "addCorToPhi", addCorToPhi, phibx,  phibd, corbd);
+//
+//
+//      corbd.setVal(0.0);
+//
+//    }
     
     iter++;
   }

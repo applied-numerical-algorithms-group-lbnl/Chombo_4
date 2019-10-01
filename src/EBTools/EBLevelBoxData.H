@@ -124,6 +124,7 @@ public:
     {
       const Box & grid     =         dbl[dit[ibox]];
       const EBGraph& graph = (*m_graphs)[dit[ibox]];
+      const EBBoxData<cent, Real, NUMCOMPS>& resfab = (*this)[dit[ibox]];
       for(BoxIterator bit(grid); bit.ok(); ++bit)
       {
         Point pt = ProtoCh::getPoint(bit());
@@ -131,7 +132,8 @@ public:
         for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
         {
           const EBIndex<CELL>& vof = vofspt[ivec];
-          Real absval = std::abs(hostdata[dit[ibox]](vof, a_icomp));
+          Real absval = std::abs(resfab(vof, a_icomp));
+          //Real hosval = std::abs(hostdata[dit[ibox]](vof, a_icomp));
           if(absval > maxval)
           {
             maxval = absval;
