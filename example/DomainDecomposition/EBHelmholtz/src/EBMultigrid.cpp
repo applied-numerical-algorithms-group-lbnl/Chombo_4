@@ -1,9 +1,15 @@
 #include "EBMultigrid.H"
 #include "Proto.H"
 #include "Proto_Timer.H"
+#include <sstream>
 #include "NamespaceHeader.H"
 
+int  EBMultigrid::s_numSmoothDown = 2;
+int  EBMultigrid::s_numSmoothUp   = 2;
 
+typedef Proto::Var<Real, 1> Sca;
+
+/****/
 void 
 EBMultigrid::
 solve(EBLevelBoxData<CELL, 1>       & a_phi,
@@ -34,14 +40,6 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     iter++;
   }
 }
-
-
-int  EBMultigrid::s_numSmoothDown = 2;
-int  EBMultigrid::s_numSmoothUp   = 2;
-
-typedef Proto::Var<Real, 1> Sca;
-
-
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
@@ -109,8 +107,9 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    //ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
-    ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
+    //pointwise version for debugging
+    //ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
   }
 }
 /****/
@@ -189,6 +188,12 @@ EBMultigridLevel(const EBMultigridLevel& a_finerLevel)
 
 }
 /***/
+string convertUInt(unsigned int number)
+{
+  std::stringstream ss;//create a stringstream
+  ss << number;//add number to the stream
+  return ss.str();//return a string with the contents of the stream
+}
 void
 EBMultigridLevel::
 defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
@@ -198,13 +203,37 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname);
+  //true is for need the diagonal wweight
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, true);
+  string nobcname("no_bcs");
+  m_restrictionName = string("Multigrid_Restriction");
+  m_dictionary->registerStencil(m_restrictionName, nobcname, nobcname, false);
+///prolongation has ncolors stencils
+#if DIM==2
+  unsigned int ncolors = 4;
+#else
+  unsigned int ncolors = 8;
+#endif
+  for(unsigned int icolor = 0; icolor < ncolors; icolor++)
+  {
+    string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
+    m_prolongationName[icolor] = colorstring;
+    m_dictionary->registerStencil(colorstring, nobcname, nobcname, false);
+  }
+  //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
+  fillKappa(a_geoserv, a_graphs);
+}
+//need the volume fraction in a data holder so we can evaluate kappa*alpha I 
+void  
+EBMultigridLevel::
+fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
+          const shared_ptr<LevelData<EBGraph> >   & a_graphs)
+{
   Real cellVol = 1;
   for(int idir = 0; idir < DIM; idir++)
   {
     cellVol *= m_dx;
   }
-  //need the volume fraction in a data holder so we can evaluate kappa*alpha I +... HERE
   typedef IndexedMoments<DIM  , 2> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
   const shared_ptr<LevelData<VoluData> > volmomld = a_geoserv->getVoluData(m_domain);
@@ -292,8 +321,9 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     unsigned long long int numflopspt = 2;
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-//    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
-    ebforallInPlace_i(numflopspt, "subtractRHSpt", subtractRHSpt,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+    //pointwise version for debugging
+    //ebforallInPlace_i(numflopspt, "subtractRHSpt", subtractRHSpt,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
   }
 }
 /****/
