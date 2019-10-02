@@ -34,7 +34,8 @@ void
 EBDictionary<order, data_t, srcCenter, dstCenter>::
 registerStencil(string a_stencilName,
                 string a_domainBCName,
-                string a_ebbcName)
+                string a_ebbcName,
+                bool a_needDiagonalWeights)
 {
   PR_assert(!m_isClosed);
 
@@ -59,7 +60,7 @@ registerStencil(string a_stencilName,
                               gridbx, domainbx, m_srcGhost, m_dstGhost,
                               (*graphs)[dit[ibox]], (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
-                              m_dx, false));  //false is to turn off periodic
+                              m_dx, false, a_needDiagonalWeights));  //false is to turn off periodic
     std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[ibox];
     boxmap[key] = newsten;
   }

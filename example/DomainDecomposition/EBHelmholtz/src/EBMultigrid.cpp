@@ -62,31 +62,6 @@ PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
 
 
 /****/
-PROTO_KERNEL_START 
-void  addAlphaPhiPtF(int a_pt[DIM],
-                     Sca     a_lph,
-                     Sca     a_phi,
-                     Sca     a_kap,
-                     Real    a_alpha,
-                     Real    a_beta)
-{
-  //kappa and beta are already in lph
-  //kappa because we did not divide by kappa
-  //beta was sent in to ebstencil::apply
-  Real kappdiv = a_lph(0);
-  Real bkdivF  = a_beta*kappdiv;
-
-  Real phival  = a_phi(0);
-  Real kapval  = a_kap(0);
-  if((a_pt[0] == 26) && (a_pt[1]==17))
-  {
-    Point debpt(a_pt[0], a_pt[1]);
-//    cout << debpt << "addphipt: bkdivf = " << bkdivF << endl;
-  }
-  a_lph(0) = a_alpha*phival*kapval + bkdivF;
-}
-PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
-/****/
 void
 EBMultigridLevel::
 applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
@@ -108,8 +83,6 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
-    //pointwise version for debugging
-    //ebforallInPlace_i(numflopspt, "addAlphaPhi", addAlphaPhiPt, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
   }
 }
 /****/
@@ -286,24 +259,6 @@ void  subtractRHSF(Sca     a_res,
 }
 PROTO_KERNEL_END(subtractRHSF, subtractRHS)
 /****/
-//res comes in holding lphi.   leaves holding res= rhs-lphi
-PROTO_KERNEL_START 
-void  subtractRHSFptF(int     a_pt[DIM],
-                      Sca     a_res,
-                      Sca     a_rhs)
-{
-  if((a_pt[0] == 26) && (a_pt[1]==17))
-  {
-    Point debpt(a_pt[0], a_pt[1]);
-//      cout << debpt << "grb: devi diag = " << diagval << endl;
-  }
-  Real resval = a_res(0);
-  Real rhsval = a_rhs(0);
-  a_res(0) = a_rhs(0) - a_res(0);
-  a_res(0) = rhsval- resval;
-}
-PROTO_KERNEL_END(subtractRHSFptF, subtractRHSpt)
-/****/
 void
 EBMultigridLevel::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
@@ -322,8 +277,6 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
-    //pointwise version for debugging
-    //ebforallInPlace_i(numflopspt, "subtractRHSpt", subtractRHSpt,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
   }
 }
 /****/
@@ -348,11 +301,6 @@ void  gsrbResidF(int     a_pt[DIM],
     static const Real safety = 1.0;
     Real diagval = a_diag(0);
     Real kappval = a_kappa(0);
-    if((a_pt[0] == 26) && (a_pt[1]==17))
-    {
-      Point debpt(a_pt[0], a_pt[1]);
-//      cout << debpt << "grb: devi diag = " << diagval << endl;
-    }
     
     Real realdiag = kappval*a_alpha + a_beta*diagval;
     Real regudiag = a_alpha + 2*DIM*a_beta*a_dx*a_dx;
@@ -378,22 +326,13 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   {
     Point debpt(26, 17);
     EBIndex<CELL> debvof(debpt, 0);
-//    for(int ibox = 0; ibox < dit.size(); ++ibox)
-//    {
-//      auto& phifab = a_phi[dit[ibox]];
-//      auto& rhsfab = a_rhs[dit[ibox]];
-//      cout << "gsrb before redblack = " << iredblack << ", phi(26,17) = "<< phifab(debvof, 0) << endl;
-//    }
 
     residual(m_resid, a_phi, a_rhs);
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
       shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
-//
-//      cout << debpt << "rel: devi diag = " << (*diagptr)(debvof, 0) << endl;
-      
-//      
+
       const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
       Box grid = m_grids[dit[ibox]];
       Bx  grbx = getProtoBox(grid);
@@ -408,7 +347,6 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
                         phifab, resfab, stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
-//      cout << "gsrb after redblack = " << iredblack << ", phi(26,17) = "<< a_phi[dit[ibox]](debvof, 0) << endl;
       numflopspt++;
     }
   }
@@ -439,16 +377,18 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
   PR_TIME("sgmglevel::vcycle");
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothDown; irelax++)
   {
-    relax(a_phi,a_rhs); //don't do it
+    relax(a_phi,a_rhs); 
   }
 
 //  if (m_hasCoarser)
 //  {
 //    residual(m_resid,a_phi,a_rhs);                      
+      //  stencils live with the destination
 //    m_coarser->restrictResidual(m_residC,m_resid);
 //    m_deltaC.setVal(0.);
 //    m_coarser->vCycle(m_deltaC,m_residC);
-//    m_coarser->prolongIncrement(a_phi,m_deltaC);
+      //   stencils live with the destination
+//    prolongIncrement(a_phi,m_deltaC);
 //  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)

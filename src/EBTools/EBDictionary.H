@@ -45,9 +45,14 @@ public:
                Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx);
 
 
+  ///
+  /**
+     diagonal weights are for relaxation--expensive to compute so leave them out if you do not need them
+  */
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
-                              string a_ebbcName);
+                              string a_ebbcName,
+                              bool needDiagonalWeights = false);
 
 
   ///get the stencil for a particular box at a particular level of refinement

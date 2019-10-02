@@ -85,6 +85,10 @@ private:
   void defineCoarserObjects();
 
 
+//need the volume fraction in a data holder so we can evaluate kappa*alpha I 
+  void  fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
+                  const shared_ptr<LevelData<EBGraph> >   & a_graphs);
+
   /// weak construction introduces unnecessary complications
   EBMultigridLevel()
   {
@@ -100,6 +104,14 @@ private:
   string                            m_stenname;
   string                            m_dombcname;
   string                            m_ebbcname;
+
+  string                            m_restrictionName;
+///prolongation has ncolors stencils
+#if DIM==2
+  string                            m_prolongationName[4];
+#else
+  string                            m_prolongationName[8];
+#endif
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
   EBLevelBoxData<CELL, 1>           m_kappa;
@@ -154,6 +166,7 @@ public:
         const unsigned int            & a_maxIterations);
 
 private:
+
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
