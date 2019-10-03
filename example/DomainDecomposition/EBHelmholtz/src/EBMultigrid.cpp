@@ -144,14 +144,24 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
 
   defineStencils(a_geoserv, graphs);
 
-  defineCoarserObjects();
+  defineCoarserObjects(a_geoserv);
 }
 /***/
 void
 EBMultigridLevel::
-defineCoarserObjects()
+defineCoarserObjects(shared_ptr<GeometryService<2> >         & a_geoserv)
 {
   PR_TIME("sgmglevel::defineCoarser");
+
+  m_hasCoarser = (m_grids.coarsenable(4));
+  if(m_hasCoarser)
+  {
+    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this));
+
+    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
+    m_residC.define(m_coarser->m_grids, m_nghostSrc , graphs);
+    m_deltaC.define(m_coarser->m_grids, m_nghostDst , graphs);
+  }
 }
 /***/
 EBMultigridLevel::
@@ -182,12 +192,7 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
   m_restrictionName = string("Multigrid_Restriction");
   m_dictionary->registerStencil(m_restrictionName, nobcname, nobcname, false);
 ///prolongation has ncolors stencils
-#if DIM==2
-  unsigned int ncolors = 4;
-#else
-  unsigned int ncolors = 8;
-#endif
-  for(unsigned int icolor = 0; icolor < ncolors; icolor++)
+  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
   {
     string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
     m_prolongationName[icolor] = colorstring;
@@ -380,16 +385,16 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-//  if (m_hasCoarser)
-//  {
-//    residual(m_resid,a_phi,a_rhs);                      
-      //  stencils live with the destination
-//    m_coarser->restrictResidual(m_residC,m_resid);
-//    m_deltaC.setVal(0.);
-//    m_coarser->vCycle(m_deltaC,m_residC);
-      //   stencils live with the destination
-//    prolongIncrement(a_phi,m_deltaC);
-//  }
+  if (m_hasCoarser)
+  {
+    residual(m_resid,a_phi,a_rhs);                      
+    //  stencils live with the destination
+    m_coarser->restrictResidual(m_residC,m_resid);
+    m_deltaC.setVal(0.);
+    m_coarser->vCycle(m_deltaC,m_residC);
+    //   stencils live with the destination
+    prolongIncrement(a_phi,m_deltaC);
+  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {

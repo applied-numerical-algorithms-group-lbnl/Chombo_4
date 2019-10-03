@@ -82,7 +82,7 @@ private:
   void defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
                       const shared_ptr<LevelData<EBGraph> >   & a_graphs);
 
-  void defineCoarserObjects();
+  void defineCoarserObjects(shared_ptr<GeometryService<2> >         & a_geoserv);
 
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -106,14 +106,21 @@ private:
   string                            m_ebbcname;
 
   string                            m_restrictionName;
+#if DIM==2
+  static const unsigned int s_ncolors = 4;  
+#else
+  static const unsigned int s_ncolors = 8;
+#endif
 ///prolongation has ncolors stencils
 #if DIM==2
-  string                            m_prolongationName[4];
+  string                            m_prolongationName[s_ncolors];
 #else
-  string                            m_prolongationName[8];
+  string                            m_prolongationName[s_ncolors];
 #endif
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
+  EBLevelBoxData<CELL, 1>           m_residC;
+  EBLevelBoxData<CELL, 1>           m_deltaC;
   EBLevelBoxData<CELL, 1>           m_kappa;
 
   IntVect m_nghostSrc, m_nghostDst;
