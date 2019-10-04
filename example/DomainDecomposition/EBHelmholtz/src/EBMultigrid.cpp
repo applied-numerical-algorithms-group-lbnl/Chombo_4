@@ -188,15 +188,15 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, true);
-  string nobcname("no_bcs");
+  m_nobcname = string("no_bcs");
   m_restrictionName = string("Multigrid_Restriction");
-  m_dictionary->registerStencil(m_restrictionName, nobcname, nobcname, false);
+  m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, false);
 ///prolongation has ncolors stencils
   for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
   {
     string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
     m_prolongationName[icolor] = colorstring;
-    m_dictionary->registerStencil(colorstring, nobcname, nobcname, false);
+    m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, false);
   }
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, a_graphs);
@@ -360,17 +360,38 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
 void
 EBMultigridLevel::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
-                 const EBLevelBoxData<CELL, 1> & a_res)
+                 const EBLevelBoxData<CELL, 1> & a_resf)
 {
   PR_TIME("sgmglevel::restrict");
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& coarfab = a_resc[dit[ibox]];
+    auto& finefab = a_resf[dit[ibox]];
+    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_nobcname, ibox);
+    //set resc = Ave(resf) (true is initToZero)
+    stencil->apply(coarfab, finefab,  true, 1.0);
+  }
 }
 /****/
 void
 EBMultigridLevel::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
-                 const EBLevelBoxData<CELL, 1>& a_delta)
+                 const EBLevelBoxData<CELL, 1>& a_cor)
 {
   PR_TIME("sgmglevel::prolong");
+  DataIterator dit = m_grids.dataIterator();
+  for(int icolor = 0; icolor < s_ncolors; icolor++)
+  {
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto& coarfab = a_cor[dit[ibox]];
+      auto& finefab = a_phi[dit[ibox]];
+      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, ibox);
+      //phi  = phi + I(correction) (false means do not init to zero)
+      stencil->apply(finefab, coarfab,  false, 1.0);
+    }
+  }
 }
 /****/
 void 

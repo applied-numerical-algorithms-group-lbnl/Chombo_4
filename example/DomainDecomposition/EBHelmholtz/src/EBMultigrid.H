@@ -105,18 +105,16 @@ private:
   string                            m_dombcname;
   string                            m_ebbcname;
 
-  string                            m_restrictionName;
 #if DIM==2
   static const unsigned int s_ncolors = 4;  
 #else
   static const unsigned int s_ncolors = 8;
 #endif
 ///prolongation has ncolors stencils
-#if DIM==2
   string                            m_prolongationName[s_ncolors];
-#else
-  string                            m_prolongationName[s_ncolors];
-#endif
+  string                            m_restrictionName;
+
+  string                            m_nobcname;
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
   EBLevelBoxData<CELL, 1>           m_residC;

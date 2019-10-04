@@ -200,14 +200,11 @@ runTest(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
-  unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
-  
-  Vector<int> procs;
+  Vector<DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
-  LoadBalance(procs, boxes);
-  DisjointBoxLayout grids(boxes, procs, domain);
+  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+
+  DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
   IntVect dataGhostIV =   IntVect::Unit;
@@ -218,8 +215,10 @@ runTest(int a_argc, char* a_argv[])
 //  Real dx = 1.0;
   shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
+
   pout() << "defining geometry" << endl;
-  shared_ptr<GeometryService<2> >  geoserv(new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
+  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
+  shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
