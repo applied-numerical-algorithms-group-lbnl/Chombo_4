@@ -296,11 +296,20 @@ void LevelData<T>::copyTo(const Interval& srcComps,
 #pragma omp parallel for if(this->m_threadSafe)
       for (int ibox = 0; ibox < nbox; ibox++)
         {
-          dest[it[ibox]].copy(this->box(it[ibox]),
-                          destComps,
-                          this->box(it[ibox]),
-                          this->operator[](it[ibox]),
-                          srcComps);
+//          dest[it[ibox]].copy(this->box(it[ibox]),
+//                          destComps,
+//                          this->box(it[ibox]),
+//                          this->operator[](it[ibox]),
+//                          srcComps);
+          int isrc =  srcComps.begin();
+          int idst = destComps.begin();
+          int inco = destComps.size();
+          Proto::Box bx = ProtoCh::getProtoBox(this->box(it[ibox]));
+          dest[it[ibox]].copy(this->operator[](it[ibox]),
+                              bx, 
+                              isrc,
+                              bx,
+                              idst, inco);
         }
       return;
     }

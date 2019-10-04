@@ -337,7 +337,7 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
     for(int ifine = 0; ifine < fineVoFs.size(); ivof++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
-      const IndMomDIM     & fineMom = (*(a_finerLevel->m_voludata))[a_dit](fineVoF, 0);
+      const IndMomDIM     & fineMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
@@ -362,7 +362,7 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<XFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_xfacdata))[a_dit](fineFace, 0);
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_xfacdata))[a_dit](fineFace, 0);
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
@@ -389,7 +389,7 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<YFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_yfacdata))[a_dit](fineFace, 0);
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_yfacdata))[a_dit](fineFace, 0);
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
@@ -414,7 +414,7 @@ coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<ZFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel->m_zfacdata))[a_dit](fineFace, 0);
+      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_zfacdata))[a_dit](fineFace, 0);
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
