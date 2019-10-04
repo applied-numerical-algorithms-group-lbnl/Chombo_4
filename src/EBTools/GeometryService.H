@@ -319,11 +319,15 @@ public:
     int numLevels = a_grids.size();
     m_levels.resize( numLevels);
     m_domains.resize(numLevels);
-    m_levels[0]  = shared_ptr<LevelGeometryService<order> >(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost);
+    m_levels[0]  = shared_ptr<LevelGeometryService<order> >(
+      new LevelGeometryService<order>(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost)
+      );
     m_domains[0] = a_finestDomain;
     for(int ilev = 1; ilev < numLevels-1; ilev++)
     {
-      m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(m_levels[ilev-1], a_grids[ilev]);
+      m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(
+        new LevelGeometryService<order>(*m_levels[ilev-1], a_grids[ilev])
+        );
       m_domains[ilev] = coarsen(m_domains[ilev-1], 2);
     }
   }

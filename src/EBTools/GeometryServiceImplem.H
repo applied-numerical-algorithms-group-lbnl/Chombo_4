@@ -194,7 +194,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   m_grids  = a_grids;
 
   defineData();
-  LevelGeometryService* finerPtr = &a_finerLevel;
+  LevelGeometryService* finerPtr = const_cast<LevelGeometryService*>(&a_finerLevel);
   bool deleteptr = false;
   if(!a_grids.compatible(a_finerLevel.m_grids))
   {
@@ -265,7 +265,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
     Box          vofRegion =     m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
     vofRegion &= m_domain;
-    EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
+    //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
     Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
     for(auto bit = vofRegionBx.begin(); bit != vofRegionBx.end(); ++bit)
@@ -274,7 +274,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
       if(ebgraph.isIrregular(pt))
       {
         vector<EBIndex<CELL> > vofs = ebgraph.getVoFs(pt);
-        coarsenVoFData(vofs, a_finerLevel);
+        coarsenVoFData(vofs, a_finerLevel, dit[ibox]);
         for(int ivof = 0; ivof < vofs.size(); ivof++)
         {
           const EBIndex<CELL>& vof = vofs[ivof];
