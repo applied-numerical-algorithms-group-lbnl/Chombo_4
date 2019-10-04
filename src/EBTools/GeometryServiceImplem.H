@@ -193,7 +193,10 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
 
   m_grids  = a_grids;
 
+
   defineData();
+
+
   LevelGeometryService* finerPtr = const_cast<LevelGeometryService*>(&a_finerLevel);
   bool deleteptr = false;
   if(!a_grids.compatible(a_finerLevel.m_grids))
@@ -220,6 +223,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   }
   
   coarsenGraph(*finerPtr);
+
   coarsenData( *finerPtr);
   if(deleteptr)
   {
@@ -265,6 +269,15 @@ coarsenData(LevelGeometryService&      a_finerLevel)
     Box          vofRegion =     m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
     vofRegion &= m_domain;
+    Bx vofBx = ProtoCh::getProtoBox(vofRegion);
+    (*m_voludata)[dit[ibox]].define(vofBx, ebgraph);
+    (*m_ebfadata)[dit[ibox]].define(vofBx, ebgraph);
+    (*m_xfacdata)[dit[ibox]].define(vofBx, ebgraph);
+    (*m_yfacdata)[dit[ibox]].define(vofBx, ebgraph);
+#if DIM==3
+    (*m_zfacdata)[dit[ibox]].define(vofBx, ebgraph);
+#endif
+
     //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
     Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);

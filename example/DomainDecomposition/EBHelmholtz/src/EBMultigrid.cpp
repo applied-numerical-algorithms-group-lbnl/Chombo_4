@@ -127,7 +127,6 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  const IntVect                           & a_nghostsrc, 
                  const IntVect                           & a_nghostdst)
 {
-  m_dictionary = a_dictionary; 
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
   m_dx         = a_dx;         
@@ -138,6 +137,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_domain     = a_domain;     
   m_nghostSrc  = a_nghostsrc;
   m_nghostDst  = a_nghostdst;
+  m_dictionary = a_dictionary;
   const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghostSrc  , graphs);
   m_kappa.define(m_grids, IntVect::Zero, graphs);
@@ -149,25 +149,48 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
 /***/
 void
 EBMultigridLevel::
-defineCoarserObjects(shared_ptr<GeometryService<2> >         & a_geoserv)
+defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   PR_TIME("sgmglevel::defineCoarser");
 
   m_hasCoarser = (m_grids.coarsenable(4));
-  if(m_hasCoarser)
-  {
-    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this));
-
-    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
-    m_residC.define(m_coarser->m_grids, m_nghostSrc , graphs);
-    m_deltaC.define(m_coarser->m_grids, m_nghostDst , graphs);
-  }
+//  if(m_hasCoarser)
+//  {
+//    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
+//
+//    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
+//    m_residC.define(m_coarser->m_grids, m_nghostSrc , graphs);
+//    m_deltaC.define(m_coarser->m_grids, m_nghostDst , graphs);
+//  }
 }
 /***/
 EBMultigridLevel::
-EBMultigridLevel(const EBMultigridLevel& a_finerLevel)
+EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
+                 shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   PR_TIME("sgmglevel::constructor");
+
+  m_dx         = 2*a_finerLevel.m_dx;         
+  m_domain     = coarsen(a_finerLevel.m_domain, 2);      
+  coarsen(m_grids, a_finerLevel.m_grids,  2);      
+
+  m_alpha      = a_finerLevel.m_alpha;      
+  m_beta       = a_finerLevel.m_beta;       
+  m_stenname   = a_finerLevel.m_stenname;   
+  m_dombcname  = a_finerLevel.m_dombcname;  
+  m_ebbcname   = a_finerLevel.m_ebbcname;   
+
+  m_nghostSrc  = a_finerLevel.m_nghostSrc;
+  m_nghostDst  = a_finerLevel.m_nghostDst;
+  m_dictionary = a_finerLevel.m_dictionary;
+
+  const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
+  m_resid.define(m_grids, m_nghostSrc  , graphs);
+  m_kappa.define(m_grids, IntVect::Zero, graphs);
+
+  defineStencils(a_geoserv, graphs);
+
+  defineCoarserObjects(a_geoserv);
 
 }
 /***/
@@ -406,16 +429,16 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-  if (m_hasCoarser)
-  {
-    residual(m_resid,a_phi,a_rhs);                      
-    //  stencils live with the destination
-    m_coarser->restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    //   stencils live with the destination
-    prolongIncrement(a_phi,m_deltaC);
-  }
+//  if (m_hasCoarser)
+//  {
+//    residual(m_resid,a_phi,a_rhs);                      
+//    //  stencils live with the destination
+//    m_coarser->restrictResidual(m_residC,m_resid);
+//    m_deltaC.setVal(0.);
+//    m_coarser->vCycle(m_deltaC,m_residC);
+//    //   stencils live with the destination
+//    prolongIncrement(a_phi,m_deltaC);
+//  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {

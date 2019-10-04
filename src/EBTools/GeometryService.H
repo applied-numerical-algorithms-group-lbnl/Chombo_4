@@ -323,7 +323,7 @@ public:
       new LevelGeometryService<order>(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost)
       );
     m_domains[0] = a_finestDomain;
-    for(int ilev = 1; ilev < numLevels-1; ilev++)
+    for(int ilev = 1; ilev < numLevels; ilev++)
     {
       m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(
         new LevelGeometryService<order>(*m_levels[ilev-1], a_grids[ilev])
@@ -351,12 +351,17 @@ public:
     int minDomainSize = 2;
     int nref = 2;
     Vector<Box> domains(1, a_domain);
-    while(domlev.coarsenable(nref*minDomainSize) && (a_maxCoarsen > 0) && (numCoarsen > a_maxCoarsen))
+    bool domCheck = domlev.coarsenable(nref*minDomainSize);
+    bool maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
+    while( domCheck && maxCheck)
     {
       numLevels++;
       numCoarsen++;
       domlev.coarsen(nref);
       domains.push_back(domlev);
+
+      domCheck = domlev.coarsenable(nref*minDomainSize);
+      maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
     }
     a_grids.resize(numLevels);
     Vector<Box> boxes;
@@ -364,11 +369,13 @@ public:
     domainSplit(domains[0], boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
     a_grids[0].define(boxes, procs);
-    for(int ilev = 1; ilev < numLevels-1; ilev++)
+    //a_grids[0].print();
+    for(int ilev = 1; ilev < numLevels; ilev++)
     {
       if(a_grids[ilev-1].coarsenable(2))
       {
-        coarsen(a_grids[ilev-1], a_grids[ilev], 2);
+        coarsen(a_grids[ilev], a_grids[ilev-1], 2);
+        //a_grids[ilev].print();
       }
       else
       {

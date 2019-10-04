@@ -217,7 +217,8 @@ runTest(int a_argc, char* a_argv[])
   Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
-  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
+//  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
+  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids[0], geomGhost);
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;

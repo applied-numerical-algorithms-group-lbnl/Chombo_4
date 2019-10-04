@@ -39,7 +39,8 @@ public:
                    const IntVect                     & a_nghostdst);
 
   ///make coarse from fine 
-  EBMultigridLevel(const EBMultigridLevel& a_finerLevel);
+  EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
+                   shared_ptr<GeometryService<2> >   & a_geoserv);
 
   
   ///  
@@ -79,10 +80,12 @@ public:
 
   
 private:
-  void defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
-                      const shared_ptr<LevelData<EBGraph> >   & a_graphs);
+  void
+  defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
+                 const shared_ptr<LevelData<EBGraph> >   & a_graphs);
 
-  void defineCoarserObjects(shared_ptr<GeometryService<2> >         & a_geoserv);
+
+  void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
 
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -96,7 +99,6 @@ private:
 
   bool   m_hasCoarser; 
 
-  dictionary_t                      m_dictionary;
   Real                              m_alpha;   
   Real                              m_beta;    
   Real                              m_dx;      
@@ -104,7 +106,7 @@ private:
   string                            m_stenname;
   string                            m_dombcname;
   string                            m_ebbcname;
-
+  dictionary_t                      m_dictionary;
 #if DIM==2
   static const unsigned int s_ncolors = 4;  
 #else
