@@ -158,11 +158,15 @@ public:
   void 
   writeToFileHDF5(const string& a_filename, const Real& a_coveredval) const
   {
+#ifdef CH_USE_HDF5
     LevelData<FArrayBox>                         hostfabs(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
     copyToHost(     hostdata, *this);
     copyHostToFAB(  hostfabs, hostdata, a_coveredval);
     writeLevelname(&hostfabs, a_filename.c_str());
+#else
+    printf("hdf5 not enabled\n");
+#endif
   }
 
   /// this is for hdf5 stuff as multivalued stuff will be lost

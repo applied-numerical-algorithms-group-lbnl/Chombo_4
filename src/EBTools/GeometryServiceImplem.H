@@ -891,6 +891,8 @@ fillArc(vector<int>                     a_arc[DIM],
     }
     else
     {
+      //for now (and who am I kidding, probably for all time) we generate
+      //only single valued cells.   Multi-valued cells only happen in coarsening.
       a_arc[idir].resize(1);
 
       //otherIV is the iv in the idir direction on the a_hilo side
@@ -899,17 +901,9 @@ fillArc(vector<int>                     a_arc[DIM],
 
       if (domain.contains(otherIV))
       {
-        int otherCellIndex;
-        if (a_ivsIrreg.contains(otherIV))
-        {
-          otherCellIndex = 0;
-        }
-        else
-        {
-          //arc to regular cell
-          otherCellIndex = -2;
-        }
-        a_arc[idir][0]=otherCellIndex;
+        //we used to set arcs to regular cells to -2 but for the life of me
+        //I cannot figure out why.
+        a_arc[idir][0]=0;
       }
       else if (!domain.contains(otherIV))
       {

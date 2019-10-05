@@ -104,7 +104,7 @@ public:
     copyToHost(hostdata, *this);
     writeLevelname(&hostdata, a_filename.c_str());
 #else
-    printf("hdf5 not enabled");
+    printf("hdf5 not enabled\n");
 #endif
   }
 
