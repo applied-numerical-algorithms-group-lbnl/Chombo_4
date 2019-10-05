@@ -326,7 +326,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
               } //end check to see if we are in coarsening range
             }  //end loop over sides
           }   //end loop over directions
-        }    //end loop over vofs in a ce3ll
+        }    //end loop over vofs in a cell
       }     //end irregular check
     }      //end loop over cells
   }       //Attention, all planets of the solar federation:
@@ -341,17 +341,30 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
                const DataIndex                & a_dit)
 {
   const EBGraph& coarEBGraph = (*m_graphs)[a_dit];
+  const EBGraph& fineEBGraph = (*a_finerLevel.m_graphs)[a_dit];
   for(int ivof = 0; ivof < a_coarVoFs.size(); ivof++)
   {
     const EBIndex<CELL> & coarVoF = a_coarVoFs[ivof];
     IndMomDIM& coarMom  = (*m_voludata)[a_dit](coarVoF, 0);
     vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
     coarMom.setToZero();
-    for(int ifine = 0; ifine < fineVoFs.size(); ivof++)
+    for(int ifine = 0; ifine < fineVoFs.size(); ifine++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
-      const IndMomDIM     & fineMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
-      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+      IndMomDIM finemom;
+      if(fineEBGraph.isCovered(fineVoF.m_pt))
+      {
+        finemom.setToZero(); //not sure if this can happen
+      }
+      else if(fineEBGraph.isRegular(fineVoF.m_pt))
+      {
+        finemom.setToRegular(a_finerLevel.m_dx);
+      }
+      else
+      {
+        finemom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
+      }
+      coarMom += finemom;  //moments are not scaled so this is a straight addition
     }
   }
 }
@@ -375,7 +388,16 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<XFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_xfacdata))[a_dit](fineFace, 0);
+      IndMomSDMinOne fineMom; 
+      //by construction should be regular or irregular
+      if ((*(a_finerLevel.m_xfacdata))[a_dit].contains(fineFace))
+      {
+        fineMom  = (*(a_finerLevel.m_xfacdata))[a_dit](fineFace, 0);
+      }
+      else
+      {
+        fineMom.setToRegular(a_finerLevel.m_dx);
+      }
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
@@ -402,7 +424,17 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<YFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_yfacdata))[a_dit](fineFace, 0);
+      IndMomSDMinOne  fineMom;
+      //by construction should be regular or irregular
+      if((*(a_finerLevel.m_yfacdata))[a_dit].contains(fineFace))
+      {
+        fineMom  = (*(a_finerLevel.m_yfacdata))[a_dit](fineFace, 0);
+      }
+      else
+      {
+        fineMom.setToRegular(a_finerLevel.m_dx);
+      }
+
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
@@ -427,7 +459,17 @@ coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
     {
       const EBIndex<ZFACE> & fineFace = fineFaces[ifine];
-      const IndMomSDMinOne & fineMom  = (*(a_finerLevel.m_zfacdata))[a_dit](fineFace, 0);
+      IndMomSDMinOne  fineMom;
+      //by construction should be regular or irregular
+      if((*(a_finerLevel.m_zfacdata))[a_dit].contains(fineFace))
+      {
+       fineMom  = (*(a_finerLevel.m_zfacdata))[a_dit](fineFace, 0);
+      }
+      else
+      {
+        fineMom.setToRegular(a_finerLevel.m_dx);
+      }
+
       coarMom += fineMom;  //moments are not scaled so this is a straight addition
     }
   }
