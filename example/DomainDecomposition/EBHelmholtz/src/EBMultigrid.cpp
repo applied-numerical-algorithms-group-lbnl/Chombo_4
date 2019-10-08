@@ -77,6 +77,8 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     auto& lphfab = a_lph[dit[ibox]];
     shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
     //set lphi = kappa* div(F)
+    Bx lphbox = lphfab.box();
+    Bx phibox = phifab.box();
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     unsigned long long int numflopspt = 3;
@@ -154,14 +156,14 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
   PR_TIME("sgmglevel::defineCoarser");
 
   m_hasCoarser = (m_grids.coarsenable(4));
-//  if(m_hasCoarser)
-//  {
-//    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
-//
-//    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
-//    m_residC.define(m_coarser->m_grids, m_nghostSrc , graphs);
-//    m_deltaC.define(m_coarser->m_grids, m_nghostDst , graphs);
-//  }
+  if(m_hasCoarser)
+  {
+    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
+
+    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
+    m_residC.define(m_coarser->m_grids, m_nghostSrc , graphs);
+    m_deltaC.define(m_coarser->m_grids, m_nghostDst , graphs);
+  }
 }
 /***/
 EBMultigridLevel::
@@ -391,7 +393,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
   {
     auto& coarfab = a_resc[dit[ibox]];
     auto& finefab = a_resf[dit[ibox]];
-    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_nobcname, ibox);
+    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_restrictionName, m_nobcname, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
   }
@@ -429,16 +431,16 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-//  if (m_hasCoarser)
-//  {
-//    residual(m_resid,a_phi,a_rhs);                      
-//    //  stencils live with the destination
-//    m_coarser->restrictResidual(m_residC,m_resid);
-//    m_deltaC.setVal(0.);
-//    m_coarser->vCycle(m_deltaC,m_residC);
-//    //   stencils live with the destination
-//    prolongIncrement(a_phi,m_deltaC);
-//  }
+  if (m_hasCoarser)
+  {
+    residual(m_resid,a_phi,a_rhs);                      
+    //  stencils live with the destination
+    m_coarser->restrictResidual(m_residC,m_resid);
+    m_deltaC.setVal(0.);
+    m_coarser->vCycle(m_deltaC,m_residC);
+    //   stencils live with the destination
+    prolongIncrement(a_phi,m_deltaC);
+  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {
