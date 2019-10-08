@@ -1,19 +1,19 @@
 #grid size (nx = ny=nz)
-nx              = 128
+nx              =64
 #max grid size in domain decomposition
 max_grid        = 64
 #ratio of specific heats 
-gamma = 1.4
+gamma = 1.6666666666666666666667
 #maximum number of time steps
-max_step        = 200
-max_time = 10.0
+max_step        = 1000
+max_time = 0.4
 #length of each domain side 
 domain_size = 1.0
 #how often to output files (make negative to turn off output
-output_interval = 200
+output_interval = 10
 #Courant number
 cfl = 0.25
 
 #only matters with cuda
 num_streams = 8
-forced_dt = 0.0001
+forced_dt = 0.0008

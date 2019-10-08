@@ -21,7 +21,7 @@
 #include <sstream>
 
 #include "Proto.H"
-#include "EulerRK4.H"
+#include "MHDsteps.H"
 #include "LevelBoxData.H"
 #include "LevelData.H"
 #include "BaseFab.H"
@@ -48,6 +48,8 @@ using   Proto::Point;
 using   Proto::BoxData;
 using   Proto::Stencil;
 using   Proto::RK4;
+using   Proto::RHScalc;
+using   Proto::EulerStep;
 using   ProtoCh::getPoint;
 using   ProtoCh::getProtoBox;
 using   ProtoCh::getIntVect;
@@ -68,7 +70,7 @@ class RunParams
 public:
   RunParams()
   {
-    gamma    = 1.4;
+    gamma    = 1.6666666666666666666667;
     nstepmax = 0;
     nx       = 64;
     outinterv= 10;
@@ -105,7 +107,7 @@ public:
   void print() const
   {
 
-    pout() << "Compressible Euler with periodic bcs." << endl;
+    pout() << "MHD with periodic bcs." << endl;
 
     pout() << "parameters: "                           << endl;
     pout() << "nx                  =  "   << nx        << endl;
@@ -118,6 +120,7 @@ public:
     pout() << "gamma               =  "   << gamma     << endl;
     pout() << "num streams         =  "   << numstream << endl;
     pout() << "Selected dt         =  "   << dt        << endl;
+	
   }
 };                  
 ////////////
@@ -138,32 +141,98 @@ parseInputs(RunParams& a_params)
   a_params.print();
 }
 
+
 PROTO_KERNEL_START 
 unsigned int InitializeStateF(State& a_U,
-                              const V& a_x)
-{
-  Real gamma = 1.4;
-  Real rho0 = gamma;
-  Real p0 = 1.;
-  Real umag = .5/sqrt(1.*(DIM));
-  Real rho = rho0;
-  for (int dir = 0; dir < DIM; dir++)
-  {
-    rho += .1*rho0*sin(2*2*PI*a_x(0));
-  }
-  Real p = p0 + (rho - rho0)*gamma*p0/rho0;
-  a_U(0) = rho;
-  Real ke = 0.;
-  for (int dir = 1; dir <= DIM; dir++)
-  {
-    ke += umag*umag;
-    a_U(dir) = rho*umag;
-  }
-  ke *= .5;
-  a_U(NUMCOMPS-1) = p/(gamma-1.0) + rho*ke;
-  return 0;
+                             const V& a_x,
+							 const RunParams& a_params)
+{    
+    
+    double gamma = a_params.gamma;
+    double rho = 0.0;
+    double p = 0.0;
+	double u = 0.0;
+	double v = 0.0;
+	double w = 0.0;
+	double Bx = 0.0;
+	double By = 0.0;
+	double Bz = 0.0;
+	
+	
+	// //////Modifying parameters for 2D current sheet problem/////
+	// rho = 1.0;
+    // p = 0.1;
+	// u = 0.1 * sin(2*PI*a_x(1));
+	// if (a_x(0) >= 0.0 && a_x(0) < 0.5){By = 1.0;}
+	// if (a_x(0) >= 0.5 && a_x(0) < 1.5){By = -1.0;}
+	// if (a_x(0) >= 1.5 && a_x(0) <= 2.0){By = 1.0;}
+	
+	// rho = 1.0;
+    // p = 0.1;
+	// v = 0.1 * sin(2.0*PI*a_x(0));
+	// if (a_x(1) >= 0.0 && a_x(1) < 0.5){Bx = 1.0;}
+	// if (a_x(1) >= 0.5 && a_x(1) < 1.5){Bx = -1.0;}
+	// if (a_x(1) >= 1.5 && a_x(1) <= 2.0){Bx = 1.0;}
+	// ////////////////////////////////////////////////////////////
+	
+	
+	//////Modifying parameters for 2D Orszag Tang problem///////
+	// Case 1:
+	rho = gamma*((2.0 * gamma)/8.0/PI)*1.0;
+    p = (2.0 * gamma)/8.0/M_PI;
+	u = -sin(2.0*PI*a_x(1));
+	v =  sin(2.0*PI*a_x(0));
+	Bx = -sin(2.0*PI*a_x(1));
+	By =  sin(4.0*PI*a_x(0));
+	// Case 2:
+	// rho = 1.0;
+    // p = 1.0/gamma;
+	// u = -sin(2.0*PI*a_x(1));
+	// v =  sin(2.0*PI*a_x(0));
+	// Bx = -sin(2.0*PI*a_x(1))/gamma;
+	// By =  sin(4.0*PI*a_x(0))/gamma;
+	////////////////////////////////////////////////////////////
+	
+	
+	//////Modifying parameters for Alfven wave problem///////
+	// rho = 1.0;
+    // p = 1.0;
+	// u =  sin(2.0*PI*a_x(0));
+	// Bx = sin(2.0*PI*a_x(0));
+	////////////////////////////////////////////////////////////	
+	
+	double e = p/(gamma-1.0) + rho*(u*u+v*v+w*w)/2.0 + (Bx*Bx+By*By+Bz*Bz)/8.0/PI;
+	
+#if DIM == 1	
+	a_U(0) = rho;      //rho
+	a_U(1) = rho*u;    //Momentum-x
+	a_U(2) = e;        //Energy
+	a_U(3) = Bx;	   //Bx
+#endif	
+#if DIM == 2
+	a_U(0) = rho;      //rho
+	a_U(1) = rho*u;    //Momentum-x
+	a_U(2) = rho*v;    //Momentum-y 
+	a_U(3) = e;        //Energy
+	a_U(4) = Bx;	   //Bx
+	a_U(5) = By;       //By
+#endif
+#if DIM == 3
+	a_U(0) = rho;      //rho
+	a_U(1) = rho*u;    //Momentum-x
+	a_U(2) = rho*v;    //Momentum-y 
+	a_U(3) = rho*w;    //Momentum-z 
+	a_U(4) = e;        //Energy
+	a_U(5) = Bx;	   //Bx
+	a_U(6) = By;       //By
+	a_U(7) = Bw;       //Bz
+#endif
+	
+    return 0;
 }
 PROTO_KERNEL_END(InitializeStateF, InitializeState)
+
+
 
 //=================================================================================================
 PROTO_KERNEL_START
@@ -205,6 +274,8 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
   vectNames[1] = "momentum_x";
   vectNames[2] = "momentum_y";
   vectNames[3] = "energy";
+  vectNames[4] = "B_x";
+  vectNames[5] = "B_y";
 
   vectData[0] = level_data;
   
@@ -224,9 +295,9 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
 #endif
 }
 /***/
-void eulerRun(const RunParams& a_params)
+void MHDRun(const RunParams& a_params)
 {
-  CH_TIME("eulerRun");
+  CH_TIME("MHDRun");
   Real tstop = a_params.tmax;
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
@@ -252,14 +323,21 @@ void eulerRun(const RunParams& a_params)
 
   //this sneaks in parameters not covered by the RK4 template class
   //not the most elegant solution but it works for single level
-  EulerOp::s_dx    = a_params.dx;
-  EulerOp::s_gamma = a_params.gamma;
+  MHDOp::s_dx    = a_params.dx;
+  MHDOp::s_gamma = a_params.gamma;
 
   shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
-  EulerState state(Uptr);
-  RK4<EulerState,EulerRK4Op,EulerDX> rk4;
+  shared_ptr<LevelBoxData<NUMCOMPS> > rhsptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
+  LevelBoxData<NUMCOMPS> &  RHS = *rhsptr;
+  
+  
+  MHDState state(Uptr);
+  MHDState state_rhs(rhsptr);
+  RK4<MHDState, MHDRK4Op, MHDDX> rk4;    
+  EulerStep<MHDState, MHDEulerOp, MHDDX> eulerstep;
+  RHScalc<MHDState, MHDrhsOp, MHDDX> rhscalc;
   
   Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
 
@@ -274,10 +352,10 @@ void eulerRun(const RunParams& a_params)
     Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
     BoxData<Real, DIM> x(grnbx);
-    forallInPlace_p(iotaFunc, grnbx, x, EulerOp::s_dx);
+    forallInPlace_p(iotaFunc, grnbx, x, MHDOp::s_dx);
     BoxData<Real, NUMCOMPS>& ubd = U[dit[ibox] ];
     
-    forallInPlace(InitializeState,grnbx,ubd,x);
+    forallInPlace(InitializeState,grnbx,ubd,x,a_params);
 
     //smooth initial data
     BoxData<Real, NUMCOMPS> lapu = Lap2nd(ubd, 1.0/24.0);
@@ -285,16 +363,18 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U);
-//  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
-  Real dt = a_params.dt;
+  Real maxwave = MHDOp::maxWave(*state.m_U);
+    
+  
+  Real dt = .25*a_params.cfl*a_params.dx/maxwave;     // Talwinder
+  //Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
 
   pout() << "after initializestate"<< endl;
   U.exchange(state.m_exchangeCopier);
 
   Real time = 0.;
-
+  rhscalc.calc(state_rhs,state);
   pout() << "starting time loop"<< endl;
   if(a_params.outinterv > 0)
   {
@@ -309,11 +389,11 @@ void eulerRun(const RunParams& a_params)
     //this was computed during the advance.
     //so the standard trick is to reuse it.
     maxwave = state.m_velSave;
-
+    eulerstep.advance(time,dt,state);
     time += dt;
-    
-//    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
-//    dt = std::min(1.1*dtold, dtnew);
+    rhscalc.calc(state_rhs,state);
+    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt; // Talwinder
+    dt = std::min(1.1*dtold, dtnew);                                // Talwinder
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))
@@ -331,7 +411,7 @@ int main(int a_argc, char* a_argv[])
   MPI_Init(&a_argc, &a_argv);
 #endif
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("euler.time.table");
+  CH_TIMER_SETFILE("MHD.time.table");
 
   {
     if (a_argc < 2)
@@ -345,8 +425,8 @@ int main(int a_argc, char* a_argv[])
     RunParams params;
     //std::cout << " parsing inputs " << std::endl;
     parseInputs(params);
-    //std::cout << " running euler exmaple " << std::endl;
-    eulerRun(params);
+    //std::cout << " running MHD exmaple " << std::endl;
+    MHDRun(params);
   }
   CH_TIMER_REPORT();
 #ifdef CH_MPI
