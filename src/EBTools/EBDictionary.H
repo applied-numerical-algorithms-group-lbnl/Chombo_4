@@ -36,6 +36,7 @@ public:
 
   ///
   /**
+     This interface is for a single level
      a_ghost is the number of ghost cells your data will hold.
      It must be at least as big as the stencil span in each direction..
   */
@@ -45,6 +46,30 @@ public:
                Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx);
 
 
+  ///maybe we need an amr structure.
+  EBDictionary(const shared_ptr<GeometryService<order> >   & a_geoserv,
+               const vector<DisjointBoxLayout>             & a_grids,
+               const vector<Box>                           & a_domain,
+               const vector<data_t>                        & a_dx,
+               Point  a_srcGhost,  Point  a_dstGhost);                      
+  
+
+  int getIndex(const Box& a_dstDomain)
+  {
+    bool found = false;
+    int retval =-1;
+    for(int ilev = 0; ilev < m_domain.size(); ilev++)
+    {
+      if(a_dstDomain == m_domain[ilev])
+      {
+        found = true;
+        retval = ilev;
+      }
+    }
+    PROTO_ASSERT(found, "dictionary did not find input domain");
+    return retval;
+  }
+  
   ///
   /**
      diagonal weights are for relaxation--expensive to compute so leave them out if you do not need them
@@ -52,13 +77,17 @@ public:
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
                               string a_ebbcName,
+                              Box    a_srcDomain,
+                              Box    a_dstDomain,
                               bool needDiagonalWeights = false);
 
 
   ///get the stencil for a particular box at a particular level of refinement
   inline shared_ptr< ebstencil_t >
   getEBStencil(const string & a_stencilName, 
-               const string & a_ebbcName, 
+               const string & a_ebbcName,
+               const Box    & a_srcDomain,
+               const Box    & a_dstDomain,               
                const int    & a_boxid);
 
   ///
@@ -95,15 +124,16 @@ protected:
   };
  
   /// one per box in the grid
-  vector< map< stencilKey, shared_ptr< ebstencil_t> > >     m_registeredStencils;
+  vector< vector< map< stencilKey, shared_ptr< ebstencil_t> > > >   m_registeredStencils;
     
   shared_ptr<GeometryService<order> > m_geoserv;
   Point                               m_srcGhost;
   Point                               m_dstGhost;
-  DisjointBoxLayout                   m_grids;
   bool                                m_isClosed;
-  Box                                 m_domain;
-  data_t m_dx;
+
+  vector<DisjointBoxLayout>           m_grids;
+  vector<Box>                         m_domain;
+  vector<data_t>                      m_dx;
 private:
   EBDictionary();
   EBDictionary(  const EBDictionary<order, data_t, srcCenter, dstCenter>& a_inp);

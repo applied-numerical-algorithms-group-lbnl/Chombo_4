@@ -17,17 +17,45 @@ EBDictionary(const shared_ptr<GeometryService<order> >    & a_geoserv,
              Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx)
 {
   m_geoserv  = a_geoserv;
-  m_grids    = a_grids;
-  m_domain   = a_domain;
+  m_grids .resize(1, a_grids );
+  m_domain.resize(1, a_domain);
+  m_dx    .resize(1, a_dx    );
+  
   m_srcGhost = a_srcGhost;
   m_dstGhost = a_dstGhost;
-  m_dx       = a_dx;
   m_isClosed = false;
 
-  DataIterator dit = m_grids.dataIterator();
-  m_registeredStencils.resize(dit.size());
+  DataIterator dit = m_grids[0].dataIterator();
+  m_registeredStencils.resize(1);
+  m_registeredStencils[0].resize(dit.size());
 }    
-    
+
+
+template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+EBDictionary<order, data_t, srcCenter, dstCenter>::
+EBDictionary(const shared_ptr<GeometryService<order> >   & a_geoserv,     
+             const vector<DisjointBoxLayout>             & a_grids,       
+             const vector<Box>                           & a_domain,      
+             const vector<data_t>                        & a_dx,          
+             Point  a_srcGhost,  Point  a_dstGhost)                        
+{
+  m_geoserv  =  a_geoserv;
+  m_grids    =  a_grids  ;
+  m_domain   =  a_domain ;
+  m_dx       =  a_dx     ;
+  
+  m_srcGhost = a_srcGhost;
+  m_dstGhost = a_dstGhost;
+  m_isClosed = false;
+
+  m_registeredStencils.resize(m_grids.size());
+  for(int ilev = 0; ilev < m_grids.size(); ilev++)
+  {
+    DataIterator dit = m_grids[ilev].dataIterator();
+    m_registeredStencils[ilev].resize(dit.size());
+  }
+}    
+
 ///
 template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
 void
@@ -35,33 +63,41 @@ EBDictionary<order, data_t, srcCenter, dstCenter>::
 registerStencil(string a_stencilName,
                 string a_domainBCName,
                 string a_ebbcName,
-                bool a_needDiagonalWeights)
+                Box    a_srcDomain,
+                Box    a_dstDomain,
+                bool   a_needDiagonalWeights)
 {
   PR_assert(!m_isClosed);
 
   stencilKey key;
   key.m_ebbcName    = a_ebbcName;
   key.m_stencilName = a_stencilName;
-  Box domain = m_domain;
-  shared_ptr< LevelData< EBGraph  >  > graphs = m_geoserv->getGraphs(domain);
-  shared_ptr< LevelData< VoluData >  > voldat = m_geoserv->getVoluData(domain);
-  shared_ptr< LevelData< EBFaData >  > ebfdat = m_geoserv->getEBFaceData(domain);
-  shared_ptr< LevelData< XFacData >  > xfadat = m_geoserv->getXFaceData(domain);
-  shared_ptr< LevelData< YFacData >  > yfadat = m_geoserv->getYFaceData(domain);
-  shared_ptr< LevelData< ZFacData >  > zfadat = m_geoserv->getZFaceData(domain);
+  int dstIndex = getIndex(a_dstDomain);
 
-  DataIterator dit = m_grids.dataIterator();
+  
+  shared_ptr< LevelData< EBGraph  >  > graphS = m_geoserv->getGraphs(    a_srcDomain);
+  shared_ptr< LevelData< EBGraph  >  > graphD = m_geoserv->getGraphs(    a_dstDomain);
+  shared_ptr< LevelData< VoluData >  > voldat = m_geoserv->getVoluData(  a_srcDomain);
+  shared_ptr< LevelData< EBFaData >  > ebfdat = m_geoserv->getEBFaceData(a_srcDomain);
+  shared_ptr< LevelData< XFacData >  > xfadat = m_geoserv->getXFaceData( a_srcDomain);
+  shared_ptr< LevelData< YFacData >  > yfadat = m_geoserv->getYFaceData( a_srcDomain);
+  shared_ptr< LevelData< ZFacData >  > zfadat = m_geoserv->getZFaceData( a_srcDomain);
+
+  DataIterator dit = m_grids[dstIndex].dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Proto::Box gridbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    Proto::Box domainbx = ProtoCh::getProtoBox(domain);
+    Proto::Box gridbx = ProtoCh::getProtoBox(m_grids[dstIndex][dit[ibox]]);
+    Proto::Box domainbxS = ProtoCh::getProtoBox(a_srcDomain);
+    Proto::Box domainbxD = ProtoCh::getProtoBox(a_dstDomain);
     shared_ptr<ebstencil_t> 
       newsten(new ebstencil_t(a_stencilName, a_domainBCName, a_ebbcName, 
-                              gridbx, domainbx, m_srcGhost, m_dstGhost,
-                              (*graphs)[dit[ibox]], (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
+                              gridbx, domainbxS, domainbxD,
+                              m_srcGhost, m_dstGhost,
+                              (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
+                              (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
-                              m_dx, false, a_needDiagonalWeights));  //false is to turn off periodic
-    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[ibox];
+                              m_dx[dstIndex], false, a_needDiagonalWeights));  //false is to turn off periodic
+    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
     boxmap[key] = newsten;
   }
 }
@@ -74,19 +110,23 @@ shared_ptr< EBStencil<order, data_t, srcCenter, dstCenter> >
 EBDictionary<order, data_t, srcCenter, dstCenter>::
 getEBStencil(const string & a_stencilName,
              const string & a_ebbcName, 
+             const Box    & a_srcDomain,
+             const Box    & a_dstDomain,               
              const int    & a_boxid)
 {
   stencilKey key;
   key.m_ebbcName    = a_ebbcName;
   key.m_stencilName = a_stencilName;
   shared_ptr<ebstencil_t>   retval;
-  if(m_registeredStencils[a_boxid].find(key) == m_registeredStencils[a_boxid].end())
+  int dstIndex = getIndex(a_dstDomain);
+  
+  if(m_registeredStencils[dstIndex][a_boxid].find(key) == m_registeredStencils[dstIndex][a_boxid].end())
   {
     PR_error("stencil not found");
   }
   else
   {
-    retval = m_registeredStencils[a_boxid][key];
+    retval = m_registeredStencils[dstIndex][a_boxid][key];
   }
   return retval;
 }

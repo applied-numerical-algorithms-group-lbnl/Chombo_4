@@ -75,7 +75,8 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   {
     auto& phifab = a_phi[dit[ibox]];
     auto& lphfab = a_lph[dit[ibox]];
-    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
+    shared_ptr<ebstencil_t> stencil =
+      m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     //set lphi = kappa* div(F)
     Bx lphbox = lphfab.box();
     Bx phibox = phifab.box();
@@ -146,7 +147,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
 
   defineStencils(a_geoserv, graphs);
 
-  defineCoarserObjects(a_geoserv);
+//  defineCoarserObjects(a_geoserv);
 }
 /***/
 void
@@ -212,17 +213,17 @@ defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
   //true is for need the diagonal wweight
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, true);
-  m_nobcname = string("no_bcs");
-  m_restrictionName = string("Multigrid_Restriction");
-  m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, false);
-///prolongation has ncolors stencils
-  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
-  {
-    string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
-    m_prolongationName[icolor] = colorstring;
-    m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, false);
-  }
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+//  m_nobcname = string("no_bcs");
+//  m_restrictionName = string("Multigrid_Restriction");
+//  m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, false);
+/////prolongation has ncolors stencils
+//  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+//  {
+//    string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
+//    m_prolongationName[icolor] = colorstring;
+//    m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, false);
+//  }
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, a_graphs);
 }
@@ -360,7 +361,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
     residual(m_resid, a_phi, a_rhs);
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, ibox);
+      shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
       shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
 
       const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
@@ -387,16 +388,16 @@ EBMultigridLevel::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
                  const EBLevelBoxData<CELL, 1> & a_resf)
 {
-  PR_TIME("sgmglevel::restrict");
-  DataIterator dit = m_grids.dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
-  {
-    auto& coarfab = a_resc[dit[ibox]];
-    auto& finefab = a_resf[dit[ibox]];
-    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_restrictionName, m_nobcname, ibox);
-    //set resc = Ave(resf) (true is initToZero)
-    stencil->apply(coarfab, finefab,  true, 1.0);
-  }
+//  PR_TIME("sgmglevel::restrict");
+//  DataIterator dit = m_grids.dataIterator();
+//  for(int ibox = 0; ibox < dit.size(); ++ibox)
+//  {
+//    auto& coarfab = a_resc[dit[ibox]];
+//    auto& finefab = a_resf[dit[ibox]];
+//    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_restrictionName, m_nobcname, ibox);
+//    //set resc = Ave(resf) (true is initToZero)
+//    stencil->apply(coarfab, finefab,  true, 1.0);
+//  }
 }
 /****/
 void
@@ -404,19 +405,19 @@ EBMultigridLevel::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
                  const EBLevelBoxData<CELL, 1>& a_cor)
 {
-  PR_TIME("sgmglevel::prolong");
-  DataIterator dit = m_grids.dataIterator();
-  for(int icolor = 0; icolor < s_ncolors; icolor++)
-  {
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      auto& coarfab = a_cor[dit[ibox]];
-      auto& finefab = a_phi[dit[ibox]];
-      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, ibox);
-      //phi  = phi + I(correction) (false means do not init to zero)
-      stencil->apply(finefab, coarfab,  false, 1.0);
-    }
-  }
+//  PR_TIME("sgmglevel::prolong");
+//  DataIterator dit = m_grids.dataIterator();
+//  for(int icolor = 0; icolor < s_ncolors; icolor++)
+//  {
+//    for(int ibox = 0; ibox < dit.size(); ++ibox)
+//    {
+//      auto& coarfab = a_cor[dit[ibox]];
+//      auto& finefab = a_phi[dit[ibox]];
+//      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, ibox);
+//      //phi  = phi + I(correction) (false means do not init to zero)
+//      stencil->apply(finefab, coarfab,  false, 1.0);
+//    }
+//  }
 }
 /****/
 void 
@@ -431,16 +432,16 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-  if (m_hasCoarser)
-  {
-    residual(m_resid,a_phi,a_rhs);                      
-    //  stencils live with the destination
-    m_coarser->restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    //   stencils live with the destination
-    prolongIncrement(a_phi,m_deltaC);
-  }
+//  if (m_hasCoarser)
+//  {
+//    residual(m_resid,a_phi,a_rhs);                      
+//    //  stencils live with the destination
+//    m_coarser->restrictResidual(m_residC,m_resid);
+//    m_deltaC.setVal(0.);
+//    m_coarser->vCycle(m_deltaC,m_residC);
+//    //   stencils live with the destination
+//    prolongIncrement(a_phi,m_deltaC);
+//  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {
