@@ -222,8 +222,17 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
+//  shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
+//    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx));
+  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Real>   vecdx    (vecgrids.size(), dx);
+  for(int ilev = 1; ilev < vecgrids.size(); ilev++)
+  {
+    vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
+    vecdx    [ilev] =           2*vecdx[ilev-1];
+  }
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx));
+    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt, dataGhostPt));
   
 //  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
