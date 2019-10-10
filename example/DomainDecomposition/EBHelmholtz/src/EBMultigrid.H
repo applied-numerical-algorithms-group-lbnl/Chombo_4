@@ -80,10 +80,6 @@ public:
 
   
 private:
-  void
-  defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
-                 const shared_ptr<LevelData<EBGraph> >   & a_graphs);
-
 
   void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
 

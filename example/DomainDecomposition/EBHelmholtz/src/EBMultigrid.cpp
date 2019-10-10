@@ -24,17 +24,27 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   int iter = 0;
   pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
+  Real resnormold = resnorm;
   while((iter < a_maxIter) && (resnorm > a_tol*initres))
   {
     pout() << setprecision(3)
            << setiosflags(ios::showpoint)
            << setiosflags(ios::scientific);
 
-    pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm << endl;
-
+    
+    pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm;
+    Real rate = 1;
+    if(resnormold > 1.0e-12)
+    {
+      rate = resnormold/resnorm;
+      pout() << ", rate = " << rate;
+    }
+    pout() << endl;
+    
     vCycle(a_phi, a_rhs);
 
     residual(res, a_phi, a_rhs);
+    resnormold = resnorm;
     resnorm = res.maxNorm(0);
 
     iter++;
@@ -145,9 +155,21 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_resid.define(m_grids, m_nghostSrc  , graphs);
   m_kappa.define(m_grids, IntVect::Zero, graphs);
 
-  defineStencils(a_geoserv, graphs);
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+  //register stencil for apply op
+  //true is for need the diagonal wweight
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
+  fillKappa(a_geoserv, graphs);
 
-//  defineCoarserObjects(a_geoserv);
+  defineCoarserObjects(a_geoserv);
+}
+/***/
+string convertUInt(unsigned int number)
+{
+  std::stringstream ss;//create a stringstream
+  ss << number;//add number to the stream
+  return ss.str();//return a string with the contents of the stream
 }
 /***/
 void
@@ -159,6 +181,19 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
   m_hasCoarser = (m_grids.coarsenable(4));
   if(m_hasCoarser)
   {
+    //multilevel operators live with the finer level
+    Box coardom = coarsen(m_domain, 2);
+    m_nobcname = string("no_bcs");
+    m_restrictionName = string("Multigrid_Restriction");
+    m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, m_domain, coardom, false);
+    ///prolongation has ncolors stencils
+    for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+    {
+      string colorstring = "PWC_Prolongation_" + convertUInt(icolor);
+      m_prolongationName[icolor] = colorstring;
+      m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
+    }
+    
     m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
@@ -191,41 +226,15 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   m_resid.define(m_grids, m_nghostSrc  , graphs);
   m_kappa.define(m_grids, IntVect::Zero, graphs);
 
-  defineStencils(a_geoserv, graphs);
-
-  defineCoarserObjects(a_geoserv);
-
-}
-/***/
-string convertUInt(unsigned int number)
-{
-  std::stringstream ss;//create a stringstream
-  ss << number;//add number to the stream
-  return ss.str();//return a string with the contents of the stream
-}
-void
-EBMultigridLevel::
-defineStencils(const shared_ptr<GeometryService<2> >   & a_geoserv,
-               const shared_ptr<LevelData<EBGraph> >   & a_graphs)
-{
-  PR_TIME("sgmglevel::definestencils");
-
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
-//  m_nobcname = string("no_bcs");
-//  m_restrictionName = string("Multigrid_Restriction");
-//  m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, false);
-/////prolongation has ncolors stencils
-//  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
-//  {
-//    string colorstring = "Multigrid_Prolongation_" + convertUInt(icolor);
-//    m_prolongationName[icolor] = colorstring;
-//    m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, false);
-//  }
-  //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
-  fillKappa(a_geoserv, a_graphs);
+  fillKappa(a_geoserv, graphs);
+
+
+  defineCoarserObjects(a_geoserv);
+
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
@@ -432,16 +441,15 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-//  if (m_hasCoarser)
-//  {
-//    residual(m_resid,a_phi,a_rhs);                      
-//    //  stencils live with the destination
-//    m_coarser->restrictResidual(m_residC,m_resid);
-//    m_deltaC.setVal(0.);
-//    m_coarser->vCycle(m_deltaC,m_residC);
-//    //   stencils live with the destination
-//    prolongIncrement(a_phi,m_deltaC);
-//  }
+  if (m_hasCoarser)
+  {
+    residual(m_resid,a_phi,a_rhs);                      
+    //stencils for multilevel objects live with the finer level
+    restrictResidual(m_residC,m_resid);
+    m_deltaC.setVal(0.);
+    m_coarser->vCycle(m_deltaC,m_residC);
+    prolongIncrement(a_phi,m_deltaC);
+  }
 
   for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
   {
