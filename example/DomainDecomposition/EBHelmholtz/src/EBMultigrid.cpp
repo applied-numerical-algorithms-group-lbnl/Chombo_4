@@ -397,16 +397,19 @@ EBMultigridLevel::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
                  const EBLevelBoxData<CELL, 1> & a_resf)
 {
-//  PR_TIME("sgmglevel::restrict");
-//  DataIterator dit = m_grids.dataIterator();
-//  for(int ibox = 0; ibox < dit.size(); ++ibox)
-//  {
-//    auto& coarfab = a_resc[dit[ibox]];
-//    auto& finefab = a_resf[dit[ibox]];
-//    shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_restrictionName, m_nobcname, ibox);
-//    //set resc = Ave(resf) (true is initToZero)
-//    stencil->apply(coarfab, finefab,  true, 1.0);
-//  }
+  PR_TIME("sgmglevel::restrict");
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& coarfab = a_resc[dit[ibox]];
+    auto& finefab = a_resf[dit[ibox]];
+    //finer level owns the stencil (and the operator)
+    Box coardom = coarsen(m_domain, 2);
+    shared_ptr<ebstencil_t> stencil =
+      m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
+    //set resc = Ave(resf) (true is initToZero)
+    stencil->apply(coarfab, finefab,  true, 1.0);
+  }
 }
 /****/
 void
@@ -414,19 +417,21 @@ EBMultigridLevel::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
                  const EBLevelBoxData<CELL, 1>& a_cor)
 {
-//  PR_TIME("sgmglevel::prolong");
-//  DataIterator dit = m_grids.dataIterator();
-//  for(int icolor = 0; icolor < s_ncolors; icolor++)
-//  {
-//    for(int ibox = 0; ibox < dit.size(); ++ibox)
-//    {
-//      auto& coarfab = a_cor[dit[ibox]];
-//      auto& finefab = a_phi[dit[ibox]];
-//      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, ibox);
-//      //phi  = phi + I(correction) (false means do not init to zero)
-//      stencil->apply(finefab, coarfab,  false, 1.0);
-//    }
-//  }
+  PR_TIME("sgmglevel::prolong");
+  //finer level owns the stencil (and the operator)
+  Box coardom = coarsen(m_domain, 2);
+  DataIterator dit = m_grids.dataIterator();
+  for(int icolor = 0; icolor < s_ncolors; icolor++)
+  {
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto& coarfab = a_cor[dit[ibox]];
+      auto& finefab = a_phi[dit[ibox]];
+      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, coardom, m_domain, ibox);
+      //phi  = phi + I(correction) (false means do not init to zero)
+      stencil->apply(finefab, coarfab,  false, 1.0);
+    }
+  }
 }
 /****/
 void 

@@ -27,4 +27,4 @@ coveredval = -1
 # 0 neumann, 1 dirichlet
 domainBC     = 1
 EBBC         = 0
-numSmooth  = 4
+numSmooth  = 8
