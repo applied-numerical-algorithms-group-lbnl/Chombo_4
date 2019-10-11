@@ -61,13 +61,14 @@ defineFinestLevel(const RealVect               & a_origin,
     Box interBoxCh = grownBox & m_domain;
     Bx interBox = getProtoBox(interBoxCh);
     Bx domain   = getProtoBox(m_domain);
+    Bx validBx  = getProtoBox(validBox);
     if(m_baseIF->entireBoxRegular(interBox, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllRegular(interBox, domain);
+      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox, domain);
     }
     else if(m_baseIF->entireBoxCovered(interBox, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllCovered(interBox, domain);
+      (*m_graphs)[dit[ibox]].defineAsAllCovered(validBx, interBox, domain);
     }
     else
     {
@@ -77,7 +78,7 @@ defineFinestLevel(const RealVect               & a_origin,
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
-      (*m_graphs  )[dit[ibox]].defineFromPrimitives(regIrregCovered, irrgraph, interBox, domain);
+      (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
 //now fill in the moditment information
       (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
       (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
@@ -247,12 +248,14 @@ coarsenGraph(LevelGeometryService&      a_finerLevel)
   { 
     EBGraph & fineEBGraph = (*a_finerLevel.m_graphs)[dit[ibox]];
     Box        vofRegion       = m_grids[dit[ibox]];
+    Box        validBox        = m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
     vofRegion &= m_domain;
     EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
     Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
-    coarEBGraph.coarsenVoFs( fineEBGraph, vofRegionBx);
+    Bx validBx     = ProtoCh::getProtoBox(validBox);
+    coarEBGraph.coarsenVoFs( validBx, fineEBGraph, vofRegionBx);
     coarEBGraph.coarsenFaces(fineEBGraph, vofRegionBx);
   }
 }

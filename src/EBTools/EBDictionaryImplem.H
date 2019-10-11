@@ -86,12 +86,13 @@ registerStencil(string a_stencilName,
   DataIterator dit = m_grids[dstIndex].dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Proto::Box gridbx = ProtoCh::getProtoBox(m_grids[dstIndex][dit[ibox]]);
+    Proto::Box gridbxS  = (*graphS)[dit[ibox]].validBox();
+    Proto::Box gridbxD  = (*graphD)[dit[ibox]].validBox();
     Proto::Box domainbxS = ProtoCh::getProtoBox(a_srcDomain);
     Proto::Box domainbxD = ProtoCh::getProtoBox(a_dstDomain);
     shared_ptr<ebstencil_t> 
       newsten(new ebstencil_t(a_stencilName, a_domainBCName, a_ebbcName, 
-                              gridbx, domainbxS, domainbxD,
+                              gridbxS, gridbxD, domainbxS, domainbxD,
                               m_srcGhost, m_dstGhost,
                               (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
