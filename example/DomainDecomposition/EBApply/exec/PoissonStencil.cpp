@@ -141,7 +141,7 @@ runTest(int a_argc, char* a_argv[])
   string  ebbcname("Dirichlet");
 
   pout() << "registering stencil" << endl;
-  dictionary.registerStencil(stenname, dombcname, ebbcname);
+  dictionary.registerStencil(stenname, dombcname, ebbcname, domain.domainBox(), domain.domainBox());
 
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
 
@@ -170,7 +170,7 @@ runTest(int a_argc, char* a_argv[])
 //#pragma omp parallel for
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, ibox);
+      shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, domain.domainBox(), domain.domainBox(), ibox);
       stencil->apply(dstData[dit[ibox]], srcData[dit[ibox]]);
     }
   }
