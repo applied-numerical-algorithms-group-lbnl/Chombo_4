@@ -50,7 +50,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
     iter++;
   }
-  pout() << "EBMultigrid: final |resid| = " << resnorm << endl;
+  pout() << "EBMultigrid: final     |resid| = " << resnorm << endl;
 }
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
@@ -385,8 +385,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       auto& phifab =   a_phi[dit[ibox]];
       auto& resfab = m_resid[dit[ibox]];
       unsigned long long int numflopspt = 10;
-      Real aalpha = std::abs(m_alpha);
-      Real abeta  = std::abs(m_beta);
+
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                         phifab, resfab, stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
