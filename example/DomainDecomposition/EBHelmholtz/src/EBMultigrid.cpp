@@ -4,6 +4,7 @@
 #include <sstream>
 #include "NamespaceHeader.H"
 
+bool EBMultigrid::s_useWCycle     = true;
 int  EBMultigrid::s_numSmoothDown = 2;
 int  EBMultigrid::s_numSmoothUp   = 2;
 
@@ -49,6 +50,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
     iter++;
   }
+  pout() << "EBMultigrid: final |resid| = " << resnorm << endl;
 }
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
@@ -383,6 +385,8 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       auto& phifab =   a_phi[dit[ibox]];
       auto& resfab = m_resid[dit[ibox]];
       unsigned long long int numflopspt = 10;
+      Real aalpha = std::abs(m_alpha);
+      Real abeta  = std::abs(m_beta);
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                         phifab, resfab, stendiag,
                         m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
@@ -453,6 +457,10 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     restrictResidual(m_residC,m_resid);
     m_deltaC.setVal(0.);
     m_coarser->vCycle(m_deltaC,m_residC);
+    if(EBMultigrid::s_useWCycle)
+    {
+      m_coarser->vCycle(m_deltaC,m_residC);
+    }
     prolongIncrement(a_phi,m_deltaC);
   }
 

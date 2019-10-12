@@ -131,6 +131,7 @@ public:
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
   static int  s_numSmoothDown ;
   static int  s_numSmoothUp   ;
+  static bool s_useWCycle     ;
 
   /// 
   EBMultigrid(dictionary_t                      & a_dictionary,
