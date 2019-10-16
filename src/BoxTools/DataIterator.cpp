@@ -8,9 +8,9 @@
  */
 #endif
 
-#include "Proto_ClockTicks.H"
+#include "implem/Proto_ClockTicks.H"
 #include "DataIterator.H"
-#include "Proto_DisjointBoxLayout.H"
+#include "implem/Proto_DisjointBoxLayout.H"
 #include "NamespaceHeader.H"
 
 #ifdef CH_MPI

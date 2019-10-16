@@ -10,7 +10,7 @@
 
 #include "TimedDataIterator.H"
 #include "parstream.H"
-#include "Proto_ClockTicks.H"
+#include "implem/Proto_ClockTicks.H"
 #ifdef CH_MPI
 #include "SPMD.H"
 #endif
