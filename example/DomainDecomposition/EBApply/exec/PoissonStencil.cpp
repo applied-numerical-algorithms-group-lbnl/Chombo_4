@@ -134,7 +134,7 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 
   pout() << "making dictionary" << endl;
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx);
+  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dx, dataGhostPt, dataGhostPt);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Dirichlet");

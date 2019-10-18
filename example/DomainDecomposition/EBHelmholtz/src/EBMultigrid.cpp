@@ -316,9 +316,12 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   {
     //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
     unsigned long long int numflopspt = 2;
+    auto&       resfab = a_res[dit[ibox]];
+    //const auto& phifab = a_phi[dit[ibox]];
+    const auto& rhsfab = a_rhs[dit[ibox]];
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, a_res[dit[ibox]], a_rhs[dit[ibox]]);
+    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
   }
 }
 /****/
@@ -402,6 +405,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
 {
   PR_TIME("sgmglevel::restrict");
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& coarfab = a_resc[dit[ibox]];
@@ -412,6 +416,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
       m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
+    ideb++;
   }
 }
 /****/
@@ -426,6 +431,7 @@ prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
   DataIterator dit = m_grids.dataIterator();
   for(int icolor = 0; icolor < s_ncolors; icolor++)
   {
+    int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       auto& coarfab = a_cor[dit[ibox]];
@@ -433,6 +439,7 @@ prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
       shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, coardom, m_domain, ibox);
       //phi  = phi + I(correction) (false means do not init to zero)
       stencil->apply(finefab, coarfab,  false, 1.0);
+      ideb++;
     }
   }
 }
