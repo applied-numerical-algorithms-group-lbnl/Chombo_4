@@ -37,6 +37,11 @@ template<int order>
 void LevelGeometryService<order>::
 defineData()
 {
+  m_cellVol = 1;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    m_cellVol *= m_dx;
+  }
   //the 2* is because of coarsening means ghost cells need to be more numerous on finer levels than coarser levels
   m_exchangeCopier.exchangeDefine(m_grids, 2*m_geomgrow);
   m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<EBGraph >()));

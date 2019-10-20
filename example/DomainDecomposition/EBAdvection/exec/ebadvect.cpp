@@ -16,6 +16,7 @@
 #include "EBEncyclopedia.H"
 #include "EBDictionary.H"
 #include "EBChombo.H"
+#include "EBAdvection.H"
 #include <iomanip>
 
 #define MAX_ORDER 2
@@ -271,7 +272,7 @@ runAdvection(int a_argc, char* a_argv[])
   pout() << "making dictionary" << endl;
   Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
-    (new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt, dataGhostPt));
+    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;
@@ -297,7 +298,7 @@ runAdvection(int a_argc, char* a_argv[])
   }
 
   pout() << "running advection operator " << endl;
-//  EBAdvectionOp advectOp(dictionary, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
+  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
 
   while((step < max_step) && (time < max_time))
   {

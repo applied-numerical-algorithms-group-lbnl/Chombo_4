@@ -244,14 +244,6 @@ EBMultigridLevel::
 fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
           const shared_ptr<LevelData<EBGraph> >   & a_graphs)
 {
-  Real cellVol = 1;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    cellVol *= m_dx;
-  }
-  typedef IndexedMoments<DIM  , 2> IndMomDIM;
-  typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
-  const shared_ptr<LevelData<VoluData> > volmomld = a_geoserv->getVoluData(m_domain);
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -260,33 +252,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
     const EBGraph  & graph = (*a_graphs)[dit[ibox]];
     EBHostData<CELL, Real, 1> hostdat(grbx, graph);
     //fill kappa on the host then copy to the device
-    HostBoxData<        Real, 1>& reghost = hostdat.getRegData();
-    HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
-    const VoluData & volmo = (*volmomld)[dit[ibox]];
-    for(auto bit = grbx.begin(); bit != grbx.end();  ++bit)
-    {
-      if(graph.isRegular(*bit))
-      {
-        reghost(*bit, 0) = 1.0;
-      }
-      else if(graph.isCovered(*bit))
-      {
-        reghost(*bit, 0) = 0.0;
-      }
-      else
-      {
-        vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
-        for(int ivec = 0; ivec < vofs.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofs[ivec];
-          const IndMomDIM&  momspt = volmo(vof, 0);
-          double kappavof = momspt[0]/cellVol;
-
-          reghost(*bit, 0) = kappavof;
-          irrhost( vof, 0) = kappavof;
-        }
-      }
-    }
+    a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
   }
