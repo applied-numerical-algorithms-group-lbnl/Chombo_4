@@ -106,6 +106,43 @@ dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
     }
   }
 }
+
+
+void 
+dumpEBBD(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+    typedef EBIndex<CELL> VolIndex;
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    EBGraph  ebgraph = data.ebgraph();
+
+    Bx databox = dataPtr->box();
+    Point lo = databox.low();
+    Point hi = databox.high();
+    cout << "data region contains:" << endl;
+    for(int j = lo[1]; j <= hi[1]; j++)
+    {
+      for(int i = lo[0]; i <= hi[0]; i++)
+      {
+        Point pt(i,j);
+        if((databox.contains(pt)) && ebgraph.getDomain().contains(pt))
+          {
+            vector<VolIndex> vofs = ebgraph.getVoFs(pt);
+            for(int ivof = 0; ivof < vofs.size(); ivof++)
+            {
+              VolIndex vof = vofs[ivof];
+              cout << pt << ":" << data(vof, 0) << "  ";
+            } 
+          }
+      }
+      cout << endl;
+    }
+  }
+}
 void
 dumpPPS(const PointSet* a_ivs)
 {
@@ -129,6 +166,7 @@ int
 runTest(int a_argc, char* a_argv[])
 {
   dumpArea(NULL);
+  dumpEBBD(NULL);
 
   Real coveredval = -1;
   int nx      = 32;

@@ -1,7 +1,7 @@
 #include "EBAdvection.H"
 #include "NamespaceHeader.H"
 using Proto::Var;
-////=================================================
+////
 PROTO_KERNEL_START 
 void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                        Var<Real, 1>    a_kappaConsDiv,
@@ -13,9 +13,9 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
   a_deltaM(0)    = (1-a_kappa(0))*(a_kappaConsDiv(0) - a_kappa(0)*a_nonConsDivF(0));
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
-/// 
+////
 EBAdvection::
-EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_dictionaries,
+EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             shared_ptr<GeometryService<2> >        & a_geoserv,
             shared_ptr<EBLevelBoxData<CELL, DIM> > & a_veloCell,
             const DisjointBoxLayout                & a_grids,
@@ -26,9 +26,35 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_dictionaries,
 {
   m_grids  = a_grids;
   m_domain = a_domain;
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+  m_grids      = a_grids;      
+  m_stenname   = a_stenname;   
+  m_dombcname  = a_dombcname;  
+  m_ebbcname   = a_ebbcname;   
+  m_domain     = a_domain;     
+  m_nghostSrc  = a_nghostsrc;
+  m_nghostDst  = a_nghostdst;
+  m_brit       = a_brit;
+  m_veloCell   = a_veloCell;
+  defineData();
   fillKappa(a_geoserv);
+  registerStencils();
 }
+////
+void  
+EBAdvection::
+defineData()
+{
+  const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
+  m_kappa.define(     m_grids, m_nghostSrc, graphs);
+  m_kappaDiv.define(  m_grids, m_nghostSrc, graphs);
+  m_deltaM.define(    m_grids, m_nghostSrc, graphs);
+  m_nonConsDiv.define(m_grids, m_nghostSrc, graphs);
+  m_hybridDiv.define( m_grids, m_nghostSrc, graphs);
 
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+}
+////
 void  
 EBAdvection::
 fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
@@ -46,6 +72,27 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
   }
+  m_kappa.exchange(m_exchangeCopier());
+}
+////
+void  
+EBAdvection::
+registerStencils()
+{
+  //volume weighted averaging radius one
+  string nobc("nobcs");
+  string volweight("Volume_Weighted_Averaging_rad_1");
+  //false is because I do not need diagonal  weights for any of these stencils
+  bool needDiag = false;
+  m_brit->m_cellToCell->registerStencil(volweight, nobcs, nobcs, m_domain, m_domain, needDiag);
+
+  string centInterpX("InterpolateToFaceCentroid_0");
+  string centInterpY("InterpolateToFaceCentroid_1");
+  string centInterpZ("InterpolateToFaceCentroid_2");
+  m_brit->m_xFaceToXFace->registerStencil(centInterpX, nobcs, nobcs, m_domain, m_domain, needDiag);
+  m_brit->m_yFaceToYFace->registerStencil(centInterpY, nobcs, nobcs, m_domain, m_domain, needDiag);
+  m_brit->m_zFaceToZFace->registerStencil(centInterpZ, nobcs, nobcs, m_domain, m_domain, needDiag);
+
 }
 ///
 void
