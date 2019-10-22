@@ -43,7 +43,7 @@ public:
   EBDictionary(const shared_ptr<GeometryService<order> >  & a_geoserv,
                const DisjointBoxLayout                    & a_grids,
                const Box                                  & a_domain,
-               Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx);
+               data_t a_dxPoint,   Point a_srcGhost,  Point  a_dstGhost);
 
 
   ///maybe we need an amr structure.

@@ -14,7 +14,7 @@ EBDictionary<order, data_t, srcCenter, dstCenter>::
 EBDictionary(const shared_ptr<GeometryService<order> >    & a_geoserv,
              const DisjointBoxLayout                      & a_grids,
              const Box                                   & a_domain,
-             Point  a_srcGhost,  Point  a_dstGhost, data_t a_dx)
+             data_t a_dx, Point  a_srcGhost,  Point  a_dstGhost)
 {
   m_geoserv  = a_geoserv;
   m_grids .resize(1, a_grids );

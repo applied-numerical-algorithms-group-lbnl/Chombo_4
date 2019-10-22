@@ -120,6 +120,43 @@ public:
     return m_zfacdata;
   }
 
+
+  /// fill data holder with values of the volume fraction.
+  inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
+                        const Box                & a_grbx ,
+                        const DataIndex          & a_dit) const
+  {
+    const VoluData & volmo = (*m_voludata)[a_dit];
+    const EBGraph  & graph = (*m_graphs)[a_dit];
+    HostBoxData<        Real, 1>& reghost = a_kappa.getRegData();
+    HostIrregData<CELL, Real, 1>& irrhost = a_kappa.getIrrData();
+    for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+    {
+      Point pt  = ProtoCh::getPoint(bit());
+      if(graph.isRegular(pt))
+      {
+        reghost(pt, 0) = 1.0;
+      }
+      else if(graph.isCovered(pt))
+      {
+        reghost(pt, 0) = 0.0;
+      }
+      else
+      {
+        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+        for(int ivec = 0; ivec < vofs.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofs[ivec];
+          const IndMomDIM&  momspt = volmo(vof, 0);
+          double kappavof = momspt[0]/m_cellVol;
+
+          reghost(pt  , 0) = kappavof;
+          irrhost(vof , 0) = kappavof;
+        }
+      }
+    }
+  }
+  
 protected:
   void 
   coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
@@ -251,7 +288,8 @@ private:
                                       
   int                                 m_order;
   int                                 m_degreeP;
-  double                              m_dx;
+  Real                                m_dx;
+  Real                                m_cellVol;
                                       
   IntVect                             m_geomgrow;
                                       
@@ -428,6 +466,17 @@ public:
     return   (*this)[a_domain]->getVoluData();
   }
 
+  /// fill a data holder in with volume fractions
+  inline void
+  fillKappa(EBHostData<CELL,Real, 1>& a_kappa,
+            const Box                & a_grid ,
+            const DataIndex          & a_dit,
+            const Box                & a_domain) const
+  {
+    
+    (*this)[a_domain]->fillKappa(a_kappa, a_grid, a_dit);
+  }
+      
   ///
   inline shared_ptr<LevelData<EBFaData> >
   getEBFaceData(const Box& a_domain)
@@ -463,6 +512,13 @@ public:
     return m_levels[ilev];
   }
 
+    ///
+  inline const shared_ptr<LevelGeometryService<order> > operator[](const Box& a_domain) const
+  {
+    int ilev = getLevel(a_domain);
+    return m_levels[ilev];
+  }
+
 protected:
 
   vector<Box>                               m_domains;
@@ -471,7 +527,7 @@ protected:
 
 private:
   
-  inline int getLevel(const Box & a_domain)
+  inline const int getLevel(const Box & a_domain) const
   {
     int retval = -1;
     bool found = false;

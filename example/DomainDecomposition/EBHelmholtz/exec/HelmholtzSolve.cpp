@@ -16,6 +16,7 @@
 #include "EBDictionary.H"
 #include "EBMultigrid.H"
 #include "EBChombo.H"
+#include "Proto_DebugHooks.H"
 #include <iomanip>
 
 
@@ -77,24 +78,66 @@ dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
     typedef EBIndex<CELL> VolIndex;
-    IntVect iv(26, 17);
+    IntVect iv(2, 2);
     EBBoxData<CELL, Real, 1> & data = *dataPtr;
     EBGraph  ebgraph = data.ebgraph();
     Box region = grow(Box(iv, iv), 2);
+
     IntVect lo = region.smallEnd();
     IntVect hi = region.bigEnd();
+    Bx databox = dataPtr->box();
     cout << "data region contains:" << endl;
     for(int j = lo[1]; j <= hi[1]; j++)
     {
       for(int i = lo[0]; i <= hi[0]; i++)
       {
         Point pt(i,j);
-        vector<VolIndex> vofs = ebgraph.getVoFs(pt);
-        for(int ivof = 0; ivof < vofs.size(); ivof++)
-        {
-          VolIndex vof = vofs[ivof];
-          cout << pt << ":" << data(vof, 0) << "  ";
-        }
+        if((databox.contains(pt)) && ebgraph.getDomain().contains(pt))
+          {
+            vector<VolIndex> vofs = ebgraph.getVoFs(pt);
+            for(int ivof = 0; ivof < vofs.size(); ivof++)
+            {
+              VolIndex vof = vofs[ivof];
+              cout << pt << ":" << data(vof, 0) << "  ";
+            } 
+          }
+      }
+      cout << endl;
+    }
+  }
+}
+
+
+void 
+dumpEBBD(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+    typedef EBIndex<CELL> VolIndex;
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    EBGraph  ebgraph = data.ebgraph();
+
+    Bx databox = dataPtr->box();
+    Point lo = databox.low();
+    Point hi = databox.high();
+    cout << "data region contains:" << endl;
+    for(int j = lo[1]; j <= hi[1]; j++)
+    {
+      for(int i = lo[0]; i <= hi[0]; i++)
+      {
+        Point pt(i,j);
+        if((databox.contains(pt)) && ebgraph.getDomain().contains(pt))
+          {
+            vector<VolIndex> vofs = ebgraph.getVoFs(pt);
+            for(int ivof = 0; ivof < vofs.size(); ivof++)
+            {
+              VolIndex vof = vofs[ivof];
+              cout << pt << ":" << data(vof, 0) << "  ";
+            } 
+          }
       }
       cout << endl;
     }
@@ -123,6 +166,7 @@ int
 runTest(int a_argc, char* a_argv[])
 {
   dumpArea(NULL);
+  dumpEBBD(NULL);
 
   Real coveredval = -1;
   int nx      = 32;
@@ -222,8 +266,7 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
-//  shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-//    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx));
+
   vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
@@ -277,8 +320,8 @@ runTest(int a_argc, char* a_argv[])
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
     EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
     EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-    phibd.setVal(1.0);
-    rhsbd.setVal(0.0);
+    phibd.setVal(0.0);
+    rhsbd.setVal(1.0);
     corbd.setVal(0.0);
   }
 

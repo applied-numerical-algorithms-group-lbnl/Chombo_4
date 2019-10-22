@@ -13,8 +13,10 @@
 #include "ProtoInterface.H"
 #include "BRMeshRefine.H"
 #include "GeometryService.H"
+#include "EBEncyclopedia.H"
 #include "EBDictionary.H"
 #include "EBChombo.H"
+#include "EBAdvection.H"
 #include <iomanip>
 
 #define MAX_ORDER 2
@@ -57,8 +59,8 @@ void InitializeVCellF(int       a_p[DIM],
                       Vec       a_vel,
                       Real      a_cen,
                       Real      a_rad,
-                      Real      a_maxr,
                       Real      a_mag,
+                      Real      a_maxr,
                       Real      a_dx)
 {
   Real rlocsq = 0;
@@ -82,6 +84,41 @@ void InitializeVCellF(int       a_p[DIM],
 }
 PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 
+//=================================================
+void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
+                    EBLevelBoxData<CELL, DIM>   &  a_velocell,
+                    const DisjointBoxLayout     &  a_grids,
+                    const Real                  &  a_dx,
+                    const Real                  &  a_geomCen,
+                    const Real                  &  a_geomRad,
+                    const Real                  &  a_blobCen,
+                    const Real                  &  a_blobRad,
+                    const Real                  &  a_maxVelMag,
+                    const Real                  &  a_maxVelRad)
+{
+  DataIterator dit = a_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    {
+      auto& scalfab = a_scalcell[dit[ibox]];
+      unsigned long long int numflopsscal = 5*DIM +3;
+      Bx scalbox = scalfab.box();
+
+      ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
+                        scalfab, a_blobCen, a_blobRad, a_dx);
+    }
+
+    {
+      auto& velofab = a_velocell[dit[ibox]];
+      unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
+      Bx velobox = velofab.box();
+      ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
+                        velofab, a_geomCen, a_geomRad, a_maxVelRad, a_maxVelRad, a_dx);
+
+    
+    }
+  }
+}
 //=================================================
 
 void makeGrids(DisjointBoxLayout& a_grids,
@@ -113,23 +150,25 @@ void makeGrids(DisjointBoxLayout& a_grids,
 //=================================================
 void computeDt(Real                        &  a_dt,
                EBLevelBoxData<CELL, DIM>   &  a_velocell,
-               const   Real                &  a_dx)
+               const   Real                &  a_dx,
+               const   Real                &  a_cfl)
 {
-//HERE  
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    maxvel = std::max(maxvel, a_velocell.maxNorm(idir));
+  }
+  if(maxvel > 1.0e-16)
+  {
+    a_dt = a_cfl*a_dx/maxvel;
+  }    
+  else
+  {
+    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    a_dt = a_dx;
+  }
 }
 
-//=================================================
-void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
-                    EBLevelBoxData<CELL, DIM>   &  a_velocell,
-                    const DisjointBoxLayout     &  a_grids,
-                    const Real                  &  a_dx,
-                    const Real                  &  a_geomCen,
-                    const Real                  &  a_geomRad,
-                    const Real                  &  a_blobCen,
-                    const Real                  &  a_blobRad)
-{
-  MayDay::Error("not implemented");
-}
 //=================================================
 void defineGeometry(DisjointBoxLayout& a_grids,
                     Real             & a_dx,
@@ -182,9 +221,12 @@ int
 runAdvection(int a_argc, char* a_argv[])
 {
   Real coveredval = -1;
+  Real cfl    = 0.5;
   int nx      = 32;
   int  max_step   = 10;
   Real max_time   = 1.0;
+  Real max_vel_mag = 1.0;
+  Real max_vel_rad = 0.25;
   int nStream    = 8;
   int outputInterval = -1;
   ParmParse pp;
@@ -196,11 +238,17 @@ runAdvection(int a_argc, char* a_argv[])
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
   pp.get("covered_value", coveredval);
+  pp.get("cfl"  , cfl);
+  pp.get("max_vel_mag"  , max_vel_mag);
+  pp.get("max_vel_rad"  , max_vel_rad);
 
-  pout() << "num_streams     = " << nStream   << endl;
-  pout() << "max_step        = " << max_step  << endl;
-  pout() << "max_time        = " << max_time  << endl;
+  pout() << "num_streams     = " << nStream         << endl;
+  pout() << "max_step        = " << max_step        << endl;
+  pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
+  pout() << "cfl             = " << cfl             << endl;
+  pout() << "max_vel_mag     = " << max_vel_mag     << endl;
+  pout() << "max_vel_rad     = " << max_vel_rad     << endl;
 
 #ifdef PROTO_CUDA
   Proto::DisjointBoxLayout::setNumStreams(nStream);
@@ -223,32 +271,34 @@ runAdvection(int a_argc, char* a_argv[])
 
   pout() << "making dictionary" << endl;
   Box domain = grids.physDomain().domainBox();
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain, dataGhostPt, dataGhostPt, dx);
+  shared_ptr<EBEncyclopedia<2, Real> > 
+    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;
   
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
   EBLevelBoxData<CELL,   1>  scalcell(grids, dataGhostIV, graphs);
-  EBLevelBoxData<CELL, DIM>  velocell(grids, dataGhostIV, graphs);
-  initializeData(scalcell, velocell, grids, dx, geomCen, geomRad, blobCen, blobRad);
+
+  shared_ptr<EBLevelBoxData<CELL, DIM> >  velocell(new EBLevelBoxData<CELL, DIM>(grids, dataGhostIV, graphs));
+  initializeData(scalcell, *velocell, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
 
 
   int step = 0; Real time = 0;
   Real dt = 0;
   pout() << "computing the time step"  << endl;
-  computeDt(dt, velocell, dx);
+  computeDt(dt, *velocell, dx, cfl);
 
   if(outputInterval > 0)
   {
     string filev("velo.hdf5");
-    velocell.writeToFileHDF5(filev, coveredval);
+    velocell->writeToFileHDF5(filev, coveredval);
     string filep("scal.0.hdf5");
     scalcell.writeToFileHDF5(filep, coveredval);
   }
 
   pout() << "running advection operator " << endl;
-//  EBAdvectionOp advectOp(dictionary, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
+  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
 
   while((step < max_step) && (time < max_time))
   {
