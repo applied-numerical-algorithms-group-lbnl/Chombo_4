@@ -50,9 +50,10 @@ increment(Real        & a_weight,
   
   DataIterator dit = m_grids.dataIterator();
 #pragma omp parallel
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+ for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    BoxData<Real, NUMCOMPS>& incr = delta[dit[ibox]];
+    BoxData<Real, NUMCOMPS> incr(delta[dit[ibox]].box());
+    delta[dit[ibox]].copyTo(incr); 
     incr *= a_weight;
     data[dit[ibox]] += incr;
   }
