@@ -39,6 +39,89 @@ public:
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,CELL    > >    m_zFaceToCell;
   shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL    > >    m_boundaryToCell;
 
+  //register a stencil for a face-centered thing
+  inline void registerFaceStencil(int    a_faceDir,
+                                  string a_stencilName,
+                                  string a_domainBCName,
+                                  string a_ebbcName,
+                                  Box    a_srcDomain,
+                                  Box    a_dstDomain,
+                                  bool   needDiagonalWeights = false)
+  {
+    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
+    if(a_faceDir == 0)
+    {
+      m_xFaceToXFace->registerStencil(a_stencilName,              
+                                      a_domainBCName,             
+                                      a_ebbcName,                 
+                                      a_srcDomain,                
+                                      a_dstDomain,                
+                                      needDiagonalWeights);
+    }
+    else if(a_faceDir == 1)
+    {
+      m_yFaceToYFace->registerStencil(a_stencilName,              
+                                      a_domainBCName,             
+                                      a_ebbcName,                 
+                                      a_srcDomain,                
+                                      a_dstDomain,                
+                                      needDiagonalWeights);
+    }
+    else if(a_faceDir == 2)
+    {
+      m_zFaceToZFace->registerStencil(a_stencilName,              
+                                      a_domainBCName,             
+                                      a_ebbcName,                 
+                                      a_srcDomain,                
+                                      a_dstDomain,                
+                                      needDiagonalWeights);
+    }
+  }
+
+
+//  ///get the stencil for a particular box at a particular level of refinement
+//  inline template<typename ebstencil_t>
+//  shared_ptr< ebstencil_t >
+//  getFaceEBStencil(int a_faceDir, 
+//                   const string & a_stencilName, 
+//                   const string & a_ebbcName,
+//                   const Box    & a_srcDomain,
+//                   const Box    & a_dstDomain,               
+//                   const int    & a_boxid)
+//  {
+//    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
+//    if(a_faceDir == 0)
+//    {
+//      return 
+//        m_xFaceToXFace->getEBStencil(a_stencilName,              
+//                                     a_domainBCName,             
+//                                     a_ebbcName,                 
+//                                     a_srcDomain,                
+//                                     a_dstDomain,                
+//                                     a_boxid);
+//    }
+//    else if(a_faceDir == 1)
+//    {
+//      m_yFaceToYFace->getEBStencil(a_stencilName,              
+//                                   a_domainBCName,             
+//                                   a_ebbcName,                 
+//                                   a_srcDomain,                
+//                                   a_dstDomain,                
+//                                   a_boxid);
+//    }
+//    else if(a_faceDir == 2)
+//    {
+//      m_zFaceToZFace->getEBStencil(a_stencilName,              
+//                                   a_domainBCName,             
+//                                   a_ebbcName,                 
+//                                   a_srcDomain,                
+//                                   a_dstDomain,                
+//                                   a_boxid);
+//    }
+//  }
+
+
+
 
   ///single level constructor
   EBEncyclopedia(const shared_ptr<GeometryService<order> >     & a_geoserv,

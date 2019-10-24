@@ -28,22 +28,19 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_domain = a_domain;
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   m_grids      = a_grids;      
-  m_stenname   = a_stenname;   
-  m_dombcname  = a_dombcname;  
-  m_ebbcname   = a_ebbcname;   
   m_domain     = a_domain;     
   m_nghostSrc  = a_nghostsrc;
   m_nghostDst  = a_nghostdst;
   m_brit       = a_brit;
   m_veloCell   = a_veloCell;
-  defineData();
+  defineData(a_geoserv);
   fillKappa(a_geoserv);
   registerStencils();
 }
 ////
 void  
 EBAdvection::
-defineData()
+defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
   const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
   m_kappa.define(     m_grids, m_nghostSrc, graphs);
@@ -72,7 +69,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
   }
-  m_kappa.exchange(m_exchangeCopier());
+  m_kappa.exchange(m_exchangeCopier);
 }
 ////
 void  
@@ -80,18 +77,28 @@ EBAdvection::
 registerStencils()
 {
   //volume weighted averaging radius one
-  string nobc("nobcs");
-  string volweight("Volume_Weighted_Averaging_rad_1");
+  string nobcs("nobcs");
+  string averaging("Volume_Weighted_Averaging_rad_1");
+  string redistribution("Volume_Weighted_Redistribution_rad_1");
   //false is because I do not need diagonal  weights for any of these stencils
   bool needDiag = false;
-  m_brit->m_cellToCell->registerStencil(volweight, nobcs, nobcs, m_domain, m_domain, needDiag);
+  m_brit->m_cellToCell->registerStencil(averaging     , nobcs, nobcs, m_domain, m_domain, needDiag);
+  m_brit->m_cellToCell->registerStencil(redistribution, nobcs, nobcs, m_domain, m_domain, needDiag);
 
-  string centInterpX("InterpolateToFaceCentroid_0");
-  string centInterpY("InterpolateToFaceCentroid_1");
-  string centInterpZ("InterpolateToFaceCentroid_2");
-  m_brit->m_xFaceToXFace->registerStencil(centInterpX, nobcs, nobcs, m_domain, m_domain, needDiag);
-  m_brit->m_yFaceToYFace->registerStencil(centInterpY, nobcs, nobcs, m_domain, m_domain, needDiag);
-  m_brit->m_zFaceToZFace->registerStencil(centInterpZ, nobcs, nobcs, m_domain, m_domain, needDiag);
+  //number of potential cells for redistribution
+
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    string centInterp("InterpolateToFaceCentroid_");
+    string   slopeLow("Slope_Low_");
+    string  slopeHigh("Slope_High_");
+    centInterp += std::to_string(idir);
+    slopeLow   += std::to_string(idir);
+    slopeHigh  += std::to_string(idir);
+    m_brit->registerFaceStencil(          idir, centInterp, nobcs, nobcs, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(      slopeLow  , nobcs, nobcs, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(      slopeHigh , nobcs, nobcs, m_domain, m_domain, needDiag);
+  }
 
 }
 ///
@@ -127,7 +134,11 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    
+//    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+//    ebforallIrreg("HybridDivergence", HybridDivergence, grbx,  
+//                  m_hybridDiv[dit[ibox]], 
+//                  m_kappaDiv[dit[ibox]], m_nonConsDiv[dit[ibox]], 
+//                  m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
   }
 
   //redistribute delta M

@@ -47,8 +47,8 @@ public:
 
 protected:
 
-  //hail britannica
-  shared_ptr<EBEncyclopedia<2, Real> >   m_brit,
+  //rule britannica
+  shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
   DisjointBoxLayout                      m_grids;
   Box                                    m_domain;
   IntVect                                m_nghostSrc;
@@ -57,13 +57,13 @@ protected:
   EBLevelBoxData<CELL    , 1>            m_kappa;
   EBLevelBoxData<CELL    , 1>            m_kappaDiv;
   EBLevelBoxData<BOUNDARY, 1>            m_deltaM;
-  EBLevelBoxData<BOUNDARY, 1>            m_nonConsDiv;
+  EBLevelBoxData<CELL    , 1>            m_nonConsDiv;
   EBLevelBoxData<BOUNDARY, 1>            m_hybridDiv;
   
   Copier                                 m_exchangeCopier;
 
 private:
-  defineData();
+  void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
   void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal);
   void  nonConsDiv(  EBLevelBoxData<CELL, 1>   & a_scal);
   void redistribute();
