@@ -79,46 +79,46 @@ public:
   }
 
 
-//  ///get the stencil for a particular box at a particular level of refinement
-//  inline template<typename ebstencil_t>
-//  shared_ptr< ebstencil_t >
-//  getFaceEBStencil(int a_faceDir, 
-//                   const string & a_stencilName, 
-//                   const string & a_ebbcName,
-//                   const Box    & a_srcDomain,
-//                   const Box    & a_dstDomain,               
-//                   const int    & a_boxid)
-//  {
-//    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
-//    if(a_faceDir == 0)
-//    {
-//      return 
-//        m_xFaceToXFace->getEBStencil(a_stencilName,              
-//                                     a_domainBCName,             
-//                                     a_ebbcName,                 
-//                                     a_srcDomain,                
-//                                     a_dstDomain,                
-//                                     a_boxid);
-//    }
-//    else if(a_faceDir == 1)
-//    {
-//      m_yFaceToYFace->getEBStencil(a_stencilName,              
-//                                   a_domainBCName,             
-//                                   a_ebbcName,                 
-//                                   a_srcDomain,                
-//                                   a_dstDomain,                
-//                                   a_boxid);
-//    }
-//    else if(a_faceDir == 2)
-//    {
-//      m_zFaceToZFace->getEBStencil(a_stencilName,              
-//                                   a_domainBCName,             
-//                                   a_ebbcName,                 
-//                                   a_srcDomain,                
-//                                   a_dstDomain,                
-//                                   a_boxid);
-//    }
-//  }
+  ///get the stencil for a particular box at a particular level of refinement
+  template<CENTERING cent>
+  inline 
+  shared_ptr< EBDictionary<order, data_t,cent,cent> >
+  getFaceEBStencil(int a_faceDir, 
+                   const string & a_stencilName, 
+                   const string & a_ebbcName,
+                   const Box    & a_srcDomain,
+                   const Box    & a_dstDomain,               
+                   const int    & a_boxid)
+  {
+    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
+    if(a_faceDir == 0)
+    {
+      return 
+        m_xFaceToXFace->getEBStencil(a_stencilName,              
+                                     a_ebbcName,                 
+                                     a_srcDomain,                
+                                     a_dstDomain,                
+                                     a_boxid);
+    }
+    else if(a_faceDir == 1)
+    {
+      return
+        m_yFaceToYFace->getEBStencil(a_stencilName,              
+                                     a_ebbcName,                 
+                                     a_srcDomain,                
+                                     a_dstDomain,                
+                                     a_boxid);
+    }
+    else if(a_faceDir == 2)
+    {
+      return
+        m_zFaceToZFace->getEBStencil(a_stencilName,              
+                                     a_ebbcName,                 
+                                     a_srcDomain,                
+                                     a_dstDomain,                
+                                     a_boxid);
+    }
+  }
 
 
 

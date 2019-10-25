@@ -4,13 +4,14 @@ using Proto::Var;
 ////
 PROTO_KERNEL_START 
 void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
-                       Var<Real, 1>    a_kappaConsDiv,
                        Var<Real, 1>    a_nonConsDivF,
                        Var<Real, 1>    a_deltaM,
                        Var<Real, 1>    a_kappa)
 {
-  a_hybridDiv(0) = a_kappaConsDiv(0) + (1- a_kappa(0))*a_nonConsDivF(0);
-  a_deltaM(0)    = (1-a_kappa(0))*(a_kappaConsDiv(0) - a_kappa(0)*a_nonConsDivF(0));
+  //hybrid divergence comes in holding kappa*consDiv
+  Real kappaConsDiv = a_hybridDiv(0);
+  a_hybridDiv(0) = kappaConsDiv + (1- a_kappa(0))*a_nonConsDivF(0);
+  a_deltaM(0)    = (1-a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 ////
@@ -44,7 +45,6 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
   const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
   m_kappa.define(     m_grids, m_nghostSrc, graphs);
-  m_kappaDiv.define(  m_grids, m_nghostSrc, graphs);
   m_deltaM.define(    m_grids, m_nghostSrc, graphs);
   m_nonConsDiv.define(m_grids, m_nghostSrc, graphs);
   m_hybridDiv.define( m_grids, m_nghostSrc, graphs);
@@ -76,9 +76,9 @@ void
 EBAdvection::
 registerStencils()
 {
-  //volume weighted averaging radius one
+  //volume weighted redistribution radius one
   string nobcs("nobcs");
-  string averaging("Volume_Weighted_Averaging_rad_1");
+  string averaging("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
   string redistribution("Volume_Weighted_Redistribution_rad_1");
   //false is because I do not need diagonal  weights for any of these stencils
   bool needDiag = false;
@@ -118,6 +118,17 @@ void
 EBAdvection::
 redistribute()
 {
+  string nobcs("nobcs");
+  string redistribution("Volume_Weighted_Redistribution_rad_1");
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& deltaM = m_deltaM   [dit[ibox]];
+    auto& hybrid = m_hybridDiv[dit[ibox]];
+    const auto& stencil = m_brit->m_cellToCell->getEBStencil(redistribution, nobcs, m_domain, m_domain, ibox);
+    bool initToZero = false;
+    stencil->apply(hybrid, deltaM, initToZero, 1.0);
+  }
 }
 ///
 void 
@@ -134,11 +145,10 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-//    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-//    ebforallIrreg("HybridDivergence", HybridDivergence, grbx,  
-//                  m_hybridDiv[dit[ibox]], 
-//                  m_kappaDiv[dit[ibox]], m_nonConsDiv[dit[ibox]], 
-//                  m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    ebforallIrreg("HybridDivergence", HybridDivergence, grbx,  
+                  m_hybridDiv[dit[ibox]], m_nonConsDiv[dit[ibox]],  
+                  m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
   }
 
   //redistribute delta M

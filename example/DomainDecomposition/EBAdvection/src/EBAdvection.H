@@ -54,11 +54,11 @@ protected:
   IntVect                                m_nghostSrc;
   IntVect                                m_nghostDst;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
-  EBLevelBoxData<CELL    , 1>            m_kappa;
-  EBLevelBoxData<CELL    , 1>            m_kappaDiv;
-  EBLevelBoxData<BOUNDARY, 1>            m_deltaM;
-  EBLevelBoxData<CELL    , 1>            m_nonConsDiv;
-  EBLevelBoxData<BOUNDARY, 1>            m_hybridDiv;
+
+  EBLevelBoxData<CELL, 1>                m_kappa;
+  EBLevelBoxData<CELL, 1>                m_deltaM;
+  EBLevelBoxData<CELL, 1>                m_nonConsDiv;
+  EBLevelBoxData<CELL, 1>                m_hybridDiv;
   
   Copier                                 m_exchangeCopier;
 
