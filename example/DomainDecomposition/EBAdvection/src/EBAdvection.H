@@ -15,20 +15,12 @@ class EBAdvection
 public:
 
 
-  typedef EBStencil<2, Real, CELL , CELL >  celltocell_sten;
-  typedef EBStencil<2, Real, XFACE, XFACE>  xfactoxfac_sten;
-  typedef EBStencil<2, Real, YFACE, YFACE>  yfactoyfac_sten;
-  typedef EBStencil<2, Real, ZFACE, ZFACE>  zfactozfac_sten;
-
-  typedef EBStencil<2, Real, CELL , XFACE>  celltoxfac_sten;
-  typedef EBStencil<2, Real, CELL , YFACE>  celltoyfac_sten;
-  typedef EBStencil<2, Real, CELL , ZFACE>  celltozfac_sten;
-
-  typedef EBStencil<2, Real, XFACE, CELL >  xfactocell_sten;
-  typedef EBStencil<2, Real, YFACE, CELL >  yfactocell_sten;
-  typedef EBStencil<2, Real, ZFACE, CELL >  zfactocell_sten;
-
-
+  static const string s_ncdivLabel;      //for non-conservative divergence
+  static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
+  static const string s_redistLabel;     //for redistribution
+  static const string s_centInterpLabel; //for interpolation to face centroids
+  static const string s_slopeLowLabel;   //for cell centered slopes
+  static const string s_slopeHighLabel;  //for cell centered slopes
 
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -65,7 +57,7 @@ protected:
 private:
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
   void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal);
-  void  nonConsDiv(  EBLevelBoxData<CELL, 1>   & a_scal);
+  void  nonConsDiv();
   void redistribute();
   void fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv);
   void registerStencils();

@@ -1,5 +1,11 @@
 #include "EBAdvection.H"
 #include "NamespaceHeader.H"
+const string EBAdvection::s_ncdivLabel     = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
+const string EBAdvection::s_nobcsLabel     = string("no_bcs"); //none of the operators here have eb boundary conditions
+const string EBAdvection::s_redistLabel    = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
+const string EBAdvection::s_centInterpLabel= string("InterpolateToFaceCentroid_");
+const string EBAdvection::s_slopeLowLabel  = string("Slope_Low_");
+const string EBAdvection::s_slopeHighLabel = string("Slope_High_");
 using Proto::Var;
 ////
 PROTO_KERNEL_START 
@@ -14,6 +20,15 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
   a_deltaM(0)    = (1-a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
+////
+PROTO_KERNEL_START 
+void AdvanceScalarF(Var<Real, 1>    a_scal,
+                    Var<Real, 1>    a_divF,
+                    Real            a_dt)
+{
+  a_scal(0) = a_scal(0) - a_dt*a_divF(0);
+}
+PROTO_KERNEL_END(AdvanceScalarF, AdvanceScalar)
 ////
 EBAdvection::
 EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -76,28 +91,22 @@ void
 EBAdvection::
 registerStencils()
 {
-  //volume weighted redistribution radius one
-  string nobcs("nobcs");
-  string averaging("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
-  string redistribution("Volume_Weighted_Redistribution_rad_1");
+
   //false is because I do not need diagonal  weights for any of these stencils
   bool needDiag = false;
-  m_brit->m_cellToCell->registerStencil(averaging     , nobcs, nobcs, m_domain, m_domain, needDiag);
-  m_brit->m_cellToCell->registerStencil(redistribution, nobcs, nobcs, m_domain, m_domain, needDiag);
+  m_brit->m_cellToCell->registerStencil(s_ncdivLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+  m_brit->m_cellToCell->registerStencil(s_redistLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
 
   //number of potential cells for redistribution
 
   for(int idir = 0; idir < DIM; idir++)
   {
-    string centInterp("InterpolateToFaceCentroid_");
-    string   slopeLow("Slope_Low_");
-    string  slopeHigh("Slope_High_");
-    centInterp += std::to_string(idir);
-    slopeLow   += std::to_string(idir);
-    slopeHigh  += std::to_string(idir);
-    m_brit->registerFaceStencil(          idir, centInterp, nobcs, nobcs, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(      slopeLow  , nobcs, nobcs, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(      slopeHigh , nobcs, nobcs, m_domain, m_domain, needDiag);
+    string centInterp = s_centInterpLabel+ std::to_string(idir);
+    string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
+    string slopeHigh  = s_slopeHighLabel + std::to_string(idir);
+    m_brit->registerFaceStencil(          idir, centInterp, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(      slopeLow  , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(      slopeHigh , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   }
 
 }
@@ -110,22 +119,34 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal)
 ///
 void
 EBAdvection::
-nonConsDiv(  EBLevelBoxData<CELL, 1>   & a_scal)
+nonConsDiv()
 {
+  //hybrid div comes in holding kappa*cons_div(F)
+  //this makes ncdiv = divF on regular cells
+  //and ncdiv = vol_weighted_ave(div) on cut cells
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& ncdiv  = m_nonConsDiv[dit[ibox]];
+    auto& kapdiv =  m_hybridDiv[dit[ibox]];
+    const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
+    bool initToZero = true;
+    stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
+  }
 }
 ///
 void
 EBAdvection::
 redistribute()
 {
-  string nobcs("nobcs");
-  string redistribution("Volume_Weighted_Redistribution_rad_1");
+  //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
+  //this redistributes delta M into the hybrid divergence.
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& deltaM = m_deltaM   [dit[ibox]];
     auto& hybrid = m_hybridDiv[dit[ibox]];
-    const auto& stencil = m_brit->m_cellToCell->getEBStencil(redistribution, nobcs, m_domain, m_domain, ibox);
+    const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_redistLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = false;
     stencil->apply(hybrid, deltaM, initToZero, 1.0);
   }
@@ -139,20 +160,28 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   //compute kappa div^c F
   kappaConsDiv(a_phi);
   //compute nonconservative divergence = volume weighted ave of div^c
-  nonConsDiv(a_phi);
+  nonConsDiv();
 
   //advance solution, compute delta M
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
+    unsigned long long int numflopspt = 7;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    ebforallIrreg("HybridDivergence", HybridDivergence, grbx,  
-                  m_hybridDiv[dit[ibox]], m_nonConsDiv[dit[ibox]],  
-                  m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
+    ebforallInPlace(numflopspt, "HybridDivergence", HybridDivergence, grbx,  
+                    m_hybridDiv[dit[ibox]], m_nonConsDiv[dit[ibox]],  
+                    m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
   }
-
+  m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
   redistribute();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    unsigned long long int numflopspt = 2;
+    ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
+                    a_phi[dit[ibox]], m_hybridDiv[dit[ibox]],  a_dt);
+  }
     
 }
 #include "NamespaceFooter.H"
