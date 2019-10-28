@@ -50,7 +50,7 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_brit       = a_brit;
   m_veloCell   = a_veloCell;
   defineData(a_geoserv);
-  fillKappa(a_geoserv);
+  fillKappa( a_geoserv);
   registerStencils();
 }
 ////
@@ -58,26 +58,25 @@ void
 EBAdvection::
 defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
-  const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
-  m_kappa.define(     m_grids, m_nghostSrc, graphs);
-  m_deltaM.define(    m_grids, m_nghostSrc, graphs);
-  m_nonConsDiv.define(m_grids, m_nghostSrc, graphs);
-  m_hybridDiv.define( m_grids, m_nghostSrc, graphs);
+  m_graphs = a_geoserv->getGraphs(m_domain);
+  m_kappa.define(     m_grids, m_nghostSrc, m_graphs);
+  m_deltaM.define(    m_grids, m_nghostSrc, m_graphs);
+  m_nonConsDiv.define(m_grids, m_nghostSrc, m_graphs);
+  m_hybridDiv.define( m_grids, m_nghostSrc, m_graphs);
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
 }
 ////
 void  
 EBAdvection::
-fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
+fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
-  const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    const EBGraph  & graph = (*graphs)[dit[ibox]];
+    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     EBHostData<CELL, Real, 1> hostdat(grbx, graph);
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
@@ -99,14 +98,13 @@ registerStencils()
 
   //number of potential cells for redistribution
 
+  m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   for(int idir = 0; idir < DIM; idir++)
   {
-    string centInterp = s_centInterpLabel+ std::to_string(idir);
     string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
     string slopeHigh  = s_slopeHighLabel + std::to_string(idir);
-    m_brit->registerFaceStencil(          idir, centInterp, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(      slopeLow  , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(      slopeHigh , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(slopeLow  , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(slopeHigh , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   }
 
 }
@@ -115,6 +113,23 @@ void
 EBAdvection::
 kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal)
 {
+  //coming into this we have the scalar at time = n dt
+  // velocity field at cell centers. Leaving, we have filled
+  // kappa* div(u scal)
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    Bx  grown   =  grid.grow(1);
+    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+    //get face fluxes and interpolate them to centroids
+    EBFluxData<Real, 1> centroidFlux(grid , graph);
+    EBFluxData<Real, 1>   centerFlux(grown, graph);
+    EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
+
+    // HERE auto& kapdiv =  m_hybridDiv[dit[ibox]];
+  }
+
 }
 ///
 void

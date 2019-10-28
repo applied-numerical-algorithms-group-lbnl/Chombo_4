@@ -13,6 +13,14 @@
 
 
 ///
+template <int order, typename data_t>
+struct EBFluxStencil
+{
+  shared_ptr<EBStencil< order, data_t, XFACE, XFACE> > m_xsten;
+  shared_ptr<EBStencil< order, data_t, YFACE, YFACE> > m_ysten;
+  shared_ptr<EBStencil< order, data_t, ZFACE, ZFACE> > m_zsten;
+};
+///
 /**
    EBEncylcopedia is  collection of EBDictionaries of all useful centerings.
    Nothing fancy.  The argument lists were just getting too long.
@@ -40,89 +48,54 @@ public:
   shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL    > >    m_boundaryToCell;
 
   //register a stencil for a face-centered thing
-  inline void registerFaceStencil(int    a_faceDir,
-                                  string a_stencilName,
+  inline void registerFaceStencil(string a_stencilName,
                                   string a_domainBCName,
                                   string a_ebbcName,
                                   Box    a_srcDomain,
                                   Box    a_dstDomain,
                                   bool   needDiagonalWeights = false)
   {
-    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
-    if(a_faceDir == 0)
-    {
-      m_xFaceToXFace->registerStencil(a_stencilName,              
-                                      a_domainBCName,             
-                                      a_ebbcName,                 
-                                      a_srcDomain,                
-                                      a_dstDomain,                
-                                      needDiagonalWeights);
-    }
-    else if(a_faceDir == 1)
-    {
-      m_yFaceToYFace->registerStencil(a_stencilName,              
-                                      a_domainBCName,             
-                                      a_ebbcName,                 
-                                      a_srcDomain,                
-                                      a_dstDomain,                
-                                      needDiagonalWeights);
-    }
-    else if(a_faceDir == 2)
-    {
-      m_zFaceToZFace->registerStencil(a_stencilName,              
-                                      a_domainBCName,             
-                                      a_ebbcName,                 
-                                      a_srcDomain,                
-                                      a_dstDomain,                
-                                      needDiagonalWeights);
-    }
+    m_xFaceToXFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+    m_yFaceToYFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+#if DIM==3      
+    m_zFaceToZFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+#endif      
   }
 
 
-  ///get the stencil for a particular box at a particular level of refinement
-  template<CENTERING cent>
-  inline 
-  shared_ptr< EBDictionary<order, data_t,cent,cent> >
-  getFaceEBStencil(int a_faceDir, 
-                   const string & a_stencilName, 
-                   const string & a_ebbcName,
-                   const Box    & a_srcDomain,
-                   const Box    & a_dstDomain,               
-                   const int    & a_boxid)
+  //since the above does not work, let's do this
+  EBFluxStencil<order, data_t>
+  getFluxStencil(const string & a_stencilName, 
+                 const string & a_ebbcName,
+                 const Box    & a_srcDomain,
+                 const Box    & a_dstDomain,               
+                 const int    & a_boxid)
   {
-    PR_assert((a_faceDir >= 0) && (a_faceDir < DIM));
-    if(a_faceDir == 0)
-    {
-      return 
-        m_xFaceToXFace->getEBStencil(a_stencilName,              
-                                     a_ebbcName,                 
-                                     a_srcDomain,                
-                                     a_dstDomain,                
-                                     a_boxid);
-    }
-    else if(a_faceDir == 1)
-    {
-      return
-        m_yFaceToYFace->getEBStencil(a_stencilName,              
-                                     a_ebbcName,                 
-                                     a_srcDomain,                
-                                     a_dstDomain,                
-                                     a_boxid);
-    }
-    else if(a_faceDir == 2)
-    {
-      return
-        m_zFaceToZFace->getEBStencil(a_stencilName,              
-                                     a_ebbcName,                 
-                                     a_srcDomain,                
-                                     a_dstDomain,                
-                                     a_boxid);
-    }
+    EBFluxStencil<order, data_t> retval;
+    retval.m_xsten = m_xFaceToXFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+    retval.m_ysten = m_yFaceToYFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+#if DIM==3      
+    retval.m_zsten = m_zFaceToZFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+#endif
+    return retval;
   }
 
-
-
-
+  
   ///single level constructor
   EBEncyclopedia(const shared_ptr<GeometryService<order> >     & a_geoserv,
                  const DisjointBoxLayout                       & a_grids,

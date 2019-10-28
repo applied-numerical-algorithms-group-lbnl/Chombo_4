@@ -51,7 +51,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
-  
+  shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
 
 private:
@@ -59,7 +59,7 @@ private:
   void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal);
   void  nonConsDiv();
   void redistribute();
-  void fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv);
+  void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);
   void registerStencils();
 
   void operator=(const EBAdvection& a_opin);
