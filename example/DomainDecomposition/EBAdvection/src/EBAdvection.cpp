@@ -1,11 +1,14 @@
 #include "EBAdvection.H"
 #include "NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel     = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
+const string EBAdvection::s_aveCToFLabel   = string("AverageCellToFace"); //this is to get the velocity to faces
 const string EBAdvection::s_nobcsLabel     = string("no_bcs"); //none of the operators here have eb boundary conditions
 const string EBAdvection::s_redistLabel    = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
-const string EBAdvection::s_centInterpLabel= string("InterpolateToFaceCentroid_");
+const string EBAdvection::s_centInterpLabel= string("InterpolateToFaceCentroid");
 const string EBAdvection::s_slopeLowLabel  = string("Slope_Low_");
 const string EBAdvection::s_slopeHighLabel = string("Slope_High_");
+const string EBAdvection::s_diriLabel      = string("Dirichlet");
+const string EBAdvection::s_divergeLabel   = string("Divergence");
 using Proto::Var;
 ////
 PROTO_KERNEL_START 
@@ -96,9 +99,10 @@ registerStencils()
   m_brit->m_cellToCell->registerStencil(s_ncdivLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   m_brit->m_cellToCell->registerStencil(s_redistLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
 
-  //number of potential cells for redistribution
-
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+  //no flow means dirichlet boundary conditions for normal velocities
+  m_brit->registerCellToFace( s_aveCToFLabel, s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag);
+  m_brit->registerFaceToCell( s_divergeLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   for(int idir = 0; idir < DIM; idir++)
   {
     string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
@@ -108,6 +112,41 @@ registerStencils()
   }
 
 }
+///
+void
+EBAdvection::
+getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
+                   const DataIndex    & a_dit,
+                   const int          & a_ibox)
+{
+  const auto& xfacesten = m_brit->m_cellToXFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
+  const auto& yfacesten = m_brit->m_cellToYFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
+  bool initToZero = true;
+  auto& xvelface = *(a_fcvel.m_xflux);
+  auto& yvelface = *(a_fcvel.m_yflux);
+  EBBoxData<CELL, Real, 1> xvelcell;
+  EBBoxData<CELL, Real, 1> yvelcell;
+  unsigned xcomp = 0;  unsigned ycomp = 1; 
+  
+  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+  xvelcell.define<DIM>(veccell ,xcomp);
+  yvelcell.define<DIM>(veccell ,ycomp);
+
+  xfacesten->apply(xvelface, xvelcell, initToZero, 1.0);
+  yfacesten->apply(yvelface, yvelcell, initToZero, 1.0);
+
+#if DIM==3  
+  unsigned zcomp = 2;
+  EBBoxData<CELL, Real, 1> zvelcell;
+  zvelcell.define( (*m_veloCell)[a_dit], 2);
+  yvelcell.define<DIM>(veccell ,zcomp);
+  const auto& zfacesten = m_brit->m_cellToZFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
+  auto& zvelface = *(a_fcvel.m_zflux);
+  zfacesten->apply(zvelface, zvelcell, initToZero, 1.0);
+#endif
+  
+}
+                  
 ///
 void
 EBAdvection::
@@ -121,12 +160,14 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     Bx  grown   =  grid.grow(1);
+    grown &= ProtoCh::getProtoBox(m_domain);
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
     EBFluxData<Real, 1> centroidFlux(grid , graph);
+    EBFluxData<Real, 1>  faceCentVel(grown, graph);
     EBFluxData<Real, 1>   centerFlux(grown, graph);
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
-
+    getFaceCenteredVel(faceCentVel, dit[ibox], ibox);
     // HERE auto& kapdiv =  m_hybridDiv[dit[ibox]];
   }
 

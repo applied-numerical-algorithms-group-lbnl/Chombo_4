@@ -21,7 +21,10 @@ public:
   static const string s_centInterpLabel; //for interpolation to face centroids
   static const string s_slopeLowLabel;   //for cell centered slopes
   static const string s_slopeHighLabel;  //for cell centered slopes
-
+  static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
+  static const string s_diriLabel;       //label for dirichlet bcs
+  static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
+  
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
               shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -55,6 +58,10 @@ protected:
   Copier                                 m_exchangeCopier;
 
 private:
+  void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
+                          const DataIndex    & a_dit,
+                          const int          & a_ibox);
+  
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
   void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal);
   void  nonConsDiv();

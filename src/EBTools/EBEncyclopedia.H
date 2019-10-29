@@ -47,6 +47,67 @@ public:
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,CELL    > >    m_zFaceToCell;
   shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL    > >    m_boundaryToCell;
 
+  //register a stencil cells to face things
+  inline void registerCellToFace (string a_stencilName,
+                                  string a_domainBCName,
+                                  string a_ebbcName,
+                                  Box    a_srcDomain,
+                                  Box    a_dstDomain,
+                                  bool   needDiagonalWeights = false)
+  {
+    m_cellToXFace->registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+    m_cellToYFace->registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+#if DIM==3      
+    m_cellToZFace->registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+#endif      
+  }
+
+
+    //register a stencil for a face-centered thing
+  inline void registerFaceToCell (string a_stencilName,
+                                  string a_domainBCName,
+                                  string a_ebbcName,
+                                  Box    a_srcDomain,
+                                  Box    a_dstDomain,
+                                  bool   needDiagonalWeights = false)
+  {
+    m_xFaceToCell->registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+    m_yFaceToCell->registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+#if DIM==3      
+    m_zFaceToCell>registerStencil(a_stencilName,              
+                                   a_domainBCName,             
+                                   a_ebbcName,                 
+                                   a_srcDomain,                
+                                   a_dstDomain,                
+                                   needDiagonalWeights);
+#endif      
+  }
+
   //register a stencil for a face-centered thing
   inline void registerFaceStencil(string a_stencilName,
                                   string a_domainBCName,
