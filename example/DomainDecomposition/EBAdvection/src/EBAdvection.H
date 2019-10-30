@@ -23,6 +23,7 @@ public:
   static const string s_slopeHighLabel;  //for cell centered slopes
   static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
   static const string s_diriLabel;       //label for dirichlet bcs
+  static const string s_neumLabel;       //label for neumann bcs
   static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
   
   /// 
@@ -60,10 +61,19 @@ protected:
 private:
   void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
                           const DataIndex    & a_dit,
+
                           const int          & a_ibox);
-  
+  void
+  getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
+                      const EBFluxData<Real, 1>      & a_fcvel,
+                      const EBBoxData<CELL, Real, 1> & a_scal,
+                      const DataIndex                & a_dit,
+                      const int                      & a_ibox,
+                      const Real                     & a_dt);
+
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal);
+  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
+                     const Real                & a_dt);
   void  nonConsDiv();
   void redistribute();
   void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);

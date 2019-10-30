@@ -8,6 +8,7 @@ const string EBAdvection::s_centInterpLabel= string("InterpolateToFaceCentroid")
 const string EBAdvection::s_slopeLowLabel  = string("Slope_Low_");
 const string EBAdvection::s_slopeHighLabel = string("Slope_High_");
 const string EBAdvection::s_diriLabel      = string("Dirichlet");
+const string EBAdvection::s_neumLabel      = string("Neumann");
 const string EBAdvection::s_divergeLabel   = string("Divergence");
 using Proto::Var;
 ////
@@ -105,10 +106,11 @@ registerStencils()
   m_brit->registerFaceToCell( s_divergeLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   for(int idir = 0; idir < DIM; idir++)
   {
+    //need to set neumann bcs to set slopes to zero at domain bcs.
     string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
     string slopeHigh  = s_slopeHighLabel + std::to_string(idir);
-    m_brit->m_cellToCell->registerStencil(slopeLow  , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(slopeHigh , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(slopeLow  , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(slopeHigh , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   }
 
 }
@@ -119,14 +121,16 @@ getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
                    const DataIndex    & a_dit,
                    const int          & a_ibox)
 {
+  // stencils to average velocities from cells to faces
   const auto& xfacesten = m_brit->m_cellToXFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
   const auto& yfacesten = m_brit->m_cellToYFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
   bool initToZero = true;
   auto& xvelface = *(a_fcvel.m_xflux);
   auto& yvelface = *(a_fcvel.m_yflux);
+  //these are the (aliased) holders for each component of the velocity
   EBBoxData<CELL, Real, 1> xvelcell;
   EBBoxData<CELL, Real, 1> yvelcell;
-  unsigned xcomp = 0;  unsigned ycomp = 1; 
+  unsigned int xcomp = 0;  unsigned int ycomp = 1; 
   
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   xvelcell.define<DIM>(veccell ,xcomp);
@@ -136,21 +140,61 @@ getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
   yfacesten->apply(yvelface, yvelcell, initToZero, 1.0);
 
 #if DIM==3  
-  unsigned zcomp = 2;
+  unsigned int zcomp = 2;
   EBBoxData<CELL, Real, 1> zvelcell;
-  zvelcell.define( (*m_veloCell)[a_dit], 2);
-  yvelcell.define<DIM>(veccell ,zcomp);
+  zvelcell.define<DIM>(veccell ,zcomp);
   const auto& zfacesten = m_brit->m_cellToZFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
   auto& zvelface = *(a_fcvel.m_zflux);
   zfacesten->apply(zvelface, zvelcell, initToZero, 1.0);
 #endif
   
 }
+
+
+///
+void
+EBAdvection::
+getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
+                    const EBFluxData<Real, 1>      & a_fcvel,
+                    const EBBoxData<CELL, Real, 1> & a_scal,
+                    const DataIndex                & a_dit,
+                    const int                      & a_ibox,
+                    const Real                     & a_dt)
+{
+  //first we compute the slopes of the data
+  //then we extrapolate in space and time
+  //then we solve the riemann problem to get the flux
+  Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
+  Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
+  const EBGraph  & graph = (*m_graphs)[a_dit];
+  EBBoxData<CELL, Real, DIM> slopeLo(grown, graph);
+  EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
+  
+  //compute slopes of the solution (low and high centered) in each direction
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBBoxData<CELL, Real, 1> slopeLoDir, slopeHiDir;
+    slopeLoDir.define<DIM>(slopeLo, idir);
+    slopeHiDir.define<DIM>(slopeLo, idir);
+
+    string slopeLoLab  = s_slopeLowLabel  + std::to_string(idir);
+    string slopeHiLab  = s_slopeHighLabel + std::to_string(idir);
+    const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
+    const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
+
+    bool initToZero = true;
+    stenlo->apply(slopeLoDir, a_scal, initToZero, 1.0);
+    stenhi->apply(slopeHiDir, a_scal, initToZero, 1.0);
+  }
+//HERE
+
+  
+}
                   
 ///
 void
 EBAdvection::
-kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal)
+kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
 {
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
@@ -159,15 +203,24 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal)
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    Bx  grown   =  grid.grow(1);
-    grown &= ProtoCh::getProtoBox(m_domain);
+    Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
+
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
     EBFluxData<Real, 1> centroidFlux(grid , graph);
-    EBFluxData<Real, 1>  faceCentVel(grown, graph);
-    EBFluxData<Real, 1>   centerFlux(grown, graph);
+    EBFluxData<Real, 1>  faceCentFlux(grown, graph);
+    EBFluxData<Real, 1>  faceCentVel( grown, graph);
+    getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
+
+
+    getFaceCenteredFlux(faceCentFlux, faceCentVel, a_scal[dit[ibox]], dit[ibox], ibox, a_dt);
+    //each side of the riemann problem
+    EBFluxData<Real, 1>   scalLo(grown, graph);
+    EBFluxData<Real, 1>   scalHi(grown, graph);
+
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
-    getFaceCenteredVel(faceCentVel, dit[ibox], ibox);
+    //average velocities to face centers.
+
     // HERE auto& kapdiv =  m_hybridDiv[dit[ibox]];
   }
 
@@ -214,7 +267,8 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
   //compute kappa div^c F
-  kappaConsDiv(a_phi);
+  kappaConsDiv(a_phi, a_dt);
+
   //compute nonconservative divergence = volume weighted ave of div^c
   nonConsDiv();
 
