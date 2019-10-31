@@ -1,4 +1,5 @@
 #include "EBAdvection.H"
+#include "EBAdvectionFunctions.H"
 #include "NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel     = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
 const string EBAdvection::s_aveCToFLabel   = string("AverageCellToFace"); //this is to get the velocity to faces
@@ -11,28 +12,6 @@ const string EBAdvection::s_diriLabel      = string("Dirichlet");
 const string EBAdvection::s_neumLabel      = string("Neumann");
 const string EBAdvection::s_divergeLabel   = string("Divergence");
 using Proto::Var;
-////
-PROTO_KERNEL_START 
-void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
-                       Var<Real, 1>    a_nonConsDivF,
-                       Var<Real, 1>    a_deltaM,
-                       Var<Real, 1>    a_kappa)
-{
-  //hybrid divergence comes in holding kappa*consDiv
-  Real kappaConsDiv = a_hybridDiv(0);
-  a_hybridDiv(0) = kappaConsDiv + (1- a_kappa(0))*a_nonConsDivF(0);
-  a_deltaM(0)    = (1-a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
-}
-PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
-////
-PROTO_KERNEL_START 
-void AdvanceScalarF(Var<Real, 1>    a_scal,
-                    Var<Real, 1>    a_divF,
-                    Real            a_dt)
-{
-  a_scal(0) = a_scal(0) - a_dt*a_divF(0);
-}
-PROTO_KERNEL_END(AdvanceScalarF, AdvanceScalar)
 ////
 EBAdvection::
 EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -109,8 +88,8 @@ registerStencils()
     //need to set neumann bcs to set slopes to zero at domain bcs.
     string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
     string slopeHigh  = s_slopeHighLabel + std::to_string(idir);
-    m_brit->m_cellToCell->registerStencil(slopeLow  , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
-    m_brit->m_cellToCell->registerStencil(slopeHigh , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+    m_brit->m_cellToCell->registerStencil(slopeLow  , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+    m_brit->m_cellToCell->registerStencil(slopeHigh , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
   }
 
 }
@@ -146,24 +125,41 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
   Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
   const EBGraph  & graph = (*m_graphs)[a_dit];
+  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+  //compute slopes of the solution 
+  //(low and high centered) in each direction
+
   EBBoxData<CELL, Real, DIM> slopeLo(grown, graph);
   EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
-  
-  //compute slopes of the solution (low and high centered) in each direction
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
-    EBBoxData<CELL, Real, 1> slopeLoDir, slopeHiDir;
-    slopeLoDir.define<DIM>(slopeLo, idir);
-    slopeHiDir.define<DIM>(slopeLo, idir);
+    EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
+    slopeLoComp.define<DIM>(slopeLo, idir);
+    slopeHiComp.define<DIM>(slopeHi, idir);
 
+    //low and high side differences
     string slopeLoLab  = s_slopeLowLabel  + std::to_string(idir);
     string slopeHiLab  = s_slopeHighLabel + std::to_string(idir);
     const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
     const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
 
     bool initToZero = true;
-    stenlo->apply(slopeLoDir, a_scal, initToZero, 1.0);
-    stenhi->apply(slopeHiDir, a_scal, initToZero, 1.0);
+    stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
+    stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
+  }
+
+
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    //scalar extrapolated to low side and high side face
+    EBBoxData<CELL, Real, 1> scal_imh_nph(grown, graph);
+    EBBoxData<CELL, Real, 1> scal_iph_nph(grown, graph);
+    //extrapolate in space and time to get the inputs to the Riemann problem
+    unsigned long long int numflopspt = 19 + 4*DIM;
+
+    ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
+                    scal_imh_nph, scal_iph_nph, a_scal, 
+                    slopeLo, slopeHi, veccell, idir, a_dt);
   }
 //HERE
 

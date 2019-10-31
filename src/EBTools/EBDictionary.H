@@ -73,13 +73,15 @@ public:
   ///
   /**
      diagonal weights are for relaxation--expensive to compute so leave them out if you do not need them
+     dest grow is how many cells to grow valid box for destination.
   */
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
                               string a_ebbcName,
                               Box    a_srcDomain,
                               Box    a_dstDomain,
-                              bool needDiagonalWeights = false);
+                              bool needDiagonalWeights = false,
+                              Point  a_destGrow = Point::Zeros());
 
 
   ///get the stencil for a particular box at a particular level of refinement

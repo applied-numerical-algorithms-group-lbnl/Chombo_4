@@ -65,7 +65,8 @@ registerStencil(string a_stencilName,
                 string a_ebbcName,
                 Box    a_srcDomain,
                 Box    a_dstDomain,
-                bool   a_needDiagonalWeights)
+                bool   a_needDiagonalWeights,
+                Point  a_dstGrow)
 {
   PR_assert(!m_isClosed);
 
@@ -97,7 +98,7 @@ registerStencil(string a_stencilName,
                               (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
-                              m_dx[dstIndex], false, a_needDiagonalWeights));  //false is to turn off periodic
+                              m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
     std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
     boxmap[key] = newsten;
   }
