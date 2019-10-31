@@ -59,6 +59,23 @@ protected:
   Copier                                 m_exchangeCopier;
 
 private:
+
+  template<CENTERING cent>
+  inline void
+  getFaceVelComp(EBBoxData<cent, Real, 1>                       & a_fcvel,
+                 shared_ptr< EBDictionary<2, Real, CELL, cent> >& a_dict,
+                 EBBoxData<CELL, Real, DIM>                     & a_velcc,
+                 unsigned int                                     a_idir,
+                 int                                              a_ibox)
+  {
+    EBBoxData<CELL, Real, 1> cellcomp;
+    cellcomp.define<DIM>(a_velcc, a_idir);
+    // stencils to average velocities from cells to faces
+    const auto& facesten = a_dict->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
+    bool initToZero = true;
+    facesten->apply(a_fcvel, cellcomp, initToZero, 1.0);               
+  }
+
   void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
                           const DataIndex    & a_dit,
 

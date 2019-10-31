@@ -114,6 +114,7 @@ registerStencils()
   }
 
 }
+
 ///
 void
 EBAdvection::
@@ -121,35 +122,13 @@ getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
                    const DataIndex    & a_dit,
                    const int          & a_ibox)
 {
-  // stencils to average velocities from cells to faces
-  const auto& xfacesten = m_brit->m_cellToXFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
-  const auto& yfacesten = m_brit->m_cellToYFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
-  bool initToZero = true;
-  auto& xvelface = *(a_fcvel.m_xflux);
-  auto& yvelface = *(a_fcvel.m_yflux);
-  //these are the (aliased) holders for each component of the velocity
-  EBBoxData<CELL, Real, 1> xvelcell;
-  EBBoxData<CELL, Real, 1> yvelcell;
-  unsigned int xcomp = 0;  unsigned int ycomp = 1; 
-  
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
-  xvelcell.define<DIM>(veccell ,xcomp);
-  yvelcell.define<DIM>(veccell ,ycomp);
-
-  xfacesten->apply(xvelface, xvelcell, initToZero, 1.0);
-  yfacesten->apply(yvelface, yvelcell, initToZero, 1.0);
-
-#if DIM==3  
-  unsigned int zcomp = 2;
-  EBBoxData<CELL, Real, 1> zvelcell;
-  zvelcell.define<DIM>(veccell ,zcomp);
-  const auto& zfacesten = m_brit->m_cellToZFace->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
-  auto& zvelface = *(a_fcvel.m_zflux);
-  zfacesten->apply(zvelface, zvelcell, initToZero, 1.0);
+  getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
+  getFaceVelComp<YFACE>(*(a_fcvel.m_yflux),  m_brit->m_cellToYFace, veccell, 1, a_ibox);
+#if DIM==3 
+  getFaceVelComp<ZFACE>(*(a_fcvel.m_zflux),  m_brit->m_cellToZFace, veccell, 2, a_ibox);
 #endif
-  
 }
-
 
 ///
 void
