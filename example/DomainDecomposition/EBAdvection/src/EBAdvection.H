@@ -15,16 +15,6 @@ class EBAdvection
 public:
 
 
-  static const string s_ncdivLabel;      //for non-conservative divergence
-  static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
-  static const string s_redistLabel;     //for redistribution
-  static const string s_centInterpLabel; //for interpolation to face centroids
-  static const string s_slopeLowLabel;   //for cell centered slopes
-  static const string s_slopeHighLabel;  //for cell centered slopes
-  static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
-  static const string s_diriLabel;       //label for dirichlet bcs
-  static const string s_neumLabel;       //label for neumann bcs
-  static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
   
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -59,6 +49,19 @@ protected:
   Copier                                 m_exchangeCopier;
 
 private:
+
+  static const string s_ncdivLabel;      //for non-conservative divergence
+  static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
+  static const string s_redistLabel;     //for redistribution
+  static const string s_centInterpLabel; //for interpolation to face centroids
+  static const string s_slopeLowLabel;   //for cell centered slopes
+  static const string s_slopeHighLabel;  //for cell centered slopes
+  static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
+  static const string s_diriLabel;       //label for dirichlet bcs
+  static const string s_neumLabel;       //label for neumann bcs
+  static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
+  static const string s_CtoFLowLabel;    //for getting stuff from low  side cells to faces
+  static const string s_CtoFHighLabel;   //for getting stuff from high side cells to faces
 
   template<CENTERING cent>
   inline void

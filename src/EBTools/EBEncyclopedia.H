@@ -53,27 +53,31 @@ public:
                                   string a_ebbcName,
                                   Box    a_srcDomain,
                                   Box    a_dstDomain,
-                                  bool   needDiagonalWeights = false)
+                                  bool   needDiagonalWeights = false,
+                                  Point  a_dstGrown = Point::Zeros())
   {
     m_cellToXFace->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights);
+                                   needDiagonalWeights, 
+                                   a_dstGrown);
     m_cellToYFace->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights);
+                                   needDiagonalWeights, 
+                                   a_dstGrown);
 #if DIM==3      
     m_cellToZFace->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights);
+                                   needDiagonalWeights, 
+                                   a_dstGrown);
 #endif      
   }
 

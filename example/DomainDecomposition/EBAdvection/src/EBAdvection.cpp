@@ -1,16 +1,18 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
 #include "NamespaceHeader.H"
-const string EBAdvection::s_ncdivLabel     = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
-const string EBAdvection::s_aveCToFLabel   = string("AverageCellToFace"); //this is to get the velocity to faces
-const string EBAdvection::s_nobcsLabel     = string("no_bcs"); //none of the operators here have eb boundary conditions
-const string EBAdvection::s_redistLabel    = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
-const string EBAdvection::s_centInterpLabel= string("InterpolateToFaceCentroid");
-const string EBAdvection::s_slopeLowLabel  = string("Slope_Low_");
-const string EBAdvection::s_slopeHighLabel = string("Slope_High_");
-const string EBAdvection::s_diriLabel      = string("Dirichlet");
-const string EBAdvection::s_neumLabel      = string("Neumann");
-const string EBAdvection::s_divergeLabel   = string("Divergence");
+const string EBAdvection::s_ncdivLabel          = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
+const string EBAdvection::s_aveCToFLabel        = string("AverageCellToFace"); //this is to get the velocity to faces
+const string EBAdvection::s_nobcsLabel          = string("no_bcs"); //none of the operators here have eb boundary conditions
+const string EBAdvection::s_redistLabel         = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
+const string EBAdvection::s_centInterpLabel     = string("InterpolateToFaceCentroid"); //for interpolating from face centers to face centroids
+const string EBAdvection::s_slopeLowLabel       = string("Slope_Low_");   //for low  side difference
+const string EBAdvection::s_slopeHighLabel      = string("Slope_High_");  //for high side difference
+const string EBAdvection::s_diriLabel           = string("Dirichlet");    //for diri bcs
+const string EBAdvection::s_neumLabel           = string("Neumann");      //for neum bcs
+const string EBAdvection::s_divergeLabel        = string("Divergence");   //for taking the divergence of face centered stuff to cell centered result
+const string EBAdvection::s_CtoFLowLabel        = string("Cell_To_Face_Low");  //for getting stuff from low  side cells to faces
+const string EBAdvection::s_CtoFHighLabel       = string("Cell_To_Face_High"); //for getting stuff from high side cells to faces
 using Proto::Var;
 ////
 EBAdvection::
@@ -79,10 +81,12 @@ registerStencils()
   m_brit->m_cellToCell->registerStencil(s_ncdivLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   m_brit->m_cellToCell->registerStencil(s_redistLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
 
-  m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+  //m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
-  m_brit->registerCellToFace( s_aveCToFLabel, s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag);
-  m_brit->registerFaceToCell( s_divergeLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
+  m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerCellToFace( s_CtoFLowLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerFaceToCell( s_divergeLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   for(int idir = 0; idir < DIM; idir++)
   {
     //need to set neumann bcs to set slopes to zero at domain bcs.
@@ -160,6 +164,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLo, slopeHi, veccell, idir, a_dt);
+
+    //we need to get the low and high states from the cell-centered holders to the face centered ones.
   }
 //HERE
 
@@ -185,6 +191,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     EBFluxData<Real, 1> centroidFlux(grid , graph);
     EBFluxData<Real, 1>  faceCentFlux(grown, graph);
     EBFluxData<Real, 1>  faceCentVel( grown, graph);
+    //average velocities to face centers.
     getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
 
 
@@ -194,7 +201,6 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     EBFluxData<Real, 1>   scalHi(grown, graph);
 
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
-    //average velocities to face centers.
 
     // HERE auto& kapdiv =  m_hybridDiv[dit[ibox]];
   }
