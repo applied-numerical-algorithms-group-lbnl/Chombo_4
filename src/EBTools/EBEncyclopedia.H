@@ -82,6 +82,41 @@ public:
   }
 
 
+
+
+  ///  apply the appropriate stencil
+  inline void applyCellToFace(string                        a_stenName,
+                              string                        a_ebbcName,
+                              const Box                 &   a_domain,
+                              EBFluxData<Real, 1>       &   a_fluxData,
+                              EBBoxData<CELL, Real, 1>  &   a_cellData,
+                              unsigned int  a_idir, int a_ibox, bool a_initToZero, Real a_scale)
+  {
+    if(a_idir == 0)
+    {
+      const auto& sten = m_cellToXFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_xflux, a_cellData, a_initToZero, a_scale);
+    }
+    else if(a_idir == 1)
+    {
+      const auto& sten = m_cellToYFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_yflux, a_cellData, a_initToZero, a_scale);
+
+    }
+#if DIM==3      
+    else if(a_idir == 2)
+    {
+      const auto& sten = m_cellToZFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_zflux, a_cellData, a_initToZero, a_scale);
+    }
+#endif
+    else
+    {
+      PROTO_ASSERT(false, "bogus idir");
+    }
+  }
+
+
     //register a stencil for a face-centered thing
   inline void registerFaceToCell (string a_stencilName,
                                   string a_domainBCName,

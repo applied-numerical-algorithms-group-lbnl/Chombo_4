@@ -67,6 +67,26 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
   a_deltaM(0)    = (1-a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
+
+//// pick scalup = upwind scalar and define flux = scalup*faceVel
+PROTO_KERNEL_START 
+void GetUpwindFluxF(Var<Real, 1>    a_flux,
+                    Var<Real, 1>    a_scalLo,
+                    Var<Real, 1>    a_scalHi,
+                    Var<Real, 1>    a_faceVel)
+{
+  Real upwindScal;
+  if(a_faceVel(0) > 0.)
+  {
+    upwindScal = a_scalLo(0);
+  }
+  else
+  {
+    upwindScal = a_scalHi(0);
+  }
+  a_flux(0) = upwindScal*(a_faceVel(0));
+}
+PROTO_KERNEL_END(GetUpwindFluxF, GetUpwindFlux)
 ////
 PROTO_KERNEL_START 
 void AdvanceScalarF(Var<Real, 1>    a_scal,

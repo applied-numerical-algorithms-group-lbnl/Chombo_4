@@ -130,6 +130,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+  bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
 
@@ -147,12 +148,13 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
     const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
 
-    bool initToZero = true;
     stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
   }
 
 
+  EBFluxData<Real, 1>  scalHi(grown, graph);
+  EBFluxData<Real, 1>  scalLo(grown, graph);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
@@ -166,9 +168,24 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
                     slopeLo, slopeHi, veccell, idir, a_dt);
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
+    //once we do that, we can solve the Rieman problem for the upwind state
+    //i + 1/2 becomes the high low  of the face
+    //i - 1/2 becomes the high side of the face
+    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
+    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
   }
-//HERE
 
+  //this solves the Riemann problem and sets flux = facevel*(upwind scal)
+  unsigned long long int numflopspt = 2;
+
+  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_xflux->box(),
+                  *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
+  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_yflux->box(),
+                  *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
+#if DIM==3
+  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_zflux->box(),
+                  *a_fcflux.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux, *a_fcvel.m_zflux);
+#endif
   
 }
                   
