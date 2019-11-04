@@ -213,13 +213,18 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
 
 
     getFaceCenteredFlux(faceCentFlux, faceCentVel, a_scal[dit[ibox]], dit[ibox], ibox, a_dt);
-    //each side of the riemann problem
-    EBFluxData<Real, 1>   scalLo(grown, graph);
-    EBFluxData<Real, 1>   scalHi(grown, graph);
-
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
+    //interpolate flux to centroids
 
-    // HERE auto& kapdiv =  m_hybridDiv[dit[ibox]];
+    stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+    auto& kapdiv =  m_hybridDiv[dit[ibox]];
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      //only set to zero on the first one
+      bool initToZero = (idir==0);
+      m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, kapdiv, centroidFlux,
+                              idir, ibox, initToZero, 1.0);
+    }
   }
 
 }

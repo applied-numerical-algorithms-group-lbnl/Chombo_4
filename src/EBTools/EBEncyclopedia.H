@@ -19,6 +19,17 @@ struct EBFluxStencil
   shared_ptr<EBStencil< order, data_t, XFACE, XFACE> > m_xsten;
   shared_ptr<EBStencil< order, data_t, YFACE, YFACE> > m_ysten;
   shared_ptr<EBStencil< order, data_t, ZFACE, ZFACE> > m_zsten;
+
+  void apply(EBFluxData<data_t, 1>       & a_dst,
+             const EBFluxData<data_t, 1> & a_src,
+             bool a_initToZero, data_t a_scale)
+  {
+    m_xsten->apply(*a_dst.m_xflux, *a_src.m_xflux, a_initToZero, a_scale);
+    m_ysten->apply(*a_dst.m_yflux, *a_src.m_yflux, a_initToZero, a_scale);
+#if DIM==3    
+    m_zsten->apply(*a_dst.m_zflux, *a_src.m_zflux, a_initToZero, a_scale);
+#endif    
+  }
 };
 ///
 /**
@@ -108,6 +119,39 @@ public:
     {
       const auto& sten = m_cellToZFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
       sten->apply(*a_fluxData.m_zflux, a_cellData, a_initToZero, a_scale);
+    }
+#endif
+    else
+    {
+      PROTO_ASSERT(false, "bogus idir");
+    }
+  }
+
+
+    ///  apply the appropriate stencil
+  inline void applyFaceToCell(string                        a_stenName,
+                              string                        a_ebbcName,
+                              const Box                 &   a_domain,
+                              EBBoxData<CELL, Real, 1>  &   a_cellData,
+                              EBFluxData<Real, 1>       &   a_fluxData,
+                              unsigned int  a_idir, int a_ibox, bool a_initToZero, Real a_scale)
+  {
+    if(a_idir == 0)
+    {
+      const auto& sten = m_xFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_xflux, a_initToZero, a_scale);
+    }
+    else if(a_idir == 1)
+    {
+      const auto& sten = m_yFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_yflux,  a_initToZero, a_scale);
+
+    }
+#if DIM==3      
+    else if(a_idir == 2)
+    {
+      const auto& sten = m_zFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_zflux,  a_initToZero, a_scale);
     }
 #endif
     else
