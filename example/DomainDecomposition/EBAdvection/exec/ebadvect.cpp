@@ -266,7 +266,7 @@ runAdvection(int a_argc, char* a_argv[])
   Real blobRad;
   defineGeometry(grids, dx, geomCen, geomRad, blobCen, blobRad, nx,  geoserv);
 
-  IntVect dataGhostIV =   IntVect::Unit;
+  IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   pout() << "making dictionary" << endl;
