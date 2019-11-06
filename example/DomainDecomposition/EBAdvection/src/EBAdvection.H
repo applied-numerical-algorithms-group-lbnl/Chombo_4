@@ -81,8 +81,8 @@ private:
 
   void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
                           const DataIndex    & a_dit,
-
                           const int          & a_ibox);
+
   void
   getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
                       const EBFluxData<Real, 1>      & a_fcvel,

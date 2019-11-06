@@ -62,7 +62,8 @@ fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-    EBHostData<CELL, Real, 1> hostdat(grbx, graph);
+    EBBoxData <CELL, Real, 1> & devidat = m_kappa[dit[ibox]];    
+    EBHostData<CELL, Real, 1>   hostdat(devidat.box(), graph);
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
@@ -127,14 +128,14 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
-  Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
+  Bx  grown   =  grid.grow(2);
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
 
-  EBBoxData<CELL, Real, DIM> slopeLo(grown, graph);
+  EBBoxData<CELL, Real, DIM> slopeLo(grown, graph); 
   EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -201,7 +202,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    Bx  grown   =  grid.grow(1) & ProtoCh::getProtoBox(m_domain);
+    Bx  grown   =  grid.grow(2);
 
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
