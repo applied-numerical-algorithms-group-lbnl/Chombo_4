@@ -74,7 +74,7 @@ private:
     EBBoxData<CELL, Real, 1> cellcomp;
     cellcomp.define<DIM>(a_velcc, a_idir);
     // stencils to average velocities from cells to faces
-    const auto& facesten = a_dict->getEBStencil(s_aveCToFLabel, s_diriLabel, m_domain, m_domain, a_ibox);
+    const auto& facesten = a_dict->getEBStencil(s_aveCToFLabel, s_nobcsLabel, m_domain, m_domain, a_ibox);
     bool initToZero = true;
     facesten->apply(a_fcvel, cellcomp, initToZero, 1.0);               
   }
