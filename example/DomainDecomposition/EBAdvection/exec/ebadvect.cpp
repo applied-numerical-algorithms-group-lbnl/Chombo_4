@@ -310,10 +310,10 @@ runAdvection(int a_argc, char* a_argv[])
 
   while((step < max_step) && (time < max_time))
   {
-//    advectOp.advance(dt, scalcell);
+    advectOp.advance(scalcell, dt);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
-    if((outputInterval > 0) && (step%outputInterval == 0))
+    if((outputInterval > 0) && ( (step%outputInterval == 0) || step == (max_step-1)))
     {
       string filep = string("scal.") + std::to_string(step) + string(".hdf5");
       scalcell.writeToFileHDF5(filep, coveredval);
