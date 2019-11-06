@@ -44,10 +44,14 @@ void InitializeSpotF(int       a_p[DIM],
     Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
     rlocsq += xrel*xrel;
   }
+  Real rloc = sqrt((Real) rlocsq);
+  
   Real val = 0;
-  if(rlocsq < (a_rad*a_rad))
+  if(rloc < a_rad)
   {
-    val = a_rad*a_rad - rlocsq;
+    Real carg = 0.5*PI*(a_rad - rloc)/a_rad;
+    Real cosval = cos(carg);
+    val = cosval*cosval;
   }
   a_phi(0) = val;
 }
@@ -57,10 +61,10 @@ PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
 PROTO_KERNEL_START 
 void InitializeVCellF(int       a_p[DIM],
                       Vec       a_vel,
-                      Real      a_cen,
-                      Real      a_rad,
-                      Real      a_mag,
-                      Real      a_maxr,
+                      Real      a_cen,  //geom center
+                      Real      a_rad,  //geom rad
+                      Real      a_mag,  //max vel
+                      Real      a_maxr, //radius for max vel
                       Real      a_dx)
 {
   Real rlocsq = 0;
@@ -70,8 +74,11 @@ void InitializeVCellF(int       a_p[DIM],
     xrel[idir] = (a_p[idir] + 0.5)*a_dx - a_cen;
     rlocsq += xrel[idir]*xrel[idir];
   }
-  Real raddiff = rlocsq-a_maxr*a_maxr;
-  Real velmag = a_mag*raddiff*raddiff;
+
+  Real rloc = sqrt((Real) rlocsq);
+  Real carg = 0.5*PI*(rloc - a_maxr)/a_maxr;
+  Real cosval = cos(carg);
+  Real velmag = a_mag*cosval*cosval;
 #if DIM==2
   a_vel(0) =  velmag*xrel[1];
   a_vel(1) = -velmag*xrel[0];
@@ -113,7 +120,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
       Bx velobox = velofab.box();
       ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                        velofab, a_geomCen, a_geomRad, a_maxVelRad, a_maxVelRad, a_dx);
+                        velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
 
     
     }
@@ -160,6 +167,7 @@ void computeDt(Real                        &  a_dt,
   }
   if(maxvel > 1.0e-16)
   {
+    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
     a_dt = a_cfl*a_dx/maxvel;
   }    
   else
