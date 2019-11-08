@@ -56,12 +56,10 @@ ostream&  operator<<(ostream& os, const OffsetBuffer& ob)
 }
 
 #include "Chombo_NamespaceFooter.H"
-#include "Chombo_UsingNamespace.H"
-#include "Chombo_BaseNamespaceHeader.H"
 
 //OffsetBuffer specialization of linearSize
 template < >
-int linearSize(const OffsetBuffer& a_input)
+int CH4_SPMD::linearSize(const OffsetBuffer& a_input)
 {
   int r = 0;
   r += 2;   // number of entries from this processor, number of types.
@@ -76,7 +74,7 @@ int linearSize(const OffsetBuffer& a_input)
 
 //OffsetBuffer specialization of linearIn
 template < >
-void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf)
+void CH4_SPMD::linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf)
 {
   // pout() << "in:  ";
   //guaranteed to have at least two ints.
@@ -101,7 +99,7 @@ void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf)
 
 //OffsetBuffer specialization of linearOut
 template < >
-void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
+void CH4_SPMD::linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
 {
   //  pout() << "out: ";
   int* data = (int*) a_outBuf;
@@ -132,20 +130,20 @@ void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
   // pout() << endl;
 }
 //Vector<OffsetBuffer>  specialization
-template < > int linearSize(const Vector<OffsetBuffer>& a_input)
+template < > int CH4_SPMD::linearSize(const Vector<OffsetBuffer>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
 
-#include "Chombo_BaseNamespaceFooter.H"
+
 #include "Chombo_NamespaceHeader.H"
 
 int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& name)

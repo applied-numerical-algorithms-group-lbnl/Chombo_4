@@ -24,6 +24,7 @@ class DataIterator;
 class TimedDataIterator;
 class LayoutIterator;
 template<class T> class LayoutData;
+  using CH4_SPMD::numProc;
 
 ///Base class to transform boxes in an existing layout
 /**
@@ -57,6 +58,8 @@ public:
     ;
   }
 };
+using CH4_SPMD::procID;
+
 
 struct Entry
 {
@@ -456,22 +459,22 @@ public:
    */
   void surroundingNodes();
 
-  ///
-  /**
-     multiblock stuff.
-   */
-  void convertOldToNew(const IntVect& a_permutation,
-                       const IntVect& a_sign,
-                       const IntVect& a_translation);
-
-  ///
-  /**
-     multiblock stuff.
-   */
-  void convertNewToOld(const IntVect& a_permutation,
-                       const IntVect& a_sign,
-                       const IntVect& a_translation);
-
+//  ///
+//  /**
+//     multiblock stuff.
+//   */
+//  void convertOldToNew(const IntVect& a_permutation,
+//                       const IntVect& a_sign,
+//                       const IntVect& a_translation);
+//
+//  ///
+//  /**
+//     multiblock stuff.
+//   */
+//  void convertNewToOld(const IntVect& a_permutation,
+//                       const IntVect& a_sign,
+//                       const IntVect& a_translation);
+//
   ///
   /**
      Do enclosedCells on each box.

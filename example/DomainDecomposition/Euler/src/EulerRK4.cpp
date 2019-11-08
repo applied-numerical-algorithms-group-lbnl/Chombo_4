@@ -11,9 +11,9 @@
 #include "EulerRK4.H"
 #include "Chombo_DataIterator.H"
 #include "Chombo_ProtoInterface.H"
+#include "Chombo_NamespaceHeader.H"
+using   ::Proto::Point;
 
-using   Proto::Point;
-typedef Proto::Box Bx;
 
 /****/
 EulerState::
@@ -148,3 +148,4 @@ maxWave(EulerState& a_State)
   Real velmax = EulerOp::step(*(DX.m_DU),*(a_State.m_U));
   return velmax;
 }
+#include "Chombo_NamespaceFooter.H"

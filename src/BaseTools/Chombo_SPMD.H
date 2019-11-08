@@ -31,8 +31,9 @@
 #include "mpi.h"
 #endif
 
-#include "Chombo_BaseNamespaceHeader.H"
-
+using namespace Chombo4;
+namespace CH4_SPMD
+{
 #ifdef CH_MPI
 struct Chombo_MPI
 {
@@ -289,7 +290,7 @@ int GetRank(int pid);
 int
 uniqueProc(const SerialTask::task& a_task);
 
-#include "Chombo_BaseNamespaceFooter.H"
+}
 
 #include "Chombo_SPMDI.H"
 

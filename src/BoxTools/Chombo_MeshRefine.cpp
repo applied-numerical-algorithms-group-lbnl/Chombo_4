@@ -602,12 +602,12 @@ MeshRefine::regrid(Vector<Vector<Box> >&   a_newmeshes,
           {
             // make a new mesh at the same level as the tags
 
-            const int dest_proc = uniqueProc(SerialTask::compute);
+            const int dest_proc = CH4_SPMD::uniqueProc(CH4_SPMD::SerialTask::compute);
 
             Vector<IntVectSet> all_tags;
-            gather(all_tags, modifiedTags[lvl], dest_proc);
+            CH4_SPMD::gather(all_tags, modifiedTags[lvl], dest_proc);
 
-            if (procID() == dest_proc)
+            if (CH4_SPMD::procID() == dest_proc)
               {
                 for (int i = 0; i < all_tags.size(); ++i)
                   {
@@ -627,7 +627,7 @@ MeshRefine::regrid(Vector<Vector<Box> >&   a_newmeshes,
                   }
               }
 
-            broadcast( modifiedTags[lvl] , dest_proc);
+            CH4_SPMD::broadcast( modifiedTags[lvl] , dest_proc);
 
             // Move this union _after_ the above gather/broadcast to
             // reduce memory -- shouldn't have other effects. (BVS,NDK 6/30/2008)

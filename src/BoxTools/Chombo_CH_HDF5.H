@@ -768,26 +768,24 @@ struct OffsetBuffer
 ostream& operator<<(ostream& os, const OffsetBuffer& ob);
 
 #include "Chombo_NamespaceFooter.H"
-#include "Chombo_BaseNamespaceHeader.H"
 //#include "Chombo_NamespaceVar.H"
 
 //OffsetBuffer specialization of linearSize
 template < >
-int linearSize(const OffsetBuffer& a_input);
+int ::CH4_SPMD::linearSize(const OffsetBuffer& a_input);
 
 //OffsetBuffer specialization of linearIn
 template < >
-void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf);
+void ::CH4_SPMD::linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf);
 
 //OffsetBuffer specialization of linearOut
 template < >
-void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT);
+void ::CH4_SPMD::linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT);
 
-template < > int linearSize(const Vector<OffsetBuffer>& a_input);
-template < > void linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf);
-template < > void linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT);
+template < > int  CH4_SPMD::linearSize(const Vector<OffsetBuffer>& a_input);
+template < > void CH4_SPMD::linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf);
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT);
 
-#include "Chombo_BaseNamespaceFooter.H"
 #include "Chombo_NamespaceHeader.H"
 
 // First, template specializations for read/write for FArrayBox.
@@ -976,11 +974,11 @@ void getOffsets(Vector<Vector<long long> >& offsets, const BoxLayoutData<T>& a_d
       Vector<OffsetBuffer> gathering(numProc());
       {
         CH_TIMELEAF("gather");
-        gather(gathering, buff, uniqueProc(SerialTask::compute));
+        ::CH4_SPMD::gather(gathering, buff, uniqueProc(::CH4_SPMD::SerialTask::compute));
       }
       {
         CH_TIMELEAF("broadcast");
-        broadcast(gathering,  uniqueProc(SerialTask::compute));
+        ::CH4_SPMD::broadcast(gathering,  uniqueProc(::CH4_SPMD::SerialTask::compute));
       }
       //  pout() << gathering<<endl;
       for (int i=0; i<numProc(); ++i)

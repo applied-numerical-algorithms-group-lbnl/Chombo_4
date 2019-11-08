@@ -40,18 +40,17 @@
 #define PI 3.141592653589793
 
 
-typedef Proto::Var<Real,DIM> V;
-typedef Proto::Var<Real,NUMCOMPS> State;
-
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   Proto::RK4;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
+typedef ::Proto::Var<Real,DIM> V;
+typedef ::Proto::Var<Real,NUMCOMPS> State;
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
+using   ::Proto::Stencil;
+using   ::Proto::RK4;
+using   ::ProtoCh::getPoint;
+using   ::ProtoCh::getProtoBox;
+using   ::ProtoCh::getIntVect;
+using   ::ProtoCh::getBox;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;

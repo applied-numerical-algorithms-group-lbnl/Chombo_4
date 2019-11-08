@@ -711,41 +711,43 @@ protected:
   
 };
 #include "Chombo_NamespaceFooter.H"
-
-namespace std { template <> inline bool less<CH_XD::IntVect>::operator()(const CH_XD::IntVect& a, const CH_XD::IntVect& b) const { return a.lexLT(b);}
+using Chombo4::IntVect;
+namespace std { template <> inline bool less<IntVect>::operator()(const IntVect& a, const IntVect& b) const { return a.lexLT(b);}
 }
-#include "Chombo_BaseNamespaceHeader.H"
-#include "Chombo_NamespaceVar.H"
+//#include "Chombo_NamespaceVar.H"
+
+///functions for linearization
+namespace CH4_SPMD
+{
+
+template < >
+int linearSize(const IntVect& a_iv);
 
 ///functions for linearization
 template < >
-int linearSize(const CH_XDIR::IntVect& a_iv);
+void linearIn(IntVect& a_iv, const void* a_inBuf);
 
 ///functions for linearization
 template < >
-void linearIn(CH_XDIR::IntVect& a_iv, const void* a_inBuf);
-
-///functions for linearization
-template < >
-void linearOut(void* a_outBuf, const CH_XDIR::IntVect& a_iv);
+void linearOut(void* a_outBuf, const IntVect& a_iv);
 
 //vector<IntVect>  specialization
 template < >
-int linearSize(const vector<CH_XDIR::IntVect>& a_input);
+int linearSize(const vector<IntVect>& a_input);
 template < >
-void linearIn(vector<CH_XDIR::IntVect>& a_outputT, const void* const inBuf);
+void linearIn(vector<IntVect>& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const vector<CH_XDIR::IntVect>& a_inputT);
+void linearOut(void* const a_outBuf, const vector<IntVect>& a_inputT);
 
 //vector<vector<IntVect> > specialization
 template < >
-int linearSize(const vector<vector<CH_XDIR::IntVect> >& a_input);
+int linearSize(const vector<vector<IntVect> >& a_input);
 template < >
-void linearIn(vector<vector<CH_XDIR::IntVect> >& a_outputT, const void* const inBuf);
+void linearIn(vector<vector<IntVect> >& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const vector<vector<CH_XDIR::IntVect> >& a_inputT);
+void linearOut(void* const a_outBuf, const vector<vector<IntVect> >& a_inputT);
+}
 
-#include "Chombo_BaseNamespaceFooter.H"
 #include "Chombo_NamespaceHeader.H"
 
 

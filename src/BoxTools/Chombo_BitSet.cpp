@@ -44,14 +44,19 @@ BitSet::BitSet()
 
 long int BitSet::bytes = BitSet::initialize();
 long int BitSet::peak = 0;
+using CH4_SPMD::procID;
+
 
 int BitSet::linearSize() const
 {
-  return 2* linearSize<int>(0) + m_length* sizeof(BITSETWORD);
+  using CH4_SPMD::linearSize;
+  return 2*linearSize<int>(0) + m_length* sizeof(BITSETWORD);
 }
 
 void BitSet::linearIn(const void* const inBuf)
 {
+  using CH4_SPMD::linearIn;
+  using CH4_SPMD::linearSize;
   if (m_bits != NULL)
     {
       free(m_bits);
@@ -71,6 +76,9 @@ void BitSet::linearIn(const void* const inBuf)
 
 void BitSet::linearOut(void* const a_outBuf) const
 {
+  using CH4_SPMD::linearOut;
+  using CH4_SPMD::linearSize;
+
   char* buf = (char*)a_outBuf;
   linearOut<int>(buf, m_size);
   buf+=linearSize<int>(m_size);

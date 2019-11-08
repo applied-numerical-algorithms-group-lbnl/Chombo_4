@@ -489,30 +489,30 @@ surroundingNodes()
     }
 }
 
-//////////////
-void
-BoxLayout::
-convertNewToOld(const IntVect& a_permutation,
-                const IntVect& a_sign,
-                const IntVect& a_translation)
-{
-  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
-    {
-      (*m_boxes)[ivec].box.convertNewToOld(a_permutation, a_sign, a_translation);
-    }
-}
-//////////////
-void
-BoxLayout::
-convertOldToNew(const IntVect& a_permutation,
-                const IntVect& a_sign,
-                const IntVect& a_translation)
-{
-  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
-    {
-      (*m_boxes)[ivec].box.convertOldToNew(a_permutation, a_sign, a_translation);
-    }
-}
+////////////////
+//void
+//BoxLayout::
+//convertNewToOld(const IntVect& a_permutation,
+//                const IntVect& a_sign,
+//                const IntVect& a_translation)
+//{
+//  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
+//    {
+//      (*m_boxes)[ivec].box.convertNewToOld(a_permutation, a_sign, a_translation);
+//    }
+//}
+////////////////
+//void
+//BoxLayout::
+//convertOldToNew(const IntVect& a_permutation,
+//                const IntVect& a_sign,
+//                const IntVect& a_translation)
+//{
+//  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
+//    {
+//      (*m_boxes)[ivec].box.convertOldToNew(a_permutation, a_sign, a_translation);
+//    }
+//}
 ///////////
 void
 BoxLayout::

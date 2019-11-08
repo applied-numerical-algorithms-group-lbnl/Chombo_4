@@ -10,7 +10,7 @@
 
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_SPACE.H"
-#include "Chombo_UsingNamespace.H"
+#include "Chombo_NamespaceHeader.H"
 
 
 ///get point from intvect
@@ -27,12 +27,12 @@ ProtoCh::getPoint( const IntVect& a_iv)
 }
 
 /// gets proto box from chombo box
-Proto::Box  
+::Proto::Box  
 ProtoCh::getProtoBox( const Box& a_box)
 {
   Point ptlo = getPoint(a_box.smallEnd());
   Point pthi = getPoint(a_box.bigEnd());
-  return Proto::Box(ptlo, pthi);
+  return ::Proto::Box(ptlo, pthi);
 }
 
 ///get intvect from point
@@ -49,7 +49,7 @@ ProtoCh::getIntVect(const  Point  & a_pt)
 
 ///get chombo box from proto box
 Box 
-ProtoCh::getBox(const Proto::Box & a_bx)
+ProtoCh::getBox(const ::Proto::Box & a_bx)
 {
   IntVect ivlo = getIntVect(a_bx.low());
   IntVect ivhi = getIntVect(a_bx.high());
@@ -57,6 +57,7 @@ ProtoCh::getBox(const Proto::Box & a_bx)
 }
 
 
+#include "Chombo_NamespaceFooter.H"
 
 
 

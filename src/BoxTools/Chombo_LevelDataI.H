@@ -304,7 +304,7 @@ void LevelData<T>::copyTo(const Interval& srcComps,
           int isrc =  srcComps.begin();
           int idst = destComps.begin();
           int inco = destComps.size();
-          Proto::Box bx = ProtoCh::getProtoBox(this->box(it[ibox]));
+          ::Proto::Box bx = ProtoCh::getProtoBox(this->box(it[ibox]));
           dest[it[ibox]].copy(this->operator[](it[ibox]),
                               bx, 
                               isrc,

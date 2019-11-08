@@ -14,7 +14,9 @@
 
 #include "Chombo_parstream.H"
 #include "Chombo_CH_assert.H"
-#include "Chombo_BaseNamespaceHeader.H"
+
+namespace CH4_SPMD
+{
 
 // default implementations for linearization routines.
 
@@ -300,7 +302,7 @@ linearListSize(const Vector<T>& a_input)
     }
   return itotsize;
 }
+}
 
-#include "Chombo_BaseNamespaceFooter.H"
 
 #endif

@@ -862,9 +862,9 @@ int DenseIntVectSet::linearSize() const
 {
   if (isEmpty())
   {
-    return linearSize<int>(0);
+    return ::CH4_SPMD::linearSize<int>(0);
   }
-  return m_bits.linearSize() + 2 * linearSize<Box>(m_minBox);
+  return m_bits.linearSize() + 2 * CH4_SPMD::linearSize<Box>(m_minBox);
 }
 
 void DenseIntVectSet::linearIn(const void* const inBuf)
@@ -877,9 +877,9 @@ void DenseIntVectSet::linearIn(const void* const inBuf)
   char* buf = (char*)inBuf;
   m_bits.linearIn(buf);
   buf+=m_bits.linearSize();
-  linearIn<Box>(m_domain, buf);
-  buf+=linearSize<Box>(m_domain);
-  linearIn<Box>(m_minBox, buf);
+  CH4_SPMD::linearIn<Box>(m_domain, buf);
+  buf+=CH4_SPMD::linearSize<Box>(m_domain);
+  CH4_SPMD::linearIn<Box>(m_minBox, buf);
 }
 
 void DenseIntVectSet::linearOut(void* const a_outBuf) const
@@ -893,9 +893,9 @@ void DenseIntVectSet::linearOut(void* const a_outBuf) const
   char* buf = (char*)a_outBuf;
   m_bits.linearOut(buf);
   buf+=m_bits.linearSize();
-  linearOut<Box>(buf, m_domain);
-  buf+=linearSize<Box>(m_domain);
-  linearOut<Box>(buf, m_minBox);
+  CH4_SPMD::linearOut<Box>(buf, m_domain);
+  buf+=CH4_SPMD::linearSize<Box>(m_domain);
+  CH4_SPMD::linearOut<Box>(buf, m_minBox);
 }
 
 void DenseIntVectSet::compact() const

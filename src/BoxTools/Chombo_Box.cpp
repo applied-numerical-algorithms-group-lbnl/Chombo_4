@@ -42,64 +42,64 @@ convertOldToNew(const IntVect& a_ivOld,
 }
 
 
-IntVect
-convertNewToOld(const IntVect& a_ivNew,
-                const IntVect& a_permutation,
-                const IntVect& a_sign,
-                const IntVect& a_translation)
-{
-  IntVect ivOld;
-  for (int idir = 0; idir < SpaceDim; idir++)
-    {
-      ivOld[a_permutation[idir]] = a_sign[idir] *
-        (a_ivNew[idir] - a_translation[idir]);
-    }
-  return ivOld;
-}
-
-
-///multiblock stuff.
-void
-Box::
-convertOldToNew(const IntVect& a_permutation,
-                const IntVect& a_sign,
-                const IntVect& a_translation)
-{
-  IntVect ivNewLo = convertOldToNew(smallEnd(), a_permutation, a_sign, a_translation);
-  IntVect ivNewHi = convertOldToNew(bigEnd()  , a_permutation, a_sign, a_translation);
-  for (int idir = 0; idir < SpaceDim; idir++)
-    {
-      int iLo = std::min(ivNewLo[idir], ivNewHi[idir]);
-      int iHi = std::max(ivNewLo[idir], ivNewHi[idir]);
-      ivNewLo[idir] = iLo;
-      ivNewHi[idir] = iHi;
-    }
-  //  Box bxNewNodes(ivNewLo, ivNewHi, IndexType::TheNodeType());
-  //  Box bxNewCells = enclosedCells(bxNewNodes);
-  *this = Box(ivNewLo, ivNewHi);
-}
-
-
-///multiblock stuff
-void
-Box::
-convertNewToOld(const IntVect& a_permutation,
-                const IntVect& a_sign,
-                const IntVect& a_translation)
-{
-  IntVect ivOldLo = convertNewToOld(smallEnd(), a_permutation, a_sign, a_translation);
-  IntVect ivOldHi = convertNewToOld(bigEnd()  , a_permutation, a_sign, a_translation);
-  for (int idir = 0; idir < SpaceDim; idir++)
-    {
-      int iLo = std::min(ivOldLo[idir], ivOldHi[idir]);
-      int iHi = std::max(ivOldLo[idir], ivOldHi[idir]);
-      ivOldLo[idir] = iLo;
-      ivOldHi[idir] = iHi;
-    }
-  //  Box bxOldNodes(ivOldLo, ivOldHi, IndexType::TheNodeType());
-  //  Box bxOldCells = enclosedCells(bxOldNodes);
-  *this =  Box(ivOldLo, ivOldHi);
-}
+//IntVect
+//convertNewToOld(const IntVect& a_ivNew,
+//                const IntVect& a_permutation,
+//                const IntVect& a_sign,
+//                const IntVect& a_translation)
+//{
+//  IntVect ivOld;
+//  for (int idir = 0; idir < SpaceDim; idir++)
+//    {
+//      ivOld[a_permutation[idir]] = a_sign[idir] *
+//        (a_ivNew[idir] - a_translation[idir]);
+//    }
+//  return ivOld;
+//}
+//
+//
+/////multiblock stuff.
+//void
+//Box::
+//convertOldToNew(const IntVect& a_permutation,
+//                const IntVect& a_sign,
+//                const IntVect& a_translation)
+//{
+//  IntVect ivNewLo = convertOldToNew(smallEnd(), a_permutation, a_sign, a_translation);
+//  IntVect ivNewHi = convertOldToNew(bigEnd()  , a_permutation, a_sign, a_translation);
+//  for (int idir = 0; idir < SpaceDim; idir++)
+//    {
+//      int iLo = std::min(ivNewLo[idir], ivNewHi[idir]);
+//      int iHi = std::max(ivNewLo[idir], ivNewHi[idir]);
+//      ivNewLo[idir] = iLo;
+//      ivNewHi[idir] = iHi;
+//    }
+//  //  Box bxNewNodes(ivNewLo, ivNewHi, IndexType::TheNodeType());
+//  //  Box bxNewCells = enclosedCells(bxNewNodes);
+//  *this = Box(ivNewLo, ivNewHi);
+//}
+//
+//
+/////multiblock stuff
+//void
+//Box::
+//convertNewToOld(const IntVect& a_permutation,
+//                const IntVect& a_sign,
+//                const IntVect& a_translation)
+//{
+//  IntVect ivOldLo = convertNewToOld(smallEnd(), a_permutation, a_sign, a_translation);
+//  IntVect ivOldHi = convertNewToOld(bigEnd()  , a_permutation, a_sign, a_translation);
+//  for (int idir = 0; idir < SpaceDim; idir++)
+//    {
+//      int iLo = std::min(ivOldLo[idir], ivOldHi[idir]);
+//      int iHi = std::max(ivOldLo[idir], ivOldHi[idir]);
+//      ivOldLo[idir] = iLo;
+//      ivOldHi[idir] = iHi;
+//    }
+//  //  Box bxOldNodes(ivOldLo, ivOldHi, IndexType::TheNodeType());
+//  //  Box bxOldCells = enclosedCells(bxOldNodes);
+//  *this =  Box(ivOldLo, ivOldHi);
+//}
 
 IndexType
 IndexType::TheCellType ()
@@ -1452,11 +1452,11 @@ adjCellHi (const Box& b,
 bool Box::s_tempestOutputFormat = false;
 
 #include "Chombo_NamespaceFooter.H"
-#include "Chombo_UsingNamespace.H"
-#include "Chombo_BaseNamespaceHeader.H"
+//#include "Chombo_UsingNamespace.H"
+
 
 template < >
-void linearIn<Box>(Box& a_outputT, const void* const a_inBuf)
+void ::CH4_SPMD::linearIn<Box>(Box& a_outputT, const void* const a_inBuf)
 {
   int* intBuf = (int*)a_inBuf;
   IntVect lo, hi;
@@ -1473,7 +1473,7 @@ void linearIn<Box>(Box& a_outputT, const void* const a_inBuf)
 }
 
 template < >
-void linearOut<Box>(void* const a_outBuf, const Box& a_inputT)
+void ::CH4_SPMD::linearOut<Box>(void* const a_outBuf, const Box& a_inputT)
 {
   int* intBuf = (int*)a_outBuf;
   const IntVect& lo = a_inputT.smallEnd();
@@ -1487,40 +1487,40 @@ void linearOut<Box>(void* const a_outBuf, const Box& a_inputT)
 }
 
 template < >
-int linearSize<Box>(const Box& a_input)
+int ::CH4_SPMD::linearSize<Box>(const Box& a_input)
 {
   //box is stored as 2*spaceDim integers
   return(2*SpaceDim*sizeof(int));
 }
 
 //vector<Box>  specialization
-template < > int linearSize(const Vector<Box>& a_input)
+template < > int CH4_SPMD::linearSize(const Vector<Box>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(Vector<Box>& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(Vector<Box>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<Box>& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Box>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
 
 //vector<vector<Box> >  specialization
-template < > int linearSize(const Vector<Vector<Box> >& a_input)
+template < > int CH4_SPMD::linearSize(const Vector<Vector<Box> >& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void linearIn(Vector<Vector<Box> >& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(Vector<Vector<Box> >& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<Vector<Box> >& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Vector<Box> >& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
 
 
 
-#include "Chombo_BaseNamespaceFooter.H"
+

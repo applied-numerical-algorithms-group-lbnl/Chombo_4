@@ -2375,10 +2375,10 @@ int TreeIntVectSet::linearSize() const
 
   if (isEmpty())
   {
-    return CH_XD::linearSize<int>(m_depth);
+    return CH4_SPMD::linearSize<int>(m_depth);
   }
 
-  int size = 2* CH_XD::linearSize<Box>(m_minBox) + CH_XD::linearSize<int>(m_depth);
+  int size = 2* CH4_SPMD::linearSize<Box>(m_minBox) + CH4_SPMD::linearSize<int>(m_depth);
 
   if (m_tree.nodes == &full)
     return size;
@@ -2423,19 +2423,19 @@ void TreeIntVectSet::linearOut(void* const a_outBuf) const
   }
   if (m_tree.nodes == &full)
   {
-    CH_XD::linearOut<int>(buffer, -1);
+    CH4_SPMD::linearOut<int>(buffer, -1);
   }
   else
   {
-    CH_XD::linearOut<int>(buffer, m_depth);
+    CH4_SPMD::linearOut<int>(buffer, m_depth);
   }
-  buffer+= CH_XD::linearSize<int>(m_depth);
+  buffer+= CH4_SPMD::linearSize<int>(m_depth);
 
-  CH_XD::linearOut<Box>(buffer, m_minBox);
-  buffer += CH_XD::linearSize<Box>(m_minBox);
+  CH4_SPMD::linearOut<Box>(buffer, m_minBox);
+  buffer += CH4_SPMD::linearSize<Box>(m_minBox);
 
-  CH_XD::linearOut<Box>(buffer, m_spanBox);
-  buffer += CH_XD::linearSize<Box>(m_spanBox);
+  CH4_SPMD::linearOut<Box>(buffer, m_spanBox);
+  buffer += CH4_SPMD::linearSize<Box>(m_spanBox);
 
   if (m_tree.nodes == &full)
   {
@@ -2488,8 +2488,8 @@ void TreeIntVectSet::linearIn(const void* const inBuf)
   clear();
   unsigned char* buffer = (unsigned char*)inBuf;
 
-  CH_XD::linearIn(m_depth, buffer);
-  buffer+=CH_XD::linearSize(m_depth);
+  CH4_SPMD::linearIn(m_depth, buffer);
+  buffer+=CH4_SPMD::linearSize(m_depth);
   if (m_depth == 0)
   {
     m_depth = 1;
@@ -2508,10 +2508,10 @@ void TreeIntVectSet::linearIn(const void* const inBuf)
       // bufferOffset.resize(m_depth);
     }
 */
-  CH_XD::linearIn(m_minBox, buffer);
-  buffer+=CH_XD::linearSize(m_minBox);
-  CH_XD::linearIn(m_spanBox, buffer);
-  buffer+=CH_XD::linearSize(m_spanBox);
+  CH4_SPMD::linearIn(m_minBox, buffer);
+  buffer+=CH4_SPMD::linearSize(m_minBox);
+  CH4_SPMD::linearIn(m_spanBox, buffer);
+  buffer+=CH4_SPMD::linearSize(m_spanBox);
 
   if (m_depth == -1)
   {

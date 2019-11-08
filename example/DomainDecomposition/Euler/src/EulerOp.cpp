@@ -11,15 +11,14 @@
 #include "Proto.H"
 #include "EulerOp.H"
 #include "Chombo_ProtoInterface.H"
-
-using     Proto::Var;
-using     Proto::Stencil;
-using     Proto::BoxData;
-using     Proto::Point;
-using     Proto::Shift;
-using     Proto::forall;
-using     Proto::forall_p;
-typedef   Proto::Var<Real,NUMCOMPS> State;
+using     ::Proto::Var;
+using     ::Proto::Stencil;
+using     ::Proto::BoxData;
+using     ::Proto::Point;
+using     ::Proto::Shift;
+using     ::Proto::forall;
+using     ::Proto::forall_p;
+typedef   ::Proto::Var<Real,NUMCOMPS> State;
 
 Real EulerOp::s_gamma = 1.4;
 Real EulerOp::s_dx = 1.0;
@@ -34,8 +33,8 @@ Copier          EulerOp::s_exchangeCopier;
 
 typedef BoxData<Real,1,1,1> PScalar;
 typedef BoxData<Real,NUMCOMPS,1,1> PVector;
-using Proto::forall;
-using Proto::forallOp;
+using ::Proto::forall;
+using ::Proto::forallOp;
 
 PROTO_KERNEL_START
 void 
@@ -145,6 +144,7 @@ void waveSpeedBoundF(Var<Real,1>& a_speed,
 }
 PROTO_KERNEL_END(waveSpeedBoundF, waveSpeedBound)
 
+#include "Chombo_NamespaceHeader.H"
 
 void
 EulerOp::
@@ -334,3 +334,4 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U)
 
   return maxwaveall;
 }
+#include "Chombo_NamespaceFooter.H"

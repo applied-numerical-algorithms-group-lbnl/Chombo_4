@@ -219,7 +219,7 @@ IntVectSet& IntVectSet::operator|=(const IntVectSet& ivs)
     {
       if (ivs.m_isdense)
         {
-          if (CH_XD4::minBox(m_dense.box(), ivs.m_dense.box()).numPts() <=
+          if (::Chombo4::minBox(m_dense.box(), ivs.m_dense.box()).numPts() <=
               std::max(m_dense.box().numPts(), ivs.m_dense.box().numPts()))
             {
               m_dense |= ivs.m_dense;

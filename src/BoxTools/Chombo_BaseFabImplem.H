@@ -591,7 +591,7 @@ template <class T> inline void BaseFab<T>::linearOut(void* a_outBuf) const
   linearOut( bufptr ,m_domain );
   bufptr += linearSize(m_domain);
 
-  inearOut( bufptr ,m_nvar );
+  linearOut( bufptr ,m_nvar );
   bufptr += sizeof(int) ;
 
   linearOut( bufptr ,m_domain ,interval() );

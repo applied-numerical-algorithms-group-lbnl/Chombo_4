@@ -416,6 +416,7 @@ BRMeshRefine::makeBoxesParallel(std::list<Box>&      a_mesh,
         Interval hi_interval(lo_interval.end()+1, a_procInterval.end());
         // pout()<<"lo "<<lo_interval.begin()<<lo_interval.end()
         //       <<"\nhi "<<hi_interval.begin()<<hi_interval.end()<<std::endl;
+        using CH4_SPMD::procID;
         if (lo_interval.contains(procID()) && !tags_lo.isEmpty())
           {
 

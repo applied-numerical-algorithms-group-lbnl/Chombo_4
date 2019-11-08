@@ -16,7 +16,9 @@
 
 #include "Chombo_SPMD.H"
 #include "Chombo_parstream.H"
-#include "Chombo_BaseNamespaceHeader.H"
+namespace CH4_SPMD
+{
+
 
 
 using std::endl;
@@ -445,4 +447,4 @@ uniqueProc(const SerialTask::task& a_task)
 #endif
 }
 
-#include "Chombo_BaseNamespaceFooter.H"
+}

@@ -17,17 +17,17 @@
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_BaseFab.H"
 #include "Chombo_Copier.H"
-
+#include "Chombo_NamespaceHeader.H"
 constexpr unsigned int NUMCOMPS=DIM+2;
 
 #define NGHOST 4
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
-using   Proto::Stencil;
+using   ::Proto::Stencil;
 
 class EulerOp
 {
@@ -68,5 +68,5 @@ private:
   static Copier          s_exchangeCopier;
 
 };
-
+#include "Chombo_NamespaceFooter.H"
 #endif

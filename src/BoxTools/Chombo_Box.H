@@ -1088,17 +1088,17 @@ public:
   Box& shiftHalf (int dir,
                   int num_halfs);
 
-  ///multiblock stuff.
-  void convertOldToNew(const IntVect& a_permutation,
-                       const IntVect& a_sign,
-                       const IntVect& a_translation);
-
-
-  ///multiblock stuff
-  void convertNewToOld(const IntVect& a_permutation,
-                       const IntVect& a_sign,
-                       const IntVect& a_translation);
-
+//  ///multiblock stuff.
+//  void convertOldToNew(const IntVect& a_permutation,
+//                       const IntVect& a_sign,
+//                       const IntVect& a_translation);
+//
+//
+//  ///multiblock stuff
+//  void convertNewToOld(const IntVect& a_permutation,
+//                       const IntVect& a_sign,
+//                       const IntVect& a_translation);
+//
   ///
   /**
      Modifies this Box by shifting by half indices.  Equivalent to
@@ -1651,7 +1651,9 @@ protected:
 };
 
 #include "Chombo_NamespaceFooter.H"
-#include "Chombo_BaseNamespaceHeader.H"
+namespace CH4_SPMD
+{
+
 //#include "Chombo_NamespaceVar.H"
 
 //Box specialization of linearSize
@@ -1683,7 +1685,7 @@ void linearIn(Vector<Vector<Box> >& a_outputT, const void* const inBuf);
 template < >
 void linearOut(void* const a_outBuf, const Vector<Vector<Box> >& a_inputT);
 
-#include "Chombo_BaseNamespaceFooter.H"
+}
 #include "Chombo_NamespaceHeader.H"
 
 // global function prototypes

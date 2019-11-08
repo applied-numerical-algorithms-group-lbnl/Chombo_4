@@ -413,9 +413,9 @@ public:
 
 
   BaseFab<T>& copy(const BaseFab<T>&  a_src,
-                   const Proto::Box&  a_srcbox,
+                   const ::Proto::Box&  a_srcbox,
                    int                a_srccomp,
-                   const Proto::Box&  a_dstbox,
+                   const ::Proto::Box&  a_dstbox,
                    int                a_dstcomp,
                    int                a_numcomp)
   {
@@ -520,7 +520,7 @@ public:
 
 
   ///this DOES include sizeof(T)
-  virtual size_t charsize(const Proto::Box&      a_bx,
+  virtual size_t charsize(const ::Proto::Box&      a_bx,
                           unsigned int a_startcomp,
                           unsigned int a_numcomps) const
   {
@@ -540,7 +540,7 @@ public:
                          const Interval& a_comps) const;
 
   virtual void linearOut(void*                  a_buf,
-                         const Proto::Box&      a_bx,
+                         const ::Proto::Box&      a_bx,
                          unsigned int a_startcomp,
                          unsigned int a_numcomps) const
   {
@@ -561,7 +561,7 @@ public:
 
 
   virtual void linearIn(void*                  a_buf,
-                        const Proto::Box&      a_bx,
+                        const ::Proto::Box&      a_bx,
                         unsigned int a_startcomp,
                         unsigned int a_numcomps)
   {

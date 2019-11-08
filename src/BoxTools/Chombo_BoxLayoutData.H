@@ -180,14 +180,14 @@ public:
   virtual int size(const T& arg, const Box& b, const Interval& comps) const
   {
 //    return arg.size(b, comps);
-    Proto::Box bx = ProtoCh::getProtoBox(b);
+    ::Proto::Box bx = ProtoCh::getProtoBox(b);
     return arg.charsize(bx, comps.begin(), comps.size());
   }
   virtual void linearOut(const T& arg, void* buf, const Box& R,
                          const Interval& comps) const
   {
 //    arg.linearOut(buf, R, comps);
-    Proto::Box bx = ProtoCh::getProtoBox(R);
+    ::Proto::Box bx = ProtoCh::getProtoBox(R);
     unsigned int start = comps.begin();
     unsigned int ncomp = comps.size();
     arg.linearOut(buf, bx, start, ncomp);
@@ -196,7 +196,7 @@ public:
                         const Interval& comps)const
   {
 //    arg.linearIn(buf, R, comps);
-    Proto::Box bx = ProtoCh::getProtoBox(R);
+    ::Proto::Box bx = ProtoCh::getProtoBox(R);
     unsigned int start = comps.begin();
     unsigned int ncomp = comps.size();
     arg.linearIn(buf, bx, start, ncomp);
@@ -220,8 +220,8 @@ public:
   {
     if (LinearizationTest == 0)
     {
-      Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);
-      Proto::Box bxTo = ProtoCh::getProtoBox(RegionTo);
+      ::Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);
+      ::Proto::Box bxTo = ProtoCh::getProtoBox(RegionTo);
       int isrc =  Csrc.begin();
       int idst = Cdest.begin();
       int inco = Csrc.size();

@@ -24,7 +24,7 @@
 #include "Proto_RealVect.H"
 #include "Chombo_NamespaceHeader.H"
 
-using Proto::RealVect;
+using ::Proto::RealVect;
 
 #include "Chombo_NamespaceFooter.H"
 

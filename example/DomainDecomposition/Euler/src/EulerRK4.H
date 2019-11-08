@@ -14,11 +14,11 @@
 #include "EulerOp.H"
 #include "Proto.H"
 #include "Chombo_LevelBoxData.H"
-
+#include "Chombo_NamespaceHeader.H"
 
 class EulerDX;
 using std::shared_ptr;
-using Proto::BoxData;
+using ::Proto::BoxData;
 
 ///
 class EulerState
@@ -63,4 +63,5 @@ public:
   static Real maxWave(EulerState& a_State);
 };
 
+#include "Chombo_NamespaceFooter.H"
 #endif

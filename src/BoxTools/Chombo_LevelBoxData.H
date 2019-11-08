@@ -17,7 +17,7 @@
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
 
-using Proto::BoxData;
+using ::Proto::BoxData;
 ///
 /**
 */
@@ -29,7 +29,7 @@ public:
       for calling operator 'delete' on this pointer is passed to the user. */
   virtual BoxData<Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
   {
-    Proto::Box bx = ProtoCh::getProtoBox(box);
+    ::Proto::Box bx = ProtoCh::getProtoBox(box);
     return new BoxData<Real, NUMCOMPS>(bx);
   }
 };

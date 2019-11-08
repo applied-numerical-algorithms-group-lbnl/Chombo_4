@@ -141,19 +141,18 @@ static int s_dummyForIntVectCpp( IntVect::InitStatics() );
 // constructor doesn't assign anything to any of the data members.  But we don't
 // want to count on that always being the case.
 #include "Chombo_NamespaceFooter.H"
-#include "Chombo_UsingNamespace.H"
-#include "Chombo_BaseNamespaceHeader.H"
+
 
 ///functions for linearization shamelessly grabbed from RealVect
 template < >
-int linearSize(const IntVect& a_iv)
+int CH4_SPMD::linearSize(const IntVect& a_iv)
 {
   return sizeof(IntVect);
 }
 
 ///functions for linearization
 template < >
-void linearIn(IntVect& a_iv, const void* a_inBuf)
+void CH4_SPMD::linearIn(IntVect& a_iv, const void* a_inBuf)
 {
   unsigned char* bob = (unsigned char*)a_inBuf;
   unsigned char* to = (unsigned char*)&a_iv;
@@ -162,7 +161,7 @@ void linearIn(IntVect& a_iv, const void* a_inBuf)
 
 ///functions for linearization
 template < >
-void linearOut(void* a_outBuf, const IntVect& a_iv)
+void CH4_SPMD::linearOut(void* a_outBuf, const IntVect& a_iv)
 {
   unsigned char* bob = (unsigned char*)a_outBuf;
   const unsigned char* from = (const unsigned char*)&a_iv;
@@ -170,32 +169,33 @@ void linearOut(void* a_outBuf, const IntVect& a_iv)
 }
 
 //vector<IntVect>  specialization
-template < > int linearSize(const Vector<IntVect>& a_input)
+template < > int CH4_SPMD::linearSize(const Vector<IntVect>& a_input)
 {
-  return linearListSize(a_input);
+  return CH4_SPMD::linearListSize(a_input);
 }
-template < > void linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
 {
-  linearListIn(a_outputT, inBuf);
+  CH4_SPMD::linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
 {
-  linearListOut(a_outBuf, a_inputT);
+  CH4_SPMD::linearListOut(a_outBuf, a_inputT);
 }
 
 //Vector<Vector<IntVect> >  specialization
-template < > int linearSize(const Vector<Vector<IntVect> >& a_input)
+template < > int CH4_SPMD::linearSize(const Vector<Vector<IntVect> >& a_input)
 {
-  return linearListSize(a_input);
+  return CH4_SPMD::linearListSize(a_input);
 }
-template < > void linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf)
 {
-  linearListIn(a_outputT, inBuf);
+  CH4_SPMD::linearListIn(a_outputT, inBuf);
 }
-template < > void linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT)
 {
-  linearListOut(a_outBuf, a_inputT);
+  CH4_SPMD::linearListOut(a_outBuf, a_inputT);
 }
+#include "Chombo_BaseNamespaceHeader.H"
 
 const uint32_t IntVect::morton256_x[256] =
 {
