@@ -11,15 +11,15 @@
 #ifndef _EBLEVELBoxDATA_H____
 #define _EBLEVELBoxDATA_H____
 
-#include "LevelData.H"
 #include "Proto.H"
-#include "AMRIO.H"
-#include "ProtoInterface.H"
 #include "EBProto.H"
-#include "EBChombo.H"
-#include "ProtoFactories.H"
-#include "LevelBoxData.H"
-#include "NamespaceHeader.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_AMRIO.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_ProtoFactories.H"
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_NamespaceHeader.H"
 
 
 ///
@@ -330,6 +330,6 @@ private:
 };
 
 
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 
 #endif

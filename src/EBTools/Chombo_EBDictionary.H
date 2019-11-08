@@ -3,13 +3,12 @@
 #define _Chombo_EBDictionary_H_
 
 
-#include "LevelData.H"
 #include "Proto.H"
 #include "EBProto.H"
-#include "EBChombo.H"
-#include "GeometryService.H"
-
-#include "NamespaceHeader.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_NamespaceHeader.H"
 
 
 ///
@@ -144,6 +143,6 @@ private:
 
 };
 
-#include "EBDictionaryImplem.H"
-#include "NamespaceFooter.H"
+#include "Chombo_EBDictionaryImplem.H"
+#include "Chombo_NamespaceFooter.H"
 #endif

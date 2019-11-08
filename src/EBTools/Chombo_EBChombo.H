@@ -17,8 +17,8 @@
 #include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_Notation.H"
-#include "ProtoInterface.H"
-#include "ProtoFactories.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_ProtoFactories.H"
 
 
 using std::shared_ptr;

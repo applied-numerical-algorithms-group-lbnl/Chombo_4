@@ -13,15 +13,15 @@
 #define _Chombo_GeometryService_H_
 
 
-#include "LevelData.H"
 #include "Proto.H"
-#include "AMRIO.H"
-#include "ProtoInterface.H"
 #include "EBProto.H"
-#include "EBChombo.H"
-#include "BRMeshRefine.H"
-#include "LoadBalance.H"
-#include "NamespaceHeader.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_AMRIO.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_BRMeshRefine.H"
+#include "Chombo_LoadBalance.H"
+#include "Chombo_NamespaceHeader.H"
 
 ///
 /**
@@ -556,6 +556,6 @@ private:
 
 
 };
-#include "GeometryServiceImplem.H"
-#include "NamespaceFooter.H"
+#include "Chombo_GeometryServiceImplem.H"
+#include "Chombo_NamespaceFooter.H"
 #endif

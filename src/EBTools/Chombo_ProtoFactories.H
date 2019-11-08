@@ -13,12 +13,12 @@
 #define _ProtoFactories_H_
 
 
-#include "LevelData.H"
 #include "Proto.H"
-#include "EBChombo.H"
 #include "Proto_EBGraph.H"
-#include "ProtoInterface.H"
-#include "NamespaceHeader.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_NamespaceHeader.H"
 
 /// factory where constructor called is the null constructor
 template <typename DataHolder >
@@ -98,5 +98,5 @@ private:
 };
 
 
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 #endif
