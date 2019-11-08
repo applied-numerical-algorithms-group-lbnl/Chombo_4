@@ -1,6 +1,6 @@
 #ifndef __EBAdvectionFunctions__
 #define __EBAdvectionFunctions__
-#include "NamespaceHeader.H"
+#include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 #ifdef PROTO_CUDA
 __device__
@@ -134,6 +134,6 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
   }
 }
 PROTO_KERNEL_END(ExtrapolateScalF, ExtrapolateScal)
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 
 #endif

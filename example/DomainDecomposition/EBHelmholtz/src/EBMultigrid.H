@@ -3,10 +3,10 @@
 #include <cmath>
 #include <memory>
 #include "Proto.H"
-#include "EBDictionary.H"
-#include "EBChombo.H"
-#include "EBLevelBoxData.H"
-#include "NamespaceHeader.H"
+#include "Chombo_EBDictionary.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_EBLevelBoxData.H"
+#include "Chombo_NamespaceHeader.H"
 #if DIM==2
 #define MG_NUM_COLORS 4
 #else
@@ -214,6 +214,6 @@ private:
 
   std::shared_ptr<EBMultigridLevel> m_finest;
 };
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 
 #endif

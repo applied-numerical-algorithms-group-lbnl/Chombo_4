@@ -2,7 +2,7 @@
 #include "Proto.H"
 #include "Proto_Timer.H"
 #include <sstream>
-#include "NamespaceHeader.H"
+#include "Chombo_NamespaceHeader.H"
 
 bool EBMultigrid::s_useWCycle     = true;
 int  EBMultigrid::s_numSmoothDown = 2;
@@ -436,5 +436,5 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
   }
 
 }
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 /****/

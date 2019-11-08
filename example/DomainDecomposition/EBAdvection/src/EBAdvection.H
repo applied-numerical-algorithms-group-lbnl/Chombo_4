@@ -3,11 +3,11 @@
 #include <cmath>
 #include <memory>
 #include "Proto.H"
-#include "EBDictionary.H"
-#include "EBChombo.H"
-#include "EBEncyclopedia.H"
-#include "EBLevelBoxData.H"
-#include "NamespaceHeader.H"
+#include "Chombo_EBDictionary.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_EBEncyclopedia.H"
+#include "Chombo_EBLevelBoxData.H"
+#include "Chombo_NamespaceHeader.H"
 
 ///class to advect scalars in an eb context (via Trebotich et al.)
 class EBAdvection
@@ -103,6 +103,6 @@ private:
   EBAdvection();
 
 };
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 
 #endif

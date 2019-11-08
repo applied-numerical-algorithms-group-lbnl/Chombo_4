@@ -10,7 +10,7 @@
 
 #include "Proto.H"
 #include "EulerOp.H"
-#include "ProtoInterface.H"
+#include "Chombo_ProtoInterface.H"
 
 using     Proto::Var;
 using     Proto::Stencil;

@@ -14,9 +14,9 @@
 #pragma once
 
 #include "Proto.H"
-#include "LevelBoxData.H"
-#include "BaseFab.H"
-#include "Copier.H"
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_BaseFab.H"
+#include "Chombo_Copier.H"
 
 constexpr unsigned int NUMCOMPS=DIM+2;
 

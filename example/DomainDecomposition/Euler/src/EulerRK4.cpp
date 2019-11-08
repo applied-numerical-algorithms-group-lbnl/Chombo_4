@@ -9,8 +9,8 @@
 #endif
 
 #include "EulerRK4.H"
-#include "DataIterator.H"
-#include "ProtoInterface.H"
+#include "Chombo_DataIterator.H"
+#include "Chombo_ProtoInterface.H"
 
 using   Proto::Point;
 typedef Proto::Box Bx;

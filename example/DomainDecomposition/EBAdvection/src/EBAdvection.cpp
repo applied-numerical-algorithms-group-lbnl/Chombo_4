@@ -1,6 +1,6 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
-#include "NamespaceHeader.H"
+#include "Chombo_NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel          = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
 const string EBAdvection::s_aveCToFLabel        = string("AverageCellToFace"); //this is to get the velocity to faces
 const string EBAdvection::s_nobcsLabel          = string("no_bcs"); //none of the operators here have eb boundary conditions
@@ -298,5 +298,5 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   }
     
 }
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 

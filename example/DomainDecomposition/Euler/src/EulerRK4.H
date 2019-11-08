@@ -13,7 +13,7 @@
 
 #include "EulerOp.H"
 #include "Proto.H"
-#include "LevelBoxData.H"
+#include "Chombo_LevelBoxData.H"
 
 
 class EulerDX;
