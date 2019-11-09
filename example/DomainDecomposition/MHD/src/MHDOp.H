@@ -14,23 +14,23 @@
 #pragma once
 
 #include "Proto.H"
-#include "LevelBoxData.H"
-#include "BaseFab.H"
-#include "Copier.H"
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_BaseFab.H"
+#include "Chombo_Copier.H"
 
 constexpr unsigned int NUMCOMPS=2*DIM+2;
 
-#define NGHOST 4
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
+#define NGHOST 8
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
 using     std::max;
 using     std::min;
 using     std::abs;
-using   Proto::Stencil;
+using   ::Proto::Stencil;
 
 class MHDOp
 {
@@ -46,7 +46,15 @@ public:
 						   
   /// Compute the Right-Hand side, conforming to the Euler step interface.
   static void step2(LevelBoxData<NUMCOMPS>& a_Rhs,
-                   LevelBoxData<NUMCOMPS>& a_U);			   
+                   LevelBoxData<NUMCOMPS>& a_U);	
+
+  /// Compute the Right-Hand side, conforming to the Euler step interface for artificial viscosity.
+  static void step3(LevelBoxData<NUMCOMPS>& a_Rhs,
+                   LevelBoxData<NUMCOMPS>& a_U);
+				   
+  /// Compute the testing variable Used for debugging.
+  static void step_test(LevelBoxData<NUMCOMPS>& a_Rhs,
+                   LevelBoxData<NUMCOMPS>& a_U);					   
 
   //for initial time step
   static Real maxWave(LevelBoxData<NUMCOMPS>& a_U);
@@ -62,6 +70,14 @@ private:
 						   
   static void proto_step2(BoxData<Real,NUMCOMPS>& a_Rhs,
                            const BoxData<Real,NUMCOMPS>& a_U,
+                           const Bx& a_dbx0);
+						   
+  static void proto_step3(BoxData<Real,NUMCOMPS>& a_Rhs,
+                           const BoxData<Real,NUMCOMPS>& a_U,
+                           const Bx& a_dbx0);					   
+
+  static void proto_step_test(BoxData<Real,NUMCOMPS>& a_Rhs,
+                           const BoxData<Real,NUMCOMPS>& a_U,
                            const Bx& a_dbx0);						   
 
   /// called internally from step
@@ -71,6 +87,7 @@ private:
 
   static Stencil<Real> s_laplacian;
   static Stencil<Real> s_deconvolve;
+  static Stencil<Real> s_copy;
   static Stencil<Real> s_laplacian_f[DIM];
   static Stencil<Real> s_deconvolve_f[DIM];
   static Stencil<Real> s_convolve_f[DIM];

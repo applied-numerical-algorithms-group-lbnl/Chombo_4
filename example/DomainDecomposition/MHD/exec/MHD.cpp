@@ -22,34 +22,34 @@
 
 #include "Proto.H"
 #include "MHDsteps.H"
-#include "LevelBoxData.H"
-#include "LevelData.H"
-#include "BaseFab.H"
-
-#include "ParmParse.H"
-#include "LoadBalance.H"
-#include "ProtoInterface.H"
-#include "BRMeshRefine.H"
-#include "AMRIO.H"
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_BaseFab.H"
+#include "Chombo_ParmParse.H"
+#include "Chombo_LoadBalance.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_BRMeshRefine.H"
+#include "Chombo_AMRIO.H"
 #include <string>
 #include <iostream>
 #include <sstream>
 
-#include "Box.H"
+#include "Chombo_Box.H"
+#include "Proto_RHScalc.H"
+#include "Proto_EulerStep.H"
 
 #define PI 3.141592653589793
 
 
-typedef Proto::Var<Real,DIM> V;
-typedef Proto::Var<Real,NUMCOMPS> State;
-
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   Proto::RK4;
-using   Proto::RHScalc;
-using   Proto::EulerStep;
+typedef ::Proto::Var<Real,DIM> V;
+typedef ::Proto::Var<Real,NUMCOMPS> State;
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
+using   ::Proto::Stencil;
+using   ::Proto::RK4;
+using   ::Proto::RHScalc;
+using   ::Proto::EulerStep;
 using   ProtoCh::getPoint;
 using   ProtoCh::getProtoBox;
 using   ProtoCh::getIntVect;
@@ -160,12 +160,12 @@ unsigned int InitializeStateF(State& a_U,
 	
 	
 	// //////Modifying parameters for 2D current sheet problem/////
-	// rho = 1.0;
-    // p = 0.1;
-	// u = 0.1 * sin(2*PI*a_x(1));
-	// if (a_x(0) >= 0.0 && a_x(0) < 0.5){By = 1.0;}
-	// if (a_x(0) >= 0.5 && a_x(0) < 1.5){By = -1.0;}
-	// if (a_x(0) >= 1.5 && a_x(0) <= 2.0){By = 1.0;}
+	rho = 1.0;
+    p = 0.1;
+	u = 0.1 * sin(2*PI*a_x(1));
+	if (a_x(0) >= 0.0 && a_x(0) < 0.5){By = 1.0;}
+	if (a_x(0) >= 0.5 && a_x(0) < 1.5){By = -1.0;}
+	if (a_x(0) >= 1.5 && a_x(0) <= 2.0){By = 1.0;}
 	
 	// rho = 1.0;
     // p = 0.1;
@@ -178,12 +178,12 @@ unsigned int InitializeStateF(State& a_U,
 	
 	//////Modifying parameters for 2D Orszag Tang problem///////
 	// Case 1:
-	rho = gamma*((2.0 * gamma)/8.0/PI)*1.0;
-    p = (2.0 * gamma)/8.0/M_PI;
-	u = -sin(2.0*PI*a_x(1));
-	v =  sin(2.0*PI*a_x(0));
-	Bx = -sin(2.0*PI*a_x(1));
-	By =  sin(4.0*PI*a_x(0));
+	// rho = gamma*((2.0 * gamma)/8.0/PI)*1.0;
+    // p = (2.0 * gamma)/8.0/M_PI;
+	// u = -sin(2.0*PI*a_x(1));
+	// v =  sin(2.0*PI*a_x(0));
+	// Bx = -sin(2.0*PI*a_x(1));
+	// By =  sin(4.0*PI*a_x(0));
 	// Case 2:
 	// rho = 1.0;
     // p = 1.0/gamma;
@@ -254,9 +254,6 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
 #ifdef CH_USE_HDF5
   //string filename = string("state.step") + convertInt(step) + "." + convertInt(a_nx) + "." + convertInt(DIM) + string("d.hdf5");
   string filename = string("state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
-  
-  //a_U.writeToFileHDF5(filename);
-
   Vector<DisjointBoxLayout> vectGrids(1,a_U.getBoxes());
   const Box domain = vectGrids[0].getDomain();
   Vector<LevelData<FArrayBox>* > vectData(1,NULL);
@@ -294,6 +291,57 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
    delete level_data;
 #endif
 }
+
+
+
+/***/
+void 
+writeData_debug(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
+{
+#ifdef CH_USE_HDF5
+  //string filename = string("debug_state.step") + convertInt(step) + "." + convertInt(a_nx) + "." + convertInt(DIM) + string("d.hdf5");
+  string filename = string("debug_state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
+  Vector<DisjointBoxLayout> vectGrids(1,a_U.getBoxes());
+  const Box domain = vectGrids[0].getDomain();
+  Vector<LevelData<FArrayBox>* > vectData(1,NULL);
+  IntVect ghostVect = NGHOST*IntVect::Unit;
+  LevelData<FArrayBox>* level_data = new LevelData<FArrayBox>(vectGrids[0], NUMCOMPS, ghostVect);
+  //write to host here
+  LevelBoxData<NUMCOMPS>::copyToHost(*level_data, a_U);
+
+  // single level
+  Vector<int> refRatio(1,2); 
+  int numLevels = 1;
+
+  Vector<string> vectNames(NUMCOMPS);
+  vectNames[0] = "rho";
+  vectNames[1] = "momentum_x";
+  vectNames[2] = "momentum_y";
+  vectNames[3] = "energy";
+  vectNames[4] = "B_x";
+  vectNames[5] = "B_y";
+
+  vectData[0] = level_data;
+  
+
+  WriteAMRHierarchyHDF5(filename,
+                      vectGrids,
+                      vectData,
+                      vectNames,
+                      domain,
+                      a_dx,
+                      a_dt,
+                      a_time,
+                      refRatio,
+                      numLevels);
+
+   delete level_data;
+#endif
+}
+
+
+
+
 /***/
 void MHDRun(const RunParams& a_params)
 {
@@ -329,15 +377,21 @@ void MHDRun(const RunParams& a_params)
   shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
+  bool debug_data = false; // This turns on printing of debug data as well. What data need to be printed is set in a_Rhs in MHDOp::proto_step_test
+  bool use_forced_dt = false; // If, true, program will use dt provided in inputs file
+  
   shared_ptr<LevelBoxData<NUMCOMPS> > rhsptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  RHS = *rhsptr;
-  
-  
-  MHDState state(Uptr);
   MHDState state_rhs(rhsptr);
-  RK4<MHDState, MHDRK4Op, MHDDX> rk4;    
-  EulerStep<MHDState, MHDEulerOp, MHDDX> eulerstep;
   RHScalc<MHDState, MHDrhsOp, MHDDX> rhscalc;
+
+  
+  MHDState state(Uptr);  
+  RK4<MHDState, MHDRK4Op, MHDDX> rk4;    
+//  EulerStep<MHDState, MHDRK4Op, MHDDX> rk4;    
+  EulerStep<MHDState, MHDEulerOp, MHDDX> eulerstep;
+  EulerStep<MHDState, MHDViscosityOp, MHDDX> viscositystep;
+  
   
   Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
 
@@ -364,21 +418,28 @@ void MHDRun(const RunParams& a_params)
 
 
   Real maxwave = MHDOp::maxWave(*state.m_U);
-    
-  
-  Real dt = .25*a_params.cfl*a_params.dx/maxwave;     // Talwinder
-  //Real dt = a_params.dt;
+  Real dt;  
+  if (use_forced_dt == false){
+	dt = .25*a_params.cfl*a_params.dx/maxwave;    
+  } else {  
+	dt = a_params.dt; 
+  }
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
 
   pout() << "after initializestate"<< endl;
   U.exchange(state.m_exchangeCopier);
 
   Real time = 0.;
-  rhscalc.calc(state_rhs,state);
+  if (debug_data){
+    rhscalc.calc(state_rhs,state);
+  }
   pout() << "starting time loop"<< endl;
   if(a_params.outinterv > 0)
   {
     writeData(0, U,time,dt,a_params.dx, a_params.nx);
+	if (debug_data){
+      writeData_debug(0, RHS,time,dt,a_params.dx, a_params.nx);
+	}
   }
   for (int k = 1;(k <= maxStep) && (time < tstop);k++)
   {
@@ -389,16 +450,27 @@ void MHDRun(const RunParams& a_params)
     //this was computed during the advance.
     //so the standard trick is to reuse it.
     maxwave = state.m_velSave;
+	// Take step for artificial viscosity
+    viscositystep.advance(time,dt,state);
+	// Take step for divB term
     eulerstep.advance(time,dt,state);
+	
+	
     time += dt;
-    rhscalc.calc(state_rhs,state);
-    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt; // Talwinder
-    dt = std::min(1.1*dtold, dtnew);                                // Talwinder
-
+	if (debug_data){
+      rhscalc.calc(state_rhs,state);
+	}
+	if (use_forced_dt == false){
+		Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt; 
+		dt = std::min(1.1*dtold, dtnew);                                
+    }
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))
     {
       writeData(k, U,time,dt,a_params.dx, a_params.nx);
+	  if (debug_data){
+        writeData_debug(k, RHS,time,dt,a_params.dx, a_params.nx);
+	  }
     }
   }
 

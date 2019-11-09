@@ -13,12 +13,12 @@
 
 #include "MHDOp.H"
 #include "Proto.H"
-#include "LevelBoxData.H"
+#include "Chombo_LevelBoxData.H"
 
 
 class MHDDX;
 using std::shared_ptr;
-using Proto::BoxData;
+using ::Proto::BoxData;
 
 ///
 class MHDState
@@ -85,6 +85,17 @@ class MHDrhsOp
 
 public:
   void operator()(MHDDX& a_DX,
+                  MHDState& a_State) const;
+};
+
+///
+class MHDViscosityOp
+{
+
+public:
+  void operator()(MHDDX& a_DX,
+                  Real a_time,
+                  Real a_dt,
                   MHDState& a_State) const;
 };
 

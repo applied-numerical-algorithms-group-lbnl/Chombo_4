@@ -9,11 +9,11 @@
 #endif
 
 #include "MHDsteps.H"
-#include "DataIterator.H"
-#include "ProtoInterface.H"
+#include "Chombo_DataIterator.H"
+#include "Chombo_ProtoInterface.H"
 
-using   Proto::Point;
-typedef Proto::Box Bx;
+using   ::Proto::Point;
+typedef ::Proto::Box Bx;
 
 /****/
 MHDState::
@@ -71,7 +71,9 @@ increment(Real        & a_weight,
 #pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    BoxData<Real, NUMCOMPS>& incr = delta[dit[ibox]];
+    //BoxData<Real, NUMCOMPS>& incr = delta[dit[ibox]];
+	BoxData<Real, NUMCOMPS> incr(delta[dit[ibox]].box());
+    delta[dit[ibox]].copyTo(incr); 
     incr *= a_weight;
     data[dit[ibox]] += incr;
   }
@@ -198,7 +200,6 @@ operator()(MHDDX& a_DX,
 
   CH_START(trk);
   DataIterator dit = grids.dataIterator();
-  //std::cout << "Reached here 4" << std::endl;
 #pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -251,7 +252,54 @@ operator()(MHDDX& a_DX,
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  Real velmax = MHDOp::step(*a_DX.m_DU, U_ave);
+  MHDOp::step_test(*a_DX.m_DU, U_ave);
 
+  CH_STOP(trk);
+}
+
+
+/****/
+void 
+MHDViscosityOp::
+operator()(MHDDX& a_DX,
+           Real a_time,
+           Real a_dt,
+           MHDState& a_State) const
+{
+  CH_TIMERS("MHDEulerOp::operator()");
+  CH_TIMER("defining leveldatas",tdef);
+  CH_TIMER("copying to temporary",tcop);
+  CH_TIMER("RK arithmetic_no_comm",  trk);
+
+  CH_START(tdef);
+  int ncomp  =  a_State.m_U->nComp();
+  IntVect gv =  a_State.m_U->ghostVect();
+  DisjointBoxLayout grids = a_State.m_grids;
+  LevelBoxData<NUMCOMPS>  U_ave(grids, gv);
+  LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);
+  CH_STOP(tdef);
+
+  CH_START(tcop);
+  Interval interv(0, ncomp-1);
+  Copier copier(grids, grids);
+  a_State.m_U->copyTo(interv, U_ave, interv, copier);
+  CH_STOP(tcop);
+
+
+  CH_START(trk);
+  DataIterator dit = grids.dataIterator();
+#pragma omp parallel
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    U_ave[dit[ibox]] += delta[dit[ibox]];
+  }
+
+  MHDOp::step3(*a_DX.m_DU, U_ave);
+
+#pragma omp parallel
+  for(int ibox = 0; ibox <  dit.size(); ibox++)
+  {
+    delta[dit[ibox]] *= a_dt;
+  }
   CH_STOP(trk);
 }
