@@ -27,11 +27,11 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
 {
   m_grids  = a_grids;
   m_domain = a_domain;
+  m_nghostSrc  = a_nghostsrc;
+  m_nghostDst  = a_nghostdst;
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   m_grids      = a_grids;      
   m_domain     = a_domain;     
-  m_nghostSrc  = a_nghostsrc;
-  m_nghostDst  = a_nghostdst;
   m_brit       = a_brit;
   m_veloCell   = a_veloCell;
   defineData(a_geoserv);
@@ -206,7 +206,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
 
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1> centroidFlux(grid , graph);
+    EBFluxData<Real, 1>  centroidFlux(grid , graph);
     EBFluxData<Real, 1>  faceCentFlux(grown, graph);
     EBFluxData<Real, 1>  faceCentVel( grown, graph);
     //average velocities to face centers.
