@@ -76,13 +76,22 @@ unsigned int numProc();
 void barrier(void);
 
 template <class T>
-int linearSize(const T& inputT);
+int linearSize(const T& inputT)
+{
+  return inputT.linearSize();
+}
 
 template <class T>
-void linearIn(T& a_outputT, const void* const inBuf);
+void linearIn(T& a_outputT, const void* const inBuf)
+{
+  a_outputT.linearIn(inBuf);
+}
 
 template <class T>
-void linearOut(void* const a_outBuf, const T& inputT);
+void linearOut(void* const a_outBuf, const T& inputT)
+{
+  inputT.linearOut(a_outBuf);
+}
 
 #ifdef CH_MPI
 ///gather from multiple processes

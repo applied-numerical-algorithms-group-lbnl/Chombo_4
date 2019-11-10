@@ -20,23 +20,8 @@ namespace CH4_SPMD
 
 // default implementations for linearization routines.
 
-template <class T>
-int linearSize(const T& inputT)
-{
-  return inputT.linearSize();
-}
 
-template <class T>
-void linearIn(T& a_outputT, const void* const inBuf)
-{
-  a_outputT.linearIn(inBuf);
-}
 
-template <class T>
-void linearOut(void* const a_outBuf, const T& inputT)
-{
-  inputT.linearOut(a_outBuf);
-}
 
 #ifdef CH_MPI
 

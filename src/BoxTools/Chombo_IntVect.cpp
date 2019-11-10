@@ -13,6 +13,7 @@ using std::istream;
 using std::ws;
 
 #include "Chombo_SPACE.H"
+#include "Chombo_SPMD.H"
 #include "Chombo_MayDay.H"
 #include "Chombo_IntVect.H"
 #include "Chombo_parstream.H"
@@ -142,6 +143,8 @@ static int s_dummyForIntVectCpp( IntVect::InitStatics() );
 // want to count on that always being the case.
 #include "Chombo_NamespaceFooter.H"
 
+using Chombo4::IntVect;
+using Chombo4::Vector;
 
 ///functions for linearization shamelessly grabbed from RealVect
 template < >
@@ -173,17 +176,17 @@ template < > int CH4_SPMD::linearSize(const Vector<IntVect>& a_input)
 {
   return CH4_SPMD::linearListSize(a_input);
 }
-template < > void CH4_SPMD::linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
+template < > void ::CH4_SPMD::linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
 {
   CH4_SPMD::linearListIn(a_outputT, inBuf);
 }
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
+template < > void ::CH4_SPMD::linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
 {
   CH4_SPMD::linearListOut(a_outBuf, a_inputT);
 }
 
 //Vector<Vector<IntVect> >  specialization
-template < > int CH4_SPMD::linearSize(const Vector<Vector<IntVect> >& a_input)
+template < > int ::CH4_SPMD::linearSize(const Vector<Vector<IntVect> >& a_input)
 {
   return CH4_SPMD::linearListSize(a_input);
 }
