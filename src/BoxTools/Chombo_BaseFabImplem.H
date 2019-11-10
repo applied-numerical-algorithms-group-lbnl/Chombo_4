@@ -212,7 +212,7 @@ template <class T> inline void BaseFab<T>::define(const Interval& a_comps,
 #ifdef USE_PROTO
 template < class T>
 template<unsigned int C>
-void BaseFab<T>::define(Proto::BoxData<T,C,1,1>&   a_original)
+void BaseFab<T>::define(::Proto::BoxData<T,C,1,1>&   a_original)
 {
     undefine();
     m_domain = getBox(a_original.box());

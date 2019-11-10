@@ -15,8 +15,9 @@
 
 #include "Chombo_BaseNamespaceHeader.H"
 
-
+#ifndef CH_assert
 #define CH_assert(cond) PR_assert(cond)
+#endif
 
 #include "Chombo_BaseNamespaceFooter.H"
 

@@ -148,20 +148,20 @@ public:
 
 #ifdef USE_PROTO
     template <unsigned int C>
-    void define(Proto::BoxData<T,C,1,1>&   a_original);
+    void define(::Proto::BoxData<T,C,1,1>&   a_original);
 
     template<unsigned int C>
-    operator Proto::BoxData<T,C>()
+    operator ::Proto::BoxData<T,C>()
     {
-        Proto::BoxData<T,C> bd;
+      ::Proto::BoxData<T,C> bd;
         bd.define(this->dataPtr(0), this->box(), C);
         return bd;
     }   
     
     template<unsigned int C>
-    operator const Proto::BoxData<T,C>() const
+    operator const ::Proto::BoxData<T,C>() const
     {
-        Proto::BoxData<T,C> bd;
+      ::Proto::BoxData<T,C> bd;
         bd.define(this->dataPtr(0), this->box(), C);
         return bd;
     }   

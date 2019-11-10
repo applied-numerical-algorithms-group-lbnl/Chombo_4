@@ -7,17 +7,6 @@
  *    Please refer to Copyright.txt, in Chombo's root directory.
  */
 #endif
+//just closes the bracket on namespaceheader
+ }
 
-#ifndef _CH_ASSERT_H__
-#define _CH_ASSERT_H__
-
-#include "Proto_PAssert.H"
-
-#include "BaseNamespaceHeader.H"
-
-
-#define CH_assert(cond) PR_assert(cond)
-
-#include "BaseNamespaceFooter.H"
-
-#endif /* include guard*/
