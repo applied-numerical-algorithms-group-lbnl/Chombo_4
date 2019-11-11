@@ -128,7 +128,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
-  Bx  grown   =  grid.grow(2);
+  Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   bool initToZero = true;
@@ -202,11 +202,11 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    Bx  grown   =  grid.grow(2);
+    Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
 
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1>  centroidFlux(grid , graph);
+    EBFluxData<Real, 1>  centroidFlux(grown, graph);
     EBFluxData<Real, 1>  faceCentFlux(grown, graph);
     EBFluxData<Real, 1>  faceCentVel( grown, graph);
     //average velocities to face centers.
