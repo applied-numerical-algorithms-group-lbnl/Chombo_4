@@ -41,6 +41,7 @@ using   Proto::CENTERING;
 using   Proto::CELL;
 using Proto::PointSet;
 using Proto::PointSetIterator;
+#if DIM==2
 void 
 dumpOrigin(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -106,6 +107,7 @@ dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
     }
   }
 }
+#endif
 
 
 void 
@@ -165,8 +167,10 @@ PROTO_KERNEL_END(addCorToPhiF, addCorToPhi)
 int
 runTest(int a_argc, char* a_argv[])
 {
+#if DIM==2
   dumpArea(NULL);
   dumpEBBD(NULL);
+#endif
 
   Real coveredval = -1;
   int nx      = 32;

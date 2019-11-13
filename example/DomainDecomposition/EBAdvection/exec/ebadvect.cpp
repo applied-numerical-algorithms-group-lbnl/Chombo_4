@@ -29,7 +29,37 @@ using Proto::SimpleEllipsoidIF;
 #define PI 3.141592653589793
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
+#if DIM==2
+void 
+dumpBlob(BoxData<Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+    Point lo(7 , 8 );
+    Point hi(10, 11);
+    Bx area(lo, hi);
 
+    BoxData<Real, 1> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    cout << "data region contains:" << endl;
+    for(int j = lo[1]; j <= hi[1]; j++)
+    {
+      for(int i = lo[0]; i <= hi[0]; i++)
+      {
+        Point pt(i,j);
+        if(databox.contains(pt))
+          {
+            cout << pt << ":" << data(pt, 0) << "  ";
+          }
+      }
+      cout << endl;
+    }
+  }
+}
+#endif
 //=================================================
 PROTO_KERNEL_START 
 void InitializeSpotF(int       a_p[DIM],
@@ -49,7 +79,7 @@ void InitializeSpotF(int       a_p[DIM],
   Real val = 0;
   if(rloc < a_rad)
   {
-    Real carg = 0.5*PI*(a_rad - rloc)/a_rad;
+    Real carg = 0.5*PI*(rloc)/a_rad;
     Real cosval = cos(carg);
     val = cosval*cosval;
   }
@@ -228,6 +258,10 @@ void defineGeometry(DisjointBoxLayout& a_grids,
 int
 runAdvection(int a_argc, char* a_argv[])
 {
+#if DIM==2
+  dumpBlob(NULL);
+#endif
+
   Real coveredval = -1;
   Real cfl    = 0.5;
   int nx      = 32;

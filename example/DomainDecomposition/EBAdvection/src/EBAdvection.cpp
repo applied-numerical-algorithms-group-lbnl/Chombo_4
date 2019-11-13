@@ -156,6 +156,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
+  int ideb = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
@@ -174,6 +175,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     //i - 1/2 becomes the high side of the face
     m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
+    ideb++;
   }
 
   //this solves the Riemann problem and sets flux = facevel*(upwind scal)
@@ -199,6 +201,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
@@ -226,6 +229,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
       m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
     }
+    ideb++;
   }
 
 }
