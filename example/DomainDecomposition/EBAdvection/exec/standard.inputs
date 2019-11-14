@@ -1,4 +1,4 @@
-#domain size
+n#domain size
 nx=       32
 #max number of time steps
 max_step =    100
@@ -28,3 +28,6 @@ output_interval = 1
 
 #value in hdf5 file of  covered data
 covered_value = -0.125
+
+# -1 all reg, 1 regular, 2 sphere
+which_geom = 2 

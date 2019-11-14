@@ -206,7 +206,64 @@ void computeDt(Real                        &  a_dt,
     a_dt = a_dx;
   }
 }
+///
+shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
+                                        Real  & a_geomRad,
+                                        int   & a_whichGeom)
 
+{
+  using Proto::BaseIF;
+  shared_ptr<BaseIF>  retval;
+  ParmParse pp;
+  
+  a_geomCen = 0;
+  a_geomRad = 1;
+  pp.get("which_geom", a_whichGeom);
+  if(a_whichGeom == -1)
+  {
+    using Proto::AllRegularIF;
+    pout() << "all regular geometry" << endl;
+    retval = shared_ptr<BaseIF>(new AllRegularIF());
+  }
+  else if(a_whichGeom == 0)
+  {
+    using Proto::SimpleEllipsoidIF;
+    pout() << "sphere" << endl;
+    shared_ptr<BaseIF>  retval;
+    pp.get("geom_cen", a_geomCen);
+    pp.get("geom_rad", a_geomRad);
+    pout() << "geom_cen = " << a_geomCen       << endl;
+    pout() << "geom_rad = " << a_geomRad       << endl;
+
+    RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
+    RealVect  X0 = RealVect::Unit();
+    X0 *= a_geomCen;
+
+    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, true));//true is for inside regular
+  }
+  else if(a_whichGeom ==  1)
+  {
+    using Proto::PlaneIF;
+    pout() << "plane" << endl;
+    RealVect normal, startPt;
+    vector<double> v_norm, v_start;
+    pp.getarr("normal", v_norm, 0, DIM);
+    pp.getarr("start_pt", v_start, 0, DIM);
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      normal[ idir] = v_norm[ idir];
+      startPt[idir] = v_start[idir];
+      pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+      pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+    }
+    retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
+  }
+  else
+  {
+    MayDay::Error("bogus geometry");
+  }
+  return retval;
+}
 //=================================================
 void defineGeometry(DisjointBoxLayout& a_grids,
                     Real             & a_dx,
@@ -214,6 +271,7 @@ void defineGeometry(DisjointBoxLayout& a_grids,
                     Real             & a_geomRad,
                     Real             & a_blobCen,
                     Real             & a_blobRad,
+                    int              & a_whichGeom,
                     int              & a_nx,
                     shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
 {
@@ -224,24 +282,13 @@ void defineGeometry(DisjointBoxLayout& a_grids,
     
   pp.get("nx"        , a_nx);
   pp.get("maxGrid", maxGrid);
-  pp.get("geom_cen", a_geomCen);
   pp.get("blob_cen", a_blobCen);
-  pp.get("geom_rad", a_geomRad);
   pp.get("blob_rad", a_blobRad);
 
   pout() << "nx       = " << a_nx     << endl;
   pout() << "maxGrid  = " << maxGrid  << endl;
-  pout() << "geom_cen = " << a_geomCen       << endl;
-  pout() << "geom_rad = " << a_geomRad       << endl;
   pout() << "blob_cen = " << a_blobCen       << endl;
   pout() << "blob_rad = " << a_blobRad       << endl;
-
-
-
-  RealVect ABC = RealVect::Unit();
-  RealVect  X0 = RealVect::Unit();
-  X0 *= a_geomCen;
-
 
   makeGrids(a_grids, a_dx, a_nx, maxGrid);
   Box domain = a_grids.physDomain().domainBox();
@@ -249,7 +296,7 @@ void defineGeometry(DisjointBoxLayout& a_grids,
   RealVect origin = RealVect::Zero();
 
   pout() << "creating implicit function" << endl;
-  shared_ptr<BaseIF>  impfunc(new SimpleEllipsoidIF(ABC, X0, a_geomRad, true));//true is for inside regular
+  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
   pout() << "creating geometry service" << endl;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
@@ -306,7 +353,8 @@ runAdvection(int a_argc, char* a_argv[])
   Real geomRad;
   Real blobCen;
   Real blobRad;
-  defineGeometry(grids, dx, geomCen, geomRad, blobCen, blobRad, nx,  geoserv);
+  int whichGeom;
+  defineGeometry(grids, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
