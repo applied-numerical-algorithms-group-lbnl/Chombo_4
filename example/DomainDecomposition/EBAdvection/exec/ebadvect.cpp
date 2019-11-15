@@ -17,6 +17,8 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBAdvection.H"
+#include "SetupFunctions.H"
+
 #include <iomanip>
 
 #define MAX_ORDER 2
@@ -26,7 +28,7 @@ using std::endl;
 using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
-#define PI 3.141592653589793
+
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
 #if DIM==2
@@ -38,88 +40,28 @@ dumpBlob(BoxData<Real, 1>* dataPtr)
     cout    << setprecision(6)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
-    Point lo(7 , 8 );
-    Point hi(10, 11);
+    Point lo(6 , 6 );
+    Point hi(12, 12);
     Bx area(lo, hi);
 
     BoxData<Real, 1> & data = *dataPtr;
     Bx databox = dataPtr->box();
     cout << "data region contains:" << endl;
-    for(int j = lo[1]; j <= hi[1]; j++)
+    for(int j = hi[1]; j >= lo[1]; j--)
     {
       for(int i = lo[0]; i <= hi[0]; i++)
       {
         Point pt(i,j);
         if(databox.contains(pt))
-          {
-            cout << pt << ":" << data(pt, 0) << "  ";
-          }
+        {
+          cout << pt << ":" << data(pt, 0) << "  ";
+        }
       }
       cout << endl;
     }
   }
 }
 #endif
-//=================================================
-PROTO_KERNEL_START 
-void InitializeSpotF(int       a_p[DIM],
-                     Sca       a_phi,
-                     Real      a_X0,
-                     Real      a_rad,
-                     Real      a_dx)
-{
-  Real rlocsq = 0;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
-    rlocsq += xrel*xrel;
-  }
-  Real rloc = sqrt((Real) rlocsq);
-  
-  Real val = 0;
-  if(rloc < a_rad)
-  {
-    Real carg = 0.5*PI*(rloc)/a_rad;
-    Real cosval = cos(carg);
-    val = cosval*cosval;
-  }
-  a_phi(0) = val;
-}
-PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
-
-//=================================================
-PROTO_KERNEL_START 
-void InitializeVCellF(int       a_p[DIM],
-                      Vec       a_vel,
-                      Real      a_cen,  //geom center
-                      Real      a_rad,  //geom rad
-                      Real      a_mag,  //max vel
-                      Real      a_maxr, //radius for max vel
-                      Real      a_dx)
-{
-  Real rlocsq = 0;
-  Real xrel[DIM];
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    xrel[idir] = (a_p[idir] + 0.5)*a_dx - a_cen;
-    rlocsq += xrel[idir]*xrel[idir];
-  }
-
-  Real rloc = sqrt((Real) rlocsq);
-  Real carg = 0.5*PI*(rloc - a_maxr)/a_maxr;
-  Real cosval = cos(carg);
-  Real velmag = a_mag*cosval*cosval;
-#if DIM==2
-  a_vel(0) =  velmag*xrel[1];
-  a_vel(1) = -velmag*xrel[0];
-#else
-  a_vel(0) =  velmag*( xrel[1] + xrel[2]);
-  a_vel(1) =  velmag*(-xrel[0] - xrel[2]);
-  a_vel(2) = -velmag*( xrel[0] - xrel[1]);
-#endif
-
-}
-PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 
 //=================================================
 void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
@@ -134,6 +76,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_maxVelRad)
 {
   DataIterator dit = a_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     {
@@ -143,6 +86,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
 
       ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
                         scalfab, a_blobCen, a_blobRad, a_dx);
+      ideb++;
     }
 
     {
@@ -153,6 +97,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                         velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
 
     
+      ideb++;
     }
   }
 }
@@ -247,8 +192,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     pout() << "plane" << endl;
     RealVect normal, startPt;
     vector<double> v_norm, v_start;
-    pp.getarr("normal", v_norm, 0, DIM);
-    pp.getarr("start_pt", v_start, 0, DIM);
+    pp.getarr("geom_normal", v_norm, 0, DIM);
+    pp.getarr("geom_start_pt", v_start, 0, DIM);
     for(int idir = 0; idir < DIM; idir++)
     {
       normal[ idir] = v_norm[ idir];
@@ -385,6 +330,13 @@ runAdvection(int a_argc, char* a_argv[])
     velocell->writeToFileHDF5(filev, coveredval);
     string filep("scal.0.hdf5");
     scalcell.writeToFileHDF5(filep, coveredval);
+
+//    DataIterator dit = grids.dataIterator();
+//    for(int ibox = 0; ibox < dit.size(); ibox++)
+//    {
+//      auto& scalfab = scalcell[dit[ibox]];
+//      dumpBlob(&scalfab.getRegData());
+//    }
   }
 
   pout() << "running advection operator " << endl;

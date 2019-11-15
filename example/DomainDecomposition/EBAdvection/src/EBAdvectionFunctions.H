@@ -1,5 +1,6 @@
 #ifndef __EBAdvectionFunctions__
 #define __EBAdvectionFunctions__
+#define PI 3.141592653589793
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 #ifdef PROTO_CUDA

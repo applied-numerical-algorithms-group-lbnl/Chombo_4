@@ -84,7 +84,14 @@ registerStencils()
 
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
+#if 0
+  //real code
   m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+#else
+  //debug --neumann so I can use all reg
+  m_brit->registerCellToFace( s_aveCToFLabel , s_neumLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+#endif
+
   m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
   m_brit->registerCellToFace( s_CtoFLowLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
   m_brit->registerFaceToCell( s_divergeLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
