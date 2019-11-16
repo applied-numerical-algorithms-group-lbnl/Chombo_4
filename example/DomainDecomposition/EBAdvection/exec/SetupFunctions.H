@@ -28,8 +28,9 @@ void InitializeSpotF(int       a_p[DIM],
     val = cosval*cosval;
   }
 //debug
-#if 1
-  if( ((a_p[0] > 7) && (a_p[0] < 11)) && ((a_p[1] > 7) && (a_p[1] < 11)))
+//    val = 1.0;
+#if 0
+  if( ((a_p[0] > 6) && (a_p[0] < 10)) && ((a_p[1] > 6) && (a_p[1] < 10)))
   {
     val = 1.0;
   }
@@ -38,6 +39,7 @@ void InitializeSpotF(int       a_p[DIM],
     val = 0.0;
   }
 #endif
+//end debug
   a_phi(0) = val;
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
@@ -64,6 +66,9 @@ void InitializeVCellF(int       a_p[DIM],
   Real carg = 0.5*PI*(rloc - a_maxr)/a_maxr;
   Real cosval = cos(carg);
   Real velmag = a_mag*cosval*cosval;
+//debug
+  velmag = 1;
+//end debug
 #if DIM==2
   a_vel(0) =  velmag*xrel[1];
   a_vel(1) = -velmag*xrel[0];
@@ -73,11 +78,11 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(2) = -velmag*( xrel[0] - xrel[1]);
 #endif
 //debug
-#if 1
+#if 0
   a_vel(0) =  1;
   a_vel(1) =  0;
 #endif
-
+//end debug
 }
 PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 #include "Chombo_NamespaceFooter.H"

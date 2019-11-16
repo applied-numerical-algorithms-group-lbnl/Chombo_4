@@ -40,8 +40,8 @@ dumpBlob(BoxData<Real, 1>* dataPtr)
     cout    << setprecision(6)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
-    Point lo(6 , 6 );
-    Point hi(12, 12);
+    Point lo(6,  7);
+    Point hi(10, 9);
     Bx area(lo, hi);
 
     BoxData<Real, 1> & data = *dataPtr;
@@ -174,7 +174,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   {
     using Proto::SimpleEllipsoidIF;
     pout() << "sphere" << endl;
-    shared_ptr<BaseIF>  retval;
+
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
     pout() << "geom_cen = " << a_geomCen       << endl;
@@ -347,14 +347,14 @@ runAdvection(int a_argc, char* a_argv[])
     advectOp.advance(scalcell, dt);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
+    step++;
+    time += dt;
+
     if((outputInterval > 0) && ( (step%outputInterval == 0) || step == (max_step-1)))
     {
       string filep = string("scal.") + std::to_string(step) + string(".hdf5");
       scalcell.writeToFileHDF5(filep, coveredval);
     }
-
-    step++;
-    time += dt;
   }
   pout() << "exiting runAdvection" << endl;
   return 0;

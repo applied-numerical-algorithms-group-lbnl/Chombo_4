@@ -65,7 +65,11 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
   //hybrid divergence comes in holding kappa*consDiv
   Real kappaConsDiv = a_hybridDiv(0);
   a_hybridDiv(0) = kappaConsDiv + (1- a_kappa(0))*a_nonConsDivF(0);
-  a_deltaM(0)    = (1-a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
+  a_deltaM(0)    = (-1. + a_kappa(0))*(kappaConsDiv - a_kappa(0)*a_nonConsDivF(0));
+//debug
+//  a_hybridDiv(0) = kappaConsDiv;
+//  a_deltaM(0)    = 0;
+//end debug
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 

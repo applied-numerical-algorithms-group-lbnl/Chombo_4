@@ -84,12 +84,13 @@ registerStencils()
 
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
-#if 0
+#if 1
   //real code
   m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
 #else
   //debug --neumann so I can use all reg
   m_brit->registerCellToFace( s_aveCToFLabel , s_neumLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  //end debug
 #endif
 
   m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
@@ -159,7 +160,10 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
   }
-
+//debug
+//  slopeLo.setVal(0.);
+//   slopeHi.setVal(0.);
+//end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
@@ -180,8 +184,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     //once we do that, we can solve the Rieman problem for the upwind state
     //i + 1/2 becomes the high low  of the face
     //i - 1/2 becomes the high side of the face
-    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
-    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
+    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
+    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
     ideb++;
   }
 
@@ -299,7 +303,9 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   }
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
-  redistribute();
+  //debug turn off redist
+  //redistribute();
+  //end debug
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
