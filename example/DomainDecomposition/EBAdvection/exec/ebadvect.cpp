@@ -323,24 +323,18 @@ runAdvection(int a_argc, char* a_argv[])
   Real dt = 0;
   pout() << "computing the time step"  << endl;
   computeDt(dt, *velocell, dx, cfl);
+  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
+  const EBLevelBoxData<CELL, 1> & kappa = advectOp.getKappa();
 
   if(outputInterval > 0)
   {
     string filev("velo.hdf5");
-    velocell->writeToFileHDF5(filev, coveredval);
     string filep("scal.0.hdf5");
-    scalcell.writeToFileHDF5(filep, coveredval);
-
-//    DataIterator dit = grids.dataIterator();
-//    for(int ibox = 0; ibox < dit.size(); ibox++)
-//    {
-//      auto& scalfab = scalcell[dit[ibox]];
-//      dumpBlob(&scalfab.getRegData());
-//    }
+    writeEBLevelHDF5<DIM>(filev, *velocell, kappa, domain, graphs, coveredval, dx, dt, time);
+    writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
   }
 
   pout() << "running advection operator " << endl;
-  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
 
   while((step < max_step) && (time < max_time))
   {
@@ -353,7 +347,7 @@ runAdvection(int a_argc, char* a_argv[])
     if((outputInterval > 0) && ( (step%outputInterval == 0) || step == (max_step-1)))
     {
       string filep = string("scal.") + std::to_string(step) + string(".hdf5");
-      scalcell.writeToFileHDF5(filep, coveredval);
+      writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
     }
   }
   pout() << "exiting runAdvection" << endl;

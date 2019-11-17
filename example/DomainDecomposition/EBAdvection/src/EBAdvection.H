@@ -31,6 +31,11 @@ public:
   advance(EBLevelBoxData<CELL, 1>   & a_scal,
           const  Real               & a_dt);
 
+  const EBLevelBoxData<CELL, 1> &
+  getKappa() const
+  {
+    return m_kappa;
+  }
 protected:
 
   //rule britannica
@@ -45,6 +50,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
+  EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
 

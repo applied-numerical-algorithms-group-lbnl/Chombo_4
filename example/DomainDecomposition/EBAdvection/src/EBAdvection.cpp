@@ -48,6 +48,7 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
   m_deltaM.define(    m_grids, m_nghostSrc, m_graphs);
   m_nonConsDiv.define(m_grids, m_nghostSrc, m_graphs);
   m_hybridDiv.define( m_grids, m_nghostSrc, m_graphs);
+  m_kappaDiv.define(  m_grids, m_nghostSrc, m_graphs);
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
 }
@@ -232,7 +233,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     //interpolate flux to centroids
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
-    auto& kapdiv =  m_hybridDiv[dit[ibox]];
+    auto& kapdiv =  m_kappaDiv[dit[ibox]];
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       //only set to zero on the first one
@@ -249,14 +250,13 @@ void
 EBAdvection::
 nonConsDiv()
 {
-  //hybrid div comes in holding kappa*cons_div(F)
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& ncdiv  = m_nonConsDiv[dit[ibox]];
-    auto& kapdiv =  m_hybridDiv[dit[ibox]];
+    auto& kapdiv =   m_kappaDiv[dit[ibox]];
     const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = true;
     stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
@@ -298,13 +298,15 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     unsigned long long int numflopspt = 7;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     ebforallInPlace(numflopspt, "HybridDivergence", HybridDivergence, grbx,  
-                    m_hybridDiv[dit[ibox]], m_nonConsDiv[dit[ibox]],  
-                    m_deltaM[dit[ibox]], m_kappa[dit[ibox]]);
+                    m_hybridDiv[ dit[ibox]],
+                    m_kappaDiv[  dit[ibox]],
+                    m_nonConsDiv[dit[ibox]],  
+                    m_deltaM[    dit[ibox]], m_kappa[dit[ibox]]);
   }
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
   //debug turn off redist
-  //redistribute();
+  redistribute();
   //end debug
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {

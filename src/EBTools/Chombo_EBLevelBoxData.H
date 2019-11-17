@@ -329,6 +329,85 @@ private:
     shared_ptr<LevelData<EBGraph>  > m_graphs;
 };
 
+///write EB file so visit can recognize it as EB
+template <int NUMCOMPS>
+inline void
+writeEBLevelHDF5(const string& a_filename,
+                 const EBLevelBoxData<CELL, NUMCOMPS>  & a_data,
+                 const EBLevelBoxData<CELL, 1       >  & a_kapp,
+                 const Box                             & a_domain,
+                 shared_ptr<LevelData<EBGraph>  > a_graphs,
+                 Real                             a_coveredval,
+                 Real a_dx, Real a_dt, Real a_time)
+{
+
+  typedef GraphConstructorFactory<EBHostData<CELL, Real, NUMCOMPS> > hostfactDat_t;
+  typedef GraphConstructorFactory<EBHostData<CELL, Real, 1       > > hostfactKap_t;
+  
+  DisjointBoxLayout grids = a_data.disjointBoxLayout();
+  IntVect dataGh = a_data.ghostVect();
+  IntVect kappGh = a_kapp.ghostVect();
+  LevelData<EBHostData<CELL, Real, NUMCOMPS> > hostdata(grids, NUMCOMPS, dataGh,  hostfactDat_t(a_graphs));
+  LevelData<EBHostData<CELL, Real, 1       > > hostkapp(grids,        1, kappGh,  hostfactKap_t(a_graphs));
+
+  EBLevelBoxData<CELL, NUMCOMPS>::copyToHost(hostdata, a_data);
+  EBLevelBoxData<CELL, 1       >::copyToHost(hostkapp, a_kapp);
+
+  LevelData<FArrayBox>    hostfabs(grids, NUMCOMPS+1, IntVect::Zero);
+  
+  DataIterator dit = grids.dataIterator();
+  for(int ibox = 0;  ibox < dit.size(); ibox++)
+  {
+    EBHostData<CELL, Real, NUMCOMPS> & data =    hostdata[dit[ibox]];
+    EBHostData<CELL, Real, 1       > & kapp =    hostkapp[dit[ibox]];
+    FArrayBox                        & fabu =    hostfabs[dit[ibox]];
+
+    fabu.setVal(a_coveredval);
+    Box chbox = grids[dit[ibox]];
+    Proto::Box prbox = ProtoCh::getProtoBox(chbox);
+    PointSet allivs(prbox);
+    const EBGraph& ebgraph = (*a_graphs)[dit[ibox]];
+      
+    for(PointSetIterator ivsit(allivs); ivsit.ok(); ++ivsit)
+    {
+      Point pt = ivsit();
+      IntVect iv = ProtoCh::getIntVect(pt);
+      if(ebgraph.isCovered(pt))
+      {
+        fabu(iv, NUMCOMPS) = 0;
+      }
+      else
+      {
+        //might just work for cell centered data
+        EBIndex<CELL> ebind;
+        ebind.m_pt = pt;
+        ebind.m_vofIDMe = 0;
+        ebind.m_vofIDLo = 0;
+        ebind.m_isBoundary = false;
+        for(int icomp = 0; icomp < NUMCOMPS; icomp++)
+        {
+          fabu(iv, icomp)  = data(ebind, icomp);
+        }
+        fabu(iv, NUMCOMPS) = kapp(ebind, 0);
+      }
+    }
+  }
+  Vector<string> names(NUMCOMPS+1);
+  for(unsigned int icomp = 0; icomp < NUMCOMPS; icomp++)
+  {
+    names[icomp] = string("var_") + std::to_string(icomp);
+  }
+  names[NUMCOMPS] = string("fraction-0");
+
+  Vector<DisjointBoxLayout>     vecgrids(1, grids);
+  Vector<LevelData<FArrayBox> *> vecdata(1, &hostfabs);
+  int numlev = 1;
+  
+  WriteAMRHierarchyHDF5(a_filename, vecgrids, vecdata, names, a_domain,
+                        a_dx, a_dt, a_time, Vector<int>(1,2), numlev);
+  
+}
+                 
 
 #include "Chombo_NamespaceFooter.H"
 
