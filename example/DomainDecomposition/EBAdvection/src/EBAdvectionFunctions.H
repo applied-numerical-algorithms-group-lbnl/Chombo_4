@@ -74,6 +74,40 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 
+
+////
+PROTO_KERNEL_START 
+void HybridDivergencePtF(int a_pt[DIM],
+                         Var<Real, 1>    a_hybridDiv,
+                         Var<Real, 1>    a_kappaDiv,
+                         Var<Real, 1>    a_nonConsDiv,
+                         Var<Real, 1>    a_deltaM,
+                         Var<Real, 1>    a_kappa)
+{
+  Real kapdiv = a_kappaDiv(0);
+  Real  ncdiv = a_nonConsDiv(0);
+  Real kappa  = a_kappa(0);
+  a_hybridDiv(0) = kapdiv +(1. - kappa)*ncdiv;
+
+  Real hybdiv = kapdiv +(1. - kappa)*ncdiv;
+  a_hybridDiv(0) = hybdiv;
+
+  Real deltam = (1. - kappa)*kapdiv  - kappa*(1. - kappa)*ncdiv;
+  
+  a_deltaM(0) = deltam;
+
+  int ideb = 0;
+  if((a_pt[0] == 16) && (a_pt[1] == 7))
+  {
+    ideb = 1;
+  }
+//debug
+//  a_hybridDiv(0) = kappaConsDiv;
+//  a_deltaM(0)    = 0;
+//end debug
+}
+PROTO_KERNEL_END(HybridDivergencePtF, HybridDivergencePt)
+
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
 PROTO_KERNEL_START 
 void GetUpwindFluxF(Var<Real, 1>    a_flux,

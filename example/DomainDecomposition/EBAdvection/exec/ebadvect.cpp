@@ -40,8 +40,8 @@ dumpBlob(BoxData<Real, 1>* dataPtr)
     cout    << setprecision(6)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
-    Point lo(6,  7);
-    Point hi(10, 9);
+    Point lo(16, 6);
+    Point hi(18, 8);
     Bx area(lo, hi);
 
     BoxData<Real, 1> & data = *dataPtr;

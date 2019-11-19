@@ -12,6 +12,9 @@ void InitializeSpotF(int       a_p[DIM],
                      Real      a_rad,
                      Real      a_dx)
 {
+  Real val = 0;
+#if 0
+//standard version
   Real rlocsq = 0;
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -20,24 +23,32 @@ void InitializeSpotF(int       a_p[DIM],
   }
   Real rloc = sqrt((Real) rlocsq);
   
-  Real val = 0;
   if(rloc < a_rad)
   {
     Real carg = 0.5*PI*(rloc)/a_rad;
     Real cosval = cos(carg);
     val = cosval*cosval;
   }
-//debug
+#else
+//debug stuff
 //    val = 1.0;
-#if 0
-  if( ((a_p[0] > 6) && (a_p[0] < 10)) && ((a_p[1] > 6) && (a_p[1] < 10)))
+//  if( ((a_p[0] > 6) && (a_p[0] < 10)) && ((a_p[1] > 6) && (a_p[1] < 10)))
+//  {
+//    val = 1.0;
+//  }
+//  else
+//  {
+//    val = 0.0;
+//  }
+  Real xloc[DIM];
+  for(int idir = 0; idir < DIM; idir++)
   {
-    val = 1.0;
+    xloc[idir] = (a_p[idir] + 0.5)*a_dx;
   }
-  else
-  {
-    val = 0.0;
-  }
+  Real rloc = xloc[0];
+  Real sarg = PI*(rloc);
+  val = sin(sarg);
+
 #endif
 //end debug
   a_phi(0) = val;
@@ -68,7 +79,6 @@ void InitializeVCellF(int       a_p[DIM],
   Real velmag = a_mag*cosval*cosval;
 //debug
   velmag = 1;
-//end debug
 #if DIM==2
   a_vel(0) =  velmag*xrel[1];
   a_vel(1) = -velmag*xrel[0];
@@ -77,7 +87,6 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(1) =  velmag*(-xrel[0] - xrel[2]);
   a_vel(2) = -velmag*( xrel[0] - xrel[1]);
 #endif
-//debug
 #if 0
   a_vel(0) =  1;
   a_vel(1) =  0;

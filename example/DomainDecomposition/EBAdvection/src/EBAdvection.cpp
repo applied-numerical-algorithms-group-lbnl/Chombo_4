@@ -253,6 +253,7 @@ nonConsDiv()
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& ncdiv  = m_nonConsDiv[dit[ibox]];
@@ -260,6 +261,7 @@ nonConsDiv()
     const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = true;
     stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
+    ideb++;
   }
 }
 ///
@@ -293,15 +295,33 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
 
   //advance solution, compute delta M
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 7;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    auto & hybridDiv  =  m_hybridDiv[ dit[ibox]];
+    auto & kappaDiv   =  m_kappaDiv[  dit[ibox]];
+    auto & nonConsDiv =  m_nonConsDiv[dit[ibox]];  
+    auto & deltaM     =  m_deltaM[    dit[ibox]]; 
+    auto & kappa      =  m_kappa[     dit[ibox]];
+#if 0
     ebforallInPlace(numflopspt, "HybridDivergence", HybridDivergence, grbx,  
-                    m_hybridDiv[ dit[ibox]],
-                    m_kappaDiv[  dit[ibox]],
-                    m_nonConsDiv[dit[ibox]],  
-                    m_deltaM[    dit[ibox]], m_kappa[dit[ibox]]);
+                    hybridDiv ,
+                    kappaDiv  ,
+                    nonConsDiv,  
+                    deltaM    , 
+                    kappa     );
+#else
+    //debugging
+    ebforallInPlace_i(numflopspt, "HybridDivergencePt", HybridDivergencePt, grbx,  
+      hybridDiv ,
+      kappaDiv  ,
+      nonConsDiv,  
+      deltaM    , 
+      kappa     );
+#endif 
+    ideb++;
   }
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
