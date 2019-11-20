@@ -12,4 +12,9 @@ LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack
 HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
 HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
 EFENCEFLAGS = -L/usr/lib -lefence
+
+PETSC_DIR   = /usr/local/anag/pkg/petsc-3.11.3
+SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
+
+
 #end mach dependent

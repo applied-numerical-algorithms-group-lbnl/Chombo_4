@@ -13,6 +13,7 @@ parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [
 parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
 parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
 
 args = parser.parse_args()
 
@@ -53,6 +54,12 @@ for t in targets:
         f.write('\nCPPFLAGS += -DCH_USE_HDF5')
         f.write('\nCPPFLAGS += $(HDFINCFLAGS)')
         f.write('\nLIBS     += $(HDFLIBFLAGS) ')
+
+    if(args.petsc == 'TRUE'):
+        f.write('\ninclude $(PETSC_DIR)/lib/petsc/conf/variables')
+        f.write('\nCPPFLAGS += -DCH_USE_PETSC')
+        f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
+        f.write('\nLIBS     += $(PETSC_KSP_LIB)')
 
     if(args.efence == 'TRUE'):
         f.write('\nLIBS     += $(EFENCEFLAGS) ')
