@@ -26,7 +26,7 @@ makefile_post = f_post.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply', 'DomainDecomposition/EBHelmholtz', 'DomainDecomposition/MHD', 'DomainDecomposition/EBAdvection']
+targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply', 'DomainDecomposition/EBHelmholtz', 'DomainDecomposition/MHD', 'DomainDecomposition/EBAdvection', 'DomainDecomposition/EBPETSc']
 
 top = os.getcwd()
 chombo_home = top + '/..'
@@ -56,22 +56,22 @@ for t in targets:
         f.write('\nLIBS     += $(HDFLIBFLAGS) ')
 
     if(args.petsc == 'TRUE'):
-        f.write('\ninclude $(PETSC_DIR)/lib/petsc/conf/variables')
+        f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables')
         f.write('\nCPPFLAGS += -DCH_USE_PETSC')
         f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
-        f.write('\nLIBS     += $(PETSC_KSP_LIB)')
+        f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
 
     if(args.efence == 'TRUE'):
-        f.write('\nLIBS     += $(EFENCEFLAGS) ')
+        f.write('\nLIBS     += $(EFENCEFLAGS) \n')
 
 
     if(args.prec == 'DOUBLE'):
-        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
+        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
     if args.opt == 'DEBUG':
-        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) ')
+        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
-        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
+        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
    
 
     if args.cuda == 'TRUE':
