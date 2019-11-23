@@ -163,7 +163,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   }
 //debug
 //  slopeLo.setVal(0.);
-//   slopeHi.setVal(0.);
+//  slopeHi.setVal(0.);
 //end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
@@ -233,6 +233,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     //interpolate flux to centroids
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -326,14 +327,17 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
   //debug turn off redist
-  redistribute();
+  //redistribute();
   //end debug
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
+    auto& scalar =       a_phi[dit[ibox]];
+    auto& diverg = m_hybridDiv[dit[ibox]];
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     unsigned long long int numflopspt = 2;
     ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
-                    a_phi[dit[ibox]], m_hybridDiv[dit[ibox]],  a_dt);
+      scalar, diverg, a_dt);
+    ideb++;
   }
     
 }

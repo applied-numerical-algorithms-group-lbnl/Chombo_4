@@ -13,7 +13,7 @@ void InitializeSpotF(int       a_p[DIM],
                      Real      a_dx)
 {
   Real val = 0;
-#if 0
+#if 1
 //standard version
   Real rlocsq = 0;
   for(int idir = 0; idir < DIM; idir++)
@@ -31,7 +31,7 @@ void InitializeSpotF(int       a_p[DIM],
   }
 #else
 //debug stuff
-//    val = 1.0;
+//   val = 1.0;
 //  if( ((a_p[0] > 6) && (a_p[0] < 10)) && ((a_p[1] > 6) && (a_p[1] < 10)))
 //  {
 //    val = 1.0;
@@ -40,17 +40,31 @@ void InitializeSpotF(int       a_p[DIM],
 //  {
 //    val = 0.0;
 //  }
+//  Real xloc[DIM];
+//  for(int idir = 0; idir < DIM; idir++)
+//  {
+//    xloc[idir] = (a_p[idir] + 0.5)*a_dx;
+//  }
+//  Real rloc = xloc[0];
+//  Real sarg = PI*(rloc + 0.25);
+//  val = cos(sarg);
   Real xloc[DIM];
   for(int idir = 0; idir < DIM; idir++)
   {
     xloc[idir] = (a_p[idir] + 0.5)*a_dx;
   }
-  Real rloc = xloc[0];
-  Real sarg = PI*(rloc);
-  val = sin(sarg);
+  Real rloc = std::abs(xloc[0] - a_X0);
+  
+  if(rloc < a_rad)
+  {
+    Real carg = 0.5*PI*(rloc)/a_rad;
+    Real cosval = cos(carg);
+    val = cosval*cosval;
+  }
+
+//end debug
 
 #endif
-//end debug
   a_phi(0) = val;
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
