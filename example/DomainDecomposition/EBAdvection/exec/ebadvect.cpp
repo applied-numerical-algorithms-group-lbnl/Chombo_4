@@ -172,7 +172,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
           bool printLines = false;
           if(vofs.size() >  0)
           {
-            vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Hi);
+            vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Lo);
             if(faces.size() == 0)
             {
               printLines = true;
@@ -226,7 +226,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
           bool printLines = false;
           if(vofs.size() >  0)
           {
-            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Hi);
+            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
             if(faces.size() == 0)
             {
               printLines = true;
