@@ -162,8 +162,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
   }
 //debug
-//  slopeLo.setVal(0.);
-//  slopeHi.setVal(0.);
+  slopeLo.setVal(0.);
+  slopeHi.setVal(0.);
 //end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);

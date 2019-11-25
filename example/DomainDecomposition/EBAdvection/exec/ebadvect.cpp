@@ -46,6 +46,37 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
 {
   DataIterator dit = a_grids.dataIterator();
   int ideb = 0;
+  int whichvelo = 0;
+  int whichscal = 0;
+  ParmParse pp;
+  pp.query("which_velo", whichvelo);
+  if(whichvelo == 0)
+  {
+    pout() << "calling initializevel for velocity" << endl;
+  }
+  else if(whichvelo == -1)
+  {
+    pout() << "calling initializevelconst for velocity" << endl;
+  }
+  else
+  {
+    MayDay::Error("bogus velo");
+  }
+
+  pp.query("which_scal", whichscal);
+  if(whichscal == 0)
+  {
+    pout() << "calling initializespot for scalar " << endl;
+  }
+  else if(whichscal == -1)
+  {
+    pout() << "calling initializeline for scalar" << endl;
+  }
+  else
+  {
+    MayDay::Error("bogus scal");
+  }
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     {
@@ -53,19 +84,46 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       unsigned long long int numflopsscal = 5*DIM +3;
       Bx scalbox = scalfab.box();
 
-      ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
-                        scalfab, a_blobCen, a_blobRad, a_dx);
-      ideb++;
+      if(whichscal == 0)
+      {
+        ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
+                          scalfab, a_blobCen, a_blobRad, a_dx);
+        ideb++;
+      }
+      else
+      {
+        vector<double> v_norm;
+        pp.getarr("geom_normal", v_norm, 0, DIM);
+        Real nx =  v_norm[1];
+        Real ny = -v_norm[0];
+        ebforallInPlace_i(numflopsscal, "IntializeLine", InitializeLine,  scalbox, 
+                          scalfab, a_blobCen, a_blobCen,  nx, ny, a_blobRad, a_dx);
+        ideb++;
+      }
     }
 
     {
+    
       auto& velofab = a_velocell[dit[ibox]];
       unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
       Bx velobox = velofab.box();
-      ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                        velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
-
-    
+      if(whichvelo == 0)
+      {
+        ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
+                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
+        ideb++;
+      }
+      else if(whichvelo == -1)
+      {
+        vector<double> v_norm;
+        pp.getarr("geom_normal", v_norm, 0, DIM);
+        Real xvel =  v_norm[1];
+        Real yvel = -v_norm[0];
+        ebforallInPlace_i(numflopsvelo, "IntializeVCellConst", InitializeVCellConst,  velobox, 
+                          velofab, xvel, yvel);
+        ideb++;
+      }
+      
       ideb++;
     }
   }

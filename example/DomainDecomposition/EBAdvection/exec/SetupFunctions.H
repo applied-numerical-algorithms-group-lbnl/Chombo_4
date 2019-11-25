@@ -233,8 +233,6 @@ void InitializeSpotF(int       a_p[DIM],
                      Real      a_dx)
 {
   Real val = 0;
-#if 0
-//standard version
   Real rlocsq = 0;
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -249,45 +247,42 @@ void InitializeSpotF(int       a_p[DIM],
     Real cosval = cos(carg);
     val = cosval*cosval;
   }
-#else
-//debug stuff
-//   val = 1.0;
-//  if( ((a_p[0] > 6) && (a_p[0] < 10)) && ((a_p[1] > 6) && (a_p[1] < 10)))
-//  {
-//    val = 1.0;
-//  }
-//  else
-//  {
-//    val = 0.0;
-//  }
-//  Real xloc[DIM];
-//  for(int idir = 0; idir < DIM; idir++)
-//  {
-//    xloc[idir] = (a_p[idir] + 0.5)*a_dx;
-//  }
-//  Real rloc = xloc[0];
-//  Real sarg = PI*(rloc + 0.25);
-//  val = cos(sarg);
+  a_phi(0) = val;
+}
+PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
+
+
+//=================================================
+PROTO_KERNEL_START 
+void InitializeLineF(int          a_p[DIM],
+                     Var<Real, 1> a_phi,
+                     Real      a_px,
+                     Real      a_py,
+                     Real      a_nx,
+                     Real      a_ny,
+                     Real      a_rad,
+                     Real      a_dx)
+{
+  Real val = 0;
   Real xloc[DIM];
   for(int idir = 0; idir < DIM; idir++)
   {
     xloc[idir] = (a_p[idir] + 0.5)*a_dx;
+    
   }
-  Real rloc = std::abs(xloc[0] - a_X0);
   
-  if(rloc < a_rad)
+  Real funcval = std::abs(a_nx*(a_px - xloc[0]) + a_ny*(a_py - xloc[1]));
+  Real rloc = funcval;
+  
+  if(rloc < a_rad && (xloc[1] < 0.75) )
   {
     Real carg = 0.5*PI*(rloc)/a_rad;
     Real cosval = cos(carg);
     val = cosval*cosval;
   }
-
-//end debug
-
-#endif
   a_phi(0) = val;
 }
-PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
+PROTO_KERNEL_END(InitializeLineF, InitializeLine)
 
 //=================================================
 PROTO_KERNEL_START 
@@ -322,12 +317,29 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(2) = -velmag*( xrel[0] - xrel[1]);
 #endif
 #if 1
-  a_vel(0) =  1;
-  a_vel(1) =  0;
+  a_vel(0) =  0;
+  a_vel(1) =  1;
 #endif
 //end debug
 }
 PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
+
+
+//=================================================
+PROTO_KERNEL_START 
+void InitializeVCellConstF(int       a_p[DIM],
+                           Var<Real, DIM>       a_vel,
+                           Real      a_xvel,
+                           Real      a_yvel)
+{
+  a_vel(0) =  a_xvel;
+  a_vel(1) =  a_yvel;
+#if DIM==3  
+  a_vel(2) =  0;
+#endif
+//end debug
+}
+PROTO_KERNEL_END(InitializeVCellConstF, InitializeVCellConst)
 #include "Chombo_NamespaceFooter.H"
 
 #endif
