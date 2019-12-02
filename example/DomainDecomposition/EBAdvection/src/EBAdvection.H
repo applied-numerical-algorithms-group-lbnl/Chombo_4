@@ -45,7 +45,7 @@ protected:
   IntVect                                m_nghostSrc;
   IntVect                                m_nghostDst;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
-
+  Real m_dx;
   EBLevelBoxData<CELL, 1>                m_kappa;
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;

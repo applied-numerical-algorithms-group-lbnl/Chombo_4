@@ -96,6 +96,8 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
         pp.getarr("geom_normal", v_norm, 0, DIM);
         Real nx =  v_norm[1];
         Real ny = -v_norm[0];
+//        Real nx =  1;
+//        Real ny =  0;
         ebforallInPlace_i(numflopsscal, "IntializeLine", InitializeLine,  scalbox, 
                           scalfab, a_blobCen, a_blobCen,  nx, ny, a_blobRad, a_dx);
         ideb++;

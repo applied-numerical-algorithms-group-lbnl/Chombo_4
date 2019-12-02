@@ -25,6 +25,7 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const IntVect                          & a_nghostsrc, 
             const IntVect                          & a_nghostdst)
 {
+  m_dx     = a_dx;
   m_grids  = a_grids;
   m_domain = a_domain;
   m_nghostSrc  = a_nghostsrc;
@@ -235,10 +236,11 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
+    kapdiv.setVal(0.);
+//    for(unsigned int idir = DIM-1; idir >= 0; idir--)
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
-      //only set to zero on the first one
-      bool initToZero = (idir==0);
+      bool initToZero = false;
       m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
     }

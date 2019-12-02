@@ -68,7 +68,7 @@ void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
     a_kappaDiv(0)*   (1. - a_kappa(0)) +
     a_nonConsDivF(0)*(1. - a_kappa(0))*a_kappa(0);
 //debug
-//  a_hybridDiv(0) = kappaConsDiv;
+//  a_hybridDiv(0) = a_kappaDiv(0)/a_kappa(0);
 //  a_deltaM(0)    = 0;
 //end debug
 }

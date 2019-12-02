@@ -5,8 +5,8 @@
 using Proto::Var;
 
 #if DIM==2
-Point lodeb(17,18);
-Point hideb(21,21);
+Point lodeb(34,34);
+Point hideb(42,42);
 void 
 dumpBlob(BoxData<Real, 1>* dataPtr)
 {
@@ -272,13 +272,15 @@ void InitializeLineF(int          a_p[DIM],
   }
   
   Real funcval = std::abs(a_nx*(a_px - xloc[0]) + a_ny*(a_py - xloc[1]));
+  funcval = std::abs(a_nx*(a_px - xloc[0]));
+  
   Real rloc = funcval;
   
   if(rloc < a_rad && (xloc[1] < 0.75) )
   {
     Real carg = 0.5*PI*(rloc)/a_rad;
     Real cosval = cos(carg);
-    val = cosval*cosval;
+    val = std::abs(cosval);
   }
   a_phi(0) = val;
 }
