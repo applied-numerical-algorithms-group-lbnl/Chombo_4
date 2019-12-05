@@ -89,10 +89,10 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
-    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
-    copyToHost(hostdata, *this);
-    hostdata.exchange();
-    copyToDevice(*this, hostdata);
+    LevelData<BoxData<Real, NUMCOMPS> > devdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+    //copyToHost(hostdata, *this);
+    devdata.exchange();
+    //copyToDevice(*this, hostdata);
   }
     
 
