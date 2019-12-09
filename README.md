@@ -1,4 +1,4 @@
-![Chombo Logo](https://https://github.com/applied-numerical-algorithms-group-lbnl/Chombo_4/blob/master/chologo.jpg)
+![Chombo Logo]
 # Courtesy of the Applied Numerical Algorithms Group at LBNL.
 
 ## Introduction
