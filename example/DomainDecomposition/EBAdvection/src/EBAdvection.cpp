@@ -163,8 +163,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
   }
 //debug
-  slopeLo.setVal(0.);
-  slopeHi.setVal(0.);
+//  slopeLo.setVal(0.);
+//  slopeHi.setVal(0.);
 //end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
@@ -178,9 +178,17 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 19 + 4*DIM;
 
+#if 1
+//debug call point function
+    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, grown,  
+                      scal_imh_nph, scal_iph_nph, a_scal, 
+                      slopeLo, slopeHi, veccell, idir, a_dt);
+//end debug    
+#else
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLo, slopeHi, veccell, idir, a_dt);
+#endif
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
     //once we do that, we can solve the Rieman problem for the upwind state
@@ -261,11 +269,25 @@ nonConsDiv()
   {
     auto& ncdiv  = m_nonConsDiv[dit[ibox]];
     auto& kapdiv =   m_kappaDiv[dit[ibox]];
+    auto& kappa =   m_kappa[dit[ibox]];
     const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = true;
     stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
     ideb++;
   }
+//begin debug
+  Real coveredval = -0.125;
+  Real time = 0;
+  Real dt = 1;
+  {
+    string filep("divnc.hdf5");
+    writeEBLevelHDF5<1>(  filep,  m_nonConsDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
+  }
+  {
+    string filep("kapdiv.hdf5");
+    writeEBLevelHDF5<1>(  filep,  m_kappaDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
+  }
+//end ddebug
 }
 ///
 void
