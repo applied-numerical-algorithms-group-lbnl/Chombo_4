@@ -1,7 +1,6 @@
-![Chombo Logo]
-(https://github.com/applied-numerical-algorithms-group-lbnl/Chombo_4/blob/master/chologo.jpg?raw=true)
-# Courtesy of the Applied Numerical Algorithms Group
-# Lawrence Berkeley National Laboratory
+# Chombo
+## Courtesy of the Applied Numerical Algorithms Group
+## Lawrence Berkeley National Laboratory
 
 ## Introduction
 This version of Chombo is fortran-free and depends on the Proto infrasturcture  for performance portability.
