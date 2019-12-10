@@ -12,7 +12,7 @@
 #include "Chombo_DataIterator.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
-using   ::Proto::Point;
+//using   ::Proto::Point;
 
 
 /****/

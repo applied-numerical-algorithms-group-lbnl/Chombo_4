@@ -2188,7 +2188,7 @@ WriteMultiData<T>::WriteMultiData(HDF5Handle&      a_handle,
     long myCountBoxes = m_maxBoxPerProc;
     MPI_Allreduce(&myCountBoxes,
                   &m_maxBoxPerProc,
-                  1, MPI_LONG, MPI_MAX, Chombo_MPI::comm);
+                  1, MPI_LONG, MPI_MAX, CH4_SPMD::Chombo_MPI::comm);
 #endif    
   }
 }

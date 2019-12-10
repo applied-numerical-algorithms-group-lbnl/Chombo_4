@@ -124,7 +124,7 @@ void BoxLayout::buildDataIndex()
   std::list<DataIndex> dlist;
   unsigned int index = 0;
   unsigned int datIn = 0;
-  unsigned int p = CHprocID();
+  unsigned int p = CH4_SPMD::CHprocID();
   int count=0;
   const Entry* box;
 
@@ -283,14 +283,14 @@ BoxLayout::define(const LayoutData<Box>& a_newLayout)
     }
   Vector< Vector<Box> > gatheredNewBoxes;
   int iprocdest = 0;
-  gather(gatheredNewBoxes, localNewBoxes, iprocdest);
+  CH4_SPMD::gather(gatheredNewBoxes, localNewBoxes, iprocdest);
 
   // Now iprocdest has every Box gatheredNewBoxes[iproc][ivec].
   // We want to broadcast gatheredNewBoxes to allNewBoxes,
   // but we have to do it one Vector<Box> at a time.
   Vector< Vector<Box> > allNewBoxes;
   allNewBoxes.resize(numProc());
-  if (CHprocID() == iprocdest)
+  if (CH4_SPMD::CHprocID() == iprocdest)
     {
       for (int iproc = 0; iproc < numProc(); iproc++)
         {
@@ -303,7 +303,7 @@ BoxLayout::define(const LayoutData<Box>& a_newLayout)
     {
       // void broadcast(T& a_inAndOut, int a_src) requires for T:
       // linearSize<T>, linearIn<T>, linearOut<T>.
-      broadcast(allNewBoxes[iproc], iprocdest);
+      CH4_SPMD::broadcast(allNewBoxes[iproc], iprocdest);
     }
   // Now every processor knows Vector< Vector<Box> > allNewBoxes.
 
@@ -924,7 +924,7 @@ void mortonOrdering(Vector<Box>& a_boxes)
   std::vector<Box>& b = a_boxes.stdVector();
   int bits;
 #ifdef CH_MPI
-  parallelMortonOrdering(b.begin(), b.end(), bits, Chombo_MPI::comm);
+  parallelMortonOrdering(b.begin(), b.end(), bits, CH4_SPMD::Chombo_MPI::comm);
 #else
   bits = maxBits(b.begin(), b.end());
   std::sort(b.begin(), b.end(), MortonOrdering(bits));

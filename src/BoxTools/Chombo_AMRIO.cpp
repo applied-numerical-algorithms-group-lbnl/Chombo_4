@@ -70,7 +70,7 @@ WriteAMRHierarchyHDF5(const string& filename,
 #ifdef CH_MPI
   {
     CH_TIME("Barrier");
-    MPI_Barrier(Chombo_MPI::comm);
+    MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
   }
 #endif
   CH_START(createFile);
@@ -85,7 +85,7 @@ WriteAMRHierarchyHDF5(const string& filename,
 #ifdef CH_MPI
   {
     CH_TIME("Barrier");
-    MPI_Barrier(Chombo_MPI::comm);
+    MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
   }
 #endif
   CH_START(closeFile);
@@ -135,7 +135,7 @@ WriteAnisotropicAMRHierarchyHDF5(
   CH_STOP(writeFile);
 
 #ifdef CH_MPI
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 #endif
 
   CH_START(closeFile);
@@ -288,7 +288,7 @@ WriteAMRHierarchyHDF5(const string& filename,
 #ifdef CH_MPI
   { 
     CH_TIME("Barrier");
-    MPI_Barrier(Chombo_MPI::comm);
+    MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
   }
 #endif
   handle.close();
@@ -401,7 +401,7 @@ ReadAMRHierarchyHDF5(const string& filename,
                                      a_time, a_refRatio, a_numLevels);
 
 #ifdef CH_MPI
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 #endif
   handle.close();
 
@@ -498,7 +498,7 @@ ReadAMRHierarchyHDF5(const string& filename,
                                      a_domain, a_refRatio, a_numLevels);
 
 #ifdef CH_MPI
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 #endif
   handle.close();
   return (eekflag);
@@ -600,7 +600,7 @@ ReadAnisotropicAMRHierarchyHDF5(const string& filename,
                                      a_time, a_refRatio, a_numLevels);
 
 #ifdef CH_MPI
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 #endif
   handle.close();
 
@@ -697,7 +697,7 @@ ReadAnisotropicAMRHierarchyHDF5(const string& filename,
                                      a_domain, a_refRatio, a_numLevels);
 
 #ifdef CH_MPI
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 #endif
   handle.close();
   return (eekflag);

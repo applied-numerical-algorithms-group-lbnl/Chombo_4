@@ -40,14 +40,14 @@ inline void CH_TIMER_SETFILE(const char* a_prefix_string = "chombo.time.table")
   {
     outInterv =  atoi(charInterv);
   }
-  int thisProc = procID();
+  int thisProc = CH4_SPMD::procID();
   if ((thisProc % outInterv) != 0)
   {
     sprintf(char_str,"/dev/null");
   }
   else
   {
-    sprintf(char_str, "%s.%d",a_prefix_string, procID());
+    sprintf(char_str, "%s.%d",a_prefix_string, CH4_SPMD::procID());
   }
 
   std::string name(char_str);

@@ -588,10 +588,10 @@ template <class T> inline void BaseFab<T>::linearOut(void* a_outBuf) const
 {
   char * bufptr = static_cast<char*>(a_outBuf) ;
 
-  linearOut( bufptr ,m_domain );
+  CH4_SPMD::linearOut( bufptr ,m_domain );
   bufptr += linearSize(m_domain);
 
-  linearOut( bufptr ,m_nvar );
+  CH4_SPMD::linearOut( bufptr ,m_nvar );
   bufptr += sizeof(int) ;
 
   linearOut( bufptr ,m_domain ,interval() );
@@ -607,11 +607,11 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
   // first get the box, then the number of components, then the data
   char * bufptr = static_cast<char*>(const_cast<void*>(a_buf)) ;
 
-  linearIn( m_domain ,bufptr ); 
+  CH4_SPMD::linearIn( m_domain ,bufptr ); 
   bufptr += linearSize( m_domain );
 
   int ncomps;
-  linearIn( ncomps ,bufptr );
+  CH4_SPMD::linearIn( ncomps ,bufptr );
   bufptr += sizeof( ncomps );
 
   resize(m_domain, ncomps);

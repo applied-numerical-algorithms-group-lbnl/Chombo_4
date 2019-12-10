@@ -503,7 +503,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
                 {
 
                   MPI_Irecv(dataPtr, messageSize, MPI_UNSIGNED_LONG, lastProc,
-                            1, Chombo_MPI::comm, Rptr);
+                            1, CH4_SPMD::Chombo_MPI::comm, Rptr);
                   Rptr++;
 
                   lastProc = b.procID;
@@ -514,7 +514,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
             }
 
           MPI_Irecv(dataPtr, messageSize, MPI_UNSIGNED_LONG, lastProc,
-                    1, Chombo_MPI::comm, Rptr );
+                    1, CH4_SPMD::Chombo_MPI::comm, Rptr );
         }
 
       if (m_buff->m_fromMe.size() > 0)
@@ -538,7 +538,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
               else
                 {
                   MPI_Isend(dataPtr, messageSize, MPI_UNSIGNED_LONG, lastProc,
-                            1, Chombo_MPI::comm, Rptr);
+                            1, CH4_SPMD::Chombo_MPI::comm, Rptr);
 
                   Rptr++;
                   lastProc = b.procID;
@@ -549,7 +549,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
             }
 
           MPI_Isend(dataPtr, messageSize, MPI_UNSIGNED_LONG, lastProc,
-                    1, Chombo_MPI::comm, Rptr);
+                    1, CH4_SPMD::Chombo_MPI::comm, Rptr);
         }
 
       if (m_buff->m_toMe.size() > 0)
@@ -693,23 +693,23 @@ void BoxLayoutData<T>::postSendsFromMe() const
       char*  buffer = (char*)entry.bufPtr;
       std::size_t bsize = entry.size;
       int idtag=0;
-      while (bsize > CH_MAX_MPI_MESSAGE_SIZE)
+      while (bsize > CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE)
       {
         extraRequests.push_back(MPI_Request());
         {
           //CH_TIME("MPI_Isend");
-          MPI_Isend(buffer, CH_MAX_MPI_MESSAGE_SIZE, MPI_BYTE, entry.procID,
-                    idtag, Chombo_MPI::comm, &(extraRequests.back()));
+          MPI_Isend(buffer, CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE, MPI_BYTE, entry.procID,
+                    idtag, CH4_SPMD::Chombo_MPI::comm, &(extraRequests.back()));
         }
-        maxSize = CH_MAX_MPI_MESSAGE_SIZE;
-        bsize -= CH_MAX_MPI_MESSAGE_SIZE;
-        buffer+=CH_MAX_MPI_MESSAGE_SIZE;
+        maxSize = CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
+        bsize -= CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
+        buffer+=CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
         idtag++;
       }
       {
         //CH_TIME("MPI_Isend");
         MPI_Isend(buffer, bsize, MPI_BYTE, entry.procID,
-                idtag, Chombo_MPI::comm, &(m_buff->m_sendRequests[i]));
+                idtag, CH4_SPMD::Chombo_MPI::comm, &(m_buff->m_sendRequests[i]));
       }
       maxSize = std::max<long long>(bsize, maxSize);
       ++next;
@@ -721,7 +721,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   }
   this->m_buff->numSends = m_buff->m_sendRequests.size();
 
-  CH_MaxMPISendSize = std::max<long long>(CH_MaxMPISendSize, maxSize);
+  CH4_SPMD::CH_MaxMPISendSize = std::max<long long>(CH4_SPMD::CH_MaxMPISendSize, maxSize);
 
 }
 
@@ -754,23 +754,23 @@ void BoxLayoutData<T>::postReceivesToMe() const
       char*  buffer = (char*)entry.bufPtr;
       size_t bsize = entry.size;
       int idtag=0;
-      while (bsize > CH_MAX_MPI_MESSAGE_SIZE)
+      while (bsize > CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE)
       {
         extraRequests.push_back(MPI_Request());
         {
           //CH_TIME("MPI_Irecv");
-          MPI_Irecv(buffer, CH_MAX_MPI_MESSAGE_SIZE, MPI_BYTE, entry.procID,
-                    idtag, Chombo_MPI::comm, &(extraRequests.back()));
+          MPI_Irecv(buffer, CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE, MPI_BYTE, entry.procID,
+                    idtag, CH4_SPMD::Chombo_MPI::comm, &(extraRequests.back()));
         }
-        maxSize = CH_MAX_MPI_MESSAGE_SIZE;
-        bsize -= CH_MAX_MPI_MESSAGE_SIZE;
-        buffer+=CH_MAX_MPI_MESSAGE_SIZE;
+        maxSize = CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
+        bsize -= CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
+        buffer+=CH4_SPMD::CH_MAX_MPI_MESSAGE_SIZE;
         idtag++;
       }
       {
         //CH_TIME("MPI_Irecv");
         MPI_Irecv(buffer, bsize, MPI_BYTE, entry.procID,
-                  idtag, Chombo_MPI::comm, &(m_buff->m_receiveRequests[i]));
+                  idtag, CH4_SPMD::Chombo_MPI::comm, &(m_buff->m_receiveRequests[i]));
       }
       ++next;
       maxSize = std::max<long long>(bsize, maxSize);
@@ -782,7 +782,7 @@ void BoxLayoutData<T>::postReceivesToMe() const
   }
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
-  CH_MaxMPIRecvSize = std::max<long long>(CH_MaxMPIRecvSize, maxSize);
+  CH4_SPMD::CH_MaxMPIRecvSize = std::max<long long>(CH4_SPMD::CH_MaxMPIRecvSize, maxSize);
   //pout()<<"maxSize="<<maxSize<<" posted "<<this->m_buff->numReceives<<" receives\n";
 
 }

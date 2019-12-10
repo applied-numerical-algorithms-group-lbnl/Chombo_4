@@ -466,7 +466,7 @@ MeshRefine::regrid(Vector<Vector<Box> >&   a_newmeshes,
 
 #ifdef CH_MPI
   int mlevel;
-  MPI_Allreduce(&level, &mlevel, 1, MPI_INT, MPI_MAX, Chombo_MPI::comm);
+  MPI_Allreduce(&level, &mlevel, 1, MPI_INT, MPI_MAX, CH4_SPMD::Chombo_MPI::comm);
   level=mlevel;
 #endif
 

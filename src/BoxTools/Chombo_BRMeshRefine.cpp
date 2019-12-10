@@ -194,7 +194,7 @@ BRMeshRefine::makeBoxes(Vector<Box>&         a_mesh,
 
 #ifdef CH_MPI
   int size;
-  MPI_Comm_size (Chombo_MPI::comm, &size );
+  MPI_Comm_size (CH4_SPMD::Chombo_MPI::comm, &size );
   Interval interval(0, size-1);
   makeBoxesParallel(boxes, (IntVectSet&)a_tags, a_pnd, a_domain, a_maxBoxSize, 0, a_totalBufferSize,
                     100, interval);
@@ -1134,12 +1134,12 @@ BRMeshRefine::receiveBoxesParallel(const Interval& a_from,
 
   int source, dest;
 
-  source = procID()-a_from.begin() + a_to.begin();
+  source = CH4_SPMD::procID()-a_from.begin() + a_to.begin();
   dest = source;
 
   bool hang=false;
-  if (a_from.size() > a_to.size() && procID()== a_from.end()) hang = true;
-  if (a_to.size() > a_from.size() && procID()== a_to.end()) hang = true;
+  if (a_from.size() > a_to.size() && CH4_SPMD::procID()== a_from.end()) hang = true;
+  if (a_to.size() > a_from.size() && CH4_SPMD::procID()== a_to.end()) hang = true;
 
   if (a_from.size() == a_to.size() || !hang)
     {
@@ -1148,22 +1148,22 @@ BRMeshRefine::receiveBoxesParallel(const Interval& a_from,
       MPI_Sendrecv( sendBuffers.back(), ch_count.back(), MPI_INT,
                     dest, tag,
                     recBuffer, MAXBOXES*boxSize, MPI_INT,
-                    source, tag, Chombo_MPI::comm, &status );
+                    source, tag, CH4_SPMD::Chombo_MPI::comm, &status );
     }
   // OK, need to pick up the oddball stragler here.
-  if (a_from.size() < a_to.size() && procID()==a_from.end())
+  if (a_from.size() < a_to.size() && CH4_SPMD::procID()==a_from.end())
     {
       dest = a_to.end();
       // pout()<<"SEnding "<<ch_count.back()/boxSize<<" boxes to "<<dest<<std::endl;
       MPI_Send(sendBuffers.back(), ch_count.back(), MPI_INT,
-               a_to.end(), tag, Chombo_MPI::comm);
+               a_to.end(), tag, CH4_SPMD::Chombo_MPI::comm);
     }
-  if (a_from.size() > a_to.size() && procID()==a_from.end())
+  if (a_from.size() > a_to.size() && CH4_SPMD::procID()==a_from.end())
     {
       source = a_to.end();
       // pout()<<"EXpecting boxes from "<<source<<"\n";
       MPI_Recv(recBuffer, MAXBOXES*boxSize, MPI_INT,
-               source, tag, Chombo_MPI::comm, &status );
+               source, tag, CH4_SPMD::Chombo_MPI::comm, &status );
     }
 
   delete [] sendBuffers.back();

@@ -21,7 +21,7 @@ DataIndex
 DataIterator::
 operator[](int ivec) const
 {
-  Proto::DisjointBoxLayout::activeBox(ivec);
+  ::Proto::DisjointBoxLayout::activeBox(ivec);
   return (DataIndex)((*m_indices)[ivec]);
 }
 
@@ -107,7 +107,7 @@ mergeTime()
 {
   int count = m_time.size();
   Vector<unsigned long long> tmp(count);
-  MPI_Allreduce(&(m_time[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, Chombo_MPI::comm);
+  MPI_Allreduce(&(m_time[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, CH4_SPMD::Chombo_MPI::comm);
   m_time = tmp;
 }
 
@@ -117,7 +117,7 @@ mergePeak()
 {
   int count = m_peak.size();
   Vector<unsigned long long> tmp(count);
-  MPI_Allreduce(&(m_peak[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, Chombo_MPI::comm);
+  MPI_Allreduce(&(m_peak[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, CH4_SPMD::Chombo_MPI::comm);
   m_peak = tmp;
 }
 

@@ -627,7 +627,7 @@ int LoadBalance(Vector<int>& a_procAssignments,
   Box* nonConstBox = const_cast<Box*>(&a_localGridBox);  
   int boxSize = sizeof(Box);
   status = MPI_Allgather(nonConstBox,  boxSize,  MPI_BYTE, &(tempBoxes[0]), 
-                         boxSize , MPI_BYTE , Chombo_MPI::comm);
+                         boxSize , MPI_BYTE , CH4_SPMD::Chombo_MPI::comm);
 #endif
 
   tempProcAssign.resize(tempBoxes.size());

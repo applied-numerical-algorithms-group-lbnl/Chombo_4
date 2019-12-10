@@ -655,9 +655,9 @@ int HDF5Handle::open(
       file_access = H5Pcreate (H5P_FILE_ACCESS);
 
 #if ( H5_VERS_MAJOR == 1 && H5_VERS_MINOR <= 2 )
-      H5Pset_mpi(file_access,  Chombo_MPI::comm, MPI_INFO_NULL);
+      H5Pset_mpi(file_access,  CH4_SPMD::Chombo_MPI::comm, MPI_INFO_NULL);
 #else
-      H5Pset_fapl_mpio(file_access,  Chombo_MPI::comm, MPI_INFO_NULL);
+      H5Pset_fapl_mpio(file_access,  CH4_SPMD::Chombo_MPI::comm, MPI_INFO_NULL);
 #endif
 #else
       file_access = H5P_DEFAULT;

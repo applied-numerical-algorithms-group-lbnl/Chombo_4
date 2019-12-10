@@ -70,10 +70,10 @@ static void setFileName()
     {
       outInterv =  atoi(charInterv);
       // If zero specified, change it to numProc() which should give pout.0 only
-      if (outInterv == 0) outInterv=numProc();
+      if (outInterv == 0) outInterv=CH4_SPMD::numProc();
     }
 #endif
-  int thisProc = procID();
+  int thisProc = CH4_SPMD::procID();
   if ((thisProc % outInterv) != 0)
     {
       s_pout_filename = std::string("/dev/null");
@@ -82,7 +82,7 @@ static void setFileName()
     {
       static const size_t ProcnumSize = 1 + 10 + 1 ;  //'.' + 10digits + '\0'
       char procnum[ProcnumSize] ;
-      snprintf( procnum ,ProcnumSize ,".%d" ,procID() );
+      snprintf( procnum ,ProcnumSize ,".%d" ,CH4_SPMD::procID() );
       s_pout_filename = s_pout_basename + procnum ;
     }
 }

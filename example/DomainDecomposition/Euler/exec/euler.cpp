@@ -231,7 +231,7 @@ void eulerRun(const RunParams& a_params)
   int nGhost = NGHOST;
 
 #ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(a_params.nstream);
+  ::Proto::DisjointBoxLayout::setNumStreams(a_params.numstream);
 #endif
 
   IntVect domLo = IntVect::Zero;
