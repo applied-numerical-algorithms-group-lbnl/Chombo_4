@@ -5,8 +5,8 @@
 using Proto::Var;
 
 #if DIM==2
-Point lodeb(34,34);
-Point hideb(42,42);
+Point lodeb(15, 15);
+Point hideb(21, 21);
 void 
 dumpBlob(BoxData<Real, 1>* dataPtr)
 {
@@ -257,9 +257,6 @@ PROTO_KERNEL_START
 void InitializeLineF(int          a_p[DIM],
                      Var<Real, 1> a_phi,
                      Real      a_px,
-                     Real      a_py,
-                     Real      a_nx,
-                     Real      a_ny,
                      Real      a_rad,
                      Real      a_dx)
 {
@@ -271,9 +268,7 @@ void InitializeLineF(int          a_p[DIM],
     
   }
   
-  Real funcval = std::abs(a_nx*(a_px - xloc[0]) + a_ny*(a_py - xloc[1]));
-  funcval = std::abs(a_nx*(a_px - xloc[0]));
-  
+  Real funcval = std::abs(a_px - xloc[0]);
   Real rloc = funcval;
   
   if(rloc < a_rad && (xloc[1] < 0.75) )
@@ -281,6 +276,7 @@ void InitializeLineF(int          a_p[DIM],
     Real carg = 0.5*PI*(rloc)/a_rad;
     Real cosval = cos(carg);
     val = std::abs(cosval);
+//    val = 1.;
   }
   a_phi(0) = val;
 }
@@ -318,7 +314,7 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(1) =  velmag*(-xrel[0] - xrel[2]);
   a_vel(2) = -velmag*( xrel[0] - xrel[1]);
 #endif
-#if 1
+#if 0
   a_vel(0) =  0;
   a_vel(1) =  1;
 #endif

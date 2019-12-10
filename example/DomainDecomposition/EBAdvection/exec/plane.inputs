@@ -17,7 +17,7 @@ blob_cen = 0.3
 # radius of the sphere
 geom_rad = 0.455
 # radius of the blob
-blob_rad = 0.075
+blob_rad = 0.05
 
 #mag of biggest velo
 max_vel_mag = 1.0
