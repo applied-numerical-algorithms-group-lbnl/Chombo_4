@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /autofs/nccs-svm1_home1/dwaters/chombo_4/example/..
+CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
 DIM := 2
 
 SRC := $(wildcard *.cpp) 
@@ -23,24 +23,31 @@ LIBS =
 
 
 
+VARS_OLD := $(.VARIABLES)
+PROTO_HOME = $(HOME)/_proto/proto
+PROTO_HOME =$(HOME)/_proto/proto
+DEPXX=g++
+CXX=g++
 
-PROTO_HOME =$(HOME)/proto
-DEPXX=nvcc
-CXX=nvcc
+CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
-CXXALLFLAGS := -std=c++11 -x cu --expt-extended-lambda
-CXXDBGFLAGS:= -g -G -DTHRUST_DEBUG $(CXXALLFLAGS)
-CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+#LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
+EFENCEFLAGS = -L/usr/lib -lefence
 
-HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
-HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+PETSC_DIR   = /usr/local/anag/pkg/petsc-3.11.3
+SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
+
 #end mach dependent
 
 
 
 
 
-CPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
 CPPFLAGS += -DCH_USE_HDF5
 CPPFLAGS += $(HDFINCFLAGS)
 LIBS     += $(HDFLIBFLAGS) 

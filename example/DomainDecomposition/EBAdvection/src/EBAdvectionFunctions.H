@@ -164,8 +164,9 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
   Real ccveldir  = a_ccVel(a_dir);
   //standard BCG Godunov dance to extrapolate in space and time
   //normal predictor
-  a_scal_iph_nph(0)  = a_scal_ijk_n(0) + 0.5*vanLeer*minVal((1. - ccveldir*dtbydx), 1.0);
-  a_scal_imh_nph(0)  = a_scal_ijk_n(0) - 0.5*vanLeer*minVal((1. + ccveldir*dtbydx), 1.0);
+  Real ccval = a_scal_ijk_n(0);
+  a_scal_iph_nph(0)  = ccval + 0.5*vanLeer*minVal((1. - ccveldir*dtbydx), 1.0);
+  a_scal_imh_nph(0)  = ccval - 0.5*vanLeer*minVal((1. + ccveldir*dtbydx), 1.0);
 
   //transverse predictor
   for(int idir = 0; idir < DIM; idir++)
