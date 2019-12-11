@@ -147,6 +147,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   EBBoxData<CELL, Real, DIM> slopeLo(grown, graph); 
   EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
+  int ideb = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
@@ -161,6 +162,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
     stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
+    ideb++;
   }
 //debug
 //  slopeLo.setVal(0.);
@@ -169,7 +171,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
-  int ideb = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
@@ -182,12 +183,12 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 //debug call point function
     ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, grown,  
                       scal_imh_nph, scal_iph_nph, a_scal, 
-                      slopeLo, slopeHi, veccell, idir, a_dt);
+                      slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
 //end debug    
 #else
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLo, slopeHi, veccell, idir, a_dt);
+                    slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
 #endif
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
@@ -276,18 +277,18 @@ nonConsDiv()
     ideb++;
   }
 //begin debug
-  Real coveredval = -0.125;
-  Real time = 0;
-  Real dt = 1;
-  {
-    string filep("divnc.hdf5");
-    writeEBLevelHDF5<1>(  filep,  m_nonConsDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
-  }
-  {
-    string filep("kapdiv.hdf5");
-    writeEBLevelHDF5<1>(  filep,  m_kappaDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
-  }
-//end ddebug
+//  Real coveredval = -0.125;
+//  Real time = 0;
+//  Real dt = 1;
+//  {
+//    string filep("divnc.hdf5");
+//    writeEBLevelHDF5<1>(  filep,  m_nonConsDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
+//  }
+//  {
+//    string filep("kapdiv.hdf5");
+//    writeEBLevelHDF5<1>(  filep,  m_kappaDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
+//  }
+//end debug
 }
 ///
 void

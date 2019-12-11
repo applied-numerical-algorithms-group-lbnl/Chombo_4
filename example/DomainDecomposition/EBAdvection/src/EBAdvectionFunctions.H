@@ -145,11 +145,12 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
                       Var<Real, DIM>     a_slopeHi,
                       Var<Real, DIM>     a_ccVel,
                       unsigned int       a_dir,
-                      Real               a_dt)
+                      Real               a_dt,
+                      Real               a_dx)
 {
-  Real mono = (a_slopeLo(a_dir) * a_slopeHi(a_dir));
+  //van leer slopes
   Real vanLeer = 0;
-
+  Real mono   = (a_slopeLo(a_dir) * a_slopeHi(a_dir));
   if(mono >= 0)
   {
     Real cent = 0.5*(a_slopeLo(0) + a_slopeHi(0));
@@ -157,9 +158,17 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
     vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLo(a_dir)));
     vanLeer = cpySign(vanLeer, cent);
   }
+
+  //normal predictor
+  Real dtbydx    = a_dt/a_dx;
+  Real ccveldir  = a_ccVel(a_dir);
   //standard BCG Godunov dance to extrapolate in space and time
-  a_scal_iph_nph(0) = a_scal_ijk_n(0) + 0.5*vanLeer*( 1.0 + a_dt*a_ccVel(a_dir));
-  a_scal_imh_nph(0) = a_scal_ijk_n(0) + 0.5*vanLeer*(-1.0 + a_dt*a_ccVel(a_dir));
+  //normal predictor
+  Real ccval = a_scal_ijk_n(0);
+  a_scal_iph_nph(0)  = ccval + 0.5*vanLeer*minVal((1. - ccveldir*dtbydx), 1.0);
+  a_scal_imh_nph(0)  = ccval - 0.5*vanLeer*minVal((1. + ccveldir*dtbydx), 1.0);
+
+  //transverse predictor
   for(int idir = 0; idir < DIM; idir++)
   {
     if(idir != a_dir)
@@ -169,8 +178,8 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
       {
         upwind = a_slopeHi(idir);
       }
-      a_scal_imh_nph(0) = a_scal_imh_nph(0) + 0.5*a_dt*upwind;
-      a_scal_iph_nph(0) = a_scal_iph_nph(0) + 0.5*a_dt*upwind;
+      a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind;
+      a_scal_iph_nph(0) = a_scal_iph_nph(0) - 0.5*dtbydx*upwind;
     }
   }
 }
@@ -186,44 +195,29 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
                         Var<Real, DIM>     a_slopeHi,
                         Var<Real, DIM>     a_ccVel,
                         unsigned int       a_dir,
-                        Real               a_dt)
+                        Real               a_dt,
+                        Real               a_dx)
 {
-  Real mono = (a_slopeLo(a_dir) * a_slopeHi(a_dir));
-  Real vanLeer = 0;
 
 //begin debug
 #if DIM==2
-  int ideb = 0;
   Point debpt (17, 18);
+  int ideb = 0;
   if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
   {
     ideb = 1;
   }
 #endif  
 //end   debug
-    if(mono >= 0)
-    {
-      Real cent = 0.5*(a_slopeLo(0) + a_slopeHi(0));
-      vanLeer = minVal(absVal(cent)   , absVal(2.*a_slopeHi(a_dir)));
-      vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLo(a_dir)));
-      vanLeer = cpySign(vanLeer, cent);
-    }
-  //standard BCG Godunov dance to extrapolate in space and time
-  a_scal_iph_nph(0) = a_scal_ijk_n(0) + 0.5*vanLeer*( 1.0 + a_dt*a_ccVel(a_dir));
-  a_scal_imh_nph(0) = a_scal_ijk_n(0) + 0.5*vanLeer*(-1.0 + a_dt*a_ccVel(a_dir));
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    if(idir != a_dir)
-    {
-      Real upwind = a_slopeLo(idir);
-      if(a_ccVel(idir) < 0)
-      {
-        upwind = a_slopeHi(idir);
-      }
-      a_scal_imh_nph(0) = a_scal_imh_nph(0) + 0.5*a_dt*upwind;
-      a_scal_iph_nph(0) = a_scal_iph_nph(0) + 0.5*a_dt*upwind;
-    }
-  }
+  ExtrapolateScal(a_scal_imh_nph,
+                  a_scal_iph_nph,
+                  a_scal_ijk_n,
+                  a_slopeLo,
+                  a_slopeHi,
+                  a_ccVel,
+                  a_dir,
+                  a_dt,
+                  a_dx);
 }
 PROTO_KERNEL_END(ExtrapolateScalPtF, ExtrapolateScalPt)
 #include "Chombo_NamespaceFooter.H"
