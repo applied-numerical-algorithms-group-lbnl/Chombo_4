@@ -1,3 +1,4 @@
+
 PROTO_HOME =$(HOME)/_proto/proto
 
 export OMPI_CXX=nvcc

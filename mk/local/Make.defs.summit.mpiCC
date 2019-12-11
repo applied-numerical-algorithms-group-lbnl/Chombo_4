@@ -1,4 +1,4 @@
-#begin mach dependent
+
 PROTO_HOME =$(SCRATCH)/_proto/proto
 
 export OMPI_CXX=nvcc

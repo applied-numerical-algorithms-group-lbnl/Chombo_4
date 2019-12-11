@@ -1,6 +1,10 @@
 
 PROTO_HOME =$(HOME)/proto
 
+export OMPI_CXX=nvcc
+
+LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
+
 HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
 HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
 #end mach dependent
