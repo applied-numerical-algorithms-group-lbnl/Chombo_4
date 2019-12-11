@@ -45,6 +45,7 @@ for t in targets:
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
 
+    f.write('\nCPPFLAGS = -std=c++11')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
@@ -75,6 +76,7 @@ for t in targets:
    
 
     if args.cuda == 'TRUE':
+        f.write('\nCXX = nvcc \n DEP=nvcc')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')
         if args.opt == 'DEBUG':
             f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG')

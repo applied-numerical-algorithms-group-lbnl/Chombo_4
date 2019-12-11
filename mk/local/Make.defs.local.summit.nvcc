@@ -1,11 +1,6 @@
-
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=nvcc
-CXX=nvcc
 
-CXXALLFLAGS := -std=c++11 -x cu --expt-extended-lambda
-CXXDBGFLAGS:= -g -G -DTHRUST_DEBUG $(CXXALLFLAGS)
-CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
+LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
 
 HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
 HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
