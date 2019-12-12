@@ -180,16 +180,17 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     unsigned long long int numflopspt = 19 + 4*DIM;
 
 #if 1
-//debug call point function
-    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, grown,  
-                      scal_imh_nph, scal_iph_nph, a_scal, 
-                      slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
-//end debug    
+  //begin debug  call point version
+    ebforallInPlace_i(numflopspt, "ExtrapolateScal", ExtrapolateScalPt, grown,  
+                    scal_imh_nph, scal_iph_nph, a_scal, 
+                    slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
+  //end debug;
 #else
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
 #endif
+
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
     //once we do that, we can solve the Rieman problem for the upwind state
@@ -202,11 +203,28 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   //this solves the Riemann problem and sets flux = facevel*(upwind scal)
   unsigned long long int numflopspt = 2;
-
+#if 0
+  //begin debug  call point version
+  ebforallInPlace_i(numflopspt, "GetUpwindFlux", GetUpwindFluxPt, a_fcflux.m_xflux->box(),
+                  *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
+  //end   debug 
+  
+#else
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_xflux->box(),
                   *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
+#endif
+
+#if 1
+  //begin debug  call point version
+  ebforallInPlace_i(numflopspt, "GetUpwindFlux", GetUpwindFluxPt, a_fcflux.m_yflux->box(),
+                  *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
+  //end   debug 
+  
+#else
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_yflux->box(),
                   *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
+#endif
+
 #if DIM==3
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_zflux->box(),
                   *a_fcflux.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux, *a_fcvel.m_zflux);
@@ -270,7 +288,7 @@ nonConsDiv()
   {
     auto& ncdiv  = m_nonConsDiv[dit[ibox]];
     auto& kapdiv =   m_kappaDiv[dit[ibox]];
-    auto& kappa =   m_kappa[dit[ibox]];
+    //auto& kappa =       m_kappa[dit[ibox]];
     const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = true;
     stencil->apply(ncdiv, kapdiv, initToZero, 1.0);

@@ -116,17 +116,44 @@ void GetUpwindFluxF(Var<Real, 1>    a_flux,
                     Var<Real, 1>    a_faceVel)
 {
   Real upwindScal;
-  if(a_faceVel(0) > 0.)
+  Real advVel  = a_faceVel(0);
+  Real scaLo = a_scalLo(0);
+  Real scaHi = a_scalHi(0);
+  if(advVel > 0.)
   {
-    upwindScal = a_scalLo(0);
+    upwindScal = scaLo;
   }
   else
   {
-    upwindScal = a_scalHi(0);
+    upwindScal = scaHi;
   }
-  a_flux(0) = upwindScal*(a_faceVel(0));
+  a_flux(0) = upwindScal*advVel;
 }
 PROTO_KERNEL_END(GetUpwindFluxF, GetUpwindFlux)
+//// pick scalup = upwind scalar and define flux = scalup*faceVel
+PROTO_KERNEL_START 
+void GetUpwindFluxPtF(int             a_pt[DIM],
+                      Var<Real, 1>    a_flux,
+                      Var<Real, 1>    a_scalLo,
+                      Var<Real, 1>    a_scalHi,
+                      Var<Real, 1>    a_faceVel)
+{
+//begin debug
+#if DIM==2
+  Point debpt (17, 19);
+  int ideb = 0;
+  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
+  {
+    ideb = 1;
+  }
+#endif  
+//end   debug
+  GetUpwindFlux(a_flux,
+                a_scalLo,
+                a_scalHi,
+                a_faceVel);
+}
+PROTO_KERNEL_END(GetUpwindFluxPtF, GetUpwindFluxPt)
 ////
 PROTO_KERNEL_START 
 void AdvanceScalarF(Var<Real, 1>    a_scal,
@@ -178,8 +205,9 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
       {
         upwind = a_slopeHi(idir);
       }
-      a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind;
-      a_scal_iph_nph(0) = a_scal_iph_nph(0) - 0.5*dtbydx*upwind;
+      Real tanvel = a_ccVel(idir);
+      a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind*tanvel;
+      a_scal_iph_nph(0) = a_scal_iph_nph(0) - 0.5*dtbydx*upwind*tanvel;
     }
   }
 }
