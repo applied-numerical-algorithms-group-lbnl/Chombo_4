@@ -331,6 +331,7 @@ EBAdvection::
 advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
+  a_phi.exchange(m_exchangeCopier);
   //compute kappa div^c F
   kappaConsDiv(a_phi, a_dt);
 
@@ -380,6 +381,7 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     unsigned long long int numflopspt = 2;
     ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
       scalar, diverg, a_dt);
+
     ideb++;
   }
     

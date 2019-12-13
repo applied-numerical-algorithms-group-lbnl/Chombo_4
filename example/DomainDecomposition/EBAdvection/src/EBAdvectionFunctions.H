@@ -59,18 +59,18 @@ Real cpySign(Real vala, Real signval)
 PROTO_KERNEL_START 
 void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                        Var<Real, 1>    a_kappaDiv,
-                       Var<Real, 1>    a_nonConsDivF,
+                       Var<Real, 1>    a_nonConsDiv,
                        Var<Real, 1>    a_deltaM,
                        Var<Real, 1>    a_kappa)
 {
-  a_hybridDiv(0) = a_kappaDiv(0) +(1. - a_kappa(0))*a_nonConsDivF(0);
-  a_deltaM(0)    =
-    a_kappaDiv(0)*   (1. - a_kappa(0)) +
-    a_nonConsDivF(0)*(1. - a_kappa(0))*a_kappa(0);
-//debug
-//  a_hybridDiv(0) = a_kappaDiv(0)/a_kappa(0);
-//  a_deltaM(0)    = 0;
-//end debug
+  Real kapdiv = a_kappaDiv(0);
+  Real  ncdiv = a_nonConsDiv(0);
+  Real kappa  = a_kappa(0);
+  Real hybdiv = kapdiv +(1. - kappa)*ncdiv;
+  Real deltam = (1. - kappa)*kapdiv  - kappa*(1. - kappa)*ncdiv;
+
+  a_hybridDiv(0) = hybdiv;
+  a_deltaM(0) = deltam;
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 
@@ -82,29 +82,25 @@ void HybridDivergencePtF(int a_pt[DIM],
                          Var<Real, 1>    a_kappaDiv,
                          Var<Real, 1>    a_nonConsDiv,
                          Var<Real, 1>    a_deltaM,
-                         Var<Real, 1>    a_kappa)
+                         Var<Real, 1>    a_kappa)     
 {
-  Real kapdiv = a_kappaDiv(0);
-  Real  ncdiv = a_nonConsDiv(0);
-  Real kappa  = a_kappa(0);
-  a_hybridDiv(0) = kapdiv +(1. - kappa)*ncdiv;
 
-  Real hybdiv = kapdiv +(1. - kappa)*ncdiv;
-  a_hybridDiv(0) = hybdiv;
-
-  Real deltam = (1. - kappa)*kapdiv  - kappa*(1. - kappa)*ncdiv;
-  
-  a_deltaM(0) = deltam;
-
+//begin debug
+#if DIM==2
+  Point debpt (17, 19);
   int ideb = 0;
-  if((a_pt[0] == 16) && (a_pt[1] == 7))
+  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
   {
     ideb = 1;
   }
-//debug
-//  a_hybridDiv(0) = kappaConsDiv;
-//  a_deltaM(0)    = 0;
-//end debug
+#endif  
+//end   debug
+  HybridDivergence(a_hybridDiv, 
+                   a_kappaDiv,  
+                   a_nonConsDiv,
+                   a_deltaM,    
+                   a_kappa);     
+
 }
 PROTO_KERNEL_END(HybridDivergencePtF, HybridDivergencePt)
 
