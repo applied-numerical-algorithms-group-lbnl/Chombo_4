@@ -4,6 +4,20 @@
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 
+void
+dumpPS(PointSet* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    PointSet irregset = *dataPtr;
+    for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
+    {
+      cout << ivsit() << " ";
+    }
+    cout << endl;
+  }
+}
+
 #if DIM==2
 Point lodeb(15, 15);
 Point hideb(21, 21);

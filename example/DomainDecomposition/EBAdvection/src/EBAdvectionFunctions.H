@@ -173,10 +173,13 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
 {
   //van leer slopes
   Real vanLeer = 0;
-  Real mono   = (a_slopeLo(a_dir) * a_slopeHi(a_dir));
+  Real sloplo = a_slopeLo(a_dir);
+  Real slophi = a_slopeHi(a_dir);
+  Real cent = 0.5*(sloplo + slophi);
+
+  Real mono   = sloplo*slophi;
   if(mono >= 0)
   {
-    Real cent = 0.5*(a_slopeLo(0) + a_slopeHi(0));
     vanLeer = minVal(absVal(cent)   , absVal(2.*a_slopeHi(a_dir)));
     vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLo(a_dir)));
     vanLeer = cpySign(vanLeer, cent);
@@ -227,7 +230,7 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
 #if DIM==2
   Point debpt (17, 18);
   int ideb = 0;
-  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
+  if((a_dir==1) && (a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
   {
     ideb = 1;
   }

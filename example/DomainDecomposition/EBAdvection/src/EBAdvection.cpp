@@ -165,8 +165,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     ideb++;
   }
 //debug
-//  slopeLo.setVal(0.);
-//  slopeHi.setVal(0.);
+  slopeLo.setVal(0.);
+  slopeHi.setVal(0.);
 //end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
@@ -194,7 +194,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
     //once we do that, we can solve the Rieman problem for the upwind state
-    //i + 1/2 becomes the high low  of the face
+    //i + 1/2 becomes the low  side of the face
     //i - 1/2 becomes the high side of the face
     m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
@@ -203,7 +203,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   //this solves the Riemann problem and sets flux = facevel*(upwind scal)
   unsigned long long int numflopspt = 2;
-#if 0
+#if 1
   //begin debug  call point version
   ebforallInPlace_i(numflopspt, "GetUpwindFlux", GetUpwindFluxPt, a_fcflux.m_xflux->box(),
                   *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
