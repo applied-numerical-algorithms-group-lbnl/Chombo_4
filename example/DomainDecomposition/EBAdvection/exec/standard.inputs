@@ -1,9 +1,9 @@
 #domain size
 nx=       128
 #max number of time steps
-max_step =    100
+max_step =    1000
 #maximum time
-max_time =    1.0
+max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
@@ -16,7 +16,7 @@ blob_cen = 0.3
 # radius of the sphere
 geom_rad = 0.455
 # radius of the blob
-blob_rad = 0.15
+blob_rad = 0.2
 
 #mag of biggest velo
 max_vel_mag = 1.0
@@ -24,7 +24,7 @@ max_vel_mag = 1.0
 max_vel_rad = 0.25
 
 #negative to turn off output
-output_interval = 1
+output_interval = 10
 
 #value in hdf5 file of  covered data
 covered_value = -0.125
