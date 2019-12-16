@@ -45,7 +45,7 @@ for t in targets:
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
 
-    f.write('\nCPPFLAGS = -std=c++11')
+    f.write('\nCPPFLAGS = -std=c++11\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
