@@ -10,9 +10,16 @@ dumpPS(PointSet* dataPtr)
   if(dataPtr != NULL)
   {
     PointSet irregset = *dataPtr;
+    int irow = 0;
     for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
     {
       cout << ivsit() << " ";
+      irow++;
+      if(irow > 10) 
+      {
+        cout << endl;
+        irow = 0;
+      }
     }
     cout << endl;
   }
