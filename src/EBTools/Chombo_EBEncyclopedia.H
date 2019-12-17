@@ -181,7 +181,7 @@ public:
                                    a_dstDomain,                
                                    needDiagonalWeights);
 #if DIM==3      
-    m_zFaceToCell>registerStencil(a_stencilName,              
+    m_zFaceToCell->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
