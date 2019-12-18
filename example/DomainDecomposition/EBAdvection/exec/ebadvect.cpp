@@ -275,13 +275,6 @@ void defineGeometry(DisjointBoxLayout& a_grids,
 int
 runAdvection(int a_argc, char* a_argv[])
 {
-#if DIM==2
-  dumpBlob(NULL);
-  dumpEB1(NULL);
-  dumpEBDIM(NULL);
-  dumpXFace(NULL);
-  dumpYFace(NULL);
-#endif
 
   Real coveredval = -1;
   Real cfl    = 0.5;
