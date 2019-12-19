@@ -82,6 +82,12 @@ namespace StencilNames
    */
   static const string CellToFaceHi("Cell_To_Face_High"); 
 
+  ///2nd order face gradient of cell based data
+  /**
+     This is the mac gradient
+   */
+  static const string MACGradient("MAC_Gradient"); 
+
 }
 
 ///
