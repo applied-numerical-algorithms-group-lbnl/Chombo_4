@@ -14,15 +14,15 @@ EBDictionary<order, data_t, srcCenter, dstCenter>::
 EBDictionary(const shared_ptr<GeometryService<order> >    & a_geoserv,
              const DisjointBoxLayout                      & a_grids,
              const Box                                   & a_domain,
-             data_t a_dx, Point  a_srcGhost,  Point  a_dstGhost)
+             data_t a_dx, Point  a_ghost)
 {
   m_geoserv  = a_geoserv;
   m_grids .resize(1, a_grids );
   m_domain.resize(1, a_domain);
   m_dx    .resize(1, a_dx    );
   
-  m_srcGhost = a_srcGhost;
-  m_dstGhost = a_dstGhost;
+  m_srcGhost = a_ghost;
+  m_dstGhost = a_ghost;
   m_isClosed = false;
 
   DataIterator dit = m_grids[0].dataIterator();
@@ -37,15 +37,15 @@ EBDictionary(const shared_ptr<GeometryService<order> >   & a_geoserv,
              const vector<DisjointBoxLayout>             & a_grids,       
              const vector<Box>                           & a_domain,      
              const vector<data_t>                        & a_dx,          
-             Point  a_srcGhost,  Point  a_dstGhost)                        
+             Point  a_ghost)
 {
   m_geoserv  =  a_geoserv;
   m_grids    =  a_grids  ;
   m_domain   =  a_domain ;
   m_dx       =  a_dx     ;
   
-  m_srcGhost = a_srcGhost;
-  m_dstGhost = a_dstGhost;
+  m_srcGhost = a_ghost;
+  m_dstGhost = a_ghost;
   m_isClosed = false;
 
   m_registeredStencils.resize(m_grids.size());

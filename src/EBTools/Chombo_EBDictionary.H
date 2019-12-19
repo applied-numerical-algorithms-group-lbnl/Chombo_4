@@ -42,7 +42,7 @@ public:
   EBDictionary(const shared_ptr<GeometryService<order> >  & a_geoserv,
                const DisjointBoxLayout                    & a_grids,
                const Box                                  & a_domain,
-               data_t a_dxPoint,   Point a_srcGhost,  Point  a_dstGhost);
+               data_t a_dxPoint,   Point a_ghost);
 
 
   ///maybe we need an amr structure.
@@ -50,7 +50,7 @@ public:
                const vector<DisjointBoxLayout>             & a_grids,
                const vector<Box>                           & a_domain,
                const vector<data_t>                        & a_dx,
-               Point  a_srcGhost,  Point  a_dstGhost);                      
+               Point  a_ghost);
   
 
   int getIndex(const Box& a_dstDomain)

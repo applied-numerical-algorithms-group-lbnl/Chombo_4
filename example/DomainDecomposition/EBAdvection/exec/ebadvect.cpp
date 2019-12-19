@@ -329,7 +329,7 @@ runAdvection(int a_argc, char* a_argv[])
   pout() << "making dictionary" << endl;
   Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt, dataGhostPt));
+    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;

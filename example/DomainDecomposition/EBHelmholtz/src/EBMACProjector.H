@@ -23,37 +23,23 @@ public:
                  const DisjointBoxLayout                & a_grids,
                  const Box                              & a_domain,
                  const Real                             & a_dx,
-                 const IntVect                          & a_nghost)
-  {
-    m_dx         = a_dx;
-    m_grids      = a_grids;
-    m_domain     = a_domain;
-    m_nghost     = a_nghost;
-    m_grids      = a_grids;      
-    m_domain     = a_domain;     
-    m_brit       = a_brit;
-
-    defineInternals();
-  }
-
+                 const IntVect                          & a_nghost);
 
   /// advance one time step (via Trebotich et al.) in  an eb context
   void 
   project(EBLevelFluxData<1>   & a_velo,
-          EBLevelFluxData<1>   & a_gphi)
-  {
-  }
+          EBLevelFluxData<1>   & a_gphi);
 
+
+  ///
   void 
   divergence(EBLevelBoxData<CELL, 1> & a_divu,
-             EBLevelFluxData<1>      & a_velo)
-  {
-  }
+             EBLevelFluxData<1>      & a_velo);
 
-  EBLevelBoxData<CELL, 1>& getRHSHolder()
-  {
-    return m_rhs;
-  }
+  
+  ///
+  EBLevelBoxData<CELL, 1>& getRHSHolder();
+
 protected:
   
   void defineInternals()

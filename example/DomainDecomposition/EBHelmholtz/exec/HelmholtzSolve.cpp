@@ -279,7 +279,7 @@ runTest(int a_argc, char* a_argv[])
     vecdx    [ilev] =           2*vecdx[ilev-1];
   }
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt, dataGhostPt));
+    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
   
 //  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
