@@ -25,12 +25,10 @@ public:
                  const Real                             & a_dx,
                  const IntVect                          & a_nghost)
   {
-    m_dx     = a_dx;
-    m_grids  = a_grids;
-    m_domain = a_domain;
-    m_nghostSrc  = a_nghostsrc;
-    m_nghostDst  = a_nghostdst;
-    m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+    m_dx         = a_dx;
+    m_grids      = a_grids;
+    m_domain     = a_domain;
+    m_nghost     = a_nghost;
     m_grids      = a_grids;      
     m_domain     = a_domain;     
     m_brit       = a_brit;
@@ -47,15 +45,20 @@ public:
   }
 
   void 
-  divergence(EBLevelBoxData<CELL, 1> & a_divu
+  divergence(EBLevelBoxData<CELL, 1> & a_divu,
              EBLevelFluxData<1>      & a_velo)
   {
   }
 
+  EBLevelBoxData<CELL, 1>& getRHSHolder()
+  {
+    return m_rhs;
+  }
 protected:
   
   void defineInternals()
   {
+    m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   }
 
   //rule britannica
@@ -68,6 +71,7 @@ protected:
   //internals
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
+  EBLevelBoxData<CELL, 1>                m_rhs;
 
 private:
 
