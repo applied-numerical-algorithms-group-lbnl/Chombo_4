@@ -1,18 +1,18 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
 #include "Chombo_NamespaceHeader.H"
-const string EBAdvection::s_ncdivLabel          = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
-const string EBAdvection::s_aveCToFLabel        = string("AverageCellToFace"); //this is to get the velocity to faces
-const string EBAdvection::s_nobcsLabel          = string("no_bcs"); //none of the operators here have eb boundary conditions
-const string EBAdvection::s_redistLabel         = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
-const string EBAdvection::s_centInterpLabel     = string("InterpolateToFaceCentroid"); //for interpolating from face centers to face centroids
-const string EBAdvection::s_slopeLowLabel       = string("Slope_Low_");   //for low  side difference
-const string EBAdvection::s_slopeHighLabel      = string("Slope_High_");  //for high side difference
-const string EBAdvection::s_diriLabel           = string("Dirichlet");    //for diri bcs
-const string EBAdvection::s_neumLabel           = string("Neumann");      //for neum bcs
-const string EBAdvection::s_divergeLabel        = string("Divergence");   //for taking the divergence of face centered stuff to cell centered result
-const string EBAdvection::s_CtoFLowLabel        = string("Cell_To_Face_Low");  //for getting stuff from low  side cells to faces
-const string EBAdvection::s_CtoFHighLabel       = string("Cell_To_Face_High"); //for getting stuff from high side cells to faces
+const string EBAdvection::s_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the non-conservative div (radius 1)
+const string EBAdvection::s_redistLabel    = StencilNames::SmushRoot     + string("1"); //for redistribution radius 1
+const string EBAdvection::s_aveCToFLabel   = StencilNames::AveCellToFace;               //this is to get the velocity to faces
+const string EBAdvection::s_nobcsLabel     = StencilNames::NoBC;                        //none of the operators here have eb boundary conditions
+const string EBAdvection::s_centInterpLabel= StencilNames::InterpToFaceCentroid;        //for interpolating from face centers to face centroids
+const string EBAdvection::s_slopeLowLabel  = StencilNames::SlopeLoRoot;                 //for low  side difference
+const string EBAdvection::s_slopeHighLabel = StencilNames::SlopeHiRoot;                 //for high side difference
+const string EBAdvection::s_diriLabel      = StencilNames::Dirichlet;                   //for diri bcs
+const string EBAdvection::s_neumLabel      = StencilNames::Neumann;                     //for neum bcs
+const string EBAdvection::s_divergeLabel   = StencilNames::DivergeFtoC;                 //for taking the divergence of face centered stuff to cell centered result
+const string EBAdvection::s_CtoFLowLabel   = StencilNames::CellToFaceLo;                //for getting stuff from low  side cells to faces
+const string EBAdvection::s_CtoFHighLabel  = StencilNames::CellToFaceHi;                //for getting stuff from high side cells to faces
 using Proto::Var;
 ////
 EBAdvection::

@@ -167,8 +167,8 @@ void computeDt(Real                        &  a_dt,
   }
   if(maxvel > 1.0e-16)
   {
-    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
     a_dt = a_cfl*a_dx/maxvel;
+    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
   }    
   else
   {

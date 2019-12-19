@@ -11,6 +11,79 @@
 #include "Chombo_NamespaceHeader.H"
 
 
+///names that Proto::EBStencilArchive will recognize
+namespace StencilNames
+{
+  ///second order Poisson stencil a la Schwartz, et al.
+  static const string Poisson2("Second_Order_Poisson");
+
+  ///Signals Dirichlet BCs
+  static const string Dirichlet("Dirichlet");
+
+  ///Signals Neumann  BCs
+  static const string  Neumann("Dirichlet");
+  
+  ///placeholder for when there are no bcs for an operator
+  static const string     NoBC("no_bcs");
+
+  ///root for the string used for the volume weighted avergaging operator 
+  /**
+     Used in Trebotich and Graves
+     This is for the non-conservative divergence.
+     Add the radius to get the stencil for ncdiv = sum_rad (kappa div)/sum_rad(kappa)
+  */
+  static const string NCDivergeRoot("Volume_Weighted_Averaging_rad_"); 
+  
+  /// for simple average from faces to cells
+  /**
+    This is to get the velocity to faces in projection.
+  */
+  static const string AveCellToFace("AverageCellToFace"); 
+
+  ///for volume-weighted redistribution
+  /**
+     add a radius to get the stencil for volume-weighted redistribution (originally Chern and Colella but everywhere).
+   */
+  static const string SmushRoot("Volume_Weighted_Redistribution_rad_"); 
+
+  ///for interpolating from face centers to face centroids
+  static const string InterpToFaceCentroid("InterpolateToFaceCentroid"); 
+
+  ///for (cell centered) one-sided differences on the low side
+  /**
+     For (cell centered) one-sided differences on the low side.  Append the string for 
+     the direction (0, 1, or 2) to complete it
+  */
+  static const string SlopeLoRoot("Slope_Low_");   
+
+  ///for (cell centered) one-sided differences on the high side
+  /**
+     For (cell centered) one-sided differences on the high side.  Append the string for 
+     the direction (0, 1, or 2) to complete it
+  */
+  static const string SlopeHiRoot("Slope_High_");   
+
+  ///for taking the divergence of face centered stuff to cell centered result
+  static const string DivergeFtoC("Divergence");   
+  
+  ///for getting stuff from low  side cells to faces
+  /**
+     For getting stuff from low  side cells to faces.  Commonly used in Godunov-style 
+     extrapolation to get the extrapolated states to face holders so the Riemann problem
+     can be solved.
+   */
+  static const string CellToFaceLo("Cell_To_Face_Low"); 
+
+  ///for getting stuff from high side cells to faces
+  /**
+     For getting stuff from high side cells to faces.  Commonly used in Godunov-style 
+     extrapolation to get the extrapolated states to face holders so the Riemann problem
+     can be solved.
+   */
+  static const string CellToFaceHi("Cell_To_Face_High"); 
+
+}
+
 ///
 /**
    makes geometric description from an implicit function.
