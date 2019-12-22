@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/example/..
 DIM := 2
 
 SRC := $(wildcard *.cpp) 
@@ -25,8 +25,7 @@ LIBS =
 
 
 CPPFLAGS = -std=c++11
-VARS_OLD := $(.VARIABLES)
-PROTO_HOME = $(HOME)/_proto/proto
+
 PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=g++
 CXX=g++
@@ -36,14 +35,9 @@ CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-#LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
-HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
-EFENCEFLAGS = -L/usr/lib -lefence
-
-PETSC_DIR   = /usr/local/anag/pkg/petsc-3.11.3
-SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
-
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
+HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
 #end mach dependent
 
 
@@ -58,7 +52,7 @@ LIBS     += $(HDFLIBFLAGS)
  
 CXXFLAGS += -DCH_USE_DOUBLE
 
-CXXFLAGS+=$(CXXDBGFLAGS) 
+CXXFLAGS+=$(CXXOPTFLAGS) 
 
 CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
