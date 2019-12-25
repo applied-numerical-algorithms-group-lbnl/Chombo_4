@@ -76,10 +76,21 @@ project(EBLevelFluxData<1>   & a_velo,
   //gphi = grad(phi)
   //v := v - gphi
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
+    
+    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    //get face fluxes and interpolate them to centroids
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initToZero = true;
+      m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::Neumann, m_domain,
+                              a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
+    }
+    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
+    ideb++;
   }
-
 }
 ///
 void 
@@ -87,6 +98,33 @@ EBMACProjector::
 divergence(EBLevelBoxData<CELL, 1> & a_divu,
            EBLevelFluxData<1>      & a_velo)
 {
+
+  DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+
+    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+
+    //get face fluxes and interpolate them to centroids
+    EBFluxData<Real, 1>  centroidFlux(grid, graph);
+    EBFluxStencil<2, Real> stencils =
+      m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
+    EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
+    stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+
+
+    auto& kapdiv =  m_rhs[dit[ibox]];
+    kapdiv.setVal(0.);
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initToZero = false;
+      m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
+                              idir, ibox, initToZero, 1.0);
+    }
+    ideb++;
+  }
 }
 ///
 EBLevelBoxData<CELL, 1>& 

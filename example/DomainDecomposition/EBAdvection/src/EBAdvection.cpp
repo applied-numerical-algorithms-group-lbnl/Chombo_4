@@ -231,7 +231,6 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
 
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     kapdiv.setVal(0.);
-//    for(unsigned int idir = DIM-1; idir >= 0; idir--)
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initToZero = false;
