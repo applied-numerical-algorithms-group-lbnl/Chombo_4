@@ -106,9 +106,10 @@ divergence(EBLevelBoxData<CELL, 1> & a_divu,
 
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+    Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
 
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1>  centroidFlux(grid, graph);
+    EBFluxData<Real, 1>  centroidFlux(grown, graph);
     EBFluxStencil<2, Real> stencils =
       m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
@@ -125,6 +126,8 @@ divergence(EBLevelBoxData<CELL, 1> & a_divu,
     }
     ideb++;
   }
+
+  writeEBLevelHDF5(string("divu.hdf5"), m_rhs, m_solver->getKappa(), m_domain, m_graphs);
 }
 ///
 EBLevelBoxData<CELL, 1>& 

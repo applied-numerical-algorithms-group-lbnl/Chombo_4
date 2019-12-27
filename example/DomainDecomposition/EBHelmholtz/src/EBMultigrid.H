@@ -78,6 +78,10 @@ public:
 
   std::shared_ptr<EBMultigridLevel> m_coarser;
 
+  EBLevelBoxData<CELL, 1> & getKappa()
+  {
+    return m_kappa;
+  }
   
 private:
 
@@ -169,6 +173,10 @@ public:
         const Real                    & a_tolerance,
         const unsigned int            & a_maxIterations);
 
+  EBLevelBoxData<CELL, 1> & getKappa()
+  {
+    return m_finest->getKappa();
+  }
 private:
 
   /// 

@@ -206,7 +206,7 @@ runProjection(int a_argc, char* a_argv[])
   Proto::DisjointBoxLayout::setNumStreams(nStream);
 #endif
 
-  Real dx;
+  Real dx = 1.0/nx;
   Vector<DisjointBoxLayout> vecgrids;
 
   pout() << "making grids" << endl;

@@ -97,7 +97,8 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, a_lph[dit[ibox]], a_phi[dit[ibox]], m_kappa[dit[ibox]], m_alpha, m_beta);
+    auto& kapfab = m_kappa[dit[ibox]];
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
   }
 }
 /****/

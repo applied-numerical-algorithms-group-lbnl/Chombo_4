@@ -87,7 +87,7 @@ public:
                                    a_srcDomain,                
                                    a_dstDomain,                
                                    needDiagonalWeights, 
-                                   a_dstGrown);
+                                   a_ pdstGrown);
 #endif      
   }
 
