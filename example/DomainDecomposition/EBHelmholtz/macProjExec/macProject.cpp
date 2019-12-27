@@ -77,33 +77,6 @@ void initializeData(EBLevelFluxData<1>          &  a_velo,
   }
       
 }
-//=================================================
-
-void makeGrids(DisjointBoxLayout& a_grids,
-               Real             & a_dx,
-               const int        & a_nx,
-               const int        & a_maxGrid)
-{
-  pout() << "making grids" << endl;
-
-  IntVect domLo = IntVect::Zero;
-  IntVect domHi  = (a_nx - 1)*IntVect::Unit;
-
-  // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
-
-  Vector<Box> boxes;
-  unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, a_maxGrid, blockfactor);
-  
-  Vector<int> procs;
-
-  a_dx = 1.0/a_nx;
-  LoadBalance(procs, boxes);
-  a_grids = DisjointBoxLayout(boxes, procs, domain);
-  a_grids.printBalance();
-
-}
 
 ///
 shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
@@ -164,7 +137,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(DisjointBoxLayout& a_grids,
+void defineGeometry(Vector<DisjointBoxLayout>& a_grids,
+                    const Box        & a_finestDomain,
                     Real             & a_dx,
                     Real             & a_geomCen,
                     Real             & a_geomRad,
@@ -177,20 +151,13 @@ void defineGeometry(DisjointBoxLayout& a_grids,
   pout() << "defining geometry" << endl;
 
   ParmParse pp;
-  int maxGrid = 32;
     
-  pp.get("nx"        , a_nx);
-  pp.get("maxGrid", maxGrid);
   pp.get("blob_cen", a_blobCen);
   pp.get("blob_rad", a_blobRad);
 
-  pout() << "nx       = " << a_nx     << endl;
-  pout() << "maxGrid  = " << maxGrid  << endl;
   pout() << "blob_cen = " << a_blobCen       << endl;
   pout() << "blob_rad = " << a_blobRad       << endl;
 
-  makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Box domain = a_grids.physDomain().domainBox();
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
@@ -198,6 +165,7 @@ void defineGeometry(DisjointBoxLayout& a_grids,
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
   pout() << "creating geometry service" << endl;
+  Box domain = a_finestDomain;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
@@ -218,13 +186,18 @@ runProjection(int a_argc, char* a_argv[])
   Real max_vel_rad = 0.25;
   int nStream    = 8;
   ParmParse pp;
+  int maxGrid = 32;
+  pp.get("maxGrid", maxGrid); 
 
   pp.get("nstream", nStream);
 
     
   pp.get("max_vel_mag"  , max_vel_mag);
   pp.get("max_vel_rad"  , max_vel_rad);
+  pp.get("nx"           , nx);
 
+  pout() << "nx       = " << nx     << endl;
+  pout() << "maxGrid  = " << maxGrid  << endl;
   pout() << "max_vel_mag     = " << max_vel_mag     << endl;
   pout() << "max_vel_rad     = " << max_vel_rad     << endl;
   pout() << "num_streams     = " << nStream         << endl;
@@ -234,7 +207,15 @@ runProjection(int a_argc, char* a_argv[])
 #endif
 
   Real dx;
-  DisjointBoxLayout grids;
+  Vector<DisjointBoxLayout> vecgrids;
+
+  pout() << "making grids" << endl;
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+// EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
+  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -244,27 +225,37 @@ runProjection(int a_argc, char* a_argv[])
   Real blobCen;
   Real blobRad;
   int whichGeom;
-  defineGeometry(grids, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
+
+  Box domainb = domain.domainBox();
+  defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   pout() << "making dictionary" << endl;
-  Box domain = grids.physDomain().domainBox();
+  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Real>   vecdx    (vecgrids.size(), dx);
+  for(int ilev = 1; ilev < vecgrids.size(); ilev++)
+  {
+    vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
+    vecdx    [ilev] =           2*vecdx[ilev-1];
+  }
+
   shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
+    brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  DisjointBoxLayout& grids = vecgrids[0];
   EBLevelFluxData<1>  velo(grids, dataGhostIV, graphs);
   EBLevelFluxData<1>  gphi(grids, dataGhostIV, graphs);
 
   initializeData(velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
 
 
-  EBMACProjector proj(brit, geoserv, grids, domain, dx, dataGhostIV);
+  EBMACProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV);
   Real tol = 1.0e-8;
   unsigned int maxiter = 27;
   proj.project(velo, gphi, tol, maxiter);

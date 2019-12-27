@@ -21,7 +21,7 @@ public:
   /// 
   EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                  shared_ptr<GeometryService<2> >        & a_geoserv,
-                 const DisjointBoxLayout                & a_grids,
+                 const DisjointBoxLayout                & a_vecgrids,
                  const Box                              & a_domain,
                  const Real                             & a_dx,
                  const IntVect                          & a_nghost);

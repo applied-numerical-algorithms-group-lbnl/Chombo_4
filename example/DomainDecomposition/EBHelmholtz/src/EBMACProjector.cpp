@@ -85,7 +85,7 @@ project(EBLevelFluxData<1>   & a_velo,
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initToZero = true;
-      m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::Neumann, m_domain,
+      m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
                               a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
