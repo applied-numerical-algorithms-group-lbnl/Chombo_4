@@ -26,8 +26,8 @@ dumpPS(PointSet* dataPtr)
 }
 
 #if DIM==2
-Point lodeb(15, 15);
-Point hideb(21, 21);
+Point lodeb(10, 10);
+Point hideb(16, 16);
 void 
 dumpBlob(BoxData<Real, 1>* dataPtr)
 {
@@ -266,16 +266,15 @@ void InitializeVFaceF(int          a_p[DIM],
     rlocsq += xrel[idir]*xrel[idir];
   }
 
-  Real rloc = sqrt((Real) rlocsq);
-  Real velmag = 1;
+  Real velmag = sin(PI*(rlocsq -(a_geomRad*a_geomRad)));
   Real vel[DIM];
 #if DIM==2
-  vel[0] =  velmag*xrel[1]/rloc;
-  vel[1] = -velmag*xrel[0]/rloc;
+  vel[0] =  velmag*xrel[1];
+  vel[1] = -velmag*xrel[0];
 #else
-  vel[0] =  velmag*( xrel[1] + xrel[2])/rloc;
-  vel[1] =  velmag*(-xrel[0] - xrel[2])/rloc;
-  vel[2] = -velmag*( xrel[0] - xrel[1])/rloc;
+  vel[0] =  velmag*( xrel[1] + xrel[2]);
+  vel[1] =  velmag*(-xrel[0] - xrel[2]);
+  vel[2] = -velmag*( xrel[0] - xrel[1]);
 #endif
   a_vel(0) = vel[a_dir];
 }

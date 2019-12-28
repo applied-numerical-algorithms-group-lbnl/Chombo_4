@@ -19,7 +19,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
       const unsigned int            & a_maxIter)
 {
   EBLevelBoxData<CELL, 1>& res =  m_finest->m_resid;
-
+  a_phi.setVal(0.);
   residual(res, a_phi, a_rhs);
   Real initres = res.maxNorm(0);
   int iter = 0;
@@ -35,7 +35,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     
     pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm;
     Real rate = 1;
-    if(resnormold > 1.0e-12)
+    if((resnormold > 1.0e-12) && (iter > 0))
     {
       rate = resnormold/resnorm;
       pout() << ", rate = " << rate;
@@ -83,6 +83,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   phi.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
+  int ideb  = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& phifab = a_phi[dit[ibox]];
@@ -99,6 +100,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ideb++;
   }
 }
 /****/
@@ -279,6 +281,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   applyOp(a_res, a_phi);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
@@ -289,6 +292,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
+    ideb++;
   }
 }
 /****/

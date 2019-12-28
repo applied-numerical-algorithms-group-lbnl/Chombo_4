@@ -127,7 +127,12 @@ divergence(EBLevelBoxData<CELL, 1> & a_divu,
     ideb++;
   }
 
-  writeEBLevelHDF5(string("divu.hdf5"), m_rhs, m_solver->getKappa(), m_domain, m_graphs);
+  static bool printed = false;
+  if(!printed)
+  {
+    printed = true;
+    writeEBLevelHDF5(string("divu.hdf5"), m_rhs, m_solver->getKappa(), m_domain, m_graphs);
+  }
 }
 ///
 EBLevelBoxData<CELL, 1>& 

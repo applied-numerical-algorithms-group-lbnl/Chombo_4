@@ -1,9 +1,9 @@
 #domain size
-nx=       128
+nx=       64
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  128
+maxGrid=  64
 
 # center of the sphere
 geom_cen = 0.5

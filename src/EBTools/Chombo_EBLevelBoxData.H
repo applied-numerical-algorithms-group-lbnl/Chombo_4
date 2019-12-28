@@ -386,7 +386,8 @@ writeEBLevelHDF5(const string& a_filename,
         ebind.m_isBoundary = false;
         for(int icomp = 0; icomp < NUMCOMPS; icomp++)
         {
-          fabu(iv, icomp)  = data(ebind, icomp);
+          Real val = data(ebind, icomp);
+          fabu(iv, icomp)  = val;
         }
         fabu(iv, NUMCOMPS) = kapp(ebind, 0);
       }
