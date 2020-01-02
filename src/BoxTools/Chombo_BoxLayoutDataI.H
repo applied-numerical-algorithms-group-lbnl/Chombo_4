@@ -238,9 +238,18 @@ void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
     pout() << "makeit so copier = " << endl;
     a_copier.print();
   }
-  makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
-  makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
-  a_dest.makeItSoEnd(a_destComps, a_op);
+  {
+    CH_TIME("maKeItSoBegin");
+    makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+  }
+  {
+      CH_TIME("makeItSoLocalCopy");
+    makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+  }
+  {
+      CH_TIME("makeItSoEnd");
+    a_dest.makeItSoEnd(a_destComps, a_op);
+  }
 }
 
 template<class T>

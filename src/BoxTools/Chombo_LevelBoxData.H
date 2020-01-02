@@ -89,10 +89,23 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
+    CH_TIMERS("LevelBoxData::exchange");
+    CH_TIMER("FArrayBox",t0);
+    CH_TIMER("copyToHost",t1);
+    CH_TIMER("exchange",t2);
+    CH_TIMER("copyToDevice",t3);
+    CH_START(t0);
     LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+    CH_STOP(t0);
+    CH_START(t1);
     copyToHost(hostdata, *this);
-    hostdata.exchange();
+    CH_STOP(t1);
+    CH_START(t2);
+    hostdata.exchange(copier);
+    CH_STOP(t2);
+    CH_START(t3);
     copyToDevice(*this, hostdata);
+    CH_STOP(t3);
   }
     
 
