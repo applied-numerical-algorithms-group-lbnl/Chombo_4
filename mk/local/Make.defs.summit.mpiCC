@@ -1,5 +1,5 @@
 
-PROTO_HOME =$(SCRATCH)/_proto/proto
+PROTO_HOME =$(HOME)/proto
 
 export OMPI_CXX=nvcc
 

@@ -279,30 +279,30 @@ runTest(int a_argc, char* a_argv[])
     vecdx    [ilev] =           2*vecdx[ilev-1];
   }
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt, dataGhostPt));
+    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
   
 //  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  string stenname("Second_Order_Poisson");
+  string stenname = StencilNames::Poisson2;
   string dombcname, ebbcname;
   if(dombc == 0)
   {
-    dombcname = string("Neumann");
+    dombcname = StencilNames::Neumann;
     pout() << "using Neumann BCs at domain" << endl;
   }
   else
   {
-    dombcname = string("Dirichlet");
+    dombcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at domain" << endl;
   }
 
   if(ebbc == 0)
   {
-    ebbcname = string("Neumann");
+    ebbcname = StencilNames::Neumann;
     pout() << "using Neumann BCs at EB" << endl;
   }
   else
   {
-    ebbcname = string("Dirichlet");
+    dombcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at EB" << endl;
   }
 

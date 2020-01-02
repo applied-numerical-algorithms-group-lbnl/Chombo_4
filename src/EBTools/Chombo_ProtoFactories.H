@@ -77,8 +77,9 @@ public:
    */
   virtual DataHolder * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
+    bool usestack = false;
     Proto::Box bx = ProtoCh::getProtoBox(a_box);
-    return new DataHolder(bx, (*m_graphs)[a_datInd]);
+    return new DataHolder(bx, (*m_graphs)[a_datInd], usestack);
   }
 
   virtual bool callDelete() const

@@ -30,7 +30,7 @@ public:
   virtual BoxData<Real, NUMCOMPS>* create(const Box& box, int ncomps, const DataIndex& a_datInd) const
   {
     ::Proto::Box bx = ProtoCh::getProtoBox(box);
-    return new BoxData<Real, NUMCOMPS>(bx);
+    return new BoxData<Real, NUMCOMPS>(bx, false);
   }
 };
 

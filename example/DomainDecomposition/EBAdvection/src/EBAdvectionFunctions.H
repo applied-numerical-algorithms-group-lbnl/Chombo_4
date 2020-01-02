@@ -59,18 +59,18 @@ Real cpySign(Real vala, Real signval)
 PROTO_KERNEL_START 
 void HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                        Var<Real, 1>    a_kappaDiv,
-                       Var<Real, 1>    a_nonConsDivF,
+                       Var<Real, 1>    a_nonConsDiv,
                        Var<Real, 1>    a_deltaM,
                        Var<Real, 1>    a_kappa)
 {
-  a_hybridDiv(0) = a_kappaDiv(0) +(1. - a_kappa(0))*a_nonConsDivF(0);
-  a_deltaM(0)    =
-    a_kappaDiv(0)*   (1. - a_kappa(0)) +
-    a_nonConsDivF(0)*(1. - a_kappa(0))*a_kappa(0);
-//debug
-//  a_hybridDiv(0) = a_kappaDiv(0)/a_kappa(0);
-//  a_deltaM(0)    = 0;
-//end debug
+  Real kapdiv = a_kappaDiv(0);
+  Real  ncdiv = a_nonConsDiv(0);
+  Real kappa  = a_kappa(0);
+  Real hybdiv = kapdiv +(1. - kappa)*ncdiv;
+  Real deltam = (1. - kappa)*kapdiv  - kappa*(1. - kappa)*ncdiv;
+
+  a_hybridDiv(0) = hybdiv;
+  a_deltaM(0) = deltam;
 }
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 
@@ -82,29 +82,25 @@ void HybridDivergencePtF(int a_pt[DIM],
                          Var<Real, 1>    a_kappaDiv,
                          Var<Real, 1>    a_nonConsDiv,
                          Var<Real, 1>    a_deltaM,
-                         Var<Real, 1>    a_kappa)
+                         Var<Real, 1>    a_kappa)     
 {
-  Real kapdiv = a_kappaDiv(0);
-  Real  ncdiv = a_nonConsDiv(0);
-  Real kappa  = a_kappa(0);
-  a_hybridDiv(0) = kapdiv +(1. - kappa)*ncdiv;
 
-  Real hybdiv = kapdiv +(1. - kappa)*ncdiv;
-  a_hybridDiv(0) = hybdiv;
-
-  Real deltam = (1. - kappa)*kapdiv  - kappa*(1. - kappa)*ncdiv;
-  
-  a_deltaM(0) = deltam;
-
+//begin debug
+#if DIM==2
+  Point debpt (17, 19);
   int ideb = 0;
-  if((a_pt[0] == 16) && (a_pt[1] == 7))
+  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
   {
     ideb = 1;
   }
-//debug
-//  a_hybridDiv(0) = kappaConsDiv;
-//  a_deltaM(0)    = 0;
-//end debug
+#endif  
+//end   debug
+  HybridDivergence(a_hybridDiv, 
+                   a_kappaDiv,  
+                   a_nonConsDiv,
+                   a_deltaM,    
+                   a_kappa);     
+
 }
 PROTO_KERNEL_END(HybridDivergencePtF, HybridDivergencePt)
 
@@ -116,17 +112,44 @@ void GetUpwindFluxF(Var<Real, 1>    a_flux,
                     Var<Real, 1>    a_faceVel)
 {
   Real upwindScal;
-  if(a_faceVel(0) > 0.)
+  Real advVel  = a_faceVel(0);
+  Real scaLo = a_scalLo(0);
+  Real scaHi = a_scalHi(0);
+  if(advVel > 0.)
   {
-    upwindScal = a_scalLo(0);
+    upwindScal = scaLo;
   }
   else
   {
-    upwindScal = a_scalHi(0);
+    upwindScal = scaHi;
   }
-  a_flux(0) = upwindScal*(a_faceVel(0));
+  a_flux(0) = upwindScal*advVel;
 }
 PROTO_KERNEL_END(GetUpwindFluxF, GetUpwindFlux)
+//// pick scalup = upwind scalar and define flux = scalup*faceVel
+PROTO_KERNEL_START 
+void GetUpwindFluxPtF(int             a_pt[DIM],
+                      Var<Real, 1>    a_flux,
+                      Var<Real, 1>    a_scalLo,
+                      Var<Real, 1>    a_scalHi,
+                      Var<Real, 1>    a_faceVel)
+{
+//begin debug
+#if DIM==2
+  Point debpt (17, 19);
+  int ideb = 0;
+  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
+  {
+    ideb = 1;
+  }
+#endif  
+//end   debug
+  GetUpwindFlux(a_flux,
+                a_scalLo,
+                a_scalHi,
+                a_faceVel);
+}
+PROTO_KERNEL_END(GetUpwindFluxPtF, GetUpwindFluxPt)
 ////
 PROTO_KERNEL_START 
 void AdvanceScalarF(Var<Real, 1>    a_scal,
@@ -150,10 +173,13 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
 {
   //van leer slopes
   Real vanLeer = 0;
-  Real mono   = (a_slopeLo(a_dir) * a_slopeHi(a_dir));
+  Real sloplo = a_slopeLo(a_dir);
+  Real slophi = a_slopeHi(a_dir);
+  Real cent = 0.5*(sloplo + slophi);
+
+  Real mono   = sloplo*slophi;
   if(mono >= 0)
   {
-    Real cent = 0.5*(a_slopeLo(0) + a_slopeHi(0));
     vanLeer = minVal(absVal(cent)   , absVal(2.*a_slopeHi(a_dir)));
     vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLo(a_dir)));
     vanLeer = cpySign(vanLeer, cent);
@@ -178,8 +204,9 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
       {
         upwind = a_slopeHi(idir);
       }
-      a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind;
-      a_scal_iph_nph(0) = a_scal_iph_nph(0) - 0.5*dtbydx*upwind;
+      Real tanvel = a_ccVel(idir);
+      a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind*tanvel;
+      a_scal_iph_nph(0) = a_scal_iph_nph(0) - 0.5*dtbydx*upwind*tanvel;
     }
   }
 }
@@ -203,7 +230,7 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
 #if DIM==2
   Point debpt (17, 18);
   int ideb = 0;
-  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
+  if((a_dir==1) && (a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
   {
     ideb = 1;
   }

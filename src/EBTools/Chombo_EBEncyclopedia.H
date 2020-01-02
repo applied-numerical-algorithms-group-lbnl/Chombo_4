@@ -87,7 +87,7 @@ public:
                                    a_srcDomain,                
                                    a_dstDomain,                
                                    needDiagonalWeights, 
-                                   a_dstGrown);
+                                   a_ pdstGrown);
 #endif      
   }
 
@@ -181,7 +181,7 @@ public:
                                    a_dstDomain,                
                                    needDiagonalWeights);
 #if DIM==3      
-    m_zFaceToCell>registerStencil(a_stencilName,              
+    m_zFaceToCell->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
@@ -243,20 +243,20 @@ public:
   EBEncyclopedia(const shared_ptr<GeometryService<order> >     & a_geoserv,
                  const DisjointBoxLayout                       & a_grids,
                  const Box                                     & a_domain,
-                 data_t a_dx, Point  a_srcGhost,  Point  a_dstGhost )
+                 data_t a_dx, Point  a_ghost)
   {
-    m_cellToCell      = shared_ptr<EBDictionary<order, data_t, CELL,    CELL>     >(new EBDictionary<order, data_t, CELL,    CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToBoundary  = shared_ptr<EBDictionary<order, data_t, CELL,    BOUNDARY> >(new EBDictionary<order, data_t, CELL,    BOUNDARY> (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_xFaceToCell     = shared_ptr<EBDictionary<order, data_t, XFACE,   CELL>     >(new EBDictionary<order, data_t, XFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_yFaceToCell     = shared_ptr<EBDictionary<order, data_t, YFACE,   CELL>     >(new EBDictionary<order, data_t, YFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_zFaceToCell     = shared_ptr<EBDictionary<order, data_t, ZFACE,   CELL>     >(new EBDictionary<order, data_t, ZFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_boundaryToCell  = shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL>     >(new EBDictionary<order, data_t, BOUNDARY,CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
+    m_cellToCell      = shared_ptr<EBDictionary<order, data_t, CELL,    CELL>     >(new EBDictionary<order, data_t, CELL,    CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToBoundary  = shared_ptr<EBDictionary<order, data_t, CELL,    BOUNDARY> >(new EBDictionary<order, data_t, CELL,    BOUNDARY> (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToCell     = shared_ptr<EBDictionary<order, data_t, XFACE,   CELL>     >(new EBDictionary<order, data_t, XFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToCell     = shared_ptr<EBDictionary<order, data_t, YFACE,   CELL>     >(new EBDictionary<order, data_t, YFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToCell     = shared_ptr<EBDictionary<order, data_t, ZFACE,   CELL>     >(new EBDictionary<order, data_t, ZFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_boundaryToCell  = shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL>     >(new EBDictionary<order, data_t, BOUNDARY,CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
   }
 
   ///multi-level constructor
@@ -264,20 +264,20 @@ public:
                  const vector<DisjointBoxLayout>             & a_grids,
                  const vector<Box>                           & a_domain,
                  const vector<data_t>                        & a_dx,
-                 Point  a_srcGhost,  Point  a_dstGhost)                      
+                 Point  a_ghost)                      
   {
-    m_cellToCell      = shared_ptr<EBDictionary<order, data_t, CELL,    CELL>     >(new EBDictionary<order, data_t, CELL,    CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_cellToBoundary  = shared_ptr<EBDictionary<order, data_t, CELL,    BOUNDARY> >(new EBDictionary<order, data_t, CELL,    BOUNDARY> (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_xFaceToCell     = shared_ptr<EBDictionary<order, data_t, XFACE,   CELL>     >(new EBDictionary<order, data_t, XFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_yFaceToCell     = shared_ptr<EBDictionary<order, data_t, YFACE,   CELL>     >(new EBDictionary<order, data_t, YFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_zFaceToCell     = shared_ptr<EBDictionary<order, data_t, ZFACE,   CELL>     >(new EBDictionary<order, data_t, ZFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
-    m_boundaryToCell  = shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL>     >(new EBDictionary<order, data_t, BOUNDARY,CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_srcGhost, a_dstGhost));
+    m_cellToCell      = shared_ptr<EBDictionary<order, data_t, CELL,    CELL>     >(new EBDictionary<order, data_t, CELL,    CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_cellToBoundary  = shared_ptr<EBDictionary<order, data_t, CELL,    BOUNDARY> >(new EBDictionary<order, data_t, CELL,    BOUNDARY> (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToCell     = shared_ptr<EBDictionary<order, data_t, XFACE,   CELL>     >(new EBDictionary<order, data_t, XFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToCell     = shared_ptr<EBDictionary<order, data_t, YFACE,   CELL>     >(new EBDictionary<order, data_t, YFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToCell     = shared_ptr<EBDictionary<order, data_t, ZFACE,   CELL>     >(new EBDictionary<order, data_t, ZFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_boundaryToCell  = shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL>     >(new EBDictionary<order, data_t, BOUNDARY,CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
   }
   
   ///after this is done, you cannot register any more stencils.  This will delete the moment information.

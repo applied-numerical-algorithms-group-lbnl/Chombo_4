@@ -337,8 +337,8 @@ writeEBLevelHDF5(const string& a_filename,
                  const EBLevelBoxData<CELL, 1       >  & a_kapp,
                  const Box                             & a_domain,
                  shared_ptr<LevelData<EBGraph>  > a_graphs,
-                 Real                             a_coveredval,
-                 Real a_dx, Real a_dt, Real a_time)
+                 Real                             a_coveredval = 0.0,
+                 Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0)
 {
 
   typedef GraphConstructorFactory<EBHostData<CELL, Real, NUMCOMPS> > hostfactDat_t;
@@ -386,7 +386,8 @@ writeEBLevelHDF5(const string& a_filename,
         ebind.m_isBoundary = false;
         for(int icomp = 0; icomp < NUMCOMPS; icomp++)
         {
-          fabu(iv, icomp)  = data(ebind, icomp);
+          Real val = data(ebind, icomp);
+          fabu(iv, icomp)  = val;
         }
         fabu(iv, NUMCOMPS) = kapp(ebind, 0);
       }

@@ -13,9 +13,13 @@
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_GeometryService.H"
+#include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
+#include "Proto_SimpleImplicitFunctions.H"
 #include <iomanip>
+
+#include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2
 
@@ -23,23 +27,6 @@ using std::cout;
 using std::endl;
 using std::shared_ptr;
 
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
-using     std::cout;
-using     std::endl;
-using     std::shared_ptr;
-using   Proto::BaseIF;
-using   Proto::SimpleEllipsoidIF;
-using   Proto::CENTERING;
-using   Proto::CELL;
-using Proto::PointSet;
-using Proto::PointSetIterator;
 
 void
 dumpPPS(const PointSet* a_ivs)
@@ -124,17 +111,17 @@ runTest(int a_argc, char* a_argv[])
   grids.printBalance();
 
   IntVect dataGhostIV =   IntVect::Unit;
-  Point   dataGhostPt = getPoint(dataGhostIV); 
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
-  shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
+  shared_ptr<BaseIF>                       impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, false));
   Bx domainpr = getProtoBox(domain.domainBox());
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 
   pout() << "making dictionary" << endl;
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dx, dataGhostPt, dataGhostPt);
+  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dx, dataGhostPt);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Dirichlet");
@@ -180,6 +167,7 @@ runTest(int a_argc, char* a_argv[])
   return 0;
 }
 
+#include "Chombo_NamespaceFooter.H"
 
 int main(int a_argc, char* a_argv[])
 {
@@ -197,7 +185,7 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runTest(a_argc, a_argv);
+    Chombo4::runTest(a_argc, a_argv);
   }
 
   pout() << "printing time table " << endl;

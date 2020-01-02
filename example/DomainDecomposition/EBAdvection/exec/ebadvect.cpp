@@ -167,8 +167,8 @@ void computeDt(Real                        &  a_dt,
   }
   if(maxvel > 1.0e-16)
   {
-    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
     a_dt = a_cfl*a_dx/maxvel;
+    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
   }    
   else
   {
@@ -275,13 +275,6 @@ void defineGeometry(DisjointBoxLayout& a_grids,
 int
 runAdvection(int a_argc, char* a_argv[])
 {
-#if DIM==2
-  dumpBlob(NULL);
-  dumpEB1(NULL);
-  dumpEBDIM(NULL);
-  dumpXFace(NULL);
-  dumpYFace(NULL);
-#endif
 
   Real coveredval = -1;
   Real cfl    = 0.5;
@@ -336,7 +329,7 @@ runAdvection(int a_argc, char* a_argv[])
   pout() << "making dictionary" << endl;
   Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt, dataGhostPt));
+    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;

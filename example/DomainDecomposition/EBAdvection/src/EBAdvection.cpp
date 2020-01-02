@@ -1,18 +1,18 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
 #include "Chombo_NamespaceHeader.H"
-const string EBAdvection::s_ncdivLabel          = string("Volume_Weighted_Averaging_rad_1"); //this is for the non-conservative div
-const string EBAdvection::s_aveCToFLabel        = string("AverageCellToFace"); //this is to get the velocity to faces
-const string EBAdvection::s_nobcsLabel          = string("no_bcs"); //none of the operators here have eb boundary conditions
-const string EBAdvection::s_redistLabel         = string("Volume_Weighted_Redistribution_rad_1"); //for redistribution
-const string EBAdvection::s_centInterpLabel     = string("InterpolateToFaceCentroid"); //for interpolating from face centers to face centroids
-const string EBAdvection::s_slopeLowLabel       = string("Slope_Low_");   //for low  side difference
-const string EBAdvection::s_slopeHighLabel      = string("Slope_High_");  //for high side difference
-const string EBAdvection::s_diriLabel           = string("Dirichlet");    //for diri bcs
-const string EBAdvection::s_neumLabel           = string("Neumann");      //for neum bcs
-const string EBAdvection::s_divergeLabel        = string("Divergence");   //for taking the divergence of face centered stuff to cell centered result
-const string EBAdvection::s_CtoFLowLabel        = string("Cell_To_Face_Low");  //for getting stuff from low  side cells to faces
-const string EBAdvection::s_CtoFHighLabel       = string("Cell_To_Face_High"); //for getting stuff from high side cells to faces
+const string EBAdvection::s_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the non-conservative div (radius 1)
+const string EBAdvection::s_redistLabel    = StencilNames::SmushRoot     + string("1"); //for redistribution radius 1
+const string EBAdvection::s_aveCToFLabel   = StencilNames::AveCellToFace;               //this is to get the velocity to faces
+const string EBAdvection::s_nobcsLabel     = StencilNames::NoBC;                        //none of the operators here have eb boundary conditions
+const string EBAdvection::s_centInterpLabel= StencilNames::InterpToFaceCentroid;        //for interpolating from face centers to face centroids
+const string EBAdvection::s_slopeLowLabel  = StencilNames::SlopeLoRoot;                 //for low  side difference
+const string EBAdvection::s_slopeHighLabel = StencilNames::SlopeHiRoot;                 //for high side difference
+const string EBAdvection::s_diriLabel      = StencilNames::Dirichlet;                   //for diri bcs
+const string EBAdvection::s_neumLabel      = StencilNames::Neumann;                     //for neum bcs
+const string EBAdvection::s_divergeLabel   = StencilNames::DivergeFtoC;                 //for taking the divergence of face centered stuff to cell centered result
+const string EBAdvection::s_CtoFLowLabel   = StencilNames::CellToFaceLo;                //for getting stuff from low  side cells to faces
+const string EBAdvection::s_CtoFHighLabel  = StencilNames::CellToFaceHi;                //for getting stuff from high side cells to faces
 using Proto::Var;
 ////
 EBAdvection::
@@ -86,14 +86,8 @@ registerStencils()
 
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
-#if 1
-  //real code
   m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
-#else
-  //debug --neumann so I can use all reg
-  m_brit->registerCellToFace( s_aveCToFLabel , s_neumLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
-  //end debug
-#endif
+
 
   m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
   m_brit->registerCellToFace( s_CtoFLowLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
@@ -164,10 +158,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
     ideb++;
   }
-//debug
-//  slopeLo.setVal(0.);
-//  slopeHi.setVal(0.);
-//end debug
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
@@ -179,21 +169,14 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 19 + 4*DIM;
 
-#if 1
-//debug call point function
-    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, grown,  
-                      scal_imh_nph, scal_iph_nph, a_scal, 
-                      slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
-//end debug    
-#else
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
-#endif
+
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
     //once we do that, we can solve the Rieman problem for the upwind state
-    //i + 1/2 becomes the high low  of the face
+    //i + 1/2 becomes the low  side of the face
     //i - 1/2 becomes the high side of the face
     m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
@@ -205,8 +188,10 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_xflux->box(),
                   *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
+
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_yflux->box(),
                   *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
+
 #if DIM==3
   ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_zflux->box(),
                   *a_fcflux.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux, *a_fcvel.m_zflux);
@@ -246,7 +231,6 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
 
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     kapdiv.setVal(0.);
-//    for(unsigned int idir = DIM-1; idir >= 0; idir--)
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initToZero = false;
@@ -270,25 +254,12 @@ nonConsDiv()
   {
     auto& ncdiv  = m_nonConsDiv[dit[ibox]];
     auto& kapdiv =   m_kappaDiv[dit[ibox]];
-    auto& kappa =   m_kappa[dit[ibox]];
+    //auto& kappa =       m_kappa[dit[ibox]];
     const auto& stencil = m_brit->m_cellToCell->getEBStencil(s_ncdivLabel,s_nobcsLabel, m_domain, m_domain, ibox);
     bool initToZero = true;
     stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
     ideb++;
   }
-//begin debug
-//  Real coveredval = -0.125;
-//  Real time = 0;
-//  Real dt = 1;
-//  {
-//    string filep("divnc.hdf5");
-//    writeEBLevelHDF5<1>(  filep,  m_nonConsDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
-//  }
-//  {
-//    string filep("kapdiv.hdf5");
-//    writeEBLevelHDF5<1>(  filep,  m_kappaDiv, m_kappa, m_domain, m_graphs, coveredval, m_dx, dt, time);
-//  }
-//end debug
 }
 ///
 void
@@ -313,6 +284,7 @@ EBAdvection::
 advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
+  a_phi.exchange(m_exchangeCopier);
   //compute kappa div^c F
   kappaConsDiv(a_phi, a_dt);
 
@@ -331,28 +303,19 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     auto & nonConsDiv =  m_nonConsDiv[dit[ibox]];  
     auto & deltaM     =  m_deltaM[    dit[ibox]]; 
     auto & kappa      =  m_kappa[     dit[ibox]];
-#if 0
+
     ebforallInPlace(numflopspt, "HybridDivergence", HybridDivergence, grbx,  
                     hybridDiv ,
                     kappaDiv  ,
                     nonConsDiv,  
                     deltaM    , 
                     kappa     );
-#else
-    //debugging
-    ebforallInPlace_i(numflopspt, "HybridDivergencePt", HybridDivergencePt, grbx,  
-      hybridDiv ,
-      kappaDiv  ,
-      nonConsDiv,  
-      deltaM    , 
-      kappa     );
-#endif 
     ideb++;
   }
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
   //debug turn off redist
-  //redistribute();
+  redistribute();
   //end debug
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -362,6 +325,7 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     unsigned long long int numflopspt = 2;
     ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
       scalar, diverg, a_dt);
+
     ideb++;
   }
     
