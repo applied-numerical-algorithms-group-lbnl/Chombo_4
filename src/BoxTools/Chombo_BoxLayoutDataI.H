@@ -239,7 +239,7 @@ void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
     a_copier.print();
   }
   {
-    CH_TIME("maKeItSoBegin");
+    CH_TIME("makeItSoBegin");
     makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
   }
   {
