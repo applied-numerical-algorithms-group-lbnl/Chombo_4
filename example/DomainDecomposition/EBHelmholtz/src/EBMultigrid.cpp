@@ -319,12 +319,20 @@ void  gsrbResidF(int     a_pt[DIM],
     Real kappval = a_kappa(0);
     
     Real realdiag = kappval*a_alpha + a_beta*diagval;
-    Real regudiag = a_alpha + 2*DIM*a_beta*a_dx*a_dx;
+//    Real regudiag = a_alpha - 2*DIM*a_beta/(a_dx*a_dx);
     Real lambda = safety/realdiag;
-    Real reglam = safety/regudiag;
+//    Real reglam = safety/regudiag;
     Real phival = a_phi(0);
     Real resval = a_res(0);
-    if(lambda > reglam) lambda= reglam;
+//begin debug
+    int ideb = 0;
+    if((a_pt[0]==55) && (a_pt[1]==14))
+    {
+      ideb = 1;
+    }
+
+//end debug
+//    if(std::abs(lambda) > std::abs(reglam)) lambda= reglam;
     a_phi(0) = phival + lambda*resval;
   }
 }

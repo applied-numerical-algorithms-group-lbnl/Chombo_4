@@ -185,6 +185,7 @@ runProjection(int a_argc, char* a_argv[])
   Real max_vel_mag = 1.0;
   Real max_vel_rad = 0.25;
   int nStream    = 8;
+  int numSmooth;
   ParmParse pp;
   int maxGrid = 32;
   pp.get("maxGrid", maxGrid); 
@@ -192,6 +193,7 @@ runProjection(int a_argc, char* a_argv[])
   pp.get("nstream", nStream);
 
     
+  pp.get("numSmooth"  , numSmooth);
   pp.get("max_vel_mag"  , max_vel_mag);
   pp.get("max_vel_rad"  , max_vel_rad);
   pp.get("nx"           , nx);
@@ -202,6 +204,8 @@ runProjection(int a_argc, char* a_argv[])
   pout() << "max_vel_rad     = " << max_vel_rad     << endl;
   pout() << "num_streams     = " << nStream         << endl;
 
+  EBMultigrid::s_numSmoothUp   = numSmooth;
+  EBMultigrid::s_numSmoothDown = numSmooth;
 #ifdef PROTO_CUDA
   Proto::DisjointBoxLayout::setNumStreams(nStream);
 #endif
