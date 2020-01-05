@@ -21,7 +21,7 @@ namespace StencilNames
   static const string Dirichlet("Dirichlet");
 
   ///Signals Neumann  BCs
-  static const string  Neumann("Dirichlet");
+  static const string  Neumann("Neumann");
   
   ///placeholder for when there are no bcs for an operator
   static const string     NoBC("no_bcs");
