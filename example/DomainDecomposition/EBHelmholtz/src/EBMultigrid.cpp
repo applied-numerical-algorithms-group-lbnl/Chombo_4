@@ -363,6 +363,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       //also does an integer check for red/black but I am not sure what to do with that
       auto& phifab =   a_phi[dit[ibox]];
       auto& resfab = m_resid[dit[ibox]];
+      auto& rhsfab =   a_rhs[dit[ibox]];
       unsigned long long int numflopspt = 10;
 
       ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
