@@ -326,7 +326,7 @@ void  gsrbResidF(int     a_pt[DIM],
     Real resval = a_res(0);
 //begin debug
     int ideb = 0;
-    if((a_pt[0]==55) && (a_pt[1]==14))
+    if((a_pt[0]==18) && (a_pt[1]==30))
     {
       ideb = 1;
     }
@@ -382,7 +382,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
 {
   PR_TIME("sgmglevel::restrict");
   DataIterator dit = m_grids.dataIterator();
-
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& coarfab = a_resc[dit[ibox]];
@@ -393,6 +393,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
       m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
+    ideb++;
   }
 }
 /****/

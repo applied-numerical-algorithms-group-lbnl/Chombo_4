@@ -97,6 +97,39 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 
 
 void 
+dumpEBFAB(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    Bx area = databox;
+    Bx valid = graph.validBox();
+    cout << "ebboxdata contains:" << endl;
+    for(auto bit = area.begin(); bit != area.end(); ++bit)
+    {
+      Point pt = *bit;
+      if(valid.contains(pt))
+      {
+        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+        if(vofs.size() >  0)
+        {
+          cout << pt << ":";
+          cout << data(vofs[0], 0);
+          cout << endl;
+        }
+      }
+    }
+  }
+}
+
+
+void 
 dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
