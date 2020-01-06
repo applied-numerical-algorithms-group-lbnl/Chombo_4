@@ -158,6 +158,60 @@ public:
   }
   
 protected:
+  //for coarsening volume moment data
+  template <CENTERING cent>
+  inline void shiftAndIncrement(IndMomDIM                  &      a_output, 
+                                const IndMomDIM            &      a_input,
+                                const EBIndex<cent>        &      a_coarVoF,
+                                const EBIndex<cent>        &      a_fineVoF,
+                                const LevelGeometryService &      a_finerLevel)
+  {
+    Real coarDx =              m_dx;
+    Real fineDx = a_finerLevel.m_dx;
+    RealVect coarLoc = indexLoc(a_coarVoF, RealVect::Zero(), coarDx);
+    RealVect fineLoc = indexLoc(a_fineVoF, RealVect::Zero(), fineDx);
+
+    IndexTM<Real, SpaceDim> shiftVec;
+    for(int idir = 0; idir < SpaceDim; idir++)
+    {
+      shiftVec[idir] =  fineLoc[idir] - coarLoc[idir];
+    }
+    IndMomDIM increment = a_input;
+    increment.shift(shiftVec);
+  
+    a_output += increment;
+  }
+
+  //for coarsening face moment data
+  template <CENTERING cent>
+  inline void shiftAndIncrement(IndMomSDMinOne             &      a_output, 
+                                const IndMomSDMinOne       &      a_input,
+                                const EBIndex<cent>        &      a_coarFace,
+                                const EBIndex<cent>        &      a_fineFace,
+                                const LevelGeometryService &      a_finerLevel)
+  {
+    int faceDir = a_coarFace.direction();
+    Real coarDx =              m_dx;
+    Real fineDx = a_finerLevel.m_dx;
+    RealVect coarLoc = indexLoc(a_coarFace, RealVect::Zero(), coarDx);
+    RealVect fineLoc = indexLoc(a_fineFace, RealVect::Zero(), fineDx);
+
+    IndexTM<Real, SpaceDim-1> shiftVec;
+    int iindex = 0;
+    for(int idir = 0; idir < SpaceDim; idir++)
+    {
+      if(idir != faceDir)
+      {
+        shiftVec[iindex] =  fineLoc[idir] - coarLoc[idir];
+        iindex++;
+      }
+    }
+    IndMomSDMinOne increment = a_input;
+    increment.shift(shiftVec);
+  
+    a_output += increment;
+  }
+
   void 
   coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
                  const LevelGeometryService     & a_finerLevel,
@@ -526,7 +580,8 @@ protected:
 
 
 private:
-  
+
+
   inline const int getLevel(const Box & a_domain) const
   {
     int retval = -1;

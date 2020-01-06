@@ -360,21 +360,32 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
     for(int ifine = 0; ifine < fineVoFs.size(); ifine++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
-      IndMomDIM finemom;
+      IndMomDIM fineMom;
       if(fineEBGraph.isCovered(fineVoF.m_pt))
       {
-        finemom.setToZero(); //not sure if this can happen
+        fineMom.setToZero(); //not sure if this can happen
       }
       else if(fineEBGraph.isRegular(fineVoF.m_pt))
       {
-        finemom.setToRegular(a_finerLevel.m_dx);
+        fineMom.setToRegular(a_finerLevel.m_dx);
       }
       else
       {
-        finemom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
+        fineMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
       }
-      coarMom += finemom;  //moments are not scaled so this is a straight addition
+
+      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
+      shiftAndIncrement(coarMom, fineMom, coarVoF, fineVoF, a_finerLevel);
+
     }
+//begin debug
+    Point coariv = coarVoF.m_pt;
+    if((coariv[0] == 18) && (coariv[1] == 30))
+    {
+      pout() << "volume moments for " << coariv << ":" << endl;
+      coarMom.print();
+    }
+//begin debug
   }
 }
 
@@ -407,11 +418,32 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
       {
         fineMom.setToRegular(a_finerLevel.m_dx);
       }
-      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+
+      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
+      shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
+//begin debug
+    for(SideIterator sit; sit.ok(); ++sit)
+    {
+      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
+      Point coariv = coarVoF.m_pt;
+      if((coariv[0] == 18) && (coariv[1] == 30))
+      {
+        if(sit() == Side::Lo)
+        {
+          pout() << "High " ; //this means that the face is on the high side of the vof
+        }
+        else
+        {
+          pout() << "Low  " ;
+        }
+        pout() << "X face moments for " << coariv << ":" << endl;
+        coarMom.print();
+      }
+    }
+//end debug
   }
 }
-
 
 /*********************************************/
 template <int order>
@@ -444,7 +476,8 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
         fineMom.setToRegular(a_finerLevel.m_dx);
       }
 
-      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
+      shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
   }
 }
@@ -479,7 +512,8 @@ coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
         fineMom.setToRegular(a_finerLevel.m_dx);
       }
 
-      coarMom += fineMom;  //moments are not scaled so this is a straight addition
+      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
+      shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
   }
 }
