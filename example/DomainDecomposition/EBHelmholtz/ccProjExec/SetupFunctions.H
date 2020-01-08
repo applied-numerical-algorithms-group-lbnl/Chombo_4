@@ -280,16 +280,13 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
 #endif
 //=================================================
 PROTO_KERNEL_START 
-void InitializeVFaceF(int          a_p[DIM],
-                      Var<Real, 1> a_vel,
-                      Real         a_geomCen,
-                      Real         a_geomRad,
-                      Real         a_blobCen,
-                      Real         a_blobRad,
-                      Real         a_maxVelMag,
-                      Real         a_maxVelRad,
-                      Real         a_dx,
-                      unsigned int a_dir)
+void InitializeVCellF(int            a_p[DIM],
+                      Var<Real, DIM> a_vel,
+                      Real           a_geomCen,
+                      Real           a_geomRad,
+                      Real           a_maxVelMag,
+                      Real           a_maxVelRad,
+                      Real           a_dx)
 {
   Real rlocsq = 0;
   Real xrel[DIM];
@@ -309,9 +306,13 @@ void InitializeVFaceF(int          a_p[DIM],
   vel[1] =  velmag*(-xrel[0] - xrel[2]);
   vel[2] = -velmag*( xrel[0] - xrel[1]);
 #endif
-  a_vel(0) = vel[a_dir];
+
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_vel(idir) = vel[idir];
+  }
 }
-PROTO_KERNEL_END(InitializeVFaceF, InitializeVFace)
+PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 
 #include "Chombo_NamespaceFooter.H"
 

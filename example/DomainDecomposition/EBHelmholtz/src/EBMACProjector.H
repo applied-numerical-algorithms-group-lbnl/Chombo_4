@@ -11,12 +11,14 @@
 #include "EBMultigrid.H"
 #include "Chombo_NamespaceHeader.H"
 
-///class to advect scalars in an eb context (via Trebotich et al.)
+class EBCCProjector;
+
+///discrete projection for face centered velocity fields in an EB context
 class EBMACProjector
 {
 public:
-
-
+  /// the cc proj class uses a bunch of mac projector internals
+  friend class EBCCProjector;
   
   /// 
   EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -49,12 +51,15 @@ public:
 
   
   ///
-  EBLevelBoxData<CELL, 1>& getRHSHolder();
+  inline EBLevelBoxData<CELL, 1>& getRHSHolder()
+  {
+    return m_rhs;
+  }
 
-protected:
+
+private:
   
   void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);
-
   void registerStencils();
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
@@ -70,7 +75,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_phi;
 
   shared_ptr<EBMultigrid>                m_solver;
-private:
+
 
 
   void operator=(const EBMACProjector& a_opin);

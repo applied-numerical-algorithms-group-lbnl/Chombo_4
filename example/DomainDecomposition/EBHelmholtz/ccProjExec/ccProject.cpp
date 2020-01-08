@@ -17,7 +17,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelFluxData.H"
-#include "EBMACProjector.H"
+#include "EBCCProjector.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
@@ -34,13 +34,11 @@ typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
 
 //=================================================
-void initializeData(EBLevelFluxData<1>          &  a_velo,
+void initializeData(EBLevelBoxData<CELL, DIM>   &  a_velo,
                     const DisjointBoxLayout     &  a_grids,
                     const Real                  &  a_dx,
                     const Real                  &  a_geomCen,
                     const Real                  &  a_geomRad,
-                    const Real                  &  a_blobCen,
-                    const Real                  &  a_blobRad,
                     const Real                  &  a_maxVelMag,
                     const Real                  &  a_maxVelRad)
 {
@@ -52,27 +50,8 @@ void initializeData(EBLevelFluxData<1>          &  a_velo,
     auto& velofab = a_velo[dit[ibox]];
     unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
 
-    {
-      auto& xvel = *velofab.m_xflux;
-      unsigned int facedir = 0;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  xvel.box(), xvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
-    }
-    {
-      auto& yvel = *velofab.m_yflux;
-      unsigned int facedir = 1;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  yvel.box(), yvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
-    }
-
-#if DIM==3
-    {
-      auto& zvel = *velofab.m_zflux;
-      unsigned int facedir = 2;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  zvel.box(), zvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
-    }
-#endif
+    ebforallInPlace_i(numflopsvelo, "InitializeVCell", InitializeVCell,  velofab.box(), velofab, 
+                      a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
     ideb++;
   }
       
@@ -142,8 +121,6 @@ void defineGeometry(Vector<DisjointBoxLayout>& a_grids,
                     Real             & a_dx,
                     Real             & a_geomCen,
                     Real             & a_geomRad,
-                    Real             & a_blobCen,
-                    Real             & a_blobRad,
                     int              & a_whichGeom,
                     int              & a_nx,
                     shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
@@ -152,12 +129,6 @@ void defineGeometry(Vector<DisjointBoxLayout>& a_grids,
 
   ParmParse pp;
     
-  pp.get("blob_cen", a_blobCen);
-  pp.get("blob_rad", a_blobRad);
-
-  pout() << "blob_cen = " << a_blobCen       << endl;
-  pout() << "blob_rad = " << a_blobRad       << endl;
-
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
@@ -226,12 +197,11 @@ runProjection(int a_argc, char* a_argv[])
 
   Real geomCen;
   Real geomRad;
-  Real blobCen;
-  Real blobRad;
+
   int whichGeom;
 
   Box domainb = domain.domainBox();
-  defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
+  defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, whichGeom, nx,  geoserv);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
@@ -253,13 +223,12 @@ runProjection(int a_argc, char* a_argv[])
   
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
   DisjointBoxLayout& grids = vecgrids[0];
-  EBLevelFluxData<1>  velo(grids, dataGhostIV, graphs);
-  EBLevelFluxData<1>  gphi(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL, DIM>  velo(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL, DIM>  gphi(grids, dataGhostIV, graphs);
 
-  initializeData(velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
+  initializeData(velo, grids, dx, geomCen, geomRad, max_vel_mag, max_vel_rad);
 
-
-  EBMACProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV);
+  EBCCProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV);
   Real tol = 1.0e-8;
   unsigned int maxiter = 27;
   proj.project(velo, gphi, tol, maxiter);
