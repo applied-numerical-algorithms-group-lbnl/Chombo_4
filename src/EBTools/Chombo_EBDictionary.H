@@ -40,6 +40,12 @@ namespace StencilNames
   */
   static const string AveCellToFace("AverageCellToFace"); 
 
+  /// for simple average from  cells to faces
+  /**
+    This is to get the cc  gradient in the projection from mac grad
+  */
+  static const string AveFaceToCell("AverageFaceToCell"); 
+
   ///for volume-weighted redistribution
   /**
      add a radius to get the stencil for volume-weighted redistribution (originally Chern and Colella but everywhere).
@@ -66,9 +72,6 @@ namespace StencilNames
   ///for taking the divergence of face centered stuff to cell centered result
   static const string DivergeFtoC("Divergence");   
 
-  ///for taking the gradient of cell centered stuff to cell centered result
-  static const string GradientCtoC("GradientCC_");   
-  
   ///for getting stuff from low  side cells to faces
   /**
      For getting stuff from low  side cells to faces.  Commonly used in Godunov-style 

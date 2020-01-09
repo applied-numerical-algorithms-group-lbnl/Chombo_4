@@ -29,13 +29,10 @@ registerStencils()
   auto & doma    = m_macprojector->m_domain;
   for(int idir = 0; idir < DIM; idir++)
   {
-    string ccGrad   = StencilNames::GradientCtoC  + std::to_string(idir);
-    //need to set neumann bcs get gradients of pressure (matches no flow condition)
-    brit->m_cellToCell->registerStencil(ccGrad  , StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Zeroes());
-
     //dirichlet at domain to get zero normal velocity at domain boundaries
     //grown by one to allow interpolation to face centroids
     brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
+    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma, false);
   }
 
 }
@@ -49,31 +46,46 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & rhs     = m_macprojector->m_rhs;
   auto & brit    = m_macprojector->m_brit;
   auto & phi     = m_macprojector->m_phi;
+  auto & doma    = m_macprojector->m_domain;
   auto & solver  = m_macprojector->m_solver;
+  auto & grids   = m_macprojector->m_grids;
+  auto & graphs  = m_macprojector->m_graphs;
+  auto & nghost  = m_macprojector->m_nghost;
+
   // set rhs = div (vel)
   divergence(rhs, a_velo);
 
   //solve lapl(phi) = rhs
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
-  //gphi = grad(phi)
   //v := v - gphi
-//  DataIterator dit = m_grids.dataIterator();
-//  int ideb = 0;
-//  for(int ibox = 0; ibox < dit.size(); ibox++)
-//  {
-//    
-//    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-//    //get face fluxes and interpolate them to centroids
-//    for(unsigned int idir = 0; idir < DIM; idir++)
-//    {
-//      bool initToZero = true;
-//      brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
-//                              a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
-//    }
-//    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
-//    ideb++;
-//  }
+  DataIterator dit = grids.dataIterator();
+  int ideb = 0;
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    const EBGraph  & graph = (*graphs)[dit[ibox]];
+    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
+    Bx  grown   =  grid.grow(ProtoCh::getPoint(nghost));
+
+    //get face fluxes and interpolate them to centroids
+    EBFluxData<Real, 1>         facegrad(grown, graph);
+    //gphi = grad(phi)
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initZero = true;
+      //registered by the mac projector
+      brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
+                            facegrad, phi[dit[ibox]], idir, ibox, initZero, 1.0);
+
+      EBBoxData<CELL, Real, 1> gradComp;
+      gradComp.define(a_gphi[dit[ibox]], idir);
+      brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
+                            gradComp, facegrad,  idir, ibox, initZero, 1.0);
+      
+    }
+    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
+    ideb++;
+  }
 }
 ///
 void 
@@ -84,16 +96,10 @@ divergence(EBLevelBoxData<CELL, 1  > & a_divu,
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
   auto & divu    = m_macprojector->m_rhs;
-//  for(int idir = 0; idir < DIM; idir++)
-//  {
-//    string ccGrad   = StencilNames::GradientCtoC  + std::to_string(idir);
-//    //need to set neumann bcs get gradients of pressure (matches no flow condition)
-//    brit->m_cellToCell->registerStencil(ccGrad  , StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Zeroes());
-//    brit->m_faceToCell>registerStencil(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
-
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   auto & nghost  = m_macprojector->m_nghost;
+
   DataIterator dit = grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
