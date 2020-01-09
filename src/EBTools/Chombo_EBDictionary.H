@@ -66,9 +66,6 @@ namespace StencilNames
   ///for taking the divergence of face centered stuff to cell centered result
   static const string DivergeFtoC("Divergence");   
 
-  ///for taking the divergence of cell centered stuff to cell centered result
-  static const string DivergeCtoC("DivergenceCC");   
-  
   ///for taking the gradient of cell centered stuff to cell centered result
   static const string GradientCtoC("GradientCC_");   
   

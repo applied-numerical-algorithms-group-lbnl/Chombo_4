@@ -25,6 +25,18 @@ void
 EBCCProjector::
 registerStencils()
 {
+  auto & brit    = m_macprojector->m_brit;
+  auto & doma    = m_macprojector->m_domain;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    string ccGrad   = StencilNames::GradientCtoC  + std::to_string(idir);
+    //need to set neumann bcs get gradients of pressure (matches no flow condition)
+    brit->m_cellToCell->registerStencil(ccGrad  , StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Zeroes());
+
+    //dirichlet at domain to get zero normal velocity at domain boundaries
+    //grown by one to allow interpolation to face centroids
+    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
+  }
 
 }
 /// 
@@ -69,35 +81,59 @@ EBCCProjector::
 divergence(EBLevelBoxData<CELL, 1  > & a_divu,
            EBLevelBoxData<CELL, DIM> & a_velo)
 {
-
-//  DataIterator dit = m_grids.dataIterator();
-//  int ideb = 0;
-//  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  auto & brit    = m_macprojector->m_brit;
+  auto & doma    = m_macprojector->m_domain;
+  auto & divu    = m_macprojector->m_rhs;
+//  for(int idir = 0; idir < DIM; idir++)
 //  {
-//
-//    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-//    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-//    Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
-//
-//    //get face fluxes and interpolate them to centroids
-//    EBFluxData<Real, 1>  centroidFlux(grown, graph);
-//    EBFluxStencil<2, Real> stencils =
-//      m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
-//    EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
-//    stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
-//
-//
-//    auto& kapdiv =  m_rhs[dit[ibox]];
-//    kapdiv.setVal(0.);
-//    for(unsigned int idir = 0; idir < DIM; idir++)
-//    {
-//      bool initToZero = false;
-//      m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
-//                              idir, ibox, initToZero, 1.0);
-//    }
-//    ideb++;
-//  }
-//
+//    string ccGrad   = StencilNames::GradientCtoC  + std::to_string(idir);
+//    //need to set neumann bcs get gradients of pressure (matches no flow condition)
+//    brit->m_cellToCell->registerStencil(ccGrad  , StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Zeroes());
+//    brit->m_faceToCell>registerStencil(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
+
+  auto & grids   = m_macprojector->m_grids;
+  auto & graphs  = m_macprojector->m_graphs;
+  auto & nghost  = m_macprojector->m_nghost;
+  DataIterator dit = grids.dataIterator();
+  int ideb = 0;
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+
+    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
+    const EBGraph  & graph = (*graphs)[dit[ibox]];
+    Bx  grown   =  grid.grow(ProtoCh::getPoint(nghost));
+
+    //get face fluxes and interpolate them to centroids
+    EBFluxData<Real, 1>         centroidv(grown, graph);
+    EBFluxData<Real, 1>         facecentv(grown, graph);
+
+    EBBoxData<CELL, Real, DIM>& inputvelo =  a_velo[dit[ibox]];
+    //this one was registered by the mac projector
+    EBFluxStencil<2, Real> interpsten  = brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC   , doma, doma, ibox);
+    bool initZero = 0;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      //true is inittozero
+      EBBoxData<CELL, Real, 1> velcomp;
+      velcomp.define(inputvelo, idir);
+      brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
+                            doma,facecentv, velcomp, idir, ibox,  initZero, 1.0);
+    }
+    interpsten.apply(centroidv, facecentv, initZero, 1.0);  
+
+
+    auto& kapdiv = divu[dit[ibox]];
+    kapdiv.setVal(0.);
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initToZero = false;
+      //also registered by the mac projector
+      brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
+                            idir, ibox, initToZero, 1.0);
+    }
+    ideb++;
+  }
+
 //  static bool printed = false;
 //  if(!printed)
 //  {
