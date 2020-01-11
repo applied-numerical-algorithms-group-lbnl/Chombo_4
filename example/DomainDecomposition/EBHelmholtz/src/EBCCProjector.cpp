@@ -117,27 +117,24 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     EBBoxData<CELL, Real, DIM>& inputvelo =  a_velo[dit[ibox]];
     //this one was registered by the mac projector
     EBFluxStencil<2, Real> interpsten  = brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC   , doma, doma, ibox);
-    bool initZero = 0;
+    bool initZero = true;
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
-      //true is inittozero
       EBBoxData<CELL, Real, 1> velcomp;
       velcomp.define(inputvelo, idir);
       brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
                             doma,facecentv, velcomp, idir, ibox,  initZero, 1.0);
     }
+
+//standard algorithm does not do this
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
 
     auto& kapdiv = divu[dit[ibox]];
-    kapdiv.setVal(0.);
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initToZero = false;
-      //also registered by the mac projector
-      brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
-                            idir, ibox, initToZero, 1.0);
-    }
+    bool initToZero = false;
+    //also registered by the mac projector
+    brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
+                          ibox, initToZero, 1.0);
     ideb++;
   }
 

@@ -94,6 +94,35 @@ public:
 
 
 
+  ///  apply all the stencils
+  inline void applyCellToFace(string                        a_stenName,
+                              string                        a_ebbcName,
+                              const Box                 &   a_domain,
+                              EBFluxData<Real, 1>       &   a_fluxData,
+                              EBBoxData<CELL, Real, 1>  &   a_cellData,
+                              int a_ibox, bool a_initToZero, Real a_scale)
+  {
+
+    {
+      const auto& sten = m_cellToXFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_xflux, a_cellData, a_initToZero, a_scale);
+    }
+
+    {
+      const auto& sten = m_cellToYFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_yflux, a_cellData, a_initToZero, a_scale);
+
+    }
+#if DIM==3      
+
+    {
+      const auto& sten = m_cellToZFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(*a_fluxData.m_zflux, a_cellData, a_initToZero, a_scale);
+    }
+#endif
+  }
+
+
   ///  apply the appropriate stencil
   inline void applyCellToFace(string                        a_stenName,
                               string                        a_ebbcName,
@@ -127,13 +156,43 @@ public:
   }
 
 
-    ///  apply the appropriate stencil
+  ///  apply all the stencils
   inline void applyFaceToCell(string                        a_stenName,
                               string                        a_ebbcName,
                               const Box                 &   a_domain,
                               EBBoxData<CELL, Real, 1>  &   a_cellData,
                               EBFluxData<Real, 1>       &   a_fluxData,
-                              unsigned int  a_idir, int a_ibox, bool a_initToZero, Real a_scale)
+                              int a_ibox, bool a_initToZero, Real a_scale)
+  {
+    bool initToZero = a_initToZero;
+    {
+      const auto& sten = m_xFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_xflux, initToZero, a_scale);
+    }
+    initToZero = false;
+    {
+      const auto& sten = m_yFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_yflux,  initToZero, a_scale);
+
+    }
+#if DIM==3      
+    else if(a_idir == 2)
+    {
+      const auto& sten = m_zFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
+      sten->apply(a_cellData, *a_fluxData.m_zflux,  initToZero, a_scale);
+    }
+#endif
+
+  }
+
+
+  //  apply the right stencil
+  inline void applyFaceToCell(string                        a_stenName,
+                              string                        a_ebbcName,
+                              const Box                 &   a_domain,
+                              EBBoxData<CELL, Real, 1>  &   a_cellData,
+                              EBFluxData<Real, 1>       &   a_fluxData,
+                              unsigned int a_idir, int a_ibox, bool a_initToZero, Real a_scale)
   {
     if(a_idir == 0)
     {
