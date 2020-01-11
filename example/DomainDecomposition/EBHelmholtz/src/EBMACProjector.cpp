@@ -67,10 +67,10 @@ project(EBLevelFluxData<1>   & a_velo,
         EBLevelFluxData<1>   & a_gphi,
         Real a_tol, unsigned int a_maxiter)
 {
-  // set rhs = div (vel)
-  divergence(m_rhs, a_velo);
+  // set rhs = kappa*div (vel)
+  kappaDivU(m_rhs, a_velo);
 
-  //solve lapl(phi) = rhs
+  //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
   
   //gphi = grad(phi)
@@ -95,8 +95,8 @@ project(EBLevelFluxData<1>   & a_velo,
 ///
 void 
 EBMACProjector::
-divergence(EBLevelBoxData<CELL, 1> & a_divu,
-           EBLevelFluxData<1>      & a_velo)
+kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
+          EBLevelFluxData<1>      & a_velo)
 {
 
   DataIterator dit = m_grids.dataIterator();

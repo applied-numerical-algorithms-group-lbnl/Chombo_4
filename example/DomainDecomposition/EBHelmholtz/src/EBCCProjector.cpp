@@ -52,10 +52,10 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & graphs  = m_macprojector->m_graphs;
   auto & nghost  = m_macprojector->m_nghost;
 
-  // set rhs = div (vel)
-  divergence(rhs, a_velo);
+  // set rhs = kappa*div (vel)
+  kappaDivU(rhs, a_velo);
 
-  //solve lapl(phi) = rhs
+  //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
   //v := v - gphi
@@ -90,8 +90,8 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
 ///
 void 
 EBCCProjector::
-divergence(EBLevelBoxData<CELL, 1  > & a_divu,
-           EBLevelBoxData<CELL, DIM> & a_velo)
+kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
+          EBLevelBoxData<CELL, DIM> & a_velo)
 {
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
@@ -99,6 +99,7 @@ divergence(EBLevelBoxData<CELL, 1  > & a_divu,
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   auto & nghost  = m_macprojector->m_nghost;
+  auto & kappa   = m_macprojector->m_solver->getKappa();
 
   DataIterator dit = grids.dataIterator();
   int ideb = 0;
@@ -140,12 +141,12 @@ divergence(EBLevelBoxData<CELL, 1  > & a_divu,
     ideb++;
   }
 
-//  static bool printed = false;
-//  if(!printed)
-//  {
-//    printed = true;
-//    writeEBLevelHDF5(string("divu.hdf5"), m_rhs, m_solver->getKappa(), m_domain, m_graphs);
-//  }
+  static bool printed = false;
+  if(!printed)
+  {
+    printed = true;
+    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
+  }
 }
 ///
 #include "Chombo_NamespaceFooter.H"

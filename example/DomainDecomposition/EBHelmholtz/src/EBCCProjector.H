@@ -42,11 +42,11 @@ public:
   ///
   /**
      used internally and for  diagnostics.
-     Take divergence of mac velocity field
+     Take kappa*divergence of cc velocity field
    */
   void 
-  divergence(EBLevelBoxData<CELL, 1  > & a_divu,
-             EBLevelBoxData<CELL, DIM> & a_velo);
+  kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
+            EBLevelBoxData<CELL, DIM> & a_velo);
 
 
   ///

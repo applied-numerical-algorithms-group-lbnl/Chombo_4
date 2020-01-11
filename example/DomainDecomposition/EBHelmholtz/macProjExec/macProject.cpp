@@ -265,7 +265,7 @@ runProjection(int a_argc, char* a_argv[])
   proj.project(velo, gphi, tol, maxiter);
 
   EBLevelBoxData<CELL,   1>&  divergence = proj.getRHSHolder();
-  proj.divergence(divergence, velo);
+  proj.kappaDivU(divergence, velo);
   
   Real divnorm = divergence.maxNorm(0);
   

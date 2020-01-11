@@ -227,19 +227,24 @@ runProjection(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL, DIM>  gphi(grids, dataGhostIV, graphs);
 
   initializeData(velo, grids, dx, geomCen, geomRad, max_vel_mag, max_vel_rad);
+  velo.writeToFileHDF5(string("veloinitc4.hdf5"), 0.0);
 
   EBCCProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV);
   Real tol = 1.0e-8;
   unsigned int maxiter = 27;
   proj.project(velo, gphi, tol, maxiter);
 
-  EBLevelBoxData<CELL,   1>&  divergence = proj.getRHSHolder();
-  proj.divergence(divergence, velo);
+  EBLevelBoxData<CELL,   1>&  divu = proj.getRHSHolder();
+  proj.kappaDivU(divu, velo);
   
-  Real divnorm = divergence.maxNorm(0);
+  Real divnorm = divu.maxNorm(0);
   
   pout() << "max norm of post projection divergence(vel) = " << divnorm << endl;
-   
+
+  divu.writeToFileHDF5(string("divufinalc4.hdf5"), 0.0);
+  velo.writeToFileHDF5(string("velofinalc4.hdf5"), 0.0);
+  gphi.writeToFileHDF5(string("gphifinalc4.hdf5"), 0.0);
+  
   return 0;
 }
 
