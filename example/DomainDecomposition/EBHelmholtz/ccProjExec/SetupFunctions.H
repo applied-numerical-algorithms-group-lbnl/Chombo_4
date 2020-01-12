@@ -26,8 +26,8 @@ dumpPS(PointSet* dataPtr)
 }
 
 #if DIM==2
-Point lodeb(54, 14);
-Point hideb(56, 17);
+Point lodeb(52, 14);
+Point hideb(56, 19);
 void 
 dumpBlob(BoxData<Real, 1>* dataPtr)
 {

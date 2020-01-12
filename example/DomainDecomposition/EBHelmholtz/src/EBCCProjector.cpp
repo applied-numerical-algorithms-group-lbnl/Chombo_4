@@ -133,6 +133,7 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     auto& kapdiv = divu[dit[ibox]];
     bool initToZero = false;
     //also registered by the mac projector
+    //this should use centroid v but using face cent to compare with chombo 3 code
     brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
                           ibox, initToZero, 1.0);
     ideb++;
