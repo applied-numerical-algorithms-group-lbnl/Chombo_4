@@ -118,33 +118,27 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     //this one was registered by the mac projector
     EBFluxStencil<2, Real> interpsten  = brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC   , doma, doma, ibox);
     bool initZero = true;
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      EBBoxData<CELL, Real, 1> velcomp;
-      velcomp.define(inputvelo, idir);
-      brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
-                            doma,facecentv, velcomp, idir, ibox,  initZero, 1.0);
-    }
+    brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
+                          doma,facecentv, inputvelo,  ibox,  initZero, 1.0);
 
-//standard algorithm does not do this
+   //interpolate from face centers to centroids
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
-
     auto& kapdiv = divu[dit[ibox]];
+    //get kappa*divv
     //also registered by the mac projector
-    //this should use centroid v but using face cent to compare with chombo 3 code
     brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
                           ibox, initZero, 1.0);
     ideb++;
   }
 
-  static bool printed = false;
-  if(!printed)
-  {
-    printed = true;
-    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
-    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);
-  }
+//  static bool printed = false;
+//  if(!printed)
+//  {
+//    printed = true;
+//    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
+//    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);
+//  }
 }
 ///
 #include "Chombo_NamespaceFooter.H"
