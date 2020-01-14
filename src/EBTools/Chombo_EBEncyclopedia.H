@@ -95,29 +95,38 @@ public:
 
 
   ///  apply all the stencils
-  inline void applyCellToFace(string                        a_stenName,
-                              string                        a_ebbcName,
-                              const Box                 &   a_domain,
-                              EBFluxData<Real, 1>       &   a_fluxData,
-                              EBBoxData<CELL, Real, 1>  &   a_cellData,
+  inline void applyCellToFace(string                         a_stenName,
+                              string                         a_ebbcName,
+                              const Box                  &   a_domain,
+                              EBFluxData<Real, 1>        &   a_fluxData,
+                              EBBoxData<CELL, Real, DIM> &   a_cellData,
                               int a_ibox, bool a_initToZero, Real a_scale)
   {
 
     {
+      EBBoxData<CELL, Real, 1> cellComp;
+      unsigned int comp = 0;
+      cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToXFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
-      sten->apply(*a_fluxData.m_xflux, a_cellData, a_initToZero, a_scale);
+      sten->apply(*a_fluxData.m_xflux, cellComp, a_initToZero, a_scale);
     }
 
     {
+      EBBoxData<CELL, Real, 1> cellComp;
+      unsigned int comp = 1;
+      cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToYFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
-      sten->apply(*a_fluxData.m_yflux, a_cellData, a_initToZero, a_scale);
+      sten->apply(*a_fluxData.m_yflux, cellComp, a_initToZero, a_scale);
 
     }
 #if DIM==3      
 
     {
+      EBBoxData<CELL, Real, 1> cellComp;
+      unsigned int comp = 2;
+      cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToZFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
-      sten->apply(*a_fluxData.m_zflux, a_cellData, a_initToZero, a_scale);
+      sten->apply(*a_fluxData.m_zflux, cellComp, a_initToZero, a_scale);
     }
 #endif
   }
