@@ -131,11 +131,10 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
 
 
     auto& kapdiv = divu[dit[ibox]];
-    bool initToZero = false;
     //also registered by the mac projector
     //this should use centroid v but using face cent to compare with chombo 3 code
     brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, kapdiv, centroidv,
-                          ibox, initToZero, 1.0);
+                          ibox, initZero, 1.0);
     ideb++;
   }
 
@@ -144,6 +143,7 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
   {
     printed = true;
     writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
+    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);
   }
 }
 ///
