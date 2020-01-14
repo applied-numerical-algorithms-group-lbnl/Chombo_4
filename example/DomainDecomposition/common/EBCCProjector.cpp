@@ -99,7 +99,6 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   auto & nghost  = m_macprojector->m_nghost;
-  auto & kappa   = m_macprojector->m_solver->getKappa();
 
   DataIterator dit = grids.dataIterator();
   int ideb = 0;
@@ -135,6 +134,7 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
 //  static bool printed = false;
 //  if(!printed)
 //  {
+//    auto & kappa   = m_macprojector->m_solver->getKappa();
 //    printed = true;
 //    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
 //    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);

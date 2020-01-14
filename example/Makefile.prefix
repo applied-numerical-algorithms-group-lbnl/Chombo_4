@@ -1,6 +1,7 @@
 
 SRC := $(wildcard *.cpp) 
 SRC += $(wildcard ../src/*.cpp) 
+SRC += $(wildcard ../../common/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
