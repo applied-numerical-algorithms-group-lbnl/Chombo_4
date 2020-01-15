@@ -83,6 +83,16 @@ public:
     return m_kappa;
   }
   
+  inline void resetAlphaAndBeta(const Real& a_alpha,
+                                const Real& a_beta)
+  {
+    m_alpha = a_alpha;
+    m_beta  = a_beta;
+    if(m_hasCoarser)
+    {
+      m_coarser->resetAlphaAndBeta(a_alpha, a_beta);
+    }
+  }
 private:
 
   void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
@@ -176,6 +186,12 @@ public:
   EBLevelBoxData<CELL, 1> & getKappa()
   {
     return m_finest->getKappa();
+  }
+
+  inline void resetAlphaAndBeta(const Real& a_alpha,
+                                const Real& a_beta)
+  {
+    m_finest->resetAlphaAndBeta(a_alpha, a_beta);
   }
 private:
 
