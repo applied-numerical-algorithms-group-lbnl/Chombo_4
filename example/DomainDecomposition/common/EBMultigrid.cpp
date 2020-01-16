@@ -103,6 +103,39 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     ideb++;
   }
 }
+
+
+/****/
+//for tga
+void
+EBMultigridLevel::
+applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
+               const EBLevelBoxData<CELL, 1> & a_phi)
+                    
+{
+  EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
+  phi.exchange(m_exchangeCopier);
+  DataIterator dit = m_grids.dataIterator();
+  int ideb  = 0;
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& phifab = a_phi[dit[ibox]];
+    auto& lphfab = a_lph[dit[ibox]];
+    shared_ptr<ebstencil_t> stencil =
+      m_dictionary->getEBStencil(m_neumname, StencilNames::Neumann, m_domain, m_domain, ibox);
+    //set lphi = kappa* div(F)
+    Bx lphbox = lphfab.box();
+    Bx phibox = phifab.box();
+    stencil->apply(lphfab, phifab,  true, 1.0);
+    //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
+    unsigned long long int numflopspt = 3;
+    Box grid =m_grids[dit[ibox]];
+    Bx  grbx = getProtoBox(grid);
+    auto& kapfab = m_kappa[dit[ibox]];
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ideb++;
+  }
+}
 /****/
 void
 EBMultigrid::
@@ -150,6 +183,8 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_dx         = a_dx;         
   m_grids      = a_grids;      
   m_stenname   = a_stenname;   
+  m_neumname   = a_stenname + string("_All_Neumann");   
+
   m_dombcname  = a_dombcname;  
   m_ebbcname   = a_ebbcname;   
   m_domain     = a_domain;     
@@ -164,6 +199,9 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+
+  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
+
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, graphs);
 
@@ -220,6 +258,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   m_alpha      = a_finerLevel.m_alpha;      
   m_beta       = a_finerLevel.m_beta;       
   m_stenname   = a_finerLevel.m_stenname;   
+  m_neumname   = a_finerLevel.m_neumname;   
   m_dombcname  = a_finerLevel.m_dombcname;  
   m_ebbcname   = a_finerLevel.m_ebbcname;   
 
@@ -235,6 +274,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv, graphs);
 
 

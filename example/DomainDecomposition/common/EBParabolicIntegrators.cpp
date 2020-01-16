@@ -15,32 +15,6 @@ void  getConsDiffF(Sca     a_diff,
   a_diff(0) = (a_diff(0) - a_phiold(0))/a_dt;
 }
 PROTO_KERNEL_END(getConsDiffF, getConsDiff)
-///
-PROTO_KERNEL_START 
-void  setEulerRHSF(Sca     a_rhs,
-                   Sca     a_phiold,
-                   Sca     a_source,
-                   Sca     a_kappa,
-                   Real    a_dt)
-{
-  //source is presumed to already be kappa weighted
-  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0);
-}
-PROTO_KERNEL_END(setEulerRHSF, setEulerRHS)
-///
-void  setCrankNicRHSF(Sca     a_rhs,
-                      Sca     a_phiold,
-                      Sca     a_source,
-                      Sca     a_kappa,
-                      Sca     a_kappalapphi,
-                      Real    a_dt,
-                      Real    a_diffCoef)
-{
-  //source is presumed to already be kappa weighted
-  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0) + 0.5*a_dt*a_diffCoef*a_kappalapphi(0);
-}
-PROTO_KERNEL_END(setCrankNicRHSF, setCrankNicRHS)
-
 ///this is the conservative way to advance a solution with diffusion.
 void 
 BaseEBParabolic::
@@ -68,6 +42,19 @@ computeDiffusion( EBLevelBoxData<CELL, 1>       &  a_diffusionTerm,
     ebforallInPlace(numflopspt, "getConsDiff", getConsDiff, grid, difffab, phiofab, a_dt);
   }
 }
+///
+PROTO_KERNEL_START 
+void  setEulerRHSF(Sca     a_rhs,
+                   Sca     a_phiold,
+                   Sca     a_source,
+                   Sca     a_kappa,
+                   Real    a_dt)
+{
+  //source is presumed to already be kappa weighted
+  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0);
+}
+PROTO_KERNEL_END(setEulerRHSF, setEulerRHS)
+
 ///
 void 
 EBBackwardEuler::
@@ -103,6 +90,21 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
   m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations);
 }
+
+///
+PROTO_KERNEL_START 
+void  setCrankNicRHSF(Sca     a_rhs,
+                      Sca     a_phiold,
+                      Sca     a_source,
+                      Sca     a_kappa,
+                      Sca     a_kappalapphi,
+                      Real    a_dt,
+                      Real    a_diffCoef)
+{
+  //source is presumed to already be kappa weighted
+  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0) + 0.5*a_dt*a_diffCoef*a_kappalapphi(0);
+}
+PROTO_KERNEL_END(setCrankNicRHSF, setCrankNicRHS)
 ///
 void 
 EBCrankNicolson::
@@ -146,7 +148,80 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations);
 }
 ///
+PROTO_KERNEL_START 
+void  setTGASrcF(Sca     a_srct,
+                 Sca     a_input,
+                 Real    a_dt)
+{
+  //source is presumed to already be kappa weighted
+  a_srct(0) = a_dt*a_input(0);
+}
+PROTO_KERNEL_END(setTGASrcF, setTGASrc)
 
+PROTO_KERNEL_START 
+void  incrTGARHSF(Sca     a_phit,
+                  Sca     a_rhst)
+{
+  a_rhst(0) = a_rhst(0) + a_phit(0);
+}
+PROTO_KERNEL_END(incrTGARHSF, incrTGARHS)
+
+///
+void 
+EBTGA::
+advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
+                const EBLevelBoxData<CELL, 1> &  a_source,
+                const Real                    &  a_diffCoef,
+                const Real                    &  a_dt,
+                const Real                    &  a_tolerance,
+                const unsigned int            &  a_maxIterations)
+{
+  //this makes m_src = dt*a_src
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    const auto & inputfab =   a_source[dit[ibox]];
+    auto       & srctfab  =     m_srct[dit[ibox]];
+    Bx grid = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+
+    unsigned long long int numflopspt = 1;
+    ebforallInPlace(numflopspt, "setTGASrc", setTGASrc, grid, srctfab, inputfab, a_dt);
+  }
+
+  Real alpha = 1;
+  Real beta  = m_mu4*a_dt*a_diffCoef;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta); 
+  //this makes rhs hold       (k I + dt* mu4 k L) (S)
+  //L == kappa*diffcoef*lapl(phi)
+  m_diffusionSolver->applyOpNeumann(m_rhst, m_srct); 
+
+  //this makes phit = (k I + mu3*dt kL) phin
+  alpha = 1;
+  beta  = m_mu3*a_dt*a_diffCoef;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
+  m_diffusionSolver->applyOp(m_phit, a_phi);
+  //this sets rhst = rhst + phit
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    const auto & phitfab  =   m_phit[dit[ibox]];
+    auto       & rhstfab  =   m_rhst[dit[ibox]];
+    Bx grid = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    unsigned long long int numflopspt = 1;
+    ebforallInPlace(numflopspt, "incrTGARHS", incrTGARHS, grid, rhstfab, phitfab);
+  }
+
+  alpha = 1;
+  beta = -m_mu2*a_dt*a_diffCoef;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta); 
+  //sets phit = (k I - mu2* L)^-1(rhs)
+  m_diffusionSolver->solve(m_phit, m_rhst, a_tolerance, a_maxIterations);
+
+  //this uses phit as the RHS (instead of copying it it over to m_rhst)
+  alpha = 1;
+  beta = -m_mu1*a_dt*a_diffCoef;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta); 
+  m_diffusionSolver->solve(a_phi, m_phit, a_tolerance, a_maxIterations);
+}
 
 ///
 #include "Chombo_NamespaceFooter.H"

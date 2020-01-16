@@ -122,7 +122,7 @@ class EBCrankNicolson: public BaseEBParabolic
 {
 public:
   ///
-  EBCrankNicolson(shared_ptr<EBMultigrid>              a_diffusionSolver,
+  EBCrankNicolson(shared_ptr<EBMultigrid>            a_diffusionSolver,
                   shared_ptr<GeometryService<2> >    a_geoserv,
                   const DisjointBoxLayout          & a_grids,
                   const Box                        & a_domain,
@@ -157,6 +157,67 @@ private:
   EBCrankNicolson();
   EBCrankNicolson(const  EBCrankNicolson& a_input);
   void operator= (const  EBCrankNicolson& a_input);
+
+};
+
+
+///
+class EBTGA: public BaseEBParabolic
+{
+public:
+  ///
+  EBTGA(shared_ptr<EBMultigrid>            a_diffusionSolver,
+        shared_ptr<GeometryService<2> >    a_geoserv,
+        const DisjointBoxLayout          & a_grids,
+        const Box                        & a_domain,
+        const IntVect                    & a_nghost)
+    :BaseEBParabolic(a_diffusionSolver, 
+                     a_geoserv,         
+                     a_grids,           
+                     a_domain,          
+                     a_nghost)
+  {
+    m_rhst.define(     m_grids, m_nghost, m_graphs);
+    m_srct.define(     m_grids, m_nghost, m_graphs);
+    m_phit.define(     m_grids, m_nghost, m_graphs);
+
+    Real tgaEpsilon = 1.e-12;
+#ifdef CH_USE_FLOAT
+    tgaEpsilon = sqrt(tgaEpsilon);
+#endif
+    Real a = 2.0 - sqrt(2.0) - tgaEpsilon;
+    m_mu1 = (a - sqrt( a*a - 4.0*a + 2.0))/2.0 ;
+    m_mu2 = (a + sqrt( a*a - 4.0*a + 2.0))/2.0 ;
+    m_mu3 = (1.0 - a);
+    m_mu4 = 0.5 - a;
+
+    Real discr = sqrt(a*a - 4.0*a + 2.0);
+    m_r1 = (2.0*a - 1.0)/(a + discr);
+  }         
+
+  ///
+  /** 
+      source term assumed to be already multiplied by kappa (kappa div F for example)
+  */
+  void advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
+                       const EBLevelBoxData<CELL, 1> &  a_source,
+                       const Real                    &  a_diffCoef,
+                       const Real                    &  a_dt,
+                       const Real                    &  a_tolerance,
+                       const unsigned int            &  a_maxIterations);
+
+protected:
+  Real m_mu1, m_mu2, m_mu3, m_mu4, m_r1;
+  
+  EBLevelBoxData<CELL, 1>  m_rhst;
+  EBLevelBoxData<CELL, 1>  m_srct;
+  EBLevelBoxData<CELL, 1>  m_phit;
+
+private:
+  //outlawed for all the usual reasons
+  EBTGA();
+  EBTGA(const            EBTGA& a_input);
+  void operator= (const  EBTGA& a_input);
 
 };
 

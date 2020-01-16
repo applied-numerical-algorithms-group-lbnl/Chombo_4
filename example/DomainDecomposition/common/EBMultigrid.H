@@ -72,6 +72,10 @@ public:
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi);
 
+  ///for tga
+  void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
+                      const EBLevelBoxData<CELL, 1> & a_phi);
+
   /// Multigrid v-cycle.
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
               const EBLevelBoxData<CELL, 1>& a_rhs);
@@ -114,6 +118,7 @@ private:
   Real                              m_dx;      
   DisjointBoxLayout                 m_grids;   
   string                            m_stenname;
+  string                            m_neumname;
   string                            m_dombcname;
   string                            m_ebbcname;
   dictionary_t                      m_dictionary;
@@ -197,6 +202,15 @@ public:
   /// 
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi);
+
+
+  /// for TGA force bcs to be homogeneous neumann
+  inline
+  void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
+                      const EBLevelBoxData<CELL, 1> & a_phi)
+  {
+    m_finest->applyOpNeumann(a_lph, a_phi);
+  }
 
 private:
 
