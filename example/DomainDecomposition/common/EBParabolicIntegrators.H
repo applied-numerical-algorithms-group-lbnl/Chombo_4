@@ -117,6 +117,50 @@ private:
 };
 
 
+///
+class EBCrankNicolson: public BaseEBParabolic
+{
+public:
+  ///
+  EBCrankNicolson(shared_ptr<EBMultigrid>              a_diffusionSolver,
+                  shared_ptr<GeometryService<2> >    a_geoserv,
+                  const DisjointBoxLayout          & a_grids,
+                  const Box                        & a_domain,
+                  const IntVect                    & a_nghost)
+    :BaseEBParabolic(a_diffusionSolver, 
+                     a_geoserv,         
+                     a_grids,           
+                     a_domain,          
+                     a_nghost)
+  {
+    m_rhs.define(     m_grids, m_nghost, m_graphs);
+    m_kappaLph.define(m_grids, m_nghost, m_graphs);
+  }         
+
+  ///
+  /** 
+      source term assumed to be already multiplied by kappa (kappa div F for example)
+  */
+  void advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
+                       const EBLevelBoxData<CELL, 1> &  a_source,
+                       const Real                    &  a_diffCoef,
+                       const Real                    &  a_dt,
+                       const Real                    &  a_tolerance,
+                       const unsigned int            &  a_maxIterations);
+
+protected:
+  
+  EBLevelBoxData<CELL, 1>  m_rhs;
+  EBLevelBoxData<CELL, 1>  m_kappaLph;
+private:
+  //outlawed for all the usual reasons
+  EBCrankNicolson();
+  EBCrankNicolson(const  EBCrankNicolson& a_input);
+  void operator= (const  EBCrankNicolson& a_input);
+
+};
+
+
 #include "Chombo_NamespaceFooter.H"
 #endif
 

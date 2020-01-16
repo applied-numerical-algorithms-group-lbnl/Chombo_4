@@ -194,6 +194,9 @@ public:
     m_finest->resetAlphaAndBeta(a_alpha, a_beta);
   }
 
+  /// 
+  void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
+               const EBLevelBoxData<CELL, 1> & a_phi);
 
 private:
 
@@ -204,9 +207,6 @@ private:
 
   Real norm(const EBLevelBoxData<CELL, 1>       & a_res) const;
   
-  /// 
-  void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-               const EBLevelBoxData<CELL, 1> & a_phi);
 
   /// Multigrid v-cycle.
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,

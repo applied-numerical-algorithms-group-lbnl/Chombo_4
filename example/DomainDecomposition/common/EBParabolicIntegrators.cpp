@@ -28,6 +28,18 @@ void  setEulerRHSF(Sca     a_rhs,
 }
 PROTO_KERNEL_END(setEulerRHSF, setEulerRHS)
 ///
+void  setCrankNicRHSF(Sca     a_rhs,
+                      Sca     a_phiold,
+                      Sca     a_source,
+                      Sca     a_kappa,
+                      Sca     a_kappalapphi,
+                      Real    a_dt,
+                      Real    a_diffCoef)
+{
+  //source is presumed to already be kappa weighted
+  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0) + 0.5*a_dt*a_diffCoef*a_kappalapphi(0);
+}
+PROTO_KERNEL_END(setCrankNicRHSF, setCrankNicRHS)
 
 ///this is the conservative way to advance a solution with diffusion.
 void 
@@ -91,5 +103,50 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
   m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations);
 }
+///
+void 
+EBCrankNicolson::
+advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
+                const EBLevelBoxData<CELL, 1> &  a_source,
+                const Real                    &  a_diffCoef,
+                const Real                    &  a_dt,
+                const Real                    &  a_tolerance,
+                const unsigned int            &  a_maxIterations)
+{
+  EBLevelBoxData<CELL, 1> & kappa = m_diffusionSolver->getKappa();
 
+  //take kappa*laplacian(phiold)
+  Real alpha = 0;
+  Real beta  = 1;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
+  m_diffusionSolver->applyOp(m_kappaLph, a_phi);
+
+  //set rhs = kappa*phi^n + source*dt + (dt/2)*kappa*lapl(phi)
+  //the source is assumed to already be kappa weighted
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto       & rhsfab =      m_rhs[dit[ibox]];
+    auto       & phifab =      a_phi[dit[ibox]];
+    const auto & soufab =   a_source[dit[ibox]];
+    const auto & kapfab =      kappa[dit[ibox]];
+    const auto & lapfab = m_kappaLph[dit[ibox]];
+
+    Bx grid = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+
+    unsigned long long int numflopspt = 3;
+
+    ebforallInPlace(numflopspt, "setCrankNicRHS", setCrankNicRHS, grid, rhsfab, phifab, soufab, kapfab, lapfab, a_dt, a_diffCoef);
+  }
+  
+  //solve for new phi
+  alpha = 1;
+  beta = -0.5*a_dt*a_diffCoef;
+  m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
+  m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations);
+}
+///
+
+
+///
 #include "Chombo_NamespaceFooter.H"
