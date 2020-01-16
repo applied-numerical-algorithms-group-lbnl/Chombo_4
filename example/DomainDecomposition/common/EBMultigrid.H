@@ -193,6 +193,8 @@ public:
   {
     m_finest->resetAlphaAndBeta(a_alpha, a_beta);
   }
+
+
 private:
 
   /// 
@@ -230,6 +232,7 @@ private:
   {
     m_finest->relax(a_phi, a_rhs);
   }
+
 
   /// weak construction introduces unnecessary complications
   EBMultigrid()
