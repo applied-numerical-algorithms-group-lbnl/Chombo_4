@@ -1,14 +1,14 @@
 #domain size
-nx=       16
+nx=       64
 #number of applies
-maxIter=    10
+maxIter=    27
 #number of cuda streams (if used)
 nStream=  8
-alpha = 1.0
-beta = -1.0e-1
-tolerance = 1.0e-6
+alpha = 0.0
+beta = 1.0
+tolerance = 1.0e-10
 #max grid size in domain decomposition
-maxGrid=  64
+maxGrid=  32
 # center coordinates
 x0=       0.5
 y0=       0.5
@@ -21,10 +21,10 @@ A=        1.0
 B=        1.0
 C=        1.0
 # radius of ellipsoid
-R=        0.25
+R=        0.45
 #value in hdf5 file of  covered data
-coveredval = 0.
+coveredval = -0.001
 # 0 neumann, 1 dirichlet
-domainBC     = 1
-EBBC         = 0
+domainBC     = 0
+EBBC         = 1
 numSmooth  = 4

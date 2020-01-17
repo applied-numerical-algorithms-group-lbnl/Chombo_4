@@ -261,7 +261,7 @@ runTest(int a_argc, char* a_argv[])
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
-  shared_ptr<BaseIF>    impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
+  shared_ptr<BaseIF>    impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
   Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
@@ -302,11 +302,11 @@ runTest(int a_argc, char* a_argv[])
   }
   else
   {
-    dombcname = StencilNames::Dirichlet;
+    ebbcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at EB" << endl;
   }
-
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  Box dombox = domain.domainBox();
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
@@ -314,7 +314,7 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox(), dataGhostIV, dataGhostIV);
+  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV, dataGhostIV);
   EBMultigrid::s_numSmoothUp   = numSmooth;
   EBMultigrid::s_numSmoothDown = numSmooth;
   DataIterator dit = grids.dataIterator();
@@ -333,9 +333,10 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "writing to file " << endl;
   
-  phi.writeToFileHDF5("phi.hdf5",  -1.0);
-  rhs.writeToFileHDF5("rhs.hdf5",   0.0);
-  res.writeToFileHDF5("res.hdf5",   0.0);
+  auto& kappa = solver.getKappa();
+  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
   pout() << "exiting " << endl;
   return 0;
