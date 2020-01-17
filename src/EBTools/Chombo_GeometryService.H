@@ -460,7 +460,7 @@ public:
     Vector<int> procs;
     domainSplit(domains[0], boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
-    a_grids[0].define(boxes, procs);
+    a_grids[0].define(boxes, procs, domains[0]);
     //a_grids[0].print();
     for(int ilev = 1; ilev < numLevels; ilev++)
     {
@@ -473,7 +473,7 @@ public:
       {
         domainSplit(domains[ilev], boxes, a_maxGridSize);
         LoadBalance(procs, boxes);
-        a_grids[ilev].define(boxes, procs);
+        a_grids[ilev].define(boxes, procs, domains[ilev]);
       }
     }
   }

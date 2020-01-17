@@ -16,7 +16,8 @@
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-#include "EBAdvection.H"
+#include "EBMultigrid.H"
+#include "EBParabolicIntegrators.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
@@ -29,41 +30,95 @@ using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
 
-typedef Var<Real,DIM> Vec;
-typedef Var<Real,  1> Sca;
 
 //=================================================
 void 
-initializeSource(EBLevelBoxData<CELL,   1>   &  a_source,
-                 const DisjointBoxLayout     &  a_grids,
-                 const Real                  &  a_dx,
-                 const Real                  &  a_geomCen,
-                 const Real                  &  a_geomRad,
-                 const Real                  &  a_blobCen,
-                 const Real                  &  a_blobRad)
+initializeData(EBLevelBoxData<CELL,   1>   &  a_scalarCell,
+               EBLevelBoxData<CELL,   1>   &  a_sourceTerm,
+               const DisjointBoxLayout     &  a_grids,
+               const Real                  &  a_dx)
 
 {
   DataIterator dit = a_grids.dataIterator();
-  int ideb = 0;
+  Real blobCen, blobRad;
+  ParmParse pp;
+  pp.get("blob_cen", blobCen);
+  pp.get("blob_rad", blobRad);
+  pout() << "blob_cen = " << blobCen       << endl;
+  pout() << "blob_rad = " << blobRad       << endl;
+
   pout() << "calling initializespot for scalar rhs " << endl;
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    auto& scalfab = a_source[dit[ibox]];
+    auto& sourcefab = a_sourceTerm[dit[ibox]];
+    auto& scalarfab = a_scalarCell[dit[ibox]];
     unsigned long long int numflopsscal = 5*DIM +3;
-    Bx scalbox = scalfab.box();
+    Bx scalbox = scalarfab.box();
 
     ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
-                      scalfab, a_blobCen, a_blobRad, a_dx);
+                      sourcefab, scalarfab, blobCen, blobRad, a_dx);
   }
 }
+///
+shared_ptr<EBMultigrid> 
+getEBMultigrid(shared_ptr<EBEncyclopedia<2, Real> > & a_brit,
+               shared_ptr<GeometryService<2> >      & a_geoserv,
+               const DisjointBoxLayout              & a_grids,
+               const Real                           & a_dx,
+               const IntVect                        & a_dataGhostIV)
 
+{
+  ParmParse pp;
+  //these get overwritten for heat solves
+  Real alpha = 1.; Real beta  = 1.;
+  int numSmooth  = 2;
+  string stenname = StencilNames::Poisson2;
+  string dombcname, ebbcname;
+  Box domain = a_grids.physDomain().domainBox();
+  pp.get("numSmooth" , numSmooth);         
+  pout() << "num smooths = " << numSmooth;
+
+  int dombc, ebbc;
+  pp.get("domainBC"  , dombc);
+  pp.get("EBBC"      , ebbc);
+  if(dombc == 0)
+  {
+    dombcname = StencilNames::Neumann;
+    pout() << "using Neumann BCs at domain" << endl;
+  }
+  else
+  {
+    dombcname = StencilNames::Dirichlet;
+    pout() << "using Dirichlet BCs at domain" << endl;
+  }
+
+  if(ebbc == 0)
+  {
+    ebbcname = StencilNames::Neumann;
+    pout() << "using Neumann BCs at EB" << endl;
+  }
+  else
+  {
+    ebbcname = StencilNames::Dirichlet;
+    pout() << "using Dirichlet BCs at EB" << endl;
+  }
+  auto dictionary = a_brit->m_cellToCell;
+  shared_ptr<EBMultigrid> 
+    solver(new EBMultigrid (dictionary, a_geoserv, alpha, beta, a_dx, a_grids, stenname, dombcname, ebbcname, domain, a_dataGhostIV, a_dataGhostIV));
+
+  EBMultigrid::s_numSmoothUp   = numSmooth;
+  EBMultigrid::s_numSmoothDown = numSmooth;
+
+  return solver;
+
+}
+///
 int
 runHeatEqn(int a_argc, char* a_argv[])
 {
   Real coveredval = -1;
-  Real cfl    = 0.5;
-  int nx      = 32;
+  int nx          = 32;
   int  max_step   = 10;
   Real max_time   = 1.0;
 
@@ -71,7 +126,7 @@ runHeatEqn(int a_argc, char* a_argv[])
   int outputInterval = -1;
   ParmParse pp;
 
-  pp.get("nstream", nStream);
+  pp.get("nStream", nStream);
 
     
   pp.get("max_step"  , max_step);
@@ -79,7 +134,7 @@ runHeatEqn(int a_argc, char* a_argv[])
   pp.get("output_interval", outputInterval);
   pp.get("covered_value", coveredval);
 
-  pout() << "num_streams     = " << nStream         << endl;
+  pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
@@ -88,53 +143,98 @@ runHeatEqn(int a_argc, char* a_argv[])
   Proto::DisjointBoxLayout::setNumStreams(nStream);
 #endif
 
-  Real dx;
-  DisjointBoxLayout grids;
+
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
-  Real geomCen;
-  Real geomRad;
-  Real blobCen;
-  Real blobRad;
-  int whichGeom;
-  defineGeometry(grids, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
+  Real diffCoef;
+  pp.get("nx"        , nx);
+
+  pout() << "nx       = " << nx     << endl;
+  Real dx = 1.0/Real(nx);
+
+  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Box>               vecdomains;
+  Vector<Real> vecdx;
+
+  defineGeometry(vecgrids, vecdomains, vecdx, geoserv, dx, nx);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-
+  
+  
   pout() << "making dictionary" << endl;
-  Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
+    brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomains, vecdx, dataGhostPt));
 
 
   pout() << "inititializing data"   << endl;
   
+  Box domain              = vecdomains[0];
+  DisjointBoxLayout grids =   vecgrids[0];
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
-  EBLevelBoxData<CELL,   1>  scalcell(grids, dataGhostIV, graphs);
-  initializeData(scalcell,  grids, dx, blobCen, blobRad);
+  EBLevelBoxData<CELL,   1>  sourceTerm(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  scalarCell(grids, dataGhostIV, graphs);
+  initializeData(scalarCell, sourceTerm,  grids, dx);
 
 
   int step = 0; Real time = 0;
   Real dt = dx;
   pout() << "setting the dt = dx" << endl;
 
-  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
-  const EBLevelBoxData<CELL, 1> & kappa = advectOp.getKappa();
+
+  pout() << "defining Helmholtz solver " << endl;
+  shared_ptr<EBMultigrid> ebmg =getEBMultigrid(brit, geoserv, grids, dx, dataGhostIV);
+  const EBLevelBoxData<CELL, 1> & kappa = ebmg->getKappa();
 
   if(outputInterval > 0)
   {
     string filep("scal.0.hdf5");
-    writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
+    writeEBLevelHDF5<1>(  filep,  scalarCell, kappa, domain, graphs, coveredval, dx, dt, time);
+
+    string fileq("sourceTerm.hdf5");
+    writeEBLevelHDF5<1>(  fileq,  sourceTerm, kappa, domain, graphs, coveredval, dx, dt, time);
   }
 
-  pout() << "running advection operator " << endl;
+  pp.get("diffusion_coefficient", diffCoef);
+  pout() << "Diffusion coeficient = " << diffCoef << endl;
 
+  Real tol = 0.00001;
+  int  maxIter = 10;
+
+  pp.get("maxIter"   , maxIter);
+  pp.get("tolerance" , tol);
+  pout() << "tolerance = " << tol    << endl;
+  pout() << "maxIter   = " << maxIter    << endl;
+
+  int whichSolver = 0;
+  pp.get("which_solver", whichSolver);
+  shared_ptr<BaseEBParabolic> heatIntegrator;
+  if(whichSolver == 0)
+  {
+    pout() << "using backward Euler for time integration" << endl;
+    heatIntegrator = shared_ptr<BaseEBParabolic>(new EBBackwardEuler(ebmg, geoserv, grids, domain, dataGhostIV));
+  }
+  else if(whichSolver == 1)
+  {
+    pout() << "using Crank Nicolson for time integration" << endl;
+    heatIntegrator = shared_ptr<BaseEBParabolic>(new EBCrankNicolson(ebmg, geoserv, grids, domain, dataGhostIV));
+  }
+  else if(whichSolver == 2)
+  {
+    pout() << "using TGA for time integration" << endl;
+    heatIntegrator = shared_ptr<BaseEBParabolic>(new EBTGA(ebmg, geoserv, grids, domain, dataGhostIV));
+  }
+  else
+  {
+    MayDay::Error("bogus whichSolver");
+  }
+
+  pout() << "running heat equation operator" << endl;
   while((step < max_step) && (time < max_time))
   {
-    advectOp.advance(scalcell, dt);
+    heatIntegrator->advanceOneStep(scalarCell, sourceTerm, diffCoef, dt, tol, maxIter);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;
@@ -143,7 +243,7 @@ runHeatEqn(int a_argc, char* a_argv[])
     if((outputInterval > 0) && ( (step%outputInterval == 0) || step == (max_step-1)))
     {
       string filep = string("scal.") + std::to_string(step) + string(".hdf5");
-      writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
+      writeEBLevelHDF5<1>(  filep,  scalarCell, kappa, domain, graphs, coveredval, dx, dt, time);
     }
   }
   pout() << "exiting runAdvection" << endl;
