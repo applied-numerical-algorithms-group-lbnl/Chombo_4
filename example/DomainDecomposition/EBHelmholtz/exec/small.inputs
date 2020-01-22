@@ -8,7 +8,7 @@ alpha = 0.0
 beta = 1.0
 tolerance = 1.0e-10
 #max grid size in domain decomposition
-maxGrid=  32
+maxGrid=  64
 # center coordinates
 x0=       0.5
 y0=       0.5

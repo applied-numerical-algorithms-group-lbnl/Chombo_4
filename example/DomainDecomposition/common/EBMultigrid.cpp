@@ -383,7 +383,7 @@ EBMultigridLevel::
 relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs)
 {
-  PR_TIME("sgmglevel::relax");
+
   //
   DataIterator dit = m_grids.dataIterator();
   for(int iredblack = 0; iredblack < 2; iredblack++)
