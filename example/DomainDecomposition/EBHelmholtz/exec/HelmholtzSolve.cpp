@@ -17,159 +17,39 @@
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
 #include "Proto_DebugHooks.H"
+#include "DebugFunctions.H"
 #include <iomanip>
 
 
-using std::cout;
-using std::endl;
-using std::shared_ptr;
-
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
-using     std::cout;
-using     std::endl;
-using     std::shared_ptr;
-using   Proto::BaseIF;
-using   Proto::SimpleEllipsoidIF;
-using   Proto::CENTERING;
-using   Proto::CELL;
-using Proto::PointSet;
-using Proto::PointSetIterator;
-#if DIM==2
-void 
-dumpOrigin(EBBoxData<CELL, Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-    typedef EBIndex<CELL> VolIndex;
-    IntVect iv(1, 1);
-    BoxData<Real, 1> & data = dataPtr->getRegData();
-    Box region = grow(Box(iv, iv), 2);
-    IntVect lo = region.smallEnd();
-    IntVect hi = region.bigEnd();
-    cout << "data region contains:" << endl;
-    for(int j = lo[1]; j <= hi[1]; j++)
-    {
-      for(int i = lo[0]; i <= hi[0]; i++)
-      {
-        Point pt(i,j);
-        cout << pt << ":" << data(pt, 0) << "  ";
-      }
-      cout << endl;
-    }
-  }
-}
-
-
-void 
-dumpArea(EBBoxData<CELL, Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-    typedef EBIndex<CELL> VolIndex;
-    IntVect iv(2, 2);
-    EBBoxData<CELL, Real, 1> & data = *dataPtr;
-    EBGraph  ebgraph = data.ebgraph();
-    Box region = grow(Box(iv, iv), 2);
-
-    IntVect lo = region.smallEnd();
-    IntVect hi = region.bigEnd();
-    Bx databox = dataPtr->box();
-    cout << "data region contains:" << endl;
-    for(int j = lo[1]; j <= hi[1]; j++)
-    {
-      for(int i = lo[0]; i <= hi[0]; i++)
-      {
-        Point pt(i,j);
-        if((databox.contains(pt)) && ebgraph.getDomain().contains(pt))
-          {
-            vector<VolIndex> vofs = ebgraph.getVoFs(pt);
-            for(int ivof = 0; ivof < vofs.size(); ivof++)
-            {
-              VolIndex vof = vofs[ivof];
-              cout << pt << ":" << data(vof, 0) << "  ";
-            } 
-          }
-      }
-      cout << endl;
-    }
-  }
-}
-#endif
-
-
-void 
-dumpEBBD(EBBoxData<CELL, Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-    typedef EBIndex<CELL> VolIndex;
-    EBBoxData<CELL, Real, 1> & data = *dataPtr;
-    EBGraph  ebgraph = data.ebgraph();
-
-    Bx databox = dataPtr->box();
-    Point lo = databox.low();
-    Point hi = databox.high();
-    cout << "data region contains:" << endl;
-    for(int j = lo[1]; j <= hi[1]; j++)
-    {
-      for(int i = lo[0]; i <= hi[0]; i++)
-      {
-        Point pt(i,j);
-        if((databox.contains(pt)) && ebgraph.getDomain().contains(pt))
-          {
-            vector<VolIndex> vofs = ebgraph.getVoFs(pt);
-            for(int ivof = 0; ivof < vofs.size(); ivof++)
-            {
-              VolIndex vof = vofs[ivof];
-              cout << pt << ":" << data(vof, 0) << "  ";
-            } 
-          }
-      }
-      cout << endl;
-    }
-  }
-}
-void
-dumpPPS(const PointSet* a_ivs)
-{
-  for(PointSetIterator ivsit(*a_ivs);  ivsit.ok(); ++ivsit)
-  {
-    std::cout << ivsit() << " " ;
-  }
-  std::cout << std::endl;
- }
-
-typedef Proto::Var<Real, 1> Sca;
-PROTO_KERNEL_START 
-void  addCorToPhiF(Sca     a_phi,
-                   Sca     a_cor)
-{
-  a_phi(0) = a_phi(0) + a_cor(0);
-}
-PROTO_KERNEL_END(addCorToPhiF, addCorToPhi)
+//using std::cout;
+//using std::endl;
+//using std::shared_ptr;
+//
+//typedef Proto::Box Bx;
+//using   Proto::Point;
+//using   Proto::BoxData;
+//using   Proto::Stencil;
+//using   ProtoCh::getPoint;
+//using   ProtoCh::getProtoBox;
+//using   ProtoCh::getIntVect;
+//using   ProtoCh::getBox;
+//using     std::cout;
+//using     std::endl;
+//using     std::shared_ptr;
+//using   Proto::BaseIF;
+//using   Proto::SimpleEllipsoidIF;
+//using   Proto::CENTERING;
+//using   Proto::CELL;
+//using Proto::PointSet;
+//using Proto::PointSetIterator;
 
 int
 runTest(int a_argc, char* a_argv[])
 {
 #if DIM==2
-  dumpArea(NULL);
-  dumpEBBD(NULL);
+  dumpEB1(NULL);
+  dumpXFace(NULL);
+  dumpYFace(NULL);
 #endif
 
   Real coveredval = -1;
@@ -256,12 +136,12 @@ runTest(int a_argc, char* a_argv[])
   grids.printBalance();
 
   IntVect dataGhostIV =   IntVect::Unit;
-  Point   dataGhostPt = getPoint(dataGhostIV); 
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
-  shared_ptr<BaseIF>    impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
+  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, true));
   Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
@@ -324,12 +204,12 @@ runTest(int a_argc, char* a_argv[])
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
     EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
     EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-    phibd.setVal(0.0);
-    rhsbd.setVal(1.0);
+    phibd.setVal(1.0);
+    rhsbd.setVal(0.0);
     corbd.setVal(0.0);
   }
 
-  solver.solve(phi, rhs, tol, maxIter);
+  solver.solve(phi, rhs, tol, maxIter, false);
 
   pout() << "writing to file " << endl;
   

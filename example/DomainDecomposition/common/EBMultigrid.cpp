@@ -16,18 +16,23 @@ EBMultigrid::
 solve(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       const Real                    & a_tol,
-      const unsigned int            & a_maxIter)
+      const unsigned int            & a_maxIter,
+      bool a_initToZero)
 {
-  EBLevelBoxData<CELL, 1>& res =  m_finest->m_resid;
-  a_phi.setVal(0.);
-  residual(res, a_phi, a_rhs);
-  Real initres = res.maxNorm(0);
+  if(a_initToZero)
+  {
+    a_phi.setVal(0.);
+  }
+
+  residual(m_res, a_phi, a_rhs);
+  Real initres = m_res.maxNorm(0);
   int iter = 0;
   pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
   Real resnormold = resnorm;
   while((iter < a_maxIter) && (resnorm > a_tol*initres))
   {
+    m_cor.setVal(0.);
     pout() << setprecision(3)
            << setiosflags(ios::showpoint)
            << setiosflags(ios::scientific);
@@ -42,11 +47,13 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     }
     pout() << endl;
     
-    vCycle(a_phi, a_rhs);
+    vCycle(m_cor, m_res);
 
-    residual(res, a_phi, a_rhs);
+    a_phi += m_cor;
+    residual(m_res, a_phi, a_rhs);
+
     resnormold = resnorm;
-    resnorm = res.maxNorm(0);
+    resnorm = m_res.maxNorm(0);
 
     iter++;
   }
@@ -200,7 +207,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
-  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
+//  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
 
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, graphs);
@@ -471,24 +478,24 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-  if (m_hasCoarser)
-  {
-    residual(m_resid,a_phi,a_rhs);                      
-    //stencils for multilevel objects live with the finer level
-    restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    if(EBMultigrid::s_useWCycle)
-    {
-      m_coarser->vCycle(m_deltaC,m_residC);
-    }
-    prolongIncrement(a_phi,m_deltaC);
-  }
-
-  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
-  {
-    relax(a_phi,a_rhs);
-  }
+//  if (m_hasCoarser)
+//  {
+//    residual(m_resid,a_phi,a_rhs);                      
+//    //stencils for multilevel objects live with the finer level
+//    restrictResidual(m_residC,m_resid);
+//    m_deltaC.setVal(0.);
+//    m_coarser->vCycle(m_deltaC,m_residC);
+//    if(EBMultigrid::s_useWCycle)
+//    {
+//      m_coarser->vCycle(m_deltaC,m_residC);
+//    }
+//    prolongIncrement(a_phi,m_deltaC);
+//  }
+//
+//  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
+//  {
+//    relax(a_phi,a_rhs);
+//  }
 
 }
 #include "Chombo_NamespaceFooter.H"

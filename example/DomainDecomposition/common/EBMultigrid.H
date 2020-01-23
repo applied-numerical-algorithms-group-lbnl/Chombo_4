@@ -179,6 +179,10 @@ public:
                            a_domain, 
                            a_nghostsrc,
                            a_nghostdst));     
+
+    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
+    m_res.define(a_grids, a_nghostsrc  , graphs);
+    m_cor.define(a_grids, a_nghostsrc  , graphs);
   }
 
   ///
@@ -186,7 +190,8 @@ public:
   solve(EBLevelBoxData<CELL, 1>       & a_phi,
         const EBLevelBoxData<CELL, 1> & a_rhs,
         const Real                    & a_tolerance,
-        const unsigned int            & a_maxIterations);
+        const unsigned int            & a_maxIterations,
+        bool a_initToZero = true);
 
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -254,6 +259,8 @@ private:
   }
 
   std::shared_ptr<EBMultigridLevel> m_finest;
+  EBLevelBoxData<CELL, 1>           m_res;
+  EBLevelBoxData<CELL, 1>           m_cor;
 };
 #include "Chombo_NamespaceFooter.H"
 
