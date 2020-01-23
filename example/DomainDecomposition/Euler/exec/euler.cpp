@@ -25,6 +25,7 @@
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_BaseFab.H"
+#include "Chombo_BFM.H"
 
 #include "Chombo_ParmParse.H"
 #include "Chombo_LoadBalance.H"
@@ -34,6 +35,8 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+
+#include "Chombo_BFM.H"
 
 #include "Chombo_Box.H"
 
@@ -182,8 +185,7 @@ void
 writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
 {
 #ifdef CH_USE_HDF5
-  //string filename = string("state.step") + convertInt(step) + "." + convertInt(a_nx) + "." + convertInt(DIM) + string("d.hdf5");
-  string filename = string("state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
+  string filename = std::string("state.step") + std::to_string(step) + "." + std::to_string(DIM) + std::string("d.hdf5");
   
   //a_U.writeToFileHDF5(filename);
 
@@ -199,6 +201,15 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
   Vector<int> refRatio(1,2); 
   int numLevels = 1;
 
+  DataIterator dit = vectGrids[0].dataIterator();
+  Real maxRho = 0;
+  for(dit.begin(); dit.ok(); ++dit)
+    {
+      Box b = vectGrids[0][dit];
+      BFM1<CH_SPACEDIM>(level_data->operator[](dit).dataPtr(),b, 0, 1, b, [&maxRho](Real& v){ maxRho = std::max(v, maxRho);});
+    }
+  std::cout<<"max Rho "<<maxRho<<"\n";
+  
   Vector<string> vectNames(NUMCOMPS);
   vectNames[0] = "rho";
   vectNames[1] = "momentum_x";
