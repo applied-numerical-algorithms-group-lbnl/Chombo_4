@@ -41,6 +41,28 @@ struct BFMImpl<0,T1,T2,F>
   }
 };
 
+template<unsigned char D, typename T1, typename F>
+struct BFMImpl1
+{
+  static void f(T1* __restrict t1, int* lo1, int* stride1, int* counting,F f)
+  {
+    t1+=lo1[D]*stride1[D-1];
+    for(int i=0; i<counting[D]; ++i, t1+=stride1[D-1]) 
+      BFMImpl1<D-1,T1,F>::f(t1, lo1, stride1, counting, f);
+  }
+};
+ 
+template<typename T1, typename F>
+struct BFMImpl1<0,T1,F>
+{
+  static void f(T1* __restrict__ t1, int* lo1, int* stride1, int* counting,F f)
+  {
+    int trips=counting[0];
+    int l1=lo1[0];
+    for(int i=0; i!=trips; ++i) f(t1[i+l1]);
+  }
+};
+
 template<unsigned char R> inline void rcount(int* c, const Box& r)
 {
   rcount<R-1>(c,r);
@@ -97,6 +119,20 @@ void BFM(T1* __restrict t1, const T2* __restrict t2, const Box& b1, const Box& b
   gridStride<D-1>(stride2, lo2, b2, r);
 
   BFMImpl<D,T1,T2,F>::f(t1,t2,lo1,lo2,stride1,stride2,counting,f);
+}
+
+template<unsigned char D, typename T1, typename F>
+void BFM1(T1* __restrict t1, const Box& b1, int c1, 
+         int ncomp, const Box& r, F f)
+{
+  CH_assert(b1.contains(r));
+  int lo1[D+1]; lo1[D]=c1;
+  int stride1[D];
+  int counting[D+1]; counting[D]=ncomp;
+  rcount<D-1>(counting,r);
+  gridStride<D-1>(stride1, lo1, b1, r);
+
+  BFMImpl1<D,T1,F>::f(t1,lo1,stride1,counting,f);
 }
 
 
