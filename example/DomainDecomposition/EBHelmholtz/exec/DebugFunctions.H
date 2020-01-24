@@ -3,6 +3,40 @@
 #define PI 3.141592653589793
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
+void 
+dumpVecRV(Vector<RealVect>* a_dataPtr)
+{
+  if(a_dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
+    {
+      
+      cout << ivec << ":" << (*a_dataPtr)[ivec];
+      cout << endl;
+    }
+  }
+}
+void 
+dumpvecRV(vector<RealVect>* a_dataPtr)
+{
+  if(a_dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
+    {
+      
+      cout << ivec << ":" << (*a_dataPtr)[ivec];
+      cout << endl;
+    }
+  }
+}
 
 void
 dumpPS(PointSet* dataPtr)
@@ -61,7 +95,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -86,7 +120,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
           }
           else
           {
-            cout  << "------------" << "  ";
+            cout  << "--------------" << "  ";
           }
         }
       }
@@ -101,7 +135,7 @@ dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -144,7 +178,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -197,7 +231,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
