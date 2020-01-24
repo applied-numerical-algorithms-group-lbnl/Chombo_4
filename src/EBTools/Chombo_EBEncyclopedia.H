@@ -87,7 +87,7 @@ public:
                                    a_srcDomain,                
                                    a_dstDomain,                
                                    needDiagonalWeights, 
-                                   a_ pdstGrown);
+                                   a_dstGrown);
 #endif      
   }
 
@@ -185,7 +185,6 @@ public:
 
     }
 #if DIM==3      
-    else if(a_idir == 2)
     {
       const auto& sten = m_zFaceToCell->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
       sten->apply(a_cellData, *a_fluxData.m_zflux,  initToZero, a_scale);
