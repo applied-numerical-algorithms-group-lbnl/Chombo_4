@@ -478,24 +478,31 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-//  if (m_hasCoarser)
-//  {
-//    residual(m_resid,a_phi,a_rhs);                      
-//    //stencils for multilevel objects live with the finer level
-//    restrictResidual(m_residC,m_resid);
-//    m_deltaC.setVal(0.);
-//    m_coarser->vCycle(m_deltaC,m_residC);
-//    if(EBMultigrid::s_useWCycle)
-//    {
-//      m_coarser->vCycle(m_deltaC,m_residC);
-//    }
-//    prolongIncrement(a_phi,m_deltaC);
-//  }
-//
-//  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
-//  {
-//    relax(a_phi,a_rhs);
-//  }
+  if (m_hasCoarser)
+  {
+    residual(m_resid,a_phi,a_rhs);                      
+    //stencils for multilevel objects live with the finer level
+    restrictResidual(m_residC,m_resid);
+    m_deltaC.setVal(0.);
+    m_coarser->vCycle(m_deltaC,m_residC);
+    if(EBMultigrid::s_useWCycle)
+    {
+      m_coarser->vCycle(m_deltaC,m_residC);
+    }
+    prolongIncrement(a_phi,m_deltaC);
+  }
+  else
+  {
+    for(int irelax = 0; irelax < 100; irelax++)
+    {
+      relax(a_phi,a_rhs);
+    }
+  }
+
+  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
+  {
+    relax(a_phi,a_rhs);
+  }
 
 }
 #include "Chombo_NamespaceFooter.H"
