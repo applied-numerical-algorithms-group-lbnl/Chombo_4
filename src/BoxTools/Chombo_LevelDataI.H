@@ -107,7 +107,8 @@ void LevelData<T>::define(const DisjointBoxLayout& dp, int comps, const IntVect&
   //no need for exchange copier if no ghost
   //do not do this if it is periodic because bad things can happen
   //with large number of ghost cells.
-  bool periodic = m_disjointBoxLayout.physDomain().isPeriodic();
+// unused --dtg
+//   bool periodic = m_disjointBoxLayout.physDomain().isPeriodic();
   // only build Copier if exchange is called, and we are not passed in a Copier.
   //  if((m_ghost != IntVect::Zero) && !periodic)
   //    {
