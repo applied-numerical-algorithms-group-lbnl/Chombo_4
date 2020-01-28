@@ -15,6 +15,7 @@
 
 using std::array;
 class EBMultigrid;
+class EBRelaxSolver;
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
 class EBMultigridLevel
 {
@@ -41,6 +42,11 @@ public:
   ///make coarse from fine 
   EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
                    shared_ptr<GeometryService<2> >   & a_geoserv);
+
+  ///
+  void
+  preCond(EBLevelBoxData<CELL, 1>       & a_phi,
+          const EBLevelBoxData<CELL, 1> & a_rhs);
 
   
   ///  
@@ -112,7 +118,7 @@ private:
   }
 
   bool   m_hasCoarser; 
-
+  unsigned int m_depth;
   Real                              m_alpha;   
   Real                              m_beta;    
   Real                              m_dx;      
@@ -140,6 +146,7 @@ private:
 
   IntVect m_nghostSrc, m_nghostDst;
   Copier                            m_exchangeCopier;
+  shared_ptr<EBRelaxSolver>         m_bottomSolver;
 };
 
 
@@ -261,6 +268,7 @@ private:
   std::shared_ptr<EBMultigridLevel> m_finest;
   EBLevelBoxData<CELL, 1>           m_res;
   EBLevelBoxData<CELL, 1>           m_cor;
+
 };
 #include "Chombo_NamespaceFooter.H"
 

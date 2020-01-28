@@ -60,21 +60,21 @@ dumpPS(PointSet* dataPtr)
 }
 
 #if DIM==2
-Point lodeb(7, 12);
-Point hideb(11,16);
 void 
-dumpBlob(BoxData<Real, 1>* dataPtr)
+fullDump(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    Bx area(lodeb, hideb);
-
-    BoxData<Real, 1> & data = *dataPtr;
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
     Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    Point lodeb = databox.low();
+    Point hideb = databox.high();
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
     {
@@ -83,13 +83,26 @@ dumpBlob(BoxData<Real, 1>* dataPtr)
         Point pt(i,j);
         if(databox.contains(pt))
         {
-          cout << pt << ":" << data(pt, 0) << "  ";
+          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+          cout << pt << ":";
+          if(vofs.size() >  0)
+          {
+            cout  << data(vofs[0], 0) << "  ";
+          }
+          else
+          {
+            cout  << "--------------" << "  ";
+          }
         }
       }
       cout << endl;
     }
   }
 }
+
+
+Point lodeb(7, 12);
+Point hideb(11,16);
 void 
 dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -128,6 +141,8 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
     }
   }
 }
+
+
 
 
 void 

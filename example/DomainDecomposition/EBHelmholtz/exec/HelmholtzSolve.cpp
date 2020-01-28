@@ -50,6 +50,7 @@ runTest(int a_argc, char* a_argv[])
   dumpEB1(NULL);
   dumpXFace(NULL);
   dumpYFace(NULL);
+  fullDump(NULL);
 #endif
 
   Real coveredval = -1;
