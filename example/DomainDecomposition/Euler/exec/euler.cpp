@@ -210,6 +210,11 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
   vectNames[1] = "momentum_x";
   vectNames[2] = "momentum_y";
   vectNames[3] = "energy";
+#if CH_SPACEDIM==3
+  vectNames[3] = "momentum_z";
+  vectNames[4] = "energy";
+#endif
+  
 
   vectData[0] = level_data;
   
