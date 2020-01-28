@@ -107,14 +107,18 @@ operator()(EulerDX& a_DX,
   int ncomp  =  a_State.m_U->nComp();
   IntVect gv =  a_State.m_U->ghostVect();
   DisjointBoxLayout grids = a_State.m_grids;
-  LevelBoxData<NUMCOMPS>  U_ave(grids, gv);
+
   LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);
   CH_STOP(tdef);
 
   CH_START(tcop);
-  Interval interv(0, ncomp-1);
-  Copier copier(grids, grids);
-  a_State.m_U->copyTo(interv, U_ave, interv, copier);
+  //Interval interv(0, ncomp-1);
+  //Copier copier(grids, grids);
+  
+  LevelBoxData<NUMCOMPS>  U_ave;
+  U_ave.define(*(a_State.m_U));
+
+  // U_ave.define(*(a_State.m_U));
   CH_STOP(tcop);
 
 
