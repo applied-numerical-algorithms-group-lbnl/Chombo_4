@@ -662,7 +662,7 @@ public:
   /**
      Initializes Zero and Unit.
   */
-  static int InitStatics();
+  //static int InitStatics();
 
   /*@}*/
 
@@ -758,7 +758,7 @@ void linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT);
 // IntVect::Unit -- the very things the following definition is supposed to
 // initialize.
 //
-static int s_dummyForIntVectH = IntVect::InitStatics();
+//static int s_dummyForIntVectH = IntVect::InitStatics();
 
 #ifndef WRAPPER
 //
