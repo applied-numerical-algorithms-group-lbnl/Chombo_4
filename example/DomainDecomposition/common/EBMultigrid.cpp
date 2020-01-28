@@ -1,10 +1,11 @@
 #include "EBMultigrid.H"
 #include "Proto.H"
 #include "Proto_Timer.H"
+#include "EBRelaxSolver.H"
 #include <sstream>
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = true;
+bool EBMultigrid::s_useWCycle     = false;
 int  EBMultigrid::s_numSmoothDown = 2;
 int  EBMultigrid::s_numSmoothUp   = 2;
 
@@ -110,8 +111,18 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     ideb++;
   }
 }
-
-
+/****/
+void
+EBMultigridLevel::
+preCond(EBLevelBoxData<CELL, 1>       & a_phi,
+        const EBLevelBoxData<CELL, 1> & a_rhs)
+{
+  unsigned int maxiter = 4;
+  for(unsigned int iter = 0; iter < maxiter; iter++)
+  {
+    relax(a_phi,a_rhs); 
+  }
+}
 /****/
 //for tga
 void
@@ -185,6 +196,8 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  const IntVect                           & a_nghostsrc, 
                  const IntVect                           & a_nghostdst)
 {
+  m_depth = 0;
+
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
   m_dx         = a_dx;         
@@ -201,7 +214,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghostSrc  , graphs);
   m_kappa.define(m_grids, IntVect::Zero, graphs);
-
+  
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
   //register stencil for apply op
   //true is for need the diagonal wweight
@@ -213,6 +226,10 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   fillKappa(a_geoserv, graphs);
 
   defineCoarserObjects(a_geoserv);
+  if(!m_hasCoarser)
+  {
+    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, graphs, m_nghostSrc));
+  }
 }
 /***/
 string convertUInt(unsigned int number)
@@ -257,6 +274,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
                  shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   PR_TIME("sgmglevel::constructor");
+  m_depth = a_finerLevel.m_depth + 1;
 
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -286,6 +304,10 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 
 
   defineCoarserObjects(a_geoserv);
+  if(!m_hasCoarser)
+  {
+    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, graphs, m_nghostSrc));
+  }
 
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -478,24 +500,31 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     relax(a_phi,a_rhs); 
   }
 
-//  if (m_hasCoarser)
-//  {
-//    residual(m_resid,a_phi,a_rhs);                      
-//    //stencils for multilevel objects live with the finer level
-//    restrictResidual(m_residC,m_resid);
-//    m_deltaC.setVal(0.);
-//    m_coarser->vCycle(m_deltaC,m_residC);
-//    if(EBMultigrid::s_useWCycle)
-//    {
-//      m_coarser->vCycle(m_deltaC,m_residC);
-//    }
-//    prolongIncrement(a_phi,m_deltaC);
-//  }
-//
-//  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
-//  {
-//    relax(a_phi,a_rhs);
-//  }
+  if (m_hasCoarser)
+  {
+    residual(m_resid,a_phi,a_rhs);                      
+    //stencils for multilevel objects live with the finer level
+    restrictResidual(m_residC,m_resid);
+    m_deltaC.setVal(0.);
+    m_coarser->vCycle(m_deltaC,m_residC);
+    if(EBMultigrid::s_useWCycle)
+    {
+      m_coarser->vCycle(m_deltaC,m_residC);
+    }
+    prolongIncrement(a_phi,m_deltaC);
+  }
+  else
+  {
+    //defaults from Chombo3 RelaxSolver.H
+    int maxiter = 40;
+    Real tol = 1.0e-6;
+    m_bottomSolver->solve(a_phi, a_rhs, maxiter, tol);
+  }
+
+  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
+  {
+    relax(a_phi,a_rhs);
+  }
 
 }
 #include "Chombo_NamespaceFooter.H"

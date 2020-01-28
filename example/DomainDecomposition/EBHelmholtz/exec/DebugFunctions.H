@@ -3,6 +3,40 @@
 #define PI 3.141592653589793
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
+void 
+dumpVecRV(Vector<RealVect>* a_dataPtr)
+{
+  if(a_dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
+    {
+      
+      cout << ivec << ":" << (*a_dataPtr)[ivec];
+      cout << endl;
+    }
+  }
+}
+void 
+dumpvecRV(vector<RealVect>* a_dataPtr)
+{
+  if(a_dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
+    {
+      
+      cout << ivec << ":" << (*a_dataPtr)[ivec];
+      cout << endl;
+    }
+  }
+}
 
 void
 dumpPS(PointSet* dataPtr)
@@ -26,21 +60,21 @@ dumpPS(PointSet* dataPtr)
 }
 
 #if DIM==2
-Point lodeb(7, 12);
-Point hideb(11,16);
 void 
-dumpBlob(BoxData<Real, 1>* dataPtr)
+fullDump(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    Bx area(lodeb, hideb);
-
-    BoxData<Real, 1> & data = *dataPtr;
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
     Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    Point lodeb = databox.low();
+    Point hideb = databox.high();
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
     {
@@ -49,19 +83,32 @@ dumpBlob(BoxData<Real, 1>* dataPtr)
         Point pt(i,j);
         if(databox.contains(pt))
         {
-          cout << pt << ":" << data(pt, 0) << "  ";
+          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+          cout << pt << ":";
+          if(vofs.size() >  0)
+          {
+            cout  << data(vofs[0], 0) << "  ";
+          }
+          else
+          {
+            cout  << "--------------" << "  ";
+          }
         }
       }
       cout << endl;
     }
   }
 }
+
+
+Point lodeb(7, 12);
+Point hideb(11,16);
 void 
 dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -86,7 +133,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
           }
           else
           {
-            cout  << "------------" << "  ";
+            cout  << "--------------" << "  ";
           }
         }
       }
@@ -96,12 +143,14 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 }
 
 
+
+
 void 
 dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -144,7 +193,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
@@ -197,7 +246,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    cout    << setprecision(6)
+    cout    << setprecision(8)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
