@@ -55,6 +55,7 @@ public:
   {
   }
 
+
   ///
   virtual ~LevelBoxData()
   {
@@ -67,6 +68,10 @@ public:
     LevelData<BoxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>());
   }
 
+  void define(const LevelBoxData<NUMCOMPS>& a_lbd)
+  {
+    LevelData<BoxData<Real, NUMCOMPS> >::define(a_lbd, DefaultBoxDataFactory<NUMCOMPS>());
+  }
 
   ///
   void copyTo(const Interval                      &            a_srcComps,

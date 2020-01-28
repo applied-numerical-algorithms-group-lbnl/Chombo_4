@@ -51,10 +51,10 @@ LevelData<T>::LevelData(const DisjointBoxLayout& dp, int comps, const IntVect& g
   this->m_comps = comps;
   this->m_isdefined = true;
   //no need for exchange copier if no ghost
-  if(m_ghost != IntVect::Zero)
-    {
-      m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
-    }
+  //  if(m_ghost != IntVect::Zero)  // only build this Copier if a) exchange is called, and b) no Copier supplied
+  //    {
+  //      m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
+  //   }
 
   if (!dp.isClosed())
     {
@@ -108,10 +108,11 @@ void LevelData<T>::define(const DisjointBoxLayout& dp, int comps, const IntVect&
   //do not do this if it is periodic because bad things can happen
   //with large number of ghost cells.
   bool periodic = m_disjointBoxLayout.physDomain().isPeriodic();
-  if((m_ghost != IntVect::Zero) && !periodic)
-    {
-      m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
-    }
+  // only build Copier if exchange is called, and we are not passed in a Copier.
+  //  if((m_ghost != IntVect::Zero) && !periodic)
+  //    {
+  //     m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
+  //   }
 
   // Interval interval(0, comps-1);
   this->allocateGhostVector(a_factory, ghost);
@@ -125,10 +126,11 @@ void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_fact
 {
   CH_TIME("LevelData<T>::define(LevelData<T>,factory)");
   // clear exchange copier if it's already been defined
-  if (this->m_isdefined)
-    {
-      m_exchangeCopier.clear();
-    }
+  m_exchangeCopier = da.m_exchangeCopier;
+  // if (this->m_isdefined)
+  //   {
+  //     m_exchangeCopier.clear();
+  //   }
   this->m_isdefined = true;
   if (this == &da) return;
   m_disjointBoxLayout = da.m_disjointBoxLayout;
@@ -140,12 +142,19 @@ void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_fact
   m_ghost     = da.m_ghost;
 
   //no need for exchange copier if no ghost
-  if(m_ghost != IntVect::Zero)
-    {
-      m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
-    }
+  // if(m_ghost != IntVect::Zero)
+  //   {
+  //    m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
+  //  }
   this->allocateGhostVector(a_factory, m_ghost);
-  da.copyTo(*this);
+  //da.copyTo(*this);
+  DataIterator it = m_disjointBoxLayout.dataIterator();
+  int nbox = it.size();
+#pragma omp parallel for if(this->m_threadSafe)
+  for (int ibox = 0; ibox < nbox; ibox++)
+    {
+      da[it[ibox]].copyTo(this->operator[](it[ibox]));
+    }
 }
 //-----------------------------------------------------------------------
 
@@ -179,10 +188,10 @@ void LevelData<T>::define(const LevelData<T>& da, const Interval& comps,
 
   m_ghost = da.m_ghost;
   //no need for exchange copier if no ghost
-  if(m_ghost != IntVect::Zero)
-    {
-      m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
-    }
+  //if(m_ghost != IntVect::Zero)
+  //  {
+  //    m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
+  //  }
 
   Interval dest(0, this->m_comps-1);
 
