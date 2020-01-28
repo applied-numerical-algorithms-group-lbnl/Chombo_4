@@ -109,30 +109,33 @@ IntVect::dumpOn (ostream& os) const
     os << "IntVect " << *this << '\n';
 }
 
+const IntVect IntVect::Zero = IntVect(D_DECL6(0,0,0,0,0,0));
+const IntVect IntVect::Unit = IntVect(D_DECL6(1,1,1,1,1,1));
+                              
 //
 // Static object initialization.
 //
-int IntVect::InitStatics()
-{
-  IntVect* pz = const_cast<IntVect*>( &IntVect::Zero );
-  *pz = IntVect(D_DECL6(0,0,0,0,0,0));
+// int IntVect::InitStatics()
+// {
+//   //  IntVect* pz = const_cast<IntVect*>( &IntVect::Zero );
+//   // *pz = IntVect(D_DECL6(0,0,0,0,0,0));
 
-  IntVect* pu = const_cast<IntVect*>( &IntVect::Unit );
-  *pu = IntVect(D_DECL6(1,1,1,1,1,1));
+//   IntVect* pu = const_cast<IntVect*>( &IntVect::Unit );
+//   *pu = IntVect(D_DECL6(1,1,1,1,1,1));
 
-  // No danger of IntVect::Zero and Unit not having been allocated, as ARM section
-  // 3.4 says "The initialization of nonlocal static objects in a translation unit
-  // is done before the first use of any function...defined in that translation
-  // unit."
-  //
-  // Had to go through the const_cast stuff because it's nice to be able to declare
-  // IntVect::Zero and IntVect::Unit as const.
+//   // No danger of IntVect::Zero and Unit not having been allocated, as ARM section
+//   // 3.4 says "The initialization of nonlocal static objects in a translation unit
+//   // is done before the first use of any function...defined in that translation
+//   // unit."
+//   //
+//   // Had to go through the const_cast stuff because it's nice to be able to declare
+//   // IntVect::Zero and IntVect::Unit as const.
 
-  return 0; // arbitrary
-}
-const IntVect IntVect::Zero;
-const IntVect IntVect::Unit;
-static int s_dummyForIntVectCpp( IntVect::InitStatics() );
+//   return 0; // arbitrary
+// }
+                               //const IntVect IntVect::Zero;
+                               //const IntVect IntVect::Unit;
+//static int s_dummyForIntVectCpp( IntVect::InitStatics() );
 // If IntVect::Zero and IntVect::Unit were pointers, we wouldn't need this extra
 // static int.  But they're objects, and the danger is that the initializations
 // right above here ("IntVect IntVect::Zero;" and "IntVect IntVect::Unit;") are hit
