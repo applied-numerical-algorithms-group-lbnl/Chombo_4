@@ -47,6 +47,7 @@ int
 runTest(int a_argc, char* a_argv[])
 {
 #if DIM==2
+  dumpLD(NULL);
   dumpEB1(NULL);
   dumpXFace(NULL);
   dumpYFace(NULL);

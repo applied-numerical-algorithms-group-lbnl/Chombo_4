@@ -88,14 +88,32 @@ fullDump(EBBoxData<CELL, Real, 1>* dataPtr)
           if(vofs.size() >  0)
           {
             cout  << data(vofs[0], 0) << "  ";
+            if(data(vofs[0], 0) >= 0)
+            {
+              cout << " ";
+            }
           }
           else
           {
-            cout  << "--------------" << "  ";
+            cout  << "---------------" << "  ";
           }
         }
       }
       cout << endl;
+    }
+  }
+}
+void 
+dumpLD(EBLevelBoxData<CELL, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, 1>& data = *dataPtr;
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      cout << "ibox = " << ibox << ":" << endl;
+      fullDump(&data[dit[ibox]]);
     }
   }
 }

@@ -117,11 +117,9 @@ EBMultigridLevel::
 preCond(EBLevelBoxData<CELL, 1>       & a_phi,
         const EBLevelBoxData<CELL, 1> & a_rhs)
 {
-  unsigned int maxiter = 4;
-  for(unsigned int iter = 0; iter < maxiter; iter++)
-  {
-    relax(a_phi,a_rhs); 
-  }
+  int maxiter = 4;
+
+  relax(a_phi,a_rhs, maxiter); 
 }
 /****/
 //for tga
@@ -383,6 +381,14 @@ void  gsrbResidF(int     a_pt[DIM],
   }
   if(sumpt%2 == a_iredBlack)
   {
+#if DIM==2
+    IntVect debivr(0, 9);
+    int ideb = 0;
+    if(     (a_pt[0] == debivr[0]) && (a_pt[1]==debivr[1]))
+    {
+      ideb = 1;
+    }
+#endif
     static const Real safety = 1.0;
     Real diagval = a_diag(0);
     Real kappval = a_kappa(0);
@@ -393,14 +399,6 @@ void  gsrbResidF(int     a_pt[DIM],
 //    Real reglam = safety/regudiag;
     Real phival = a_phi(0);
     Real resval = a_res(0);
-//begin debug
-    int ideb = 0;
-    if((a_pt[0]==18) && (a_pt[1]==30))
-    {
-      ideb = 1;
-    }
-
-//end debug
 //    if(std::abs(lambda) > std::abs(reglam)) lambda= reglam;
     a_phi(0) = phival + lambda*resval;
   }
@@ -410,36 +408,40 @@ PROTO_KERNEL_END(gsrbResidF, gsrbResid)
 void
 EBMultigridLevel::
 relax(EBLevelBoxData<CELL, 1>       & a_phi,
-      const EBLevelBoxData<CELL, 1> & a_rhs)
+      const EBLevelBoxData<CELL, 1> & a_rhs,
+      int a_maxiter)
 {
 
   //
   DataIterator dit = m_grids.dataIterator();
-  for(int iredblack = 0; iredblack < 2; iredblack++)
+  for(int iter = 0; iter < a_maxiter; iter++)
   {
-    residual(m_resid, a_phi, a_rhs);
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    for(int iredblack = 0; iredblack < 2; iredblack++)
     {
-      shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
-      shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+      residual(m_resid, a_phi, a_rhs);
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+        shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
 
-      const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
-      Box grid = m_grids[dit[ibox]];
-      Bx  grbx = getProtoBox(grid);
-      //lambda = safety/diag
-      //phi = phi - lambda*(res)
-      ///lambda takes floating point to calculate
-      //also does an integer check for red/black but I am not sure what to do with that
-      auto& phifab =   a_phi[dit[ibox]];
-      auto& resfab = m_resid[dit[ibox]];
+        const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
+        Box grid = m_grids[dit[ibox]];
+        Bx  grbx = getProtoBox(grid);
+        //lambda = safety/diag
+        //phi = phi - lambda*(res)
+        ///lambda takes floating point to calculate
+        //also does an integer check for red/black but I am not sure what to do with that
+        auto& phifab =   a_phi[dit[ibox]];
+        auto& resfab = m_resid[dit[ibox]];
 //      auto& rhsfab =   a_rhs[dit[ibox]];
-      unsigned long long int numflopspt = 10;
+        unsigned long long int numflopspt = 10;
 
-      ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                        phifab, resfab, stendiag,
-                        m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+        ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
+                          phifab, resfab, stendiag,
+                          m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
-      numflopspt++;
+        numflopspt++;
+      }
     }
   }
 }
@@ -495,10 +497,7 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
 {
 
   PR_TIME("sgmglevel::vcycle");
-  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothDown; irelax++)
-  {
-    relax(a_phi,a_rhs); 
-  }
+  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
 
   if (m_hasCoarser)
   {
@@ -521,10 +520,7 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     m_bottomSolver->solve(a_phi, a_rhs, maxiter, tol);
   }
 
-  for(int irelax = 0; irelax < EBMultigrid::s_numSmoothUp; irelax++)
-  {
-    relax(a_phi,a_rhs);
-  }
+  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
 
 }
 #include "Chombo_NamespaceFooter.H"

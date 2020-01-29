@@ -62,7 +62,8 @@ public:
 
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
-             const EBLevelBoxData<CELL, 1>& a_rhs);
+             const EBLevelBoxData<CELL, 1>& a_rhs,
+             int a_niter);
 
 
   /// average down residual to next coarser level.
@@ -254,9 +255,10 @@ private:
 
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
-             const EBLevelBoxData<CELL, 1>& a_rhs)
+             const EBLevelBoxData<CELL, 1>& a_rhs,
+             int a_niter)
   {
-    m_finest->relax(a_phi, a_rhs);
+    m_finest->relax(a_phi, a_rhs, a_niter);
   }
 
 
