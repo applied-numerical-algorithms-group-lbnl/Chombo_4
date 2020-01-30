@@ -330,7 +330,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
 #endif
                 else
                 {
-                  PROTO_ASSERT(false, "bad idir in coarsening");
+                   PROTO_ASSERT(false, "bad idir in coarsening");
                 }
               } //end check to see if we are in coarsening range
             }  //end loop over sides
@@ -388,6 +388,8 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
 //begin debug
   }
 }
+
+
 
 /*********************************************/
 template <int order>
@@ -850,6 +852,14 @@ fillNewNode(inode               &     a_node,
 {
   PR_TIME("LevelGeometryService::ComputeVofInternals");
 
+//  int ideb = 0;
+//#if CH_SPACEDIM==2  
+//  Point ivdeb(1,19);
+//  if(a_iv == ivdeb)
+//  {
+//    ideb = 1;
+//  }
+//#endif
   //for each CutCellMoments<dim>, we record the cell Center
   //(in physical coordinates at the global dimension)
   RvgDim cellCenter;
@@ -894,6 +904,10 @@ fillNewNode(inode               &     a_node,
 
   a_node.m_volumeMoments = thisVof.m_moments;          
   a_node.m_EBMoments     = thisVof.m_EBmoments;
+//  if(ideb == 1)
+//  {
+//    a_node.m_EBMoments.print();
+//  }
 
   IndexTM<double,DIM> point;
   for (int idir = 0; idir < DIM; ++idir)
