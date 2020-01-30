@@ -215,7 +215,7 @@ protected:
   void 
   coarsenVoFData(const vector< EBIndex<CELL> >  & a_vofs,
                  const LevelGeometryService     & a_finerLevel,
-                 const DataIndex                 & a_dit);
+                 const DataIndex                & a_dit);
 
   void 
   coarsenXFaceData(const vector< EBIndex<XFACE> > & a_faces,
