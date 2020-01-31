@@ -1,0 +1,4 @@
+
+CPPFLAGS += -I../../common
+CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools
+
