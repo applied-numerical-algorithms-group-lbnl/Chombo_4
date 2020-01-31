@@ -29,7 +29,7 @@ tolerance = 1.0e-13
 #  0 backward euler
 #  1 crank nicolson
 #  2 TGA
-which_solver = 2
+which_solver = 0
 
 #geometric params
 which_geom = 0

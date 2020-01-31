@@ -59,7 +59,9 @@ public:
     {
       Real initialNorm = norm;
       int iter =0;
-      while (iter < a_maxIter)
+      int miniter = 1;
+      Real minnorm = 1.0e-16;
+      while (iter < miniter || ((iter < a_maxIter) && (norm >  minnorm)))
       {
         m_cor.setVal(0.);
         m_op->preCond(m_cor, m_res);
