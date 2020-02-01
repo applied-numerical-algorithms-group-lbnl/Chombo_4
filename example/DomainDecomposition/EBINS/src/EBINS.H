@@ -1,112 +1,75 @@
-#ifndef _EBAdvection_H_
-#define _EBAdvection_H_
+#ifndef _EBINS_finally__H_
+#define _EBINS_finally__H_
 #include <cmath>
 #include <memory>
 #include "Proto.H"
-#include "Chombo_EBDictionary.H"
-#include "Chombo_EBChombo.H"
-#include "Chombo_EBEncyclopedia.H"
-#include "Chombo_EBLevelBoxData.H"
+#include "EBAdvection.H"
+#include "EBParabolicIntegrators.H"
+#include "EBMACProjector.H"
+#include "EBCCProjector.H"
 #include "Chombo_NamespaceHeader.H"
 
-///class to advect scalars in an eb context (via Trebotich et al.)
-class EBAdvection
+///class to run the incompressible algorithm described in Trebotich, et al.
+class EBINS
 {
 public:
 
-
+  enum ParabolicSolverType(BackwardEuler=0, CrankNicolson, TGA)
   
   /// 
-  EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-              shared_ptr<GeometryService<2> >        & a_geoserv,
-              shared_ptr<EBLevelBoxData<CELL, DIM> > & a_veloCell,
-              const DisjointBoxLayout                & a_grids,
-              const Box                              & a_domain,
-              const Real                             & a_dx,
-              const IntVect                          & a_nghostsrc, 
-              const IntVect                          & a_nghostdst);
+  EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
+        shared_ptr<GeometryService<2> >        & a_geoserv,
+        const DisjointBoxLayout                & a_grids,
+        const Box                              & a_domain,
+        const Real                             & a_dx,
+        const Real                             & a_solverTolerance,
+        const unsigned int                     & a_maxSolverIterations,
+        const Real                             & a_coveredval,
+        const IntVect                          & a_nghostdst,
+        ParabolicSolverType a_solver);
 
-  /// advance one time step (via Trebotich et al.) in  an eb context
+  /// 
   void 
-  advance(EBLevelBoxData<CELL, 1>   & a_scal,
-          const  Real               & a_dt);
+  run(unsigned int a_max_step,
+      Real         a_max_time,
+      Real         a_cfl,
+      unsigned int a_outputInterval);
 
-  const EBLevelBoxData<CELL, 1> &
-  getKappa() const
-  {
-    return m_kappa;
-  }
-protected:
+
 
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
+  shared_ptr<EBAdvection>                m_advectOp;
+  shared_ptr<EBMACProjector>             m_macProj;
+  shared_ptr<EBCCProjector >             m_ccProj;
+  shared_ptr<BaseEBParabolic>            m_heatSolver;
+  shared_ptr<EBLevelBoxData<CELL, DIM> > m_velo;
+  shared_ptr<EBLevelBoxData<CELL, DIM> > m_gphi;
+  shared_ptr<EBLevelBoxData<CELL, 1  > > m_scal;
+#if DIM==2  
+  shared_ptr<EBLevelBoxData<CELL, 1  > > m_vort;
+#else  
+  shared_ptr<EBLevelBoxData<CELL, DIM> > m_vort;
+#endif  
+  shared_ptr<LevelData<EBGraph> >        m_graphs;
+  
   DisjointBoxLayout                      m_grids;
   Box                                    m_domain;
-  IntVect                                m_nghostSrc;
-  IntVect                                m_nghostDst;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
-  Real m_dx;
-  EBLevelBoxData<CELL, 1>                m_kappa;
-  EBLevelBoxData<CELL, 1>                m_deltaM;
-  EBLevelBoxData<CELL, 1>                m_nonConsDiv;
-  EBLevelBoxData<CELL, 1>                m_hybridDiv;
-  EBLevelBoxData<CELL, 1>                m_kappaDiv;
-  shared_ptr<LevelData<EBGraph>  >       m_graphs;
-  Copier                                 m_exchangeCopier;
+  IntVect                                m_nghost;
+  Real                                   m_dx, m_dt, m_time;
+
 
 private:
 
-  static const string s_ncdivLabel;      //for non-conservative divergence
-  static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
-  static const string s_redistLabel;     //for redistribution
-  static const string s_centInterpLabel; //for interpolation to face centroids
-  static const string s_slopeLowLabel;   //for cell centered slopes
-  static const string s_slopeHighLabel;  //for cell centered slopes
-  static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
-  static const string s_diriLabel;       //label for dirichlet bcs
-  static const string s_neumLabel;       //label for neumann bcs
-  static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
-  static const string s_CtoFLowLabel;    //for getting stuff from low  side cells to faces
-  static const string s_CtoFHighLabel;   //for getting stuff from high side cells to faces
-
-  template<CENTERING cent>
-  inline void
-  getFaceVelComp(EBBoxData<cent, Real, 1>                       & a_fcvel,
-                 shared_ptr< EBDictionary<2, Real, CELL, cent> >& a_dict,
-                 EBBoxData<CELL, Real, DIM>                     & a_velcc,
-                 unsigned int                                     a_idir,
-                 int                                              a_ibox)
-  {
-    EBBoxData<CELL, Real, 1> cellcomp;
-    cellcomp.define<DIM>(a_velcc, a_idir);
-    // stencils to average velocities from cells to faces
-    const auto& facesten = a_dict->getEBStencil(s_aveCToFLabel, s_nobcsLabel, m_domain, m_domain, a_ibox);
-    bool initToZero = true;
-    facesten->apply(a_fcvel, cellcomp, initToZero, 1.0);               
-  }
-
-  void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
-                          const DataIndex    & a_dit,
-                          const int          & a_ibox);
-
-  void
-  getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                      const EBFluxData<Real, 1>      & a_fcvel,
-                      const EBBoxData<CELL, Real, 1> & a_scal,
-                      const DataIndex                & a_dit,
-                      const int                      & a_ibox,
-                      const Real                     & a_dt);
-
-  void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                     const Real                & a_dt);
-  void  nonConsDiv();
-  void redistribute();
-  void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void registerStencils();
-
-  void operator=(const EBAdvection& a_opin);
-  EBAdvection();
+  void computeDt(Real a_cfl) const;
+  void advanceVelocity();
+  void advanceScalar();
+  void computeVorticity();
+  void outputToFile(unsigned int a_step) const;
+  //forbidde for all the usual reasons
+  EBINS();
+  EBINS(const EBINS& a_input);
+  EBINS& operator=(const EBINS& a_input);
 
 };
 #include "Chombo_NamespaceFooter.H"

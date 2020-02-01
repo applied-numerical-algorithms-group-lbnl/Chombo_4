@@ -1,114 +1,91 @@
-#ifndef _EBAdvection_H_
-#define _EBAdvection_H_
-#include <cmath>
-#include <memory>
-#include "Proto.H"
-#include "Chombo_EBDictionary.H"
-#include "Chombo_EBChombo.H"
-#include "Chombo_EBEncyclopedia.H"
-#include "Chombo_EBLevelBoxData.H"
+
+#include "EBINS.H"
 #include "Chombo_NamespaceHeader.H"
 
-///class to advect scalars in an eb context (via Trebotich et al.)
-class EBAdvection
+/*******/
+EBINS::
+EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
+      shared_ptr<GeometryService<2> >        & a_geoserv,
+      const DisjointBoxLayout                & a_grids,
+      const Box                              & a_domain,
+      const Real                             & a_dx,
+      const Real                             & a_solverTolerance,
+      const unsigned int                     & a_maxSolverIterations,
+      const Real                             & a_coveredval,
+      const IntVect                          & a_nghostdst)
 {
-public:
+}
+/*******/ 
+void 
+EBINS::
+run(unsigned int a_max_step,
+    Real         a_max_time,
+    Real         a_cfl,
+    unsigned int a_outputInterval)
+{
+}
 
-
-  
-  /// 
-  EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-              shared_ptr<GeometryService<2> >        & a_geoserv,
-              shared_ptr<EBLevelBoxData<CELL, DIM> > & a_veloCell,
-              const DisjointBoxLayout                & a_grids,
-              const Box                              & a_domain,
-              const Real                             & a_dx,
-              const IntVect                          & a_nghostsrc, 
-              const IntVect                          & a_nghostdst);
-
-  /// advance one time step (via Trebotich et al.) in  an eb context
-  void 
-  advance(EBLevelBoxData<CELL, 1>   & a_scal,
-          const  Real               & a_dt);
-
-  const EBLevelBoxData<CELL, 1> &
-  getKappa() const
+/*******/ 
+void
+EBINS::
+computeDt(Real a_cfl) const
+{
+  Real dtval;
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
   {
-    return m_kappa;
+    maxvel = std::max(maxvel, m_velo.maxNorm(idir));
   }
-protected:
-
-  //rule britannica
-  shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
-  DisjointBoxLayout                      m_grids;
-  Box                                    m_domain;
-  IntVect                                m_nghostSrc;
-  IntVect                                m_nghostDst;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
-  Real m_dx;
-  EBLevelBoxData<CELL, 1>                m_kappa;
-  EBLevelBoxData<CELL, 1>                m_deltaM;
-  EBLevelBoxData<CELL, 1>                m_nonConsDiv;
-  EBLevelBoxData<CELL, 1>                m_hybridDiv;
-  EBLevelBoxData<CELL, 1>                m_kappaDiv;
-  shared_ptr<LevelData<EBGraph>  >       m_graphs;
-  Copier                                 m_exchangeCopier;
-
-private:
-
-  static const string s_ncdivLabel;      //for non-conservative divergence
-  static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
-  static const string s_redistLabel;     //for redistribution
-  static const string s_centInterpLabel; //for interpolation to face centroids
-  static const string s_slopeLowLabel;   //for cell centered slopes
-  static const string s_slopeHighLabel;  //for cell centered slopes
-  static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
-  static const string s_diriLabel;       //label for dirichlet bcs
-  static const string s_neumLabel;       //label for neumann bcs
-  static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
-  static const string s_CtoFLowLabel;    //for getting stuff from low  side cells to faces
-  static const string s_CtoFHighLabel;   //for getting stuff from high side cells to faces
-
-  template<CENTERING cent>
-  inline void
-  getFaceVelComp(EBBoxData<cent, Real, 1>                       & a_fcvel,
-                 shared_ptr< EBDictionary<2, Real, CELL, cent> >& a_dict,
-                 EBBoxData<CELL, Real, DIM>                     & a_velcc,
-                 unsigned int                                     a_idir,
-                 int                                              a_ibox)
+  if(maxvel > 1.0e-16)
   {
-    EBBoxData<CELL, Real, 1> cellcomp;
-    cellcomp.define<DIM>(a_velcc, a_idir);
-    // stencils to average velocities from cells to faces
-    const auto& facesten = a_dict->getEBStencil(s_aveCToFLabel, s_nobcsLabel, m_domain, m_domain, a_ibox);
-    bool initToZero = true;
-    facesten->apply(a_fcvel, cellcomp, initToZero, 1.0);               
+    dtval = a_cfl*m_dx/maxvel;
+    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
+  }    
+  else
+  {
+    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    dtval = m_dx;
   }
+  m_dt =  dtval;
+}
+/*******/ 
 
-  void getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
-                          const DataIndex    & a_dit,
-                          const int          & a_ibox);
-
-  void
-  getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                      const EBFluxData<Real, 1>      & a_fcvel,
-                      const EBBoxData<CELL, Real, 1> & a_scal,
-                      const DataIndex                & a_dit,
-                      const int                      & a_ibox,
-                      const Real                     & a_dt);
-
-  void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                     const Real                & a_dt);
-  void  nonConsDiv();
-  void redistribute();
-  void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void registerStencils();
-
-  void operator=(const EBAdvection& a_opin);
-  EBAdvection();
-
-};
+void
+EBINS::
+advanceVelocity()
+{
+}
+/*******/ 
+void
+EBINS::
+advanceScalar()
+{
+}
+/*******/ 
+void
+EBINS::
+computeVorticity()
+{
+}
+/*******/ 
+void
+EBINS::
+outputToFile(unsigned int a_step) const
+{
+  const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->getKappa();
+  string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
+  string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");
+  string filegphi = string("gphi.") + std::to_string(a_step) + string(".hdf5");
+  string filevort = string("vort.") + std::to_string(a_step) + string(".hdf5");
+  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, m_coveredval, m_dx, m_dt, m_time);
+  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, m_coveredval, m_dx, m_dt, m_time);
+  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, m_coveredval, m_dx, m_dt, m_time);
+#if DIM==2
+  writeEBLevelHDF5<1>(  filevort,  *m_vort, kappa, m_domain, m_graphs, m_coveredval, m_dx, m_dt, m_time);
+#else  
+  writeEBLevelHDF5<DIM>(filevort,  *m_vort, kappa, m_domain, m_graphs, m_coveredval, m_dx, m_dt, m_time);
+#endif  
+}
+/*******/ 
 #include "Chombo_NamespaceFooter.H"
 
-#endif

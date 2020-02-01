@@ -119,11 +119,11 @@ runNavierStokes(int a_argc, char* a_argv[])
   pout() << "=============================================="  << endl;
 
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, velocell, grids, domain,  dx, tol, 
-               maxIter, coveredval,dataGhostIV, dataGhostIV);
+  EBINS solver(brit, geoserv, grids, domain,  dx, tol, 
+               maxIter, coveredval,dataGhostIV);
 
-  shared_ptr<EBLevelBoxData<CELL, DIM> velo = solver.getVelocity();
-  shared_ptr<EBLevelBoxData<CELL,   1> scal = solver.getScalar();
+  shared_ptr<EBLevelBoxData<CELL, DIM> velo = solver.m_velo;
+  shared_ptr<EBLevelBoxData<CELL,   1> scal = solver.m_scal;
 
   
   pout() << "initializing data " << endl;
