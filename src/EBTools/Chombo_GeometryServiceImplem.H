@@ -330,7 +330,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
 #endif
                 else
                 {
-                  PROTO_ASSERT(false, "bad idir in coarsening");
+                   PROTO_ASSERT(false, "bad idir in coarsening");
                 }
               } //end check to see if we are in coarsening range
             }  //end loop over sides
@@ -354,28 +354,38 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
   for(int ivof = 0; ivof < a_coarVoFs.size(); ivof++)
   {
     const EBIndex<CELL> & coarVoF = a_coarVoFs[ivof];
-    IndMomDIM& coarMom  = (*m_voludata)[a_dit](coarVoF, 0);
+    EBIndex<BOUNDARY>     coarEBF = coarVoF.getCutFace();
+    IndMomDIM& coarVoluMom  = (*m_voludata)[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBFaMom  = (*m_ebfadata)[a_dit](coarEBF, 0);
+    
     vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
-    coarMom.setToZero();
+    coarVoluMom.setToZero();
+    coarEBFaMom.setToZero();
     for(int ifine = 0; ifine < fineVoFs.size(); ifine++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
-      IndMomDIM fineMom;
+      EBIndex<BOUNDARY>     fineEBF = fineVoF.getCutFace();
+      IndMomDIM fineVoluMom;
+      IndMomDIM fineEBFaMom;
       if(fineEBGraph.isCovered(fineVoF.m_pt))
       {
-        fineMom.setToZero(); //not sure if this can happen
+        fineVoluMom.setToZero(); //not sure if this can happen
+        fineEBFaMom.setToZero(); //not sure if this can happen
       }
       else if(fineEBGraph.isRegular(fineVoF.m_pt))
       {
-        fineMom.setToRegular(a_finerLevel.m_dx);
+        fineVoluMom.setToRegular(a_finerLevel.m_dx);
+        fineEBFaMom.setToZero(); 
       }
       else
       {
-        fineMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
+        fineVoluMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
+        fineEBFaMom = (*(a_finerLevel.m_ebfadata))[a_dit](fineEBF, 0);
       }
 
-      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
-      shiftAndIncrement(coarMom, fineMom, coarVoF, fineVoF, a_finerLevel);
+      //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarVoluMom += finemom;  
+      shiftAndIncrement(coarVoluMom, fineVoluMom, coarVoF, fineVoF, a_finerLevel);
+      shiftAndIncrement(coarEBFaMom, fineEBFaMom, coarEBF, fineEBF, a_finerLevel);
 
     }
 //begin debug
@@ -383,11 +393,13 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
 //    if((coariv[0] == 18) && (coariv[1] == 30))
 //    {
 //      pout() << "volume moments for " << coariv << ":" << endl;
-//      coarMom.print();
+//      coarVoluMom.print();
 //    }
 //begin debug
   }
 }
+
+
 
 /*********************************************/
 template <int order>
@@ -850,6 +862,14 @@ fillNewNode(inode               &     a_node,
 {
   PR_TIME("LevelGeometryService::ComputeVofInternals");
 
+//  int ideb = 0;
+//#if CH_SPACEDIM==2  
+//  Point ivdeb(1,19);
+//  if(a_iv == ivdeb)
+//  {
+//    ideb = 1;
+//  }
+//#endif
   //for each CutCellMoments<dim>, we record the cell Center
   //(in physical coordinates at the global dimension)
   RvgDim cellCenter;
@@ -894,6 +914,10 @@ fillNewNode(inode               &     a_node,
 
   a_node.m_volumeMoments = thisVof.m_moments;          
   a_node.m_EBMoments     = thisVof.m_EBmoments;
+//  if(ideb == 1)
+//  {
+//    a_node.m_EBMoments.print();
+//  }
 
   IndexTM<double,DIM> point;
   for (int idir = 0; idir < DIM; ++idir)

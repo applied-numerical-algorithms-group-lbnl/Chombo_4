@@ -50,16 +50,18 @@ public:
     m_op->residual(m_res, a_phi, a_rhs);
 
     Real norm = m_res.maxNorm(0);
-    m_minNorm = norm;
 
     pout() << "      EBRelaxSolver:: initial Residual norm = "  << norm << "\n";
 
 
-    if (norm > 0.) // Do not iterate if norm == 0.
+    if (std::abs(norm) > 0.) // Do not iterate if norm == 0.
     {
       Real initialNorm = norm;
       int iter =0;
-      while (iter < a_maxIter)
+      int miniter = 1;
+      Real minnorm = 1.0e-16;
+      Real targetNorm =  std::max(a_tolerance*initialNorm, minnorm);
+      while (iter < miniter || ((iter < a_maxIter) && (std::abs(norm) > targetNorm)))
       {
         m_cor.setVal(0.);
         m_op->preCond(m_cor, m_res);
@@ -70,17 +72,18 @@ public:
         Real oldNorm = norm;
         norm = m_res.maxNorm(0);
         iter++;
-
-        pout() << "      EBRelaxSolver:: iteration = " << iter
-               << " residual norm = " << norm
-               << ", rate = " << oldNorm/norm << endl;
-
-        if (norm <  a_tolerance*initialNorm) break;
-
-        if (norm < m_minNorm)
+        Real rate = 0.01134;
+        bool printRate = false;
+        if(std::abs(norm) > 0)
         {
-          m_minNorm = norm;
+          rate = oldNorm/norm;
+          printRate = true;
         }
+        pout() << "      EBRelaxSolver:: iteration = " << iter
+               << " residual norm = " << norm;
+        if(printRate) pout() << ", rate = " << rate;
+        pout() << endl;
+          
       }
     }
 
@@ -88,7 +91,6 @@ public:
 private:
   EBMultigridLevel* m_op;
   EBLevelBoxData<CELL, 1>  m_res, m_cor;
-  Real m_minNorm;
 
   EBRelaxSolver();
   EBRelaxSolver(const EBRelaxSolver& a_in);

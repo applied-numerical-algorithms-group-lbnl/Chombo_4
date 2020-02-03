@@ -1,0 +1,10 @@
+
+SRC += $(wildcard ../../common/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
+
+VPATH +=  $(CHOMBO_HOME)/src/EBTools 
+
+
+
+
+
