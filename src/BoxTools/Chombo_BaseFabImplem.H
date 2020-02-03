@@ -718,16 +718,30 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
   IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
-  for (int icomp = 0; icomp < a_numcomp; icomp++)
-  {
-    int srccomp = a_srccomp + icomp;
-    int dstcomp = a_dstcomp + icomp;
-    for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
-    {
-      IntVect dstiv = bit();
-      IntVect srciv = dstiv + shiftiv;
-      (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
-    }
+  if (a_src.box()==box() && box()==a_srcbox && a_srcbox==a_dstbox) {
+      int npts = box().numPts();
+      for (int icomp = 0; icomp < a_numcomp; icomp++) {
+          const T* srcPtr = a_src.dataPtr(icomp);
+          T* dstPtr = this->dataPtr(icomp);
+          for (int ibox = 0; ibox < npts; ibox++)
+              *(dstPtr+ibox) = *(srcPtr+ibox);
+      }
+  //} else if (a_srcbox.size() == a_dstbox.size()) {
+
+  } else if (a_srcbox != a_dstbox) {
+      for (int icomp = 0; icomp < a_numcomp; icomp++)
+      {
+        int srccomp = a_srccomp + icomp;
+        int dstcomp = a_dstcomp + icomp;
+        for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
+        {
+          IntVect dstiv = bit();
+          IntVect srciv = dstiv + shiftiv;
+          (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
+        }
+      }
+  } else {
+
   }
 }
 
