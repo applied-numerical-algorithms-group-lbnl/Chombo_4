@@ -112,7 +112,7 @@ public:
   
   ///
   void copyTo(const Interval                      &            a_srcComps,
-              LevelData<BoxData<Real, NUMCOMPS> > &            a_dst,
+              EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {

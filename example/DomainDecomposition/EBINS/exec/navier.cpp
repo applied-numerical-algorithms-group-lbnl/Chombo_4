@@ -16,7 +16,7 @@
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-#include "EBAdvection.H"
+#include "EBINS.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
@@ -60,7 +60,6 @@ runNavierStokes(int a_argc, char* a_argv[])
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
-  Real diffCoef;
   pp.get("nx"        , nx);
 
   pout() << "nx       = " << nx     << endl;
@@ -69,7 +68,9 @@ runNavierStokes(int a_argc, char* a_argv[])
   Vector<DisjointBoxLayout> vecgrids;
   Vector<Box>               vecdomains;
   Vector<Real> vecdx;
-  defineGeometry(vecgrids, vecdomains, vecdx, geoserv, dx, nx);
+  int whichGeom;
+  Real geomCen, geomRad;
+  defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
@@ -86,24 +87,40 @@ runNavierStokes(int a_argc, char* a_argv[])
   DisjointBoxLayout grids =   vecgrids[0];
   Real tol = 0.00001;
   int  maxIter = 10;
-  Real coveredval = -0.0001;
-  Real blobCen, blobRad, maxVelMag, maxVelRad;
-  int  max_step       = 10;
-  Real max_time       = 1.0;
-  int  outputInterval = -1;
+
+  Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
   Real cfl            = 0.5;
 
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
   pp.get("covered_value", coveredval);
   pp.get("blob_cen", blobCen);
-  pp.get("geom_cen", geomCen);
+  pp.get("viscosity", viscosity);
   pp.get("max_vel_mag", maxVelMag);
   pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
   pp.get("cfl"  , cfl);
+  int whichSolver;
+  pp.get("parabolic_solver", whichSolver);
+  EBINS::ParabolicSolverType paraSolver;
+  if(whichSolver == 0)
+  {
+    paraSolver = EBINS::BackwardEuler;
+  }
+  else if(whichSolver == 1)
+  {
+    paraSolver = EBINS::CrankNicolson;
+  }
+  else if(whichSolver == 2)
+  {
+    paraSolver = EBINS::TGA;
+  }
+  else
+  {
+    MayDay::Error("unrecognized solver type input");
+  }
 
   pout() << "=============================================="  << endl;
 
@@ -119,17 +136,20 @@ runNavierStokes(int a_argc, char* a_argv[])
   pout() << "=============================================="  << endl;
 
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, grids, domain,  dx, tol, 
-               maxIter, coveredval,dataGhostIV);
+  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver);
 
-  shared_ptr<EBLevelBoxData<CELL, DIM> velo = solver.m_velo;
-  shared_ptr<EBLevelBoxData<CELL,   1> scal = solver.m_scal;
+
+  shared_ptr<EBLevelBoxData<CELL, DIM> > velo = solver.m_velo;
+  shared_ptr<EBLevelBoxData<CELL,   1> > scal = solver.m_scal;
 
   
   pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(*scal, *velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
 
-  solver.run(max_step, max_time, cfl, outputInterval);
+  Real fixedDt = -1.0;//signals varaible dt
+
+  unsigned int pIters = 1;
+  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters, outputInterval, maxIter, coveredval);
   pout() << "exiting run" << endl;
   return 0;
 }

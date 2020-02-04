@@ -427,41 +427,57 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(DisjointBoxLayout& a_grids,
-                    Real             & a_dx,
-                    Real             & a_geomCen,
-                    Real             & a_geomRad,
-                    Real             & a_blobCen,
-                    Real             & a_blobRad,
-                    int              & a_whichGeom,
-                    int              & a_nx,
-                    shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
+void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
+                    Vector<Box>                     & a_vecdom,
+                    Vector<Real>                    & a_vecdx,
+                    shared_ptr<GeometryService<2> > & a_geoserv,
+                    Real  & a_geomCen,
+                    Real  & a_geomRad,
+                    int   & a_whichGeom,
+                    const Real                      & a_dx,
+                    const int                       & a_nx)
 {
   pout() << "defining geometry" << endl;
 
   ParmParse pp;
   int maxGrid = 32;
-    
-  pp.get("nx"        , a_nx);
   pp.get("maxGrid", maxGrid);
-  pp.get("blob_cen", a_blobCen);
-  pp.get("blob_rad", a_blobRad);
-
-  pout() << "nx       = " << a_nx     << endl;
   pout() << "maxGrid  = " << maxGrid  << endl;
-  pout() << "blob_cen = " << a_blobCen       << endl;
-  pout() << "blob_rad = " << a_blobRad       << endl;
 
-  makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Box domain = a_grids.physDomain().domainBox();
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (a_nx - 1)*IntVect::Unit;
+
+// EB and periodic do not mix
+  Box domain(domLo, domHi);
+
+
+  pout() << "creating grid hierarchy" << endl;
+  GeometryService<2>::generateGrids(a_grids, domain, maxGrid);
+  a_vecdom.resize(a_grids.size());
+  a_vecdx.resize( a_grids.size());
+  a_vecdom[0] = a_grids[0].physDomain().domainBox();
+  PR_assert(a_vecdom[0]==domain)
+  a_vecdx[0]  = a_dx;
+  for(int ilev = 1; ilev < a_grids.size(); ilev++)
+  {
+
+    a_vecdx[ ilev] = 2.*a_vecdx[ilev-1];
+    a_vecdom[ilev] = a_grids[ilev].physDomain().domainBox();
+  }
+    
+
+
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
   pout() << "creating implicit function" << endl;
-  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
+  
+  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen,
+                                                    a_geomRad,
+                                                    a_whichGeom);
 
   pout() << "creating geometry service" << endl;
-  a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  a_geoserv  = shared_ptr<GeometryService<2> >(new GeometryService<2>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
 //=================================================
@@ -540,7 +556,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       if(whichvelo == 0)
       {
         ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
+                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx); // 
         ideb++;
       }
       else if(whichvelo == -1)

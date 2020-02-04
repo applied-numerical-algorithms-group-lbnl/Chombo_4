@@ -21,11 +21,11 @@ public:
   
   /// 
   EBCCProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-                 shared_ptr<GeometryService<2> >        & a_geoserv,
-                 const DisjointBoxLayout                & a_vecgrids,
-                 const Box                              & a_domain,
-                 const Real                             & a_dx,
-                 const IntVect                          & a_nghost);
+                shared_ptr<GeometryService<2> >        & a_geoserv,
+                const DisjointBoxLayout                & a_vecgrids,
+                const Box                              & a_domain,
+                const Real                             & a_dx,
+                const IntVect                          & a_nghost);
 
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**
@@ -55,9 +55,10 @@ public:
     return m_macprojector->m_rhs;
   }
   
-protected:
 
   shared_ptr<EBMACProjector> m_macprojector;
+protected:
+
   void registerStencils();
 
 
