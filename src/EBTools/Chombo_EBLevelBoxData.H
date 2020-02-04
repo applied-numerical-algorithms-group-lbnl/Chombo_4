@@ -32,6 +32,10 @@ public:
 
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
+
+  //for making scalar holders out of vector ones.
+  typedef AliasConstructorFactory<EBBoxData<cent, Real, NUMCOMPS>, DIM> aliasfactory_t;
+
   ///
   EBLevelBoxData(): LevelData<EBBoxData<cent, Real, NUMCOMPS> >()
   {
@@ -84,6 +88,18 @@ public:
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
+  //aliasing define
+  template<unsigned int srccomp>
+  void define(EBLevelBoxData<cent,  srccomp>        & a_input,
+              unsigned int                          & a_comp,
+              shared_ptr<LevelData<EBGraph>  >        a_graphs)
+  {
+    auto dp    = a_input.disjointBoxLayout();
+    auto ghost = a_input.ghostVect();
+    m_graphs = a_graphs;
+    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::
+      define(dp, NUMCOMPS, ghost, aliasfactory_t(a_input, a_comp));
+  }
 
   void setVal(Real a_value)
   {
