@@ -14,6 +14,7 @@
 
 
 #include "Proto.H"
+#include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_LevelData.H"
@@ -96,6 +97,50 @@ public:
 private:
   GraphConstructorFactory();
   shared_ptr<LevelData<EBGraph> > m_graphs;
+};
+
+
+template <typename DataHolder,  int NCOMP> 
+class AliasConstructorFactory: public DataFactory< DataHolder >
+{
+public:
+
+  AliasConstructorFactory(LevelData<DataHolder>* a_source, int whichcomp)
+  {
+    m_source = a_source;
+  }
+  virtual ~AliasConstructorFactory()
+  {
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual DataHolder * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    DataHolder& vecholder = (*m_source)[a_datInd];
+    DataHolder* retval = new DataHolder();
+    //aliasing define
+    retval->define(vecholder, m_whichcomp);
+    return retval;
+  }
+
+  virtual bool callDelete() const
+  {
+    return false;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  AliasConstructorFactory();
+  LevelData<DataHolder>* m_source;
+  unsigned int              m_whichcomp;
+
 };
 
 
