@@ -46,6 +46,8 @@ public:
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_velo;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_gphi;
   shared_ptr<EBLevelBoxData<CELL, 1  > > m_scal;
+  shared_ptr<EBLevelBoxData<CELL, DIM> > m_sour;
+  shared_ptr<EBLevelBoxData<CELL, DIM> > m_divuu;
 
   shared_ptr<EBAdvection>                m_advectOp;
   shared_ptr<EBCCProjector >             m_ccProj;
@@ -53,11 +55,6 @@ public:
   shared_ptr<EBMultigrid>                m_helmholtz;
 
   shared_ptr<BaseEBParabolic>            m_heatSolver;
-#if DIM==2  
-  shared_ptr<EBLevelBoxData<CELL, 1  > > m_vort;
-#else  
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_vort;
-#endif  
   shared_ptr<LevelData<EBGraph> >        m_graphs;
   
   DisjointBoxLayout                      m_grids;
@@ -72,6 +69,16 @@ public:
 private:
   
   bool m_eulerCalc;
+  void projectVelocityAndCorrectPressure(Real a_dt,
+                                         Real a_tol,                         
+                                         unsigned int a_maxIter);
+  void getAdvectiveDerivative(Real a_dt);
+  //gets  ustar
+  void advanceVelocityEuler(Real a_dt);
+  //gets  ustar
+  void advanceVelocityNavierStokes(Real a_dt,                          
+                                   Real a_tol,                         
+                                   unsigned int a_maxSolverIterations);
 
   Real  computeDt(Real a_cfl) const;
   void initializePressure(Real a_dt,
@@ -83,7 +90,7 @@ private:
                                   unsigned int a_maxSolverIterations);
 
   void advanceScalar(Real a_dt);
-  void computeVorticity();
+
   void outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const;
   //forbidde for all the usual reasons
   EBINS();

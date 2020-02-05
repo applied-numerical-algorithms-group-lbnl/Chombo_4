@@ -2,7 +2,7 @@
 #include "EBINS.H"
 #include "EBParabolicIntegrators.H"
 #include "Chombo_NamespaceHeader.H"
-
+using Proto::Var;
 /*******/
 EBINS::
 EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -27,17 +27,14 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   
   m_velo     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
+  m_sour     = shared_ptr<EBLevelBoxData<CELL, DIM> >
+    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
+  m_divuu    = shared_ptr<EBLevelBoxData<CELL, DIM> >
+    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_gphi     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-#if DIM==2
-  m_vort     = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-#else
-  m_vort     = shared_ptr<EBLevelBoxData<CELL, DIM> >
-    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
-#endif
 
   string stenname = StencilNames::Poisson2;
   string bcname;
@@ -115,7 +112,6 @@ run(unsigned int a_max_step,
 
   if(doFileOutput)
   {
-    computeVorticity();
     outputToFile(0, a_coveredVal, dt, 0.0);
   }
 
@@ -138,7 +134,6 @@ run(unsigned int a_max_step,
     }
     if((doFileOutput) && (step%a_outputInterval == 0))
     {
-      computeVorticity();
       outputToFile(step, a_coveredVal, dt, time);
     }
   }
@@ -185,14 +180,175 @@ computeDt(Real a_cfl) const
   return dtval;
 }
 /*******/ 
+void
+EBINS::
+getAdvectiveDerivative(Real a_dt)
+{
+/** 
+//not quite right, yet
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBLevelBoxData<CELL, 1> sour; //will hold nu*lapl(u)
+    EBLevelBoxData<CELL, 1> velc; //will hold vel  comp
+    EBLevelBoxData<CELL, 1> divf; //will hold divu comp
+    sour.define(m_sour,  idir, m_graphs);
+    velc.define(m_velo,  idir, m_graphs);
+    divf.define(m_divuu, idir, m_graphs);
 
+    m_advectOp->hybridDivergence(velc, sour, a_dt);
+    Interval interv(0, 0); 
+    m_advectOp->m_hybridDiv->copyTo(interv, divf, interv, m_copyCopier);
+  }
+**/
+}
+/*******/ 
+PROTO_KERNEL_START 
+void EulerAdvanceF(Var<Real, DIM>    a_velo,
+                   Var<Real, DIM>    a_divuu,
+                   Var<Real, DIM>    a_gradp,
+                   Real              a_dt)
+{
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
+
+/*******/ 
+void
+EBINS::
+advanceVelocityEuler(Real a_dt)
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    unsigned long long int numflopspt = 3*DIM;
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    auto & velo =  (*m_velo )[ dit[ibox]];
+    auto & udel =  (*m_divuu)[dit[ibox]];
+    auto & gphi =  (*m_gphi )[ dit[ibox]];  
+
+    ebforallInPlace(numflopspt, "EulerAdvance", EulerAdvance, grbx,  
+                    velo, udel, gphi, a_dt);
+  }
+}
+/*******/ 
+PROTO_KERNEL_START 
+void ParabolicRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuu,
+                   Var<Real, 1>    a_gradp)
+{
+  a_rhs(0) = -a_divuu(0) - a_gradp(0);
+}
+PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
+
+/*******/ 
+void
+EBINS::
+advanceVelocityNavierStokes(Real a_dt,                          
+                            Real a_tol,                         
+                            unsigned int a_maxIter)
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBLevelBoxData<CELL, 1> scalRHS, scalVelo, scalUdelu, scalGphi;
+    scalRHS.define  ((*m_sour) ,idir, m_graphs);
+    scalVelo.define( (*m_velo) ,idir, m_graphs);
+    scalUdelu.define((*m_divuu),idir, m_graphs);
+    scalGphi.define( (*m_gphi) ,idir, m_graphs);
+
+    //set source of parabolic advance to -(gphi + udelu)
+    for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      unsigned long long int numflopspt = 2;
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & sour =    scalRHS[dit[ibox]];
+      auto & udel =  scalUdelu[dit[ibox]];
+      auto & gphi =  scalGphi[ dit[ibox]];  
+
+      ebforallInPlace(numflopspt, "ParabolicRHS", ParabolicRHS, grbx, sour, udel, gphi);
+      
+      //advance the parabolic equation
+      m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    }
+  }
+}
+/*******/ 
+PROTO_KERNEL_START 
+void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
+                      Var<Real, DIM>    a_gradp,
+                      Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) += a_dt*(a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(AddDtGphiToVeloF, AddDtGphiToVelo)
+/*******/ 
+PROTO_KERNEL_START 
+void DivideOutDtF(Var<Real, DIM>    a_gradp,
+                  Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_gradp(idir) /= a_dt;
+  }
+}
+PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
+/*******/ 
+void
+EBINS::
+projectVelocityAndCorrectPressure(Real a_dt,
+                                  Real a_tol,                         
+                                  unsigned int a_maxIter)
+{
+  //make w = v + dt*gphi
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    unsigned long long int numflopspt = 2*DIM;
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    auto & velo =  (*m_velo)[dit[ibox]];
+    auto & gphi =  (*m_gphi)[dit[ibox]];  
+
+    ebforallInPlace(numflopspt, "AddDtGphiToVelo", AddDtGphiToVelo, grbx, velo, gphi, a_dt);
+  }
+
+  //project the resulting field
+  m_ccProj->project((*m_velo), (*m_gphi), a_tol, a_maxIter);
+
+  //the resulting pressure  is = dt * gphi so we need to divide out the dt
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    unsigned long long int numflopspt = 2*DIM;
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    auto & gphi =  (*m_gphi)[dit[ibox]];  
+
+    ebforallInPlace(numflopspt, "DivideOutDt", DivideOutDt, grbx, gphi, a_dt);
+  }
+}
+/*******/ 
 void
 EBINS::
 advanceVelocityAndPressure(Real a_dt,                          
                            Real a_tol,                         
-                           unsigned int a_maxSolverIterations)
+                           unsigned int a_maxIter)
 {
-  //HERE!!
+  //get udelu
+  getAdvectiveDerivative(a_dt);
+
+  if(m_eulerCalc)
+  {
+    advanceVelocityEuler(a_dt);
+  }
+  else
+  {
+    advanceVelocityNavierStokes(a_dt, a_tol, a_maxIter);
+  }
+  projectVelocityAndCorrectPressure(a_dt, a_tol, a_maxIter);
 }
 /*******/ 
 void
@@ -200,32 +356,22 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
+  EBLevelBoxData<CELL, 1> source(m_grids, m_nghost, m_graphs);
   m_advectOp->advance(*m_scal, a_dt);
-}
-/*******/ 
-void
-EBINS::
-computeVorticity()
-{
 }
 /*******/ 
 void
 EBINS::
 outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const
 {
-  const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->getKappa();
+  const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
   string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
   string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");
   string filegphi = string("gphi.") + std::to_string(a_step) + string(".hdf5");
-  string filevort = string("vort.") + std::to_string(a_step) + string(".hdf5");
   writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-#if DIM==2                                                                                       
-  writeEBLevelHDF5<1>(  filevort,  *m_vort, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-#else                                                                                            
-  writeEBLevelHDF5<DIM>(filevort,  *m_vort, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-#endif  
+
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

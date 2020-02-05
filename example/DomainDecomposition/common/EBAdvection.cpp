@@ -167,7 +167,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     EBBoxData<CELL, Real, 1> scal_imh_nph(grown, graph);
     EBBoxData<CELL, Real, 1> scal_iph_nph(grown, graph);
     //extrapolate in space and time to get the inputs to the Riemann problem
-    unsigned long long int numflopspt = 19 + 4*DIM;
+    unsigned long long int numflopspt = 21 + 4*DIM;
 
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
@@ -202,7 +202,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 ///
 void
 EBAdvection::
-kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
+kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, 
+             const Real& a_dt)
 {
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
@@ -223,7 +224,9 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
 
 
-    getFaceCenteredFlux(faceCentFlux, faceCentVel, a_scal[dit[ibox]], dit[ibox], ibox, a_dt);
+    getFaceCenteredFlux(faceCentFlux, faceCentVel, 
+                        a_scal[dit[ibox]], 
+                        dit[ibox], ibox, a_dt);
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
     //interpolate flux to centroids
 
@@ -284,6 +287,27 @@ EBAdvection::
 advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
+  
+  hybridDivergence(a_phi,  a_dt);
+
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& scalar =       a_phi[dit[ibox]];
+    auto& diverg = m_hybridDiv[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    unsigned long long int numflopspt = 2;
+    ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
+      scalar, diverg, a_dt);
+  }
+}
+
+///
+void 
+EBAdvection::
+hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
+                 const  Real                   & a_dt)
+{
   a_phi.exchange(m_exchangeCopier);
   //compute kappa div^c F
   kappaConsDiv(a_phi, a_dt);
@@ -293,7 +317,6 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
 
   //advance solution, compute delta M
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 7;
@@ -310,24 +333,12 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
                     nonConsDiv,  
                     deltaM    , 
                     kappa     );
-    ideb++;
   }
+
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
-  //debug turn off redist
   redistribute();
-  //end debug
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    auto& scalar =       a_phi[dit[ibox]];
-    auto& diverg = m_hybridDiv[dit[ibox]];
-    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    unsigned long long int numflopspt = 2;
-    ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
-      scalar, diverg, a_dt);
 
-    ideb++;
-  }
     
 }
 #include "Chombo_NamespaceFooter.H"

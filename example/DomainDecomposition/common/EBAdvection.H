@@ -36,6 +36,14 @@ public:
   {
     return m_kappa;
   }
+
+  ///fills m_hybridDiv with hybrid divergence
+  void 
+  hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
+                   const  Real               & a_dt);
+
+  EBLevelBoxData<CELL, 1>                m_hybridDiv;
+  EBLevelBoxData<CELL, 1>                m_kappa;
 protected:
 
   //rule britannica
@@ -46,10 +54,8 @@ protected:
   IntVect                                m_nghostDst;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
   Real m_dx;
-  EBLevelBoxData<CELL, 1>                m_kappa;
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
-  EBLevelBoxData<CELL, 1>                m_hybridDiv;
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;

@@ -360,7 +360,7 @@ runAdvection(int a_argc, char* a_argv[])
 
   while((step < max_step) && (time < max_time))
   {
-    advectOp.advance(scalcell, dt);
+    advectOp.advance(scalcell,  dt);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;
