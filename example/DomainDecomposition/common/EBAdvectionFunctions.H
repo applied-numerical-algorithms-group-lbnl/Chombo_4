@@ -6,7 +6,7 @@ using Proto::Var;
 #ifdef PROTO_CUDA
 __device__
 #endif
-Real minVal(Real vala, Real valb)
+inline Real minVal(Real vala, Real valb)
 {
   Real minval;
   if(vala < valb)
@@ -23,7 +23,7 @@ Real minVal(Real vala, Real valb)
 #ifdef PROTO_CUDA
 __device__
 #endif
-Real absVal(Real vala)
+inline Real absVal(Real vala)
 {
   Real absval;
   if(vala < 0.0)
@@ -41,7 +41,7 @@ Real absVal(Real vala)
 #ifdef PROTO_CUDA
 __device__
 #endif
-Real cpySign(Real vala, Real signval)
+inline Real cpySign(Real vala, Real signval)
 {
   Real retval;
   if(signval < 0.0)
@@ -167,6 +167,7 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
                       Var<Real, DIM>     a_slopeLo,
                       Var<Real, DIM>     a_slopeHi,
                       Var<Real, DIM>     a_ccVel,
+                      Var<Real, 1  >     a_source,
                       unsigned int       a_dir,
                       Real               a_dt,
                       Real               a_dx)
@@ -190,7 +191,7 @@ void ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
   Real ccveldir  = a_ccVel(a_dir);
   //standard BCG Godunov dance to extrapolate in space and time
   //normal predictor
-  Real ccval = a_scal_ijk_n(0);
+  Real ccval = a_scal_ijk_n(0) + 0.5*a_dt*a_source(0);
   a_scal_iph_nph(0)  = ccval + 0.5*vanLeer*minVal((1. - ccveldir*dtbydx), 1.0);
   a_scal_imh_nph(0)  = ccval - 0.5*vanLeer*minVal((1. + ccveldir*dtbydx), 1.0);
 
@@ -221,6 +222,7 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
                         Var<Real, DIM>     a_slopeLo,
                         Var<Real, DIM>     a_slopeHi,
                         Var<Real, DIM>     a_ccVel,
+                        Var<Real, 1>       a_source,
                         unsigned int       a_dir,
                         Real               a_dt,
                         Real               a_dx)
@@ -242,6 +244,7 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
                   a_slopeLo,
                   a_slopeHi,
                   a_ccVel,
+                  a_source,
                   a_dir,
                   a_dt,
                   a_dx);

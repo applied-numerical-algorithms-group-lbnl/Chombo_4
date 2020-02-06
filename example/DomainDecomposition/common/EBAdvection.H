@@ -13,9 +13,6 @@
 class EBAdvection
 {
 public:
-
-
-  
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
               shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -25,6 +22,10 @@ public:
               const Real                             & a_dx,
               const IntVect                          & a_nghostsrc, 
               const IntVect                          & a_nghostdst);
+
+  virtual ~EBAdvection()
+  {
+  }
 
   /// advance one time step (via Trebotich et al.) in  an eb context
   void 
@@ -37,13 +38,18 @@ public:
     return m_kappa;
   }
 
+  virtual void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
+                             const Real                & a_dt);
   ///fills m_hybridDiv with hybrid divergence
-  void 
+  virtual void 
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
                    const  Real               & a_dt);
 
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
   EBLevelBoxData<CELL, 1>                m_kappa;
+
+  //additional terms added to extrapolation
+  EBLevelBoxData<CELL, 1>                m_source;
 protected:
 
   //rule britannica
@@ -59,8 +65,6 @@ protected:
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
-
-private:
 
   static const string s_ncdivLabel;      //for non-conservative divergence
   static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
@@ -104,8 +108,6 @@ private:
                       const Real                     & a_dt);
 
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                     const Real                & a_dt);
   void  nonConsDiv();
   void redistribute();
   void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);

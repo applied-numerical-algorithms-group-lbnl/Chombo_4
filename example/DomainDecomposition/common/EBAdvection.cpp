@@ -50,7 +50,8 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
   m_nonConsDiv.define(m_grids, m_nghostSrc, m_graphs);
   m_hybridDiv.define( m_grids, m_nghostSrc, m_graphs);
   m_kappaDiv.define(  m_grids, m_nghostSrc, m_graphs);
-
+  m_source.define(    m_grids, m_nghostSrc, m_graphs);
+  m_source.setVal(0.); //necessary in case the app does not  have a source
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
 }
 ////
@@ -168,10 +169,10 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     EBBoxData<CELL, Real, 1> scal_iph_nph(grown, graph);
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 21 + 4*DIM;
-
+    auto& sourfab = m_source[a_dit];
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
+                    slopeLo, slopeHi, veccell, sourfab, idir, a_dt, m_dx);
 
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
