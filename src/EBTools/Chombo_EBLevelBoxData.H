@@ -130,7 +130,7 @@ public:
   }
 
   void define(EBLevelBoxData<cent,   DIM>           & a_input,
-              unsigned int                          & a_comp,
+              unsigned int                            a_comp,
               shared_ptr<LevelData<EBGraph>  >        a_graphs)
   {
     //for making scalar holders out of vector ones.

@@ -22,6 +22,49 @@
 #include "Chombo_NamespaceHeader.H"
 
 
+class ScalarFluxAliasFactory: public DataFactory< EBFluxData<Real, 1> >
+{
+public:
+
+  ScalarFluxAliasFactory(LevelData<EBFluxData<Real, DIM> >* a_source, 
+                         unsigned int                       a_whichcomp)
+  {
+    m_source    = a_source;
+    m_whichcomp = a_whichcomp;
+  }
+  virtual ~ScalarFluxAliasFactory()
+  {
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual EBFluxData<Real, 1> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    EBFluxData<Real, DIM>& vecholder = (*m_source)[a_datInd];
+    EBFluxData<Real, 1  >* retval = new EBFluxData<Real, 1  >();
+    //aliasing define
+    retval->define<DIM>(vecholder, m_whichcomp);
+    return retval;
+  }
+
+  virtual bool callDelete() const
+  {
+    return false;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  ScalarFluxAliasFactory();
+  LevelData<EBFluxData<Real, DIM> >* m_source;
+  unsigned int                       m_whichcomp;
+
+};
 ///
 /**
 */
@@ -61,6 +104,19 @@ public:
     LevelData<EBFluxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
+  ///aliasing define
+  void define(EBLevelFluxData<DIM>       &     a_input, 
+              unsigned int                     a_comp,
+              shared_ptr<LevelData<EBGraph>  > a_graphs)
+  {
+    m_graphs = a_graphs;
+    auto dp    = a_input.disjointBoxLayout();
+    auto ghost = a_input.ghostVect();
+    m_graphs = a_graphs;
+    LevelData<EBFluxData<Real, DIM> >* inputPtr = static_cast<LevelData<EBFluxData<Real, DIM> > * >(&a_input);
+    LevelData<EBFluxData<Real, NUMCOMPS> >::
+      define(dp, NUMCOMPS, ghost, ScalarFluxAliasFactory(inputPtr, a_comp));
+  }
 
   void setVal(Real a_value)
   {
