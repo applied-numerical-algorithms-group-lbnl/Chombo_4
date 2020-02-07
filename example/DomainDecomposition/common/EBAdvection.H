@@ -114,6 +114,17 @@ protected:
   void registerStencils();
 
   void operator=(const EBAdvection& a_opin);
+  void
+  bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalHi,
+                       EBFluxData<Real, 1>            & a_scalLo,
+                       EBBoxData<CELL, Real, DIM>     & a_veccell,
+                       const EBBoxData<CELL, Real, 1> & a_scal,
+                       const EBBoxData<CELL, Real, 1> & a_source,
+                       const Bx                       & a_grown,
+                       const EBGraph                  & a_graph,
+                       const DataIndex                & a_dit,
+                       const int                      & a_ibox,
+                       const Real                     & a_dt);
   EBAdvection();
 
 };

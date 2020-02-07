@@ -18,13 +18,16 @@ public:
 
   /// 
   BCGVelAdvect(shared_ptr<EBMACProjector>             & a_macproj,
+               shared_ptr<EBMultigrid>                & a_helmholtz,
                shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                shared_ptr<GeometryService<2> >        & a_geoserv,
                shared_ptr<EBLevelBoxData<CELL, DIM> > & a_veloCell,
                const DisjointBoxLayout                & a_grids,
                const Box                              & a_domain,
                const Real                             & a_dx,
-               const IntVect                          & a_nghost)    
+               const Real                             & a_viscosity,
+               const IntVect                          & a_nghost,
+               Real a_tolerance, unsigned int a_maxIter)    
   :EBAdvection(a_brit,
                a_geoserv,   
                a_veloCell,  
@@ -34,11 +37,15 @@ public:
                a_nghost,    
                a_nghost)
   {
-    m_macproj = a_macproj;
-    m_nghost  = a_nghost;
-    m_macScal.define(m_grids, m_nghost, m_graphs);
-    m_macGrad.define(m_grids, m_nghost, m_graphs);
-    m_macVect.define(m_grids, m_nghost, m_graphs);
+    m_macproj    = a_macproj;
+    m_helmholtz  = a_helmholtz;
+    m_nghost     = a_nghost;
+    m_viscosity  = a_viscosity;
+    m_tol        = a_tolerance;
+    m_maxIter    = a_maxIter;
+    m_advectionVel.define(m_grids, m_nghost, m_graphs);
+    m_macGradient.define(m_grids, m_nghost, m_graphs);
+    m_macVelocity.define(m_grids, m_nghost, m_graphs);
   }
 
 
@@ -51,11 +58,14 @@ public:
 protected:
 
   shared_ptr<EBMACProjector>    m_macproj;
-  EBLevelFluxData<1>            m_macScal;
-  EBLevelFluxData<1>            m_macGrad;
-  EBLevelFluxData<DIM>          m_macVect;
+  shared_ptr<EBMultigrid>       m_helmholtz;
+  EBLevelFluxData<1>            m_advectionVel;
+  Real m_tol;
+  unsigned int m_maxIter;
+  EBLevelFluxData<1>            m_macGradient;
+  EBLevelFluxData<DIM>          m_macVelocity;
   IntVect m_nghost;
-
+  Real    m_viscosity;
   //does hybrid divergence by component--includes resdistribution
   virtual void  assembleDivergence();
 

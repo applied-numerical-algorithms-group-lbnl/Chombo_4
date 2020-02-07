@@ -25,29 +25,86 @@ BCGVelAdvect::
 getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
                      const Real                  & a_dt)
 {
-#if 0  
-  HERE 
+  
+  
+
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> velcomp;
     velcomp.define(a_inputVel, idir, m_graphs);
+    //source term = nu*lapl(ucomp);
+    Real alpha = 0; Real beta = m_viscosity;
+    m_helmholtz->resetAlphaAndBeta(alpha, beta);
+    m_helmholtz->applyOp(m_source, velcomp);
+
     DataIterator dit = m_grids.dataIterator();
-    int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
       Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
-
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-      //get face fluxes and interpolate them to centroids
-      EBFluxData<Real, 1>  faceCentVel( grown, graph);
-      //average velocities to face centers.
-      getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
 
-    }
-  }
+      //this gets the low and high side states for the riemann problem
+      auto& scalfab = velcomp[dit[ibox]];
+      EBFluxData<Real, 1>  scalHi(grown, graph);
+      EBFluxData<Real, 1>  scalLo(grown, graph);
+      auto & veccell = a_inputVel[dit[ibox]];
+      auto & sourfab =   m_source[dit[ibox]];
+      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
+                           grown, graph, dit[ibox], ibox, a_dt);
+
+      //get face fluxes and interpolate them to centroids
+      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
+      EBFluxData<Real, 1>  upwindScal(   grown, graph);
+      //average velocities to face centers.
+      getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
+
+      //solve for the upwind value
+      unsigned long long int numflopspt = 2;
+      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_xflux->box(),
+                      *upwindScal.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux,
+                      *faceCentVelo.m_xflux);
+
+      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_yflux->box(),
+                      *upwindScal.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux,
+                      *faceCentVelo.m_yflux);
+
+#if DIM==3
+      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_zflux->box(),
+                      *upwindScal.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux,
+                      *faceCentVelo.m_zflux);
 #endif
+      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
+      //now copy into the normal direction holder
+      for(unsigned int faceDir = 0; faceDir < DIM; ++faceDir)
+      {
+        if(faceDir == idir)
+        {
+          if(idir == 0)
+          {
+            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_xflux->box(),
+                            *advvelfab.m_xflux, *upwindScal.m_xflux);
+          }
+          else if(idir == 1)
+          {
+            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_yflux->box(),
+                            *advvelfab.m_yflux, *upwindScal.m_yflux);
+          }
+#if DIM==3
+          else if(idir == 2)
+          {
+            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_zflux->box(),
+                            *advvelfab.m_zflux, *upwindScal.m_zflux);
+          }
+#endif
+        } // end if we are on normal face
+      } // end loop over facedir
+
+    } //end loop over boxes
+  }  // and loop over velocity directions
+  
+  // now we need to project the mac velocity
+  m_macproj->project(m_advectionVel, m_macGradient, m_tol, m_maxIter);
 }
 /*******/
 void  
@@ -58,10 +115,10 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 }
 /*******/
 void 
-BCGVelAdvect::
-assembleDivergence()
-{
-}
+    BCGVelAdvect::
+    assembleDivergence()
+  {
+  }
 /*******/
 #include "Chombo_NamespaceFooter.H"
 

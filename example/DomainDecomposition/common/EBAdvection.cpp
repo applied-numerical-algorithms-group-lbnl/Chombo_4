@@ -107,9 +107,9 @@ registerStencils()
 ///
 void
 EBAdvection::
-getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
-                   const DataIndex    & a_dit,
-                   const int          & a_ibox)
+getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
+                   const DataIndex                & a_dit,
+                   const int                      & a_ibox)
 {
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
@@ -117,6 +117,62 @@ getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
 #if DIM==3 
   getFaceVelComp<ZFACE>(*(a_fcvel.m_zflux),  m_brit->m_cellToZFace, veccell, 2, a_ibox);
 #endif
+}
+///
+void
+EBAdvection::
+bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalHi,
+                     EBFluxData<Real, 1>            & a_scalLo,
+                     EBBoxData<CELL, Real, DIM>     & a_veccell,
+                     const EBBoxData<CELL, Real, 1> & a_scal,
+                     const EBBoxData<CELL, Real, 1> & a_source,
+                     const Bx                       & a_grown,
+                     const EBGraph                  & a_graph,
+                     const DataIndex                & a_dit,
+                     const int                      & a_ibox,
+                     const Real                     & a_dt)
+{
+  bool initToZero = true;
+  //compute slopes of the solution 
+  //(low and high centered) in each direction
+  EBBoxData<CELL, Real, DIM> slopeLo(a_grown, a_graph); 
+  EBBoxData<CELL, Real, DIM> slopeHi(a_grown, a_graph);
+
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
+    slopeLoComp.define<DIM>(slopeLo, idir);
+    slopeHiComp.define<DIM>(slopeHi, idir);
+
+    //low and high side differences
+    string slopeLoLab  = s_slopeLowLabel  + std::to_string(idir);
+    string slopeHiLab  = s_slopeHighLabel + std::to_string(idir);
+    const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
+    const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
+
+    stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
+    stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
+  }
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    //scalar extrapolated to low side and high side face
+    EBBoxData<CELL, Real, 1> scal_imh_nph(a_grown, a_graph);
+    EBBoxData<CELL, Real, 1> scal_iph_nph(a_grown, a_graph);
+    //extrapolate in space and time to get the inputs to the Riemann problem
+    unsigned long long int numflopspt = 21 + 4*DIM;
+    auto& sourfab = a_source;
+    ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, a_grown,  
+                    scal_imh_nph, scal_iph_nph, a_scal, 
+                    slopeLo, slopeHi, a_veccell, sourfab, idir, a_dt, m_dx);
+
+
+    //we need to get the low and high states from the cell-centered holders to the face centered ones.
+    //once we do that, we can solve the Rieman problem for the upwind state
+    //i + 1/2 becomes the low  side of the face
+    //i - 1/2 becomes the high side of the face
+    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, a_scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
+    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, a_scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
+  }
 }
 
 ///
@@ -137,8 +193,12 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   bool initToZero = true;
-  //compute slopes of the solution 
-  //(low and high centered) in each direction
+
+  EBFluxData<Real, 1>  scalHi(grown, graph);
+  EBFluxData<Real, 1>  scalLo(grown, graph);
+  auto & sourfab = m_source[a_dit];
+  bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
+                       grown, graph, a_dit, a_ibox, a_dt);
 
   EBBoxData<CELL, Real, DIM> slopeLo(grown, graph); 
   EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
@@ -160,8 +220,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
     ideb++;
   }
 
-  EBFluxData<Real, 1>  scalHi(grown, graph);
-  EBFluxData<Real, 1>  scalLo(grown, graph);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
