@@ -159,7 +159,58 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     } //end loop over boxes
   }  // and loop over velocity directions
+
+  //subtract off pure gradient part of the velocity field
+  correctVectorVelocity();
 }
+/*******/
+//subtract off pure gradient part of the velocity field
+//makes normal component of the velocity  = advection velocity at the face
+//Recall the gradients only exist on the normal face
+//the tangential compoents get average of neighboring gradients in the same direciton
+//subtracted.   So the y component on the xfaces get the average of the values of the
+//gradient on the neighboring y faces
+void 
+BCGVelAdvect::
+correctVectorVelocity()
+{
+  for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
+  {
+    EBLevelFluxData<1> facecomp;
+    facecomp.define(m_macVelocity, vecDir, m_graphs);
+
+    DataIterator dit = m_grids.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
+      EBFluxData<Real, 1>& veccomp   = m_advectionVel[dit[ibox]];
+      EBFluxData<Real, 1>& macGrad   =  m_macGradient[dit[ibox]];
+      //first correct facedir==vecdir direction
+      //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
+      unsigned int numflopspt = 0;
+      if(vecDir == 0)
+      {
+        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_xflux->box(),
+                        *veccomp.m_xflux, *advvelfab.m_xflux);
+      }
+      else if(vecDir == 1)
+      {
+        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_yflux->box(),
+                        *veccomp.m_yflux, *advvelfab.m_yflux );
+      }
+#if DIM==3
+      else if(vecDir == 2)
+      {
+        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_zflux->box(),
+                        *veccomp.m_zflux, *advvelfab.m_zflux );
+      }
+#endif
+
+
+    } // end loop over facedir
+  }
+}
+
 /*******/
 void 
 BCGVelAdvect::

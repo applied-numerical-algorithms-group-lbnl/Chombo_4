@@ -75,6 +75,7 @@ protected:
 
   void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);
+  void correctVectorVelocity();
 
   void operator=(const BCGVelAdvect& a_opin);
   BCGVelAdvect();
