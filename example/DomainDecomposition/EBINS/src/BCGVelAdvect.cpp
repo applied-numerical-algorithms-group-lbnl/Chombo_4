@@ -197,7 +197,9 @@ correctVectorVelocity()
         {
           EBCrossFaceStencil<2, Real> stencils =
             m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
-          stencils.apply(veccomp, macGrad, faceDir, vecDir);
+          bool initToZero = false;
+          Real scale = -1.0; //subtracting off gradient
+          stencils.apply(veccomp, macGrad, faceDir, vecDir, initToZero, scale);
         }
       }
     } // end loop over facedir
