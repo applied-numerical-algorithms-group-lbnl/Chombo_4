@@ -11,7 +11,7 @@
 #include "Chombo_NamespaceHeader.H"
 
 
-///
+/// for x to x (same direction stencils)
 template <int order, typename data_t>
 struct EBFluxStencil
 {
@@ -28,6 +28,77 @@ struct EBFluxStencil
 #if DIM==3    
     m_zsten->apply(*a_dst.m_zflux, *a_src.m_zflux, a_initToZero, a_scale);
 #endif    
+  }
+};
+
+
+/// for x to y (different direction stencils)
+template <int order, typename data_t>
+struct EBCrossFaceStencil
+{
+  shared_ptr<EBStencil< order, data_t, XFACE, YFACE> > m_xtoysten;
+  shared_ptr<EBStencil< order, data_t, XFACE, ZFACE> > m_xtozsten;
+  
+  shared_ptr<EBStencil< order, data_t, YFACE, XFACE> > m_ytoxsten;
+  shared_ptr<EBStencil< order, data_t, YFACE, ZFACE> > m_ytozsten;
+  
+  shared_ptr<EBStencil< order, data_t, ZFACE, XFACE> > m_ztoxsten;
+  shared_ptr<EBStencil< order, data_t, ZFACE, YFACE> > m_ztoysten;
+
+  //apply every stencil
+  void apply(EBFluxData<data_t, 1>       & a_dst,
+             const EBFluxData<data_t, 1> & a_src,
+             bool a_initToZero, data_t a_scale)
+  {
+    m_xtoysten->apply(*a_dst.m_yflux, *a_src.m_xflux, a_initToZero, a_scale);
+    m_ytoxsten->apply(*a_dst.m_xflux, *a_src.m_yflux, a_initToZero, a_scale);
+    
+#if DIM==3    
+    m_xtozsten->apply(*a_dst.m_zflux, *a_src.m_xflux, a_initToZero, a_scale);
+    m_ytozsten->apply(*a_dst.m_zflux, *a_src.m_yflux, a_initToZero, a_scale);
+
+    m_ztoxsten->apply(*a_dst.m_xflux, *a_src.m_zflux, a_initToZero, a_scale);
+    m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_flux, a_initToZero, a_scale);
+#endif    
+  }
+
+
+  //apply one particular stencil
+  void apply(EBFluxData<data_t, 1>       & a_dst,
+             const EBFluxData<data_t, 1> & a_src,
+             unsigned int a_dstDir, unsigned int a_srcDir,
+             bool a_initToZero, data_t a_scale)
+  {
+    if((a_srcDir == 0) && (a_dstDir==1))
+    {
+      m_xtoysten->apply(*a_dst.m_yflux, *a_src.m_xflux, a_initToZero, a_scale);
+    }
+    else if((a_srcDir == 1) && (a_dstDir==0))
+    {
+      m_ytoxsten->apply(*a_dst.m_xflux, *a_src.m_yflux, a_initToZero, a_scale);
+    }
+#if DIM==3
+    else if((a_srcDir == 0) && (a_dstDir==2))
+    {
+      m_xtozsten->apply(*a_dst.m_zflux, *a_src.m_xflux, a_initToZero, a_scale);
+    }
+    else if((a_srcDir == 1) && (a_dstDir==2))
+    {
+      m_ytozsten->apply(*a_dst.m_zflux, *a_src.m_yflux, a_initToZero, a_scale);
+    }
+    else if((a_srcDir == 2) && (a_dstDir==0))
+    {
+      m_ztoxsten->apply(*a_dst.m_xflux, *a_src.m_zflux, a_initToZero, a_scale);
+    }
+    else if((a_srcDir == 2) && (a_dstDir==1))
+    {
+      m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_flux, a_initToZero, a_scale);
+    }
+#endif
+    else
+    {
+      MayDay::Error("ebcrossstencil::apply: bogus input directions");
+    }
   }
 };
 ///
@@ -56,6 +127,15 @@ public:
   shared_ptr<EBDictionary<order, data_t, YFACE   ,CELL    > >    m_yFaceToCell;
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,CELL    > >    m_zFaceToCell;
   shared_ptr<EBDictionary<order, data_t, BOUNDARY,CELL    > >    m_boundaryToCell;
+
+  shared_ptr<EBDictionary<order, data_t, XFACE   ,YFACE   > >    m_xFaceToYFace;
+  shared_ptr<EBDictionary<order, data_t, XFACE   ,ZFACE   > >    m_xFaceToZFace;
+
+  shared_ptr<EBDictionary<order, data_t, YFACE   ,XFACE   > >    m_yFaceToXFace;
+  shared_ptr<EBDictionary<order, data_t, YFACE   ,ZFACE   > >    m_yFaceToZFace;
+
+  shared_ptr<EBDictionary<order, data_t, ZFACE   ,XFACE   > >    m_zFaceToXFace;
+  shared_ptr<EBDictionary<order, data_t, ZFACE   ,YFACE   > >    m_zFaceToYFace;
 
   //register a stencil cells to face things
   inline void registerCellToFace (string a_stencilName,
@@ -227,7 +307,7 @@ public:
   }
 
 
-    //register a stencil for a face-centered thing
+  //
   inline void registerFaceToCell (string a_stencilName,
                                   string a_domainBCName,
                                   string a_ebbcName,
@@ -258,6 +338,7 @@ public:
   }
 
   //register a stencil for a face-centered thing
+  //where the faces act only on stuff of the same flavor of face
   inline void registerFaceStencil(string a_stencilName,
                                   string a_domainBCName,
                                   string a_ebbcName,
@@ -288,7 +369,57 @@ public:
   }
 
 
-  //since the above does not work, let's do this
+  //register a stencil for a face-centered thing
+  //where faces act on different direction faces
+  inline void registerCrossFaceStencil(string a_stencilName,
+                                       string a_domainBCName,
+                                       string a_ebbcName,
+                                       Box    a_srcDomain,
+                                       Box    a_dstDomain,
+                                       bool   needDiagonalWeights = false)
+  {
+    m_xFaceToYFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+    m_yFaceToXFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+#if DIM==3      
+    m_zFaceToXFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+    m_zFaceToYFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+    m_xFaceToZFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+    m_yFaceToZFace->registerStencil(a_stencilName,              
+                                    a_domainBCName,             
+                                    a_ebbcName,                 
+                                    a_srcDomain,                
+                                    a_dstDomain,                
+                                    needDiagonalWeights);
+#endif      
+  }
+  
+
+  //get same face stencils all gathered together
   EBFluxStencil<order, data_t>
   getFluxStencil(const string & a_stencilName, 
                  const string & a_ebbcName,
@@ -301,6 +432,26 @@ public:
     retval.m_ysten = m_yFaceToYFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
 #if DIM==3      
     retval.m_zsten = m_zFaceToZFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+#endif
+    return retval;
+  }
+  
+  //get cross face stencils all gathered together
+  EBCrossFaceStencil<order, data_t>
+  getCrossFaceStencil(const string & a_stencilName, 
+                      const string & a_ebbcName,
+                      const Box    & a_srcDomain,
+                      const Box    & a_dstDomain,               
+                      const int    & a_boxid)
+  {
+    EBCrossFaceStencil<order, data_t> retval;
+    retval.m_xtoysten = m_xFaceToYFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+    retval.m_ytoxsten = m_yFaceToXFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+#if DIM==3      
+    retval.m_ztoxsten = m_zFaceToXFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+    retval.m_ztoysten = m_zFaceToYFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+    retval.m_ytozsten = m_yFaceToZFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
+    retval.m_xtozsten = m_xFaceToZFace->getEBStencil(a_stencilName, a_ebbcName, a_srcDomain, a_dstDomain, a_boxid);
 #endif
     return retval;
   }

@@ -56,52 +56,69 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       //average velocities to face centers.
       getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
-      //solve for the upwind value
-      unsigned long long int numflopspt = 2;
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_xflux->box(),
-                      *upwindScal.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux,
-                      *faceCentVelo.m_xflux);
-
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_yflux->box(),
-                      *upwindScal.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux,
-                      *faceCentVelo.m_yflux);
-
-#if DIM==3
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_zflux->box(),
-                      *upwindScal.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux,
-                      *faceCentVelo.m_zflux);
-#endif
+      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
       EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
+      
       //now copy into the normal direction holder
-      for(unsigned int faceDir = 0; faceDir < DIM; ++faceDir)
-      {
-        if(faceDir == idir)
-        {
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_xflux->box(),
-                            *advvelfab.m_xflux, *upwindScal.m_xflux);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_yflux->box(),
-                            *advvelfab.m_yflux, *upwindScal.m_yflux);
-          }
-#if DIM==3
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "Copied", Copied, upwindScal.m_zflux->box(),
-                            *advvelfab.m_zflux, *upwindScal.m_zflux);
-          }
-#endif
-        } // end if we are on normal face
-      } // end loop over facedir
+      copyComp(advvelfab, upwindScal, idir);
 
     } //end loop over boxes
   }  // and loop over velocity directions
   
   // now we need to project the mac velocity
   m_macproj->project(m_advectionVel, m_macGradient, m_tol, m_maxIter);
+}
+/*******/
+
+//solve for the upwind value
+void  
+BCGVelAdvect::      
+getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+               EBFluxData<Real, 1>&  a_faceCentVelo,
+               EBFluxData<Real, 1>&  a_scalLo,
+               EBFluxData<Real, 1>&  a_scalHi)
+{
+  unsigned long long int numflopspt = 0;
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_xflux->box(),
+                  *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
+                  *a_faceCentVelo.m_xflux);
+
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
+                  *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                  *a_faceCentVelo.m_yflux);
+
+#if DIM==3
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
+                  *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,
+                  *a_faceCentVelo.m_zflux);
+#endif
+}
+/*******/
+
+void  
+BCGVelAdvect::      
+copyComp(EBFluxData<Real, 1>&  a_dst,
+         EBFluxData<Real, 1>&  a_src,
+         int a_vecDir)
+{
+  unsigned numflopspt = 0;
+  if(a_vecDir == 0)
+  {
+    ebforallInPlace(numflopspt, "Copied", Copied, a_dst.m_xflux->box(),
+                    *a_dst.m_xflux, *a_src.m_xflux);
+  }
+  else if(a_vecDir == 1)
+  {
+    ebforallInPlace(numflopspt, "Copied", Copied, a_dst.m_yflux->box(),
+                    *a_dst.m_yflux, *a_src.m_yflux );
+  }
+#if DIM==3
+  else if(a_vecDir == 2)
+  {
+    ebforallInPlace(numflopspt, "Copied", Copied, a_dst.m_zflux->box(),
+                    *a_dst.m_zflux, *a_src.m_zflux );
+  }
+#endif
 }
 /*******/
 void  
@@ -140,22 +157,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       //get face fluxes and interpolate them to centroids
       EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-
-      //solve for the upwind value
-      unsigned long long int numflopspt = 2;
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_xflux->box(),
-                      *upwindScal.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux,
-                      *faceCentVelo.m_xflux);
-
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_yflux->box(),
-                      *upwindScal.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux,
-                      *faceCentVelo.m_yflux);
-
-#if DIM==3
-      ebforallInPlace(numflopspt, "Upwinded", Upwinded, upwindScal.m_zflux->box(),
-                      *upwindScal.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux,
-                      *faceCentVelo.m_zflux);
-#endif
+      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
 
     } //end loop over boxes
   }  // and loop over velocity directions
@@ -166,8 +168,8 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 /*******/
 //subtract off pure gradient part of the velocity field
 //makes normal component of the velocity  = advection velocity at the face
-//Recall the gradients only exist on the normal face
-//the tangential compoents get average of neighboring gradients in the same direciton
+//Recall the gradients only exist on the normal face.
+//The tangential compoents get the average of neighboring gradients in the same direciton
 //subtracted.   So the y component on the xfaces get the average of the values of the
 //gradient on the neighboring y faces
 void 
@@ -187,26 +189,17 @@ correctVectorVelocity()
       EBFluxData<Real, 1>& macGrad   =  m_macGradient[dit[ibox]];
       //first correct facedir==vecdir direction
       //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
-      unsigned int numflopspt = 0;
-      if(vecDir == 0)
-      {
-        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_xflux->box(),
-                        *veccomp.m_xflux, *advvelfab.m_xflux);
-      }
-      else if(vecDir == 1)
-      {
-        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_yflux->box(),
-                        *veccomp.m_yflux, *advvelfab.m_yflux );
-      }
-#if DIM==3
-      else if(vecDir == 2)
-      {
-        ebforallInPlace(numflopspt, "Copied", Copied, veccomp.m_zflux->box(),
-                        *veccomp.m_zflux, *advvelfab.m_zflux );
-      }
-#endif
+      copyComp(veccomp, advvelfab, vecDir);
 
-
+      for(unsigned int faceDir = 0; faceDir < DIM; faceDir++)
+      {
+        if(faceDir != vecDir)
+        {
+          EBCrossFaceStencil<2, Real> stencils =
+            m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
+          stencils.apply(veccomp, macGrad, faceDir, vecDir);
+        }
+      }
     } // end loop over facedir
   }
 }

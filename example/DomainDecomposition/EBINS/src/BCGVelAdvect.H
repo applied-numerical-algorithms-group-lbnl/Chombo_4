@@ -46,6 +46,9 @@ public:
     m_advectionVel.define(m_grids, m_nghost, m_graphs);
     m_macGradient.define(m_grids, m_nghost, m_graphs);
     m_macVelocity.define(m_grids, m_nghost, m_graphs);
+
+    //for tangential velocity correction at faces
+    m_brit->registerFaceToCell( StencilNames::TanVelCorrect, StencilNames::NoBC,  StencilNames::NoBC, m_domain, m_domain, false);
   }
 
 
@@ -68,7 +71,15 @@ protected:
   Real    m_viscosity;
   //does hybrid divergence by component--includes resdistribution
   virtual void  assembleDivergence();
+  
+  void  copyComp(EBFluxData<Real, 1>&  a_dst,
+                 EBFluxData<Real, 1>&  a_src,
+                 int a_vecDir);
 
+  void getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+                      EBFluxData<Real, 1>&  a_faceCentVelo,
+                      EBFluxData<Real, 1>&  a_scalLo,
+                      EBFluxData<Real, 1>&  a_scalHi);
 
   void getAdvectionVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);
