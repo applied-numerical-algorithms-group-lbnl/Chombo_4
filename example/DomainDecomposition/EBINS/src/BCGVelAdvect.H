@@ -70,8 +70,7 @@ protected:
   IntVect m_nghost;
   Real    m_viscosity;
   //does hybrid divergence by component--includes resdistribution
-  virtual void  assembleDivergence();
-  
+  void  assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, const Real& a_dt);  
   void  copyComp(EBFluxData<Real, 1>&  a_dst,
                  EBFluxData<Real, 1>&  a_src,
                  int a_vecDir);
@@ -87,6 +86,10 @@ protected:
   void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);
   void correctVectorVelocity();
+
+  void assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+                    EBFluxData<Real, 1>& a_scalar,
+                    EBFluxData<Real, 1>& a_fcvel);
 
   void operator=(const BCGVelAdvect& a_opin);
   BCGVelAdvect();

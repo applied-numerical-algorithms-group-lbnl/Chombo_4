@@ -109,11 +109,10 @@ protected:
 
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
   void  nonConsDiv();
-  void redistribute();
+  void redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv);
   void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);
   void registerStencils();
 
-  void operator=(const EBAdvection& a_opin);
   void
   bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalHi,
                        EBFluxData<Real, 1>            & a_scalLo,
@@ -125,7 +124,16 @@ protected:
                        const DataIndex                & a_dit,
                        const int                      & a_ibox,
                        const Real                     & a_dt);
+  //do the linear combination of kappa div and nc div to get hybrid.  also fills delta m
+  void kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv);
+
+  void getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
+                                  EBFluxData<Real, 1>      &  a_centroidFlux,
+                                  unsigned int a_ibox);
+
+  //disallowed for all the usual reasons
   EBAdvection();
+  void operator=(const EBAdvection& a_opin);
 
 };
 #include "Chombo_NamespaceFooter.H"

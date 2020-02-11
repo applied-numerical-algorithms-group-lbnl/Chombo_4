@@ -17,7 +17,7 @@ hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
   getMACVectorVelocity(a_inputVel, a_dt);
 
   //lots of aliasing and smushing
-  assembleDivergence();
+  assembleDivergence(a_divuu, a_dt);
 }
 /*******/
 void  
@@ -209,8 +209,70 @@ correctVectorVelocity()
 /*******/
 void 
 BCGVelAdvect::
-assembleDivergence()
+assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+             EBFluxData<Real, 1>& a_scalar,
+             EBFluxData<Real, 1>& a_fcvel)
 {
+  //this flux = facevel*(scal)
+  unsigned long long int numflopspt = 2;
+
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_xflux->box(),
+                  *a_fcflux.m_xflux, *a_scalar.m_xflux,  *a_fcvel.m_xflux);
+
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_yflux->box(),
+                  *a_fcflux.m_yflux, *a_scalar.m_yflux,  *a_fcvel.m_yflux);
+
+#if DIM==3
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_zflux->box(),
+                  *a_fcflux.m_zflux, *a_scalar.m_zflux,  *a_fcvel.m_zflux);
+#endif
+}
+/**********/
+void 
+BCGVelAdvect::
+assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, 
+                   const  Real              & a_dt)
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(int ivar = 0; ivar < DIM; ivar++)
+  {
+    EBLevelBoxData<CELL, 1> hybridDiv;
+    EBLevelFluxData<1> scalarVelComp;
+    hybridDiv.define(          a_divuu, ivar, m_graphs);
+    scalarVelComp.define(m_macVelocity, ivar, m_graphs);
+    //this loop fills m_kappaDiv with the conservative divergence
+    for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+      const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+
+      auto& faceCentVel  = m_advectionVel[dit[ibox]];
+      auto& scalar       =  scalarVelComp[dit[ibox]];
+
+      EBFluxData<Real, 1>  centroidFlux(grown, graph);
+      EBFluxData<Real, 1>  faceCentFlux(grown, graph);
+
+      assembleFlux(faceCentFlux, scalar, faceCentVel);
+
+      EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
+      //interpolate flux to centroids
+      stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+      scalar.define(m_macVelocity[dit[ibox]], ivar);
+
+      auto& kapdiv =  m_kappaDiv[dit[ibox]];
+      getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
+    }
+    m_kappaDiv.exchange(m_exchangeCopier);
+    //this computes the non-conservative divergence and puts it into m_nonConsDiv
+    nonConsDiv();
+    //this forms the hybrid divergence
+
+    //does linear combination of divnc and div c to get hybrid and  compute delta M
+    kappaDivPlusOneMinKapDivNC(hybridDiv);
+
+    redistribute(hybridDiv);
+  }
 }
 /*******/
 #include "Chombo_NamespaceFooter.H"

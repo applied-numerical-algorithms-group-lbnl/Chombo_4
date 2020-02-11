@@ -128,6 +128,18 @@ void GetUpwindFluxF(Var<Real, 1>    a_flux,
 PROTO_KERNEL_END(GetUpwindFluxF, GetUpwindFlux)
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
 PROTO_KERNEL_START 
+void FluxMultiplyF(Var<Real, 1>    a_flux,
+                   Var<Real, 1>    a_scal,
+                   Var<Real, 1>    a_faceVel)
+{
+  Real upwindScal = a_scal(0);
+  Real advVel  = a_faceVel(0);
+
+  a_flux(0) = upwindScal*advVel;
+}
+PROTO_KERNEL_END(FluxMultiplyF, FluxMultiply)
+//// pick scalup = upwind scalar and define flux = scalup*faceVel
+PROTO_KERNEL_START 
 void UpwindedF(Var<Real, 1>    a_upwind,
                Var<Real, 1>    a_scalLo,
                Var<Real, 1>    a_scalHi,

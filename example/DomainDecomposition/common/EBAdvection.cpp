@@ -257,6 +257,21 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 #endif
   
 }
+///
+void
+EBAdvection::
+getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
+                           EBFluxData<Real, 1>      &  a_centroidFlux,
+                           unsigned int a_ibox)
+{
+  a_kapdiv.setVal(0.);
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    bool initToZero = false;
+    m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, a_kapdiv, a_centroidFlux,
+                            idir, a_ibox, initToZero, 1.0);
+  }
+}
                   
 ///
 void
@@ -269,7 +284,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
   // kappa* div(u scal)
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
@@ -286,19 +301,15 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
     getFaceCenteredFlux(faceCentFlux, faceCentVel, 
                         a_scal[dit[ibox]], 
                         dit[ibox], ibox, a_dt);
+
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
     //interpolate flux to centroids
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
-    kapdiv.setVal(0.);
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initToZero = false;
-      m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, kapdiv, centroidFlux,
-                              idir, ibox, initToZero, 1.0);
-    }
+    getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
+
     ideb++;
   }
 
@@ -310,6 +321,7 @@ nonConsDiv()
 {
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
+  m_kappaDiv.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -326,7 +338,7 @@ nonConsDiv()
 ///
 void
 EBAdvection::
-redistribute()
+redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
 {
   //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
   //this redistributes delta M into the hybrid divergence.
@@ -364,23 +376,14 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
 ///
 void 
 EBAdvection::
-hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
-                 const  Real                   & a_dt)
+kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv)
 {
-  a_phi.exchange(m_exchangeCopier);
-  //compute kappa div^c F
-  kappaConsDiv(a_phi, a_dt);
-
-  //compute nonconservative divergence = volume weighted ave of div^c
-  nonConsDiv();
-
-  //advance solution, compute delta M
-  DataIterator dit = m_grids.dataIterator();
+ DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 7;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & hybridDiv  =  m_hybridDiv[ dit[ibox]];
+    auto & hybridDiv  =  a_hybridDiv[ dit[ibox]];
     auto & kappaDiv   =  m_kappaDiv[  dit[ibox]];
     auto & nonConsDiv =  m_nonConsDiv[dit[ibox]];  
     auto & deltaM     =  m_deltaM[    dit[ibox]]; 
@@ -393,10 +396,27 @@ hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
                     deltaM    , 
                     kappa     );
   }
+}
+///
+void 
+EBAdvection::
+hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
+                 const  Real                   & a_dt)
+{
+  a_phi.exchange(m_exchangeCopier);
+  //compute kappa div^c F
+  kappaConsDiv(a_phi, a_dt);
 
+  //compute nonconservative divergence = volume weighted ave of div^c
+  nonConsDiv();
+
+  //does linear combination of kappaDiv and divNC.   also fills m_deltaM
+  kappaDivPlusOneMinKapDivNC(m_hybridDiv);
+  //advance solution, compute delta M
+ 
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
-  redistribute();
+  redistribute(m_hybridDiv);
 
     
 }
