@@ -1,250 +1,10 @@
 #ifndef __SetupFunctionss__
 #define __SetupFunctionss__
 #define PI 3.141592653589793
+#include "DebugFunctions.H"
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 
-void
-dumpPS(PointSet* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    PointSet irregset = *dataPtr;
-    int irow = 0;
-    for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
-    {
-      cout << ivsit() << " ";
-      irow++;
-      if(irow > 10) 
-      {
-        cout << endl;
-        irow = 0;
-      }
-    }
-    cout << endl;
-  }
-}
-
-#if DIM==2
-Point lodeb(15, 15);
-Point hideb(21, 21);
-void 
-dumpBlob(BoxData<Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    BoxData<Real, 1> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          cout << pt << ":" << data(pt, 0) << "  ";
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-void 
-dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, 1> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          if(vofs.size() >  0)
-          {
-            cout  << data(vofs[0], 0) << "  ";
-          }
-          else
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-
-
-void 
-dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, DIM> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    for(int  icomp = 0; icomp < DIM; icomp++)
-    {
-      cout << "comp = :" << icomp << endl;
-      for(int j = hideb[1]; j >= lodeb[1]; j--)
-      {
-        for(int i = lodeb[0]; i <= hideb[0]; i++)
-        {
-          Point pt(i,j);
-          if(databox.contains(pt))
-          {
-            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-            cout << pt << ":";
-            if(vofs.size() >  0)
-            {
-              cout  << data(vofs[0], icomp) << "  ";
-            }
-            else
-            {
-              cout  << "------------" << "  ";
-            }
-          }
-        }
-        cout << endl;
-      }
-    }
-  }
-}
-
-
-void 
-dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBBoxData<XFACE, Real, 1> & data = *(*dataPtr);
-    EBGraph graph = data.ebgraph();
-    Bx databox = data.box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          bool printLines = false;
-          if(vofs.size() >  0)
-          {
-            vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Lo);
-            if(faces.size() == 0)
-            {
-              printLines = true;
-            }
-            else
-            {
-              cout  << data(faces[0], 0) << "  ";
-            }
-          }
-          else
-          {
-            printLines = true;
-          }
-          if(printLines)
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-
-
-void 
-dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBBoxData<YFACE, Real, 1> & data = *(*dataPtr);
-    EBGraph graph = data.ebgraph();
-    Bx databox = data.box();
-
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          bool printLines = false;
-          if(vofs.size() >  0)
-          {
-            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
-            if(faces.size() == 0)
-            {
-              printLines = true;
-            }
-            else
-            {
-              cout  << data(faces[0], 0) << "  ";
-            }
-          }
-          else
-          {
-            printLines = true;
-          }
-          if(printLines)
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-#endif
 //=================================================
 PROTO_KERNEL_START 
 void InitializeSpotF(int       a_p[DIM],
@@ -311,6 +71,7 @@ void InitializeVCellF(int       a_p[DIM],
                       Real      a_rad,  //geom rad
                       Real      a_mag,  //max vel
                       Real      a_maxr, //radius for max vel
+                      bool      a_solidBody,
                       Real      a_dx)
 {
   Real rlocsq = 0;
@@ -325,8 +86,10 @@ void InitializeVCellF(int       a_p[DIM],
   Real carg = 0.5*PI*(rloc - a_maxr)/a_maxr;
   Real cosval = cos(carg);
   Real velmag = a_mag*cosval*cosval;
-//debug
-  velmag = 1;
+  if(a_solidBody)
+  {
+    velmag = 1;
+  }
 #if DIM==2
   a_vel(0) =  velmag*xrel[1];
   a_vel(1) = -velmag*xrel[0];

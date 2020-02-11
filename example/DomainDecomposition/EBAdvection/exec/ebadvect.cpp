@@ -107,9 +107,19 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       Bx velobox = velofab.box();
       if(whichvelo == 0)
       {
+        bool solidBody = false;
+        pp.query("solid_body_rot", solidBody);
+        if(solidBody)
+        {
+          pout() << "solid body rotation ON" << endl;
+        }
+        else
+        {
+          pout() << "solid body rotation OFF" << endl;
+        }
         ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
-        ideb++;
+                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, 
+                          solidBody, a_dx);
       }
       else if(whichvelo == -1)
       {

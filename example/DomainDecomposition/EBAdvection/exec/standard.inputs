@@ -41,6 +41,9 @@ which_geom = 0
 geom_rad = 0.455
 # center of the sphere
 geom_cen = 0.5
+solid_body_rot = true
+which_velo = 0
+which_scal = 0
 #
 ##plane 
 ##which_geom = 1 
