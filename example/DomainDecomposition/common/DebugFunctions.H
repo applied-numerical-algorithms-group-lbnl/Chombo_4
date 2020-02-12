@@ -20,23 +20,6 @@ dumpVecRV(Vector<RealVect>* a_dataPtr)
     }
   }
 }
-void 
-dumpvecRV(vector<RealVect>* a_dataPtr)
-{
-  if(a_dataPtr != NULL)
-  {
-    cout    << setprecision(8)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
-    {
-      
-      cout << ivec << ":" << (*a_dataPtr)[ivec];
-      cout << endl;
-    }
-  }
-}
 
 void
 dumpPS(PointSet* dataPtr)
@@ -61,7 +44,7 @@ dumpPS(PointSet* dataPtr)
 
 #if DIM==2
 void 
-fullDump(EBBoxData<CELL, Real, 1>* dataPtr)
+fullDump1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -103,8 +86,57 @@ fullDump(EBBoxData<CELL, Real, 1>* dataPtr)
     }
   }
 }
+
+
 void 
-dumpLD(EBLevelBoxData<CELL, 1>* dataPtr)
+fullDumpDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, DIM> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    Point lodeb = databox.low();
+    Point hideb = databox.high();
+    for(int ivar = 0; ivar <DIM; ivar++)
+    {
+      
+      cout << "data region contains for variable " << ivar << endl;
+      for(int j = hideb[1]; j >= lodeb[1]; j--)
+      {
+        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        {
+          Point pt(i,j);
+          if(databox.contains(pt))
+          {
+            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+            cout << pt << ":";
+            if(vofs.size() >  0)
+            {
+              cout  << data(vofs[0], ivar) << "  ";
+              if(data(vofs[0], ivar) >= 0)
+              {
+                cout << " ";
+              }
+            }
+            else
+            {
+              cout  << "---------------" << "  ";
+            }
+          }
+        }
+        cout << endl;
+      }
+    }
+  }
+}
+void 
+dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -113,7 +145,21 @@ dumpLD(EBLevelBoxData<CELL, 1>* dataPtr)
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      fullDump(&data[dit[ibox]]);
+      fullDump1(&data[dit[ibox]]);
+    }
+  }
+}
+void 
+dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, DIM>& data = *dataPtr;
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      cout << "ibox = " << ibox << ":" << endl;
+      fullDumpDIM(&data[dit[ibox]]);
     }
   }
 }
@@ -310,6 +356,12 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
       cout << endl;
     }
   }
+}
+
+void dummyfunc()
+{
+  dumpLDDIM(NULL);
+  dumpLD1(NULL);
 }
 #endif
 #include "Chombo_NamespaceFooter.H"
