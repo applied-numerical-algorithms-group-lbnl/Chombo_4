@@ -100,12 +100,22 @@ protected:
                           const int          & a_ibox);
 
   void
-  getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                      const EBFluxData<Real, 1>      & a_fcvel,
-                      const EBBoxData<CELL, Real, 1> & a_scal,
-                      const DataIndex                & a_dit,
-                      const int                      & a_ibox,
-                      const Real                     & a_dt);
+  getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
+                      EBFluxData<Real, 1>      & a_fcvel,
+                      EBBoxData<CELL, Real, 1> & a_scal,
+                      const DataIndex          & a_dit,
+                      int                        a_ibox,
+                      Real                       a_dt);
+
+  void
+  getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+                 EBFluxData<Real, 1>&  a_faceCentVelo,
+                 EBFluxData<Real, 1>&  a_scalLo,
+                 EBFluxData<Real, 1>&  a_scalHi);
+
+  void assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+                    EBFluxData<Real, 1>& a_scalar,
+                    EBFluxData<Real, 1>& a_fcvel);
 
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
   void  nonConsDiv();

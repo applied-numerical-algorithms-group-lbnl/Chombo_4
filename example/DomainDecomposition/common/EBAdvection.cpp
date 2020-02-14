@@ -174,16 +174,77 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalHi,
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, a_scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
   }
 }
+/*******/
+void 
+EBAdvection::
+assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+             EBFluxData<Real, 1>& a_scalar,
+             EBFluxData<Real, 1>& a_fcvel)
+{
+  //this flux = facevel*(scal)
+  unsigned long long int numflopspt = 2;
+
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_xflux->box(),
+                  *a_fcflux.m_xflux, *a_scalar.m_xflux,  *a_fcvel.m_xflux);
+
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_yflux->box(),
+                  *a_fcflux.m_yflux, *a_scalar.m_yflux,  *a_fcvel.m_yflux);
+
+#if DIM==3
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_zflux->box(),
+                  *a_fcflux.m_zflux, *a_scalar.m_zflux,  *a_fcvel.m_zflux);
+#endif
+}
+//solve for the upwind value
+void  
+EBAdvection::
+getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+               EBFluxData<Real, 1>&  a_faceCentVelo,
+               EBFluxData<Real, 1>&  a_scalLo,
+               EBFluxData<Real, 1>&  a_scalHi)
+{
+  unsigned long long int numflopspt = 0;
+  ebforallInPlace_i(numflopspt, "UpwindedPt", UpwindedPt, a_upwindScal.m_xflux->box(),
+                  *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
+                  *a_faceCentVelo.m_xflux);
+
+  ebforallInPlace_i(numflopspt, "UpwindedPt", UpwindedPt, a_upwindScal.m_yflux->box(),
+                  *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                  *a_faceCentVelo.m_yflux);
+
+#if DIM==3
+  ebforallInPlace_i(numflopspt, "UpwindedPt", UpwindedPt, a_upwindScal.m_zflux->box(),
+                  *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,
+                  *a_faceCentVelo.m_zflux);
+#endif
+  /**
+  unsigned long long int numflopspt = 0;
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_xflux->box(),
+                  *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
+                  *a_faceCentVelo.m_xflux);
+
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
+                  *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                  *a_faceCentVelo.m_yflux);
+
+#if DIM==3
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
+                  *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,
+                  *a_faceCentVelo.m_zflux);
+#endif
+  **/
+}
+/*******/
 
 ///
 void
 EBAdvection::
-getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                    const EBFluxData<Real, 1>      & a_fcvel,
-                    const EBBoxData<CELL, Real, 1> & a_scal,
-                    const DataIndex                & a_dit,
-                    const int                      & a_ibox,
-                    const Real                     & a_dt)
+getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
+                    EBFluxData<Real, 1>      & a_fcvel,
+                    EBBoxData<CELL, Real, 1> & a_scal,
+                    const DataIndex          & a_dit,
+                    int                        a_ibox,
+                    Real                       a_dt)
 {
   //first we compute the slopes of the data
   //then we extrapolate in space and time
@@ -192,7 +253,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
-  bool initToZero = true;
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
@@ -200,62 +260,10 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
   bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
                        grown, graph, a_dit, a_ibox, a_dt);
 
-  EBBoxData<CELL, Real, DIM> slopeLo(grown, graph); 
-  EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
-  int ideb = 0;
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
-    slopeLoComp.define<DIM>(slopeLo, idir);
-    slopeHiComp.define<DIM>(slopeHi, idir);
+  EBFluxData<Real, 1>  upwindScal(   grown, graph);
+  getUpwindState(upwindScal, a_fcvel,  scalLo, scalHi);
 
-    //low and high side differences
-    string slopeLoLab  = s_slopeLowLabel  + std::to_string(idir);
-    string slopeHiLab  = s_slopeHighLabel + std::to_string(idir);
-    const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
-    const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
-
-    stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
-    stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
-    ideb++;
-  }
-
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    //scalar extrapolated to low side and high side face
-    EBBoxData<CELL, Real, 1> scal_imh_nph(grown, graph);
-    EBBoxData<CELL, Real, 1> scal_iph_nph(grown, graph);
-    //extrapolate in space and time to get the inputs to the Riemann problem
-    unsigned long long int numflopspt = 21 + 4*DIM;
-    auto& sourfab = m_source[a_dit];
-    ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
-                    scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLo, slopeHi, veccell, sourfab, idir, a_dt, m_dx);
-
-
-    //we need to get the low and high states from the cell-centered holders to the face centered ones.
-    //once we do that, we can solve the Rieman problem for the upwind state
-    //i + 1/2 becomes the low  side of the face
-    //i - 1/2 becomes the high side of the face
-    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
-    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
-    ideb++;
-  }
-
-  //this solves the Riemann problem and sets flux = facevel*(upwind scal)
-  unsigned long long int numflopspt = 2;
-
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_xflux->box(),
-                  *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
-
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_yflux->box(),
-                  *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
-
-#if DIM==3
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_zflux->box(),
-                  *a_fcflux.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux, *a_fcvel.m_zflux);
-#endif
-  
+  assembleFlux(a_fcflux, upwindScal, a_fcvel);
 }
 ///
 void

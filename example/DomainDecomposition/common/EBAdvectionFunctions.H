@@ -160,6 +160,26 @@ void UpwindedF(Var<Real, 1>    a_upwind,
   a_upwind(0) = upwindScal;
 }
 PROTO_KERNEL_END(UpwindedF, Upwinded)
+
+PROTO_KERNEL_START 
+void UpwindedPtF(int a_pt[DIM],
+                 Var<Real, 1>    a_upwind,
+                 Var<Real, 1>    a_scalLo,
+                 Var<Real, 1>    a_scalHi,
+                 Var<Real, 1>    a_faceVel)
+{
+#if DIM==2
+  Point debpt(3, 9);
+  Point inpt(a_pt[0], a_pt[1]);
+  int ideb = 0;
+  if(inpt == debpt)
+  {
+    ideb = 1;
+  }
+#endif  
+  Upwinded(a_upwind, a_scalLo, a_scalHi, a_faceVel);
+}
+PROTO_KERNEL_END(UpwindedPtF, UpwindedPt)
 PROTO_KERNEL_START 
 void CopiedF(Var<Real, 1>    a_dst,
              Var<Real, 1>    a_src)

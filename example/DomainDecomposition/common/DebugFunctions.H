@@ -44,7 +44,7 @@ dumpPS(PointSet* dataPtr)
 
 #if DIM==2
 void 
-fullDump1(EBBoxData<CELL, Real, 1>* dataPtr)
+fullDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -89,7 +89,7 @@ fullDump1(EBBoxData<CELL, Real, 1>* dataPtr)
 
 
 void 
-fullDumpDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+fullDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -145,7 +145,7 @@ dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      fullDump1(&data[dit[ibox]]);
+      fullDumpCell1(&data[dit[ibox]]);
     }
   }
 }
@@ -159,14 +159,13 @@ dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      fullDumpDIM(&data[dit[ibox]]);
+      fullDumpCellDIM(&data[dit[ibox]]);
     }
   }
 }
 
 
-Point lodeb(7, 12);
-Point hideb(11,16);
+
 void 
 dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -176,11 +175,14 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    Bx area(lodeb, hideb);
+
 
     EBGraph graph = dataPtr->ebgraph();
     EBBoxData<CELL, Real, 1> & data = *dataPtr;
     Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    Point lodeb = databox.low();
+    Point hideb = databox.high();
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
     {
@@ -193,11 +195,12 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
           cout << pt << ":";
           if(vofs.size() >  0)
           {
+            if(data(vofs[0], 0) >= 0.0) cout << " ";
             cout  << data(vofs[0], 0) << "  ";
           }
           else
           {
-            cout  << "--------------" << "  ";
+            cout  << "---------------" << "  ";
           }
         }
       }
@@ -218,6 +221,8 @@ dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
+    Point lodeb = dataPtr->box().low();
+    Point hideb = dataPtr->box().high();
     Bx area(lodeb, hideb);
 
     EBGraph graph = dataPtr->ebgraph();
@@ -237,11 +242,12 @@ dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
             cout << pt << ":";
             if(vofs.size() >  0)
             {
+              if(data(vofs[0], icomp) >= 0.0) cout << " ";
               cout  << data(vofs[0], icomp) << "  ";
             }
             else
             {
-              cout  << "------------" << "  ";
+              cout  << "---------------" << "  ";
             }
           }
         }
@@ -261,11 +267,16 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    Bx area(lodeb, hideb);
-
     EBBoxData<XFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
+    databox.grow(0, -1);
+
+    Bx area = databox & graph.getDomain();
+    Point lodeb = area.low();
+    Point hideb = area.high();
+
+
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
     {
@@ -286,6 +297,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
             }
             else
             {
+              if (data(faces[0], 0) >= 0) cout << " ";
               cout  << data(faces[0], 0) << "  ";
             }
           }
@@ -295,7 +307,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
           }
           if(printLines)
           {
-            cout  << "------------" << "  ";
+            cout << "---------------" << "  ";
           }
         }
       }
@@ -314,11 +326,15 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    Bx area(lodeb, hideb);
-
     EBBoxData<YFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
+    databox.grow(0, -1);
+
+    Bx area = databox & graph.getDomain();
+    Point lodeb = area.low();
+    Point hideb = area.high();
+
 
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
@@ -340,6 +356,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
             }
             else
             {
+              if (data(faces[0], 0) >= 0) cout << " ";
               cout  << data(faces[0], 0) << "  ";
             }
           }
@@ -349,7 +366,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
           }
           if(printLines)
           {
-            cout  << "------------" << "  ";
+            cout << "---------------" << "  ";
           }
         }
       }
@@ -362,6 +379,9 @@ void dummyfunc()
 {
   dumpLDDIM(NULL);
   dumpLD1(NULL);
+  dumpXFace(NULL);
+  dumpYFace(NULL);
+  dumpEB1(NULL);
 }
 #endif
 #include "Chombo_NamespaceFooter.H"
