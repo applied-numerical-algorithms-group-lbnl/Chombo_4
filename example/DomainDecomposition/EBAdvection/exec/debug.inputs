@@ -1,5 +1,6 @@
 #domain size
-nx=       32
+nx=       8
+
 #max number of time steps
 max_step =    10
 #maximum time

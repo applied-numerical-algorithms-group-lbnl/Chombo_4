@@ -75,21 +75,12 @@ protected:
                  EBFluxData<Real, 1>&  a_src,
                  int a_vecDir);
 
-  void getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
-                      EBFluxData<Real, 1>&  a_faceCentVelo,
-                      EBFluxData<Real, 1>&  a_scalLo,
-                      EBFluxData<Real, 1>&  a_scalHi);
-
   void getAdvectionVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);
 
   void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);
   void correctVectorVelocity();
-
-  void assembleFlux(EBFluxData<Real, 1>& a_fcflux,
-                    EBFluxData<Real, 1>& a_scalar,
-                    EBFluxData<Real, 1>& a_fcvel);
 
   void operator=(const BCGVelAdvect& a_opin);
   BCGVelAdvect();

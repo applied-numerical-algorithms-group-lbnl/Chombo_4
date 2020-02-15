@@ -31,6 +31,82 @@ using Proto::SimpleEllipsoidIF;
 
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
+#if DIM==2
+void 
+testDebugFunctions(const EBGraph& a_graph)
+{
+  Point lo(3, 5);
+  Point hi(7, 9);
+  Bx bx(lo, hi);
+  EBBoxData<CELL, Real, 1> cellfab(bx, a_graph);
+  unsigned int numflops = 0;
+  ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
+  dumpEB1(&cellfab);
+
+  EBFluxData<Real, 1> fluxdat(bx, a_graph);
+  ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
+  
+  int idir = 0;
+  ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_xflux->box(),
+                    *fluxdat.m_xflux, idir);
+  dumpXFace(&fluxdat.m_xflux);
+
+
+  idir = 1;
+  ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_yflux->box(),
+                    *fluxdat.m_yflux, idir);
+  dumpYFace(&fluxdat.m_yflux);
+
+}
+
+
+void 
+testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
+                   shared_ptr<GeometryService<2>    >   a_geoserv,
+                   DisjointBoxLayout                     a_grids,
+                   Box                                   a_domain,
+                   Real , Point  a_ghost)
+{
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  //cell to face
+  a_brit->registerCellToFace(StencilNames::CellToFaceHi, 
+                             StencilNames::NoBC,
+                             StencilNames::NoBC,
+                             a_domain, a_domain, false, Point::Ones());
+  a_brit->registerCellToFace(StencilNames::CellToFaceLo, 
+                             StencilNames::NoBC,
+                             StencilNames::NoBC,
+                             a_domain, a_domain, false, Point::Ones());
+  DataIterator dit = a_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = a_grids[dit[ibox]];
+    Bx  bx = ProtoCh::getProtoBox(grid);
+    Bx grown = bx.grow(a_ghost);
+    EBGraph graph = (*graphs)[dit[ibox]];
+    EBBoxData<CELL, Real, 1> cellfab(grown, graph);
+    unsigned int numflops = 0;
+    ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
+    dumpEB1(&cellfab);
+
+    EBFluxData<Real, 1> fluxdat(grown, graph);
+    int idir = 0;
+    a_brit->applyCellToFace(StencilNames::CellToFaceHi, 
+                            StencilNames::NoBC,
+                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
+
+    dumpXFace(&fluxdat.m_xflux);
+
+
+
+    a_brit->applyCellToFace(StencilNames::CellToFaceLo, 
+                            StencilNames::NoBC,
+                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
+
+    dumpXFace(&fluxdat.m_xflux);
+  }
+}
+#endif
 
 //=================================================
 void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
@@ -81,6 +157,14 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   {
     {
       auto& scalfab = a_scalcell[dit[ibox]];
+#if DIM==2
+//      static bool tested = false;
+//      if(!tested)
+//      {
+//        testDebugFunctions(scalfab.ebgraph());
+//        tested = true;
+//      }
+#endif
       unsigned long long int numflopsscal = 5*DIM +3;
       Bx scalbox = scalfab.box();
 
@@ -341,6 +425,7 @@ runAdvection(int a_argc, char* a_argv[])
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 
+  testSimpleStencils(brit, geoserv, grids, domain, dx, dataGhostPt);
 
   pout() << "inititializing data"   << endl;
   

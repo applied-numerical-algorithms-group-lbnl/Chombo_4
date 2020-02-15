@@ -200,7 +200,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
           }
           else
           {
-            cout  << "---------------" << "  ";
+            cout  << "----------------" << "  ";
           }
         }
       }

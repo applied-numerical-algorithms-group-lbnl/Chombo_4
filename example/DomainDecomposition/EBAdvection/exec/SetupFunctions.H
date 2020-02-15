@@ -122,6 +122,31 @@ void InitializeVCellConstF(int       a_p[DIM],
 //end debug
 }
 PROTO_KERNEL_END(InitializeVCellConstF, InitializeVCellConst)
+
+
+//=================================================
+PROTO_KERNEL_START 
+void InitCellF(int                 a_p[DIM],
+               Var<Real, 1>       a_val)
+{
+
+  a_val(0) = Real(a_p[0]);
+  if(a_p[1] %2 == 1) a_val(0) *= -1;
+}
+PROTO_KERNEL_END(InitCellF, InitCell)
+
+
+//=================================================
+PROTO_KERNEL_START 
+void InitFaceF(int                 a_p[DIM],
+               Var<Real, 1>       a_val,
+               int idir)
+{
+
+  a_val(0) = Real(a_p[idir]);
+  if(a_p[1] %2 == 1) a_val(0) *= -1;
+}
+PROTO_KERNEL_END(InitFaceF, InitFace)
 #include "Chombo_NamespaceFooter.H"
 
 #endif

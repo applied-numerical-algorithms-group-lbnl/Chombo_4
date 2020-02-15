@@ -70,30 +70,6 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 }
 /*******/
 
-//solve for the upwind value
-void  
-BCGVelAdvect::      
-getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
-               EBFluxData<Real, 1>&  a_faceCentVelo,
-               EBFluxData<Real, 1>&  a_scalLo,
-               EBFluxData<Real, 1>&  a_scalHi)
-{
-  unsigned long long int numflopspt = 0;
-  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_xflux->box(),
-                  *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
-                  *a_faceCentVelo.m_xflux);
-
-  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
-                  *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
-                  *a_faceCentVelo.m_yflux);
-
-#if DIM==3
-  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
-                  *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,
-                  *a_faceCentVelo.m_zflux);
-#endif
-}
-/*******/
 
 void  
 BCGVelAdvect::      
@@ -206,27 +182,6 @@ correctVectorVelocity()
   }
 }
 
-/*******/
-void 
-BCGVelAdvect::
-assembleFlux(EBFluxData<Real, 1>& a_fcflux,
-             EBFluxData<Real, 1>& a_scalar,
-             EBFluxData<Real, 1>& a_fcvel)
-{
-  //this flux = facevel*(scal)
-  unsigned long long int numflopspt = 2;
-
-  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_xflux->box(),
-                  *a_fcflux.m_xflux, *a_scalar.m_xflux,  *a_fcvel.m_xflux);
-
-  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_yflux->box(),
-                  *a_fcflux.m_yflux, *a_scalar.m_yflux,  *a_fcvel.m_yflux);
-
-#if DIM==3
-  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_zflux->box(),
-                  *a_fcflux.m_zflux, *a_scalar.m_zflux,  *a_fcvel.m_zflux);
-#endif
-}
 /**********/
 void 
 BCGVelAdvect::
