@@ -182,7 +182,7 @@ assembleFlux(EBFluxData<Real, 1>& a_fcflux,
              EBFluxData<Real, 1>& a_fcvel)
 {
   //this flux = facevel*(scal)
-  unsigned long long int numflopspt = 2;
+  unsigned long long int numflopspt = 2; 
 
   ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_xflux->box(),
                   *a_fcflux.m_xflux, *a_scalar.m_xflux,  *a_fcvel.m_xflux);
