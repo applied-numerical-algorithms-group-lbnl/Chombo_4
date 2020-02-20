@@ -62,25 +62,22 @@ testDebugFunctions(const EBGraph& a_graph)
 
 }
 
-
+/***/
 void 
-testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
-                   shared_ptr<GeometryService<2>    >   a_geoserv,
-                   DisjointBoxLayout                     a_grids,
-                   Box                                   a_domain,
-                   Real , Point  a_ghost)
+testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
+              shared_ptr<GeometryService<2>    >   a_geoserv,
+              DisjointBoxLayout                     a_grids,
+              Box                                   a_domain,
+              Real a_dx, Point  a_ghost)
 {
-  pout() << "testing cell to face stencil" << endl;
+  pout() << "testing hi cell to face stencil" << endl;
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-  //cell to face
+
   a_brit->registerCellToFace(StencilNames::CellToFaceHi, 
-                              StencilNames::NoBC,
-                             StencilNames::NoBC,
-                             a_domain, a_domain, false, Point::Ones());
-  a_brit->registerCellToFace(StencilNames::CellToFaceLo, 
                              StencilNames::NoBC,
                              StencilNames::NoBC,
                              a_domain, a_domain, false, Point::Ones());
+
   DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -88,6 +85,48 @@ testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
     Bx  bx = ProtoCh::getProtoBox(grid);
     Bx grown = bx.grow(a_ghost);
     EBGraph graph = (*graphs)[dit[ibox]];
+
+    EBBoxData<CELL, Real, 1> cellfab(grown, graph);
+    unsigned int numflops = 0;
+    pout() << "cell data looks like:" << endl;
+    ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
+
+    dumpEB1(&cellfab);
+
+    EBFluxData<Real, 1> fluxdat(grown, graph);
+    int idir = 0;
+    pout() << "XFace data for Side::Lo looks like:" << endl;
+    a_brit->applyCellToFace(StencilNames::CellToFaceHi, 
+                            StencilNames::NoBC,
+                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
+
+    dumpXFace(&fluxdat.m_xflux);
+  }
+}
+/***/
+void 
+testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
+                   shared_ptr<GeometryService<2>    >    a_geoserv,
+                   DisjointBoxLayout                     a_grids,
+                   Box                                   a_domain,
+                   Real a_dx, Point  a_ghost)
+{
+  pout() << "testing low cell to face stencil" << endl;
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+
+  a_brit->registerCellToFace(StencilNames::CellToFaceLo, 
+                             StencilNames::NoBC,
+                             StencilNames::NoBC,
+                             a_domain, a_domain, false, Point::Ones());
+
+  DataIterator dit = a_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = a_grids[dit[ibox]];
+    Bx  bx = ProtoCh::getProtoBox(grid);
+    Bx grown = bx.grow(a_ghost);
+    EBGraph graph = (*graphs)[dit[ibox]];
+
     EBBoxData<CELL, Real, 1> cellfab(grown, graph);
     unsigned int numflops = 0;
     pout() << "cell data looks like:" << endl;
@@ -96,22 +135,27 @@ testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
 
     EBFluxData<Real, 1> fluxdat(grown, graph);
     int idir = 0;
-    a_brit->applyCellToFace(StencilNames::CellToFaceHi, 
+    a_brit->applyCellToFace(StencilNames::CellToFaceLo, 
                             StencilNames::NoBC,
                             a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
 
     pout() << "XFace data for Side::Hi data looks like:" << endl;
     dumpXFace(&fluxdat.m_xflux);
-
-
-    pout() << "XFace data for Side::Lo looks like:" << endl;
-    a_brit->applyCellToFace(StencilNames::CellToFaceLo, 
-                            StencilNames::NoBC,
-                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
-
-    dumpXFace(&fluxdat.m_xflux);
   }
 }
+/***/
+void 
+testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
+                   shared_ptr<GeometryService<2>    >     a_geoserv,
+                   DisjointBoxLayout                      a_grids,
+                   Box                                    a_domain,
+                   Real a_dx, Point  a_ghost)
+{
+  pout() << "testing cell to face stencil" << endl;
+  testHiStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
+  testLoStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
+}
+/***/
 #endif
 
 //=================================================
