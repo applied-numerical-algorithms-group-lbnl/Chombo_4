@@ -21,39 +21,9 @@
 #include <iomanip>
 
 
-//using std::cout;
-//using std::endl;
-//using std::shared_ptr;
-//
-//typedef Proto::Box Bx;
-//using   Proto::Point;
-//using   Proto::BoxData;
-//using   Proto::Stencil;
-//using   ProtoCh::getPoint;
-//using   ProtoCh::getProtoBox;
-//using   ProtoCh::getIntVect;
-//using   ProtoCh::getBox;
-//using     std::cout;
-//using     std::endl;
-//using     std::shared_ptr;
-//using   Proto::BaseIF;
-//using   Proto::SimpleEllipsoidIF;
-//using   Proto::CENTERING;
-//using   Proto::CELL;
-//using Proto::PointSet;
-//using Proto::PointSetIterator;
-
 int
 runTest(int a_argc, char* a_argv[])
 {
-#if DIM==2
-  dumpLD(NULL);
-  dumpEB1(NULL);
-  dumpXFace(NULL);
-  dumpYFace(NULL);
-  fullDump(NULL);
-#endif
-
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
@@ -137,7 +107,7 @@ runTest(int a_argc, char* a_argv[])
   DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
-  IntVect dataGhostIV =   IntVect::Unit;
+  IntVect dataGhostIV =   2*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();

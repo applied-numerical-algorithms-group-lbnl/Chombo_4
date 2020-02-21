@@ -43,13 +43,13 @@ defineData()
     m_cellVol *= m_dx;
   }
   //the 2* is because of coarsening means ghost cells need to be more numerous on finer levels than coarser levels
-  m_exchangeCopier.exchangeDefine(m_grids, 2*m_geomgrow);
-  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<EBGraph >()));
-  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<VoluData>()));
-  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<EBFaData>()));
-  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<XFacData>()));
-  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<YFacData>()));
-  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, 2*m_geomgrow, NullConstructorDataFactory<ZFacData>()));
+  m_exchangeCopier.exchangeDefine(m_grids, m_geomgrow);
+  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBGraph >()));
+  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<VoluData>()));
+  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBFaData>()));
+  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
+  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
+  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
 }
 /*********************************************/
 template<int order>
@@ -62,7 +62,7 @@ defineFinestLevel(const RealVect               & a_origin,
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box validBox = m_grids[dit[ibox]];
-    Box grownBox = grow(validBox, 2*m_geomgrow);
+    Box grownBox = grow(validBox, m_geomgrow);
 
     Box interBoxCh = grownBox & m_domain;
     Bx interBox = getProtoBox(interBoxCh);
@@ -275,6 +275,7 @@ coarsenData(LevelGeometryService&      a_finerLevel)
   for (int ibox = 0; ibox < dit.size(); ibox++)
   { 
     const EBGraph& ebgraph = (*m_graphs)[dit[ibox]];
+    Box          validBox  =     m_grids[dit[ibox]];
     Box          vofRegion =     m_grids[dit[ibox]];
     vofRegion.grow(m_geomgrow);
     vofRegion &= m_domain;
@@ -289,8 +290,8 @@ coarsenData(LevelGeometryService&      a_finerLevel)
 
     //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
-    Bx vofRegionBx = ProtoCh::getProtoBox(vofRegion);
-    for(auto bit = vofRegionBx.begin(); bit != vofRegionBx.end(); ++bit)
+    Bx validBx = ProtoCh::getProtoBox(validBox);
+    for(auto bit = validBx.begin(); bit != validBx.end(); ++bit)
     {
       const Point& pt = *bit;
       if(ebgraph.isIrregular(pt))
