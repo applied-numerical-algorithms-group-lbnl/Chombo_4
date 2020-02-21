@@ -121,8 +121,8 @@ getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
 ///
 void
 EBAdvection::
-bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalHi,
-                     EBFluxData<Real, 1>            & a_scalLo,
+bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
+                     EBFluxData<Real, 1>            & a_scalHi,
                      EBBoxData<CELL, Real, DIM>     & a_veccell,
                      const EBBoxData<CELL, Real, 1> & a_scal,
                      const EBBoxData<CELL, Real, 1> & a_source,
