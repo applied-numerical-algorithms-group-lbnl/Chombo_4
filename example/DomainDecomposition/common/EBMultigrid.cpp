@@ -381,14 +381,6 @@ void  gsrbResidF(int     a_pt[DIM],
   }
   if(sumpt%2 == a_iredBlack)
   {
-#if DIM==2
-    IntVect debivr(0, 9);
-    int ideb = 0;
-    if(     (a_pt[0] == debivr[0]) && (a_pt[1]==debivr[1]))
-    {
-      ideb = 1;
-    }
-#endif
     static const Real safety = 1.0;
     Real diagval = a_diag(0);
     Real kappval = a_kappa(0);

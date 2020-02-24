@@ -595,8 +595,10 @@ private:
         break;
       }
     }
-
-    PROTO_ASSERT(found, "did not find asked-for domain");
+    if(!found)
+    {
+      MayDay::Error("did not find asked-for domain");
+    }
 
     return retval;
   }

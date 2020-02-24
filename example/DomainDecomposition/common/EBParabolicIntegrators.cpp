@@ -4,6 +4,7 @@
 //diff comes in holding phinew
 //leaves holding (phinew-phiold)/dt
 
+#if 1
 typedef Proto::Var<Real, 1> Sca;
 
 ///
@@ -176,6 +177,7 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
                 const Real                    &  a_tolerance,
                 const unsigned int            &  a_maxIterations)
 {
+
   //this makes m_src = dt*a_src
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
@@ -222,6 +224,6 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   m_diffusionSolver->resetAlphaAndBeta(alpha, beta); 
   m_diffusionSolver->solve(a_phi, m_phit, a_tolerance, a_maxIterations);
 }
-
+#endif
 ///
 #include "Chombo_NamespaceFooter.H"

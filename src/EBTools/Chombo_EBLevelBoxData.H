@@ -73,6 +73,11 @@ class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
 {
 public:
 
+
+#ifdef PROTO_CUDA
+  //just shutting up the compiler
+  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
+#endif
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
 
@@ -120,6 +125,7 @@ public:
   }
 
   ///
+  virtual
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
@@ -129,6 +135,8 @@ public:
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
+#if NUMCOMPS==1  
+  virtual
   void define(EBLevelBoxData<cent,   DIM>           & a_input,
               unsigned int                            a_comp,
               shared_ptr<LevelData<EBGraph>  >        a_graphs)
@@ -139,9 +147,12 @@ public:
     auto ghost = a_input.ghostVect();
     m_graphs = a_graphs;
     LevelData<EBBoxData<cent, Real, DIM> >* inputPtr = static_cast<LevelData<EBBoxData<cent, Real, DIM> > * >(&a_input);
+    ScalarAliasFactory  fact(inputPtr, a_comp) ;
+
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::
-      define(dp, NUMCOMPS, ghost, ScalarAliasFactory(inputPtr, a_comp));
+      define(dp, NUMCOMPS, ghost, fact);
   }
+#endif
 
   void setVal(Real a_value)
   {

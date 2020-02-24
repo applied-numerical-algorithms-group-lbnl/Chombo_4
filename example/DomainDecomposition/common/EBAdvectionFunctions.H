@@ -85,16 +85,16 @@ void HybridDivergencePtF(int a_pt[DIM],
                          Var<Real, 1>    a_kappa)     
 {
 
-//begin debug
-#if DIM==2
-  Point debpt (17, 19);
-  int ideb = 0;
-  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
-  {
-    ideb = 1;
-  }
-#endif  
-//end   debug
+////begin debug
+//#if DIM==2
+//  Point debpt (17, 19);
+//  int ideb = 0;
+//  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
+//  {
+//    ideb = 1;
+//  }
+//#endif  
+////end   debug
   HybridDivergence(a_hybridDiv, 
                    a_kappaDiv,  
                    a_nonConsDiv,
@@ -168,15 +168,16 @@ void UpwindedPtF(int a_pt[DIM],
                  Var<Real, 1>    a_scalHi,
                  Var<Real, 1>    a_faceVel)
 {
-#if DIM==2
-  Point debpt(3, 9);
-  Point inpt(a_pt[0], a_pt[1]);
-  int ideb = 0;
-  if(inpt == debpt)
-  {
-    ideb = 1;
-  }
-#endif  
+//#if DIM==2
+//  Point debpt(3, 9);
+//  Point inpt(a_pt[0], a_pt[1]);
+//  int ideb = 0;
+//  if(inpt == debpt)
+//  {
+//    ideb = 1;
+//  }
+//#endif  
+
   Upwinded(a_upwind, a_scalLo, a_scalHi, a_faceVel);
 }
 PROTO_KERNEL_END(UpwindedPtF, UpwindedPt)
@@ -195,16 +196,6 @@ void GetUpwindFluxPtF(int             a_pt[DIM],
                       Var<Real, 1>    a_scalHi,
                       Var<Real, 1>    a_faceVel)
 {
-//begin debug
-#if DIM==2
-  Point debpt (17, 19);
-  int ideb = 0;
-  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
-  {
-    ideb = 1;
-  }
-#endif  
-//end   debug
   GetUpwindFlux(a_flux,
                 a_scalLo,
                 a_scalHi,
@@ -290,15 +281,6 @@ void ExtrapolateScalPtF(int                a_pt[DIM],
 {
 
 //begin debug
-#if DIM==2
-  Point debpt (17, 18);
-  int ideb = 0;
-  if((a_dir==1) && (a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
-  {
-    ideb = 1;
-  }
-#endif  
-//end   debug
   ExtrapolateScal(a_scal_imh_nph,
                   a_scal_iph_nph,
                   a_scal_ijk_n,

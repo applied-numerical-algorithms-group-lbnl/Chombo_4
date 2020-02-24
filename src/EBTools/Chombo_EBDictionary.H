@@ -153,7 +153,9 @@ public:
         retval = ilev;
       }
     }
-    PROTO_ASSERT(found, "dictionary did not find input domain");
+    if(!found)
+      MayDay::Error("dictionary did not find input domain");
+
     return retval;
   }
   
