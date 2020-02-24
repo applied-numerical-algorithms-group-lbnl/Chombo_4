@@ -19,8 +19,10 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_ProtoFactories.H"
 #include "Chombo_LevelBoxData.H"
+#include "Chombo_SPMD.H"
 #include "Chombo_NamespaceHeader.H"
 
+using CH4_SPMD::Chombo_MPI;
 class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, 1> >
 {
 public:
