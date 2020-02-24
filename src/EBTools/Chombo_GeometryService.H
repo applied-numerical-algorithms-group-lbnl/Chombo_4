@@ -582,7 +582,7 @@ protected:
 private:
 
 
-  inline const int getLevel(const Box & a_domain) const
+  inline int getLevel(const Box & a_domain) const
   {
     int retval = -1;
     bool found = false;
