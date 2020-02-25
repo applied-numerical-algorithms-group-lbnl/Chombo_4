@@ -9,4 +9,4 @@
 ## m1759 = nersc
 
 
-srun -n 1 ./main.exe euler.inputs
+srun ./main.exe euler.inputs
