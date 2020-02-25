@@ -2,14 +2,13 @@
 #include "Proto.H"
 #include "Proto_Timer.H"
 #include "EBRelaxSolver.H"
+#include "EBMultigridFunctions.H"
 #include <sstream>
 #include "Chombo_NamespaceHeader.H"
 
 bool EBMultigrid::s_useWCycle     = false;
 int  EBMultigrid::s_numSmoothDown = 2;
 int  EBMultigrid::s_numSmoothUp   = 2;
-
-typedef Proto::Var<Real, 1> Sca;
 
 /****/
 void 
@@ -60,26 +59,6 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   }
   pout() << "EBMultigrid: final     |resid| = " << resnorm << endl;
 }
-/****/
-//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
-PROTO_KERNEL_START 
-void  addAlphaPhiF(Sca     a_lph,
-                   Sca     a_phi,
-                   Sca     a_kap,
-                   Real    a_alpha,
-                   Real    a_beta)
-{
-  //kappa and beta are already in lph
-  //kappa because we did not divide by kappa
-  //beta was sent in to ebstencil::apply
-  Real kappdiv = a_lph(0);
-  Real bkdivF  = a_beta*kappdiv;
-  Real phival  = a_phi(0);
-  Real kapval  = a_kap(0);
-  a_lph(0) = a_alpha*phival*kapval + bkdivF;
-}
-PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
-
 
 /****/
 void
@@ -230,13 +209,6 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   }
 }
 /***/
-string convertUInt(unsigned int number)
-{
-  std::stringstream ss;//create a stringstream
-  ss << number;//add number to the stream
-  return ss.str();//return a string with the contents of the stream
-}
-/***/
 void
 EBMultigridLevel::
 defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
@@ -254,7 +226,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
     ///prolongation has ncolors stencils
     for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
     {
-      string colorstring = "PWC_Prolongation_" + convertUInt(icolor);
+      string colorstring = "PWC_Prolongation_" + std::to_string(icolor);
       m_prolongationName[icolor] = colorstring;
       m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
     }
@@ -328,15 +300,6 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
   }
 }
 /****/
-//res comes in holding lphi.   leaves holding res= rhs-lphi
-PROTO_KERNEL_START 
-void  subtractRHSF(Sca     a_res,
-                   Sca     a_rhs)
-{
-  a_res(0) = a_rhs(0) - a_res(0);
-}
-PROTO_KERNEL_END(subtractRHSF, subtractRHS)
-/****/
 void
 EBMultigridLevel::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
@@ -362,48 +325,6 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     ideb++;
   }
 }
-/****/
-PROTO_KERNEL_START 
-void  gsrbResidF(int     a_pt[DIM],
-                 Sca     a_phi,
-                 Sca     a_res,
-                 Sca     a_diag,
-                 Sca     a_kappa,
-                 Real    a_alpha,
-                 Real    a_beta,
-                 Real    a_dx,
-                 int     a_iredBlack)
-{
-  int sumpt = 0;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    sumpt += a_pt[idir];
-  }
-  if(sumpt%2 == a_iredBlack)
-  {
-#if DIM==2
-    IntVect debivr(0, 9);
-    int ideb = 0;
-    if(     (a_pt[0] == debivr[0]) && (a_pt[1]==debivr[1]))
-    {
-      ideb = 1;
-    }
-#endif
-    static const Real safety = 1.0;
-    Real diagval = a_diag(0);
-    Real kappval = a_kappa(0);
-    
-    Real realdiag = kappval*a_alpha + a_beta*diagval;
-//    Real regudiag = a_alpha - 2*DIM*a_beta/(a_dx*a_dx);
-    Real lambda = safety/realdiag;
-//    Real reglam = safety/regudiag;
-    Real phival = a_phi(0);
-    Real resval = a_res(0);
-//    if(std::abs(lambda) > std::abs(reglam)) lambda= reglam;
-    a_phi(0) = phival + lambda*resval;
-  }
-}
-PROTO_KERNEL_END(gsrbResidF, gsrbResid)
 /****/
 void
 EBMultigridLevel::

@@ -15,7 +15,6 @@
 #include "Chombo_NamespaceHeader.H"
 
 Real BaseFabRealSetVal = BASEFAB_REAL_SETVAL;
-
 template < > int BaseFab<int>::test()
 {
   int retbox = testBoxAndComp();

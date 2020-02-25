@@ -7,7 +7,7 @@ using Proto::Var;
 
 //=================================================
 PROTO_KERNEL_START 
-void InitializeSpotF(int       a_p[DIM],
+unsigned int InitializeSpotF(int       a_p[DIM],
                      Var<Real, 1>       a_phi,
                      Real      a_X0,
                      Real      a_rad,
@@ -29,13 +29,14 @@ void InitializeSpotF(int       a_p[DIM],
     val = cosval*cosval;
   }
   a_phi(0) = val;
+  return 0;
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
 
 
 //=================================================
 PROTO_KERNEL_START 
-void InitializeLineF(int          a_p[DIM],
+unsigned int InitializeLineF(int          a_p[DIM],
                      Var<Real, 1> a_phi,
                      Real      a_px,
                      Real      a_rad,
@@ -60,12 +61,13 @@ void InitializeLineF(int          a_p[DIM],
 //    val = 1.;
   }
   a_phi(0) = val;
+  return 0;
 }
 PROTO_KERNEL_END(InitializeLineF, InitializeLine)
 
 //=================================================
 PROTO_KERNEL_START 
-void InitializeVCellF(int       a_p[DIM],
+unsigned int InitializeVCellF(int       a_p[DIM],
                       Var<Real, DIM>       a_vel,
                       Real      a_cen,  //geom center
                       Real      a_rad,  //geom rad
@@ -103,13 +105,14 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(1) =  1;
 #endif
 //end debug
+  return 0;
 }
 PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 
 
 //=================================================
 PROTO_KERNEL_START 
-void InitializeVCellConstF(int       a_p[DIM],
+unsigned int InitializeVCellConstF(int       a_p[DIM],
                            Var<Real, DIM>       a_vel,
                            Real      a_xvel,
                            Real      a_yvel)
@@ -120,31 +123,34 @@ void InitializeVCellConstF(int       a_p[DIM],
   a_vel(2) =  0;
 #endif
 //end debug
+  return 0;
 }
 PROTO_KERNEL_END(InitializeVCellConstF, InitializeVCellConst)
 
 
 //=================================================
 PROTO_KERNEL_START 
-void InitCellF(int                 a_p[DIM],
+unsigned int InitCellF(int                 a_p[DIM],
                Var<Real, 1>       a_val)
 {
 
   a_val(0) = Real(a_p[0]);
   if(a_p[1] %2 == 1) a_val(0) *= -1;
+  return 0;
 }
 PROTO_KERNEL_END(InitCellF, InitCell)
 
 
 //=================================================
 PROTO_KERNEL_START 
-void InitFaceF(int                 a_p[DIM],
+unsigned int InitFaceF(int                 a_p[DIM],
                Var<Real, 1>       a_val,
                int idir)
 {
 
   a_val(0) = Real(a_p[idir]);
   if(a_p[1] %2 == 1) a_val(0) *= -1;
+  return 0;
 }
 PROTO_KERNEL_END(InitFaceF, InitFace)
 #include "Chombo_NamespaceFooter.H"

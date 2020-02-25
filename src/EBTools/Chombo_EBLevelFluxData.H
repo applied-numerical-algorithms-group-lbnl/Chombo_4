@@ -73,6 +73,11 @@ class EBLevelFluxData: public LevelData<EBFluxData<Real, NUMCOMPS> >
 {
 public:
 
+#ifdef PROTO_CUDA
+//just shutting up the compilers
+  using LevelData<EBFluxData<Real, NUMCOMPS> >::define;
+#endif
+
   typedef GraphConstructorFactory<EBFluxData<Real, NUMCOMPS> > devifactory_t;
 
   ///
@@ -96,6 +101,7 @@ public:
 
 
   ///
+  virtual
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
@@ -105,6 +111,7 @@ public:
   }
 
   ///aliasing define
+  virtual 
   void define(EBLevelFluxData<DIM>       &     a_input, 
               unsigned int                     a_comp,
               shared_ptr<LevelData<EBGraph>  > a_graphs)

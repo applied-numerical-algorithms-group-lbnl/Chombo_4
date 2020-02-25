@@ -655,7 +655,7 @@ void ReductionCopier::define(const BoxLayout& a_level,
                 }
             }
           
-          Box destBox(ghost);
+          //Box destBox(ghost);
           
           // for this Copier, we want to grow the "dest" region to cover the
           // entire domain in the transverse direction. In that way, we
