@@ -254,10 +254,10 @@ advanceVelocityNavierStokes(Real a_dt,
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> scalRHS, scalVelo, scalUdelu, scalGphi;
-    scalRHS.define  ((*m_sour) ,idir, m_graphs);
-    scalVelo.define( (*m_velo) ,idir, m_graphs);
-    scalUdelu.define((*m_divuu),idir, m_graphs);
-    scalGphi.define( (*m_gphi) ,idir, m_graphs);
+    scalRHS.define<DIM>(  (*m_sour) ,idir, m_graphs);
+    scalVelo.define<DIM>( (*m_velo) ,idir, m_graphs);
+    scalUdelu.define<DIM>((*m_divuu),idir, m_graphs);
+    scalGphi.define<DIM>( (*m_gphi) ,idir, m_graphs);
 
     //set source of parabolic advance to -(gphi + udelu)
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)

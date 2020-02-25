@@ -23,7 +23,8 @@
 #include "Chombo_NamespaceHeader.H"
 
 using CH4_SPMD::Chombo_MPI;
-class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, 1> >
+template<unsigned int srcComp, unsigned int dstComp>
+class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, dstComp> >
 {
 public:
 
@@ -40,12 +41,12 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual EBBoxData<CELL, Real, 1> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  virtual EBBoxData<CELL, Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
-    EBBoxData<CELL, Real, DIM>& vecholder = (*m_source)[a_datInd];
-    EBBoxData<CELL, Real, 1  >* retval = new EBBoxData<CELL, Real, 1  >();
+    EBBoxData<CELL, Real, srcComp>& vecholder = (*m_source)[a_datInd];
+    EBBoxData<CELL, Real, dstComp>* retval = new EBBoxData<CELL, Real, dstComp>();
     //aliasing define
-    retval->define<DIM>(vecholder, m_whichcomp);
+    retval->define(vecholder, m_whichcomp);
     return retval;
   }
 
@@ -62,8 +63,8 @@ public:
 
 private:
   ScalarAliasFactory();
-  LevelData<EBBoxData<CELL, Real, DIM> >* m_source;
-  unsigned int              m_whichcomp;
+  LevelData<EBBoxData<CELL, Real, srcComp> >* m_source;
+  unsigned int                                m_whichcomp;
 
 };
 
@@ -137,9 +138,9 @@ public:
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
-#if NUMCOMPS==1  
-  virtual
-  void define(EBLevelBoxData<cent,   DIM>           & a_input,
+
+  template <unsigned int srcComp>
+  void define(EBLevelBoxData<cent, srcComp>           & a_input,
               unsigned int                            a_comp,
               shared_ptr<LevelData<EBGraph>  >        a_graphs)
   {
@@ -148,13 +149,13 @@ public:
     auto dp    = a_input.disjointBoxLayout();
     auto ghost = a_input.ghostVect();
     m_graphs = a_graphs;
-    LevelData<EBBoxData<cent, Real, DIM> >* inputPtr = static_cast<LevelData<EBBoxData<cent, Real, DIM> > * >(&a_input);
-    ScalarAliasFactory  fact(inputPtr, a_comp) ;
+    LevelData<EBBoxData<cent, Real, srcComp> >* inputPtr = static_cast<LevelData<EBBoxData<cent, Real, srcComp> > * >(&a_input);
+    ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
 
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::
       define(dp, NUMCOMPS, ghost, fact);
   }
-#endif
+
 
   void setVal(Real a_value)
   {

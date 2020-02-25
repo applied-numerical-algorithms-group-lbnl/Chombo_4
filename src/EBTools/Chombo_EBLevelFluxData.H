@@ -22,12 +22,13 @@
 #include "Chombo_NamespaceHeader.H"
 
 
-class ScalarFluxAliasFactory: public DataFactory< EBFluxData<Real, 1> >
+template<unsigned int srcComp, unsigned int dstComp>
+class ScalarFluxAliasFactory: public DataFactory< EBFluxData<Real, dstComp> >
 {
 public:
 
-  ScalarFluxAliasFactory(LevelData<EBFluxData<Real, DIM> >* a_source, 
-                         unsigned int                       a_whichcomp)
+  ScalarFluxAliasFactory(LevelData<EBFluxData<Real, srcComp> >* a_source, 
+                         unsigned int                           a_whichcomp)
   {
     m_source    = a_source;
     m_whichcomp = a_whichcomp;
@@ -39,12 +40,12 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual EBFluxData<Real, 1> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  virtual EBFluxData<Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
-    EBFluxData<Real, DIM>& vecholder = (*m_source)[a_datInd];
-    EBFluxData<Real, 1  >* retval = new EBFluxData<Real, 1  >();
+    EBFluxData<Real, srcComp>& vecholder = (*m_source)[a_datInd];
+    EBFluxData<Real, dstComp>* retval = new EBFluxData<Real, dstComp>();
     //aliasing define
-    retval->define<DIM>(vecholder, m_whichcomp);
+    retval->define(vecholder, m_whichcomp);
     return retval;
   }
 
@@ -111,8 +112,8 @@ public:
   }
 
   ///aliasing define
-  virtual 
-  void define(EBLevelFluxData<DIM>       &     a_input, 
+  template <unsigned int srcComp>
+  void define(EBLevelFluxData<srcComp>   &     a_input, 
               unsigned int                     a_comp,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
@@ -120,9 +121,9 @@ public:
     auto dp    = a_input.disjointBoxLayout();
     auto ghost = a_input.ghostVect();
     m_graphs = a_graphs;
-    LevelData<EBFluxData<Real, DIM> >* inputPtr = static_cast<LevelData<EBFluxData<Real, DIM> > * >(&a_input);
-    LevelData<EBFluxData<Real, NUMCOMPS> >::
-      define(dp, NUMCOMPS, ghost, ScalarFluxAliasFactory(inputPtr, a_comp));
+    LevelData<EBFluxData<Real, srcComp> >* inputPtr = static_cast<LevelData<EBFluxData<Real, DIM> > * >(&a_input);
+    ScalarFluxAliasFactory<srcComp, NUMCOMPS> fact(inputPtr, a_comp);
+    LevelData<EBFluxData<Real, NUMCOMPS> >::define(dp, NUMCOMPS, ghost, fact);
   }
 
   void setVal(Real a_value)

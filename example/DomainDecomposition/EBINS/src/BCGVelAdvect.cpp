@@ -28,7 +28,7 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> velcomp;
-    velcomp.define(a_inputVel, idir, m_graphs);
+    velcomp.define<DIM>(a_inputVel, idir, m_graphs);
     //source term = nu*lapl(ucomp);
     Real alpha = 0; Real beta = m_viscosity;
     m_helmholtz->resetAlphaAndBeta(alpha, beta);
@@ -106,8 +106,8 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   {
     EBLevelBoxData< CELL, 1> velcomp;
     EBLevelFluxData<1> facecomp;
-    velcomp.define(a_inputVel, vecDir, m_graphs);
-    facecomp.define(m_macVelocity, vecDir, m_graphs);
+    velcomp.define<DIM> (a_inputVel, vecDir, m_graphs);
+    facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
 
     //source term = nu*lapl(ucomp);
     Real alpha = 0; Real beta = m_viscosity;
@@ -155,7 +155,7 @@ correctVectorVelocity()
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
   {
     EBLevelFluxData<1> facecomp;
-    facecomp.define(m_macVelocity, vecDir, m_graphs);
+    facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
 
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -193,8 +193,8 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
   {
     EBLevelBoxData<CELL, 1> hybridDiv;
     EBLevelFluxData<1> scalarVelComp;
-    hybridDiv.define(          a_divuu, ivar, m_graphs);
-    scalarVelComp.define(m_macVelocity, ivar, m_graphs);
+    hybridDiv.define<DIM>(          a_divuu, ivar, m_graphs);
+    scalarVelComp.define<DIM>(m_macVelocity, ivar, m_graphs);
     //this loop fills m_kappaDiv with the conservative divergence
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
