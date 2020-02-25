@@ -22,7 +22,9 @@
 #include "Chombo_SPMD.H"
 #include "Chombo_NamespaceHeader.H"
 
+#ifdef CH_MPI
 using CH4_SPMD::Chombo_MPI;
+#endif
 template<unsigned int srcComp, unsigned int dstComp>
 class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, dstComp> >
 {
