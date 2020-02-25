@@ -1,0 +1,18 @@
+
+PROTO_HOME =$(HOME)/proto
+DEPXX=nvcc
+CXX=nvcc
+export OMPI_CXX=nvcc
+
+CXXALLFLAGS := #-std=c++11
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g #-pedantic 
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3 -use_fast_math
+
+
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack
+HDFINCFLAGS=-I/global/common/cori_cle6/software/hdf5/1.10.5/pgi/19.5/include/ 
+HDFLIBFLAGS=-L/global/common/cori_cle6/software/hdf5/1.10.5/pgi/19.5/lib/ 
+
+#end mach dependent
+
