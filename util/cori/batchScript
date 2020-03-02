@@ -9,4 +9,9 @@
 ## m1759 = nersc
 
 
-srun ./main.exe euler.inputs
+module load cuda
+module load pgi
+module load mvapich2
+module load esslurm
+
+srun -n 2 ./main.exe euler.inputs
