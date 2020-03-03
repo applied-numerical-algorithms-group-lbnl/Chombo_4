@@ -4,12 +4,13 @@
 //diff comes in holding phinew
 //leaves holding (phinew-phiold)/dt
 
-typedef Proto::Var<Real, 1> Sca;
+#if 1
+
 
 ///
 PROTO_KERNEL_START 
-void  getConsDiffF(Sca     a_diff,
-                   Sca     a_phiold,
+void  getConsDiffF(Proto::Var<Real, 1>     a_diff,
+                   Proto::Var<Real, 1>     a_phiold,
                    Real    a_dt)
 {
   a_diff(0) = (a_diff(0) - a_phiold(0))/a_dt;
@@ -44,10 +45,10 @@ computeDiffusion( EBLevelBoxData<CELL, 1>       &  a_diffusionTerm,
 }
 ///
 PROTO_KERNEL_START 
-void  setEulerRHSF(Sca     a_rhs,
-                   Sca     a_phiold,
-                   Sca     a_source,
-                   Sca     a_kappa,
+void  setEulerRHSF(Proto::Var<Real, 1>     a_rhs,
+                   Proto::Var<Real, 1>     a_phiold,
+                   Proto::Var<Real, 1>     a_source,
+                   Proto::Var<Real, 1>     a_kappa,
                    Real    a_dt)
 {
   //source is presumed to already be kappa weighted
@@ -93,11 +94,11 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
 
 ///
 PROTO_KERNEL_START 
-void  setCrankNicRHSF(Sca     a_rhs,
-                      Sca     a_phiold,
-                      Sca     a_source,
-                      Sca     a_kappa,
-                      Sca     a_kappalapphi,
+void  setCrankNicRHSF(Proto::Var<Real, 1>     a_rhs,
+                      Proto::Var<Real, 1>     a_phiold,
+                      Proto::Var<Real, 1>     a_source,
+                      Proto::Var<Real, 1>     a_kappa,
+                      Proto::Var<Real, 1>     a_kappalapphi,
                       Real    a_dt,
                       Real    a_diffCoef)
 {
@@ -149,8 +150,8 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
 }
 ///
 PROTO_KERNEL_START 
-void  setTGASrcF(Sca     a_srct,
-                 Sca     a_input,
+void  setTGASrcF(Proto::Var<Real, 1>     a_srct,
+                 Proto::Var<Real, 1>     a_input,
                  Real    a_dt)
 {
   //source is presumed to already be kappa weighted
@@ -159,8 +160,8 @@ void  setTGASrcF(Sca     a_srct,
 PROTO_KERNEL_END(setTGASrcF, setTGASrc)
 
 PROTO_KERNEL_START 
-void  incrTGARHSF(Sca     a_phit,
-                  Sca     a_rhst)
+void  incrTGARHSF(Proto::Var<Real, 1>     a_phit,
+                  Proto::Var<Real, 1>     a_rhst)
 {
   a_rhst(0) = a_rhst(0) + a_phit(0);
 }
@@ -176,6 +177,7 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
                 const Real                    &  a_tolerance,
                 const unsigned int            &  a_maxIterations)
 {
+
   //this makes m_src = dt*a_src
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
@@ -222,6 +224,6 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   m_diffusionSolver->resetAlphaAndBeta(alpha, beta); 
   m_diffusionSolver->solve(a_phi, m_phit, a_tolerance, a_maxIterations);
 }
-
+#endif
 ///
 #include "Chombo_NamespaceFooter.H"

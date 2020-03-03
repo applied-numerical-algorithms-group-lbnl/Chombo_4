@@ -13,9 +13,6 @@
 class EBAdvection
 {
 public:
-
-
-  
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
               shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -25,6 +22,10 @@ public:
               const Real                             & a_dx,
               const IntVect                          & a_nghostsrc, 
               const IntVect                          & a_nghostdst);
+
+  virtual ~EBAdvection()
+  {
+  }
 
   /// advance one time step (via Trebotich et al.) in  an eb context
   void 
@@ -36,6 +37,19 @@ public:
   {
     return m_kappa;
   }
+
+  virtual void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
+                             const Real                & a_dt);
+  ///fills m_hybridDiv with hybrid divergence
+  virtual void 
+  hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
+                   const  Real               & a_dt);
+
+  EBLevelBoxData<CELL, 1>                m_hybridDiv;
+  EBLevelBoxData<CELL, 1>                m_kappa;
+
+  //additional terms added to extrapolation
+  EBLevelBoxData<CELL, 1>                m_source;
 protected:
 
   //rule britannica
@@ -46,15 +60,11 @@ protected:
   IntVect                                m_nghostDst;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
   Real m_dx;
-  EBLevelBoxData<CELL, 1>                m_kappa;
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
-  EBLevelBoxData<CELL, 1>                m_hybridDiv;
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
-
-private:
 
   static const string s_ncdivLabel;      //for non-conservative divergence
   static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
@@ -90,23 +100,50 @@ private:
                           const int          & a_ibox);
 
   void
-  getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                      const EBFluxData<Real, 1>      & a_fcvel,
-                      const EBBoxData<CELL, Real, 1> & a_scal,
-                      const DataIndex                & a_dit,
-                      const int                      & a_ibox,
-                      const Real                     & a_dt);
+  getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
+                      EBFluxData<Real, 1>      & a_fcvel,
+                      EBBoxData<CELL, Real, 1> & a_scal,
+                      const DataIndex          & a_dit,
+                      int                        a_ibox,
+                      Real                       a_dt);
+
+  void
+  getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+                 EBFluxData<Real, 1>&  a_faceCentVelo,
+                 EBFluxData<Real, 1>&  a_scalLo,
+                 EBFluxData<Real, 1>&  a_scalHi);
+
+  void assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+                    EBFluxData<Real, 1>& a_scalar,
+                    EBFluxData<Real, 1>& a_fcvel);
 
   void  defineData(shared_ptr<GeometryService<2> >        & a_geoserv);
-  void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                     const Real                & a_dt);
   void  nonConsDiv();
-  void redistribute();
+  void redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv);
   void fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv);
   void registerStencils();
 
-  void operator=(const EBAdvection& a_opin);
+  void
+  bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
+                       EBFluxData<Real, 1>            & a_scalHi,
+                       EBBoxData<CELL, Real, DIM>     & a_veccell,
+                       const EBBoxData<CELL, Real, 1> & a_scal,
+                       const EBBoxData<CELL, Real, 1> & a_source,
+                       const Bx                       & a_grown,
+                       const EBGraph                  & a_graph,
+                       const DataIndex                & a_dit,
+                       const int                      & a_ibox,
+                       const Real                     & a_dt);
+  //do the linear combination of kappa div and nc div to get hybrid.  also fills delta m
+  void kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv);
+
+  void getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
+                                  EBFluxData<Real, 1>      &  a_centroidFlux,
+                                  unsigned int a_ibox);
+
+  //disallowed for all the usual reasons
   EBAdvection();
+  void operator=(const EBAdvection& a_opin);
 
 };
 #include "Chombo_NamespaceFooter.H"

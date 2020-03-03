@@ -50,7 +50,8 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
   m_nonConsDiv.define(m_grids, m_nghostSrc, m_graphs);
   m_hybridDiv.define( m_grids, m_nghostSrc, m_graphs);
   m_kappaDiv.define(  m_grids, m_nghostSrc, m_graphs);
-
+  m_source.define(    m_grids, m_nghostSrc, m_graphs);
+  m_source.setVal(0.); //necessary in case the app does not  have a source
   m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
 }
 ////
@@ -106,9 +107,9 @@ registerStencils()
 ///
 void
 EBAdvection::
-getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
-                   const DataIndex    & a_dit,
-                   const int          & a_ibox)
+getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
+                   const DataIndex                & a_dit,
+                   const int                      & a_ibox)
 {
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
@@ -117,31 +118,26 @@ getFaceCenteredVel(EBFluxData<Real, 1>& a_fcvel,
   getFaceVelComp<ZFACE>(*(a_fcvel.m_zflux),  m_brit->m_cellToZFace, veccell, 2, a_ibox);
 #endif
 }
-
 ///
 void
 EBAdvection::
-getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
-                    const EBFluxData<Real, 1>      & a_fcvel,
-                    const EBBoxData<CELL, Real, 1> & a_scal,
-                    const DataIndex                & a_dit,
-                    const int                      & a_ibox,
-                    const Real                     & a_dt)
+bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
+                     EBFluxData<Real, 1>            & a_scalHi,
+                     EBBoxData<CELL, Real, DIM>     & a_veccell,
+                     const EBBoxData<CELL, Real, 1> & a_scal,
+                     const EBBoxData<CELL, Real, 1> & a_source,
+                     const Bx                       & a_grown,
+                     const EBGraph                  & a_graph,
+                     const DataIndex                & a_dit,
+                     const int                      & a_ibox,
+                     const Real                     & a_dt)
 {
-  //first we compute the slopes of the data
-  //then we extrapolate in space and time
-  //then we solve the riemann problem to get the flux
-  Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
-  Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
-  const EBGraph  & graph = (*m_graphs)[a_dit];
-  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
+  EBBoxData<CELL, Real, DIM> slopeLo(a_grown, a_graph); 
+  EBBoxData<CELL, Real, DIM> slopeHi(a_grown, a_graph);
 
-  EBBoxData<CELL, Real, DIM> slopeLo(grown, graph); 
-  EBBoxData<CELL, Real, DIM> slopeHi(grown, graph);
-  int ideb = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
@@ -156,60 +152,131 @@ getFaceCenteredFlux(EBFluxData<Real, 1>            & a_fcflux,
 
     stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
     stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
-    ideb++;
   }
-
-  EBFluxData<Real, 1>  scalHi(grown, graph);
-  EBFluxData<Real, 1>  scalLo(grown, graph);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
-    EBBoxData<CELL, Real, 1> scal_imh_nph(grown, graph);
-    EBBoxData<CELL, Real, 1> scal_iph_nph(grown, graph);
+    EBBoxData<CELL, Real, 1> scal_imh_nph(a_grown, a_graph);
+    EBBoxData<CELL, Real, 1> scal_iph_nph(a_grown, a_graph);
     //extrapolate in space and time to get the inputs to the Riemann problem
-    unsigned long long int numflopspt = 19 + 4*DIM;
-
-    ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, grown,  
+    unsigned long long int numflopspt = 21 + 4*DIM;
+    auto& sourfab = a_source;
+    ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, a_grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLo, slopeHi, veccell, idir, a_dt, m_dx);
+                    slopeLo, slopeHi, a_veccell, sourfab, idir, a_dt, m_dx);
 
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.
     //once we do that, we can solve the Rieman problem for the upwind state
     //i + 1/2 becomes the low  side of the face
     //i - 1/2 becomes the high side of the face
-    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
-    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
-    ideb++;
+    m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, a_scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
+    m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, a_scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
   }
+}
+/*******/
+void 
+EBAdvection::
+assembleFlux(EBFluxData<Real, 1>& a_fcflux,
+             EBFluxData<Real, 1>& a_scalar,
+             EBFluxData<Real, 1>& a_fcvel)
+{
+  //this flux = facevel*(scal)
+  unsigned long long int numflopspt = 2; 
 
-  //this solves the Riemann problem and sets flux = facevel*(upwind scal)
-  unsigned long long int numflopspt = 2;
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_xflux->box(),
+                  *a_fcflux.m_xflux, *a_scalar.m_xflux,  *a_fcvel.m_xflux);
 
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_xflux->box(),
-                  *a_fcflux.m_xflux, *scalLo.m_xflux, *scalHi.m_xflux, *a_fcvel.m_xflux);
-
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_yflux->box(),
-                  *a_fcflux.m_yflux, *scalLo.m_yflux, *scalHi.m_yflux, *a_fcvel.m_yflux);
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_yflux->box(),
+                  *a_fcflux.m_yflux, *a_scalar.m_yflux,  *a_fcvel.m_yflux);
 
 #if DIM==3
-  ebforallInPlace(numflopspt, "GetUpwindFlux", GetUpwindFlux, a_fcflux.m_zflux->box(),
-                  *a_fcflux.m_zflux, *scalLo.m_zflux, *scalHi.m_zflux, *a_fcvel.m_zflux);
+  ebforallInPlace(numflopspt, "FluxMultiply", FluxMultiply, a_fcflux.m_zflux->box(),
+                  *a_fcflux.m_zflux, *a_scalar.m_zflux,  *a_fcvel.m_zflux);
 #endif
-  
+}
+//solve for the upwind value
+void  
+EBAdvection::
+getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
+               EBFluxData<Real, 1>&  a_faceCentVelo,
+               EBFluxData<Real, 1>&  a_scalLo,
+               EBFluxData<Real, 1>&  a_scalHi)
+{
+  unsigned long long int numflopspt = 0;
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_xflux->box(),
+                  *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
+                  *a_faceCentVelo.m_xflux);
+
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
+                  *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                  *a_faceCentVelo.m_yflux);
+
+#if DIM==3
+  ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
+                  *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,
+                  *a_faceCentVelo.m_zflux);
+#endif
+}
+/*******/
+
+///
+void
+EBAdvection::
+getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
+                    EBFluxData<Real, 1>      & a_fcvel,
+                    EBBoxData<CELL, Real, 1> & a_scal,
+                    const DataIndex          & a_dit,
+                    int                        a_ibox,
+                    Real                       a_dt)
+{
+  //first we compute the slopes of the data
+  //then we extrapolate in space and time
+  //then we solve the riemann problem to get the flux
+  Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
+  Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+  const EBGraph  & graph = (*m_graphs)[a_dit];
+  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+
+  EBFluxData<Real, 1>  scalHi(grown, graph);
+  EBFluxData<Real, 1>  scalLo(grown, graph);
+  auto & sourfab = m_source[a_dit];
+  bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
+                       grown, graph, a_dit, a_ibox, a_dt);
+
+  EBFluxData<Real, 1>  upwindScal(   grown, graph);
+  getUpwindState(upwindScal, a_fcvel,  scalLo, scalHi);
+
+  assembleFlux(a_fcflux, upwindScal, a_fcvel);
+}
+///
+void
+EBAdvection::
+getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
+                           EBFluxData<Real, 1>      &  a_centroidFlux,
+                           unsigned int a_ibox)
+{
+  a_kapdiv.setVal(0.);
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    bool initToZero = false;
+    m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, a_kapdiv, a_centroidFlux,
+                            idir, a_ibox, initToZero, 1.0);
+  }
 }
                   
 ///
 void
 EBAdvection::
-kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
+kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, 
+             const Real& a_dt)
 {
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
@@ -223,20 +290,18 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, const Real& a_dt)
     getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
 
 
-    getFaceCenteredFlux(faceCentFlux, faceCentVel, a_scal[dit[ibox]], dit[ibox], ibox, a_dt);
+    getFaceCenteredFlux(faceCentFlux, faceCentVel, 
+                        a_scal[dit[ibox]], 
+                        dit[ibox], ibox, a_dt);
+
     EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
     //interpolate flux to centroids
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
-    kapdiv.setVal(0.);
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initToZero = false;
-      m_brit->applyFaceToCell(s_divergeLabel , s_nobcsLabel, m_domain, kapdiv, centroidFlux,
-                              idir, ibox, initToZero, 1.0);
-    }
+    getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
+
     ideb++;
   }
 
@@ -248,6 +313,7 @@ nonConsDiv()
 {
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
+  m_kappaDiv.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -264,7 +330,7 @@ nonConsDiv()
 ///
 void
 EBAdvection::
-redistribute()
+redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
 {
   //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
   //this redistributes delta M into the hybrid divergence.
@@ -284,21 +350,32 @@ EBAdvection::
 advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
-  a_phi.exchange(m_exchangeCopier);
-  //compute kappa div^c F
-  kappaConsDiv(a_phi, a_dt);
+  
+  hybridDivergence(a_phi,  a_dt);
 
-  //compute nonconservative divergence = volume weighted ave of div^c
-  nonConsDiv();
-
-  //advance solution, compute delta M
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& scalar =       a_phi[dit[ibox]];
+    auto& diverg = m_hybridDiv[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    unsigned long long int numflopspt = 2;
+    ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
+      scalar, diverg, a_dt);
+  }
+}
+
+///
+void 
+EBAdvection::
+kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv)
+{
+ DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 7;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & hybridDiv  =  m_hybridDiv[ dit[ibox]];
+    auto & hybridDiv  =  a_hybridDiv[ dit[ibox]];
     auto & kappaDiv   =  m_kappaDiv[  dit[ibox]];
     auto & nonConsDiv =  m_nonConsDiv[dit[ibox]];  
     auto & deltaM     =  m_deltaM[    dit[ibox]]; 
@@ -310,24 +387,29 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
                     nonConsDiv,  
                     deltaM    , 
                     kappa     );
-    ideb++;
   }
+}
+///
+void 
+EBAdvection::
+hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
+                 const  Real                   & a_dt)
+{
+  a_phi.exchange(m_exchangeCopier);
+  //compute kappa div^c F
+  kappaConsDiv(a_phi, a_dt);
+
+  //compute nonconservative divergence = volume weighted ave of div^c
+  nonConsDiv();
+
+  //does linear combination of kappaDiv and divNC.   also fills m_deltaM
+  kappaDivPlusOneMinKapDivNC(m_hybridDiv);
+  //advance solution, compute delta M
+ 
   m_deltaM.exchange(m_exchangeCopier);
   //redistribute delta M
-  //debug turn off redist
-  redistribute();
-  //end debug
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    auto& scalar =       a_phi[dit[ibox]];
-    auto& diverg = m_hybridDiv[dit[ibox]];
-    Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    unsigned long long int numflopspt = 2;
-    ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
-      scalar, diverg, a_dt);
+  redistribute(m_hybridDiv);
 
-    ideb++;
-  }
     
 }
 #include "Chombo_NamespaceFooter.H"

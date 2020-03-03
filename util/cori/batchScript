@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH -C gpu
+#SBATCH -N 2
+#SBATCH -n 2
+#SBATCH -t 300
+#SBATCH --gres=gpu:8
+#SBATCH -A m1759  
+
+## m1759 = nersc
+
+
+module load cuda
+module load pgi
+module load mvapich2
+module load esslurm
+
+srun -n 2 ./main.exe euler.inputs

@@ -479,7 +479,7 @@ void TreeIntVectSet::chop(int a_dir, int a_chop_pnt, TreeIntVectSet& a_hi)
     }
   a_hi.clear();
 
-  Box min  = m_minBox;
+  //Box min  = m_minBox;
   Box chop = m_spanBox;
 
   Box hiBox = chop.chop(a_dir, a_chop_pnt);

@@ -107,9 +107,19 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       Bx velobox = velofab.box();
       if(whichvelo == 0)
       {
+        bool solidBody = false;
+        pp.query("solid_body_rot", solidBody);
+        if(solidBody)
+        {
+          pout() << "solid body rotation ON" << endl;
+        }
+        else
+        {
+          pout() << "solid body rotation OFF" << endl;
+        }
         ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
-        ideb++;
+                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, 
+                          solidBody, a_dx);
       }
       else if(whichvelo == -1)
       {
@@ -331,7 +341,6 @@ runAdvection(int a_argc, char* a_argv[])
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 
-
   pout() << "inititializing data"   << endl;
   
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
@@ -360,7 +369,7 @@ runAdvection(int a_argc, char* a_argv[])
 
   while((step < max_step) && (time < max_time))
   {
-    advectOp.advance(scalcell, dt);
+    advectOp.advance(scalcell,  dt);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;

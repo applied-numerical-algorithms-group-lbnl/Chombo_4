@@ -29,7 +29,9 @@ output_interval = 10
 #value in hdf5 file of  covered data
 covered_value = -0.125
 
-
+# 0 euler, 1 CN, 2 TGA	
+parabolic_solver = 0
+viscosity = 0.001
 ## -1 all reg, 1 regular, 2 sphere
 #all regular geometry
 #which_geom = -1

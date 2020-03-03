@@ -40,7 +40,10 @@ void aliasLevelData(LevelData<T>& a_alias,
 template<class T> class LevelData : public BoxLayoutData<T>
 {
 public:
-
+#ifdef PROTO_CUDA  
+  //just to shut it up about partially overwritten virtual functions
+  using BoxLayoutData<T>::define;
+#endif
   ///
   LevelData();
 
@@ -51,6 +54,7 @@ public:
 
   ///
   virtual ~LevelData();
+
 
   ///
    void define(const DisjointBoxLayout& dp, int comps,

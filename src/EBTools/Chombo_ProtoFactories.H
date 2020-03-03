@@ -14,6 +14,7 @@
 
 
 #include "Proto.H"
+#include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_LevelData.H"
@@ -97,6 +98,8 @@ private:
   GraphConstructorFactory();
   shared_ptr<LevelData<EBGraph> > m_graphs;
 };
+
+
 
 
 #include "Chombo_NamespaceFooter.H"

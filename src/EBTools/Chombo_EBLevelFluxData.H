@@ -22,6 +22,50 @@
 #include "Chombo_NamespaceHeader.H"
 
 
+template<unsigned int srcComp, unsigned int dstComp>
+class ScalarFluxAliasFactory: public DataFactory< EBFluxData<Real, dstComp> >
+{
+public:
+
+  ScalarFluxAliasFactory(LevelData<EBFluxData<Real, srcComp> >* a_source, 
+                         unsigned int                           a_whichcomp)
+  {
+    m_source    = a_source;
+    m_whichcomp = a_whichcomp;
+  }
+  virtual ~ScalarFluxAliasFactory()
+  {
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual EBFluxData<Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    EBFluxData<Real, srcComp>& vecholder = (*m_source)[a_datInd];
+    EBFluxData<Real, dstComp>* retval = new EBFluxData<Real, dstComp>();
+    //aliasing define
+    retval->define(vecholder, m_whichcomp);
+    return retval;
+  }
+
+  virtual bool callDelete() const
+  {
+    return false;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  ScalarFluxAliasFactory();
+  LevelData<EBFluxData<Real, DIM> >* m_source;
+  unsigned int                       m_whichcomp;
+
+};
 ///
 /**
 */
@@ -29,6 +73,11 @@ template<int  NUMCOMPS>
 class EBLevelFluxData: public LevelData<EBFluxData<Real, NUMCOMPS> >
 {
 public:
+
+#ifdef PROTO_CUDA
+//just shutting up the compilers
+  using LevelData<EBFluxData<Real, NUMCOMPS> >::define;
+#endif
 
   typedef GraphConstructorFactory<EBFluxData<Real, NUMCOMPS> > devifactory_t;
 
@@ -53,6 +102,7 @@ public:
 
 
   ///
+  virtual
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
@@ -61,6 +111,20 @@ public:
     LevelData<EBFluxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
+  ///aliasing define
+  template <unsigned int srcComp>
+  void define(EBLevelFluxData<srcComp>   &     a_input, 
+              unsigned int                     a_comp,
+              shared_ptr<LevelData<EBGraph>  > a_graphs)
+  {
+    m_graphs = a_graphs;
+    auto dp    = a_input.disjointBoxLayout();
+    auto ghost = a_input.ghostVect();
+    m_graphs = a_graphs;
+    LevelData<EBFluxData<Real, srcComp> >* inputPtr = static_cast<LevelData<EBFluxData<Real, DIM> > * >(&a_input);
+    ScalarFluxAliasFactory<srcComp, NUMCOMPS> fact(inputPtr, a_comp);
+    LevelData<EBFluxData<Real, NUMCOMPS> >::define(dp, NUMCOMPS, ghost, fact);
+  }
 
   void setVal(Real a_value)
   {

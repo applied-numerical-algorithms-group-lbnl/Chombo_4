@@ -19,8 +19,56 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_ProtoFactories.H"
 #include "Chombo_LevelBoxData.H"
+#include "Chombo_SPMD.H"
 #include "Chombo_NamespaceHeader.H"
 
+#ifdef CH_MPI
+using CH4_SPMD::Chombo_MPI;
+#endif
+template<unsigned int srcComp, unsigned int dstComp>
+class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, dstComp> >
+{
+public:
+
+  ScalarAliasFactory(LevelData<EBBoxData<CELL, Real, DIM> >* a_source, 
+                     unsigned int                            a_whichcomp)
+  {
+    m_source    = a_source;
+    m_whichcomp = a_whichcomp;
+  }
+  virtual ~ScalarAliasFactory()
+  {
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual EBBoxData<CELL, Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    EBBoxData<CELL, Real, srcComp>& vecholder = (*m_source)[a_datInd];
+    EBBoxData<CELL, Real, dstComp>* retval = new EBBoxData<CELL, Real, dstComp>();
+    //aliasing define
+    retval->define(vecholder, m_whichcomp);
+    return retval;
+  }
+
+  virtual bool callDelete() const
+  {
+    return false;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  ScalarAliasFactory();
+  LevelData<EBBoxData<CELL, Real, srcComp> >* m_source;
+  unsigned int                                m_whichcomp;
+
+};
 
 ///
 /**
@@ -30,8 +78,15 @@ class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
 {
 public:
 
+
+#ifdef PROTO_CUDA
+  //just shutting up the compiler
+  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
+#endif
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
+
+
   ///
   EBLevelBoxData(): LevelData<EBBoxData<cent, Real, NUMCOMPS> >()
   {
@@ -75,6 +130,7 @@ public:
   }
 
   ///
+  virtual
   void define(const DisjointBoxLayout& a_dp, 
               const IntVect          & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
@@ -82,6 +138,24 @@ public:
     checkIfPeriodic(a_dp);
     m_graphs = a_graphs;
     LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
+  }
+
+
+  template <unsigned int srcComp>
+  void define(EBLevelBoxData<cent, srcComp>           & a_input,
+              unsigned int                            a_comp,
+              shared_ptr<LevelData<EBGraph>  >        a_graphs)
+  {
+    //for making scalar holders out of vector ones.
+
+    auto dp    = a_input.disjointBoxLayout();
+    auto ghost = a_input.ghostVect();
+    m_graphs = a_graphs;
+    LevelData<EBBoxData<cent, Real, srcComp> >* inputPtr = static_cast<LevelData<EBBoxData<cent, Real, srcComp> > * >(&a_input);
+    ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
+
+    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::
+      define(dp, NUMCOMPS, ghost, fact);
   }
 
 
@@ -96,7 +170,7 @@ public:
   
   ///
   void copyTo(const Interval                      &            a_srcComps,
-              LevelData<BoxData<Real, NUMCOMPS> > &            a_dst,
+              EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {

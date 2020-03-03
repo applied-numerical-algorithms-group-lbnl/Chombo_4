@@ -34,6 +34,9 @@ namespace StencilNames
   */
   static const string NCDivergeRoot("Volume_Weighted_Averaging_rad_"); 
   
+  ///for correcting tangential velocity at faces
+  static const string TanVelCorrect("Tangential_Velocity_Correction");
+
   /// for simple average from faces to cells
   /**
     This is to get the velocity to faces in projection.
@@ -150,7 +153,9 @@ public:
         retval = ilev;
       }
     }
-    PROTO_ASSERT(found, "dictionary did not find input domain");
+    if(!found)
+      MayDay::Error("dictionary did not find input domain");
+
     return retval;
   }
   

@@ -1,6 +1,7 @@
 #ifndef __SetupFunctionss__
 #define __SetupFunctionss__
 #define PI 3.141592653589793
+#include "DebugFunctions.H"
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 using std::cout;
@@ -13,247 +14,6 @@ typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
 
 
-void
-dumpPS(PointSet* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    PointSet irregset = *dataPtr;
-    int irow = 0;
-    for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
-    {
-      cout << ivsit() << " ";
-      irow++;
-      if(irow > 10) 
-      {
-        cout << endl;
-        irow = 0;
-      }
-    }
-    cout << endl;
-  }
-}
-
-#if DIM==2
-Point lodeb(15, 15);
-Point hideb(21, 21);
-void 
-dumpBlob(BoxData<Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    BoxData<Real, 1> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          cout << pt << ":" << data(pt, 0) << "  ";
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-void 
-dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, 1> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          if(vofs.size() >  0)
-          {
-            cout  << data(vofs[0], 0) << "  ";
-          }
-          else
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-
-
-void 
-dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, DIM> & data = *dataPtr;
-    Bx databox = dataPtr->box();
-    for(int  icomp = 0; icomp < DIM; icomp++)
-    {
-      cout << "comp = :" << icomp << endl;
-      for(int j = hideb[1]; j >= lodeb[1]; j--)
-      {
-        for(int i = lodeb[0]; i <= hideb[0]; i++)
-        {
-          Point pt(i,j);
-          if(databox.contains(pt))
-          {
-            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-            cout << pt << ":";
-            if(vofs.size() >  0)
-            {
-              cout  << data(vofs[0], icomp) << "  ";
-            }
-            else
-            {
-              cout  << "------------" << "  ";
-            }
-          }
-        }
-        cout << endl;
-      }
-    }
-  }
-}
-
-
-void 
-dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBBoxData<XFACE, Real, 1> & data = *(*dataPtr);
-    EBGraph graph = data.ebgraph();
-    Bx databox = data.box();
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          bool printLines = false;
-          if(vofs.size() >  0)
-          {
-            vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Lo);
-            if(faces.size() == 0)
-            {
-              printLines = true;
-            }
-            else
-            {
-              cout  << data(faces[0], 0) << "  ";
-            }
-          }
-          else
-          {
-            printLines = true;
-          }
-          if(printLines)
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-
-
-void 
-dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    cout    << setprecision(6)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    Bx area(lodeb, hideb);
-
-    EBBoxData<YFACE, Real, 1> & data = *(*dataPtr);
-    EBGraph graph = data.ebgraph();
-    Bx databox = data.box();
-
-    cout << "data region contains:" << endl;
-    for(int j = hideb[1]; j >= lodeb[1]; j--)
-    {
-      for(int i = lodeb[0]; i <= hideb[0]; i++)
-      {
-        Point pt(i,j);
-        if(databox.contains(pt))
-        {
-          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-          cout << pt << ":";
-          bool printLines = false;
-          if(vofs.size() >  0)
-          {
-            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
-            if(faces.size() == 0)
-            {
-              printLines = true;
-            }
-            else
-            {
-              cout  << data(faces[0], 0) << "  ";
-            }
-          }
-          else
-          {
-            printLines = true;
-          }
-          if(printLines)
-          {
-            cout  << "------------" << "  ";
-          }
-        }
-      }
-      cout << endl;
-    }
-  }
-}
-#endif
 //=================================================
 PROTO_KERNEL_START 
 void InitializeSpotF(int       a_p[DIM],
@@ -427,41 +187,57 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(DisjointBoxLayout& a_grids,
-                    Real             & a_dx,
-                    Real             & a_geomCen,
-                    Real             & a_geomRad,
-                    Real             & a_blobCen,
-                    Real             & a_blobRad,
-                    int              & a_whichGeom,
-                    int              & a_nx,
-                    shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
+void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
+                    Vector<Box>                     & a_vecdom,
+                    Vector<Real>                    & a_vecdx,
+                    shared_ptr<GeometryService<2> > & a_geoserv,
+                    Real  & a_geomCen,
+                    Real  & a_geomRad,
+                    int   & a_whichGeom,
+                    const Real                      & a_dx,
+                    const int                       & a_nx)
 {
   pout() << "defining geometry" << endl;
 
   ParmParse pp;
   int maxGrid = 32;
-    
-  pp.get("nx"        , a_nx);
   pp.get("maxGrid", maxGrid);
-  pp.get("blob_cen", a_blobCen);
-  pp.get("blob_rad", a_blobRad);
-
-  pout() << "nx       = " << a_nx     << endl;
   pout() << "maxGrid  = " << maxGrid  << endl;
-  pout() << "blob_cen = " << a_blobCen       << endl;
-  pout() << "blob_rad = " << a_blobRad       << endl;
 
-  makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Box domain = a_grids.physDomain().domainBox();
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (a_nx - 1)*IntVect::Unit;
+
+// EB and periodic do not mix
+  Box domain(domLo, domHi);
+
+
+  pout() << "creating grid hierarchy" << endl;
+  GeometryService<2>::generateGrids(a_grids, domain, maxGrid);
+  a_vecdom.resize(a_grids.size());
+  a_vecdx.resize( a_grids.size());
+  a_vecdom[0] = a_grids[0].physDomain().domainBox();
+  PR_assert(a_vecdom[0]==domain)
+  a_vecdx[0]  = a_dx;
+  for(int ilev = 1; ilev < a_grids.size(); ilev++)
+  {
+
+    a_vecdx[ ilev] = 2.*a_vecdx[ilev-1];
+    a_vecdom[ilev] = a_grids[ilev].physDomain().domainBox();
+  }
+    
+
+
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
   pout() << "creating implicit function" << endl;
-  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
+  
+  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen,
+                                                    a_geomRad,
+                                                    a_whichGeom);
 
   pout() << "creating geometry service" << endl;
-  a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  a_geoserv  = shared_ptr<GeometryService<2> >(new GeometryService<2>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
 //=================================================
@@ -540,7 +316,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       if(whichvelo == 0)
       {
         ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx);
+                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx); // 
         ideb++;
       }
       else if(whichvelo == -1)

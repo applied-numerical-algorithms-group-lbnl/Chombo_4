@@ -582,7 +582,7 @@ protected:
 private:
 
 
-  inline const int getLevel(const Box & a_domain) const
+  inline int getLevel(const Box & a_domain) const
   {
     int retval = -1;
     bool found = false;
@@ -595,8 +595,10 @@ private:
         break;
       }
     }
-
-    PROTO_ASSERT(found, "did not find asked-for domain");
+    if(!found)
+    {
+      MayDay::Error("did not find asked-for domain");
+    }
 
     return retval;
   }

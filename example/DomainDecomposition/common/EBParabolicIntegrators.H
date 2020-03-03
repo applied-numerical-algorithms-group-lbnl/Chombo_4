@@ -69,10 +69,10 @@ protected:
 
 private:
   
-  //outlawed for all the usual reasons
-  BaseEBParabolic();
-  BaseEBParabolic(const  BaseEBParabolic& a_input);
-  void operator= (const  BaseEBParabolic& a_input);
+//  //outlawed for all the usual reasons
+//  BaseEBParabolic();
+//  BaseEBParabolic(const  BaseEBParabolic& a_input);
+//  void operator= (const  BaseEBParabolic& a_input);
 };
 
 ///
@@ -108,12 +108,12 @@ public:
 protected:
   
   EBLevelBoxData<CELL, 1>  m_rhs;
-private:
-  //outlawed for all the usual reasons
-  EBBackwardEuler();
-  EBBackwardEuler(const  EBBackwardEuler& a_input);
-  void operator= (const  EBBackwardEuler& a_input);
-
+//private:
+//  //outlawed for all the usual reasons
+//  EBBackwardEuler();
+//  EBBackwardEuler(const  EBBackwardEuler& a_input);
+//  void operator= (const  EBBackwardEuler& a_input);
+//
 };
 
 
@@ -152,11 +152,11 @@ protected:
   
   EBLevelBoxData<CELL, 1>  m_rhs;
   EBLevelBoxData<CELL, 1>  m_kappaLph;
-private:
-  //outlawed for all the usual reasons
-  EBCrankNicolson();
-  EBCrankNicolson(const  EBCrankNicolson& a_input);
-  void operator= (const  EBCrankNicolson& a_input);
+//private:
+//  //outlawed for all the usual reasons
+//  EBCrankNicolson();
+//  EBCrankNicolson(const  EBCrankNicolson& a_input);
+//  void operator= (const  EBCrankNicolson& a_input);
 
 };
 
@@ -213,11 +213,11 @@ protected:
   EBLevelBoxData<CELL, 1>  m_srct;
   EBLevelBoxData<CELL, 1>  m_phit;
 
-private:
-  //outlawed for all the usual reasons
-  EBTGA();
-  EBTGA(const            EBTGA& a_input);
-  void operator= (const  EBTGA& a_input);
+//private:
+//  //outlawed for all the usual reasons
+//  EBTGA();
+//  EBTGA(const            EBTGA& a_input);
+//  void operator= (const  EBTGA& a_input);
 
 };
 

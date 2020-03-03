@@ -630,7 +630,7 @@ void SpreadingCopier::define(const BoxLayout& a_level,
     if (a_domain.intersects(ghost))
       {
         
-        Box destBox(ghost);
+//        Box destBox(ghost);
         
         // for this Copier, we want to grow the "dest" region to cover the
         // entire domain in the transverse direction. In that way, we

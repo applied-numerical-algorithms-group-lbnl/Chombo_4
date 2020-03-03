@@ -1,7 +1,8 @@
 #domain size
-nx=       128
+nx=       8
+
 #max number of time steps
-max_step =    1000
+max_step =    10
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
