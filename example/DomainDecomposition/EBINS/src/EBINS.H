@@ -92,7 +92,7 @@ private:
   void advanceScalar(Real a_dt);
 
   void outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const;
-  //forbidde for all the usual reasons
+  //forbidden for all the usual reasons
   EBINS();
   EBINS(const EBINS& a_input);
   EBINS& operator=(const EBINS& a_input);
