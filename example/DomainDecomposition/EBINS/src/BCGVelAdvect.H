@@ -26,8 +26,7 @@ public:
                const Box                              & a_domain,
                const Real                             & a_dx,
                const Real                             & a_viscosity,
-               const IntVect                          & a_nghost,
-               Real a_tolerance, unsigned int a_maxIter)    
+               const IntVect                          & a_nghost)
   :EBAdvection(a_brit,
                a_geoserv,   
                a_veloCell,  
@@ -41,14 +40,12 @@ public:
     m_helmholtz  = a_helmholtz;
     m_nghost     = a_nghost;
     m_viscosity  = a_viscosity;
-    m_tol        = a_tolerance;
-    m_maxIter    = a_maxIter;
     m_advectionVel.define(m_grids, m_nghost, m_graphs);
     m_macGradient.define(m_grids, m_nghost, m_graphs);
     m_macVelocity.define(m_grids, m_nghost, m_graphs);
 
     //for tangential velocity correction at faces
-    m_brit->registerFaceToCell( StencilNames::TanVelCorrect, StencilNames::NoBC,  StencilNames::NoBC, m_domain, m_domain, false);
+    m_brit->registerCrossFaceStencil( StencilNames::TanVelCorrect, StencilNames::NoBC,  StencilNames::NoBC, m_domain, m_domain, false);
   }
 
 
@@ -56,15 +53,14 @@ public:
   virtual void 
   hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                    EBLevelBoxData<CELL, DIM>& a_inputVel,
-                   const Real               & a_dt);
+                   const Real               & a_dt,
+                   Real a_tolerance, unsigned int a_maxIter);    
 
 protected:
 
   shared_ptr<EBMACProjector>    m_macproj;
   shared_ptr<EBMultigrid>       m_helmholtz;
   EBLevelFluxData<1>            m_advectionVel;
-  Real m_tol;
-  unsigned int m_maxIter;
   EBLevelFluxData<1>            m_macGradient;
   EBLevelFluxData<DIM>          m_macVelocity;
   IntVect m_nghost;
@@ -76,7 +72,8 @@ protected:
                  int a_vecDir);
 
   void getAdvectionVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
-                            const Real               & a_dt);
+                            const Real               & a_dt,
+                            Real a_tolerance, unsigned int a_maxIter);    
 
   void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt);

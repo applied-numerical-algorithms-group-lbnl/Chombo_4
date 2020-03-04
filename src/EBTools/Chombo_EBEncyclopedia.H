@@ -467,6 +467,16 @@ public:
     m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+    m_xFaceToYFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   YFACE>    >(new EBDictionary<order, data_t, XFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToZFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   ZFACE>    >(new EBDictionary<order, data_t, XFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+    m_yFaceToXFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   XFACE>    >(new EBDictionary<order, data_t, YFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToZFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   ZFACE>    >(new EBDictionary<order, data_t, YFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+    m_zFaceToXFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   XFACE>    >(new EBDictionary<order, data_t, ZFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToYFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   YFACE>    >(new EBDictionary<order, data_t, ZFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
     m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
@@ -488,10 +498,23 @@ public:
     m_xFaceToXFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   XFACE>    >(new EBDictionary<order, data_t, XFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_yFaceToYFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   YFACE>    >(new EBDictionary<order, data_t, YFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_zFaceToZFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   ZFACE>    >(new EBDictionary<order, data_t, ZFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+
+    m_xFaceToYFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   YFACE>    >(new EBDictionary<order, data_t, XFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_xFaceToZFace    = shared_ptr<EBDictionary<order, data_t, XFACE,   ZFACE>    >(new EBDictionary<order, data_t, XFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+    m_yFaceToXFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   XFACE>    >(new EBDictionary<order, data_t, YFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_yFaceToZFace    = shared_ptr<EBDictionary<order, data_t, YFACE,   ZFACE>    >(new EBDictionary<order, data_t, YFACE,   ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+    m_zFaceToXFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   XFACE>    >(new EBDictionary<order, data_t, ZFACE,   XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+    m_zFaceToYFace    = shared_ptr<EBDictionary<order, data_t, ZFACE,   YFACE>    >(new EBDictionary<order, data_t, ZFACE,   YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
+
     m_cellToXFace     = shared_ptr<EBDictionary<order, data_t, CELL,    XFACE>    >(new EBDictionary<order, data_t, CELL,    XFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_cellToYFace     = shared_ptr<EBDictionary<order, data_t, CELL,    YFACE>    >(new EBDictionary<order, data_t, CELL,    YFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_cellToZFace     = shared_ptr<EBDictionary<order, data_t, CELL,    ZFACE>    >(new EBDictionary<order, data_t, CELL,    ZFACE>    (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_cellToBoundary  = shared_ptr<EBDictionary<order, data_t, CELL,    BOUNDARY> >(new EBDictionary<order, data_t, CELL,    BOUNDARY> (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
+
     m_xFaceToCell     = shared_ptr<EBDictionary<order, data_t, XFACE,   CELL>     >(new EBDictionary<order, data_t, XFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_yFaceToCell     = shared_ptr<EBDictionary<order, data_t, YFACE,   CELL>     >(new EBDictionary<order, data_t, YFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));
     m_zFaceToCell     = shared_ptr<EBDictionary<order, data_t, ZFACE,   CELL>     >(new EBDictionary<order, data_t, ZFACE,   CELL>     (a_geoserv, a_grids, a_domain, a_dx, a_ghost));

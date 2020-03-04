@@ -60,6 +60,10 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost));
   m_macProj = m_ccProj->m_macprojector;
 
+  m_bcgAdvect = shared_ptr<BCGVelAdvect>
+    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+                      m_grids, m_domain, m_dx, m_viscosity, m_nghost));
+
   if(a_solver == BackwardEuler)
   {
     m_heatSolver = shared_ptr<BaseEBParabolic>
@@ -146,13 +150,20 @@ initializePressure(Real         a_dt,
                    unsigned int a_numIterPres, 
                    unsigned int a_maxIter)
 {
+  auto & velo =  (*m_velo );
+  auto & gphi =  (*m_gphi );  
+
+  //project the resulting field
+  pout() << "projecting initial velocity"<< endl;
+  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
-  m_velo->copyTo(interv, velosave, interv, m_copyCopier);
+  velo.copyTo(interv, velosave, interv, m_copyCopier);
   for(int iter = 0; iter < a_numIterPres; iter++)
   {
     advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
-    velosave.copyTo(interv, *m_velo, interv, m_copyCopier);
+    velosave.copyTo(interv, velo, interv, m_copyCopier);
   }
 }
 /*******/ 
@@ -182,24 +193,9 @@ computeDt(Real a_cfl) const
 /*******/ 
 void
 EBINS::
-getAdvectiveDerivative(Real a_dt)
+getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
-/** 
-//not quite right, yet
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    EBLevelBoxData<CELL, 1> sour; //will hold nu*lapl(u)
-    EBLevelBoxData<CELL, 1> velc; //will hold vel  comp
-    EBLevelBoxData<CELL, 1> divf; //will hold divu comp
-    sour.define(m_sour,  idir, m_graphs);
-    velc.define(m_velo,  idir, m_graphs);
-    divf.define(m_divuu, idir, m_graphs);
-
-    m_advectOp->hybridDivergence(velc, sour, a_dt);
-    Interval interv(0, 0); 
-    m_advectOp->m_hybridDiv->copyTo(interv, divf, interv, m_copyCopier);
-  }
-**/
+  m_bcgAdvect->hybridDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -220,17 +216,20 @@ void
 EBINS::
 advanceVelocityEuler(Real a_dt)
 {
+  auto & velo =  (*m_velo );
+  auto & udel =  (*m_divuu);
+  auto & gphi =  (*m_gphi );  
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 3*DIM;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & velo =  (*m_velo )[ dit[ibox]];
-    auto & udel =  (*m_divuu)[dit[ibox]];
-    auto & gphi =  (*m_gphi )[ dit[ibox]];  
+    auto & velofab =  velo[dit[ibox]];
+    auto & udelfab =  udel[dit[ibox]];
+    auto & gphifab =  gphi[dit[ibox]];  
 
     ebforallInPlace(numflopspt, "EulerAdvance", EulerAdvance, grbx,  
-                    velo, udel, gphi, a_dt);
+                    velofab, udelfab, gphifab, a_dt);
   }
 }
 /*******/ 
@@ -250,14 +249,18 @@ advanceVelocityNavierStokes(Real a_dt,
                             Real a_tol,                         
                             unsigned int a_maxIter)
 {
+  auto & sour  = *m_sour ;
+  auto & velo  = *m_velo ;
+  auto & divuu = *m_divuu;
+  auto & gphi  = *m_gphi ;
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> scalRHS, scalVelo, scalUdelu, scalGphi;
-    scalRHS.define<DIM>(  (*m_sour) ,idir, m_graphs);
-    scalVelo.define<DIM>( (*m_velo) ,idir, m_graphs);
-    scalUdelu.define<DIM>((*m_divuu),idir, m_graphs);
-    scalGphi.define<DIM>( (*m_gphi) ,idir, m_graphs);
+    scalRHS.define<DIM>(  sour ,idir, m_graphs);
+    scalVelo.define<DIM>( velo ,idir, m_graphs);
+    scalUdelu.define<DIM>(divuu,idir, m_graphs);
+    scalGphi.define<DIM>( gphi ,idir, m_graphs);
 
     //set source of parabolic advance to -(gphi + udelu)
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
@@ -305,29 +308,32 @@ projectVelocityAndCorrectPressure(Real a_dt,
                                   Real a_tol,                         
                                   unsigned int a_maxIter)
 {
+  auto & velo =  (*m_velo);
+  auto & gphi =  (*m_gphi);
   //make w = v + dt*gphi
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 2*DIM;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & velo =  (*m_velo)[dit[ibox]];
-    auto & gphi =  (*m_gphi)[dit[ibox]];  
+    auto & velofab =  velo[dit[ibox]];
+    auto & gphifab =  gphi[dit[ibox]];  
 
-    ebforallInPlace(numflopspt, "AddDtGphiToVelo", AddDtGphiToVelo, grbx, velo, gphi, a_dt);
+    ebforallInPlace(numflopspt, "AddDtGphiToVelo", AddDtGphiToVelo, grbx, velofab, gphifab, a_dt);
   }
 
   //project the resulting field
-  m_ccProj->project((*m_velo), (*m_gphi), a_tol, a_maxIter);
+  pout() << "cc projecting vel + gphi*dt" << endl;
+  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
 
   //the resulting pressure  is = dt * gphi so we need to divide out the dt
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 2*DIM;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & gphi =  (*m_gphi)[dit[ibox]];  
+    auto & gphifab =  gphi[dit[ibox]];  
 
-    ebforallInPlace(numflopspt, "DivideOutDt", DivideOutDt, grbx, gphi, a_dt);
+    ebforallInPlace(numflopspt, "DivideOutDt", DivideOutDt, grbx, gphifab, a_dt);
   }
 }
 /*******/ 
@@ -338,7 +344,7 @@ advanceVelocityAndPressure(Real a_dt,
                            unsigned int a_maxIter)
 {
   //get udelu
-  getAdvectiveDerivative(a_dt);
+  getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
 
   if(m_eulerCalc)
   {

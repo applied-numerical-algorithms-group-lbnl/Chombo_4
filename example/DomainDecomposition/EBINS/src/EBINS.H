@@ -7,6 +7,7 @@
 #include "EBParabolicIntegrators.H"
 #include "EBMACProjector.H"
 #include "EBCCProjector.H"
+#include "BCGVelAdvect.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///class to run the incompressible algorithm described in Trebotich, et al.
@@ -53,6 +54,7 @@ public:
   shared_ptr<EBCCProjector >             m_ccProj;
   shared_ptr<EBMACProjector>             m_macProj;
   shared_ptr<EBMultigrid>                m_helmholtz;
+  shared_ptr<BCGVelAdvect>               m_bcgAdvect;
 
   shared_ptr<BaseEBParabolic>            m_heatSolver;
   shared_ptr<LevelData<EBGraph> >        m_graphs;
@@ -72,7 +74,7 @@ private:
   void projectVelocityAndCorrectPressure(Real a_dt,
                                          Real a_tol,                         
                                          unsigned int a_maxIter);
-  void getAdvectiveDerivative(Real a_dt);
+  void getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter);
   //gets  ustar
   void advanceVelocityEuler(Real a_dt);
   //gets  ustar
