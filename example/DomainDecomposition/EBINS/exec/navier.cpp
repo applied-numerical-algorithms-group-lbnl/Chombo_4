@@ -139,12 +139,12 @@ runNavierStokes()
   EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver);
 
 
-  shared_ptr<EBLevelBoxData<CELL, DIM> > velo = solver.m_velo;
-  shared_ptr<EBLevelBoxData<CELL,   1> > scal = solver.m_scal;
+ auto &  velo = *(solver.m_velo);
+ auto &  scal = *(solver.m_scal);
 
-  
+
   pout() << "initializing data " << endl;
-  initializeData(*scal, *velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
