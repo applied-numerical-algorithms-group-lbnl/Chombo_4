@@ -69,6 +69,7 @@ runNavierStokes()
   Vector<Box>               vecdomains;
   Vector<Real> vecdx;
   int whichGeom;
+
   Real geomCen, geomRad;
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
 

@@ -5,11 +5,7 @@ CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools
 CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
 CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
 
-DEP=$(DEPXX) -MM $(CXXFLAGS)
-ifeq ($(DEPXX),nvcc)
-DEP=$(DEPXX) -M $(CXXFLAGS)
-LIBS+= -lnvToolsExt
-endif
+
 
 LINK=$(CXX)
 OBJDIR = o
@@ -19,29 +15,33 @@ TARGET = main.exe
 $(TARGET): $(OBJ)
 	$(LINK)  $(OBJ) $(LIBS) -o $(TARGET)
 
-$(OBJDIR):
-	if [ ! -d "./$(OBJDIR)" ];then     \
-		mkdir $(OBJDIR);           \
-	fi
+$(OBJDIR): ; mkdir -p $@
 
-$(DEPDIR):
-	if [ ! -d "./$(DEPDIR)" ];then     \
-		mkdir $(DEPDIR);           \
-	fi
 
-#compile non-main sources
-$(OBJDIR)/%.o : %.cpp   $(OBJDIR) $(DEPDIR)
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
-#	$(DEP) $<   $(CPPFLAGS) > $(DEPDIR)/$*.d
+$(DEPDIR): ; mkdir  -p $@
+
+DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
+
+$(DEPFILES):
+
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
+
+ifeq ($(CXX),nvcc)
+LIBS+= -lnvToolsExt
+endif
+
+$(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
+	@mkdir -p $(OBJDIR)
+	$(CXX) $(DEPFLAGS) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
 
 all: $(TARGET)
 
-.PHONY: clean realclean print dirs
+-include $(DEPFILES)
 
+.PHONY: clean realclean print dirs
 
 print-%: ; @echo $* = $($*)
 
--include $(DEPENDS)
 
 vars:
 	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
