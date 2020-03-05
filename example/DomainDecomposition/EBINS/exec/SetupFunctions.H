@@ -82,6 +82,15 @@ void InitializeVCellF(int       a_p[DIM],
                       Real      a_maxr, //radius for max vel
                       Real      a_dx)
 {
+#if DIM==2
+  int ideb = 0;
+  IntVect ivdeb(1, 12);
+  IntVect curiv(a_p[0], a_p[1]);
+  if(curiv == ivdeb)
+  {
+    ideb = 1;
+  }
+#endif
   Real rlocsq = 0;
   Real xrel[DIM];
   for(int idir = 0; idir < DIM; idir++)
