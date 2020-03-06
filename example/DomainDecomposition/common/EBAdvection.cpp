@@ -135,23 +135,43 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
-  EBBoxData<CELL, Real, DIM> slopeLo(a_grown, a_graph); 
-  EBBoxData<CELL, Real, DIM> slopeHi(a_grown, a_graph);
+  EBBoxData<CELL, Real, DIM> slopeLoNor(a_grown, a_graph); 
+  EBBoxData<CELL, Real, DIM> slopeHiNor(a_grown, a_graph);
+  //compute slopes of the solution + dt*sourcce 
+  //(low and high centered) in each direction (for tangential ders)
+  EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph); 
+  EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph);
+
+  //vel + 0.5*dt*source for minion stability fix
+  EBBoxData<CELL, Real, 1> minion(a_grown, a_graph);
+  {
+    unsigned int nflop = 3;
+    ebforallInPlace(nflop, "Minioned", Minioned, a_grown,  
+                    minion, a_scal, a_source, a_dt);
+
+  }
 
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
-    EBBoxData<CELL, Real, 1> slopeLoComp, slopeHiComp;
-    slopeLoComp.define<DIM>(slopeLo, idir);
-    slopeHiComp.define<DIM>(slopeHi, idir);
+    EBBoxData<CELL, Real, 1> slopeLoCompNor, slopeHiCompNor;
+    EBBoxData<CELL, Real, 1> slopeLoCompTan, slopeHiCompTan;
+    slopeLoCompNor.define<DIM>(slopeLoNor, idir);
+    slopeHiCompNor.define<DIM>(slopeHiNor, idir);
+    slopeLoCompTan.define<DIM>(slopeLoTan, idir);
+    slopeHiCompTan.define<DIM>(slopeHiTan, idir);
 
     //low and high side differences
     string slopeLoLab  = s_slopeLowLabel  + std::to_string(idir);
     string slopeHiLab  = s_slopeHighLabel + std::to_string(idir);
     const auto& stenlo = m_brit->m_cellToCell->getEBStencil(slopeLoLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
     const auto& stenhi = m_brit->m_cellToCell->getEBStencil(slopeHiLab , s_nobcsLabel, m_domain, m_domain, a_ibox);
+    //normal slopes get straight scal.
+    //tangential slopes get the minion fix
+    stenlo->apply(slopeLoCompNor, a_scal, initToZero, 1.0);
+    stenhi->apply(slopeHiCompNor, a_scal, initToZero, 1.0);
 
-    stenlo->apply(slopeLoComp, a_scal, initToZero, 1.0);
-    stenhi->apply(slopeHiComp, a_scal, initToZero, 1.0);
+    stenlo->apply(slopeLoCompTan, minion, initToZero, 1.0);
+    stenhi->apply(slopeHiCompTan, minion, initToZero, 1.0);
   }
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -161,9 +181,18 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 21 + 4*DIM;
     auto& sourfab = a_source;
+/*
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, a_grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLo, slopeHi, a_veccell, sourfab, idir, a_dt, m_dx);
+                    slopeLoNor, slopeHiNor, 
+                    slopeLoTan, slopeHiTan, 
+                    a_veccell, sourfab, idir, a_dt, m_dx);
+*/
+    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, a_grown,  
+                    scal_imh_nph, scal_iph_nph, a_scal, 
+                    slopeLoNor, slopeHiNor, 
+                    slopeLoTan, slopeHiTan, 
+                    a_veccell, sourfab, idir, a_dt, m_dx);
 
 
     //we need to get the low and high states from the cell-centered holders to the face centered ones.

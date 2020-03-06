@@ -1,13 +1,15 @@
 #domain size
-nx=       128
+nx=       64
 #max number of time steps
-max_step =    1000
+max_step =    10
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
 maxGrid=  128
+maxIter = 27
+tolerance = 1.0e-8
 cfl = 0.5
 # center of the sphere
 geom_cen = 0.5

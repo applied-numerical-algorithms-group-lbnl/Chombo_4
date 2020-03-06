@@ -51,7 +51,7 @@ public:
 
     Real norm = m_res.maxNorm(0);
 
-    pout() << "      EBRelaxSolver:: initial Residual norm = "  << norm << "\n";
+    //pout() << "      EBRelaxSolver:: initial Residual norm = "  << norm << "\n";
 
 
     if (std::abs(norm) > 0.) // Do not iterate if norm == 0.
@@ -79,10 +79,10 @@ public:
           rate = oldNorm/norm;
           printRate = true;
         }
-        pout() << "      EBRelaxSolver:: iteration = " << iter
-               << " residual norm = " << norm;
-        if(printRate) pout() << ", rate = " << rate;
-        pout() << endl;
+//        pout() << "      EBRelaxSolver:: iteration = " << iter
+//               << " residual norm = " << norm;
+//        if(printRate) pout() << ", rate = " << rate;
+//        pout() << endl;
           
       }
     }

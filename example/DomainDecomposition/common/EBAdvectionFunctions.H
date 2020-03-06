@@ -189,10 +189,22 @@ PROTO_KERNEL_START
 unsigned int CopiedF(Var<Real, 1>    a_dst,
                      Var<Real, 1>    a_src)
 {
-  return 0;
   a_dst(0) = a_src(0);
+  return 0;
 }
 PROTO_KERNEL_END(CopiedF, Copied)
+
+
+PROTO_KERNEL_START 
+unsigned int MinionedF(Var<Real, 1>    a_minion,
+                       Var<Real, 1>    a_scalar,
+                       Var<Real, 1>    a_source,
+                       Real a_dt)
+{
+  a_minion(0) = a_scalar(0) + 0.5*a_dt*a_source(0);
+  return 0;
+}
+PROTO_KERNEL_END(MinionedF, Minioned)
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
 PROTO_KERNEL_START 
 unsigned int GetUpwindFluxPtF(int             a_pt[DIM],
@@ -222,25 +234,29 @@ PROTO_KERNEL_START
 unsigned int ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
                               Var<Real, 1>       a_scal_iph_nph,
                               Var<Real, 1>       a_scal_ijk_n,
-                              Var<Real, DIM>     a_slopeLo,
-                              Var<Real, DIM>     a_slopeHi,
+                              Var<Real, DIM>     a_slopeLoNor,
+                              Var<Real, DIM>     a_slopeHiNor,
+                              Var<Real, DIM>     a_slopeLoTan,
+                              Var<Real, DIM>     a_slopeHiTan,
                               Var<Real, DIM>     a_ccVel,
                               Var<Real, 1  >     a_source,
                               unsigned int       a_dir,
                               Real               a_dt,
                               Real               a_dx)
 {
+  //normal slopes get straight scal.
+  //tangential slopes get the minion fix
   //van leer slopes
   Real vanLeer = 0;
-  Real sloplo = a_slopeLo(a_dir);
-  Real slophi = a_slopeHi(a_dir);
+  Real sloplo = a_slopeLoNor(a_dir);
+  Real slophi = a_slopeHiNor(a_dir);
   Real cent = 0.5*(sloplo + slophi);
 
   Real mono   = sloplo*slophi;
   if(mono >= 0)
   {
-    vanLeer = minVal(absVal(cent)   , absVal(2.*a_slopeHi(a_dir)));
-    vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLo(a_dir)));
+    vanLeer = minVal(absVal(cent)   , absVal(2.*a_slopeHiNor(a_dir)));
+    vanLeer = minVal(absVal(vanLeer), absVal(2.*a_slopeLoNor(a_dir)));
     vanLeer = cpySign(vanLeer, cent);
   }
 
@@ -258,10 +274,10 @@ unsigned int ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
   {
     if(idir != a_dir)
     {
-      Real upwind = a_slopeLo(idir);
+      Real upwind = a_slopeLoTan(idir);
       if(a_ccVel(idir) < 0)
       {
-        upwind = a_slopeHi(idir);
+        upwind = a_slopeHiTan(idir);
       }
       Real tanvel = a_ccVel(idir);
       a_scal_imh_nph(0) = a_scal_imh_nph(0) - 0.5*dtbydx*upwind*tanvel;
@@ -278,21 +294,33 @@ unsigned int ExtrapolateScalPtF(int                a_pt[DIM],
                                 Var<Real, 1>       a_scal_imh_nph,
                                 Var<Real, 1>       a_scal_iph_nph,
                                 Var<Real, 1>       a_scal_ijk_n,
-                                Var<Real, DIM>     a_slopeLo,
-                                Var<Real, DIM>     a_slopeHi,
+                                Var<Real, DIM>     a_slopeLoNor,
+                                Var<Real, DIM>     a_slopeHiNor,
+                                Var<Real, DIM>     a_slopeLoTan,
+                                Var<Real, DIM>     a_slopeHiTan,
                                 Var<Real, DIM>     a_ccVel,
                                 Var<Real, 1>       a_source,
                                 unsigned int       a_dir,
                                 Real               a_dt,
                                 Real               a_dx)
 {
+#if DIM==2
+  int ideb = 0;
+  IntVect ivin(a_pt[0], a_pt[1]);
+  IntVect ivdeb(1, 12);
+  if(ivin == ivdeb)
+  {
+    ideb = 1;
+  }
+#endif
 
-//begin debug
   ExtrapolateScal(a_scal_imh_nph,
                   a_scal_iph_nph,
                   a_scal_ijk_n,
-                  a_slopeLo,
-                  a_slopeHi,
+                  a_slopeLoNor,
+                  a_slopeHiNor,
+                  a_slopeLoTan,
+                  a_slopeHiTan,
                   a_ccVel,
                   a_source,
                   a_dir,

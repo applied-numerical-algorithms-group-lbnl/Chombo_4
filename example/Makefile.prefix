@@ -9,8 +9,6 @@ NODIRSRC = $(notdir $(SRC))
 NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
 OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 
-NODIRDEP = $(subst .cpp,.d,$(NODIRSRC))
-DEPENDS=$(patsubst %.d,d/%.d, $(NODIRDEP))
 
 VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 LIBS = 

@@ -7,10 +7,11 @@ void
 BCGVelAdvect::
 hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                  EBLevelBoxData<CELL, DIM>& a_inputVel,
-                 const Real               & a_dt)
+                 const Real               & a_dt,
+                 Real a_tolerance, unsigned int a_maxIter)    
 {
   //fills m_macScal with velocity extrapolated to its normal face and projected
-  getAdvectionVelocity(a_inputVel, a_dt);
+  getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
 
   //using macScal for upwinding, this gets the vector compoents of velcity to faces
   //this also gets corrected by teh gradient found in the previous step.
@@ -23,7 +24,8 @@ hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
 void  
 BCGVelAdvect::
 getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
-                     const Real                  & a_dt)
+                     const Real                  & a_dt,
+                     Real a_tol, unsigned int a_maxIter)    
 {
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -66,7 +68,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   }  // and loop over velocity directions
   
   // now we need to project the mac velocity
-  m_macproj->project(m_advectionVel, m_macGradient, m_tol, m_maxIter);
+  pout() << "mac projecting advection velocity" << endl;
+  m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
 }
 /*******/
 

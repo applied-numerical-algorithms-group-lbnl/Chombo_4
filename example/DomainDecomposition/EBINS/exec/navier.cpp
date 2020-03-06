@@ -25,7 +25,7 @@
 
 
 int
-runNavierStokes(int a_argc, char* a_argv[])
+runNavierStokes()
 {
 
   Real coveredval = -1;
@@ -38,7 +38,7 @@ runNavierStokes(int a_argc, char* a_argv[])
   int outputInterval = -1;
   ParmParse pp;
 
-  pp.get("nStream", nStream);
+  pp.get("nstream", nStream);
 
   pp.get("viscosity" , nu);
   pp.get("max_step"  , max_step);
@@ -69,6 +69,7 @@ runNavierStokes(int a_argc, char* a_argv[])
   Vector<Box>               vecdomains;
   Vector<Real> vecdx;
   int whichGeom;
+
   Real geomCen, geomRad;
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
 
@@ -139,12 +140,12 @@ runNavierStokes(int a_argc, char* a_argv[])
   EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver);
 
 
-  shared_ptr<EBLevelBoxData<CELL, DIM> > velo = solver.m_velo;
-  shared_ptr<EBLevelBoxData<CELL,   1> > scal = solver.m_scal;
+ auto &  velo = *(solver.m_velo);
+ auto &  scal = *(solver.m_scal);
 
-  
+
   pout() << "initializing data " << endl;
-  initializeData(*scal, *velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
@@ -172,7 +173,7 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runNavierStokes(a_argc, a_argv);
+    runNavierStokes();
   }
 
   pout() << "printing time table " << endl;
