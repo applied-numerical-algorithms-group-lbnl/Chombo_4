@@ -38,8 +38,9 @@ public:
   static Real s_gamma;
 
   /// Compute the Right-Hand side, conforming to the RK4 interface.
-  static Real step(LevelBoxData<NUMCOMPS>& a_Rhs,
-                   LevelBoxData<NUMCOMPS>& a_U);
+  static void step(LevelBoxData<NUMCOMPS>& a_Rhs,
+                   LevelBoxData<NUMCOMPS>& a_U,
+                   Reduction<Real,AbsMax>& a_Rxn);
 
   //for initial time step
   static Real maxWave(LevelBoxData<NUMCOMPS>& a_U);
@@ -49,9 +50,10 @@ public:
 
 private:
   // all the messy internals.
-  static Real proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
+  static void proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
                            const BoxData<Real,NUMCOMPS>& a_U,
-                           const Bx& a_dbx0);
+                           const Bx& a_dbx0,
+                           Reduction<Real,AbsMax>& a_Rxn);
 
   /// called internally from step
   static void define(const DisjointBoxLayout& a_grids,
