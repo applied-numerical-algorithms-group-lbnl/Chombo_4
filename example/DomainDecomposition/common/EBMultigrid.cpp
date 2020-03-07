@@ -332,7 +332,6 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       int a_maxiter)
 {
-
   //
   DataIterator dit = m_grids.dataIterator();
   for(int iter = 0; iter < a_maxiter; iter++)

@@ -32,9 +32,16 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     EBLevelBoxData<CELL, 1> velcomp;
     velcomp.define<DIM>(a_inputVel, idir, m_graphs);
     //source term = nu*lapl(ucomp);
-    Real alpha = 0; Real beta = m_viscosity;
-    m_helmholtz->resetAlphaAndBeta(alpha, beta);
-    m_helmholtz->applyOp(m_source, velcomp);
+    if(m_eulerCalc)
+    {
+      m_source.setVal(0.);
+    }
+    else
+    {
+      Real alpha = 0; Real beta = m_viscosity;
+      m_helmholtz->resetAlphaAndBeta(alpha, beta);
+      m_helmholtz->applyOp(m_source, velcomp);
+    }
 
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -113,9 +120,16 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
 
     //source term = nu*lapl(ucomp);
-    Real alpha = 0; Real beta = m_viscosity;
-    m_helmholtz->resetAlphaAndBeta(alpha, beta);
-    m_helmholtz->applyOp(m_source, velcomp);
+    if(m_eulerCalc)
+    {
+      m_source.setVal(0.); 
+    }
+    else
+    {
+      Real alpha = 0; Real beta = m_viscosity;
+      m_helmholtz->resetAlphaAndBeta(alpha, beta);
+      m_helmholtz->applyOp(m_source, velcomp);
+    }
 
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)

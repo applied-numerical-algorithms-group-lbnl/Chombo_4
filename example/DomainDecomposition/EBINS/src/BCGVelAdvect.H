@@ -26,7 +26,8 @@ public:
                const Box                              & a_domain,
                const Real                             & a_dx,
                const Real                             & a_viscosity,
-               const IntVect                          & a_nghost)
+               const IntVect                          & a_nghost,
+               bool a_eulerCalc)
   :EBAdvection(a_brit,
                a_geoserv,   
                a_veloCell,  
@@ -40,6 +41,7 @@ public:
     m_helmholtz  = a_helmholtz;
     m_nghost     = a_nghost;
     m_viscosity  = a_viscosity;
+    m_eulerCalc  = a_eulerCalc;
     m_advectionVel.define(m_grids, m_nghost, m_graphs);
     m_macGradient.define(m_grids, m_nghost, m_graphs);
     m_macVelocity.define(m_grids, m_nghost, m_graphs);
@@ -65,6 +67,7 @@ protected:
   EBLevelFluxData<DIM>          m_macVelocity;
   IntVect m_nghost;
   Real    m_viscosity;
+  bool    m_eulerCalc;
   //does hybrid divergence by component--includes resdistribution
   void  assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, const Real& a_dt);  
   void  copyComp(EBFluxData<Real, 1>&  a_dst,
