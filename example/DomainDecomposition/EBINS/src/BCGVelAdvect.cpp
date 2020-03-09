@@ -77,6 +77,7 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   // now we need to project the mac velocity
   pout() << "mac projecting advection velocity" << endl;
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
+  pout() << "leaving getAdvectionVelocity" << endl;
 }
 /*******/
 
