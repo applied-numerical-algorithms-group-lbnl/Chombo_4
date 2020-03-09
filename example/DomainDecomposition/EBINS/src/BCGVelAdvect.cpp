@@ -179,7 +179,7 @@ correctVectorVelocity()
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
-      EBFluxData<Real, 1>& veccomp   = m_advectionVel[dit[ibox]];
+      EBFluxData<Real, 1>& veccomp   =       facecomp[dit[ibox]];
       EBFluxData<Real, 1>& macGrad   =  m_macGradient[dit[ibox]];
       //first correct facedir==vecdir direction
       //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
