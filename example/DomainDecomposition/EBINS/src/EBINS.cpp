@@ -50,10 +50,13 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   }
 
   auto cell_dict = m_brit->m_cellToCell;
-  Real alpha = 1; Real beta = 1; //these get reset before solve
-  m_helmholtz = shared_ptr<EBMultigrid> 
-    (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                     stenname, bcname, bcname, m_domain, m_nghost, m_nghost));
+  if(!m_eulerCalc)
+  {
+    Real alpha = 1; Real beta = 1; //these get reset before solve
+    m_helmholtz = shared_ptr<EBMultigrid> 
+      (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
+                       stenname, bcname, bcname, m_domain, m_nghost, m_nghost));
+  }
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));
   m_ccProj  = shared_ptr<EBCCProjector>
@@ -62,26 +65,29 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
     (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
-                      m_grids, m_domain, m_dx, m_viscosity, m_nghost));
+                      m_grids, m_domain, m_dx, m_viscosity, m_nghost, m_eulerCalc));
 
-  if(a_solver == BackwardEuler)
+  if(!m_eulerCalc)
   {
-    m_heatSolver = shared_ptr<BaseEBParabolic>
-      (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-  }
-  else if (a_solver == CrankNicolson)
-  {
-    m_heatSolver = shared_ptr<BaseEBParabolic>
-      (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-  }
-  else if (a_solver == TGA)
-  {
-    m_heatSolver = shared_ptr<BaseEBParabolic>
-      (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-  }
-  else
-  {
-    MayDay::Error("unaccounted-for solver type");
+    if(a_solver == BackwardEuler)
+    {
+      m_heatSolver = shared_ptr<BaseEBParabolic>
+        (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    else if (a_solver == CrankNicolson)
+    {
+      m_heatSolver = shared_ptr<BaseEBParabolic>
+        (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    else if (a_solver == TGA)
+    {
+      m_heatSolver = shared_ptr<BaseEBParabolic>
+        (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    else
+    {
+      MayDay::Error("unaccounted-for solver type");
+    }
   }
   
 }
@@ -151,11 +157,12 @@ initializePressure(Real         a_dt,
                    unsigned int a_maxIter)
 {
   auto & velo =  (*m_velo );
-  auto & gphi =  (*m_gphi );  
 
   //project the resulting field
   pout() << "projecting initial velocity"<< endl;
+  auto & gphi =  (*m_gphi );  
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+
 
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);

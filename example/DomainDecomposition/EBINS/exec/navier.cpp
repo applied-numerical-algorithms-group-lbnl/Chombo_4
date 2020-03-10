@@ -33,9 +33,10 @@ runNavierStokes()
   int nx          = 32;
   int  max_step   = 10;
   Real max_time   = 1.0;
-
+  int numSmooth  = 4;
   int nStream    = 8;
   int outputInterval = -1;
+  bool useWCycle = false;
   ParmParse pp;
 
   pp.get("nstream", nStream);
@@ -45,7 +46,11 @@ runNavierStokes()
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
   pp.get("covered_value", coveredval);
-
+  pp.get("num_smooth", numSmooth);
+  pp.get("use_w_cycle", useWCycle);
+  EBMultigrid::s_numSmoothUp   = numSmooth;
+  EBMultigrid::s_numSmoothDown = numSmooth;
+  EBMultigrid::s_useWCycle     = useWCycle;
   pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;

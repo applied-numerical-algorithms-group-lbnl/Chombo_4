@@ -38,6 +38,8 @@ viscosity = 0.001
 #all regular geometry
 #which_geom = -1
 
+num_smooth = 4
+use_w_cycle = false
 #
 ##sphere
 which_geom = 0 
