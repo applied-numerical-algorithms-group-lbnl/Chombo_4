@@ -295,7 +295,7 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U, *state.m_Rxn);
+  Real maxwave = EulerOp::maxWave(*state.m_U, state.m_Rxn);
 //  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;

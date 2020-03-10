@@ -172,7 +172,7 @@ EulerOp::
 proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
            const BoxData<Real,NUMCOMPS>& a_U,
            const Bx& a_rangeBox,
-           Reduction<Real,AbsMax>& a_Rxn)
+           Reduction<Real,Abs>& a_Rxn)
 {
 
   CH_TIMERS("EulerOp::step(boxdata)");
@@ -260,7 +260,7 @@ void
 EulerOp::
 step(LevelBoxData<NUMCOMPS> & a_Rhs,
      LevelBoxData<NUMCOMPS> & a_U,
-     Reduction<Real,AbsMax> & a_Rxn)
+     Reduction<Real,Abs> & a_Rxn)
 {
   CH_TIME("EulerOp::step(leveldata)");
   static bool initCalled =false;
@@ -294,7 +294,7 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
 Real 
 EulerOp::
 maxWave(LevelBoxData<NUMCOMPS> & a_U,
-        Reduction<Real,AbsMax> & a_Rxn)
+        Reduction<Real,Abs> & a_Rxn)
 {
   static bool initCalled =false;
   DisjointBoxLayout grids = a_U.disjointBoxLayout();
@@ -323,7 +323,7 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U,
     PScalar umax = forallOp<Real>(wavespdnum, "wavespeed",waveSpeedBound,pgrid,W, gamma);
     umax.absMax(a_Rxn);
   }
-    maxwaveproc = a_Rxn.fetch();
+  Real maxwaveproc = a_Rxn.fetch();
   Real maxwaveall = gatherMaxWave(maxwaveproc);
 
   return maxwaveall;

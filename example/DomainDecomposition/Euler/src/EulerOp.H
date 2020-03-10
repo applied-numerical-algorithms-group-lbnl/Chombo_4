@@ -40,10 +40,11 @@ public:
   /// Compute the Right-Hand side, conforming to the RK4 interface.
   static void step(LevelBoxData<NUMCOMPS>& a_Rhs,
                    LevelBoxData<NUMCOMPS>& a_U,
-                   Reduction<Real,AbsMax>& a_Rxn);
+                   Reduction<Real,Abs>& a_Rxn);
 
   //for initial time step
-  static Real maxWave(LevelBoxData<NUMCOMPS>& a_U);
+  static Real maxWave(LevelBoxData<NUMCOMPS>& a_U,
+                   Reduction<Real,Abs>& a_Rxn);
 
   EulerOp(){};
   ~EulerOp(){};
@@ -53,7 +54,7 @@ private:
   static void proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
                            const BoxData<Real,NUMCOMPS>& a_U,
                            const Bx& a_dbx0,
-                           Reduction<Real,AbsMax>& a_Rxn);
+                           Reduction<Real,Abs>& a_Rxn);
 
   /// called internally from step
   static void define(const DisjointBoxLayout& a_grids,
