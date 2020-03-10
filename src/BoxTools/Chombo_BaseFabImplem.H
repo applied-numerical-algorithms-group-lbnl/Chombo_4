@@ -13,6 +13,7 @@
 #define _Chombo_BASEFABIMPLEM_H_
 
 
+#include "Chombo_BFM.H"
 #include "Chombo_CH_Timer.H"
 #include "Chombo_SliceSpec.H"
 #include "Chombo_MayDay.H"
@@ -531,8 +532,11 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
                                                        const Interval& a_comps) const
 {
   T* buffer = (T*)a_buf;
+  int ncomps = a_comps.end() - a_comps.begin() + 1;
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+              [&buffer](T s) { *buffer = s; ++buffer; });
 
-  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+/*  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
   {
     for (BoxIterator bit(a_R); bit.ok(); ++bit)
     {
@@ -541,7 +545,7 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
       ++buffer;
     }
   }
-
+*/
   return (void*)buffer;
 }
 
@@ -551,7 +555,10 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
 {
   //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
-  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+  int ncomps = a_comps.end() - a_comps.begin() + 1;
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+              [&buffer](T s) { s = *buffer; ++buffer; });
+  /*for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
     {
       for (BoxIterator bit(a_R); bit.ok(); ++bit)
         {
@@ -559,7 +566,7 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
           (*this)(iv, icomp) = *buffer;
           ++buffer;
         }
-    }
+    }*/
 }
 
 
@@ -569,7 +576,10 @@ template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
 {
   //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
-  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+  int ncomps = a_comps.end() - a_comps.begin() + 1;
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+              [&buffer](T s) { s = *buffer; ++buffer; });
+  /*for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
     {
       for (BoxIterator bit(a_R); bit.ok(); ++bit)
         {
@@ -577,7 +587,7 @@ template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
           (*this)(iv, icomp) = *buffer;
           ++buffer;
         }
-    }
+    }*/
   return buffer;
 }
 
@@ -621,7 +631,9 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
   // but it crashed with OPT setting.
   // So we use BoxIterator instead.
   T* buffer = (T*)bufptr;
-  for (int icomp = 0; icomp < ncomps; icomp++)
+  BFM1<CH_SPACEDIM>(dataPtr, box(), 0, ncomps, m_domain,
+              [&buffer](T s) { s = *buffer; ++buffer; });
+  /*for (int icomp = 0; icomp < ncomps; icomp++)
     {
       for (BoxIterator bit(m_domain); bit.ok(); ++bit)
         {
@@ -630,7 +642,7 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
           ++buffer;
         }
     }
-
+*/
 }
 
 // ---------------------------------------------------------
@@ -651,7 +663,10 @@ template <class T> inline void BaseFab<T>::define()
   m_truesize = m_nvar * m_numpts;
   if (m_truesize > 0)
     {
-      m_dptr     = static_cast<T*>(malloc(m_truesize * sizeof(T)));
+      //cudaError_t status = cudaMallocHost((void**)&m_dptr, m_truesize*sizeof(T));
+      //if (status != cudaSuccess)
+      //    std::cout << "Error allocating pinned host memory" << std::endl;
+       m_dptr     = static_cast<T*>(malloc(m_truesize * sizeof(T)));
     }
   else
     { // m_truesize == 0: allocating no space
@@ -659,7 +674,7 @@ template <class T> inline void BaseFab<T>::define()
     }
 
   //
-  // Now call T::T() on the raw memo'ry so we have valid Ts.
+  // Now call T::T() on the raw memory so we have valid Ts.
   //
   T* ptr = m_dptr;
 
@@ -690,6 +705,7 @@ template <class T> inline void BaseFab<T>::undefine()
     ptr->~T();
   }
 
+  //cudaFreeHost(m_dptr);
   free(m_dptr);
 
 
@@ -726,10 +742,11 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
           for (int ibox = 0; ibox < npts; ibox++)
               *(dstPtr+ibox) = *(srcPtr+ibox);
       }
-  //} else if (a_srcbox.size() == a_dstbox.size()) {
-
-  } else if (a_srcbox != a_dstbox) {
-      for (int icomp = 0; icomp < a_numcomp; icomp++)
+  } else {
+      Box r = a_srcbox & a_dstbox;
+      BFM<CH_SPACEDIM>(dataPtr(), a_src.dataPtr(), box(), a_src.box(), a_dstcomp, a_srccomp, a_numcomp, r,
+              [](T* __restrict d, T s) { (*d) = s; });
+  /*    for (int icomp = 0; icomp < a_numcomp; icomp++)
       {
         int srccomp = a_srccomp + icomp;
         int dstcomp = a_dstcomp + icomp;
@@ -741,7 +758,7 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
         }
       }
   } else {
-
+*/
   }
 }
 

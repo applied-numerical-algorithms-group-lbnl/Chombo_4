@@ -21,7 +21,6 @@ EulerState(shared_ptr<LevelBoxData<NUMCOMPS> > a_U)
 {
   m_U     = a_U;
   m_grids = m_U->disjointBoxLayout();
-  m_Rxn();
 }
 /****/
 void 
@@ -131,8 +130,8 @@ operator()(EulerDX& a_DX,
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  EulerOp::step(*a_DX.m_DU, U_ave, a_State.rxn);
-  Real velmax = a_Rxn.fetch();
+  EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
+  Real velmax = a_State.m_Rxn.fetch();
   a_State.m_velSave = std::max(a_State.m_velSave,velmax);
 
 #pragma omp parallel
@@ -151,7 +150,7 @@ maxWave(EulerState& a_State)
   CH_TIME("EulerRKOp::maxwave_init");
   EulerDX DX;
   DX.init(a_State);
-  Reaction<Real,Abs> rxn = a_State.m_Rxn;
+  Reduction<Real,Abs>& rxn = a_State.m_Rxn;
   rxn.reset(); // initialize device pointer
   EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
   Real velmax = rxn.fetch();
