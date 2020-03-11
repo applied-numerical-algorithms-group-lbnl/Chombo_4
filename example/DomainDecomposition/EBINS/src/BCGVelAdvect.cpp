@@ -178,9 +178,9 @@ correctVectorVelocity()
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
-      EBFluxData<Real, 1>& veccomp   =       facecomp[dit[ibox]];
-      EBFluxData<Real, 1>& macGrad   =  m_macGradient[dit[ibox]];
+      auto & advvelfab = m_advectionVel[dit[ibox]];
+      auto & veccomp   =       facecomp[dit[ibox]];
+      auto & macGrad   =  m_macGradient[dit[ibox]];
       //first correct facedir==vecdir direction
       //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
       copyComp(veccomp, advvelfab, vecDir);
@@ -244,7 +244,7 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
     //does linear combination of divnc and div c to get hybrid and  compute delta M
     kappaDivPlusOneMinKapDivNC(hybridDiv);
 
-    redistribute(hybridDiv);
+//    redistribute(hybridDiv);
   }
 }
 /*******/

@@ -76,7 +76,10 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       //registered by the mac projector
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
                             facegrad, phi[dit[ibox]], idir, ibox, initZero, 1.0);
-
+    }
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initZero = true;
       EBBoxData<CELL, Real, 1> gradComp;
       gradComp.define(a_gphi[dit[ibox]], idir);
       brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
