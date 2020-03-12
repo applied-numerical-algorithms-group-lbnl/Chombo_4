@@ -167,6 +167,7 @@ initializePressure(Real         a_dt,
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
   velo.copyTo(interv, velosave, interv, m_copyCopier);
+  gphi.setVal(0.);
   for(int iter = 0; iter < a_numIterPres; iter++)
   {
     advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);

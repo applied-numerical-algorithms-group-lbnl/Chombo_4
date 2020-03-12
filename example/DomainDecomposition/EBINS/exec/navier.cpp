@@ -101,6 +101,7 @@ runNavierStokes()
   pp.get("tolerance" , tol);
   pp.get("covered_value", coveredval);
   pp.get("blob_cen", blobCen);
+  pp.get("blob_rad", blobRad);
   pp.get("viscosity", viscosity);
   pp.get("max_vel_mag", maxVelMag);
   pp.get("max_vel_rad", maxVelRad);

@@ -52,7 +52,7 @@ void  setEulerRHSF(Proto::Var<Real, 1>     a_rhs,
                    Real    a_dt)
 {
   //source is presumed to already be kappa weighted
-  a_rhs(0) = a_kappa(0)*a_phiold(0) + a_dt*a_source(0);
+  a_rhs(0) = a_kappa(0)*(a_phiold(0) + a_dt*a_source(0));
 }
 PROTO_KERNEL_END(setEulerRHSF, setEulerRHS)
 
