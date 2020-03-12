@@ -26,10 +26,6 @@ $(DEPFILES):
 
 DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d --generate-dependencies
 
-ifeq ($(CXX),nvcc)
-LIBS+= -lnvToolsExt
-endif
-
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)
 	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
