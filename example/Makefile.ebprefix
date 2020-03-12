@@ -4,7 +4,5 @@ SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp)
 
 VPATH +=  $(CHOMBO_HOME)/src/EBTools 
 
-
-
-
-
+CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
+CXXGPUFLAGS := -arch=compute_70 --compiler-options='$(CXXALLFLAGS)'

@@ -24,7 +24,7 @@ DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
 
 $(DEPFILES):
 
-DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
+DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d --generate-dependencies
 
 ifeq ($(CXX),nvcc)
 LIBS+= -lnvToolsExt
@@ -32,7 +32,8 @@ endif
 
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)
-	$(CXX) $(DEPFLAGS) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
+	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
 
 all: $(TARGET)
 
