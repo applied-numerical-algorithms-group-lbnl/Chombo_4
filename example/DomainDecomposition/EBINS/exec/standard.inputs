@@ -32,7 +32,7 @@ output_interval = 10
 covered_value = 0.0
 
 # 0 euler, 1 CN, 2 TGA	
-parabolic_solver = 0
+parabolic_solver = 2
 viscosity = 0.00
 ## -1 all reg, 1 regular, 2 sphere
 #all regular geometry
