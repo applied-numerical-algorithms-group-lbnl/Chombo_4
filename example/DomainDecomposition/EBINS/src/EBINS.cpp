@@ -12,7 +12,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const Real                             & a_dx,
       const Real                             & a_viscosity,
       const IntVect                          & a_nghost,
-      ParabolicSolverType                      a_solver)
+      ParabolicSolverType                      a_solver,
+      EBIBC                                    a_ibc)
 {
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
@@ -21,6 +22,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
+
   m_graphs = m_geoserv->getGraphs(m_domain);
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
   m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);

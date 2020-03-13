@@ -255,7 +255,8 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_blobCen,
                     const Real                  &  a_blobRad,
                     const Real                  &  a_maxVelMag,
-                    const Real                  &  a_maxVelRad)
+                    const Real                  &  a_maxVelRad,
+                    EBIBC  a_ibcs)
 {
   DataIterator dit = a_grids.dataIterator();
   int ideb = 0;
