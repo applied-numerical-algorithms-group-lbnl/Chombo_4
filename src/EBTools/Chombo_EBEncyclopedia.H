@@ -92,7 +92,7 @@ struct EBCrossFaceStencil
     }
     else if((a_srcDir == 2) && (a_dstDir==1))
     {
-      m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_flux, a_initToZero, a_scale);
+      m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_zflux, a_initToZero, a_scale);
     }
 #endif
     else
