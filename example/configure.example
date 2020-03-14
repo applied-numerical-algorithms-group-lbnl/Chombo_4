@@ -51,8 +51,6 @@ for t in targets:
     if("EB" in t):
         f.write(makefile_ebpre);
 
-
-
     f.write('\nCPPFLAGS = -std=c++11\n')
     f.write(mach_dep);
 
