@@ -1,3 +1,11 @@
+initial_velo = "vortex_0"
+initial_scal = "blob_scal_0"
+domain_bc_lo_0 = "no_slip_wall"
+domain_bc_lo_1 = "no_slip_wall"
+domain_bc_lo_2 = "no_slip_wall"
+domain_bc_hi_0 = "no_slip_wall"
+domain_bc_hi_1 = "no_slip_wall"
+domain_bc_hi_2 = "no_slip_wall"
 #domain size
 nx=       64
 #max number of time steps
