@@ -131,7 +131,7 @@ run(unsigned int a_max_step,
   unsigned int step = 0;
   while((step < a_max_step) && (time < a_max_time))
   {
-    pout() << "step = " << step << ", time = " << time << " dt = " << endl;
+    pout() << "step = " << step << ", time = " << time << " dt = " << dt << endl;
     pout() << "advancing passive scalar " << endl;
     advanceScalar(dt);
 
