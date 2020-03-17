@@ -53,7 +53,7 @@ for t in targets:
 
 
 
-    f.write('\nCPPFLAGS = -std=c++11\n')
+    f.write('\nCPPFLAGS = -std=c++14\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
@@ -86,8 +86,8 @@ for t in targets:
     if args.cuda == 'TRUE':
 #        f.write('\nCXX = nvcc -ccbin mpicxx \n DEP=nvcc\n')
 #	f.write('\nCXX = mpicxx -cxx=nvcc \n DEP=nvcc\n')
-	f.write('\nCXX = nvcc \n DEP=nvcc\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda \n')
+	f.write('\nCXX = nvcc --default-stream per-thread  \n DEP=nvcc\n')
+        f.write('\nCXXFLAGS+= -DPROTO_CUDA=1 -D__CORIGPU -x cu --expt-extended-lambda -arch=compute_70 -Xcompiler -fopenmp\n')
         if args.opt == 'DEBUG':
             f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG\n')
 

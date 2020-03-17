@@ -1,0 +1,21 @@
+
+PROTO_HOME =$(HOME)/proto
+DEPXX=nvcc
+CXX=nvcc
+export OMPI_CXX=nvcc
+
+CXXALLFLAGS := #-std=c++11
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g #-pedantic 
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3 -use_fast_math
+
+LIBS +=-L/usr/common/software/mvapich2/2.3.2/pgi/19.10/cuda/10.2.89/lib -lmpi -L/usr/common/software/pgi/19.10/linux86-64/19.10/lib/ -lomp -lgomp
+CPPFLAGS +=-I/usr/common/software/mvapich2/2.3.2/pgi/19.10/cuda/10.2.89/include/
+
+
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack
+HDFINCFLAGS=-I/global/common/cori_cle6/software/hdf5/1.10.5/pgi/19.5/include/ 
+HDFLIBFLAGS=-L/global/common/cori_cle6/software/hdf5/1.10.5/pgi/19.5/lib/ 
+
+#end mach dependent
+
