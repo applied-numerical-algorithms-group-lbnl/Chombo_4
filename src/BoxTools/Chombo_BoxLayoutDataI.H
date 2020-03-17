@@ -47,7 +47,6 @@ inline void BoxLayoutData<T>::setVector(const BoxLayoutData<T>& da,
     {
       DataIterator it=this->dataIterator();
       int nbox=it.size();
-#pragma omp parallel for if(this->m_threadSafe)
       for(int box=0; box<nbox; box++)
         {
           this->m_vector[it[box].datInd()]->copy( this->box(it[box]), destComps,
@@ -176,7 +175,6 @@ inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory,
 
   DataIterator it(this->dataIterator()); int nbox=it.size();
   this->m_vector.resize(it.size(), NULL);
-#pragma omp parallel for if(this->m_threadSafe)
   for(int i=0; i<nbox; i++)
   {
     unsigned int index = it[i].datInd();
@@ -194,7 +192,6 @@ template<class T>
 inline void BoxLayoutData<T>::apply(void (*a_func)(const Box& box, int comps, T& t))
 {
   DataIterator it(this->dataIterator()); int nbox=it.size();
-#pragma omp parallel for
   for(int i=0; i<nbox; i++)
 
     {
@@ -308,7 +305,6 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 #ifdef _OPENMP
   bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
-#pragma omp parallel for if(threadSafe)
   for (int n=0; n<items; n++)
   {
     const MotionItem& item = it[n];
@@ -661,7 +657,6 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
 #ifdef _OPENMP
   bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
-#pragma omp parallel for if(threadSafe)
   for (unsigned int i=0; i< isize; ++i)
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[i];
@@ -823,7 +818,6 @@ void BoxLayoutData<T>::unpackReceivesToMe(
 #ifdef _OPENMP
     bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
-#pragma omp parallel for if(threadSafe)
     for (unsigned int i=0; i< isize; ++i)
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
@@ -858,7 +852,6 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
    }
    int isize = m_buff->m_toMe.size();
    // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
-   // #pragma omp parallel for if(this->m_threadSafe)
    for (int i=0; i< isize; ++i)
    {
      const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
@@ -919,7 +912,6 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 
 //brian says this does not need conditionals because everyone is getting different buffers
   // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
-  // #pragma omp parallel for
   for(int i=0; i<items; ++i)
   {
     const MotionItem& item = it[i];

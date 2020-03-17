@@ -651,7 +651,11 @@ template <class T> inline void BaseFab<T>::define()
   m_truesize = m_nvar * m_numpts;
   if (m_truesize > 0)
     {
+#ifdef PROTO_CUDA
+      cudaHostAlloc((void**)&m_dptr, m_truesize * sizeof(T),cudaHostAllocDefault);
+#else
       m_dptr     = static_cast<T*>(malloc(m_truesize * sizeof(T)));
+#endif
     }
   else
     { // m_truesize == 0: allocating no space
@@ -690,8 +694,11 @@ template <class T> inline void BaseFab<T>::undefine()
     ptr->~T();
   }
 
+#ifdef PROTO_CUDA
+  cudaFreeHost(m_dptr);
+#else
   free(m_dptr);
-
+#endif
 
   m_dptr = 0;
 }
