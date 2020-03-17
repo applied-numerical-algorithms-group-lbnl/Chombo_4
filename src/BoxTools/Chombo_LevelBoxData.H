@@ -40,6 +40,7 @@ public:
 template<int  NUMCOMPS>
 class LevelBoxData: public LevelData<BoxData<Real, NUMCOMPS> >
 {
+
 public:
 
   ///
@@ -53,6 +54,8 @@ public:
                const IntVect           & a_ghost   = IntVect::Zero)
     : LevelData<BoxData<Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>())
   {
+    if(a_ghost > IntVect::Zero)
+	 m_host.define(a_dp, NUMCOMPS, a_ghost);
   }
 
 
@@ -66,28 +69,40 @@ public:
               const IntVect          & a_ghost = IntVect::Zero)
   {
     LevelData<BoxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>());
+    if(a_ghost > IntVect::Zero)
+	 m_host.define(a_dp, NUMCOMPS, a_ghost);
   }
 
   void define(const LevelBoxData<NUMCOMPS>& a_lbd)
   {
     LevelData<BoxData<Real, NUMCOMPS> >::define(a_lbd, DefaultBoxDataFactory<NUMCOMPS>());
+    if(a_lbd.ghostVect() > IntVect::Zero)
+	 m_host.define(a_lbd.disjointBoxLayout(), NUMCOMPS, a_lbd.ghostVect());
   }
 
   ///
   void copyTo(const Interval                      &            a_srcComps,
               LevelData<BoxData<Real, NUMCOMPS> > &           a_dst,
               const Interval &            a_dstComps,
-              const Copier   &            a_copier) const
+              const Copier   &            a_copier) 
   {
-    LevelData<FArrayBox> hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost);
-    LevelData<FArrayBox> hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect());
+  //  LevelData<FArrayBox> hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost);
+  //  LevelData<FArrayBox> hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect());
 
-    copyToHost(hostdataSrc, *this);
-    copyToHost(hostdataDst,  a_dst);
+    // To check
+    if(this->m_ghost > IntVect::Zero)
+	 m_hostSrc.define(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+
+    // To check
+    if(a_dst.ghostVect() > IntVect::Zero)
+	 m_hostDst.define(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect());
+
+    copyToHost(m_hostSrc, *this);
+    copyToHost(m_hostDst,  a_dst);
     
-    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
+    m_hostSrc.copyTo(a_srcComps, m_hostDst, a_dstComps, a_copier);
     
-    copyToDevice(a_dst, hostdataDst);
+    copyToDevice(a_dst, m_hostDst);
   }
 
 
@@ -100,16 +115,16 @@ public:
     CH_TIMER("exchange",t2);
     CH_TIMER("copyToDevice",t3);
     CH_START(t0);
-    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+// LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
     CH_STOP(t0);
     CH_START(t1);
-    copyToHost(hostdata, *this);
+    copyToHost(m_host, *this);
     CH_STOP(t1);
     CH_START(t2);
-    hostdata.exchange(copier);
+    m_host.exchange(copier);
     CH_STOP(t2);
     CH_START(t3);
-    copyToDevice(*this, hostdata);
+    copyToDevice(*this, m_host);
     CH_STOP(t3);
   }
     
@@ -140,7 +155,10 @@ public:
       Real*       hostPtr = hostfab.dataPtr(0);
       const Real* deviPtr = devifab.dataPtr(0);
 #ifdef PROTO_CUDA
-      cudaMemcpy(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost);
+      //cudaMemcpy(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost);
+      //cudaStreamSynchronize(Proto::DisjointBoxLayout::getCurrentStream());
+      cudaDeviceSynchronize();
+      cudaMemcpyAsync(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
       cudaError err = cudaGetLastError();
       if (err != cudaSuccess)
       {
@@ -167,7 +185,10 @@ public:
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);
 #ifdef PROTO_CUDA
-      cudaMemcpy(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice);
+      cudaDeviceSynchronize();
+      cudaMemcpyAsync(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice, Proto::DisjointBoxLayout::getCurrentStream());
+
+      //cudaMemcpy(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice);
       cudaError err = cudaGetLastError();
       if (err != cudaSuccess)
       {
@@ -179,6 +200,11 @@ public:
 #endif  
     }
   }
+
+private:
+  LevelData<FArrayBox> m_host;
+  LevelData<FArrayBox> m_hostSrc;
+  LevelData<FArrayBox> m_hostDst;
 };
 
 

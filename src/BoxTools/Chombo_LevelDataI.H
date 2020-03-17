@@ -87,7 +87,6 @@ void LevelData<T>::define(const DisjointBoxLayout& dp, int comps, const IntVect&
       m_exchangeCopier.clear();
     }
 
-  this->m_isdefined = true;
   if (!dp.isClosed())
     {
       MayDay::Error("non-disjoint DisjointBoxLayout: LevelData<T>::define(const DisjointBoxLayout& dp,....)");
@@ -115,9 +114,16 @@ void LevelData<T>::define(const DisjointBoxLayout& dp, int comps, const IntVect&
   //     m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
   //   }
 
-  // Interval interval(0, comps-1);
-  this->allocateGhostVector(a_factory, ghost);
-  //  this->setVector(*this, interval, interval);
+   
+  if(this->m_isdefined==false)
+    this->allocateGhostVector(a_factory, ghost);
+  else
+  {
+    Interval interval(0, comps-1);
+    this->setVector(*this, interval, interval);
+  }
+
+  this->m_isdefined = true;
 }
 //-----------------------------------------------------------------------
 
@@ -151,7 +157,6 @@ void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_fact
   //da.copyTo(*this);
   DataIterator it = m_disjointBoxLayout.dataIterator();
   int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
   for (int ibox = 0; ibox < nbox; ibox++)
     {
       da[it[ibox]].copyTo(this->operator[](it[ibox]));
@@ -218,7 +223,6 @@ void LevelData<T>::copyTo(const Interval& srcComps,
       // parallel direct copy here, no communication issues
       DataIterator it = this->dataIterator();
       int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
       for (int ibox = 0; ibox < nbox; ibox++)
         {
           dest[it[ibox]].copy(this->box(it[ibox]),
@@ -245,7 +249,6 @@ void LevelData<T>::localCopyTo(const Interval& srcComps,
     {
       DataIterator it = this->dataIterator();
       int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
       for (int ibox = 0; ibox < nbox; ibox++)
         {
           Box srcBox = this->box(it[ibox]);
@@ -303,7 +306,6 @@ void LevelData<T>::copyTo(const Interval& srcComps,
       // parallel direct copy here, no communication issues
       DataIterator it = this->dataIterator();
       int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
       for (int ibox = 0; ibox < nbox; ibox++)
         {
 //          dest[it[ibox]].copy(this->box(it[ibox]),
@@ -530,10 +532,8 @@ void LevelData<T>::apply( void (*a_Function)(const Box& box, int comps, T& t) )
 {
   DataIterator it = this->dataIterator();
   int nbox = it.size();
-#pragma omp parallel for
   for (int ibox = 0; ibox < nbox; ibox++)
   {
-
     a_Function(m_disjointBoxLayout.get(it[ibox]), this->m_comps, *(this->m_vector[it[ibox].datInd()]));
   }
 }
@@ -545,7 +545,6 @@ void LevelData<T>::apply( const ApplyFunctor & f )
 {
   DataIterator it = this->dataIterator();
   int nbox = it.size();
-#pragma omp parallel for
   for (int ibox = 0; ibox < nbox; ibox++)
   {
       //     unsigned int index = this->m_boxLayout.lindex(it());

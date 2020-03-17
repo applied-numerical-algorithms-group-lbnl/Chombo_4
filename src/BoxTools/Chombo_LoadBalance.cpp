@@ -659,22 +659,18 @@ int basicLoadBalance(Vector<int>& a_procAssignments, int a_numBoxes, int a_numPr
 {
   CH_TIME("basicLoadBalance");
   a_procAssignments.resize(a_numBoxes);
-#pragma omp parallel
   {
     if(a_numProc == 1)
       {
-#pragma omp for
         for(int i=0; i<a_numBoxes; i++) a_procAssignments[i]=0;
       }
     else if(a_numBoxes<=a_numProc)
       {
-#pragma omp for
         for(int i=0; i<a_numBoxes; i++) a_procAssignments[i]=i;
       }
     else
       {
         float factor = (float)a_numProc/a_numBoxes;
-#pragma omp for
         for(int i=0; i<a_numBoxes; i++)
           {
             a_procAssignments[i] = i*factor;
