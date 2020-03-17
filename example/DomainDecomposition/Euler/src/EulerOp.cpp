@@ -277,7 +277,7 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
   {
     CH_TIME("step_no_gather");
     DataIterator dit = grids.dataIterator();
-#pragma omp parallel for
+
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       Box grid = grids[dit[ibox]];
@@ -318,7 +318,7 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U)
 
   Real gamma = s_gamma;
   DataIterator dit = grids.dataIterator();
-#pragma omp parallel for
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box grid = grids[dit[ibox]];

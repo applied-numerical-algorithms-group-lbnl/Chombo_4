@@ -40,6 +40,8 @@
 
 #include "Chombo_Box.H"
 
+#include<omp.h>
+
 #define PI 3.141592653589793
 
 
@@ -177,9 +179,9 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 
 /***/
 void 
-writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
+writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
 {
-#ifdef CH_USE_HDF5
+	#ifdef CH_USE_HDF5
   string filename = std::string("state.step") + std::to_string(step) + "." + std::to_string(DIM) + std::string("d.hdf5");
   
   //a_U.writeToFileHDF5(filename);
@@ -201,7 +203,14 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
   for(dit.begin(); dit.ok(); ++dit)
     {
       Box b = vectGrids[0][dit];
-      BFM1<CH_SPACEDIM>(level_data->operator[](dit).dataPtr(),b, 0, 1, b, [&maxRho](Real& v){ maxRho = std::max(v, maxRho);});
+      BFM1<CH_SPACEDIM>(
+		level_data->operator[](dit).dataPtr(),
+		b, 
+		0, 
+		1, 
+		b, 
+		[&maxRho](Real& v){ maxRho = std::max(v, maxRho);}
+	);
     }
   std::cout<<"max Rho "<<maxRho<<"\n";
   
@@ -234,8 +243,22 @@ writeData(int step, LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a
 #endif
 }
 /***/
+
 void eulerRun(const RunParams& a_params)
 {
+
+#ifdef __CORIGPU
+#ifdef CH_MPI
+    // Get the rank of the process
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    //std::cout << " rank =  " << world_rank << std::endl;
+
+    cudaSetDevice(world_rank);
+#endif
+#endif
+
   CH_TIME("eulerRun");
   Real tstop = a_params.tmax;
   int maxStep  = a_params.nstepmax;
@@ -268,18 +291,20 @@ void eulerRun(const RunParams& a_params)
   shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
+
   EulerState state(Uptr);
   RK4<EulerState,EulerRK4Op,EulerDX> rk4;
   
-  Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
-
   pout() << "before initializestate"<< endl;
 
   DataIterator dit = grids.dataIterator();
-#pragma omp parallel for
+
+  // This constructor can't be called in the next loop
+  Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-
+ 
     Box grid = grids[dit[ibox]];
     Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
@@ -296,6 +321,7 @@ void eulerRun(const RunParams& a_params)
 
 
   Real maxwave = EulerOp::maxWave(*state.m_U);
+
 //  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
@@ -303,6 +329,7 @@ void eulerRun(const RunParams& a_params)
   pout() << "after initializestate"<< endl;
   U.exchange(state.m_exchangeCopier);
 
+  // init Time
   Real time = 0.;
 
   pout() << "starting time loop"<< endl;
