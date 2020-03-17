@@ -105,7 +105,6 @@ struct EBCrossFaceStencil
 /**
    EBEncylcopedia is  collection of EBDictionaries of all useful centerings.
    Nothing fancy.  The argument lists were just getting too long.
-   Not all combinations are here but the ones I actually use are here.
    I realize this is not a great use of metaphor.
 */
 template <int order, typename data_t>

@@ -165,7 +165,7 @@ public:
      dest grow is how many cells to grow valid box for destination.
   */
   inline void registerStencil(string a_stencilName,
-                              string a_domainBCName,
+                              string a_domainBCName[2*DIM],
                               string a_ebbcName,
                               Box    a_srcDomain,
                               Box    a_dstDomain,
@@ -173,6 +173,30 @@ public:
                               Point  a_destGrow = Point::Zeros());
 
 
+  inline void registerStencil(string a_stencilName,
+                              string a_domainBCName,
+                              string a_ebbcName,
+                              Box    a_srcDomain,
+                              Box    a_dstDomain,
+                              bool   a_needDiagonalWeights = false,
+                              Point  a_destGrow = Point::Zeros())
+  {
+    string domBCNames[2*DIM];
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      domBCNames[ivec] = a_domainBCName;
+    }
+    registerStencil(a_stencilName,
+                    domBCNames,
+                    a_ebbcName,
+                    a_srcDomain,
+                    a_dstDomain,
+                    a_needDiagonalWeights,
+                    a_destGrow);
+  }
+
+
+  
   ///get the stencil for a particular box at a particular level of refinement
   inline shared_ptr< ebstencil_t >
   getEBStencil(const string & a_stencilName, 
