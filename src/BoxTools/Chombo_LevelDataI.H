@@ -120,7 +120,7 @@ void LevelData<T>::define(const DisjointBoxLayout& dp, int comps, const IntVect&
   else
   {
     Interval interval(0, comps-1);
-    this->setVector(*this, interval, interval);
+//    this->setVector(*this, interval, interval);
   }
 
   this->m_isdefined = true;
