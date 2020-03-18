@@ -24,7 +24,14 @@ DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
 
 $(DEPFILES):
 
-DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d --generate-dependencies
+DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d 
+
+ifeq ($(CXX),nvcc)
+LIBS+= -lnvToolsExt
+DEPFLAGS += --generate-dependencies
+else
+DEPFLAGS += -MM
+endif
 
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)

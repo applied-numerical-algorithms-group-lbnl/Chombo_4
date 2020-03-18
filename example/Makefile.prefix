@@ -1,3 +1,4 @@
+VARS_OLD := $(.VARIABLES)
 
 SRC := $(wildcard *.cpp) 
 SRC += $(wildcard ../src/*.cpp) 
