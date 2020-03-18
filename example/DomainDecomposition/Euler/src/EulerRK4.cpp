@@ -130,8 +130,9 @@ operator()(EulerDX& a_DX,
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
-  Real velmax = a_State.m_Rxn.fetch();
+  Reduction<Real,Abs>& rxn = a_State.m_Rxn;
+  EulerOp::step(*a_DX.m_DU, U_ave, rxn);
+  Real velmax = rxn.fetch();
   a_State.m_velSave = std::max(a_State.m_velSave,velmax);
 
 #pragma omp parallel
