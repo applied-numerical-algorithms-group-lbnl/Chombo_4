@@ -34,13 +34,69 @@ public:
     m_scalIC =   a_scalIC;
   }
 
-  string getDomainIndex(unsigned int idir, Side::LoHiSide a_sd)
+  string getDomainIndex(unsigned int idir, Side::LoHiSide a_sd) const
   {
     unsigned int index = ebp_index(idir, a_sd);
     return m_domainBC[index];
   }
-  
-  string         m_domainBC[2*DIM];
+
+  void helmholtzStencilStrings(string a_bcnames[2*DIM]) const
+  {
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      const string& faceBC = m_domainBC[ivec];
+      if(faceBC == "NoSlipWall")
+      {
+        a_bcnames[ivec] = StencilNames::Dirichlet;
+      }
+      else if(faceBC == "SlipWall")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else if(faceBC == "Inflow")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else if(faceBC == "Outflow")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else
+      {
+        MayDay::Error("EBIBC: unknown bc string");
+      }
+    }
+  }
+
+
+  void projectionStencilStrings(string a_bcnames[2*DIM]) const
+  {
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      const string& faceBC = m_domainBC[ivec];
+      if(faceBC == "no_slip_wall")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else if(faceBC == "slip_wall")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else if(faceBC == "inflow")
+      {
+        a_bcnames[ivec] = StencilNames::Neumann;
+      }
+      else if(faceBC == "outflow")
+      {
+        a_bcnames[ivec] = StencilNames::Dirichlet;
+      }
+      else
+      {
+        MayDay::Error("EBIBC: unknown bc string");
+      }
+    }
+  }
+string         m_domainBC[2*DIM];
   string         m_ebbc;
   string         m_veloIC;
   string         m_scalIC;

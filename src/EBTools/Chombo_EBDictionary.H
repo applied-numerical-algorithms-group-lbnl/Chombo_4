@@ -43,6 +43,9 @@ namespace StencilNames
   */
   static const string AveCellToFace("AverageCellToFace"); 
 
+  ///for extrap bcs used to get one-sided differences in slopes
+  static const string LinearExtrapolation("LinearExtrapolation"); 
+
   /// for simple average from  cells to faces
   /**
     This is to get the cc  gradient in the projection from mac grad

@@ -3,13 +3,15 @@
 #include "EBCCProjector.H"
 #include "Chombo_NamespaceHeader.H"
 /// 
+void
 EBCCProjector::
-EBCCProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,     
-              shared_ptr<GeometryService<2> >        & a_geoserv,  
-              const DisjointBoxLayout                & a_grids,    
-              const Box                              & a_domain,   
-              const Real                             & a_dx,       
-              const IntVect                          & a_nghost)   
+define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,     
+       shared_ptr<GeometryService<2> >        & a_geoserv,  
+       const DisjointBoxLayout                & a_grids,    
+       const Box                              & a_domain,   
+       const Real                             & a_dx,       
+       const IntVect                          & a_nghost,
+       string                                   a_bcnames[2*DIM])   
 {
   m_macprojector = shared_ptr<EBMACProjector>
     (new EBMACProjector(a_brit,     
@@ -17,7 +19,8 @@ EBCCProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_grids,    
                         a_domain,   
                         a_dx,       
-                        a_nghost));
+                        a_nghost,
+                        a_bcnames));
   registerStencils();
 }
 ////

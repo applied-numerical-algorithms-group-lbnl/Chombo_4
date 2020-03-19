@@ -1,5 +1,6 @@
 initial_velo = "vortex_0"
 initial_scal = "blob_scal_0"
+#also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "no_slip_wall"
 domain_bc_lo_1 = "no_slip_wall"
 domain_bc_lo_2 = "no_slip_wall"

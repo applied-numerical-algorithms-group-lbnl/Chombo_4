@@ -55,14 +55,19 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   if(!m_eulerCalc)
   {
     Real alpha = 1; Real beta = 1; //these get reset before solve
+    string helmnames[2*DIM];
+    a_ibc.helmholtzStencilStrings(helmnames);
     m_helmholtz = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, bcname, bcname, m_domain, m_nghost, m_nghost));
+                       stenname, helmnames, bcname, m_domain, m_nghost, m_nghost));
   }
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));
+  
+  string projnames[2*DIM];
+  a_ibc.projectionStencilStrings(projnames);
   m_ccProj  = shared_ptr<EBCCProjector>
-    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost));
+    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, projnames));
   m_macProj = m_ccProj->m_macprojector;
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>

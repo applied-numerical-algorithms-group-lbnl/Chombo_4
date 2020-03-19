@@ -141,9 +141,9 @@ void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_fact
   this->m_isdefined = true;
   if (this == &da) return;
   m_disjointBoxLayout = da.m_disjointBoxLayout;
-  this->m_boxLayout  = da.m_disjointBoxLayout;
-  this->m_comps     = da.m_comps;
-  this->m_threadSafe = a_factory.threadSafe();
+  this->m_boxLayout   = da.m_disjointBoxLayout;
+  this->m_comps       = da.m_comps;
+  this->m_threadSafe  = a_factory.threadSafe();
   //this->m_threadSafe = false;
 
   m_ghost     = da.m_ghost;

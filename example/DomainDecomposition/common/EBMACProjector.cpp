@@ -1,15 +1,18 @@
+
 #include <cmath>
 #include <memory>
 #include "EBMACProjector.H"
 #include "Chombo_NamespaceHeader.H"
-/// 
+///
+void
 EBMACProjector::
-EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-               shared_ptr<GeometryService<2> >        & a_geoserv,
-               const DisjointBoxLayout                & a_grids,
-               const Box                              & a_domain,
-               const Real                             & a_dx,
-               const IntVect                          & a_nghost)
+define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
+       shared_ptr<GeometryService<2> >        & a_geoserv,
+       const DisjointBoxLayout                & a_grids,
+       const Box                              & a_domain,
+       const Real                             & a_dx,
+       const IntVect                          & a_nghost,
+       string                                   a_bcnames[2*DIM])
 {
   m_dx      = a_dx;
 
@@ -21,12 +24,13 @@ EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_brit    = a_brit;
   m_graphs  = a_geoserv->getGraphs(m_domain);
 
-  defineInternals(a_geoserv);
+  defineInternals(a_geoserv, a_bcnames);
 }
 ///
 void 
 EBMACProjector::
-defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
+defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
+                string                                   a_bcnames[2*DIM])
 
 {
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
@@ -37,7 +41,7 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
 
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
-                     StencilNames::Poisson2, StencilNames::Neumann, StencilNames::Neumann,
+                     StencilNames::Poisson2, a_bcnames, StencilNames::Neumann,
                      m_domain, m_nghost, m_nghost));
 
   registerStencils();

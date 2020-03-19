@@ -9,7 +9,7 @@ const string EBAdvection::s_centInterpLabel= StencilNames::InterpToFaceCentroid;
 const string EBAdvection::s_slopeLowLabel  = StencilNames::SlopeLoRoot;                 //for low  side difference
 const string EBAdvection::s_slopeHighLabel = StencilNames::SlopeHiRoot;                 //for high side difference
 const string EBAdvection::s_diriLabel      = StencilNames::Dirichlet;                   //for diri bcs
-const string EBAdvection::s_neumLabel      = StencilNames::Neumann;                     //for neum bcs
+const string EBAdvection::s_extrLabel      = StencilNames::LinearExtrapolation;         //for neum bcs
 const string EBAdvection::s_divergeLabel   = StencilNames::DivergeFtoC;                 //for taking the divergence of face centered stuff to cell centered result
 const string EBAdvection::s_CtoFLowLabel   = StencilNames::CellToFaceLo;                //for getting stuff from low  side cells to faces
 const string EBAdvection::s_CtoFHighLabel  = StencilNames::CellToFaceHi;                //for getting stuff from high side cells to faces
@@ -95,11 +95,11 @@ registerStencils()
   m_brit->registerFaceToCell( s_divergeLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   for(int idir = 0; idir < DIM; idir++)
   {
-    //need to set neumann bcs to set slopes to zero at domain bcs.
+    //need to set extrapolation ccs to set slopes to one sided at domain bcs.
     string slopeLow   = s_slopeLowLabel  + std::to_string(idir);
     string slopeHigh  = s_slopeHighLabel + std::to_string(idir);
-    m_brit->m_cellToCell->registerStencil(slopeLow  , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
-    m_brit->m_cellToCell->registerStencil(slopeHigh , s_neumLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+    m_brit->m_cellToCell->registerStencil(slopeLow  , s_extrLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+    m_brit->m_cellToCell->registerStencil(slopeHigh , s_extrLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
   }
 
 }
