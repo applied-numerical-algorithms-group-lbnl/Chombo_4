@@ -150,8 +150,8 @@ maxWave(EulerState& a_State)
   EulerDX DX;
   DX.init(a_State);
   Real velmax;
-#ifdef PROTO_CUDA
   Reduction<Real,Op::Abs>& rxn = a_State.m_Rxn;
+#ifdef PROTO_CUDA
   rxn.reset(); // initialize device pointer
   EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
   velmax = rxn.fetch();
