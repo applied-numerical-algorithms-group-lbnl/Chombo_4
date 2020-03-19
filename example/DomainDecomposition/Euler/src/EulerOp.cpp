@@ -167,12 +167,12 @@ define(const DisjointBoxLayout& a_grids,
 
 
 
-void 
+Real 
 EulerOp::
 proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
            const BoxData<Real,NUMCOMPS>& a_U,
            const Bx& a_rangeBox,
-           Reduction<Real,Abs>& a_Rxn)
+           Reduction<Real,Op::Abs>& a_Rxn)
 {
 
   CH_TIMERS("EulerOp::step(boxdata)");
@@ -197,7 +197,7 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
   PVector U = s_deconvolve(a_U);
   PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, "consToPrim", consToPrim,U, gamma);
   PScalar umax = forallOp<Real>(wavespdnum, "wavespeed",waveSpeedBound,a_rangeBox,W, gamma);
-  umax.absMax(a_Rxn);
+  Real retval = umax.absMax(a_Rxn); // returns 0 in CUDA environment
   PVector W_ave = s_laplacian(W_bar,1.0/24.0);
   W_ave += W;
   for (int d = 0; d < DIM; d++)
@@ -238,6 +238,7 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
   CH_START(tdx);
   a_Rhs *= -1./s_dx;
   CH_STOP(tdx);
+  return retval;
 }
 
 Real gatherMaxWave(Real maxwaveproc)
@@ -256,11 +257,11 @@ Real gatherMaxWave(Real maxwaveproc)
   return maxwaveall;
 
 }
-void 
+Real 
 EulerOp::
 step(LevelBoxData<NUMCOMPS> & a_Rhs,
      LevelBoxData<NUMCOMPS> & a_U,
-     Reduction<Real,Abs> & a_Rxn)
+     Reduction<Real,Op::Abs> & a_Rxn)
 {
   CH_TIME("EulerOp::step(leveldata)");
   static bool initCalled =false;
@@ -284,17 +285,28 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
       Bx  pgrid = ProtoCh::getProtoBox(grid);
       BoxData<Real, NUMCOMPS>& ubd   =   a_U[dit[ibox]];
       BoxData<Real, NUMCOMPS>& rhsbd = a_Rhs[dit[ibox]];
-
+#ifdef PROTO_CUDA
       proto_step(rhsbd, ubd, pgrid, a_Rxn);
+#else
+      Real maxwavegrid = proto_step(rhsbd, ubd, pgrid, a_Rxn);
+      maxwaveproc = std::max(maxwavegrid, maxwaveproc);
+#endif
     }
   }
+  maxwaveproc = maxwaveproc + a_Rxn.fetch(); // fetch = 0 without CUDA
+  Real maxwaveall;
+  {
+      CH_TIME("gatherMaxWaveSpeed");
+      maxwaveall = gatherMaxWave(maxwaveproc);
+  }
+  return maxwaveall;
 }
 
 
 Real 
 EulerOp::
 maxWave(LevelBoxData<NUMCOMPS> & a_U,
-        Reduction<Real,Abs> & a_Rxn)
+        Reduction<Real,Op::Abs> & a_Rxn)
 {
   static bool initCalled =false;
   DisjointBoxLayout grids = a_U.disjointBoxLayout();
@@ -305,6 +317,7 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U,
     initCalled = true;
   }
   a_U.exchange(s_exchangeCopier);
+  Real maxwaveproc = 0;
   unsigned long long int ctoprmnum  = 4*DIM + 5;
   unsigned long long int sqrtnum = 10;  //this one is just a guess
   unsigned long long int wavespdnum = sqrtnum +3 + DIM;
@@ -321,9 +334,10 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U,
     PVector U = s_deconvolve(ubd);
     PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, "consToPrim",consToPrim,ubd, gamma);
     PScalar umax = forallOp<Real>(wavespdnum, "wavespeed",waveSpeedBound,pgrid,W, gamma);
-    umax.absMax(a_Rxn);
+    Real maxwavegrid = umax.absMax(a_Rxn); // returns 0 in CUDA environment
+    maxwaveproc = std::max(maxwavegrid, maxwaveproc);
   }
-  Real maxwaveproc = a_Rxn.fetch();
+  maxwaveproc = maxwaveproc + a_Rxn.fetch(); // fetch returns 0 w/o CUDA
   Real maxwaveall = gatherMaxWave(maxwaveproc);
 
   return maxwaveall;

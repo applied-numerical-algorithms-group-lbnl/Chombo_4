@@ -50,6 +50,7 @@ using   ::Proto::Point;
 using   ::Proto::BoxData;
 using   ::Proto::Stencil;
 using   ::Proto::RK4;
+using   ::Proto::Reduction;
 using   ::ProtoCh::getPoint;
 using   ::ProtoCh::getProtoBox;
 using   ::ProtoCh::getIntVect;

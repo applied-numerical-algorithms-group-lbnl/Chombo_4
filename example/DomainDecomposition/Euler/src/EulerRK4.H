@@ -33,7 +33,7 @@ public:
   shared_ptr<LevelBoxData<NUMCOMPS> > m_U;
   DisjointBoxLayout m_grids;
   Copier m_exchangeCopier;
-  Reduction<Real,Abs> m_Rxn;
+  Reduction<Real,Op::Abs> m_Rxn;
 };
 
 ///
