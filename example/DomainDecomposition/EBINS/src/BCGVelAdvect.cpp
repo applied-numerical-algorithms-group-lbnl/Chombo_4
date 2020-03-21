@@ -27,6 +27,7 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
                      const Real                  & a_dt,
                      Real a_tol, unsigned int a_maxIter)    
 {
+  a_inputVel.exchange(m_exchangeCopier);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> velcomp;
@@ -206,6 +207,7 @@ BCGVelAdvect::
 assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, 
                    const  Real              & a_dt)
 {
+  m_macVelocity.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   for(int ivar = 0; ivar < DIM; ivar++)
   {

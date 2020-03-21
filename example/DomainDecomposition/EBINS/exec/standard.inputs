@@ -8,7 +8,7 @@ domain_bc_hi_0 = "no_slip_wall"
 domain_bc_hi_1 = "no_slip_wall"
 domain_bc_hi_2 = "no_slip_wall"
 #domain size
-nx=       64
+nx=       32
 #max number of time steps
 max_step =    200
 #maximum time
@@ -16,7 +16,7 @@ max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  128
+maxGrid=  16
 maxIter = 27
 tolerance = 1.0e-8
 cfl = 0.5

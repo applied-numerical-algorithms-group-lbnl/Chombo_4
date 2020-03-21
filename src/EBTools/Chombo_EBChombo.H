@@ -38,6 +38,7 @@ using Proto::HostBoxData;
 using Proto::EBHostData;
 using Proto::EBBoxData;
 using Proto::EBFluxData;
+using Proto::EBHostFluxData;
 using Proto::BoxData;
 using Proto::EBGraph;
 using Proto::IndexTM;
