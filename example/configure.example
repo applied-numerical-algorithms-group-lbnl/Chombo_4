@@ -77,7 +77,7 @@ for t in targets:
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
     if args.opt == 'DEBUG':
-        f.write('\nCXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)\n')
+        f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
             f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
