@@ -8,7 +8,7 @@ CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack -ldl
 HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
 HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
 #end mach dependent

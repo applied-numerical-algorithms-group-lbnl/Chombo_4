@@ -43,6 +43,7 @@ public:
   EulerDX(){};
   ~EulerDX(){};
   shared_ptr<LevelBoxData<NUMCOMPS> > m_DU;
+  shared_ptr<LevelBoxData<NUMCOMPS> > U_ave;
   DisjointBoxLayout m_grids;
 
   void increment(Real& a_weight,const EulerDX& a_incr);

@@ -17,13 +17,34 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBINS.H"
+#include "EBIBC.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
 
 #define MAX_ORDER 2
-
-
+/***/
+EBIBC getIBCs()
+{
+  string veloIC, scalIC;
+  string loDomBC[DIM];
+  string hiDomBC[DIM];
+  ParmParse pp;
+  pp.get("initial_velo", veloIC);
+  pp.get("initial_scal", scalIC);
+  using std::to_string;
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    string lostr = "domain_bc_lo_" + to_string(idir);
+    string histr = "domain_bc_hi_" + to_string(idir);
+    pp.get(lostr.c_str(), loDomBC[idir]);
+    pp.get(histr.c_str(), hiDomBC[idir]);
+  }
+  string ebbc("NoSlipWall");
+  EBIBC retval(veloIC, scalIC, loDomBC, hiDomBC, ebbc);
+  return retval;
+}
+/***/
 int
 runNavierStokes()
 {
@@ -142,8 +163,10 @@ runNavierStokes()
   pout() << "max_time        = " << max_time   << endl;
   pout() << "=============================================="  << endl;
 
+  
+  EBIBC ibc = getIBCs();
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver);
+  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver, ibc);
 
 
  auto &  velo = *(solver.m_velo);
@@ -151,7 +174,7 @@ runNavierStokes()
 
 
   pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
 
   Real fixedDt = -1.0;//signals varaible dt
 

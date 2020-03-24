@@ -12,7 +12,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const Real                             & a_dx,
       const Real                             & a_viscosity,
       const IntVect                          & a_nghost,
-      ParabolicSolverType                      a_solver)
+      ParabolicSolverType                      a_solver,
+      EBIBC                                    a_ibc)
 {
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
@@ -21,6 +22,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
+
   m_graphs = m_geoserv->getGraphs(m_domain);
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
   m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);
@@ -53,14 +55,19 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   if(!m_eulerCalc)
   {
     Real alpha = 1; Real beta = 1; //these get reset before solve
+    string helmnames[2*DIM];
+    a_ibc.helmholtzStencilStrings(helmnames);
     m_helmholtz = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, bcname, bcname, m_domain, m_nghost, m_nghost));
+                       stenname, helmnames, bcname, m_domain, m_nghost, m_nghost));
   }
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));
+  
+  string projnames[2*DIM];
+  a_ibc.projectionStencilStrings(projnames);
   m_ccProj  = shared_ptr<EBCCProjector>
-    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost));
+    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, projnames));
   m_macProj = m_ccProj->m_macprojector;
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
@@ -129,7 +136,7 @@ run(unsigned int a_max_step,
   unsigned int step = 0;
   while((step < a_max_step) && (time < a_max_time))
   {
-    pout() << "step = " << step << ", time = " << time << " dt = " << endl;
+    pout() << "step = " << step << ", time = " << time << " dt = " << dt << endl;
     pout() << "advancing passive scalar " << endl;
     advanceScalar(dt);
 

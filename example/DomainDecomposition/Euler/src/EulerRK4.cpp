@@ -32,7 +32,7 @@ increment(const EulerDX & a_DX)
   LevelBoxData<NUMCOMPS> & delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     data[dit[ibox]] += delta[dit[ibox]];
@@ -49,7 +49,7 @@ increment(Real        & a_weight,
   LevelBoxData<NUMCOMPS>& delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+
  for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     BoxData<Real, NUMCOMPS> incr(delta[dit[ibox]].box());
@@ -66,10 +66,15 @@ init(const EulerState& a_State)
 {
   CH_TIME("EulerDX::init");
   m_grids = a_State.m_grids;
-  m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
+
+  if(m_DU == NULL)
+    m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
+
+  if(U_ave == NULL)
+    U_ave = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
 
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     (*m_DU)[dit[ibox]].setVal(0.);
@@ -83,7 +88,7 @@ operator*=(const Real& a_weight)
 {
   CH_TIME("EulerDX::operator*=");
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+//#pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     (*m_DU)[dit[ibox]] *= a_weight;
@@ -115,16 +120,14 @@ operator()(EulerDX& a_DX,
   //Interval interv(0, ncomp-1);
   //Copier copier(grids, grids);
   
-  LevelBoxData<NUMCOMPS>  U_ave;
-  U_ave.define(*(a_State.m_U));
+  LevelBoxData<NUMCOMPS>&  U_ave= *(a_DX.U_ave); 
+  U_ave.define(*(a_State.m_U)); // ask why
 
-  // U_ave.define(*(a_State.m_U));
   CH_STOP(tcop);
-
 
   CH_START(trk);
   DataIterator dit = grids.dataIterator();
-#pragma omp parallel
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     U_ave[dit[ibox]] += delta[dit[ibox]];
@@ -133,7 +136,6 @@ operator()(EulerDX& a_DX,
   Real velmax = EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
   a_State.m_velSave = std::max(a_State.m_velSave,velmax);
 
-#pragma omp parallel
   for(int ibox = 0; ibox <  dit.size(); ibox++)
   {
     delta[dit[ibox]] *= a_dt;

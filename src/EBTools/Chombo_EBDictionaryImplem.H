@@ -61,7 +61,7 @@ template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
 void
 EBDictionary<order, data_t, srcCenter, dstCenter>::
 registerStencil(string a_stencilName,
-                string a_domainBCName,
+                string a_domainBCName[2*DIM],
                 string a_ebbcName,
                 Box    a_srcDomain,
                 Box    a_dstDomain,

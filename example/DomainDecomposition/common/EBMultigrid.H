@@ -33,7 +33,7 @@ public:
                    const Real                        & a_dx,
                    const DisjointBoxLayout           & a_grids,
                    const string                      & a_stenname,
-                   const string                      & a_dombcname,
+                   string                              a_dombcname[2*DIM],
                    const string                      & a_ebbcname,
                    const Box                         & a_domain,
                    const IntVect                     & a_nghostsrc, 
@@ -126,7 +126,7 @@ private:
   DisjointBoxLayout                 m_grids;   
   string                            m_stenname;
   string                            m_neumname;
-  string                            m_dombcname;
+  string                            m_dombcname[2*DIM];
   string                            m_ebbcname;
   dictionary_t                      m_dictionary;
 #if DIM==2
@@ -174,6 +174,45 @@ public:
               const IntVect                     & a_nghostsrc, 
               const IntVect                     & a_nghostdst)
   {
+    string dombc[2*DIM];
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      dombc[ivec] = a_dombcname;
+    }
+    m_finest = std::shared_ptr<EBMultigridLevel>(
+      new EBMultigridLevel(a_dictionary, 
+                           a_geoserv,
+                           a_alpha,      
+                           a_beta,       
+                           a_dx,         
+                           a_grids,      
+                           a_stenname,   
+                           dombc,
+                           a_ebbcname,   
+                           a_domain, 
+                           a_nghostsrc,
+                           a_nghostdst));     
+
+    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
+    m_res.define(a_grids, a_nghostsrc  , graphs);
+    m_cor.define(a_grids, a_nghostsrc  , graphs);
+  }
+
+
+  /// 
+  EBMultigrid(dictionary_t                      & a_dictionary,
+              shared_ptr<GeometryService<2> >   & a_geoserv,
+              const Real                        & a_alpha,
+              const Real                        & a_beta,
+              const Real                        & a_dx,
+              const DisjointBoxLayout           & a_grids,
+              const string                      & a_stenname,
+              string                              a_dombcname[2*DIM],
+              const string                      & a_ebbcname,
+              const Box                         & a_domain,
+              const IntVect                     & a_nghostsrc, 
+              const IntVect                     & a_nghostdst)
+  {
     m_finest = std::shared_ptr<EBMultigridLevel>(
       new EBMultigridLevel(a_dictionary, 
                            a_geoserv,
@@ -192,7 +231,7 @@ public:
     m_res.define(a_grids, a_nghostsrc  , graphs);
     m_cor.define(a_grids, a_nghostsrc  , graphs);
   }
-
+  
   ///
   void 
   solve(EBLevelBoxData<CELL, 1>       & a_phi,

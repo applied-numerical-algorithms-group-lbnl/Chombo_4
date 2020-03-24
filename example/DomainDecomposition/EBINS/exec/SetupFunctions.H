@@ -104,7 +104,8 @@ void InitializeVCellF(int       a_p[DIM],
   Real cosval = cos(carg);
   Real velmag = a_mag*cosval*cosval;
 //debug
-  velmag = 1;
+//  velmag = 1;
+//end debug
 #if DIM==2
   a_vel(0) =  velmag*xrel[1];
   a_vel(1) = -velmag*xrel[0];
@@ -113,11 +114,6 @@ void InitializeVCellF(int       a_p[DIM],
   a_vel(1) =  velmag*(-xrel[0] - xrel[2]);
   a_vel(2) = -velmag*( xrel[0] - xrel[1]);
 #endif
-#if 0
-  a_vel(0) =  0;
-  a_vel(1) =  1;
-#endif
-//end debug
 }
 PROTO_KERNEL_END(InitializeVCellF, InitializeVCell)
 
@@ -259,7 +255,8 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_blobCen,
                     const Real                  &  a_blobRad,
                     const Real                  &  a_maxVelMag,
-                    const Real                  &  a_maxVelRad)
+                    const Real                  &  a_maxVelRad,
+                    EBIBC  a_ibcs)
 {
   DataIterator dit = a_grids.dataIterator();
   int ideb = 0;

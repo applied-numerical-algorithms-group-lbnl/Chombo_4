@@ -167,7 +167,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  const Real                              & a_dx,
                  const DisjointBoxLayout                 & a_grids,
                  const string                            & a_stenname,
-                 const string                            & a_dombcname,
+                 string                                    a_dombcname[2*DIM],
                  const string                            & a_ebbcname,
                  const Box                               & a_domain,
                  const IntVect                           & a_nghostsrc, 
@@ -182,7 +182,10 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_stenname   = a_stenname;   
   m_neumname   = a_stenname + string("_All_Neumann");   
 
-  m_dombcname  = a_dombcname;  
+  for(int ivec = 0; ivec < 2*DIM; ivec++)
+  {
+    m_dombcname[ivec]  = a_dombcname[ivec];
+  }
   m_ebbcname   = a_ebbcname;   
   m_domain     = a_domain;     
   m_nghostSrc  = a_nghostsrc;
@@ -253,8 +256,11 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   m_alpha      = a_finerLevel.m_alpha;      
   m_beta       = a_finerLevel.m_beta;       
   m_stenname   = a_finerLevel.m_stenname;   
-  m_neumname   = a_finerLevel.m_neumname;   
-  m_dombcname  = a_finerLevel.m_dombcname;  
+  m_neumname   = a_finerLevel.m_neumname;
+  for(int ivec = 0; ivec < 2*DIM; ivec++)
+  {
+    m_dombcname[ivec]  = a_finerLevel.m_dombcname[ivec];
+  }
   m_ebbcname   = a_finerLevel.m_ebbcname;   
 
   m_nghostSrc  = a_finerLevel.m_nghostSrc;

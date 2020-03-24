@@ -8,6 +8,7 @@
 #include "EBMACProjector.H"
 #include "EBCCProjector.H"
 #include "BCGVelAdvect.H"
+#include "EBIBC.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///class to run the incompressible algorithm described in Trebotich, et al.
@@ -25,7 +26,8 @@ public:
         const Real                             & a_dx,
         const Real                             & a_viscosity,
         const IntVect                          & a_nghost,
-        ParabolicSolverType a_solver);
+        ParabolicSolverType a_solver,
+        EBIBC               a_ibc);
 
   /// set fixedDt to positive number to force that to be dt
   void 
@@ -66,7 +68,7 @@ public:
   Real                                   m_viscosity;
   Copier                                 m_exchangeCopier;
   Copier                                 m_copyCopier;
-  
+
 
 private:
   

@@ -79,7 +79,9 @@ public:
   using LevelData<EBFluxData<Real, NUMCOMPS> >::define;
 #endif
 
-  typedef GraphConstructorFactory<EBFluxData<Real, NUMCOMPS> > devifactory_t;
+
+  typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
+  typedef GraphConstructorFactory<    EBFluxData<Real, NUMCOMPS> > devifactory_t;
 
   ///
   EBLevelFluxData(): LevelData<EBFluxData<Real, NUMCOMPS> >()
@@ -141,17 +143,128 @@ public:
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {
-    MayDay::Error("not implemented---not sure if we need this");
+    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
+
+    copyToHost(hostdataSrc, *this);
+    copyToHost(hostdataDst,  a_dst);
+    
+    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
+    
+    copyToDevice(a_dst, hostdataDst);
   }
 
 
   /// 
   virtual void exchange(const Copier& copier)
   {
+    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
-    MayDay::Error("not implemented---not sure if we need this");
+    copyToHost(hostdata, *this);
+
+    hostdata.exchange();
+
+    copyToDevice(*this, hostdata);
+  }
+  ////mpi stuff
+  static 
+  void copyToHost(LevelData<      EBHostFluxData<Real, NUMCOMPS> > & a_hostDat,
+                  const LevelData<    EBFluxData<Real, NUMCOMPS> > & a_deviDat)
+  {
+    LevelData< EBFluxData<Real, NUMCOMPS> >& deviDat = (LevelData< EBFluxData<Real, NUMCOMPS> >&) (a_deviDat);
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      auto & hostfab = a_hostDat[dit[ibox]];
+      auto & devifab =   deviDat[dit[ibox]];
+      copyToHost(hostfab, devifab);
+    }
   }
 
+
+  /// 
+  static 
+  void copyToHost(EBHostFluxData<Real, NUMCOMPS> & hostfab,
+                      EBFluxData<Real, NUMCOMPS> & devifab)
+  {
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
+      {
+        size_t fabsizeHost, fabsizeDevi; 
+        Real*  dataptrHost;
+        Real*  dataptrDevi;
+        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
+        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
+
+        size_t datSize = sizeof(Real)*fabsizeDevi;
+
+#ifdef PROTO_CUDA
+        cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
+        cudaError err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, cudaGetErrorString(err));
+        }
+#else
+        memcpy(dataptrHost, dataptrDevi, datSize);
+#endif  
+      }
+    }
+  }
+
+  
+  ///
+  static 
+  void copyToDevice(LevelData<          EBFluxData<Real, NUMCOMPS> > & a_deviDat,
+                    const LevelData<EBHostFluxData<Real, NUMCOMPS> > & a_hostDat)
+  {
+    auto & deviDat = const_cast<LevelData<     EBFluxData<Real, NUMCOMPS> > &> (a_deviDat);
+    auto & hostDat = const_cast<LevelData< EBHostFluxData<Real, NUMCOMPS> > &> (a_hostDat);
+    DataIterator dit = hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      auto & hostfab =   hostDat[dit[ibox]];
+      auto & devifab =   deviDat[dit[ibox]];
+      copyToDevice(hostfab, devifab);
+    }
+  }
+
+  ///
+  static 
+  void copyToDevice( EBHostFluxData<Real, NUMCOMPS> & hostfab,
+                     EBFluxData<    Real, NUMCOMPS> & devifab)
+  {
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
+      {
+        size_t fabsizeHost, fabsizeDevi; 
+        Real*  dataptrHost, *dataptrDevi;
+        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
+        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
+
+        size_t datSize = sizeof(Real)*fabsizeDevi;
+
+#ifdef PROTO_CUDA
+        cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
+        cudaError err = cudaGetLastError();
+        if (err != cudaSuccess)
+        {
+          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, cudaGetErrorString(err));
+        }
+#else
+        memcpy(dataptrDevi, dataptrHost, datSize);
+#endif  
+      }
+    }
+  }
+
+
+
+  
 private:
     shared_ptr<LevelData<EBGraph>  > m_graphs;
 };

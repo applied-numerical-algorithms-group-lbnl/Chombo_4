@@ -92,7 +92,7 @@ struct EBCrossFaceStencil
     }
     else if((a_srcDir == 2) && (a_dstDir==1))
     {
-      m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_flux, a_initToZero, a_scale);
+      m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_zflux, a_initToZero, a_scale);
     }
 #endif
     else
@@ -105,7 +105,6 @@ struct EBCrossFaceStencil
 /**
    EBEncylcopedia is  collection of EBDictionaries of all useful centerings.
    Nothing fancy.  The argument lists were just getting too long.
-   Not all combinations are here but the ones I actually use are here.
    I realize this is not a great use of metaphor.
 */
 template <int order, typename data_t>
