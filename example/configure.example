@@ -79,9 +79,9 @@ for t in targets:
 
     if args.opt == 'DEBUG':
         if args.cuda == 'TRUE':
-            f.write('\nCXXDBGFLAGS:= -g -pedantic -Wall $(CXXGPUFLAGS)\n')
+            f.write('\nCXXDBGFLAGS:= -g $(CXXGPUFLAGS)\n')
         else:
-            f.write('\nCXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)\n')
+            f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
         f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
         if args.cuda == 'TRUE':
