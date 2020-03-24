@@ -169,7 +169,7 @@ initializePressure(Real         a_dt,
   pout() << "projecting initial velocity"<< endl;
   auto & gphi =  (*m_gphi );  
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
-
+  velo.exchange(m_exchangeCopier);
 
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
@@ -180,6 +180,7 @@ initializePressure(Real         a_dt,
     advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
     velosave.copyTo(interv, velo, interv, m_copyCopier);
   }
+  gphi.exchange(m_exchangeCopier);
 }
 /*******/ 
 Real

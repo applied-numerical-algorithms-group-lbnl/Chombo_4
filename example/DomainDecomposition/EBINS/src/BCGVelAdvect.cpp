@@ -134,6 +134,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->applyOp(m_source, velcomp);
     }
 
+    m_source.exchange(m_exchangeCopier);
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
@@ -172,6 +173,7 @@ void
 BCGVelAdvect::
 correctVectorVelocity()
 {
+  m_macGradient.exchange(m_exchangeCopier);
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
   {
     EBLevelFluxData<1> facecomp;
