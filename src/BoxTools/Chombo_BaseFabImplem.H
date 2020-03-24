@@ -18,6 +18,7 @@
 #include "Chombo_MayDay.H"
 #include "Chombo_parstream.H"
 #include "Chombo_BoxIterator.H"
+#include "Chombo_BFM.H"
 #include "Chombo_NamespaceHeader.H"
 
 //
@@ -524,8 +525,12 @@ template <class T> inline void BaseFab<T>::linearOut(void*           a_buf,
                                                      const Box&      a_R,
                                                      const Interval& a_comps) const
 {
-  linearOut2(a_buf, a_R, a_comps);
+  T* buffer = (T*) a_buf;
+  int ncomps = a_comps.end()-a_comps.begin();
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+                   [&buffer](const T* __restrict__ d){*buffer=(*d); buffer++;});
 }
+
 template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
                                                        const Box&      a_R,
                                                        const Interval& a_comps) const
@@ -549,17 +554,10 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
                                                     const Box&      a_R,
                                                     const Interval& a_comps)
 {
-  //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
-  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
-    {
-      for (BoxIterator bit(a_R); bit.ok(); ++bit)
-        {
-          IntVect iv = bit();
-          (*this)(iv, icomp) = *buffer;
-          ++buffer;
-        }
-    }
+  int ncomps = a_comps.end()-a_comps.begin();
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+                   [&buffer](T* __restrict__ d){(*d)=*buffer; buffer++;});
 }
 
 
@@ -724,18 +722,9 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
   CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
-  IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
-  for (int icomp = 0; icomp < a_numcomp; icomp++)
-  {
-    int srccomp = a_srccomp + icomp;
-    int dstcomp = a_dstcomp + icomp;
-    for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
-    {
-      IntVect dstiv = bit();
-      IntVect srciv = dstiv + shiftiv;
-      (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
-    }
-  }
+  Box r = a_srcbox&a_dstbox;
+  BFM<CH_SPACEDIM>(dataPtr(),a_src.dataPtr(), box(), a_src.box(), a_dstcomp, a_srccomp,a_numcomp,r,
+                   [](T* __restrict__ d, T s){(*d)=s;});
 }
 
 template <class T> inline void BaseFab<T>::performSetVal(T          a_x,
