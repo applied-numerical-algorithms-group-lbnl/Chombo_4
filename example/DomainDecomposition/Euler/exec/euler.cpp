@@ -209,7 +209,7 @@ writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, 
 		0, 
 		1, 
 		b, 
-		[&maxRho](Real& v){ maxRho = std::max(v, maxRho);}
+		[&maxRho](Real* v){ maxRho = std::max(*v, maxRho);}
 	);
     }
   std::cout<<"max Rho "<<maxRho<<"\n";
