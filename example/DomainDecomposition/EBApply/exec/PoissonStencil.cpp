@@ -110,7 +110,7 @@ runTest(int a_argc, char* a_argv[])
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
 
-  IntVect dataGhostIV =   IntVect::Unit;
+  IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
