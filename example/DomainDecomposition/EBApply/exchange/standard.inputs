@@ -1,5 +1,6 @@
 #domain size
 nx=       64
+maxGrid =32
 # center of the blob
 blob_cen = 0.3
 # radius of the blob
@@ -10,6 +11,7 @@ which_geom = 0
 geom_rad = 0.455
 # center of the sphere
 geom_cen = 0.5
+
 #
 ##plane 
 ##which_geom = 1 

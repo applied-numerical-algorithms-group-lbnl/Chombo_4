@@ -12,17 +12,12 @@ using Proto::SimpleEllipsoidIF;
 
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
-
-
-//=================================================
-PROTO_KERNEL_START 
-void InitializeSpotF(int       a_p[DIM],
-                     Var<Real, 1>       a_phi,
-                     Real      a_X0,
-                     Real      a_rad,
-                     Real      a_dx)
+inline Real getSpotVal(int       a_p[DIM],
+                       Real      a_X0,
+                       Real      a_rad,
+                       Real      a_dx)
 {
-  Real val = 0;
+  Real val =  0;
   Real rlocsq = 0;
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -35,9 +30,44 @@ void InitializeSpotF(int       a_p[DIM],
   Real carg = 0.5*PI*(rloc)/a_rad;
   Real cosval = cos(carg);
   val = cosval*cosval;
+  return val;
+}
+
+
+//=================================================
+PROTO_KERNEL_START 
+void InitializeSpotF(int       a_p[DIM],
+                     Var<Real, 1>       a_phi,
+                     Real      a_X0,
+                     Real      a_rad,
+                     Real      a_dx)
+{
+  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
   a_phi(0) = val;
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
+
+
+
+//=================================================
+PROTO_KERNEL_START 
+void checkSpotF(int       a_p[DIM],
+                     Var<Real, 1>       a_phi,
+                     Real      a_X0,
+                     Real      a_rad,
+                     Real      a_dx)
+{
+  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  Real phi = a_phi(0);
+  Real diff = phi - val;
+  if(std::abs(diff) > 1.0e-6)
+  {
+    using std::cout;
+    using std::endl;
+    cout << "bogus value at point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
+  }
+}
+PROTO_KERNEL_END(checkSpotF, checkSpot)
 
 
 ///

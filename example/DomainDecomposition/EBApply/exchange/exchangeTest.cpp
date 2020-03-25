@@ -41,6 +41,10 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   pp.get("nx"        , nx);
+  Real blobCen, blobRad;
+
+  pp.get("blob_cen", blobCen);
+  pp.get("blob_rad", blobRad);
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
@@ -51,15 +55,76 @@ runTest(int a_argc, char* a_argv[])
 
   Real geomCen, geomRad;
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
+  Box domain = vecdomains[0];
 
-  auto graphs = m_geoserv->getGraphs(m_domain);
-
+  auto graphs = geoserv->getGraphs(domain);
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
   auto grids = vecgrids[0];
   EBLevelBoxData<CELL, 1>  cellDat(grids, dataGhostIV, graphs);
   EBLevelFluxData<1>       fluxDat(grids, dataGhostIV, graphs);
-  
+  DataIterator dit = grids.dataIterator();
+  Copier exchangeCopier;
+  exchangeCopier.exchangeDefine(grids, dataGhostIV);
+  unsigned int numflops = 0;
+  pout() << "initializing valid data" << endl;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& cellfab = cellDat[dit[ibox]];
+    auto& fluxfab = fluxDat[dit[ibox]];
+
+    Bx grid = ProtoCh::getProtoBox(grids[dit[ibox]]);
+    ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
+                      cellfab, blobCen, blobRad, dx);
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      auto& xfab = *fluxfab.m_xflux;
+      auto& yfab = *fluxfab.m_yflux;
+
+      Bx xgrid = grid.growHi(0, 1);
+      Bx ygrid = grid.growHi(1, 1);
+      
+      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  xgrid,
+                        xfab, blobCen, blobRad, dx);
+      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  ygrid,
+                        yfab, blobCen, blobRad, dx);
+    }
+  }
+
+  pout() << "calling exchange to fill ghost cells" << endl;
+  cellDat.exchange(exchangeCopier);
+  fluxDat.exchange(exchangeCopier);
+  Bx domainbx = ProtoCh::getProtoBox(domain);
+  Bx domainbx_x = domainbx.growHi(0,1);
+  Bx domainbx_y = domainbx.growHi(1,1);
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& cellfab = cellDat[dit[ibox]];
+    auto& fluxfab = fluxDat[dit[ibox]];
+    Bx grid = cellfab.box();
+    grid &= domainbx;
+    pout() << "checking cell   data" << endl;
+    ebforallInPlace_i(numflops, "checkSpot", checkSpot,  grid,
+                      cellfab, blobCen, blobRad, dx);
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      auto& xfab = *fluxfab.m_xflux;
+      auto& yfab = *fluxfab.m_yflux;
+
+      Bx xgrid = xfab.box();
+      Bx ygrid = yfab.box();
+      xgrid &= domainbx_x;
+      ygrid &= domainbx_y;
+      
+      pout() << "checking x face data" << endl;
+      ebforallInPlace_i(numflops, "checkSpot", checkSpot,  xgrid,
+                        xfab, blobCen, blobRad, dx);
+      pout() << "checking y face data" << endl;
+      ebforallInPlace_i(numflops, "checkSpot", checkSpot,  ygrid,
+                        yfab, blobCen, blobRad, dx);
+    }
+  }
+  return 0;
 }
 
 #include "Chombo_NamespaceFooter.H"
