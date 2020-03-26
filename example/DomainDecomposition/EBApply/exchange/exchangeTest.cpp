@@ -19,6 +19,7 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBLevelFluxData.H"
 #include "DebugFunctions.H"
+#include "HostDebugFunctions.H"
 #include "SetupFunctions.H"
 #include <iomanip>
 
