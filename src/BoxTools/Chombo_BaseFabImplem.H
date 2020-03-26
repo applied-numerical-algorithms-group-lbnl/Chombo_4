@@ -19,6 +19,7 @@
 #include "Chombo_MayDay.H"
 #include "Chombo_parstream.H"
 #include "Chombo_BoxIterator.H"
+#include "Chombo_BFM.H"
 #include "Chombo_NamespaceHeader.H"
 
 //
@@ -525,8 +526,12 @@ template <class T> inline void BaseFab<T>::linearOut(void*           a_buf,
                                                      const Box&      a_R,
                                                      const Interval& a_comps) const
 {
-  linearOut2(a_buf, a_R, a_comps);
+  T* buffer = (T*) a_buf;
+  int ncomps = a_comps.end()-a_comps.begin();
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
+                   [&buffer](const T* __restrict__ d){*buffer=(*d); buffer++;});
 }
+
 template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
                                                        const Box&      a_R,
                                                        const Interval& a_comps) const
@@ -553,7 +558,6 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
                                                     const Box&      a_R,
                                                     const Interval& a_comps)
 {
-  //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
   int ncomps = a_comps.end() - a_comps.begin() + 1;
   BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,

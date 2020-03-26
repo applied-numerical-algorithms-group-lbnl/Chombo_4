@@ -1,50 +1,14 @@
-#ifndef __DBGFunctionss__
-#define __DBGFunctionss__
+#ifndef __HostDBGFunctionss__
+#define __HostDBGFunctionss__
 #define PI 3.141592653589793
+#include "Proto_EBHostData.H"
+#include "Proto_EBHostFluxData.H"
 #include "Chombo_NamespaceHeader.H"
-using Proto::Var;
-void 
-dumpVecRV(Vector<RealVect>* a_dataPtr)
-{
-  if(a_dataPtr != NULL)
-  {
-    cout    << setprecision(8)
-            << setiosflags(ios::showpoint)
-            << setiosflags(ios::scientific);
-
-    for(int ivec = 0; ivec < a_dataPtr->size(); ivec++)
-    {
-      
-      cout << ivec << ":" << (*a_dataPtr)[ivec];
-      cout << endl;
-    }
-  }
-}
-
-void
-dumpPS(PointSet* dataPtr)
-{
-  if(dataPtr != NULL)
-  {
-    PointSet irregset = *dataPtr;
-    int irow = 0;
-    for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
-    {
-      cout << ivsit() << " ";
-      irow++;
-      if(irow > 10) 
-      {
-        cout << endl;
-        irow = 0;
-      }
-    }
-    cout << endl;
-  }
-}
-
+using Proto::EBHostData;
+using Proto::EBHostFluxData;
 #if DIM==2
 void 
-genDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr, Point lodeb, Point hideb)
+genDumpHostCellDIM(EBHostData<CELL, Real, DIM>* dataPtr, Point lodeb, Point hideb)
 {
   if(dataPtr != NULL)
   {
@@ -53,7 +17,7 @@ genDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr, Point lodeb, Point hideb)
             << setiosflags(ios::scientific);
 
     EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, DIM> & data = *dataPtr;
+    EBHostData<CELL, Real, DIM> & data = *dataPtr;
     Bx databox = dataPtr->box();
     databox &= graph.getDomain();
     if((databox.contains(lodeb)) || (databox.contains(hideb)))
@@ -93,7 +57,7 @@ genDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr, Point lodeb, Point hideb)
 }
 
 void 
-genDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
+genDumpHostCell1(EBHostData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
 {
   if(dataPtr != NULL)
   {
@@ -102,7 +66,7 @@ genDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
             << setiosflags(ios::scientific);
 
     EBGraph graph = dataPtr->ebgraph();
-    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    EBHostData<CELL, Real, 1> & data = *dataPtr;
     Bx databox = dataPtr->box();
     databox &= graph.getDomain();
     if((databox.contains(lodeb)) || (databox.contains(hideb)))
@@ -139,7 +103,7 @@ genDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
 
 
 void 
-fullDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
+fullDumpHostCell1(EBHostData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -153,13 +117,13 @@ fullDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
     databox &= graph.getDomain();
     Point lodeb = databox.low();
     Point hideb = databox.high();
-    genDumpCell1(dataPtr, lodeb, hideb);
+    genDumpHostCell1(dataPtr, lodeb, hideb);
   }
 }
 
 
 void 
-fullDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+fullDumpHostCellDIM(EBHostData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -172,34 +136,34 @@ fullDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
     databox &= graph.getDomain();
     Point lodeb = databox.low();
     Point hideb = databox.high();
-    genDumpCellDIM(dataPtr, lodeb, hideb);
+    genDumpHostCellDIM(dataPtr, lodeb, hideb);
   }
 }
 void 
-dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpHostLD1(LevelData<EBHostData<CELL, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelBoxData<CELL, 1>& data = *dataPtr;
+    LevelData<EBHostData<CELL, Real, 1> >& data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      fullDumpCell1(&data[dit[ibox]]);
+      fullDumpHostCell1(&data[dit[ibox]]);
     }
   }
 }
 void 
-dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
+dumpHostLDDIM(LevelData<EBHostData<CELL, Real, DIM> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelBoxData<CELL, DIM>& data = *dataPtr;
+    LevelData<EBHostData<CELL, Real, DIM> >& data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      fullDumpCellDIM(&data[dit[ibox]]);
+      fullDumpHostCellDIM(&data[dit[ibox]]);
     }
   }
 }
@@ -207,7 +171,7 @@ dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
 
 
 void 
-dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
+dumpHostEB1(EBHostData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -223,7 +187,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
     databox &= graph.getDomain();
     Point lodeb = databox.low();
     Point hideb = databox.high();
-    genDumpCell1(dataPtr, lodeb, hideb);
+    genDumpHostCell1(dataPtr, lodeb, hideb);
   }
 }
 
@@ -231,7 +195,7 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
 
 
 void 
-dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+dumpHostEBDIM(EBHostData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -241,13 +205,13 @@ dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 
     Point lodeb = dataPtr->box().low();
     Point hideb = dataPtr->box().high();
-    genDumpCellDIM(dataPtr, lodeb, hideb);
+    genDumpHostCellDIM(dataPtr, lodeb, hideb);
   }
 }
 
 
 void 
-genDumpXFace1(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr,
+genDumpHostXFace1(shared_ptr<EBHostData<XFACE, Real, 1> >* dataPtr,
               Point lodeb,
               Point hideb)
 {
@@ -257,7 +221,7 @@ genDumpXFace1(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr,
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<XFACE, Real, 1> & data = *(*dataPtr);
+    EBHostData<XFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
     databox.grow(0, -1);
@@ -305,7 +269,7 @@ genDumpXFace1(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr,
   }
 }
 void 
-dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
+dumpHostXFace(shared_ptr<EBHostData<XFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -313,7 +277,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<XFACE, Real, 1> & data = *(*dataPtr);
+    EBHostData<XFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
     databox.grow(0, -1);
@@ -321,13 +285,13 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
     Bx area = databox & graph.getDomain();
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpXFace1(dataPtr, lodeb, hideb);
+    genDumpHostXFace1(dataPtr, lodeb, hideb);
   }
 }
 
 
 void 
-genDumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr, 
+genDumpHostXFaceDIM(shared_ptr<EBHostData<XFACE, Real, DIM> >* dataPtr, 
                 Point lodeb,
                 Point hideb)
 {
@@ -337,7 +301,7 @@ genDumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr,
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<XFACE, Real, DIM> & data = *(*dataPtr);
+    EBHostData<XFACE, Real, DIM> & data = *(*dataPtr);
     for(int idir = 0 ; idir < DIM; idir++)
     {
       Bx databox = data.box();
@@ -393,7 +357,7 @@ genDumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr,
 }
 
 void 
-dumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
+dumpHostXFaceDIM(shared_ptr<EBHostData<XFACE, Real, DIM> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -408,13 +372,13 @@ dumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
 
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpXFaceDIM(dataPtr, lodeb, hideb);
+    genDumpHostXFaceDIM(dataPtr, lodeb, hideb);
   }
 }
 
 
 void 
-genDumpYFace1(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr,
+genDumpHostYFace1(shared_ptr<EBHostData<YFACE, Real, 1> >* dataPtr,
               Point lodeb,
               Point hideb)
 {
@@ -424,7 +388,7 @@ genDumpYFace1(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr,
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<YFACE, Real, 1> & data = *(*dataPtr);
+    EBHostData<YFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
     databox.grow(0, -1);
@@ -475,7 +439,7 @@ genDumpYFace1(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr,
 
 
 void 
-dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
+dumpHostYFace(shared_ptr<EBHostData<YFACE, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -483,7 +447,7 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<YFACE, Real, 1> & data = *(*dataPtr);
+    EBHostData<YFACE, Real, 1> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
     databox.grow(0, -1);
@@ -491,13 +455,13 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
     Bx area = databox & graph.getDomain();             // 
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpYFace1(dataPtr, lodeb, hideb);
+    genDumpHostYFace1(dataPtr, lodeb, hideb);
   }
 }
 
 
 void 
-genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
+genDumpHostYFaceDIM(shared_ptr<EBHostData<YFACE, Real, DIM> >* dataPtr,
                 Point lodeb, Point hideb)
 {
   if(dataPtr != NULL)
@@ -506,7 +470,7 @@ genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<YFACE, Real, DIM> & data = *(*dataPtr);
+    EBHostData<YFACE, Real, DIM> & data = *(*dataPtr);
     for(int idir = 0; idir < DIM; idir++)
     {
       pout() << "variable  = "  << idir << endl;
@@ -561,7 +525,7 @@ genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
 
 
 void 
-dumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
+dumpHostYFaceDIM(shared_ptr<EBHostData<YFACE, Real, DIM> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -569,7 +533,7 @@ dumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
             << setiosflags(ios::showpoint)
             << setiosflags(ios::scientific);
 
-    EBBoxData<YFACE, Real, DIM> & data = *(*dataPtr);
+    EBHostData<YFACE, Real, DIM> & data = *(*dataPtr);
     EBGraph graph = data.ebgraph();
     Bx databox = data.box();
     databox.grow(1, -1);
@@ -577,206 +541,203 @@ dumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
     Bx area = databox & graph.getDomain();
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpYFaceDIM(dataPtr, lodeb, hideb);
+    genDumpHostYFaceDIM(dataPtr, lodeb, hideb);
   }
 }
 
 void 
-dumpFlux1(EBFluxData<Real, 1>*  dataPtr)
+dumpHostFlux1(EBHostFluxData<Real, 1>*  dataPtr)
 {
   if(dataPtr != NULL)
   {
     pout() << "x face data:" << endl;
-    dumpXFace(&(dataPtr->m_xflux));
+    dumpHostXFace(&(dataPtr->m_xflux));
     pout() << "y face data:" << endl;
-    dumpYFace(&(dataPtr->m_yflux));
+    dumpHostYFace(&(dataPtr->m_yflux));
   }
 }
 
 void 
-dumpFluxDIM(EBFluxData<Real, DIM>*  dataPtr)
+dumpHostFluxDIM(EBHostFluxData<Real, DIM>*  dataPtr)
 {
   if(dataPtr != NULL)
   {
     pout() << "x face data:" << endl;
-    dumpXFaceDIM(&(dataPtr->m_xflux));
+    dumpHostXFaceDIM(&(dataPtr->m_xflux));
     pout() << "y face data:" << endl;
-    dumpYFaceDIM(&(dataPtr->m_yflux));
+    dumpHostYFaceDIM(&(dataPtr->m_yflux));
   }
 }
 
 void 
-dumpLDFlux1(EBLevelFluxData<1>*  dataPtr)
+dumpHostLDFlux1(LevelData<EBHostFluxData<Real, 1> >*  dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelFluxData<1>& data = *dataPtr;
+    LevelData<EBHostFluxData<Real, 1> > & data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       
       pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFlux1(&(data[dit[ibox]]));
+      dumpHostFlux1(&(data[dit[ibox]]));
     }
   }
 }
 void 
-dumpLDFluxDIM(EBLevelFluxData<DIM>*  dataPtr)
+dumpHostLDFluxDIM(LevelData<EBHostFluxData<Real, DIM> >*  dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelFluxData<DIM>& data = *dataPtr;
+    LevelData<EBHostFluxData<Real, DIM> >& data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       
       pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFluxDIM(&(data[dit[ibox]]));
+      dumpHostFluxDIM(&(data[dit[ibox]]));
     }
   }
 }
 
-void dummyfunc()
+
+
+Point lodebareahost(1, 10);
+Point hidebareahost(4, 20);                                    
+
+void dumpHostEB1Area(EBHostData<CELL, Real, 1>* dataPtr)
 {
-  dumpLDDIM(NULL);
-  dumpLDFluxDIM(NULL);
-  dumpLD1(NULL);
-  dumpLDFlux1(NULL);
-  dumpXFace(NULL);
-  dumpYFace(NULL);
-  dumpFlux1(NULL);
-  dumpEB1(NULL);
+  genDumpHostCell1(dataPtr, lodebareahost, hidebareahost);
 }
-
-
-Point lodebarea(1, 10);
-Point hidebarea(4, 20);                                    
-
-void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
+void dumpHostEBDIMArea(EBHostData<CELL, Real, DIM>* dataPtr)
 {
-  genDumpCell1(dataPtr, lodebarea, hidebarea);
-}
-void dumpEBDIMArea(EBBoxData<CELL, Real, DIM>* dataPtr)
-{
-  genDumpCellDIM(dataPtr, lodebarea, hidebarea);
+  genDumpHostCellDIM(dataPtr, lodebareahost, hidebareahost);
 }
 
 void 
-dumpLD1Area(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpHostLD1Area(LevelData<EBHostData<CELL, Real, 1> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelBoxData<CELL, 1>& data = *dataPtr;
+    LevelData<EBHostData<CELL, Real, 1> >& data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      genDumpCell1(&data[dit[ibox]], lodebarea, hidebarea);
+      genDumpHostCell1(&data[dit[ibox]], lodebareahost, hidebareahost);
     }
   }
 }
 void 
-dumpLDDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
+dumpHostLDDIMArea(LevelData<EBHostData<CELL, Real, DIM> >* dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelBoxData<CELL, DIM>& data = *dataPtr;
+    LevelData<EBHostData<CELL, Real, DIM> >& data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      genDumpCellDIM(&data[dit[ibox]], lodebarea, hidebarea);
+      genDumpHostCellDIM(&data[dit[ibox]], lodebareahost, hidebareahost);
     }
   }
 }
 void 
-dumpXFaceDIMArea(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
+dumpHostXFaceDIMArea(shared_ptr<EBHostData<XFACE, Real, DIM> >* dataPtr)
 {
-  genDumpXFaceDIM(dataPtr, lodebarea, hidebarea);
+  genDumpHostXFaceDIM(dataPtr, lodebareahost, hidebareahost);
 }
 void 
-dumpXFace1Area(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
+dumpHostXFace1Area(shared_ptr<EBHostData<XFACE, Real, 1> >* dataPtr)
 {
-  genDumpXFace1(dataPtr, lodebarea, hidebarea);
+  genDumpHostXFace1(dataPtr, lodebareahost, hidebareahost);
 }
 void 
-dumpYFaceDIMArea(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
+dumpHostYFaceDIMArea(shared_ptr<EBHostData<YFACE, Real, DIM> >* dataPtr)
 {
-  genDumpYFaceDIM(dataPtr, lodebarea, hidebarea);
+  genDumpHostYFaceDIM(dataPtr, lodebareahost, hidebareahost);
 }
 void 
-dumpYFace1Area(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
+dumpHostYFace1Area(shared_ptr<EBHostData<YFACE, Real, 1> >* dataPtr)
 {
-  genDumpYFace1(dataPtr, lodebarea, hidebarea);
+  genDumpHostYFace1(dataPtr, lodebareahost, hidebareahost);
 }
 
 void 
-dumpFlux1Area(EBFluxData<Real, 1>*  dataPtr)
+dumpHostFlux1Area(EBHostFluxData<Real, 1>*  dataPtr)
 {
   if(dataPtr != NULL)
   {
     pout() << "x face data:" << endl;
-    dumpXFace1Area(&(dataPtr->m_xflux));
+    dumpHostXFace1Area(&(dataPtr->m_xflux));
     pout() << "y face data:" << endl;
-    dumpYFace1Area(&(dataPtr->m_yflux));
+    dumpHostYFace1Area(&(dataPtr->m_yflux));
   }
 }
 void 
-dumpFluxDIMArea(EBFluxData<Real, DIM>*  dataPtr)
+dumpHostFluxDIMArea(EBHostFluxData<Real, DIM>*  dataPtr)
 {
   if(dataPtr != NULL)
   {
     pout() << "x face data:" << endl;
-    dumpXFaceDIMArea(&(dataPtr->m_xflux));
+    dumpHostXFaceDIMArea(&(dataPtr->m_xflux));
     pout() << "y face data:" << endl;
-    dumpYFaceDIMArea(&(dataPtr->m_yflux));
+    dumpHostYFaceDIMArea(&(dataPtr->m_yflux));
   }
 }
 
 void 
-dumpLDFluxDIMArea(EBLevelFluxData<DIM>*  dataPtr)
+dumpHostLDFluxDIMArea(LevelData<EBHostFluxData<Real, DIM>  >*  dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelFluxData<DIM>& data = *dataPtr;
+    LevelData<EBHostFluxData<Real, DIM> > & data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       
       pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFluxDIMArea(&(data[dit[ibox]]));
+      dumpHostFluxDIMArea(&(data[dit[ibox]]));
     }
   }
 }
 void 
-dumpLDFlux1Area(EBLevelFluxData<1>*  dataPtr)
+dumpHostLDFlux1Area(LevelData<EBHostFluxData<Real, 1> > *  dataPtr)
 {
   if(dataPtr != NULL)
   {
-    EBLevelFluxData<1>& data = *dataPtr;
+    LevelData<EBHostFluxData<Real, 1> > & data = *dataPtr;
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       
       pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFlux1Area(&(data[dit[ibox]]));
+      dumpHostFlux1Area(&(data[dit[ibox]]));
     }
   }
 }
 
-void dummyfunc_too()
+void dummyfunc_too_bad_for_me()
 {
-  dumpLDDIMArea(NULL);
-  dumpLDFluxDIMArea(NULL);
-  dumpLD1Area(NULL);
-  dumpLDFlux1Area(NULL);
-  dumpXFace1Area(NULL);
-  dumpYFace1Area(NULL);
-  dumpXFaceDIMArea(NULL);
-  dumpYFaceDIMArea(NULL);
-  dumpFlux1Area(NULL);
-  dumpEB1Area(NULL);
-  dumpEBDIMArea(NULL);
+  dumpHostLDDIM(NULL);
+  dumpHostLDFluxDIM(NULL);
+  dumpHostLD1(NULL);
+  dumpHostLDFlux1(NULL);
+  dumpHostXFace(NULL);
+  dumpHostYFace(NULL);
+  dumpHostFlux1(NULL);
+  dumpHostEB1(NULL);
+  dumpHostLDDIMArea(NULL);
+  dumpHostLDFluxDIMArea(NULL);
+  dumpHostLD1Area(NULL);
+  dumpHostLDFlux1Area(NULL);
+  dumpHostXFace1Area(NULL);
+  dumpHostYFace1Area(NULL);
+  dumpHostXFaceDIMArea(NULL);
+  dumpHostYFaceDIMArea(NULL);
+  dumpHostFlux1Area(NULL);
+  dumpHostEB1Area(NULL);
+  dumpHostEBDIMArea(NULL);
 }
 #endif
 #include "Chombo_NamespaceFooter.H"

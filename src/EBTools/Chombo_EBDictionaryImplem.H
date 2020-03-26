@@ -1,5 +1,5 @@
 
-#ifndef _Chomboo_EBDictionaryImplem_H_
+#ifndef _Chombo_EBDictionaryImplem_H_
 #define _Chombo_EBDictionaryImplem_H_
 
 

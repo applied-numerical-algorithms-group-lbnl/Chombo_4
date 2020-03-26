@@ -162,7 +162,7 @@ public:
 
     copyToHost(hostdata, *this);
 
-    hostdata.exchange();
+    hostdata.exchange(copier);
 
     copyToDevice(*this, hostdata);
   }

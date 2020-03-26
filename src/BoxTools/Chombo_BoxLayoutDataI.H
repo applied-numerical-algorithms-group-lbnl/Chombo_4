@@ -74,7 +74,7 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da, const Interval&
   this->m_threadSafe = factory.threadSafe();
   //this->m_threadSafe = false;
   
-  Interval dest(0, m_comps-1);
+  //  Interval dest(0, m_comps-1);
   allocateGhostVector(factory);
 //  setVector(da, comps, dest);
 }
@@ -139,7 +139,7 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da,
     m_comps    = da.nComp();
     this->m_threadSafe = factory.threadSafe();
     //this->m_threadSafe = false;
-    Interval srcAnddest(0, m_comps-1);
+    //  Interval srcAnddest(0, m_comps-1);
     allocateGhostVector(factory);
 //    setVector(da, srcAnddest, srcAnddest);
   }
