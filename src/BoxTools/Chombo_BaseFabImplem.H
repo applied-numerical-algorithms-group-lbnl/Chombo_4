@@ -537,11 +537,8 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
                                                        const Interval& a_comps) const
 {
   T* buffer = (T*)a_buf;
-  int ncomps = a_comps.end() - a_comps.begin() + 1;
-  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
-              [&buffer](T s) { *buffer = s; ++buffer; });
 
-/*  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
   {
     for (BoxIterator bit(a_R); bit.ok(); ++bit)
     {
@@ -550,7 +547,7 @@ template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
       ++buffer;
     }
   }
-*/
+
   return (void*)buffer;
 }
 
@@ -561,16 +558,7 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
   T* buffer = (T*) a_buf;
   int ncomps = a_comps.end() - a_comps.begin() + 1;
   BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
-              [&buffer](T s) { s = *buffer; ++buffer; });
-  /*for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
-    {
-      for (BoxIterator bit(a_R); bit.ok(); ++bit)
-        {
-          IntVect iv = bit();
-          (*this)(iv, icomp) = *buffer;
-          ++buffer;
-        }
-    }*/
+              [&buffer](T* __restrict__ d) { (*d) = *buffer; buffer++; });
 }
 
 
@@ -580,10 +568,7 @@ template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
 {
   //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
-  int ncomps = a_comps.end() - a_comps.begin() + 1;
-  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
-              [&buffer](T s) { s = *buffer; ++buffer; });
-  /*for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
     {
       for (BoxIterator bit(a_R); bit.ok(); ++bit)
         {
@@ -591,7 +576,7 @@ template <class T> inline void* BaseFab<T>::linearIn2(void*           a_buf,
           (*this)(iv, icomp) = *buffer;
           ++buffer;
         }
-    }*/
+    }
   return buffer;
 }
 
