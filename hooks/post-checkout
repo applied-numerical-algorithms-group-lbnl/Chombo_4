@@ -1,21 +1,14 @@
 #!/usr/bin/python
 
-import sys, os, re
-from subprocess import check_output
+import sys, os
 
-# Collect the parameters
-previous_head = sys.argv[1]
-new_head = sys.argv[2]
-is_branch_checkout = sys.argv[3]
-
-if is_branch_checkout == "0":
-#    print "post-checkout: This is a file checkout. Nothing to do."
-    sys.exit(0)
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-for root, dirs, files in os.walk(dir_path + '/../example/DomainDecomposition'):
-    for filename in files:
-        if filename == 'GNUmakefile':
-            os.path.join(root,filename)
-            os.system("make realclean -C " + root + "> /dev/null")
-            continue
+if sys.argv[3] == "1":  # determines branch (1) or file (0) checkout
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    for root, dirs, files in os.walk(dir_path + '/../example/DomainDecomposition'):
+        for filename in files:
+            if filename == 'GNUmakefile':
+                os.path.join(root,filename)
+                os.system("make realclean -C " + root + "> /dev/null")
+                continue
+#  else:
+#      print "post-checkout: This is a file checkout. Nothing to do."
