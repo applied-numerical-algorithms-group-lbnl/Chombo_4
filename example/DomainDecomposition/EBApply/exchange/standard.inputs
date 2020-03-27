@@ -1,6 +1,6 @@
 #domain size
-nx=       64
-maxGrid =32
+nx=      32
+maxGrid =16
 # center of the blob
 blob_cen = 0.3
 # radius of the blob

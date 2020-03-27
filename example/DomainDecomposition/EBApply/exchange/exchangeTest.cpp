@@ -82,12 +82,9 @@ runTest(int a_argc, char* a_argv[])
       auto& xfab = *fluxfab.m_xflux;
       auto& yfab = *fluxfab.m_yflux;
 
-      Bx xgrid = grid.growHi(0, 1);
-      Bx ygrid = grid.growHi(1, 1);
-      
-      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  xgrid,
+      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
                         xfab, blobCen, blobRad, dx);
-      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  ygrid,
+      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
                         yfab, blobCen, blobRad, dx);
     }
   }
@@ -96,8 +93,6 @@ runTest(int a_argc, char* a_argv[])
   cellDat.exchange(exchangeCopier);
   fluxDat.exchange(exchangeCopier);
   Bx domainbx = ProtoCh::getProtoBox(domain);
-  Bx domainbx_x = domainbx.growHi(0,1);
-  Bx domainbx_y = domainbx.growHi(1,1);
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     auto& cellfab = cellDat[dit[ibox]];
@@ -114,8 +109,8 @@ runTest(int a_argc, char* a_argv[])
 
       Bx xgrid = xfab.box();
       Bx ygrid = yfab.box();
-      xgrid &= domainbx_x;
-      ygrid &= domainbx_y;
+      xgrid &= domainbx;
+      ygrid &= domainbx;
       
       pout() << "checking x face data" << endl;
       ebforallInPlace_i(numflops, "checkSpot", checkSpot,  xgrid,

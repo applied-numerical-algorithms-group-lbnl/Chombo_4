@@ -52,6 +52,7 @@ using   ::Proto::Point;
 using   ::Proto::BoxData;
 using   ::Proto::Stencil;
 using   ::Proto::RK4;
+using   ::Proto::Reduction;
 using   ::ProtoCh::getPoint;
 using   ::ProtoCh::getProtoBox;
 using   ::ProtoCh::getIntVect;
@@ -320,8 +321,7 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U);
-
+  Real maxwave = EulerOp::maxWave(*state.m_U, state.m_Rxn);
 //  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
