@@ -428,6 +428,7 @@ writeEBLevelHDF5(const string& a_filename,
                  Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0)
 {
 
+#ifdef CH_USE_HDF5
   typedef GraphConstructorFactory<EBHostData<CELL, Real, NUMCOMPS> > hostfactDat_t;
   typedef GraphConstructorFactory<EBHostData<CELL, Real, 1       > > hostfactKap_t;
   
@@ -493,7 +494,10 @@ writeEBLevelHDF5(const string& a_filename,
   
   WriteAMRHierarchyHDF5(a_filename, vecgrids, vecdata, names, a_domain,
                         a_dx, a_dt, a_time, Vector<int>(1,2), numlev);
-  
+#else
+    printf("hdf5 not enabled\n");
+#endif
+
 }
                  
 
