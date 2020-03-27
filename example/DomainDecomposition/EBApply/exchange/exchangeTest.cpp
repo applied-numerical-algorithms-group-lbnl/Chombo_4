@@ -62,62 +62,125 @@ runTest(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
   auto grids = vecgrids[0];
-  EBLevelBoxData<CELL, 1>  cellDat(grids, dataGhostIV, graphs);
-  EBLevelFluxData<1>       fluxDat(grids, dataGhostIV, graphs);
   DataIterator dit = grids.dataIterator();
   Copier exchangeCopier;
   exchangeCopier.exchangeDefine(grids, dataGhostIV);
-  unsigned int numflops = 0;
-  pout() << "initializing valid data" << endl;
-  for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    auto& cellfab = cellDat[dit[ibox]];
-    auto& fluxfab = fluxDat[dit[ibox]];
-
-    Bx grid = ProtoCh::getProtoBox(grids[dit[ibox]]);
-    ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
-                      cellfab, blobCen, blobRad, dx);
-    for(int idir = 0; idir < DIM; idir++)
+    pout() << "Single-variable  data" << endl;
+    EBLevelBoxData<CELL, 1>  cellDat(grids, dataGhostIV, graphs);
+    EBLevelFluxData<1>       fluxDat(grids, dataGhostIV, graphs);
+    
+    unsigned int numflops = 0;
+    pout() << "initializing valid data" << endl;
+    for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      auto& xfab = *fluxfab.m_xflux;
-      auto& yfab = *fluxfab.m_yflux;
+      auto& cellfab = cellDat[dit[ibox]];
+      auto& fluxfab = fluxDat[dit[ibox]];
 
+      Bx grid = ProtoCh::getProtoBox(grids[dit[ibox]]);
       ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
-                        xfab, blobCen, blobRad, dx);
-      ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
-                        yfab, blobCen, blobRad, dx);
+                        cellfab, blobCen, blobRad, dx);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        auto& xfab = *fluxfab.m_xflux;
+        auto& yfab = *fluxfab.m_yflux;
+
+        ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
+                          xfab, blobCen, blobRad, dx);
+        ebforallInPlace_i(numflops, "IntializeSpot", InitializeSpot,  grid,
+                          yfab, blobCen, blobRad, dx);
+      }
+    }
+
+    pout() << "calling exchange to fill ghost cells" << endl;
+    cellDat.exchange(exchangeCopier);
+    fluxDat.exchange(exchangeCopier);
+    Bx domainbx = ProtoCh::getProtoBox(domain);
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      auto& cellfab = cellDat[dit[ibox]];
+      auto& fluxfab = fluxDat[dit[ibox]];
+      Bx grid = cellfab.box();
+      grid &= domainbx;
+      pout() << "checking cell   data" << endl;
+      ebforallInPlace_i(numflops, "checkSpot", checkSpot,  grid,
+                        cellfab, blobCen, blobRad, dx);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        auto& xfab = *fluxfab.m_xflux;
+        auto& yfab = *fluxfab.m_yflux;
+
+        Bx xgrid = xfab.box();
+        Bx ygrid = yfab.box();
+        xgrid &= domainbx;
+        ygrid &= domainbx;
+      
+        pout() << "checking x face data" << endl;
+        ebforallInPlace_i(numflops, "checkSpot", checkSpot,  xgrid,
+                          xfab, blobCen, blobRad, dx);
+        pout() << "checking y face data" << endl;
+        ebforallInPlace_i(numflops, "checkSpot", checkSpot,  ygrid,
+                          yfab, blobCen, blobRad, dx);
+      }
     }
   }
-
-  pout() << "calling exchange to fill ghost cells" << endl;
-  cellDat.exchange(exchangeCopier);
-  fluxDat.exchange(exchangeCopier);
-  Bx domainbx = ProtoCh::getProtoBox(domain);
-  for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    auto& cellfab = cellDat[dit[ibox]];
-    auto& fluxfab = fluxDat[dit[ibox]];
-    Bx grid = cellfab.box();
-    grid &= domainbx;
-    pout() << "checking cell   data" << endl;
-    ebforallInPlace_i(numflops, "checkSpot", checkSpot,  grid,
-                      cellfab, blobCen, blobRad, dx);
-    for(int idir = 0; idir < DIM; idir++)
+    pout() << "DIM variables  data" << endl;
+    EBLevelBoxData<CELL, DIM>  cellDat(grids, dataGhostIV, graphs);
+    EBLevelFluxData<DIM>       fluxDat(grids, dataGhostIV, graphs);
+    
+    unsigned int numflops = 0;
+    pout() << "initializing valid data" << endl;
+    for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      auto& xfab = *fluxfab.m_xflux;
-      auto& yfab = *fluxfab.m_yflux;
+      auto& cellfab = cellDat[dit[ibox]];
+      auto& fluxfab = fluxDat[dit[ibox]];
 
-      Bx xgrid = xfab.box();
-      Bx ygrid = yfab.box();
-      xgrid &= domainbx;
-      ygrid &= domainbx;
+      Bx grid = ProtoCh::getProtoBox(grids[dit[ibox]]);
+      ebforallInPlace_i(numflops, "IntializeSpotDIM", InitializeSpotDIM,  grid,
+                        cellfab, blobCen, blobRad, dx);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        auto& xfab = *fluxfab.m_xflux;
+        auto& yfab = *fluxfab.m_yflux;
+
+        ebforallInPlace_i(numflops, "IntializeSpotDIM", InitializeSpotDIM,  grid,
+                          xfab, blobCen, blobRad, dx);
+        ebforallInPlace_i(numflops, "IntializeSpotDIM", InitializeSpotDIM,  grid,
+                          yfab, blobCen, blobRad, dx);
+      }
+    }
+
+    pout() << "calling exchange to fill ghost cells" << endl;
+    cellDat.exchange(exchangeCopier);
+    fluxDat.exchange(exchangeCopier);
+    Bx domainbx = ProtoCh::getProtoBox(domain);
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      auto& cellfab = cellDat[dit[ibox]];
+      auto& fluxfab = fluxDat[dit[ibox]];
+      Bx grid = cellfab.box();
+      grid &= domainbx;
+      pout() << "checking cell   data" << endl;
+      ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  grid,
+                        cellfab, blobCen, blobRad, dx);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        auto& xfab = *fluxfab.m_xflux;
+        auto& yfab = *fluxfab.m_yflux;
+
+        Bx xgrid = xfab.box();
+        Bx ygrid = yfab.box();
+        xgrid &= domainbx;
+        ygrid &= domainbx;
       
-      pout() << "checking x face data" << endl;
-      ebforallInPlace_i(numflops, "checkSpot", checkSpot,  xgrid,
-                        xfab, blobCen, blobRad, dx);
-      pout() << "checking y face data" << endl;
-      ebforallInPlace_i(numflops, "checkSpot", checkSpot,  ygrid,
-                        yfab, blobCen, blobRad, dx);
+        pout() << "checking x face data" << endl;
+        ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  xgrid,
+                          xfab, blobCen, blobRad, dx);
+        pout() << "checking y face data" << endl;
+        ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  ygrid,
+                          yfab, blobCen, blobRad, dx);
+      }
     }
   }
   return 0;
