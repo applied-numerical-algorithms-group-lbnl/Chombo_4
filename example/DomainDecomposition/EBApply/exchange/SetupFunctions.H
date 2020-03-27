@@ -169,7 +169,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
     
 
 
-  int geomGhost = 4;
+  int geomGhost = 6;
   RealVect origin = RealVect::Zero();
 
   pout() << "creating implicit function" << endl;

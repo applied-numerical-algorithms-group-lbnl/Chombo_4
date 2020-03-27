@@ -222,7 +222,7 @@ public:
     {
       ::Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);
       ::Proto::Box bxTo = ProtoCh::getProtoBox(RegionTo);
-      int isrc =  Csrc.begin();
+      int isrc = Csrc.begin();
       int idst = Cdest.begin();
       int inco = Csrc.size();
 //      dest.copy(RegionFrom, Cdest,RegionTo, src, Csrc);

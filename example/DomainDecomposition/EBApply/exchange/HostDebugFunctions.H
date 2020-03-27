@@ -552,8 +552,8 @@ dumpHostFlux1(EBHostFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFace(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpHostYFace(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpHostYFace(&(dataPtr->m_yflux));
   }
 }
 
@@ -564,8 +564,8 @@ dumpHostFluxDIM(EBHostFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFaceDIM(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpHostYFaceDIM(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpHostYFaceDIM(&(dataPtr->m_yflux));
   }
 }
 
@@ -578,9 +578,11 @@ dumpHostLDFlux1(LevelData<EBHostFluxData<Real, 1> >*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      
-      pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpHostFlux1(&(data[dit[ibox]]));
+      if(ibox < 2)
+      {
+        pout() << "level flux data for ibox = " << ibox << ":" << endl;
+        dumpHostFlux1(&(data[dit[ibox]]));
+      }
     }
   }
 }
@@ -593,9 +595,11 @@ dumpHostLDFluxDIM(LevelData<EBHostFluxData<Real, DIM> >*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      
-      pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpHostFluxDIM(&(data[dit[ibox]]));
+      if(ibox < 2)
+      {
+        pout() << "level flux data for ibox = " << ibox << ":" << endl;
+        dumpHostFluxDIM(&(data[dit[ibox]]));
+      }
     }
   }
 }
@@ -670,8 +674,8 @@ dumpHostFlux1Area(EBHostFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFace1Area(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpHostYFace1Area(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpHostYFace1Area(&(dataPtr->m_yflux));
   }
 }
 void 
@@ -681,8 +685,8 @@ dumpHostFluxDIMArea(EBHostFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFaceDIMArea(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpHostYFaceDIMArea(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpHostYFaceDIMArea(&(dataPtr->m_yflux));
   }
 }
 

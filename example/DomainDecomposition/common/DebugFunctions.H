@@ -588,8 +588,9 @@ dumpFlux1(EBFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFace(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpYFace(&(dataPtr->m_yflux));
+    pout() << "y face data skipped" << endl;
+//    pout() << "y face data:" << endl;
+//    dumpYFace(&(dataPtr->m_yflux));
   }
 }
 
@@ -600,8 +601,9 @@ dumpFluxDIM(EBFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFaceDIM(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpYFaceDIM(&(dataPtr->m_yflux));
+    pout() << "y face data skipped" << endl;
+//    pout() << "y face data:" << endl;
+//    dumpYFaceDIM(&(dataPtr->m_yflux));
   }
 }
 
@@ -717,8 +719,8 @@ dumpFlux1Area(EBFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFace1Area(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpYFace1Area(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpYFace1Area(&(dataPtr->m_yflux));
   }
 }
 void 
@@ -728,8 +730,8 @@ dumpFluxDIMArea(EBFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFaceDIMArea(&(dataPtr->m_xflux));
-    pout() << "y face data:" << endl;
-    dumpYFaceDIMArea(&(dataPtr->m_yflux));
+//    pout() << "y face data:" << endl;
+//    dumpYFaceDIMArea(&(dataPtr->m_yflux));
   }
 }
 
@@ -742,9 +744,11 @@ dumpLDFluxDIMArea(EBLevelFluxData<DIM>*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      
-      pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFluxDIMArea(&(data[dit[ibox]]));
+      if(ibox < 2)
+      {
+        pout() << "level flux data for ibox = " << ibox << ":" << endl;
+        dumpFluxDIMArea(&(data[dit[ibox]]));
+      }
     }
   }
 }
@@ -757,9 +761,11 @@ dumpLDFlux1Area(EBLevelFluxData<1>*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      
-      pout() << "level flux data for ibox = " << ibox << ":" << endl;
-      dumpFlux1Area(&(data[dit[ibox]]));
+      if(ibox < 2)
+      {
+        pout() << "level flux data for ibox = " << ibox << ":" << endl;
+        dumpFlux1Area(&(data[dit[ibox]]));
+      }
     }
   }
 }
