@@ -278,7 +278,6 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
   {
     CH_TIME("step_no_gather");
     DataIterator dit = grids.dataIterator();
-    a_Rxn.reset();
 
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
@@ -294,7 +293,6 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
 #endif
     }
   }
-  maxwaveproc = maxwaveproc + a_Rxn.fetch(); // fetch = 0 without CUDA
   Real maxwaveall;
   {
       CH_TIME("gatherMaxWaveSpeed");
