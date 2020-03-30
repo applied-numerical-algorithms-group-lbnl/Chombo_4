@@ -52,6 +52,7 @@ using   ::Proto::Point;
 using   ::Proto::BoxData;
 using   ::Proto::Stencil;
 using   ::Proto::RK4;
+using   ::Proto::Reduction;
 using   ::ProtoCh::getPoint;
 using   ::ProtoCh::getProtoBox;
 using   ::ProtoCh::getIntVect;
@@ -247,17 +248,6 @@ writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, 
 void eulerRun(const RunParams& a_params)
 {
 
-#ifdef __CORIGPU
-#ifdef CH_MPI
-    // Get the rank of the process
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    //std::cout << " rank =  " << world_rank << std::endl;
-
-    cudaSetDevice(world_rank);
-#endif
-#endif
 
   CH_TIME("eulerRun");
   Real tstop = a_params.tmax;
@@ -320,8 +310,7 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U);
-
+  Real maxwave = EulerOp::maxWave(*state.m_U, state.m_Rxn);
 //  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;

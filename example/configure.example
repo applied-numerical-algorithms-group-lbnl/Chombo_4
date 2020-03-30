@@ -51,13 +51,12 @@ for t in targets:
     if("EB" in t):
         f.write(makefile_ebpre);
 
-
-
     f.write('\nCPPFLAGS = -std=c++11\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
         f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
         f.write('\nCPPFLAGS += -DCH_USE_HDF5 \n')
@@ -78,23 +77,25 @@ for t in targets:
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
     if args.opt == 'DEBUG':
+        f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
-            f.write('\nCXXDBGFLAGS:= -g $(CXXGPUFLAGS)\n')
+            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
-        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
+            f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
+        f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
-            f.write('\nCXXOPTFLAGS:= -O3 $(CXXGPUFLAGS)\n')
+            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
-        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
 
     if args.cuda == 'TRUE':
         f.write('\nCXX = nvcc \n DEP=nvcc\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda\n')
-        if args.opt == 'DEBUG':
-            f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG\n')
+        f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCXXFLAGS+=-Xcompiler -fopenmp\n')
    
     if("EB" in t):
         f.write(makefile_ebpost);
