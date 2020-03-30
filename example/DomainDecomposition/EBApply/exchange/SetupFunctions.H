@@ -47,8 +47,47 @@ void InitializeSpotF(int       a_p[DIM],
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
 
+//=================================================
+PROTO_KERNEL_START 
+void InitializeSpotDIMF(int       a_p[DIM],
+                        Var<Real, DIM>       a_phi,
+                        Real      a_X0,
+                        Real      a_rad,
+                        Real      a_dx)
+{
+  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    a_phi(idir) = val*Real(idir+1);
+  }
+}
+PROTO_KERNEL_END(InitializeSpotDIMF, InitializeSpotDIM)
 
 
+
+//=================================================
+PROTO_KERNEL_START 
+void checkSpotDIMF(int       a_p[DIM],
+                   Var<Real, DIM>       a_phi,
+                   Real      a_X0,
+                   Real      a_rad,
+                   Real      a_dx)
+{
+  Real val0 =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    Real val = val0*Real(idir+1);
+    Real phi = a_phi(idir);
+    Real diff = phi - val;
+    if(std::abs(diff) > 1.0e-6)
+    {
+      using std::cout;
+      using std::endl;
+      cout << "bogus value at variable " << idir << ", point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
+    }
+  }
+}
+PROTO_KERNEL_END(checkSpotDIMF, checkSpotDIM)
 //=================================================
 PROTO_KERNEL_START 
 void checkSpotF(int       a_p[DIM],

@@ -552,8 +552,8 @@ dumpHostFlux1(EBHostFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFace(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpHostYFace(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpHostYFace(&(dataPtr->m_yflux));
   }
 }
 
@@ -564,8 +564,8 @@ dumpHostFluxDIM(EBHostFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFaceDIM(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpHostYFaceDIM(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpHostYFaceDIM(&(dataPtr->m_yflux));
   }
 }
 
@@ -674,8 +674,8 @@ dumpHostFlux1Area(EBHostFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFace1Area(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpHostYFace1Area(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpHostYFace1Area(&(dataPtr->m_yflux));
   }
 }
 void 
@@ -685,8 +685,8 @@ dumpHostFluxDIMArea(EBHostFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpHostXFaceDIMArea(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpHostYFaceDIMArea(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpHostYFaceDIMArea(&(dataPtr->m_yflux));
   }
 }
 

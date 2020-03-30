@@ -363,6 +363,7 @@ redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
 {
   //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
   //this redistributes delta M into the hybrid divergence.
+  m_deltaM.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
