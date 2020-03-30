@@ -19,6 +19,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
       const unsigned int            & a_maxIter,
       bool a_initToZero)
 {
+  CH_TIME("EBMultigrid::solve");
   if(a_initToZero)
   {
     a_phi.setVal(0.);
@@ -67,6 +68,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
         const EBLevelBoxData<CELL, 1> & a_phi)
                     
 {
+  CH_TIME("EBMultigrid::applyOp");
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   phi.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
@@ -96,6 +98,7 @@ EBMultigridLevel::
 preCond(EBLevelBoxData<CELL, 1>       & a_phi,
         const EBLevelBoxData<CELL, 1> & a_rhs)
 {
+  CH_TIME("EBMultigrid::preCond");
   int maxiter = 4;
 
   relax(a_phi,a_rhs, maxiter); 
@@ -108,6 +111,7 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi)
                     
 {
+  CH_TIME("EBMultigrid::applyOpNeumann");
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   phi.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
@@ -173,6 +177,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  const IntVect                           & a_nghostsrc, 
                  const IntVect                           & a_nghostdst)
 {
+  CH_TIME("EBMultigridLevel::define");
   m_depth = 0;
 
   m_alpha      = a_alpha;      
@@ -292,6 +297,7 @@ EBMultigridLevel::
 fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
           const shared_ptr<LevelData<EBGraph> >   & a_graphs)
 {
+  CH_TIME("EBMultigridLevel::fillkappa");
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -313,6 +319,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_rhs)
                     
 {
+  CH_TIME("EBMultigridLevel::residual");
   //this puts lphi into a_res
   applyOp(a_res, a_phi);
   //subtract off rhs so res = lphi - rhs
@@ -338,6 +345,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       int a_maxiter)
 {
+  CH_TIME("EBMultigridLevel::relax");
   //
   DataIterator dit = m_grids.dataIterator();
   for(int iter = 0; iter < a_maxiter; iter++)

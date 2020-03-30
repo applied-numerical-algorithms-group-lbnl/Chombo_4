@@ -15,6 +15,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       ParabolicSolverType                      a_solver,
       EBIBC                                    a_ibc)
 {
+  CH_TIME("EBINS::define");
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -111,6 +112,7 @@ run(unsigned int a_max_step,
     unsigned int a_maxIter,
     Real         a_coveredVal)
 {
+  CH_TIME("EBINS::run");
   bool usingFixedDt = (a_fixedDt > 0);
   bool doFileOutput = (a_outputInterval > 0);
   Real dt;
@@ -163,12 +165,13 @@ initializePressure(Real         a_dt,
                    unsigned int a_numIterPres, 
                    unsigned int a_maxIter)
 {
+  CH_TIME("EBINS::initializePressure");
   auto & velo =  (*m_velo );
 
   //project the resulting field
   pout() << "projecting initial velocity"<< endl;
   auto & gphi =  (*m_gphi );
-  velo.exchange(m_exchangeCopier);
+
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
   velo.exchange(m_exchangeCopier);
 
@@ -188,6 +191,7 @@ Real
 EBINS::
 computeDt(Real a_cfl) const
 {
+  CH_TIME("EBINS::computeDt");
   Real dtval;
   Real maxvel = 0;
   for(int idir = 0; idir < DIM; idir++)
@@ -233,6 +237,7 @@ void
 EBINS::
 advanceVelocityEuler(Real a_dt)
 {
+  CH_TIME("EBINS::advanceVelocityEuler");
   auto & velo =  (*m_velo );
   auto & udel =  (*m_divuu);
   auto & gphi =  (*m_gphi );
@@ -267,6 +272,7 @@ advanceVelocityNavierStokes(Real a_dt,
                             Real a_tol,                         
                             unsigned int a_maxIter)
 {
+  CH_TIME("EBINS::advanceVelocityNavierStokes");
   auto & sour  = *m_sour ;
   auto & velo  = *m_velo ;
   auto & divuu = *m_divuu;
@@ -326,6 +332,7 @@ projectVelocityAndCorrectPressure(Real a_dt,
                                   Real a_tol,                         
                                   unsigned int a_maxIter)
 {
+  CH_TIME("EBINS::projectVelocityAndCorrectPressure");
   auto & velo =  (*m_velo);
   auto & gphi =  (*m_gphi);
   //make w = v + dt*gphi
@@ -342,7 +349,6 @@ projectVelocityAndCorrectPressure(Real a_dt,
 
   //project the resulting field
   pout() << "cc projecting vel + gphi*dt" << endl;
-  velo.exchange(m_exchangeCopier);
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
 
   //the resulting pressure  is = dt * gphi so we need to divide out the dt
@@ -362,6 +368,7 @@ advanceVelocityAndPressure(Real a_dt,
                            Real a_tol,                         
                            unsigned int a_maxIter)
 {
+  CH_TIME("EBINS::advanceVelocityNavierStokes");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
 
@@ -381,6 +388,7 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
+  CH_TIME("EBINS::advanceScalar");
   EBLevelBoxData<CELL, 1> source(m_grids, m_nghost, m_graphs);
   m_advectOp->advance(*m_scal, a_dt);
 }
@@ -389,6 +397,7 @@ void
 EBINS::
 outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const
 {
+  CH_TIME("EBINS::outputToFile");
   const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
   string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
   string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");

@@ -13,6 +13,7 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const IntVect                          & a_nghost,
        string                                   a_bcnames[2*DIM])   
 {
+  CH_TIME("EBCCProjector::define");
   m_macprojector = shared_ptr<EBMACProjector>
     (new EBMACProjector(a_brit,     
                         a_geoserv,  
@@ -28,6 +29,7 @@ void
 EBCCProjector::
 registerStencils()
 {
+  CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
   for(int idir = 0; idir < DIM; idir++)
@@ -46,6 +48,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
         EBLevelBoxData<CELL, DIM>   & a_gphi,
         Real a_tol, unsigned int a_maxiter)
 {
+  CH_TIME("EBCCProjector::project");
   auto & rhs     = m_macprojector->m_rhs;
   auto & brit    = m_macprojector->m_brit;
   auto & phi     = m_macprojector->m_phi;
@@ -54,7 +57,8 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   auto & nghost  = m_macprojector->m_nghost;
-
+  
+  a_velo.exchange(m_macprojector->m_exchangeCopier);
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo);
 
@@ -99,6 +103,7 @@ EBCCProjector::
 kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
           EBLevelBoxData<CELL, DIM> & a_velo)
 {
+  CH_TIME("EBCCProjector::kappaDivU");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
   auto & divu    = m_macprojector->m_rhs;

@@ -25,6 +25,7 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const IntVect                          & a_nghostsrc, 
             const IntVect                          & a_nghostdst)
 {
+  CH_TIME("EBAdvection::define");
   m_dx     = a_dx;
   m_grids  = a_grids;
   m_domain = a_domain;
@@ -44,6 +45,7 @@ void
 EBAdvection::
 defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
+  CH_TIME("EBAdvection::defineData");
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_kappa.define(     m_grids, m_nghostSrc, m_graphs);
   m_deltaM.define(    m_grids, m_nghostSrc, m_graphs);
@@ -59,6 +61,7 @@ void
 EBAdvection::
 fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
+  CH_TIME("EBAdvection::fillKappa");
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -80,6 +83,7 @@ EBAdvection::
 registerStencils()
 {
 
+  CH_TIME("EBAdvection::registerStencils");
   //false is because I do not need diagonal  weights for any of these stencils
   bool needDiag = false;
   m_brit->m_cellToCell->registerStencil(s_ncdivLabel , s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
@@ -111,6 +115,7 @@ getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
                    const DataIndex                & a_dit,
                    const int                      & a_ibox)
 {
+  CH_TIME("EBAdvection::getFaceCenteredVel");
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
   getFaceVelComp<YFACE>(*(a_fcvel.m_yflux),  m_brit->m_cellToYFace, veccell, 1, a_ibox);
@@ -132,6 +137,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
                      const int                      & a_ibox,
                      const Real                     & a_dt)
 {
+  CH_TIME("EBAdvection::bcgExtrapolateScalar");
   bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
@@ -210,6 +216,7 @@ assembleFlux(EBFluxData<Real, 1>& a_fcflux,
              EBFluxData<Real, 1>& a_scalar,
              EBFluxData<Real, 1>& a_fcvel)
 {
+  CH_TIME("EBAdvection::assembleFlux");
   //this flux = facevel*(scal)
   unsigned long long int numflopspt = 2; 
 
@@ -232,6 +239,7 @@ getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
                EBFluxData<Real, 1>&  a_scalLo,
                EBFluxData<Real, 1>&  a_scalHi)
 {
+  CH_TIME("EBAdvection::getUpwindState");
   unsigned long long int numflopspt = 0;
   ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_xflux->box(),
                   *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
@@ -259,6 +267,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
                     int                        a_ibox,
                     Real                       a_dt)
 {
+  CH_TIME("EBAdvection::getFaceCenteredFlux");
   //first we compute the slopes of the data
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
@@ -285,6 +294,7 @@ getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
                            EBFluxData<Real, 1>      &  a_centroidFlux,
                            unsigned int a_ibox)
 {
+  CH_TIME("EBAdvection::getKapDivFFromCentroidFlux");
   a_kapdiv.setVal(0.);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -300,6 +310,7 @@ EBAdvection::
 kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, 
              const Real& a_dt)
 {
+  CH_TIME("EBAdvection::kappaConsDiv");
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)
@@ -340,6 +351,7 @@ void
 EBAdvection::
 nonConsDiv()
 {
+  CH_TIME("EBAdvection::nonConsDiv");
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
   m_kappaDiv.exchange(m_exchangeCopier);
@@ -361,6 +373,7 @@ void
 EBAdvection::
 redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
 {
+  CH_TIME("EBAdvection::redistribute");
   //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
   //this redistributes delta M into the hybrid divergence.
   m_deltaM.exchange(m_exchangeCopier);
@@ -381,6 +394,7 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
         const  Real                   & a_dt)
 {
   
+  CH_TIME("EBAdvection::advance");
   hybridDivergence(a_phi,  a_dt);
 
   DataIterator dit = m_grids.dataIterator();
@@ -400,7 +414,8 @@ void
 EBAdvection::
 kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv)
 {
- DataIterator dit = m_grids.dataIterator();
+  CH_TIME("EBAdvection::kappaDivPlusOneMinKapDivNC");
+  DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 7;
@@ -425,6 +440,7 @@ EBAdvection::
 hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
                  const  Real                   & a_dt)
 {
+  CH_TIME("EBAdvection::hybridDivergence");
   a_phi.exchange(m_exchangeCopier);
   //compute kappa div^c F
   kappaConsDiv(a_phi, a_dt);

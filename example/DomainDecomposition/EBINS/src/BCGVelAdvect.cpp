@@ -10,6 +10,7 @@ hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                  const Real               & a_dt,
                  Real a_tolerance, unsigned int a_maxIter)    
 {
+  CH_TIME("BCGAdvect::hybridDivergence");
   //fills m_macScal with velocity extrapolated to its normal face and projected
   getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
 
@@ -27,6 +28,7 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
                      const Real                  & a_dt,
                      Real a_tol, unsigned int a_maxIter)    
 {
+  CH_TIME("BCGAdvect::getAdvectionVelocity");
   a_inputVel.exchange(m_exchangeCopier);
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -90,6 +92,7 @@ copyComp(EBFluxData<Real, 1>&  a_dst,
          EBFluxData<Real, 1>&  a_src,
          int a_vecDir)
 {
+  CH_TIME("BCGAdvect::copyComp");
   unsigned numflopspt = 0;
   if(a_vecDir == 0)
   {
@@ -115,6 +118,7 @@ BCGVelAdvect::
 getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
                      const Real                  & a_dt)
 {
+  CH_TIME("BCGAdvect::getMACVectorVelocity");
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
   {
     EBLevelBoxData< CELL, 1> velcomp;
@@ -173,6 +177,7 @@ void
 BCGVelAdvect::
 correctVectorVelocity()
 {
+  CH_TIME("BCGAdvect::correctVectorVelocity");
   m_macGradient.exchange(m_exchangeCopier);
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
   {
@@ -211,6 +216,7 @@ BCGVelAdvect::
 assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, 
                    const  Real              & a_dt)
 {
+  CH_TIME("BCGAdvect::assembleDivergence");
   DataIterator dit = m_grids.dataIterator();
   for(int ivar = 0; ivar < DIM; ivar++)
   {
