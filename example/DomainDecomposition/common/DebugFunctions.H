@@ -516,45 +516,45 @@ genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
       if((databox.contains(lodeb)) || (databox.contains(hideb)))
       {
 
-      Bx area = databox & graph.getDomain();
+        Bx area = databox & graph.getDomain();
 
-      cout << "data region contains:" << endl;
-      for(int j = hideb[1]; j >= lodeb[1]; j--)
-      {
-        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        cout << "data region contains:" << endl;
+        for(int j = hideb[1]; j >= lodeb[1]; j--)
         {
-          Point pt(i,j);
-          if(databox.contains(pt))
+          for(int i = lodeb[0]; i <= hideb[0]; i++)
           {
-            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-            cout << pt << ":";
-            bool printLines = false;
-            if(vofs.size() >  0)
+            Point pt(i,j);
+            if(databox.contains(pt))
             {
-              vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
-              if(faces.size() == 0)
+              vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+              cout << pt << ":";
+              bool printLines = false;
+              if(vofs.size() >  0)
               {
-                printLines = true;
+                vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
+                if(faces.size() == 0)
+                {
+                  printLines = true;
+                }
+                else
+                {
+                  if (data(faces[0], idir) >= 0) cout << " ";
+                  cout  << data(faces[0], idir) << "  ";
+                }
               }
               else
               {
-                if (data(faces[0], idir) >= 0) cout << " ";
-                cout  << data(faces[0], idir) << "  ";
+                printLines = true;
+              }
+              if(printLines)
+              {
+                cout << "---------------" << "  ";
               }
             }
-            else
-            {
-              printLines = true;
-            }
-            if(printLines)
-            {
-              cout << "---------------" << "  ";
-            }
           }
+          cout << endl;
         }
-        cout << endl;
       }
-    }
     }
   }
 }
@@ -588,9 +588,8 @@ dumpFlux1(EBFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFace(&(dataPtr->m_xflux));
-    pout() << "y face data skipped" << endl;
-//    pout() << "y face data:" << endl;
-//    dumpYFace(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpYFace(&(dataPtr->m_yflux));
   }
 }
 
@@ -601,9 +600,8 @@ dumpFluxDIM(EBFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFaceDIM(&(dataPtr->m_xflux));
-    pout() << "y face data skipped" << endl;
-//    pout() << "y face data:" << endl;
-//    dumpYFaceDIM(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpYFaceDIM(&(dataPtr->m_yflux));
   }
 }
 
@@ -651,8 +649,8 @@ void dummyfunc()
 }
 
 
-Point lodebarea(1, 10);
-Point hidebarea(4, 20);                                    
+Point lodebarea(2, 8);
+Point hidebarea(5, 16);                                    
 
 void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -719,8 +717,8 @@ dumpFlux1Area(EBFluxData<Real, 1>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFace1Area(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpYFace1Area(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpYFace1Area(&(dataPtr->m_yflux));
   }
 }
 void 
@@ -730,8 +728,8 @@ dumpFluxDIMArea(EBFluxData<Real, DIM>*  dataPtr)
   {
     pout() << "x face data:" << endl;
     dumpXFaceDIMArea(&(dataPtr->m_xflux));
-//    pout() << "y face data:" << endl;
-//    dumpYFaceDIMArea(&(dataPtr->m_yflux));
+    pout() << "y face data:" << endl;
+    dumpYFaceDIMArea(&(dataPtr->m_yflux));
   }
 }
 

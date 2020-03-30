@@ -202,6 +202,7 @@ correctVectorVelocity()
       }
     } // end loop over facedir
   }
+  m_macVelocity.exchange(m_exchangeCopier);
 }
 
 /**********/
@@ -210,7 +211,6 @@ BCGVelAdvect::
 assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, 
                    const  Real              & a_dt)
 {
-  m_macVelocity.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   for(int ivar = 0; ivar < DIM; ivar++)
   {
@@ -249,9 +249,8 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
     //does linear combination of divnc and div c to get hybrid and  compute delta M
     kappaDivPlusOneMinKapDivNC(hybridDiv);
 
-//    redistribute(hybridDiv);
+    redistribute(hybridDiv);
   }
 }
 /*******/
 #include "Chombo_NamespaceFooter.H"
-

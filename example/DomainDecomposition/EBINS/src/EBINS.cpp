@@ -167,7 +167,8 @@ initializePressure(Real         a_dt,
 
   //project the resulting field
   pout() << "projecting initial velocity"<< endl;
-  auto & gphi =  (*m_gphi );  
+  auto & gphi =  (*m_gphi );
+  velo.exchange(m_exchangeCopier);
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
   velo.exchange(m_exchangeCopier);
 
@@ -234,7 +235,8 @@ advanceVelocityEuler(Real a_dt)
 {
   auto & velo =  (*m_velo );
   auto & udel =  (*m_divuu);
-  auto & gphi =  (*m_gphi );  
+  auto & gphi =  (*m_gphi );
+
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -340,6 +342,7 @@ projectVelocityAndCorrectPressure(Real a_dt,
 
   //project the resulting field
   pout() << "cc projecting vel + gphi*dt" << endl;
+  velo.exchange(m_exchangeCopier);
   m_ccProj->project(velo, gphi, a_tol, a_maxIter);
 
   //the resulting pressure  is = dt * gphi so we need to divide out the dt
