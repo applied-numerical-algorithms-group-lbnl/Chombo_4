@@ -248,17 +248,6 @@ writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, 
 void eulerRun(const RunParams& a_params)
 {
 
-#ifdef __CORIGPU
-#ifdef CH_MPI
-    // Get the rank of the process
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    //std::cout << " rank =  " << world_rank << std::endl;
-
-    cudaSetDevice(world_rank);
-#endif
-#endif
 
   CH_TIME("eulerRun");
   Real tstop = a_params.tmax;
