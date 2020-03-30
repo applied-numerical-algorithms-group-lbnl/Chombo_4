@@ -37,6 +37,7 @@ template<int order>
 void LevelGeometryService<order>::
 defineData()
 {
+  PR_TIME("LevelGeometryService::defineData");
   m_cellVol = 1;
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -57,6 +58,7 @@ void LevelGeometryService<order>::
 defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
+  PR_TIME("LevelGeometryService::defineFinestLevel");
   using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -132,6 +134,7 @@ void
 LevelGeometryService<order>::
 exchange()
 {
+  PR_TIME("LevelGeometryService::exchange");
   Interval interv(0,0);
   m_graphs  ->exchange(m_exchangeCopier);       
   m_voludata->exchange(m_exchangeCopier);       
@@ -191,6 +194,7 @@ LevelGeometryService<order>::
 LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
                      const DisjointBoxLayout      &      a_grids)
 {
+  PR_TIME("LevelGeometryService::defineFromcoarser");
   m_baseIF   = a_finerLevel.m_baseIF;
   m_domain   = coarsen(a_finerLevel.m_domain,2);
   m_origin   =         a_finerLevel.m_origin;
@@ -248,6 +252,7 @@ void
 LevelGeometryService<order>::
 coarsenGraph(LevelGeometryService&      a_finerLevel)
 {
+  PR_TIME("LevelGeometryService::coarsenGraph");
   //fills finer level ghost cells 
   DataIterator dit = m_grids.dataIterator();
   for (int ibox = 0; ibox < dit.size(); ibox++)
@@ -271,6 +276,7 @@ void
 LevelGeometryService<order>::
 coarsenData(LevelGeometryService&      a_finerLevel)
 {
+  PR_TIME("LevelGeometryService::coarsenData");
   DataIterator dit = m_grids.dataIterator();
   for (int ibox = 0; ibox < dit.size(); ibox++)
   { 
@@ -350,6 +356,7 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
                const LevelGeometryService     & a_finerLevel,
                const DataIndex                & a_dit)
 {
+  PR_TIME("LevelGeometryService::coarsenVoFData");
   const EBGraph& coarEBGraph = (*m_graphs)[a_dit];
   const EBGraph& fineEBGraph = (*a_finerLevel.m_graphs)[a_dit];
   for(int ivof = 0; ivof < a_coarVoFs.size(); ivof++)
@@ -410,6 +417,7 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
                  const LevelGeometryService      & a_finerLevel,
                  const DataIndex                 & a_dit)
 {
+  PR_TIME("LevelGeometryService::coarsenXFaceData");
   const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
   const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
   for(int iface = 0; iface < a_coarFaces.size(); iface++)
@@ -485,6 +493,7 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
                  const DataIndex                 & a_dit)
 
 {
+  PR_TIME("LevelGeometryService::coarsenYFaceData");
   const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
   const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
   for(int iface = 0; iface < a_coarFaces.size(); iface++)
@@ -545,6 +554,7 @@ coarsenZFaceData(const vector< EBIndex<ZFACE> >  & a_coarFaces,
                  const LevelGeometryService      & a_finerLevel,
                  const DataIndex                 & a_dit)
 {
+  PR_TIME("LevelGeometryService::coarsenZFaceData");
   const EBGraph& coarEBGraph =               (*m_graphs) [a_dit];
   const EBGraph& fineEBGraph = (*(a_finerLevel.m_graphs))[a_dit];
   for(int iface = 0; iface < a_coarFaces.size(); iface++)
@@ -736,6 +746,7 @@ fixRegularCellsNextToCovered(vector<inode>       & a_nodes,
                              const Point         & a_iv) const
 
 {
+  PR_TIME("LevelGeometryService::fixregularnextToCovered");
   Bx domain = getProtoBox(m_domain);
   Bx ivbox(a_iv, a_iv);
   Bx grownBox = ivbox.grow(1) & domain;
