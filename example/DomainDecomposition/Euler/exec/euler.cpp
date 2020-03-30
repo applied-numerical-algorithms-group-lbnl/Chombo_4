@@ -326,15 +326,17 @@ void eulerRun(const RunParams& a_params)
   {
     writeData(0, U,time,dt,a_params.dx, a_params.nx);
   }
+  Reduction<Real> rxn = state.m_Rxn;
   for (int k = 1;(k <= maxStep) && (time < tstop);k++)
   {
+    rxn.reset();
     {
       CH_TIME("rk4_advance");
       rk4.advance(time,dt,state);
     }
     //this was computed during the advance.
     //so the standard trick is to reuse it.
-    maxwave = state.m_velSave;
+    maxwave = state.m_velSave + rxn.fetch(); // one of the operands is 0
 
     time += dt;
     
