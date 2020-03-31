@@ -96,6 +96,7 @@ public:
     return m_rhs;
   }
 
+  Copier                                 m_exchangeCopier;
 
 private:
   
@@ -111,7 +112,6 @@ private:
 
   //internals
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
-  Copier                                 m_exchangeCopier;
   EBLevelBoxData<CELL, 1>                m_rhs;
   EBLevelBoxData<CELL, 1>                m_phi;
 

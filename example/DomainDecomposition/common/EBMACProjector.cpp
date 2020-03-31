@@ -14,6 +14,7 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const IntVect                          & a_nghost,
        string                                   a_bcnames[2*DIM])
 {
+  CH_TIME("EBMACProjector::define");
   m_dx      = a_dx;
 
   m_grids   = a_grids;
@@ -33,6 +34,7 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
                 string                                   a_bcnames[2*DIM])
 
 {
+  CH_TIME("EBMACProjector::defineInternals");
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   m_rhs.define(m_grids, m_nghost, m_graphs);
   m_phi.define(m_grids, m_nghost, m_graphs);
@@ -52,6 +54,7 @@ EBMACProjector::
 registerStencils()
 {
 
+  CH_TIME("EBMACProjector::defineInternals");
   //false is because I do not need diagonal  weights for any of these stencils
   bool needDiag = false;
   
@@ -71,6 +74,7 @@ project(EBLevelFluxData<1>   & a_velo,
         EBLevelFluxData<1>   & a_gphi,
         Real a_tol, unsigned int a_maxiter)
 {
+  CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
 
@@ -103,6 +107,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
           EBLevelFluxData<1>      & a_velo)
 {
 
+  CH_TIME("EBMACProjector::kappaDivU");
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
