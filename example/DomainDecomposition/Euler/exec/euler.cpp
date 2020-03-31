@@ -336,7 +336,7 @@ void eulerRun(const RunParams& a_params)
     }
     //this was computed during the advance.
     //so the standard trick is to reuse it.
-    maxwave = state.m_velSave + rxn.fetch(); // one of the operands is 0
+    maxwave = rxn.fetch();
 
     time += dt;
     

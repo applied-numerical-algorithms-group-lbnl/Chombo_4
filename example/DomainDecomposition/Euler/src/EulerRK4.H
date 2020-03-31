@@ -29,7 +29,6 @@ public:
   EulerState(shared_ptr<LevelBoxData<NUMCOMPS> >a_U);
   void increment(const EulerDX& a_DX);
   //for max wave speeds
-  Real m_velSave;
   shared_ptr<LevelBoxData<NUMCOMPS> > m_U;
   DisjointBoxLayout m_grids;
   Copier m_exchangeCopier;

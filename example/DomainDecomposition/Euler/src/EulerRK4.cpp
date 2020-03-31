@@ -134,7 +134,6 @@ operator()(EulerDX& a_DX,
   }
 
   Real velmax = EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
-  a_State.m_velSave = std::max(a_State.m_velSave,velmax);
 
   for(int ibox = 0; ibox <  dit.size(); ibox++)
   {
