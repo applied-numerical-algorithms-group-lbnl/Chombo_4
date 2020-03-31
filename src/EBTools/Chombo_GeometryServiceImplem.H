@@ -65,14 +65,16 @@ defineFinestLevel(const RealVect               & a_origin,
   {
     Box validBox = m_grids[dit[ibox]];
     Box grownBox = grow(validBox, m_geomgrow);
+    Box smgrBox = grow(validBox, m_geomgrow-1);
 
     Box interBoxCh = grownBox & m_domain;
+    Box interBoxSm =  smgrBox & m_domain;
     Bx interBox = getProtoBox(interBoxCh);
     Bx domain   = getProtoBox(m_domain);
     Bx validBx  = getProtoBox(validBox);
     if(m_baseIF->entireBoxRegular(interBox, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox, domain);
+      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domain);
     }
     else if(m_baseIF->entireBoxCovered(interBox, a_origin, a_dx))
     {
@@ -82,7 +84,7 @@ defineFinestLevel(const RealVect               & a_origin,
     {
       HostBoxData<int> regIrregCovered;
       vector< IrregNode<order> > nodes;
-      fillGraph(regIrregCovered, nodes, validBox, interBoxCh, m_domain);
+      fillGraph(regIrregCovered, nodes, validBox, interBoxCh, interBoxSm, m_domain);
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
@@ -593,12 +595,14 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
           vector<inode>&       a_nodes,
           const Box&           a_validRegion,
           const Box&           a_ghostRegion,
+          const Box&           a_smghRegion,
           const Box&           a_domain) const
 {
   PR_TIME("LevelGeometryService::fillGraph");
 
   PR_assert(m_domain.contains(a_ghostRegion));
   Bx ghostRegion = ProtoCh::getProtoBox(a_ghostRegion);
+  Bx smGhRegion = ProtoCh::getProtoBox(a_smghRegion);
   Bx validRegion = ProtoCh::getProtoBox(a_validRegion);
   a_regIrregCovered.define(ghostRegion);
 
@@ -609,48 +613,61 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
     for (auto bit = ghostRegion.begin(); bit != ghostRegion.end(); ++bit)
     {
       const Point iv =*bit;
-      RvgDim cellCenter;
-      for (int idir = 0;idir < DIM; ++idir)
+      Bx interBox(iv, iv);
+      if(m_baseIF->entireBoxRegular(interBox, m_origin, m_dx))
       {
-        cellCenter[idir] = m_dx*(iv[idir] +0.5) + m_origin[idir];
-      }
-
-      //member data: sign(chosen from -1,0,1) of each vertex,
-      //location of each edge intersection, cellCenter,normal and gradNormal
-
-      IndexTM<double, DIM> vectdx;
-      vectdx.setAll(m_dx);
-
-      int degreeP = order + m_degreeP;
-      IFData<DIM> edgeData(*m_baseIF, vectdx, cellCenter,  degreeP);
-
-
-      //create a CutCellMoment object, in order to detect whether any face coincides with the interface
-      CutCellMoments <DIM> cutCell(edgeData);
-      if (cutCell.isCovered())
-      {
-        //set covered cells to -1
-        a_regIrregCovered(iv, 0) = -1;
-      }
-      else if (cutCell.isRegular())
-      {
-        //set regular cells to 1
         a_regIrregCovered(iv, 0) =  1;
+      }
+      else if(m_baseIF->entireBoxCovered(interBox, m_origin, m_dx))
+      {
+        a_regIrregCovered(iv, 0) = -1;
       }
       else
       {
-        //set irregular cells to 0
-        //irregular if any face coincides with interface and edgeData.m_allVerticesIn = true
-        a_regIrregCovered(iv, 0) =  0;
-        if (ghostRegion.contains(iv))
+        RvgDim cellCenter;
+        for (int idir = 0;idir < DIM; ++idir)
         {
-          ivsirreg |= iv;
+          cellCenter[idir] = m_dx*(iv[idir] +0.5) + m_origin[idir];
+        }
+
+        //member data: sign(chosen from -1,0,1) of each vertex,
+        //location of each edge intersection, cellCenter,normal and gradNormal
+
+        IndexTM<double, DIM> vectdx;
+        vectdx.setAll(m_dx);
+
+        int degreeP = order + m_degreeP;
+        IFData<DIM> edgeData(*m_baseIF, vectdx, cellCenter,  degreeP);
+
+
+        //create a CutCellMoment object, in order to detect whether any face coincides with the interface
+        CutCellMoments <DIM> cutCell(edgeData);
+        if (cutCell.isCovered())
+        {
+          //set covered cells to -1
+          a_regIrregCovered(iv, 0) = -1;
+        }
+        else if (cutCell.isRegular())
+        {
+          //set regular cells to 1
+          a_regIrregCovered(iv, 0) =  1;
+        }
+        else
+        {
+          //set irregular cells to 0
+          //irregular if any face coincides with interface and edgeData.m_allVerticesIn = true
+          a_regIrregCovered(iv, 0) =  0;
+          if (ghostRegion.contains(iv))
+          {
+            ivsirreg |= iv;
+          }
         }
       }
     }
   }
 //if a regular is next to a  covered, change to irregular with correct arcs and so on.
-  for (auto bit = ghostRegion.begin(); bit != ghostRegion.end() ; ++bit)
+
+  for (auto bit = smGhRegion.begin(); bit != smGhRegion.end() ; ++bit)
   {
     const Point iv =*bit;
 

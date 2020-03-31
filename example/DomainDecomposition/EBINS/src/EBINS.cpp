@@ -108,8 +108,8 @@ run(unsigned int a_max_step,
     Real         a_fixedDt,
     Real         a_tol,
     unsigned int a_numIterPres,
-    unsigned int a_outputInterval,
     unsigned int a_maxIter,
+    int          a_outputInterval,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");

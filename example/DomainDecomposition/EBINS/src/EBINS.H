@@ -37,8 +37,8 @@ public:
       Real         a_fixedDt             = -1.0,
       Real         a_solverTolerance     = 1.0e-10,
       unsigned int a_pressureInitIters   = 1,
-      unsigned int a_outputInterval      = 1,
       unsigned int a_maxSolverIterations = 27,
+      int          a_outputInterval      = 1,
       Real         a_coveredval          = 0.0);
 
 

@@ -74,6 +74,7 @@ public:
                         vector<inode>             &   a_nodes,
                         const Box                 &   a_validRegion,
                         const Box                 &   a_ghostRegion,
+                        const Box                 &   a_smghRegion,
                         const Box                 &   a_domain) const;
 
 

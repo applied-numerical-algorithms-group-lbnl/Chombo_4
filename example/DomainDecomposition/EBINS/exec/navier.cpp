@@ -179,7 +179,7 @@ runNavierStokes()
   Real fixedDt = -1.0;//signals varaible dt
 
   unsigned int pIters = 1;
-  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters, outputInterval, maxIter, coveredval);
+  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
   pout() << "exiting run" << endl;
   return 0;
 }
@@ -193,7 +193,7 @@ int main(int a_argc, char* a_argv[])
   pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("ebadvect.time.table");
+  CH_TIMER_SETFILE("navier.time.table");
   {
     if (a_argc < 2)
     {
