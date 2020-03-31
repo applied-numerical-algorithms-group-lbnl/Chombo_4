@@ -45,19 +45,19 @@ public:
     for(int ivec = 0; ivec < 2*DIM; ivec++)
     {
       const string& faceBC = m_domainBC[ivec];
-      if(faceBC == "NoSlipWall")
+      if(faceBC == "no_slip_wall")
       {
         a_bcnames[ivec] = StencilNames::Dirichlet;
       }
-      else if(faceBC == "SlipWall")
+      else if(faceBC == "slip_wall")
       {
         a_bcnames[ivec] = StencilNames::Neumann;
       }
-      else if(faceBC == "Inflow")
+      else if(faceBC == "inflow")
       {
         a_bcnames[ivec] = StencilNames::Neumann;
       }
-      else if(faceBC == "Outflow")
+      else if(faceBC == "outflow")
       {
         a_bcnames[ivec] = StencilNames::Neumann;
       }
