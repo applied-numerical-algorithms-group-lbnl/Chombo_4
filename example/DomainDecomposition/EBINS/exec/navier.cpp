@@ -117,6 +117,7 @@ runNavierStokes()
 
   Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
   Real cfl            = 0.5;
+  int pIters = 1;
 
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
@@ -129,6 +130,7 @@ runNavierStokes()
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
+  pp.get("pressure_iterations", pIters);
   pp.get("cfl"  , cfl);
   int whichSolver;
   pp.get("parabolic_solver", whichSolver);
@@ -136,14 +138,17 @@ runNavierStokes()
   if(whichSolver == 0)
   {
     paraSolver = EBINS::BackwardEuler;
+    pout() << "using backward Euler for parabolic solver"  << endl;
   }
   else if(whichSolver == 1)
   {
     paraSolver = EBINS::CrankNicolson;
+    pout() << "using Crank Nicolson for parabolic solver"  << endl;
   }
   else if(whichSolver == 2)
   {
     paraSolver = EBINS::TGA;
+    pout() << "using TGA for parabolic solver"  << endl;
   }
   else
   {
@@ -161,6 +166,8 @@ runNavierStokes()
   pout() << "num_streams     = " << nStream    << endl;
   pout() << "max_step        = " << max_step   << endl;
   pout() << "max_time        = " << max_time   << endl;
+  pout() << "pressure iter   = " << pIters     << endl;
+  pout() << "viscosity       = " << viscosity  << endl;
   pout() << "=============================================="  << endl;
 
   
@@ -178,7 +185,6 @@ runNavierStokes()
 
   Real fixedDt = -1.0;//signals varaible dt
 
-  unsigned int pIters = 1;
   solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
   pout() << "exiting run" << endl;
   return 0;

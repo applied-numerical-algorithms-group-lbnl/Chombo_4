@@ -7,6 +7,7 @@ domain_bc_lo_2 = "no_slip_wall"
 domain_bc_hi_0 = "no_slip_wall"
 domain_bc_hi_1 = "no_slip_wall"
 domain_bc_hi_2 = "no_slip_wall"
+pressure_iterations = 1
 #domain size
 nx=       32
 #max number of time steps
