@@ -132,29 +132,23 @@ template<class T>
 void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_factory)
 {
   CH_TIME("LevelData<T>::define(LevelData<T>,factory)");
-  // clear exchange copier if it's already been defined
+
   m_exchangeCopier = da.m_exchangeCopier;
-  // if (this->m_isdefined)
-  //   {
-  //     m_exchangeCopier.clear();
-  //   }
+
   this->m_isdefined = true;
   if (this == &da) return;
-  m_disjointBoxLayout = da.m_disjointBoxLayout;
-  this->m_boxLayout   = da.m_disjointBoxLayout;
-  this->m_comps       = da.m_comps;
+  if(!(m_disjointBoxLayout == da.m_disjointBoxLayout &&  m_ghost  == da.m_ghost
+       &&   this->m_comps  == da.m_comps))
+    {
+      
+      m_disjointBoxLayout = da.m_disjointBoxLayout;
+      this->m_boxLayout   = da.m_disjointBoxLayout;
+      this->m_comps       = da.m_comps;
+      m_ghost     = da.m_ghost;
+      this->allocateGhostVector(a_factory, m_ghost);
+    }
   this->m_threadSafe  = a_factory.threadSafe();
-  //this->m_threadSafe = false;
 
-  m_ghost     = da.m_ghost;
-
-  //no need for exchange copier if no ghost
-  // if(m_ghost != IntVect::Zero)
-  //   {
-  //    m_exchangeCopier.define(m_disjointBoxLayout, m_disjointBoxLayout, m_ghost, true);
-  //  }
-  this->allocateGhostVector(a_factory, m_ghost);
-  //da.copyTo(*this);
   DataIterator it = m_disjointBoxLayout.dataIterator();
   int nbox = it.size();
   for (int ibox = 0; ibox < nbox; ibox++)

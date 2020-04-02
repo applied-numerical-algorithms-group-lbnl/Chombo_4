@@ -620,7 +620,7 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
   // but it crashed with OPT setting.
   // So we use BoxIterator instead.
   T* buffer = (T*)bufptr;
-  BFM1<CH_SPACEDIM>(dataPtr, box(), 0, ncomps, m_domain,
+  BFM1<CH_SPACEDIM>(dataPtr(), box(), 0, ncomps, m_domain,
               [&buffer](T s) { s = *buffer; ++buffer; });
   /*for (int icomp = 0; icomp < ncomps; icomp++)
     {
