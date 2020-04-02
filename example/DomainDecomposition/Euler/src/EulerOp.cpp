@@ -293,12 +293,16 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
 #endif
     }
   }
+#ifdef PROTO_CUDA
+  return maxwaveproc;
+#else
   Real maxwaveall;
   {
       CH_TIME("gatherMaxWaveSpeed");
       maxwaveall = gatherMaxWave(maxwaveproc);
   }
   return maxwaveall;
+#endif
 }
 
 

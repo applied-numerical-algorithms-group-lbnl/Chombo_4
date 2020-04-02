@@ -31,6 +31,9 @@ using   ::Proto::Stencil;
 using   Op = ::Proto::Operation;
 using   ::Proto::Reduction;
 
+//global reduction of each processor's max wave
+Real gatherMaxWave(Real maxwaveproc);
+
 class EulerOp
 {
 

@@ -21,6 +21,7 @@
 #include <sstream>
 
 #include "Proto.H"
+#include "EulerOp.H"
 #include "EulerRK4.H"
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_LevelData.H"
@@ -337,6 +338,9 @@ void eulerRun(const RunParams& a_params)
     //this was computed during the advance.
     //so the standard trick is to reuse it.
     maxwave = rxn.fetch();
+#ifdef PROTO_CUDA
+    maxwave = gatherMaxWave(maxwave);
+#endif
 
     time += dt;
     
