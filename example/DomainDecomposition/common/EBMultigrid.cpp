@@ -353,28 +353,31 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
     for(int iredblack = 0; iredblack < 2; iredblack++)
     {
       residual(m_resid, a_phi, a_rhs);
-      for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
-        shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
-        shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+        CH_TIME("ebforall gsrb bit");
+        for(int ibox = 0; ibox < dit.size(); ++ibox)
+        {
+          shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+          shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
 
-        const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
-        Box grid = m_grids[dit[ibox]];
-        Bx  grbx = getProtoBox(grid);
-        //lambda = safety/diag
-        //phi = phi - lambda*(res)
-        ///lambda takes floating point to calculate
-        //also does an integer check for red/black but I am not sure what to do with that
-        auto& phifab =   a_phi[dit[ibox]];
-        auto& resfab = m_resid[dit[ibox]];
+          const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
+          Box grid = m_grids[dit[ibox]];
+          Bx  grbx = getProtoBox(grid);
+          //lambda = safety/diag
+          //phi = phi - lambda*(res)
+          ///lambda takes floating point to calculate
+          //also does an integer check for red/black but I am not sure what to do with that
+          auto& phifab =   a_phi[dit[ibox]];
+          auto& resfab = m_resid[dit[ibox]];
 //      auto& rhsfab =   a_rhs[dit[ibox]];
-        unsigned long long int numflopspt = 10;
+          unsigned long long int numflopspt = 10;
 
-        ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                          phifab, resfab, stendiag,
-                          m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+          ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
+                            phifab, resfab, stendiag,
+                            m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
-        numflopspt++;
+          numflopspt++;
+        }
       }
     }
   }

@@ -53,10 +53,10 @@ public:
 
   ///
   virtual void 
-  hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
-                   EBLevelBoxData<CELL, DIM>& a_inputVel,
-                   const Real               & a_dt,
-                   Real a_tolerance, unsigned int a_maxIter);    
+  hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
+                      EBLevelBoxData<CELL, DIM>& a_inputVel,
+                      const Real               & a_dt,
+                      Real a_tolerance, unsigned int a_maxIter);    
 
 protected:
 

@@ -5,10 +5,10 @@
 /*******/
 void 
 BCGVelAdvect::
-hybridDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
-                 EBLevelBoxData<CELL, DIM>& a_inputVel,
-                 const Real               & a_dt,
-                 Real a_tolerance, unsigned int a_maxIter)    
+hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
+                    EBLevelBoxData<CELL, DIM>& a_inputVel,
+                    const Real               & a_dt,
+                    Real a_tolerance, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::hybridDivergence");
   //fills m_macScal with velocity extrapolated to its normal face and projected
