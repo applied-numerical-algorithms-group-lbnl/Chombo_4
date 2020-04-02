@@ -311,7 +311,8 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U, state.m_Rxn);
+  Reduction<Real> rxn = state.m_Rxn;
+  Real maxwave = EulerOp::maxWave(*state.m_U, rxn);
 //  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
   Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
@@ -327,7 +328,6 @@ void eulerRun(const RunParams& a_params)
   {
     writeData(0, U,time,dt,a_params.dx, a_params.nx);
   }
-  Reduction<Real> rxn = state.m_Rxn;
   for (int k = 1;(k <= maxStep) && (time < tstop);k++)
   {
     rxn.reset();
@@ -337,10 +337,7 @@ void eulerRun(const RunParams& a_params)
     }
     //this was computed during the advance.
     //so the standard trick is to reuse it.
-    maxwave = rxn.fetch();
-#ifdef PROTO_CUDA
-    maxwave = gatherMaxWave(maxwave);
-#endif
+    maxwave = gatherMaxWave(rxn.fetch());
 
     time += dt;
     

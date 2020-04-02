@@ -166,8 +166,7 @@ define(const DisjointBoxLayout& a_grids,
 }
 
 
-
-Real 
+void
 EulerOp::
 proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
            const BoxData<Real,NUMCOMPS>& a_U,
@@ -197,7 +196,7 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
   PVector U = s_deconvolve(a_U);
   PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, "consToPrim", consToPrim,U, gamma);
   PScalar umax = forallOp<Real>(wavespdnum, "wavespeed",waveSpeedBound,a_rangeBox,W, gamma);
-  Real retval = umax.absMax(a_Rxn); // returns 0 in CUDA environment
+  umax.absMax(a_Rxn);
   PVector W_ave = s_laplacian(W_bar,1.0/24.0);
   W_ave += W;
   for (int d = 0; d < DIM; d++)
@@ -238,7 +237,6 @@ proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
   CH_START(tdx);
   a_Rhs *= -1./s_dx;
   CH_STOP(tdx);
-  return retval;
 }
 
 Real gatherMaxWave(Real maxwaveproc)
@@ -255,9 +253,9 @@ Real gatherMaxWave(Real maxwaveproc)
 #endif  
   
   return maxwaveall;
-
 }
-Real 
+
+void 
 EulerOp::
 step(LevelBoxData<NUMCOMPS> & a_Rhs,
      LevelBoxData<NUMCOMPS> & a_U,
@@ -274,7 +272,6 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
     initCalled = true;
   }
   a_U.exchange(s_exchangeCopier);
-  Real maxwaveproc = 0;
   {
     CH_TIME("step_no_gather");
     DataIterator dit = grids.dataIterator();
@@ -285,24 +282,9 @@ step(LevelBoxData<NUMCOMPS> & a_Rhs,
       Bx  pgrid = ProtoCh::getProtoBox(grid);
       BoxData<Real, NUMCOMPS>& ubd   =   a_U[dit[ibox]];
       BoxData<Real, NUMCOMPS>& rhsbd = a_Rhs[dit[ibox]];
-#ifdef PROTO_CUDA
       proto_step(rhsbd, ubd, pgrid, a_Rxn);
-#else
-      Real maxwavegrid = proto_step(rhsbd, ubd, pgrid, a_Rxn);
-      maxwaveproc = std::max(maxwavegrid, maxwaveproc);
-#endif
     }
   }
-#ifdef PROTO_CUDA
-  return maxwaveproc;
-#else
-  Real maxwaveall;
-  {
-      CH_TIME("gatherMaxWaveSpeed");
-      maxwaveall = gatherMaxWave(maxwaveproc);
-  }
-  return maxwaveall;
-#endif
 }
 
 
@@ -320,7 +302,6 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U,
     initCalled = true;
   }
   a_U.exchange(s_exchangeCopier);
-  Real maxwaveproc = 0;
   unsigned long long int ctoprmnum  = 4*DIM + 5;
   unsigned long long int sqrtnum = 10;  //this one is just a guess
   unsigned long long int wavespdnum = sqrtnum +3 + DIM;
@@ -337,11 +318,9 @@ maxWave(LevelBoxData<NUMCOMPS> & a_U,
     PVector U = s_deconvolve(ubd);
     PVector W = forallOp<Real,NUMCOMPS>(ctoprmnum, "consToPrim",consToPrim,ubd, gamma);
     PScalar umax = forallOp<Real>(wavespdnum, "wavespeed",waveSpeedBound,pgrid,W, gamma);
-    Real maxwavegrid = umax.absMax(a_Rxn); // returns 0 in CUDA environment
-    maxwaveproc = std::max(maxwavegrid, maxwaveproc);
+    umax.absMax(a_Rxn);
   }
-  maxwaveproc = maxwaveproc + a_Rxn.fetch(); // fetch returns 0 w/o CUDA
-  Real maxwaveall = gatherMaxWave(maxwaveproc);
+  Real maxwaveall = gatherMaxWave(a_Rxn.fetch());
 
   return maxwaveall;
 }

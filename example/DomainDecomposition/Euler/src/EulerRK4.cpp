@@ -133,7 +133,7 @@ operator()(EulerDX& a_DX,
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  Real velmax = EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
+  EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
 
   for(int ibox = 0; ibox <  dit.size(); ibox++)
   {
@@ -150,15 +150,10 @@ maxWave(EulerState& a_State)
   CH_TIME("EulerRKOp::maxwave_init");
   EulerDX DX;
   DX.init(a_State);
-  Real velmax;
   Reduction<Real,Op::Abs>& rxn = a_State.m_Rxn;
-#ifdef PROTO_CUDA
   rxn.reset(); // initialize device pointer
   EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
-  velmax = rxn.fetch();
-#else
-  velmax = EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
-#endif
+  Real velmax = rxn.fetch();
   return velmax;
 }
 #include "Chombo_NamespaceFooter.H"
