@@ -185,10 +185,10 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "writing to file " << endl;
   
-  auto& kappa = solver.getKappa();
-  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  auto& kappa = solver.getKappa();
+//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
   pout() << "exiting " << endl;
   return 0;
@@ -202,7 +202,7 @@ int main(int a_argc, char* a_argv[])
   pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("ebapply.time.table");
+  CH_TIMER_SETFILE("helmholtz.time.table");
   {
     if (a_argc < 2)
     {

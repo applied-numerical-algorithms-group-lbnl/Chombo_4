@@ -459,6 +459,7 @@ void LevelData<T>::exchange(const Interval& comps,
 template<class T>
 void LevelData<T>::exchange(const Copier& copier)
 {
+  CH_TIME("LevelData::exchange");
   exchange(this->interval(), copier);
 }
 //-----------------------------------------------------------------------

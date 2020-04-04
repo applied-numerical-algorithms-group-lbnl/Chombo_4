@@ -174,6 +174,7 @@ public:
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier) const
   {
+    CH_TIME("EBLevelBoxData::copyTo");
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
@@ -189,7 +190,7 @@ public:
   /// 
   virtual void exchange(const Copier& copier)
   {
-
+    CH_TIME("EBLevelBoxData::exchange");
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
@@ -202,6 +203,7 @@ public:
   ///
   Real maxNorm(int a_icomp) const
   {
+    CH_TIME("EBLevelBoxData::maxNorm");
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
     copyToHost(     hostdata, *this);
     DataIterator dit = this->dataIterator();
@@ -302,6 +304,7 @@ public:
   void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
                   const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
   {
+    CH_TIME("EBLevelBoxData::copyToHost");
     LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = (LevelData< EBBoxData<cent, Real, NUMCOMPS> >&) (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
@@ -372,6 +375,7 @@ public:
   void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
                     const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
   {
+    CH_TIME("EBLevelBoxData::copyToDevice");
     LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> >  &> (a_deviDat);
     LevelData<EBHostData<cent, Real, NUMCOMPS> >& hostDat = const_cast<LevelData< EBHostData<cent, Real, NUMCOMPS> > &> (a_hostDat);
     DataIterator dit = a_hostDat.dataIterator();
