@@ -216,7 +216,7 @@ void
 EBINS::
 getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
-  m_bcgAdvect->hybridDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
+  m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
 }
 /*******/ 
 PROTO_KERNEL_START 

@@ -202,6 +202,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
                     const Real                      & a_dx,
                     const int                       & a_nx)
 {
+  CH_TIME("defineGeometry");
   pout() << "defining geometry" << endl;
 
   ParmParse pp;
@@ -258,6 +259,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_maxVelRad,
                     EBIBC  a_ibcs)
 {
+  CH_TIME("InitialData");
   DataIterator dit = a_grids.dataIterator();
   int ideb = 0;
   int whichvelo = 0;

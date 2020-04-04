@@ -1,3 +1,5 @@
+#ifndef __EBMultiGridFunctions__
+#define __EBMultiGridFunctions__
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 
@@ -72,3 +74,4 @@ PROTO_KERNEL_END(gsrbResidF, gsrbResid)
 /****/
 #include "Chombo_NamespaceFooter.H"
 /****/
+#endif
