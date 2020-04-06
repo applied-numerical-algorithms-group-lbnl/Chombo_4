@@ -1,6 +1,7 @@
 #ifndef __DBGFunctionss__
 #define __DBGFunctionss__
 #define PI 3.141592653589793
+#include "Chombo_EBLevelFluxData.H"
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 void 
