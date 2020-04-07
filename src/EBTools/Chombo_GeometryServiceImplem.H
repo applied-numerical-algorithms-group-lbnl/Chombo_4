@@ -398,14 +398,6 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
       shiftAndIncrement(coarEBFaMom, fineEBFaMom, coarEBF, fineEBF, a_finerLevel);
 
     }
-//begin debug
-//    Point coariv = coarVoF.m_pt;
-//    if((coariv[0] == 18) && (coariv[1] == 30))
-//    {
-//      pout() << "volume moments for " << coariv << ":" << endl;
-//      coarVoluMom.print();
-//    }
-//begin debug
   }
 }
 
@@ -425,21 +417,6 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
   for(int iface = 0; iface < a_coarFaces.size(); iface++)
   {
     const EBIndex<XFACE> & coarFace = a_coarFaces[iface];
-////begin debug
-//#if DIM==2
-//    int ideb  = 0;
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        ideb = 1;
-//      }
-//    }
-//#endif
-////end debug
     IndMomSDMinOne & coarMom  = (*m_xfacdata)[a_dit](coarFace, 0);
     vector< EBIndex<XFACE> > fineFaces = coarEBGraph.refine<XFACE>(coarFace, fineEBGraph);
     coarMom.setToZero();
@@ -460,29 +437,6 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
       shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
-//begin debug
-//#if DIM==2
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        if(sit() == Side::Lo)
-//        {
-//          pout() << "High " ; //this means that the face is on the high side of the vof
-//        }
-//        else
-//        {
-//          pout() << "Low  " ;
-//        }
-//        pout() << "X face moments for " << debugiv << ":" << endl;
-//        coarMom.print();
-//      }
-//    }
-//#endif
-//end debug
   }
 }
 
@@ -521,29 +475,6 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
       shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
-//begin debug
-//#if DIM==2
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        if(sit() == Side::Lo)
-//        {
-//          pout() << "High " ; //this means that the face is on the high side of the vof
-//        }
-//        else
-//        {
-//          pout() << "Low  " ;
-//        }
-//        pout() << "Y face moments for " << debugiv << ":" << endl;
-//        coarMom.print();
-//      }
-//    }
-//#endif
-//end debug
 
   }
 }
@@ -891,14 +822,6 @@ fillNewNode(inode               &     a_node,
 {
   PR_TIME("LevelGeometryService::ComputeVofInternals");
 
-//  int ideb = 0;
-//#if CH_SPACEDIM==2  
-//  Point ivdeb(1,19);
-//  if(a_iv == ivdeb)
-//  {
-//    ideb = 1;
-//  }
-//#endif
   //for each CutCellMoments<dim>, we record the cell Center
   //(in physical coordinates at the global dimension)
   RvgDim cellCenter;
@@ -943,10 +866,6 @@ fillNewNode(inode               &     a_node,
 
   a_node.m_volumeMoments = thisVof.m_moments;          
   a_node.m_EBMoments     = thisVof.m_EBmoments;
-//  if(ideb == 1)
-//  {
-//    a_node.m_EBMoments.print();
-//  }
 
   IndexTM<double,DIM> point;
   for (int idir = 0; idir < DIM; ++idir)
