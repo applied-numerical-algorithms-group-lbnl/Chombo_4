@@ -1,5 +1,5 @@
 #domain size
-nx=       32
+nx=       64
 #number of applies
 maxIter=    27
 #number of cuda streams (if used)
