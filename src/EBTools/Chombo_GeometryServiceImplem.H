@@ -148,48 +148,6 @@ exchange()
   m_zfacdata->exchange(m_exchangeCopier);
 #endif
 }
-/*********************************************/
-/// Funny private constructor for when grids change and we have to copy data over
-/// to do coarsening
-/*********************************************/
-template <int order>
-LevelGeometryService<order>::
-LevelGeometryService(const Box                               &  a_domain,
-                     const DisjointBoxLayout                 &  a_grids,          
-                     const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
-                     const shared_ptr<LevelData<VoluData> >  &  a_voludata,
-                     const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
-                     const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
-                     const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
-                     const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
-                     const RealVect                          &  a_origin,         
-                     const int                               &  a_order,          
-                     const int                               &  a_degreeP,
-                     const double                            &  a_dx,             
-                     const IntVect                           &  a_geomgrow,       
-                     const shared_ptr<BaseIF>                &  a_baseIF)              
-{
-
-  m_domain    =  a_domain;         
-  m_grids     =  a_grids;          
-  m_origin    =  a_origin;         
-  m_order     =  a_order;          
-  m_degreeP   =  a_degreeP;
-  m_dx        =  a_dx;             
-  m_geomgrow  =  a_geomgrow;
-  m_baseIF    =  a_baseIF;         
-
-  defineData();
-  
-  Interval interv(0,0);
-  a_graphs  ->copyTo(interv, (*m_graphs  ), interv);       
-  a_voludata->copyTo(interv, (*m_voludata), interv);       
-  a_ebfadata->copyTo(interv, (*m_ebfadata), interv);       
-  a_xfacdata->copyTo(interv, (*m_xfacdata), interv);       
-  a_yfacdata->copyTo(interv, (*m_yfacdata), interv);       
-  a_zfacdata->copyTo(interv, (*m_zfacdata), interv);
-  
-}
   
 /*********************************************/
 template <int order>
@@ -204,49 +162,16 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   m_dx       =      2.*a_finerLevel.m_dx;
   m_geomgrow =         a_finerLevel.m_geomgrow;
   m_degreeP =          a_finerLevel.m_degreeP;
-
   m_grids  = a_grids;
-
 
   defineData();
 
-
-  LevelGeometryService* finerPtr = const_cast<LevelGeometryService*>(&a_finerLevel);
-  bool deleteptr = false;
-  if(!a_grids.compatible(a_finerLevel.m_grids))
-  {
-    DisjointBoxLayout refCoarGrids;
-    refine(refCoarGrids, m_grids, 2);
-    finerPtr = new LevelGeometryService(a_finerLevel.m_domain,          
-                                        refCoarGrids,           
-                                        a_finerLevel.m_graphs,          
-                                        a_finerLevel.m_voludata,        
-                                        a_finerLevel.m_ebfadata,        
-                                        a_finerLevel.m_xfacdata,        
-                                        a_finerLevel.m_yfacdata,        
-                                        a_finerLevel.m_zfacdata,        
-                                        a_finerLevel.m_origin,          
-                                        a_finerLevel.m_order,           
-                                        a_finerLevel.m_degreeP,         
-                                        a_finerLevel.m_dx,              
-                                        a_finerLevel.m_geomgrow,        
-                                        a_finerLevel.m_baseIF);         
-
-      
-    deleteptr = true;
-  }
+  PR_assert(a_grids.compatible(a_finerLevel.m_grids));
   
-  coarsenGraph(*finerPtr);
+  LevelGeometryService& finerCast = const_cast<LevelGeometryService&>(a_finerLevel);
+  coarsenGraph(finerCast);
+  coarsenData( finerCast);
 
-  coarsenData( *finerPtr);
-  if(deleteptr)
-  {
-    //if we had to copy the fine stuff to a refcoar layout, we need to copy it back
-    //because the fine to coarse thing changed the fine graph
-    Interval interv(0,0);
-    finerPtr->m_graphs->copyTo(interv, *a_finerLevel.m_graphs, interv);
-    delete finerPtr;
-  }
   exchange();
 }
 /*********************************************/

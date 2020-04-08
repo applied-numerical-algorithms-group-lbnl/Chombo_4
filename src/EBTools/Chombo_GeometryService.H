@@ -290,24 +290,6 @@ private:
                              const HostBoxData<int>  & a_regIrregCovered,
                              const Point             & a_iv) const;
 
-  ///funny constructor for when grids change and we have to copy data over
-  /// to do coarsening
-  LevelGeometryService(const Box                               &  a_domain,
-                       const DisjointBoxLayout                 &  a_grids,          
-                       const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
-                       const shared_ptr<LevelData<VoluData> >  &  a_voludata,
-                       const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
-                       const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
-                       const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
-                       const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
-                       const RealVect                          &  a_origin,         
-                       const int                               &  a_order,          
-                       const int                               &  a_degreeP,
-                       const double                            &  a_dx,             
-                       const IntVect                           &  a_geomgrow,       
-                       const shared_ptr<BaseIF>                &  a_baseIF);         
-
-
   ///calls exchange on everything
   void exchange();
 
@@ -419,8 +401,7 @@ public:
     for(int ilev = 1; ilev < numLevels; ilev++)
     {
       m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(
-        new LevelGeometryService<order>(*m_levels[ilev-1], a_grids[ilev])
-        );
+        new LevelGeometryService<order>(*m_levels[ilev-1], a_grids[ilev]));
       m_domains[ilev] = coarsen(m_domains[ilev-1], 2);
     }
   }
@@ -443,40 +424,36 @@ public:
     int numCoarsen = 0;
     int minDomainSize = 2;
     int nref = 2;
+
+    Vector<Box> boxes;
+    Vector<int> procs;
+    domainSplit(a_domain, boxes, a_maxGridSize);
+    LoadBalance(procs, boxes);
+    DisjointBoxLayout lev0grids(boxes, procs);
+    a_grids.resize(1, lev0grids);
     Vector<Box> domains(1, a_domain);
+    unsigned int curlev = 0;
     bool domCheck = domlev.coarsenable(nref*minDomainSize);
     bool maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
-    while( domCheck && maxCheck)
+    bool gridCheck = a_grids[0].coarsenable(nref*minDomainSize);
+    while(domCheck && maxCheck && gridCheck)
     {
       numLevels++;
       numCoarsen++;
+      curlev++;
+
       domlev.coarsen(nref);
+      DisjointBoxLayout newgrids;
+      coarsen(newgrids, a_grids[curlev-1], 2);
       domains.push_back(domlev);
+      a_grids.push_back(newgrids);
 
       domCheck = domlev.coarsenable(nref*minDomainSize);
       maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
+      gridCheck=  a_grids[curlev].coarsenable(nref*minDomainSize);
+
     }
     a_grids.resize(numLevels);
-    Vector<Box> boxes;
-    Vector<int> procs;
-    domainSplit(domains[0], boxes, a_maxGridSize);
-    LoadBalance(procs, boxes);
-    a_grids[0].define(boxes, procs, domains[0]);
-    //a_grids[0].print();
-    for(int ilev = 1; ilev < numLevels; ilev++)
-    {
-      if(a_grids[ilev-1].coarsenable(2))
-      {
-        coarsen(a_grids[ilev], a_grids[ilev-1], 2);
-        //a_grids[ilev].print();
-      }
-      else
-      {
-        domainSplit(domains[ilev], boxes, a_maxGridSize);
-        LoadBalance(procs, boxes);
-        a_grids[ilev].define(boxes, procs, domains[ilev]);
-      }
-    }
   }
                 
   ///
