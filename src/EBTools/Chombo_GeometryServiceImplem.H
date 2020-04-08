@@ -66,16 +66,20 @@ defineFinestLevel(const RealVect               & a_origin,
   {
     Box validBox = m_grids[dit[ibox]];
     Box grownBox = grow(validBox, m_geomgrow);
-    Box smgrBox = grow(validBox, m_geomgrow-1);
-
+    Box bigBox = grow(validBox, m_geomgrow+1);
+    bigBox &= m_domain;
+    Box smgrBox =  grow(validBox, m_geomgrow-1);
+    smgrBox &= m_domain;
     Box interBoxCh = grownBox & m_domain;
-    Box interBoxSm =  smgrBox & m_domain;
+
     Bx interBox = getProtoBox(interBoxCh);
+    Bx interBoxSm = getProtoBox(smgrBox);
     Bx domain   = getProtoBox(m_domain);
     Bx validBx  = getProtoBox(validBox);
+    Bx bigbx  = getProtoBox(bigBox);
     if(m_baseIF->entireBoxRegular(interBox, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domain);
+      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox, domain);
     }
     else if(m_baseIF->entireBoxCovered(interBox, a_origin, a_dx))
     {
@@ -85,11 +89,11 @@ defineFinestLevel(const RealVect               & a_origin,
     {
       HostBoxData<int> regIrregCovered;
       vector< IrregNode<order> > nodes;
-      fillGraph(regIrregCovered, nodes, validBox, interBoxCh, interBoxSm, m_domain);
+      fillGraph(regIrregCovered, nodes, validBox, bigBox, smgrBox, m_domain);
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
-      (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
+      (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, bigbx, domain);
 //now fill in the moditment information
       (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
       (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
