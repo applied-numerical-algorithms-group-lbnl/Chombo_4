@@ -105,30 +105,35 @@ defineFinestLevel(const RealVect               & a_origin,
       for(int inode = 0; inode < nodes.size(); inode++)
       {
         const IrregNode<order>& node = nodes[inode];
-        EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
-        EBIndex<BOUNDARY> ebf = vof.getCutFace();
-        (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
-        (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
-        for(SideIterator sit; sit.ok(); ++sit)
+        //the data is on  slighly smaller boxes  than the graph
+        Bx volbox = (*m_voludata)[dit[ibox]].inputBox();
+        if(volbox .contains(node.m_cell))
         {
-          vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
-          vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
+          EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
+          EBIndex<BOUNDARY> ebf = vof.getCutFace();
+          (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
+          (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
+          for(SideIterator sit; sit.ok(); ++sit)
+          {
+            vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
+            vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
 #if DIM==3
-          int zfacindex = ebp_index(2, sit());
-          vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
+            int zfacindex = ebp_index(2, sit());
+            vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
 #endif
-          int yfacindex = ebp_index(1, sit());
-          int xfacindex = ebp_index(0, sit());
+            int yfacindex = ebp_index(1, sit());
+            int xfacindex = ebp_index(0, sit());
 
-          PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
-          if(xfaces.size() > 0)
-            (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
-          if(yfaces.size() > 0)
-            (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
+            PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
+            if(xfaces.size() > 0)
+              (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
+            if(yfaces.size() > 0)
+              (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
 #if DIM==3
-          if(zfaces.size() > 0)
-            (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
+            if(zfaces.size() > 0)
+              (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
 #endif
+          }
         }
       }
     }
