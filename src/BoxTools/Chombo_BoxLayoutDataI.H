@@ -324,10 +324,13 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 
     delete[] charbuffer;
 #else
-    a_op.op(a_dest[item.toIndex], item.fromRegion,
+    const T & srcFAB = a_src[item.fromIndex];
+    T       & dstFAB = a_dest[item.toIndex];
+    
+    a_op.op(dstFAB, item.fromRegion,
             a_destComps,
             item.toRegion,
-            a_src[item.fromIndex],
+            srcFAB,
             a_srcComps);
 #endif
 
