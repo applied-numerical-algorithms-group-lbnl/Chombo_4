@@ -473,7 +473,6 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
   a_regIrregCovered.define(ghostRegion);
 
   PointSet ivsirreg;
-  double thrshd = 1.0e-10;
   {
     PR_TIME("boxiterator loop");
     for (auto bit = ghostRegion.begin(); bit != ghostRegion.end(); ++bit)
@@ -531,21 +530,21 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
       }
     }
   }
-//if a regular is next to a  covered, change to irregular with correct arcs and so on.
-
-  for (auto bit = smGhRegion.begin(); bit != smGhRegion.end() ; ++bit)
-  {
-    const Point iv =*bit;
-
-    if(a_regIrregCovered(iv, 0) == -1)
-    {
-      fixRegularCellsNextToCovered(a_nodes, a_regIrregCovered, a_ghostRegion, iv);
-    }
-  }
-
-//now loop through irregular cells and make nodes for each  one.
-  PointSet ivsdrop; //volumes too small to keep
-
+////if a regular is next to a  covered, change to irregular with correct arcs and so on.
+//
+//  for (auto bit = smGhRegion.begin(); bit != smGhRegion.end() ; ++bit)
+//  {
+//    const Point iv =*bit;
+//
+//    if(a_regIrregCovered(iv, 0) == -1)
+//    {
+//      fixRegularCellsNextToCovered(a_nodes, a_regIrregCovered, a_ghostRegion, iv);
+//    }
+//  }
+//
+////now loop through irregular cells and make nodes for each  one.
+//  PointSet ivsdrop; //volumes too small to keep
+//
   for (PointSetIterator ivsit(ivsirreg); ivsit.ok(); ++ivsit)
   {
     Point iv = ivsit();
@@ -557,67 +556,68 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
                 ivsit());
 
       
-    double volFrac = newNode.m_volumeMoments[IvgDim::Zero];
-    if (volFrac < thrshd)
-    {
-      ivsdrop |= iv;
-      a_regIrregCovered(iv, 0) = -1;
-    }//CP record these nodes to be removed
-    else
+//    double volFrac = newNode.m_volumeMoments[IvgDim::Zero];
+//  double thrshd = 1.0e-10;
+//    if (volFrac < thrshd)
+//    {
+//      ivsdrop |= iv;
+//      a_regIrregCovered(iv, 0) = -1;
+//    }//CP record these nodes to be removed
+//    else
     {
       //bool fixMoments = true;
       //checkNodeMoments(newNode, m_dx, fixMoments, s_relativeTol);      
       a_nodes.push_back(newNode);
     }
   } //end loop over cells in the box
-// CP: fix sweep that removes cells with volFrac less than a certain threshold
-  for(PointSetIterator ivsit(ivsdrop); ivsit.ok(); ++ivsit)
-  {
-    const Point& iv = ivsit();
-  
-    for (int faceDir = 0; faceDir < DIM; faceDir++)
-    {
-      for (SideIterator sit; sit.ok(); ++sit)
-      {
-        int isign = sign(sit());
-        Point otherIV = iv + isign*Point::Basis(faceDir);
-        if (ghostRegion.contains(otherIV))
-        {
-          if (a_regIrregCovered(otherIV,0) == 0)
-          {
-            // i am in the case where the other cell
-            // is also irregular.   I just made a previously
-            // irregular cell covered so I have to check to
-            // see if it had any faces pointed this way.
-            int inode = -1;
-            bool found = false;
-            for (int ivec = 0; ivec < a_nodes.size() && ! found; ivec++)
-            {
-              if (a_nodes[ivec].m_cell == otherIV)
-              {
-                inode = ivec;
-                found = true;
-              }
-            }
-            if (!found && validRegion.contains(otherIV))
-            {
-              PR_error("something wrong in our logic2");
-            }
-            if (found)
-            {
-              int arcindex = ebp_index(faceDir, flip(sit()));
-              a_nodes[inode].m_arc[         arcindex].resize(0);
-              a_nodes[inode].m_faceMoments [arcindex].setToZero();
-            }
-          }
-        }//valid region
-      }//sit
-    }//facedir
-        
-    //also need to fix regular cells next to new covered cell
-    fixRegularCellsNextToCovered(a_nodes, a_regIrregCovered, a_ghostRegion, iv);
-
-  }//ivsdrop
+//// CP: fix sweep that removes cells with volFrac less than a certain threshold
+//  for(PointSetIterator ivsit(ivsdrop); ivsit.ok(); ++ivsit)
+//  {
+//    const Point& iv = ivsit();
+//  
+//    for (int faceDir = 0; faceDir < DIM; faceDir++)
+//    {
+//      for (SideIterator sit; sit.ok(); ++sit)
+//      {
+//        int isign = sign(sit());
+//        Point otherIV = iv + isign*Point::Basis(faceDir);
+//        if (ghostRegion.contains(otherIV))
+//        {
+//          if (a_regIrregCovered(otherIV,0) == 0)
+//          {
+//            // i am in the case where the other cell
+//            // is also irregular.   I just made a previously
+//            // irregular cell covered so I have to check to
+//            // see if it had any faces pointed this way.
+//            int inode = -1;
+//            bool found = false;
+//            for (int ivec = 0; ivec < a_nodes.size() && ! found; ivec++)
+//            {
+//              if (a_nodes[ivec].m_cell == otherIV)
+//              {
+//                inode = ivec;
+//                found = true;
+//              }
+//            }
+//            if (!found && validRegion.contains(otherIV))
+//            {
+//              PR_error("something wrong in our logic2");
+//            }
+//            if (found)
+//            {
+//              int arcindex = ebp_index(faceDir, flip(sit()));
+//              a_nodes[inode].m_arc[         arcindex].resize(0);
+//              a_nodes[inode].m_faceMoments [arcindex].setToZero();
+//            }
+//          }
+//        }//valid region
+//      }//sit
+//    }//facedir
+//        
+//    //also need to fix regular cells next to new covered cell
+////    fixRegularCellsNextToCovered(a_nodes, a_regIrregCovered, a_ghostRegion, iv);
+//
+//  }//ivsdrop
 }
 /*************/
 template <int order>
