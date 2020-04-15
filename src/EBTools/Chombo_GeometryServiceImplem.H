@@ -66,7 +66,7 @@ defineFinestLevel(const RealVect               & a_origin,
   {
     Box validBox = m_grids[dit[ibox]];
     Box grownBox = grow(validBox, m_geomgrow);
-    Box bigBox = grow(validBox, m_geomgrow+1);
+    Box bigBox = grow(validBox, m_geomgrow+2);
     bigBox &= m_domain;
     Box smgrBox =  grow(validBox, m_geomgrow-1);
     smgrBox &= m_domain;
@@ -77,13 +77,13 @@ defineFinestLevel(const RealVect               & a_origin,
     Bx domain   = getProtoBox(m_domain);
     Bx validBx  = getProtoBox(validBox);
     Bx bigbx  = getProtoBox(bigBox);
-    if(m_baseIF->entireBoxRegular(interBox, a_origin, a_dx))
+    if(m_baseIF->entireBoxRegular(bigbx, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox, domain);
+      (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, bigbx, domain);
     }
-    else if(m_baseIF->entireBoxCovered(interBox, a_origin, a_dx))
+    else if(m_baseIF->entireBoxCovered(bigbx, a_origin, a_dx))
     {
-      (*m_graphs)[dit[ibox]].defineAsAllCovered(validBx, interBox, domain);
+      (*m_graphs)[dit[ibox]].defineAsAllCovered(validBx, bigbx, domain);
     }
     else
     {
@@ -479,18 +479,15 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
     {
       const Point iv =*bit;
       Bx interBox(iv, iv);
-      interBox = interBox.grow(1);
-      Bx domainbx = ProtoCh::getProtoBox(a_domain);
-      interBox &= domainbx;
-//      if(m_baseIF->entireBoxRegular(interBox, m_origin, m_dx))
-//      {
-//        a_regIrregCovered(iv, 0) =  1;
-//      }
-//      else if(m_baseIF->entireBoxCovered(interBox, m_origin, m_dx))
-//      {
-//        a_regIrregCovered(iv, 0) = -1;
-//      }
-//      else
+      if(m_baseIF->entireBoxRegular(interBox, m_origin, m_dx))
+      {
+        a_regIrregCovered(iv, 0) =  1;
+      }
+      else if(m_baseIF->entireBoxCovered(interBox, m_origin, m_dx))
+      {
+        a_regIrregCovered(iv, 0) = -1;
+      }
+      else
       {
         RvgDim cellCenter;
         for (int idir = 0;idir < DIM; ++idir)
