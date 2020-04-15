@@ -479,15 +479,18 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
     {
       const Point iv =*bit;
       Bx interBox(iv, iv);
-      if(m_baseIF->entireBoxRegular(interBox, m_origin, m_dx))
-      {
-        a_regIrregCovered(iv, 0) =  1;
-      }
-      else if(m_baseIF->entireBoxCovered(interBox, m_origin, m_dx))
-      {
-        a_regIrregCovered(iv, 0) = -1;
-      }
-      else
+      interBox = interBox.grow(1);
+      Bx domainbx = ProtoCh::getProtoBox(a_domain);
+      interBox &= domainbx;
+//      if(m_baseIF->entireBoxRegular(interBox, m_origin, m_dx))
+//      {
+//        a_regIrregCovered(iv, 0) =  1;
+//      }
+//      else if(m_baseIF->entireBoxCovered(interBox, m_origin, m_dx))
+//      {
+//        a_regIrregCovered(iv, 0) = -1;
+//      }
+//      else
       {
         RvgDim cellCenter;
         for (int idir = 0;idir < DIM; ++idir)
