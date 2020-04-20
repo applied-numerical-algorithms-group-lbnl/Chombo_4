@@ -41,7 +41,7 @@ inline bool BoxLayoutData<T>::isDefined() const
 template <class T>
 inline void BoxLayoutData<T>::setVector(const BoxLayoutData<T>& da,
                                         const Interval& srcComps,
-                                        const Interval& destComps)
+                                        const Interval& dstComps)
 {
   if(&da != this)
     {
@@ -49,7 +49,7 @@ inline void BoxLayoutData<T>::setVector(const BoxLayoutData<T>& da,
       int nbox=it.size();
       for(int box=0; box<nbox; box++)
         {
-          this->m_vector[it[box].datInd()]->copy( this->box(it[box]), destComps,
+          this->m_vector[it[box].datInd()]->copy( this->box(it[box]), dstComps,
                                                this->box(it[box]), da[it[box]], srcComps);
         }
     }
@@ -74,9 +74,9 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da, const Interval&
   this->m_threadSafe = factory.threadSafe();
   //this->m_threadSafe = false;
   
-  //  Interval dest(0, m_comps-1);
+  //  Interval dst(0, m_comps-1);
   allocateGhostVector(factory);
-//  setVector(da, comps, dest);
+//  setVector(da, comps, dst);
 }
 
 template<class T>
@@ -139,9 +139,9 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da,
     m_comps    = da.nComp();
     this->m_threadSafe = factory.threadSafe();
     //this->m_threadSafe = false;
-    //  Interval srcAnddest(0, m_comps-1);
+    //  Interval srcAnddst(0, m_comps-1);
     allocateGhostVector(factory);
-//    setVector(da, srcAnddest, srcAnddest);
+//    setVector(da, srcAnddst, srcAnddst);
   }
 
 }
@@ -225,8 +225,8 @@ T* AliasDataFactory<T>::create(const Box& a_box, int ncomps, const DataIndex& a_
 template<class T>
 void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
                                 const BoxLayoutData<T>& a_src,
-                                BoxLayoutData<T>& a_dest,
-                                const Interval&   a_destComps,
+                                BoxLayoutData<T>& a_dst,
+                                const Interval&   a_dstComps,
                                 const Copier&     a_copier,
                                 const LDOperator<T>& a_op) const
 {
@@ -237,23 +237,23 @@ void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
   }
   {
     CH_TIME("makeItSoBegin");
-    makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+    makeItSoBegin(a_srcComps, a_src, a_dst, a_dstComps, a_copier, a_op);
   }
   {
       CH_TIME("makeItSoLocalCopy");
-    makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+    makeItSoLocalCopy(a_srcComps, a_src, a_dst, a_dstComps, a_copier, a_op);
   }
   {
       CH_TIME("makeItSoEnd");
-    a_dest.makeItSoEnd(a_destComps, a_op);
+    a_dst.makeItSoEnd(a_dstComps, a_op);
   }
 }
 
 template<class T>
 void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
                                      const BoxLayoutData<T>& a_src,
-                                     BoxLayoutData<T>& a_dest,
-                                     const Interval&   a_destComps,
+                                     BoxLayoutData<T>& a_dst,
+                                     const Interval&   a_dstComps,
                                      const Copier&     a_copier,
                                      const LDOperator<T>& a_op) const
 {
@@ -262,7 +262,7 @@ void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
 #ifdef CH_MPI
 
   allocateBuffers(a_src,  a_srcComps,
-                  a_dest, a_destComps,
+                  a_dst, a_dstComps,
                   a_copier,
                   a_op);  //monkey with buffers, set up 'fromMe' and 'toMe' queues
 
@@ -293,8 +293,8 @@ void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
 template<class T>
 void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
                                           const BoxLayoutData<T>& a_src,
-                                          BoxLayoutData<T>& a_dest,
-                                          const Interval&   a_destComps,
+                                          BoxLayoutData<T>& a_dst,
+                                          const Interval&   a_dstComps,
                                           const Copier&     a_copier,
                                           const LDOperator<T>& a_op) const
 {
@@ -311,24 +311,24 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 //debugging bit to force serial code to run parallel bits
 #if 1
     const T & srcFAB = a_src[item.fromIndex];
-    T       & dstFAB = a_dest[item.toIndex];
+    T       & dstFAB = a_dst[item.toIndex];
     size_t bufsize_src = a_op.size(srcFAB, item.fromRegion, a_srcComps);
-    size_t bufsize_dst = a_op.size(dstFAB, item.fromRegion, a_srcComps);
+    size_t bufsize_dst = a_op.size(dstFAB, item.fromRegion, a_dstComps);
     if(bufsize_src != bufsize_dst)
     {
       MayDay::Error("buffer size mismatch");
     }
     char* charbuffer = new char[bufsize_src];
     a_op.linearOut(srcFAB, charbuffer, item.fromRegion, a_srcComps);
-    a_op.linearIn (dstFAB, charbuffer, item.toRegion,  a_destComps);
+    a_op.linearIn (dstFAB, charbuffer, item.toRegion,  a_dstComps);
 
     delete[] charbuffer;
 #else
     const T & srcFAB = a_src[item.fromIndex];
-    T       & dstFAB = a_dest[item.toIndex];
+    T       & dstFAB = a_dst[item.toIndex];
     
     a_op.op(dstFAB, item.fromRegion,
-            a_destComps,
+            a_dstComps,
             item.toRegion,
             srcFAB,
             a_srcComps);
@@ -338,13 +338,13 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 }
 template<class T>
 void BoxLayoutData<T>::makeItSoEnd(
-                                   const Interval&   a_destComps,
+                                   const Interval&   a_dstComps,
                                    const LDOperator<T>& a_op)
 {
   // Uncomment and Move this out of unpackReceivesToMe()  (ndk)
   completePendingSends(); // wait for sends from possible previous operation
 
-  unpackReceivesToMe(a_destComps, a_op); // nullOp in uniprocessor mode
+  unpackReceivesToMe(a_dstComps, a_op); // nullOp in uniprocessor mode
 
 }
 
@@ -358,8 +358,8 @@ void BoxLayoutData<T>::completePendingSends() const
 template<class T>
 void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
                                    const Interval& a_srcComps,
-                                   const BoxLayoutData<T>& a_dest,
-                                   const Interval& a_destComps,
+                                   const BoxLayoutData<T>& a_dst,
+                                   const Interval& a_dstComps,
                                    const Copier&   a_copier,
                                    const LDOperator<T>& a_op
                                    ) const
@@ -385,14 +385,14 @@ void BoxLayoutData<T>::postReceivesToMe() const
 
 template<class T>
 void BoxLayoutData<T>::unpackReceivesToMe(
-                                      const Interval&   a_destComps,
+                                      const Interval&   a_dstComps,
                                       const LDOperator<T>& a_op)
 {
 }
 
 template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
-                                                 const Interval&   a_destComps,
+void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dst,
+                                                 const Interval&   a_dstComps,
                                                  int ncomp,
                                                  const DataFactory<T>& factory,
                                                  const LDOperator<T>& a_op) const
@@ -423,21 +423,21 @@ void BoxLayoutData<T>::completePendingSends() const
 template<class T>
 void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
                                    const Interval& a_srcComps,
-                                   const BoxLayoutData<T>& a_dest,
-                                   const Interval& a_destComps,
+                                   const BoxLayoutData<T>& a_dst,
+                                   const Interval& a_dstComps,
                                    const Copier&   a_copier,
                                    const LDOperator<T>& a_op) const
 {
   CH_TIME("MPI_allocateBuffers");
   m_buff = &(((Copier&)a_copier).m_buffers);
-  a_dest.m_buff = m_buff;
+  a_dst.m_buff = m_buff;
   
-  CH_assert(a_srcComps.size() == a_destComps.size());
+  CH_assert(a_srcComps.size() == a_dstComps.size());
   if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2) return;
 
   if(s_verbosity > 0)
   {
-    pout() << " allocate buffers srcComps = " << a_srcComps << ", dest comps = " << a_destComps << endl;
+    pout() << " allocate buffers srcComps = " << a_srcComps << ", dst comps = " << a_dstComps << endl;
   }
   m_buff->m_ncomps = a_srcComps.size();
 
@@ -466,12 +466,12 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
       b.item = &item;
       if (T::preAllocatable() == 0)
         {
-          b.size = a_op.size(dummy, item.fromRegion, a_destComps);
+          b.size = a_op.size(dummy, item.fromRegion, a_dstComps);
           recBufferSize+=b.size;
         }
       else if (T::preAllocatable() == 1)
         {
-          b.size = a_op.size(a_dest[item.toIndex], item.fromRegion, a_destComps);
+          b.size = a_op.size(a_dst[item.toIndex], item.fromRegion, a_dstComps);
           recBufferSize+=b.size;
         }
       b.procID = item.procID;
@@ -796,7 +796,7 @@ void BoxLayoutData<T>::postReceivesToMe() const
 
 template<class T>
 void BoxLayoutData<T>::unpackReceivesToMe(
-                                          const Interval&   a_destComps,
+                                          const Interval&   a_dstComps,
                                           const LDOperator<T>& a_op)
 {
 
@@ -825,15 +825,15 @@ void BoxLayoutData<T>::unpackReceivesToMe(
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
       a_op.linearIn(this->operator[](entry.item->toIndex), entry.bufPtr,
-                    entry.item->toRegion, a_destComps);
+                    entry.item->toRegion, a_dstComps);
     }
   }
   this->m_buff->numReceives = 0;
 }
 
 template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
-                                                 const Interval&   a_destComps,
+void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dst,
+                                                 const Interval&   a_dstComps,
                                                  int ncomp,
                                                  const DataFactory<T>& factory,
 
@@ -854,15 +854,15 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
      //hell if I know what to do about failed messaging here
    }
    int isize = m_buff->m_toMe.size();
-   // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
+   // NOT thread-safe, because of a_dst[item.toIndex].push_back(newT);
    for (int i=0; i< isize; ++i)
    {
      const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
      const MotionItem& item = *(entry.item);
      RefCountedPtr<T> newT( factory.create(item.toRegion, ncomp, item.toIndex) );;
 
-     a_op.linearIn(*newT, entry.bufPtr, item.toRegion, a_destComps);
-     a_dest[item.toIndex].push_back(newT);
+     a_op.linearIn(*newT, entry.bufPtr, item.toRegion, a_dstComps);
+     a_dst[item.toIndex].push_back(newT);
    }
   }
 
@@ -871,8 +871,8 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
 #endif
 
 template <class T>
-void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
-                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_dstGrids,
+                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dst,
                                      const Interval& a_srcComps,
                                      const ProblemDomain& a_domain,
                                      const Copier& a_copier,
@@ -880,14 +880,14 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 {
 
   CH_assert(T::preAllocatable() == 0);
-  a_dest.define(a_destGrids);
+  a_dst.define(a_dstGrids);
 
   LDOperator<T> a_op;
 
   int ncomp = a_srcComps.size();
-  Interval destComps(0, ncomp-1);
+  Interval dstComps(0, ncomp-1);
   allocateBuffers(*this,  a_srcComps,
-                  *this,  destComps,
+                  *this,  dstComps,
                   a_copier, a_op);
 
   writeSendDataFromMeIntoBuffers(*this, a_srcComps, a_op);
@@ -914,62 +914,62 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
   int items=it.size();
 
 //brian says this does not need conditionals because everyone is getting different buffers
-  // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
+  // NOT thread-safe, because of a_dst[item.toIndex].push_back(newT);
   for(int i=0; i<items; ++i)
   {
     const MotionItem& item = it[i];
     RefCountedPtr<T> newT( factory.create(item.toRegion, ncomp, item.toIndex) );
 
     a_op.op(*newT, item.fromRegion,
-            destComps,
+            dstComps,
             item.toRegion,
             this->operator[](item.fromIndex),
             a_srcComps);
-    a_dest[item.toIndex].push_back(newT);
+    a_dst[item.toIndex].push_back(newT);
   }
   // }
   // Uncomment and Move this out of unpackReceivesToMe()  (ndk)
   completePendingSends(); // wait for sends from possible previous operation
 
-  unpackReceivesToMe_append(a_dest, destComps, ncomp, factory, a_op); // nullOp in uniprocessor mode
+  unpackReceivesToMe_append(a_dst, dstComps, ncomp, factory, a_op); // nullOp in uniprocessor mode
 }
 
 template <class T>
-void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
-                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_dstGrids,
+                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dst,
                                      const Interval& a_srcComps,
                                      const ProblemDomain& a_domain,
                                      const DataFactory<T>& factory) const
 {
   Copier copier;
-  copier.define(this->m_boxLayout, a_destGrids, a_domain, IntVect::Zero);
+  copier.define(this->m_boxLayout, a_dstGrids, a_domain, IntVect::Zero);
 
-  generalCopyTo(a_destGrids, a_dest, a_srcComps, a_domain, copier, factory);
+  generalCopyTo(a_dstGrids, a_dst, a_srcComps, a_domain, copier, factory);
 }
 
 template <class T>
 void BoxLayoutData<T>::addTo(const Interval& a_srcComps,
-                             BoxLayoutData<T>& a_dest,
-                             const Interval& a_destComps,
+                             BoxLayoutData<T>& a_dst,
+                             const Interval& a_dstComps,
                              const ProblemDomain& a_domain) const
 {
   Copier copier;
-  copier.define(this->m_boxLayout, a_dest.m_boxLayout, a_domain, IntVect::Zero);
-  addTo(a_srcComps, a_dest, a_destComps, a_domain, copier);
+  copier.define(this->m_boxLayout, a_dst.m_boxLayout, a_domain, IntVect::Zero);
+  addTo(a_srcComps, a_dst, a_dstComps, a_domain, copier);
 }
 
 template <class T>
 class LDaddOp : public LDOperator<T>
 {
 public:
-  virtual void op(T& dest,
+  virtual void op(T& dst,
                   const Box& RegionFrom,
-                  const Interval& Cdest,
+                  const Interval& Cdst,
                   const Box& RegionTo,
                   const T& src,
                   const Interval& Csrc) const
   {
-    dest.plus(src, RegionFrom, RegionTo, Csrc.begin(), Cdest.begin(), Cdest.size());
+    dst.plus(src, RegionFrom, RegionTo, Csrc.begin(), Cdst.begin(), Cdst.size());
   }
   virtual void linearIn(T& arg,  void* buf, const Box& R,
                         const Interval& comps) const
@@ -993,43 +993,43 @@ public:
 
 template <class T>
 void BoxLayoutData<T>::addTo(const Interval& a_srcComps,
-                             BoxLayoutData<T>& a_dest,
-                             const Interval& a_destComps,
+                             BoxLayoutData<T>& a_dst,
+                             const Interval& a_dstComps,
                              const ProblemDomain& a_domain,
                              const Copier& a_copier) const
 {
   CH_TIME("addTo");
   LDaddOp<T> addOp;
-  addToBegin(a_srcComps, a_dest, a_destComps, a_copier);
-  a_dest.addToEnd(a_destComps);
-  //makeItSoBegin(a_srcComps, *this, a_dest, a_destComps, a_copier, addOp);
-  //makeItSoLocalCopy(a_srcComps, *this, a_dest, a_destComps, a_copier, addOp);
-  //a_dest.makeItSoEnd(a_destComps, addOp);
-  //makeItSo(a_srcComps, *this, a_dest, a_destComps, a_copier, addOp);
+  addToBegin(a_srcComps, a_dst, a_dstComps, a_copier);
+  a_dst.addToEnd(a_dstComps);
+  //makeItSoBegin(a_srcComps, *this, a_dst, a_dstComps, a_copier, addOp);
+  //makeItSoLocalCopy(a_srcComps, *this, a_dst, a_dstComps, a_copier, addOp);
+  //a_dst.makeItSoEnd(a_dstComps, addOp);
+  //makeItSo(a_srcComps, *this, a_dst, a_dstComps, a_copier, addOp);
 }
 
 
 template <class T>
 void BoxLayoutData<T>::addToBegin(const Interval& a_srcComps,
-                             BoxLayoutData<T>& a_dest,
-                             const Interval& a_destComps,
+                             BoxLayoutData<T>& a_dst,
+                             const Interval& a_dstComps,
                              const Copier& a_copier) const
 {
   CH_TIME("addToBegin");
   LDaddOp<T> addOp;
-  makeItSoBegin(a_srcComps, *this, a_dest, a_destComps, a_copier, addOp);
-  makeItSoLocalCopy(a_srcComps, *this, a_dest, a_destComps, a_copier, addOp);
+  makeItSoBegin(a_srcComps, *this, a_dst, a_dstComps, a_copier, addOp);
+  makeItSoLocalCopy(a_srcComps, *this, a_dst, a_dstComps, a_copier, addOp);
 
 }
 
 
 template <class T>
-void BoxLayoutData<T>::addToEnd(const Interval& a_destComps)
+void BoxLayoutData<T>::addToEnd(const Interval& a_dstComps)
 {
   CH_TIME("addToEnd");
   LDaddOp<T> addOp;
 
-  makeItSoEnd(a_destComps, addOp);
+  makeItSoEnd(a_dstComps, addOp);
  
 }
 
