@@ -309,7 +309,7 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
   {
     const MotionItem& item = it[n];
 //debugging bit to force serial code to run parallel bits
-#if 0
+#if 1
     const T & srcFAB = a_src[item.fromIndex];
     T       & dstFAB = a_dest[item.toIndex];
     size_t bufsize_src = a_op.size(srcFAB, item.fromRegion, a_srcComps);

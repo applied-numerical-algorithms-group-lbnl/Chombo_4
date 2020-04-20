@@ -60,6 +60,9 @@ defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
   PR_TIME("LevelGeometryService::defineFinestLevel");
+
+ 
+  LayoutData< vector< IrregNode<order> > > ld_nodes(m_grids);
   using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -88,56 +91,77 @@ defineFinestLevel(const RealVect               & a_origin,
     else
     {
       HostBoxData<int> regIrregCovered;
-      vector< IrregNode<order> > nodes;
+      vector< IrregNode<order> >& nodes = ld_nodes[dit[ibox]] ;
       fillGraph(regIrregCovered, nodes, validBox, bigBox, smgrBox, m_domain);
+
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, bigbx, domain);
-//now fill in the moditment information
-      (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-#if DIM==3
-      (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-#endif
-      for(int inode = 0; inode < nodes.size(); inode++)
-      {
-        const IrregNode<order>& node = nodes[inode];
-        //the data is on  slighly smaller boxes  than the graph
-        Bx volbox = (*m_voludata)[dit[ibox]].inputBox();
-        if(volbox .contains(node.m_cell))
-        {
-          EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
-          EBIndex<BOUNDARY> ebf = vof.getCutFace();
-          (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
-          (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
-            vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
-#if DIM==3
-            int zfacindex = ebp_index(2, sit());
-            vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
-#endif
-            int yfacindex = ebp_index(1, sit());
-            int xfacindex = ebp_index(0, sit());
+    }
+  }
+  m_graphs  ->exchange(m_exchangeCopier);       
+  
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box bigBox = grow(validBox, m_geomgrow+2);
+    bigBox &= m_domain;
+    Box smgrBox =  grow(validBox, m_geomgrow-1);
+    smgrBox &= m_domain;
+    Box interBoxCh = grownBox & m_domain;
 
-            PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
-            if(xfaces.size() > 0)
-              (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
-            if(yfaces.size() > 0)
-              (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
+    Bx interBox = getProtoBox(interBoxCh);
+    Bx interBoxSm = getProtoBox(smgrBox);
+    Bx domain   = getProtoBox(m_domain);
+    Bx validBx  = getProtoBox(validBox);
+    Bx bigbx  = getProtoBox(bigBox);
+//now fill in the moment information
+    (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
 #if DIM==3
-            if(zfaces.size() > 0)
-              (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
+    (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
 #endif
-          }
+    vector< IrregNode<order> >& nodes = ld_nodes[dit[ibox]] ;
+    for(int inode = 0; inode < nodes.size(); inode++)
+    {
+      const IrregNode<order>& node = nodes[inode];
+      //the data is on  slighly smaller boxes  than the graph
+      Bx volbox = (*m_voludata)[dit[ibox]].inputBox();
+      if(volbox .contains(node.m_cell))
+      {
+        EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
+        EBIndex<BOUNDARY> ebf = vof.getCutFace();
+        (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
+        (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
+          vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
+#if DIM==3
+          int zfacindex = ebp_index(2, sit());
+          vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
+#endif
+          int yfacindex = ebp_index(1, sit());
+          int xfacindex = ebp_index(0, sit());
+
+          PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
+          if(xfaces.size() > 0)
+            (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
+          if(yfaces.size() > 0)
+            (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
+#if DIM==3
+          if(zfaces.size() > 0)
+            (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
+#endif
         }
       }
     }
   }
+  
   exchange();
 }
 /*********************************************/
@@ -148,7 +172,6 @@ exchange()
 {
   PR_TIME("LevelGeometryService::exchange");
   Interval interv(0,0);
-  m_graphs  ->exchange(m_exchangeCopier);       
   m_voludata->exchange(m_exchangeCopier);       
   m_ebfadata->exchange(m_exchangeCopier);       
   m_xfacdata->exchange(m_exchangeCopier);       
