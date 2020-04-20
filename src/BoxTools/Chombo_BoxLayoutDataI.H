@@ -313,7 +313,7 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
     const T & srcFAB = a_src[item.fromIndex];
     T       & dstFAB = a_dest[item.toIndex];
     size_t bufsize_src = a_op.size(srcFAB, item.fromRegion, a_srcComps);
-    size_t bufsize_dst = a_op.size(srcFAB, item.fromRegion, a_srcComps);
+    size_t bufsize_dst = a_op.size(dstFAB, item.fromRegion, a_srcComps);
     if(bufsize_src != bufsize_dst)
     {
       MayDay::Error("buffer size mismatch");
