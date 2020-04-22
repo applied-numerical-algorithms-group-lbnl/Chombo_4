@@ -114,7 +114,7 @@ runTest(int a_argc, char* a_argv[])
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, true));
-  Bx domainpr = getProtoBox(domain.domainBox());
+//  Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);

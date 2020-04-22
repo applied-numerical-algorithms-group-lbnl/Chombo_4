@@ -88,7 +88,7 @@ project(EBLevelFluxData<1>   & a_velo,
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     
-    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+//    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     //get face fluxes and interpolate them to centroids
     for(unsigned int idir = 0; idir < DIM; idir++)
     {

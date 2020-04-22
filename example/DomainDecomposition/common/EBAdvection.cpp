@@ -66,7 +66,7 @@ fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Box grid =m_grids[dit[ibox]];
-    Bx  grbx = getProtoBox(grid);
+//    Bx  grbx = getProtoBox(grid);
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     EBBoxData <CELL, Real, 1> & devidat = m_kappa[dit[ibox]];    
     EBHostData<CELL, Real, 1>   hostdat(devidat.box(), graph);
