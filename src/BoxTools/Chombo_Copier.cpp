@@ -1070,54 +1070,7 @@ void Copier::exchangeDefine(const DisjointBoxLayout& a_grids,
                             const IntVect& a_ghost, bool a_includeSelf)
 {
   CH_TIME("Copier::exchangeDefine");
-  clear();
-  DataIterator dit = a_grids.dataIterator();
-  NeighborIterator nit(a_grids);
-  int myprocID = procID();
-  for (dit.begin(); dit.ok(); ++dit)
-    {
-      const Box& b = a_grids[dit];
-      Box bghost(b);
-      bghost.grow(a_ghost);
-      if(a_includeSelf)
-      {
-        MotionItem* item = new (s_motionItemPool.getPtr())
-                MotionItem(dit(), dit(), bghost);
-        m_localMotionPlan.push_back(item);
-      } 
-      for (nit.begin(dit()); nit.ok(); ++nit)
-        {
-          Box neighbor = nit.box();
-          int fromProcID = a_grids.procID(nit());
-          if (neighbor.intersectsNotEmpty(bghost))
-            {
-              Box box(neighbor & bghost);
-
-              MotionItem* item = new (s_motionItemPool.getPtr())
-                MotionItem(DataIndex(nit()), dit(), nit.unshift(box), box);
-              if (fromProcID == myprocID)
-              { // local move
-                m_localMotionPlan.push_back(item);
-              }
-              else
-              {
-                item->procID = fromProcID;
-                m_toMotionPlan.push_back(item);
-              }
-            }
-          neighbor.grow(a_ghost);
-          if (neighbor.intersectsNotEmpty(b) && fromProcID != myprocID)
-            {
-              Box box(neighbor & b);
-              MotionItem* item = new (s_motionItemPool.getPtr())
-                MotionItem(dit(), DataIndex(nit()), box, nit.unshift(box) );
-              item->procID = fromProcID;
-              m_fromMotionPlan.push_back(item);
-            }
-        }
-
-    }
-  sort();
+  define(a_grids, a_grids, a_ghost, true);
 }
 
 class MotionItemSorter
