@@ -725,7 +725,7 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
   CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
-  IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
+  //IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
   if (a_src.box()==box() && box()==a_srcbox && a_srcbox==a_dstbox) {
       int npts = box().numPts();
       for (int icomp = 0; icomp < a_numcomp; icomp++) {

@@ -17,6 +17,7 @@
 #include "Chombo_DisjointBoxLayout.H"
 #include "Chombo_Copier.H"
 #include "Chombo_SPMD.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
 
@@ -24,7 +25,18 @@
 
 class FluxBox;
 
-extern int LinearizationTest;
+inline int getLinearizationTest()
+{
+  static int linearTest=0;
+  static bool checkedInputs = false;
+  if(!checkedInputs)
+  {
+    ParmParse pp;
+    pp.query("bld_linearization_test", linearTest);
+    checkedInputs = true;
+  }
+  return linearTest;
+}
 
 /// Factory object to data members of a BoxLayoutData container
 template <class T> class DataFactory
@@ -218,6 +230,7 @@ public:
           const T& src,
           const Interval& Csrc) const
   {
+    int LinearizationTest = getLinearizationTest();
     if (LinearizationTest == 0)
     {
       ::Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);

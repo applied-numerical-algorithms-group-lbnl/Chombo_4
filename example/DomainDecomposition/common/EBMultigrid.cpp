@@ -80,8 +80,8 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     shared_ptr<ebstencil_t> stencil =
       m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     //set lphi = kappa* div(F)
-    Bx lphbox = lphfab.box();
-    Bx phibox = phifab.box();
+//    Bx lphbox = lphfab.box();
+//    Bx phibox = phifab.box();
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     unsigned long long int numflopspt = 3;
@@ -123,8 +123,8 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     shared_ptr<ebstencil_t> stencil =
       m_dictionary->getEBStencil(m_neumname, StencilNames::Neumann, m_domain, m_domain, ibox);
     //set lphi = kappa* div(F)
-    Bx lphbox = lphfab.box();
-    Bx phibox = phifab.box();
+//    Bx lphbox = lphfab.box();
+//    Bx phibox = phifab.box();
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     unsigned long long int numflopspt = 3;

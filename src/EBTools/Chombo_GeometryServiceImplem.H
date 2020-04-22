@@ -68,15 +68,15 @@ defineFinestLevel(const RealVect               & a_origin,
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box validBox = m_grids[dit[ibox]];
-    Box grownBox = grow(validBox, m_geomgrow);
+    //Box grownBox = grow(validBox, m_geomgrow);
     Box bigBox = grow(validBox, m_geomgrow+2);
     bigBox &= m_domain;
     Box smgrBox =  grow(validBox, m_geomgrow-1);
     smgrBox &= m_domain;
-    Box interBoxCh = grownBox & m_domain;
+//    Box interBoxCh = grownBox & m_domain;
 
-    Bx interBox = getProtoBox(interBoxCh);
-    Bx interBoxSm = getProtoBox(smgrBox);
+    //Bx interBox = getProtoBox(interBoxCh);
+//    Bx interBoxSm = getProtoBox(smgrBox);
     Bx domain   = getProtoBox(m_domain);
     Bx validBx  = getProtoBox(validBox);
     Bx bigbx  = getProtoBox(bigBox);
@@ -113,10 +113,10 @@ defineFinestLevel(const RealVect               & a_origin,
     Box interBoxCh = grownBox & m_domain;
 
     Bx interBox = getProtoBox(interBoxCh);
-    Bx interBoxSm = getProtoBox(smgrBox);
-    Bx domain   = getProtoBox(m_domain);
-    Bx validBx  = getProtoBox(validBox);
-    Bx bigbx  = getProtoBox(bigBox);
+    //Bx interBoxSm = getProtoBox(smgrBox);
+//    Bx domain   = getProtoBox(m_domain);
+//    Bx validBx  = getProtoBox(validBox);
+//    Bx bigbx  = getProtoBox(bigBox);
 //now fill in the moment information
     (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
     (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
@@ -491,8 +491,8 @@ fillGraph(HostBoxData<int>&    a_regIrregCovered,
 
   PR_assert(m_domain.contains(a_ghostRegion));
   Bx ghostRegion = ProtoCh::getProtoBox(a_ghostRegion);
-  Bx smGhRegion = ProtoCh::getProtoBox(a_smghRegion);
-  Bx validRegion = ProtoCh::getProtoBox(a_validRegion);
+//  Bx smGhRegion = ProtoCh::getProtoBox(a_smghRegion);
+//  Bx validRegion = ProtoCh::getProtoBox(a_validRegion);
   a_regIrregCovered.define(ghostRegion);
 
   PointSet ivsirreg;

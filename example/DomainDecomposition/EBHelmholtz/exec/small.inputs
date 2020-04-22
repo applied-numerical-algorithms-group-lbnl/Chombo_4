@@ -1,3 +1,4 @@
+bld_linearization_test = 0
 #domain size
 nx=       32
 #number of applies

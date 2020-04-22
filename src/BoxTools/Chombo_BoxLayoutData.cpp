@@ -18,8 +18,6 @@ using std::pow;
 #endif
 #include "Chombo_NamespaceHeader.H"
 
-int LinearizationTest = 0;
-
 
 template <>
 BaseFab<int>* DefaultDataFactory<BaseFab<int> >::create(const Box& box,
