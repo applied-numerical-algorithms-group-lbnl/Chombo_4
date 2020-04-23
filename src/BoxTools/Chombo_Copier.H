@@ -221,7 +221,7 @@ public:
   ///  alternative version of define for exchange copiers that uses new optimized neighborIterator
   virtual void exchangeDefine(const DisjointBoxLayout& a_grids,
                               const IntVect& a_ghost,
-	                      bool a_includeSelf=false);
+	                      bool a_includeSelf=true);
   
   void defineFixedBoxSize(const DisjointBoxLayout& a_src,
                           const LMap&  a_lmap,
