@@ -210,7 +210,7 @@ public:
       each Box in the LayoutData<Box>.
       On exit, the BoxLayout will be closed, and NOT re-sorted.
   */
-  void define(const LayoutData<Box>& a_newLayout);
+  virtual void define(const LayoutData<Box>& a_newLayout);
 
   /*@}*/
 

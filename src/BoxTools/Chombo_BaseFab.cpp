@@ -65,12 +65,7 @@ template < > void BaseFab<Real>::define()
   CH_assert(!m_aliased);
 
   m_truesize = m_nvar * m_numpts;
-
-#ifdef PROTO_CUDA
-  cudaHostAlloc((void**)&m_dptr, m_truesize * sizeof(Real),cudaHostAllocDefault);
-#else
   m_dptr     = static_cast<Real*>(malloc(m_truesize * sizeof(Real)));
-#endif
 
 #ifdef CH_USE_SETVAL
   setVal(BaseFabRealSetVal);
@@ -87,11 +82,7 @@ template < > void BaseFab<int>::define()
 
 
   m_truesize = m_nvar * m_numpts;
-#ifdef PROTO_CUDA
-  cudaHostAlloc((void**)&m_dptr,m_truesize * sizeof(int),cudaHostAllocDefault);	
-#else
   m_dptr     = static_cast<int*>(malloc(m_truesize * sizeof(int)));
-#endif
 }
 
 template < > void BaseFab<Real>::undefine()
@@ -107,11 +98,8 @@ template < > void BaseFab<Real>::undefine()
     return;
   }
 
-#ifdef PROTO_CUDA
-  cudaFreeHost(m_dptr);
-#else
   free(m_dptr);
-#endif
+
 
   m_dptr = 0;
 }
@@ -129,11 +117,8 @@ template < > void BaseFab<int>::undefine()
     return;
   }
 
-#ifdef PROTO_CUDA
-  cudaFreeHost(m_dptr);
-#else
   free(m_dptr);
-#endif
+
   m_dptr = 0;
 }
 

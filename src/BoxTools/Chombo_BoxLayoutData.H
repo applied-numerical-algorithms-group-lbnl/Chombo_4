@@ -56,16 +56,16 @@ public:
 /**
    creates new T object by invoking operator new
 
- \code
- template <class T>
- T* DefaultDataFactory<T>::create(const Box& box,
-                                  int ncomps,
-                                  const DataIndex& a_datInd) const
- {
+   \code
+   template <class T>
+   T* DefaultDataFactory<T>::create(const Box& box,
+   int ncomps,
+   const DataIndex& a_datInd) const
+   {
    return new T(box, ncomps);
- }
- \endcode
- */
+   }
+   \endcode
+*/
 
 template <class T> class DefaultDataFactory : public DataFactory<T>
 {
@@ -105,7 +105,7 @@ public:
 
   AliasDataFactory(BoxLayoutData<T>* a_original, const Interval& interval);
   void define(BoxLayoutData<T>* a_original, const Interval& interval);
-    /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
+  /** creates a new 'T' object and returns a pointer to it.  Responsiblitly
       for calling operator 'delete' on this pointer is passed to the user. */
   virtual T* create(const Box& box, int ncomps, const DataIndex& a_datInd) const;
 
@@ -206,23 +206,23 @@ public:
   /**
      If you want to declare a class more generally thread-unsafe, use the data factory 
      threadSafe interface.
-   */
+  */
   virtual bool threadSafe() const
-    {
-      return true;
-    }
+  {
+    return true;
+  }
   virtual void op(T& dest,
-          const Box& RegionFrom,
-          const Interval& Cdest,
-          const Box& RegionTo,
-          const T& src,
-          const Interval& Csrc) const
+                  const Box& RegionFrom,
+                  const Interval& Cdest,
+                  const Box& RegionTo,
+                  const T& src,
+                  const Interval& Csrc) const
   {
     if (LinearizationTest == 0)
     {
       ::Proto::Box bxFr = ProtoCh::getProtoBox(RegionFrom);
       ::Proto::Box bxTo = ProtoCh::getProtoBox(RegionTo);
-      int isrc = Csrc.begin();
+      int isrc =  Csrc.begin();
       int idst = Cdest.begin();
       int inco = Csrc.size();
 //      dest.copy(RegionFrom, Cdest,RegionTo, src, Csrc);
@@ -236,9 +236,9 @@ public:
       if (T::preAllocatable() == 0 || T::preAllocatable() == 1)
       {
         if (sizeSource != sizeDest)
-          {
-            MayDay::Abort("LinearizationTest failure: dest and source have different sizes");
-          }
+        {
+          MayDay::Abort("LinearizationTest failure: dest and source have different sizes");
+        }
       }
       Vector<char> buffer(sizeSource);
       void* b = (void*)&(buffer[0]);
@@ -251,37 +251,37 @@ public:
 /// Data on a BoxLayout
 /**
 
-  A collection of Box-oriented objects.  The arrangement
-  of Boxes is given by the underlying BoxLayout object.
-  BoxLayoutData attempt to prevent users from manipulating
-  the template class T to become out of sync with the
-  boxes in the BoxLayout.  Caveat emptor.
+   A collection of Box-oriented objects.  The arrangement
+   of Boxes is given by the underlying BoxLayout object.
+   BoxLayoutData attempt to prevent users from manipulating
+   the template class T to become out of sync with the
+   boxes in the BoxLayout.  Caveat emptor.
 
-  All access to the data in a BoxLayoutData is forced to be
-  data-parallel, by use of the DataIterator.
+   All access to the data in a BoxLayoutData is forced to be
+   data-parallel, by use of the DataIterator.
 
-  class T must provide the following methods:
-    - <PRE> T() </PRE>
-    - <PRE> T(const Box& box, int comps) </PRE>
-    - <PRE> define(const Box& box, int comps) </PRE>
-    - <PRE> void copy(const Box& Rfrom, const Interval& Cd, const Box& Rto, const T& source, const Interval Cs)
-     Cs and Cd must have same length, but can be displaced;
-     Rfrom and Rto must be the same size, but can be translated. </PRE>
-    - <PRE> static int preAllocatable()
-     returns 0 if the size(...) function is strictly a function of Box and
-        Interval, and does not depend on the current state of the T object.
-     return 1 if size(..) is symmetric, in that sender and receiver T object
-        can size their message buffers, but a static object cannot.
-     returns 2 if the object is truly dynamic.  the message size is subject to
-        unique object data. </PRE>
-    - <PRE> int size(const Box& R, const Interval& comps) </PRE>
-    - <PRE> void linearOut(void* buf, const Box& R, const Interval& comps)
-      writes the T object into the byte stream buf, already allocated. </PRE>
-    - <PRE> void linearIn(void* buf, const Box& R, const Interval& comps)
-      reads in the T object from the byte stream buf. </PRE>
+   class T must provide the following methods:
+   - <PRE> T() </PRE>
+   - <PRE> T(const Box& box, int comps) </PRE>
+   - <PRE> define(const Box& box, int comps) </PRE>
+   - <PRE> void copy(const Box& Rfrom, const Interval& Cd, const Box& Rto, const T& source, const Interval Cs)
+   Cs and Cd must have same length, but can be displaced;
+   Rfrom and Rto must be the same size, but can be translated. </PRE>
+   - <PRE> static int preAllocatable()
+   returns 0 if the size(...) function is strictly a function of Box and
+   Interval, and does not depend on the current state of the T object.
+   return 1 if size(..) is symmetric, in that sender and receiver T object
+   can size their message buffers, but a static object cannot.
+   returns 2 if the object is truly dynamic.  the message size is subject to
+   unique object data. </PRE>
+   - <PRE> int size(const Box& R, const Interval& comps) </PRE>
+   - <PRE> void linearOut(void* buf, const Box& R, const Interval& comps)
+   writes the T object into the byte stream buf, already allocated. </PRE>
+   - <PRE> void linearIn(void* buf, const Box& R, const Interval& comps)
+   reads in the T object from the byte stream buf. </PRE>
 
-  In sequential codes, many of these functions will not be called, but in the
-  general parallel case, they all will be.
+   In sequential codes, many of these functions will not be called, but in the
+   general parallel case, they all will be.
 */
 
 template<class T>
@@ -335,7 +335,7 @@ public:
   /**
      @param a_destGrids BoxLayout for the destination data holder
      @param a_dest return argument.  upon completion contains a Vector of T objects
-       for each Box in a_destGrids that overlaps this->boxLayout()
+     for each Box in a_destGrids that overlaps this->boxLayout()
      @param a_interval range of components to source
      @param a_domain ProblemDomain that this grid and a_destGrids reside on.
      @param factory optional data factory for template classes that have non-trivial construction
@@ -376,7 +376,7 @@ public:
              const Copier& a_copier) const;
 
 
-   /**
+  /**
      Special version of generalCopyTo that performs increment-on-intersection of
      the destination instead of replacement.  This version of addTo allows for split-phase
      communication, where you call addToBegin on the source, then addToEnd on 
@@ -391,13 +391,13 @@ public:
   /// you call this on the destination BoxLayoutData, not the source.
   void addToEnd(const Interval& a_destComps);
   
-    ///
+  ///
   /* User writes a function with the signature:
 
      <PRE>
      void myfunction(const Box& box, int comps, T& t)
      {
-       your code here;
+     your code here;
      }
      </PRE>
 
@@ -405,7 +405,7 @@ public:
      then cycles through all the T objects and invokes this function.  Function
      must not be inline. (I'm still trying to figure out a nice way to send
      in non-static member functions).
-     */
+  */
   virtual void apply(void (*a_Function)(const Box& box, int comps, T& t));
 
   ///
@@ -436,22 +436,22 @@ protected:
                 const Copier&       a_copier,
                 const LDOperator<T>& a_op = LDOperator<T>()) const;
   void makeItSoBegin(
-                const Interval&     a_srcComps,
-                const BoxLayoutData<T>& a_src,
-                BoxLayoutData<T>&   a_dest,
-                const Interval&     a_destComps,
-                const Copier&       a_copier,
-                const LDOperator<T>& a_op = LDOperator<T>()) const;
+    const Interval&     a_srcComps,
+    const BoxLayoutData<T>& a_src,
+    BoxLayoutData<T>&   a_dest,
+    const Interval&     a_destComps,
+    const Copier&       a_copier,
+    const LDOperator<T>& a_op = LDOperator<T>()) const;
   void makeItSoLocalCopy(
-                const Interval&     a_srcComps,
-                const BoxLayoutData<T>& a_src,
-                BoxLayoutData<T>&   a_dest,
-                const Interval&     a_destComps,
-                const Copier&       a_copier,
-                const LDOperator<T>& a_op = LDOperator<T>()) const;
+    const Interval&     a_srcComps,
+    const BoxLayoutData<T>& a_src,
+    BoxLayoutData<T>&   a_dest,
+    const Interval&     a_destComps,
+    const Copier&       a_copier,
+    const LDOperator<T>& a_op = LDOperator<T>()) const;
   void makeItSoEnd(
-                const Interval&     a_destComps,
-                const LDOperator<T>& a_op = LDOperator<T>());
+    const Interval&     a_destComps,
+    const LDOperator<T>& a_op = LDOperator<T>());
 
   //========================================================================
   //
@@ -477,8 +477,8 @@ protected:
   void postReceivesToMe() const ;
 
   void unpackReceivesToMe(
-                          const Interval&   a_destComps,
-                          const LDOperator<T>& a_op) ;
+    const Interval&   a_destComps,
+    const LDOperator<T>& a_op) ;
 
   void unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
                                  const Interval&   a_destComps,
@@ -513,24 +513,24 @@ protected:
 
 ///
 /** not actually L-p norms, since it doesn't take into
-  account the dx of the system.  A user can take that
-  into account or not.
+    account the dx of the system.  A user can take that
+    into account or not.
 
-  For p != 0, returns pth root of sum of pth powers over all
-  points in all fabs and all components in the interval:
+    For p != 0, returns pth root of sum of pth powers over all
+    points in all fabs and all components in the interval:
 
-  ( sum [ |A[i][pt,var]|^p : FArrayBox A[i], point pt in A[i].box(), var in interval ] )^(1/p)
+    ( sum [ |A[i][pt,var]|^p : FArrayBox A[i], point pt in A[i].box(), var in interval ] )^(1/p)
 
-  To turn into an L-p norm, one needs to multiply this by dx^(SpaceDim/p).
+    To turn into an L-p norm, one needs to multiply this by dx^(SpaceDim/p).
 
-  For p == 0, returns global max over all points in all fabs and all
-  components in the interval:
+    For p == 0, returns global max over all points in all fabs and all
+    components in the interval:
 
-  max [ |A[i][pt,var]| : FArrayBox A[i], point pt in A[i].box(), var in interval ]
+    max [ |A[i][pt,var]| : FArrayBox A[i], point pt in A[i].box(), var in interval ]
 
-  Some people don't like that this norm is not normalized based on
-  number of points in A.  Normalization is your problem.
-  */
+    Some people don't like that this norm is not normalized based on
+    number of points in A.  Normalization is your problem.
+*/
 Real norm(const BoxLayoutData<FArrayBox>& A,
           const Interval& interval,
           const int& p = 2);

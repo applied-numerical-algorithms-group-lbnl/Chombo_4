@@ -124,7 +124,7 @@ void
 StencilProject(IndexML a_mliv, Vector<StencilNode> &a_scales, StencilTensor &a_sten)
 {
   //CH_TIME("PetscCompGrid::projectStencil");
-//  StencilTensorValue ghostNode = a_sten[a_mliv]; // node getting deleted (distributed)
+  StencilTensorValue ghostNode = a_sten[a_mliv]; // node getting deleted (distributed)
   // would like to remove the root but this messes up interators
   StencilTensor::iterator root = a_sten.find(a_mliv);
   // add scaled

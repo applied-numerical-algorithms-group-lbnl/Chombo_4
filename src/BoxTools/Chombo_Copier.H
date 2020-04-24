@@ -227,7 +227,7 @@ public:
                           const LMap&  a_lmap,
                           const IntVect&  a_ghost,
                           const ProblemDomain& a_domain,
-                          bool  a_includeSelf=false,
+                          bool  a_includeSelf=true,
                           bool  a_reverse=false);
 
   void defineFixedSizeNodesCollect(const DisjointBoxLayout& a_layout,

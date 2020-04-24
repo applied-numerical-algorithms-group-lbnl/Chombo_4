@@ -13,13 +13,11 @@
 #define _Chombo_BASEFABIMPLEM_H_
 
 
-#include "Chombo_BFM.H"
 #include "Chombo_CH_Timer.H"
 #include "Chombo_SliceSpec.H"
 #include "Chombo_MayDay.H"
 #include "Chombo_parstream.H"
 #include "Chombo_BoxIterator.H"
-#include "Chombo_BFM.H"
 #include "Chombo_NamespaceHeader.H"
 
 //
@@ -526,12 +524,8 @@ template <class T> inline void BaseFab<T>::linearOut(void*           a_buf,
                                                      const Box&      a_R,
                                                      const Interval& a_comps) const
 {
-  T* buffer = (T*) a_buf;
-  int ncomps = a_comps.end()-a_comps.begin();
-  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
-                   [&buffer](const T* __restrict__ d){*buffer=(*d); buffer++;});
+  linearOut2(a_buf, a_R, a_comps);
 }
-
 template <class T> inline void* BaseFab<T>::linearOut2(void*           a_buf,
                                                        const Box&      a_R,
                                                        const Interval& a_comps) const
@@ -555,10 +549,17 @@ template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
                                                     const Box&      a_R,
                                                     const Interval& a_comps)
 {
+  //  pout() << "basefab::linearin box = " <<  a_R << "comps = (" << a_comps.begin() << "," << a_comps.end() << ")" << endl;
   T* buffer = (T*) a_buf;
-  int ncomps = a_comps.end() - a_comps.begin() + 1;
-  BFM1<CH_SPACEDIM>(dataPtr(), box(), a_comps.begin(), ncomps, a_R,
-              [&buffer](T* __restrict__ d) { (*d) = *buffer; buffer++; });
+  for (int icomp = a_comps.begin(); icomp <= a_comps.end(); icomp++)
+    {
+      for (BoxIterator bit(a_R); bit.ok(); ++bit)
+        {
+          IntVect iv = bit();
+          (*this)(iv, icomp) = *buffer;
+          ++buffer;
+        }
+    }
 }
 
 
@@ -620,9 +621,7 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
   // but it crashed with OPT setting.
   // So we use BoxIterator instead.
   T* buffer = (T*)bufptr;
-  BFM1<CH_SPACEDIM>(dataPtr(), box(), 0, ncomps, m_domain,
-              [&buffer](T s) { s = *buffer; ++buffer; });
-  /*for (int icomp = 0; icomp < ncomps; icomp++)
+  for (int icomp = 0; icomp < ncomps; icomp++)
     {
       for (BoxIterator bit(m_domain); bit.ok(); ++bit)
         {
@@ -631,7 +630,7 @@ template <class T> inline void BaseFab<T>::linearIn(const void* const a_buf)
           ++buffer;
         }
     }
-*/
+
 }
 
 // ---------------------------------------------------------
@@ -652,11 +651,7 @@ template <class T> inline void BaseFab<T>::define()
   m_truesize = m_nvar * m_numpts;
   if (m_truesize > 0)
     {
-#ifdef PROTO_CUDA
-      cudaHostAlloc((void**)&m_dptr, m_truesize * sizeof(T),cudaHostAllocDefault);
-#else
       m_dptr     = static_cast<T*>(malloc(m_truesize * sizeof(T)));
-#endif
     }
   else
     { // m_truesize == 0: allocating no space
@@ -664,7 +659,7 @@ template <class T> inline void BaseFab<T>::define()
     }
 
   //
-  // Now call T::T() on the raw memory so we have valid Ts.
+  // Now call T::T() on the raw memo'ry so we have valid Ts.
   //
   T* ptr = m_dptr;
 
@@ -695,11 +690,8 @@ template <class T> inline void BaseFab<T>::undefine()
     ptr->~T();
   }
 
-#ifdef PROTO_CUDA
-  cudaFreeHost(m_dptr);
-#else
   free(m_dptr);
-#endif
+
 
   m_dptr = 0;
 }
@@ -725,32 +717,17 @@ inline void BaseFab<T>::performCopy(const BaseFab<T>& a_src,
   CH_assert(a_srccomp  >= 0 && a_srccomp  + a_numcomp <= a_src.nComp());
   CH_assert(a_dstcomp >= 0 && a_dstcomp + a_numcomp <= nComp());
   CH_TIME("BaseFab::performCopy");
-//  IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
-  if (a_src.box()==box() && box()==a_srcbox && a_srcbox==a_dstbox) {
-      int npts = box().numPts();
-      for (int icomp = 0; icomp < a_numcomp; icomp++) {
-          const T* srcPtr = a_src.dataPtr(icomp);
-          T* dstPtr = this->dataPtr(icomp);
-          for (int ibox = 0; ibox < npts; ibox++)
-              *(dstPtr+ibox) = *(srcPtr+ibox);
-      }
-  } else {
-      Box r = a_srcbox & a_dstbox;
-      BFM<CH_SPACEDIM>(dataPtr(), a_src.dataPtr(), box(), a_src.box(), a_dstcomp, a_srccomp, a_numcomp, r,
-              [](T* __restrict d, T s) { (*d) = s; });
-  /*    for (int icomp = 0; icomp < a_numcomp; icomp++)
-      {
-        int srccomp = a_srccomp + icomp;
-        int dstcomp = a_dstcomp + icomp;
-        for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
-        {
-          IntVect dstiv = bit();
-          IntVect srciv = dstiv + shiftiv;
-          (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
-        }
-      }
-  } else {
-*/
+  IntVect shiftiv = a_srcbox.smallEnd() - a_dstbox.smallEnd();
+  for (int icomp = 0; icomp < a_numcomp; icomp++)
+  {
+    int srccomp = a_srccomp + icomp;
+    int dstcomp = a_dstcomp + icomp;
+    for (BoxIterator bit(a_dstbox); bit.ok(); ++bit)
+    {
+      IntVect dstiv = bit();
+      IntVect srciv = dstiv + shiftiv;
+      (*this)(dstiv, dstcomp) = a_src(srciv, srccomp);
+    }
   }
 }
 

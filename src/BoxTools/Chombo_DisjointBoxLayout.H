@@ -125,7 +125,7 @@ public:
       error if not disjoint.  If <i>a_layout</i> is disjoint, then this object
       becomes a closed DisjointBoxLayout object.
   */
-  void
+  virtual void
   define(const BoxLayout& a_layout);
 
   ///
@@ -136,7 +136,7 @@ public:
       and is sorted, the neighbour iterator is rebuilt (now with knowledge of
       the problem domain).
   */
-  void
+  virtual void
   define(const BoxLayout& a_layout, const ProblemDomain& a_physDomain);
 
   ///

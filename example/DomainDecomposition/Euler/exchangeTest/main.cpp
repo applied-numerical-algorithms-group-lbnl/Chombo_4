@@ -155,7 +155,7 @@ unsigned int InitializeStateF(State a_U,
 {
   for(int icomp = 0; icomp < NUMCOMPS; icomp++)
   {
-    Real rightAns = Real(icomp+1)*sin(PI*a_x(0));
+    Real rightAns = Real(icomp+1)*sin(2.*PI*a_x(0));
     a_U(icomp) = rightAns;
   }
   return 0;

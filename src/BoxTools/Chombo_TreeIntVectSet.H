@@ -318,6 +318,9 @@ private:
   static const TreeNode* otherParents[24];
   static const TreeNode* P2[24];
   static Box boxes[24], otherBoxes[24];
+#pragma omp threadprivate(boxes,otherBoxes)
+#pragma omp threadprivate(parents,otherParents,P1,P2)
+#pragma omp threadprivate(index, otherIndex)
 
 
   // xlC wasn't like this
