@@ -31,7 +31,8 @@ class DisjointBoxLayout: public BoxLayout
 {
 
 public:
-
+  using BoxLayout::define;
+  
 #ifdef PROTO_CUDA  
   //just to shut it up about partially overwritten virtual functions
   using BoxLayout::define;

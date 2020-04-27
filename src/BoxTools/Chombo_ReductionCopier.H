@@ -37,10 +37,8 @@
 class ReductionCopier : public Copier
 {
 public:
-#ifdef PROTO_CUDA
   //just shutting up the compiler
   using Copier::define;
-#endif
 
   ///null constructor, copy constructor and operator= can be compiler defined.
   ReductionCopier()

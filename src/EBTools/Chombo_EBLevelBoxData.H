@@ -78,7 +78,8 @@ class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
 {
 public:
 
-
+  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
+  
 #ifdef PROTO_CUDA
   //just shutting up the compiler
   using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;

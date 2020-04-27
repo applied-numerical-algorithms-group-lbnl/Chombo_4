@@ -73,11 +73,8 @@ template<int  NUMCOMPS>
 class EBLevelFluxData: public LevelData<EBFluxData<Real, NUMCOMPS> >
 {
 public:
-
-#ifdef PROTO_CUDA
-//just shutting up the compilers
+  //shutting up the compilers
   using LevelData<EBFluxData<Real, NUMCOMPS> >::define;
-#endif
 
 
   typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
