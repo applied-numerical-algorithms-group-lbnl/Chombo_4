@@ -59,7 +59,7 @@ struct BFMImpl1<0,T1,F>
   {
     int trips=counting[0];
     int l1=lo1[0];
-    for(int i=0; i!=trips; ++i) f(t1[i+l1]);
+    for(int i=0; i!=trips; ++i) f(&(t1[i+l1]));
   }
 };
 
