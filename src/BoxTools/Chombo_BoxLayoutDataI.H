@@ -318,28 +318,12 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
   for (int n=0; n<items; n++)
   {
     const MotionItem& item = it[n];
-//debugging bit to force serial code to run parallel bits
-#if 0
-    const T & srcFAB = a_src[item.fromIndex];
-    T       & dstFAB = a_dest[item.toIndex];
-    size_t bufsize_src = a_op.size(srcFAB, item.fromRegion, a_srcComps);
-    size_t bufsize_dst = a_op.size(srcFAB, item.fromRegion, a_srcComps);
-    if(bufsize_src != bufsize_dst)
-    {
-      MayDay::Error("buffer size mismatch");
-    }
-    char* charbuffer = new char[bufsize_src];
-    a_op.linearOut(srcFAB, charbuffer, item.fromRegion, a_srcComps);
-    a_op.linearIn (dstFAB, charbuffer, item.toRegion,  a_destComps);
 
-    delete[] charbuffer;
-#else
     a_op.op(a_dest[item.toIndex], item.fromRegion,
             a_destComps,
             item.toRegion,
             a_src[item.fromIndex],
             a_srcComps);
-#endif
 
   }
 }

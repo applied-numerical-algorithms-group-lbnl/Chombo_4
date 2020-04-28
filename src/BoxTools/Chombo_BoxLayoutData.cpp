@@ -18,7 +18,7 @@ using std::pow;
 #endif
 #include "Chombo_NamespaceHeader.H"
 
-int LinearizationTest = 0;
+int LinearizationTest = 1;
 
 
 template <>

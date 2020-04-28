@@ -30,7 +30,7 @@ makefile_ebpost = f_ebpost.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/exchange', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/MHD/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec']
+targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/MHD/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec']
 
 top = os.getcwd()
 chombo_home = top + '/..'
