@@ -197,6 +197,7 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     Chombo4::test1(a_argc, a_argv);
     Chombo4::test2(a_argc, a_argv);
+    Chombo4::test3(a_argc, a_argv);
   }
 
   pout() << "printing time table " << endl;
