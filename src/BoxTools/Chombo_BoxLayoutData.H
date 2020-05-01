@@ -241,9 +241,11 @@ public:
         }
       }
       Vector<char> buffer(sizeSource);
+//      char* buffer  = new char[sizeSource];
       void* b = (void*)&(buffer[0]);
       linearOut(src, b, RegionFrom, Csrc);
       linearIn(dest, b, RegionTo,   Cdest);
+//      delete[] buffer;
     }
   }
 };
