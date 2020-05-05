@@ -190,11 +190,11 @@ public:
   }
 
 private:
-/*
+
   LevelData<FArrayBox> m_host;
   LevelData<FArrayBox> m_hostSrc;
   LevelData<FArrayBox> m_hostDst;
-*/
+
 };
 
 
