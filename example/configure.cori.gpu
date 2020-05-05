@@ -87,7 +87,7 @@ for t in targets:
 #        f.write('\nCXX = nvcc -ccbin mpicxx \n DEP=nvcc\n')
 #	f.write('\nCXX = mpicxx -cxx=nvcc \n DEP=nvcc\n')
 	f.write('\nCXX = nvcc --default-stream per-thread  \n DEP=nvcc\n')
-        f.write('\nCXXFLAGS+= -DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70 -Xcompiler -fopenmp\n')
+        f.write('\nCXXFLAGS+= -DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
         if args.opt == 'DEBUG':
             f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG\n')
 

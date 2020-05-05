@@ -521,6 +521,25 @@ template <class T> inline size_t BaseFab<T>::size(const Box&      a_box,
 }
 
 template <class T> inline void BaseFab<T>::linearOut(void*           a_buf,
+                                                     const ::Proto::Box&      a_R,
+                                                     const ::Proto::CInterval& a_comps) const
+{
+        Box b_R = ProtoCh::getBox(a_R);
+        Interval b_comp(a_comps.low(0),a_comps.high(0));
+        linearOut(a_buf, b_R, b_comp);
+}
+
+template <class T> inline void BaseFab<T>::linearIn(void*           a_buf,
+                                                     const ::Proto::Box&      a_R,
+                                                     const ::Proto::CInterval& a_comps)
+{
+        Box b_R = ProtoCh::getBox(a_R);
+        Interval b_comp(a_comps.low(0),a_comps.high(0));
+        linearIn(a_buf, b_R, b_comp);
+}
+
+
+template <class T> inline void BaseFab<T>::linearOut(void*           a_buf,
                                                      const Box&      a_R,
                                                      const Interval& a_comps) const
 {

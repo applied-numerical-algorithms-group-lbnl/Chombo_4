@@ -66,6 +66,10 @@ public:
               const IntVect          & a_ghost = IntVect::Zero)
   {
     LevelData<BoxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, DefaultBoxDataFactory<NUMCOMPS>());
+    if(a_ghost > IntVect::Zero)
+         m_host.define(this->disjointBoxLayout(), NUMCOMPS, a_ghost);
+
+
   }
 
   void define(const LevelBoxData<NUMCOMPS>& a_lbd)
@@ -77,17 +81,30 @@ public:
   void copyTo(const Interval                      &            a_srcComps,
               LevelData<BoxData<Real, NUMCOMPS> > &           a_dst,
               const Interval &            a_dstComps,
-              const Copier   &            a_copier) const
+              const Copier   &            a_copier)
   {
+/*    if(this->m_ghost > IntVect::Zero)
+	 m_hostSrc.define(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
+
+    if(a_dst.getGhost() > IntVect::Zero)
+         m_hostDst.define(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.getGhost());
+
+    copyToHost(m_hostSrc, *this);
+    copyToHost(m_hostDst,  a_dst);
+    
+    m_hostSrc.copyTo(a_srcComps, m_hostDst, a_dstComps, a_copier);
+    
+    copyToDevice(a_dst, m_hostDst);*/
+
     LevelData<FArrayBox> hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost);
     LevelData<FArrayBox> hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect());
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
-    
+
     hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
-    
     copyToDevice(a_dst, hostdataDst);
+
   }
 
 
@@ -95,24 +112,12 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIMERS("LevelBoxData::exchange");
-    CH_TIMER("FArrayBox",t0);
-    CH_TIMER("copyToHost",t1);
     CH_TIMER("exchange",t2);
-    CH_TIMER("copyToDevice",t3);
-    CH_START(t0);
-    LevelData<FArrayBox> hostdata(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
-    CH_STOP(t0);
-    CH_START(t1);
-    copyToHost(hostdata, *this);
-    CH_STOP(t1);
+    // Now, the exchange are performed by BoxData instead of FArray, therefor we don't need to use copy To Host and copy to Device 
     CH_START(t2);
-    hostdata.exchange(copier);
-    CH_STOP(t2);
-    CH_START(t3);
-    copyToDevice(*this, hostdata);
-    CH_STOP(t3);
+   this->LevelData<BoxData<Real, NUMCOMPS> >::exchange(copier);
+   CH_STOP(t2);
   }
-    
 
   void 
   writeToFileHDF5(const string& a_filename) const
@@ -126,7 +131,7 @@ public:
 #endif
   }
 
-  ///
+  /// This function is no longer used in exchange due to the Gpu to Gpu strategy
   static 
   void copyToHost(LevelData<FArrayBox>                      & a_hostDat,
                   const LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat)
@@ -139,8 +144,10 @@ public:
       size_t datSize = sizeof(Real)*devifab.size();
       Real*       hostPtr = hostfab.dataPtr(0);
       const Real* deviPtr = devifab.dataPtr(0);
+
 #ifdef PROTO_CUDA
-      cudaMemcpy(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost);
+      cudaDeviceSynchronize();
+      cudaMemcpyAsync(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
       cudaError err = cudaGetLastError();
       if (err != cudaSuccess)
       {
@@ -149,11 +156,11 @@ public:
       }
 #else
       memcpy(hostPtr, deviPtr, datSize);
-#endif  
+#endif
     }
   }
 
-  ///
+  // This function is no longer used in exchange due to the Gpu to Gpu strategy
   static 
   void copyToDevice(LevelData<BoxData<Real, NUMCOMPS> > & a_deviDat,
                     const LevelData<FArrayBox>          & a_hostDat) 
@@ -166,8 +173,10 @@ public:
       size_t datSize = sizeof(Real)*devifab.size();
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);
+
 #ifdef PROTO_CUDA
-      cudaMemcpy(deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice);
+      cudaDeviceSynchronize();
+      cudaMemcpyAsync( deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
       cudaError err = cudaGetLastError();
       if (err != cudaSuccess)
       {
@@ -179,6 +188,13 @@ public:
 #endif  
     }
   }
+
+private:
+/*
+  LevelData<FArrayBox> m_host;
+  LevelData<FArrayBox> m_hostSrc;
+  LevelData<FArrayBox> m_hostDst;
+*/
 };
 
 

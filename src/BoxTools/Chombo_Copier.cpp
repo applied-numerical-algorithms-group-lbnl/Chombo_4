@@ -35,8 +35,8 @@ CopierBuffer::~CopierBuffer()
 
 void CopierBuffer::clear()
 {
-  if (m_sendbuffer != NULL) free(m_sendbuffer);
-  if (m_recbuffer  != NULL) free(m_recbuffer);
+  if (m_sendbuffer != NULL) cudaFree(m_sendbuffer);
+  if (m_recbuffer  != NULL) cudaFree(m_recbuffer);
   m_sendbuffer = NULL;
   m_recbuffer  = NULL;
   m_sendcapacity = 0;

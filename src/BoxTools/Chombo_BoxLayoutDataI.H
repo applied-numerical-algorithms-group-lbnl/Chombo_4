@@ -47,7 +47,6 @@ inline void BoxLayoutData<T>::setVector(const BoxLayoutData<T>& da,
   {
     DataIterator it=this->dataIterator();
     int nbox=it.size();
-#pragma omp parallel for if(this->m_threadSafe)
     for(int box=0; box<nbox; box++)
     {
 //      this->m_vector[it[box].datInd()]->copy( this->box(it[box]), destComps,
@@ -314,7 +313,7 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 #ifdef _OPENMP
   bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
-#pragma omp parallel for if(threadSafe)
+
   for (int n=0; n<items; n++)
   {
     const MotionItem& item = it[n];
@@ -327,6 +326,7 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 
   }
 }
+
 template<class T>
 void BoxLayoutData<T>::makeItSoEnd(
   const Interval&   a_destComps,
@@ -584,26 +584,44 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
-    free((m_buff->m_sendbuffer));
-    if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
-    (m_buff->m_sendbuffer) = malloc(sendBufferSize);
-    if ((m_buff->m_sendbuffer) == NULL)
-    {
-      MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
-    }
-    m_buff->m_sendcapacity = sendBufferSize;
+#ifdef PROTO_CUDA
+      cudaFree((m_buff->m_sendbuffer));
+#else
+      free((m_buff->m_sendbuffer));
+#endif
+      if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
+      
+#ifdef PROTO_CUDA
+      cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
+#else
+      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+#endif
+      if ((m_buff->m_sendbuffer) == NULL)
+        {
+          MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
+        }
+      m_buff->m_sendcapacity = sendBufferSize;
   }
 
   if (recBufferSize > m_buff->m_reccapacity)
   {
-    free(m_buff->m_recbuffer);
-    if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
-    m_buff->m_recbuffer = malloc(recBufferSize);
-    if (m_buff->m_recbuffer == NULL)
-    {
-      MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
-    }
-    m_buff->m_reccapacity = recBufferSize;
+#ifdef PROTO_CUDA
+      cudaFree(m_buff->m_recbuffer);
+#else
+      free(m_buff->m_recbuffer);
+#endif
+      if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
+
+#ifdef PROTO_CUDA
+      cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
+#else
+      m_buff->m_recbuffer = malloc(recBufferSize);
+#endif
+      if (m_buff->m_recbuffer == NULL)
+        {
+          MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
+        }
+      m_buff->m_reccapacity = recBufferSize;
   }
 
   /*
@@ -648,10 +666,7 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
 {
   CH_TIME("write Data to buffers");
   int isize = m_buff->m_fromMe.size();
-#ifdef _OPENMP
-  bool threadSafe = m_threadSafe && (a_op.threadSafe());
-#endif
-#pragma omp parallel for if(threadSafe)
+
   for (unsigned int i=0; i< isize; ++i)
   {
     const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[i];
@@ -728,6 +743,7 @@ template<class T>
 void BoxLayoutData<T>::postReceivesToMe() const
 {
   CH_TIME("post_Receives");
+
   this->m_buff->numReceives = m_buff->m_toMe.size();
 
   if (this->m_buff->numReceives > 1)
@@ -747,6 +763,7 @@ void BoxLayoutData<T>::postReceivesToMe() const
   std::list<MPI_Request> extraRequests;
   unsigned int next=0;
   long long maxSize = 0;
+
   for (int i=0; i<this->m_buff->numReceives; ++i)
   {
     const CopierBuffer::bufEntry& entry = m_buff->m_toMe[next];
@@ -782,7 +799,6 @@ void BoxLayoutData<T>::postReceivesToMe() const
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
   CH4_SPMD::CH_MaxMPIRecvSize = std::max<long long>(CH4_SPMD::CH_MaxMPIRecvSize, maxSize);
-  //pout()<<"maxSize="<<maxSize<<" posted "<<this->m_buff->numReceives<<" receives\n";
 
 }
 
@@ -791,7 +807,6 @@ void BoxLayoutData<T>::unpackReceivesToMe(
   const Interval&   a_destComps,
   const LDOperator<T>& a_op)
 {
-
   CH_TIME("unpack_messages");
   
   if (this->m_buff->numReceives > 0)
@@ -821,7 +836,9 @@ void BoxLayoutData<T>::unpackReceivesToMe(
                     entry.item->toRegion, a_destComps);
     }
   }
+
   this->m_buff->numReceives = 0;
+
 }
 
 template<class T>
@@ -832,7 +849,6 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
 
                                                  const LDOperator<T>& a_op) const
 {
-
   if (this->m_buff->numReceives > 0)
   {
     m_buff->m_receiveStatus.resize(this->m_buff->numReceives);
