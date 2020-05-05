@@ -584,14 +584,14 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
-#ifdef PROTO_CUDA
+#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
       cudaFree((m_buff->m_sendbuffer));
 #else
       free((m_buff->m_sendbuffer));
 #endif
       if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
       
-#ifdef PROTO_CUDA
+#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
       cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
 #else
       (m_buff->m_sendbuffer) = malloc(sendBufferSize);
@@ -605,14 +605,14 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (recBufferSize > m_buff->m_reccapacity)
   {
-#ifdef PROTO_CUDA
+#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
       cudaFree(m_buff->m_recbuffer);
 #else
       free(m_buff->m_recbuffer);
 #endif
       if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
-#ifdef PROTO_CUDA
+#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
       cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
 #else
       m_buff->m_recbuffer = malloc(recBufferSize);

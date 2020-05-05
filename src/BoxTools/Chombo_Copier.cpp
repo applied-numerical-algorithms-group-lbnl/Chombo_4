@@ -35,8 +35,13 @@ CopierBuffer::~CopierBuffer()
 
 void CopierBuffer::clear()
 {
+#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
   if (m_sendbuffer != NULL) cudaFree(m_sendbuffer);
   if (m_recbuffer  != NULL) cudaFree(m_recbuffer);
+#else
+  if (m_sendbuffer != NULL) free(m_sendbuffer);
+  if (m_recbuffer  != NULL) free(m_recbuffer);
+#endif
   m_sendbuffer = NULL;
   m_recbuffer  = NULL;
   m_sendcapacity = 0;
