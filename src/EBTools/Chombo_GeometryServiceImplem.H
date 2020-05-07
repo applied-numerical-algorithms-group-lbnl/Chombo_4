@@ -202,6 +202,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   
   LevelGeometryService& finerCast = const_cast<LevelGeometryService&>(a_finerLevel);
   coarsenGraph(finerCast);
+  m_graphs  ->exchange(m_exchangeCopier);       
   coarsenData( finerCast);
 
   exchange();
