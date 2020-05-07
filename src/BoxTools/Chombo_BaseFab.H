@@ -582,10 +582,6 @@ public:
   ///
   int linearSize(void) const;
 
-  /// used to interface Proto calls of linear in and out (should be not used now)
-  void linearOut(void* a_buf, const ::Proto::Box& a_R, const ::Proto::CInterval& a_comps) const;
-  void linearIn(void* a_buf, const ::Proto::Box& a_R, const ::Proto::CInterval& a_comps);
-
   ///
   static int preAllocatable()
   {

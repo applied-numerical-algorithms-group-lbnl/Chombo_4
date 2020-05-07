@@ -187,15 +187,22 @@ public:
                          const Interval& comps) const
   {
     ::Proto::Box bx = ProtoCh::getProtoBox(R);
-    ::Proto::CInterval Ccomps(comps.begin(),comps.end());
-    arg.linearOut(buf, bx, Ccomps);
+//    ::Proto::CInterval Ccomps(comps.begin(),comps.end());
+//    arg.linearOut(buf, bx, Ccomps);
+    unsigned int start = comps.begin();
+    unsigned int ncomp = comps.size();
+    arg.linearOut(buf, bx, start, ncomp);
+
   }
   virtual void linearIn(T& arg,  void* buf, const Box& R,
                         const Interval& comps)const
   {
     ::Proto::Box bx = ProtoCh::getProtoBox(R);
-    ::Proto::CInterval Ccomps(comps.begin(),comps.end());
-     arg.linearIn(buf, bx, Ccomps);
+//    ::Proto::CInterval Ccomps(comps.begin(),comps.end());
+//     arg.linearIn(buf, bx, Ccomps);
+    unsigned int start = comps.begin();
+    unsigned int ncomp = comps.size();
+    arg.linearIn(buf, bx, start, ncomp);
   }
 
   ///this boolean only has to do with whether the op(...) function is thread safe
