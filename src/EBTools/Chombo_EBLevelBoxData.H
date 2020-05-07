@@ -82,7 +82,7 @@ public:
   
 #ifdef PROTO_CUDA
   //just shutting up the compiler
-  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
+//  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
 #endif
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
