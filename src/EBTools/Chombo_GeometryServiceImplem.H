@@ -59,8 +59,11 @@ defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
   PR_TIME("LevelGeometryService::defineFinestLevel");
+  LayoutData<vector< IrregNode<order> > > ldnodes(m_grids);
   using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
+  //need to fill graph first and exchange because the exchange can change the graph
+  // and we want the data to be defined consistent with the final graph
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box validBox = m_grids[dit[ibox]];
@@ -83,51 +86,64 @@ defineFinestLevel(const RealVect               & a_origin,
     else
     {
       HostBoxData<int> regIrregCovered;
-      vector< IrregNode<order> > nodes;
+      vector< IrregNode<order> >& nodes = ldnodes[dit[ibox]];
       fillGraph(regIrregCovered, nodes, validBox, interBoxCh, interBoxSm, m_domain);
       vector<IrregGraph> irrgraph;
       getIrregGraphFromNodes<order>(irrgraph, nodes);
 
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
-//now fill in the moditment information
-      (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
-      (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    }
+  }
+  
+  m_graphs  ->exchange(m_exchangeCopier);
+  
+  //now fill in the moment information
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    
+    const vector< IrregNode<order> >& nodes = ldnodes[dit[ibox]];
+    (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
 #if DIM==3
-      (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
 #endif
-      for(int inode = 0; inode < nodes.size(); inode++)
+    for(int inode = 0; inode < nodes.size(); inode++)
+    {
+      const IrregNode<order>& node = nodes[inode];
+      EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
+      EBIndex<BOUNDARY> ebf = vof.getCutFace();
+      (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
+      (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
+      for(SideIterator sit; sit.ok(); ++sit)
       {
-        const IrregNode<order>& node = nodes[inode];
-        EBIndex<CELL>     vof(node.m_cell, node.m_cellIndex);
-        EBIndex<BOUNDARY> ebf = vof.getCutFace();
-        (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
-        (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
-        for(SideIterator sit; sit.ok(); ++sit)
-        {
-          vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
-          vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
+        vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
+        vector<EBIndex<YFACE> > yfaces = (*m_graphs)[dit[ibox]].getYFaces(vof, sit());
 #if DIM==3
-          int zfacindex = ebp_index(2, sit());
-          vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
+        int zfacindex = ebp_index(2, sit());
+        vector<EBIndex<ZFACE> > zfaces = (*m_graphs)[dit[ibox]].getZFaces(vof, sit());
 #endif
-          int yfacindex = ebp_index(1, sit());
-          int xfacindex = ebp_index(0, sit());
+        int yfacindex = ebp_index(1, sit());
+        int xfacindex = ebp_index(0, sit());
 
-          PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
-          if(xfaces.size() > 0)
-            (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
-          if(yfaces.size() > 0)
-            (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
+        PR_assert((xfaces.size() <= 1) && (yfaces.size() <= 1));
+        if(xfaces.size() > 0)
+          (*m_xfacdata)[dit[ibox]](xfaces[0], 0)  = node.m_faceMoments[xfacindex];
+        if(yfaces.size() > 0)
+          (*m_yfacdata)[dit[ibox]](yfaces[0], 0)  = node.m_faceMoments[yfacindex];
 #if DIM==3
-          if(zfaces.size() > 0)
-            (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
+        if(zfaces.size() > 0)
+          (*m_zfacdata)[dit[ibox]](zfaces[0], 0)  = node.m_faceMoments[zfacindex];
 #endif
-        }
       }
     }
   }
+  m_graphs  ->exchange(m_exchangeCopier);       
   exchange();
 }
 /*********************************************/
@@ -138,7 +154,6 @@ exchange()
 {
   PR_TIME("LevelGeometryService::exchange");
   Interval interv(0,0);
-  m_graphs  ->exchange(m_exchangeCopier);       
   m_voludata->exchange(m_exchangeCopier);       
   m_ebfadata->exchange(m_exchangeCopier);       
   m_xfacdata->exchange(m_exchangeCopier);       
@@ -206,53 +221,23 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
 
   m_grids  = a_grids;
 
-
   defineData();
 
-
-  LevelGeometryService* finerPtr = const_cast<LevelGeometryService*>(&a_finerLevel);
-  bool deleteptr = false;
-  if(!a_grids.compatible(a_finerLevel.m_grids))
-  {
-    DisjointBoxLayout refCoarGrids;
-    refine(refCoarGrids, m_grids, 2);
-    finerPtr = new LevelGeometryService(a_finerLevel.m_domain,          
-                                        refCoarGrids,           
-                                        a_finerLevel.m_graphs,          
-                                        a_finerLevel.m_voludata,        
-                                        a_finerLevel.m_ebfadata,        
-                                        a_finerLevel.m_xfacdata,        
-                                        a_finerLevel.m_yfacdata,        
-                                        a_finerLevel.m_zfacdata,        
-                                        a_finerLevel.m_origin,          
-                                        a_finerLevel.m_order,           
-                                        a_finerLevel.m_degreeP,         
-                                        a_finerLevel.m_dx,              
-                                        a_finerLevel.m_geomgrow,        
-                                        a_finerLevel.m_baseIF);         
-
-      
-    deleteptr = true;
-  }
+  PROTO_ASSERT(a_grids.compatible(a_finerLevel.m_grids), "GeometryService:problem in grid generation");
   
-  coarsenGraph(*finerPtr);
+  coarsenGraph(a_finerLevel);
+  
+  m_graphs  ->exchange(m_exchangeCopier);       
 
-  coarsenData( *finerPtr);
-  if(deleteptr)
-  {
-    //if we had to copy the fine stuff to a refcoar layout, we need to copy it back
-    //because the fine to coarse thing changed the fine graph
-    Interval interv(0,0);
-    finerPtr->m_graphs->copyTo(interv, *a_finerLevel.m_graphs, interv);
-    delete finerPtr;
-  }
+  coarsenData(a_finerLevel);
+
   exchange();
 }
 /*********************************************/
 template <int order>
 void
 LevelGeometryService<order>::
-coarsenGraph(LevelGeometryService&      a_finerLevel)
+coarsenGraph(const LevelGeometryService &  a_finerLevel)
 {
   PR_TIME("LevelGeometryService::coarsenGraph");
   //fills finer level ghost cells 
@@ -276,7 +261,7 @@ coarsenGraph(LevelGeometryService&      a_finerLevel)
 template <int order>
 void
 LevelGeometryService<order>::
-coarsenData(LevelGeometryService&      a_finerLevel)
+coarsenData(const LevelGeometryService &  a_finerLevel)
 {
   PR_TIME("LevelGeometryService::coarsenData");
   DataIterator dit = m_grids.dataIterator();

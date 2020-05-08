@@ -449,7 +449,7 @@ public:
     {
       DisjointBoxLayout coarDBL;
       coarsen(coarDBL, currDBL, 2);
-      a_grids.push_back(currDBL);
+      a_grids.push_back(coarDBL);
       currDBL = coarDBL;
     }
   }
