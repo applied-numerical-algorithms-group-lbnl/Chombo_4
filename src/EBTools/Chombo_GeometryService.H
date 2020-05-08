@@ -244,9 +244,9 @@ protected:
   void
   defineData();
   void
-  coarsenGraph(LevelGeometryService&      a_finerLevel);
+  coarsenGraph(const LevelGeometryService&      a_finerLevel);
   void
-  coarsenData( LevelGeometryService&      a_finerLevel);
+  coarsenData( const LevelGeometryService&      a_finerLevel);
 
   
   void
@@ -438,44 +438,19 @@ public:
                 int a_maxGridSize =  32,
                 int a_maxCoarsen  = -1)
   {
-    int numLevels = 1;
-    Box domlev = a_domain;
-    int numCoarsen = 0;
-    int minDomainSize = 2;
-    int nref = 2;
-    Vector<Box> domains(1, a_domain);
-    bool domCheck = domlev.coarsenable(nref*minDomainSize);
-    bool maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
-    while( domCheck && maxCheck)
-    {
-      numLevels++;
-      numCoarsen++;
-      domlev.coarsen(nref);
-      domains.push_back(domlev);
-
-      domCheck = domlev.coarsenable(nref*minDomainSize);
-      maxCheck = (a_maxCoarsen < 0) || (numCoarsen < a_maxCoarsen);
-    }
-    a_grids.resize(numLevels);
     Vector<Box> boxes;
     Vector<int> procs;
-    domainSplit(domains[0], boxes, a_maxGridSize);
+    domainSplit(a_domain, boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
-    a_grids[0].define(boxes, procs, domains[0]);
+    DisjointBoxLayout currDBL(boxes, procs);
+    a_grids.push_back(currDBL);
     //a_grids[0].print();
-    for(int ilev = 1; ilev < numLevels; ilev++)
+    while(currDBL.coarsenable(4))
     {
-      if(a_grids[ilev-1].coarsenable(2))
-      {
-        coarsen(a_grids[ilev], a_grids[ilev-1], 2);
-        //a_grids[ilev].print();
-      }
-      else
-      {
-        domainSplit(domains[ilev], boxes, a_maxGridSize);
-        LoadBalance(procs, boxes);
-        a_grids[ilev].define(boxes, procs, domains[ilev]);
-      }
+      DisjointBoxLayout coarDBL;
+      coarsen(coarDBL, currDBL, 2);
+      a_grids.push_back(currDBL);
+      currDBL = coarDBL;
     }
   }
                 
