@@ -44,7 +44,7 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
                      StencilNames::Poisson2, a_bcnames, StencilNames::Neumann,
-                     m_domain, m_nghost, m_nghost));
+                     m_domain, m_nghost));
 
   registerStencils();
 }

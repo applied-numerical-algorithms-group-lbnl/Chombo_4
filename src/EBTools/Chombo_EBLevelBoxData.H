@@ -243,6 +243,44 @@ public:
     return maxval;
   }
 
+  ///for dot products
+  Real sum(int a_icomp) const
+  {
+    CH_TIME("EBLevelBoxData::maxNorm");
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real sumval = 0; 
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid     =         dbl[dit[ibox]];
+      const EBGraph& graph = (*m_graphs)[dit[ibox]];
+      for(BoxIterator bit(grid); bit.ok(); ++bit)
+      {
+        Point pt = ProtoCh::getPoint(bit());
+        vector<EBIndex<CELL> > vofspt = graph.getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofspt[ivec];
+          sumval += hostdata[dit[ibox]](vof, a_icomp);
+        }
+      }
+    }
+
+#ifdef CH_MPI    
+    Real sendBuf = sumval;
+    int result = MPI_Allreduce(&sendBuf, &sumval, 1, MPI_CH_REAL,MPI_SUM, Chombo_MPI::comm);
+
+    if (result != MPI_SUCCESS)
+    {
+      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+    }
+#endif
+    return sumval;
+  }
+
+  
   ///
   void 
   writeToFileHDF5(const string& a_filename, const Real& a_coveredval) const

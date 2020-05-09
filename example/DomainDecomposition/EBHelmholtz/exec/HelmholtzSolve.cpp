@@ -166,7 +166,7 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV, dataGhostIV);
+  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV);
   EBMultigrid::s_numSmoothUp   = numSmooth;
   EBMultigrid::s_numSmoothDown = numSmooth;
   DataIterator dit = grids.dataIterator();
