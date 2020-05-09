@@ -452,12 +452,12 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
   else
   {
     //defaults from Chombo3 RelaxSolver.H
-    int maxiter = 100;
-    Real tol = 1.0e-6;
-    m_bottomSolver->solve(a_phi, a_rhs, maxiter, tol);
-//    typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
-//    int status = bicgstab::solve(a_phi, a_rhs, *this);
-//    pout() << "bicgstab returned " << status << std::endl;
+//    int maxiter = 100;
+//    Real tol = 1.0e-6;
+//    m_bottomSolver->solve(a_phi, a_rhs, maxiter, tol);
+    typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+    int status = bicgstab::solve(a_phi, a_rhs, *this);
+    pout() << "bicgstab returned " << status << std::endl;
   }
 
   relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
