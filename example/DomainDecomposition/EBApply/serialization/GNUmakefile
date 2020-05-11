@@ -1,6 +1,6 @@
 
-CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
-DIM := 2
+CHOMBO_HOME := /home/spencer/users/graves/_chombo4/Chombo_4/example/..
+DIM := 3
 VARS_OLD := $(.VARIABLES)
 
 SRC := $(wildcard *.cpp) 
@@ -31,24 +31,24 @@ CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 CPPFLAGS = -std=c++11
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=clang++
-CXX=clang++
-EFENCEFLAGS = -L/usr/lib -lefence
+DEPXX=mpiCC
+CXX=mpiCC
 
-CXXALLFLAGS := -Wall  -std=c++11 
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
-CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)
+CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 
-#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
-HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 -ldl
+LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.parallel/include
+HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.parallel/lib -lhdf5 -lz
 #end mach dependent
 
 
 
 
 
+CPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
+LIBS     += $(MPILIBS)
 CPPFLAGS += -DCH_USE_HDF5 
 
 CPPFLAGS += $(HDFINCFLAGS)
@@ -57,9 +57,9 @@ LIBS     += $(HDFLIBFLAGS)
  
 CXXFLAGS += -DCH_USE_DOUBLE
 
-CXXDBGFLAGS:= -g $(CXXALLFLAGS)
+CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 
-CXXFLAGS+=$(CXXDBGFLAGS) 
+CXXFLAGS+=$(CXXOPTFLAGS) 
 
 CPPFLAGS += -I../../common
 CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools
