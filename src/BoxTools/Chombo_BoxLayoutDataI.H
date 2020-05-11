@@ -581,41 +581,39 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   }
 
   // allocate send and receveive buffer space.
+  using ::Proto::BoxData;
+  const bool bufDevice = std::is_same<T, BoxData<Real,DIM+2>>::value;
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
-#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
-      cudaFree((m_buff->m_sendbuffer));
-#else
-      free((m_buff->m_sendbuffer));
+#ifdef PROTO_CUDA
+    if(bufDevice) cudaFree((m_buff->m_sendbuffer));
+    else free((m_buff->m_sendbuffer));
 #endif
-      if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
+    if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
       
-#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
-      cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
-#else
-      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+#ifdef PROTO_CUDA 
+    if(bufDevice)  cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
+    else (m_buff->m_sendbuffer) = malloc(sendBufferSize);
 #endif
-      if ((m_buff->m_sendbuffer) == NULL)
-        {
-          MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
-        }
-      m_buff->m_sendcapacity = sendBufferSize;
+    if ((m_buff->m_sendbuffer) == NULL)
+    {
+      MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
+    }
+    m_buff->m_sendcapacity = sendBufferSize;
   }
 
   if (recBufferSize > m_buff->m_reccapacity)
   {
-#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
-      cudaFree(m_buff->m_recbuffer);
-#else
-      free(m_buff->m_recbuffer);
+#ifdef PROTO_CUDA
+    if(bufDevice) cudaFree(m_buff->m_recbuffer);
+    else free(m_buff->m_recbuffer);
 #endif
-      if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
+    if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
-#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
-      cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
-#else
-      m_buff->m_recbuffer = malloc(recBufferSize);
+#ifdef PROTO_CUDA
+    if(bufDevice) cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
+    else m_buff->m_recbuffer = malloc(recBufferSize);
 #endif
       if (m_buff->m_recbuffer == NULL)
         {
@@ -623,7 +621,6 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
         }
       m_buff->m_reccapacity = recBufferSize;
   }
-
   /*
     pout()<<"\n";
     for (int i=0; i<m_buff->m_fromMe.size(); i++)

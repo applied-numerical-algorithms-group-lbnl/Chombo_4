@@ -35,9 +35,22 @@ CopierBuffer::~CopierBuffer()
 
 void CopierBuffer::clear()
 {
-#if defined(PROTO_CUDA) && !defined(CPUtoCPU)
-  if (m_sendbuffer != NULL) cudaFree(m_sendbuffer);
-  if (m_recbuffer  != NULL) cudaFree(m_recbuffer);
+#ifdef PROTO_CUDA
+  if (m_sendbuffer != NULL)
+  {
+    cudaPointerAttributes att;
+    cudaPointerGetAttributes(&att, m_sendbuffer);
+    if(att.type == 2) cudaFree(m_sendbuffer); // = 2-> device allocation
+    else free(m_sendbuffer); 
+  }
+  
+  if (m_recbuffer  != NULL) 
+  {
+    cudaPointerAttributes att;
+    cudaPointerGetAttributes(&att, m_recbuffer);
+    if(att.type == 2) cudaFree(m_recbuffer);
+    else free(m_recbuffer);	  
+  }
 #else
   if (m_sendbuffer != NULL) free(m_sendbuffer);
   if (m_recbuffer  != NULL) free(m_recbuffer);
