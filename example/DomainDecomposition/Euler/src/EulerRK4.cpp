@@ -121,13 +121,18 @@ operator()(EulerDX& a_DX,
   //Copier copier(grids, grids);
   
   LevelBoxData<NUMCOMPS>&  U_ave= *(a_DX.U_ave); 
-  U_ave.define(*(a_State.m_U)); // ask why
 
+  DataIterator it = grids.dataIterator();
+  int nbox = it.size();
+  for (int ibox = 0; ibox < nbox; ibox++)
+  {
+    a_State.m_U->operator[](it[ibox]).copyTo(U_ave[it[ibox]]);
+  }
   CH_STOP(tcop);
 
   CH_START(trk);
-  DataIterator dit = grids.dataIterator();
 
+  DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     U_ave[dit[ibox]] += delta[dit[ibox]];
