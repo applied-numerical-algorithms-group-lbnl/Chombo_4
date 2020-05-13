@@ -86,7 +86,7 @@ for t in targets:
     else:
         if args.opt == 'HIGH':
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
-        else
+        else:
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
