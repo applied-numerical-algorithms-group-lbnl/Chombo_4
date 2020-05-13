@@ -7,7 +7,7 @@ import platform
 parser = ArgumentParser()
 
 parser.add_argument('--dim', type=int, help='dimensionality to build executables [2]',default='2')
-parser.add_argument('--opt',  choices=['DEBUG', 'TRUE'],help='compiler optimization [DEBUG]',default='DEBUG')
+parser.add_argument('--opt',  choices=['DEBUG', 'TRUE', 'HIGH'],help='compiler optimization [DEBUG]',default='DEBUG')
 parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
 parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [TRUE]',default='FALSE')
 parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
@@ -79,9 +79,12 @@ for t in targets:
 
     if args.opt == 'DEBUG':
         f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
-    else:
+    else: # TRUE or HIGH case
         f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
    
+
+    if args.opt == 'HIGH':
+        f.write('\nCXXFLAGS+=-DNDEBUG \n')
 
     if args.cuda == 'TRUE':
 #        f.write('\nCXX = nvcc -ccbin mpicxx \n DEP=nvcc\n')
