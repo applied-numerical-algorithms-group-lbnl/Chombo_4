@@ -372,6 +372,7 @@ BitSetTrueIterator::BitSetTrueIterator(const BitSet& a_bitset)
   m_size(a_bitset.m_size),
   m_length(a_bitset.m_length)
 {
+  m_pos = 0;
   // Check for empty BitSet
   for (int i = 0; i < m_length; ++i)
     {

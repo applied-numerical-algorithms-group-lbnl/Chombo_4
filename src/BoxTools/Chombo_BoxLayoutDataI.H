@@ -582,7 +582,9 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   // allocate send and receveive buffer space.
   using ::Proto::BoxData;
+#ifdef PROTO_CUDA
   const bool bufDevice = std::is_same<T, BoxData<Real,DIM+2>>::value;
+#endif
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
