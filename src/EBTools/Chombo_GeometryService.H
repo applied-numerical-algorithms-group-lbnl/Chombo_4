@@ -290,23 +290,6 @@ private:
                              const HostBoxData<int>  & a_regIrregCovered,
                              const Point             & a_iv) const;
 
-  ///funny constructor for when grids change and we have to copy data over
-  /// to do coarsening
-  LevelGeometryService(const Box                               &  a_domain,
-                       const DisjointBoxLayout                 &  a_grids,          
-                       const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
-                       const shared_ptr<LevelData<VoluData> >  &  a_voludata,
-                       const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
-                       const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
-                       const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
-                       const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
-                       const RealVect                          &  a_origin,         
-                       const int                               &  a_order,          
-                       const int                               &  a_degreeP,
-                       const double                            &  a_dx,             
-                       const IntVect                           &  a_geomgrow,       
-                       const shared_ptr<BaseIF>                &  a_baseIF);         
-
 
   ///calls exchange on everything
   void exchange();

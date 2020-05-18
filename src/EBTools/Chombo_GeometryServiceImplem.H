@@ -59,6 +59,7 @@ defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
   PR_TIME("LevelGeometryService::defineFinestLevel");
+  pout() << "defining finest level" << endl;
   LayoutData<vector< IrregNode<order> > > ldnodes(m_grids);
   using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
@@ -94,8 +95,9 @@ defineFinestLevel(const RealVect               & a_origin,
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
     }
   }
-  
+  pout() << "exchanging graph data" << endl;
   m_graphs  ->exchange(m_exchangeCopier);
+  pout() << "done with graph exchange" << endl;
   
   //now fill in the moment information
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -153,6 +155,7 @@ LevelGeometryService<order>::
 exchange()
 {
   PR_TIME("LevelGeometryService::exchange");
+  pout() << "exchanging moment data" << endl;
   Interval interv(0,0);
   m_voludata->exchange(m_exchangeCopier);       
   m_ebfadata->exchange(m_exchangeCopier);       
@@ -162,48 +165,6 @@ exchange()
   m_zfacdata->exchange(m_exchangeCopier);
 #endif
 }
-/*********************************************/
-/// Funny private constructor for when grids change and we have to copy data over
-/// to do coarsening
-/*********************************************/
-template <int order>
-LevelGeometryService<order>::
-LevelGeometryService(const Box                               &  a_domain,
-                     const DisjointBoxLayout                 &  a_grids,          
-                     const shared_ptr<LevelData<EBGraph> >   &  a_graphs,
-                     const shared_ptr<LevelData<VoluData> >  &  a_voludata,
-                     const shared_ptr<LevelData<EBFaData> >  &  a_ebfadata,
-                     const shared_ptr<LevelData<XFacData> >  &  a_xfacdata,       
-                     const shared_ptr<LevelData<YFacData> >  &  a_yfacdata,       
-                     const shared_ptr<LevelData<ZFacData> >  &  a_zfacdata,       
-                     const RealVect                          &  a_origin,         
-                     const int                               &  a_order,          
-                     const int                               &  a_degreeP,
-                     const double                            &  a_dx,             
-                     const IntVect                           &  a_geomgrow,       
-                     const shared_ptr<BaseIF>                &  a_baseIF)              
-{
-
-  m_domain    =  a_domain;         
-  m_grids     =  a_grids;          
-  m_origin    =  a_origin;         
-  m_order     =  a_order;          
-  m_degreeP   =  a_degreeP;
-  m_dx        =  a_dx;             
-  m_geomgrow  =  a_geomgrow;
-  m_baseIF    =  a_baseIF;         
-
-  defineData();
-  
-  Interval interv(0,0);
-  a_graphs  ->copyTo(interv, (*m_graphs  ), interv);       
-  a_voludata->copyTo(interv, (*m_voludata), interv);       
-  a_ebfadata->copyTo(interv, (*m_ebfadata), interv);       
-  a_xfacdata->copyTo(interv, (*m_xfacdata), interv);       
-  a_yfacdata->copyTo(interv, (*m_yfacdata), interv);       
-  a_zfacdata->copyTo(interv, (*m_zfacdata), interv);
-  
-}
   
 /*********************************************/
 template <int order>
@@ -212,6 +173,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
                      const DisjointBoxLayout      &      a_grids)
 {
   PR_TIME("LevelGeometryService::defineFromcoarser");
+  pout() << "creating coarser level" << endl;
   m_baseIF   = a_finerLevel.m_baseIF;
   m_domain   = coarsen(a_finerLevel.m_domain,2);
   m_origin   =         a_finerLevel.m_origin;
@@ -227,8 +189,9 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   
   coarsenGraph(a_finerLevel);
   
+  pout() << "exchanging graph info" << endl;
   m_graphs  ->exchange(m_exchangeCopier);       
-
+  pout() << "done with graph exchange" << endl;
   coarsenData(a_finerLevel);
 
   exchange();
