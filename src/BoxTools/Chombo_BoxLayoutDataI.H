@@ -589,14 +589,31 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) cudaFree((m_buff->m_sendbuffer));
-    else free((m_buff->m_sendbuffer));
+    if(bufDevice) 
+    {
+      cudaFree((m_buff->m_sendbuffer));
+    }
+    else
+    {
+      cudaFree((m_buff->m_sendbuffer));
+    }
+    
+#else
+    free((m_buff->m_sendbuffer));
 #endif
     if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
       
 #ifdef PROTO_CUDA 
-    if(bufDevice)  cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
-    else (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+    if(bufDevice)  
+    {
+      cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
+    }
+    else
+    { 
+      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+    }
+#else
+    (m_buff->m_sendbuffer) = malloc(sendBufferSize);
 #endif
     if ((m_buff->m_sendbuffer) == NULL)
     {
@@ -608,20 +625,37 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   if (recBufferSize > m_buff->m_reccapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) cudaFree(m_buff->m_recbuffer);
-    else free(m_buff->m_recbuffer);
+    if(bufDevice) 
+    {
+      cudaFree(m_buff->m_recbuffer);
+    }
+    else
+    {
+      free(m_buff->m_recbuffer);
+    }
+#else
+    free(m_buff->m_recbuffer);
 #endif
     if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
 #ifdef PROTO_CUDA
-    if(bufDevice) cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
-    else m_buff->m_recbuffer = malloc(recBufferSize);
+    if(bufDevice) 
+    {
+      cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
+    }
+    else
+    {
+      m_buff->m_recbuffer = malloc(recBufferSize);
+    }
+#else
+    m_buff->m_recbuffer = malloc(recBufferSize);
 #endif
-      if (m_buff->m_recbuffer == NULL)
-        {
-          MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
-        }
-      m_buff->m_reccapacity = recBufferSize;
+    if (m_buff->m_recbuffer == NULL)
+    {
+      MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
+    }
+
+    m_buff->m_reccapacity = recBufferSize;
   }
   /*
     pout()<<"\n";
