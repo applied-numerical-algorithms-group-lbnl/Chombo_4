@@ -93,7 +93,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
 #if 0
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+        ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
     ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #endif
@@ -334,7 +334,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   CH_TIME("EBMultigridLevel::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
-  applyOp(a_res, a_phi);
+ applyOp(a_res, a_phi);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
