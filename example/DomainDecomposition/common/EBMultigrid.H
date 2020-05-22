@@ -208,6 +208,7 @@ private:
   string                            m_nobcname;
   Box                               m_domain;
   EBLevelBoxData<CELL, 1>           m_resid;
+  EBLevelBoxData<CELL, 1>           m_diagW;
   EBLevelBoxData<CELL, 1>           m_residC;
   EBLevelBoxData<CELL, 1>           m_deltaC;
   EBLevelBoxData<CELL, 1>           m_kappa;

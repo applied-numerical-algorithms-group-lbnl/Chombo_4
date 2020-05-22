@@ -213,6 +213,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghost, m_graphs);
   m_kappa.define(m_grids, m_nghost, m_graphs);
+  m_diagW.define(m_grids, m_nghost, m_graphs);
   
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
@@ -289,11 +290,13 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghost, m_graphs);
   m_kappa.define(m_grids, m_nghost, m_graphs);
+  m_diagW.define(m_grids, m_nghost, m_graphs);
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv);
 
@@ -324,6 +327,15 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
+
+    shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+    shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+    auto& diagGhost = m_diagW[dit[ibox]];
+    
+    Bx gridbx = ProtoCh::getProtoBox(grid);
+    size_t numflopspt = 0;
+    //this one has to be the old, slow ebforall
+    ebforallInPlace(numflopspt, "copyDiag", copyDiag,  gridbx, diagGhost, *diagptr);
     ideb++;
   }
   m_kappa.exchange(m_exchangeCopier);
@@ -368,8 +380,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       int a_maxiter) const
 {
   CH_TIME("EBMultigridLevel::relax");
-  CH_assert(a_phi.ghostVect() == a_rhs.ghostVect());
+  CH_assert(a_phi.ghostVect() ==   a_rhs.ghostVect());
   CH_assert(a_phi.ghostVect() == m_kappa.ghostVect());
+  CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
+  CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
   DataIterator dit = m_grids.dataIterator();
   for(int iter = 0; iter < a_maxiter; iter++)
@@ -383,23 +397,28 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
         for(int ibox = 0; ibox < dit.size(); ++ibox)
         {
           shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
-          shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
 
-          const       EBBoxData<CELL, Real, 1> &   stendiag = *diagptr;
           Box grid = m_grids[dit[ibox]];
           Bx  grbx = getProtoBox(grid);
           //lambda = safety/diag
           //phi = phi - lambda*(res)
           ///lambda takes floating point to calculate
           //also does an integer check for red/black but I am not sure what to do with that
-          auto& phifab =   a_phi[dit[ibox]];
-          auto& resfab =   resid[dit[ibox]];
+          auto& phifab   =   a_phi[dit[ibox]];
+          auto& resfab   =   resid[dit[ibox]];
+          auto& stendiag = m_diagW[dit[ibox]];
 //      auto& rhsfab =   a_rhs[dit[ibox]];
           unsigned long long int numflopspt = 10;
 
+#if 0          
           ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                             phifab, resfab, stendiag,
                             m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+#else           
+          ebFastforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
+                                phifab, resfab, stendiag,
+                                m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+#endif
       
           numflopspt++;
         }
