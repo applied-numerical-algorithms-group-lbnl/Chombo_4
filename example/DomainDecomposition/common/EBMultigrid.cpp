@@ -70,8 +70,11 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                     
 {
   CH_TIME("EBMultigrid::applyOp");
+  CH_assert(  a_lph.ghostVect() == a_phi.ghostVect());
+  CH_assert(m_kappa.ghostVect() == a_phi.ghostVect());
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   phi.exchange(m_exchangeCopier);
+  
   DataIterator dit = m_grids.dataIterator();
   int ideb  = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -89,7 +92,12 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
+#if 0
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+#else
+//    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebFastforallInPlace_i(numflopspt, "addAlphaPhiPt", addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+#endif
     ideb++;
   }
 }
@@ -112,6 +120,8 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi) const
                     
 {
+  CH_assert(  a_lph.ghostVect() == a_phi.ghostVect());
+  CH_assert(m_kappa.ghostVect() == a_phi.ghostVect());
   CH_TIME("EBMultigrid::applyOpNeumann");
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   phi.exchange(m_exchangeCopier);
@@ -132,7 +142,11 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
+#if 0
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+#else
+    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+#endif
     ideb++;
   }
 }
@@ -197,8 +211,8 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_dictionary = a_dictionary;
 
   m_graphs = a_geoserv->getGraphs(m_domain);
-  m_resid.define(m_grids, m_nghost  , m_graphs);
-  m_kappa.define(m_grids, IntVect::Zero, m_graphs);
+  m_resid.define(m_grids, m_nghost, m_graphs);
+  m_kappa.define(m_grids, m_nghost, m_graphs);
   
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
@@ -273,8 +287,8 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   m_dictionary = a_finerLevel.m_dictionary;
 
   m_graphs = a_geoserv->getGraphs(m_domain);
-  m_resid.define(m_grids, m_nghost  , m_graphs);
-  m_kappa.define(m_grids, IntVect::Zero, m_graphs);
+  m_resid.define(m_grids, m_nghost, m_graphs);
+  m_kappa.define(m_grids, m_nghost, m_graphs);
 
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
@@ -298,17 +312,21 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   CH_TIME("EBMultigridLevel::fillkappa");
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    Box grid =m_grids[dit[ibox]];
-    Bx  grbx = getProtoBox(grid);
+    auto& kappdat = m_kappa[dit[ibox]];
+    auto grid =m_grids[dit[ibox]];
+    Bx  grbx = kappdat.inputBox();
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     EBHostData<CELL, Real, 1> hostdat(grbx, graph);
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
-    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
+    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
+    ideb++;
   }
+  m_kappa.exchange(m_exchangeCopier);
 }
 /****/
 void
@@ -320,6 +338,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
 {
   CH_TIME("EBMultigridLevel::residual");
   //this puts lphi into a_res
+  CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
   applyOp(a_res, a_phi);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
@@ -333,7 +352,11 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     const auto& rhsfab = a_rhs[dit[ibox]];
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
+#if 0
     ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
+#else
+    ebFastforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
+#endif
     ideb++;
   }
 }
@@ -345,6 +368,8 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       int a_maxiter) const
 {
   CH_TIME("EBMultigridLevel::relax");
+  CH_assert(a_phi.ghostVect() == a_rhs.ghostVect());
+  CH_assert(a_phi.ghostVect() == m_kappa.ghostVect());
   //
   DataIterator dit = m_grids.dataIterator();
   for(int iter = 0; iter < a_maxiter; iter++)

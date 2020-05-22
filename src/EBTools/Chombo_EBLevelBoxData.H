@@ -436,7 +436,10 @@ public:
       Real*  dataptrHost, *dataptrDevi;
       hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
       devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
-
+      if(fabsizeDevi != fabsizeHost)
+      {
+        MayDay::Error("incompatible host and device sizes in EBLevelBoxData");
+      }
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA

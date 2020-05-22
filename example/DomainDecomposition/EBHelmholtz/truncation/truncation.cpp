@@ -17,25 +17,9 @@
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
 #include "Proto_DebugHooks.H"
-#include "Chombo_EBLevelFluxData.H"
-
 #include "DebugFunctions.H"
 #include <iomanip>
 
-/****/
-//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
-PROTO_KERNEL_START 
-unsigned int  setPhiPtF(int              a_pt[DIM],
-                        Var<Real, 1>     a_phi,
-                        Real             a_dx)
-{
-  Real x = Real(a_pt[0])*(a_dx + 0.5);
-  Real y = Real(a_pt[1])*(a_dx + 0.5);
-  Real val = sin(PI*x*y);
-  a_phi(0) = val;
-  return 0;
-}
-PROTO_KERNEL_END(setPhiPtF, setPhiPt)
 
 int
 runTest(int a_argc, char* a_argv[])
@@ -130,6 +114,7 @@ runTest(int a_argc, char* a_argv[])
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, true));
+//  Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
@@ -177,8 +162,9 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
-  EBLevelBoxData<CELL,   1>  lph(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV);
   EBMultigrid::s_numSmoothUp   = numSmooth;
@@ -188,18 +174,22 @@ runTest(int a_argc, char* a_argv[])
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& lphbd = lph[dit[ibox]];
-    Bx grbx = phibd.box();
-    size_t numflopspt = 0;
-    ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, dx);
-    lphbd.setVal(0.0);
+    EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
+    EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+    phibd.setVal(0.0);
+    rhsbd.setVal(1.0);
+    corbd.setVal(0.0);
   }
 
+  solver.solve(phi, rhs, tol, maxIter, false);
 
-  for(int iiter = 0; iiter  < maxIter; iiter++)
-  {
-    solver.applyOp(lph, phi);
-  }
+  pout() << "writing to file " << endl;
+  
+//  auto& kappa = solver.getKappa();
+//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+  
   pout() << "exiting " << endl;
   return 0;
 }
@@ -212,7 +202,7 @@ int main(int a_argc, char* a_argv[])
   pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("ebapply.time.table");
+  CH_TIMER_SETFILE("helmholtz.time.table");
   {
     if (a_argc < 2)
     {
