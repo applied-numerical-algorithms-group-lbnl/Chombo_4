@@ -6,6 +6,37 @@ using Proto::Var;
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
+unsigned int  addAlphaPhiPtF(int a_pt[DIM],
+                             Var<Real, 1>     a_lph,
+                           Var<Real, 1>     a_phi,
+                           Var<Real, 1>     a_kap,
+                           Real    a_alpha,
+                           Real    a_beta)
+{
+  //kappa and beta are already in lph
+  //kappa because we did not divide by kappa
+  //beta was sent in to ebstencil::apply
+  
+  //begin debug
+#if DIM==2
+  int ideb = 0;
+  Point debpt(3, 13);
+  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]) )
+  {
+    ideb = 1;
+  }
+#endif
+  //end debug
+  
+  Real kappdiv = a_lph(0);
+  Real bkdivF  = a_beta*kappdiv;
+  Real phival  = a_phi(0);
+  Real kapval  = a_kap(0);
+  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+  return 0;
+}
+PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
+PROTO_KERNEL_START 
 unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
                            Var<Real, 1>     a_phi,
                            Var<Real, 1>     a_kap,

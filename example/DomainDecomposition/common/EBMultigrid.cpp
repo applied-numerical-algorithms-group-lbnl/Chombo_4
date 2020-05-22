@@ -93,9 +93,10 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
 #if 0
-        ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
-    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+//    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebFastforallInPlace_i(numflopspt, "addAlphaPhiPt", addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #endif
     ideb++;
   }
@@ -148,97 +149,97 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
 #endif
     ideb++;
   }
-  }
+}
 /****/
-    void
-      EBMultigrid::
-      applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-      const EBLevelBoxData<CELL, 1> & a_phi) const
-    {
-    return m_finest->applyOp(a_lph, a_phi);
-  }
+void
+EBMultigrid::
+applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
+        const EBLevelBoxData<CELL, 1> & a_phi) const
+{
+  return m_finest->applyOp(a_lph, a_phi);
+}
 /***/
-    void
-      EBMultigrid::
-      residual(EBLevelBoxData<CELL, 1>       & a_res,
-      const EBLevelBoxData<CELL, 1> & a_phi,
-      const EBLevelBoxData<CELL, 1> & a_rhs) const
-    {
-    PR_TIME("sgmg::resid");
-    return m_finest->residual(a_res, a_phi, a_rhs);
-  }
+void
+EBMultigrid::
+residual(EBLevelBoxData<CELL, 1>       & a_res,
+         const EBLevelBoxData<CELL, 1> & a_phi,
+         const EBLevelBoxData<CELL, 1> & a_rhs) const
+{
+  PR_TIME("sgmg::resid");
+  return m_finest->residual(a_res, a_phi, a_rhs);
+}
 /***/
-    void
-      EBMultigrid::
-      vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
-      const EBLevelBoxData<CELL, 1> & a_rhs)
-    {
-    PR_TIME("sgmg::vcycle");
-    return m_finest->vCycle(a_phi, a_rhs);
-  }
+void
+EBMultigrid::
+vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
+       const EBLevelBoxData<CELL, 1> & a_rhs)
+{
+  PR_TIME("sgmg::vcycle");
+  return m_finest->vCycle(a_phi, a_rhs);
+}
 /***/
-    EBMultigridLevel::
-      EBMultigridLevel(dictionary_t                            & a_dictionary,
-      shared_ptr<GeometryService<2> >         & a_geoserv,
-      const Real                              & a_alpha,
-      const Real                              & a_beta,
-      const Real                              & a_dx,
-      const DisjointBoxLayout                 & a_grids,
-      const string                            & a_stenname,
-      string                                    a_dombcname[2*DIM],
-      const string                            & a_ebbcname,
-      const Box                               & a_domain,
-      const IntVect                           & a_nghost)
-    {
-    CH_TIME("EBMultigridLevel::define");
-    m_depth = 0;
+EBMultigridLevel::
+EBMultigridLevel(dictionary_t                            & a_dictionary,
+                 shared_ptr<GeometryService<2> >         & a_geoserv,
+                 const Real                              & a_alpha,
+                 const Real                              & a_beta,
+                 const Real                              & a_dx,
+                 const DisjointBoxLayout                 & a_grids,
+                 const string                            & a_stenname,
+                 string                                    a_dombcname[2*DIM],
+                 const string                            & a_ebbcname,
+                 const Box                               & a_domain,
+                 const IntVect                           & a_nghost)
+{
+  CH_TIME("EBMultigridLevel::define");
+  m_depth = 0;
 
-    m_alpha      = a_alpha;      
-    m_beta       = a_beta;       
-    m_dx         = a_dx;         
-    m_grids      = a_grids;      
-    m_stenname   = a_stenname;   
-    m_neumname   = a_stenname + string("_All_Neumann");   
+  m_alpha      = a_alpha;      
+  m_beta       = a_beta;       
+  m_dx         = a_dx;         
+  m_grids      = a_grids;      
+  m_stenname   = a_stenname;   
+  m_neumname   = a_stenname + string("_All_Neumann");   
 
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
-    {
+  for(int ivec = 0; ivec < 2*DIM; ivec++)
+  {
     m_dombcname[ivec]  = a_dombcname[ivec];
   }
-    m_ebbcname   = a_ebbcname;   
-    m_domain     = a_domain;     
-    m_nghost     = a_nghost;
-    m_dictionary = a_dictionary;
+  m_ebbcname   = a_ebbcname;   
+  m_domain     = a_domain;     
+  m_nghost     = a_nghost;
+  m_dictionary = a_dictionary;
 
-    m_graphs = a_geoserv->getGraphs(m_domain);
-    m_resid.define(m_grids, m_nghost, m_graphs);
-    m_kappa.define(m_grids, m_nghost, m_graphs);
+  m_graphs = a_geoserv->getGraphs(m_domain);
+  m_resid.define(m_grids, m_nghost, m_graphs);
+  m_kappa.define(m_grids, m_nghost, m_graphs);
   
-    m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
-    //register stencil for apply op
-    //true is for need the diagonal wweight
-    m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
+  //register stencil for apply op
+  //true is for need the diagonal wweight
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
-    m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
+  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
 
-    //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
-    fillKappa(a_geoserv);
+  //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
+  fillKappa(a_geoserv);
 
-    defineCoarserObjects(a_geoserv);
-    if(!m_hasCoarser)
-    {
+  defineCoarserObjects(a_geoserv);
+  if(!m_hasCoarser)
+  {
     m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
   }
-  }
+}
 /***/
-    void
-      EBMultigridLevel::
-      defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
-    {
-    PR_TIME("sgmglevel::defineCoarser");
+void
+EBMultigridLevel::
+defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
+{
+  PR_TIME("sgmglevel::defineCoarser");
 
-    m_hasCoarser = (m_grids.coarsenable(4));
-    if(m_hasCoarser)
-    {
+  m_hasCoarser = (m_grids.coarsenable(4));
+  if(m_hasCoarser)
+  {
     //multilevel operators live with the finer level
     Box coardom = coarsen(m_domain, 2);
     m_nobcname = string("no_bcs");
@@ -247,10 +248,10 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     ///prolongation has ncolors stencils
     for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
     {
-    string colorstring = "PWC_Prolongation_" + std::to_string(icolor);
-    m_prolongationName[icolor] = colorstring;
-    m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
-  }
+      string colorstring = "PWC_Prolongation_" + std::to_string(icolor);
+      m_prolongationName[icolor] = colorstring;
+      m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
+    }
     
     m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
 
@@ -258,52 +259,52 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
     m_deltaC.define(m_coarser->m_grids, m_nghost , graphs);
   }
-  }
+}
 /***/
-    EBMultigridLevel::
-      EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
-      shared_ptr<GeometryService<2> >   & a_geoserv)
-    {
-    PR_TIME("sgmglevel::constructor");
-    m_depth = a_finerLevel.m_depth + 1;
+EBMultigridLevel::
+EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
+                 shared_ptr<GeometryService<2> >   & a_geoserv)
+{
+  PR_TIME("sgmglevel::constructor");
+  m_depth = a_finerLevel.m_depth + 1;
 
-    m_dx         = 2*a_finerLevel.m_dx;         
-    m_domain     = coarsen(a_finerLevel.m_domain, 2);      
-    coarsen(m_grids, a_finerLevel.m_grids,  2);      
+  m_dx         = 2*a_finerLevel.m_dx;         
+  m_domain     = coarsen(a_finerLevel.m_domain, 2);      
+  coarsen(m_grids, a_finerLevel.m_grids,  2);      
 
-    m_alpha      = a_finerLevel.m_alpha;      
-    m_beta       = a_finerLevel.m_beta;       
-    m_stenname   = a_finerLevel.m_stenname;   
-    m_neumname   = a_finerLevel.m_neumname;
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
-    {
+  m_alpha      = a_finerLevel.m_alpha;      
+  m_beta       = a_finerLevel.m_beta;       
+  m_stenname   = a_finerLevel.m_stenname;   
+  m_neumname   = a_finerLevel.m_neumname;
+  for(int ivec = 0; ivec < 2*DIM; ivec++)
+  {
     m_dombcname[ivec]  = a_finerLevel.m_dombcname[ivec];
   }
-    m_ebbcname   = a_finerLevel.m_ebbcname;   
+  m_ebbcname   = a_finerLevel.m_ebbcname;   
 
-    m_nghost     = a_finerLevel.m_nghost;
-    m_nghost     = a_finerLevel.m_nghost;
-    m_dictionary = a_finerLevel.m_dictionary;
+  m_nghost     = a_finerLevel.m_nghost;
+  m_nghost     = a_finerLevel.m_nghost;
+  m_dictionary = a_finerLevel.m_dictionary;
 
-    m_graphs = a_geoserv->getGraphs(m_domain);
-    m_resid.define(m_grids, m_nghost, m_graphs);
-    m_kappa.define(m_grids, m_nghost, m_graphs);
+  m_graphs = a_geoserv->getGraphs(m_domain);
+  m_resid.define(m_grids, m_nghost, m_graphs);
+  m_kappa.define(m_grids, m_nghost, m_graphs);
 
-    m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
-    //register stencil for apply op
-    //true is for need the diagonal wweight
-    m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
-    //should not need the neumann one for coarser levels as TGA only calls it on finest level
-    fillKappa(a_geoserv);
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
+  //register stencil for apply op
+  //true is for need the diagonal wweight
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  //should not need the neumann one for coarser levels as TGA only calls it on finest level
+  fillKappa(a_geoserv);
 
 
-    defineCoarserObjects(a_geoserv);
-    if(!m_hasCoarser)
-    {
+  defineCoarserObjects(a_geoserv);
+  if(!m_hasCoarser)
+  {
     m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
-    }
+  }
 
-    }
+}
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
 EBMultigridLevel::
@@ -311,17 +312,21 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   CH_TIME("EBMultigridLevel::fillkappa");
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    Box grid =m_grids[dit[ibox]];
-    Bx  grbx = getProtoBox(grid);
+    auto& kappdat = m_kappa[dit[ibox]];
+    auto grid =m_grids[dit[ibox]];
+    Bx  grbx = kappdat.inputBox();
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     EBHostData<CELL, Real, 1> hostdat(grbx, graph);
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
-    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
+    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
+    ideb++;
   }
+  m_kappa.exchange(m_exchangeCopier);
 }
 /****/
 void
@@ -334,7 +339,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   CH_TIME("EBMultigridLevel::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
- applyOp(a_res, a_phi);
+  applyOp(a_res, a_phi);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;

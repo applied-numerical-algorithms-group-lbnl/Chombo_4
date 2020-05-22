@@ -138,6 +138,51 @@ genDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
   }
 }
 
+void 
+genDumpHost1(EBHostData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    EBGraph graph = dataPtr->ebgraph();
+    EBHostData<CELL, Real, 1> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    if((databox.contains(lodeb)) || (databox.contains(hideb)))
+    {
+      cout << "data region contains:" << endl;
+      for(int j = hideb[1]; j >= lodeb[1]; j--)
+      {
+        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        {
+          Point pt(i,j);
+          if(databox.contains(pt))
+          {
+            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+            cout << pt << ":";
+            if(vofs.size() >  0)
+            {
+              if(data(vofs[0], 0) >= 0)
+              {
+                cout << " ";
+              }
+              cout  << data(vofs[0], 0) << "  ";
+            }
+            else
+            {
+              cout  << "---------------" << "  ";
+            }
+          }
+        }
+        cout << endl;
+      }
+    }
+  }
+}
+
 
 void 
 fullDumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
@@ -225,6 +270,27 @@ dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
     Point lodeb = databox.low();
     Point hideb = databox.high();
     genDumpCell1(dataPtr, lodeb, hideb);
+  }
+}
+
+void 
+dumpHost1(EBHostData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+
+
+    EBGraph graph = dataPtr->ebgraph();
+
+    Bx databox = dataPtr->box();
+    databox &= graph.getDomain();
+    Point lodeb = databox.low();
+    Point hideb = databox.high();
+    genDumpHost1(dataPtr, lodeb, hideb);
   }
 }
 
@@ -647,6 +713,7 @@ void dummyfunc()
   dumpYFace(NULL);
   dumpFlux1(NULL);
   dumpEB1(NULL);
+  dumpHost1(NULL);
 }
 
 

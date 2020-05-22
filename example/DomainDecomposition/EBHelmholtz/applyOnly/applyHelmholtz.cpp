@@ -192,7 +192,6 @@ runTest(int a_argc, char* a_argv[])
     Bx grbx = phibd.box();
     size_t numflopspt = 0;
     ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, dx);
-    phibd.setVal(1.0);
     lphbd.setVal(0.0);
   }
 
