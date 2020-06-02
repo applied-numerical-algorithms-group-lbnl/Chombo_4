@@ -13,6 +13,7 @@ parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [
 parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
 parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
 parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
 
 args = parser.parse_args()
@@ -77,18 +78,29 @@ for t in targets:
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
     if args.opt == 'DEBUG':
-        f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
-        if args.cuda == 'TRUE':
+        if args.hip == 'FALSE':
+	  f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
+	if args.cuda == 'TRUE':
             f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
+            if args.hip == 'TRUE':
+              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+              f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+	    else:
+              f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
         if args.opt == 'HIGH':
-            f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
+	    if args.hip == 'FALSE':
+               f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
         else:
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
+            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+        else:
+            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+        if args.hip == 'TRUE':
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
@@ -100,6 +112,11 @@ for t in targets:
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
         f.write('\nCXXFLAGS+=-Xcompiler -fopenmp\n')
    
+    if args.hip == 'TRUE':
+        f.write('\nCXX = hipcc \n DEP=hipcc\n')
+        f.write('\nLIBS+= -lnvToolsExt\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP --expt-extended-lambda -arch=compute_70\n')
+    
     if("EB" in t):
         f.write(makefile_ebpost);
 

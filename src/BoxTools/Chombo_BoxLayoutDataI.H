@@ -591,11 +591,11 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(bufDevice) 
     {
-      cudaFree((m_buff->m_sendbuffer));
+      protoFree((m_buff->m_sendbuffer));
     }
     else
     {
-      cudaFree((m_buff->m_sendbuffer));
+      protoFree((m_buff->m_sendbuffer));
     }
     
 #else
@@ -606,7 +606,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA 
     if(bufDevice)  
     {
-      cudaMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
+      protoMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
     }
     else
     { 
@@ -627,7 +627,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(bufDevice) 
     {
-      cudaFree(m_buff->m_recbuffer);
+      protoFree(m_buff->m_recbuffer);
     }
     else
     {
@@ -641,7 +641,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(bufDevice) 
     {
-      cudaMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
+      protoMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
     }
     else
     {
@@ -733,7 +733,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   std::list<MPI_Request> extraRequests;
 
 #ifdef PROTO_CUDA
-  cudaDeviceSynchronize();
+  protoDeviceSynchronize();
 #endif
 
 

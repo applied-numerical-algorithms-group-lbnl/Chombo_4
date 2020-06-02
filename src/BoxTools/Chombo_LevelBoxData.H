@@ -146,13 +146,13 @@ public:
       const Real* deviPtr = devifab.dataPtr(0);
 
 #ifdef PROTO_CUDA
-      cudaDeviceSynchronize();
-      cudaMemcpyAsync(hostPtr, deviPtr, datSize, cudaMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      protoDeviceSynchronize();
+      protoMemcpyAsync(hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
+      protoError err = protoGetLastError();
+      if (err != protoSuccess)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
+        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, protoGetErrorString(err));
       }
 #else
       memcpy(hostPtr, deviPtr, datSize);
@@ -175,13 +175,13 @@ public:
       Real*       deviPtr = devifab.dataPtr(0);
 
 #ifdef PROTO_CUDA
-      cudaDeviceSynchronize();
-      cudaMemcpyAsync( deviPtr, hostPtr, datSize, cudaMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      protoDeviceSynchronize();
+      protoMemcpyAsync( deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
+      protoError err = protoGetLastError();
+      if (err != protoSuccess)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
+        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, protoGetErrorString(err));
       }
 #else
       memcpy(deviPtr, hostPtr, datSize);
