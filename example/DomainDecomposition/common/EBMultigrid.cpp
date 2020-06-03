@@ -5,11 +5,12 @@
 #include "EBMultigridFunctions.H"
 #include <sstream>
 #include "BiCGStabSolver.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = false;
-int  EBMultigrid::s_numSmoothDown = 2;
-int  EBMultigrid::s_numSmoothUp   = 2;
+bool EBMultigrid::s_useWCycle     = true;
+int  EBMultigrid::s_numSmoothDown = 4;
+int  EBMultigrid::s_numSmoothUp   = 4;
 
 /****/
 void 
@@ -26,7 +27,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     a_phi.setVal(0.);
   }
 
-  residual(m_res, a_phi, a_rhs);
+  residual(m_res, a_phi, a_rhs, true);
   Real initres = m_res.maxNorm(0);
   int iter = 0;
   pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
@@ -52,7 +53,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     vCycle(m_cor, m_res);
 
     a_phi += m_cor;
-    residual(m_res, a_phi, a_rhs);
+    residual(m_res, a_phi, a_rhs, true);
 
     resnormold = resnorm;
     resnorm = m_res.maxNorm(0);
@@ -66,14 +67,18 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 void
 EBMultigridLevel::
 applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-        const EBLevelBoxData<CELL, 1> & a_phi) const
+        const EBLevelBoxData<CELL, 1> & a_phi,
+        bool a_doExchange) const
                     
 {
   CH_TIME("EBMultigrid::applyOp");
   CH_assert(  a_lph.ghostVect() == a_phi.ghostVect());
   CH_assert(m_kappa.ghostVect() == a_phi.ghostVect());
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
-  phi.exchange(m_exchangeCopier);
+  if(a_doExchange)
+  {
+    phi.exchange(m_exchangeCopier);
+  }
   
   DataIterator dit = m_grids.dataIterator();
   int ideb  = 0;
@@ -92,7 +97,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
-#if 0
+#if 1
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
 //    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
@@ -142,7 +147,7 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
-#if 0
+#if 1
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
     ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
@@ -154,19 +159,21 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
 void
 EBMultigrid::
 applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-        const EBLevelBoxData<CELL, 1> & a_phi) const
+        const EBLevelBoxData<CELL, 1> & a_phi,
+        bool a_doExchange) const
 {
-  return m_finest->applyOp(a_lph, a_phi);
+  return m_finest->applyOp(a_lph, a_phi, a_doExchange);
 }
 /***/
 void
 EBMultigrid::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_phi,
-         const EBLevelBoxData<CELL, 1> & a_rhs) const
+         const EBLevelBoxData<CELL, 1> & a_rhs,
+         bool a_doExchange) const
 {
   PR_TIME("sgmg::resid");
-  return m_finest->residual(a_res, a_phi, a_rhs);
+  return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
 }
 /***/
 void
@@ -181,7 +188,7 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
 EBMultigridLevel::
 EBMultigridLevel(dictionary_t                            & a_dictionary,
                  shared_ptr<GeometryService<2> >         & a_geoserv,
-                 const Real                              & a_alpha,
+                  const Real                              & a_alpha,
                  const Real                              & a_beta,
                  const Real                              & a_dx,
                  const DisjointBoxLayout                 & a_grids,
@@ -345,13 +352,14 @@ void
 EBMultigridLevel::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_phi,
-         const EBLevelBoxData<CELL, 1> & a_rhs) const
+         const EBLevelBoxData<CELL, 1> & a_rhs,
+         bool a_doExchange) const
                     
 {
   CH_TIME("EBMultigridLevel::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
-  applyOp(a_res, a_phi);
+  applyOp(a_res, a_phi, a_doExchange);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
@@ -364,7 +372,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     const auto& rhsfab = a_rhs[dit[ibox]];
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-#if 0
+#if 1
     ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
 #else
     ebFastforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
@@ -385,13 +393,22 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
+  ParmParse pp;
+  bool do_lazy_relax = false;
+  pp.query("do_lazy_relax", do_lazy_relax);
   DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(int iter = 0; iter < a_maxiter; iter++)
   {
     for(int iredblack = 0; iredblack < 2; iredblack++)
     {
       auto & resid = const_cast<EBLevelBoxData<CELL, 1> & >(m_resid);
-      residual(resid, a_phi, a_rhs);
+      bool doExchange = true;
+      if(do_lazy_relax)
+      {
+        doExchange = (iredblack==0);
+      }
+      residual(resid, a_phi, a_rhs, doExchange);
       {
         CH_TIME("ebforall gsrb bit");
         for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -410,7 +427,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
 //      auto& rhsfab =   a_rhs[dit[ibox]];
           unsigned long long int numflopspt = 10;
 
-#if 0          
+#if 1        
           ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
                             phifab, resfab, stendiag,
                             m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
@@ -420,11 +437,13 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
                                 m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
 #endif
       
-          numflopspt++;
-        }
+          ideb++;
+        } //end loop over boxes
+        ideb++;
       }
-    }
-  }
+    } //end loop over red and black
+    ideb++;
+  }// end loop over iteratioons
 }
 /****/
 void
@@ -447,6 +466,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
     stencil->apply(coarfab, finefab,  true, 1.0);
     ideb++;
   }
+  ideb++;
 }
 /****/
 void
@@ -495,13 +515,26 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
   }
   else
   {
-    //defaults from Chombo3 RelaxSolver.H
-//    int maxiter = 100;
-//    Real tol = 1.0e-6;
-//    m_bottomSolver->solve(a_phi, a_rhs, maxiter, tol);
     typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
-    int status = bicgstab::solve(a_phi, a_rhs, *this);
-    pout() << "bicgstab returned " << status << std::endl;
+    ParmParse pp("bicgstab");
+    Real tol   = 1.0e-6;
+    Real hang  = 1.0e-8;
+    Real small = 1.0e-16;
+    int  verb  = 0;
+    int  imax  = 0;
+    int nrestart = 5;
+    pp.query("tol"  , tol);
+    pp.query("hang" , hang);
+    pp.query("small", small);
+    pp.query("imax" , imax);
+    pp.query("nrestart", nrestart);
+    //the -1.0 is the metric parameter which I do not understand
+    //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
+    int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);
+    if(status != 1)
+    {
+      pout() << "mild warning: bicgstab returned " << status << std::endl;
+    }
   }
 
   relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);

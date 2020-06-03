@@ -56,7 +56,8 @@ public:
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
-                const EBLevelBoxData<CELL, 1> & a_rhs) const;
+                const EBLevelBoxData<CELL, 1> & a_rhs,
+                bool a_doExchange = true) const;
 
 
   /// 
@@ -76,7 +77,8 @@ public:
 
   /// 
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-               const EBLevelBoxData<CELL, 1> & a_phi) const;
+               const EBLevelBoxData<CELL, 1> & a_phi,
+               bool a_doExchange = true) const;
 
   ///for tga
   void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
@@ -317,7 +319,8 @@ public:
 
   /// 
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-               const EBLevelBoxData<CELL, 1> & a_phi) const;
+               const EBLevelBoxData<CELL, 1> & a_phi,
+               bool a_doExchange = true) const;
 
 
   /// for TGA force bcs to be homogeneous neumann
@@ -333,7 +336,8 @@ private:
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
-                const EBLevelBoxData<CELL, 1> & a_rhs) const;
+                const EBLevelBoxData<CELL, 1> & a_rhs,
+                bool a_doExchange = true) const;
 
   Real norm(const EBLevelBoxData<CELL, 1>       & a_res) const;
   

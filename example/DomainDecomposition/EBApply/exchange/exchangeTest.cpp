@@ -35,33 +35,86 @@ using std::shared_ptr;
 int
 runTest(int a_argc, char* a_argv[])
 {
-  int nx          = 32;
+  int nx      = 32;
+  int maxGrid = 32;
+  Real x0 = 0.5;
+  Real y0 = 0.5;
+  Real z0 = 0.5;
+  Real A = 1.0;
+  Real B = 1.0;
+  Real C = 1.0;
+  Real R = 0.25;
+    
   ParmParse pp;
-
-  pout() << "defining geometry" << endl;
-  shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
-
+    
   pp.get("nx"        , nx);
+
+  pp.get("maxGrid"   , maxGrid);
+
+  pp.get("x0"        , x0);
+  pp.get("y0"        , y0);
+  pp.get("z0"        , z0);
+  pp.get("A"         , A);
+  pp.get("B"         , B);
+  pp.get("C"         , C);
+  pp.get("R"         , R);         
+
+  pout() << "nx        = " << nx       << endl;
+  pout() << "maxGrid   = " << maxGrid  << endl;
+  pout() << "x0        = " << x0       << endl;
+  pout() << "y0        = " << y0       << endl;
+  pout() << "z0        = " << z0       << endl;
+  pout() << "A         = " << A        << endl;
+  pout() << "B         = " << B        << endl;
+  pout() << "C         = " << C        << endl;
+  pout() << "R         = " << R        << endl;
   Real blobCen, blobRad;
 
   pp.get("blob_cen", blobCen);
   pp.get("blob_rad", blobRad);
-  pout() << "nx       = " << nx     << endl;
-  Real dx = 1.0/Real(nx);
+
+  RealVect ABC, X0;
+  ABC[0] = A;
+  ABC[1] = B;
+  X0[0] = x0;
+  X0[1] = y0;
+#if DIM==3
+  ABC[2] = C;
+  X0[2] = z0;
+#endif
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+// EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
 
   Vector<DisjointBoxLayout> vecgrids;
-  Vector<Box>               vecdomains;
-  Vector<Real> vecdx;
-  int whichGeom;
+  pout() << "making grids" << endl;
+  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  Real geomCen, geomRad;
-  defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
-  Box domain = vecdomains[0];
+  DisjointBoxLayout grids = vecgrids[0];
+  grids.printBalance();
 
-  auto graphs = geoserv->getGraphs(domain);
-  IntVect dataGhostIV =   4*IntVect::Unit;
-  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
-  auto grids = vecgrids[0];
+  IntVect dataGhostIV =   2*IntVect::Unit;
+
+  int geomGhost = 4;
+  RealVect origin = RealVect::Zero();
+  Real dx = 1.0/nx;
+//  Real dx = 1.0;
+  bool insideRegular = false;
+  pp.get("inside_regular", insideRegular);
+                          
+  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
+//  Bx domainpr = getProtoBox(domain.domainBox());
+
+  pout() << "defining geometry" << endl;
+  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
+  shared_ptr< GeometryService<2> >  geoserv(geomptr);
+
+  auto graphs = geoserv->getGraphs(domain.domainBox());
+
+//  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
+
   DataIterator dit = grids.dataIterator();
   Copier exchangeCopier;
   exchangeCopier.exchangeDefine(grids, dataGhostIV);
@@ -95,7 +148,7 @@ runTest(int a_argc, char* a_argv[])
     pout() << "calling exchange to fill ghost cells" << endl;
     cellDat.exchange(exchangeCopier);
     fluxDat.exchange(exchangeCopier);
-    Bx domainbx = ProtoCh::getProtoBox(domain);
+    Bx domainbx = ProtoCh::getProtoBox(domain.domainBox());
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       auto& cellfab = cellDat[dit[ibox]];
@@ -154,7 +207,7 @@ runTest(int a_argc, char* a_argv[])
     pout() << "calling exchange to fill ghost cells" << endl;
     cellDat.exchange(exchangeCopier);
     fluxDat.exchange(exchangeCopier);
-    Bx domainbx = ProtoCh::getProtoBox(domain);
+    Bx domainbx = ProtoCh::getProtoBox(domain.domainBox());
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       auto& cellfab = cellDat[dit[ibox]];

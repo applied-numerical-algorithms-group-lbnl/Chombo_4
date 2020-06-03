@@ -45,6 +45,72 @@ dumpPS(PointSet* dataPtr)
 
 #if DIM==2
 void 
+dumpBDDIM(BoxData<Real, DIM>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    Point lodeb = dataPtr->box().low();
+    Point hideb = dataPtr->box().high();
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    BoxData<Real, DIM> & data = *dataPtr;
+    for(int ivar = 0; ivar <DIM; ivar++)
+    {
+      
+      cout << "data region contains for variable " << ivar << endl;
+      for(int j = hideb[1]; j >= lodeb[1]; j--)
+      {
+        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        {
+          Point pt(i,j);
+          cout << pt << ":";
+          if(data(pt, ivar) >= 0)
+          {
+            cout << " ";
+          }
+          cout  << data(pt, ivar) << "  ";
+        }
+        cout << endl;
+      }
+    }
+  }
+}
+
+void 
+dumpBD1(BoxData< Real, 1>* dataPtr)
+  
+{
+if(dataPtr != NULL)
+  {
+    Point lodeb = dataPtr->box().low();
+    Point hideb = dataPtr->box().high();
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    BoxData< Real, 1> & data = *dataPtr;
+
+    cout << "data region contains:" << endl;
+    for(int j = hideb[1]; j >= lodeb[1]; j--)
+    {
+      for(int i = lodeb[0]; i <= hideb[0]; i++)
+      {
+        Point pt(i,j);
+        cout << pt << ":";
+        if(data(pt, 0) >= 0)
+        {
+          cout << " ";
+        }
+        cout  << data(pt, 0) << "  ";
+      }
+      cout << endl;
+    }
+  }
+}
+
+void 
 genDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr, Point lodeb, Point hideb)
 {
   if(dataPtr != NULL)
@@ -717,8 +783,8 @@ void dummyfunc()
 }
 
 
-Point lodebarea(2, 8);
-Point hidebarea(5, 16);                                    
+Point lodebarea(1, 7 );
+Point hidebarea(5, 14);                                    
 
 void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -849,6 +915,8 @@ void dummyfunc_too()
   dumpFlux1Area(NULL);
   dumpEB1Area(NULL);
   dumpEBDIMArea(NULL);
+  dumpBD1(NULL);
+  dumpBDDIM(NULL);
 }
 #endif
 #include "Chombo_NamespaceFooter.H"

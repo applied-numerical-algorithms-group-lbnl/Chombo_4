@@ -313,7 +313,7 @@ genDumpHostXFaceDIM(shared_ptr<EBHostData<XFACE, Real, DIM> >* dataPtr,
         Bx databox = data.box();
         databox.grow(0, -1);
 
-        Bx area = databox & graph.getDomain();
+//        Bx area = databox & graph.getDomain();
 
         cout << "data region contains:" << endl;
         for(int j = hideb[1]; j >= lodeb[1]; j--)
@@ -395,7 +395,7 @@ genDumpHostYFace1(shared_ptr<EBHostData<YFACE, Real, 1> >* dataPtr,
 
     if((databox.contains(lodeb)) || (databox.contains(hideb)))
     {
-    Bx area = databox & graph.getDomain();
+//    Bx area = databox & graph.getDomain();
 
     cout << "data region contains:" << endl;
     for(int j = hideb[1]; j >= lodeb[1]; j--)
@@ -480,7 +480,7 @@ genDumpHostYFaceDIM(shared_ptr<EBHostData<YFACE, Real, DIM> >* dataPtr,
       if((databox.contains(lodeb)) || (databox.contains(hideb)))
       {
 
-      Bx area = databox & graph.getDomain();
+//      Bx area = databox & graph.getDomain();
 
       cout << "data region contains:" << endl;
       for(int j = hideb[1]; j >= lodeb[1]; j--)

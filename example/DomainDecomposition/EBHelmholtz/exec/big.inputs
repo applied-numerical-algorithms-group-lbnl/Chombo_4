@@ -21,10 +21,21 @@ A=        1.0
 B=        1.0
 C=        1.0
 # radius of ellipsoid
-R=        0.45
+#R=        0.45
+#inside_regular = true
+R=        0.1
+inside_regular = false
+do_lazy_relax = true
 #value in hdf5 file of  covered data
 coveredval = -0.001
 # 0 neumann, 1 dirichlet
-domainBC     = 0
+domainBC     = 1
 EBBC         = 1
 numSmooth  = 4
+bicgstab.tol   = 1.0e-20
+bicgstab.hang  = 1.0e-20
+bicgstab.small = 1.0e-20
+bicgstab.imax  = 27
+bicgstab.verb  = 0
+bicgstab.nrestart = 27
+

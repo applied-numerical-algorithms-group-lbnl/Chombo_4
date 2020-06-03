@@ -36,7 +36,8 @@ public:
         Real a_tol = 1.0e-6,
         Real a_hang = 1.0e-8,
         Real a_small = 1.0e-16,
-        int  a_imax = 27)
+        int  a_imax = 27,
+        int numRestarts = 5)
   {
     CH_TIMERS("BiCGStabSolver::solve");
     CH_TIMER("BiCGStabSolver::solve::Initialize",timeInitialize);
@@ -46,7 +47,6 @@ public:
     CH_START(timeInitialize);
     int exitStatus = 1;
     dataholder_t r, r_tilde, e, p, p_tilde, s_tilde, t, v;
-    int numRestarts = 5;
     a_op.create(r_tilde);
     a_op.create(p_tilde);
     a_op.create(s_tilde);
