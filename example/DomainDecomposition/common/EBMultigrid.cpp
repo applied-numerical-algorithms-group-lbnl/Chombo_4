@@ -101,7 +101,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
 //    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-    ebFastforallInPlace_i(numflopspt, "addAlphaPhiPt", addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebFastforallInPlace_i(phifab.inputBox(), numflopspt, "addAlphaPhiPt", addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #endif
     ideb++;
   }
@@ -150,7 +150,7 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
 #if 1
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
-    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebFastforallInPlace(phifab.inputBox(), numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #endif
     ideb++;
   }
@@ -375,7 +375,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
 #if 1
     ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
 #else
-    ebFastforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
+    ebFastforallInPlace(rhsfab.inputBox(), numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
 #endif
     ideb++;
   }
@@ -432,7 +432,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
                             phifab, resfab, stendiag,
                             m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
 #else           
-          ebFastforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
+          ebFastforallInPlace_i(phifab.inputBox(), numflopspt, "gsrbResid", gsrbResid,  grbx, 
                                 phifab, resfab, stendiag,
                                 m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
 #endif
