@@ -395,7 +395,9 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   //
   ParmParse pp;
   bool do_lazy_relax = false;
+  bool one_exchange_per_relax = false;
   pp.query("do_lazy_relax", do_lazy_relax);
+  pp.query("one_exchange_per_relax", one_exchange_per_relax);
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int iter = 0; iter < a_maxiter; iter++)
@@ -407,6 +409,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       if(do_lazy_relax)
       {
         doExchange = (iredblack==0);
+        if(doExchange && one_exchange_per_relax)
+        {
+          doExchange = (iter==0);
+        }
       }
       residual(resid, a_phi, a_rhs, doExchange);
       {
