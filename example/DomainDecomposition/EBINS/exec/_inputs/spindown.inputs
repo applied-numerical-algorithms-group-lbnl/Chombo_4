@@ -18,7 +18,7 @@ max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  64
+maxGrid=  32
 maxIter = 27
 tolerance = 1.0e-8
 cfl = 0.5
@@ -63,5 +63,6 @@ geom_cen = 0.5
 #geom_cen = 0.0 0.1 0.0
 
 
-do_lazy_relax = true
-one_exchange_per_relax = true
+do_lazy_relax =  true
+
+one_exchange_per_relax = false
