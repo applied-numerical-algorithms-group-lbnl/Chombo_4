@@ -66,3 +66,4 @@ geom_cen = 0.5
 do_lazy_relax =  true
 
 one_exchange_per_relax = false
+inside_regular = true

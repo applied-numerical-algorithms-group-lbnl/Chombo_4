@@ -60,7 +60,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     a_ibc.helmholtzStencilStrings(helmnames);
     m_helmholtz = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnames, bcname, m_domain, m_nghost, m_nghost));
+                       stenname, helmnames, bcname, m_domain, m_nghost));
   }
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));

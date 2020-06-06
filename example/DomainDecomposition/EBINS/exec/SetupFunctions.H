@@ -165,8 +165,9 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
     RealVect  X0 = RealVect::Unit();
     X0 *= a_geomCen;
-
-    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, true));//true is for inside regular
+    bool inside_regular;
+    pp.get("inside_regular",inside_regular);
+    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, inside_regular));
   }
   else if(a_whichGeom ==  1)
   {
