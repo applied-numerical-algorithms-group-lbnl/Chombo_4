@@ -7,6 +7,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "EBIBC.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///class to advect scalars in an eb context (via Trebotich et al.)
@@ -20,8 +21,8 @@ public:
               const DisjointBoxLayout                & a_grids,
               const Box                              & a_domain,
               const Real                             & a_dx,
-              const IntVect                          & a_nghostsrc, 
-              const IntVect                          & a_nghostdst);
+              const EBIBC                            & a_ebibc,
+              const IntVect                          & a_nghost);
 
   virtual ~EBAdvection()
   {
@@ -45,6 +46,11 @@ public:
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
                    const  Real               & a_dt);
 
+ virtual void applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                                          const DataIndex     & a_dit,
+                                          int a_velcomp) const;
+   
+
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
   EBLevelBoxData<CELL, 1>                m_kappa;
 
@@ -56,8 +62,7 @@ protected:
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
   DisjointBoxLayout                      m_grids;
   Box                                    m_domain;
-  IntVect                                m_nghostSrc;
-  IntVect                                m_nghostDst;
+  IntVect                                m_nghost;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_veloCell;
   Real m_dx;
   EBLevelBoxData<CELL, 1>                m_deltaM;
@@ -65,7 +70,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   Copier                                 m_exchangeCopier;
-
+  EBIBC                                  m_ebibc;
   static const string s_ncdivLabel;      //for non-conservative divergence
   static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions
   static const string s_redistLabel;     //for redistribution

@@ -63,7 +63,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                        stenname, helmnames, bcname, m_domain, m_nghost));
   }
   m_advectOp = shared_ptr<EBAdvection>
-    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));
+    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
   string projnames[2*DIM];
   a_ibc.projectionStencilStrings(projnames);
@@ -73,7 +73,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
     (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
-                      m_grids, m_domain, m_dx, m_viscosity, m_nghost, m_eulerCalc));
+                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
 
   if(!m_eulerCalc)
   {

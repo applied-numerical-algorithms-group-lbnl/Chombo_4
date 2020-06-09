@@ -26,6 +26,7 @@ public:
                const Box                              & a_domain,
                const Real                             & a_dx,
                const Real                             & a_viscosity,
+               const EBIBC                            & a_ebibc,
                const IntVect                          & a_nghost,
                bool a_eulerCalc)
   :EBAdvection(a_brit,
@@ -34,7 +35,7 @@ public:
                a_grids,     
                a_domain,    
                a_dx,        
-               a_nghost,    
+               a_ebibc,    
                a_nghost)
   {
     m_macproj    = a_macproj;
@@ -51,6 +52,9 @@ public:
   }
 
 
+  virtual void applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                                           const DataIndex     & a_dit,
+                                           int a_velcomp) const;
   ///
   virtual void 
   hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
@@ -68,6 +72,7 @@ protected:
   IntVect m_nghost;
   Real    m_viscosity;
   bool    m_eulerCalc;
+
   //does hybrid divergence by component--includes resdistribution
   void  assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu, const Real& a_dt);  
   void  copyComp(EBFluxData<Real, 1>&  a_dst,

@@ -57,6 +57,15 @@ inline Real cpySign(Real vala, Real signval)
 
 ////
 PROTO_KERNEL_START 
+unsigned int setFluxValF(Var<Real, 1>    a_flux,
+                         Real            a_value)
+{
+  a_flux(0) = a_value;
+  return 0;
+}
+PROTO_KERNEL_END(setFluxValF, setFluxVal)
+////
+PROTO_KERNEL_START 
 unsigned int HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                                Var<Real, 1>    a_kappaDiv,
                                Var<Real, 1>    a_nonConsDiv,

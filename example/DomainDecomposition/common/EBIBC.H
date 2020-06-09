@@ -96,7 +96,7 @@ public:
       }
     }
   }
-string         m_domainBC[2*DIM];
+  string         m_domainBC[2*DIM];
   string         m_ebbc;
   string         m_veloIC;
   string         m_scalIC;
