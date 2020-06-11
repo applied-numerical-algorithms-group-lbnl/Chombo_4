@@ -67,6 +67,12 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   
   string projnames[2*DIM];
   a_ibc.projectionStencilStrings(projnames);
+  //begin debug
+  for(int ivec = 0; ivec < 2*DIM; ivec++)
+  {
+    pout() << "proj_bc[" << ivec << "]=" << projnames[ivec] << endl;
+  }
+  //end debug        
   m_ccProj  = shared_ptr<EBCCProjector>
     (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, projnames));
   m_macProj = m_ccProj->m_macprojector;

@@ -534,6 +534,7 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
     pp.query("small", small);
     pp.query("imax" , imax);
     pp.query("nrestart", nrestart);
+    pp.query("verbosity", verb);
     //the -1.0 is the metric parameter which I do not understand
     //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
     int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);

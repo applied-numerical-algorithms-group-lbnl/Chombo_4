@@ -26,7 +26,7 @@ public:
       unsigned int loIndex = ebp_index(idir, Side::Lo);
       unsigned int hiIndex = ebp_index(idir, Side::Hi);
       m_domainBC[loIndex] = a_loSideDomainBC[idir];
-      m_domainBC[hiIndex] = a_loSideDomainBC[idir];
+      m_domainBC[hiIndex] = a_hiSideDomainBC[idir];
     }
 
     m_ebbc   =   a_ebbc  ;
