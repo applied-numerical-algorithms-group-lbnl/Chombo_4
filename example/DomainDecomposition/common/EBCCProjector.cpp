@@ -87,12 +87,15 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     //get face fluxes and interpolate them to centroids
     EBFluxData<Real, 1>         facegrad(grown, graph);
     //gphi = grad(phi)
+    int ideb = 0;
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initZero = true;
       //registered by the mac projector
+      auto& phifab = phi[dit[ibox]];
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
-                            facegrad, phi[dit[ibox]], idir, ibox, initZero, 1.0);
+                            facegrad, phifab, idir, ibox, initZero, 1.0);
+      ideb++;
     }
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -148,6 +151,8 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
    //interpolate from face centers to centroids
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
+    //brutally enforce flux-based boundary conditions on the hapless data
+    m_macprojector->applyFluxBoundaryConditions(centroidv, dit[ibox]);
     auto& kapdiv = divu[dit[ibox]];
     //get kappa*divv
     //also registered by the mac projector

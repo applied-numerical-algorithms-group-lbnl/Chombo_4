@@ -2,6 +2,8 @@
 #include <cmath>
 #include <memory>
 #include "EBMACProjector.H"
+#include "EBAdvectionFunctions.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 ///
 void
@@ -71,7 +73,7 @@ registerStencils()
   m_brit->registerFaceToCell( StencilNames::DivergeFtoC         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
 
   //face-centered gradient of cell-centered data
-  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::Neumann, StencilNames::NoBC, m_domain, m_domain, needDiag);
+  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
 }
 /// 
 void 
@@ -109,6 +111,81 @@ project(EBLevelFluxData<1>   & a_velo,
 ///
 void 
 EBMACProjector::
+applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                            const DataIndex     & a_dit)
+{
+  Box validBox = m_grids[a_dit];
+
+  Bx dombx = ProtoCh::getProtoBox(m_domain);
+  Bx valbx = ProtoCh::getProtoBox(validBox);
+  for(SideIterator sit; sit.ok(); ++sit)
+  {
+    Point dombnd = dombx.boundary(sit());
+    Point valbnd = valbx.boundary(sit());
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(dombnd[idir] == valbnd[idir])
+      {
+        int index = ebp_index(idir, sit());
+        string bcstr = m_ebibc.m_domainBC[index];
+        bool setstuff = true;
+        Real fluxval = 0;
+        if(bcstr == string("outflow"))
+        {
+          //do nothing, the upwind state should already be correct
+          setstuff = false;
+        }
+        else if(bcstr == string("inflow"))
+        {
+          //velocities in this context are always normal velocity
+          setstuff = true;
+          ParmParse pp;
+          pp.get("velocity_inflow_value", fluxval);
+        }
+        else if(bcstr == string("slip_wall"))
+        {
+          setstuff = true;
+          fluxval = 0;  //velocities in this context are always normal velocity
+        }
+        else if(bcstr == string("no_slip_wall"))
+        {
+          setstuff = true;
+          fluxval = 0; 
+        }
+        else
+        {
+          MayDay::Error("EBMACProjector: unrecognized bc");
+        }
+        if(setstuff)
+        {
+          Bx faceBx = valbx.faceBox(idir, sit());
+          unsigned long long int numflopspt = 0;
+          if(idir == 0)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+          }
+          else if(idir == 1)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+          }
+#if DIM==3          
+          else if(idir == 2)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+          }
+#endif
+          else
+          {
+            MayDay::Error("bogus idir");
+          }
+        }
+      }
+    }
+  }
+}   
+///
+void 
+EBMACProjector::
 kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
           EBLevelFluxData<1>      & a_velo)
 {
@@ -129,6 +206,8 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
       m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+
+    applyFluxBoundaryConditions(centroidFlux, dit[ibox]);
 
     MayDay::Error("need to set mac velocity at domain boundaries");
 

@@ -46,16 +46,16 @@ public:
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
                    const  Real               & a_dt);
 
- virtual void applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
-                                          const DataIndex     & a_dit,
-                                          int a_velcomp) const;
-   
 
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
   EBLevelBoxData<CELL, 1>                m_kappa;
 
   //additional terms added to extrapolation
   EBLevelBoxData<CELL, 1>                m_source;
+private:  
+  virtual void applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
+                                  const DataIndex     & a_dit) const;
+   
 protected:
 
   //rule britannica

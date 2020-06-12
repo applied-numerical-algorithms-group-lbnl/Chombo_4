@@ -6,9 +6,9 @@
 ///
 void
 BCGVelAdvect::
-applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
-                            const DataIndex     & a_dit,
-                            int a_velcomp) const
+applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
+                 const DataIndex     & a_dit,
+                 int a_velcomp) const
 {
   Box validBox = m_grids[a_dit];
 
@@ -46,7 +46,7 @@ applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
         }
         else if(bcstr == string("slip_wall"))
         {
-          setstuff = true;
+          setstuff = (idir == a_velcomp); //leave tangential vels alone in this context
           fluxval = 0;
         }
         else if(bcstr == string("no_slip_wall"))
@@ -325,7 +325,10 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
       //interpolate flux to centroids
       stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
-      applyFluxBoundaryConditions(centroidFlux,  dit[ibox], ivar);
+
+      //enforce boundary conditions with an iron fist.
+      applyVeloFluxBCs(centroidFlux,  dit[ibox], ivar);
+      
       scalar.define(m_macVelocity[dit[ibox]], ivar);
 
       auto& kapdiv =  m_kappaDiv[dit[ibox]];

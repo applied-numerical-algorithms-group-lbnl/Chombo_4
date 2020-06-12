@@ -145,6 +145,9 @@ public:
                                   bool   needDiagonalWeights = false,
                                   Point  a_dstGrown = Point::Zeros())
   {
+    using std::cout ;
+    using std::endl;
+    cout << "a_domainBCName = "  << a_domainBCName << endl;
     m_cellToXFace->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 

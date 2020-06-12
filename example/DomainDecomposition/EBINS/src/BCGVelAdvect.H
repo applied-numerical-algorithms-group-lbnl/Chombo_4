@@ -52,9 +52,6 @@ public:
   }
 
 
-  virtual void applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
-                                           const DataIndex     & a_dit,
-                                           int a_velcomp) const;
   ///
   virtual void 
   hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
@@ -62,6 +59,10 @@ public:
                       const Real               & a_dt,
                       Real a_tolerance, unsigned int a_maxIter);    
 
+private:
+  void applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
+                        const DataIndex     & a_dit,
+                        int a_velcomp) const;
 protected:
 
   shared_ptr<EBMACProjector>    m_macproj;

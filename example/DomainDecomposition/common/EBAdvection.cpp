@@ -305,12 +305,11 @@ getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
   }
 }
                   
-///
+/// this version only for scalar advection (bcgveladvect has its own)
 void
 EBAdvection::
-applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
-                            const DataIndex     & a_dit,
-                            int a_velcomp) const
+applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
+                   const DataIndex     & a_dit) const
 {
   Box validBox = m_grids[a_dit];
 
@@ -415,7 +414,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-    applyFluxBoundaryConditions(centroidFlux,  dit[ibox], 0);//the 0 is for a vel comp not used here
+    applyScalarFluxBCs(centroidFlux,  dit[ibox]);
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
 
