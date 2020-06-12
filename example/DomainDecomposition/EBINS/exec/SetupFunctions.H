@@ -330,16 +330,13 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       }
       else if(whichvelo == -1)
       {
-        vector<double> v_norm;
-        pp.getarr("geom_normal", v_norm, 0, DIM);
-        Real xvel =  v_norm[1];
-        Real yvel = -v_norm[0];
+        Real yvel =  0;
+        Real xvel =  0;
+        //pp.get("velocity_inflow_value", xvel);
         ebforallInPlace_i(numflopsvelo, "IntializeVCellConst", InitializeVCellConst,  velobox, 
                           velofab, xvel, yvel);
         ideb++;
       }
-      
-      ideb++;
     }
   }
 }

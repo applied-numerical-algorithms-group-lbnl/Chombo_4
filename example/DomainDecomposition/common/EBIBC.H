@@ -14,6 +14,10 @@ class EBIBC
 {
 public:
 
+  EBIBC()
+  {
+    m_isDefined = false;
+  }
   /// 
   EBIBC(string  a_veloIC,
         string  a_scalIC,
@@ -21,6 +25,21 @@ public:
         string  a_hiSideDomainBC[DIM],
         string  a_ebbc = string("NoSlipWall"))
   {
+    define( a_veloIC,                     
+            a_scalIC,                     
+            a_loSideDomainBC,
+            a_hiSideDomainBC,
+            a_ebbc);
+  }
+  ///
+  void
+  define(string  a_veloIC,
+         string  a_scalIC,
+         string  a_loSideDomainBC[DIM],
+         string  a_hiSideDomainBC[DIM],
+         string  a_ebbc = string("NoSlipWall"))
+  {
+    m_isDefined = true;
     for(int idir = 0;  idir < DIM; idir++)
     {
       unsigned int loIndex = ebp_index(idir, Side::Lo);
@@ -102,8 +121,8 @@ public:
   string         m_scalIC;
 
 private:
+  bool m_isDefined;
 
-  EBIBC();
 
 };
 #include "Chombo_NamespaceFooter.H"

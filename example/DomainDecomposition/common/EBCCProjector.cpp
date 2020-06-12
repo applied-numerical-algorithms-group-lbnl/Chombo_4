@@ -11,7 +11,8 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const Box                              & a_domain,   
        const Real                             & a_dx,       
        const IntVect                          & a_nghost,
-       string                                   a_bcnames[2*DIM])   
+       const EBIBC                            & a_ebibc)
+
 {
   CH_TIME("EBCCProjector::define");
   m_macprojector = shared_ptr<EBMACProjector>
@@ -21,9 +22,10 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_domain,   
                         a_dx,       
                         a_nghost,
-                        a_bcnames));
+                        a_ebibc));
   registerStencils();
 }
+
 ////
 void  
 EBCCProjector::
@@ -59,11 +61,19 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & nghost  = m_macprojector->m_nghost;
   
   a_velo.exchange(m_macprojector->m_exchangeCopier);
+  
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo);
 
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
+  
+  //begin debug
+  Real covval = 0;
+  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
+  phi.writeToFileHDF5(string("phi.hdf5"), covval);
+  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
+  //end debug
   
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
@@ -96,6 +106,10 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
     ideb++;
   }
+  //begin debug
+  a_velo.writeToFileHDF5(string("final_velo.hdf5"), covval);
+  a_gphi.writeToFileHDF5(string("proj_gphi.hdf5"), covval);
+  //end debug
 }
 ///
 void 
