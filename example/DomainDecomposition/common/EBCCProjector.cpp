@@ -77,7 +77,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
-  int ideb = 0;
+
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     const EBGraph  & graph = (*graphs)[dit[ibox]];
@@ -87,7 +87,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     //get face fluxes and interpolate them to centroids
     EBFluxData<Real, 1>         facegrad(grown, graph);
     //gphi = grad(phi)
-    int ideb = 0;
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initZero = true;
@@ -95,7 +94,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       auto& phifab = phi[dit[ibox]];
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
                             facegrad, phifab, idir, ibox, initZero, 1.0);
-      ideb++;
     }
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -107,7 +105,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
-    ideb++;
   }
   //begin debug
   a_velo.writeToFileHDF5(string("final_velo.hdf5"), covval);

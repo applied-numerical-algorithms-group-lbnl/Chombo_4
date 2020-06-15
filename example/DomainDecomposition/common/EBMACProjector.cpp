@@ -43,11 +43,6 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
 
   string bcnames[2*DIM];
   m_ebibc.projectionStencilStrings(bcnames);
-  //begin debug
-  for(int ivec = 0; ivec < 2*DIM; ivec++)
-  {
-    pout() << "proj_bc[" << ivec << "]=" << bcnames[ivec] << endl;
-  }
 
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
@@ -208,8 +203,6 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
     applyFluxBoundaryConditions(centroidFlux, dit[ibox]);
-
-    MayDay::Error("need to set mac velocity at domain boundaries");
 
     auto& kapdiv =  m_rhs[dit[ibox]];
     kapdiv.setVal(0.);
