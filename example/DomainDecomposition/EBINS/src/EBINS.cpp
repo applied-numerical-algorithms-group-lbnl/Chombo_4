@@ -61,21 +61,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     m_helmholtz = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
                        stenname, helmnames, bcname, m_domain, m_nghost));
-  }
-  m_advectOp = shared_ptr<EBAdvection>
-    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
-  
-  //end debug        
-  m_ccProj  = shared_ptr<EBCCProjector>
-    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, a_ibc));
-  m_macProj = m_ccProj->m_macprojector;
 
-  m_bcgAdvect = shared_ptr<BCGVelAdvect>
-    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
-                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
-
-  if(!m_eulerCalc)
-  {
     if(a_solver == BackwardEuler)
     {
       m_heatSolver = shared_ptr<BaseEBParabolic>
@@ -96,7 +82,18 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       MayDay::Error("unaccounted-for solver type");
     }
   }
+  m_bcgAdvect = shared_ptr<BCGVelAdvect>
+    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
+
+
+  m_advectOp = shared_ptr<EBAdvection>
+    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
+  m_ccProj  = shared_ptr<EBCCProjector>
+    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, a_ibc));
+  m_macProj = m_ccProj->m_macprojector;
+
 }
 /*******/ 
 void 

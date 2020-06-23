@@ -1,4 +1,4 @@
-initial_velo = "vortex_0"
+initial_velo = "zero"
 initial_scal = "blob_scal_0"
 #also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "inflow"
@@ -7,12 +7,12 @@ domain_bc_lo_1 = "slip_wall"
 domain_bc_lo_2 = "slip_wall"
 domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
-pressure_iterations = 1
+pressure_iterations = 0
 #domain size
-nx=       64
+nx=       32
 
 #max number of time steps
-max_step =    200
+max_step =    1
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
@@ -39,8 +39,8 @@ output_interval = 10
 covered_value = 0.0
 
 # 0 euler, 1 CN, 2 TGA	
-parabolic_solver = 2
-viscosity = 0.00
+parabolic_solver = 0
+viscosity = 0.1
 ## -1 all reg, 1 regular, 2 sphere
 #all regular geometry
 #which_geom = -1

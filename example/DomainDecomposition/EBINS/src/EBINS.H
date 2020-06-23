@@ -57,7 +57,6 @@ public:
   shared_ptr<EBMACProjector>             m_macProj;
   shared_ptr<EBMultigrid>                m_helmholtz;
   shared_ptr<BCGVelAdvect>               m_bcgAdvect;
-
   shared_ptr<BaseEBParabolic>            m_heatSolver;
   shared_ptr<LevelData<EBGraph> >        m_graphs;
   

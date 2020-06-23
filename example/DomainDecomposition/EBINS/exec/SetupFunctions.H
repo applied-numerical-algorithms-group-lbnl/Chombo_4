@@ -82,15 +82,7 @@ void InitializeVCellF(int       a_p[DIM],
                       Real      a_maxr, //radius for max vel
                       Real      a_dx)
 {
-#if DIM==2
-  int ideb = 0;
-  IntVect ivdeb(1, 12);
-  IntVect curiv(a_p[0], a_p[1]);
-  if(curiv == ivdeb)
-  {
-    ideb = 1;
-  }
-#endif
+
   Real rlocsq = 0;
   Real xrel[DIM];
   for(int idir = 0; idir < DIM; idir++)
@@ -258,40 +250,38 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_blobRad,
                     const Real                  &  a_maxVelMag,
                     const Real                  &  a_maxVelRad,
-                    EBIBC  a_ibcs)
+                    EBIBC  a_ibc)
 {
   CH_TIME("InitialData");
   DataIterator dit = a_grids.dataIterator();
-  int ideb = 0;
-  int whichvelo = 0;
-  int whichscal = 0;
-  ParmParse pp;
-  pp.query("which_velo", whichvelo);
-  if(whichvelo == 0)
+
+  string whichvelo = a_ibc.m_veloIC;
+  string whichscal = a_ibc.m_scalIC;
+
+  if(whichvelo == string("zero"))
   {
-    pout() << "calling initializevel for velocity" << endl;
+    pout() << "zero velocity in the interior (potential flow ic)" << endl;
   }
-  else if(whichvelo == -1)
+  else if(whichvelo == string("vortex_0"))
   {
-    pout() << "calling initializevelconst for velocity" << endl;
+    pout() << "vortex ic " << endl;
   }
   else
   {
-    MayDay::Error("bogus velo");
+    MayDay::Error("bogus velo ic");
   }
 
-  pp.query("which_scal", whichscal);
-  if(whichscal == 0)
+  if(whichscal == string("blob_scal_0"))
   {
     pout() << "calling initializespot for scalar " << endl;
   }
-  else if(whichscal == -1)
+  else if(whichscal == string("line_scal_0"))
   {
     pout() << "calling initializeline for scalar" << endl;
   }
   else
   {
-    MayDay::Error("bogus scal");
+    MayDay::Error("bogus scal ic");
   }
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -301,42 +291,47 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       unsigned long long int numflopsscal = 5*DIM +3;
       Bx scalbox = scalfab.box();
 
-      if(whichscal == 0)
+      if(whichscal == string("blob_scal_0"))
       {
         ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
                           scalfab, a_blobCen, a_blobRad, a_dx);
-        ideb++;
       }
-      else
+      else if(whichscal == string("line_scal_0"))
       {
         vector<double> v_norm;
+        ParmParse pp;
         pp.getarr("geom_normal", v_norm, 0, DIM);
         ebforallInPlace_i(numflopsscal, "IntializeLine", InitializeLine,  scalbox, 
                           scalfab, a_blobCen, a_blobRad, a_dx);
-        ideb++;
       }
+      else
+      {
+        MayDay::Error("unknown scalar ic");
+      }
+      
     }
 
-    {
     
-      auto& velofab = a_velocell[dit[ibox]];
+    auto& velofab = a_velocell[dit[ibox]];
+    Bx velobox = velofab.box();
+    if(whichvelo == string("vortex_0"))
+    {
       unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
-      Bx velobox = velofab.box();
-      if(whichvelo == 0)
-      {
-        ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
-                          velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx); // 
-        ideb++;
-      }
-      else if(whichvelo == -1)
-      {
-        Real yvel =  0;
-        Real xvel =  0;
-        //pp.get("velocity_inflow_value", xvel);
-        ebforallInPlace_i(numflopsvelo, "IntializeVCellConst", InitializeVCellConst,  velobox, 
-                          velofab, xvel, yvel);
-        ideb++;
-      }
+      ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
+                        velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, a_dx); // 
+    }
+    else if(whichvelo == string("zero"))
+    {
+      Real yvel =  0;
+      Real xvel =  0;
+      unsigned long long int numflopsvelo = 0;
+      //setting to zero allows the potential flow solution as an initial condition.
+      ebforallInPlace_i(numflopsvelo, "IntializeVCellConst", InitializeVCellConst,  velobox, 
+                        velofab, xvel, yvel);
+    }
+    else
+    {
+      MayDay::Error("unknown velo ic");
     }
   }
 }

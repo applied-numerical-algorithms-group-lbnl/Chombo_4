@@ -69,10 +69,10 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
   //begin debug
-  Real covval = 0;
-  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
-  phi.writeToFileHDF5(string("phi.hdf5"), covval);
-  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
+//  Real covval = 0;
+//  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
+//  phi.writeToFileHDF5(string("phi.hdf5"), covval);
+//  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
   //end debug
   
   //v := v - gphi
@@ -106,10 +106,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
   }
-  //begin debug
-  a_velo.writeToFileHDF5(string("final_velo.hdf5"), covval);
-  a_gphi.writeToFileHDF5(string("proj_gphi.hdf5"), covval);
-  //end debug
 }
 ///
 void 
