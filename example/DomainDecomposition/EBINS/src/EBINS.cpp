@@ -82,17 +82,17 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       MayDay::Error("unaccounted-for solver type");
     }
   }
-  m_bcgAdvect = shared_ptr<BCGVelAdvect>
-    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
-                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
-
-
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
   m_ccProj  = shared_ptr<EBCCProjector>
     (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, a_ibc));
   m_macProj = m_ccProj->m_macprojector;
+
+  m_bcgAdvect = shared_ptr<BCGVelAdvect>
+    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
+
 
 }
 /*******/ 
