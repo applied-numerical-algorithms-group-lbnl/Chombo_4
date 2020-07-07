@@ -10,9 +10,9 @@ domain_bc_hi_2 = "slip_wall"
 pressure_iterations = 0
 #domain size
 nx=       32
-
+use_stokes_dt = true
 #max number of time steps
-max_step =    1
+max_step =    100
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
