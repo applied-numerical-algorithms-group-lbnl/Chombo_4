@@ -1,6 +1,6 @@
 
-CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
-DIM := 2
+CHOMBO_HOME := /gpfs/alpine/geo127/scratch/dtgraves/_chombo4/Chombo_4/example/..
+DIM := 3
 VARS_OLD := $(.VARIABLES)
 
 SRC := $(wildcard *.cpp) 
@@ -31,18 +31,11 @@ CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 CPPFLAGS = -std=c++11
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=clang++
-CXX=clang++
-EFENCEFLAGS = -L/usr/lib -lefence
 
-CXXALLFLAGS := -Wall  -std=c++11 
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
-CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
 
-#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
-HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 -ldl
+HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
+HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
 #end mach dependent
 
 
@@ -57,9 +50,20 @@ LIBS     += $(HDFLIBFLAGS)
  
 CXXFLAGS += -DCH_USE_DOUBLE
 
-CXXDBGFLAGS:= -g $(CXXALLFLAGS)
+CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 
-CXXFLAGS+=$(CXXDBGFLAGS) 
+CXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'
+
+CXXFLAGS+=$(CXXGPUFLAGS) 
+
+CXX = nvcc 
+ DEP=nvcc
+
+LIBS+= -lnvToolsExt -lgomp
+
+CXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70
+
+CXXFLAGS+=-Xcompiler -fopenmp
 
 CPPFLAGS += -I../../common
 CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools
