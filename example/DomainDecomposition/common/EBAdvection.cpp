@@ -188,14 +188,8 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 21 + 4*DIM;
     auto& sourfab = a_source;
-/*
+
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, a_grown,  
-                    scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLoNor, slopeHiNor, 
-                    slopeLoTan, slopeHiTan, 
-                    a_veccell, sourfab, idir, a_dt, m_dx);
-*/
-    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, a_grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLoNor, slopeHiNor, 
                     slopeLoTan, slopeHiTan, 

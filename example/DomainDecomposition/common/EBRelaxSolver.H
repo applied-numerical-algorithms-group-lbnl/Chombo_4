@@ -69,16 +69,16 @@ public:
 
         m_op->residual(m_res, a_phi, a_rhs);
 
-        Real oldNorm = norm;
+//        Real oldNorm = norm;
         norm = m_res.maxNorm(0);
         iter++;
-        Real rate = 0.01134;
-        bool printRate = false;
-        if(std::abs(norm) > 0)
-        {
-          rate = oldNorm/norm;
-          printRate = true;
-        }
+        //Real rate = 0.01134;
+//        bool printRate = false;
+//        if(std::abs(norm) > 0)
+//        {
+//          rate = oldNorm/norm;
+//          printRate = true;
+//        }
 //        pout() << "      EBRelaxSolver:: iteration = " << iter
 //               << " residual norm = " << norm;
 //        if(printRate) pout() << ", rate = " << rate;

@@ -285,9 +285,6 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
   m_isDefined=true;
   buffersAllocated = false;
   Box domainBox(a_domain.domainBox());
-  bool isPeriodic = false;
-  if (!domainBox.isEmpty())
-    isPeriodic = a_domain.isPeriodic();
 
   DataIterator dit = a_src.dataIterator();
   if(dit.size() == 0)
