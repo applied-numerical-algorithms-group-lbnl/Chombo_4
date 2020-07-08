@@ -364,7 +364,7 @@ public:
         cudaError err = cudaGetLastError();
         if (err != cudaSuccess)
         {
-          fprintf(stderr, "fabsizeHost = %d,  fabsizeDevi = %d", fabsizeHost, fabsizeDevi);
+          fprintf(stderr, "fabsizeHost = %lu,  fabsizeDevi = %lu", fabsizeHost, fabsizeDevi);
           fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
                   __FILE__, __LINE__, cudaGetErrorString(err));
         }
