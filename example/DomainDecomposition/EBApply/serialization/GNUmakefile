@@ -30,7 +30,7 @@ CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 CPPFLAGS = -std=c++11
 
-PROTO_HOME =$(HOME)/_proto/proto
+PROTO_HOME =$(SCRATCH)/_proto/proto
 
 LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
 
@@ -42,6 +42,8 @@ HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
 
 
 
+CPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND
+LIBS     += $(MPILIBS)
 CPPFLAGS += -DCH_USE_HDF5 
 
 CPPFLAGS += $(HDFINCFLAGS)
