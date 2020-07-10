@@ -93,15 +93,15 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 //    Bx phibox = phifab.box();
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
-    unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
-#if 1
+#if 0
+    unsigned long long int numflopspt = 3;
     ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #else
-//    ebFastforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-    ebFastforallInPlace_i(phifab.inputBox(), numflopspt, "addAlphaPhiPt", addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    Bx inputBox = lphfab.inputBox();
+    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 #endif
     ideb++;
   }
@@ -225,9 +225,10 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  Point pghost = ProtoCh::getPoint(m_nghost);
+  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
 
-  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true);
+  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
 
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv);
@@ -338,11 +339,11 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
     auto& diagGhost = m_diagW[dit[ibox]];
-    
+    auto& stendiag = *diagptr;
     Bx gridbx = ProtoCh::getProtoBox(grid);
-    size_t numflopspt = 0;
-    //this one has to be the old, slow ebforall
-    ebforallInPlace(numflopspt, "copyDiag", copyDiag,  gridbx, diagGhost, *diagptr);
+    Bx inputBox = diagGhost.inputBox();
+
+    ebforall(inputBox, copyDiag,  gridbx, diagGhost, stendiag);
     ideb++;
   }
   m_kappa.exchange(m_exchangeCopier);
