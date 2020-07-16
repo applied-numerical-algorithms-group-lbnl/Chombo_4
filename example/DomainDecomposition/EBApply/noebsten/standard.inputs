@@ -1,11 +1,11 @@
 #domain size
-nx=      16
+nx=      32
 maxGrid =16
 ##sphere
 which_geom = 0 
 #radius of the sphere
 geom_rad = 0.1
 # center of the sphere
-geom_cen = 0.5
-#geom_cen = 50
+#eom_cen = 0.5
+geom_cen = 50
 inside_regular = false

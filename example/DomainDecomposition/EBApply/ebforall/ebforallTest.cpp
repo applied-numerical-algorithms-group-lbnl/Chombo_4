@@ -75,6 +75,7 @@ runTest(int a_argc, char* a_argv[])
   pp.get("inside_regular", insideRegular);
                           
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
+  //shared_ptr<BaseIF>    impfunc(new Proto::AllRegularIF());
 
   pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost);
@@ -87,9 +88,11 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
     dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain, dx, ptghost));
   dictionary->registerStencil(stenname, dombcname, ebbcname, domain, domain, true, ptghost);
-
+  pout() << "done with registering stencil" << endl;
   auto graphs = geoserv->getGraphs(domain);
+  pout() << "defining data" << endl;
   EBLevelBoxData<CELL, 1>  kappaDev(grids, ivghost, graphs);
+  pout() << "done with data definition"  << endl;
   DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -99,19 +102,26 @@ runTest(int a_argc, char* a_argv[])
     const EBGraph  & graph = (*graphs)[dit[ibox]];
     EBHostData<CELL, Real, 1> hostdat(grbx, graph);
     //fill kappa on the host then copy to the device
+    pout() << "calling geoserv::fillKappa"  << endl;
     geoserv->fillKappa(hostdat, grid, dit[ibox], domain);
     // now copy to the device
+    pout() << "calling geoserv::copyToDevice"  << endl;
     EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
 
+    pout() << "calling getEBStencil"  << endl;
     auto stencil  = dictionary->getEBStencil(stenname, ebbcname, domain, domain, ibox);
+    pout() << "calling getDiagonalWeights"  << endl;
     auto  diagptr  = stencil->getDiagonalWeights();
     auto& diagGhost = kappaDev[dit[ibox]];
     auto& stendiag = *diagptr;
     Bx gridbx = ProtoCh::getProtoBox(grid);
     Bx inputBox = diagGhost.inputBox();
 
+    pout() << "calling ebforall"  << endl;
     ebforall(inputBox, copyDiag,  gridbx, diagGhost, stendiag);
+    pout() << "out of   ebforall"  << endl;
   }
+  pout() << "leaving function"  << endl;
   return 0;
 }
 
@@ -134,6 +144,7 @@ int main(int a_argc, char* a_argv[])
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     Chombo4::runTest(a_argc, a_argv);
+    pout() << "out of run test"  << endl;
   }
 
   pout() << "printing time table " << endl;

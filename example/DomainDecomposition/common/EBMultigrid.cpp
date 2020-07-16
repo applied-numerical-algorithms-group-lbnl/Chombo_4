@@ -89,20 +89,16 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
     shared_ptr<ebstencil_t> stencil =
       m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     //set lphi = kappa* div(F)
-//    Bx lphbox = lphfab.box();
-//    Bx phibox = phifab.box();
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
-#if 0
-    unsigned long long int numflopspt = 3;
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-#else
+
+    //pout() << "going into add alphaphi" << endl;
     Bx inputBox = lphfab.inputBox();
     ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-#endif
+
     ideb++;
   }
 }
@@ -138,20 +134,17 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     auto& lphfab = a_lph[dit[ibox]];
     shared_ptr<ebstencil_t> stencil =
       m_dictionary->getEBStencil(m_neumname, StencilNames::Neumann, m_domain, m_domain, ibox);
-    //set lphi = kappa* div(F)
-//    Bx lphbox = lphfab.box();
-//    Bx phibox = phifab.box();
+
     stencil->apply(lphfab, phifab,  true, 1.0);
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
-    unsigned long long int numflopspt = 3;
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
     auto& kapfab = m_kappa[dit[ibox]];
-#if 1
-    ebforallInPlace(numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-#else
-    ebFastforallInPlace(phifab.inputBox(), numflopspt, "addAlphaPhi", addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-#endif
+
+    pout() << "going into add alphaphi" << endl;
+    Bx inputBox = lphfab.inputBox();
+    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+
     ideb++;
   }
 }
@@ -340,10 +333,9 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
     auto& diagGhost = m_diagW[dit[ibox]];
     auto& stendiag = *diagptr;
-    Bx gridbx = ProtoCh::getProtoBox(grid);
     Bx inputBox = diagGhost.inputBox();
 
-    ebforall(inputBox, copyDiag,  gridbx, diagGhost, stendiag);
+    ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
     ideb++;
   }
   m_kappa.exchange(m_exchangeCopier);
@@ -363,22 +355,17 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   applyOp(a_res, a_phi, a_doExchange);
   //subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     //this adds alpha*phi (making lphi = alpha*phi + beta*divF)
-    unsigned long long int numflopspt = 2;
+
     auto&       resfab = a_res[dit[ibox]];
     //const auto& phifab = a_phi[dit[ibox]];
     const auto& rhsfab = a_rhs[dit[ibox]];
     Box grid = m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
-#if 1
-    ebforallInPlace(numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
-#else
-    ebFastforallInPlace(rhsfab.inputBox(), numflopspt, "subtractRHS", subtractRHS,  grbx, resfab, rhsfab);
-#endif
-    ideb++;
+    Bx inputBox = resfab.inputBox();
+    ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
 }
 /****/
@@ -431,18 +418,11 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           auto& phifab   =   a_phi[dit[ibox]];
           auto& resfab   =   resid[dit[ibox]];
           auto& stendiag = m_diagW[dit[ibox]];
-//      auto& rhsfab =   a_rhs[dit[ibox]];
-          unsigned long long int numflopspt = 10;
-
-#if 1        
-          ebforallInPlace_i(numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                            phifab, resfab, stendiag,
-                            m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
-#else           
-          ebFastforallInPlace_i(phifab.inputBox(), numflopspt, "gsrbResid", gsrbResid,  grbx, 
-                                phifab, resfab, stendiag,
-                                m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
-#endif
+          
+          Bx  inputBox = phifab.inputBox();
+          ebforall_i(inputBox, gsrbResid,  grbx, 
+                     phifab, resfab, stendiag,
+                     m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
       
           ideb++;
         } //end loop over boxes
