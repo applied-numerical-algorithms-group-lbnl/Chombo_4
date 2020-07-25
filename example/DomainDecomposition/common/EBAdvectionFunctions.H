@@ -57,6 +57,15 @@ inline Real cpySign(Real vala, Real signval)
 
 ////
 PROTO_KERNEL_START 
+unsigned int setFluxValF(Var<Real, 1>    a_flux,
+                         Real            a_value)
+{
+  a_flux(0) = a_value;
+  return 0;
+}
+PROTO_KERNEL_END(setFluxValF, setFluxVal)
+////
+PROTO_KERNEL_START 
 unsigned int HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                                Var<Real, 1>    a_kappaDiv,
                                Var<Real, 1>    a_nonConsDiv,
@@ -76,34 +85,6 @@ unsigned int HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
 PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 
 
-////
-PROTO_KERNEL_START 
-unsigned int HybridDivergencePtF(int a_pt[DIM],
-                                 Var<Real, 1>    a_hybridDiv,
-                                 Var<Real, 1>    a_kappaDiv,
-                                 Var<Real, 1>    a_nonConsDiv,
-                                 Var<Real, 1>    a_deltaM,
-                                 Var<Real, 1>    a_kappa)     
-{
-
-////begin debug
-//#if DIM==2
-//  Point debpt (17, 19);
-//  int ideb = 0;
-//  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]))
-//  {
-//    ideb = 1;
-//  }
-//#endif  
-////end   debug
-  return  HybridDivergence(a_hybridDiv, 
-                           a_kappaDiv,  
-                           a_nonConsDiv,
-                           a_deltaM,    
-                           a_kappa);     
-
-}
-PROTO_KERNEL_END(HybridDivergencePtF, HybridDivergencePt)
 
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
 PROTO_KERNEL_START 
@@ -166,26 +147,6 @@ unsigned int UpwindedF(Var<Real, 1>    a_upwind,
 PROTO_KERNEL_END(UpwindedF, Upwinded)
 
 PROTO_KERNEL_START 
-unsigned int UpwindedPtF(int a_pt[DIM],
-                         Var<Real, 1>    a_upwind,
-                         Var<Real, 1>    a_scalLo,
-                         Var<Real, 1>    a_scalHi,
-                         Var<Real, 1>    a_faceVel)
-{
-//#if DIM==2
-//  Point debpt(3, 9);
-//  Point inpt(a_pt[0], a_pt[1]);
-//  int ideb = 0;
-//  if(inpt == debpt)
-//  {
-//    ideb = 1;
-//  }
-//#endif  
-
-  return  Upwinded(a_upwind, a_scalLo, a_scalHi, a_faceVel);
-}
-PROTO_KERNEL_END(UpwindedPtF, UpwindedPt)
-PROTO_KERNEL_START 
 unsigned int CopiedF(Var<Real, 1>    a_dst,
                      Var<Real, 1>    a_src)
 {
@@ -206,19 +167,6 @@ unsigned int MinionedF(Var<Real, 1>    a_minion,
 }
 PROTO_KERNEL_END(MinionedF, Minioned)
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
-PROTO_KERNEL_START 
-unsigned int GetUpwindFluxPtF(int             a_pt[DIM],
-                              Var<Real, 1>    a_flux,
-                              Var<Real, 1>    a_scalLo,
-                              Var<Real, 1>    a_scalHi,
-                              Var<Real, 1>    a_faceVel)
-{
-  return  GetUpwindFlux(a_flux,
-                        a_scalLo,
-                        a_scalHi,
-                        a_faceVel);
-}
-PROTO_KERNEL_END(GetUpwindFluxPtF, GetUpwindFluxPt)
 ////
 PROTO_KERNEL_START 
 unsigned int AdvanceScalarF(Var<Real, 1>    a_scal,
@@ -289,46 +237,6 @@ unsigned int ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
 PROTO_KERNEL_END(ExtrapolateScalF, ExtrapolateScal)
 
 
-PROTO_KERNEL_START 
-unsigned int ExtrapolateScalPtF(int                a_pt[DIM],
-                                Var<Real, 1>       a_scal_imh_nph,
-                                Var<Real, 1>       a_scal_iph_nph,
-                                Var<Real, 1>       a_scal_ijk_n,
-                                Var<Real, DIM>     a_slopeLoNor,
-                                Var<Real, DIM>     a_slopeHiNor,
-                                Var<Real, DIM>     a_slopeLoTan,
-                                Var<Real, DIM>     a_slopeHiTan,
-                                Var<Real, DIM>     a_ccVel,
-                                Var<Real, 1>       a_source,
-                                unsigned int       a_dir,
-                                Real               a_dt,
-                                Real               a_dx)
-{
-#if DIM==2
-  int ideb = 0;
-  IntVect ivin(a_pt[0], a_pt[1]);
-  IntVect ivdeb(1, 12);
-  if(ivin == ivdeb)
-  {
-    ideb = 1;
-  }
-#endif
-
-  ExtrapolateScal(a_scal_imh_nph,
-                  a_scal_iph_nph,
-                  a_scal_ijk_n,
-                  a_slopeLoNor,
-                  a_slopeHiNor,
-                  a_slopeLoTan,
-                  a_slopeHiTan,
-                  a_ccVel,
-                  a_source,
-                  a_dir,
-                  a_dt,
-                  a_dx);
-  return 0;
-}
-PROTO_KERNEL_END(ExtrapolateScalPtF, ExtrapolateScalPt)
 #include "Chombo_NamespaceFooter.H"
 
 #endif

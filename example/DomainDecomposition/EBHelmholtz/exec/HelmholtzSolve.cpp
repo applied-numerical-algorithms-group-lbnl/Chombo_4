@@ -113,7 +113,10 @@ runTest(int a_argc, char* a_argv[])
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
-  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, true));
+  bool insideRegular = false;
+  pp.get("inside_regular", insideRegular);
+                          
+  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
 //  Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;

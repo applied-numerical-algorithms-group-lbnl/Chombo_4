@@ -1,5 +1,6 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the non-conservative div (radius 1)
 const string EBAdvection::s_redistLabel    = StencilNames::SmushRoot     + string("1"); //for redistribution radius 1
@@ -22,16 +23,16 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const DisjointBoxLayout                & a_grids,
             const Box                              & a_domain,
             const Real                             & a_dx,
-            const IntVect                          & a_nghostsrc, 
-            const IntVect                          & a_nghostdst)
+            const EBIBC                            & a_ebibc,
+            const IntVect                          & a_nghost):
+m_ebibc(a_ebibc)
 {
   CH_TIME("EBAdvection::define");
   m_dx     = a_dx;
   m_grids  = a_grids;
   m_domain = a_domain;
-  m_nghostSrc  = a_nghostsrc;
-  m_nghostDst  = a_nghostdst;
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+  m_nghost = a_nghost;
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   m_grids      = a_grids;      
   m_domain     = a_domain;     
   m_brit       = a_brit;
@@ -47,14 +48,14 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
   CH_TIME("EBAdvection::defineData");
   m_graphs = a_geoserv->getGraphs(m_domain);
-  m_kappa.define(     m_grids, m_nghostSrc, m_graphs);
-  m_deltaM.define(    m_grids, m_nghostSrc, m_graphs);
-  m_nonConsDiv.define(m_grids, m_nghostSrc, m_graphs);
-  m_hybridDiv.define( m_grids, m_nghostSrc, m_graphs);
-  m_kappaDiv.define(  m_grids, m_nghostSrc, m_graphs);
-  m_source.define(    m_grids, m_nghostSrc, m_graphs);
+  m_kappa.define(     m_grids, m_nghost, m_graphs);
+  m_deltaM.define(    m_grids, m_nghost, m_graphs);
+  m_nonConsDiv.define(m_grids, m_nghost, m_graphs);
+  m_hybridDiv.define( m_grids, m_nghost, m_graphs);
+  m_kappaDiv.define(  m_grids, m_nghost, m_graphs);
+  m_source.define(    m_grids, m_nghost, m_graphs);
   m_source.setVal(0.); //necessary in case the app does not  have a source
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghostSrc);
+  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
 }
 ////
 void  
@@ -187,14 +188,8 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 21 + 4*DIM;
     auto& sourfab = a_source;
-/*
+
     ebforallInPlace(numflopspt, "ExtrapolateScal", ExtrapolateScal, a_grown,  
-                    scal_imh_nph, scal_iph_nph, a_scal, 
-                    slopeLoNor, slopeHiNor, 
-                    slopeLoTan, slopeHiTan, 
-                    a_veccell, sourfab, idir, a_dt, m_dx);
-*/
-    ebforallInPlace_i(numflopspt, "ExtrapolateScalPt", ExtrapolateScalPt, a_grown,  
                     scal_imh_nph, scal_iph_nph, a_scal, 
                     slopeLoNor, slopeHiNor, 
                     slopeLoTan, slopeHiTan, 
@@ -272,7 +267,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
-  Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+  Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
 
@@ -304,6 +299,80 @@ getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
   }
 }
                   
+/// this version only for scalar advection (bcgveladvect has its own)
+void
+EBAdvection::
+applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
+                   const DataIndex     & a_dit) const
+{
+  Box validBox = m_grids[a_dit];
+
+  Bx dombx = ProtoCh::getProtoBox(m_domain);
+  Bx valbx = ProtoCh::getProtoBox(validBox);
+  for(SideIterator sit; sit.ok(); ++sit)
+  {
+    Point dombnd = dombx.boundary(sit());
+    Point valbnd = valbx.boundary(sit());
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(dombnd[idir] == valbnd[idir])
+      {
+        int index = ebp_index(idir, sit());
+        string bcstr = m_ebibc.m_domainBC[index];
+        bool setstuff = true;
+        Real fluxval = 0;
+        if(bcstr == string("outflow"))
+        {
+          //do nothing, the upwind state should already be correct
+          setstuff = false;
+        }
+        else if(bcstr == string("inflow"))
+        {
+          setstuff = true;
+          ParmParse pp;
+          pp.get("scalar_inflow_value", fluxval);
+        }
+        else if(bcstr == string("slip_wall"))
+        {
+          setstuff = true;
+          fluxval = 0;
+        }
+        else if(bcstr == string("no_slip_wall"))
+        {
+          setstuff = true;
+          fluxval = 0;
+        }
+        else
+        {
+          MayDay::Error("EBAdvection: unrecognized bc");
+        }
+        if(setstuff)
+        {
+          Bx faceBx = valbx.faceBox(idir, sit());
+          unsigned long long int numflopspt = 0;
+          if(idir == 0)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+          }
+          else if(idir == 1)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+          }
+#if DIM==3          
+          else if(idir == 2)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+          }
+#endif
+          else
+          {
+            MayDay::Error("bogus idir");
+          }
+        }
+      }
+    }
+  }
+}   
 ///
 void
 EBAdvection::
@@ -319,7 +388,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+    Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
 
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
@@ -339,6 +408,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
+    applyScalarFluxBCs(centroidFlux,  dit[ibox]);
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
 

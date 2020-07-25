@@ -9,6 +9,7 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBLevelFluxData.H"
 #include "EBMultigrid.H"
+#include "EBIBC.H"
 #include "Chombo_NamespaceHeader.H"
 
 class EBCCProjector;
@@ -20,44 +21,21 @@ public:
   /// the cc proj class uses a bunch of mac projector internals
   friend class EBCCProjector;
   
-  /// 
   EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                  shared_ptr<GeometryService<2> >        & a_geoserv,
                  const DisjointBoxLayout                & a_vecgrids,
                  const Box                              & a_domain,
                  const Real                             & a_dx,
                  const IntVect                          & a_nghost,
-                 string a_bcname = StencilNames::Neumann)
-  {
-    string bcnames[2*DIM];
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
-    {
-      bcnames[ivec] = a_bcname;
-    }
-    define(a_brit,          
-           a_geoserv,       
-           a_vecgrids,      
-           a_domain,        
-           a_dx,            
-           a_nghost,        
-           bcnames);
-    
-  }
-  EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-                 shared_ptr<GeometryService<2> >        & a_geoserv,
-                 const DisjointBoxLayout                & a_vecgrids,
-                 const Box                              & a_domain,
-                 const Real                             & a_dx,
-                 const IntVect                          & a_nghost,
-                 string                                   a_bcnames[2*DIM])
+                 const EBIBC                            & a_ebibc)
   {
     define(a_brit,          
            a_geoserv,       
            a_vecgrids,      
            a_domain,        
            a_dx,            
-           a_nghost,        
-           a_bcnames);
+           a_nghost,
+           a_ebibc);
   }
 
   void define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -66,7 +44,7 @@ public:
               const Box                              & a_domain,
               const Real                             & a_dx,
               const IntVect                          & a_nghost,
-              string                                   a_bcnames[2*DIM]);
+              const EBIBC                            & a_ebibc);
   
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**
@@ -100,8 +78,11 @@ public:
 
 private:
   
-  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
-                       string                                   a_bcnames[2*DIM]);
+  void
+  applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                              const DataIndex     & a_dit);
+  
+  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);
   void registerStencils();
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
@@ -109,7 +90,7 @@ private:
   Box                                    m_domain;
   IntVect                                m_nghost;
   Real m_dx;
-
+  EBIBC                                  m_ebibc;
   //internals
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
   EBLevelBoxData<CELL, 1>                m_rhs;

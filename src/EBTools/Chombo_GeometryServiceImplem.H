@@ -59,7 +59,7 @@ defineFinestLevel(const RealVect               & a_origin,
                   const double                 & a_dx )
 {
   PR_TIME("LevelGeometryService::defineFinestLevel");
-  pout() << "defining finest level" << endl;
+  pout() << "defining finest GeometryService level" << endl;
   LayoutData<vector< IrregNode<order> > > ldnodes(m_grids);
   using Proto::getIrregGraphFromNodes;
   DataIterator dit = m_grids.dataIterator();
@@ -95,9 +95,9 @@ defineFinestLevel(const RealVect               & a_origin,
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
     }
   }
-  pout() << "exchanging graph data" << endl;
+//  pout() << "exchanging graph data" << endl;
   m_graphs  ->exchange(m_exchangeCopier);
-  pout() << "done with graph exchange" << endl;
+//  pout() << "done with graph exchange" << endl;
   
   //now fill in the moment information
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -155,7 +155,7 @@ LevelGeometryService<order>::
 exchange()
 {
   PR_TIME("LevelGeometryService::exchange");
-  pout() << "exchanging moment data" << endl;
+//  pout() << "exchanging moment data" << endl;
   Interval interv(0,0);
   m_voludata->exchange(m_exchangeCopier);       
   m_ebfadata->exchange(m_exchangeCopier);       
@@ -173,7 +173,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
                      const DisjointBoxLayout      &      a_grids)
 {
   PR_TIME("LevelGeometryService::defineFromcoarser");
-  pout() << "creating coarser level" << endl;
+  pout() << "creating coarser GeometryService level" << endl;
   m_baseIF   = a_finerLevel.m_baseIF;
   m_domain   = coarsen(a_finerLevel.m_domain,2);
   m_origin   =         a_finerLevel.m_origin;
@@ -189,9 +189,9 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   
   coarsenGraph(a_finerLevel);
   
-  pout() << "exchanging graph info" << endl;
+//  pout() << "exchanging graph info" << endl;
   m_graphs  ->exchange(m_exchangeCopier);       
-  pout() << "done with graph exchange" << endl;
+//  pout() << "done with graph exchange" << endl;
   coarsenData(a_finerLevel);
 
   exchange();
@@ -346,14 +346,6 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
       shiftAndIncrement(coarEBFaMom, fineEBFaMom, coarEBF, fineEBF, a_finerLevel);
 
     }
-//begin debug
-//    Point coariv = coarVoF.m_pt;
-//    if((coariv[0] == 18) && (coariv[1] == 30))
-//    {
-//      pout() << "volume moments for " << coariv << ":" << endl;
-//      coarVoluMom.print();
-//    }
-//begin debug
   }
 }
 
@@ -373,21 +365,6 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
   for(int iface = 0; iface < a_coarFaces.size(); iface++)
   {
     const EBIndex<XFACE> & coarFace = a_coarFaces[iface];
-////begin debug
-//#if DIM==2
-//    int ideb  = 0;
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        ideb = 1;
-//      }
-//    }
-//#endif
-////end debug
     IndMomSDMinOne & coarMom  = (*m_xfacdata)[a_dit](coarFace, 0);
     vector< EBIndex<XFACE> > fineFaces = coarEBGraph.refine<XFACE>(coarFace, fineEBGraph);
     coarMom.setToZero();
@@ -408,29 +385,6 @@ coarsenXFaceData(const vector< EBIndex<XFACE> >  & a_coarFaces,
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
       shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
-//begin debug
-//#if DIM==2
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        if(sit() == Side::Lo)
-//        {
-//          pout() << "High " ; //this means that the face is on the high side of the vof
-//        }
-//        else
-//        {
-//          pout() << "Low  " ;
-//        }
-//        pout() << "X face moments for " << debugiv << ":" << endl;
-//        coarMom.print();
-//      }
-//    }
-//#endif
-//end debug
   }
 }
 
@@ -469,29 +423,6 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarMom += finemom;  
       shiftAndIncrement(coarMom, fineMom, coarFace, fineFace, a_finerLevel);
     }
-//begin debug
-//#if DIM==2
-//    for(SideIterator sit; sit.ok(); ++sit)
-//    {
-//      EBIndex<CELL> coarVoF = coarFace.getVoF(sit());
-//      Point debugiv(18, 30);
-//      Point coariv = coarVoF.m_pt;
-//      if(coariv == debugiv)
-//      {
-//        if(sit() == Side::Lo)
-//        {
-//          pout() << "High " ; //this means that the face is on the high side of the vof
-//        }
-//        else
-//        {
-//          pout() << "Low  " ;
-//        }
-//        pout() << "Y face moments for " << debugiv << ":" << endl;
-//        coarMom.print();
-//      }
-//    }
-//#endif
-//end debug
 
   }
 }

@@ -1,0 +1,19 @@
+
+PROTO_HOME =$(HOME)/proto
+
+export OMPI_CXX=hipcc
+
+CPPFLAGS +=-I$(MPI_HOME)/include/
+MPILIBS=-L$(MPI_HOME)/lib -lmpi
+
+
+CPPFLAGS+=-I$(ROCM_PATH)/rocthrust/include/ -I$(ROCM_PATH)/rocprim/include/ -I$(ROCM_PATH)/include/roctracer
+CXXFLAGS+=--amdgpu-target=gfx906 -Wno-non-c-typedef-for-linkage -Wno-unused-command-line-argument
+LIBS+= -L/$(ROCM_PATH)/lib/
+LIBS+= -lroctx64
+
+#end mach dependent
+
+
+
+

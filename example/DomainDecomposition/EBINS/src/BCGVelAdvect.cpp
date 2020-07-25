@@ -1,7 +1,90 @@
 
 #include "BCGVelAdvect.H"
 #include "EBAdvectionFunctions.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+///
+void
+BCGVelAdvect::
+applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
+                 const DataIndex     & a_dit,
+                 int a_velcomp) const
+{
+  Box validBox = m_grids[a_dit];
+
+  Bx dombx = ProtoCh::getProtoBox(m_domain);
+  Bx valbx = ProtoCh::getProtoBox(validBox);
+  for(SideIterator sit; sit.ok(); ++sit)
+  {
+    Point dombnd = dombx.boundary(sit());
+    Point valbnd = valbx.boundary(sit());
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(dombnd[idir] == valbnd[idir])
+      {
+        int index = ebp_index(idir, sit());
+        string bcstr = m_ebibc.m_domainBC[index];
+        bool setstuff = true;
+        Real fluxval = 0;
+        if(bcstr == string("outflow"))
+        {
+          //do nothing, the upwind state should already be correct
+          setstuff = false;
+        }
+        else if(bcstr == string("inflow"))
+        {
+          setstuff = true;
+          if(idir == a_velcomp)
+          {
+            ParmParse pp;
+            pp.get("velocity_inflow_value", fluxval);
+          }
+          else
+          {
+            fluxval = 0;
+          }
+        }
+        else if(bcstr == string("slip_wall"))
+        {
+          setstuff = (idir == a_velcomp); //leave tangential vels alone in this context
+          fluxval = 0;
+        }
+        else if(bcstr == string("no_slip_wall"))
+        {
+          setstuff = true;
+          fluxval = 0;
+        }
+        else
+        {
+          MayDay::Error("EBAdvection: unrecognized bc");
+        }
+        if(setstuff)
+        {
+          Bx faceBx = valbx.faceBox(idir, sit());
+          unsigned long long int numflopspt = 0;
+          if(idir == 0)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+          }
+          else if(idir == 1)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+          }
+#if DIM==3          
+          else if(idir == 2)
+          {
+            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+          }
+#endif
+          else
+          {
+            MayDay::Error("bogus idir");
+          }
+        }
+      }
+    }
+  }
+}   
 /*******/
 void 
 BCGVelAdvect::
@@ -50,7 +133,7 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
 
       //this gets the low and high side states for the riemann problem
@@ -143,7 +226,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
 
       //this gets the low and high side states for the riemann problem
@@ -228,7 +311,7 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghostSrc));
+      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
 
       auto& faceCentVel  = m_advectionVel[dit[ibox]];
@@ -242,6 +325,10 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       EBFluxStencil<2, Real> stencils =   m_brit->getFluxStencil(s_centInterpLabel, s_nobcsLabel, m_domain, m_domain, ibox);
       //interpolate flux to centroids
       stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+
+      //enforce boundary conditions with an iron fist.
+      applyVeloFluxBCs(centroidFlux,  dit[ibox], ivar);
+      
       scalar.define(m_macVelocity[dit[ibox]], ivar);
 
       auto& kapdiv =  m_kappaDiv[dit[ibox]];

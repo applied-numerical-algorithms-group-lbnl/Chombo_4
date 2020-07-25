@@ -1,6 +1,7 @@
 
 #include "EBINS.H"
 #include "EBParabolicIntegrators.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 /*******/
@@ -60,23 +61,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     a_ibc.helmholtzStencilStrings(helmnames);
     m_helmholtz = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnames, bcname, m_domain, m_nghost, m_nghost));
-  }
-  m_advectOp = shared_ptr<EBAdvection>
-    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, m_nghost, m_nghost));
-  
-  string projnames[2*DIM];
-  a_ibc.projectionStencilStrings(projnames);
-  m_ccProj  = shared_ptr<EBCCProjector>
-    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, projnames));
-  m_macProj = m_ccProj->m_macprojector;
+                       stenname, helmnames, bcname, m_domain, m_nghost));
 
-  m_bcgAdvect = shared_ptr<BCGVelAdvect>
-    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
-                      m_grids, m_domain, m_dx, m_viscosity, m_nghost, m_eulerCalc));
-
-  if(!m_eulerCalc)
-  {
     if(a_solver == BackwardEuler)
     {
       m_heatSolver = shared_ptr<BaseEBParabolic>
@@ -97,7 +83,18 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       MayDay::Error("unaccounted-for solver type");
     }
   }
+  m_advectOp = shared_ptr<EBAdvection>
+    (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
+  m_ccProj  = shared_ptr<EBCCProjector>
+    (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, a_ibc));
+  m_macProj = m_ccProj->m_macprojector;
+
+  m_bcgAdvect = shared_ptr<BCGVelAdvect>
+    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+                      m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
+
+
 }
 /*******/ 
 void 
@@ -116,6 +113,14 @@ run(unsigned int a_max_step,
   bool usingFixedDt = (a_fixedDt > 0);
   bool doFileOutput = (a_outputInterval > 0);
   Real dt;
+  //project the resulting field
+  pout() << "projecting initial velocity"<< endl;
+  auto & velo =  (*m_velo );
+  auto & gphi =  (*m_gphi );
+
+  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  velo.exchange(m_exchangeCopier);
+
   //get the time step
   if(usingFixedDt)
   {
@@ -167,13 +172,7 @@ initializePressure(Real         a_dt,
 {
   CH_TIME("EBINS::initializePressure");
   auto & velo =  (*m_velo );
-
-  //project the resulting field
-  pout() << "projecting initial velocity"<< endl;
   auto & gphi =  (*m_gphi );
-
-  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
-  velo.exchange(m_exchangeCopier);
 
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
@@ -193,22 +192,31 @@ computeDt(Real a_cfl) const
 {
   CH_TIME("EBINS::computeDt");
   Real dtval;
-  Real maxvel = 0;
-  for(int idir = 0; idir < DIM; idir++)
+  ParmParse pp;
+  bool use_stokes_dt = false;
+  pp.query("use_stokes_dt", use_stokes_dt);
+  if(use_stokes_dt)
   {
-    maxvel = std::max(maxvel, m_velo->maxNorm(idir));
+    dtval = m_dx*m_dx/m_viscosity;
   }
-  if(maxvel > 1.0e-16)
-  {
-    dtval = a_cfl*m_dx/maxvel;
-    pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
-  }    
   else
   {
-    pout() << "velocity seems to be zero--setting dt to dx" << endl;
-    dtval = m_dx;
+    Real maxvel = 0;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      maxvel = std::max(maxvel, m_velo->maxNorm(idir));
+    }
+    if(maxvel > 1.0e-16)
+    {
+      dtval = a_cfl*m_dx/maxvel;
+      pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
+    }    
+    else
+    {
+      pout() << "velocity seems to be zero--setting dt to dx" << endl;
+      dtval = m_dx;
+    }
   }
-
   return dtval;
 }
 /*******/ 

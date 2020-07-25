@@ -17,16 +17,7 @@ unsigned int  addAlphaPhiPtF(int a_pt[DIM],
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
   
-  //begin debug
-#if DIM==2
-  int ideb = 0;
-  Point debpt(3, 13);
-  if((a_pt[0] == debpt[0]) && (a_pt[1] == debpt[1]) )
-  {
-    ideb = 1;
-  }
-#endif
-  //end debug
+
   
   Real kappdiv = a_lph(0);
   Real bkdivF  = a_beta*kappdiv;

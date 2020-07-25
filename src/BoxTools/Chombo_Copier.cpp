@@ -41,7 +41,7 @@ void CopierBuffer::clear()
     protoPointerAttributes att;
     protoPointerGetAttributes(&att, m_sendbuffer);
 #ifdef PROTO_HIP
-    if(att.memoryType == 2) protoFree(m_sendbuffer); // = 2-> device allocation
+    if(att.memoryType == hipMemoryTypeDevice) protoFree(m_sendbuffer); // = 2-> device allocation
 #else
     if(att.type == 2) protoFree(m_sendbuffer); // = 2-> device allocation
 #endif
@@ -53,7 +53,7 @@ void CopierBuffer::clear()
     protoPointerAttributes att;
     protoPointerGetAttributes(&att, m_recbuffer);
 #ifdef PROTO_HIP
-    if(att.memoryType == 2) protoFree(m_recbuffer);
+    if(att.memoryType == hipMemoryTypeDevice) protoFree(m_recbuffer);
 #else
     if(att.type == 2) protoFree(m_recbuffer);
 #endif
@@ -293,9 +293,6 @@ void Copier::defineFixedBoxSize(const DisjointBoxLayout& a_src,
   m_isDefined=true;
   buffersAllocated = false;
   Box domainBox(a_domain.domainBox());
-  bool isPeriodic = false;
-  if (!domainBox.isEmpty())
-    isPeriodic = a_domain.isPeriodic();
 
   DataIterator dit = a_src.dataIterator();
   if(dit.size() == 0)

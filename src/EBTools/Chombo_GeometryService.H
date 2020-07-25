@@ -425,7 +425,7 @@ public:
     Vector<int> procs;
     domainSplit(a_domain, boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
-    DisjointBoxLayout currDBL(boxes, procs);
+    DisjointBoxLayout currDBL(boxes, procs, a_domain);
     a_grids.push_back(currDBL);
     //a_grids[0].print();
     while(currDBL.coarsenable(4))

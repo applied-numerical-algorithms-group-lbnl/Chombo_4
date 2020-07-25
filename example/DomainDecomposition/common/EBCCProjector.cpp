@@ -11,7 +11,8 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const Box                              & a_domain,   
        const Real                             & a_dx,       
        const IntVect                          & a_nghost,
-       string                                   a_bcnames[2*DIM])   
+       const EBIBC                            & a_ebibc)
+
 {
   CH_TIME("EBCCProjector::define");
   m_macprojector = shared_ptr<EBMACProjector>
@@ -21,9 +22,10 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_domain,   
                         a_dx,       
                         a_nghost,
-                        a_bcnames));
+                        a_ebibc));
   registerStencils();
 }
+
 ////
 void  
 EBCCProjector::
@@ -59,15 +61,23 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & nghost  = m_macprojector->m_nghost;
   
   a_velo.exchange(m_macprojector->m_exchangeCopier);
+  
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo);
 
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
+  //begin debug
+//  Real covval = 0;
+//  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
+//  phi.writeToFileHDF5(string("phi.hdf5"), covval);
+//  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
+  //end debug
+  
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
-  int ideb = 0;
+
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     const EBGraph  & graph = (*graphs)[dit[ibox]];
@@ -81,8 +91,9 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     {
       bool initZero = true;
       //registered by the mac projector
+      auto& phifab = phi[dit[ibox]];
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
-                            facegrad, phi[dit[ibox]], idir, ibox, initZero, 1.0);
+                            facegrad, phifab, idir, ibox, initZero, 1.0);
     }
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -94,7 +105,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
-    ideb++;
   }
 }
 ///
@@ -134,6 +144,8 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
    //interpolate from face centers to centroids
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
+    //brutally enforce flux-based boundary conditions on the hapless data
+    m_macprojector->applyFluxBoundaryConditions(centroidv, dit[ibox]);
     auto& kapdiv = divu[dit[ibox]];
     //get kappa*divv
     //also registered by the mac projector
