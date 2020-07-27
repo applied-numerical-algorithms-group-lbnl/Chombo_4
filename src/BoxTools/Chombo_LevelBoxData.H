@@ -41,7 +41,7 @@ template<int  NUMCOMPS>
 class LevelBoxData: public LevelData<BoxData<Real, NUMCOMPS> >
 {
 public:
-
+  using  LevelData<BoxData<Real, NUMCOMPS> >::define;
   ///
   LevelBoxData(): LevelData<BoxData<Real, NUMCOMPS> >()
   {
