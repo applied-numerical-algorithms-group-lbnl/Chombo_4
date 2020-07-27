@@ -23,7 +23,7 @@ BITSETWORD BitSet::trueMasks[BITSETWORDSIZE];
 
 int BitSet::initialize()
 {
-#pragma omp single
+//#pragma omp single
   {
    trueMasks[BITSETWORDSIZE-1] = 1;
    for (int i=BITSETWORDSIZE-2; i>=0 ; --i)
