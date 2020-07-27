@@ -181,7 +181,7 @@ inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory,
 
   DataIterator it(this->dataIterator()); int nbox=it.size();
   this->m_vector.resize(it.size(), NULL);
-#pragma omp parallel for if(this->m_threadSafe)
+//#pragma omp parallel for if(this->m_threadSafe)
   for(int i=0; i<nbox; i++)
   {
     unsigned int index = it[i].datInd();
@@ -199,7 +199,7 @@ template<class T>
 inline void BoxLayoutData<T>::apply(void (*a_func)(const Box& box, int comps, T& t))
 {
   DataIterator it(this->dataIterator()); int nbox=it.size();
-#pragma omp parallel for
+//#pragma omp parallel for
   for(int i=0; i<nbox; i++)
 
   {
@@ -866,7 +866,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
 #ifdef _OPENMP
     bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
-#pragma omp parallel for if(threadSafe)
+//#pragma omp parallel for if(threadSafe)
     for (unsigned int i=0; i< isize; ++i)
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
