@@ -150,7 +150,7 @@ void LevelData<T>::define(const LevelData<T>& da,  const DataFactory<T> & a_fact
   //da.copyTo(*this);
   DataIterator it = m_disjointBoxLayout.dataIterator();
   int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
+//#pragma omp parallel for if(this->m_threadSafe)
   for (int ibox = 0; ibox < nbox; ibox++)
   {
     da[it[ibox]].copyTo(this->operator[](it[ibox]));
@@ -217,7 +217,7 @@ void LevelData<T>::copyTo(const Interval& srcComps,
     // parallel direct copy here, no communication issues
     DataIterator it = this->dataIterator();
     int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
+//#pragma omp parallel for if(this->m_threadSafe)
     for (int ibox = 0; ibox < nbox; ibox++)
     {
       dest[it[ibox]].copy(this->box(it[ibox]),
@@ -244,7 +244,7 @@ void LevelData<T>::localCopyTo(const Interval& srcComps,
   {
     DataIterator it = this->dataIterator();
     int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
+//#pragma omp parallel for if(this->m_threadSafe)
     for (int ibox = 0; ibox < nbox; ibox++)
     {
       Box srcBox = this->box(it[ibox]);
@@ -302,7 +302,7 @@ void LevelData<T>::copyTo(const Interval& srcComps,
     // parallel direct copy here, no communication issues
     DataIterator it = this->dataIterator();
     int nbox = it.size();
-#pragma omp parallel for if(this->m_threadSafe)
+//#pragma omp parallel for if(this->m_threadSafe)
     for (int ibox = 0; ibox < nbox; ibox++)
     {
 //          dest[it[ibox]].copy(this->box(it[ibox]),
@@ -529,7 +529,7 @@ void LevelData<T>::apply( void (*a_Function)(const Box& box, int comps, T& t) )
 {
   DataIterator it = this->dataIterator();
   int nbox = it.size();
-#pragma omp parallel for
+//#pragma omp parallel for
   for (int ibox = 0; ibox < nbox; ibox++)
   {
 
@@ -544,7 +544,7 @@ void LevelData<T>::apply( const ApplyFunctor & f )
 {
   DataIterator it = this->dataIterator();
   int nbox = it.size();
-#pragma omp parallel for
+//#pragma omp parallel for
   for (int ibox = 0; ibox < nbox; ibox++)
   {
     //     unsigned int index = this->m_boxLayout.lindex(it());

@@ -41,7 +41,9 @@
 
 #include "Chombo_Box.H"
 
+#ifdef _OPENMP
 #include<omp.h>
+#endif
 
 #define PI 3.141592653589793
 

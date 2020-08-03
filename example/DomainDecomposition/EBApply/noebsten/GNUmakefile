@@ -63,8 +63,6 @@ LIBS+= -lnvToolsExt -lgomp
 
 CXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70
 
-CXXFLAGS+=-Xcompiler -fopenmp
-
 CPPFLAGS += -I../../common
 CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools
 

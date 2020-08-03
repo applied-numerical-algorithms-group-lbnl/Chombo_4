@@ -105,7 +105,7 @@ getEBMultigrid(shared_ptr<EBEncyclopedia<2, Real> > & a_brit,
   }
   auto dictionary = a_brit->m_cellToCell;
   shared_ptr<EBMultigrid> 
-    solver(new EBMultigrid (dictionary, a_geoserv, alpha, beta, a_dx, a_grids, stenname, dombcname, ebbcname, domain, a_dataGhostIV, a_dataGhostIV));
+    solver(new EBMultigrid (dictionary, a_geoserv, alpha, beta, a_dx, a_grids, stenname, dombcname, ebbcname, domain, a_dataGhostIV));
 
   EBMultigrid::s_numSmoothUp   = numSmooth;
   EBMultigrid::s_numSmoothDown = numSmooth;

@@ -360,13 +360,12 @@ public:
         size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-        cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
-        cudaError err = cudaGetLastError();
-        if (err != cudaSuccess)
+        protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+        protoError err = protoGetLastError();
+        if (err != protoSuccess)
         {
-          fprintf(stderr, "fabsizeHost = %lu,  fabsizeDevi = %lu", fabsizeHost, fabsizeDevi);
-          fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, cudaGetErrorString(err));
+          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, protoGetErrorString(err));
         }
 #else
         memcpy(dataptrHost, dataptrDevi, datSize);
@@ -393,12 +392,12 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      cudaMemcpy(dataptrHost, dataptrDevi, datSize, cudaMemcpyDeviceToHost);
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+      protoError err = protoGetLastError();
+      if (err != protoSuccess)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
+        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, protoGetErrorString(err));
       }
 #else
       memcpy(dataptrHost, dataptrDevi, datSize);
@@ -444,12 +443,12 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      cudaMemcpy(dataptrDevi, dataptrHost, datSize, cudaMemcpyHostToDevice);
-      cudaError err = cudaGetLastError();
-      if (err != cudaSuccess)
+      protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
+      protoError err = protoGetLastError();
+      if (err != protoSuccess)
       {
-        fprintf(stderr, "cudaGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, cudaGetErrorString(err));
+        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                __FILE__, __LINE__, protoGetErrorString(err));
       }
 #else
       memcpy(dataptrDevi, dataptrHost, datSize);
