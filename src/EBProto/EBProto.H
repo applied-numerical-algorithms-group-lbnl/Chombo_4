@@ -1,0 +1,33 @@
+#pragma once
+
+#include "Proto.H"
+#include "Proto_LoHiSide.H"
+
+namespace Proto
+{
+
+  enum CENTERING {CELL=0,BOUNDARY,XFACE,YFACE,ZFACE};
+/// Return the index into the arc vector
+  inline int ebp_index(int a_idir, Side::LoHiSide a_side) 
+  {
+    return a_idir + a_side*DIM;
+  }
+}
+
+#include "implem/Proto_PointSet.H"
+#include "Proto_HostBoxData.H"
+#include "implem/Proto_HostIrregData.H"
+#include "implem/Proto_IrregNode.H"
+#include "Proto_EBGraph.H"
+#include "implem/Proto_LevelData.H"
+#include "Proto_GeometryService.H"
+#include "Proto_EBBoxData.H"
+#include "Proto_EBFluxData.H"
+#include "implem/Proto_AggStencil.H"
+#include "Proto_EBStencil.H"
+#include "implem/Proto_EBStencilArchive.H"
+#include "Proto_SimpleImplicitFunctions.H"
+#include "Proto_EBDictionary.H"
+#include "Proto_EBHostData.H"
+#include "Proto_EBHostFluxData.H"
+
