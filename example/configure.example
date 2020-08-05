@@ -20,10 +20,10 @@ args = parser.parse_args()
 
 print args
 
-f_pref = open('Makefile.prefix','r')
-f_ebpre = open('Makefile.ebprefix','r')
-f_post = open('Makefile.postfix','r')
-f_ebpost = open('Makefile.ebpost','r')
+f_pref = open('../mk/Makefile.prefix','r')
+f_ebpre = open('../mk/Makefile.ebprefix','r')
+f_post = open('../mk/Makefile.postfix','r')
+f_ebpost = open('../mk/Makefile.ebpost','r')
 makefile_pref = f_pref.read()
 makefile_post = f_post.read()
 makefile_ebpre = f_ebpre.read()
