@@ -104,8 +104,27 @@ namespace Proto
       m_regData.define(a_input.getRegData()  , a_comp);
     }           
 
-
-    
+    ///
+    data_t maxNorm(const Box& a_grid, unsigned int a_icomp) const
+    {
+      data_t maxval = 0; 
+      using Proto::BoxIterator;
+      for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = m_graph.getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofspt[ivec];
+          data_t absval = std::abs((*this)(vof, a_icomp));
+          if(absval > maxval)
+          {
+            maxval = absval;
+          }
+        }
+      }
+      return maxval;
+    }
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
     void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab)
     {

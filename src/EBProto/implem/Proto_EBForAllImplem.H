@@ -520,6 +520,7 @@ namespace Proto
     ebforallInPlace(numflops, "ebforall", a_F, a_box, (checkBox(a_inputBox, a_srcs))...);
   }
 
+  
 }
 
 #endif

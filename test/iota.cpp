@@ -62,12 +62,36 @@ int main(int argc, char* argv[])
   BoxData<double,DIM> x(dbx1);
 
   unsigned long long int numflops = 0;
-  printf(" calling int c-array iota function\n");
-  forallInPlaceBaseOp_i(numflops, "int_version", iotaFuncInt,   dbx1, x, s_dx);
-
-  printf(" calling point iota function\n");
-  forallInPlaceBaseOp_p(numflops, "point_version",iotaFuncPoint, dbx1, x, s_dx);
-
-  printf("done \n");
+  {
+    //printf(" calling int c-array iota function\n");
+    forallInPlaceBaseOp_i(numflops, "int_version", iotaFuncInt,   dbx1, x, s_dx);
+#ifdef PROTO_CUDA
+    protoError err = protoGetLastError();
+    if (err != protoSuccess)
+    {
+      fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+              __FILE__, __LINE__, protoGetErrorString(err));
+      printf("iota FAILED ");
+      return -1;
+    }
+#endif    
+  }
+  {
+    //printf(" calling point iota function\n");
+    forallInPlaceBaseOp_p(numflops, "point_version",iotaFuncPoint, dbx1, x, s_dx);
+    
+#ifdef PROTO_CUDA
+    protoError err = protoGetLastError();
+    if (err != protoSuccess)
+    {
+      fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+              __FILE__, __LINE__, protoGetErrorString(err));
+      printf("iota FAILED ");
+      return -1;
+    }
+#endif
+  }
+  printf("iota PASSED \n");
+  return 0;
 
 }

@@ -103,10 +103,6 @@ void setWtoUplusVptF(int a_p[DIM],
                      V a_V,
                      double  a_val)
 {
-//  printf("setw: uptr[0] = %p, uptr[1] = %p\n" ,a_U.m_ptrs[0],a_U.m_ptrs[1]);
-//  printf("setw: vptr[0] = %p, vptr[1] = %p\n" ,a_V.m_ptrs[0],a_V.m_ptrs[1]);
-//  printf("setw: wptr[0] = %p, wptr[1] = %p\n" ,a_W.m_ptrs[0],a_W.m_ptrs[1]);
-//  printf("in set W \n");
   for(int idir = 0; idir < DIM; idir++)
   {
     a_W(idir) = a_U(idir) + a_V(idir);
@@ -133,9 +129,9 @@ int main(int argc, char* argv[])
   Point geomGhost = Point::Zeros();
 
   RealVect ABC = RealVect::Unit();
-  RealVect X0 = RealVect::Unit();
-//  X0 *= 100.;
+  RealVect X0  = RealVect::Unit();
   X0 *= 0.5;
+  
   RealVect origin= RealVect::Zero();
   double R = 0.25;
   shared_ptr<BaseIF>              impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
@@ -148,27 +144,27 @@ int main(int argc, char* argv[])
     EBBoxData<CELL, double, DIM> U(grid,(*graphs)[ibox]);
     EBBoxData<CELL, double, DIM> V(grid,(*graphs)[ibox]);
     EBBoxData<CELL, double, DIM> W(grid,(*graphs)[ibox]);
-    unsigned long long int numFlopsPt = 0;
+
     double uval = 1;
     double vval = 2;
     printf("going into setU\n");
-    ebforallInPlace(numFlopsPt, "setU", UsetU, grid, U, uval);
+    ebforall(grid, UsetU, grid, U, uval);
     printf("going into setV\n");
     int vvar = -1;
-    ebforallInPlace(numFlopsPt, "setV", VsetV, grid, V, vval, vvar);  //tweaking signature to clarify compilers job
+    ebforall(grid, VsetV, grid, V, vval, vvar);  //tweaking signature to clarify compilers job
     double wval = 3;
     printf("going into setWtoUPlusV\n");
-    ebforallInPlace(numFlopsPt, "setWtoUPlusV", WsetWtoUplusV, grid, W, U, V, wval);
+    ebforall(grid, WsetWtoUplusV, grid, W, U, V, wval);
 
     uval = 2;
     vval = 5;
     wval = 7;
     printf("going into setUpt\n");
-    ebforallInPlace_i(numFlopsPt, "setU", setUpt, grid, U, uval);
+    ebforall_i(grid, setUpt, grid, U, uval);
     printf("going into setVpt\n");
-    ebforallInPlace_i(numFlopsPt, "setV", setVpt, grid, V, vval, vvar);
+    ebforall_i(grid, setVpt, grid, V, vval, vvar);
     printf("going into setWpt\n");
-    ebforallInPlace_i(numFlopsPt, "setWtoUPlusV", setWtoUplusVpt, grid, W, U, V, wval);
+    ebforall_i(grid, setWtoUplusVpt, grid, W, U, V, wval);
 
   }
 
