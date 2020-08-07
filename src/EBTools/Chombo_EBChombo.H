@@ -19,6 +19,20 @@
 #include "implem/Proto_Notation.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_ProtoFactories.H"
+#include "Proto_RealVect.H"
+#include "Proto_Box.H"
+#include "Proto_Point.H"
+#include "implem/Proto_LSquares.H"
+#include "Proto_BaseIF.H"
+#include "implem/Proto_IrregNode.H"
+#include "implem/Proto_CutCellMoments.H"
+#include "Proto_HostBoxData.H"
+#include "implem/Proto_HostIrregData.H"
+#include "implem/Proto_PointSet.H"
+#include "implem/Proto_LevelData.H"
+#include "Proto_EBGraph.H"
+#include "Proto_EBStencil.H"
+#include "implem/Proto_MinimalCCCM.H"
 
 
 using std::shared_ptr;

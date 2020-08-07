@@ -74,16 +74,16 @@ namespace Proto
                                      unsigned int  a_ivar)  const
     {
       EBDataLoc index = indexInfo(a_vof,  a_ivar);
-      data_t retval;
+      const data_t* retval;
       if(index.m_dataID == 0)
       {
-        retval = m_regData(a_vof.m_pt, a_ivar);
+        retval = &(m_regData(a_vof.m_pt, a_ivar));
       }
       else
       {
-        retval = m_irrData(a_vof, a_ivar);
+        retval = &(m_irrData(a_vof, a_ivar));
       }
-      return retval;
+      return *retval;
 
     }
 
@@ -116,7 +116,8 @@ namespace Proto
         for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
         {
           const EBIndex<CELL>& vof = vofspt[ivec];
-          data_t absval = std::abs((*this)(vof, a_icomp));
+          data_t datval = (*this)(vof, a_icomp);
+          data_t absval = std::abs(datval);
           if(absval > maxval)
           {
             maxval = absval;

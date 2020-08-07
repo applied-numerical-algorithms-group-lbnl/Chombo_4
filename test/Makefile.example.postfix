@@ -1,0 +1,39 @@
+
+CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
+CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
+CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+
+
+
+LINK=$(CXX)
+
+
+ifeq ($(CXX),nvcc)
+LIBS+= -lnvToolsExt
+DEPFLAGS += --generate-dependencies
+else
+DEPFLAGS += -MM
+endif
+
+%.exe : %.cpp  
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $<  -o $@ 
+
+all: $(TARGET)
+.PHONY: clean realclean print dirs
+
+print-%: ; @echo $* = $($*)
+
+
+vars:
+	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
+
+clean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+realclean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+pristine:
+	rm -rf d o *.o *.exe *.table *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d pout.* *.time.table.* *.hdf5

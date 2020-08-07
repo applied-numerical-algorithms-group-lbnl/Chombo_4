@@ -298,8 +298,8 @@ void eulerRun(const RunParams& a_params)
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
  
-    Box grid = grids[dit[ibox]];
-    Bx valid = getProtoBox(grid);
+    //Box grid = grids[dit[ibox]];
+    // Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
     BoxData<Real, DIM> x(grnbx);
     forallInPlace_p(iotaFunc, grnbx, x, EulerOp::s_dx);

@@ -7,7 +7,7 @@
 #include <memory>
 #include "Proto.H"
 #include "EBProto.H"
-
+#include "implem/Proto_IrregData.H"
 using std::vector;
 using std::shared_ptr;
 namespace Proto

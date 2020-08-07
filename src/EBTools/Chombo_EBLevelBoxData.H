@@ -20,6 +20,8 @@
 #include "Chombo_ProtoFactories.H"
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_SPMD.H"
+#include "Proto_EBBoxData.H"
+#include "Proto_EBHostData.H"
 #include "Chombo_NamespaceHeader.H"
 
 #ifdef CH_MPI
@@ -213,7 +215,8 @@ public:
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
       const Box & grid     =         dbl[dit[ibox]];
-      Real gridval = hostdata[dit[ibox]].maxNorm(grid, a_icomp);
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      Real gridval = hostdata[dit[ibox]].maxNorm(grbx, a_icomp);
       if(gridval > maxval)
       {
         maxval = gridval;
@@ -446,33 +449,33 @@ public:
     }
   }
 
-inline int 
-checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
-            const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,
-            const Bx & a_grid,
-            unsigned int a_icomp,
-            Real a_tol)
-{
-  Bx      inbox = a_calculatedAns.inputBox();
-  EBGraph graph = a_calculatedAns.ebgraph();
-  PROTO_ASSERT(inbox == a_referenceAns.inputBox());
-  
-  
-  EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph);
-  difference.setVal(0.);
-  difference += a_calculatedAns;
-  difference -= a_referenceAns;
-
-  EBHostData hostdat(inbox, graph);
-  copyToHost(hostdat, difference);
-  Real maxval = hostdat.maxNorm(grid, a_icomp);
-  int retval = 0;
-  if(maxval > a_tol)
+  static int 
+  checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
+              const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,
+              const Bx & a_grid,
+              unsigned int a_icomp,
+              Real a_tol)
   {
-    retval = 1;
+    Bx      inbox = a_calculatedAns.inputBox();
+    EBGraph graph = a_calculatedAns.ebgraph();
+    CH_assert(inbox == a_referenceAns.inputBox());
+  
+  
+    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph);
+    difference.setVal(0.);
+    difference += a_calculatedAns;
+    difference -= a_referenceAns;
+
+    EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
+    copyToHost(hostdat, difference);
+    Real maxval = hostdat.maxNorm(a_grid, a_icomp);
+    int retval = 0;
+    if(maxval > a_tol)
+    {
+      retval = 1;
+    }
+    return retval;
   }
-  return retval;
-}
 
 
 private:

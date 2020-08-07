@@ -8,6 +8,14 @@ SRC += $(wildcard ../src/*.cpp)
 SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
 SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
+SRC += $(wildcard ../../common/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
+SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp) 
+
+VPATH +=  $(CHOMBO_HOME)/src/EBTools 
+
+CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
+CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 NODIRSRC = $(notdir $(SRC))
 NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
@@ -16,15 +24,6 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 
 VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 LIBS = 
-
-CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
-CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
-
-SRC += $(wildcard ../../common/*.cpp) 
-SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
-SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp) 
-
-VPATH +=  $(CHOMBO_HOME)/src/EBTools 
 
 CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
 CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
@@ -61,15 +60,13 @@ CXXDBGFLAGS:= -g $(CXXALLFLAGS)
 
 CXXFLAGS+=$(CXXDBGFLAGS) 
 
-CPPFLAGS += -I../../common
-CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
-
-
 CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
 CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+CPPFLAGS += -I../../common
+CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
 
 
 
