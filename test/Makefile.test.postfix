@@ -38,23 +38,6 @@ else
 DEPFLAGS += -MM
 endif
 
-$(OBJDIR): ; mkdir -p $@
-
-
-$(DEPDIR): ; mkdir  -p $@
-
-DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
-
-$(DEPFILES):
-
-DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d 
-
-ifeq ($(CXX),nvcc)
-LIBS+= -lnvToolsExt
-DEPFLAGS += --generate-dependencies
-else
-DEPFLAGS += -MM
-endif
 
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)
@@ -67,12 +50,8 @@ $(CH_LIB): $(OBJ)
 	ar -crs $(CH_LIB) $(OBJDIR)/*.o
 	ranlib $(CH_LIB)
 
-%.o : %.cpp  
-	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS)
-
-%.exe : %.o  $(CH_LIB)
-	$(CXX) -L$(CH_LIB) $<   -o $@ 
+%.exe : %.cpp  $(CH_LIB)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $<  -o $@ 
 
 all: $(TARGET)
 .PHONY: clean realclean print dirs
