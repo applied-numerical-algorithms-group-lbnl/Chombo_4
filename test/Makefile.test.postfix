@@ -20,6 +20,8 @@ else
 DEPFLAGS += -MM
 endif
 
+all: $(TARGET)
+
 $(OBJDIR): ; mkdir -p $@
 
 
@@ -51,9 +53,8 @@ $(CH_LIB): $(OBJ)
 	ranlib $(CH_LIB)
 
 %.exe : %.cpp  $(CH_LIB)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $<  -o $@ 
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $<  $(CH_LIB)  -o $@ 
 
-all: $(TARGET)
 .PHONY: clean realclean print dirs
 
 print-%: ; @echo $* = $($*)
