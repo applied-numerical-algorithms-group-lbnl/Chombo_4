@@ -13,18 +13,18 @@ void specieslocal(const int ncomp,
 		  const int nx, 
 		  const int ny, 
 		  const int nz,
-		  /* const */ double *muaq_2d, // [ncomp][nspec], 
-		  double *sp_4d, // [nz][ny][nx][ncomp + nspec],
-		  /* const */ double *gam_4d, // [nz][ny][nx][ncomp + nspec],
-		  double *sp10_4d, // [nz][ny][nx][ncomp + nspec], 
-		  /* const */ double *keqaq_4d) // [nz][ny][nx][nspec]
+		  double *muaq_2d, 
+		  double *sp_4d, 
+		  double *gam_4d, 
+		  double *sp10_4d, 
+		  double *keqaq_4d)
 {
   ShapeArray<double, 2> muaq(muaq_2d, ncomp, nspec);
   ShapeArray<double, 4> sp(sp_4d, nz, ny, nx, ncomp + nspec);
   ShapeArray<double, 4> gam(gam_4d, nz, ny, nx, ncomp + nspec);
-  ShapeArray<double, 4> sp10(sp10_4d, nz, ny, nx, ncomp + nspec);
+  ShapeArray<double, 4> sp10(sp10_4d, nz, ny, nx, ncomp + nspec); 
   ShapeArray<double, 4> keqaq(keqaq_4d, nz, ny, nx, nspec);
-    
+
   int ksp = 0;
   int i = 0;
   int nk = 0;
@@ -41,5 +41,4 @@ void specieslocal(const int ncomp,
     }
   return;
 }
-
 
