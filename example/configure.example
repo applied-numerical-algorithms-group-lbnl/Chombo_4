@@ -38,7 +38,7 @@ mach_dep = f_mach_dep.read()
 f_mach_dep.close()
 os.chdir(top)
 r = open('compile.example','w')
-r.write('#!/usr/bin/csh\n')
+r.write('#/usr/bin/csh\n')
 
 for t in targets:
     d= t
