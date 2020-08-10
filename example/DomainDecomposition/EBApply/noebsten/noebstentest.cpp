@@ -50,7 +50,7 @@ runTest(int a_argc, char* a_argv[])
   Vector<int> procs(1, 0);
   DisjointBoxLayout grids(boxes, procs);
   IntVect ivghost =   2*IntVect::Unit;
-  Point   ptghost = ProtoCh::getPoint(ivghost);
+  // Point   ptghost = ProtoCh::getPoint(ivghost);
 
   auto sten = Proto::Stencil<double>::Laplacian();
   return 0;

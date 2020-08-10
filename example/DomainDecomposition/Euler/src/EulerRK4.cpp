@@ -109,8 +109,8 @@ operator()(EulerDX& a_DX,
   CH_TIMER("RK arithmetic_no_comm",  trk);
 
   CH_START(tdef);
-  int ncomp  =  a_State.m_U->nComp();
-  IntVect gv =  a_State.m_U->ghostVect();
+  //int ncomp  =  a_State.m_U->nComp();
+  //IntVect gv =  a_State.m_U->ghostVect();
   DisjointBoxLayout grids = a_State.m_grids;
 
   LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);

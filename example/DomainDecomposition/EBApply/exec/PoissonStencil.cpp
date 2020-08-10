@@ -116,7 +116,7 @@ runTest(int a_argc, char* a_argv[])
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
   shared_ptr<BaseIF>                       impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, false));
-  Bx domainpr = getProtoBox(domain.domainBox());
+//  Bx domainpr = getProtoBox(domain.domainBox());
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 

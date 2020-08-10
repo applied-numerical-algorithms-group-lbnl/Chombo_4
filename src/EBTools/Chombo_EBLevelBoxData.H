@@ -20,6 +20,8 @@
 #include "Chombo_ProtoFactories.H"
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_SPMD.H"
+#include "Proto_EBBoxData.H"
+#include "Proto_EBHostData.H"
 #include "Chombo_NamespaceHeader.H"
 
 #ifdef CH_MPI
@@ -213,21 +215,11 @@ public:
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
       const Box & grid     =         dbl[dit[ibox]];
-      const EBGraph& graph = (*m_graphs)[dit[ibox]];
-      for(BoxIterator bit(grid); bit.ok(); ++bit)
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      Real gridval = hostdata[dit[ibox]].maxNorm(grbx, a_icomp);
+      if(gridval > maxval)
       {
-        Point pt = ProtoCh::getPoint(bit());
-        vector<EBIndex<CELL> > vofspt = graph.getVoFs(pt);
-        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofspt[ivec];
-
-          Real absval = std::abs(hostdata[dit[ibox]](vof, a_icomp));
-          if(absval > maxval)
-          {
-            maxval = absval;
-          }
-        }
+        maxval = gridval;
       }
     }
 
@@ -421,14 +413,15 @@ public:
     {
       EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
       EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
-      copyToDevice(hostfab, devifab);
+      copyToDevice(devifab, hostfab);
     }
   }
 
   ///
   static 
-  void copyToDevice( EBHostData<cent, Real, NUMCOMPS> & hostfab,
-                     EBBoxData< cent, Real, NUMCOMPS> & devifab)
+  void copyToDevice( EBBoxData< cent, Real, NUMCOMPS> & devifab,
+                     EBHostData<cent, Real, NUMCOMPS> & hostfab)
+                     
   {
     for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
     {
@@ -454,6 +447,34 @@ public:
       memcpy(dataptrDevi, dataptrHost, datSize);
 #endif  
     }
+  }
+
+  static int 
+  checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
+              const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,
+              const Bx & a_grid,
+              unsigned int a_icomp,
+              Real a_tol)
+  {
+    Bx      inbox = a_calculatedAns.inputBox();
+    EBGraph graph = a_calculatedAns.ebgraph();
+    CH_assert(inbox == a_referenceAns.inputBox());
+  
+  
+    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph);
+    difference.setVal(0.);
+    difference += a_calculatedAns;
+    difference -= a_referenceAns;
+
+    EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
+    copyToHost(hostdat, difference);
+    Real maxval = hostdat.maxNorm(a_grid, a_icomp);
+    int retval = 0;
+    if(maxval > a_tol)
+    {
+      retval = 1;
+    }
+    return retval;
   }
 
 
@@ -544,7 +565,6 @@ writeEBLevelHDF5(const string& a_filename,
 #endif
 
 }
-                 
 
 #include "Chombo_NamespaceFooter.H"
 

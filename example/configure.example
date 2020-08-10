@@ -21,13 +21,10 @@ args = parser.parse_args()
 print args
 
 f_pref = open('Makefile.prefix','r')
-f_ebpre = open('Makefile.ebprefix','r')
 f_post = open('Makefile.postfix','r')
-f_ebpost = open('Makefile.ebpost','r')
+
 makefile_pref = f_pref.read()
 makefile_post = f_post.read()
-makefile_ebpre = f_ebpre.read()
-makefile_ebpost = f_ebpost.read()
 f_pref.close()
 f_post.close()
 
@@ -40,17 +37,22 @@ f_mach_dep = open('Make.defs.local','r')
 mach_dep = f_mach_dep.read()
 f_mach_dep.close()
 os.chdir(top)
+r = open('compile.example','w')
+r.write('#!/usr/bin/csh\n')
 
 for t in targets:
     d= t
     print d
+    comstr = " cd " + d + "; make pristine; make; cd " + top 
+    echostr =  "\necho \" " + comstr + "\" \n"
+    runstr =  "\n" + comstr + "\n"
+    r.write(echostr)
+    r.write(runstr)
     os.chdir(d)
     f = open('GNUmakefile','w')
     f.write('\nCHOMBO_HOME := ' + chombo_home)
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
-    if("EB" in t):
-        f.write(makefile_ebpre);
 
     f.write('\nCPPFLAGS = -std=c++11\n')
     f.write(mach_dep);
@@ -115,11 +117,12 @@ for t in targets:
         f.write('\nCXX = hipcc \n DEP=hipcc\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     
-    if("EB" in t):
-        f.write(makefile_ebpost);
 
-    f.write(makefile_post);
+    f.write(makefile_post)
  
     os.chdir(top)
     f.close()
+    
 
+r.close()
+os.system('chmod +x compile.example')

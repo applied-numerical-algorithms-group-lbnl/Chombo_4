@@ -106,7 +106,7 @@ runTest(int a_argc, char* a_argv[])
     geoserv->fillKappa(hostdat, grid, dit[ibox], domain);
     // now copy to the device
     pout() << "calling geoserv::copyToDevice"  << endl;
-    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
+    EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
 
     pout() << "calling getEBStencil"  << endl;
     auto stencil  = dictionary->getEBStencil(stenname, ebbcname, domain, domain, ibox);

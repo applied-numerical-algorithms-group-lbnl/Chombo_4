@@ -1,9 +1,11 @@
 
-CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include  -I$(PROTO_HOME)/EBProto/include -I. -I../src 
+CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
 CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+CPPFLAGS += -I../../common
+CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
 
 
 

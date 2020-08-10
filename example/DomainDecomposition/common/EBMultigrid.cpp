@@ -327,7 +327,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
-    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, kappdat);
+    EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
 
     shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();

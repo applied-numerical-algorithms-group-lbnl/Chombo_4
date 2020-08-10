@@ -74,7 +74,7 @@ fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
     //fill kappa on the host then copy to the device
     a_geoserv->fillKappa(hostdat, grid, dit[ibox], m_domain);
     // now copy to the device
-    EBLevelBoxData<CELL, 1>::copyToDevice(hostdat, m_kappa[dit[ibox]]);
+    EBLevelBoxData<CELL, 1>::copyToDevice(m_kappa[dit[ibox]], hostdat);
   }
   m_kappa.exchange(m_exchangeCopier);
 }
