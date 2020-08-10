@@ -234,6 +234,8 @@ int main(int argc, char* argv[])
 
   }
 
+  printf("testLibEBForall PASSED\n");
+  return 0;
 }
 
 
