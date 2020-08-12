@@ -116,12 +116,12 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-        unsigned int nsize = size();
-        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
+//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
+//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
+//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
+//        unsigned int nsize = size();
+//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
+//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
         
       }
       else
@@ -150,12 +150,12 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-        unsigned int nsize = size();
-        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
+//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
+//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
+//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
+//        unsigned int nsize = size();
+//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
+//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
         
       }
       else
@@ -184,12 +184,12 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-        unsigned int nsize = size();
-        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::multiplies<data_t>());
+//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
+//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
+//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
+//        unsigned int nsize = size();
+//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
+//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::multiplies<data_t>());
         
       }
       else
