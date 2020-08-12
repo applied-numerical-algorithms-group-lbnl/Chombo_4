@@ -53,7 +53,7 @@ $(CH_LIB): $(OBJ)
 	ranlib $(CH_LIB)
 
 %.exe : %.cpp  $(CH_LIB)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  $<  $(CH_LIB)  -o $@ 
+	$(LINK)  $<  o/*.o $(LIBS)  -o $@ 
 
 .PHONY: clean realclean print dirs
 
@@ -64,10 +64,10 @@ vars:
 	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
 
 clean:
-	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+	rm -rf d o *.a *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
 
 realclean:
-	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+	rm -rf d o *.a *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
 
 pristine:
-	rm -rf d o *.o *.exe *.table *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d pout.* *.time.table.* *.hdf5
+	rm -rf d o *.a *.o *.exe *.table *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d pout.* *.time.table.* *.hdf5
