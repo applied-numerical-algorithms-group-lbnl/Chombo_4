@@ -46,13 +46,17 @@ $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR)
 	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
 
+%.o : %.cpp  
+	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
+	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
+
 CH_LIB = libchombo.a
 
 $(CH_LIB): $(OBJ)
 	ar -crs $(CH_LIB) $(OBJDIR)/*.o
 	ranlib $(CH_LIB)
 
-%.exe : %.cpp  $(CH_LIB)
+%.exe : %.o  $(CH_LIB)
 	$(LINK)  $<  o/*.o $(LIBS)  -o $@ 
 
 .PHONY: clean realclean print dirs
