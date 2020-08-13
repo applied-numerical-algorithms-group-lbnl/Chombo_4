@@ -33,11 +33,12 @@ unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  Real kappdiv = a_lph(0);
-  Real bkdivF  = a_beta*kappdiv;
-  Real phival  = a_phi(0);
-  Real kapval  = a_kap(0);
-  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+//  Real kappdiv = a_lph(0);
+//  Real bkdivF  = a_beta*kappdiv;
+//  Real phival  = a_phi(0);
+//  Real kapval  = a_kap(0);
+//  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+  a_lph(0) = a_alpha*a_phi(0)*a_kap(0)+ a_beta*a_lph(0);
   return 0;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
@@ -52,11 +53,12 @@ unsigned int  addAlphaPhiPtF(int a_pt[DIM],
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  Real kappdiv = a_lph(0);
-  Real bkdivF  = a_beta*kappdiv;
-  Real phival  = a_phi(0);
-  Real kapval  = a_kap(0);
-  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+//  Real kappdiv = a_lph(0);
+//  Real bkdivF  = a_beta*kappdiv;
+//  Real phival  = a_phi(0);
+//  Real kapval  = a_kap(0);
+//  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+  a_lph(0) = a_alpha*a_phi(0)*a_kap(0)+ a_beta*a_lph(0);
   return 0;
 }
 PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
@@ -65,6 +67,8 @@ PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
 PROTO_KERNEL_START 
 unsigned int  setPhiPtF(int              a_pt[DIM],
                         Var<Real, 1>     a_phi,
+                        Var<Real, 1>     a_lph,
+                        Var<Real, 1>     a_kap,
                         Real             a_dx)
 {
   Real pi = 4.*atan(1.0);
@@ -72,6 +76,8 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
   Real y = Real(a_pt[1])*(a_dx + 0.5);
   Real val = sin(pi*x*y);
   a_phi(0) = val;
+  a_lph(0) = 2.*val;
+  a_kap(0) = 1.;
   return 0;
 }
 PROTO_KERNEL_END(setPhiPtF, setPhiPt)
@@ -131,9 +137,7 @@ runTest(int a_argc, char* a_argv[])
     Bx inputBox = phibd.box();
 //    size_t numflopspt = 0;
 //    ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, dx);
-    ebforall_i(inputBox, setPhiPt, grbx, phibd, dx);
-    lphbd.setVal(1.0);
-    kapbd.setVal(1.0);
+    ebforall_i(inputBox, setPhiPt, grbx, phibd, lphbd, kapbd, dx);
   }
 
   pout() << "running forall" << endl;

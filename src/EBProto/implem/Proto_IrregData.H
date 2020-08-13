@@ -116,12 +116,19 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-//        unsigned int nsize = size();
-//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
+        unsigned int nsize = size();
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize; 
+        auto streamid = DisjointBoxLayout::getCurrentStream();
+        protoLaunchKernelMemAsync(incKernel<data_t>, nBlocks, blockSize, 0, streamid, m_rawPtr, a_input.m_rawPtr, nsize);
+#ifdef THRUST_DEBUG
+        protoError err = protoGetLastError();
+        if (err != protoSuccess)
+        {
+          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, protoGetErrorString(err));
+        }
+#endif
         
       }
       else
@@ -150,13 +157,21 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-//        unsigned int nsize = size();
-//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::plus<data_t>());
+        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
+        unsigned int nsize = size();
+        unsigned int mem = 0;
+        protoLaunchKernelMemAsync(minusOperatorKernel<data_t>, 
+                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
+                                  m_rawPtr, castPtrInp, nsize);
         
+#ifdef THRUST_DEBUG
+        protoError err = protoGetLastError();
+        if (err != protoSuccess)
+        {
+          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, protoGetErrorString(err));
+        }
+#endif
       }
       else
       {
@@ -184,13 +199,21 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-//        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
-//        thrust::device_ptr<data_t> devptrLoc = thrust::device_pointer_cast(m_rawPtr);
-//        thrust::device_ptr<data_t> devptrInp = thrust::device_pointer_cast(castPtrInp);
-//        unsigned int nsize = size();
-//        thrust::transform(thrust_proto::par.on(DisjointBoxLayout::getCurrentStream()),
-//                          devptrLoc, devptrLoc+nsize, devptrInp, devptrLoc, thrust::multiplies<data_t>());
+        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
+        unsigned int nsize = size();
+        unsigned int mem = 0;
+        protoLaunchKernelMemAsync(multipliesOperatorKernel<data_t>, 
+                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
+                                  m_rawPtr, castPtrInp, nsize);
         
+#ifdef THRUST_DEBUG
+        protoError err = protoGetLastError();
+        if (err != protoSuccess)
+        {
+          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, protoGetErrorString(err));
+        }
+#endif
       }
       else
       {
