@@ -42,7 +42,19 @@ void InitializeSpotF(int       a_p[DIM],
                      Real      a_rad,
                      Real      a_dx)
 {
-  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  Real val =  0;
+  Real rlocsq = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
+    rlocsq += xrel*xrel;
+  }
+  Real rloc = sqrt((Real) rlocsq);
+  
+
+  Real carg = 0.5*PI*(rloc)/a_rad;
+  Real cosval = cos(carg);
+  val = cosval*cosval;
   a_phi(0) = val;
 }
 PROTO_KERNEL_END(InitializeSpotF, InitializeSpot)
@@ -55,7 +67,19 @@ void InitializeSpotDIMF(int       a_p[DIM],
                         Real      a_rad,
                         Real      a_dx)
 {
-  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  Real val =  0;
+  Real rlocsq = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
+    rlocsq += xrel*xrel;
+  }
+  Real rloc = sqrt((Real) rlocsq);
+  
+
+  Real carg = 0.5*PI*(rloc)/a_rad;
+  Real cosval = cos(carg);
+  val = cosval*cosval;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     a_phi(idir) = val*Real(idir+1);
@@ -73,7 +97,20 @@ void checkSpotDIMF(int       a_p[DIM],
                    Real      a_rad,
                    Real      a_dx)
 {
-  Real val0 =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  Real val =  0;
+  Real rlocsq = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
+    rlocsq += xrel*xrel;
+  }
+  Real rloc = sqrt((Real) rlocsq);
+  
+
+  Real carg = 0.5*PI*(rloc)/a_rad;
+  Real cosval = cos(carg);
+  val = cosval*cosval;
+  Real val0 =  val;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     Real val = val0*Real(idir+1);
@@ -83,7 +120,7 @@ void checkSpotDIMF(int       a_p[DIM],
     {
       using std::cout;
       using std::endl;
-      cout << "bogus value at variable " << idir << ", point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
+//      cout << "bogus value at variable " << idir << ", point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
     }
   }
 }
@@ -96,14 +133,26 @@ void checkSpotF(int       a_p[DIM],
                      Real      a_rad,
                      Real      a_dx)
 {
-  Real val =  getSpotVal(a_p, a_X0, a_rad, a_dx);
+  Real val =  0;
+  Real rlocsq = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    Real xrel = (a_p[idir] + 0.5)*a_dx - a_X0;
+    rlocsq += xrel*xrel;
+  }
+  Real rloc = sqrt((Real) rlocsq);
+  
+
+  Real carg = 0.5*PI*(rloc)/a_rad;
+  Real cosval = cos(carg);
+  val = cosval*cosval;
   Real phi = a_phi(0);
   Real diff = phi - val;
   if(std::abs(diff) > 1.0e-6)
   {
     using std::cout;
     using std::endl;
-    cout << "bogus value at point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
+//    cout << "bogus value at point: (" << a_p[0] << "," <<  a_p[1] << ")" << endl;;
   }
 }
 PROTO_KERNEL_END(checkSpotF, checkSpot)

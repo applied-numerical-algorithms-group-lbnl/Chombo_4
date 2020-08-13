@@ -32,6 +32,27 @@ using Proto::SimpleEllipsoidIF;
 
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
+EBIBC getIBCs()
+{
+  string veloIC, scalIC;
+  string loDomBC[DIM];
+  string hiDomBC[DIM];
+  ParmParse pp;
+  pp.get("initial_velo", veloIC);
+  pp.get("initial_scal", scalIC);
+  using std::to_string;
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    string lostr = "domain_bc_lo_" + to_string(idir);
+    string histr = "domain_bc_hi_" + to_string(idir);
+    pp.get(lostr.c_str(), loDomBC[idir]);
+    pp.get(histr.c_str(), hiDomBC[idir]);
+  }
+  string ebbc("NoSlipWall");
+  EBIBC retval(veloIC, scalIC, loDomBC, hiDomBC, ebbc);
+  return retval;
+}
+
 
 //=================================================
 void initializeData(EBLevelFluxData<1>          &  a_velo,
@@ -259,7 +280,8 @@ runProjection(int a_argc, char* a_argv[])
   initializeData(velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
 
 
-  EBMACProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV);
+  EBIBC bc = getIBCs();
+  EBMACProjector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV, bc);
   Real tol = 1.0e-8;
   unsigned int maxiter = 27;
   proj.project(velo, gphi, tol, maxiter);
