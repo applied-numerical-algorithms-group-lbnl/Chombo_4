@@ -169,7 +169,7 @@ int main(int a_argc, char* a_argv[])
 
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
-  pout() << "applyHelmholtz PASSED " << endl;
+  pout() << "forallTest PASSED " << endl;
 #ifdef CH_MPI
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
