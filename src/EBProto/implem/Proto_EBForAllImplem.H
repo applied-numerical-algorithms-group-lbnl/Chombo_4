@@ -153,8 +153,10 @@ namespace Proto
   inline int
   cleanUpPtrMem(EBIrregStruct<cent, data_t, ncomp> * a_ptr)
   {
+    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
     if(a_ptr != nullptr)
-      protoFree(a_ptr);
+      allocator.free(a_ptr);
+
     return 0;
   }
 
@@ -173,8 +175,9 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = 256;
-    unsigned int blocks = (N+stride-1)/stride;
+    unsigned int stride = N;
+    unsigned int blocks = 1;
+
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
@@ -192,8 +195,9 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = 256;
-    unsigned int blocks = (N+stride-1)/stride;
+    unsigned int stride = N;
+    unsigned int blocks = 1;
+
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer_i, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
@@ -220,7 +224,9 @@ namespace Proto
 
     size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
     EBIrregStruct<cent, data_t, ncomp>* retval;
-    protoMalloc(&retval, memsize);
+    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+    retval = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
+
     protoMemcpy(retval, hostvec.data(), memsize, protoMemcpyHostToDevice);
 
     //this copies from the host to the device
