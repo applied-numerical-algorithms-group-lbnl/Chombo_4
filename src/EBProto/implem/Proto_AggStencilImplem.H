@@ -263,7 +263,10 @@ namespace Proto
         m_stride /= 2;
       }
     }
+    PROTO_ASSERT(found, "could not find right number of blocks and strides");
     m_blocks = numptsDst/m_stride;
+    m_blocks = 1;
+    m_stride =numptsDst;
   }
 /////
 

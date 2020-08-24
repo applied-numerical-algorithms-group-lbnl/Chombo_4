@@ -275,13 +275,13 @@ namespace Proto
   cudaEBforall(const Func & a_F,  Box a_box, Srcs&... a_srcs)
   {
 //call regular forall
-    using std::cout;
-    using std::endl;
-    cout << "going into regular forall" << endl;
+//    using std::cout;
+//    using std::endl;
+//    cout << "going into regular forall" << endl;
     forallInPlaceBase(a_F, a_box, (getBoxData(a_srcs))...);
   
 //do the same thing for the irregular data
-    cout << "going into irreg forall" << endl;
+//    cout << "going into irreg forall" << endl;
     cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
 //    cout << "leaving ebforall" << endl;
   }
