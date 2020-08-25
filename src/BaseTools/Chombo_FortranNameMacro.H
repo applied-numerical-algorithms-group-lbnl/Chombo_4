@@ -11,6 +11,8 @@
 #ifndef _FORTRANNAMEMACRO_H_
 #define _FORTRANNAMEMACRO_H_
 
+#define CH_FORT_UNDERSCORE
+
 #ifdef CH_FORT_UPPERCASE
    #ifdef CH_FORT_UNDERSCORE
       #define FORTRAN_BASENAME( NAME ,name ) NAME ## _

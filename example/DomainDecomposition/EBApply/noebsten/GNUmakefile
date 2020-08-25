@@ -1,5 +1,5 @@
 
-CHOMBO_HOME := /gpfs/alpine/geo127/scratch/dtgraves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /home/dtgraves/_chombo4/Chombo_4/example/..
 DIM := 2
 VARS_OLD := $(.VARIABLES)
 
@@ -29,13 +29,19 @@ CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compa
 CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 CPPFLAGS = -std=c++11
+PROTO_HOME =$(HOME)/_proto/proto
+DEPXX=clang++
+CXX=clang++
+EFENCEFLAGS = -L/usr/lib -lefence
 
-PROTO_HOME =$(SCRATCH)/_proto/proto
+CXXALLFLAGS := -Wall  -std=c++11 
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
-LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
-
-HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
-HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
+HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 -ldl
 #end mach dependent
 
 

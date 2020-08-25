@@ -42,26 +42,6 @@ unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
   return 0;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
-PROTO_KERNEL_START 
-unsigned int  addAlphaPhiPtF(int a_pt[DIM],
-                             Var<Real, 1>     a_lph,
-                             Var<Real, 1>     a_phi,
-                             Var<Real, 1>     a_kap,
-                             Real    a_alpha,
-                             Real    a_beta)
-{
-  //kappa and beta are already in lph
-  //kappa because we did not divide by kappa
-  //beta was sent in to ebstencil::apply
-//  Real kappdiv = a_lph(0);
-//  Real bkdivF  = a_beta*kappdiv;
-//  Real phival  = a_phi(0);
-//  Real kapval  = a_kap(0);
-//  a_lph(0) = a_alpha*phival*kapval + bkdivF;
-  a_lph(0) = a_alpha*a_phi(0)*a_kap(0)+ a_beta*a_lph(0);
-  return 0;
-}
-PROTO_KERNEL_END(addAlphaPhiPtF, addAlphaPhiPt)
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
@@ -85,7 +65,7 @@ PROTO_KERNEL_END(setPhiPtF, setPhiPt)
 int
 runTest(int a_argc, char* a_argv[])
 {
-  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
+
   int nx      = 64;
   int maxGrid = 32;
 
@@ -110,7 +90,7 @@ runTest(int a_argc, char* a_argv[])
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
-  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
+//  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
