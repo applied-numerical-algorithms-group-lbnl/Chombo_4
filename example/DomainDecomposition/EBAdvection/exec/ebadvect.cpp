@@ -31,6 +31,28 @@ using Proto::SimpleEllipsoidIF;
 
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
+/***/
+EBIBC getIBCs()
+{
+  string veloIC, scalIC;
+  string loDomBC[DIM];
+  string hiDomBC[DIM];
+  ParmParse pp;
+  pp.get("initial_velo", veloIC);
+  pp.get("initial_scal", scalIC);
+  using std::to_string;
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    string lostr = "domain_bc_lo_" + to_string(idir);
+    string histr = "domain_bc_hi_" + to_string(idir);
+    pp.get(lostr.c_str(), loDomBC[idir]);
+    pp.get(histr.c_str(), hiDomBC[idir]);
+  }
+  string ebbc("NoSlipWall");
+  EBIBC retval(veloIC, scalIC, loDomBC, hiDomBC, ebbc);
+  return retval;
+}
+
 
 //=================================================
 void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
@@ -354,7 +376,8 @@ runAdvection(int a_argc, char* a_argv[])
   Real dt = 0;
   pout() << "computing the time step"  << endl;
   computeDt(dt, *velocell, dx, cfl);
-  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, dataGhostIV, dataGhostIV);
+  EBIBC bc = getIBCs();
+  EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, bc, dataGhostIV);
   const EBLevelBoxData<CELL, 1> & kappa = advectOp.getKappa();
 
   if(outputInterval > 0)

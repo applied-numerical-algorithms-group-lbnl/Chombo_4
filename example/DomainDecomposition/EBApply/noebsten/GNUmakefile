@@ -52,16 +52,7 @@ CXXFLAGS += -DCH_USE_DOUBLE
 
 CXXDBGFLAGS:= -g $(CXXALLFLAGS)
 
-CXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'
-
-CXXFLAGS+=$(CXXGPUFLAGS) 
-
-CXX = nvcc 
- DEP=nvcc
-
-LIBS+= -lnvToolsExt -lgomp
-
-CXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70
+CXXFLAGS+=$(CXXDBGFLAGS) 
 
 CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
 CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 

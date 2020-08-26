@@ -153,7 +153,10 @@ namespace Proto
   inline int
   cleanUpPtrMem(EBIrregStruct<cent, data_t, ncomp> * a_ptr)
   {
-    protoFree(a_ptr);
+    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+    if(a_ptr != nullptr)
+      allocator.free(a_ptr);
+
     return 0;
   }
 
@@ -172,8 +175,9 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = a_Nvec;
+    unsigned int stride = N;
     unsigned int blocks = 1;
+
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
@@ -191,8 +195,9 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = a_Nvec;
+    unsigned int stride = N;
     unsigned int blocks = 1;
+
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer_i, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
@@ -219,7 +224,9 @@ namespace Proto
 
     size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
     EBIrregStruct<cent, data_t, ncomp>* retval;
-    protoMalloc(&retval, memsize);
+    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+    retval = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
+
     protoMemcpy(retval, hostvec.data(), memsize, protoMemcpyHostToDevice);
 
     //this copies from the host to the device
@@ -268,13 +275,13 @@ namespace Proto
   cudaEBforall(const Func & a_F,  Box a_box, Srcs&... a_srcs)
   {
 //call regular forall
-    using std::cout;
-    using std::endl;
-    cout << "going into regular forall" << endl;
+//    using std::cout;
+//    using std::endl;
+//    cout << "going into regular forall" << endl;
     forallInPlaceBase(a_F, a_box, (getBoxData(a_srcs))...);
   
 //do the same thing for the irregular data
-    cout << "going into irreg forall" << endl;
+//    cout << "going into irreg forall" << endl;
     cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
 //    cout << "leaving ebforall" << endl;
   }

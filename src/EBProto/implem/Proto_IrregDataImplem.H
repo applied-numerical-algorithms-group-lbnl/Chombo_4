@@ -59,18 +59,21 @@ namespace Proto
   setVal(const data_t& a_val)
   {
 #ifdef PROTO_CUDA
-//    thrust::device_ptr<data_t> devptr = thrust::device_pointer_cast(m_rawPtr);
-//    unsigned int nsize = size();
-//
-//    thrust::fill(thrust::device, devptr, devptr+nsize, a_val);
-//
-//    protoError err = protoGetLastError();
-//    if (err != protoSuccess)
-//    {
-//      fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-//              __FILE__, __LINE__, protoGetErrorString(err));
-//    }
-//
+  unsigned int nsize = size();
+  int blockSize = 512;
+  int nBlocks = (nsize + blockSize - 1) / blockSize;
+  auto streamid = DisjointBoxLayout::getCurrentStream();
+  protoLaunchKernelMemAsync(setValKernel, nBlocks, blockSize, 0, streamid, m_rawPtr, nsize, a_val);
+
+#ifdef THRUST_DEBUG
+  protoError err = protoGetLastError();
+  if (err != protoSuccess)
+  {
+    fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+            __FILE__, __LINE__, protoGetErrorString(err));
+  }
+#endif
+
 #else
     for(int ival = 0; ival < size(); ival++)
     {

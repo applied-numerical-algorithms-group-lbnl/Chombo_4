@@ -30,14 +30,7 @@ unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
                            Real    a_alpha,
                            Real    a_beta)
 {
-  //kappa and beta are already in lph
-  //kappa because we did not divide by kappa
-  //beta was sent in to ebstencil::apply
-  Real kappdiv = a_lph(0);
-  Real bkdivF  = a_beta*kappdiv;
-  Real phival  = a_phi(0);
-  Real kapval  = a_kap(0);
-  a_lph(0) = a_alpha*phival*kapval + bkdivF;
+  a_lph(0) = a_alpha*a_phi(0)*a_kap(0)+ a_beta*a_lph(0);
   return 0;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
@@ -46,6 +39,7 @@ PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
 PROTO_KERNEL_START 
 unsigned int  setPhiPtF(int              a_pt[DIM],
                         Var<Real, 1>     a_phi,
+                        Var<Real, 1>     a_lph,
                         Real             a_dx)
 {
   Real pi = 4.*atan(1.0);
@@ -53,6 +47,7 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
   Real y = Real(a_pt[1])*(a_dx + 0.5);
   Real val = sin(pi*x*y);
   a_phi(0) = val;
+  a_lph(0) = 0;
   return 0;
 }
 PROTO_KERNEL_END(setPhiPtF, setPhiPt)
@@ -125,8 +120,8 @@ runTest(int a_argc, char* a_argv[])
     EBBoxData<CELL, Real, 1>& lphbd = lph[dit[ibox]];
     Bx grbx = phibd.box();
     size_t numflopspt = 0;
-    ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, dx);
-    lphbd.setVal(1.0);
+    ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, lphbd, dx);
+
     Point pghost = ProtoCh::getPoint(dataGhostIV);
     dictionary->registerStencil(stenname, dombcname, ebbcname, dombox, dombox, true, pghost);
   }

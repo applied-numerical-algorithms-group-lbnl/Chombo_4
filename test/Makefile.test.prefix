@@ -15,6 +15,6 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 
 LIBS = 
 
-CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
-CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
+#CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-un
+#CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
