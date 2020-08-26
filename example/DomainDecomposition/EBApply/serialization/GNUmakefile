@@ -88,6 +88,7 @@ DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
 $(DEPFILES):
 
 DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d 
+LIBS+= $(LAPACKLIBS)
 
 ifeq ($(CXX),nvcc)
 LIBS+= -lnvToolsExt
