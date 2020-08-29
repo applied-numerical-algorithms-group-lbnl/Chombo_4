@@ -45,10 +45,13 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
                         int              a_idir,
                         Real             a_dx)
 {
-  Real xd = Real(a_pt[0])*(a_dx + 0.5);
-  Real yd = Real(a_pt[1])*(a_dx + 0.5);
+  Real ri = a_pt[0];
+  Real rj = a_pt[1];
+  Real xd = a_dx*(ri + 0.5);
+  Real yd = a_dx*(rj + 0.5);
 #if DIM==3  
-  Real zd = Real(a_pt[2])*(a_dx + 0.5);
+  Real rk = a_pt[2];
+  Real zd = a_dx*(rk + 0.5);
 #endif
   Real x = 0;
   if(a_idir == 0)
@@ -91,6 +94,7 @@ unsigned int  checkLphPtF(int              a_pt[DIM],
   Real lphval = a_lph(0);
   Real kapval = a_kappa(0);
   Real corval = 2.*a_a*kapval;
+  corval = 2*a_a;
   Real tol = 1.0e-3;
   Real diff = (lphval-corval)*(lphval-corval);
   if(diff > tol)
@@ -106,8 +110,8 @@ runTest(int a_argc, char* a_argv[])
 {
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   int nx      = 64;
-  Real alpha = 1.0;
-  Real beta = -0.001;
+  Real alpha = 0.0;
+  Real beta  = 1.0;
     
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
@@ -127,7 +131,7 @@ runTest(int a_argc, char* a_argv[])
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
-  Real x0 = 0.75;
+  Real x0 = 0.7;
   Real a = 1;
   Real b = -2*a*x0;
   string stenname  = StencilNames::Poisson2;
@@ -186,14 +190,28 @@ runTest(int a_argc, char* a_argv[])
       pout() << "applying stencil" << endl;
       //set lphi = kappa* div(F)
       stencil->apply(lphbd, phibd,  true, 1.0);
-      auto& kapbd = *diagptr;
+
+      auto& graph = (*graphs)[dit[ibox]];
+      EBHostData<CELL, Real, 1> hostdat(grownbx, graph);
+      EBBoxData< CELL, Real, 1> kappdat(grownbx, graph);
+
+      //fill kappa on the host then copy to the device
+      geoserv->fillKappa(hostdat, gridbox, dit[ibox], domain.domainBox());
+      // now copy to the device
+      EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
+      auto& kapbd = kappdat;
 
       //pout() << "going into add alphaphi" << endl;
       pout() << "going into addAlphaPhi" << endl;
       ebforall(inputBx, addAlphaPhi, grbx, lphbd, phibd, kapbd, alpha, beta);
 
       pout() << "checking answer" << endl;
-      ebforall_i(inputBx, checkLphPt, grbx, lphbd, kapbd,  a, b, idir, dx);
+      Box interiorBox = gridbox;
+      interiorBox.grow(1);
+      interiorBox &= domain.domainBox();
+      interiorBox.grow(-1);
+      Bx intbx = ProtoCh::getProtoBox(interiorBox);
+      ebforall_i(inputBx, checkLphPt, intbx, lphbd, kapbd,  a, b, idir, dx);
     }
   }
   printf("\nexact test PASSED\n");
