@@ -65,7 +65,6 @@ PROTO_KERNEL_END(setPhiPtF, setPhiPt)
 int
 runTest(int a_argc, char* a_argv[])
 {
-
   int nx      = 64;
   int maxGrid = 32;
 
@@ -90,7 +89,7 @@ runTest(int a_argc, char* a_argv[])
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
-//  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
+
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
