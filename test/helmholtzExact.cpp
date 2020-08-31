@@ -74,7 +74,7 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
   }
     
   Real val = a_a*x*x + a_b*x;
-  
+
   a_phi(0) = val;
   a_lph(0) = 0;
   return 0;
@@ -94,10 +94,10 @@ unsigned int  checkLphPtF(int              a_pt[DIM],
   Real lphval = a_lph(0);
   Real kapval = a_kappa(0);
   Real corval = 2.*a_a*kapval;
-  corval = 2*a_a;
+
   Real tol = 1.0e-3;
   Real diff = (lphval-corval)*(lphval-corval);
-  if(diff > tol)
+  if( (diff > tol) && kapval > 0.99)
   {
     printf("\nexact test FAILED\n");
   }
