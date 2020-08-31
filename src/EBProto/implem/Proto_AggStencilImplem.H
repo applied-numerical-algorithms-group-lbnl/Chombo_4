@@ -325,6 +325,66 @@ namespace Proto
       }
     }
   }
+
+template<typename T>
+struct pairPtr{
+  T* ptr[2];
+};
+
+  template <typename data_t>
+  __global__
+  void 
+  aggStencilIndexerNew(int a_begin, int a_end,
+		    pairPtr<const data_t>   dataPtrsSrc,
+		    pairPtr<data_t>         dataPtrsDst,
+                    const pair_t<data_t>*   a_ebstencil,
+                    const uint64_t*         a_stensizes,
+                    const uint64_t*         a_stenstart,
+                    const EBDataLoc*        a_dstaccess,
+                    bool                    a_incrementOnly,
+                    data_t                  a_scale)
+  {
+
+    int idx = a_begin + threadIdx.x+blockIdx.x*blockDim.x;
+/*    __shared__ const data_t* dataPtrsSrc[2];
+    __shared__ data_t* dataPtrsDst[2];
+
+    if(threadIdx.x == 0)
+    {
+      dataPtrsSrc[0]  = a_dataPtrRegSrc;
+      dataPtrsDst[0]  = a_dataPtrRegDst;
+      dataPtrsSrc[1]  = a_dataPtrIrrSrc;
+      dataPtrsDst[1]  = a_dataPtrIrrDst;
+    }
+    __syncthreads();
+*/
+
+    if(idx< a_end)
+    {
+      uint64_t startInd = a_stenstart[idx];
+      uint64_t stenSize = a_stensizes[idx];
+      const EBDataLoc& dstAcc = a_dstaccess[idx];
+
+      data_t acc = 0;
+
+      #pragma loop unroll
+      for(uint64_t isten = 0; isten < stenSize; isten++)
+      {
+        const pair_t<data_t>& entry = a_ebstencil[startInd + isten];
+        const EBDataLoc& srcAcc = entry.first;
+        const data_t weight = entry.second;
+        const data_t phi = dataPtrsSrc.ptr[srcAcc.m_dataID][srcAcc.m_offset];
+        acc += weight*phi;
+      }
+      data_t& lphi = dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset];
+      if(!a_incrementOnly)
+      {
+        lphi = a_scale*acc;
+      }
+      else lphi += a_scale*acc;
+    }
+  }
+
 /////
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
   void 
@@ -337,16 +397,25 @@ namespace Proto
   {
     int begin = 0;
     int end   = m_dstAccess.size();
-    //std::cout << "cuda apply phi box = " << a_phi.getRegData().box() << std::endl;
-    //std::cout << "cuda apply lph box = " << a_lph.getRegData().box() << std::endl;
+    std::cout << "cuda apply phi box = " << a_phi.getRegData().box() << std::endl;
+    std::cout << "cuda apply lph box = " << a_lph.getRegData().box() << std::endl;
+    std::cout << "cuda apply endx = " << end << std::endl;
 
-    const data_t* dataPtrRegSrc = a_phi.dataPtr( 0, 0);
-    const data_t* dataPtrIrrSrc = a_phi.dataPtr( 1, 0);
+    pairPtr<const data_t> srcPtr;
+    pairPtr<data_t> dstPtr;
+    srcPtr.ptr[0] = a_phi.dataPtr( 0, 0);
+    srcPtr.ptr[1] = a_phi.dataPtr( 1, 0);
 
-    data_t*       dataPtrRegDst = a_lph.dataPtr( 0, 0);
-    data_t*       dataPtrIrrDst = a_lph.dataPtr( 1, 0);
-    protoLaunchKernel(aggStencilIndexer, m_stride, m_blocks, 
-      begin, end, dataPtrRegSrc, dataPtrIrrSrc, dataPtrRegDst, dataPtrIrrDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
+    dstPtr.ptr[0] = a_lph.dataPtr( 0, 0);
+    dstPtr.ptr[1] = a_lph.dataPtr( 1, 0);
+
+    // determine the best block size and block dim
+    int strides;
+    int blocks;
+    v100tuning(end-begin, blocks, strides);
+    //protoLaunchKernel(aggStencilIndexerNew, m_stride, m_blocks, 
+    protoLaunchKernel(aggStencilIndexerNew, blocks, strides, 
+      begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
   }
 #endif
 }

@@ -91,15 +91,18 @@ registerStencil(string a_stencilName,
     Proto::Box gridbxD  = (*graphD)[dit[ibox]].validBox();
     Proto::Box domainbxS = ProtoCh::getProtoBox(a_srcDomain);
     Proto::Box domainbxD = ProtoCh::getProtoBox(a_dstDomain);
+    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
     shared_ptr<ebstencil_t> 
-      newsten(new ebstencil_t(a_stencilName, a_domainBCName, a_ebbcName, 
+      newsten
+	 ( new ebstencil_t(a_stencilName, a_domainBCName, a_ebbcName, 
                               gridbxS, gridbxD, domainbxS, domainbxD,
                               m_srcGhost, m_dstGhost,
                               (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
                               m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
-    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
+
+ 
     boxmap[key] = newsten;
   }
 }

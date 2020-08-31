@@ -61,6 +61,9 @@ namespace Proto
       }
     }
   }
+
+
+
   ///
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
   void 
@@ -75,10 +78,15 @@ namespace Proto
     if(srcCenter == dstCenter)
     {
       Box grownBox = a_validBox.grow(a_dstGrown);
+auto deleter = [](EBBoxData<dstCenter, data_t, 1>*p){
+std::cout << " destruct m_diagonalWeights " << std::endl;
+  };
 
+      std::cout << " New diag " << std::endl;
       m_diagonalWeights = shared_ptr< EBBoxData<dstCenter, data_t, 1> >
-        (new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph));
-    
+        (new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph), deleter);
+        //(new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph));
+      
       //have to compute stuff on the host first
       EBHostData<dstCenter, data_t, 1> hostDiagonal(grownBox, a_graph);
       //first set the regular data to the value of the regular stencil's diagonal.

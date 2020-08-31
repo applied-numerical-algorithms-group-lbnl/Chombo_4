@@ -23,7 +23,7 @@
 #define PI 3.1419
 using Proto::Var;
 /****/
-PROTO_KERNEL_START 
+/*PROTO_KERNEL_START 
 unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
                            Var<Real, 1>     a_phi,
                            Var<Real, 1>     a_kap,
@@ -34,6 +34,21 @@ unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
   return 0;
 }
 PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
+*/
+
+
+PROTO_KERNEL_START 
+unsigned int  addAlphaPhiF(Var<Real, 1>     a_lph,
+                           Var<Real, 1>     a_phi,
+                           Var<Real, 1>     a_kap,
+                           Real    a_alpha,
+                           Real    a_beta)
+{
+  a_lph(0) = a_alpha*a_phi(0)*a_kap(0) + a_beta*a_lph(0);
+  return 0;
+}
+PROTO_KERNEL_END(addAlphaPhiF, addAlphaPhi)
+
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
@@ -57,7 +72,7 @@ runTest(int a_argc, char* a_argv[])
 {
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   int nx      = 64;
-  int maxGrid = 32;
+  int maxGrid = 64;
 
   Real alpha = 1.0;
   Real beta = -0.001;
@@ -122,9 +137,10 @@ runTest(int a_argc, char* a_argv[])
     size_t numflopspt = 0;
     ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, lphbd, dx);
 
+  }
+
     Point pghost = ProtoCh::getPoint(dataGhostIV);
     dictionary->registerStencil(stenname, dombcname, ebbcname, dombox, dombox, true, pghost);
-  }
 
   pout() << "applying operator" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -135,13 +151,17 @@ runTest(int a_argc, char* a_argv[])
     Bx grbx = ProtoCh::getProtoBox(gridbox);
     shared_ptr<ebstencil_t> stencil = dictionary->getEBStencil(stenname, ebbcname, dombox, dombox, ibox);
     shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+    
    //set lphi = kappa* div(F)
-    stencil->apply(lphfab, phifab,  true, 1.0);
-    auto& kapfab = *diagptr;
+   stencil->apply(lphfab, phifab,  true, 1.0);
+
+
+  // auto& kapfab = *diagptr;
     //pout() << "going into add alphaphi" << endl;
     Bx inputBox = lphfab.inputBox();
-    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, alpha, beta);
-  }      
+//    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, *diagptr, alpha, beta);
+    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, phifab, alpha, beta);
+  }
   return 0;
 }
 
