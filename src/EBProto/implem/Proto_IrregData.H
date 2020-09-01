@@ -284,10 +284,11 @@ namespace Proto
     void define(IrregData<cent, data_t, srccomp>& a_input,
                 unsigned int                    & a_comp)
     {
-      m_indicies = a_input.getIndicies();
-      m_inputBox = a_input.inputBox();
-      m_data     = a_input.getData();
-      m_rawPtr   = a_input.dataPtr(a_comp);
+      m_indicies       = a_input.getIndicies();
+      m_inputBox       = a_input.inputBox();
+      m_data           = a_input.getData();
+      m_rawPtr         = a_input.dataPtr(a_comp);
+      m_EBIrregDataPtr = a_input.getEBIrregDataPtr();
     }           
 
     //do not use this
