@@ -240,7 +240,7 @@ namespace Proto
                     Srcs&...  a_srcs)
   {
     //indicies into irreg vector that correspond to input box
-    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices(a_box);
+    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices();  //a_dst.m_inputBox
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {
@@ -259,7 +259,7 @@ namespace Proto
                       Srcs&...  a_srcs)
   {
     //indicies into irreg vector that correspond to input box
-    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices(a_box);
+    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices();
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {

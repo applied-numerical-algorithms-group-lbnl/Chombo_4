@@ -269,6 +269,11 @@ namespace Proto
       return retval;
     }
 
+    vector<EBIndex<cent> > getIndices() const
+    {
+      return getIndices(m_inputBox);
+    }
+
     unsigned int vecsize() const
     {
       return m_indicies->size();
