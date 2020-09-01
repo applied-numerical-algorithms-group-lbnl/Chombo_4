@@ -71,7 +71,7 @@ int
 runTest(int a_argc, char* a_argv[])
 {
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  int nx      = 64;
+  int nx      = 128;
   int maxGrid = 64;
 
   Real alpha = 1.0;
@@ -148,9 +148,11 @@ runTest(int a_argc, char* a_argv[])
     auto& phifab =   phi[dit[ibox]];
     auto& lphfab =   lph[dit[ibox]];
     Box gridbox  = grids[dit[ibox]];
-    Bx grbx = ProtoCh::getProtoBox(gridbox);
+    Bx grbx = lphfab.box();//ProtoCh::getProtoBox(gridbox);
+    //Bx grbx = ProtoCh::getProtoBox(gridbox);
+    std::cout << " grbx lo: " << grbx.low() << " high: " << grbx.high() << std::endl;
     shared_ptr<ebstencil_t> stencil = dictionary->getEBStencil(stenname, ebbcname, dombox, dombox, ibox);
-    shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
+//    shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
     
    //set lphi = kappa* div(F)
    stencil->apply(lphfab, phifab,  true, 1.0);
@@ -159,8 +161,9 @@ runTest(int a_argc, char* a_argv[])
   // auto& kapfab = *diagptr;
     //pout() << "going into add alphaphi" << endl;
     Bx inputBox = lphfab.inputBox();
+    size_t numflopspt = 0;
 //    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, *diagptr, alpha, beta);
-    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, phifab, alpha, beta);
+    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, *(stencil->getDiagonalWeights()), alpha, beta);
   }
   return 0;
 }

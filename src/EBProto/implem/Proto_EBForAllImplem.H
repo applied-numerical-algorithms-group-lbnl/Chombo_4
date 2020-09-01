@@ -178,6 +178,8 @@ namespace Proto
     unsigned int stride = N;
     unsigned int blocks = 1;
 
+    std::cout << " size vec :" << N << std::endl;
+
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
