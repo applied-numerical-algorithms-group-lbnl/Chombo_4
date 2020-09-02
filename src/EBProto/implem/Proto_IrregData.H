@@ -284,10 +284,11 @@ namespace Proto
     void define(IrregData<cent, data_t, srccomp>& a_input,
                 unsigned int                    & a_comp)
     {
-      m_indicies = a_input.getIndicies();
-      m_inputBox = a_input.inputBox();
-      m_data     = a_input.getData();
-      m_rawPtr   = a_input.dataPtr(a_comp);
+      m_indicies       = a_input.getIndicies();
+      m_inputBox       = a_input.inputBox();
+      m_data           = a_input.getData();
+      m_rawPtr         = a_input.dataPtr(a_comp);
+      m_EBIrregDataPtr = a_input.getEBIrregDataPtr();
     }           
 
     //do not use this
@@ -311,6 +312,21 @@ namespace Proto
       *indicies = getIrregIndicies<cent>(interBox, a_graph);
 
       define(indicies);
+      defineEBIrregData(indicies);
+    }
+
+    inline void defineEBIrregData(shared_ptr<vector<EBIndex<cent>>> indicies)
+    {
+      vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*indicies, *this);
+      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
+      StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+      m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
+      protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+    }
+
+    inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
+    {
+      return m_EBIrregDataPtr;
     }
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const
@@ -355,7 +371,7 @@ namespace Proto
     data_t*                    m_rawPtr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
-
+    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
 
   };
 
