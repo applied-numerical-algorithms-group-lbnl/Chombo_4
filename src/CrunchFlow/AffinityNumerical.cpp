@@ -17,10 +17,10 @@ double affinitynumerical(const int ncomp,
 			 const int loopNP, 
 			 int k, 
 			 double *sppTMP_1d, // [ncomp + nspec]
-			 double *gam_4d, // [nz][ny][nx][ncomp + nspec],
+			 /* const */ double *gam_4d, // [nz][ny][nx][ncomp + nspec],
 			 double *mumin_3d, // [ncomp][nkin][MAX_PATH], 
-			 double *keqmin_5d, // [nz][ny][nx][nkin][MAX_PATH], 
-			 double *AffinityDepend1_2d) // [nkin][MAX_PATH]
+			 /* const */ double *keqmin_5d, // [nz][ny][nx][nkin][MAX_PATH], 
+			 /* const */ double *AffinityDepend1_2d) // [nkin][MAX_PATH]
 {
   ShapeArray<double, 1> sppTMP(sppTMP_1d, ncomp + nspec);
   ShapeArray<double, 4> gam(gam_4d, nz, ny, nx, ncomp + nspec);

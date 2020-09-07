@@ -21,7 +21,7 @@ void fx_local(const int ncomp,
 	      /* const */ double *s_4d, // [nz][ny][nx][ncomp], 
 	      /* const */ double *xgramOld_3d, // [nz+2][ny+2][nx+3],
 	      /* const */ double *sn_4d, // [nz][ny][nx][ncomp], 
-	      double *distrib, 
+	      double *distrib_1d, // [ncomp], 
 	      double *fxx_1d, // [neqn], 
 	      double *fxmax_1d, // [neqn],
 	      double *satliq_3d) // [nz][ny][nx]
@@ -34,6 +34,7 @@ void fx_local(const int ncomp,
   ShapeArray<double, 3> xgramOld(xgramOld_3d, nz+2, ny+2, nx+3);
   ShapeArray<double, 4> s(s_4d, nz, ny, nx, ncomp);
   ShapeArray<double, 4> sn(sn_4d, nz, ny, nx, ncomp);
+  ShapeArray<double, 1> distrib(distrib_1d, ncomp); 
   ShapeArray<double, 1> fxx(fxx_1d, neqn);
   ShapeArray<double, 1> fxmax(fxmax_1d, neqn); 
     
