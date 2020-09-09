@@ -25,13 +25,14 @@ public:
   Real operator()(const EBGraph & a_graph,
                   const Real    & a_dx,
                   const VoluData& a_voldat,
-                  const   & a_cell)
+                  const EBIndex<CELL>   & a_vof)
   {
     Real retval = 0;
     RealVect cornerloc;
+    Poitn cell = a_vof.m_pt;
     for(int idir = 0; idir < DIM; idir++)
     {
-      cornerloc[idir] = a_dx*a_cell[idir];
+      cornerloc[idir] = a_dx*cell[idir];
     }
     IndexedMoments<DIM, order> moments;
     if(a_graph.isRegular(a_cell))
@@ -45,7 +46,7 @@ public:
     else
     {
       Point pt = ProtoCh::getPoint(a_cell);
-      moments = a_voldata(pt, 0);
+      moments = a_voldata(a_vof, 0);
     }
       
     Real volu = moments[IvDIM::Zero]
@@ -272,12 +273,12 @@ public:
     return retval;
   }
 
-  virtual ~ZeroSolution()
+  virtual ~SineSphere()
   {
   }
 
-  ZeroSolution(Real a_radius,
-               Real a_center)
+  SineSphere(Real a_radius,
+             Real a_center)
   {
     m_radius = a_radius;
     m_center = a_center;
@@ -287,7 +288,7 @@ private:
   Real  m_radius;
   Real  m_center;
   
-  ZeroSolution()
+  SineSphere()
   {
   }
 
