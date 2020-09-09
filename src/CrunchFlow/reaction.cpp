@@ -55,7 +55,7 @@ void reaction(const int ncomp,
 	      double *sp_4d, // [nz][ny][nx][ncomp + nspec],
 	      double *AffinityDepend1_2d, // [nkin][MAX_PATH], 
 	      double *rate0_2d, // [nkin][MAX_PATH], 
-	      double *volmol, 
+	      double *volmol_1d, // [nkin] 
 	      double *mumin_3d, // [ncomp][nkin][MAX_PATH],
 	      /* const */ double *keqmin_5d) // [nz][ny][nx][nkin][MAX_PATH])
 {
@@ -80,6 +80,7 @@ void reaction(const int ncomp,
   ShapeArray<double, 4> sp(sp_4d, nz, ny, nx, ncomp + nspec);
   ShapeArray<double, 2> AffinityDepend1(AffinityDepend1_2d, nkin, MAX_PATH); 
   ShapeArray<double, 2> rate0(rate0_2d, nkin, MAX_PATH); 
+  ShapeArray<double, 1> volmol(volmol_1d, nkin); 
   ShapeArray<double, 3> mumin(mumin_3d, ncomp, nkin, MAX_PATH);
   ShapeArray<double, 5> keqmin(keqmin_5d, nz, ny, nx, nkin, MAX_PATH);
   

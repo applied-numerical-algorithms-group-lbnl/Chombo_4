@@ -121,10 +121,10 @@ runTest(int a_argc, char* a_argv[])
     Bx grbx = phibd.box();
     size_t numflopspt = 0;
     ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, grbx, phibd, lphbd, dx);
-
-    Point pghost = ProtoCh::getPoint(dataGhostIV);
-    dictionary->registerStencil(stenname, dombcname, ebbcname, dombox, dombox, true, pghost);
   }
+
+  Point pghost = ProtoCh::getPoint(dataGhostIV);
+  dictionary->registerStencil(stenname, dombcname, ebbcname, dombox, dombox, true, pghost);
 
   pout() << "applying operator" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
