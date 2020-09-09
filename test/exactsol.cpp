@@ -15,61 +15,67 @@
 
 /***/
 template< unsigned int order>
-Real
-getTruncationError(int a_nx)
+void
+getPhi(EBBoxData<CELL, 1>& phi, int a_nx, DisjointBoxLayout a_grids, Box a_domain)
 {
-  using Chombo4::Box;
-  using Chombo4::DisjointBoxLayout;
-
-  IntVect dataGhostIV =   3*IntVect::Unit;
+  IntVect dataGhostIV =   IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-
-  Box domain(IntVect::Zero, (a_nx-1)*IntVect::Unit);
-  Vector<Box> boxes(1, domain);
-  Vector<int> procs(1, 0);
-  Real dx = 1.0/domain.size(0);
-  std::array<bool, DIM> periodic;
-  for(int idir = 0; idir < DIM; idir++) periodic[idir]=true;
-  DisjointBoxLayout grids(boxes, procs);
-
-  int geomGhost = 4;
-
+  int geomGhost = 2;
   RealVect ABC = RealVect::Unit();
   RealVect X0  = RealVect::Unit();
-  
   RealVect origin= RealVect::Zero();
   Real R = 0.45;
   Real C = 0.5;
   X0 *= C;
+  SineSphere<order> phigen(R, C);
   shared_ptr<BaseIF>                  impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
-  shared_ptr<GeometryService<order> > geoserv(new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost));
-  shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(domain);
+  shared_ptr<GeometryService<order> > geoserv(new GeometryService<2>(impfunc, origin, dx, a_domain, a_grids, geomGhost));
+  shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(a_domain);
   pout() << "making data" << endl;
-  EBLevelBoxData<CELL,   1>  phiExacLD(grids, dataGhostIV, graphs);
-  EBLevelBoxData<CELL,   1>  lphExacLD(grids, dataGhostIV, graphs);
-  EBLevelBoxData<CELL,   1>  lphCalcLD(grids, dataGhostIV, graphs);
-  
-  DataIterator dit = grids.dataIterator();
+  a_phi.define(a_grids, dataGhostPt, graphs);
+
+  DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Box     valid =     grids[dit[ibox]];
-    EBGraph graph =    graphs[dit[ibox]];
-    auto& lphCalc = lphCalcLD[dit[ibox]];
-    auto& lphExac = lphExacLD[dit[ibox]];
-    auto& phiExac = phiExacLD[dit[ibox]];
-    ebforall_i(inputBox, setTrigStuff, valid, lphCalc, lphExac, phiExac, R, C, dx);
-    std::shared_ptr< AggStencil<CELL, CELL, Real> > aggsten = getAggSten(graph, valid, ghost);
-    aggsten->apply(lphCalc, phiCalc, 1.0, false);
+    Box chgrid = dit[dit[ibox]];
+    Bx  prgrid = ProtoCh::getProtoBox(chgrid);
+    auto graph = graphs[dit[ibox]];
+    EBHostData<CELL, 1> hostdat(prgrid, graph, 1);
+    for(auto bit = prgrid.begin(); bit != prgrid.end(); ++bit)
+    {
+      auto vofs = graph.getVoFs(*bit);
+      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        hostdat(vofs[ivof], 0) = phigen(graph, dx, voldat, vofs[ivof]);
+      }
+    }
+    EBLevelBoxData<CELL, 1>::copyToDevice(a_phi[dit[ibox]], hostdat);
   }
+}
+
+void
+average(EBLevelBoxData<CELL, 1> & a_diff,
+        EBLevelBoxData<CELL, 1> & a_phiFine,
+        EBLevelBoxData<CELL, 1> & a_phiCoar)
+{
 }
 /***/
 template< unsigned int order>
 Real
 getTruncationError(int a_nx)
 {
-  EBBoxData<CELL, 1> phiFine, phiMedi, diff;
-  getPhi(phiFine, nx);
-  getPhi(phiCoar, nx/2);
+  Box domFine(IntVect::Zero, (a_nx-1)*IntVect::Unit);
+  Box domCoar = coarsen(domFine, 2);
+  Vector<Box> boxes(1, domain);
+  Vector<int> procs(1, 0);
+  Real dx = 1.0/domain.size(0);
+  DisjointBoxLayout gridsFine(boxes, procs);
+  DisjointBoxLayout gridsCoar;
+  coarsen(gridsCoar, gridsFine, 2);
+  
+  EBLevelBoxData<CELL, 1> phiFine, phiMedi, diff;
+  getPhi(phiFine, nx,   gridsFine, domFine);
+  getPhi(phiCoar, nx/2, gridsCoar, domCoar);
 
   average(diff, phiFine, phiCoar);
 

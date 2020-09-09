@@ -86,8 +86,6 @@ getTruncationError(int a_nx)
   Vector<Box> boxes(1, domain);
   Vector<int> procs(1, 0);
   Real dx = 1.0/domain.size(0);
-  std::array<bool, DIM> periodic;
-  for(int idir = 0; idir < DIM; idir++) periodic[idir]=true;
   DisjointBoxLayout grids(boxes, procs);
 
   int geomGhost = 4;
