@@ -288,7 +288,7 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      m_EBIrregDataPtr = a_input.getEBIrregDataPtr();
+      m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)a_input.m_EBIrregDataPtr;
     }           
 
     //do not use this
@@ -321,7 +321,11 @@ namespace Proto
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
       StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
       m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
+#ifdef PROTO_CUDA      
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+#else
+      memcpy(m_EBIrregDataPtr, hostvec.data(), memsize);
+#endif      
     }
 
     inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
@@ -355,6 +359,8 @@ namespace Proto
       return m_uglystructDevPtr;
     }
 #endif
+    //public for aliasing;
+    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
@@ -371,7 +377,6 @@ namespace Proto
     data_t*                    m_rawPtr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
-    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
 
   };
 
