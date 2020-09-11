@@ -66,6 +66,12 @@ using Proto::MinimalCCCM;
 using Proto::NormalDerivativeNew;
 using Proto::IFSlicer;
 using Proto::EBStencil;
+using Proto::Var;
+using Proto::AggStencil;
+using Proto::LocalStencil;
+using Proto::RealVect;
+using Proto::SimpleEllipsoidIF;
+
 typedef Proto::Box Bx;
 using ProtoCh::getProtoBox;
 typedef Proto::IndexTM<int,2>      Iv2;

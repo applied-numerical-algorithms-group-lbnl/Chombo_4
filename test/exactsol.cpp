@@ -11,53 +11,88 @@
 #include <sstream>
 
 #include "Proto.H"
+#include "EBProto.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_EBLevelBoxData.H"
 #include "Chombo_LAPACKMatrix.H"
+#include "Proto_EBExactSolutions.H"
+#include "Chombo_EBDictionary.H"
 
 /***/
 template< unsigned int order>
 void
-getPhi(EBBoxData<CELL, 1>& phi, int a_nx, DisjointBoxLayout a_grids, Box a_domain)
+getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
+       shared_ptr<GeometryService<order> >& a_geoserv ,
+       int a_nx, DisjointBoxLayout a_grids, Box a_domain, Real a_dx,
+       SineSphere<order>& a_phigen)
 {
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
   IntVect dataGhostIV =   IntVect::Unit;
-  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-  int geomGhost = 2;
-  RealVect ABC = RealVect::Unit();
-  RealVect X0  = RealVect::Unit();
-  RealVect origin= RealVect::Zero();
-  Real R = 0.45;
-  Real C = 0.5;
-  X0 *= C;
-  SineSphere<order> phigen(R, C);
-  shared_ptr<BaseIF>                  impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
-  shared_ptr<GeometryService<order> > geoserv(new GeometryService<2>(impfunc, origin, dx, a_domain, a_grids, geomGhost));
-  shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(a_domain);
+
+  shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
   pout() << "making data" << endl;
-  a_phi.define(a_grids, dataGhostPt, graphs);
+  a_phi.define(a_grids, dataGhostIV, graphs);
+  shared_ptr<LevelData<VoluData> > volDatLD= a_geoserv->getVoluData(a_domain);
 
   DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Box chgrid = dit[dit[ibox]];
+    Box chgrid = a_grids[dit[ibox]];
     Bx  prgrid = ProtoCh::getProtoBox(chgrid);
-    auto graph = graphs[dit[ibox]];
-    EBHostData<CELL, 1> hostdat(prgrid, graph, 1);
+    auto graph =(*graphs)[dit[ibox]];
+    EBHostData<CELL, Real, 1> hostdat(prgrid, graph, 1);
+    auto& voldat = (*volDatLD)[dit[ibox]];
     for(auto bit = prgrid.begin(); bit != prgrid.end(); ++bit)
     {
       auto vofs = graph.getVoFs(*bit);
       for(int ivof = 0; ivof < vofs.size(); ivof++)
       {
-        hostdat(vofs[ivof], 0) = phigen(graph, dx, voldat, vofs[ivof]);
+        hostdat(vofs[ivof], 0) = a_phigen(graph, a_dx, voldat, vofs[ivof]);
       }
     }
     EBLevelBoxData<CELL, 1>::copyToDevice(a_phi[dit[ibox]], hostdat);
   }
 }
 
+template< unsigned int order>
 void
 average(EBLevelBoxData<CELL, 1> & a_diff,
         EBLevelBoxData<CELL, 1> & a_phiFine,
-        EBLevelBoxData<CELL, 1> & a_phiCoar)
+        EBLevelBoxData<CELL, 1> & a_phiCoar,
+        shared_ptr<GeometryService<order> >& a_geoserv ,
+        Vector<DisjointBoxLayout> a_grids,
+        Vector<Box> a_domains,
+        Vector<Real> a_dxes)
 {
+  typedef EBStencil<order, Real, CELL, CELL> ebstencil_t;
+  IntVect dataGhostIV =a_diff.ghostVect();
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
+  
+  shared_ptr<EBDictionary<order, Real, CELL, CELL> > 
+    dictionary(new EBDictionary<order, Real, CELL, CELL>(a_geoserv, a_grids, a_domains, a_dxes, dataGhostPt));
+  string nobcName("no_bcs");
+  string restrictName = string("Restriction");
+  Box fineDom =a_domains[0];
+  Box coarDom =a_domains[1];
+  dictionary->registerStencil(restrictName, nobcName, nobcName, fineDom, coarDom, false);
+  
+  DataIterator dit = a_grids[0].dataIterator();
+
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& difffab  =    a_diff[dit[ibox]];
+    auto& finecalc = a_phiFine[dit[ibox]];
+    auto& coarcalc = a_phiCoar[dit[ibox]];
+    //finer level owns the stencil (and the operator)
+
+    shared_ptr<ebstencil_t> stencil =
+      dictionary->getEBStencil(restrictName, nobcName, fineDom, coarDom, ibox);
+    //set resc = Ave(resf) (true is initToZero)
+    stencil->apply(difffab, finecalc,  true, 1.0);
+    difffab -= coarcalc;
+  }
 }
 /***/
 template< unsigned int order>
@@ -66,20 +101,45 @@ getTruncationError(int a_nx)
 {
   Box domFine(IntVect::Zero, (a_nx-1)*IntVect::Unit);
   Box domCoar = coarsen(domFine, 2);
-  Vector<Box> boxes(1, domain);
+  Vector<Box> boxes(1, domFine);
   Vector<int> procs(1, 0);
-  Real dx = 1.0/domain.size(0);
+  int nxFine = domFine.size(0);
+  int nxCoar = nxFine/2;
+  Real dxFine = 1.0/domFine.size(0);
+  Real dxCoar = 2.*dxFine;
   DisjointBoxLayout gridsFine(boxes, procs);
   DisjointBoxLayout gridsCoar;
   coarsen(gridsCoar, gridsFine, 2);
   
-  EBLevelBoxData<CELL, 1> phiFine, phiMedi, diff;
-  getPhi(phiFine, nx,   gridsFine, domFine);
-  getPhi(phiCoar, nx/2, gridsCoar, domCoar);
+  int geomGhost = 2;
+  RealVect ABC = RealVect::Unit();
+  RealVect X0  = RealVect::Unit();
+  RealVect origin= RealVect::Zero();
+  Real R = 0.45;
+  Real C = 0.5;
+  X0 *= C;
+  SineSphere<order> phigen(R, C);
+  Vector<DisjointBoxLayout>           grids(2);
+  grids[0] = gridsFine;
+  grids[1] = gridsCoar;
+  shared_ptr<BaseIF>                  impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
+  shared_ptr<GeometryService<order> > geoserv(new GeometryService<order>(impfunc, origin, dxFine, domFine, grids, geomGhost));
 
-  average(diff, phiFine, phiCoar);
+  
+  EBLevelBoxData<CELL, 1> phiFine, phiCoar, diff;
+  getPhi<order>(phiFine, geoserv, nxFine, gridsFine, domFine, dxFine, phigen);
+  getPhi<order>(phiCoar, geoserv, nxCoar, gridsCoar, domCoar, dxCoar, phigen);
 
-  Real   retval = maxnorm(diff);
+  Vector<Box> domains(2);
+  domains[0] = domFine;
+  domains[1] = domCoar;
+
+  Vector<Real> dxes(2);
+  dxes[0] = dxFine;
+  dxes[1] = dxCoar;
+  average<order>(diff, phiFine, phiCoar, geoserv, grids, domains, dxes);
+
+  Real   retval = diff.maxNorm(0);
   return retval;
     
 }

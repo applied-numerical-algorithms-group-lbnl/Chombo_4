@@ -9,6 +9,7 @@ template <unsigned int order>
 class BaseExactSolution
 {
 public:
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef       IndexTM<int, DIM>            IvDIM;
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
 
@@ -29,32 +30,32 @@ public:
   {
     Real retval = 0;
     RealVect cornerloc;
-    Poitn cell = a_vof.m_pt;
+    Point cell = a_vof.m_pt;
     for(int idir = 0; idir < DIM; idir++)
     {
       cornerloc[idir] = a_dx*cell[idir];
     }
     IndexedMoments<DIM, order> moments;
-    if(a_graph.isRegular(a_cell))
+    if(a_graph.isRegular(cell))
     {
       moments.setToRegular(a_dx);
     }
-    else if(a_graph.isCovered(a_cell))
+    else if(a_graph.isCovered(cell))
     {
       return 0;
     }
     else
     {
-      Point pt = ProtoCh::getPoint(a_cell);
-      moments = a_voldata(a_vof, 0);
+      moments = a_voldat(a_vof, 0);
     }
       
-    Real volu = moments[IvDIM::Zero]
+    Real volu = moments[IvDIM::Zero];
     for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
     {
       IvDIM  power = momit();
       Real   deriv = getDerivative(power, cornerloc);
-      Real   denom = (Real)(deriv.factorial());
+      int   idenom = (power.factorial());
+      Real   denom = (Real)(idenom);
       Real   momen = moments[power];
       Real   incre = deriv*momen/denom;
       retval += incre;
@@ -73,11 +74,12 @@ public:
 
 ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
 template <unsigned int order>
-class ZeroSolution: public BaseSolution<order>
+class ZeroSolution: public BaseExactSolution<order>
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_power,
@@ -98,11 +100,12 @@ public:
 
 ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
 template <unsigned int order>
-class SineSphere: public BaseSolution<order>
+class SineSphere: public BaseExactSolution<order>
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_power,
@@ -112,7 +115,7 @@ public:
     Real y = a_loc[1];
     Real z = 0;
     Real pi = 4.*atan(1.0);
-    Real r02 = m_R0*m_R0;
+    Real r02 = m_radius*m_radius;
 #if DIM==3
     z = a_loc[0];
 #endif

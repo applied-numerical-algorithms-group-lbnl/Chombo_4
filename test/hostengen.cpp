@@ -11,7 +11,11 @@
 #include <sstream>
 
 #include "Proto.H"
+#include "EBProto.H"
 #include "Chombo_LAPACKMatrix.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_EBLevelBoxData.H"
 
 PROTO_KERNEL_START 
 unsigned int  setTrigStuffF(int              a_pt[DIM],
@@ -26,19 +30,21 @@ unsigned int  setTrigStuffF(int              a_pt[DIM],
   Real x = Real(a_pt[0])*(a_dx + 0.5) - a_cen;
   Real y = Real(a_pt[1])*(a_dx + 0.5) - a_cen;
   Real rsq = x*x + y*y;
-  Real sinval = sin(pi*x)*sin(pi*y);
+
 #if DIM==3  
   Real z = Real(a_pt[1])*(a_dx + 0.5);
   rsq += z*z;
   sinval *= sin(pi*z);
 #endif
-  Real cosval = cos(pi*(rsq -(R*R)));
+  Real Rsq = a_rad*a_rad;
+  Real cosval = cos(pi*(rsq -(Rsq)));
   a_phiExac(0) = cosval;
   a_lphExac(0) = -pi*pi*cosval;
   a_lphCalc(0) = 0;
   return 0;
 }
 PROTO_KERNEL_END(setTrigStuffF, setTrigStuff)
+
 
 vector<EBIndex<CELL> > getNeighbors(unsigned int          a_radius,
                                     const EBIndex<CELL> & a_start,
@@ -48,7 +54,7 @@ vector<EBIndex<CELL> > getNeighbors(unsigned int          a_radius,
   Bx ptbox(a_start.m_pt, a_start.m_pt);
   Bx area = ptbox.grow(a_radius);
   area &=  a_graph.getDomain();
-  for(auto bit = area.begin(); bit != bit.end(); ++bit)
+  for(auto bit = area.begin(); bit != area.end(); ++bit)
   {
     vector<EBIndex<CELL> > cellvofs = a_graph.getVoFs(*bit);
     retval.insert(retval.end(), cellvofs.begin(), cellvofs.end());
@@ -58,17 +64,21 @@ vector<EBIndex<CELL> > getNeighbors(unsigned int          a_radius,
 /***/
 std::shared_ptr< AggStencil<CELL, CELL, Real> >
 getAggSten(const EBGraph & a_graph,
-           const Box     & a_valid,
+           const Bx      & a_valid,
            const Point   & a_ghost)
 {
+  
+  std::shared_ptr< AggStencil<CELL, CELL, Real> > retval;
+/**  
+  MayDay::Error();
   vector< EBIndex<CELL> > dstVoFs;
   vector< LocalStencil< CELL, Real> > localstens;
-  
-  std::shared_ptr< AggStencil<CELL, CELL, Real> > retval(dstVoFs,
-                                                         localstens,
-                                                         graph, graph,
-                                                         valid, valid,
-                                                         ghost, ghost);
+    retval(new     AggStencil<CELL, CELL, Real> >(dstVoFs,
+                                                  localstens,
+                                                  a_graph, a_graph,
+                                                  a_valid, a_valid,
+                                                  a_ghost, a_ghost));
+*/
   return retval;
 }
 /***/
@@ -98,27 +108,30 @@ getTruncationError(int a_nx)
   Real C = 0.5;
   X0 *= C;
   shared_ptr<BaseIF>                  impfunc(new SimpleEllipsoidIF(ABC, X0, R, true));
-  shared_ptr<GeometryService<order> > geoserv(new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost));
+  shared_ptr<GeometryService<order> > geoserv(new GeometryService<order>(impfunc, origin, dx, domain, grids, geomGhost));
   shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(domain);
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phiExacLD(grids, dataGhostIV, graphs);
-  EBLevelBoxData<CELL,   1>  lphExacLD(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  diffLD(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  lphCalcLD(grids, dataGhostIV, graphs);
   
   DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Box     valid =     grids[dit[ibox]];
-    EBGraph graph =    graphs[dit[ibox]];
+    Bx     valid =   ProtoCh::getProtoBox(grids[dit[ibox]]);
+    EBGraph graph = (*graphs)[dit[ibox]];
     auto& lphCalc = lphCalcLD[dit[ibox]];
-    auto& lphExac = lphExacLD[dit[ibox]];
+    auto& difffab =   diffLD[dit[ibox]];
     auto& phiExac = phiExacLD[dit[ibox]];
-    ebforall_i(inputBox, setTrigStuff, valid, lphCalc, lphExac, phiExac, R, C, dx);
-    std::shared_ptr< AggStencil<CELL, CELL, Real> > aggsten = getAggSten(graph, valid, ghost);
-    aggsten->apply(lphCalc, phiCalc, 1.0, false);
+    Bx inputBox = lphCalc.inputBox();
+    //difffab is initialized to lphiExact
+    ebforall_i(inputBox, setTrigStuff, valid, lphCalc, difffab, phiExac, R, C, dx); 
+    std::shared_ptr< AggStencil<CELL, CELL, Real> > aggsten = getAggSten(graph, valid, dataGhostPt);
+    aggsten->apply(lphCalc, phiExac, 1.0, false);
+    difffab -= lphCalc;
   }
-
-    
+  Real retval  = diffLD.maxNorm(0);
+  return retval;
 }
 /***/
 int main(int argc, char* argv[])
