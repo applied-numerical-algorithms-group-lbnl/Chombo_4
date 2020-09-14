@@ -42,7 +42,8 @@ getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
     Box chgrid = a_grids[dit[ibox]];
     Bx  prgrid = ProtoCh::getProtoBox(chgrid);
     auto graph =(*graphs)[dit[ibox]];
-    EBHostData<CELL, Real, 1> hostdat(prgrid, graph, 1);
+    Bx inputBox = a_phi[dit[ibox]].inputBox();
+    EBHostData<CELL, Real, 1> hostdat(inputBox, graph, 1);
     auto& voldat = (*volDatLD)[dit[ibox]];
     for(auto bit = prgrid.begin(); bit != prgrid.end(); ++bit)
     {

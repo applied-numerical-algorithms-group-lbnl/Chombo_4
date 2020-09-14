@@ -1,5 +1,4 @@
-  
-        //read and interpret file: #p/home/dtgraves/_chombo4/Chombo_4/util/maxima/sinr.commands
+        //  
         //(%i2) display2d:false
         //(%o2) false
         //(%i3) r:x^2+y^2+z^2
@@ -30,24 +29,61 @@
         //(%i15) der_yyy:diff(der_yy,y)
         //(%o15) (-12*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^3
         //                                              *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i16) der_zzz:diff(der_zzz,z)
-        //(%o16) 0
-        //(%i17) der_zzz:diff(der_zz,z)
-        //(%o17) (-12*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*z^3
+        //(%i16) der_zzz:diff(der_zz,z)
+        //(%o16) (-12*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*z^3
         //                                              *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i18) der_xyy:diff(der_xy,y)
-        //(%o18) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*y^2
+        //(%i17) der_xyy:diff(der_xy,y)
+        //(%o17) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*y^2
         //                                             *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i19) der_yxx:diff(der_xy,x)
-        //(%o19) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*y
+        //(%i18) der_yxx:diff(der_xy,x)
+        //(%o18) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*y
         //                                             *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i20) der_yzz:diff(der_yz,z)
-        //(%o20) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y*z^2
+        //(%i19) der_yzz:diff(der_yz,z)
+        //(%o19) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y*z^2
         //                                             *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i21) der_xzz:diff(der_xz,z)
-        //(%o21) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*z^2
+        //(%i20) der_xzz:diff(der_xz,z)
+        //(%o20) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*z^2
         //                                             *cos(pi*(z^2+y^2+x^2-R0))
-        //(%i22) der_xyz:diff(der_xy,z)
-        //(%o22) -8*pi^3*x*y*z*cos(pi*(z^2+y^2+x^2-R0))
-        //(%o22) "sinr.commands"
-        //(%i23) 
+        //(%i21) der_xyz:diff(der_xy,z)
+        //(%o21) -8*pi^3*x*y*z*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i22) der_xxxx:diff(der_xxx,x)
+        //(%o22) 16*pi^4*x^4*sin(pi*(z^2+y^2+x^2-R0))
+        // -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i23) der_yyyy:diff(der_yyy,y)
+        //(%o23) 16*pi^4*y^4*sin(pi*(z^2+y^2+x^2-R0))
+        // -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i24) der_zzzz:diff(der_zzz,z)
+        //(%o24) 16*pi^4*z^4*sin(pi*(z^2+y^2+x^2-R0))
+        // -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i25) der_xxxy:diff(der_xxx,y)
+        //(%o25) 16*pi^4*x^3*y*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i26) der_xxxz:diff(der_xxx,z)
+        //(%o26) 16*pi^4*x^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i27) der_yyyx:diff(der_yyy,x)
+        //(%o27) 16*pi^4*x*y^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i28) der_yyyz:diff(der_yyy,z)
+        //(%o28) 16*pi^4*y^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i29) der_zzzx:diff(der_zzz,x)
+        //(%o29) 16*pi^4*x*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i30) der_zzzy:diff(der_zzz,y)
+        //(%o30) 16*pi^4*y*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z
+        //                                                *cos(pi*(z^2+y^2+x^2-R0))
+        //(%i31) der_zzyy:diff(der_yzz,y)
+        //(%o31) 16*pi^4*y^2*z^2*sin(pi*(z^2+y^2+x^2-R0))
+        // -4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
+        // -8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i32) der_zzxx:diff(der_xzz,x)
+        //(%o32) 16*pi^4*x^2*z^2*sin(pi*(z^2+y^2+x^2-R0))
+        // -4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
+        // -8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%i33) der_xxyy:diff(der_xyy,x)
+        //(%o33) 16*pi^4*x^2*y^2*sin(pi*(z^2+y^2+x^2-R0))
+        // -4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+        // -8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        //(%o33) "sinr.commands"
+        //

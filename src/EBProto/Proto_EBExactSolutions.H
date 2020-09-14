@@ -113,13 +113,26 @@ public:
   {
     Real x = a_loc[0];
     Real y = a_loc[1];
-    Real z = 0;
+    Real x2 = x*x;
+    Real x3 = x*x*x;
+    Real x4 = x*x*x*x;
+    Real y2 = y*y;
+    Real y3 = y*y*y;
+    Real y4 = y*y*y*y;
+
     Real pi = 4.*atan(1.0);
+    Real pi2 = pi*pi;
+    Real pi3 = pi*pi*pi;
+    Real pi4 = pi*pi*pi*pi;
     Real r02 = m_radius*m_radius;
+    Real z2 = 0;
 #if DIM==3
-    z = a_loc[0];
+    Real z = a_loc[2];
+    z2 = z*z;
+    Real z3 = z*z*z;
+    Real z4 = z*z*z*z;
 #endif
-    Real r2 = x*x + y*y + z*z;
+    Real r2 = x2 + y2 + z2;
 
     int sum = a_power.sum();
     Real retval =0;
@@ -141,17 +154,23 @@ public:
         //(%o5) 2*pi*x*cos(pi*(z^2+y^2+x^2-R0))
         retval = 2*pi*x*cos(pi*(r2 - r02));
       }
-      else if (a_power[0]== 1)
+      else if (a_power[1]== 1)
       {
         //(%i6) der_y:diff(phi,y)
         //(%o6) 2*pi*y*cos(pi*(z^2+y^2+x^2-R0))
         retval = 2*pi*y*cos(pi*(r2 - r02));
       }
+#if DIM==3      
       else if(a_power[2] == 1)
       {
         //(%i7) der_z:diff(phi,z)
         //(%o7) 2*pi*z*cos(pi*(z^2+y^2+x^2-R0))
         retval = 2*pi*z*cos(pi*(r2 - r02));
+      }
+#endif      
+      else
+      {
+        MayDay::Error("sinesphere ran out of cases 2");
       }
     }
     else if(sum == 2)
@@ -160,27 +179,27 @@ public:
       {
         //(%i8) der_xy:diff(der_x,y)
         //(%o8) -4*pi^2*x*y*sin(pi*(z^2+y^2+x^2-R0))
-        retval = -4.*pi*pi*x*y*sin(pi*(r2 -r02));
+        retval = -4.*pi2*x*y*sin(pi*(r2 -r02));
       }
 #if DIM==3      
       else if((a_power[0]== 1) && (a_power[2]== 1))
       {
         //(%i9) der_xz:diff(der_x,z)
         //(%o9) -4*pi^2*x*z*sin(pi*(z^2+y^2+x^2-R0))
-        retval = -4.*pi*pi*x*z*sin(pi*(r2 -r02));
+        retval = -4.*pi2*x*z*sin(pi*(r2 -r02));
         
       }
       else if((a_power[1]== 1) && (a_power[2]== 1))
       {
         //(%i10) der_yz:diff(der_y,z)
         //(%o10) -4*pi^2*y*z*sin(pi*(z^2+y^2+x^2-R0))
-        retval = -4.*pi*pi*y*z*sin(pi*(r2 -r02));
+        retval = -4.*pi2*y*z*sin(pi*(r2 -r02));
       }
       else if(a_power[2]== 2)
       {
         //(%i13) der_zz:diff(der_z,z)
         //(%o13) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*z^2*sin(pi*(z^2+y^2+x^2-R0))
-        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi*pi*z*z*sin(pi*(r2 - r02));
+        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*z2*sin(pi*(r2 - r02));
 
       }
 #endif
@@ -188,13 +207,13 @@ public:
       {
         //(%i11) der_xx:diff(der_x,x)
         //(%o11)  2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*x^2*sin(pi*(z^2+y^2+x^2-R0))
-        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi*pi*x*x*sin(pi*(r2 - r02));
+        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*x2*sin(pi*(r2 - r02));
       }
       else if(a_power[1]== 2)
       {
         //(%i12) der_yy:diff(der_y,y)
         //(%o12) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*y^2*sin(pi*(z^2+y^2+x^2-R0))
-        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi*pi*y*y*sin(pi*(r2 - r02));
+        retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*y2*sin(pi*(r2 - r02));
 
       }
       else
@@ -208,25 +227,25 @@ public:
       {
         //(%i14) der_xxx:diff(der_xx,x)
         //(%o14) (-12*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))      -8*pi^3*x^3*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-12.*pi*pi*x*sin(pi*(r2 -r02))) -   8.*pi*pi*pi*x*x*x*cos(pi*(r2 - r02));
+        retval = (-12.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x3*cos(pi*(r2 - r02));
       }
       else if(a_power[1] == 3)
       {
         //(%i15) der_yyy:diff(der_yy,y)
         //(%o15) (-12*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^3*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-12.*pi*pi*y*sin(pi*(r2 -r02))) -    8.*pi*pi*pi*y*y*y*cos(pi*(r2 - r02));
+        retval = (-12.*pi2*y*sin(pi*(r2 -r02))) -    8.*pi3*y3*cos(pi*(r2 - r02));
       }
       else if( (a_power[0] == 2) && (a_power[1]==1))
       {
         //(%i19) der_yxx:diff(der_xy,x)
         //(%o19) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*y*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*y*sin(pi*(r2 -r02))) -   8.*pi*pi*pi*x*x*y*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*x2*y*cos(pi*(r2 - r02));
       }
       else if( (a_power[0] == 1) && (a_power[1]==2))
       {
         //(%i18) der_xyy:diff(der_xy,y)
         //(%o18) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*y^2*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*x*sin(pi*(r2 -r02))) -   8.*pi*pi*pi*x*y*y*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x*y2*cos(pi*(r2 - r02));
 
       }
 #if DIM==3
@@ -234,42 +253,126 @@ public:
       {
         //(%i17) der_zzz:diff(der_zz,z)
         //(%o17) (-12*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*z^3*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-12.*pi*pi*z*sin(pi*(r2 -r02))) -    8.*pi*pi*pi*z*z*z*cos(pi*(r2 - r02));
+        retval = (-12.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*z3*cos(pi*(r2 - r02));
       }
       else if( (a_power[2] == 2) && (a_power[1]==1))
       {
         //(%i20) der_yzz:diff(der_yz,z)
         //(%o20) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y*z^2*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*y*sin(pi*(r2 -r02))) -   8.*pi*pi*pi*y*z*z*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*y*z2*cos(pi*(r2 - r02));
       }
       else if( (a_power[2] == 2) && (a_power[0]==1))
       {
         //(%i21) der_xzz:diff(der_xz,z)
         //(%o21) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*z^2*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*x*sin(pi*(r2 -r02))) -    8.*pi*pi*pi*x*z*z*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -    8.*pi3*x*z2*cos(pi*(r2 - r02));
       }
       else if( (a_power[0] == 2) && (a_power[2]==1))
       {
         //  (%i23) der_xxz:diff(der_xx, z);
         //  (%o23) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*z*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*z*sin(pi*(r2 -r02))) -    8.*pi*pi*pi*x*x*z*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*x2*z*cos(pi*(r2 - r02));
       }
       else if( (a_power[1] == 2) && (a_power[2]==1))
       {
         //(%i24) der_yyz:diff(der_yy, z);
         //(%o24) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^2*z*cos(pi*(z^2+y^2+x^2-R0))
-        retval = (-4.*pi*pi*z*sin(pi*(r2 -r02))) -    8.*pi*pi*pi*y*y*z*cos(pi*(r2 - r02));
+        retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*y2*z*cos(pi*(r2 - r02));
       }
 #endif      
       else
       {
-        MayDay::Warning("sinesphere ran out of cases 3");
+        MayDay::Error("sinesphere ran out of cases 3");
+        retval = 0;
+      }
+    }
+    else if(sum==4)
+    {
+      if(a_power[0] == 4)
+      {
+        //(%i22) der_xxxx:diff(der_xxx,x)
+        //(%o22) 16*pi^4*x^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*x2*cos(pi*(r2 - r02));
+      }
+      else if(a_power[1] == 4)
+      {
+        //(%i23) der_yyyy:diff(der_yyy,y)
+        //(%o23) 16*pi^4*y^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*y4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*y2*cos(pi*(r2 - r02));
+      }
+      else if( (a_power[0] == 3) && (a_power[1] == 1))
+      {
+        //(%i25) der_xxxy:diff(der_xxx,y)
+        //(%o25) 16*pi^4*x^3*y*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x3*y*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
+      }
+      else if( (a_power[0] == 1) && (a_power[1] == 3))
+      {
+        //(%i27) der_yyyx:diff(der_yyy,x)
+        //(%o27) 16*pi^4*x*y^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*y3*x*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
+      }
+      else if( (a_power[0] == 2) && (a_power[1] == 2))
+      {
+        //(%i33) der_xxyy:diff(der_xyy,x)
+        //(%o33) 16*pi^4*x^2*y^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x2*y2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*y2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
+      }
+#if DIM==3
+      else if(a_power[2] == 4)
+      {
+        //(%i24) der_zzzz:diff(der_zzz,z)
+        //(%o24) 16*pi^4*z^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*z4*sin(pi(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*z2*cos(pi*(r2 - r02));
+      }
+      else if((a_power[2] == 3) && (a_power[0] == 1))
+      {
+        //(%i29) der_zzzx:diff(der_zzz,x)
+        //(%o29) 16*pi^4*x*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
+      }
+      else if((a_power[2] == 3) && (a_power[1] == 1))
+      {
+        //(%i30) der_zzzy:diff(der_zzz,y)
+        //(%o30) 16*pi^4*y*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*y*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
+
+      }
+      else if((a_power[2] == 2) && (a_power[0] == 2))
+      {
+        //(%i32) der_zzxx:diff(der_xzz,x)
+        //(%o32) 16*pi^4*x^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
+      }
+      else if((a_power[2] == 2) && (a_power[1] == 2))
+      {
+        //(%i31) der_zzyy:diff(der_yzz,y)
+        //(%o31) 16*pi^4*y^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*y2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*y2*cos(pi*(r2 - r02));
+      }
+      else if((a_power[2] == 1) && (a_power[0] == 3))
+      {
+        //(%i26) der_xxxz:diff(der_xxx,z)
+        //(%o26) 16*pi^4*x^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x3*z*sin(pi*(r2-r02))          -24.*pi3*x*z*sin(pi*(r2 -r02))      ;
+        
+      }
+      else if((a_power[2] == 1) && (a_power[1] == 3))
+      {
+        //(%i28) der_yyyz:diff(der_yyy,z)
+        //(%o28) 16*pi^4*y^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*y3*z*sin(pi*(r2-r02))          -24.*pi3*y*z*sin(pi*(r2 -r02))      ;
+      }
+#endif      
+      else
+      {
+        MayDay::Error("sinesphere ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      MayDay::Warning("sinesphere ran out of cases");
+      MayDay::Error("sinesphere ran out of power cases");
       retval = 0;
     }
         
