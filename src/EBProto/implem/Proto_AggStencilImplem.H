@@ -320,13 +320,12 @@ struct pairPtr{
         const data_t phi = dataPtrsSrc.ptr[srcAcc.m_dataID][srcAcc.m_offset];
         acc += weight*phi;
       }
-      //data_t& lphi = dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset];
+      data_t& lphi = dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset];
       if(!a_incrementOnly)
       {
-        //lphi = a_scale*acc;
-        dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset] = a_scale*acc;
+        lphi = a_scale*acc;
       }
-      else dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset] += a_scale*acc; //lphi += a_scale*acc;
+      else lphi += a_scale*acc;
     }
   }
 /////
