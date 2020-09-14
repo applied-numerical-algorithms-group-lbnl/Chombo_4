@@ -34,12 +34,11 @@ typedef Var<Real,  1> Sca;
 /***/
 EBIBC getIBCs()
 {
-  string veloIC, scalIC;
+  string veloIC("does_not_matter");
+  string scalIC("does_not_matter");
   string loDomBC[DIM];
   string hiDomBC[DIM];
   ParmParse pp;
-  pp.get("initial_velo", veloIC);
-  pp.get("initial_scal", scalIC);
   using std::to_string;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
