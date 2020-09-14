@@ -360,8 +360,7 @@ namespace Proto
       return m_uglystructDevPtr;
     }
 #endif
-    //public for aliasing;
-    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
+  
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
