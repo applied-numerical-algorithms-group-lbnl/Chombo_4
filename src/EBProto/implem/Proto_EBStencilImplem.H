@@ -50,6 +50,8 @@ namespace Proto
                             a_xfacdata,  a_yfacdata, a_zfacdata,    
                             a_dx, a_periodiconly, a_dstGrown);
 
+    if(m_hasDomainBCs) defineApplyITZ();
+
     if(!m_bcsOnly)
     {
       m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
@@ -61,9 +63,6 @@ namespace Proto
       }
     }
   }
-
-
-
   ///
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
   void 
@@ -78,15 +77,10 @@ namespace Proto
     if(srcCenter == dstCenter)
     {
       Box grownBox = a_validBox.grow(a_dstGrown);
-auto deleter = [](EBBoxData<dstCenter, data_t, 1>*p){
-std::cout << " destruct m_diagonalWeights " << std::endl;
-  };
 
-      std::cout << " New diag " << std::endl;
       m_diagonalWeights = shared_ptr< EBBoxData<dstCenter, data_t, 1> >
-        (new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph), deleter);
-        //(new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph));
-      
+        (new EBBoxData<dstCenter, data_t, 1>(grownBox, a_graph));
+    
       //have to compute stuff on the host first
       EBHostData<dstCenter, data_t, 1> hostDiagonal(grownBox, a_graph);
       //first set the regular data to the value of the regular stencil's diagonal.
@@ -136,6 +130,19 @@ std::cout << " destruct m_diagonalWeights " << std::endl;
     }
   }
 
+  template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+  void
+  EBStencil<order, data_t, srcCenter, dstCenter>::
+  defineApplyITZ() 
+  {
+      auto& vecStencil = sFused.getStencils();  
+      for(int ibc = 0; ibc < 2*DIM; ibc++)
+        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
+          vecStencil.push_back(&m_regStencilBCS[ibc][ivec]);
+      
+      sFused.copyInfo();
+  }
+
   ///
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
   void 
@@ -150,16 +157,17 @@ std::cout << " destruct m_diagonalWeights " << std::endl;
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
-      BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
+      const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
+      std::vector<Box> vecBox;
+
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
         for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
         {
-          Box bcsrcbox = m_BCApplyBoxes[ibc][ivec];
-          m_regStencilBCS[ibc][ivec].apply(castSrc, castSrc,
-                                           bcsrcbox, true, 1.0);
+	  vecBox.push_back(m_BCApplyBoxes[ibc][ivec]);
         }
       }
+      sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), vecBox.data(), true, 1.0);
     }
     if(!m_bcsOnly)
     {

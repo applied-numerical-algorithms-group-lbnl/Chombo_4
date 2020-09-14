@@ -16,6 +16,7 @@ namespace Proto
              const Point                                     & a_srcGhost,
              const Point                                     & a_dstGhost)
   {
+
     PR_TIME("AggSten.constructor");
     m_ebstencil.resize(a_dstVoFs.size());
     m_dstAccess.resize(a_dstVoFs.size());
@@ -281,51 +282,6 @@ namespace Proto
     protoFree(d_stenstart);
   }
 /////
-  template <typename data_t>
-  __global__
-  void 
-  aggStencilIndexer(int a_begin, int a_end,
-                    const data_t*           a_dataPtrRegSrc,
-                    const data_t*           a_dataPtrIrrSrc,
-                    data_t*                 a_dataPtrRegDst,
-                    data_t*                 a_dataPtrIrrDst,
-                    const pair_t<data_t>*   a_ebstencil,
-                    const uint64_t*         a_stensizes,
-                    const uint64_t*         a_stenstart,
-                    const EBDataLoc*        a_dstaccess,
-                    bool                    a_incrementOnly,
-                    data_t                  a_scale)
-  {
-    int idx = a_begin + threadIdx.x+blockIdx.x*blockDim.x;
-    if((idx >= a_begin) && (idx< a_end))
-    {
-      const data_t* dataPtrsSrc[2];
-      data_t*       dataPtrsDst[2];
-      dataPtrsSrc[0]  = a_dataPtrRegSrc;
-      dataPtrsDst[0]  = a_dataPtrRegDst;
-      dataPtrsSrc[1]  = a_dataPtrIrrSrc;
-      dataPtrsDst[1]  = a_dataPtrIrrDst;
-
-      uint64_t startInd = a_stenstart[idx];
-      uint64_t stenSize = a_stensizes[idx];
-      const EBDataLoc& dstAcc = a_dstaccess[idx];
-
-      data_t& lphi = dataPtrsDst[dstAcc.m_dataID][dstAcc.m_offset];
-      if(!a_incrementOnly)
-      {
-        lphi = 0;
-      }
-      for(uint64_t isten = 0; isten < stenSize; isten++)
-      {
-        const pair_t<data_t>& entry = a_ebstencil[startInd + isten];
-        const EBDataLoc& srcAcc = entry.first;
-        const data_t   & weight = entry.second;
-        const data_t& phi = dataPtrsSrc[srcAcc.m_dataID][srcAcc.m_offset];
-        lphi += a_scale*weight*phi;
-      }
-    }
-  }
-
 template<typename T>
 struct pairPtr{
   T* ptr[2];
@@ -334,7 +290,7 @@ struct pairPtr{
   template <typename data_t>
   __global__
   void 
-  aggStencilIndexerNew(int a_begin, int a_end,
+  aggStencilIndexer(int a_begin, int a_end,
 		    pairPtr<const data_t>   dataPtrsSrc,
 		    pairPtr<data_t>         dataPtrsDst,
                     const pair_t<data_t>*   a_ebstencil,
@@ -346,23 +302,11 @@ struct pairPtr{
   {
 
     int idx = a_begin + threadIdx.x+blockIdx.x*blockDim.x;
-/*    __shared__ const data_t* dataPtrsSrc[2];
-    __shared__ data_t* dataPtrsDst[2];
-
-    if(threadIdx.x == 0)
-    {
-      dataPtrsSrc[0]  = a_dataPtrRegSrc;
-      dataPtrsDst[0]  = a_dataPtrRegDst;
-      dataPtrsSrc[1]  = a_dataPtrIrrSrc;
-      dataPtrsDst[1]  = a_dataPtrIrrDst;
-    }
-    __syncthreads();
-*/
-
+    
     if(idx< a_end)
     {
-      uint64_t startInd = a_stenstart[idx];
-      uint64_t stenSize = a_stensizes[idx];
+      const uint64_t startInd = a_stenstart[idx];
+      const uint64_t stenSize = a_stensizes[idx];
       const EBDataLoc& dstAcc = a_dstaccess[idx];
 
       data_t acc = 0;
@@ -376,16 +320,40 @@ struct pairPtr{
         const data_t phi = dataPtrsSrc.ptr[srcAcc.m_dataID][srcAcc.m_offset];
         acc += weight*phi;
       }
-      data_t& lphi = dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset];
+      //data_t& lphi = dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset];
       if(!a_incrementOnly)
       {
-        lphi = a_scale*acc;
+        //lphi = a_scale*acc;
+        dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset] = a_scale*acc;
       }
-      else lphi += a_scale*acc;
+      else dataPtrsDst.ptr[dstAcc.m_dataID][dstAcc.m_offset] += a_scale*acc; //lphi += a_scale*acc;
+    }
+  }
+/////
+
+  inline void v100tuning(int nbElems, int & nbBlocks, int &blockSize)
+  {
+    // determine the best block size and block dim
+    blockSize = 256;
+    nbBlocks = ( nbElems + blockSize - 1)/ blockSize;
+    if(nbBlocks < 80)
+    {
+      // On V100 we want at least 80 blocks;
+      nbBlocks = 80;
+      // figure out what is the blockSize for 80 blocks
+      // 
+      blockSize = ( nbElems + nbBlocks - 1) / nbBlocks;
+      // as we use __syncthreads(), we want that stride modulo 32 is equal to 0
+      int coeff = blockSize / 32;
+      if(coeff > 0)
+      {
+        blockSize = coeff * 32;
+        // recompute the number of blocks > 80
+        nbBlocks = ( nbElems + blockSize - 1) / nbBlocks;
+      }
     }
   }
 
-/////
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
   void 
   AggStencil<    srcCenter, dstCenter, data_t>::
@@ -397,24 +365,19 @@ struct pairPtr{
   {
     int begin = 0;
     int end   = m_dstAccess.size();
-    std::cout << "cuda apply phi box = " << a_phi.getRegData().box() << std::endl;
-    std::cout << "cuda apply lph box = " << a_lph.getRegData().box() << std::endl;
-    std::cout << "cuda apply endx = " << end << std::endl;
-
     pairPtr<const data_t> srcPtr;
     pairPtr<data_t> dstPtr;
     srcPtr.ptr[0] = a_phi.dataPtr( 0, 0);
     srcPtr.ptr[1] = a_phi.dataPtr( 1, 0);
-
     dstPtr.ptr[0] = a_lph.dataPtr( 0, 0);
     dstPtr.ptr[1] = a_lph.dataPtr( 1, 0);
 
-    // determine the best block size and block dim
-    int strides;
-    int blocks;
-    v100tuning(end-begin, blocks, strides);
-    //protoLaunchKernel(aggStencilIndexerNew, m_stride, m_blocks, 
-    protoLaunchKernel(aggStencilIndexerNew, blocks, strides, 
+    // m_stride or m_blocks doesn't fit. This function is temporary used.
+    int stride, blocks;
+    v100tuning(end-begin, blocks, stride);
+
+    //protoLaunchKernel(aggStencilIndexer, m_stride, m_blocks, 
+    protoLaunchKernel(aggStencilIndexer, blocks, stride,  
       begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
   }
 #endif

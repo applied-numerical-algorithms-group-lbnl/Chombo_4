@@ -141,24 +141,6 @@ namespace Proto
       a_body(a_dst[idx].m_index.m_tuple, cudaGetVar(idx, a_dst), cudaGetVar(idx, a_srcs)...);
     }
   }
-//going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template <typename T>
-  inline int
-  cleanUpPtrMem(T a_T)
-  {
-    return 0;
-  }
-//going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template <CENTERING cent, typename data_t,unsigned int ncomp>
-  inline int
-  cleanUpPtrMem(EBIrregStruct<cent, data_t, ncomp> * a_ptr)
-  {
-    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-    if(a_ptr != nullptr)
-      allocator.free(a_ptr);
-
-    return 0;
-  }
 
 //
   template<typename... Srcs>
@@ -175,17 +157,14 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = N;
-    unsigned int blocks = 1;
+    int stride = N;
+    int blocks = 1;
 
-    std::cout << " size vec :" << N << std::endl;
+    v100tuning(N,blocks,stride);
 
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
-
-    //there is a cudaMalloc that happens above so we have to delete
-    emptyFunc(cleanUpPtrMem(a_dst ), (cleanUpPtrMem(a_srcs))...); 
   }
 
 
@@ -197,43 +176,30 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    unsigned int stride = N;
-    unsigned int blocks = 1;
+    int stride = N;
+    int blocks = 1;
 
+    v100tuning(N,blocks,stride);
+    
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer_i, blocks, stride, smem, curstream,
       0, N, a_F, a_dst, a_srcs...);
-
-    //there is a cudaMalloc that happens above so we have to delete
-    emptyFunc(cleanUpPtrMem(a_dst ), (cleanUpPtrMem(a_srcs))...); 
   }
 
 
-  template <CENTERING cent, typename T>
-  inline T
-  cudagetEBIrregStruct(const vector<EBIndex<cent> >& a_indices,
-                       T& a_T)
+  template <typename T>
+  inline T cudagetEBIrregStruct(T& a_T)
   {
     return a_T;
   }
-//
+
   template <CENTERING cent, typename  data_t, unsigned int ncomp>
   inline  EBIrregStruct<cent, data_t, ncomp>*
-  cudagetEBIrregStruct(const vector<EBIndex<cent> >& a_indices,
-                       IrregData<cent, data_t, ncomp>& a_s )
+  cudagetEBIrregStruct(IrregData<cent, data_t, ncomp>& a_s )
   {
-    vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(a_indices, a_s);
-
-    size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-    EBIrregStruct<cent, data_t, ncomp>* retval;
-    StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-    retval = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
-
-    protoMemcpy(retval, hostvec.data(), memsize, protoMemcpyHostToDevice);
-
-    //this copies from the host to the device
-    return retval;
+    return a_s.getEBIrregDataPtr();
   }
+
 //going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
@@ -242,12 +208,11 @@ namespace Proto
                     Srcs&...  a_srcs)
   {
     //indicies into irreg vector that correspond to input box
-    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices(a_box);
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {
-      cudaVectorFunc(a_F, vecsize, cudagetEBIrregStruct(dstvofs, a_dst), 
-                     (cudagetEBIrregStruct(dstvofs, a_srcs))...);
+      cudaVectorFunc(a_F, vecsize, cudagetEBIrregStruct(a_dst), 
+                     (cudagetEBIrregStruct(a_srcs))...);
 
     }
   }
@@ -261,12 +226,11 @@ namespace Proto
                       Srcs&...  a_srcs)
   {
     //indicies into irreg vector that correspond to input box
-    const vector<EBIndex<cent> >& dstvofs = a_dst.getIndices(a_box);
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {
-      cudaVectorFunc_i(a_F, vecsize, cudagetEBIrregStruct(dstvofs, a_dst), 
-                       (cudagetEBIrregStruct(dstvofs, a_srcs))...);
+      cudaVectorFunc_i(a_F, vecsize, cudagetEBIrregStruct(a_dst), 
+                       (cudagetEBIrregStruct(a_srcs))...);
 
     }
   }
