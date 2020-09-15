@@ -304,9 +304,9 @@ advanceVelocityNavierStokes(Real a_dt,
       auto & gphi =  scalGphi[ dit[ibox]];  
 
       ebforallInPlace(numflopspt, "ParabolicRHS", ParabolicRHS, grbx, sour, udel, gphi);
-      pout() << "calling heat solver for variable " << idir << endl;
-      //advance the parabolic equation
     }
+    pout() << "calling heat solver for variable " << idir << endl;
+    //advance the parabolic equation
     m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
   }
 }
