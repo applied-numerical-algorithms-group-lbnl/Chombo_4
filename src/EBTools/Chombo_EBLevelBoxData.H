@@ -275,7 +275,7 @@ public:
   
   ///
   void 
-  writeToFileHDF5(const string& a_filename, const Real& a_coveredval) const
+  writeToFileHDF5(const string& a_filename, Real a_coveredval) const
   {
 #ifdef CH_USE_HDF5
     LevelData<FArrayBox>                         hostfabs(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
