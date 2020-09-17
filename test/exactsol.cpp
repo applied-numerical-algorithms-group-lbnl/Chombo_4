@@ -29,11 +29,8 @@ getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
 {
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
-  IntVect dataGhostIV =   IntVect::Unit;
 
   shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
-  pout() << "making data" << endl;
-  a_phi.define(a_grids, dataGhostIV, graphs);
   shared_ptr<LevelData<VoluData> > volDatLD= a_geoserv->getVoluData(a_domain);
 
   DataIterator dit = a_grids.dataIterator();
@@ -75,9 +72,9 @@ average(EBLevelBoxData<CELL, 1> & a_diff,
     dictionary(new EBDictionary<order, Real, CELL, CELL>(a_geoserv, a_grids, a_domains, a_dxes, dataGhostPt));
   string nobcName("no_bcs");
   string restrictName = string("Restriction");
-  Box fineDom =a_domains[0];
-  Box coarDom =a_domains[1];
-  dictionary->registerStencil(restrictName, nobcName, nobcName, fineDom, coarDom, false);
+  Box domFine =a_domains[0];
+  Box domCoar =a_domains[1];
+  dictionary->registerStencil(restrictName, nobcName, nobcName, domFine, domCoar, false);
   
   DataIterator dit = a_grids[0].dataIterator();
 
@@ -89,7 +86,7 @@ average(EBLevelBoxData<CELL, 1> & a_diff,
     //finer level owns the stencil (and the operator)
 
     shared_ptr<ebstencil_t> stencil =
-      dictionary->getEBStencil(restrictName, nobcName, fineDom, coarDom, ibox);
+      dictionary->getEBStencil(restrictName, nobcName, domFine, domCoar, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(difffab, finecalc,  true, 1.0);
     difffab -= coarcalc;
@@ -127,7 +124,15 @@ getTruncationError(int a_nx)
   shared_ptr<GeometryService<order> > geoserv(new GeometryService<order>(impfunc, origin, dxFine, domFine, grids, geomGhost));
 
   
-  EBLevelBoxData<CELL, 1> phiFine, phiCoar, diff;
+  pout() << "making data holders" << endl;
+  IntVect dataGhostIV = IntVect::Unit;
+  shared_ptr<Chombo4::LevelData<EBGraph>  > graphFine = geoserv->getGraphs(domFine);
+  shared_ptr<Chombo4::LevelData<EBGraph>  > graphCoar = geoserv->getGraphs(domCoar);
+  EBLevelBoxData<CELL, 1> phiFine(gridsFine, dataGhostIV, graphFine);
+  EBLevelBoxData<CELL, 1> phiCoar(gridsCoar, dataGhostIV, graphCoar);
+  EBLevelBoxData<CELL, 1> phiDiff(gridsCoar, dataGhostIV, graphCoar);
+  
+  pout() << "filling data holders" << endl;
   getPhi<order>(phiFine, geoserv, nxFine, gridsFine, domFine, dxFine, phigen);
   getPhi<order>(phiCoar, geoserv, nxCoar, gridsCoar, domCoar, dxCoar, phigen);
 
@@ -138,9 +143,9 @@ getTruncationError(int a_nx)
   Vector<Real> dxes(2);
   dxes[0] = dxFine;
   dxes[1] = dxCoar;
-  average<order>(diff, phiFine, phiCoar, geoserv, grids, domains, dxes);
+  average<order>(phiDiff, phiFine, phiCoar, geoserv, grids, domains, dxes);
 
-  Real   retval = diff.maxNorm(0);
+  Real   retval = phiDiff.maxNorm(0);
   return retval;
     
 }
