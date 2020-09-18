@@ -145,6 +145,10 @@ getTruncationError(int a_nx)
   dxes[1] = dxCoar;
   average<order>(phiDiff, phiFine, phiCoar, geoserv, grids, domains, dxes);
 
+  phiFine.writeToFileHDF5("phiFine.hdf5", 0.0);
+  phiCoar.writeToFileHDF5("phiCoar.hdf5", 0.0);
+  phiDiff.writeToFileHDF5("phiDiff.hdf5", 0.0);
+  
   Real   retval = phiDiff.maxNorm(0);
   return retval;
     
