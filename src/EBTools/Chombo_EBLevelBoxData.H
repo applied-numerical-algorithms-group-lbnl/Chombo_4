@@ -288,6 +288,12 @@ public:
 #endif
   }
 
+  //
+  IntVect ghost() const
+  {
+    return m_ghost;
+  }
+  
   /// this is for hdf5 stuff as multivalued stuff will be lost
   static 
   void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
