@@ -156,10 +156,104 @@ private:
     return 0;
   }
 
-  int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
-                           vector< LocalStencil<CELL, REAL> >  & a_wstencil,
-                           Stencil<Real>                       & regStencilInterior)
+  void getLocalRegularStencil(LocalStencil<CELL, Real> & a_regSten,
+                              const EBIndex<CELL>      & a_vof,
+                              const Stencil<Real >     & a_regStencilInterior)
   {
+    a_regSten.m_entries.resize(0);
+    auto startpt = a_vof.m_pt;
+    auto coefs = a_regSten.coefs();
+    auto offsets = a_regSten.offsets();
+    for(int isten =  0; isten < coefs.size(); isten++)
+    {
+      Point stenpt = startpt + offsets[isten].size();
+      if(m_domain.contains(stenpt))
+      {
+        EBIndex<CELL> stenvof;
+        stenvof.defineAsRegular(stenpt);
+        a_regSten.add(stenvof, coefs[isten]);
+      }
+      else
+      {
+        //compensate for neumann or dirichlet bcs
+        //here is where we diverge from canon.   The original just ignored stuff outside the domain.
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          for(SideIterator sit; sit.ok(); ++sit)
+          {
+            int isign = sign(sit());
+            Point justOutside = startpt + isign*Point::Basis(idir);
+            if(stenpt == justOutside)
+            {
+              int index = ebp_index(idir, sit());
+              string bcstr = m_domainBCName[index];
+              if(bcstr == StringNames::Dirichlet)
+              {
+                a_regSten.add(a_vof, -coefs[isten]);
+              }
+              else if(bcstr == StringNames::Neumann)
+              {
+                a_regSten.add(a_vof,  coefs[isten]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
+                           vector< LocalStencil<CELL, Real> >  & a_wstencil,
+                           Stencil<Real>                       & a_regStencilInterior,
+                           PointSet                            & a_allIrregPoints,
+                           const DataIndex                     & a_dit)
+  {
+    typedef EBStencilArchive<CELL, CELL, order, Real> archive_t;
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    shared_ptr< LevelData< VoluData >  > voldatpld = m_geoserv->getVoluData(  m_domain);
+    shared_ptr< LevelData< EBFaData >  > ebfdatpld = m_geoserv->getEBFaceData(m_domain);
+    shared_ptr< LevelData< XFacData >  > xfadatpld = m_geoserv->getXFaceData( m_domain);
+    shared_ptr< LevelData< YFacData >  > yfadatpld = m_geoserv->getYFaceData( m_domain);
+    shared_ptr< LevelData< ZFacData >  > zfadatpld = m_geoserv->getZFaceData( m_domain);
+
+    auto& voludata =(*voldatpld)[a_dit];
+    auto& ebfadata =(*ebfdatpld)[a_dit];
+    auto& xfacdata =(*xfadatpld)[a_dit];
+    auto& yfacdata =(*yfadatpld)[a_dit];
+    auto& zfacdata =(*zfadatpld)[a_dit];
+    Box valid = m_grids[a_dit];
+    Bx  valbx = ProtoCh::getProtoBox(valid);
+    vector<Stencil<Real> >    regStencilBCS[2*DIM];
+    vector<Box>               BCApplyBoxes[2*DIM];
+    bool                      periodicOnly = false;
+    bool                      bcsOnly = false;
+    Box                       regApplyBox;
+    
+    bool hasDomBCs =    
+      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                            m_stencilName,  m_domainBCName, m_ebbcName,
+                            valbx, valbx,  valbx, m_domain, m_domain,
+                            a_ptGhost,  a_ptGhost,    
+                            graph,  graph,
+                            voludata,  ebfadata,    
+                            xfacdata,  yfacdata, zfacdata,    
+                            m_dx, m_periodiconly, m_dstGrown);
+
+    a_allIrregPoints.makeEmpty();
+    for(int ipt = 0; ipt < a_wstencil.size(); ipt++)
+    {
+      a_allIrregPoints |= a_wstencil[ipt].m_pt;
+    }
+
     return 0;
   }
 
@@ -167,34 +261,35 @@ private:
                     const Vec               & a_src)
                     
   {
-  PetscErrorCode ierr;
-  const PetscScalar *arr;
-  ierr = VecGetArrayRead(a_src,&arr);  CHKERRQ(ierr);
+    PetscErrorCode ierr;
+    const PetscScalar *arr;
+    ierr = VecGetArrayRead(a_src,&arr);  CHKERRQ(ierr);
 
-  //copy data to host.  The PeTsC team has promised to make this
-  //step unnecessary by providing the pointer to the vector that lives
-  //on the device
-  hostfactreal_t factory(m_graphs);
-  LevelData<EBHostData<CELL, , 1> > hostDst(m_grids, 1, a_deviceSrc.ghost(), factory);
+    //copy data to host.  The PeTsC team has promised to make this
+    //step unnecessary by providing the pointer to the vector that lives
+    //on the device
+    hostfactreal_t factory(m_graphs);
+    LevelData<EBHostData<CELL, , 1> > hostDst(m_grids, 1, a_deviceSrc.ghost(), factory);
     
-  DataIterator dit = m_grids.dataIterator();
-  for (int ibox=0;ibox< dit.size(); ibox++)
-  {
-    auto& hostfab =   hostSrc[dit[ibox]];
-    auto& graph = (*m_graphs)[dit[ibox]];
-    auto& grid  =     m_grids[dit[ibox]];
-    Bx grbx = ProtoCh::getProtoBox(grid);
-    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+    DataIterator dit = m_grids.dataIterator();
+    for (int ibox=0;ibox< dit.size(); ibox++)
     {
-      auto pt = *bit;
-      auto vofs = m_graph.getVoFs(pt);
-      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      auto& hostfab =   hostSrc[dit[ibox]];
+      auto& graph = (*m_graphs)[dit[ibox]];
+      auto& grid  =     m_grids[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
       {
-        auto vof = vofs[ivof];
-        PetscInt ki = m_gids[dit[ibox]](vof, 0);
-        hostfab(vof, 0) = arr[ki];
+        auto pt = *bit;
+        auto vofs = m_graph.getVoFs(pt);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          auto vof = vofs[ivof];
+          PetscInt ki = m_gids[dit[ibox]](vof, 0);
+          hostfab(vof, 0) = arr[ki];
+        }
       }
-    }//dit
+    }
 
     ///copy data back to device.   Soon, the pEtSc team will render this unnecessary.
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
@@ -228,47 +323,53 @@ private:
         vector< EBIndex<CELL> >            dstVoFs;
         vector< LocalStencil<CELL, REAL> > wstencil;
         Stencil<Real>    regStencilInterior;
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, dit[ibox]);
+        PointSet irregSet;
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox]);
         
         auto& graph = (*m_graphs)[dit[ibox]];
         auto& grid  =     m_grids[dit[ibox]];
         Bx grbx = ProtoCh::getProtoBox(grid);
+        //add stencils for cells that are in the regular stencil regime to the irregular
+        //set.   This includes adjusting for boundary condtions
         for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
         {
           auto pt = *bit;
-          auto vofs = graph.getVoFs(pt);
-      for(int ivof = 0; ivof < vofs.size() ivof++)
-      {
-        auto vof = vofs[ivof];
-        int irow  = m_gids[dit[ibox]](vof, 0);
-        //the chombo version of this has domain bcs meshed in here.
-        //the original mark adams code was hard coded for Neumann boundary
-        //conditions,
-                  VoFStencil stenc;
-                  //get the stencil for this point
+          if(graph.isCovered(pt))
+          {
+            //do nothing
+          }
+          else if(!irregSet.contains(pt))
+          {
+            EBIndex<CELL> vof;
+            vof.defineAsRegular(pt);
+            LocalStencil<CELL, Real> regSten;
+            getLocalRegularStencil(regSten,  vof, regStencilInterior);
+            dstVoFs.push_back(vof);
+            wstencil.push_back(regSten);
+          }
+        }
+        //now create the matrix
+        for(int ivof = 0; ivof < dstVoFs.size() ivof++)
+        {
+          auto vof    =   dstVoFs[ivof];
+          auto& stenc = westencil[ivof];
+          int irow = m_gids[dit[ibox]](vof, 0); 
+          for(int ivof = 0; ivof < stenc.size(); ivof++)
+          {
+            auto& stenvof = stenc.m_entries[ivof].m_vof;
+            auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            int icol = m_gids[dit[ibox]](stenvof, 0);  
+            PetscInt irowpet = irow;
+            PetscInt icolpet = icol;
+            ierr = MatSetValues(a_mat,1,&irowpet,1,&icolpet,&stenwei,INSERT_VALUES);
+          } 
+        }
+      }
 
-                  m_op->getVoFStencil(stenc, vof, dit());
-                  for(int ivof = 0; ivof < stenc.size(); ivof++)
-                    {
-                      const VolIndex& stenvof = stenc.vof(ivof);
-                      const Real    & stenwei = stenc.weight(ivof);
-                      int icol = m_gids[dit()](stenvof.gridIndex(), 0);  //this will also break with multicells
-                      PetscInt irowpet = irow;
-                      PetscInt icolpet = icol;
-                      ierr = MatSetValues(a_mat,1,&irowpet,1,&icolpet,&stenwei,INSERT_VALUES);
-                      CHKERRQ(ierr);
-                    }//end loop over stencil
-                } //end loop over vofs in cell
-            }// end if(notcovered)
-        } //box iterator over box because petscsolver is not too smart
-    }//data iterator
+      ierr = MatAssemblyBegin(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-  ierr = MatAssemblyBegin(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-  return 0;
-
-      
+      return 0;
     }
     //HERE use strings to get stencil for this particular operator.
   }
