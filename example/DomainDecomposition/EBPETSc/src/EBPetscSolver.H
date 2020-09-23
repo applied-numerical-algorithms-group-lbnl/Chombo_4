@@ -156,6 +156,13 @@ private:
     return 0;
   }
 
+  int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
+                           vector< LocalStencil<CELL, REAL> >  & a_wstencil,
+                           Stencil<Real>                       & regStencilInterior)
+  {
+    return 0;
+  }
+
   int petscToChombo(EBLevelBoxData<CELL, 1> & a_deviceDst,
                     const Vec               & a_src)
                     
@@ -212,6 +219,56 @@ private:
 #else
       ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
 #endif
+      PetscInt  ierr;
+      Real nil = 1;
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(): ibox++)
+      {
+        bool periodic = false;
+        vector< EBIndex<CELL> >            dstVoFs;
+        vector< LocalStencil<CELL, REAL> > wstencil;
+        Stencil<Real>    regStencilInterior;
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, dit[ibox]);
+        
+        auto& graph = (*m_graphs)[dit[ibox]];
+        auto& grid  =     m_grids[dit[ibox]];
+        Bx grbx = ProtoCh::getProtoBox(grid);
+        for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+        {
+          auto pt = *bit;
+          auto vofs = graph.getVoFs(pt);
+      for(int ivof = 0; ivof < vofs.size() ivof++)
+      {
+        auto vof = vofs[ivof];
+        int irow  = m_gids[dit[ibox]](vof, 0);
+        //the chombo version of this has domain bcs meshed in here.
+        //the original mark adams code was hard coded for Neumann boundary
+        //conditions,
+                  VoFStencil stenc;
+                  //get the stencil for this point
+
+                  m_op->getVoFStencil(stenc, vof, dit());
+                  for(int ivof = 0; ivof < stenc.size(); ivof++)
+                    {
+                      const VolIndex& stenvof = stenc.vof(ivof);
+                      const Real    & stenwei = stenc.weight(ivof);
+                      int icol = m_gids[dit()](stenvof.gridIndex(), 0);  //this will also break with multicells
+                      PetscInt irowpet = irow;
+                      PetscInt icolpet = icol;
+                      ierr = MatSetValues(a_mat,1,&irowpet,1,&icolpet,&stenwei,INSERT_VALUES);
+                      CHKERRQ(ierr);
+                    }//end loop over stencil
+                } //end loop over vofs in cell
+            }// end if(notcovered)
+        } //box iterator over box because petscsolver is not too smart
+    }//data iterator
+
+  ierr = MatAssemblyBegin(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  return 0;
+
+      
     }
     //HERE use strings to get stencil for this particular operator.
   }
