@@ -291,7 +291,7 @@ public:
   //
   IntVect ghost() const
   {
-    return m_ghost;
+    return this->ghostVect();
   }
   
   /// this is for hdf5 stuff as multivalued stuff will be lost

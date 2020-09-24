@@ -46,7 +46,7 @@ public:
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
-                Real a_dxPoint,   Point a_ghost)
+                Real a_dx,   Point a_ghost)
   {
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
@@ -54,6 +54,8 @@ public:
     m_grids        =    a_grids;
     m_domain       =    a_domain;
     m_stencilName  =    a_stencilName;
+    m_dx           =    a_dx;
+    m_prestring[0] = '\0';
     for(int iface = 0; iface < 2*DIM; iface++)
     {
       m_domainBCName[iface] = a_domainBCName[iface];
@@ -71,26 +73,17 @@ public:
     setupSolver();
   }
 
-  virtual void solve(EBLevelBoxData<CELL, 1>       & a_phi,
-                     const EBLevelBoxData<CELL, 1> & a_rhs )
+  virtual
+  PetscErrorCode
+  solve(EBLevelBoxData<CELL, 1>       & a_phi,
+        const EBLevelBoxData<CELL, 1> & a_rhs )
   {
 
     
     auto dbl = m_grids;
-    int nc = 1;
+
     PetscErrorCode ierr;
-    const PetscInt nc = a_rhs.nComp();
-#ifdef CH_MPI
-    MPI_Comm wcomm = Chombo_MPI::comm;
-#else
-    MPI_Comm wcomm = PETSC_COMM_SELF;
-#endif
     
-    // form RHS -- m_bb
-    Real idx2 = 1.e0/(this->m_dx*this->m_dx);
-    Real addV;
-
-
     // this is an interface in case some operations are needed on the rhs
     // the default does nothing
     ierr = VecSetOption(m_bb,VEC_IGNORE_OFF_PROC_ENTRIES,PETSC_TRUE);CHKERRQ(ierr);
@@ -112,9 +105,15 @@ public:
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
-    a_phi.exchange();
-
+    Copier styx;
+    styx.exchangeDefine(m_grids, m_ivghost);
+    a_phi.exchange(styx);
     return 0;
+  }
+
+  void setInitialGuessNonzero( bool b = true )
+  {
+    m_nz_init_guess = b;
   }
 
   
@@ -128,7 +127,7 @@ private:
     //step unnecessary by providing the pointer to the vector that lives
     //on the device
     hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, , 1> > hostSrc(m_grids, 1, a_deviceSrc.ghost(), factory);
+    LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghost(), factory);
     EBLevelBoxData<CELL, 1>::copyToHost(hostSrc, a_deviceSrc);
     
     DataIterator dit = m_grids.dataIterator();
@@ -136,12 +135,12 @@ private:
     {
       auto& hostfab =   hostSrc[dit[ibox]];
       auto& graph = (*m_graphs)[dit[ibox]];
-      auto& grid  =     m_grids[dit[ibox]];
+      auto  grid  =     m_grids[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
       for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
       {
         auto pt = *bit;
-        auto vofs = m_graph.getVoFs(pt);
+        auto vofs = graph.getVoFs(pt);
         for(int ivof = 0; ivof < vofs.size(); ivof++)
         {
           auto vof = vofs[ivof];
@@ -156,22 +155,23 @@ private:
     return 0;
   }
 
-  void getLocalRegularStencil(LocalStencil<CELL, Real> & a_regSten,
+  void getLocalRegularStencil(LocalStencil<CELL, Real> & a_localSten,
                               const EBIndex<CELL>      & a_vof,
-                              const Stencil<Real >     & a_regStencilInterior)
+                              const Stencil<Real >     & a_regSten)
   {
-    a_regSten.m_entries.resize(0);
+    a_localSten.m_entries.resize(0);
     auto startpt = a_vof.m_pt;
-    auto coefs = a_regSten.coefs();
+    auto coefs   = a_regSten.coefs();
     auto offsets = a_regSten.offsets();
+    Bx domainbx = ProtoCh::getProtoBox(m_domain);
     for(int isten =  0; isten < coefs.size(); isten++)
     {
-      Point stenpt = startpt + offsets[isten].size();
-      if(m_domain.contains(stenpt))
+      Point stenpt = startpt + offsets[isten];
+      if(domainbx.contains(stenpt))
       {
         EBIndex<CELL> stenvof;
         stenvof.defineAsRegular(stenpt);
-        a_regSten.add(stenvof, coefs[isten]);
+        a_localSten.add(stenvof, coefs[isten]);
       }
       else
       {
@@ -187,13 +187,13 @@ private:
             {
               int index = ebp_index(idir, sit());
               string bcstr = m_domainBCName[index];
-              if(bcstr == StringNames::Dirichlet)
+              if(bcstr == StencilNames::Dirichlet)
               {
-                a_regSten.add(a_vof, -coefs[isten]);
+                a_localSten.add(a_vof, -coefs[isten]);
               }
-              else if(bcstr == StringNames::Neumann)
+              else if(bcstr == StencilNames::Neumann)
               {
-                a_regSten.add(a_vof,  coefs[isten]);
+                a_localSten.add(a_vof,  coefs[isten]);
               }
             }
           }
@@ -211,8 +211,6 @@ private:
     typedef EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef MomentIterator<DIM  , order> MomItDIM;
-    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
     typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
@@ -229,29 +227,28 @@ private:
     auto& xfacdata =(*xfadatpld)[a_dit];
     auto& yfacdata =(*yfadatpld)[a_dit];
     auto& zfacdata =(*zfadatpld)[a_dit];
+    auto& graph    =(*m_graphs )[a_dit];
     Box valid = m_grids[a_dit];
     Bx  valbx = ProtoCh::getProtoBox(valid);
     vector<Stencil<Real> >    regStencilBCS[2*DIM];
-    vector<Box>               BCApplyBoxes[2*DIM];
-    bool                      periodicOnly = false;
+    vector<Bx >               BCApplyBoxes[2*DIM];
     bool                      bcsOnly = false;
-    Box                       regApplyBox;
-    
-    bool hasDomBCs =    
-      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
-                            m_stencilName,  m_domainBCName, m_ebbcName,
-                            valbx, valbx,  valbx, m_domain, m_domain,
-                            a_ptGhost,  a_ptGhost,    
-                            graph,  graph,
-                            voludata,  ebfadata,    
-                            xfacdata,  yfacdata, zfacdata,    
-                            m_dx, m_periodiconly, m_dstGrown);
+    Bx                        regApplyBox;
+    Bx domainbx = ProtoCh::getProtoBox(m_domain);
+    archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                          m_stencilName,  m_domainBCName, m_ebbcName,
+                          valbx, valbx,  domainbx, domainbx,
+                          m_ptghost,  m_ptghost,    
+                          graph,  graph,
+                          voludata,  ebfadata,    
+                          xfacdata,  yfacdata, zfacdata,    
+                          m_dx, false, Point::Zeros());
 
     a_allIrregPoints.makeEmpty();
-    for(int ipt = 0; ipt < a_wstencil.size(); ipt++)
+    for(int ipt = 0; ipt < a_dstVoFs.size(); ipt++)
     {
-      a_allIrregPoints |= a_wstencil[ipt].m_pt;
+      a_allIrregPoints |= a_dstVoFs[ipt].m_pt;
     }
 
     return 0;
@@ -269,19 +266,19 @@ private:
     //step unnecessary by providing the pointer to the vector that lives
     //on the device
     hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, , 1> > hostDst(m_grids, 1, a_deviceSrc.ghost(), factory);
+    LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghost(), factory);
     
     DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
     {
-      auto& hostfab =   hostSrc[dit[ibox]];
+      auto& hostfab =   hostDst[dit[ibox]];
       auto& graph = (*m_graphs)[dit[ibox]];
-      auto& grid  =     m_grids[dit[ibox]];
+      auto  grid  =     m_grids[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
       for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
       {
         auto pt = *bit;
-        auto vofs = m_graph.getVoFs(pt);
+        auto vofs = graph.getVoFs(pt);
         for(int ivof = 0; ivof < vofs.size(); ivof++)
         {
           auto vof = vofs[ivof];
@@ -297,7 +294,7 @@ private:
   }
 
   
-  virtual void formMatrix()
+  virtual PetscInt formMatrix()
   {
     
     {
@@ -309,25 +306,24 @@ private:
 #else
       strcat (str,"pc_gamg_square_graph true");
 #endif
+      PetscInt  ierr;
 #if PETSC_VERSION_GE(3,7,0)
       ierr = PetscOptionsInsertString(PETSC_NULL,str);CHKERRQ(ierr);
 #else
       ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
 #endif
-      PetscInt  ierr;
-      Real nil = 1;
       DataIterator dit = m_grids.dataIterator();
-      for(int ibox = 0; ibox < dit.size(): ibox++)
+      for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        bool periodic = false;
         vector< EBIndex<CELL> >            dstVoFs;
-        vector< LocalStencil<CELL, REAL> > wstencil;
+        vector< LocalStencil<CELL, Real> > wstencil;
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
+        //use strings to get stencil for this particular operator.
         getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox]);
         
         auto& graph = (*m_graphs)[dit[ibox]];
-        auto& grid  =     m_grids[dit[ibox]];
+        auto  grid  =     m_grids[dit[ibox]];
         Bx grbx = ProtoCh::getProtoBox(grid);
         //add stencils for cells that are in the regular stencil regime to the irregular
         //set.   This includes adjusting for boundary condtions
@@ -349,10 +345,10 @@ private:
           }
         }
         //now create the matrix
-        for(int ivof = 0; ivof < dstVoFs.size() ivof++)
+        for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
         {
           auto vof    =   dstVoFs[ivof];
-          auto& stenc = westencil[ivof];
+          auto& stenc =  wstencil[ivof];
           int irow = m_gids[dit[ibox]](vof, 0); 
           for(int ivof = 0; ivof < stenc.size(); ivof++)
           {
@@ -361,19 +357,23 @@ private:
             int icol = m_gids[dit[ibox]](stenvof, 0);  
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
-            ierr = MatSetValues(a_mat,1,&irowpet,1,&icolpet,&stenwei,INSERT_VALUES);
+            ierr = MatSetValues(m_mat,1,&irowpet,1,&icolpet,&stenwgt,INSERT_VALUES);
           } 
         }
       }
 
-      ierr = MatAssemblyBegin(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(a_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
-      return 0;
     }
-    //HERE use strings to get stencil for this particular operator.
+    return 0;
   }
-  virtual void setupSolver()
+  static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
+  {
+    pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
+    return 0;
+  }
+  virtual PetscInt setupSolver()
   {
     // create solvers
     PetscBool ism = PETSC_FALSE;
@@ -382,8 +382,14 @@ private:
 #else 
     PetscOptionsGetBool(m_prestring,"-ksp_monitor",&ism,PETSC_NULL);
 #endif
+#ifdef CH_MPI
+    MPI_Comm wcomm = Chombo_MPI::comm;
+#else
+    MPI_Comm wcomm = PETSC_COMM_SELF;
+#endif
     // create the KSP so that we can set KSP parameters
     KSPCreate( wcomm, &m_ksp );
+    PetscInt  ierr;
     if ( strlen(m_prestring) > 0 )
     {
       ierr = KSPSetOptionsPrefix( m_ksp, m_prestring );    CHKERRQ(ierr);
@@ -401,6 +407,7 @@ private:
     ierr = KSPSetInitialGuessNonzero(m_ksp, m_nz_init_guess ? PETSC_TRUE : PETSC_FALSE );CHKERRQ(ierr);
 
     //there is some stuff here about blocksize but it appears to be optional.
+    return 0;
   }
   
   virtual int getNNZPerRow() const
@@ -498,6 +505,7 @@ private:
   LevelData<EBHostData<CELL, int, 1> > m_gids;
   PetscInt m_gid0;
   PetscInt m_NN;
+  bool m_nz_init_guess;
 
 
   shared_ptr<GeometryService<order> >  m_geoserv;
@@ -505,6 +513,8 @@ private:
   shared_ptr<LevelData<EBGraph> >      m_graphs;
   DisjointBoxLayout                    m_grids;
   Box                                  m_domain;
+  Real                                 m_dx;
+  
   string m_stencilName;
   string m_domainBCName[2*DIM];
   string m_ebbcName;
@@ -519,6 +529,8 @@ private:
   SNES m_snes;
   KSP m_ksp;
   PetscInt m_defined;
+  char m_prestring[32];
+  
 };
 
 #endif   //if petsc is defined
