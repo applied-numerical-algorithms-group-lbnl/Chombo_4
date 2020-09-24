@@ -454,7 +454,8 @@ private:
   
   void defineGIDS()
   {
-    m_gids.define(m_grids, 1, IntVect::Zero, hostfactint_t(m_graphs));
+    IntVect gidghost = 4*IntVect::Unit;
+    m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
     int numpointsThisProc = 0;
@@ -469,6 +470,7 @@ private:
         numpointsThisProc += vofs.size();
       }
     }
+
     //decide which location maps to the first one of this proc
 #ifdef CH_MPI    
     gather(m_numPtsAllProc, numPtsThisProc, 0);
@@ -500,6 +502,9 @@ private:
         }
       }
     }
+    Copier exchangeCopier;
+    exchangeCopier.exchangeDefine(m_grids, gidghost);
+    m_gids.exchange(exchangeCopier);
   }
   //index space--allows us to to matrix to solution space
   LevelData<EBHostData<CELL, int, 1> > m_gids;

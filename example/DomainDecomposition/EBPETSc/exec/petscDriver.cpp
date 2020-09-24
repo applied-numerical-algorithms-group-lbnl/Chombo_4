@@ -42,7 +42,7 @@ runTest(int a_argc, char* a_argv[])
     
   pp.get("domainBC"  , dombc);
   pp.get("EBBC"      , ebbc);
-  pp.get("nx"        , nx);
+  pp.get("nx"   , nx);
   pp.get("maxGrid"   , maxGrid);
   pp.get("x0"        , x0);
   pp.get("y0"        , y0);
@@ -179,10 +179,8 @@ runTest(int a_argc, char* a_argv[])
 
 int main(int a_argc, char* a_argv[])
 {
-#ifdef CH_MPI
-  MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
-#endif
+  PetscInt ierr;
+  ierr = PetscInitialize(&a_argc, &a_argv, "./petscrc",PETSC_NULL); CHKERRQ(ierr); 
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("helmholtz.time.table");
   {
@@ -194,13 +192,11 @@ int main(int a_argc, char* a_argv[])
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     runTest(a_argc, a_argv);
+
   }
 
   pout() << "printing time table " << endl;
+  ierr = PetscFinalize(); CHKERRQ(ierr); 
   CH_TIMER_REPORT();
-#ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
-  MPI_Finalize();
-#endif
   return 0;
 }
