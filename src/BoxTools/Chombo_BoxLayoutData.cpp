@@ -13,8 +13,14 @@ using std::pow;
 
 #include "Chombo_BoxLayoutData.H"
 #include "Chombo_FluxBox.H"
+//Thus did the sins of petsc through the unholy union of mpi.h with petsc.h
+//reflect sevenfold unto the generations of developers
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#else
 #include "mpi.h"
+#endif
 #endif
 #include "Chombo_NamespaceHeader.H"
 

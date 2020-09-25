@@ -180,6 +180,7 @@ runTest(int a_argc, char* a_argv[])
 int main(int a_argc, char* a_argv[])
 {
   PetscInt ierr;
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
   ierr = PetscInitialize(&a_argc, &a_argv, "./petscrc",PETSC_NULL); CHKERRQ(ierr); 
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("helmholtz.time.table");
