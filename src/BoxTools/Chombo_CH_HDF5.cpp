@@ -15,6 +15,7 @@
 #include <cstdio>
 #include "Chombo_parstream.H"
 #include "Chombo_NamespaceHeader.H"
+#include "hdf5.h"
 using std::ostream;
 //using std::cout;
 using std::endl;

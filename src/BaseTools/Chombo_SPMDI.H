@@ -131,7 +131,7 @@ broadcast(T& a_inAndOut,  int a_src)
     isize = linearSize(a_inAndOut);
   }
 
-  MPI_Bcast(&isize, 1, MPI_INT, a_src, Chombo_MPI::comm);
+  MPI_Bcast(&isize, 1, MPI_INT, a_src, CH4_SPMD::Chombo_MPI::comm);
 
   void* broadBuf = malloc(isize);
 
@@ -147,7 +147,7 @@ broadcast(T& a_inAndOut,  int a_src)
   }
 
   //broadcast broadBuf to all procs
-  MPI_Bcast(broadBuf, isize, MPI_BYTE, a_src, Chombo_MPI::comm);
+  MPI_Bcast(broadBuf, isize, MPI_BYTE, a_src, CH4_SPMD::Chombo_MPI::comm);
 
   if (procID()==a_src)
   {
@@ -173,7 +173,7 @@ broadcast(T& a_inAndOut,  int a_src)
 inline void
 barrier(void)
 {
-  MPI_Barrier(Chombo_MPI::comm);
+  MPI_Barrier(CH4_SPMD::Chombo_MPI::comm);
 }
 
 #else

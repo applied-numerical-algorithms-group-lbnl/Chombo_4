@@ -16,11 +16,9 @@
 #include "petscmat.h"
 #include "petscksp.h"
 #include "petscviewer.h"
-#endif
 
 #include "Chombo_EBLevelBoxData.H"
 
-#ifdef CH_USE_PETSC
 
 /// Framework to solve an elliptic equation using PETsC (PETsC?  petsC?)
 /**
@@ -96,10 +94,11 @@ public:
     chomboToPetsc(m_xx, a_phi);
     // solve
 #ifdef CH_MPI
+    MPI_Comm wcomm = Chombo_MPI::comm;
     //with all the host to device and device to host stuff going on, this is probably
     //unnessary.   The peTsC team, however, tells me that the communication between
     //host and device will unnecessary soon so I left the barrier in the code.
-    MPI_Barrier(Chombo_MPI::comm);
+    MPI_Barrier(wcomm);
 #endif
     ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
 
@@ -458,7 +457,7 @@ private:
     m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
-    int numpointsThisProc = 0;
+    int numPtsThisProc = 0;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       auto graph = (*m_graphs)[dit[ibox]];
@@ -467,24 +466,24 @@ private:
       for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
       {
         auto vofs = graph.getVoFs(*bit);
-        numpointsThisProc += vofs.size();
+        numPtsThisProc += vofs.size();
       }
     }
 
     //decide which location maps to the first one of this proc
 #ifdef CH_MPI    
-    gather(m_numPtsAllProc, numPtsThisProc, 0);
-    broadcast(m_numptsAllProc, 0);
+    CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
+    CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
     int startgid = 0;
     for(int iproc = 0; iproc < procID(); iproc++)
     {
-      startgid += numptsAllProc[iproc];
+      startgid += m_numPtsAllProc[iproc];
     }
 #else
     int startgid = 0;
 #endif
     m_gid0     = startgid;
-    m_NN       = numpointsThisProc;
+    m_NN       = numPtsThisProc;
     
     int curgid = startgid;
     for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -538,6 +537,6 @@ private:
   
 };
 
-#endif   //if petsc is defined
+#endif
 
 #endif 

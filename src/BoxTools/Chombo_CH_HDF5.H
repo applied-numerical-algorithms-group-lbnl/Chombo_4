@@ -19,8 +19,13 @@
 using std::cout;
 using std::endl;
 
+//Here me, o Lord and decry the inclusion of mpi.h unto petsc.h.
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#else
 #include "mpi.h"
+#endif
 #endif
 
 #include "Chombo_LevelData.H"
@@ -2233,10 +2238,10 @@ WriteMultiData<T>::writeData(const BoxLayoutData<T>& a_data,
 
   hid_t DXPL = H5Pcreate(H5P_DATASET_XFER);
 #ifdef CH_MPI
-  if (m_policyFlags & CH_HDF5::IOPolicyCollectiveWrite)
-    {
-      H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
-    }
+//  if (m_policyFlags & CH_HDF5::IOPolicyCollectiveWrite)
+//    {
+//      H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
+//    }
 #endif
 
   if (m_policyFlags & CH_HDF5::IOPolicyMultiDimHyperslab)
