@@ -2238,10 +2238,10 @@ WriteMultiData<T>::writeData(const BoxLayoutData<T>& a_data,
 
   hid_t DXPL = H5Pcreate(H5P_DATASET_XFER);
 #ifdef CH_MPI
-//  if (m_policyFlags & CH_HDF5::IOPolicyCollectiveWrite)
-//    {
-//      H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
-//    }
+  if (m_policyFlags & CH_HDF5::IOPolicyCollectiveWrite)
+    {
+      H5Pset_dxpl_mpio(DXPL, H5FD_MPIO_COLLECTIVE);
+    }
 #endif
 
   if (m_policyFlags & CH_HDF5::IOPolicyMultiDimHyperslab)
