@@ -319,8 +319,7 @@ namespace Proto
     {
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-      StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-      m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
+      protoMalloc(&m_EBIrregDataPtr,memsize);
 #ifdef PROTO_CUDA      
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
 #else
