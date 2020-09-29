@@ -1,0 +1,17 @@
+
+PROTO_HOME =$(SCRATCH)/_proto/proto
+PETSC_DIR=/gpfs/alpine/world-shared/geo127/petsc/opt-gcc-int64-cuda-omp 
+PETSC_ARCH="" 
+LAPACKLIBS =  -lgfortran -lm   -lblas -llapack 
+
+export OMPI_CXX=nvcc
+
+MPILIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
+
+HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
+HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+#end mach dependent
+
+
+
+

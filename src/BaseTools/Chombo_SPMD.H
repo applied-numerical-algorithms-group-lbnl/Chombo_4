@@ -12,11 +12,7 @@
 // These are the inevitable functions that people
 // can't avoid using when writing a SPMD program.
 // It is a minimal set from which more elaborate
-// functionality can be generated.  As always, a
-// user is free to utilize the entire MPI programming
-// on their own platform.  The functions are
-// assured to work on all machines supported.
-//
+// functionality can be generated. 
 
 #ifndef _Chombo_SPMD_H_
 #define _Chombo_SPMD_H_
@@ -26,9 +22,13 @@
 #include "Chombo_Vector.H"
 #include "Chombo_MayDay.H"
 
-
+//Why, in the name of all that is holy and profane, does petsc.h include mpi.h?   
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#else
 #include "mpi.h"
+#endif
 #endif
 
 using namespace Chombo4;

@@ -324,7 +324,9 @@ namespace Proto
 #ifdef PROTO_CUDA      
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
 #else
-      memcpy(m_EBIrregDataPtr, hostvec.data(), memsize);
+      char* charebirreg = (char*)m_EBIrregDataPtr;
+      char* charhostvec = (char*)(hostvec.data());
+      memcpy(charebirreg, charhostvec, memsize);
 #endif      
     }
 

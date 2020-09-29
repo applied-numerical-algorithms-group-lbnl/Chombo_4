@@ -19,8 +19,13 @@
 using std::cout;
 using std::endl;
 
+//Here me, o Lord and decry the inclusion of mpi.h unto petsc.h.
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#else
 #include "mpi.h"
+#endif
 #endif
 
 #include "Chombo_LevelData.H"

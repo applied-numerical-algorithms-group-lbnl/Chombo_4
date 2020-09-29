@@ -1,0 +1,104 @@
+igor:~> maxima
+
+Maxima 5.41.0 http://maxima.sourceforge.net
+using Lisp GNU Common Lisp (GCL) GCL 2.6.12
+Distributed under the GNU Public License. See the file COPYING.
+Dedicated to the memory of William Schelter.
+The function bug_report() provides bug reporting information.
+(%i1) display2d:false;
+
+(%o1) false
+(%i2) r: x^2 + y^2
+;
+
+(%o2) y^2+x^2
+(%i3) phi: cos(pi*(r - R0))
+;
+
+(%o3) cos(pi*(y^2+x^2-R0))
+(%i4) der_x: diff(phi, x);
+
+(%o4) -2*pi*x*sin(pi*(y^2+x^2-R0))
+(%i5) igor:~> 
+igor:~> maxima
+
+Maxima 5.41.0 http://maxima.sourceforge.net
+using Lisp GNU Common Lisp (GCL) GCL 2.6.12
+Distributed under the GNU Public License. See the file COPYING.
+Dedicated to the memory of William Schelter.
+The function bug_report() provides bug reporting information.
+(%i1) r: x^2 + y^2 + z^2
+;
+                                  2    2    2
+(%o1)                            z  + y  + x
+(%i2) phi: cos(pi*(r - R0))
+;
+                                   2    2    2
+(%o2)                     cos(pi (z  + y  + x  - R0))
+(%i3) der_x: diff(phi, x);
+                                       2    2    2
+(%o3)                - 2 pi x sin(pi (z  + y  + x  - R0))
+(%i4) der_x: diff(phi, y);
+                                       2    2    2
+(%o4)                - 2 pi y sin(pi (z  + y  + x  - R0))
+(%i5) der_x: diff(phi, z);
+                                       2    2    2
+(%o5)                - 2 pi z sin(pi (z  + y  + x  - R0))
+(%i6) display2d:false;
+
+(%o6) false
+(%i7) der_x: diff(phi, x);
+
+(%o7) -2*pi*x*sin(pi*(z^2+y^2+x^2-R0))
+(%i8) der_y: diff(phi, y);
+
+(%o8) -2*pi*y*sin(pi*(z^2+y^2+x^2-R0))
+(%i9) der_z: diff(phi, z);
+
+(%o9) -2*pi*z*sin(pi*(z^2+y^2+x^2-R0))
+(%i10) der_xy: diff(der_x, y);
+
+(%o10) -4*pi^2*x*y*cos(pi*(z^2+y^2+x^2-R0))
+(%i11) der_xz: diff(der_x, z);
+
+(%o11) -4*pi^2*x*z*cos(pi*(z^2+y^2+x^2-R0))
+(%i12) der_yz: diff(der_y, z);
+
+(%o12) -4*pi^2*y*z*cos(pi*(z^2+y^2+x^2-R0))
+(%i13) der_xx: diff(der_x, x);
+
+(%o13) (-2*pi*sin(pi*(z^2+y^2+x^2-R0)))-4*pi^2*x^2*cos(pi*(z^2+y^2+x^2-R0))
+(%i14) der_yy: diff(der_y, y);
+
+(%o14) (-2*pi*sin(pi*(z^2+y^2+x^2-R0)))-4*pi^2*y^2*cos(pi*(z^2+y^2+x^2-R0))
+(%i15) der_zz: diff(der_z, z);
+
+(%o15) (-2*pi*sin(pi*(z^2+y^2+x^2-R0)))-4*pi^2*z^2*cos(pi*(z^2+y^2+x^2-R0))
+(%i16) der_xxx: diff(der_xx, x);
+
+(%o16) 8*pi^3*x^3*sin(pi*(z^2+y^2+x^2-R0))-12*pi^2*x*cos(pi*(z^2+y^2+x^2-R0))
+(%i17) der_yyy: diff(der_yy, y);
+
+(%o17) 8*pi^3*y^3*sin(pi*(z^2+y^2+x^2-R0))-12*pi^2*y*cos(pi*(z^2+y^2+x^2-R0))
+(%i18) der_zzz: diff(der_zzz, z);
+
+(%o18) 0
+(%i19) der_zzz: diff(der_zz, z);
+
+(%o19) 8*pi^3*z^3*sin(pi*(z^2+y^2+x^2-R0))-12*pi^2*z*cos(pi*(z^2+y^2+x^2-R0))
+(%i20) der_xyy: diff(der_xy, y);
+
+(%o20) 8*pi^3*x*y^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*x*cos(pi*(z^2+y^2+x^2-R0))
+(%i21) der_yxx: diff(der_xy, x);
+
+(%o21) 8*pi^3*x^2*y*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*y*cos(pi*(z^2+y^2+x^2-R0))
+(%i22) der_yzz: diff(der_yz, z);
+
+(%o22) 8*pi^3*y*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*y*cos(pi*(z^2+y^2+x^2-R0))
+(%i23) der_xzz: diff(der_xz, z);
+
+(%o23) 8*pi^3*x*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*x*cos(pi*(z^2+y^2+x^2-R0))
+(%i24) der_xyz: diff(der_xy, z);
+
+(%o24) 8*pi^3*x*y*z*sin(pi*(z^2+y^2+x^2-R0))
+(%i25) 

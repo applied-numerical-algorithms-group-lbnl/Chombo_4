@@ -1,7 +1,9 @@
 PROTO_HOME =$(HOME)/_proto/proto
+EFENCEFLAGS = -L/usr/lib -lefence
+PETSC_DIR   = $(HOME)/src/petsc-3.13.5
+include $(PETSC_DIR)/lib/petsc/conf/variables
 DEPXX=clang++
 CXX=clang++
-EFENCEFLAGS = -L/usr/lib -lefence
 
 CXXALLFLAGS := -Wall  -std=c++11 
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
