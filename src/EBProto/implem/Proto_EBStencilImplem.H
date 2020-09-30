@@ -135,12 +135,14 @@ namespace Proto
   EBStencil<order, data_t, srcCenter, dstCenter>::
   defineApplyITZ() 
   {
+#ifdef PROTO_CUDA
       auto& vecStencil = sFused.getStencils();  
       for(int ibc = 0; ibc < 2*DIM; ibc++)
         for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
           vecStencil.push_back(&m_regStencilBCS[ibc][ivec]);
       
       sFused.copyInfo();
+#endif
   }
 
   ///
@@ -157,6 +159,7 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
+#ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       std::vector<Box> vecBox;
 
@@ -168,6 +171,18 @@ namespace Proto
         }
       }
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), vecBox.data(), true, 1.0);
+#else
+      BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
+      for(int ibc = 0; ibc < 2*DIM; ibc++)
+      {
+        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
+        {
+          Box bcsrcbox = m_BCApplyBoxes[ibc][ivec];
+          m_regStencilBCS[ibc][ivec].apply(castSrc, castSrc,
+                                           bcsrcbox, true, 1.0);
+        }
+      }
+#endif
     }
     if(!m_bcsOnly)
     {
