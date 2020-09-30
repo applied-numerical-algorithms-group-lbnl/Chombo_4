@@ -45,6 +45,7 @@ namespace Proto
     EBBoxData<cent, data_t, ncomp>&
     operator-=(const EBBoxData<cent, data_t, ncomp>& a_input)
     {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator-= box mismatch");
       m_regData -= a_input.m_regData;
       m_irrData -= a_input.m_irrData;
 
@@ -65,6 +66,8 @@ namespace Proto
     EBBoxData<cent, data_t, ncomp>&
     operator+=(const EBBoxData<cent, data_t, ncomp>& a_input)
     {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator+= box mismatch");
+
       m_regData += a_input.m_regData;
       m_irrData += a_input.m_irrData;
 
@@ -75,6 +78,7 @@ namespace Proto
     EBBoxData<cent, data_t, ncomp>&
     operator*=(const EBBoxData<cent, data_t, ncomp>& a_input)
     {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator*= box mismatch");
       m_regData *= a_input.m_regData;
       m_irrData *= a_input.m_irrData;
 

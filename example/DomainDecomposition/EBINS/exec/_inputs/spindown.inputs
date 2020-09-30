@@ -63,7 +63,7 @@ geom_cen = 0.5
 #geom_cen = 0.0 0.1 0.0
 
 
-do_lazy_relax =  true
+do_lazy_relax =  false
 
 one_exchange_per_relax = false
 inside_regular = true

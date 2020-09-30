@@ -304,10 +304,10 @@ advanceVelocityNavierStokes(Real a_dt,
       auto & gphi =  scalGphi[ dit[ibox]];  
 
       ebforallInPlace(numflopspt, "ParabolicRHS", ParabolicRHS, grbx, sour, udel, gphi);
-      pout() << "calling heat solver for variable " << idir << endl;
-      //advance the parabolic equation
-      m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
     }
+    pout() << "calling heat solver for variable " << idir << endl;
+    //advance the parabolic equation
+    m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
   }
 }
 /*******/ 
@@ -379,6 +379,8 @@ advanceVelocityAndPressure(Real a_dt,
   CH_TIME("EBINS::advanceVelocityAndPressure");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
+
+  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
 
   if(m_eulerCalc)
   {

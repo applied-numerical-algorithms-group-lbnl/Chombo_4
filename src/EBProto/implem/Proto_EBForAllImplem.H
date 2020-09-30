@@ -157,10 +157,8 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    int stride = N;
-    int blocks = 1;
-
-    v100tuning(N,blocks,stride);
+    unsigned int stride = 256;
+    unsigned int blocks = (N+stride-1)/stride;
 
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, curstream,
@@ -176,10 +174,9 @@ namespace Proto
   {
     protoStream_t curstream = DisjointBoxLayout::getCurrentStream();
     const int N = a_Nvec;
-    int stride = N;
-    int blocks = 1;
+    unsigned int stride = 256;
+    unsigned int blocks = (N+stride-1)/stride;
 
-    v100tuning(N,blocks,stride);
     
     size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer_i, blocks, stride, smem, curstream,
