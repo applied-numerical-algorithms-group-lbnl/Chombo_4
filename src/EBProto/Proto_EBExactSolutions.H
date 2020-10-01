@@ -101,7 +101,7 @@ public:
 
 ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
 template <unsigned int order>
-class SineSphere: public BaseExactSolution<order>
+class SineSphereEF: public BaseExactSolution<order>
 {
 public:
   
@@ -380,11 +380,11 @@ public:
     return retval;
   }
 
-  virtual ~SineSphere()
+  virtual ~SineSphereEF()
   {
   }
 
-  SineSphere(Real a_radius,
+  SineSphereEF(Real a_radius,
              Real a_center)
   {
     m_radius = a_radius;
@@ -395,7 +395,7 @@ private:
   Real  m_radius;
   Real  m_center;
   
-  SineSphere()
+  SineSphereEF()
   {
   }
 
@@ -415,8 +415,8 @@ public:
   virtual Real getDerivative(IvDIM    a_deriv,
                              RealVect a_loc)
   {
-    Real  C     = m_entry.first;  //coefficient
-    Point expon = m_entry.second; //exponent
+    Real  C     = m_entry.second;  //coefficient
+    Point expon = m_entry.first; //exponent
     
     //first deal with the zeros.  If the deriv in a particular direction is higher
     //than the original exponent, the derivative is zero
@@ -432,49 +432,70 @@ public:
 
     //Past this point, we can assume by construction that the exponent is bigger than the derivative
     // (exp >= deriv),  in all directions.   We can also assume that both >= 0.
-    Real x = a_loc[0];
-    Real y = a_loc[1];
-    Real z = 0;
-
     int px = expon[0];
     int py = expon[1];
-    int pz = 1;
     using std::pow;
 #if DIM==3
-    z  = a_loc[2];
-    pz = expon[2];
+    int pz = expon[2];
 #endif
     int sum = a_deriv.sum();
-    Real retval =0;
+    //all the return vals are constants multiplied by this stuff
+    Real ppowbit = 1;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      ppowbit *= (pow(a_loc[idir], expon[idir]-a_deriv[idir]));
+    }
+    //this is to denote the cascading derivative factors (deriv-3)*(deriv-2)....
+    Real retval_simp = C*ppowbit;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      int curDeriv = a_deriv[idir];
+      int curExpon =   expon[idir];
+      Real factor = 1;
+      while(curDeriv > 0)
+      {
+        factor *= Real(curExpon);
+        curDeriv--;
+        curExpon--;
+      }
+      retval_simp *= factor;
+    }
+
+    Real retval = 0;
     if(sum == 0)
     {
       //(%i2) display2d:false
       //(%o2) false
       //(%i3) phi:C*x^px*y^py*z^pz
-      //(%o3) C*x^px*y^py*z^pz
-      retval = C*(pow(x, px))*(pow(y, py))*(pow(z, pz));
+      //(%o3)    C*x^px*y^py*z^pz
+      //retval = C*(pow(x, px))*(pow(y, py))*(pow(z, pz));
+      retval =   C*ppowbit;
     }
     else if(sum == 1)
     {
       if(a_deriv[0]== 1)
       {
         //(%i4) der_x:diff(phi,x)
-        //(%o4) C*px*x^(px-1)*y^py*z^pz
-        retval = C*px*(pow(x, px-1))*(pow(y, py))*(pow(z, pz));
+        //(%o4)    C*px*x^(px-1)*y^py*z^pz
+        //retval = C*px*(pow(x, px-1))*(pow(y, py))*(pow(z, pz));
+       retval  =   C*px*ppowbit;
+        
         
       }
       else if (a_deriv[1]== 1)
       {
         //(%i5) der_y:diff(phi,y)
-        //(%o5) C*py*x^px*y^(py-1)*z^pz
-        retval = C*py*(pow(x, px))*(pow(y, py-1))*(pow(z, pz));
+        //(%o5)    C*py*x^px*y^(py-1)*z^pz
+        //retval = C*py*(pow(x, px))*(pow(y, py-1))*(pow(z, pz));
+        retval  =  C*py*ppowbit;
       }
 #if DIM==3      
       else if(a_deriv[2] == 1)
       {
         //(%i6) der_z:diff(phi,z)
-        //(%o6) C*pz*x^px*y^py*z^(pz-1)
-        retval = C*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-1));
+        //(%o6)    C*pz*x^px*y^py*z^(pz-1)
+        //retval = C*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-1));
+        retval  =  C*pz*ppowbit;
       }
 #endif      
       else
@@ -487,40 +508,46 @@ public:
       if((a_deriv[0]== 1) && (a_deriv[1]== 1))
       {
         //(%i7) der_xy:diff(der_x,y)
-        //(%o7) C*px*py*x^(px-1)*y^(py-1)*z^pz
-        retval = C*px*py*(pow(x, px-1))*(pow(y, py-1))*(pow(z, pz));
+        //(%o7)    C*px*py*x^(px-1)*y^(py-1)*z^pz
+        //retval = C*px*py*(pow(x, px-1))*(pow(y, py-1))*(pow(z, pz));
+        retval  =  C*px*py*ppowbit;
       }
 #if DIM==3      
       else if((a_deriv[0]== 1) && (a_deriv[2]== 1))
       {
         //(%i8) der_xz:diff(der_x,z)
-        //(%o8) C*px*pz*x^(px-1)*y^py*z^(pz-1)
-        retval = C*px*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-1));
+        //(%o8)    C*px*pz*x^(px-1)*y^py*z^(pz-1)
+        //retval = C*px*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-1));
+        retval  =  C*px*pz*ppowbit;
       }
       else if((a_deriv[1]== 1) && (a_deriv[2]== 1))
       {
         //(%i9) der_yz:diff(der_y,z)
-        //(%o9) C*py*pz*x^px*y^(py-1)*z^(pz-1)
-        retval = C*py*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-1));
+        //(%o9)    C*py*pz*x^px*y^(py-1)*z^(pz-1)
+        //retval = C*py*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-1));
+        retval  =  C*py*pz*ppowbit;
       }
       else if(a_deriv[2]== 2)
       {
         //(%i12) der_zz:diff(der_z,z)
-        //(%o12) C*(pz-1)*pz*x^px*y^py*z^(pz-2)
-        retval = C*pz*(pz-1)*(pow(x, px))*(pow(y, py))*(pow(z, pz-2));
+        //(%o12)   C*(pz-1)*pz*x^px*y^py*z^(pz-2)
+        //retval = C*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-2));
+        retval  =  C*(pz-1)*pz*ppowbit;
       }
 #endif
       else if(a_deriv[0]== 2)
       {
         //(%i10) der_xx:diff(der_x,x)
-        //(%o10) C*(px-1)*px*x^(px-2)*y^py*z^pz
-        retval = C*px*(px-1)*(pow(x, px-2))*(pow(y, py))*(pow(z, pz));
+        //(%o10)   C*(px-1)*px*x^(px-2)*y^py*z^pz
+        //retval = C*(px-1)*px*(pow(x, px-2))*(pow(y, py))*(pow(z, pz));
+        retval  =  C*(px-1)*px*ppowbit;
       }
       else if(a_deriv[1]== 2)
       {
         //(%i11) der_yy:diff(der_y,y)
-        //(%o11) C*(py-1)*py*x^px*y^(py-2)*z^pz
-        retval = C*py*(py-1)*(pow(x, px))*(pow(y, py-2))*(pow(z, pz));
+        //(%o11)   C*(py-1)*py*x^px*y^(py-2)*z^pz
+        //retval = C*(py-1)*py*(pow(x, px))*(pow(y, py-2))*(pow(z, pz));
+        retval  =  C*(py-1)*py*ppowbit;
       }
       else
       {
@@ -532,57 +559,67 @@ public:
       if(a_deriv[0] == 3)
       {
         //(%i13) der_xxx:diff(der_xx,x)
-        //(%o13) C*(px-2)*(px-1)*px*x^(px-3)*y^py*z^pz
-        retval = C*(px-2)*(px-1)*px*(pow(x, px-3))*(pow(y, py))*(pow(z, pz));
+        //(%o13)   C*(px-2)*(px-1)*px*x^(px-3)*y^py*z^pz
+        //retval =   C*(px-2)*(px-1)*px*(pow(x, px-3))*(pow(y, py))*(pow(z, pz));
+        //retval  =  C*(px-2)*(px-1)*px*ppowbit;
+        retval  =    C*(px-2)*(px-1)*px*ppowbit;
       }
       else if(a_deriv[1] == 3)
       {
         //(%i14) der_yyy:diff(der_yy,y)
         //(%o14) C*(py-2)*(py-1)*py*x^px*y^(py-3)*z^pz
-        retval = C*(py-2)*(py-1)*py*(pow(x, px))*(pow(y, py-3))*(pow(z, pz));
+        //retval = C*(py-2)*(py-1)*py*(pow(x, px))*(pow(y, py-3))*(pow(z, pz));
+        retval  =  C*(py-2)*(py-1)*py*ppowbit;
       }
       else if( (a_deriv[0] == 2) && (a_deriv[1]==1))
       {
         //(%i17) der_yxx:diff(der_xy,x)
-        //(%o17) C*(px-1)*px*py*x^(px-2)*y^(py-1)*z^pz
-        retval = C*(px-1)*px*py*(pow(x, px-2))*(pow(y, py-1))*(pow(z, pz));
+        //(%o17)   C*(px-1)*px*py*x^(px-2)*y^(py-1)*z^pz
+        //retval = C*(px-1)*px*py*(pow(x, px-2))*(pow(y, py-1))*(pow(z, pz));
+        retval  =  C*(px-1)*px*py*ppowbit;
       }
       else if( (a_deriv[0] == 1) && (a_deriv[1]==2))
       {
         //(%i16) der_xyy:diff(der_xy,y)
-        //(%o16) C*px*(py-1)*py*x^(px-1)*y^(py-2)*z^pz
-        retval = C*px*(py-1)*py*(pow(x, px-1))*(pow(y, py-2))*(pow(z, pz));
+        //(%o16)   C*px*(py-1)*py*x^(px-1)*y^(py-2)*z^pz
+        //retval = C*px*(py-1)*py*(pow(x, px-1))*(pow(y, py-2))*(pow(z, pz));
+        retval  =  C*px*(py-1)*py*ppowbit;
       }
 #if DIM==3
       else if(a_deriv[2] == 3)
       {
         //(%i15) der_zzz:diff(der_zz,z)
-        //(%o15) C*(pz-2)*(pz-1)*pz*x^px*y^py*z^(pz-3)
-        retval = C*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-3));
+        //(%o15)   C*(pz-2)*(pz-1)*pz*x^px*y^py*z^(pz-3)
+        //retval = C*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-3));
+        retval  =  C*(pz-2)*(pz-1)*pz*ppowbit;
       }
       else if( (a_deriv[2] == 2) && (a_deriv[1]==1))
       {
         //(%i18) der_yzz:diff(der_yz,z)
-        //(%o18) C*py*(pz-1)*pz*x^px*y^(py-1)*z^(pz-2)
-        retval = C*py*(pz-1)*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-2));
+        ////(%o18) C*py*(pz-1)*pz*x^px*y^(py-1)*z^(pz-2)
+        //retval = C*py*(pz-1)*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-2));
+        retval  =  C*py*(pz-1)*pz*ppowbit;
       }
       else if( (a_deriv[2] == 2) && (a_deriv[0]==1))
       {
         //(%i19) der_xzz:diff(der_xz,z)
-        //(%o19) C*px*(pz-1)*pz*x^(px-1)*y^py*z^(pz-2)
-        retval = C*px*(pz-1)*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-2));
+        ////(%o19) C*px*(pz-1)*pz*x^(px-1)*y^py*z^(pz-2)
+        //retval = C*px*(pz-1)*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-2));
+        retval  =  C*px*(pz-1)*pz*ppowbit;
       }
       else if( (a_deriv[0] == 2) && (a_deriv[2]==1))
       {
         //(%i33) der_xxz: diff(der_xx, z);
-        //(%o33) C*(px-1)*px*pz*x^(px-2)*y^py*z^(pz-1)
-        retval = C*(px-1)*px*pz*(pow(x, px-2))*(pow(y, py))*(pow(z, pz-1));
+        ////(%o33) C*(px-1)*px*pz*x^(px-2)*y^py*z^(pz-1)
+        //retval = C*(px-1)*px*pz*(pow(x, px-2))*(pow(y, py))*(pow(z, pz-1));
+        retval  =  C*(px-1)*px*pz*ppowbit;
       }
       else if( (a_deriv[1] == 2) && (a_deriv[2]==1))
       {
         //(%i34) der_yyz: diff(der_yy, z);
-        //(%o34) C*(py-1)*py*pz*x^px*y^(py-2)*z^(pz-1)
-        retval = C*(py-1)*py*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-1));
+        ////(%o34) C*(py-1)*py*pz*x^px*y^(py-2)*z^(pz-1)
+        //retval = C*(py-1)*py*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-1));
+        retval  =  C*(py-1)*py*pz*ppowbit;
       }
 #endif      
       else
@@ -595,54 +632,108 @@ public:
     {
       if(a_deriv[0] == 4)
       {
+        //(%i21) der_xxxx:diff(der_xxx,x)
+        ////(%o21) C*(px-3)*(px-2)*(px-1)*px*x^(px-4)*y^py*z^pz
+        //retval = C*(px-3)*(px-2)*(px-1)*px*(pow(x, px-4))*(pow(y, py))*(pow(z, pz));
+        retval  =  C*(px-3)*(px-2)*(px-1)*px*ppowbit;
       }
       else if(a_deriv[1] == 4)
       {
+        //(%i22) der_yyyy:diff(der_yyy,y)
+        ////(%o22) C*(py-3)*(py-2)*(py-1)*py*x^px*y^(py-4)*z^pz
+        //retval = C*(py-3)*(py-2)*(py-1)*py*(pow(x, px))*(pow(y, py-4))*(pow(z, pz));
+        retval  =  C*(py-3)*(py-2)*(py-1)*py*ppowbit;
       }
       else if( (a_deriv[0] == 3) && (a_deriv[1] == 1))
       {
+        //(%i24) der_xxxy:diff(der_xxx,y)
+        //(%o24)   C*(px-2)*(px-1)*px*py*x^(px-3)*y^(py-1)*z^pz
+        //retval = C*(px-2)*(px-1)*px*py(pow(x, px-3))*(pow(y, py-1))*(pow(z, pz));
+        retval  =  C*(px-2)*(px-1)*px*py*ppowbit;
       }
       else if( (a_deriv[0] == 1) && (a_deriv[1] == 3))
       {
+        //(%i26) der_yyyx:diff(der_yyy,x)
+        ////(%o26) C*px*(py-2)*(py-1)*py*x^(px-1)*y^(py-3)*z^pz
+        //retval = C*px*(py-2)*(py-1)*py(pow(x, px-1))*(pow(y, py-3))*(pow(z, pz));
+        retval  =  C*px*(py-2)*(py-1)*py*ppowbit;
       }
       else if( (a_deriv[0] == 2) && (a_deriv[1] == 2))
       {
+        //(%i32) der_xxyy:diff(der_xyy,x)
+        ////(%o32) C*(px-1)*px*(py-1)*py*x^(px-2)*y^(py-2)*z^pz
+        //retval = C*(px-1)*px*(py-1)*py*(pow(x, px-2))*(pow(y, py-2))*(pow(z, pz));
+        retval  =  C*(px-1)*px*(py-1)*py*ppowbit;
       }
 #if DIM==3
       else if(a_deriv[2] == 4)
       {
+        //(%i23) der_zzzz:diff(der_zzz,z)
+        ////(%o23) C*(pz-3)*(pz-2)*(pz-1)*pz*x^px*y^py*z^(pz-4)
+        //retval = C*(pz-3)*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-4));
+        retval  =  C*(pz-3)*(pz-2)*(pz-1)*pz*ppowbit;
       }
       else if((a_deriv[2] == 3) && (a_deriv[0] == 1))
       {
+        //(%i28) der_zzzx:diff(der_zzz,x)
+        ////(%o28) C*px*(pz-2)*(pz-1)*pz*x^(px-1)*y^py*z^(pz-3)
+        //retval = C*px*(pz-2)*(pz-1)*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-3));
+        retval  =  C*px*(pz-2)*(pz-1)*pz*ppowbit;
       }
       else if((a_deriv[2] == 3) && (a_deriv[1] == 1))
       {
+        //(%i29) der_zzzy:diff(der_zzz,y)
+        ////(%o29) C*py*(pz-2)*(pz-1)*pz*x^px*y^(py-1)*z^(pz-3)
+        //retval = C*py*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-3));
+        retval  =  C*py*(pz-2)*(pz-1)*pz*ppowbit;
       }
       else if((a_deriv[2] == 2) && (a_deriv[0] == 2))
       {
+        //(%i31) der_zzxx:diff(der_xzz,x)
+        ////(%o31) C*(px-1)*px*(pz-1)*pz*x^(px-2)*y^py*z^(pz-2)
+        //retval = C*(px-1)*px*(pz-1)*pz*(pow(x, px-2))*(pow(y, py))*(pow(z, pz-2));
+        retval  =  C*(px-1)*px*(pz-1)*pz*ppowbit;
       }
       else if((a_deriv[2] == 2) && (a_deriv[1] == 2))
       {
+        //(%i30) der_zzyy:diff(der_yzz,y)
+        ////(%o30) C*(py-1)*py*(pz-1)*pz*x^px*y^(py-2)*z^(pz-2)
+        //retval = C*(py-1)*py*(pz-1)*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-2));
+        retval  =  C*(py-1)*py*(pz-1)*pz*ppowbit;
       }
       else if((a_deriv[2] == 1) && (a_deriv[0] == 3))
       {
+        //(%i25) der_xxxz:diff(der_xxx,z)
+        ////(%o25) C*(px-2)*(px-1)*px*pz*x^(px-3)*y^py*z^(pz-1)
+        //retval = C*(px-2)*(px-1)*px*pz(pow(x, px-3))*(pow(y, py))*(pow(z, pz-1));
+        retval  =  C*(px-2)*(px-1)*px*pz*ppowbit;
       }
       else if((a_deriv[2] == 1) && (a_deriv[1] == 3))
       {
+        //(%i27) der_yyyz:diff(der_yyy,z)
+        ////(%o27) C*(py-2)*(py-1)*py*pz*x^px*y^(py-3)*z^(pz-1)
+        //retval = C*(py-2)*(py-1)*py*pz(pow(x, px))*(pow(y, py-3))*(pow(z, pz-1));
+        retval  =  C*(py-2)*(py-1)*py*pz*ppowbit;
       }
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 4");
+        MayDay::Error("monomial ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      MayDay::Error("sinesphere ran out of deriv cases");
+      MayDay::Error("monomial ran out of deriv cases");
       retval = 0;
     }
-        
+
+    Real tol = 1.0e-16;
+    Real diff = std::abs(retval - retval_simp);
+    if(diff > tol)
+    {
+      MayDay::Error("broken elegance");
+    }
     return retval;
   }
   virtual ~MonomialEF()
