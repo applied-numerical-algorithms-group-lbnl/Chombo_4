@@ -280,6 +280,12 @@ public:
         //(%o24) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^2*z*cos(pi*(z^2+y^2+x^2-R0))
         retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*y2*z*cos(pi*(r2 - r02));
       }
+      else if( (a_deriv[0]==1) && (a_deriv[1] == 1) && (a_deriv[2]==1))
+      {
+        //(%i21) der_xyz:diff(der_xy,z)
+        //(%o21)    -8*pi^3*x*y*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval  =  (-8.*pi3*x*y*z*cos(pi*(r2 -r02)));
+      }
 #endif      
       else
       {
@@ -324,7 +330,7 @@ public:
       {
         //(%i24) der_zzzz:diff(der_zzz,z)
         //(%o24) 16*pi^4*z^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
-        retval = 16.*pi4*z4*sin(pi(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*z2*cos(pi*(r2 - r02));
+        retval = 16.*pi4*z4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*z2*cos(pi*(r2 - r02));
       }
       else if((a_deriv[2] == 3) && (a_deriv[0] == 1))
       {
@@ -364,6 +370,24 @@ public:
         //(%o28) 16*pi^4*y^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
         retval = 16.*pi4*y3*z*sin(pi*(r2-r02))          -24.*pi3*y*z*sin(pi*(r2 -r02))      ;
       }
+      else if((a_deriv[2] == 2) && (a_deriv[0] == 1)&& (a_deriv[1] == 1))
+      {
+        //(%i34) der_xyzz:diff(der_xyz,z)
+        //(%o34) 16*pi^4*x*y*z^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x*y*z2*sin(pi*(r2-r02))         -8.*pi3*x*y*cos(pi*(r2 -r02))      ;
+      }
+      else if((a_deriv[2] == 1) && (a_deriv[0] == 1)&& (a_deriv[1] == 2))
+      {
+        //(%i35) der_xyyz:diff(der_xyz,y)
+        //(%o35) 16*pi^4*x*y^2*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x*y2*z*sin(pi*(r2-r02))         -8.*pi3*x*z*cos(pi*(r2 -r02))      ;
+      }
+      else if((a_deriv[2] == 1) && (a_deriv[0] == 2)&& (a_deriv[1] == 1))
+      {
+        //(%i36) der_xxyz:diff(der_xyz,x)
+        //(%o36) 16*pi^4*x^2*y*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+        retval = 16.*pi4*x2*y*z*sin(pi*(r2-r02))         -8.*pi3*y*z*cos(pi*(r2 -r02))      ;
+      }
 #endif      
       else
       {
@@ -385,7 +409,7 @@ public:
   }
 
   SineSphereEF(Real a_radius,
-             Real a_center)
+               Real a_center)
   {
     m_radius = a_radius;
     m_center = a_center;
@@ -445,7 +469,7 @@ public:
     {
       ppowbit *= (pow(a_loc[idir], expon[idir]-a_deriv[idir]));
     }
-    //this is to denote the cascading derivative factors (deriv-3)*(deriv-2)....
+    //this is to denote the cascading derivative factors ...(expon-3)*(expon-2)(expon)
     Real retval_simp = C*ppowbit;
     for(int idir = 0; idir < DIM; idir++)
     {
@@ -621,10 +645,16 @@ public:
         //retval = C*(py-1)*py*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-1));
         retval  =  C*(py-1)*py*pz*ppowbit;
       }
+      else if( (a_deriv[0]==1) && (a_deriv[1] == 1) && (a_deriv[2]==1))
+      {
+        //(%i20) der_xyz:diff(der_xy,z)
+        //(%o20)   C*px*py*pz*x^(px-1)*y^(py-1)*z^(pz-1)
+        retval  =  C*px*py*pz*ppowbit;
+      }
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 3");
+        MayDay::Error("monomial ran out of cases 3");
         retval = 0;
       }
     }
@@ -715,6 +745,24 @@ public:
         //retval = C*(py-2)*(py-1)*py*pz(pow(x, px))*(pow(y, py-3))*(pow(z, pz-1));
         retval  =  C*(py-2)*(py-1)*py*pz*ppowbit;
       }
+      else if((a_deriv[2] == 2) && (a_deriv[0] == 1)&& (a_deriv[1] == 1))
+      {
+        //(%i34) der_xyzz:diff(der_xyz,z)
+        //(%o34)   C*px*py*(pz-1)*pz*x^(px-1)*y^(py-1)*z^(pz-2)
+        retval  =  C*px*py*(pz-1)*pz*ppowbit;
+      }
+      else if((a_deriv[2] == 1) && (a_deriv[0] == 1)&& (a_deriv[1] == 2))
+      {
+        //(%i35) der_xyyz:diff(der_xyz,y)
+        //(%o35)   C*px*(py-1)*py*pz*x^(px-1)*y^(py-2)*z^(pz-1)
+        retval  =  C*px*(py-1)*py*pz*ppowbit;
+      }
+      else if((a_deriv[2] == 1) && (a_deriv[0] == 2)&& (a_deriv[1] == 1))
+      {
+        //(%i36) der_xxyz:diff(der_xyz,x)
+        //(%o36)   C*(px-1)*px*py*pz*x^(px-2)*y^(py-1)*z^(pz-1)
+        retval  =  C*(px-1)*px*py*pz*ppowbit;
+      }
 #endif      
       else
       {
@@ -734,7 +782,7 @@ public:
     {
       MayDay::Error("broken elegance");
     }
-    return retval;
+    return retval_simp;
   }
   virtual ~MonomialEF()
   {

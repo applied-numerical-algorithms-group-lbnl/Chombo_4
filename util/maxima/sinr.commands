@@ -30,3 +30,6 @@ der_zzzy: diff(der_zzz, y);
 der_zzyy: diff(der_yzz, y);
 der_zzxx: diff(der_xzz, x);
 der_xxyy: diff(der_xyy, x);
+der_xyzz: diff(der_xyz, z);
+der_xyyz: diff(der_xyz, y);
+der_xxyz: diff(der_xyz, x);

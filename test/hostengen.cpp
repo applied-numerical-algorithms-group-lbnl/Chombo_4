@@ -31,11 +31,10 @@ unsigned int  setTrigStuffF(int              a_pt[DIM],
   Real y = Real(a_pt[1])*(a_dx + 0.5) - a_cen;
   Real rsq = x*x + y*y;
 
-#if DIM==3  
-  Real z = Real(a_pt[1])*(a_dx + 0.5);
+#if DIM==3
+  Real z = Real(a_pt[2])*(a_dx + 0.5) - a_cen;
   rsq += z*z;
-  sinval *= sin(pi*z);
-#endif
+#endif  
   Real Rsq = a_rad*a_rad;
   Real cosval = cos(pi*(rsq -(Rsq)));
   a_phiExac(0) = cosval;

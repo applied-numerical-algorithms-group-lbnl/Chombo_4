@@ -25,7 +25,7 @@ void
 getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
        shared_ptr<GeometryService<order> >& a_geoserv ,
        int a_nx, DisjointBoxLayout a_grids, Box a_domain, Real a_dx,
-       SineSphere<order>& a_phigen)
+       SineSphereEF<order>& a_phigen)
 {
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
@@ -116,7 +116,41 @@ getTruncationError(int a_nx)
   Real R = 0.45;
   Real C = 0.5;
   X0 *= C;
-  SineSphere<order> phigen(R, C);
+  SineSphereEF<order> phigen(R, C);
+
+  std::pair<Point, Real> entry;
+  entry.first  = Point::Ones(4);
+  entry.second = 4;
+  RealVect loca = RealVect::Unit();
+  loca *= 4.0;
+  MonomialEF<order> funk(entry);
+  IndexTM<int, DIM> curDeriv= IndexTM<int, DIM>::Zero;
+  for(int xderiv = 0; xderiv < 5; xderiv++)
+  {
+    curDeriv[0] = xderiv;
+    for(int yderiv = 0; yderiv < 5; yderiv++)
+    {
+      curDeriv[1] = yderiv;
+      int zderiv = 0;
+#if DIM==3
+      for(zderiv = 0; zderiv < 5; zderiv++)
+      {
+        curDeriv[2] = zderiv;
+#endif
+        int sum = curDeriv.sum();
+        if(sum < 5)
+        {
+          Real derivval = funk.getDerivative(curDeriv, loca);
+          pout() << "(xd yd zd) derivval: ("
+                 << xderiv << ", "<< yderiv << ", " << zderiv << ")= "
+                 << derivval << std::endl;
+        }
+#if DIM==3
+      }
+#endif    
+    }
+  }
+  exit(0);
   Vector<DisjointBoxLayout>           grids(2);
   grids[0] = gridsFine;
   grids[1] = gridsCoar;
