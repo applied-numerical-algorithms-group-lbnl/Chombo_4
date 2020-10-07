@@ -320,8 +320,8 @@ namespace Proto
     {
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-      protoMalloc(&m_EBIrregDataPtr,memsize);
 #ifdef PROTO_CUDA      
+      protoMalloc(&m_EBIrregDataPtr,memsize);
       protoMemcpy(&m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
 #else
       memcpy(m_EBIrregDataPtr, hostvec.data(), memsize);
