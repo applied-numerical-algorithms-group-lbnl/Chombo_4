@@ -141,8 +141,9 @@ namespace Proto
     EBStencil(     const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
+#ifdef PROTO_CUDA
     FusedStencil<data_t> sFused;
-
+#endif
   };
 }
 #include "implem/Proto_EBStencilImplem.H"
