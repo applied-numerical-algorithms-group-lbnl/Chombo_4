@@ -1,5 +1,6 @@
 #include "Proto.H"
 #include "EBProto.H"
+#include "Proto_GeometryService.H"
 
 using namespace Proto;
 
