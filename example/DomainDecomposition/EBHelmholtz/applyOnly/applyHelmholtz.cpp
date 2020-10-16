@@ -195,10 +195,31 @@ runTest(int a_argc, char* a_argv[])
     lphbd.setVal(0.0);
   }
 
+  int step = 0; Real time = 0;
+  Real dt = dx;
+
+  const EBLevelBoxData<CELL, 1> & kappa = solver.getKappa();
+
+  {
+    string filep("lph.0.hdf5");
+    writeEBLevelHDF5<1>(  filep,  lph, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+
+    string fileq("phi.0.hdf5");
+    writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+  }
+
 
   for(int iiter = 0; iiter  < maxIter; iiter++)
   {
     solver.applyOp(lph, phi);
+  }
+
+  {
+    string filep("lph.1.hdf5");
+    writeEBLevelHDF5<1>(  filep,  lph, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+
+    string fileq("phi.1.hdf5");
+    writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
   }
   pout() << "exiting " << endl;
   return 0;
