@@ -60,6 +60,7 @@ namespace Proto
   {
 #ifdef PROTO_CUDA
   unsigned int nsize = size();
+  if(nsize == 0) return;
   int blockSize = 512;
   int nBlocks = (nsize + blockSize - 1) / blockSize;
   auto streamid = DisjointBoxLayout::getCurrentStream();
