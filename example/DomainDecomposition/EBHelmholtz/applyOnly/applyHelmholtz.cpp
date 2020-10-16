@@ -200,13 +200,7 @@ runTest(int a_argc, char* a_argv[])
 
   const EBLevelBoxData<CELL, 1> & kappa = solver.getKappa();
 
-  {
-    string filep("lph.0.hdf5");
-    writeEBLevelHDF5<1>(  filep,  lph, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
-
-    string fileq("phi.0.hdf5");
-    writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
-  }
+ 
 
 
   for(int iiter = 0; iiter  < maxIter; iiter++)
@@ -214,13 +208,13 @@ runTest(int a_argc, char* a_argv[])
     solver.applyOp(lph, phi);
   }
 
-  {
-    string filep("lph.1.hdf5");
-    writeEBLevelHDF5<1>(  filep,  lph, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+  
+  string filep("lphi.hdf5");
+  writeEBLevelHDF5<1>(  filep,  lph, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
 
-    string fileq("phi.1.hdf5");
-    writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
-  }
+  string fileq("phi.hdf5");
+  writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+ 
   pout() << "exiting " << endl;
   return 0;
 }
