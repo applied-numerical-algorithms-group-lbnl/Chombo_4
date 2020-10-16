@@ -120,7 +120,7 @@ namespace Proto
       {
         unsigned int nsize = size();
         int blockSize = 512;
-        if(nsize == 0) return;
+        if(nsize == 0) return *this;
         int nBlocks = (nsize + blockSize - 1) / blockSize; 
         auto streamid = DisjointBoxLayout::getCurrentStream();
         protoLaunchKernelMemAsync(incKernel<data_t>, nBlocks, blockSize, 0, streamid, m_rawPtr, a_input.m_rawPtr, nsize);
