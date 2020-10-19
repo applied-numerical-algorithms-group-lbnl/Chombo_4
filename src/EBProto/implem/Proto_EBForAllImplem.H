@@ -107,7 +107,8 @@ namespace Proto
     const EBIrregStruct<cent, data_t, ncomp>&  ugly   = rawptr[a_ivec];
     for(int icomp = 0; icomp < ncomp; icomp++)
     {
-      retval.m_ptrs[icomp] = ugly.m_startPtr + ugly.m_offset + (ugly.m_varsize*icomp);
+      retval.m_ptrs[icomp] = ugly.m_startPtr + (ugly.m_varsize*icomp);
+      //retval.m_ptrs[icomp] = ugly.m_startPtr + ugly.m_offset + (ugly.m_varsize*icomp);
     }
     return retval;
   }
