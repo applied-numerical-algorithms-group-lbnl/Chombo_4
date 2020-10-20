@@ -288,6 +288,12 @@ public:
 #endif
   }
 
+  void dumpFile(int fileNumber, Real coveredValue) const
+  {
+    string filename = "tmp"+std::to_string(fileNumber)+".hdf5";
+    writeToFileHDF5(filename, coveredValue);
+  }
+
   /// this is for hdf5 stuff as multivalued stuff will be lost
   static 
   void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,

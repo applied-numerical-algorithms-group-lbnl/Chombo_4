@@ -780,6 +780,10 @@ void dummyfunc()
   dumpFlux1(NULL);
   dumpEB1(NULL);
   dumpHost1(NULL);
+  EBLevelBoxData<CELL,1>* phi1=nullptr;
+  EBLevelBoxData<CELL,2>* phi2=nullptr;
+  phi1->dumpFile(0,0.1);
+  phi2->dumpFile(0,0.1);
 }
 
 
