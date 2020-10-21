@@ -407,7 +407,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
         CH_TIME("ebforall gsrb bit");
         for(int ibox = 0; ibox < dit.size(); ++ibox)
         {
-          shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+          //shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
 
           Box grid = m_grids[dit[ibox]];
           Bx  grbx = getProtoBox(grid);
@@ -418,11 +418,11 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           auto& phifab   =   a_phi[dit[ibox]];
           auto& resfab   =   resid[dit[ibox]];
           auto& stendiag = m_diagW[dit[ibox]];
-          
+          auto& kappa    = m_kappa[dit[ibox]];
           Bx  inputBox = phifab.inputBox();
           ebforall_i(inputBox, gsrbResid,  grbx, 
                      phifab, resfab, stendiag,
-                     m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+                     kappa, m_alpha, m_beta, m_dx, iredblack);
       
           ideb++;
         } //end loop over boxes
