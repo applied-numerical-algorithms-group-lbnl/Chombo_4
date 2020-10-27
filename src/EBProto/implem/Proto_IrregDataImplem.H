@@ -45,12 +45,6 @@ namespace Proto
       vecval.m_offset   = this->index(ugindex, 0);
       vecval.m_index    = ugindex.m_pt;
     }
-#ifdef PROTO_CUDA
-    auto uglystruct = *m_uglystruct;
-    size_t memsize = uglystruct.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-    protoMalloc(&m_uglystructDevPtr, memsize);
-    protoMemcpy( m_uglystructDevPtr, uglystruct.data(), memsize, protoMemcpyHostToDevice);
-#endif
   }
   ////
   template <CENTERING cent, class data_t,  unsigned int ncomp>
