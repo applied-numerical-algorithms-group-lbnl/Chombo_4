@@ -25,7 +25,7 @@ void
 getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
        shared_ptr<GeometryService<order> >& a_geoserv ,
        int a_nx, DisjointBoxLayout a_grids, Box a_domain, Real a_dx,
-       SineSphereEF<order>& a_phigen)
+       BaseExactSolution<order>& a_phigen)
 {
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
@@ -116,41 +116,54 @@ getTruncationError(int a_nx)
   Real R = 0.45;
   Real C = 0.5;
   X0 *= C;
-  SineSphereEF<order> phigen(R, C);
+//  for(int idir = 0; idir < DIM; idir++)
+//  {
+//    pout() << "direction = " << idir << endl;
+//    for(int ipower = 0; ipower < 3; ipower++)
+//    {
+//      pout() << "power  = " << ipower << endl;
+//    
+//      std::pair<Point, Real> mono;
+//      //mono.first = Point::Ones(1);
+//      mono.first = Point::Zeros();
+//      mono.first[idir] = ipower;
+//      mono.second = 1;
+//
+//      //SineSphereEF<order> phigen(R, C);
+//      MonomialEF<order> phigen(mono);
+//
+//
+//      RealVect loca = RealVect::Unit();
+//      loca *= 4.0;
+//      IndexTM<int, DIM> curDeriv= IndexTM<int, DIM>::Zero;
+//      for(int xderiv = 0; xderiv < 3; xderiv++)
+//      {
+//        curDeriv[0] = xderiv;
+//        for(int yderiv = 0; yderiv < 3; yderiv++)
+//        {
+//          curDeriv[1] = yderiv;
+//          int zderiv = 0;
+//#if DIM==3
+//          for(zderiv = 0; zderiv < 5; zderiv++)
+//          {
+//            curDeriv[2] = zderiv;
+//#endif
+//            int sum = curDeriv.sum();
+//            if(sum < 5)
+//            {
+//              Real derivval = phigen.getDerivative(curDeriv, loca);
+//              pout() << "(xd yd zd) derivval: ("
+//                     << xderiv << ", "<< yderiv << ", " << zderiv << ")= "
+//                     << derivval << std::endl;
+//            }
+//#if DIM==3
+//          }
+//#endif    
+//        }
+//      }
+//    }
+//  }
 
-  std::pair<Point, Real> entry;
-  entry.first  = Point::Ones(4);
-  entry.second = 4;
-  RealVect loca = RealVect::Unit();
-  loca *= 4.0;
-  MonomialEF<order> funk(entry);
-  IndexTM<int, DIM> curDeriv= IndexTM<int, DIM>::Zero;
-  for(int xderiv = 0; xderiv < 5; xderiv++)
-  {
-    curDeriv[0] = xderiv;
-    for(int yderiv = 0; yderiv < 5; yderiv++)
-    {
-      curDeriv[1] = yderiv;
-      int zderiv = 0;
-#if DIM==3
-      for(zderiv = 0; zderiv < 5; zderiv++)
-      {
-        curDeriv[2] = zderiv;
-#endif
-        int sum = curDeriv.sum();
-        if(sum < 5)
-        {
-          Real derivval = funk.getDerivative(curDeriv, loca);
-          pout() << "(xd yd zd) derivval: ("
-                 << xderiv << ", "<< yderiv << ", " << zderiv << ")= "
-                 << derivval << std::endl;
-        }
-#if DIM==3
-      }
-#endif    
-    }
-  }
-  exit(0);
   Vector<DisjointBoxLayout>           grids(2);
   grids[0] = gridsFine;
   grids[1] = gridsCoar;
@@ -167,6 +180,14 @@ getTruncationError(int a_nx)
   EBLevelBoxData<CELL, 1> phiDiff(gridsCoar, dataGhostIV, graphCoar);
   
   pout() << "filling data holders" << endl;
+  std::pair<Point, Real> mono;
+  //mono.first = Point::Ones(1);
+  mono.first = Point::Zeros();
+  mono.first[0] = 1;
+  mono.second = 1;
+
+  //SineSphereEF<order> phigen(R, C);
+  MonomialEF<order> phigen(mono);
   getPhi<order>(phiFine, geoserv, nxFine, gridsFine, domFine, dxFine, phigen);
   getPhi<order>(phiCoar, geoserv, nxCoar, gridsCoar, domCoar, dxCoar, phigen);
 
