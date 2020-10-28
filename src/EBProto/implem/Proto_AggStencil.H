@@ -226,16 +226,17 @@ namespace Proto
                    bool                                a_incrementOnly) const;
 
 
-    int m_stride, m_blocks;
+    int m_stride = 0;
+    int m_blocks = 0;
 #endif
     //this is for flop counts
-    int  m_flopsThisApply;        
+    int  m_flopsThisApply = 0;        
 
     /// this stuff lives on the device
-    pair_t<data_t>*      d_ebstencil;
-    EBDataLoc*           d_dstaccess;
-    uint64_t*            d_stensizes;
-    uint64_t*            d_stenstart;
+    pair_t<data_t>*      d_ebstencil = nullptr;
+    EBDataLoc*           d_dstaccess = nullptr;
+    uint64_t*            d_stensizes = nullptr;
+    uint64_t*            d_stenstart = nullptr;
 
     Box m_srcBox, m_dstBox;
   private:
