@@ -124,6 +124,11 @@ runTest(int a_argc, char* a_argv[])
 
 
     }
+
+  
+ // string fileq("phi.hdf5");
+ // writeEBLevelHDF5<1>(  fileq,  phi, kappa, domain.domainBox(), graphs, coveredval, dx, dt, time);
+  
   return 0;
 }
 
