@@ -67,3 +67,9 @@ do_lazy_relax =  false
 
 one_exchange_per_relax = false
 inside_regular = true
+bicgstab.tol      = 1.0e-6
+bicgstab.hang     = 1.0e-8
+bicgstab.small    = 1.0e-16
+bicgstab.imax     = 0
+bicgstab.nrestart = 27
+bicgstab.verbosity = 1
