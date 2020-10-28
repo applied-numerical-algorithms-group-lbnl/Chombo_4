@@ -286,6 +286,7 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
+      defineEBIrregData(m_indicies);
     }           
 
     //do not use this
