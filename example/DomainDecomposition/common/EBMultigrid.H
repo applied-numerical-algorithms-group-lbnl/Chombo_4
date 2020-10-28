@@ -138,7 +138,7 @@ public:
   inline Real dotProduct(const EBLevelBoxData<CELL, 1> & a_srcOne,
                          const EBLevelBoxData<CELL, 1> & a_srcTwo) const
   {
-    EBLevelBoxData<CELL, 1>  dst(m_grids, IntVect::Zero, m_graphs);
+    EBLevelBoxData<CELL, 1>  dst(m_grids, a_srcOne.ghostVect(), m_graphs);
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
