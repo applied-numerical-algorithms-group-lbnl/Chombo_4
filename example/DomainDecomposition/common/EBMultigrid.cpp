@@ -8,7 +8,7 @@
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = true;
+bool EBMultigrid::s_useWCycle     = false;
 int  EBMultigrid::s_numSmoothDown = 4;
 int  EBMultigrid::s_numSmoothUp   = 4;
 
