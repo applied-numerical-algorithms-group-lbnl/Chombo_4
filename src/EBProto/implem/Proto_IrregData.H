@@ -111,7 +111,7 @@ namespace Proto
     operator+=(const IrregData<cent, data_t, ncomp> & a_input)
     {
 #ifdef PROTO_CUDA
-      if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
+      if((m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
         int blockSize = 512;
