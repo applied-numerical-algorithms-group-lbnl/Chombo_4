@@ -29,6 +29,8 @@ CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compa
 CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 CPPFLAGS = -std=c++11
+PETSC_DIR=/home/dtgraves
+PETSC_ARCH=arch-linux2-c-debug 
 PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=clang++
 CXX=clang++
@@ -54,6 +56,13 @@ CPPFLAGS += $(HDFINCFLAGS)
 
 LIBS     += $(HDFLIBFLAGS)
  
+
+include $(PETSC_DIR)/lib/petsc/conf/variables
+
+CPPFLAGS += -DCH_USE_PETSC
+CPPFLAGS += $(PETSC_CC_INCLUDES)
+LIBS     += $(PETSC_KSP_LIB)
+
 CXXFLAGS += -DCH_USE_DOUBLE
 
 CXXDBGFLAGS:= -g $(CXXALLFLAGS)
