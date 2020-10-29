@@ -29,12 +29,12 @@ CXXALLFLAGS := -Wall -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compa
 CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 CPPFLAGS = -std=c++11
-PETSC_DIR=/home/dtgraves
-PETSC_ARCH=arch-linux2-c-debug 
 PROTO_HOME =$(HOME)/_proto/proto
+EFENCEFLAGS = -L/usr/lib -lefence
+PETSC_DIR   = $(HOME)/src/petsc-3.13.5
+include $(PETSC_DIR)/lib/petsc/conf/variables
 DEPXX=clang++
 CXX=clang++
-EFENCEFLAGS = -L/usr/lib -lefence
 
 CXXALLFLAGS := -Wall  -std=c++11 
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
@@ -56,9 +56,6 @@ CPPFLAGS += $(HDFINCFLAGS)
 
 LIBS     += $(HDFLIBFLAGS)
  
-
-include $(PETSC_DIR)/lib/petsc/conf/variables
-
 CPPFLAGS += -DCH_USE_PETSC
 CPPFLAGS += $(PETSC_CC_INCLUDES)
 LIBS     += $(PETSC_KSP_LIB)

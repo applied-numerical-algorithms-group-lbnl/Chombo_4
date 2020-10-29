@@ -19,7 +19,6 @@
 
 #include "Chombo_EBLevelBoxData.H"
 
-
 /// Framework to solve an elliptic equation using PETsC (PETsC?  petsC?)
 /**
    This is an an adaptation to the new reality of Mark Adams' PetscSolver framework.
@@ -126,7 +125,7 @@ private:
     //step unnecessary by providing the pointer to the vector that lives
     //on the device
     hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghost(), factory);
+    LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghostVect(), factory);
     EBLevelBoxData<CELL, 1>::copyToHost(hostSrc, a_deviceSrc);
     
     DataIterator dit = m_grids.dataIterator();
@@ -154,9 +153,9 @@ private:
     return 0;
   }
 
-  void getLocalRegularStencil(LocalStencil<CELL, Real> & a_localSten,
+  void getLocalRegularStencil(Proto::LocalStencil<CELL, Real> & a_localSten,
                               const EBIndex<CELL>      & a_vof,
-                              const Stencil<Real >     & a_regSten)
+                              const Proto::Stencil<Real >     & a_regSten)
   {
     a_localSten.m_entries.resize(0);
     auto startpt = a_vof.m_pt;
@@ -202,12 +201,12 @@ private:
   }
 
   int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
-                           vector< LocalStencil<CELL, Real> >  & a_wstencil,
-                           Stencil<Real>                       & a_regStencilInterior,
+                           vector< Proto::LocalStencil<CELL, Real> >  & a_wstencil,
+                           Proto::Stencil<Real>                       & a_regStencilInterior,
                            PointSet                            & a_allIrregPoints,
                            const DataIndex                     & a_dit)
   {
-    typedef EBStencilArchive<CELL, CELL, order, Real> archive_t;
+    typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
@@ -229,7 +228,7 @@ private:
     auto& graph    =(*m_graphs )[a_dit];
     Box valid = m_grids[a_dit];
     Bx  valbx = ProtoCh::getProtoBox(valid);
-    vector<Stencil<Real> >    regStencilBCS[2*DIM];
+    vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
     vector<Bx >               BCApplyBoxes[2*DIM];
     bool                      bcsOnly = false;
     Bx                        regApplyBox;
@@ -265,7 +264,7 @@ private:
     //step unnecessary by providing the pointer to the vector that lives
     //on the device
     hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghost(), factory);
+    LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
     
     DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
@@ -315,7 +314,7 @@ private:
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         vector< EBIndex<CELL> >            dstVoFs;
-        vector< LocalStencil<CELL, Real> > wstencil;
+        vector< Proto::LocalStencil<CELL, Real> > wstencil;
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
         //use strings to get stencil for this particular operator.
