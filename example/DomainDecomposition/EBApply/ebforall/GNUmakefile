@@ -30,9 +30,11 @@ CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
 
 CPPFLAGS = -std=c++11
 PROTO_HOME =$(HOME)/_proto/proto
+EFENCEFLAGS = -L/usr/lib -lefence
+PETSC_DIR   = $(HOME)/src/petsc-3.13.5
+include $(PETSC_DIR)/lib/petsc/conf/variables
 DEPXX=clang++
 CXX=clang++
-EFENCEFLAGS = -L/usr/lib -lefence
 
 CXXALLFLAGS := -Wall  -std=c++11 
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
@@ -54,6 +56,10 @@ CPPFLAGS += $(HDFINCFLAGS)
 
 LIBS     += $(HDFLIBFLAGS)
  
+CPPFLAGS += -DCH_USE_PETSC
+CPPFLAGS += $(PETSC_CC_INCLUDES)
+LIBS     += $(PETSC_KSP_LIB)
+
 CXXFLAGS += -DCH_USE_DOUBLE
 
 CXXDBGFLAGS:= -g $(CXXALLFLAGS)
