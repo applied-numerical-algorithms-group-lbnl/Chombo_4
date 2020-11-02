@@ -23,9 +23,13 @@ namespace Proto
   public:
     typedef EBIndex<cent> index_t;
     ///
-    IrregData()
+    IrregData() 
     {
       m_boxdefined = false;
+      m_indicies = nullptr;
+      m_data = nullptr;
+      m_rawPtr = nullptr;
+      m_EBIrregDataPtr = nullptr;
     }
 
     ///
@@ -38,7 +42,11 @@ namespace Proto
     {  }
 
     ///
-    inline std::size_t size() const {return m_indicies->size()*ncomp;};
+    inline std::size_t size() const 
+    {
+      if(m_boxdefined) return m_indicies->size()*ncomp;
+      else return 0; 
+    };
 
     ///
     inline bool defined() const {return bool(m_data);};
@@ -269,7 +277,8 @@ namespace Proto
 
     unsigned int vecsize() const
     {
-      return m_indicies->size();
+      if(m_boxdefined) return m_indicies->size();
+      else return 0;
     }
 
     inline Box inputBox() const
