@@ -14,5 +14,6 @@ int main()
   cudaSetDevice(1);
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
 //  do_test("run_test_irreg_data_has_index_empty",run_test_irreg_data_has_index_empty);
+  do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
   return 0;
 }
