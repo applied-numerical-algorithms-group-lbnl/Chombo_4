@@ -1,0 +1,18 @@
+#include<iostream>
+#include<src/test_IrregData.cu>
+
+template<typename Func>
+void do_test(std::string a_str, Func &fun)
+{
+  std::cout << "Do " << a_str << std::endl;
+  bool b = fun();
+  if(b) std::cout << "-> passed " << a_str << std::endl;
+  else std::cout << "-> failed " << a_str << std::endl;
+}
+int main()
+{
+  cudaSetDevice(1);
+  do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
+//  do_test("run_test_irreg_data_has_index_empty",run_test_irreg_data_has_index_empty);
+  return 0;
+}
