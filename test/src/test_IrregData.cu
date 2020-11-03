@@ -61,7 +61,6 @@ bool run_test_irreg_data_use_constructor()
   unsigned int size = 8;
   double* ptr = new double[size];
   std::vector<Proto::EBIndex<Proto::CELL>> index;
-//  index.resize(size);
   Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
 
   test_irreg_data_fill(ptr,index,size);

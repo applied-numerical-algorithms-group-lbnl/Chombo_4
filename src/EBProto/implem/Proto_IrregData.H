@@ -26,10 +26,6 @@ namespace Proto
     IrregData() 
     {
       m_boxdefined = false;
-      m_indicies = nullptr;
-      m_data = nullptr;
-      m_rawPtr = nullptr;
-      m_EBIrregDataPtr = nullptr;
     }
 
     /// constructor by copying
@@ -44,7 +40,7 @@ namespace Proto
 #else
       m_data=::std::shared_ptr<data_t>(new data_t[size], [](data_t* p) { delete[] p;});
       for(int i = 0; i < size ; i++)
-        m_data[i] = a_data[i];
+        (*m_data)[i] = a_data[i];
       m_rawPtr = m_data.get();
 #endif
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
@@ -392,12 +388,12 @@ namespace Proto
     void makeUglyStruct();
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
-    shared_ptr<vector<  index_t > >        m_indicies;
-    shared_ptr<data_t>         m_data;
-    data_t*                    m_rawPtr;
+    shared_ptr<vector<  index_t > >           m_indicies = nullptr;
+    shared_ptr<data_t>                            m_data = nullptr;
+    data_t*                                     m_rawPtr = nullptr;
+    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr = nullptr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
-    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
   };
 
 }
