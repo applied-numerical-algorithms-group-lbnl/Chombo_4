@@ -15,5 +15,6 @@ int main()
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
 //  do_test("run_test_irreg_data_has_index_empty",run_test_irreg_data_has_index_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
+  do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
   return 0;
 }

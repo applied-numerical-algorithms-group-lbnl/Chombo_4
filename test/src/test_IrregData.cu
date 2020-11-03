@@ -25,6 +25,14 @@ bool test_irreg_data_check_fill(double* ptr, std::vector<Proto::EBIndex<Proto::C
   return true;
 }
 
+bool test_irreg_data_check_set_zero(double* ptr, unsigned int size)
+{
+  for(int i = 0 ; i < size ; i++)
+    if(ptr[i] != 0) return false;
+
+  return true;
+}
+
 bool run_test_irreg_data_empty()
 {
   Proto::IrregData<Proto::CELL,double,1> empty;
@@ -85,4 +93,35 @@ bool run_test_irreg_data_use_constructor()
   free(ptr);  
 
   return check && before && after;
+}
+
+bool run_test_irreg_data_set_val()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+  fill.setVal(0);
+
+#ifdef PROTO_CUDA
+  double* checkPtr = new double[size];
+  double* devicPtr = fill.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+#else
+  double* checkPtr = fill.data();
+#endif  
+
+  // should be false
+  bool nochange = test_irreg_data_check_fill(checkPtr, *(fill.getIndicies()), size);
+  assert(!nochange);
+
+  bool change = test_irreg_data_check_set_zero(checkPtr,size);
+
+  index.clear();
+  free(ptr);  
+
+  return change && (!nochange);
 }

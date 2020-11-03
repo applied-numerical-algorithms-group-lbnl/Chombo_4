@@ -47,14 +47,11 @@ namespace Proto
         m_data[i] = a_data[i];
       m_rawPtr = m_data.get();
 #endif
-      //m_indicies = ::std::shared_ptr<std::vector<index_t>>(&a_indicies);
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
- //     *m_indicies = a_indicies;
-
       m_indicies->resize(size);
       for(int i = 0; i < size ; i++)
         (*m_indicies)[i] = a_indicies[i];
- //     defineEBIrregData();
+      defineEBIrregData();
     }
 
     ///
