@@ -216,7 +216,7 @@ public:
     {
       const Box & grid     =         dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
-      Real gridval = hostdata[dit[ibox]].maxNorm(grbx, a_icomp);
+      Real gridval = Proto::maxNormCell(hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > maxval)
       {
         maxval = gridval;

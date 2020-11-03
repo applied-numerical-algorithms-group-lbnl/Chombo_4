@@ -1266,7 +1266,12 @@ namespace Proto
   inline vector<EBIndex<cent> > 
   getFaces(const  EBIndex<CELL>   & a_vof,
            const Side::LoHiSide   & a_sd,
-           const EBGraph          & a_graph) ;
+           const EBGraph          & a_graph) 
+  {
+    vector<EBIndex<cent> > retval;
+    PROTO_ASSERT(false, "should not get here");
+    return retval;
+  }
 
   template< > 
   inline vector<EBIndex<XFACE> > 
