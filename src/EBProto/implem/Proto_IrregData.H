@@ -44,7 +44,7 @@ namespace Proto
 #else
       m_data=::std::shared_ptr<data_t>(new data_t[size], [](data_t* p) { delete[] p;});
       for(int i = 0; i < size ; i++)
-        m_data[i] = a_data[i];
+        (*m_data)[i] = a_data[i];
       m_rawPtr = m_data.get();
 #endif
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});

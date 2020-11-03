@@ -28,9 +28,9 @@ unsigned int  kernel_test_forallF(Var<double, 1>  a_in)
 PROTO_KERNEL_END(kernel_test_forallF, kernel_test_forall)
 
 PROTO_KERNEL_START
-unsigned int  init_test_forallF(Var<double, 1>  a_in)
+unsigned int  init_test_forallF(Var<double, 1>  a_in, double a_val)
 {
-  a_in(0) = 0;
+  a_in(0) = a_val;
   return 0;
 }
 PROTO_KERNEL_END(init_test_forallF, init_test_forall)
@@ -68,6 +68,9 @@ bool run_test_ebforall_init()
 
   bool check = fill.size() == size;
 
+  double a = 0;
+  cudaEBForAllIrreg(init_test_forall, bx, fill, a);
+
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
@@ -76,7 +79,6 @@ bool run_test_ebforall_init()
   double* checkPtr = fill.data();
 #endif  
 
-  ebforallIrreg("init_test_forall", init_test_forall, bx, fill);
 
   bool result = test_ebforal_check_answer_init(checkPtr, size);
 
@@ -100,6 +102,7 @@ bool run_test_ebforall_kernel()
 
   // use this constructor to initialize data on the GPU
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+  cudaEBForAllIrreg(kernel_test_forall, bx, fill);
 
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
@@ -109,7 +112,6 @@ bool run_test_ebforall_kernel()
   double* checkPtr = fill.data();
 #endif  
 
-  ebforallIrreg("kernel_test_forall", kernel_test_forall, bx, fill);
 
   bool result = test_ebforal_check_answer(checkPtr, size);
   assert(result);
