@@ -2,6 +2,7 @@
 #include<src/test_IrregData.cu>
 #include<src/test_ebforall.cu>
 #include<src/test_ebforall_i.cu>
+#include<src/test_agg_stencil.cu>
 
 template<typename Func>
 void do_test(std::string a_str, Func &fun)
@@ -22,5 +23,8 @@ int main()
   do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
   do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
   do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
+//  do_test("run_test_agg_stencil_empty",run_test_agg_stencil_empty);
+  do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
+
   return 0;
 }
