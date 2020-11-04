@@ -350,7 +350,7 @@ namespace Proto
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
 #else
       m_EBIrregDataPtr = new EBIrregStruct<cent, data_t, ncomp>[hostvec.size()];
-      memcpy(m_EBIrregDataPtr, hostvec.data(), memsize);
+      memcpy((char*)(m_EBIrregDataPtr), (char*)(hostvec.data()), memsize);
 #endif      
     }
 

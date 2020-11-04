@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <memory>
+#include <iomanip>
 #include "Proto.H"
 #include "EBProto.H"
 #include "implem/Proto_IrregData.H"
@@ -286,6 +287,80 @@ namespace Proto
     IrregData<cent, data_t, ncomp>     m_irrData;
     EBGraph                            m_graph;
   };
+
+
+  //for debugging --- only works on host
+  template< typename data_t>
+  inline void 
+  maxLocCell(const EBBoxData<CELL, data_t, 1>& data, const Box& a_grid, string a_prefix)
+  {
+    using std::cout; 
+    using std::endl;
+    using std::ios;
+    cout    << std::setprecision(8)
+            << std::setiosflags(ios::showpoint)
+            << std::setiosflags(ios::scientific);
+
+    EBGraph graph = data.ebgraph();
+    data_t maxval = 0;
+    EBIndex<CELL> bigshot;
+    for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+    {
+      auto pt = *bit;
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        auto vof =vofs[ivof];
+        data_t thisval = std::abs(data(vof, 0));
+        if(thisval > maxval)
+        {
+          maxval = thisval;
+          bigshot = vof;
+        }
+      }
+    }
+    cout << a_prefix << "maxval = " << maxval << ", loc = "<< bigshot.m_pt << endl;
+  }
+
+  //for debugging --- only works on host
+  template<CENTERING cent, typename data_t>
+  inline void 
+  maxLocFace(const EBBoxData<cent, data_t, 1>& data, const Box& a_grid, string a_prefix)
+  {
+    using std::cout; 
+    using std::endl;
+    cout    << std::setprecision(8)
+            << std::setiosflags(std::ios::showpoint)
+            << std::setiosflags(std::ios::scientific);
+
+    EBGraph graph = data.ebgraph();
+    data_t maxval = 0;
+    EBIndex<cent> bigshot;
+    for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+    {
+      auto pt = *bit;
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        auto vof =vofs[ivof];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          vector<EBIndex<cent> > faces = getFaces<cent>(vof, sit(), graph);
+          for(int ifac = 0; ifac < faces.size(); ifac++)
+          {
+            auto fac = faces[ifac];
+            data_t thisval = std::abs(data(fac, 0));
+            if(thisval > maxval)
+            {
+              maxval = thisval;
+              bigshot = fac;
+            }
+          }
+        }
+      }
+    }
+    cout << a_prefix << "maxval = " << maxval << ", loc = "<< bigshot.m_pt << endl;
+  }
 
 
 
