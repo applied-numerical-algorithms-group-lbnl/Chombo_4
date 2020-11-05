@@ -249,6 +249,94 @@ bool run_test_agg_stencil_cpu_versu_gpu()
   return check1 && check2;
 }
 
+bool run_test_agg_stencil_scale(double a_scale)
+{
+  unsigned int size_src = 8;
+  unsigned int size_dst = 8;
+  unsigned int begin = 0;
+  unsigned int end = size_src;
+  pairPtr<double> data_ptrs_src = {nullptr,nullptr};
+  pairPtr<double> data_ptrs_dst = {nullptr,nullptr};
+  pair_t<double>* eb_stencil = nullptr;
+  uint64_t* sten_sizes   = nullptr;
+  uint64_t* sten_start   = nullptr;
+  EBDataLoc* dst_access      = nullptr;
+  bool increment_only = false;
+  double scale = a_scale;
+
+  int nb0=0;
+  int nb1=0;
+  test_agg_stencil_alloc(dst_access,    size_dst, nb0, nb1);
+  test_agg_stencil_alloc(data_ptrs_src, size_src); 
+  test_agg_stencil_alloc(data_ptrs_dst, size_dst); 
+  test_agg_stencil_alloc(sten_sizes,    size_src);  
+  test_agg_stencil_alloc(sten_start,    size_src);    
+
+  test_agg_stencil_fill_sten_size_start(sten_sizes, sten_start, size_src);
+  test_agg_stencil_fill_eb_stencil(eb_stencil, sten_sizes, size_src, size_src, size_dst);
+  test_agg_stencil_fill_value(data_ptrs_src, 10, 100, size_src);
+  test_agg_stencil_fill_value(data_ptrs_dst,  0,   0, size_dst);
+
+  pairPtr<double> data_ptrs_src_device = {nullptr,nullptr};
+  pairPtr<double> data_ptrs_dst_device = {nullptr,nullptr};
+  pair_t<double>* eb_stencil_device    = nullptr;
+  uint64_t* sten_sizes_device          = nullptr;
+  uint64_t* sten_start_device          = nullptr;
+  EBDataLoc* dst_access_device         = nullptr;
+
+  test_agg_stencil_copy_to_gpu(sten_sizes, sten_sizes_device, size_src);
+  test_agg_stencil_copy_to_gpu(sten_start, sten_start_device, size_src);
+  test_agg_stencil_copy_to_gpu(dst_access, dst_access_device, size_dst);
+  test_agg_stencil_copy_to_gpu(data_ptrs_src, data_ptrs_src_device, size_src);
+  test_agg_stencil_copy_to_gpu(data_ptrs_dst, data_ptrs_dst_device, size_dst);
+  test_agg_stencil_copy_to_gpu_eb_stencil(eb_stencil, eb_stencil_device, sten_sizes, size_src);
+
+
+  pairPtr<const double> const_data_ptrs_src_device = {data_ptrs_src_device.ptr[0],data_ptrs_src_device.ptr[1]};
+  const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
+
+
+  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+			(int)(begin), 
+			(int)(end),
+			const_data_ptrs_src_device,
+			data_ptrs_dst_device,
+			const_eb_stencil_device,
+			(const uint64_t*)(sten_sizes_device),
+			(const uint64_t*)(sten_start_device),
+			(const EBDataLoc*)(dst_access_device),
+			increment_only,
+			scale		
+		);
+  pairPtr<double> result = {nullptr,nullptr};
+  test_agg_stencil_get_back_data(result, data_ptrs_dst_device, size_dst);
+
+  bool check = test_agg_stencil_answer_scale(result, 10, 100, size_src, a_scale);
+  if(!check) 
+  {
+    test_agg_stencil_print(data_ptrs_src, size_src);
+    test_agg_stencil_print(result, size_dst);
+  }
+  return check;
+}
+
+bool run_test_agg_stencil_scale_0()
+{
+  double a = 0;
+  return run_test_agg_stencil_scale(a);
+}
+
+bool run_test_agg_stencil_scale_minus10()
+{
+  double a = -10;
+  return run_test_agg_stencil_scale(a);
+}
+
+bool run_test_agg_stencil_scale_100()
+{
+  double a = 100;
+  return run_test_agg_stencil_scale(a);
+}
 
 bool run_test_agg_stencil_empty()
 {

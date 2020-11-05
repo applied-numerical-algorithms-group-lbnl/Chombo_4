@@ -224,8 +224,61 @@ bool test_answer_increment_only(pairPtr<double> a_res, double a_val0, double a_v
     if(a_res.ptr[1][i] != a_val3) return false;
 
   return true;
- }
+}
+ 
+bool test_agg_stencil_answer_scale(pairPtr<double> a_res, double a_val0, double a_val1, unsigned int a_size, double a_scale)
+{
+  int compt_0 = 0;
+  int compt_1 = 0;
+  for(int i = 0 ; i < a_size ; i++)
+  {
+    int id = ((unsigned int)(i*3.15)) % 2;
+    if(id == 1)
+    {
+      int dep = 2*i +3*(i*(i-1)/2);
+      double res = (int)((3*i+2)/2) *(a_val1 + a_val0)*a_scale;
 
+      if(i%2==1)
+      {
+        if(dep%2==1) res += a_val1*a_scale;
+        else res += a_val0*a_scale;
+      }
+
+      if(a_res.ptr[1][compt_1] != res)
+      {
+	std::cout << " a_res.ptr[1]["<<compt_1<<"]: " << a_res.ptr[1][compt_1] << " diff of " << res << std::endl;
+	return false;
+      }
+      compt_1++;
+    }
+
+    if( id == 0)
+    {
+      int dep = 2*i +3*(i*(i-1)/2);
+      double res = 0;
+      res +=  (int)((3*i+2)/2) * (a_val1 + a_val0) * a_scale;
+      if(i%2==1)
+      {
+        if(dep%2==1) res += a_val1 * a_scale;
+        else res += a_val0 * a_scale;
+      }
+      if(a_res.ptr[0][compt_0] != res) 
+      {
+	std::cout << "i: " << i << " and a_res.ptr[0]["<<compt_0<<"]: " << a_res.ptr[0][compt_0] << " diff of " << res << std::endl;
+	return false;
+      }
+      compt_0++;
+    }
+  }
+
+  for(int i = compt_0 ; i < a_size ; i++)
+    if(a_res.ptr[0][i] != 0) return false;
+
+  for(int i = compt_1 ; i < a_size ; i++)
+    if(a_res.ptr[1][i] != 0) return false;
+
+  return true;
+}
 
 bool test_agg_stencil_is_equal(pairPtr<double> a_gpu, double* a_cpu[2], unsigned int a_size)
 {

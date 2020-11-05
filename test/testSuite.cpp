@@ -29,6 +29,9 @@ int main()
   do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
   do_test("run_test_agg_stencil_increment_only_true",run_test_agg_stencil_increment_only_true);
   do_test("run_test_agg_stencil_increment_only_false",run_test_agg_stencil_increment_only_false);
+  do_test("run_test_agg_stencil_scale_0",run_test_agg_stencil_scale_0);
+  do_test("run_test_agg_stencil_scale_100",run_test_agg_stencil_scale_100);
+  do_test("run_test_agg_stencil_scale_minus10",run_test_agg_stencil_scale_minus10);
   do_test("run_test_agg_stencil_cpu_versu_gpu",run_test_agg_stencil_cpu_versu_gpu);
   return 0;
 }
