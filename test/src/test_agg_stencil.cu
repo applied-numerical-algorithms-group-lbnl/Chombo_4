@@ -178,7 +178,7 @@ bool test_answer_kernel_only_using(pairPtr<double> a_res, double a_val0, double 
   return true;
 }
 
-bool test_answer_increment_only(pairPtr<double> a_res, double a_val0, double a_val1, double a_val2, double a_val3, unsigned int a_size)
+bool test_answer_increment_only(pairPtr<double> a_res, double a_val0, double a_val1, double a_val2, double a_val3, unsigned int a_size, bool increment_only)
 {
   int compt_0 = 0;
   int compt_1 = 0;
@@ -188,7 +188,7 @@ bool test_answer_increment_only(pairPtr<double> a_res, double a_val0, double a_v
     if(id == 1)
     {
       int dep = 2*i +3*(i*(i-1)/2);
-      double res = (int)((3*i+2)/2) *(a_val1 + a_val0) + a_val3;
+      double res = (int)((3*i+2)/2) *(a_val1 + a_val0) + a_val3*increment_only;
 
       if(i%2==1)
       {
@@ -207,7 +207,7 @@ bool test_answer_increment_only(pairPtr<double> a_res, double a_val0, double a_v
     if( id == 0)
     {
       int dep = 2*i +3*(i*(i-1)/2);
-      double res = a_val2;
+      double res = a_val2*increment_only;
       res +=  (int)((3*i+2)/2) *(a_val1 + a_val0);
       if(i%2==1)
       {
@@ -313,7 +313,8 @@ bool run_test_agg_stencil_kernel_only_using()
   return check;
 }
 
-bool run_test_agg_stencil_increment_only_true()
+
+bool run_test_agg_stencil_increment_only(bool b)
 {
   unsigned int size_src = 8;
   unsigned int size_dst = 8;
@@ -325,7 +326,7 @@ bool run_test_agg_stencil_increment_only_true()
   uint64_t* sten_sizes   = nullptr;
   uint64_t* sten_start   = nullptr;
   EBDataLoc* dst_access      = nullptr;
-  bool increment_only = true;
+  bool increment_only = b;
   double scale = 1;
 
   int nb0=0;
@@ -375,13 +376,23 @@ bool run_test_agg_stencil_increment_only_true()
   pairPtr<double> result = {nullptr,nullptr};
   test_agg_stencil_get_back_data(result, data_ptrs_dst_device, size_dst);
 
-  bool check = test_answer_increment_only(result, 10, 100, 66, 666, size_src);
+  bool check = test_answer_increment_only(result, 10, 100, 66, 666, size_src, increment_only);
   if(!check) 
   {
     test_agg_stencil_print(data_ptrs_src, size_src);
     test_agg_stencil_print(result, size_dst);
   }
   return check;
+}
+
+bool run_test_agg_stencil_increment_only_true()
+{
+  return run_test_agg_stencil_increment_only(true);
+}
+
+bool run_test_agg_stencil_increment_only_false()
+{
+  return run_test_agg_stencil_increment_only(false);
 }
 
 bool run_test_agg_stencil_cpu_versu_gpu()
