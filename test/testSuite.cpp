@@ -21,8 +21,10 @@ int main()
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
   do_test("run_test_ebforall_init",run_test_ebforall_init);
   do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
+  do_test("run_test_ebforall_kernel_box_no_impact",run_test_ebforall_kernel_box_no_impact);
   do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
   do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
+  do_test("run_test_ebforall_i_kernel_box_no_impact",run_test_ebforall_i_kernel_box_no_impact);
 //  do_test("run_test_agg_stencil_empty",run_test_agg_stencil_empty);
   do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
 
