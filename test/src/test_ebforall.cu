@@ -107,7 +107,6 @@ bool run_test_ebforall_kernel_box_no_impact()
   return result;
 }
 
-  //hostEBForAllIrreg(kernel_test_forall, bx, fill);
 bool run_test_ebforall_vec_indexer_only_gpu()
 {
   unsigned int size = 16;

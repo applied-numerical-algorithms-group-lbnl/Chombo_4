@@ -37,6 +37,25 @@ unsigned int  init_test_forall_iF(int              a_pt[DIM],
 }
 PROTO_KERNEL_END(init_test_forall_iF, init_test_forall_i)
 
+PROTO_KERNEL_START
+unsigned int  kernel_test_forall_i_valF(int              a_pt[DIM],
+					      Var<double, 1>  a_in, 
+						      double a_val)
+{
+  a_in(0) = a_val;
+  return 0;
+}
+PROTO_KERNEL_END(kernel_test_forall_i_valF, kernel_test_forall_i_val)
+
+inline unsigned int  kernel_test_forall_i_val_hostF(int              a_pt[DIM],
+							  Var<double, 1>  a_in, 
+								  double a_val)
+{
+  a_in(0) = a_val;
+  return 0;
+}
+constexpr decltype(&kernel_test_forall_i_val_hostF) kernel_test_forall_i_val_host = kernel_test_forall_i_val_hostF;
+
 bool test_ebforal_i_check_answer(double* a_ptr, unsigned int a_size)
 {
   for(int i = 0 ; i < a_size ; i++)
@@ -63,4 +82,12 @@ bool test_ebforal_i_check_same_result(double* a_ptr1, double* a_ptr2, unsigned i
   return true;  
 }
 
+bool test_ebforal_i_check_answer_val(double* a_ptr, double a_val, unsigned int a_size)
+{
+  for(int i = 0 ; i < a_size ; i++)
+  {
+    if(a_ptr[i] != a_val) return false;
+  }
+  return true;
+}
 

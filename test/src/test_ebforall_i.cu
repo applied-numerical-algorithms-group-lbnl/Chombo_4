@@ -27,7 +27,6 @@ bool run_test_ebforall_i_init()
   double* checkPtr = fill.data();
 #endif  
 
-
   bool result = test_ebforal_i_check_answer_init(checkPtr, size);
 
   if(!result) test_ebforall_i_print(checkPtr,size);
@@ -105,5 +104,119 @@ bool run_test_ebforall_i_kernel_box_no_impact()
   free(ptr);  
   free(checkPtr_1);  
   free(checkPtr_2);  
+  return result;
+}
+
+bool run_test_ebforall_i_vec_indexer_only_gpu()
+{
+  unsigned int size = 16;
+  double val        = 5;
+  double* ptr       = new double[size];
+
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  test_ebforall_i_fill(ptr,index,size);
+
+  // use this constructor to initialize data on the GPU
+  Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+  Proto::EBIrregStruct<Proto::CELL, double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
+
+  protoLaunchKernel(vec_indexer_i, 1, size, //small test so nb block = 1
+			0, size,
+			kernel_test_forall_i_val,
+			eb_irreg_struct_ptr,
+			val
+			);
+			 
+  double* checkPtr = new double[size];
+  double* devicPtr = fill.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool result = test_ebforal_i_check_answer_val(checkPtr, val, size);
+  assert(result);
+
+  index.clear();
+  free(ptr);  
+  free(checkPtr);  
+  return result;
+}
+
+bool run_test_ebforall_i_vec_indexer_only_cpu()
+{
+  unsigned int size = 16;
+  double val        = 5;
+  double* ptr       = new double[size];
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  test_ebforall_i_fill(ptr,index,size);
+
+  // use this constructor to initialize data on the GPU
+  Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+
+  vector< Proto::EBIrregStruct<Proto::CELL, double, 1> >  eb_irreg_struct_vector = Proto::getEBIrregStruct(index, fill);
+  // small trick
+  for(int i = 0; i < eb_irreg_struct_vector.size() ; i++)
+    eb_irreg_struct_vector[i].m_startPtr = ptr;
+ 
+  Proto::hostVectorFunc_i(
+			kernel_test_forall_i_val_host,
+			eb_irreg_struct_vector,
+			val
+		);
+
+  double* checkPtr = ptr;
+
+  bool result = test_ebforal_i_check_answer_val(checkPtr, val, size);
+  assert(result);
+
+  index.clear();
+  free(checkPtr); // ptr == checkPtr 
+  return result;
+}
+
+bool run_test_ebforall_i_vec_indexer_cpu_versus_gpu()
+{
+  unsigned int size = 16;
+  double val        = 5;
+  double* ptr       = new double[size];
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  test_ebforall_i_fill(ptr,index,size);
+
+  // use this constructor to initialize data on the GPU
+  Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+
+  vector< Proto::EBIrregStruct<Proto::CELL, double, 1> >  eb_irreg_struct_vector = Proto::getEBIrregStruct(index, fill);
+  // small trick
+  for(int i = 0; i < eb_irreg_struct_vector.size() ; i++)
+    eb_irreg_struct_vector[i].m_startPtr = ptr;
+ 
+  Proto::hostVectorFunc_i(
+			kernel_test_forall_i_val_host,
+			eb_irreg_struct_vector,
+			val
+		);
+
+  double* check_ptr_cpu = ptr;
+
+  Proto::EBIrregStruct<Proto::CELL, double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
+
+  protoLaunchKernel(vec_indexer_i, 1, size, //small test so nb block = 1
+			0, size,
+			kernel_test_forall_i_val,
+			eb_irreg_struct_ptr,
+			val
+			);
+			 
+  double* check_ptr_gpu = new double[size];
+  double* devicPtr = fill.data();
+  protoMemcpy(check_ptr_gpu,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool result = test_ebforal_i_check_same_result(check_ptr_cpu, check_ptr_gpu, size);
+  assert(result);
+
+  index.clear();
+  free(check_ptr_cpu); 
+  free(check_ptr_gpu); 
   return result;
 }
