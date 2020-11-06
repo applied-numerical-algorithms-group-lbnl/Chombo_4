@@ -265,56 +265,6 @@ namespace Proto
 #else
 ///cpu-only specific functions
 
-///
-  template<typename T>
-  inline T
-  getVar(unsigned int ivec,  T a_s)
-  {
-    return a_s;
-  }
-
-///
-  template<CENTERING cent, typename data_t, unsigned int ncomp>
-  inline Var<data_t, ncomp>
-  getVar(unsigned int a_ivec,
-         vector< EBIrregStruct<cent, data_t, ncomp> > a_dst)
-  {
-    Var<data_t, ncomp> retval;
-    const EBIrregStruct<cent, data_t, ncomp> ugly = a_dst[a_ivec];
-    for(int icomp = 0; icomp < ncomp; icomp++)
-    {
-      retval.m_ptrs[icomp] = ugly.m_startPtr + ugly.m_offset + (ugly.m_varsize*icomp);
-    }
-
-    return retval;
-  }
-
-///going into this srcs are vector<EBIrregStruct<cent, data_t, ncomp>> and other stuff
-  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
-  inline void
-  hostVectorFunc(const Func& a_F, vector< EBIrregStruct<cent, data_t, ncomp> > a_dst, Srcs... a_srcs)
-  {
-    for(unsigned int ivec = 0; ivec < a_dst.size(); ivec++)
-    {
-      a_F(getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
-    }
-       
-  }
-
-
-///going into this srcs are vector<EBIrregStruct<cent, data_t, ncomp> > and other stuff
-  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
-  inline void
-  hostVectorFunc_i(const Func& a_F, vector< EBIrregStruct<cent, data_t, ncomp> > a_dst, Srcs... a_srcs)
-  {
-    for(unsigned int ivec = 0; ivec < a_dst.size(); ivec++)
-    {
-      Point pt = a_dst[ivec].m_index;
-      a_F(pt.m_tuple, getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
-    }
-       
-  }
-
 ///going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
@@ -374,6 +324,58 @@ namespace Proto
   }
 
 #endif
+
+///This stuff has been removed from the no-PROTO_CUDA section to alloew test cpu versus gpu.
+///These functions are not in conflict with the gpu version.
+///
+  template<typename T>
+  inline T
+  getVar(unsigned int ivec,  T a_s)
+  {
+    return a_s;
+  }
+
+///
+  template<CENTERING cent, typename data_t, unsigned int ncomp>
+  inline Var<data_t, ncomp>
+  getVar(unsigned int a_ivec,
+         vector< EBIrregStruct<cent, data_t, ncomp> > a_dst)
+  {
+    Var<data_t, ncomp> retval;
+    const EBIrregStruct<cent, data_t, ncomp> ugly = a_dst[a_ivec];
+    for(int icomp = 0; icomp < ncomp; icomp++)
+    {
+      retval.m_ptrs[icomp] = ugly.m_startPtr + ugly.m_offset + (ugly.m_varsize*icomp);
+    }
+
+    return retval;
+  }
+
+///going into this srcs are vector<EBIrregStruct<cent, data_t, ncomp>> and other stuff
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
+  inline void
+  hostVectorFunc(const Func& a_F, vector< EBIrregStruct<cent, data_t, ncomp> > a_dst, Srcs... a_srcs)
+  {
+    for(unsigned int ivec = 0; ivec < a_dst.size(); ivec++)
+    {
+      a_F(getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
+    }
+       
+  }
+
+
+///going into this srcs are vector<EBIrregStruct<cent, data_t, ncomp> > and other stuff
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
+  inline void
+  hostVectorFunc_i(const Func& a_F, vector< EBIrregStruct<cent, data_t, ncomp> > a_dst, Srcs... a_srcs)
+  {
+    for(unsigned int ivec = 0; ivec < a_dst.size(); ivec++)
+    {
+      Point pt = a_dst[ivec].m_index;
+      a_F(pt.m_tuple, getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
+    }
+       
+  }
 
 ///version that does not send the point to the function
   template<typename Func, typename... Srcs>
