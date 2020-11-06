@@ -1348,17 +1348,26 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
-    
-    a_regStencil = (0.5)*Shift(Point::Basis(facedir, 1)) +  (0.5)*Shift(Point::Zeros());
+
+    //reg stencil did not work here.
+    a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
 
-    //this stencil has a span so we have to evaluate the stencil on a grown set of the irregular cells so the regular and irregular data actually talk
-    getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph, facedir);
-
+    a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
+    //begin debug
+#if DIM==2
+    int ideb = 0;
+    Point debpt(4,8);
+#endif    
+    //end debug
     for(unsigned int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       EBIndex<CELL> vof = a_dstVoFs[ivof];
+      if(vof.m_pt == debpt)
+      {
+        ideb =1;
+      }
       vector<EBIndex<fcent> > faceslo = getSideFaces<fcent>(vof, Side::Lo, a_graph);
       vector<EBIndex<fcent> > faceshi = getSideFaces<fcent>(vof, Side::Hi, a_graph);
       vector<EBIndex<fcent> > allfaces;

@@ -790,8 +790,8 @@ void dummyfunc()
 }
 
 
-Point lodebarea(26, 22);
-Point hidebarea(28, 24);                                    
+Point lodebarea(3 , 7);
+Point hidebarea(5,  11);                                    
 
 void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {

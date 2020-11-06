@@ -68,7 +68,7 @@ registerStencils()
   m_brit->registerFaceToCell( StencilNames::DivergeFtoC         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
 
   //face-centered gradient of cell-centered data
-  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag, Point::Ones(2));
 }
 /// 
 void 
@@ -82,9 +82,9 @@ project(EBLevelFluxData<1>   & a_velo,
   kappaDivU(m_rhs, a_velo);
 
   //begin debug
-//  Real rhsmax = m_rhs.maxNorm(0);
-//  pout() << "rhs of mac projection = " << rhsmax << endl;
-////exit(0);
+  Real rhsmax = m_rhs.maxNorm(0);
+  pout() << "rhs of mac projection = " << rhsmax << endl;
+//  exit(0);
   //end debug
 
   //solve kappa*lapl(phi) = kappa*divu
@@ -220,7 +220,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
                               idir, ibox, initToZero, 1.0);
 
       //begin debug
-//      maxLocCell(kapdiv, grid, string("m_rhs"));
+      maxLocCell(kapdiv, grid, string("m_rhs"));
       //end debug
     }
     ideb++;
