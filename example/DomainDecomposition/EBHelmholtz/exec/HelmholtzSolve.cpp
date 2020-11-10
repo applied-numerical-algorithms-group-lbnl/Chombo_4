@@ -179,7 +179,7 @@ runTest(int a_argc, char* a_argv[])
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
     EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
     EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-    phibd.setVal(0.0);
+    phibd.setVal(0.6);
     rhsbd.setVal(1.0);
     corbd.setVal(0.0);
   }
@@ -188,8 +188,8 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "writing to file " << endl;
   
-//  auto& kappa = solver.getKappa();
-//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+  auto& kappa = solver.getKappa();
+  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
