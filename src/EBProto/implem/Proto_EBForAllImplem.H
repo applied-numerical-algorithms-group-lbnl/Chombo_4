@@ -201,7 +201,7 @@ namespace Proto
 //going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
-  cudaEBForAllIrreg(const Func& a_F, const Box& a_box,
+  cudaEBForAllIrreg(const Func& a_F, 
                     IrregData<cent, data_t, ncomp>& a_dst,
                     Srcs&...  a_srcs)
   {
@@ -219,7 +219,7 @@ namespace Proto
 ///going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
-  cudaEBForAllIrreg_i(const Func& a_F, const Box& a_box,
+  cudaEBForAllIrreg_i(const Func& a_F, 
                       IrregData<cent, data_t, ncomp>& a_dst,
                       Srcs&...  a_srcs)
   {
@@ -246,7 +246,7 @@ namespace Proto
   
 //do the same thing for the irregular data
 //    cout << "going into irreg forall" << endl;
-    cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg(a_F, getIrregData(a_srcs)...);
 //    cout << "leaving ebforall" << endl;
   }
 
@@ -259,7 +259,7 @@ namespace Proto
     forallInPlace_i(a_F, a_box, (getBoxData(a_srcs))...);
   
 //do the same thing for the irregular data
-    cudaEBForAllIrreg_i(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
   }
 
 #else
@@ -426,7 +426,7 @@ namespace Proto
     PR_TIME(a_timername);
     //the flops thing here is tricky
 #ifdef PROTO_CUDA
-    cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg(a_F, getIrregData(a_srcs)...);
 #else
     hostEBForAllIrreg(a_F, a_box, (getIrregData(a_srcs))...);
 #endif
@@ -443,7 +443,7 @@ namespace Proto
     PR_TIME(a_timername);
     //the flops thing here is tricky
 #ifdef PROTO_CUDA
-    cudaEBForAllIrreg_i(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
 #else
     hostEBForAllIrreg_i(a_F, a_box, (getIrregData(a_srcs))...);
 #endif

@@ -17,7 +17,7 @@ bool run_test_ebforall_i_init()
   bool check = fill.size() == size;
 
   double a = 0;
-  cudaEBForAllIrreg_i(init_test_forall_i, bx, fill, a);
+  cudaEBForAllIrreg_i(init_test_forall_i, fill, a);
 
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
@@ -49,7 +49,7 @@ bool run_test_ebforall_i_kernel()
 
   // use this constructor to initialize data on the GPU
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
-  cudaEBForAllIrreg_i(kernel_test_forall_i, bx, fill);
+  cudaEBForAllIrreg_i(kernel_test_forall_i, fill);
 
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
@@ -69,6 +69,7 @@ bool run_test_ebforall_i_kernel()
   return result;
 }
 
+#ifdef Debug_No
 bool run_test_ebforall_i_kernel_box_no_impact()
 {
   unsigned int size = 16;
@@ -106,6 +107,7 @@ bool run_test_ebforall_i_kernel_box_no_impact()
   free(checkPtr_2);  
   return result;
 }
+#endif
 
 bool run_test_ebforall_i_vec_indexer_only_gpu()
 {
