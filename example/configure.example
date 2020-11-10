@@ -67,7 +67,6 @@ for t in targets:
         f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
 
     if(args.petsc == 'TRUE'):
-        f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables\n')
         f.write('\nCPPFLAGS += -DCH_USE_PETSC')
         f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
