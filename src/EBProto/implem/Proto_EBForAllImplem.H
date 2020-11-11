@@ -273,7 +273,7 @@ namespace Proto
                     Srcs&...  a_srcs)
   {
 //indicies into irreg vector that correspond to input box
-    vector<EBIndex<cent> > dstvofs = a_dst.getIndices(a_box);
+    vector<EBIndex<cent> > dstvofs = a_dst.getIndices();
     hostVectorFunc(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
   }
 
@@ -286,7 +286,7 @@ namespace Proto
                       Srcs&...  a_srcs)
   {
 //indicies into irreg vector that correspond to input box
-    vector<EBIndex<cent> > dstvofs = a_dst.getIndices(a_box);
+    vector<EBIndex<cent> > dstvofs = a_dst.getIndices();
     hostVectorFunc_i(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
   }
 

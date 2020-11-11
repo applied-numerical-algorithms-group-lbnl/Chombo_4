@@ -265,32 +265,9 @@ namespace Proto
       return m_rawPtr[ind];
     }
 
-    vector<EBIndex<cent> > getIndices(const Box& a_box) const
+    vector<EBIndex<cent> > getIndices() const
     {
-      vector<EBIndex<cent> > retval;
-      CENTERING tcent = cent;
-      Box compBox = a_box;
-      if(tcent == XFACE)
-      {
-        compBox = a_box.grow(0, 1);
-      }
-      else if(tcent == YFACE)
-      {
-        compBox = a_box.grow(1, 1);
-      }
-      else if(tcent == ZFACE)
-      {
-        compBox = a_box.grow(1, 1);
-      }
-      
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        if(a_box.contains((*m_indicies)[i].m_pt))
-        {
-          retval.push_back((*m_indicies)[i]);
-        }
-      }
-      return retval;
+      return *m_indicies;
     }
 
     unsigned int vecsize() const
