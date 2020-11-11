@@ -789,9 +789,10 @@ void dummyfunc()
   phi2->dumpFile(0,0.1);
 }
 
+//around point (4, 8)
 
-Point lodebarea(3 , 7);
-Point hidebarea(5,  11);                                    
+Point lodebarea(3 , 6);
+Point hidebarea(5 , 10 );                                    
 
 void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {

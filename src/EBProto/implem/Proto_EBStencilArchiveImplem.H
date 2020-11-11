@@ -903,57 +903,7 @@ namespace Proto
                        Point                                       a_dstGrown,
                        Side::LoHiSide                              a_side)               
   {
-#if 0
-    int facedir;
-    if(fcent == XFACE)
-    {
-      facedir = 0;
-    }
-    else if(fcent == YFACE)
-    {
-      facedir = 1;
-    }
-    else if(fcent == ZFACE)
-    {
-      facedir = 2;
-    }
-    else
-    {
-      PROTO_ASSERT(false, "bogus face direction");
-    }
-    if(a_side == Side::Lo)
-    {
-      a_regStencil = (1.0)*Shift(Point::Basis(facedir, -1));
-    }
-    else if(a_side == Side::Hi)
-    {
-      a_regStencil = (1.0)*Shift(Point::Zeros());
-    }
-    else
-    {
-      PROTO_ASSERT(false, "bogus side");
-    }
 
-    Box faceBox = a_validBox.growHi(facedir, 1);
-    Box grownFace = faceBox;
-    for(int jdir = 0; jdir < DIM; jdir++)
-    {
-      if(jdir != facedir)
-      {
-        grownFace = grownFace.grow(jdir, a_dstGrown[jdir]);
-      }
-    }
-    a_regApplyBox = grownFace;
-
-    Box grown = a_validBox.grow(a_dstGrown);
-    a_dstFaces = getIrregFaces<fcent>(grown, a_graph);
-    a_stencil.resize(a_dstFaces.size());
-    for(unsigned int iface = 0; iface < a_dstFaces.size(); iface++)
-    {
-      EBIndex<CELL> vof = a_dstFaces[iface].getVoF(a_side);
-      a_stencil[iface].add(vof, 1.0);
-    }
-#else
     a_regStencil = (0.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
 
@@ -967,7 +917,6 @@ namespace Proto
       EBIndex<CELL> vof = dstface.getVoF(a_side);
       a_stencil[iface].add(vof, 1.0);
     }
-#endif
 
     return false;
   }
@@ -1007,20 +956,11 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
-    a_regStencil = (0.5)*Shift(Point::Zeros()) + (0.5)*Shift(Point::Basis(facedir, -1));
-    Box faceBox = a_validBox.growHi(facedir, 1);
-    Box grownFace = faceBox;
-    for(int jdir = 0; jdir < DIM; jdir++)
-    {
-      if(jdir != facedir)
-      {
-        grownFace = grownFace.grow(jdir, a_dstGrown[jdir]);
-      }
-    }
-    a_regApplyBox = grownFace;
+    a_regStencil = (1.0)*Shift(Point::Zeros());
+    a_regApplyBox = a_validBox;
 
     Box grown = a_validBox.grow(a_dstGrown);
-    a_dstFaces = getIrregFaces<fcent>(grown, a_graph);
+    a_dstFaces = getAllFaces<fcent>(grown, a_graph);
     a_stencil.resize(a_dstFaces.size());
     for(unsigned int iface = 0; iface < a_dstFaces.size(); iface++)
     {
@@ -1071,20 +1011,13 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
-    a_regStencil = (1.0/a_dx)*Shift(Point::Zeros()) - (1.0/a_dx)*Shift(Point::Basis(facedir, -1));
-    Box faceBox = a_validBox.growHi(facedir, 1);
-    Box grownFace = faceBox;
-    for(int jdir = 0; jdir < DIM; jdir++)
-    {
-      if(jdir != facedir)
-      {
-        grownFace = grownFace.grow(jdir, a_dstGrown[jdir]);
-      }
-    }
-    a_regApplyBox = grownFace;
+
+
+    a_regStencil = (1.0)*Shift(Point::Zeros());
+    a_regApplyBox = a_validBox;
 
     Box grown = a_validBox.grow(a_dstGrown);
-    a_dstFaces = getIrregFaces<fcent>(grown, a_graph);
+    a_dstFaces = getAllFaces<fcent>(grown, a_graph);
     a_stencil.resize(a_dstFaces.size());
     for(unsigned int iface = 0; iface < a_dstFaces.size(); iface++)
     {
@@ -1259,12 +1192,14 @@ namespace Proto
       PROTO_ASSERT(false, "bogus face direction");
     }
     
-    a_regStencil = (1.0/a_dx)*Shift(Point::Basis(facedir, 1)) +  (-1.0/a_dx)*Shift(Point::Zeros());
-    a_regApplyBox = a_validBox;
-
+//    a_regStencil = (1.0/a_dx)*Shift(Point::Basis(facedir, 1)) +  (-1.0/a_dx)*Shift(Point::Zeros());
     //this stencil has a span so we have to evaluate the stencil on a grown set of the irregular cells so the regular and irregular data actually talk
-    getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph, facedir);
+//    getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph, facedir);
+    a_regApplyBox = a_validBox;
+  
+    a_regStencil = (1.0)*Shift(Point::Zeros());
 
+    a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
     for(unsigned int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
@@ -1552,7 +1487,8 @@ namespace Proto
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox.growHi(facedir, 1);
 
-    a_dstFaces = getIrregFaces<fcent>(a_validBox, a_graph);
+    Box grown = a_validBox.grow(1);
+    a_dstFaces = getIrregFaces<fcent>(grown, a_graph);
 
     a_stencil.resize(a_dstFaces.size());
     for(unsigned int iface = 0; iface < a_dstFaces.size(); iface++)
