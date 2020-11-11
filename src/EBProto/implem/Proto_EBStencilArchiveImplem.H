@@ -619,7 +619,7 @@ namespace Proto
     //since the regular sencil has no span, we can just get the vofs
     a_dstVoFs = a_graph.getIrregVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
-    int ideb = 0;
+
     for(unsigned int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       vector<EBIndex<CELL> > neighbors;
@@ -649,7 +649,6 @@ namespace Proto
       {
         a_stencil[ivof].add(neighbors[inei], weight);
       }
-      ideb++;
     }
 
     //no bcs to apply here
@@ -1290,19 +1289,10 @@ namespace Proto
 
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
-    //begin debug
-#if DIM==2
-    int ideb = 0;
-    Point debpt(4,8);
-#endif    
-    //end debug
+
     for(unsigned int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       EBIndex<CELL> vof = a_dstVoFs[ivof];
-      if(vof.m_pt == debpt)
-      {
-        ideb =1;
-      }
       vector<EBIndex<fcent> > faceslo = getSideFaces<fcent>(vof, Side::Lo, a_graph);
       vector<EBIndex<fcent> > faceshi = getSideFaces<fcent>(vof, Side::Hi, a_graph);
       vector<EBIndex<fcent> > allfaces;
