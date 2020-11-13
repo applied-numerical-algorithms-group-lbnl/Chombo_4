@@ -37,7 +37,7 @@ endif
 
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)
-	$(CXX) $(DEPFLAGS) $(CPPFLAGS) $< 
+	$(DEPXX) $(DEPFLAGS) $(CPPFLAGS) $< 
 	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
 
 all: $(TARGET)
