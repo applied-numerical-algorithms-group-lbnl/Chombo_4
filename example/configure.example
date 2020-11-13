@@ -93,9 +93,9 @@ for t in targets:
     else:
         if args.opt == 'HIGH':
 	    if args.hip == 'FALSE':
-               f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
+               f.write('\nCXXOPTFLAGS:= $(CXXALLFLAGS) -DNDEBUG\n')
         else:
-            f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
+            f.write('\nCXXOPTFLAGS:= $(CXXALLFLAGS)\n')
         if args.cuda == 'TRUE':
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')

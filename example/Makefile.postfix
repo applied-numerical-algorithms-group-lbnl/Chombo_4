@@ -30,6 +30,9 @@ DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d
 
 ifeq ($(CXX),nvcc)
 LIBS+= -lnvToolsExt
+endif
+
+ifeq ($(DEPXX),nvcc)
 DEPFLAGS += --generate-dependencies
 else
 DEPFLAGS += -MM
