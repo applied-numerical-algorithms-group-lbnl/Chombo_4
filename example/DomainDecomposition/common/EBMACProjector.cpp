@@ -81,9 +81,9 @@ project(EBLevelFluxData<1>   & a_velo,
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
 
-  //begin debug
-  Real rhsmax = m_rhs.maxNorm(0);
-  pout() << "rhs of mac projection = " << rhsmax << endl;
+//  //begin debug
+//  Real rhsmax = m_rhs.maxNorm(0);
+//  pout() << "rhs of mac projection = " << rhsmax << endl;
 //  exit(0);
   //end debug
 
@@ -218,9 +218,10 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
       bool initToZero = false;
       m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
-
-      //begin debug
-      maxLocCell(kapdiv, grid, string("m_rhs"));
+//      //begin debug
+//      using std::to_string;
+//      string prefix = string("m_rhs") + string(", idir=") + to_string(idir) + string(", ibox = ") + to_string(ibox) + string(":");
+//      maxLocCell(kapdiv, grid, prefix);
       //end debug
     }
     ideb++;

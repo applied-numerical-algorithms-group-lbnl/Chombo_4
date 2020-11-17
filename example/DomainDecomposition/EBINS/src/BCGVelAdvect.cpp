@@ -162,8 +162,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   }  // and loop over velocity directions
 
   //begin debug
-  pout()  << "max norm of advection velocity before projection = " 
-          << m_advectionVel.maxNorm(0) << endl;
+//  pout()  << "max norm of advection velocity before projection = " 
+//          << m_advectionVel.maxNorm(0) << endl;
 
   // now we need to project the mac velocity
   pout() << "mac projecting advection velocity" << endl;
@@ -171,11 +171,11 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
   m_advectionVel.exchange(m_exchangeCopier);
-  //begin debug
-  pout()  << "max norm of advection velocity after projection = " 
-          << m_advectionVel.maxNorm(0) << endl;
-  pout() << "leaving getAdvectionVelocity" << endl;
-
+//  //begin debug
+//  pout()  << "max norm of advection velocity after projection = " 
+//          << m_advectionVel.maxNorm(0) << endl;
+//  pout() << "leaving getAdvectionVelocity" << endl;
+//
   //end debug
 
 }

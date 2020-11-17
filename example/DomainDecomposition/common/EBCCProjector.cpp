@@ -38,7 +38,7 @@ registerStencils()
   {
     //dirichlet at domain to get zero normal velocity at domain boundaries
     //grown by one to allow interpolation to face centroids
-    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
+    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
     brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma);
   }
 
