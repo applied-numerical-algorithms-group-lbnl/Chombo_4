@@ -233,42 +233,47 @@ namespace Proto
 
   {
     uint64_t a_numStenEntriesTotal = h_serializedStenInfo.size();
-    uint64_t numptsDst = m_dstAccess.size();
-    uint64_t totStenSize = a_numStenEntriesTotal*(sizeof(pair_t<data_t>));
-    uint64_t destAccSize = numptsDst*(sizeof(EBDataLoc));
-    uint64_t stenLenSize = numptsDst*(sizeof(uint64_t));
-    uint64_t stStartSize = numptsDst*(sizeof(uint64_t));
-    ///allocate memory on the device
-    protoMalloc(&d_ebstencil, totStenSize);
-    protoMalloc(&d_dstaccess, destAccSize);
-    protoMalloc(&d_stensizes, stenLenSize);
-    protoMalloc(&d_stenstart, stStartSize);
-
-    ///copy from the host
-    protoMemcpy(d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
-    protoMemcpy(d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
-    protoMemcpy(d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
-    protoMemcpy(d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
-
-    //figure out blocks and strides
-    m_stride = 32;
-    bool found = false;
-    while(!found)
-    {
-      if((numptsDst % m_stride) == 0)
+    if(a_numStenEntriesTotal>0)
       {
-        found = true;
+        uint64_t numptsDst = m_dstAccess.size();
+        uint64_t totStenSize = a_numStenEntriesTotal*(sizeof(pair_t<data_t>));
+        uint64_t destAccSize = numptsDst*(sizeof(EBDataLoc));
+        uint64_t stenLenSize = numptsDst*(sizeof(uint64_t));
+        uint64_t stStartSize = numptsDst*(sizeof(uint64_t));
+        ///allocate memory on the device
+        protoMalloc(&d_ebstencil, totStenSize);
+        protoMalloc(&d_dstaccess, destAccSize);
+        protoMalloc(&d_stensizes, stenLenSize);
+        protoMalloc(&d_stenstart, stStartSize);
+
+        ///copy from the host
+        protoMemcpy(d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
+        protoMemcpy(d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
+        protoMemcpy(d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
+        protoMemcpy(d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
+
+        //figure out blocks and strides
+        m_stride = 32;
+        bool found = false;
+        while(!found)
+          {
+            if((numptsDst % m_stride) == 0)
+              {
+                found = true;
+              }
+            else
+              {
+                m_stride /= 2;
+              }
+          }
+        PROTO_ASSERT(found, "could not find right number of blocks and strides");
+        m_blocks = numptsDst/m_stride;
+        m_blocks = 1;
+        m_stride =numptsDst;
       }
-      else
-      {
-        m_stride /= 2;
-      }
-    }
-    PROTO_ASSERT(found, "could not find right number of blocks and strides");
-    m_blocks = numptsDst/m_stride;
-    m_blocks = 1;
-    m_stride =numptsDst;
+ 
   }
+        
 /////
 
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
@@ -276,10 +281,13 @@ namespace Proto
   AggStencil<srcCenter, dstCenter, data_t>::
   cudaRelease()
   {
-    protoFree(d_ebstencil);
-    protoFree(d_dstaccess);
-    protoFree(d_stensizes);
-    protoFree(d_stenstart);
+    if(d_ebstencil != nullptr)
+      {
+        protoFree(d_ebstencil);
+        protoFree(d_dstaccess);
+        protoFree(d_stensizes);
+        protoFree(d_stenstart);
+      }
   }
 /////
 template<typename T>

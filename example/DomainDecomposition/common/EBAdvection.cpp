@@ -157,7 +157,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
                     minion, a_scal, a_source, a_dt);
 
   }
-
+  int istoop = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBBoxData<CELL, Real, 1> slopeLoCompNor, slopeHiCompNor;
@@ -179,6 +179,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
 
     stenlo->apply(slopeLoCompTan, minion, initToZero, 1.0);
     stenhi->apply(slopeHiCompTan, minion, initToZero, 1.0);
+    istoop++;
   }
   for(unsigned int idir = 0; idir < DIM; idir++)
   {

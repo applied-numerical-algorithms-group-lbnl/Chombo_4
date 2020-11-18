@@ -380,7 +380,7 @@ advanceVelocityAndPressure(Real a_dt,
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
 
-  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
+//  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
 
   if(m_eulerCalc)
   {

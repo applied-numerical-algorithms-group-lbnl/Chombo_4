@@ -68,7 +68,7 @@ registerStencils()
   m_brit->registerFaceToCell( StencilNames::DivergeFtoC         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
 
   //face-centered gradient of cell-centered data
-  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
+  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag, Point::Ones(2));
 }
 /// 
 void 
@@ -80,6 +80,12 @@ project(EBLevelFluxData<1>   & a_velo,
   CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
+
+//  //begin debug
+//  Real rhsmax = m_rhs.maxNorm(0);
+//  pout() << "rhs of mac projection = " << rhsmax << endl;
+//  exit(0);
+  //end debug
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
@@ -186,6 +192,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
 {
 
   CH_TIME("EBMACProjector::kappaDivU");
+  a_velo.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -211,6 +218,11 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
       bool initToZero = false;
       m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
+//      //begin debug
+//      using std::to_string;
+//      string prefix = string("m_rhs") + string(", idir=") + to_string(idir) + string(", ibox = ") + to_string(ibox) + string(":");
+//      maxLocCell(kapdiv, grid, prefix);
+      //end debug
     }
     ideb++;
   }

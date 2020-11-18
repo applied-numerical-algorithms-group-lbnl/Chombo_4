@@ -174,18 +174,28 @@ runTest(int a_argc, char* a_argv[])
   EBMultigrid::s_numSmoothDown = numSmooth;
   DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+  int numsolves = 1;
+  pp.query("num_solves", numsolves);
+#ifdef PROTO_CUDA
+  int whichgpu = 0;
+  pp.query("which_gpu", whichgpu);
+  cudaSetDevice(whichgpu);
+#endif  
+  for(int isolve =0; isolve < numsolves; isolve++)
   {
-    EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-    phibd.setVal(0.0);
-    rhsbd.setVal(1.0);
-    corbd.setVal(0.0);
+    pout() << "solve numbber " << isolve << endl;
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+      phibd.setVal(0.6);
+      rhsbd.setVal(1.0);
+      corbd.setVal(0.0);
+    }
+
+    solver.solve(phi, rhs, tol, maxIter, false);
   }
-
-  solver.solve(phi, rhs, tol, maxIter, false);
-
   pout() << "writing to file " << endl;
   
 //  auto& kappa = solver.getKappa();

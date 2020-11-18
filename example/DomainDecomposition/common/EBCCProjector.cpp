@@ -38,8 +38,8 @@ registerStencils()
   {
     //dirichlet at domain to get zero normal velocity at domain boundaries
     //grown by one to allow interpolation to face centroids
-    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
-    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma, false);
+    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
+    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma);
   }
 
 }
@@ -95,6 +95,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
                             facegrad, phifab, idir, ibox, initZero, 1.0);
     }
+    int ideb = 0;
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initZero = true;
@@ -102,6 +103,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       gradComp.define(a_gphi[dit[ibox]], idir);
       brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
                             gradComp, facegrad,  idir, ibox, initZero, 1.0);
+      ideb++;
       
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];

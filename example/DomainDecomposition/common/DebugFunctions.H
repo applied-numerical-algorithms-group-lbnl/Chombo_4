@@ -3,6 +3,9 @@
 #define PI 3.141592653589793
 #include "Chombo_EBLevelFluxData.H"
 #include "Chombo_NamespaceHeader.H"
+///will not work on device--debugging use only
+
+
 using Proto::Var;
 void 
 dumpVecRV(Vector<RealVect>* a_dataPtr)
@@ -786,9 +789,10 @@ void dummyfunc()
   phi2->dumpFile(0,0.1);
 }
 
+//around point (4, 8)
 
-Point lodebarea(1, 7 );
-Point hidebarea(5, 14);                                    
+Point lodebarea(3 , 6);
+Point hidebarea(5 , 10 );                                    
 
 void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {
@@ -880,11 +884,8 @@ dumpLDFluxDIMArea(EBLevelFluxData<DIM>*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      if(ibox < 2)
-      {
-        pout() << "level flux data for ibox = " << ibox << ":" << endl;
-        dumpFluxDIMArea(&(data[dit[ibox]]));
-      }
+      pout() << "level flux data for ibox = " << ibox << ":" << endl;
+      dumpFluxDIMArea(&(data[dit[ibox]]));
     }
   }
 }
@@ -897,11 +898,8 @@ dumpLDFlux1Area(EBLevelFluxData<1>*  dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      if(ibox < 2)
-      {
-        pout() << "level flux data for ibox = " << ibox << ":" << endl;
-        dumpFlux1Area(&(data[dit[ibox]]));
-      }
+      pout() << "level flux data for ibox = " << ibox << ":" << endl;
+      dumpFlux1Area(&(data[dit[ibox]]));
     }
   }
 }

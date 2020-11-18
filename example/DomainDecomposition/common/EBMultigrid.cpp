@@ -8,7 +8,7 @@
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = true;
+bool EBMultigrid::s_useWCycle     = false;
 int  EBMultigrid::s_numSmoothDown = 4;
 int  EBMultigrid::s_numSmoothUp   = 4;
 
@@ -402,32 +402,37 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           doExchange = (iter==0);
         }
       }
+//begin debug
+//      EBLevelBoxData<CELL, 1> &  rhs = (EBLevelBoxData<CELL, 1> &) a_rhs;
+//      rhs.exchange(m_exchangeCopier);
+//end debug
       residual(resid, a_phi, a_rhs, doExchange);
-      {
-        CH_TIME("ebforall gsrb bit");
-        for(int ibox = 0; ibox < dit.size(); ++ibox)
-        {
-          shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
 
-          Box grid = m_grids[dit[ibox]];
-          Bx  grbx = getProtoBox(grid);
-          //lambda = safety/diag
-          //phi = phi - lambda*(res)
-          ///lambda takes floating point to calculate
-          //also does an integer check for red/black but I am not sure what to do with that
-          auto& phifab   =   a_phi[dit[ibox]];
-          auto& resfab   =   resid[dit[ibox]];
-          auto& stendiag = m_diagW[dit[ibox]];
-          
-          Bx  inputBox = phifab.inputBox();
-          ebforall_i(inputBox, gsrbResid,  grbx, 
-                     phifab, resfab, stendiag,
-                     m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        //shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+
+        Box grid = m_grids[dit[ibox]];
+        Bx  grbx = getProtoBox(grid);
+        //lambda = safety/diag
+        //phi = phi - lambda*(res)
+        ///lambda takes floating point to calculate
+        //also does an integer check for red/black but I am not sure what to do with that
+        auto& phifab   =   a_phi[dit[ibox]];
+        auto& resfab   =   resid[dit[ibox]];
+        auto& stendiag = m_diagW[dit[ibox]];
+        auto& kappa    = m_kappa[dit[ibox]];
+        Bx  inputBox = phifab.inputBox();
+        ebforall_i(inputBox, gsrbResid,  grbx, 
+                   phifab, resfab, stendiag,
+                   kappa, m_alpha, m_beta, m_dx, iredblack);
       
-          ideb++;
-        } //end loop over boxes
         ideb++;
-      }
+      } //end loop over boxes
+//begin debug
+//      a_phi.exchange(m_exchangeCopier);
+//      ideb++;
+//end debug
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons

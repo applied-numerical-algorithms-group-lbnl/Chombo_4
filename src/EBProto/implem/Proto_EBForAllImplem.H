@@ -201,7 +201,7 @@ namespace Proto
 //going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
-  cudaEBForAllIrreg(const Func& a_F, const Box& a_box,
+  cudaEBForAllIrreg(const Func& a_F, 
                     IrregData<cent, data_t, ncomp>& a_dst,
                     Srcs&...  a_srcs)
   {
@@ -219,7 +219,7 @@ namespace Proto
 ///going into this srcs are IrregDatas and other stuff
   template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
-  cudaEBForAllIrreg_i(const Func& a_F, const Box& a_box,
+  cudaEBForAllIrreg_i(const Func& a_F, 
                       IrregData<cent, data_t, ncomp>& a_dst,
                       Srcs&...  a_srcs)
   {
@@ -246,7 +246,7 @@ namespace Proto
   
 //do the same thing for the irregular data
 //    cout << "going into irreg forall" << endl;
-    cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg(a_F, getIrregData(a_srcs)...);
 //    cout << "leaving ebforall" << endl;
   }
 
@@ -259,12 +259,74 @@ namespace Proto
     forallInPlace_i(a_F, a_box, (getBoxData(a_srcs))...);
   
 //do the same thing for the irregular data
-    cudaEBForAllIrreg_i(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
   }
 
 #else
 ///cpu-only specific functions
 
+///going into this srcs are IrregDatas and other stuff
+  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  inline void
+  hostEBForAllIrreg(const Func& a_F, 
+                    IrregData<cent, data_t, ncomp>& a_dst,
+                    Srcs&...  a_srcs)
+  {
+//indicies into irreg vector that correspond to input box
+    vector<EBIndex<cent> > dstvofs = a_dst.getIndices();
+    hostVectorFunc(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
+  }
+
+
+///going into this srcs are IrregDatas and other stuff
+  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  inline void
+  hostEBForAllIrreg_i(const Func& a_F, 
+                      IrregData<cent, data_t, ncomp>& a_dst,
+                      Srcs&...  a_srcs)
+  {
+//indicies into irreg vector that correspond to input box
+    vector<EBIndex<cent> > dstvofs = a_dst.getIndices();
+    hostVectorFunc_i(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
+  }
+
+
+///going into this srcs are EBBoxDatas and other stuff
+  template<typename Func, typename... Srcs>
+  inline void
+  hostEBforall(const Func & a_F,  Box a_box, Srcs&... a_srcs)
+  {
+//call regular forall
+    {
+      PR_TIME("regular_forall");
+      forallInPlaceBase(a_F, a_box, (getBoxData(a_srcs))...);
+    }  
+//do the same thing for the irregular data
+    {
+      PR_TIME("irreg_forall");
+      hostEBForAllIrreg(a_F, (getIrregData(a_srcs))...);
+    }
+  }
+
+///going into this srcs are EBBoxDatas and other stuff
+  template<typename Func, typename... Srcs>
+  inline void
+  hostEBforall_i(const Func & a_F,  Box a_box, Srcs&... a_srcs)
+  {
+    {
+      PR_TIME("regular_forall_i");
+      forallInPlace_i(a_F, a_box, (getBoxData(a_srcs))...);
+    }  
+    {
+      PR_TIME("irreg_forall_i");
+      hostEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
+    }
+  }
+
+#endif
+
+///This stuff has been removed from the no-PROTO_CUDA section to alloew test cpu versus gpu.
+///These functions are not in conflict with the gpu version.
 ///
   template<typename T>
   inline T
@@ -315,66 +377,6 @@ namespace Proto
        
   }
 
-///going into this srcs are IrregDatas and other stuff
-  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
-  inline void
-  hostEBForAllIrreg(const Func& a_F, const Box& a_box,
-                    IrregData<cent, data_t, ncomp>& a_dst,
-                    Srcs&...  a_srcs)
-  {
-//indicies into irreg vector that correspond to input box
-    vector<EBIndex<cent> > dstvofs = a_dst.getIndices(a_box);
-    hostVectorFunc(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
-  }
-
-
-///going into this srcs are IrregDatas and other stuff
-  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
-  inline void
-  hostEBForAllIrreg_i(const Func& a_F, const Box& a_box,
-                      IrregData<cent, data_t, ncomp>& a_dst,
-                      Srcs&...  a_srcs)
-  {
-//indicies into irreg vector that correspond to input box
-    vector<EBIndex<cent> > dstvofs = a_dst.getIndices(a_box);
-    hostVectorFunc_i(a_F, getEBIrregStruct(dstvofs, a_dst), (getEBIrregStruct(dstvofs, a_srcs))...);
-  }
-
-
-///going into this srcs are EBBoxDatas and other stuff
-  template<typename Func, typename... Srcs>
-  inline void
-  hostEBforall(const Func & a_F,  Box a_box, Srcs&... a_srcs)
-  {
-//call regular forall
-    {
-      PR_TIME("regular_forall");
-      forallInPlaceBase(a_F, a_box, (getBoxData(a_srcs))...);
-    }  
-//do the same thing for the irregular data
-    {
-      PR_TIME("irreg_forall");
-      hostEBForAllIrreg(a_F, a_box, (getIrregData(a_srcs))...);
-    }
-  }
-
-///going into this srcs are EBBoxDatas and other stuff
-  template<typename Func, typename... Srcs>
-  inline void
-  hostEBforall_i(const Func & a_F,  Box a_box, Srcs&... a_srcs)
-  {
-    {
-      PR_TIME("regular_forall_i");
-      forallInPlace_i(a_F, a_box, (getBoxData(a_srcs))...);
-    }  
-    {
-      PR_TIME("irreg_forall_i");
-      hostEBForAllIrreg_i(a_F, a_box, getIrregData(a_srcs)...);
-    }
-  }
-
-#endif
-
 ///version that does not send the point to the function
   template<typename Func, typename... Srcs>
   inline void ebforallInPlace(unsigned long long int a_num_flops_point,
@@ -424,9 +426,9 @@ namespace Proto
     PR_TIME(a_timername);
     //the flops thing here is tricky
 #ifdef PROTO_CUDA
-    cudaEBForAllIrreg(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg(a_F, getIrregData(a_srcs)...);
 #else
-    hostEBForAllIrreg(a_F, a_box, (getIrregData(a_srcs))...);
+    hostEBForAllIrreg(a_F, (getIrregData(a_srcs))...);
 #endif
   }
 
@@ -441,9 +443,9 @@ namespace Proto
     PR_TIME(a_timername);
     //the flops thing here is tricky
 #ifdef PROTO_CUDA
-    cudaEBForAllIrreg_i(a_F, a_box, getIrregData(a_srcs)...);
+    cudaEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
 #else
-    hostEBForAllIrreg_i(a_F, a_box, (getIrregData(a_srcs))...);
+    hostEBForAllIrreg_i(a_F, (getIrregData(a_srcs))...);
 #endif
   }
 
