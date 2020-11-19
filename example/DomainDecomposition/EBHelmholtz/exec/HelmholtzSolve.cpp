@@ -175,7 +175,7 @@ runTest(int a_argc, char* a_argv[])
   DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   int numsolves = 1;
-  pp.query("num solves", numsolves);
+  pp.query("num_solves", numsolves);
 #ifdef PROTO_CUDA
   int whichgpu = 0;
   pp.query("which_gpu", whichgpu);
@@ -198,8 +198,8 @@ runTest(int a_argc, char* a_argv[])
   }
   pout() << "writing to file " << endl;
   
-  auto& kappa = solver.getKappa();
-  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  auto& kappa = solver.getKappa();
+//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
