@@ -6,122 +6,67 @@ import platform
 
 parser = ArgumentParser()
 
-parser.add_argument('--dim', type=int, help='dimensionality to build executables [2]',default='2')
-parser.add_argument('--opt',  choices=['DEBUG', 'TRUE', 'HIGH'],help='compiler optimization [DEBUG]',default='DEBUG')
-parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
-parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [TRUE]',default='TRUE')
-parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
-parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
-parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
-parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
-parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--procs', type=int, help='minimum number of mpi processes [4]',default = '4')
+parser.add_argument('--input', type=str, help='name of input template  ["inputs.template"]',default="inputs.template")
+parser.add_argument('--batch', type=str, help='name of batch template ["batch.template"]' ,default="batch.template")
+parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [1024]',default='1024')
+parser.add_argument('--nx', type=int, help='nx for one processor [32]',default='32')
+parser.add_argument('--prefix', type=str, help='name of test[scaling_test]',default="scaling_test")
+parser.add_argument('--input_name', type=str, help='name of input file ["inputs"]',default="inputs")
 
 args = parser.parse_args()
 
 print args
 
-f_pref = open('Makefile.prefix','r')
-f_post = open('Makefile.postfix','r')
 
-makefile_pref = f_pref.read()
-makefile_post = f_post.read()
-f_pref.close()
-f_post.close()
+f_input = open(args.input,'r')
+f_batch = open(args.batch,'r')
 
-targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec']
+nproc = args.procs
+nnode = 1
+nx    = args.nx
+homestr = os.getcwd();
+print "homedir = " + homestr
+topstr = homestr + "/_" +args.prefix
+print "topstr = " + topstr
+if not os.path.exists(topstr):
+    printstr = "making directory " + topstr
+    print printstr
+    os.mkdir(topstr)
 
-top = os.getcwd()
-chombo_home = top + '/..'
-os.chdir(chombo_home+'/mk')
-f_mach_dep = open('Make.defs.local','r')
-mach_dep = f_mach_dep.read()
-f_mach_dep.close()
-os.chdir(top)
-r = open('compile.example','w')
-r.write('#/usr/bin/csh\n')
+while nproc <= args.max_proc:
+    printstr  = "nproc = " + str(nproc)
+    print printstr
+    dirstr =  "_" + str(nproc) + "_proc"
+    if not os.path.exists(dirstr):
+        printstr = "making directory " + dirstr
+        print printstr
+        os.mkdir(dirstr)
+    print "changing directory to " + dirstr
+    os.chdir(dirstr)
 
-for t in targets:
-    d= t
-    print d
-    comstr = " cd " + d + "; make pristine; make; cd " + top 
-    echostr =  "\necho \" " + comstr + "\" \n"
-    runstr =  "\n" + comstr + "\n"
-    r.write(echostr)
-    r.write(runstr)
-    os.chdir(d)
-    f = open('GNUmakefile','w')
-    f.write('\nCHOMBO_HOME := ' + chombo_home)
-    f.write('\nDIM := ' + str(args.dim)+"\n")
-    f.write(makefile_pref);
+    inputname = args.input + "_" + str(nproc) + "proc"
+    batchname = args.batch + "_" + str(nproc) + "proc"
+    f_inp = open(inputname,'w')
+    f_bat = open(batchname,'w')
+    print "input file"
+    for inputstr in f_input:
+        nxstr = inputstr.replace("NX", str(nx))
+        f_inp.write(nxstr)
+    print "batch file"
+    inputfilestr =  str(nproc) + "proc" + "."  + args.input
+    for batchstr in f_batch:
+        t1str = batchstr;
+        t2str = t1str.replace("NUM_PROC", str(nproc))
+        t3str = t2str.replace("EXECUTABLE_FILE", "../../main.exe")
+        t4str = t3str.replace("INPUT_FILE", inputfilestr)
+        t5str = t4str.replace("NUM_NODE", str(nnode))
+        f_bat.write(t5str)
+    print "changing directory to " + topstr
+    os.chdir(topstr);
+    nproc *= 8
+    nnode *= 8
+    nx    *= 2
 
-    f.write('\nCPPFLAGS = -std=c++11\n')
-    f.write(mach_dep);
-
-    if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
-        f.write('\nLIBS     += $(MPILIBS)')
-
-    if(args.hdf5 == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_HDF5 \n')
-        f.write('\nCPPFLAGS += $(HDFINCFLAGS)\n')
-        f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
-
-    if(args.petsc == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_PETSC')
-        f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
-        f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
-
-    if(args.efence == 'TRUE'):
-        f.write('\nLIBS     += $(EFENCEFLAGS) \n')
-
-
-    if(args.prec == 'DOUBLE'):
-        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
-
-    if args.opt == 'DEBUG':
-        if args.hip == 'FALSE':
-	  f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
-	if args.cuda == 'TRUE':
-            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-        else:
-            if args.hip == 'TRUE':
-              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
-              f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-	    else:
-              f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
-    else:
-        if args.opt == 'HIGH':
-	    if args.hip == 'FALSE':
-               f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
-        else:
-            f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
-        if args.cuda == 'TRUE':
-            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-        else:
-            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
-        if args.hip == 'TRUE':
-            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-        else:
-            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
-
-    if args.cuda == 'TRUE':
-        f.write('\nCXX = nvcc \n DEP=nvcc\n')
-        f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
-   
-    if args.hip == 'TRUE':
-        f.write('\nCXX = hipcc \n DEP=hipcc\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
-    
-
-    f.write(makefile_post)
- 
-    os.chdir(top)
-    f.close()
-    
-
-r.close()
-os.system('chmod +x compile.example')
+f_input.close()
+f_batch.close()
