@@ -1,20 +1,16 @@
 #!/bin/bash
-#BSUB -nnodes 512
+#BSUB -nnodes NUM_NODE
 #BSUB -P GEO127
-#BSUB -J euler
+#BSUB -J proto
 #BSUB -W 0:50
-#BSUB -o Euler.%J
+#BSUB -o proto.%J
 NNODES=512
-NAME_DIR=current-perf-512nodes
-DIR=/gpfs/alpine/geo127/scratch/rprat/$NAME_DIR
-EXE=main.exe
-INPUT=512node.in
-rm -rf $DIR
-mkdir $DIR
-cp $EXE $DIR/$EXE
-cp $INPUT $DIR/$INPUT
-cd $DIR
+
+EXE=EXECUTABLE_FILE
+INPUT=INPUT_FILE
+PROCS=NUM_PROCS
+
 date
-jsrun --smpiargs="-gpu" -E LD_PRELOAD=/opt/ibm/spectrum_mpi/lib/pami_471/libpami.so -n $NNODES -a 1 -c 1 -g 1 -l CPU-CPU -d packed -b packed:1 ./$EXE $INPUT
+jsrun --smpiargs="-gpu" -E LD_PRELOAD=/opt/ibm/spectrum_mpi/lib/pami_471/libpami.so -n $PROCS -a 1 -c 1 -g 1 -l CPU-CPU -d packed -b packed:1 ./$EXE $INPUT
 echo " dir = $DIR"
 rm core*
