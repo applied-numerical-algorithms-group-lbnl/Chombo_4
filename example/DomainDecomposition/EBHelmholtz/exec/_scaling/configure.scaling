@@ -38,9 +38,15 @@ if not os.path.exists(topstr):
 # print comstr
 # os.system(comstr)
 
+r = open('submit.jobs','w')
+r.write('#/usr/bin/csh\n')
+
 while nproc <= args.max_proc:
     print "changing directory to " + homestr
     os.chdir(homestr);
+    commstr = "cd " + homestr  + "\n"
+    r.write(commstr)
+
     f_inptemplate = open(args.input,'r')
     f_battemplate = open(args.batch,'r')
     print "changing directory to " + topstr
@@ -56,6 +62,9 @@ while nproc <= args.max_proc:
     print "changing directory to " + dirstr
     os.chdir(dirstr)
 
+    commstr = "cd " + dirstr  + "\n"
+    r.write(commstr)
+
     inputname = args.input + "_" + str(nproc) + "proc"
     batchname = args.batch + "_" + str(nproc) + "proc"
     f_inp = open(inputname,'w')
@@ -65,7 +74,7 @@ while nproc <= args.max_proc:
         nxstr = inputstr.replace("NX", str(nx))
         f_inp.write(nxstr)
     print "batch file"
-    inputfilestr =  str(nproc) + "proc" + "."  + args.input
+    inputfilestr =  inputname
     for batchstr in f_battemplate:
         t1str = batchstr;
         t2str = t1str.replace("NUM_PROCS", str(nproc))
