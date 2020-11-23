@@ -176,14 +176,10 @@ runTest(int a_argc, char* a_argv[])
   pout() << "setting values" << endl;
   int numsolves = 1;
   pp.query("num_solves", numsolves);
-#ifdef PROTO_CUDA
-  int whichgpu = 0;
-  pp.query("which_gpu", whichgpu);
-  cudaSetDevice(whichgpu);
-#endif  
+  pout() << "number of solves = " <<  numsolves << endl;
   for(int isolve =0; isolve < numsolves; isolve++)
   {
-    pout() << "solve numbber " << isolve << endl;
+    pout() << "going into solve numbber " << isolve << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
@@ -196,7 +192,7 @@ runTest(int a_argc, char* a_argv[])
 
     solver.solve(phi, rhs, tol, maxIter, false);
   }
-  pout() << "writing to file " << endl;
+  pout() << "done with solves " << endl;
   
 //  auto& kappa = solver.getKappa();
 //  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);

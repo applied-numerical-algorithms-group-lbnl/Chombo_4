@@ -32,20 +32,16 @@ if not os.path.exists(topstr):
     print printstr
     os.mkdir(topstr)
 
-# print "changing directory to " + topstr
-# os.chdir(topstr);
-# comstr = "cp ../main.exe" + topstr
-# print comstr
-# os.system(comstr)
+print "changing directory to " + topstr
+os.chdir(topstr);
 
-r = open('submit.jobs','w')
+submitstr = "submit."  + args.prefix + ".jobs"
+r = open(submitstr,'w')
 r.write('#/usr/bin/csh\n')
 
 while nproc <= args.max_proc:
     print "changing directory to " + homestr
     os.chdir(homestr);
-    commstr = "cd " + homestr  + "\n"
-    r.write(commstr)
 
     f_inptemplate = open(args.input,'r')
     f_battemplate = open(args.batch,'r')
@@ -62,13 +58,13 @@ while nproc <= args.max_proc:
     print "changing directory to " + dirstr
     os.chdir(dirstr)
 
-    commstr = "cd " + dirstr  + "\n"
-    r.write(commstr)
-
     inputname = args.input + "_" + str(nproc) + "proc"
     batchname = args.batch + "_" + str(nproc) + "proc"
     f_inp = open(inputname,'w')
     f_bat = open(batchname,'w')
+
+    commstr = "cd " + dirstr  + "; bsub " + batchname + "; cd .. \n"
+    r.write(commstr)
     print "input file"
     for inputstr in f_inptemplate:
         nxstr = inputstr.replace("NX", str(nx))
@@ -92,4 +88,5 @@ while nproc <= args.max_proc:
     nx    *= 2
 
 print "changing directory to " + homestr
+r.close()
 os.chdir(homestr)
