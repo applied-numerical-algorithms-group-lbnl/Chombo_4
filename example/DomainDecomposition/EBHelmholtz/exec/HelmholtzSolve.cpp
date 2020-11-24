@@ -174,22 +174,28 @@ runTest(int a_argc, char* a_argv[])
   EBMultigrid::s_numSmoothDown = numSmooth;
   DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+  int numsolves = 1;
+  pp.query("num_solves", numsolves);
+  pout() << "number of solves = " <<  numsolves << endl;
+  for(int isolve =0; isolve < numsolves; isolve++)
   {
-    EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-    phibd.setVal(0.6);
-    rhsbd.setVal(1.0);
-    corbd.setVal(0.0);
+    pout() << "going into solve numbber " << isolve << endl;
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+      phibd.setVal(0.6);
+      rhsbd.setVal(1.0);
+      corbd.setVal(0.0);
+    }
+
+    solver.solve(phi, rhs, tol, maxIter, false);
   }
-
-  solver.solve(phi, rhs, tol, maxIter, false);
-
-  pout() << "writing to file " << endl;
+  pout() << "done with solves " << endl;
   
-  auto& kappa = solver.getKappa();
-  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  auto& kappa = solver.getKappa();
+//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
