@@ -177,7 +177,7 @@ initializePressure(Real         a_dt,
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
   velo.copyTo(interv, velosave, interv, m_copyCopier);
-  gphi.setVal(0.);
+  //gphi.setVal(0.);
   for(int iter = 0; iter < a_numIterPres; iter++)
   {
     advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
@@ -192,23 +192,16 @@ computeDt(Real a_cfl) const
 {
   CH_TIME("EBINS::computeDt");
   Real dtval;
-  ParmParse pp;
-  bool use_stokes_dt = false;
-  pp.query("use_stokes_dt", use_stokes_dt);
-  if(use_stokes_dt)
-  {
-    dtval = m_dx*m_dx/m_viscosity;
-  }
-  else
-  {
+  Real dtCFL = 999999999.;
     Real maxvel = 0;
     for(int idir = 0; idir < DIM; idir++)
     {
       maxvel = std::max(maxvel, m_velo->maxNorm(idir));
     }
+    dtCFL = a_cfl*m_dx/maxvel;
     if(maxvel > 1.0e-16)
     {
-      dtval = a_cfl*m_dx/maxvel;
+      dtval = dtCFL;
       pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
     }    
     else
@@ -216,6 +209,15 @@ computeDt(Real a_cfl) const
       pout() << "velocity seems to be zero--setting dt to dx" << endl;
       dtval = m_dx;
     }
+
+  ParmParse pp;
+  Real dtStokes = m_dx*m_dx/m_viscosity;
+  bool use_stokes_dt = false;
+  pp.query("use_stokes_dt", use_stokes_dt);
+  if(use_stokes_dt && dtCFL > dtStokes)
+  {
+    dtval = dtStokes;
+    pout() << "Using Stokes dt = " << dtval << endl;
   }
   return dtval;
 }
@@ -225,6 +227,11 @@ EBINS::
 getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
   m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
+  // const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
+  string filedivuu = string("divuu.") + std::to_string(1) + string(".hdf5");
+  // writeEBLevelHDF5<DIM>(filedivuu, *m_divuu, kappa, m_domain, m_graphs, 0, m_dx, a_dt, a_dt);
+  pout() << "Writing to divuu" << endl;
+  m_divuu->writeToFileHDF5(filedivuu, 0.);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -379,8 +386,7 @@ advanceVelocityAndPressure(Real a_dt,
   CH_TIME("EBINS::advanceVelocityAndPressure");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
-
-//  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
+  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
 
   if(m_eulerCalc)
   {
@@ -415,7 +421,6 @@ outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) con
   writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"
