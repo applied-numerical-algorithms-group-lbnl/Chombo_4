@@ -12,7 +12,7 @@ parser.add_argument('--batch', type=str, help='name of batch template ["batch.te
 parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [1024]',default='1024')
 parser.add_argument('--nx', type=int, help='nx for one processor [32]',default='64')
 parser.add_argument('--prefix', type=str, help='name of test[scaling_test]',default="scaling_test")
-parser.add_argument('--input_name', type=str, help='name of input file ["inputs"]',default="inputs")
+parser.add_argument('--executable__name', type=str, help='name of input file ["../../main.exe"]',default="../../main.exe")
 
 args = parser.parse_args()
 
@@ -43,10 +43,10 @@ while nproc <= args.max_proc:
     print "changing directory to " + homestr
     os.chdir(homestr);
 
-    f_inptemplate = open(args.input,'r')
+    f_inpppptemplate = open(args.input,'r')
     f_battemplate = open(args.batch,'r')
     print "changing directory to " + topstr
-    os.chdir(topstr);
+    os.pchdir(topstr);
 
     printstr  = "nproc = " + str(nproc)
     print printstr
@@ -74,7 +74,7 @@ while nproc <= args.max_proc:
     for batchstr in f_battemplate:
         t1str = batchstr;
         t2str = t1str.replace("NUM_PROCS", str(nproc))
-        t3str = t2str.replace("EXECUTABLE_FILE", "../main.exe")
+        t3str = t2str.replace("EXECUTABLE_FILE", args.executable_name)
         t4str = t3str.replace("INPUT_FILE", inputfilestr)
         t5str = t4str.replace("NUM_NODE", str(nnode))
         f_bat.write(t5str)
