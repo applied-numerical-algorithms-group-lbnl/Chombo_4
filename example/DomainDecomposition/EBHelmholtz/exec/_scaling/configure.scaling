@@ -12,7 +12,7 @@ parser.add_argument('--batch', type=str, help='name of batch template ["batch.te
 parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [1024]',default='1024')
 parser.add_argument('--nx', type=int, help='nx for one processor [32]',default='64')
 parser.add_argument('--prefix', type=str, help='name of test[scaling_test]',default="scaling_test")
-parser.add_argument('--executable__name', type=str, help='name of input file ["../../main.exe"]',default="../../main.exe")
+parser.add_argument('--executable_name', type=str, help='name of executable file ["../../main.exe"]',default="../../main.exe")
 
 args = parser.parse_args()
 
@@ -43,10 +43,10 @@ while nproc <= args.max_proc:
     print "changing directory to " + homestr
     os.chdir(homestr);
 
-    f_inpppptemplate = open(args.input,'r')
-    f_battemplate = open(args.batch,'r')
+    f_inputtemplate = open(args.input,'r')
+    f_batchtemplate = open(args.batch,'r')
     print "changing directory to " + topstr
-    os.pchdir(topstr);
+    os.chdir(topstr);
 
     printstr  = "nproc = " + str(nproc)
     print printstr
@@ -66,12 +66,12 @@ while nproc <= args.max_proc:
     commstr = "cd " + dirstr  + "; bsub " + batchname + "; cd .. \n"
     r.write(commstr)
     print "input file"
-    for inputstr in f_inptemplate:
+    for inputstr in f_inputtemplate:
         nxstr = inputstr.replace("NX", str(nx))
         f_inp.write(nxstr)
     print "batch file"
     inputfilestr =  inputname
-    for batchstr in f_battemplate:
+    for batchstr in f_batchtemplate:
         t1str = batchstr;
         t2str = t1str.replace("NUM_PROCS", str(nproc))
         t3str = t2str.replace("EXECUTABLE_FILE", args.executable_name)
@@ -81,8 +81,8 @@ while nproc <= args.max_proc:
 
     f_inp.close();
     f_bat.close()
-    f_inptemplate.close()
-    f_battemplate.close()
+    f_inputtemplate.close()
+    f_batchtemplate.close()
     nproc *= 8
     nnode *= 8
     nx    *= 2

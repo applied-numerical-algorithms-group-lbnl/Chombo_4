@@ -3,7 +3,7 @@ nx=       NX
 #number of applies
 maxIter=    5
 #number of cuda streams (if used)
-nStream=  8
+nStream=  1
 alpha = 1.0
 beta = -0.01
 tolerance = 1.0e-10
