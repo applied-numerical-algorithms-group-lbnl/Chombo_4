@@ -2,7 +2,7 @@
 #BSUB -nnodes NUM_NODE
 #BSUB -P GEO127
 #BSUB -J proto
-#BSUB -W 0:50
+#BSUB -W 1:59
 #BSUB -o proto.%J
 CH_TIMER=1
 PR_TIMER=1

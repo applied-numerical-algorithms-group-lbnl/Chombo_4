@@ -1,6 +1,8 @@
+#number of solves to do
+num_solves = 10
 #domain size
 nx=       NX
-#number of applies
+#max number of v cycles
 maxIter=    5
 #number of cuda streams (if used)
 nStream=  1
