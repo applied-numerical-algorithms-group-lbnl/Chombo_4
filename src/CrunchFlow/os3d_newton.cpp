@@ -6,12 +6,12 @@
 #  include <assert.h>
 #  include <cuda_runtime.h>
 #  include <cusolverDn.h>
+#endif
+
+#ifdef MKL
+#  include <mkl_lapacke.h>
 #else
-#  ifdef MKL
-#    include <mkl_lapacke.h>
-#  else
-#    include <lapacke.h>
-#  endif
+#  include <lapacke.h>
 #endif
 
 #include <stdlib.h>
@@ -50,12 +50,13 @@ void printSolution(int n, const double* b)
 
 void print_matrix(const int n,
 		  /* const */ double *A_2d,
-		  /* const */ double *b_1d)
+		  /* const */ double *b_1d,
+		  const char *name)
 {
   ShapeArray<double, 2> A(A_2d, n, n);
   ShapeArray<double, 1> b(b_1d, n);
   
-  fprintf(stderr,"C os3d_newton [A|b]: dim: %d\n", n);
+  fprintf(stderr,"%s: C os3d_newton [A|b]: dim: %d\n", name, n);
   for(size_t i = 0; i < n; ++i)
     {
       for(size_t j = 0; j < n; ++j)
@@ -64,7 +65,8 @@ void print_matrix(const int n,
     }
 }
 
-int os3d_newton(const int ncomp,
+int os3d_newton(enum Target target,
+		const int ncomp,
 		const int nspec,
 		const int nkin,
 		const int nrct,
@@ -210,7 +212,6 @@ int os3d_newton(const int ncomp,
   const double atol = 1e-09;
   const double rtol = 1e-06;
   double aascale;
-  double check;
   double errmax;
   double tolmax;
   int ind;
@@ -407,8 +408,9 @@ int os3d_newton(const int ncomp,
 	       fxx_1d,
 	       fxmax_1d,
 	       satliq_3d);
-
-      assemble_local(ncomp, 
+      
+      assemble_local(target,
+		     ncomp, 
 		     nspec, 
 		     nkin, 
 		     ikin,
@@ -452,12 +454,14 @@ int os3d_newton(const int ncomp,
       if( DEBUG )
 	{
 	  fprintf(stderr,"iteration %d, solve system:\n",*iterat);
-	  print_matrix(neqn, &aaa[0][0], bb);
+	  print_matrix(neqn, &aaa[0][0], bb, "host");
 	}
 
-      check = -fxx[0]/aaa[0][0];
-
 #ifdef PROTO_CUDA
+
+      if(target == DEVICE)
+	{
+
       int info = 0;       /* host copy of error info */
       int m = neqn, lda = ncomp, ldb = ncomp, nrhs = 1;
       double *d_A = NULL; /* device copy of A */
@@ -659,14 +663,19 @@ int os3d_newton(const int ncomp,
 
       if (cusolverH   ) cusolverDnDestroy(cusolverH);
       if (stream      ) cudaStreamDestroy(stream);
-#else
+
+	}
+#endif
+
+      if( target == HOST)
+	{
       auto start = std::chrono::high_resolution_clock::now();
       
       //      CALL dgetrf(neqn,neqn,aaa,neqn,indd,info)
       //
       lapack_int info, m = neqn, n = neqn, lda = neqn, ldb = 1, nrhs = 1;
       lapack_int *ipiv = (lapack_int *) malloc(n * sizeof(lapack_int));
-
+      
       //                    1                2 3 4          5   6
       info = LAPACKE_dgetrf(LAPACK_ROW_MAJOR,m,n,&aaa[0][0],lda,ipiv);
 
@@ -695,7 +704,7 @@ int os3d_newton(const int ncomp,
       double time_taken =
 	std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       total_time_taken += time_taken; 
-#endif
+	}
 
       if( DEBUG )
       	{
@@ -776,9 +785,8 @@ int os3d_newton(const int ncomp,
   free(rdkin);
   free(decay_correct);
 
-#ifndef PROTO_CUDA
-  fprintf(stderr,"os3d_newton: LU host solver: %.0f ns\n", total_time_taken);
-#endif
+  if(target == HOST)
+    fprintf(stderr,"os3d_newton: LU host solver: %.0f ns\n", total_time_taken);
 
   return *icvg;
 }

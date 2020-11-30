@@ -2,6 +2,8 @@
 
 #define DEBUG 0
 
+enum Target {HOST, DEVICE};
+
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -510,7 +512,8 @@ void cfgamma(const int ncomp,
 void fit(int *nbasis, int *ntemp, double *alogk0, double *bvec, double *vec,
 	 int *iflgint, int *inoutint, int *ntt, char *nameTransfer);
 
-void assemble_local(const int ncomp, 
+void assemble_local(enum Target target,
+		    const int ncomp, 
 		    const int nspec, 
 		    const int nkin, 
 		    const int ikin, 
@@ -556,7 +559,8 @@ int initialize(const int ncompchombo,
 	       const int ny, 
 	       const int nz);
 
-int os3d_newton(const int ncomp,
+int os3d_newton(enum Target target,
+		const int ncomp,
 		const int nspec,
 		const int nkin,
 		const int nrct,
@@ -645,3 +649,5 @@ extern Pathway *pathways;
 extern Solution *solutions;
 
 void printSpecies(Species *dependencyList);
+void printMatrix(int m, int n, const double*A, int lda, const char* name);
+void print_matrix(const int n, /* const */ double *A_2d, /* const */ double *b_1d, const char *name);

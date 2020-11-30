@@ -11,8 +11,8 @@
 #include "crunchflow.h"
 
 using namespace shape;
-
-int cfdriver(void)
+//
+int cfdriver(enum Target target)
 {
   const int ncomp = 6;
   const int nspec = 9;
@@ -295,8 +295,9 @@ int cfdriver(void)
       { 1 }
     }
   };
-  
-  return( os3d_newton(/* const int */ ncomp,
+
+  return( os3d_newton(/* enum Target */ target,
+		      /* const int */ ncomp,
 		      /* const int */ nspec,
 		      /* const int */ nkin,
 		      /* const int */ nrct,
@@ -375,4 +376,29 @@ int cfdriver(void)
 		      /* double * */ &fxx[0], // [neqn],
 		      /* double * */ &fxmax[0], // [neqn],
 		      /* double * */ &satliq[0][0][0])); // [nz][ny][nx] 79
+}
+
+int main(int argc, char *argv[])
+{
+  enum Target target = HOST;
+  switch(argc)
+    {
+    case 1:
+      break;
+    case 2:
+      if(!strcmp(argv[1],"host"))
+	target = HOST;
+      else if(!strcmp(argv[1],"device"))
+	target = DEVICE;
+      else
+	{
+	  fprintf(stderr,"unknown target");
+	  exit(1);
+	}
+      break;
+    default:
+      fprintf(stderr,"usage: %s [target]\n",argv[0]);
+      exit(1);
+    }
+  return(cfdriver(target));
 }
