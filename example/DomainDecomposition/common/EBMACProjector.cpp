@@ -112,7 +112,7 @@ project(EBLevelFluxData<1>   & a_velo,
 ///
 void 
 EBMACProjector::
-applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                             const DataIndex     & a_dit)
 {
   Box validBox = m_grids[a_dit];
@@ -163,16 +163,28 @@ applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
           unsigned long long int numflopspt = 0;
           if(idir == 0)
           {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+            //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+            //using non-eb forall because box restriction in eb land is broken right now.   This will
+            //work if there nare no cut cells near the domain boundary
+            auto& regdata = a_flux.m_xflux->getRegData();
+            forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
           }
           else if(idir == 1)
           {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+            //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+            //using non-eb forall because box restriction in eb land is broken right now.   This will
+            //work if there nare no cut cells near the domain boundary
+            auto& regdata = a_flux.m_yflux->getRegData();
+            forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
           }
 #if DIM==3          
           else if(idir == 2)
           {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+            //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+            //using non-eb forall because box restriction in eb land is broken right now.   This will
+            //work if there nare no cut cells near the domain boundary
+            auto& regdata = a_flux.m_zflux->getRegData();
+            forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
           }
 #endif
           else
@@ -209,7 +221,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-    applyFluxBoundaryConditions(centroidFlux, dit[ibox]);
+    applyVeloBoundaryConditions(centroidFlux, dit[ibox]);
 
     auto& kapdiv =  m_rhs[dit[ibox]];
     kapdiv.setVal(0.);
@@ -218,11 +230,6 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
       bool initToZero = false;
       m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
-//      //begin debug
-//      using std::to_string;
-//      string prefix = string("m_rhs") + string(", idir=") + to_string(idir) + string(", ibox = ") + to_string(ibox) + string(":");
-//      maxLocCell(kapdiv, grid, prefix);
-      //end debug
     }
     ideb++;
   }
