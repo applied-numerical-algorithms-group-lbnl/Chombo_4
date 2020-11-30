@@ -156,16 +156,8 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     ideb++;
   }
 
-//  static bool printed = false;
-//  if(!printed)
-//  {
-//    auto & kappa   = m_macprojector->m_solver->getKappa();
-//    printed = true;
-//    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
-//    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);
-//  }
 }
-///
+
 #include "Chombo_NamespaceFooter.H"
 
 
