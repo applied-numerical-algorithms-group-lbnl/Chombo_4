@@ -147,7 +147,7 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
     //brutally enforce flux-based boundary conditions on the hapless data
-    m_macprojector->applyFluxBoundaryConditions(centroidv, dit[ibox]);
+    m_macprojector->applyVeloBoundaryConditions(centroidv, dit[ibox]);
     auto& kapdiv = divu[dit[ibox]];
     //get kappa*divv
     //also registered by the mac projector

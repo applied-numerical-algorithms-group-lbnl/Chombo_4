@@ -79,7 +79,7 @@ public:
 private:
   
   void
-  applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+  applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                               const DataIndex     & a_dit);
   
   void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);

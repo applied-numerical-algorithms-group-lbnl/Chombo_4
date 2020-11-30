@@ -160,7 +160,7 @@ applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
         if(setstuff)
         {
           Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
+          //unsigned long long int numflopspt = 0;
           if(idir == 0)
           {
             //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
