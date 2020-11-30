@@ -68,13 +68,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
-  //begin debug
-//  Real covval = 0;
-//  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
-//  phi.writeToFileHDF5(string("phi.hdf5"), covval);
-//  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
-  //end debug
-  
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
 
