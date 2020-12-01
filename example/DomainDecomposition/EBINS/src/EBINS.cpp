@@ -228,10 +228,10 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
 {
   m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
   // const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
-  string filedivuu = string("divuu.") + std::to_string(1) + string(".hdf5");
-  // writeEBLevelHDF5<DIM>(filedivuu, *m_divuu, kappa, m_domain, m_graphs, 0, m_dx, a_dt, a_dt);
-  pout() << "Writing to divuu" << endl;
-  m_divuu->writeToFileHDF5(filedivuu, 0.);
+//  string filedivuu = string("divuu.") + std::to_string(1) + string(".hdf5");
+//  // writeEBLevelHDF5<DIM>(filedivuu, *m_divuu, kappa, m_domain, m_graphs, 0, m_dx, a_dt, a_dt);
+//  pout() << "Writing to divuu" << endl;
+//  m_divuu->writeToFileHDF5(filedivuu, 0.);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -386,7 +386,7 @@ advanceVelocityAndPressure(Real a_dt,
   CH_TIME("EBINS::advanceVelocityAndPressure");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
-  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
+//  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
 
   if(m_eulerCalc)
   {
