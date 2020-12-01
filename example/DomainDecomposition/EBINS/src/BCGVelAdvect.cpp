@@ -60,26 +60,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
         }
       }
     }
@@ -330,6 +311,9 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       auto& faceCentVel  = m_advectionVel[dit[ibox]];
       auto& scalar       =  scalarVelComp[dit[ibox]];
 
+      //enforce boundary conditions with an iron fist.
+      applyVeloFluxBCs(scalarVelComp[dit[ibox]],  dit[ibox], ivar);
+      
       EBFluxData<Real, 1>  centroidFlux(grown, graph);
       EBFluxData<Real, 1>  faceCentFlux(grown, graph);
 
@@ -339,9 +323,6 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       //interpolate flux to centroids
       stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-      //enforce boundary conditions with an iron fist.
-      applyVeloFluxBCs(centroidFlux,  dit[ibox], ivar);
-      
       scalar.define(m_macVelocity[dit[ibox]], ivar);
 
       auto& kapdiv =  m_kappaDiv[dit[ibox]];

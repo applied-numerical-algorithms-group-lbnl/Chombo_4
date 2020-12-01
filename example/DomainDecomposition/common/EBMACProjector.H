@@ -76,6 +76,8 @@ public:
 
   Copier                                 m_exchangeCopier;
 
+  static void setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval);
+
 private:
   
   void
