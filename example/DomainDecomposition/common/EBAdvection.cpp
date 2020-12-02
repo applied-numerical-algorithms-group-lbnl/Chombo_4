@@ -1,5 +1,6 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
+#include "EBMACProjector.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the non-conservative div (radius 1)
@@ -349,26 +350,7 @@ applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
         }
       }
     }
@@ -466,6 +448,10 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
 {
   
   CH_TIME("EBAdvection::advance");
+  //begin debug
+  Real maxbefore = a_phi.maxNorm(0);
+  pout() <<  "phi norm before scalar advance = "  << maxbefore << endl;
+  //end debug
   hybridDivergence(a_phi,  a_dt);
 
   DataIterator dit = m_grids.dataIterator();
@@ -478,6 +464,10 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
       scalar, diverg, a_dt);
   }
+  //begin debug
+  Real maxafter = a_phi.maxNorm(0);
+  pout() <<  "phi norm after  scalar advance = "  << maxafter << endl;
+  //end debug
 }
 
 ///
