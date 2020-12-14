@@ -94,6 +94,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 {
   CH_TIME("BCGAdvect::getAdvectionVelocity");
   a_inputVel.exchange(m_exchangeCopier);
+  m_source.exchange(  m_exchangeCopier);
+
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> velcomp;
@@ -110,6 +112,12 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->applyOp(m_source, velcomp);
     }
 
+    //begin debug
+    EBLevelFluxData<1> scalarLoLD(m_grids, m_nghost, m_graphs);
+    EBLevelFluxData<1> scalarHiLD(m_grids, m_nghost, m_graphs);
+    EBLevelFluxData<1> faceVeloLD(m_grids, m_nghost, m_graphs);
+    EBLevelFluxData<1> upwindScLD(m_grids, m_nghost, m_graphs);                                      
+    //end debug
     pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -120,44 +128,61 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
-      auto & veccell = a_inputVel[dit[ibox]];
-      auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
-                           grown, graph, dit[ibox], ibox, a_dt);
-
-      //get face fluxes and interpolate them to centroids
+//begin debug      
+#if 0      
+//end debug      
+      EBFluxData<Real, 1>  scalarHi(grown, graph);
+      EBFluxData<Real, 1>  scalarLo(grown, graph);
       EBFluxData<Real, 1>  faceCentVelo( grown, graph);
       EBFluxData<Real, 1>  upwindScal(   grown, graph);
+//begin debug      
+#else
+      EBFluxData<Real, 1>&  scalarLo      = scalarLoLD[dit[ibox]];
+      EBFluxData<Real, 1>&  scalarHi      = scalarHiLD[dit[ibox]];
+      EBFluxData<Real, 1>&  faceCentVelo  = faceVeloLD[dit[ibox]];
+      EBFluxData<Real, 1>&  upwindScal    = upwindScLD[dit[ibox]];
+#endif      
+//end debug
+      
+      auto & veccell = a_inputVel[dit[ibox]];
+      auto & sourfab =   m_source[dit[ibox]];
+      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
+                           grown, graph, dit[ibox], ibox, a_dt);
+
       //average velocities to face centers.
       getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
+      //get face fluxes and interpolate them to centroids
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
       EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
       
       //now copy into the normal direction holder
       copyComp(advvelfab, upwindScal, idir);
 
     } //end loop over boxes
+    //begin debug
+    static int ideb = 0;    
+    ideb++;
+    //end debug
   }  // and loop over velocity directions
 
-  //begin debug
-//  pout()  << "max norm of advection velocity before projection = " 
-//          << m_advectionVel.maxNorm(0) << endl;
+//begin debug
+  pout()  << "max norm of advection velocity before projection = " 
+          << m_advectionVel.maxNorm(0) << endl;
 
+//end debug
+                                        
   // now we need to project the mac velocity
   pout() << "mac projecting advection velocity" << endl;
-  //end debug
 
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
   m_advectionVel.exchange(m_exchangeCopier);
-//  //begin debug
-//  pout()  << "max norm of advection velocity after projection = " 
-//          << m_advectionVel.maxNorm(0) << endl;
-//  pout() << "leaving getAdvectionVelocity" << endl;
-//
-  //end debug
+//begin debug
+  pout()  << "max norm of advection velocity after projection = " 
+          << m_advectionVel.maxNorm(0) << endl;
+  pout() << "leaving getAdvectionVelocity" << endl;
+
+//end debug
 
 }
 /*******/
@@ -225,17 +250,17 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
+      EBFluxData<Real, 1>  scalarHi(grown, graph);
+      EBFluxData<Real, 1>  scalarLo(grown, graph);
       auto & veccell = a_inputVel[dit[ibox]];
       auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
+      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
                            grown, graph, dit[ibox], ibox, a_dt);
 
       //get face fluxes and interpolate them to centroids
       EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
 
     } //end loop over boxes
   }  // and loop over velocity directions

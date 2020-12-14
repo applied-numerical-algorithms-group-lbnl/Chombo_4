@@ -3,6 +3,7 @@
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+#include "DebugFunctions.H"
 using Proto::Var;
 /*******/
 EBINS::
@@ -226,12 +227,11 @@ void
 EBINS::
 getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
-  m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
-  // const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
-//  string filedivuu = string("divuu.") + std::to_string(1) + string(".hdf5");
-//  // writeEBLevelHDF5<DIM>(filedivuu, *m_divuu, kappa, m_domain, m_graphs, 0, m_dx, a_dt, a_dt);
-//  pout() << "Writing to divuu" << endl;
-//  m_divuu->writeToFileHDF5(filedivuu, 0.);
+  auto& divuu = *m_divuu;
+  auto& velo  = *m_velo;
+  static int ideb = 0;
+  m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
+  ideb++;
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -404,9 +404,13 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
+  static int ideb = 0;
+  auto& scal = *m_scal;
   CH_TIME("EBINS::advanceScalar");
-  EBLevelBoxData<CELL, 1> source(m_grids, m_nghost, m_graphs);
-  m_advectOp->advance(*m_scal, a_dt);
+  scal.exchange(m_exchangeCopier);
+  m_advectOp->advance(scal, a_dt);
+  scal.exchange(m_exchangeCopier);
+  ideb++;
 }
 /*******/ 
 void

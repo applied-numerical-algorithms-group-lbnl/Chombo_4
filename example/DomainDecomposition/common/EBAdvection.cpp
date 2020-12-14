@@ -150,7 +150,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph); 
   EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph);
 
-  //vel + 0.5*dt*source for minion stability fix
+  //vel + 0.5*dt*source for Minion (Michael, not the yellow guys) stability fix
   EBBoxData<CELL, Real, 1> minion(a_grown, a_graph);
   {
     unsigned int nflop = 3;
@@ -205,6 +205,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
     m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, a_scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, a_scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
   }
+  istoop++;
 }
 /*******/
 void 
