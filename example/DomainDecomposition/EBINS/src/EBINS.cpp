@@ -140,26 +140,26 @@ run(unsigned int a_max_step,
     outputToFile(0, a_coveredVal, dt, 0.0);
   }
 
-  Real time = 0;
-  unsigned int step = 0;
-  while((step < a_max_step) && (time < a_max_time))
+  m_time = 0;
+  m_step = 0;
+  while((m_step < a_max_step) && (m_time < a_max_time))
   {
-    pout() << "step = " << step << ", time = " << time << " dt = " << dt << endl;
+    pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
     pout() << "advancing passive scalar " << endl;
     advanceScalar(dt);
 
     pout() << "advancing velocity and pressure fields " << endl;
     advanceVelocityAndPressure(dt, a_tol, a_maxIter);
 
-    step++;
-    time += dt;
+    m_step++;
+    m_time += dt;
     if(!usingFixedDt)
     {
       dt = computeDt(a_cfl);
     }
-    if((doFileOutput) && (step%a_outputInterval == 0))
+    if((doFileOutput) && (m_step % a_outputInterval == 0))
     {
-      outputToFile(step, a_coveredVal, dt, time);
+      outputToFile(m_step, a_coveredVal, dt, m_time);
     }
   }
 }
@@ -386,7 +386,13 @@ advanceVelocityAndPressure(Real a_dt,
   CH_TIME("EBINS::advanceVelocityAndPressure");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
-//  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
+  //begin debug
+  auto& divuu = *m_divuu;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    pout() <<  "max norm of divvuu in " << idir << " direction = " << divuu.maxNorm(idir) << std::endl;
+  }
+  //end debug
 
   if(m_eulerCalc)
   {

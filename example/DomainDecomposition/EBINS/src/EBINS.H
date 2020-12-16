@@ -71,6 +71,9 @@ public:
 
 private:
   
+  unsigned int m_step;
+  Real         m_time;
+  
   bool m_eulerCalc;
   void projectVelocityAndCorrectPressure(Real a_dt,
                                          Real a_tol,                         

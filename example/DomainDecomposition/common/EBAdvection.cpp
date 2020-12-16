@@ -269,10 +269,11 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
   //first we compute the slopes of the data
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
+  auto& veloLD = *m_veloCell;
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
   Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
   const EBGraph  & graph = (*m_graphs)[a_dit];
-  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+  EBBoxData<CELL, Real, DIM>& veccell = veloLD[a_dit];
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);

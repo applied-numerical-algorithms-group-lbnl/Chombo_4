@@ -75,13 +75,25 @@ hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                     Real a_tolerance, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::hybridDivergence");
-  //fills m_macScal with velocity extrapolated to its normal face and projected
+  //fills m_advectionVel with velocity extrapolated to its normal face and projected
   getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
 
-  //using macScal for upwinding, this gets the vector compoents of velcity to faces
+  //begin debug
+  pout() << "maxnorm of m_advectionVel = " << m_advectionVel.maxNorm(0) << std::endl;
+  //end   debug
+
+  //using advectionVel for upwinding, this gets the vector compoents of velcity to faces
   //this also gets corrected by teh gradient found in the previous step.
   getMACVectorVelocity(a_inputVel, a_dt);
 
+  //begin debug
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    pout() << "comp = " << idir;
+    pout() << ", maxnorm of m_macVelocity = " << m_macVelocity.maxNorm(idir) << std::endl;
+  }
+  //end   debug
+  
   //lots of aliasing and smushing
   assembleDivergence(a_divuu, a_dt);
 }
@@ -111,7 +123,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->resetAlphaAndBeta(alpha, beta);
       m_helmholtz->applyOp(m_source, velcomp);
     }
-
+    m_source.exchange(m_exchangeCopier);
+    
     //begin debug
     EBLevelFluxData<1> scalarLoLD(m_grids, m_nghost, m_graphs);
     EBLevelFluxData<1> scalarHiLD(m_grids, m_nghost, m_graphs);
@@ -164,12 +177,18 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     static int ideb = 0;    
     ideb++;
     //end debug
-  }  // and loop over velocity directions
 
 //begin debug
-  pout()  << "max norm of advection velocity before projection = " 
-          << m_advectionVel.maxNorm(0) << endl;
+    pout() << "for idir = " << idir << ":" << endl;
+  pout()  << "max norm of scalarLoLD = " << scalarLoLD.maxNorm(0) << std::endl;
+  pout()  << "max norm of scalarHiLD = " << scalarHiLD.maxNorm(0) << std::endl;
+  pout()  << "max norm of faceVeloLD = " << faceVeloLD.maxNorm(0) << std::endl;
+  pout()  << "max norm of upwindScLD = " << upwindScLD.maxNorm(0) << std::endl;
+//end debug
+  }  // and loop over velocity directions
+//begin debug
 
+  pout()  << "after loop, max norm of advection velocity before projection = "  << m_advectionVel.maxNorm(0) << endl;
 //end debug
                                         
   // now we need to project the mac velocity
