@@ -145,12 +145,12 @@ run(unsigned int a_max_step,
   while((m_step < a_max_step) && (m_time < a_max_time))
   {
     pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
-    pout() << "advancing passive scalar " << endl;
-    advanceScalar(dt);
 
     pout() << "advancing velocity and pressure fields " << endl;
     advanceVelocityAndPressure(dt, a_tol, a_maxIter);
 
+    pout() << "advancing passive scalar" << endl;
+    advanceScalar(dt);
     m_step++;
     m_time += dt;
     if(!usingFixedDt)
@@ -229,9 +229,12 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
 {
   auto& divuu = *m_divuu;
   auto& velo  = *m_velo;
-  static int ideb = 0;
   m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
+  //begin debug
+  static int ideb = 0;
+  divuu.exchange(m_exchangeCopier);
   ideb++;
+  //end debug
 }
 /*******/ 
 PROTO_KERNEL_START 

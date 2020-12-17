@@ -118,6 +118,7 @@ getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
                    const int                      & a_ibox)
 {
   CH_TIME("EBAdvection::getFaceCenteredVel");
+  m_veloCell->exchange(m_exchangeCopier);
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
   getFaceVelComp<YFACE>(*(a_fcvel.m_yflux),  m_brit->m_cellToYFace, veccell, 1, a_ibox);
@@ -365,6 +366,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
              const Real& a_dt)
 {
   CH_TIME("EBAdvection::kappaConsDiv");
+  a_scal.exchange(m_exchangeCopier);
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)
