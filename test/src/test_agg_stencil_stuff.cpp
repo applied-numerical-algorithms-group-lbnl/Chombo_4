@@ -75,7 +75,7 @@ template<typename T>
 inline void test_agg_stencil_copy_to_gpu(T* a_host, T*& a_devi, unsigned int size)
 {
   unsigned int nbBytes = size * sizeof(T);
-  protoMalloc(&a_devi, nbBytes);
+  protoMalloc(a_devi, nbBytes);
   protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
@@ -85,7 +85,7 @@ inline void test_agg_stencil_copy_to_gpu_eb_stencil(T* a_host, T*& a_devi, uint6
   int acc = 0;
   for(int i = 0; i<size ; i++) acc += sizes[i];
   unsigned int nbBytes = acc * sizeof(T);
-  protoMalloc(&a_devi, nbBytes);
+  protoMalloc(a_devi, nbBytes);
   protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
@@ -93,9 +93,9 @@ template<typename T>
 inline void test_agg_stencil_copy_to_gpu(pairPtr<T>& a_host, pairPtr<T>& a_devi, unsigned int size)
 {
   unsigned int nbBytes = size * sizeof(T);
-  protoMalloc(&a_devi.ptr[0], nbBytes);
+  protoMalloc(a_devi.ptr[0], nbBytes);
   protoMemcpy(a_devi.ptr[0],a_host.ptr[0],nbBytes,protoMemcpyHostToDevice);
-  protoMalloc(&a_devi.ptr[1], nbBytes);
+  protoMalloc(a_devi.ptr[1], nbBytes);
   protoMemcpy(a_devi.ptr[1],a_host.ptr[1],nbBytes,protoMemcpyHostToDevice);
 }
 

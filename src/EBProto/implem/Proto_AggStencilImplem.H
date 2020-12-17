@@ -241,10 +241,10 @@ namespace Proto
         uint64_t stenLenSize = numptsDst*(sizeof(uint64_t));
         uint64_t stStartSize = numptsDst*(sizeof(uint64_t));
         ///allocate memory on the device
-        protoMalloc(&d_ebstencil, totStenSize);
-        protoMalloc(&d_dstaccess, destAccSize);
-        protoMalloc(&d_stensizes, stenLenSize);
-        protoMalloc(&d_stenstart, stStartSize);
+        protoMalloc(d_ebstencil, totStenSize);
+        protoMalloc(d_dstaccess, destAccSize);
+        protoMalloc(d_stensizes, stenLenSize);
+        protoMalloc(d_stenstart, stStartSize);
 
         ///copy from the host
         protoMemcpy(d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);

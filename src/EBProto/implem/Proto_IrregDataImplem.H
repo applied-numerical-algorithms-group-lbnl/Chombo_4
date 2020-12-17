@@ -12,7 +12,7 @@ namespace Proto
     m_indicies = a_indicies;
     std::sort(m_indicies->begin(), m_indicies->end());
 #ifdef PROTO_CUDA
-    protoMalloc(&m_rawPtr, size()*sizeof(data_t));
+    protoMalloc(m_rawPtr, size()*sizeof(data_t));
     protoError err = protoGetLastError();
     if (err != protoSuccess)
     {

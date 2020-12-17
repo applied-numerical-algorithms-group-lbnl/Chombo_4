@@ -34,7 +34,7 @@ namespace Proto
       m_inputBox = a_box;
       unsigned int size = a_indicies.size();
 #ifdef PROTO_CUDA
-      protoMalloc(&m_rawPtr,size*sizeof(data_t));
+      protoMalloc(m_rawPtr,size*sizeof(data_t));
       protoMemcpy(m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
       m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
 #else
@@ -323,7 +323,7 @@ namespace Proto
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
 #ifdef PROTO_CUDA      
-      protoMalloc(&m_EBIrregDataPtr,memsize);
+      protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
 #else
       m_EBIrregDataPtr = new EBIrregStruct<cent, data_t, ncomp>[hostvec.size()];
