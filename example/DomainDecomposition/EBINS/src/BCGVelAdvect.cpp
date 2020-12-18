@@ -78,21 +78,10 @@ hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
   //fills m_advectionVel with velocity extrapolated to its normal face and projected
   getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
 
-  //begin debug
-  pout() << "maxnorm of m_advectionVel = " << m_advectionVel.maxNorm(0) << std::endl;
-  //end   debug
-
   //using advectionVel for upwinding, this gets the vector compoents of velcity to faces
   //this also gets corrected by teh gradient found in the previous step.
   getMACVectorVelocity(a_inputVel, a_dt);
 
-  //begin debug
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    pout() << "comp = " << idir;
-    pout() << ", maxnorm of m_macVelocity = " << m_macVelocity.maxNorm(idir) << std::endl;
-  }
-  //end   debug
   
   //lots of aliasing and smushing
   assembleDivergence(a_divuu, a_dt);
@@ -125,13 +114,6 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     }
     m_source.exchange(m_exchangeCopier);
     
-    //begin debug
-    EBLevelFluxData<1> scalarLoLD(m_grids, m_nghost, m_graphs);
-    EBLevelFluxData<1> scalarHiLD(m_grids, m_nghost, m_graphs);
-    EBLevelFluxData<1> faceVeloLD(m_grids, m_nghost, m_graphs);
-    EBLevelFluxData<1> upwindScLD(m_grids, m_nghost, m_graphs);                                      
-    //end debug
-    pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
@@ -141,21 +123,11 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-//begin debug      
-#if 0      
-//end debug      
+
       EBFluxData<Real, 1>  scalarHi(grown, graph);
       EBFluxData<Real, 1>  scalarLo(grown, graph);
       EBFluxData<Real, 1>  faceCentVelo( grown, graph);
       EBFluxData<Real, 1>  upwindScal(   grown, graph);
-//begin debug      
-#else
-      EBFluxData<Real, 1>&  scalarLo      = scalarLoLD[dit[ibox]];
-      EBFluxData<Real, 1>&  scalarHi      = scalarHiLD[dit[ibox]];
-      EBFluxData<Real, 1>&  faceCentVelo  = faceVeloLD[dit[ibox]];
-      EBFluxData<Real, 1>&  upwindScal    = upwindScLD[dit[ibox]];
-#endif      
-//end debug
       
       auto & veccell = a_inputVel[dit[ibox]];
       auto & sourfab =   m_source[dit[ibox]];
@@ -173,36 +145,15 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       copyComp(advvelfab, upwindScal, idir);
 
     } //end loop over boxes
-    //begin debug
-    static int ideb = 0;    
-    ideb++;
-    //end debug
-
-//begin debug
-    pout() << "for idir = " << idir << ":" << endl;
-  pout()  << "max norm of scalarLoLD = " << scalarLoLD.maxNorm(0) << std::endl;
-  pout()  << "max norm of scalarHiLD = " << scalarHiLD.maxNorm(0) << std::endl;
-  pout()  << "max norm of faceVeloLD = " << faceVeloLD.maxNorm(0) << std::endl;
-  pout()  << "max norm of upwindScLD = " << upwindScLD.maxNorm(0) << std::endl;
-//end debug
   }  // and loop over velocity directions
-//begin debug
 
-  pout()  << "after loop, max norm of advection velocity before projection = "  << m_advectionVel.maxNorm(0) << endl;
-//end debug
                                         
   // now we need to project the mac velocity
   pout() << "mac projecting advection velocity" << endl;
 
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
   m_advectionVel.exchange(m_exchangeCopier);
-//begin debug
-  pout()  << "max norm of advection velocity after projection = " 
-          << m_advectionVel.maxNorm(0) << endl;
-  pout() << "leaving getAdvectionVelocity" << endl;
-
-//end debug
-
+  
 }
 /*******/
 

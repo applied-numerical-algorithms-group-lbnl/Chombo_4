@@ -452,10 +452,6 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
 {
   
   CH_TIME("EBAdvection::advance");
-  //begin debug
-  Real maxbefore = a_phi.maxNorm(0);
-  pout() <<  "phi norm before scalar advance = "  << maxbefore << endl;
-  //end debug
   hybridDivergence(a_phi,  a_dt);
 
   DataIterator dit = m_grids.dataIterator();
@@ -468,10 +464,6 @@ advance(EBLevelBoxData<CELL, 1>       & a_phi,
     ebforallInPlace(numflopspt, "AdvanceScalar", AdvanceScalar,  grbx,  
       scalar, diverg, a_dt);
   }
-  //begin debug
-  Real maxafter = a_phi.maxNorm(0);
-  pout() <<  "phi norm after  scalar advance = "  << maxafter << endl;
-  //end debug
 }
 
 ///
