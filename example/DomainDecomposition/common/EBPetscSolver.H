@@ -16,7 +16,7 @@
 #include "petscmat.h"
 #include "petscksp.h"
 #include "petscviewer.h"
-
+#include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
 
 /// Framework to solve an elliptic equation using PETsC (PETsC?  petsC?)
@@ -38,8 +38,8 @@ public:
   EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
                 const shared_ptr<dictionary_t           >  & a_ebdictionary,
                 const shared_ptr<LevelData<EBGraph> >      & a_graphs,
-                const DisjointBoxLayout                    & a_grids,
-                const Box                                  & a_domain,
+                const Chombo4::DisjointBoxLayout                    & a_grids,
+                const Chombo4::Box                                  & a_domain,
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
@@ -103,7 +103,7 @@ public:
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
-    Copier styx;
+    Chombo4::Copier styx;
     styx.exchangeDefine(m_grids, m_ivghost);
     a_phi.exchange(styx);
     return 0;
@@ -128,7 +128,7 @@ private:
     LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghostVect(), factory);
     EBLevelBoxData<CELL, 1>::copyToHost(hostSrc, a_deviceSrc);
     
-    DataIterator dit = m_grids.dataIterator();
+    Chombo4::DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
     {
       auto& hostfab =   hostSrc[dit[ibox]];
@@ -204,9 +204,10 @@ private:
                            vector< Proto::LocalStencil<CELL, Real> >  & a_wstencil,
                            Proto::Stencil<Real>                       & a_regStencilInterior,
                            PointSet                            & a_allIrregPoints,
-                           const DataIndex                     & a_dit)
+                           const Chombo4::DataIndex                     & a_dit)
   {
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
+    using Chombo4::Box;
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
@@ -256,6 +257,7 @@ private:
                     const Vec               & a_src)
                     
   {
+    using Chombo4::DataIterator;
     PetscErrorCode ierr;
     const PetscScalar *arr;
     ierr = VecGetArrayRead(a_src,&arr);  CHKERRQ(ierr);
@@ -296,6 +298,7 @@ private:
   {
     
     {
+      using Chombo4::DataIterator;
       char str[256];
       strcpy (str,"-");
       strcat (str,m_prestring);
@@ -452,6 +455,7 @@ private:
   
   void defineGIDS()
   {
+    using Chombo4::DataIterator;
     IntVect gidghost = 4*IntVect::Unit;
     m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
@@ -500,7 +504,7 @@ private:
         }
       }
     }
-    Copier exchangeCopier;
+    Chombo4::Copier exchangeCopier;
     exchangeCopier.exchangeDefine(m_grids, gidghost);
     m_gids.exchange(exchangeCopier);
   }
@@ -514,8 +518,8 @@ private:
   shared_ptr<GeometryService<order> >  m_geoserv;
   shared_ptr< dictionary_t>            m_ebdictionary;
   shared_ptr<LevelData<EBGraph> >      m_graphs;
-  DisjointBoxLayout                    m_grids;
-  Box                                  m_domain;
+  Chombo4::DisjointBoxLayout                    m_grids;
+  Chombo4::Box                                  m_domain;
   Real                                 m_dx;
   
   string m_stencilName;

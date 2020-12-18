@@ -13,7 +13,7 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
 #include <implem/Proto_StencilImplem.H>

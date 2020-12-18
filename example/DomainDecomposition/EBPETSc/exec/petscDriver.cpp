@@ -78,13 +78,13 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  DisjointBoxLayout grids = vecgrids[0];
+  Chombo4::DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
@@ -106,7 +106,7 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "making dictionary" << endl;
 
-  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
   {
@@ -145,7 +145,7 @@ runTest(int a_argc, char* a_argv[])
   {
     alldombc[iface] = dombcname;
   }
-  Box dombox = domain.domainBox();
+  Chombo4::Box dombox = domain.domainBox();
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   EBPetscSolver<2> solver(geoserv, dictionary, graphs, grids, domain.domainBox(),
@@ -156,7 +156,7 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
 
   pout() << "setting values" << endl;
-  DataIterator dit = grids.dataIterator();
+  Chombo4::DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];

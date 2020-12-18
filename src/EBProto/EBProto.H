@@ -19,7 +19,7 @@ namespace Proto
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_IrregNode.H"
 #include "Proto_EBGraph.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 
 #include "Proto_EBBoxData.H"
 #include "Proto_EBFluxData.H"
@@ -37,7 +37,7 @@ namespace Proto
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencil.H"
 
