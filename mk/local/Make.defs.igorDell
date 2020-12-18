@@ -12,4 +12,5 @@ CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 HDFINCFLAGS =  -I/usr/include/hdf5/serial
-HDFLIBFLAGS = -L/usr/lib/x86_64-linux-gnu -lhdf5_hl -lhdf5 -ldl
+HDFLIBFLAGS = -L/usr/lib/x86_64-linux-gnu  -lhdf5_serial
+#HDFLIBFLAGS = -L/usr/lib/x86_64-linux-gnu -lhdf5_hl -lhdf5_serial -ldl
