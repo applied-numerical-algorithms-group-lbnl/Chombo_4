@@ -77,12 +77,6 @@ runNavierStokes()
   pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
 
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
-
-
-
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
@@ -91,8 +85,8 @@ runNavierStokes()
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<DisjointBoxLayout> vecgrids;
-  Vector<Box>               vecdomains;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::Box>               vecdomains;
   Vector<Real> vecdx;
   int whichGeom;
 
@@ -110,8 +104,8 @@ runNavierStokes()
 
   pout() << "inititializing data"   << endl;
   
-  Box domain              = vecdomains[0];
-  DisjointBoxLayout grids =   vecgrids[0];
+  Chombo4::Box domain              = vecdomains[0];
+  Chombo4::DisjointBoxLayout grids =   vecgrids[0];
   Real tol = 0.00001;
   int  maxIter = 10;
 
@@ -152,7 +146,7 @@ runNavierStokes()
   }
   else
   {
-    MayDay::Error("unrecognized solver type input");
+    Chombo4::MayDay::Error("unrecognized solver type input");
   }
 
   pout() << "=============================================="  << endl;
