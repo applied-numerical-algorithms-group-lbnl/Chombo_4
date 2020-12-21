@@ -145,12 +145,12 @@ run(unsigned int a_max_step,
   while((m_step < a_max_step) && (m_time < a_max_time))
   {
     pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
-    pout() << "advancing passive scalar " << endl;
-    advanceScalar(dt);
 
     pout() << "advancing velocity and pressure fields " << endl;
     advanceVelocityAndPressure(dt, a_tol, a_maxIter);
 
+    pout() << "advancing passive scalar" << endl;
+    advanceScalar(dt);
     m_step++;
     m_time += dt;
     if(!usingFixedDt)
@@ -229,9 +229,8 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
 {
   auto& divuu = *m_divuu;
   auto& velo  = *m_velo;
-  static int ideb = 0;
   m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
-  ideb++;
+  divuu.exchange(m_exchangeCopier);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -386,13 +385,6 @@ advanceVelocityAndPressure(Real a_dt,
   CH_TIME("EBINS::advanceVelocityAndPressure");
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
-  //begin debug
-  auto& divuu = *m_divuu;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    pout() <<  "max norm of divvuu in " << idir << " direction = " << divuu.maxNorm(idir) << std::endl;
-  }
-  //end debug
 
   if(m_eulerCalc)
   {
