@@ -140,20 +140,10 @@ namespace Proto
       if((m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
-        int blockSize = 512;
         if(nsize == 0) return *this;
-        int nBlocks = (nsize + blockSize - 1) / blockSize; 
-        auto streamid = DisjointBoxLayout::getCurrentStream();
-        protoLaunchKernelMemAsync(incKernel<data_t>, nBlocks, blockSize, 0, streamid, m_rawPtr, a_input.m_rawPtr, nsize);
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
-        
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -181,21 +171,11 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
         unsigned int nsize = size();
-        unsigned int mem = 0;
-        protoLaunchKernelMemAsync(minusOperatorKernel<data_t>, 
-                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
-                                  m_rawPtr, castPtrInp, nsize);
-        
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
+        if(nsize == 0) return *this;
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -223,21 +203,11 @@ namespace Proto
 #ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
         unsigned int nsize = size();
-        unsigned int mem = 0;
-        protoLaunchKernelMemAsync(multipliesOperatorKernel<data_t>, 
-                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
-                                  m_rawPtr, castPtrInp, nsize);
-        
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
+        if(nsize == 0) return *this;
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {

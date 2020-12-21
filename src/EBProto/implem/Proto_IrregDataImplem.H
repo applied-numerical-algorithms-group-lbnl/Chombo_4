@@ -52,29 +52,11 @@ namespace Proto
   IrregData<cent, data_t, ncomp>::
   setVal(const data_t& a_val)
   {
-#ifdef PROTO_CUDA
-  unsigned int nsize = size();
-  if(nsize == 0) return;
-  int blockSize = 512;
-  int nBlocks = (nsize + blockSize - 1) / blockSize;
-  auto streamid = DisjointBoxLayout::getCurrentStream();
-  protoLaunchKernelMemAsync(setValKernel, nBlocks, blockSize, 0, streamid, m_rawPtr, nsize, a_val);
-
-#ifdef THRUST_DEBUG
-  protoError err = protoGetLastError();
-  if (err != protoSuccess)
-  {
-    fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-            __FILE__, __LINE__, protoGetErrorString(err));
-  }
-#endif
-
-#else
-    for(int ival = 0; ival < size(); ival++)
-    {
-      m_rawPtr[ival] = a_val;
-    }
-#endif
+    unsigned int nsize = size();
+    if(nsize == 0) return;
+    int blockSize = 512;
+    int nBlocks = (nsize + blockSize - 1) / blockSize;
+    protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Assign>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_val, nsize);
   }
 
 }
