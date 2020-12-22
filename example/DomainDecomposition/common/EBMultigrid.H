@@ -6,6 +6,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "EBPetscSolver.H"
 #include "Chombo_NamespaceHeader.H"
 #if DIM==2
 #define MG_NUM_COLORS 4
@@ -186,6 +187,7 @@ private:
   {
   }
 
+  
   bool   m_hasCoarser; 
   unsigned int m_depth;
   Real                              m_alpha;   
@@ -217,7 +219,21 @@ private:
 
   IntVect m_nghost;
   Copier                            m_exchangeCopier;
-  shared_ptr<EBRelaxSolver>         m_bottomSolver;
+  shared_ptr<EBRelaxSolver>         m_relaxSolver;
+#ifdef CH_USE_PETSC  
+  shared_ptr<EBPetscSolver<2> >     m_petscSolver;
+
+  void solve_petsc(EBLevelBoxData<CELL, 1>       & a_phi,
+                   const EBLevelBoxData<CELL, 1> & a_rhs);
+#endif
+  void solve_relax(EBLevelBoxData<CELL, 1>       & a_phi,
+                   const EBLevelBoxData<CELL, 1> & a_rhs);
+  
+  void solve_bicgstab(EBLevelBoxData<CELL, 1>       & a_phi,
+                      const EBLevelBoxData<CELL, 1> & a_rhs);
+
+  void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
+                    const EBLevelBoxData<CELL, 1>&  a_rhs);
 };
 
 
