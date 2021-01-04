@@ -17,9 +17,9 @@ bool run_test_ebforall_i_init()
   bool check = fill.size() == size;
 
   double a = 0;
+#ifdef PROTO_CUDA
   cudaEBForAllIrreg_i(init_test_forall_i, fill, a);
 
-#ifdef PROTO_CUDA
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
   protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
@@ -49,9 +49,9 @@ bool run_test_ebforall_i_kernel()
 
   // use this constructor to initialize data on the GPU
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
+#ifdef PROTO_CUDA
   cudaEBForAllIrreg_i(kernel_test_forall_i, fill);
 
-#ifdef PROTO_CUDA
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
   protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
@@ -123,12 +123,14 @@ bool run_test_ebforall_i_vec_indexer_only_gpu()
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
   Proto::EBIrregStruct<Proto::CELL, double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
 
+#ifdef PROTO_CUDA
   protoLaunchKernel(vec_indexer_i, 1, size, //small test so nb block = 1
 			0, size,
 			kernel_test_forall_i_val,
 			eb_irreg_struct_ptr,
 			val
 			);
+#endif
 			 
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
@@ -203,12 +205,14 @@ bool run_test_ebforall_i_vec_indexer_cpu_versus_gpu()
 
   Proto::EBIrregStruct<Proto::CELL, double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
 
+#ifdef PROTO_CUDA
   protoLaunchKernel(vec_indexer_i, 1, size, //small test so nb block = 1
 			0, size,
 			kernel_test_forall_i_val,
 			eb_irreg_struct_ptr,
 			val
 			);
+#endif                        
 			 
   double* check_ptr_gpu = new double[size];
   double* devicPtr = fill.data();

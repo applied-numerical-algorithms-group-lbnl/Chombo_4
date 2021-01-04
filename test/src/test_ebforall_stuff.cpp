@@ -22,7 +22,9 @@ using Proto::Var;
 PROTO_KERNEL_START
 unsigned int  kernel_test_forallF(Var<double, 1>  a_in)
 {
+#ifdef PROTO_CUDA  
   a_in(0) = threadIdx.x*2+3;
+#endif  
   return 0;
 }
 PROTO_KERNEL_END(kernel_test_forallF, kernel_test_forall)
