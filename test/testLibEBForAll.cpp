@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
   shared_ptr<GeometryService<2> > geoserv(new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost));
   shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(domain);
 
-  DataIterator dit = grids.dataIterator();
+  Chombo4::DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box grid = grids[dit[ibox]];
