@@ -474,7 +474,7 @@ public:
 
     EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
     copyToHost(hostdat, difference);
-    Real maxval = hostdat.maxNorm(a_grid, a_icomp);
+    Real maxval = Proto::maxNormCell(hostdat, a_grid, a_icomp);
     int retval = 0;
     if(maxval > a_tol)
     {
