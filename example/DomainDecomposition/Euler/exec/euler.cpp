@@ -40,6 +40,7 @@
 #include "Chombo_BFM.H"
 
 #include "Chombo_Box.H"
+#include "Chombo_EBChombo.H"
 
 #ifdef _OPENMP
 #include<omp.h>
@@ -183,15 +184,17 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 
 /***/
 void 
-writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
+writeData(int step, const Chombo4::LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
 {
 	#ifdef CH_USE_HDF5
   string filename = std::string("state.step") + std::to_string(step) + "." + std::to_string(DIM) + std::string("d.hdf5");
-  
-  //a_U.writeToFileHDF5(filename);
 
+  //a_U.writeToFileHDF5(filename);
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::DataIterator;
   Vector<DisjointBoxLayout> vectGrids(1,a_U.getBoxes());
-  const Box domain = vectGrids[0].getDomain();
+  const Chombo4::Box domain = vectGrids[0].getDomain();
   Vector<LevelData<FArrayBox>* > vectData(1,NULL);
   IntVect ghostVect = NGHOST*IntVect::Unit;
   LevelData<FArrayBox>* level_data = new LevelData<FArrayBox>(vectGrids[0], NUMCOMPS, ghostVect);
@@ -206,7 +209,7 @@ writeData(int step, const LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, 
   Real maxRho = 0;
   for(dit.begin(); dit.ok(); ++dit)
     {
-      Box b = vectGrids[0][dit];
+      Chombo4::Box b = vectGrids[0][dit];
       BFM1<CH_SPACEDIM>(
 		level_data->operator[](dit).dataPtr(),
 		b, 
@@ -265,14 +268,14 @@ void eulerRun(const RunParams& a_params)
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
 
-  ProblemDomain domain(domLo, domHi, is_periodic);
+  Chombo4::ProblemDomain domain(domLo, domHi, is_periodic);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_params.maxgrid, blockfactor);
   Vector<int> procs;
   LoadBalance(procs, boxes);
-  DisjointBoxLayout grids(boxes, procs, domain);
+  Chombo4::DisjointBoxLayout grids(boxes, procs, domain);
 //  LevelData<FArrayBox> fabdata(grids, NUMCOMPS, 4*IntVect::Unit);
 //  fabdata.exchange();
 
@@ -280,7 +283,7 @@ void eulerRun(const RunParams& a_params)
   //not the most elegant solution but it works for single level
   EulerOp::s_dx    = a_params.dx;
   EulerOp::s_gamma = a_params.gamma;
-
+  using Chombo4::LevelBoxData;
   shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
 
@@ -289,7 +292,7 @@ void eulerRun(const RunParams& a_params)
   RK4<EulerState,EulerRK4Op,EulerDX> rk4;
   
   pout() << "before initializestate"<< endl;
-
+  using Chombo4::DataIterator;
   DataIterator dit = grids.dataIterator();
 
   // This constructor can't be called in the next loop

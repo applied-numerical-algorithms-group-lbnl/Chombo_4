@@ -229,8 +229,9 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   defineCoarserObjects(a_geoserv);
   if(!m_hasCoarser)
   {
-    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+    m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
   }
+  
 }
 /***/
 void
@@ -305,9 +306,16 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   defineCoarserObjects(a_geoserv);
   if(!m_hasCoarser)
   {
-    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
-  }
+    m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+#ifdef CH_USE_PETSC
 
+    Point pghost= ProtoCh::getPoint(m_nghost);
+    EBPetscSolver<2>* ptrd = 
+      (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
+                            m_stenname, m_dombcname, m_ebbcname, m_dx, pghost));
+    m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
+#endif    
+  }
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
@@ -507,31 +515,95 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
   }
   else
   {
-    typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
-    ParmParse pp("bicgstab");
-    Real tol   = 1.0e-6;
-    Real hang  = 1.0e-8;
-    Real small = 1.0e-16;
-    int  verb  = 0;
-    int  imax  = 0;
-    int nrestart = 5;
-    pp.query("tol"  , tol);
-    pp.query("hang" , hang);
-    pp.query("small", small);
-    pp.query("imax" , imax);
-    pp.query("nrestart", nrestart);
-    pp.query("verbosity", verb);
-    //the -1.0 is the metric parameter which I do not understand
-    //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
-    int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);
-    if(status != 1)
-    {
-      pout() << "mild warning: bicgstab returned " << status << std::endl;
-    }
+    bottom_solve(a_phi, a_rhs);
   }
 
   relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
+}
+///
+void
+EBMultigridLevel::
+bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
+             const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+#ifdef CH_USE_PETSC
+  string which_solver("petsc");
+#else    
+  string which_solver("bicgstab");
+#endif    
+  ParmParse pp;
 
+  pp.query("bottom_solver", which_solver);
+  if(which_solver == string("bicgstab"))
+  {
+    solve_bicgstab(a_phi, a_rhs);
+  }
+  else if(which_solver == string("relax"))
+  {
+    solve_relax(a_phi, a_rhs);
+  }
+#ifdef CH_USE_PETSC    
+  else if(which_solver == string("petsc"))
+  {
+    solve_petsc(a_phi, a_rhs);
+  }
+#endif
+  else
+  {
+    MayDay::Error("bottom solver identifier not found");
+  }
+}
+///
+void
+EBMultigridLevel::
+solve_bicgstab(EBLevelBoxData<CELL, 1>         & a_phi,
+               const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  ParmParse pp("bicgstab");
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  Real tol   = 1.0e-6;
+  Real hang  = 1.0e-8;
+  Real small = 1.0e-16;
+  int  verb  = 0;
+  int  imax  = 0;
+  int nrestart = 5;
+  pp.query("tol"  , tol);
+  pp.query("hang" , hang);
+  pp.query("small", small);
+  pp.query("imax" , imax);
+  pp.query("nrestart", nrestart);
+  pp.query("verbosity", verb);
+  //the -1.0 is the metric parameter which I do not understand
+  //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
+  int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);
+  if(status != 1)
+  {
+    pout() << "mild warning: bicgstab returned " << status << std::endl;
+  }
+}
+///
+void
+EBMultigridLevel::
+solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
+            const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  ParmParse pp("relax_solver");
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  Real tol   = 1.0e-6;
+  int  imax  = 0;
+
+  pp.query("tol"  , tol);
+  pp.query("imax" , imax);
+
+  m_relaxSolver->solve(a_phi, a_rhs, imax, tol);
+}
+///
+void
+EBMultigridLevel::
+solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
+            const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  m_petscSolver->solve(a_phi, a_rhs);
 }
 #include "Chombo_NamespaceFooter.H"
 /****/

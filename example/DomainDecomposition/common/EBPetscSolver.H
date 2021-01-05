@@ -19,7 +19,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
 
-/// Framework to solve an elliptic equation using PETsC (PETsC?  petsC?)
+/// Framework to solve an elliptic equation using PETSc (PeTSC? PETsC? PETsC?)
 /**
    This is an an adaptation to the new reality of Mark Adams' PetscSolver framework.
    If it were any cooler, he would have to add another d to his name.  

@@ -56,7 +56,7 @@ EBIBC getIBCs()
 //=================================================
 void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     EBLevelBoxData<CELL, DIM>   &  a_velocell,
-                    const DisjointBoxLayout     &  a_grids,
+                    const Chombo4::DisjointBoxLayout     &  a_grids,
                     const Real                  &  a_dx,
                     const Real                  &  a_geomCen,
                     const Real                  &  a_geomRad,
@@ -65,6 +65,13 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     const Real                  &  a_maxVelMag,
                     const Real                  &  a_maxVelRad)
 {
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+
   DataIterator dit = a_grids.dataIterator();
   int ideb = 0;
   int whichvelo = 0;
@@ -81,7 +88,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   }
   else
   {
-    MayDay::Error("bogus velo");
+    Chombo4::MayDay::Error("bogus velo");
   }
 
   pp.query("which_scal", whichscal);
@@ -95,7 +102,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   }
   else
   {
-    MayDay::Error("bogus scal");
+    Chombo4::MayDay::Error("bogus scal");
   }
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -159,20 +166,27 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
 }
 //=================================================
 
-void makeGrids(DisjointBoxLayout& a_grids,
+void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                Real             & a_dx,
                const int        & a_nx,
                const int        & a_maxGrid)
 {
   pout() << "making grids" << endl;
 
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+  
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
 
   // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_maxGrid, blockfactor);
   
@@ -180,7 +194,7 @@ void makeGrids(DisjointBoxLayout& a_grids,
 
   a_dx = 1.0/a_nx;
   LoadBalance(procs, boxes);
-  a_grids = DisjointBoxLayout(boxes, procs, domain);
+  a_grids = Chombo4::DisjointBoxLayout(boxes, procs, domain);
   a_grids.printBalance();
 
 }
@@ -213,7 +227,14 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
                                         int   & a_whichGeom)
 
 {
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
   using Proto::BaseIF;
+  
   shared_ptr<BaseIF>  retval;
   ParmParse pp;
   
@@ -266,7 +287,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(DisjointBoxLayout& a_grids,
+void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
                     Real             & a_dx,
                     Real             & a_geomCen,
                     Real             & a_geomRad,
@@ -292,7 +313,7 @@ void defineGeometry(DisjointBoxLayout& a_grids,
   pout() << "blob_rad = " << a_blobRad       << endl;
 
   makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Box domain = a_grids.physDomain().domainBox();
+  Chombo4::Box domain = a_grids.physDomain().domainBox();
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
@@ -337,12 +358,8 @@ runAdvection(int a_argc, char* a_argv[])
   pout() << "max_vel_mag     = " << max_vel_mag     << endl;
   pout() << "max_vel_rad     = " << max_vel_rad     << endl;
 
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
-
   Real dx;
-  DisjointBoxLayout grids;
+  Chombo4::DisjointBoxLayout grids;
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -358,7 +375,7 @@ runAdvection(int a_argc, char* a_argv[])
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   pout() << "making dictionary" << endl;
-  Box domain = grids.physDomain().domainBox();
+  Chombo4::Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 

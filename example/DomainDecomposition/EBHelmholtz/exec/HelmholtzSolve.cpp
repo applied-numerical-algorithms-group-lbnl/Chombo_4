@@ -202,10 +202,16 @@ runTest(int a_argc, char* a_argv[])
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
 #endif
+#endif
+  
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("helmholtz.time.table");
   {
@@ -222,8 +228,13 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+  pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+#else  
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
+#endif
 #endif
   return 0;
 }
