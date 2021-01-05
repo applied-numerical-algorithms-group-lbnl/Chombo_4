@@ -202,14 +202,18 @@ void protoRun(const RunParams& a_params)
   pout() << "proto version using boxdata" << endl;
 
   int nGhost = 4;
-
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
   cout << "periodic flags: " << is_periodic[0] << ", " << is_periodic[1] << endl;
   ProblemDomain domain(domLo, domHi, is_periodic);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_params.maxgrid, blockfactor);
   Vector<int> procs;
@@ -229,7 +233,7 @@ void protoRun(const RunParams& a_params)
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
  
-    Box grid = grids[dit[ibox]];
+    Chombo4::Box grid = grids[dit[ibox]];
     Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
     BoxData<Real, DIM> x(grnbx);
@@ -262,10 +266,10 @@ Real getPerValue(IntVect a_p,
 }
 
 void fillFAB(FArrayBox& a_fab,
-             const Box& a_box,
+             const Chombo4::Box& a_box,
              Real a_dx)
 {
-  for(BoxIterator bit(a_box); bit.ok(); ++bit)
+  for(Chombo4::BoxIterator bit(a_box); bit.ok(); ++bit)
   {
     IntVect iv = bit();
     for(int icomp = 0; icomp < a_fab.nComp(); icomp++)
@@ -279,10 +283,10 @@ void fillFAB(FArrayBox& a_fab,
 
 
 void checkFAB(FArrayBox& a_fab,
-              const Box& a_box,
+              const Chombo4::Box& a_box,
               Real a_dx)
 {
-  for(BoxIterator bit(a_box); bit.ok(); ++bit)
+  for(Chombo4::BoxIterator bit(a_box); bit.ok(); ++bit)
   {
     IntVect iv = bit();
     for(int icomp = 0; icomp < a_fab.nComp(); icomp++)
@@ -304,13 +308,19 @@ void chomboRun(const RunParams& a_params)
 
   int nGhost = 4;
 
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
   cout << "periodic flags: " << is_periodic[0] << ", " << is_periodic[1] << endl;
-  ProblemDomain domain(domLo, domHi, is_periodic);
+  Chombo4::ProblemDomain domain(domLo, domHi, is_periodic);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_params.maxgrid, blockfactor);
   Vector<int> procs;
@@ -326,7 +336,7 @@ void chomboRun(const RunParams& a_params)
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
  
-    Box grid = grids[dit[ibox]];
+    auto grid = grids[dit[ibox]];
     fillFAB(U[dit[ibox]], grid, a_params.dx);
   }
   
@@ -335,7 +345,7 @@ void chomboRun(const RunParams& a_params)
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
  
-    Box grnbx = U[dit[ibox]].box();
+    auto grnbx = U[dit[ibox]].box();
     checkFAB(U[dit[ibox]], grnbx, a_params.dx);
   }
 }

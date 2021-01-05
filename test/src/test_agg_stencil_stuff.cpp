@@ -21,7 +21,7 @@ inline void test_agg_stencil_alloc(EBDataLoc*& a_ptr, unsigned int a_size, int  
 }
 
 template<typename T>
-inline void test_agg_stencil_alloc(pairPtr<T>& a_data, unsigned int a_size)
+inline void test_agg_stencil_alloc(Proto::pairPtr<T>& a_data, unsigned int a_size)
 {
   a_data.ptr[1] = new T[a_size];
   a_data.ptr[0] = new T[a_size];
@@ -117,7 +117,7 @@ void test_agg_stencil_get_back_data(pairPtr<double>& a_host, pairPtr<double>& a_
   protoDeviceSynchronize();
 }
 
-bool test_answer_kernel_only_using(pairPtr<double> a_res, double a_val0, double a_val1, unsigned int a_size)
+bool test_answer_kernel_only_using(pairPtr<double>& a_res, double a_val0, double a_val1, unsigned int a_size)
 {
   int compt_0 = 0;
   int compt_1 = 0;
