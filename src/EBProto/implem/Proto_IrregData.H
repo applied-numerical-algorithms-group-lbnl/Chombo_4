@@ -269,19 +269,11 @@ namespace Proto
 
       return found;
     }
-
-    ///
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > getUglyStructPtr()
-    {
-      return m_uglystruct;
-    }
   
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
     /// for fast forall
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > m_uglystruct;
-    void makeUglyStruct();
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;

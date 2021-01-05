@@ -14,7 +14,9 @@ void do_test(std::string a_str, Func &fun)
 }
 int main()
 {
+#ifdef PROTO_CUDA
   cudaSetDevice(1);
+#endif
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
 //  do_test("run_test_irreg_data_has_index_empty",run_test_irreg_data_has_index_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);

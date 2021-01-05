@@ -24,6 +24,8 @@ unsigned int  kernel_test_forallF(Var<double, 1>  a_in)
 {
 #ifdef PROTO_CUDA  
   a_in(0) = threadIdx.x*2+3;
+#else
+  a_in(0) = 674;
 #endif  
   return 0;
 }
@@ -57,7 +59,11 @@ bool test_ebforal_check_answer(double* a_ptr, unsigned int a_size)
 {
   for(int i = 0 ; i < a_size ; i++)
   {
+#ifdef PROTO_CUDA
     if(a_ptr[i] != 2*i+3) return false;
+#else
+    if(a_ptr[i] != 674) return false;
+#endif
   }
   return true;
 }

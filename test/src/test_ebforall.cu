@@ -52,6 +52,7 @@ bool run_test_ebforall_kernel()
   protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool result = test_ebforal_check_answer(checkPtr, size);
+  if(!result) test_ebforall_print(checkPtr,size);
   assert(result);
 
   index.clear();
