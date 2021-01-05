@@ -171,12 +171,7 @@ namespace Proto
     ///
     ~AggStencil()
     {
-#ifdef PROTO_CUDA   
-      //just contains a bunch of cuda frees
-      cudaRelease();
-#else
-      hostRelease();
-#endif 
+      EBProtoRelease();
     }
 
      ///
@@ -198,37 +193,19 @@ namespace Proto
     vector<stencil_t>    m_ebstencil;
     vector<EBDataLoc>    m_dstAccess;
 
-//    //begin debugging hooks
-//    vector< EBIndex<     dstCenter        > > m_dstVoFs;
-//    vector< LocalStencil<srcCenter, data_t> > m_stencil;
-//    //end debugging hooks
-    void hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
-                   const EBBoxData<srcCenter, data_t, 1>     & a_phi,
-                   const data_t                              & a_scale,
-                   bool                                      a_incrementOnly) const;
-
-    void hostPrep(const vector<pair_t<data_t> >   &   h_serializedStenInfo,
-                  const vector<uint64_t>          &   h_stenSizes,
-                  const vector<uint64_t>          &   h_stenStart);
-
-    void hostRelease();
-
-#ifdef PROTO_CUDA
-    void cudaPrep(const vector<pair_t<data_t> >   &   h_serializedStenInfo,
+    void EBProtoPrep(const vector<pair_t<data_t> >   &   h_serializedStenInfo,
                   const vector<uint64_t> &   h_stenSizes,
                   const vector<uint64_t> &   h_stenStart);
 
 
-    void cudaRelease();
-    void cudaApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
+    void EBProtoRelease();
+    void EBProtoApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
                    const EBBoxData<srcCenter, data_t, 1>     & a_phi,
                    const data_t                              & a_scale,
                    bool                                a_incrementOnly) const;
 
 
-    int m_stride = 0;
-    int m_blocks = 0;
-#endif
+
     //this is for flop counts
     int  m_flopsThisApply = 0;        
 
@@ -244,6 +221,9 @@ namespace Proto
     AggStencil();
     AggStencil& operator=(const AggStencil& stenin);
     AggStencil(const AggStencil& stenin);
+
+    int m_stride = 0;
+    int m_blocks = 0;
 
   };
 }

@@ -115,17 +115,7 @@ namespace Proto
           PROTO_ASSERT(false, "host and device sizes need to match here");
         }
         size_t datSize = sizeof(data_t)*fabsizeDevi;
-#ifdef PROTO_CUDA
         protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#else
-        memcpy(dataptrDevi, dataptrHost, datSize);
-#endif  
       }
     }
   }
@@ -161,16 +151,6 @@ namespace Proto
     {
 #ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
-      /*std::vector<Box> vecBox;
-
-      for(int ibc = 0; ibc < 2*DIM; ibc++)
-      {
-        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
-        {
-	  vecBox.push_back(m_BCApplyBoxes[ibc][ivec]);
-        }
-      }*/
-      //sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), vecBox.data(), true, 1.0);
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
 #else
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());

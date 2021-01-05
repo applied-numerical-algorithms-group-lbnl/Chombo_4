@@ -18,7 +18,7 @@ parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [
 
 args = parser.parse_args()
 
-print args
+print(args)
 
 f_pref = open('Makefile.prefix','r')
 f_post = open('Makefile.postfix','r')
@@ -42,7 +42,7 @@ r.write('#/usr/bin/csh\n')
 
 for t in targets:
     d= t
-    print d
+    print(d)
     comstr = " cd " + d + "; make pristine; make; cd " + top 
     echostr =  "\necho \" " + comstr + "\" \n"
     runstr =  "\n" + comstr + "\n"
@@ -78,41 +78,39 @@ for t in targets:
     if(args.prec == 'DOUBLE'):
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
-    if args.opt == 'DEBUG':
-        if args.hip == 'FALSE':
-	  f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
-	if args.cuda == 'TRUE':
+    if(args.opt) == 'DEBUG':
+        if(args.cuda == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            if args.hip == 'TRUE':
+            if(args.hip) == 'TRUE':
               f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
               f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-	    else:
+            else:
               f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
-        if args.opt == 'HIGH':
-	    if args.hip == 'FALSE':
+        if(args.opt == 'HIGH'):
+          if(args.hip == 'FALSE'):
                f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
         else:
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
-        if args.cuda == 'TRUE':
+        if(args.cuda == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
-        if args.hip == 'TRUE':
+        if(args.hip == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
 
-    if args.cuda == 'TRUE':
+    if(args.cuda == 'TRUE'):
         f.write('\nCXX = nvcc \n DEP=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
    
-    if args.hip == 'TRUE':
+    if(args.hip == 'TRUE'):
         f.write('\nCXX = hipcc \n DEP=hipcc\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     

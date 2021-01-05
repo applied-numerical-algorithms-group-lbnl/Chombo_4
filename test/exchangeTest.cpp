@@ -53,7 +53,7 @@ unsigned int  verifyPhiPtF(int              a_pt[DIM],
 PROTO_KERNEL_END(verifyPhiPtF, verifyPhiPt)
 
 
-Bx convert(const Box& b)
+Bx convert(const Chombo4::Box& b)
 {
   return Bx(b.smallEnd().dataPtr(), b.bigEnd().dataPtr());
 }
@@ -74,13 +74,13 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
   
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  DisjointBoxLayout grids = vecgrids[0];
+  Chombo4::DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
@@ -95,24 +95,24 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
 
-  Box dombox = domain.domainBox();
+  Chombo4::Box dombox = domain.domainBox();
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   2>  phi(grids, dataGhostIV, graphs);
 
-  DataIterator dit = grids.dataIterator();
+  Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     EBBoxData<CELL, Real, 2>& phibd = phi[dit[ibox]];
     phibd.setVal(0.0);
-    Box validCells = grids[dit[ibox]];
+    Chombo4::Box validCells = grids[dit[ibox]];
     size_t numflopspt = 0;
     ebforallInPlace_i(numflopspt, "setPhiPt", setPhiPt, convert(validCells), phibd, dx);
   }
 
-  Copier copier(grids, grids, dataGhostIV, true);
+  Chombo4::Copier copier(grids, grids, dataGhostIV, true);
   phi.exchange(copier);
 
   for(int ibox = 0; ibox < dit.size(); ibox++)

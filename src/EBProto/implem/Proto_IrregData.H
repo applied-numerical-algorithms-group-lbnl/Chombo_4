@@ -33,16 +33,9 @@ namespace Proto
     {
       m_inputBox = a_box;
       unsigned int size = a_indicies.size();
-#ifdef PROTO_CUDA
       protoMalloc(m_rawPtr,size*sizeof(data_t));
       protoMemcpy(m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
       m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
-#else
-      m_data=::std::shared_ptr<data_t>(new data_t[size], [](data_t* p) { delete[] p;});
-      for(int i = 0; i < size ; i++)
-        (*m_data)[i] = a_data[i];
-      m_rawPtr = m_data.get();
-#endif
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
       m_indicies->resize(size);
       for(int i = 0; i < size ; i++)
@@ -136,7 +129,6 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator+=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
       if((m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
@@ -149,18 +141,6 @@ namespace Proto
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] += a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
 
@@ -168,7 +148,6 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator-=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
@@ -181,18 +160,6 @@ namespace Proto
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] -= a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
 
@@ -200,7 +167,6 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator*=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
@@ -213,18 +179,6 @@ namespace Proto
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] *= a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
     
@@ -292,13 +246,8 @@ namespace Proto
     {
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-#ifdef PROTO_CUDA      
       protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
-#else
-      m_EBIrregDataPtr = new EBIrregStruct<cent, data_t, ncomp>[hostvec.size()];
-      memcpy((char*)(m_EBIrregDataPtr), (char*)(hostvec.data()), memsize);
-#endif      
     }
 
     inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
@@ -320,19 +269,11 @@ namespace Proto
 
       return found;
     }
-
-    ///
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > getUglyStructPtr()
-    {
-      return m_uglystruct;
-    }
   
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
     /// for fast forall
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > m_uglystruct;
-    void makeUglyStruct();
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;
