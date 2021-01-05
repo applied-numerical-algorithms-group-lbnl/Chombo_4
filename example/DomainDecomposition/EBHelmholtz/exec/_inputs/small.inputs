@@ -33,3 +33,4 @@ EBBC         = 1
 
 numSmooth  = 4
 do_lazy_relax = true
+direct_to_bottom = true

@@ -181,7 +181,7 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
 EBMultigridLevel::
 EBMultigridLevel(dictionary_t                            & a_dictionary,
                  shared_ptr<GeometryService<2> >         & a_geoserv,
-                  const Real                              & a_alpha,
+                 const Real                              & a_alpha,
                  const Real                              & a_beta,
                  const Real                              & a_dx,
                  const DisjointBoxLayout                 & a_grids,
@@ -189,11 +189,12 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  string                                    a_dombcname[2*DIM],
                  const string                            & a_ebbcname,
                  const Box                               & a_domain,
-                 const IntVect                           & a_nghost)
+                 const IntVect                           & a_nghost,
+                 bool a_directToBottom)
 {
   CH_TIME("EBMultigridLevel::define");
   m_depth = 0;
-
+  m_directToBottom = a_directToBottom;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
   m_dx         = a_dx;         
@@ -227,11 +228,10 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   fillKappa(a_geoserv);
 
   defineCoarserObjects(a_geoserv);
-  if(!m_hasCoarser)
+  if(!m_hasCoarser || m_directToBottom)
   {
-    m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+    defineBottomSolvers(a_geoserv);
   }
-  
 }
 /***/
 void
@@ -270,6 +270,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
+  m_directToBottom = false;
 
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -304,18 +305,25 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 
 
   defineCoarserObjects(a_geoserv);
-  if(!m_hasCoarser)
+  if(!m_hasCoarser || m_directToBottom)
   {
-    m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+    defineBottomSolvers(a_geoserv);
+  }
+}
+
+void  
+EBMultigridLevel::
+defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
+{
+  m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
 #ifdef CH_USE_PETSC
 
-    Point pghost= ProtoCh::getPoint(m_nghost);
-    EBPetscSolver<2>* ptrd = 
-      (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
-                            m_stenname, m_dombcname, m_ebbcname, m_dx, pghost));
-    m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
+  Point pghost= ProtoCh::getPoint(m_nghost);
+  EBPetscSolver<2>* ptrd = 
+    (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
+                          m_stenname, m_dombcname, m_ebbcname, m_dx, pghost));
+  m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
 #endif    
-  }
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
@@ -410,10 +418,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           doExchange = (iter==0);
         }
       }
-//begin debug
-//      EBLevelBoxData<CELL, 1> &  rhs = (EBLevelBoxData<CELL, 1> &) a_rhs;
-//      rhs.exchange(m_exchangeCopier);
-//end debug
+      //begin debug
+      //      EBLevelBoxData<CELL, 1> &  rhs = (EBLevelBoxData<CELL, 1> &) a_rhs;
+      //      rhs.exchange(m_exchangeCopier);
+      //end debug
       residual(resid, a_phi, a_rhs, doExchange);
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -437,10 +445,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       
         ideb++;
       } //end loop over boxes
-//begin debug
-//      a_phi.exchange(m_exchangeCopier);
-//      ideb++;
-//end debug
+      //begin debug
+      //      a_phi.exchange(m_exchangeCopier);
+      //      ideb++;
+      //end debug
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons
@@ -498,27 +506,34 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
 {
 
   PR_TIME("sgmglevel::vcycle");
-  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
-
-  if (m_hasCoarser)
-  {
-    residual(m_resid,a_phi,a_rhs);                      
-    //stencils for multilevel objects live with the finer level
-    restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    if(EBMultigrid::s_useWCycle)
-    {
-      m_coarser->vCycle(m_deltaC,m_residC);
-    }
-    prolongIncrement(a_phi,m_deltaC);
-  }
-  else
+  if(m_directToBottom)
   {
     bottom_solve(a_phi, a_rhs);
   }
+  else
+  {
+    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
 
-  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
+    if (m_hasCoarser)
+    {
+      residual(m_resid,a_phi,a_rhs);                      
+      //stencils for multilevel objects live with the finer level
+      restrictResidual(m_residC,m_resid);
+      m_deltaC.setVal(0.);
+      m_coarser->vCycle(m_deltaC,m_residC);
+      if(EBMultigrid::s_useWCycle)
+      {
+        m_coarser->vCycle(m_deltaC,m_residC);
+      }
+      prolongIncrement(a_phi,m_deltaC);
+    }
+    else
+    {
+      bottom_solve(a_phi, a_rhs);
+    }
+
+    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
+  }
 }
 ///
 void

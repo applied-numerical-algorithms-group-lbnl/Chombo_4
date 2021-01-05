@@ -37,7 +37,8 @@ public:
                    string                              a_dombcname[2*DIM],
                    const string                      & a_ebbcname,
                    const Box                         & a_domain,
-                   const IntVect                     & a_nghost);
+                   const IntVect                     & a_nghost,
+                   bool a_directToBottomSolve = false);
 
   ///make coarse from fine 
   EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
@@ -174,6 +175,8 @@ public:
     }
   }
 
+  void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
+                    const EBLevelBoxData<CELL, 1>&  a_rhs);
 private:
 
   void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
@@ -188,7 +191,8 @@ private:
   }
 
   
-  bool   m_hasCoarser; 
+  bool   m_hasCoarser;
+  bool   m_directToBottom;
   unsigned int m_depth;
   Real                              m_alpha;   
   Real                              m_beta;    
@@ -232,8 +236,7 @@ private:
   void solve_bicgstab(EBLevelBoxData<CELL, 1>       & a_phi,
                       const EBLevelBoxData<CELL, 1> & a_rhs);
 
-  void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
-                    const EBLevelBoxData<CELL, 1>&  a_rhs);
+  void defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv);
 };
 
 
@@ -257,7 +260,8 @@ public:
               const string                      & a_dombcname,
               const string                      & a_ebbcname,
               const Box                         & a_domain,
-              const IntVect                     & a_nghost)
+              const IntVect                     & a_nghost,
+              bool a_directToBottom = false)
   {
     string dombc[2*DIM];
     for(int ivec = 0; ivec < 2*DIM; ivec++)
@@ -275,7 +279,8 @@ public:
                            dombc,
                            a_ebbcname,   
                            a_domain, 
-                           a_nghost));
+                           a_nghost,
+                           a_directToBottom));
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost, graphs);
@@ -294,7 +299,8 @@ public:
               string                              a_dombcname[2*DIM],
               const string                      & a_ebbcname,
               const Box                         & a_domain,
-              const IntVect                     & a_nghost)
+              const IntVect                     & a_nghost,
+              bool a_directToBottomSolve = false)
   {
     m_finest = std::shared_ptr<EBMultigridLevel>(
       new EBMultigridLevel(a_dictionary, 
@@ -307,7 +313,8 @@ public:
                            a_dombcname,  
                            a_ebbcname,   
                            a_domain, 
-                           a_nghost));
+                           a_nghost,
+                           a_directToBottomSolve));
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost  , graphs);
@@ -348,7 +355,7 @@ public:
   }
 
 private:
-
+  
   /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
