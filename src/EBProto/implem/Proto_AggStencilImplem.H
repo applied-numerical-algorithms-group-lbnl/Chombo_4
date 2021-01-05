@@ -213,10 +213,10 @@ struct pairPtr{
 #else
 
   template <typename data_t>
-  void
+  void 
   aggStencilIndexer(int a_begin, int a_end,
-                    pairPtr<const data_t>   dataPtrsSrc,
-                    pairPtr<data_t>         dataPtrsDst,
+		    pairPtr<const data_t>   dataPtrsSrc,
+		    pairPtr<data_t>         dataPtrsDst,
                     const pair_t<data_t>*   a_ebstencil,
                     const uint64_t*         a_stensizes,
                     const uint64_t*         a_stenstart,
@@ -249,7 +249,6 @@ struct pairPtr{
       else lphi += a_scale*acc;
     }
   }
-
 
 #endif
 

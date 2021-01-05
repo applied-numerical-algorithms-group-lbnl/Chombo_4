@@ -109,7 +109,7 @@ namespace Proto
     Var<data_t, ncomp> retval;
 
     const EBIrregStruct<cent, data_t, ncomp>*  rawptr = a_dst;
-    const EBIrregStruct<cent, data_t, ncomp>&  ugly   = [a_ivec];
+    const EBIrregStruct<cent, data_t, ncomp>&  ugly   = rawptr[a_ivec];
     for(int icomp = 0; icomp < ncomp; icomp++)
     {
       retval.m_ptrs[icomp] = ugly.m_startPtr + (ugly.m_varsize*icomp);
@@ -213,7 +213,7 @@ namespace Proto
     unsigned int blocks = (N+stride-1)/stride;
 
     size_t smem = 0;
-    protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, protoGerCurrentStream,
+    protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, protoGetCurrentStream,
       0, N, a_F, a_dst, a_srcs...);
   }
 
