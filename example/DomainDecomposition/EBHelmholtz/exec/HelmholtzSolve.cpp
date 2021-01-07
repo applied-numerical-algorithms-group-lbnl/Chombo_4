@@ -186,8 +186,8 @@ runTest(int a_argc, char* a_argv[])
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
       EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
       EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-      phibd.setVal(0.6);
-      rhsbd.setVal(1.0);
+      phibd.setVal(1.0);
+      rhsbd.setVal(0.0);
       corbd.setVal(0.0);
     }
 

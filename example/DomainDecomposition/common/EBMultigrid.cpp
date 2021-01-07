@@ -321,7 +321,8 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
   Point pghost= ProtoCh::getPoint(m_nghost);
   EBPetscSolver<2>* ptrd = 
     (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
-                          m_stenname, m_dombcname, m_ebbcname, m_dx, pghost));
+                          m_stenname, m_dombcname, m_ebbcname,
+                          m_dx, m_alpha, m_beta, pghost));
   m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
 #endif    
 }

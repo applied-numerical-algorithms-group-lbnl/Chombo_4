@@ -43,7 +43,7 @@ public:
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
-                Real a_dx,   Point a_ghost)
+                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost)
   {
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
@@ -52,6 +52,8 @@ public:
     m_domain       =    a_domain;
     m_stencilName  =    a_stencilName;
     m_dx           =    a_dx;
+    m_alpha        =    a_alpha;
+    m_beta         =    a_beta;
     m_prestring[0] = '\0';
     for(int iface = 0; iface < 2*DIM; iface++)
     {
@@ -174,7 +176,8 @@ private:
       else
       {
         //compensate for neumann or dirichlet bcs
-        //here is where we diverge from canon.   The original just ignored stuff outside the domain.
+        //here is where we diverge from canon.
+        //The original just ignored stuff outside the domain.
         for(int idir = 0; idir < DIM; idir++)
         {
           for(SideIterator sit; sit.ok(); ++sit)
@@ -355,6 +358,11 @@ private:
           {
             auto& stenvof = stenc.m_entries[ivof].m_vof;
             auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            Real weight = m_beta*stenwgt;
+            if(stenvof == vof)
+            {
+              weight += m_alpha;
+            }
             int icol = m_gids[dit[ibox]](stenvof, 0);  
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
@@ -537,7 +545,7 @@ private:
   KSP m_ksp;
   PetscInt m_defined;
   char m_prestring[32];
-  
+  Real m_alpha, m_beta;
 };
 
 #endif

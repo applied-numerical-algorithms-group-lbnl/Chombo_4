@@ -148,9 +148,12 @@ runTest(int a_argc, char* a_argv[])
   Chombo4::Box dombox = domain.domainBox();
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
+  Real alpha, beta;
+  pp.get("alpha", alpha);
+  pp.get("beta",  beta);
   EBPetscSolver<2> solver(geoserv, dictionary, graphs, grids, domain.domainBox(),
                           stenname, alldombc, ebbcname,
-                          dx, dataGhostPt);
+                          dx, alpha, beta, dataGhostPt);
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
