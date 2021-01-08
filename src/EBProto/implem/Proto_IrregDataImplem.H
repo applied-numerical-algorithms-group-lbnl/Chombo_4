@@ -23,8 +23,8 @@ namespace Proto
   {
     unsigned int nsize = size();
     if(nsize == 0) return;
-    int blockSize = 512;
-    int nBlocks = (nsize + blockSize - 1) / blockSize;
+    //int blockSize = 512;
+    //int nBlocks = (nsize + blockSize - 1) / blockSize;
     protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Assign>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_val, nsize);
   }
 
