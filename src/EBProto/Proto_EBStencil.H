@@ -13,10 +13,11 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
-
+#include <implem/Proto_StencilImplem.H>
+#include <implem/Proto_FusedStencil.H>
 
 using std::shared_ptr;
 using std::vector;
@@ -95,6 +96,9 @@ namespace Proto
                
 
     
+    inline
+    void defineApplyITZ();
+    
     // this forces initToZero = true
     inline
     void applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
@@ -137,7 +141,9 @@ namespace Proto
     EBStencil(     const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
-
+#ifdef PROTO_CUDA
+    FusedStencil<data_t> sFused;
+#endif
   };
 }
 #include "implem/Proto_EBStencilImplem.H"

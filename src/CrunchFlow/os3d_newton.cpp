@@ -1,12 +1,22 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-#ifdef MKL
-#include <mkl_lapacke.h>
-#else
-#include <lapacke.h>
+
+#ifdef PROTO_CUDA
+#  include <assert.h>
+#  include <cuda_runtime.h>
+#  include <cusolverDn.h>
 #endif
+
+#ifdef MKL
+#  include <mkl_lapacke.h>
+#else
+#  include <lapacke.h>
+#endif
+
 #include <stdlib.h>
+#include <bits/stdc++.h>
+#include <chrono> 
 #include "ShapeArray.H"
 #include "crunchflow.h"
 
@@ -20,14 +30,33 @@ double sign(const double A, const double B)
   return( B >= 0.0 ? fabs(A) : -fabs(A) );
 }
 
+void printMatrix(int m, int n, const double*A, int lda, const char* name)
+{
+  for(int row = 0 ; row < m ; row++){
+    for(int col = 0 ; col < n ; col++){
+      double Areg = A[row + col*lda];
+      printf("%s(%d,%d) = %f\n", name, row+1, col+1, Areg);
+    }
+  }
+}
+
+void printSolution(int n, const double* b)
+{
+  printf("solution: [");
+  for(int col = 0 ; col < n ; col++)
+    printf("%10.2e ", b[col]);
+  printf("]\n");
+}
+
 void print_matrix(const int n,
 		  /* const */ double *A_2d,
-		  /* const */ double *b_1d)
+		  /* const */ double *b_1d,
+		  const char *name)
 {
   ShapeArray<double, 2> A(A_2d, n, n);
   ShapeArray<double, 1> b(b_1d, n);
   
-  fprintf(stderr,"C os3d_newton [A|b]: dim: %d\n", n);
+  fprintf(stderr,"%s: C os3d_newton [A|b]: dim: %d\n", name, n);
   for(size_t i = 0; i < n; ++i)
     {
       for(size_t j = 0; j < n; ++j)
@@ -36,7 +65,8 @@ void print_matrix(const int n,
     }
 }
 
-int os3d_newton(const int ncomp,
+int os3d_newton(enum Target target,
+		const int ncomp,
 		const int nspec,
 		const int nkin,
 		const int nrct,
@@ -167,12 +197,21 @@ int os3d_newton(const int ncomp,
   ShapeArray<double, 1> fxmax(fxmax_1d, neqn);
   ShapeArray<double, 3> satliq(satliq_3d, nz, ny, nx);
 
+#ifdef PROTO_CUDA
+  cusolverDnHandle_t cusolverH = NULL;
+  cudaStream_t stream = NULL;
+  cusolverStatus_t status = CUSOLVER_STATUS_SUCCESS;
+  cudaError_t cudaStat1 = cudaSuccess;
+  cudaError_t cudaStat2 = cudaSuccess;
+  cudaError_t cudaStat3 = cudaSuccess;
+  cudaError_t cudaStat4 = cudaSuccess;
+#endif
+  
   char trans = 'N';
-  const int newton = 50;
+  const int newton = 1e3;
   const double atol = 1e-09;
   const double rtol = 1e-06;
   double aascale;
-  double check;
   double errmax;
   double tolmax;
   int ind;
@@ -186,7 +225,8 @@ int os3d_newton(const int ncomp,
   double (* mukin)[IKIN] = (double (*)[IKIN])calloc(ncomp * IKIN, sizeof(double)); // non-contributory, consider removal
   double (* rdkin)[IKIN] = (double (*)[IKIN])calloc(ncomp * IKIN, sizeof(double)); // non-contributory, consider removal
   double (* decay_correct)[ncomp] = (double (*)[ncomp])calloc(nkin * ncomp, sizeof(double)); // non-contributory, consider removal
-
+  double total_time_taken = 0;
+  
   // nkin x ncomp
   //
   for(size_t i = 0; i < nkin; ++i)
@@ -368,8 +408,9 @@ int os3d_newton(const int ncomp,
 	       fxx_1d,
 	       fxmax_1d,
 	       satliq_3d);
-
-      assemble_local(ncomp, 
+      
+      assemble_local(target,
+		     ncomp, 
 		     nspec, 
 		     nkin, 
 		     ikin,
@@ -412,17 +453,229 @@ int os3d_newton(const int ncomp,
 
       if( DEBUG )
 	{
-	  fprintf(stderr,"iteration %d\n",*iterat);
-	  print_matrix(neqn, &aaa[0][0], bb);
+	  fprintf(stderr,"iteration %d, solve system:\n",*iterat);
+	  print_matrix(neqn, &aaa[0][0], bb, "host");
 	}
 
-      check = -fxx[0]/aaa[0][0];
+#ifdef PROTO_CUDA
 
+      if(target == DEVICE)
+	{
+
+      int info = 0;       /* host copy of error info */
+      int m = neqn, lda = ncomp, ldb = ncomp, nrhs = 1;
+      double *d_A = NULL; /* device copy of A */
+      double *d_B = NULL; /* device copy of B */
+      int *d_Ipiv = NULL; /* pivoting sequence */
+      int *d_info = NULL; /* error info */
+      int  lwork = 0;     /* size of workspace */
+      double *d_work = NULL; /* device workspace for getrf */
+      double A[ncomp][ncomp]; // Column Major Order 
+      const int pivot_on = 1;
+
+      if( DEBUG )
+	if( pivot_on && DEBUG )
+	  {
+	    printf("pivot is on : compute P*A = L*U \n");
+	  }
+	else
+	  {
+	    printf("pivot is off: compute A = L*U (not numerically stable)\n");
+	  }
+
+      // A = aaa^T, i.e. copy Row Major Order aaa to Column Major Order A
+      //
+      for(size_t row = 0 ; row < ncomp; row++)
+	for(size_t col = 0 ; col < ncomp; col++)
+	  A[col][row] = aaa[row][col];
+
+      if( DEBUG )
+	{
+	  printf("A = (matlab base-1)\n");
+	  printMatrix(m, m, &A[0][0], lda, "A");
+	  printf("=====\n");
+	  
+	  printf("B = (matlab base-1)\n");
+	  printMatrix(m, 1, bb, ldb, "B");
+	  printf("=====\n");
+	}
+      
+      /* step 1: create cusolver handle, bind a stream */
+      status = cusolverDnCreate(&cusolverH);
+      assert(CUSOLVER_STATUS_SUCCESS == status);
+
+      cudaStat1 = cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
+      assert(cudaSuccess == cudaStat1);
+
+      status = cusolverDnSetStream(cusolverH, stream);
+      assert(CUSOLVER_STATUS_SUCCESS == status);
+
+      /* step 2: copy A to device */
+      cudaStat1 = cudaMalloc ((void**)&d_A, sizeof(double) * lda * m);
+      cudaStat2 = cudaMalloc ((void**)&d_B, sizeof(double) * m);
+      cudaStat2 = cudaMalloc ((void**)&d_Ipiv, sizeof(int) * m);
+      cudaStat4 = cudaMalloc ((void**)&d_info, sizeof(int));
+      assert(cudaSuccess == cudaStat1);
+      assert(cudaSuccess == cudaStat2);
+      assert(cudaSuccess == cudaStat3);
+      assert(cudaSuccess == cudaStat4);
+
+      cudaStat1 = cudaMemcpy(d_A, A, sizeof(double) * lda * m, cudaMemcpyHostToDevice);
+      cudaStat2 = cudaMemcpy(d_B, bb, sizeof(double) * m, cudaMemcpyHostToDevice);
+      assert(cudaSuccess == cudaStat1);
+      assert(cudaSuccess == cudaStat2);
+
+      /* step 3: query working space of getrf */
+      status = cusolverDnDgetrf_bufferSize(cusolverH,
+					   m,
+					   m,
+					   d_A,
+					   lda,
+					   &lwork);
+      assert(CUSOLVER_STATUS_SUCCESS == status);
+
+      cudaStat1 = cudaMalloc((void**)&d_work, sizeof(double)*lwork);
+      assert(cudaSuccess == cudaStat1);
+
+      /* step 4: LU factorization */
+      if (pivot_on)
+	{
+	  status = cusolverDnDgetrf(cusolverH,
+				    m,
+				    m,
+				    d_A,
+				    lda,
+				    d_work,
+				    d_Ipiv,
+				    d_info);
+	}
+      else
+	{
+	  status = cusolverDnDgetrf(cusolverH,
+				    m,
+				    m,
+				    d_A,
+				    lda,
+				    d_work,
+				    NULL,
+				    d_info);
+	}
+      cudaStat1 = cudaDeviceSynchronize();
+      assert(CUSOLVER_STATUS_SUCCESS == status);
+      assert(cudaSuccess == cudaStat1);
+
+      double LU[lda * m]; /* L and U */
+      int Ipiv[m]; /* host copy of pivoting sequence */
+      
+      if (pivot_on)
+	{
+	  cudaStat1 = cudaMemcpy(Ipiv, d_Ipiv, sizeof(int) * m, cudaMemcpyDeviceToHost);
+	}
+      cudaStat2 = cudaMemcpy(LU, d_A, sizeof(double) * lda * m, cudaMemcpyDeviceToHost);
+      cudaStat3 = cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost);
+      assert(cudaSuccess == cudaStat1);
+      assert(cudaSuccess == cudaStat2);
+      assert(cudaSuccess == cudaStat3);
+      
+      if ( 0 > info )
+	{
+	  printf("%d-th parameter is wrong \n", -info);
+	  exit(1);
+	}
+
+      if( DEBUG )
+	{
+	  if (pivot_on)
+	    {
+	      printf("pivoting sequence, matlab base-1\n");
+	      for(int j = 0 ; j < m ; j++)
+		printf("Ipiv(%d) = %d\n", j+1, Ipiv[j]);
+	    }
+	  printf("L and U = (matlab base-1)\n");
+	  printMatrix(m, m, LU, lda, "LU");
+	  printf("=====\n");
+	}
+      
+      /* step 5: solve A*X = B */ 
+      if (pivot_on)
+	{
+	  status = cusolverDnDgetrs(cusolverH,
+				    CUBLAS_OP_N,
+				    m,
+				    nrhs,
+				    d_A,
+				    lda,
+				    d_Ipiv,
+				    d_B,
+				    ldb,
+				    d_info);
+	}
+      else
+	{
+	  status = cusolverDnDgetrs(cusolverH,
+				    CUBLAS_OP_N,
+				    m,
+				    nrhs,
+				    d_A,
+				    lda,
+				    NULL,
+				    d_B,
+				    ldb,
+				    d_info);
+	}
+
+      switch(status)
+	{
+	case CUSOLVER_STATUS_SUCCESS:
+	  if( DEBUG )
+	    printf("cusolverDnDgetrs completed successfully.\n");
+	  break;
+	case CUSOLVER_STATUS_NOT_INITIALIZED:
+	  printf("cusolverDnDgetrs: error: the library was not initialized.\n");
+	  break;
+	case CUSOLVER_STATUS_INVALID_VALUE:
+	  printf("cusolverDnDgetrs: error: invalid parameters were passed (n<0 or lda<max(1,n) or ldb<max(1,n)).\n");
+	  break;
+	case CUSOLVER_STATUS_ARCH_MISMATCH:
+	  printf("cusolverDnDgetrs: error: the device only supports compute capability 2.0 and above.\n");
+	  break;
+	case CUSOLVER_STATUS_INTERNAL_ERROR:
+	  printf("cusolverDnDgetrs: error: an internal operation failed.\n");
+	  break;
+	default:
+	  printf("cusolverDnDgetrs: unknown error.\n");
+	};
+
+      cudaStat1 = cudaDeviceSynchronize();
+      assert(CUSOLVER_STATUS_SUCCESS == status);
+      
+      assert(cudaSuccess == cudaStat1);
+
+      cudaStat1 = cudaMemcpy(bb, d_B, sizeof(double) * m, cudaMemcpyDeviceToHost);
+      assert(cudaSuccess == cudaStat1);
+
+      // free resources
+      if (d_A    ) cudaFree(d_A);
+      if (d_B    ) cudaFree(d_B);
+      if (d_Ipiv ) cudaFree(d_Ipiv);
+      if (d_info ) cudaFree(d_info);
+      if (d_work ) cudaFree(d_work);
+
+      if (cusolverH   ) cusolverDnDestroy(cusolverH);
+      if (stream      ) cudaStreamDestroy(stream);
+
+	}
+#endif
+
+      if( target == HOST)
+	{
+      auto start = std::chrono::high_resolution_clock::now();
+      
       //      CALL dgetrf(neqn,neqn,aaa,neqn,indd,info)
-
+      //
       lapack_int info, m = neqn, n = neqn, lda = neqn, ldb = 1, nrhs = 1;
       lapack_int *ipiv = (lapack_int *) malloc(n * sizeof(lapack_int));
-
+      
       //                    1                2 3 4          5   6
       info = LAPACKE_dgetrf(LAPACK_ROW_MAJOR,m,n,&aaa[0][0],lda,ipiv);
 
@@ -433,7 +686,7 @@ int os3d_newton(const int ncomp,
 	}
       else if( info > 0 )
 	{
-	  fprintf(stderr,"os3d_newton_cpp.cpp: LAPACKE_dgetrf: U(%d,%d) is exactly zero. The factorization has been completed, but the factor U is exactly singular, and division by zero will occur if it is used to solve a system of equations.\n", info, info );
+	  fprintf(stderr,"os3d_newton.cpp: LAPACKE_dgetrf: U(%d,%d) is exactly zero. The factorization has been completed, but the factor U is exactly singular, and division by zero will occur if it is used to solve a system of equations.\n", info, info );
 	  exit(1);
 	}
 
@@ -443,10 +696,21 @@ int os3d_newton(const int ncomp,
 
       if( info < 0 )
 	{
-	  fprintf(stderr,"os3d_newton_cpp.cpp: LAPACKE_dgetrs: the %d-th argument had an illegal value\n", info);
+	  fprintf(stderr,"os3d_newton.cpp: LAPACKE_dgetrs: the %d-th argument had an illegal value\n", info);
 	  exit(1);
 	}
 
+      auto end = std::chrono::high_resolution_clock::now();
+      double time_taken =
+	std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+      total_time_taken += time_taken; 
+	}
+
+      if( DEBUG )
+      	{
+	  printSolution(ncomp, bb);
+  	}
+      
       errmax = 0.0;
       for(i = 1; i <= ncomp; i++)
 	{
@@ -520,6 +784,9 @@ int os3d_newton(const int ncomp,
   free(mukin);
   free(rdkin);
   free(decay_correct);
+
+  if(target == HOST)
+    fprintf(stderr,"os3d_newton: LU host solver: %.0f ns\n", total_time_taken);
 
   return *icvg;
 }

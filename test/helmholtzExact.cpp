@@ -117,13 +117,13 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
   
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
-  Vector<Box> boxes(1, domain.domainBox());
+  Chombo4::ProblemDomain domain(domLo, domHi);
+  Vector<Chombo4::Box> boxes(1, domain.domainBox());
   Vector<int> procs(1, 0);
 
   pout() << "making grids" << endl;
-  DisjointBoxLayout grids(boxes, procs);
-  Vector<DisjointBoxLayout> vecgrids(1, grids);
+  Chombo4::DisjointBoxLayout grids(boxes, procs);
+  Vector<Chombo4::DisjointBoxLayout> vecgrids(1, grids);
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
@@ -150,7 +150,7 @@ runTest(int a_argc, char* a_argv[])
     shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
     pout() << "making dictionary" << endl;
-    vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+    vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
     vector<Real>   vecdx    (vecgrids.size(), dx);
     for(int ilev = 1; ilev < vecgrids.size(); ilev++)
     {
@@ -161,14 +161,14 @@ runTest(int a_argc, char* a_argv[])
       dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
   
 
-    Box dombox = domain.domainBox();
+    Chombo4::Box dombox = domain.domainBox();
     shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
     pout() << "making data" << endl;
     EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
     EBLevelBoxData<CELL,   1>  lph(grids, dataGhostIV, graphs);
 
-    DataIterator dit = grids.dataIterator();
+    Chombo4::DataIterator dit = grids.dataIterator();
     pout() << "registering stencil and setting values" << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
@@ -176,7 +176,7 @@ runTest(int a_argc, char* a_argv[])
       EBBoxData<CELL, Real, 1>& lphbd = lph[dit[ibox]];
       Bx inputBx = lphbd.inputBox();
       
-      Box gridbox  = grids[dit[ibox]];
+      Chombo4::Box gridbox  = grids[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(gridbox);
       Bx grownbx = phibd.box();
       ebforall_i(inputBx, setPhiPt, grownbx, phibd, lphbd, a, b, idir, dx);
@@ -206,7 +206,7 @@ runTest(int a_argc, char* a_argv[])
       ebforall(inputBx, addAlphaPhi, grbx, lphbd, phibd, kapbd, alpha, beta);
 
       pout() << "checking answer" << endl;
-      Box interiorBox = gridbox;
+      Chombo4::Box interiorBox = gridbox;
       interiorBox.grow(1);
       interiorBox &= domain.domainBox();
       interiorBox.grow(-1);

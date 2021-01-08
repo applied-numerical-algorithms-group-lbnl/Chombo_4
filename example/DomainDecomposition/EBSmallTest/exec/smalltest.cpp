@@ -66,10 +66,18 @@ testDebugFunctions(const EBGraph& a_graph)
 void 
 testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
               shared_ptr<GeometryService<2>    >   a_geoserv,
-              DisjointBoxLayout                     a_grids,
-              Box                                   a_domain,
+              Chombo4::DisjointBoxLayout                     a_grids,
+              Chombo4::Box                                   a_domain,
               Real a_dx, Point  a_ghost)
 {
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+  using Proto::BaseIF;
+  
   pout() << "testing hi cell to face stencil" << endl;
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
 
@@ -81,7 +89,7 @@ testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
   DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Box grid = a_grids[dit[ibox]];
+    Chombo4::Box grid = a_grids[dit[ibox]];
     Bx  bx = ProtoCh::getProtoBox(grid);
     Bx grown = bx.grow(a_ghost);
     EBGraph graph = (*graphs)[dit[ibox]];
@@ -107,10 +115,18 @@ testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
 void 
 testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
                    shared_ptr<GeometryService<2>    >    a_geoserv,
-                   DisjointBoxLayout                     a_grids,
-                   Box                                   a_domain,
+                   Chombo4::DisjointBoxLayout                     a_grids,
+              Chombo4::Box                                   a_domain,
                    Real a_dx, Point  a_ghost)
 {
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+  using Proto::BaseIF;
+  
   pout() << "testing low cell to face stencil" << endl;
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
 
@@ -122,7 +138,7 @@ testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
   DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    Box grid = a_grids[dit[ibox]];
+    auto grid = a_grids[dit[ibox]];
     Bx  bx = ProtoCh::getProtoBox(grid);
     Bx grown = bx.grow(a_ghost);
     EBGraph graph = (*graphs)[dit[ibox]];
@@ -147,8 +163,8 @@ testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
 void 
 testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
                    shared_ptr<GeometryService<2>    >     a_geoserv,
-                   DisjointBoxLayout                      a_grids,
-                   Box                                    a_domain,
+                   Chombo4::DisjointBoxLayout                      a_grids,
+                   Chombo4::Box                                    a_domain,
                    Real a_dx, Point  a_ghost)
 {
   pout() << "testing cell to face stencil" << endl;
@@ -160,7 +176,7 @@ testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
 
 //=================================================
 
-void makeGrids(DisjointBoxLayout& a_grids,
+void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                Real             & a_dx,
                const int        & a_nx,
                const int        & a_maxGrid)
@@ -171,9 +187,9 @@ void makeGrids(DisjointBoxLayout& a_grids,
   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
 
   // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_maxGrid, blockfactor);
   
@@ -181,7 +197,7 @@ void makeGrids(DisjointBoxLayout& a_grids,
 
   a_dx = 1.0/a_nx;
   LoadBalance(procs, boxes);
-  a_grids = DisjointBoxLayout(boxes, procs, domain);
+  a_grids = Chombo4::DisjointBoxLayout(boxes, procs, domain);
   a_grids.printBalance();
 
 }
@@ -240,12 +256,12 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   }
   else
   {
-    MayDay::Error("bogus geometry");
+    Chombo4::MayDay::Error("bogus geometry");
   }
   return retval;
 }
 //=================================================
-void defineGeometry(DisjointBoxLayout& a_grids,
+void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
                     Real             & a_dx,
                     Real             & a_geomCen,
                     Real             & a_geomRad,
@@ -265,7 +281,7 @@ void defineGeometry(DisjointBoxLayout& a_grids,
   pout() << "maxGrid  = " << maxGrid  << endl;
 
   makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Box domain = a_grids.physDomain().domainBox();
+  Chombo4::Box domain = a_grids.physDomain().domainBox();
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
@@ -280,8 +296,16 @@ int
 runTests(int a_argc, char* a_argv[])
 {
 
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+  using Proto::BaseIF;
+  
   Real dx;
-  DisjointBoxLayout grids;
+  Chombo4::DisjointBoxLayout grids;
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -296,7 +320,7 @@ runTests(int a_argc, char* a_argv[])
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   pout() << "making dictionary" << endl;
-  Box domain = grids.physDomain().domainBox();
+  Chombo4::Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 

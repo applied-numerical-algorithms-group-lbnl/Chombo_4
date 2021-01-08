@@ -68,7 +68,7 @@ registerStencils()
   m_brit->registerFaceToCell( StencilNames::DivergeFtoC         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
 
   //face-centered gradient of cell-centered data
-  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
+  m_brit->registerCellToFace( StencilNames::MACGradient         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag, Point::Ones(2));
 }
 /// 
 void 
@@ -80,6 +80,12 @@ project(EBLevelFluxData<1>   & a_velo,
   CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
+
+//  //begin debug
+//  Real rhsmax = m_rhs.maxNorm(0);
+//  pout() << "rhs of mac projection = " << rhsmax << endl;
+//  exit(0);
+  //end debug
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
@@ -99,6 +105,7 @@ project(EBLevelFluxData<1>   & a_velo,
       m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
                               a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
     }
+    applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
     ideb++;
   }
@@ -106,7 +113,45 @@ project(EBLevelFluxData<1>   & a_velo,
 ///
 void 
 EBMACProjector::
-applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval)
+{  
+  Bx faceBx = valbx.faceBox(idir, sit);
+  //unsigned long long int numflopspt = 0;
+  if(idir == 0)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there nare no cut cells near the domain boundary
+    auto& regdata = a_flux.m_xflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+  else if(idir == 1)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there nare no cut cells near the domain boundary
+    auto& regdata = a_flux.m_yflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+#if DIM==3          
+  else if(idir == 2)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there nare no cut cells near the domain boundary
+    auto& regdata = a_flux.m_zflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+#endif
+  else
+  {
+    MayDay::Error("bogus idir");
+  }
+}
+///
+void 
+EBMACProjector::
+applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                             const DataIndex     & a_dit)
 {
   Box validBox = m_grids[a_dit];
@@ -153,26 +198,65 @@ applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
+          setFaceStuff(idir, sit(),  a_flux, valbx, fluxval);
+        }
+      }
+    }
+  }
+}
+///
+void 
+EBMACProjector::
+applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                            const DataIndex     & a_dit)
+{
+  Box validBox = m_grids[a_dit];
+
+  Bx dombx = ProtoCh::getProtoBox(m_domain);
+  Bx valbx = ProtoCh::getProtoBox(validBox);
+  for(SideIterator sit; sit.ok(); ++sit)
+  {
+    Point dombnd = dombx.boundary(sit());
+    Point valbnd = valbx.boundary(sit());
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(dombnd[idir] == valbnd[idir])
+      {
+        int index = ebp_index(idir, sit());
+        string bcstr = m_ebibc.m_domainBC[index];
+        Real fluxval = 0;
+
+        Bx faceBx = valbx.faceBox(idir, sit());
+        //unsigned long long int numflopspt = 0;
+        if(idir == 0)
+        {
+          //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+          //using non-eb forall because box restriction in eb land is broken right now.   This will
+          //work if there nare no cut cells near the domain boundary
+          auto& regdata = a_flux.m_xflux->getRegData();
+          forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+        }
+        else if(idir == 1)
+        {
+          //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+          //using non-eb forall because box restriction in eb land is broken right now.   This will
+          //work if there nare no cut cells near the domain boundary
+          auto& regdata = a_flux.m_yflux->getRegData();
+          forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+        }
 #if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
+        else if(idir == 2)
+        {
+          //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+          //using non-eb forall because box restriction in eb land is broken right now.   This will
+          //work if there nare no cut cells near the domain boundary
+          auto& regdata = a_flux.m_zflux->getRegData();
+          forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+        }
 #endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+        else
+        {
+          MayDay::Error("bogus idir");
         }
       }
     }
@@ -186,6 +270,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
 {
 
   CH_TIME("EBMACProjector::kappaDivU");
+  a_velo.exchange(m_exchangeCopier);
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -202,7 +287,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-    applyFluxBoundaryConditions(centroidFlux, dit[ibox]);
+    applyVeloBoundaryConditions(centroidFlux, dit[ibox]);
 
     auto& kapdiv =  m_rhs[dit[ibox]];
     kapdiv.setVal(0.);

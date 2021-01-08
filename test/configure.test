@@ -18,7 +18,7 @@ parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [
 
 args = parser.parse_args()
 
-print args
+print(args)
 
 f_pref = open('Makefile.test.prefix','r')
 f_post = open('Makefile.test.postfix','r')

@@ -56,14 +56,14 @@ EBIBC getIBCs()
 
 //=================================================
 void initializeData(EBLevelBoxData<CELL, DIM>   &  a_velo,
-                    const DisjointBoxLayout     &  a_grids,
+                    const Chombo4::DisjointBoxLayout     &  a_grids,
                     const Real                  &  a_dx,
                     const Real                  &  a_geomCen,
                     const Real                  &  a_geomRad,
                     const Real                  &  a_maxVelMag,
                     const Real                  &  a_maxVelRad)
 {
-  DataIterator dit = a_grids.dataIterator();
+  Chombo4::DataIterator dit = a_grids.dataIterator();
   int ideb = 0;
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -132,13 +132,13 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   }
   else
   {
-    MayDay::Error("bogus geometry");
+    Chombo4::MayDay::Error("bogus geometry");
   }
   return retval;
 }
 //=================================================
-void defineGeometry(Vector<DisjointBoxLayout>& a_grids,
-                    const Box        & a_finestDomain,
+void defineGeometry(Vector<Chombo4::DisjointBoxLayout>& a_grids,
+                    const Chombo4::Box        & a_finestDomain,
                     Real             & a_dx,
                     Real             & a_geomCen,
                     Real             & a_geomRad,
@@ -157,7 +157,7 @@ void defineGeometry(Vector<DisjointBoxLayout>& a_grids,
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
   pout() << "creating geometry service" << endl;
-  Box domain = a_finestDomain;
+  Chombo4::Box domain = a_finestDomain;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
@@ -198,19 +198,16 @@ runProjection(int a_argc, char* a_argv[])
 
   EBMultigrid::s_numSmoothUp   = numSmooth;
   EBMultigrid::s_numSmoothDown = numSmooth;
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
 
   Real dx = 1.0/nx;
-  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
 
   pout() << "making grids" << endl;
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   pout() << "defining geometry" << endl;
@@ -221,14 +218,14 @@ runProjection(int a_argc, char* a_argv[])
 
   int whichGeom;
 
-  Box domainb = domain.domainBox();
+  Chombo4::Box domainb = domain.domainBox();
   defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, whichGeom, nx,  geoserv);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   pout() << "making dictionary" << endl;
-  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
   {
@@ -243,7 +240,7 @@ runProjection(int a_argc, char* a_argv[])
   pout() << "inititializing data"   << endl;
   
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
-  DisjointBoxLayout& grids = vecgrids[0];
+  Chombo4::DisjointBoxLayout& grids = vecgrids[0];
   EBLevelBoxData<CELL, DIM>  velo(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL, DIM>  gphi(grids, dataGhostIV, graphs);
 

@@ -133,6 +133,40 @@ public:
       (*this)[dit[ibox]].setVal(a_value);
     }
   }
+
+  ///
+  Real maxNorm(int a_icomp) const
+  {
+    CH_TIME("EBLevelBoxData::maxNorm");
+    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+
+    copyToHost(hostdata, *this);
+
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real maxval = 0; 
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid     =         dbl[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      Real gridval = hostdata[dit[ibox]].maxNorm(grbx, a_icomp);
+      if(gridval > maxval)
+      {
+        maxval = gridval;
+      }
+    }
+
+#ifdef CH_MPI    
+    Real sendBuf = maxval;
+    int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL,MPI_MAX, Chombo_MPI::comm);
+
+    if (result != MPI_SUCCESS)
+    {
+      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+    }
+#endif
+    return maxval;
+  }
   
   ///
   void copyTo(const Interval                      &            a_srcComps,

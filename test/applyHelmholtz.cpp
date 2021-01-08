@@ -70,13 +70,13 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
   
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  DisjointBoxLayout grids = vecgrids[0];
+  Chombo4::DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
@@ -91,7 +91,7 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
-  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
   {
@@ -105,14 +105,14 @@ runTest(int a_argc, char* a_argv[])
   string dombcname = StencilNames::Neumann;
   string  ebbcname = StencilNames::Dirichlet;
 
-  Box dombox = domain.domainBox();
+  Chombo4::Box dombox = domain.domainBox();
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  lph(grids, dataGhostIV, graphs);
 
-  DataIterator dit = grids.dataIterator();
+  Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -131,7 +131,7 @@ runTest(int a_argc, char* a_argv[])
   {
     auto& phifab =   phi[dit[ibox]];
     auto& lphfab =   lph[dit[ibox]];
-    Box gridbox  = grids[dit[ibox]];
+    Chombo4::Box gridbox  = grids[dit[ibox]];
     Bx grbx = ProtoCh::getProtoBox(gridbox);
     shared_ptr<ebstencil_t> stencil = dictionary->getEBStencil(stenname, ebbcname, dombox, dombox, ibox);
     shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();

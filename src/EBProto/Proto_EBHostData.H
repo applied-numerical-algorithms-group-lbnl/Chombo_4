@@ -104,28 +104,6 @@ namespace Proto
       m_regData.define(a_input.getRegData()  , a_comp);
     }           
 
-    ///
-    data_t maxNorm(const Box& a_grid, unsigned int a_icomp) const
-    {
-      data_t maxval = 0; 
-      using Proto::BoxIterator;
-      for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
-      {
-        Point pt = *bit;
-        vector<EBIndex<CELL> > vofspt = m_graph.getVoFs(pt);
-        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofspt[ivec];
-          data_t datval = (*this)(vof, a_icomp);
-          data_t absval = std::abs(datval);
-          if(absval > maxval)
-          {
-            maxval = absval;
-          }
-        }
-      }
-      return maxval;
-    }
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
     void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab)
     {
@@ -268,6 +246,63 @@ namespace Proto
     HostIrregData<cent, data_t, ncomp>     m_irrData;
     EBGraph                                m_graph;
   };
+
+  ///template specialization for cell
+  template <typename  data_t, unsigned int ncomp>
+  data_t maxNormCell(const EBHostData<CELL, data_t, ncomp>& a_src,
+                 const Box& a_grid, unsigned int a_icomp) 
+    {
+      data_t maxval = 0; 
+      using Proto::BoxIterator;
+      for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = a_src.ebgraph().getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofspt[ivec];
+          data_t datval = a_src(vof, a_icomp);
+          data_t absval = std::abs(datval);
+          if(absval > maxval)
+          {
+            maxval = absval;
+          }
+        }
+      }
+      return maxval;
+    }
+
+  ///
+  template <CENTERING cent, typename  data_t, unsigned int ncomp>
+  data_t maxNormFace(const EBHostData<cent, data_t, ncomp>& a_src,
+                     const Box& a_grid, unsigned int a_icomp)
+  {
+    data_t maxval = 0; 
+    using Proto::BoxIterator;
+    for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+    {
+      Point pt = *bit;
+      vector<EBIndex<CELL> > vofspt = a_src.ebgraph().getVoFs(pt);
+      for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofspt[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          vector<EBIndex<cent> > faces = getFaces<cent>(vof, sit(),  a_src.ebgraph());
+          for(unsigned int iface = 0; iface < faces.size(); iface++)
+          {
+            data_t datval = a_src(faces[iface], a_icomp);
+            data_t absval = std::abs(datval);
+            if(absval > maxval)
+            {
+              maxval = absval;
+            }
+          }
+        }
+      }
+    }
+    return maxval;
+  }
 
 
 }

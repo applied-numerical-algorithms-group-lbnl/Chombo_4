@@ -38,8 +38,8 @@ registerStencils()
   {
     //dirichlet at domain to get zero normal velocity at domain boundaries
     //grown by one to allow interpolation to face centroids
-    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones());
-    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma, false);
+    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Dirichlet, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
+    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC     , StencilNames::NoBC   , doma, doma);
   }
 
 }
@@ -68,13 +68,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
-  //begin debug
-//  Real covval = 0;
-//  a_velo.writeToFileHDF5(string("init_velo.hdf5"), covval);
-//  phi.writeToFileHDF5(string("phi.hdf5"), covval);
-//  rhs.writeToFileHDF5(string("rhs.hdf5"), covval);
-  //end debug
-  
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
 
@@ -95,6 +88,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
                             facegrad, phifab, idir, ibox, initZero, 1.0);
     }
+    int ideb = 0;
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
       bool initZero = true;
@@ -102,6 +96,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       gradComp.define(a_gphi[dit[ibox]], idir);
       brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
                             gradComp, facegrad,  idir, ibox, initZero, 1.0);
+      ideb++;
       
     }
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
@@ -145,7 +140,7 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     interpsten.apply(centroidv, facecentv, initZero, 1.0);  
 
     //brutally enforce flux-based boundary conditions on the hapless data
-    m_macprojector->applyFluxBoundaryConditions(centroidv, dit[ibox]);
+    m_macprojector->applyVeloBoundaryConditions(centroidv, dit[ibox]);
     auto& kapdiv = divu[dit[ibox]];
     //get kappa*divv
     //also registered by the mac projector
@@ -154,16 +149,8 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     ideb++;
   }
 
-//  static bool printed = false;
-//  if(!printed)
-//  {
-//    auto & kappa   = m_macprojector->m_solver->getKappa();
-//    printed = true;
-//    writeEBLevelHDF5(string("divuinitc4.hdf5"), divu, kappa, doma, graphs);
-//    divu.writeToFileHDF5(string("divuinitc.noteb.hdf5"), -0.001);
-//  }
 }
-///
+
 #include "Chombo_NamespaceFooter.H"
 
 

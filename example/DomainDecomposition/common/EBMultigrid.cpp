@@ -8,7 +8,7 @@
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = true;
+bool EBMultigrid::s_useWCycle     = false;
 int  EBMultigrid::s_numSmoothDown = 4;
 int  EBMultigrid::s_numSmoothUp   = 4;
 
@@ -181,7 +181,7 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
 EBMultigridLevel::
 EBMultigridLevel(dictionary_t                            & a_dictionary,
                  shared_ptr<GeometryService<2> >         & a_geoserv,
-                  const Real                              & a_alpha,
+                 const Real                              & a_alpha,
                  const Real                              & a_beta,
                  const Real                              & a_dx,
                  const DisjointBoxLayout                 & a_grids,
@@ -189,11 +189,12 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
                  string                                    a_dombcname[2*DIM],
                  const string                            & a_ebbcname,
                  const Box                               & a_domain,
-                 const IntVect                           & a_nghost)
+                 const IntVect                           & a_nghost,
+                 bool a_directToBottom)
 {
   CH_TIME("EBMultigridLevel::define");
   m_depth = 0;
-
+  m_directToBottom = a_directToBottom;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
   m_dx         = a_dx;         
@@ -227,9 +228,9 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
   fillKappa(a_geoserv);
 
   defineCoarserObjects(a_geoserv);
-  if(!m_hasCoarser)
+  if(!m_hasCoarser || m_directToBottom)
   {
-    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+    defineBottomSolvers(a_geoserv);
   }
 }
 /***/
@@ -269,6 +270,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
+  m_directToBottom = false;
 
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -303,11 +305,26 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 
 
   defineCoarserObjects(a_geoserv);
-  if(!m_hasCoarser)
+  if(!m_hasCoarser || m_directToBottom)
   {
-    m_bottomSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+    defineBottomSolvers(a_geoserv);
   }
+}
 
+void  
+EBMultigridLevel::
+defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
+{
+  m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
+#ifdef CH_USE_PETSC
+
+  Point pghost= ProtoCh::getPoint(m_nghost);
+  EBPetscSolver<2>* ptrd = 
+    (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
+                          m_stenname, m_dombcname, m_ebbcname,
+                          m_dx, m_alpha, m_beta, pghost));
+  m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
+#endif    
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
@@ -402,32 +419,37 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           doExchange = (iter==0);
         }
       }
+      //begin debug
+      //      EBLevelBoxData<CELL, 1> &  rhs = (EBLevelBoxData<CELL, 1> &) a_rhs;
+      //      rhs.exchange(m_exchangeCopier);
+      //end debug
       residual(resid, a_phi, a_rhs, doExchange);
-      {
-        CH_TIME("ebforall gsrb bit");
-        for(int ibox = 0; ibox < dit.size(); ++ibox)
-        {
-          shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
 
-          Box grid = m_grids[dit[ibox]];
-          Bx  grbx = getProtoBox(grid);
-          //lambda = safety/diag
-          //phi = phi - lambda*(res)
-          ///lambda takes floating point to calculate
-          //also does an integer check for red/black but I am not sure what to do with that
-          auto& phifab   =   a_phi[dit[ibox]];
-          auto& resfab   =   resid[dit[ibox]];
-          auto& stendiag = m_diagW[dit[ibox]];
-          
-          Bx  inputBox = phifab.inputBox();
-          ebforall_i(inputBox, gsrbResid,  grbx, 
-                     phifab, resfab, stendiag,
-                     m_kappa[dit[ibox]], m_alpha, m_beta, m_dx, iredblack);
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        //shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
+
+        Box grid = m_grids[dit[ibox]];
+        Bx  grbx = getProtoBox(grid);
+        //lambda = safety/diag
+        //phi = phi - lambda*(res)
+        ///lambda takes floating point to calculate
+        //also does an integer check for red/black but I am not sure what to do with that
+        auto& phifab   =   a_phi[dit[ibox]];
+        auto& resfab   =   resid[dit[ibox]];
+        auto& stendiag = m_diagW[dit[ibox]];
+        auto& kappa    = m_kappa[dit[ibox]];
+        Bx  inputBox = phifab.inputBox();
+        ebforall_i(inputBox, gsrbResid,  grbx, 
+                   phifab, resfab, stendiag,
+                   kappa, m_alpha, m_beta, m_dx, iredblack);
       
-          ideb++;
-        } //end loop over boxes
         ideb++;
-      }
+      } //end loop over boxes
+      //begin debug
+      //      a_phi.exchange(m_exchangeCopier);
+      //      ideb++;
+      //end debug
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons
@@ -485,48 +507,121 @@ vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
 {
 
   PR_TIME("sgmglevel::vcycle");
-  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
-
-  if (m_hasCoarser)
+  if(m_directToBottom)
   {
-    residual(m_resid,a_phi,a_rhs);                      
-    //stencils for multilevel objects live with the finer level
-    restrictResidual(m_residC,m_resid);
-    m_deltaC.setVal(0.);
-    m_coarser->vCycle(m_deltaC,m_residC);
-    if(EBMultigrid::s_useWCycle)
-    {
-      m_coarser->vCycle(m_deltaC,m_residC);
-    }
-    prolongIncrement(a_phi,m_deltaC);
+    bottom_solve(a_phi, a_rhs);
   }
   else
   {
-    typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
-    ParmParse pp("bicgstab");
-    Real tol   = 1.0e-6;
-    Real hang  = 1.0e-8;
-    Real small = 1.0e-16;
-    int  verb  = 0;
-    int  imax  = 0;
-    int nrestart = 5;
-    pp.query("tol"  , tol);
-    pp.query("hang" , hang);
-    pp.query("small", small);
-    pp.query("imax" , imax);
-    pp.query("nrestart", nrestart);
-    pp.query("verbosity", verb);
-    //the -1.0 is the metric parameter which I do not understand
-    //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
-    int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);
-    if(status != 1)
+    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
+
+    if (m_hasCoarser)
     {
-      pout() << "mild warning: bicgstab returned " << status << std::endl;
+      residual(m_resid,a_phi,a_rhs);                      
+      //stencils for multilevel objects live with the finer level
+      restrictResidual(m_residC,m_resid);
+      m_deltaC.setVal(0.);
+      m_coarser->vCycle(m_deltaC,m_residC);
+      if(EBMultigrid::s_useWCycle)
+      {
+        m_coarser->vCycle(m_deltaC,m_residC);
+      }
+      prolongIncrement(a_phi,m_deltaC);
     }
+    else
+    {
+      bottom_solve(a_phi, a_rhs);
+    }
+
+    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
   }
-
-  relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
-
 }
+///
+void
+EBMultigridLevel::
+bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
+             const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+#ifdef CH_USE_PETSC
+  string which_solver("petsc");
+#else    
+  string which_solver("bicgstab");
+#endif    
+  ParmParse pp;
+
+  pp.query("bottom_solver", which_solver);
+  if(which_solver == string("bicgstab"))
+  {
+    solve_bicgstab(a_phi, a_rhs);
+  }
+  else if(which_solver == string("relax"))
+  {
+    solve_relax(a_phi, a_rhs);
+  }
+#ifdef CH_USE_PETSC    
+  else if(which_solver == string("petsc"))
+  {
+    solve_petsc(a_phi, a_rhs);
+  }
+#endif
+  else
+  {
+    MayDay::Error("bottom solver identifier not found");
+  }
+}
+///
+void
+EBMultigridLevel::
+solve_bicgstab(EBLevelBoxData<CELL, 1>         & a_phi,
+               const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  ParmParse pp("bicgstab");
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  Real tol   = 1.0e-6;
+  Real hang  = 1.0e-8;
+  Real small = 1.0e-16;
+  int  verb  = 0;
+  int  imax  = 0;
+  int nrestart = 5;
+  pp.query("tol"  , tol);
+  pp.query("hang" , hang);
+  pp.query("small", small);
+  pp.query("imax" , imax);
+  pp.query("nrestart", nrestart);
+  pp.query("verbosity", verb);
+  //the -1.0 is the metric parameter which I do not understand
+  //pout() << "calling bicgstab for domain =  " << m_domain << std::endl;
+  int status = bicgstab::solve(a_phi, a_rhs, *this, verb, -1.0, tol, hang, small, imax, nrestart);
+  if(status != 1)
+  {
+    pout() << "mild warning: bicgstab returned " << status << std::endl;
+  }
+}
+///
+void
+EBMultigridLevel::
+solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
+            const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  ParmParse pp("relax_solver");
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  Real tol   = 1.0e-6;
+  int  imax  = 0;
+
+  pp.query("tol"  , tol);
+  pp.query("imax" , imax);
+
+  m_relaxSolver->solve(a_phi, a_rhs, imax, tol);
+}
+///
+#ifdef CH_USE_PETSC
+void
+EBMultigridLevel::
+solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
+            const EBLevelBoxData<CELL, 1>   & a_rhs)
+{
+  m_petscSolver->solve(a_phi, a_rhs);
+}
+#endif
 #include "Chombo_NamespaceFooter.H"
 /****/

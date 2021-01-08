@@ -19,6 +19,7 @@
 #include "EBMultigrid.H"
 #include "EBParabolicIntegrators.H"
 #include "SetupFunctions.H"
+#include "Chombo_EBChombo.H"
 
 #include <iomanip>
 
@@ -29,16 +30,24 @@ using std::endl;
 using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
+using Chombo4::DisjointBoxLayout;
+using Chombo4::Box;
+using Chombo4::DataIterator;
+using Chombo4::LevelBoxData;
 
 
 //=================================================
 void 
 initializeData(EBLevelBoxData<CELL,   1>   &  a_scalarCell,
                EBLevelBoxData<CELL,   1>   &  a_sourceTerm,
-               const DisjointBoxLayout     &  a_grids,
+               const Chombo4::DisjointBoxLayout     &  a_grids,
                const Real                  &  a_dx)
 
 {
+using Chombo4::DisjointBoxLayout;
+using Chombo4::Box;
+using Chombo4::DataIterator;
+using Chombo4::LevelBoxData;
   DataIterator dit = a_grids.dataIterator();
   Real blobCen, blobRad;
   ParmParse pp;
@@ -64,11 +73,15 @@ initializeData(EBLevelBoxData<CELL,   1>   &  a_scalarCell,
 shared_ptr<EBMultigrid> 
 getEBMultigrid(shared_ptr<EBEncyclopedia<2, Real> > & a_brit,
                shared_ptr<GeometryService<2> >      & a_geoserv,
-               const DisjointBoxLayout              & a_grids,
+               const Chombo4::DisjointBoxLayout              & a_grids,
                const Real                           & a_dx,
                const IntVect                        & a_dataGhostIV)
 
 {
+using Chombo4::DisjointBoxLayout;
+using Chombo4::Box;
+using Chombo4::DataIterator;
+using Chombo4::LevelBoxData;
   ParmParse pp;
   //these get overwritten for heat solves
   Real alpha = 1.; Real beta  = 1.;
@@ -117,6 +130,10 @@ getEBMultigrid(shared_ptr<EBEncyclopedia<2, Real> > & a_brit,
 int
 runHeatEqn(int a_argc, char* a_argv[])
 {
+using Chombo4::DisjointBoxLayout;
+using Chombo4::Box;
+using Chombo4::DataIterator;
+using Chombo4::LevelBoxData;
   Real coveredval = -1;
   int nx          = 32;
   int  max_step   = 10;
@@ -154,8 +171,8 @@ runHeatEqn(int a_argc, char* a_argv[])
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<DisjointBoxLayout> vecgrids;
-  Vector<Box>               vecdomains;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::Box>               vecdomains;
   Vector<Real> vecdx;
 
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, dx, nx);
@@ -171,7 +188,7 @@ runHeatEqn(int a_argc, char* a_argv[])
 
   pout() << "inititializing data"   << endl;
   
-  Box domain              = vecdomains[0];
+  Chombo4::Box domain              = vecdomains[0];
   DisjointBoxLayout grids =   vecgrids[0];
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
   EBLevelBoxData<CELL,   1>  sourceTerm(grids, dataGhostIV, graphs);
@@ -228,7 +245,7 @@ runHeatEqn(int a_argc, char* a_argv[])
   }
   else
   {
-    MayDay::Error("bogus whichSolver");
+    Chombo4::MayDay::Error("bogus whichSolver");
   }
 
   pout() << "running heat equation operator" << endl;

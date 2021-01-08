@@ -1,5 +1,6 @@
 #include "EBAdvection.H"
 #include "EBAdvectionFunctions.H"
+#include "EBMACProjector.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 const string EBAdvection::s_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the non-conservative div (radius 1)
@@ -117,6 +118,7 @@ getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
                    const int                      & a_ibox)
 {
   CH_TIME("EBAdvection::getFaceCenteredVel");
+  m_veloCell->exchange(m_exchangeCopier);
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
   getFaceVelComp<YFACE>(*(a_fcvel.m_yflux),  m_brit->m_cellToYFace, veccell, 1, a_ibox);
@@ -149,7 +151,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph); 
   EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph);
 
-  //vel + 0.5*dt*source for minion stability fix
+  //vel + 0.5*dt*source for Minion (Michael, not the yellow guys) stability fix
   EBBoxData<CELL, Real, 1> minion(a_grown, a_graph);
   {
     unsigned int nflop = 3;
@@ -157,7 +159,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
                     minion, a_scal, a_source, a_dt);
 
   }
-
+  int istoop = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBBoxData<CELL, Real, 1> slopeLoCompNor, slopeHiCompNor;
@@ -179,6 +181,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
 
     stenlo->apply(slopeLoCompTan, minion, initToZero, 1.0);
     stenhi->apply(slopeHiCompTan, minion, initToZero, 1.0);
+    istoop++;
   }
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -203,6 +206,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
     m_brit->applyCellToFace(s_CtoFHighLabel, s_nobcsLabel, m_domain, a_scalHi, scal_imh_nph, idir, a_ibox, initToZero, 1.0);
     m_brit->applyCellToFace(s_CtoFLowLabel , s_nobcsLabel, m_domain, a_scalLo, scal_iph_nph, idir, a_ibox, initToZero, 1.0);
   }
+  istoop++;
 }
 /*******/
 void 
@@ -266,10 +270,11 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
   //first we compute the slopes of the data
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
+  auto& veloLD = *m_veloCell;
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
   Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
   const EBGraph  & graph = (*m_graphs)[a_dit];
-  EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
+  EBBoxData<CELL, Real, DIM>& veccell = veloLD[a_dit];
 
   EBFluxData<Real, 1>  scalHi(grown, graph);
   EBFluxData<Real, 1>  scalLo(grown, graph);
@@ -348,26 +353,7 @@ applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
         }
       }
     }
@@ -380,6 +366,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
              const Real& a_dt)
 {
   CH_TIME("EBAdvection::kappaConsDiv");
+  a_scal.exchange(m_exchangeCopier);
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)

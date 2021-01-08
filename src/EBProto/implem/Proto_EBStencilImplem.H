@@ -50,6 +50,8 @@ namespace Proto
                             a_xfacdata,  a_yfacdata, a_zfacdata,    
                             a_dx, a_periodiconly, a_dstGrown);
 
+    if(m_hasDomainBCs) defineApplyITZ();
+
     if(!m_bcsOnly)
     {
       m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
@@ -113,19 +115,24 @@ namespace Proto
           PROTO_ASSERT(false, "host and device sizes need to match here");
         }
         size_t datSize = sizeof(data_t)*fabsizeDevi;
-#ifdef PROTO_CUDA
         protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#else
-        memcpy(dataptrDevi, dataptrHost, datSize);
-#endif  
       }
     }
+  }
+
+  template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+  void
+  EBStencil<order, data_t, srcCenter, dstCenter>::
+  defineApplyITZ() 
+  {
+#ifdef PROTO_CUDA
+/*      auto& vecStencil = sFused.getStencils();  
+      for(int ibc = 0; ibc < 2*DIM; ibc++)
+        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
+          vecStencil.push_back(&m_regStencilBCS[ibc][ivec]);
+   */   
+      sFused.define(m_regStencilBCS, m_BCApplyBoxes, 2*DIM);
+#endif
   }
 
   ///
@@ -142,6 +149,10 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
+#ifdef PROTO_CUDA
+      const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
+      sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
+#else
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
@@ -152,6 +163,7 @@ namespace Proto
                                            bcsrcbox, true, 1.0);
         }
       }
+#endif
     }
     if(!m_bcsOnly)
     {

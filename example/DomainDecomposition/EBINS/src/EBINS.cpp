@@ -3,6 +3,7 @@
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+#include "DebugFunctions.H"
 using Proto::Var;
 /*******/
 EBINS::
@@ -139,26 +140,26 @@ run(unsigned int a_max_step,
     outputToFile(0, a_coveredVal, dt, 0.0);
   }
 
-  Real time = 0;
-  unsigned int step = 0;
-  while((step < a_max_step) && (time < a_max_time))
+  m_time = 0;
+  m_step = 0;
+  while((m_step < a_max_step) && (m_time < a_max_time))
   {
-    pout() << "step = " << step << ", time = " << time << " dt = " << dt << endl;
-    pout() << "advancing passive scalar " << endl;
-    advanceScalar(dt);
+    pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
 
     pout() << "advancing velocity and pressure fields " << endl;
     advanceVelocityAndPressure(dt, a_tol, a_maxIter);
 
-    step++;
-    time += dt;
+    pout() << "advancing passive scalar" << endl;
+    advanceScalar(dt);
+    m_step++;
+    m_time += dt;
     if(!usingFixedDt)
     {
       dt = computeDt(a_cfl);
     }
-    if((doFileOutput) && (step%a_outputInterval == 0))
+    if((doFileOutput) && (m_step % a_outputInterval == 0))
     {
-      outputToFile(step, a_coveredVal, dt, time);
+      outputToFile(m_step, a_coveredVal, dt, m_time);
     }
   }
 }
@@ -177,7 +178,7 @@ initializePressure(Real         a_dt,
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
   Interval interv(0, DIM-1);
   velo.copyTo(interv, velosave, interv, m_copyCopier);
-  gphi.setVal(0.);
+  //gphi.setVal(0.);
   for(int iter = 0; iter < a_numIterPres; iter++)
   {
     advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
@@ -192,23 +193,16 @@ computeDt(Real a_cfl) const
 {
   CH_TIME("EBINS::computeDt");
   Real dtval;
-  ParmParse pp;
-  bool use_stokes_dt = false;
-  pp.query("use_stokes_dt", use_stokes_dt);
-  if(use_stokes_dt)
-  {
-    dtval = m_dx*m_dx/m_viscosity;
-  }
-  else
-  {
+  Real dtCFL = 999999999.;
     Real maxvel = 0;
     for(int idir = 0; idir < DIM; idir++)
     {
       maxvel = std::max(maxvel, m_velo->maxNorm(idir));
     }
+    dtCFL = a_cfl*m_dx/maxvel;
     if(maxvel > 1.0e-16)
     {
-      dtval = a_cfl*m_dx/maxvel;
+      dtval = dtCFL;
       pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
     }    
     else
@@ -216,6 +210,15 @@ computeDt(Real a_cfl) const
       pout() << "velocity seems to be zero--setting dt to dx" << endl;
       dtval = m_dx;
     }
+
+  ParmParse pp;
+  Real dtStokes = m_dx*m_dx/m_viscosity;
+  bool use_stokes_dt = false;
+  pp.query("use_stokes_dt", use_stokes_dt);
+  if(use_stokes_dt && dtCFL > dtStokes)
+  {
+    dtval = dtStokes;
+    pout() << "Using Stokes dt = " << dtval << endl;
   }
   return dtval;
 }
@@ -224,7 +227,10 @@ void
 EBINS::
 getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
-  m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
+  auto& divuu = *m_divuu;
+  auto& velo  = *m_velo;
+  m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
+  divuu.exchange(m_exchangeCopier);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -380,8 +386,6 @@ advanceVelocityAndPressure(Real a_dt,
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
 
-  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
-
   if(m_eulerCalc)
   {
     advanceVelocityEuler(a_dt);
@@ -398,9 +402,13 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
+  static int ideb = 0;
+  auto& scal = *m_scal;
   CH_TIME("EBINS::advanceScalar");
-  EBLevelBoxData<CELL, 1> source(m_grids, m_nghost, m_graphs);
-  m_advectOp->advance(*m_scal, a_dt);
+  scal.exchange(m_exchangeCopier);
+  m_advectOp->advance(scal, a_dt);
+  scal.exchange(m_exchangeCopier);
+  ideb++;
 }
 /*******/ 
 void
@@ -415,7 +423,6 @@ outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) con
   writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
   writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

@@ -216,7 +216,7 @@ public:
     {
       const Box & grid     =         dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
-      Real gridval = hostdata[dit[ibox]].maxNorm(grbx, a_icomp);
+      Real gridval = Proto::maxNormCell(hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > maxval)
       {
         maxval = gridval;
@@ -288,12 +288,12 @@ public:
 #endif
   }
 
-  //
-  IntVect ghost() const
+  void dumpFile(int fileNumber, Real coveredValue) const
   {
-    return this->ghostVect();
+    string filename = "tmp"+std::to_string(fileNumber)+".hdf5";
+    writeToFileHDF5(filename, coveredValue);
   }
-  
+
   /// this is for hdf5 stuff as multivalued stuff will be lost
   static 
   void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
@@ -474,7 +474,7 @@ public:
 
     EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
     copyToHost(hostdat, difference);
-    Real maxval = hostdat.maxNorm(a_grid, a_icomp);
+    Real maxval = Proto::maxNormCell(hostdat, a_grid, a_icomp);
     int retval = 0;
     if(maxval > a_tol)
     {

@@ -39,6 +39,7 @@ public:
         int  a_imax = 27,
         int numRestarts = 5)
   {
+    if(a_imax == 0) return 1;
     CH_TIMERS("BiCGStabSolver::solve");
     CH_TIMER("BiCGStabSolver::solve::Initialize",timeInitialize);
     CH_TIMER("BiCGStabSolver::solve::MainLoop",timeMainLoop);

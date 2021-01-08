@@ -2,6 +2,8 @@
 
 #define DEBUG 0
 
+enum Target {HOST, DEVICE};
+
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
@@ -463,7 +465,7 @@ void reaction(const int ncomp,
 	      double *sp_4d, // [nz][ny][nx][ncomp + nspec],
 	      double *AffinityDepend1_2d, // [nkin][MAX_PATH],
 	      double *rate0_2d, // [nkin][MAX_PATH], 
-	      double *volmol_1d, 
+	      double *volmol_1d, // [nkin] 
 	      double *mumin_3d, // [ncomp][nkin][MAX_PATH],
 	      /* const */ double *keqmin_5d); // [nz][ny][nx][nkin][MAX_PATH],
 
@@ -510,7 +512,8 @@ void cfgamma(const int ncomp,
 void fit(int *nbasis, int *ntemp, double *alogk0, double *bvec, double *vec,
 	 int *iflgint, int *inoutint, int *ntt, char *nameTransfer);
 
-void assemble_local(const int ncomp, 
+void assemble_local(enum Target target,
+		    const int ncomp, 
 		    const int nspec, 
 		    const int nkin, 
 		    const int ikin, 
@@ -556,7 +559,8 @@ int initialize(const int ncompchombo,
 	       const int ny, 
 	       const int nz);
 
-int os3d_newton(const int ncomp,
+int os3d_newton(enum Target target,
+		const int ncomp,
 		const int nspec,
 		const int nkin,
 		const int nrct,
@@ -583,14 +587,17 @@ int os3d_newton(const int ncomp,
 		const double AqueousToBulk,
 		const int ntemp,
 		double *sp10_4d, // [nz][ny][nx][ncomp + nspec],
-		double *t_3d, // [nz][ny][nx],
-		double adhcoeff[NBASIS],
-		double bdhcoeff[NBASIS],
-		double bdtcoeff[NBASIS], 
+		/* const */ double *t_3d, // [nz][ny][nx],
+		/* const */ double *adh_1d, // [TPOINTS]
+		/* const */ double *bdh_1d, // [TPOINTS]
+		/* const */ double *bdot_1d, // [TPOINTS]
+		double *adhcoeff_1d, // [NBASIS],
+		double *bdhcoeff_1d, // [NBASIS],
+		double *bdtcoeff_1d, // [NBASIS],
 		double *sion_3d, // [nz][ny][nx],
-		char *ulab[MAX_DEPEND],
-		const double *acmp_1d, // [ncomp + nspec],
-		const double *chg_1d, // [ncomp + nspec],
+		char **ulab_1d, // [MAX_DEPEND],
+		/* const */ double *acmp_1d, // [ncomp + nspec],
+		/* const */ double *chg_1d, // [ncomp + nspec],
 		double *gam_4d, // [nz][ny][nx][ncomp + nspec],
 		double *muaq_2d, // [ncomp][nspec],
 		double *sp_4d, // [nz][ny][nx][ncomp + nspec],
@@ -599,7 +606,7 @@ int os3d_newton(const int ncomp,
 		double *snorm_2d, // [nkin][MAX_PATH],
 		double *dppt_4d, // [nz][ny][nx][nkin],
 		double *u_rate_4d, // [nz][ny][nx][nkin],
-		const int *nreactmin_1d, // [nkin],
+		/* const */ int *nreactmin_1d, // [nkin],
 		double *actenergy_2d, // [nkin][MAX_PATH],
 		double *silog_2d, // [nkin][MAX_PATH],
 		double *siln_2d, // [nkin][MAX_PATH],
@@ -608,7 +615,7 @@ int os3d_newton(const int ncomp,
 		double *area_4d, // [nz][ny][nx][nkin],
 		double *rmin_2d, // [nkin][MAX_PATH],
 		double *pre_rmin, // [nkin][MAX_PATH],
-		const int *ndepend_2d, // [nkin][MAX_PATH],
+		/* const */ int *ndepend_2d, // [nkin][MAX_PATH],
 		int *idepend_3d, // [nkin][MAX_PATH][MAX_DEPEND],
 		double *depend_3d, // [nkin][MAX_PATH][MAX_DEPEND],
 		int *itot_min_3d, // [nkin][MAX_PATH][MAX_DEPEND],
@@ -616,10 +623,10 @@ int os3d_newton(const int ncomp,
 		double *rate0_2d, // [nkin][MAX_PATH],
 		double *volmol,
 		double *mumin_3d, // [ncomp][nkin][MAX_PATH],
-		const double *keqmin_5d, // [nz][ny][nx][nkin][MAX_PATH],
+		/* const */ double *keqmin_5d, // [nz][ny][nx][nkin][MAX_PATH],
 		double *sppTMP,
 		double *jac_rmin_3d, // [nkin][MAX_PATH][ncomp],
-		const int *ivolume_1d, // [nkin],
+		/* const */ int *ivolume_1d, // [nkin],
 		double *jac_sat,
 		double *fjac_5d, // [nz][ny][nx][neqn][neqn],
 		double *por_3d, // [nz][ny][nx],
@@ -627,7 +634,7 @@ int os3d_newton(const int ncomp,
 		/* const */ double *H2Oreacted_3d, // [nz][ny][nx],
 		/* const */ double *xgram_3d, // [nz+2][ny+2][nx+3],
 		/* const */ double *xgramOld_3d, // [nz+2][ny+2][nx+3],
-		double *sn_4d, // [nz][ny][nx][neqn],
+		/* const */ double *sn_4d, // [nz][ny][nx][neqn],
 		double *distrib,
 		double *fxx_1d, // [neqn],
 		double *fxmax, // [neqn],
@@ -642,3 +649,5 @@ extern Pathway *pathways;
 extern Solution *solutions;
 
 void printSpecies(Species *dependencyList);
+void printMatrix(int m, int n, const double*A, int lda, const char* name);
+void print_matrix(const int n, /* const */ double *A_2d, /* const */ double *b_1d, const char *name);

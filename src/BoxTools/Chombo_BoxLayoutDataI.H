@@ -606,7 +606,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA 
     if(bufDevice)  
     {
-      protoMalloc((void**)&(m_buff->m_sendbuffer) ,sendBufferSize);
+      protoMalloc(m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
@@ -641,7 +641,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(bufDevice) 
     {
-      protoMalloc( (void**)&( m_buff->m_recbuffer),recBufferSize);
+      protoMalloc( m_buff->m_recbuffer,recBufferSize);
     }
     else
     {

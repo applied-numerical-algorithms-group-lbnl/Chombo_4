@@ -23,17 +23,29 @@ namespace Proto
   public:
     typedef EBIndex<cent> index_t;
     ///
-    IrregData()
+    IrregData() 
     {
       m_boxdefined = false;
+    }
+
+    /// constructor by copying
+    IrregData(Box a_box, data_t* a_data, std::vector<index_t>& a_indicies) : m_boxdefined(true)
+    {
+      m_inputBox = a_box;
+      unsigned int size = a_indicies.size();
+      protoMalloc(m_rawPtr,size*sizeof(data_t));
+      protoMemcpy(m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
+      m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
+      m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
+      m_indicies->resize(size);
+      for(int i = 0; i < size ; i++)
+        (*m_indicies)[i] = a_indicies[i];
+      defineEBIrregData();
     }
 
     ///
     virtual ~IrregData()
     {
-#ifdef PROTO_CUDA
-      protoFree(m_uglystructDevPtr);      
-#endif
     }
 
     ///needed for leveldata
@@ -41,7 +53,11 @@ namespace Proto
     {  }
 
     ///
-    inline std::size_t size() const {return m_indicies->size()*ncomp;};
+    inline std::size_t size() const 
+    {
+      if(m_boxdefined) return m_indicies->size()*ncomp;
+      else return 0; 
+    };
 
     ///
     inline bool defined() const {return bool(m_data);};
@@ -113,40 +129,18 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator+=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
-      if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
+      if((m_inputBox == a_input.m_inputBox))
       {
         unsigned int nsize = size();
-        int blockSize = 512;
-        int nBlocks = (nsize + blockSize - 1) / blockSize; 
-        auto streamid = DisjointBoxLayout::getCurrentStream();
-        protoLaunchKernelMemAsync(incKernel<data_t>, nBlocks, blockSize, 0, streamid, m_rawPtr, a_input.m_rawPtr, nsize);
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
-        
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] += a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
 
@@ -154,41 +148,18 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator-=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
         unsigned int nsize = size();
-        unsigned int mem = 0;
-        protoLaunchKernelMemAsync(minusOperatorKernel<data_t>, 
-                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
-                                  m_rawPtr, castPtrInp, nsize);
-        
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] -= a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
 
@@ -196,41 +167,18 @@ namespace Proto
     IrregData<cent, data_t, ncomp>& 
     operator*=(const IrregData<cent, data_t, ncomp> & a_input)
     {
-#ifdef PROTO_CUDA
       if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
       {
-        data_t* castPtrInp = (data_t*)(a_input.m_rawPtr);
         unsigned int nsize = size();
-        unsigned int mem = 0;
-        protoLaunchKernelMemAsync(multipliesOperatorKernel<data_t>, 
-                                  1, 512, mem, DisjointBoxLayout::getCurrentStream(), 
-                                  m_rawPtr, castPtrInp, nsize);
-        
-#ifdef THRUST_DEBUG
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#endif
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
         PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
       }
-#else
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        for(int icomp = 0; icomp < ncomp; icomp++)
-        {
-          size_t dstind =             index((*m_indicies)[i], icomp);
-          size_t srcind =     a_input.index((*m_indicies)[i], icomp);
-          m_rawPtr[dstind] *= a_input.m_rawPtr[srcind];
-        }
-      }
-
-#endif
       return *this;
     }
     
@@ -241,37 +189,15 @@ namespace Proto
       return m_rawPtr[ind];
     }
 
-    vector<EBIndex<cent> > getIndices(const Box& a_box) const
+    vector<EBIndex<cent> > getIndices() const
     {
-      vector<EBIndex<cent> > retval;
-      CENTERING tcent = cent;
-      Box compBox = a_box;
-      if(tcent == XFACE)
-      {
-        compBox = a_box.grow(0, 1);
-      }
-      else if(tcent == YFACE)
-      {
-        compBox = a_box.grow(1, 1);
-      }
-      else if(tcent == ZFACE)
-      {
-        compBox = a_box.grow(1, 1);
-      }
-      
-      for(int i = 0; i < m_indicies->size(); i++)
-      {
-        if(a_box.contains((*m_indicies)[i].m_pt))
-        {
-          retval.push_back((*m_indicies)[i]);
-        }
-      }
-      return retval;
+      return *m_indicies;
     }
 
     unsigned int vecsize() const
     {
-      return m_indicies->size();
+      if(m_boxdefined) return m_indicies->size();
+      else return 0;
     }
 
     inline Box inputBox() const
@@ -284,11 +210,12 @@ namespace Proto
     void define(IrregData<cent, data_t, srccomp>& a_input,
                 unsigned int                    & a_comp)
     {
+      m_boxdefined = true;
       m_indicies       = a_input.getIndicies();
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)a_input.m_EBIrregDataPtr;
+      defineEBIrregData();
     }           
 
     //do not use this
@@ -312,22 +239,15 @@ namespace Proto
       *indicies = getIrregIndicies<cent>(interBox, a_graph);
 
       define(indicies);
-      defineEBIrregData(indicies);
+      defineEBIrregData();
     }
 
-    inline void defineEBIrregData(shared_ptr<vector<EBIndex<cent>>> indicies)
+    inline void defineEBIrregData()
     {
-      vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*indicies, *this);
+      vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-      StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-      m_EBIrregDataPtr = (EBIrregStruct<cent, data_t, ncomp>*)(allocator.alloc(memsize));
-#ifdef PROTO_CUDA      
+      protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
-#else
-      char* charebirreg = (char*)m_EBIrregDataPtr;
-      char* charhostvec = (char*)(hostvec.data());
-      memcpy(charebirreg, charhostvec, memsize);
-#endif      
     }
 
     inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
@@ -349,37 +269,19 @@ namespace Proto
 
       return found;
     }
-
-    ///
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > getUglyStructPtr()
-    {
-      return m_uglystruct;
-    }
-#ifdef PROTO_CUDA
-    EBIrregStruct<cent, data_t, ncomp>*  getUglyStructDevicePtr()
-    {
-      return m_uglystructDevPtr;
-    }
-#endif
-    //public for aliasing;
-    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr;
+  
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
     /// for fast forall
-    shared_ptr< vector< EBIrregStruct<cent, data_t, ncomp> > > m_uglystruct;
-    void makeUglyStruct();
-#ifdef PROTO_CUDA
-    EBIrregStruct<cent, data_t, ncomp>*  m_uglystructDevPtr;
-#endif
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
-    shared_ptr<vector<  index_t > >        m_indicies;
-    shared_ptr<data_t>         m_data;
-    data_t*                    m_rawPtr;
+    shared_ptr<vector<  index_t > >           m_indicies = nullptr;
+    shared_ptr<data_t>                            m_data = nullptr;
+    data_t*                                     m_rawPtr = nullptr;
+    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr = nullptr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
-
   };
 
 }

@@ -60,26 +60,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
         }
       }
     }
@@ -94,13 +75,14 @@ hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                     Real a_tolerance, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::hybridDivergence");
-  //fills m_macScal with velocity extrapolated to its normal face and projected
+  //fills m_advectionVel with velocity extrapolated to its normal face and projected
   getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
 
-  //using macScal for upwinding, this gets the vector compoents of velcity to faces
+  //using advectionVel for upwinding, this gets the vector compoents of velcity to faces
   //this also gets corrected by teh gradient found in the previous step.
   getMACVectorVelocity(a_inputVel, a_dt);
 
+  
   //lots of aliasing and smushing
   assembleDivergence(a_divuu, a_dt);
 }
@@ -113,6 +95,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 {
   CH_TIME("BCGAdvect::getAdvectionVelocity");
   a_inputVel.exchange(m_exchangeCopier);
+  m_source.exchange(  m_exchangeCopier);
+
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBLevelBoxData<CELL, 1> velcomp;
@@ -128,7 +112,8 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->resetAlphaAndBeta(alpha, beta);
       m_helmholtz->applyOp(m_source, velcomp);
     }
-
+    m_source.exchange(m_exchangeCopier);
+    
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
@@ -138,20 +123,22 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
-      auto & veccell = a_inputVel[dit[ibox]];
-      auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
-                           grown, graph, dit[ibox], ibox, a_dt);
 
-      //get face fluxes and interpolate them to centroids
+      EBFluxData<Real, 1>  scalarHi(grown, graph);
+      EBFluxData<Real, 1>  scalarLo(grown, graph);
       EBFluxData<Real, 1>  faceCentVelo( grown, graph);
       EBFluxData<Real, 1>  upwindScal(   grown, graph);
+      
+      auto & veccell = a_inputVel[dit[ibox]];
+      auto & sourfab =   m_source[dit[ibox]];
+      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
+                           grown, graph, dit[ibox], ibox, a_dt);
+
       //average velocities to face centers.
       getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
+      //get face fluxes and interpolate them to centroids
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
       EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
       
       //now copy into the normal direction holder
@@ -159,12 +146,14 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     } //end loop over boxes
   }  // and loop over velocity directions
-  
+
+                                        
   // now we need to project the mac velocity
   pout() << "mac projecting advection velocity" << endl;
+
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
   m_advectionVel.exchange(m_exchangeCopier);
-  pout() << "leaving getAdvectionVelocity" << endl;
+  
 }
 /*******/
 
@@ -231,17 +220,17 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
+      EBFluxData<Real, 1>  scalarHi(grown, graph);
+      EBFluxData<Real, 1>  scalarLo(grown, graph);
       auto & veccell = a_inputVel[dit[ibox]];
       auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
+      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
                            grown, graph, dit[ibox], ibox, a_dt);
 
       //get face fluxes and interpolate them to centroids
       EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
 
     } //end loop over boxes
   }  // and loop over velocity directions
@@ -317,6 +306,9 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       auto& faceCentVel  = m_advectionVel[dit[ibox]];
       auto& scalar       =  scalarVelComp[dit[ibox]];
 
+      //enforce boundary conditions with an iron fist.
+      applyVeloFluxBCs(scalarVelComp[dit[ibox]],  dit[ibox], ivar);
+      
       EBFluxData<Real, 1>  centroidFlux(grown, graph);
       EBFluxData<Real, 1>  faceCentFlux(grown, graph);
 
@@ -326,9 +318,6 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       //interpolate flux to centroids
       stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-      //enforce boundary conditions with an iron fist.
-      applyVeloFluxBCs(centroidFlux,  dit[ibox], ivar);
-      
       scalar.define(m_macVelocity[dit[ibox]], ivar);
 
       auto& kapdiv =  m_kappaDiv[dit[ibox]];

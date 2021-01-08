@@ -1,0 +1,19 @@
+
+PROTO_HOME = $(HOME)/_proto/proto
+HDF5_ROOT = /usr/lib/x86_64-linux-gnu/hdf5/serial
+DEPXX=g++
+CXX=nvcc
+export OMPI_CXX=nvcc
+
+CXXALLFLAGS := #-std=c++11
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g #-pedantic 
+CXXOPTFLAGS:=$(CXXALLFLAGS) -O3 -use_fast_math
+MPI_DIR=/usr/lib/openmpi
+LIBS +=-L$(MPI_DIR)/lib -lmpi 
+CPPFLAGS +=-I$(MPI)/include/
+LAPACKLIBS  =  -L/usr/lib/atlas-base/atlas -lblas -llapack -lgfortran -lm 
+HDFINCFLAGS=-I$(HDF5_ROOT)/include/ 
+HDFLIBFLAGS=-L$(HDF5_ROOT)/lib/ -lhdf5 
+
+#end mach dependent
+

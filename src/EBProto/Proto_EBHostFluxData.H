@@ -71,7 +71,20 @@ namespace Proto
     shared_ptr< EBHostData<YFACE, data_t, ncomp> >    m_yflux;
     ///data  on z coordinate faces
     shared_ptr< EBHostData<ZFACE, data_t, ncomp> >    m_zflux;
+    //graph stuff needed for norm
 
+    ///
+    data_t maxNorm(const Box& a_grid, unsigned int a_icomp) const
+    {
+      data_t xval = Proto::maxNormFace<XFACE>(*m_xflux, a_grid, a_icomp);
+      data_t yval = Proto::maxNormFace<YFACE>(*m_yflux, a_grid, a_icomp);
+      data_t maxval = std::max(xval, yval);
+#if DIM==3
+      data_t zval = Proto::maxNormFace<ZFACE>(*m_zflux, a_grid, a_icomp);
+      maxval = std::max(maxval, zval);
+#endif
+      return maxval;
+    }
 
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
     void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab, unsigned int a_idir)
