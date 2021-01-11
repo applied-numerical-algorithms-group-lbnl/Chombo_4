@@ -354,13 +354,14 @@ public:
     m_finest->applyOpNeumann(a_lph, a_phi);
   }
 
-private:
-  
-  /// 
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
                 bool a_doExchange = true) const;
+  
+private:
+  
+  /// 
 
   Real norm(const EBLevelBoxData<CELL, 1>       & a_res) const;
   

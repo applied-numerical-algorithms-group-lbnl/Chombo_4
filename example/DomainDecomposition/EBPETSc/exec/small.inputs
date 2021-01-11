@@ -4,8 +4,8 @@ nx=       32
 maxIter=    27
 #number of cuda streams (if used)
 nStream=  8
-alpha = 1.0
-beta = -0.01
+alpha = 0.0
+beta = 0.1
 tolerance = 1.0e-10
 #max grid size in domain decomposition
 maxGrid=  16

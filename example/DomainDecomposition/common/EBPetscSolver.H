@@ -366,7 +366,7 @@ private:
             int icol = m_gids[dit[ibox]](stenvof, 0);  
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
-            ierr = MatSetValues(m_mat,1,&irowpet,1,&icolpet,&stenwgt,INSERT_VALUES);
+            ierr = MatSetValues(m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
           } 
         }
       }
