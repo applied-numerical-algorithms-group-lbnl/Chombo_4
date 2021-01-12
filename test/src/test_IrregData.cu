@@ -124,3 +124,183 @@ bool run_test_irreg_data_set_val()
 
   return change && (!nochange);
 }
+
+
+bool run_test_irreg_copy()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  Proto::IrregData<Proto::CELL,double,1> in(bx, ptr, index);
+  Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+  in.setVal(1);
+  out.setVal(2);
+
+
+  out.copy(in,bx,0,bx,0,1); 
+
+  double* checkPtr = new double[size];
+  double* devicPtr = out.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  for(int i = 0 ; i < size ; i++)
+    std::cout << checkPtr[i] << " ";
+ 
+  std::cout << std::endl;
+
+  index.clear();
+  free(ptr);  
+
+  return true;
+}
+
+bool run_test_irreg_copy_partial()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  unsigned int inf  = 2;
+  unsigned int high = 5;
+  double inNumber   = 1;
+  double outNumber  = 2;
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  Proto::Box bx2(Proto::Point(inf,0,0),Proto::Point(high,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  Proto::IrregData<Proto::CELL,double,1> in(bx, ptr, index);
+  Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+  in.setVal(inNumber);
+  out.setVal(outNumber);
+
+  /* test copy */
+  out.copy(in,bx2,0,bx2,0,1); 
+
+  double* checkPtr = new double[size];
+  double* devicPtr = out.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool check=true;
+  for(int i = 0 ; i < size ; i++)
+    if(i>=inf && i <= high)
+      if(checkPtr[i] != inNumber) check=false;
+    else
+      if(checkPtr[i] != outNumber) check=false;
+
+  if(!check)
+  {
+    for(int i = 0 ; i < size ; i++)
+      std::cout << checkPtr[i] << " ";
+ 
+    std::cout << std::endl;
+  }
+  index.clear();
+  free(ptr);  
+
+  return check;
+}
+
+
+
+bool run_test_irreg_copy_partial_idst()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  unsigned int inf  = 2;
+  unsigned int high = 4;
+  double inNumber   = 1;
+  double outNumber  = 2;
+  unsigned int shift = 2;
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  Proto::Box bx2(Proto::Point(inf,0,0),Proto::Point(high,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  Proto::IrregData<Proto::CELL,double,1> in(bx, ptr, index);
+  Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+  in.setVal(inNumber);
+  out.setVal(outNumber);
+
+  /* test copy */
+  out.copy(in,bx2,0,bx2,shift,1); // 1 doesn't work in this case --> IrregData<Proto::CELL,double,2>  
+
+  double* checkPtr = new double[size];
+  double* devicPtr = out.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool check=true;
+  for(int i = 0 ; i < size ; i++)
+    if(i>=inf + shift && i <= high + shift)
+      if(checkPtr[i] != inNumber) check=false;
+    else
+      if(checkPtr[i] != outNumber) check=false;
+
+  if(!check)
+  {
+    for(int i = 0 ; i < size ; i++)
+      std::cout << checkPtr[i] << " ";
+ 
+    std::cout << std::endl;
+  }
+  index.clear();
+  free(ptr);  
+
+  return check;
+}
+
+
+bool run_test_irreg_linear_in_partial()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  double* ptr2 = new double[size];
+  unsigned int inf  = 2;
+  unsigned int high = 4;
+  double inNumber   = 1;
+  double outNumber  = 2;
+  unsigned int shift = 2;
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+  Proto::Box bx2(Proto::Point(inf,0,0),Proto::Point(high,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  Proto::IrregData<Proto::CELL,double,1> in(bx, ptr2, index);
+  Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+
+
+  double* inWork;
+  protoMalloc(inWork,size*sizeof(double));
+
+  in.setVal(inNumber);
+  out.setVal(outNumber);
+
+  /* test copy */
+  in.linearIn(inWork,bx,0,0); 
+  out.linearIn(inWork,bx2,0,0); 
+
+  double* checkPtr = new double[size];
+  double* devicPtr = out.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool check=true;
+  for(int i = 0 ; i < size ; i++)
+    if(i>=inf + shift && i <= high + shift)
+      if(checkPtr[i] != inNumber) check=false;
+    else
+      if(checkPtr[i] != outNumber) check=false;
+
+  if(!check)
+  {
+    for(int i = 0 ; i < size ; i++)
+      std::cout << checkPtr[i] << " ";
+ 
+    std::cout << std::endl;
+  }
+  index.clear();
+  free(ptr);  
+  free(ptr2);  
+
+  return check;
+}

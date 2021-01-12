@@ -121,6 +121,7 @@ namespace Proto
       return retval;
     }
 
+    CUDA_DECORATION
     bool operator==(const EBIndex<cent>& a_ind) const
     {
   

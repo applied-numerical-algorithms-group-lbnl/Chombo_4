@@ -18,28 +18,24 @@ int main()
   cudaSetDevice(1);
 #endif
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
-//  do_test("run_test_irreg_data_has_index_empty",run_test_irreg_data_has_index_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
+  do_test("run_test_irreg_copy",run_test_irreg_copy);
+  do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
+  do_test("run_test_irreg_linear_in_partial",run_test_irreg_linear_in_partial);
+
+//  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
   do_test("run_test_ebforall_init",run_test_ebforall_init);
   do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
   do_test("run_test_ebforall_vec_indexer",run_test_ebforall_vec_indexer);
-//  do_test("run_test_ebforall_vec_indexer_only_cpu",run_test_ebforall_vec_indexer_only_cpu);
-//  do_test("run_test_ebforall_vec_indexer_cpu_versus_gpu",run_test_ebforall_vec_indexer_cpu_versus_gpu);
-//  do_test("run_test_ebforall_kernel_box_no_impact",run_test_ebforall_kernel_box_no_impact);
   do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
   do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
-//  do_test("run_test_ebforall_i_kernel_box_no_impact",run_test_ebforall_i_kernel_box_no_impact);
   do_test("run_test_ebforall_i_vec_indexer",run_test_ebforall_i_vec_indexer);
-//  do_test("run_test_ebforall_i_vec_indexer_only_cpu",run_test_ebforall_i_vec_indexer_only_cpu);
-//  do_test("run_test_ebforall_i_vec_indexer_cpu_versus_gpu",run_test_ebforall_i_vec_indexer_cpu_versus_gpu);
-//  do_test("run_test_agg_stencil_empty",run_test_agg_stencil_empty);
   do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
   do_test("run_test_agg_stencil_increment_only_true",run_test_agg_stencil_increment_only_true);
   do_test("run_test_agg_stencil_increment_only_false",run_test_agg_stencil_increment_only_false);
   do_test("run_test_agg_stencil_scale_0",run_test_agg_stencil_scale_0);
   do_test("run_test_agg_stencil_scale_100",run_test_agg_stencil_scale_100);
   do_test("run_test_agg_stencil_scale_minus10",run_test_agg_stencil_scale_minus10);
- // do_test("run_test_agg_stencil_cpu_versu_gpu",run_test_agg_stencil_cpu_versu_gpu);
   return 0;
 }

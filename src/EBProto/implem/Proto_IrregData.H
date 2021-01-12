@@ -14,6 +14,160 @@ using std::shared_ptr;
 namespace Proto
 {
 
+    template <CENTERING cent>
+    __device__
+    size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
+    {
+      size_t ivec = 0;
+      bool found = false;
+      for(unsigned int i = 0; i < a_size; i++)
+      {        
+        if(a_vof == a_indicies[i])
+        {
+          ivec = i;
+          found = true;
+          break;
+        }
+      }
+      if(!found)
+      {
+        PROTO_ASSERT(found, "vof not found");
+      }
+
+      ivec += a_ivar* a_size;
+
+      return ivec;
+    }
+
+    template<CENTERING cent>
+    __device__
+    bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high)
+    {
+      auto pt = a_in.m_pt;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(pt[idir] < a_low[idir])
+        {
+            return false;
+        }
+        if(pt[idir] > a_high[idir])
+        {
+            return false;
+        }
+      }
+      return true;
+    }
+
+
+    template <CENTERING cent, class data_t>
+    __global__
+    void EBBoxDataIndexer( unsigned int a_end, 
+		EBIndex<cent>* a_indiciesSrc, unsigned int a_indiciesSizeSrc, 
+		EBIndex<cent>* a_indiciesDst, unsigned int a_indiciesSizeDst,
+		data_t* a_dst, const data_t* a_src, 
+                unsigned int a_idst, unsigned int a_isrc,
+		unsigned int a_inco,
+		Point a_box_inf, Point a_box_high)
+    {
+      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if(idx < a_end)
+      {
+        EBIndex<cent>& vof = a_indiciesDst[idx];
+        if( contains(vof,a_box_inf,a_box_high))
+        {
+          for(unsigned int ico = 0; ico < a_inco; ico++)
+          {
+            unsigned int isrc = a_isrc + ico;
+            unsigned int idst = a_idst + ico;
+            size_t indDst = index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
+            size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, isrc);
+            a_dst[indDst] = a_src[indSrc];
+          }
+        }
+
+      }
+    }
+
+    template <CENTERING cent, class data_t>
+    __global__
+    void EBLinearIn( unsigned int a_end,
+                EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                data_t* a_src, data_t* a_dst,
+                unsigned int a_ncomp,
+                Point a_box_inf, Point a_box_high)
+    {
+      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if(idx < a_end)
+      {
+        auto& pt = a_indicies[idx];
+        for(int icomp = 0; icomp < a_ncomp; icomp++)
+        {
+          size_t indx = index(a_indicies, a_indiciesSize, pt, icomp);
+          a_dst[idx+icomp*a_indiciesSize] = a_src[indx];
+        }
+      }
+   }
+
+    template <CENTERING cent, class data_t>
+    __global__
+    void EBLinearOut( unsigned int a_end,
+                EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                data_t* a_dst, data_t* a_src,
+                unsigned int a_ncomp,
+                Point a_box_inf, Point a_box_high)
+    {
+      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if(idx < a_end)
+      {
+        auto& pt = a_indicies[idx];
+        for(int icomp = 0; icomp < a_ncomp; icomp++)
+        {
+          size_t indx = index(a_indicies, a_indiciesSize, pt, icomp);
+          a_dst[indx+icomp*a_indiciesSize] = a_src[idx];
+        }
+      }
+    }
+
+    template <CENTERING cent>
+    CUDA_DECORATION
+    bool copyContains(const EBIndex<cent>& a_ind, const Box & a_srcbox)
+    {
+      CENTERING thiscent = cent;
+
+      bool retval = false;
+      if((thiscent == CELL) || (thiscent == BOUNDARY))
+      {
+        retval = a_srcbox.contains(a_ind.m_pt);
+      }
+      else if(thiscent == XFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(0, 1);
+        retval = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
+      }
+      else if(thiscent ==  YFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(1, 1);
+        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+      }
+#if DIM==3
+      else if(thiscent ==  ZFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(2, 1);
+        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+      }
+#endif
+      else
+      {
+        PROTO_ASSERT(false, "unaccounted-for centering");
+      }
+      return retval;
+    }
 ///
 /**
  */
@@ -183,7 +337,7 @@ namespace Proto
     }
     
     /// debugging only--will not work on the device
-    data_t operator() (const index_t& a_vof, int a_comp) const
+    data_t operator() (const index_t& a_vof, int a_comp) const 
     {
       size_t ind = index(a_vof, a_comp);
       return m_rawPtr[ind];
@@ -248,6 +402,12 @@ namespace Proto
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
       protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+
+      memsize = sizeof(index_t) * m_indicies->size(); 
+    
+      protoMalloc(m_indicies_data,memsize);
+      protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
+
     }
 
     inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
@@ -270,10 +430,240 @@ namespace Proto
       return found;
     }
   
-  protected:
+    ///this DOES include sizeof(T)
+    std::size_t charsize(const Box&   a_bx,
+                         unsigned int a_startcomp,
+                         unsigned int a_numcomps) const
+    {
+      PR_TIME("HostIrregData::charsize");
+      using ProtoSer::linearCharBufSize;
+      size_t retval = linearCharBufSize(m_inputBox);
+      retval += sizeof(int); //size of the vector;
+      const auto& data     = *this;
+      const auto& indicies = *m_indicies;
+      for(int ipt = 0; ipt < indicies.size(); ipt++)
+      {
+        retval += linearCharBufSize(indicies[ipt]);
+      }
+
+      for(int icomp = 0; icomp < ncomp; icomp++)
+      {
+        for(int ipt = 0; ipt < indicies.size(); ipt++)
+        {
+          const auto& pt = indicies[ipt];
+          retval += linearCharBufSize(data(pt, icomp));
+        }
+      }
+      return retval;
+    }
+ 
+
+
+  /// recreates this object into a stream of bytes
+    inline
+    void energize(void*  a_buf) const
+    {
+      PR_TIME("HostIrregData::energize");
+      using ProtoSer::linearCharBufSize;
+      using ProtoSer::linearOutToCharBuf;
+      size_t charsiz = 0;
+      char*  charbuf = (char *) a_buf;
+      //input box
+      linearOutToCharBuf(charbuf, m_inputBox);
+      charbuf += linearCharBufSize(m_inputBox);
+      charsiz += linearCharBufSize(m_inputBox);
+
+      //size of the vector;
+      int* intbuf  = (int*) charbuf;
+      int vecsize = m_indicies->size();
+      *intbuf = vecsize;
+      charsiz += sizeof(int);
+      charbuf += sizeof(int);
+
+      protoMemcpy(charbuf,m_indicies_data,vecsize*sizeof(EBIndex<cent>),protoMemcpyDeviceToDevice);
+
+      size_t memsize = sizeof(EBIndex<cent>)*vecsize; 
+      charsiz += memsize;
+      charbuf += memsize;
+#ifdef PROTO_CUDA
+      const unsigned int threads = 256;
+      const unsigned int blocks  = (vecsize + threads - 1) / threads; 
+
+      data_t* castptr = (data_t*)(charbuf);
+      protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
+                        vecsize,
+                        m_indicies_data, m_indicies->size(),
+                        castptr,
+                        m_rawPtr,
+                        ncomp,
+                        m_inputBox.low(), m_inputBox.high());
+      memsize = sizeof(data_t)*vecsize*ncomp;
+      charsiz += memsize;
+      charbuf += memsize;
+#else
+      const auto& data     = *this;
+      //now output the actual data
+      for(int icomp = 0; icomp < ncomp; icomp++)
+      {
+        for(int ipt = 0; ipt < indicies.size(); ipt++)
+        {
+          auto pt = indicies[ipt];
+          const auto & dataval = data(pt, icomp);
+          linearOutToCharBuf(charbuf, dataval);
+          charsiz += linearCharBufSize(data(pt, icomp));
+          charbuf += linearCharBufSize(data(pt, icomp));
+        }
+      }
+#endif
+    }
+
+  ///creates this object from the aforementioned stream of bytes
+    IrregData(void *a_buf)
+    {
+      PR_TIME("IrregData::char_constructor");
+      using ProtoSer::linearInFromCharBuf;
+      using ProtoSer::linearCharBufSize;
+      size_t charsiz = 0;
+      char*  charbuf = (char *) a_buf;
+      //input box
+      linearInFromCharBuf(m_inputBox, charbuf);
+      charbuf += linearCharBufSize(m_inputBox);
+      charsiz += linearCharBufSize(m_inputBox);
+
+      //size of the vector;
+      int* intbuf  = (int*) charbuf;
+      int vecsize = *intbuf;
+      charsiz += sizeof(int);
+      charbuf += sizeof(int);
+      shared_ptr<vector<EBIndex<cent> > > indicies_sp(new vector<EBIndex<cent> >(vecsize));
+      auto& indicies = *indicies_sp;
+
+      m_indicies_data = (EBIndex<cent>*) (charbuf);
+     
+      size_t memsize = sizeof(EBIndex<cent>)*vecsize; 
+      charsiz += memsize;
+      charbuf += memsize;
+#ifdef PROTO_CUDA
+      const unsigned int threads = 256;
+      const unsigned int blocks  = (vecsize + threads - 1) / threads; 
+
+      data_t* castptr = (data_t*)(charbuf);
+      protoLaunchKernel((EBLinearIn<cent,data_t>), blocks, threads,
+                        vecsize,
+                        m_indicies_data, vecsize,
+                        castptr,
+                        m_rawPtr,
+                        ncomp,
+                        m_inputBox.low(), m_inputBox.high());
+
+      memsize = sizeof(data_t)*vecsize*ncomp;
+      charsiz += memsize;
+      charbuf += memsize;
+#else
+      //define the data pointer and all that.
+      define(indicies_sp);
+
+      const auto& data     = *this;
+      //now input the actual data
+      for(int icomp = 0; icomp < ncomp; icomp++)
+      {
+        for(int ipt = 0; ipt < indicies.size(); ipt++)
+        {
+          auto pt = indicies[ipt];
+          data_t dataval;
+          linearInFromCharBuf(dataval, charbuf);
+          size_t ind = index(pt,  icomp);
+          m_rawPtr[ind] = dataval;
+          charsiz += linearCharBufSize(data(pt, icomp));
+          charbuf += linearCharBufSize(data(pt, icomp));
+        }
+      }
+#endif
+    }
+
+    inline index_t* getDataIndicies()
+    {
+      return m_indicies_data;
+    }
+
+    inline index_t* getDataIndicies() const
+    {
+      return m_indicies_data;
+    }
+    inline
+    void copy(const IrregData<cent, data_t, ncomp>& a_src,
+              const Box& a_bxFrom, unsigned int a_isrc,
+              const Box& a_bxTo  , unsigned int a_idst,
+              unsigned int a_inco)
+    {
+      PR_TIME("IrregData::copy");
+      Box interBox = a_bxFrom & a_bxTo;
+#ifdef PROTO_CUDA
+      unsigned int size = m_indicies->size(); 
+      unsigned int threads = 256;
+      unsigned int blocks = (threads + size - 1)/size;
+
+      auto indiciesSrc = a_src.getIndicies();
+      auto tt = a_src.getDataIndicies();
+
+      protoLaunchKernel((EBBoxDataIndexer<cent,data_t>), blocks, threads, 
+			size, 
+			m_indicies_data, m_indicies->size(),
+                        tt, indiciesSrc->size(),
+			m_rawPtr, 
+			a_src.data(), 
+			a_idst, a_isrc,
+			a_inco,
+			interBox.low(), interBox.high());
+#else
+      for(int iind = 0; iind < m_indicies->size(); iind++)
+      {
+        auto& vof = (*m_indicies)[iind];
+        if((interBox.contains(vof.m_pt)) && (a_src.copyContains(vof, interBox)))
+        {
+          for(unsigned int ico = 0; ico < a_inco; ico++)
+          {
+            unsigned int isrc = a_isrc + ico;
+            unsigned int idst = a_idst + ico;
+            size_t ind = index(vof, idst);
+            m_rawPtr[ind] = a_src(vof, isrc);
+
+          }
+        }
+      }
+#endif
+    }
+
+    inline
+    void linearOut(void*               a_buf,
+                   const Box       &   a_bx,
+                   unsigned int        a_startcomp,
+                   unsigned int        a_numcomps) const
+    {
+      PR_TIME("IrregData::linearOut");
+      energize(a_buf);
+    }
+
+    inline
+    void  linearIn(void*                  a_buf,
+                   const Box       &      a_bx,
+                   unsigned int           a_startcomp,
+                   unsigned int           a_numcomps)
+    {
+      PR_TIME("IrregData::linearIn");
+      IrregData<cent, data_t, ncomp> src(a_buf);
+      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps);
+    }
+    ///
+    static int preAllocatable()
+    {
+      return 2;
+    }
+protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
     /// for fast forall
+    index_t*                             m_indicies_data = nullptr;
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;

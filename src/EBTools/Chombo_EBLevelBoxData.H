@@ -194,13 +194,7 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIME("EBLevelBoxData::exchange");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-
-    copyToHost(hostdata, *this);
-
-    hostdata.exchange(copier);
-
-    copyToDevice(*this, hostdata);
+    this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
   }
 
   ///
