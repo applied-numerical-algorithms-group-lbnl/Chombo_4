@@ -544,8 +544,11 @@ namespace Proto
       charsiz += memsize;
       charbuf += memsize;
 #ifdef PROTO_CUDA
-      const unsigned int threads = 256;
-      const unsigned int blocks  = (vecsize + threads - 1) / threads; 
+      m_rawPtr = (data_t*)(charbuf);
+      // I don't need a copy 
+
+/*      const unsigned int threads = 256;
+     const unsigned int blocks  = (vecsize + threads - 1) / threads; 
 
       data_t* castptr = (data_t*)(charbuf);
       protoLaunchKernel((EBLinearIn<cent,data_t>), blocks, threads,
@@ -559,6 +562,7 @@ namespace Proto
       memsize = sizeof(data_t)*vecsize*ncomp;
       charsiz += memsize;
       charbuf += memsize;
+*/
 #else
       //define the data pointer and all that.
       define(indicies_sp);
