@@ -14,6 +14,7 @@
 #define _EB_RELAXSOLVER_H_
 
 #include "EBMultigrid.H"
+#include "EBMultigridFunctions.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///
@@ -65,7 +66,8 @@ public:
       {
         m_cor.setVal(0.);
         m_op->preCond(m_cor, m_res);
-        a_phi += m_cor;
+
+        m_op->incr(a_phi, m_cor, 1.0);
 
         m_op->residual(m_res, a_phi, a_rhs);
 

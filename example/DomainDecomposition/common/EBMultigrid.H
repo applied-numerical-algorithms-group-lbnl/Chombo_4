@@ -120,16 +120,9 @@ public:
   }
 
   // needed for bicgstab
-  inline void assignLocal(EBLevelBoxData<CELL, 1>&        a_dst,
-                          const EBLevelBoxData<CELL, 1>&  a_src) const
-  {
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      a_dst[dit[ibox]].setVal(0.0);
-      a_dst[dit[ibox]] += a_src[dit[ibox]] ;
-    }
-  }
+  void assignLocal(EBLevelBoxData<CELL, 1>&        a_dst,
+                   const EBLevelBoxData<CELL, 1>&  a_src) const;
+  
   // needed for bicgstab
   inline Real norm(const EBLevelBoxData<CELL, 1> & a_src) const
   {
@@ -137,43 +130,16 @@ public:
   }
 
   // needed for bicgstab
-  inline Real dotProduct(const EBLevelBoxData<CELL, 1> & a_srcOne,
-                         const EBLevelBoxData<CELL, 1> & a_srcTwo) const
-  {
-    EBLevelBoxData<CELL, 1>  dst(m_grids, a_srcOne.ghostVect(), m_graphs);
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      dst[dit[ibox]].setVal(1.0);
-      dst[dit[ibox]] *= a_srcOne[dit[ibox]] ;
-      dst[dit[ibox]] *= a_srcTwo[dit[ibox]] ;
-    }
-    return dst.sum(0);
-  }
+  Real dotProduct(const EBLevelBoxData<CELL, 1> & a_srcOne,
+                         const EBLevelBoxData<CELL, 1> & a_srcTwo) const;
+
   // needed for bicgstab
-  inline void incr(EBLevelBoxData<CELL, 1>       & a_dst,
+  void incr(EBLevelBoxData<CELL, 1>       & a_dst,
                    const EBLevelBoxData<CELL, 1> & a_src,
-                   Real a_scale) const
-  {
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      auto      & dstfab = a_dst[dit[ibox]];
-      const auto& srcfab = a_src[dit[ibox]];
-      dstfab.incr(srcfab, a_scale);
-    }
-  }
+                   Real a_scale) const;
   // needed for bicgstab
-  inline void scale(EBLevelBoxData<CELL, 1>       & a_dst,
-                     Real a_scale) const
-  {
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      auto      & dstfab = a_dst[dit[ibox]];
-      dstfab.scale(a_scale);
-    }
-  }
+  void scale(EBLevelBoxData<CELL, 1>       & a_dst,
+                    Real a_scale) const;
 
   void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
                     const EBLevelBoxData<CELL, 1>&  a_rhs);
@@ -332,6 +298,13 @@ public:
   EBLevelBoxData<CELL, 1> & getKappa()
   {
     return m_finest->getKappa();
+  }
+  
+  inline void incr(EBLevelBoxData<CELL, 1>       & a_dst,
+                   const EBLevelBoxData<CELL, 1> & a_src,
+                   Real a_scale) const
+  {
+    return m_finest->incr(a_dst, a_src, a_scale);
   }
 
   inline void resetAlphaAndBeta(const Real& a_alpha,

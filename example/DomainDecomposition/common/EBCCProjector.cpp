@@ -1,6 +1,7 @@
 #include <cmath>
 #include <memory>
 #include "EBCCProjector.H"
+#include "EBMultigridFunctions.H"
 #include "Chombo_NamespaceHeader.H"
 /// 
 void
@@ -99,7 +100,14 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       ideb++;
       
     }
-    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
+    //a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
+    auto& velfab =     a_velo[dit[ibox]];
+    auto& gphfab =     a_gphi[dit[ibox]];
+    auto inputBox = velfab.inputBox();
+    Bx   validBox = grid;
+    Real scale = -1.0;
+    ebforall(inputBox, incrementaldim, validBox, velfab, gphfab, scale);
+
   }
 }
 ///

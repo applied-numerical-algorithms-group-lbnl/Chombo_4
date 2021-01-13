@@ -52,7 +52,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     
     vCycle(m_cor, m_res);
 
-    a_phi += m_cor;
+    m_finest->incr(a_phi, m_cor, 1.0);
     residual(m_res, a_phi, a_rhs, true);
 
     resnormold = resnorm;
@@ -63,6 +63,76 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   pout() << "EBMultigrid: final     |resid| = " << resnorm << endl;
 }
 
+// needed for bicgstab
+void
+EBMultigridLevel::
+assignLocal(EBLevelBoxData<CELL, 1>&        a_dst,
+            const EBLevelBoxData<CELL, 1>&  a_src) const
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto&       dst = a_dst[dit[ibox]];
+    const auto& src = a_src[dit[ibox]];
+    Bx inputBox = dst.inputBox();
+    Bx validBox = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    ebforall(inputBox, assignation, validBox, dst, src);
+  }
+}
+/****/
+Real
+EBMultigridLevel::
+dotProduct(const EBLevelBoxData<CELL, 1> & a_srcOne,
+           const EBLevelBoxData<CELL, 1> & a_srcTwo) const
+
+{
+  EBLevelBoxData<CELL, 1>  dstld(m_grids, a_srcOne.ghostVect(), m_graphs);
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    //pout() << "going into add alphaphi" << endl;
+    auto& dst = dstld[dit[ibox]];
+    const auto&  srcone = a_srcOne[dit[ibox]];
+    const auto&  srctwo = a_srcTwo[dit[ibox]];
+    Bx inputBox = dst.inputBox();
+    Bx validBox = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    
+    ebforall(inputBox, productization, validBox, dst, srcone, srctwo);
+  }
+  return dstld.sum(0);
+}
+// needed for bicgstab
+void
+EBMultigridLevel::
+incr(EBLevelBoxData<CELL, 1>       & a_dst,
+     const EBLevelBoxData<CELL, 1> & a_src,
+     Real a_scale) const
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto&       dst = a_dst[dit[ibox]];
+    const auto& src = a_src[dit[ibox]];
+    Bx inputBox = dst.inputBox();
+    Bx validBox = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    ebforall(inputBox, incrementalism, validBox, dst, src, a_scale);
+  }
+}
+// needed for bicgstab
+void
+EBMultigridLevel::
+scale(EBLevelBoxData<CELL, 1>       & a_dst,
+      Real a_scale) const
+{
+  DataIterator dit = m_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto      & dst = a_dst[dit[ibox]];
+    Bx inputBox = dst.inputBox();
+    Bx validBox = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    ebforall(inputBox, inflationary, validBox, dst, a_scale);
+  }
+}
 /****/
 void
 EBMultigridLevel::

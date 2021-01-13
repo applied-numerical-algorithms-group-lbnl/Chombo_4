@@ -111,19 +111,6 @@ public:
   }
 
   ///
-  EBLevelBoxData&
-  operator+=(const EBLevelBoxData& a_input)
-  {
-    DisjointBoxLayout dbl = this->disjointBoxLayout();
-    DataIterator dit = dbl.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
-    {
-      (*this)[dit[ibox]] += a_input[dit[ibox]];
-    }
-    return *this;
-  }
-  
-  ///
   void checkIfPeriodic(const DisjointBoxLayout & a_dp) const
   {
     if(a_dp.physDomain().isPeriodic())
