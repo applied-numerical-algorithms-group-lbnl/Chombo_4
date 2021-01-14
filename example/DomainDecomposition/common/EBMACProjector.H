@@ -105,7 +105,11 @@ private:
   shared_ptr<EBMultigrid>                m_solver;
 
 
-
+  //dont ask
+  void
+  subtractGradient(EBFluxData<Real, 1>& a_velo,
+                   EBFluxData<Real, 1>& a_gphi,
+                   const Bx& a_grid) const;
   void operator=(const EBMACProjector& a_opin);
   EBMACProjector();
 
