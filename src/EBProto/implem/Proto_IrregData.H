@@ -89,23 +89,34 @@ namespace Proto
       }
     }
 
+   
     template <CENTERING cent, class data_t>
     __global__
-    void EBLinearIn( unsigned int a_end,
-                EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
-                data_t* a_src, data_t* a_dst,
+    void EBLinearIn(EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                void* a_buf, 
+		data_t* a_dst,
                 unsigned int a_ncomp,
                 Point a_box_inf, Point a_box_high)
     {
-      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+      char* tmp = (char*)a_buf;
+      unsigned int size = ((unsigned int*) a_buf)[0];
+      tmp += 2*sizeof(unsigned int); // we need to aligne double*
+      data_t* data = (data_t*) tmp;
+      tmp += a_ncomp*size*sizeof(data_t);
+      EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
 
-      if(idx < a_end)
+      for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x )
       {
-        auto& pt = a_indicies[idx];
-        for(int icomp = 0; icomp < a_ncomp; icomp++)
+        EBIndex<cent>& pt = indicies[idx];
+        if( contains(pt,a_box_inf,a_box_high))
         {
-          size_t indx = index(a_indicies, a_indiciesSize, pt, icomp);
-          a_dst[idx+icomp*a_indiciesSize] = a_src[indx];
+          for(int icomp = 0; icomp < a_ncomp; icomp++)
+          {
+            size_t indxDst = index(a_indicies, a_indiciesSize, pt, icomp);
+            //size_t indxSrc = index(indicies, size, pt, icomp);
+            //a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
+            a_dst[indxDst+icomp*a_indiciesSize] = data[idx+icomp*size];
+          }
         }
       }
    }
@@ -114,19 +125,30 @@ namespace Proto
     __global__
     void EBLinearOut( unsigned int a_end,
                 EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
-                data_t* a_dst, data_t* a_src,
-                unsigned int a_ncomp,
-                Point a_box_inf, Point a_box_high)
+                void* a_buf, 
+	        data_t* a_src,
+                unsigned int a_ncomp)
     {
       unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+      char* tmp = (char*)a_buf;
+
+      if(threadIdx.x == 0 && blockIdx.x == 0)
+      {
+        unsigned int *size = (unsigned int*) (tmp);
+        *size = a_end;
+      }
+      tmp += 2*sizeof(unsigned int); // we need to align double
+      data_t* ptr = (data_t*) (tmp);
+      tmp += a_ncomp*a_end*sizeof(data_t);
+      EBIndex<cent>* indicies = (EBIndex<cent>*) (tmp);
+
       if(idx < a_end)
       {
-        auto& pt = a_indicies[idx];
+        indicies[idx] = a_indicies[idx];
         for(int icomp = 0; icomp < a_ncomp; icomp++)
         {
-          size_t indx = index(a_indicies, a_indiciesSize, pt, icomp);
-          a_dst[indx+icomp*a_indiciesSize] = a_src[idx];
+          ptr[idx+icomp*a_end] = a_src[idx+icomp*a_indiciesSize];
         }
       }
     }
@@ -463,7 +485,7 @@ namespace Proto
     inline
     void energize(void*  a_buf) const
     {
-      PR_TIME("HostIrregData::energize");
+      PR_TIME("IrregData::energize");
       using ProtoSer::linearCharBufSize;
       using ProtoSer::linearOutToCharBuf;
       size_t charsiz = 0;
@@ -474,29 +496,13 @@ namespace Proto
       charsiz += linearCharBufSize(m_inputBox);
 
       //size of the vector;
-      int* intbuf  = (int*) charbuf;
       int vecsize = m_indicies->size();
-      *intbuf = vecsize;
-      charsiz += sizeof(int);
-      charbuf += sizeof(int);
-
       protoMemcpy(charbuf,m_indicies_data,vecsize*sizeof(EBIndex<cent>),protoMemcpyDeviceToDevice);
 
       size_t memsize = sizeof(EBIndex<cent>)*vecsize; 
       charsiz += memsize;
       charbuf += memsize;
 #ifdef PROTO_CUDA
-      const unsigned int threads = 256;
-      const unsigned int blocks  = (vecsize + threads - 1) / threads; 
-
-      data_t* castptr = (data_t*)(charbuf);
-      protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
-                        vecsize,
-                        m_indicies_data, m_indicies->size(),
-                        castptr,
-                        m_rawPtr,
-                        ncomp,
-                        m_inputBox.low(), m_inputBox.high());
       memsize = sizeof(data_t)*vecsize*ncomp;
       charsiz += memsize;
       charbuf += memsize;
@@ -510,74 +516,6 @@ namespace Proto
           auto pt = indicies[ipt];
           const auto & dataval = data(pt, icomp);
           linearOutToCharBuf(charbuf, dataval);
-          charsiz += linearCharBufSize(data(pt, icomp));
-          charbuf += linearCharBufSize(data(pt, icomp));
-        }
-      }
-#endif
-    }
-
-  ///creates this object from the aforementioned stream of bytes
-    IrregData(void *a_buf)
-    {
-      PR_TIME("IrregData::char_constructor");
-      using ProtoSer::linearInFromCharBuf;
-      using ProtoSer::linearCharBufSize;
-      size_t charsiz = 0;
-      char*  charbuf = (char *) a_buf;
-      //input box
-      linearInFromCharBuf(m_inputBox, charbuf);
-      charbuf += linearCharBufSize(m_inputBox);
-      charsiz += linearCharBufSize(m_inputBox);
-
-      //size of the vector;
-      int* intbuf  = (int*) charbuf;
-      int vecsize = *intbuf;
-      charsiz += sizeof(int);
-      charbuf += sizeof(int);
-      shared_ptr<vector<EBIndex<cent> > > indicies_sp(new vector<EBIndex<cent> >(vecsize));
-      auto& indicies = *indicies_sp;
-
-      m_indicies_data = (EBIndex<cent>*) (charbuf);
-     
-      size_t memsize = sizeof(EBIndex<cent>)*vecsize; 
-      charsiz += memsize;
-      charbuf += memsize;
-#ifdef PROTO_CUDA
-      m_rawPtr = (data_t*)(charbuf);
-      // I don't need a copy 
-
-/*      const unsigned int threads = 256;
-     const unsigned int blocks  = (vecsize + threads - 1) / threads; 
-
-      data_t* castptr = (data_t*)(charbuf);
-      protoLaunchKernel((EBLinearIn<cent,data_t>), blocks, threads,
-                        vecsize,
-                        m_indicies_data, vecsize,
-                        castptr,
-                        m_rawPtr,
-                        ncomp,
-                        m_inputBox.low(), m_inputBox.high());
-
-      memsize = sizeof(data_t)*vecsize*ncomp;
-      charsiz += memsize;
-      charbuf += memsize;
-*/
-#else
-      //define the data pointer and all that.
-      define(indicies_sp);
-
-      const auto& data     = *this;
-      //now input the actual data
-      for(int icomp = 0; icomp < ncomp; icomp++)
-      {
-        for(int ipt = 0; ipt < indicies.size(); ipt++)
-        {
-          auto pt = indicies[ipt];
-          data_t dataval;
-          linearInFromCharBuf(dataval, charbuf);
-          size_t ind = index(pt,  icomp);
-          m_rawPtr[ind] = dataval;
           charsiz += linearCharBufSize(data(pt, icomp));
           charbuf += linearCharBufSize(data(pt, icomp));
         }
@@ -645,7 +583,20 @@ namespace Proto
                    unsigned int        a_numcomps) const
     {
       PR_TIME("IrregData::linearOut");
-      energize(a_buf);
+#ifdef PROTO_CUDA
+      unsigned int vecsize = m_indicies->size();
+      const unsigned int threads = 256;
+      const unsigned int blocks  = (vecsize + threads - 1) / threads; 
+
+      protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
+                        vecsize,
+                        m_indicies_data, m_indicies->size(),
+                        a_buf,
+                        m_rawPtr,
+                        ncomp);
+#else
+   //deleted
+#endif
     }
 
     inline
@@ -655,8 +606,19 @@ namespace Proto
                    unsigned int           a_numcomps)
     {
       PR_TIME("IrregData::linearIn");
-      IrregData<cent, data_t, ncomp> src(a_buf);
+#ifdef PROTO_CUDA
+      unsigned int vecsize = m_indicies->size();
+      protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 256,
+                        m_indicies_data, vecsize,
+                        a_buf,
+                        m_rawPtr,
+                        ncomp,
+                        a_bx.low(), a_bx.high());
+
+#else
+      IrregData<cent, data_t, ncomp> src(a_buf,a_bx,vercsize);
       copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps);
+#endif
     }
     ///
     static int preAllocatable()

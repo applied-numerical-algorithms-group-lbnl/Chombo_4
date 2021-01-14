@@ -185,9 +185,13 @@ bool run_test_irreg_copy_partial()
   bool check=true;
   for(int i = 0 ; i < size ; i++)
     if(i>=inf && i <= high)
+    {
       if(checkPtr[i] != inNumber) check=false;
+    }
     else
+    {
       if(checkPtr[i] != outNumber) check=false;
+    }
 
   if(!check)
   {
@@ -260,24 +264,25 @@ bool run_test_irreg_linear_in_partial()
   unsigned int high = 4;
   double inNumber   = 1;
   double outNumber  = 2;
-  unsigned int shift = 2;
   std::vector<Proto::EBIndex<Proto::CELL>> index;
   Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
   Proto::Box bx2(Proto::Point(inf,0,0),Proto::Point(high,0,0));
 
   test_irreg_data_fill(ptr,index,size);
+  test_irreg_data_fill(ptr2,index,size);
   Proto::IrregData<Proto::CELL,double,1> in(bx, ptr2, index);
   Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
 
 
-  double* inWork;
-  protoMalloc(inWork,size*sizeof(double));
+  void* inWork;
+  size_t nBytes = size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
+  protoMalloc(inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
 
   /* test copy */
-  in.linearIn(inWork,bx,0,0); 
+  in.linearOut(inWork,bx,0,0); 
   out.linearIn(inWork,bx2,0,0); 
 
   double* checkPtr = new double[size];
@@ -286,10 +291,14 @@ bool run_test_irreg_linear_in_partial()
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
-    if(i>=inf + shift && i <= high + shift)
+    if(i>=inf && i <= high )
+    {
       if(checkPtr[i] != inNumber) check=false;
+    }
     else
+    {
       if(checkPtr[i] != outNumber) check=false;
+    }
 
   if(!check)
   {

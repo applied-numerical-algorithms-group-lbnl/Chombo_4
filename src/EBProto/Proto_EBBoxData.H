@@ -313,7 +313,6 @@ namespace Proto
     m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
     charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
     m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-    charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
   }
 
   virtual void linearOut(void*               a_buf,
@@ -327,7 +326,6 @@ namespace Proto
     m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
     charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
     m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-    charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
   }
   ///
   static int preAllocatable()
