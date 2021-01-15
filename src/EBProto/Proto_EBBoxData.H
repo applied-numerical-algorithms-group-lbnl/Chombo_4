@@ -42,6 +42,16 @@ namespace Proto
     {
     }
 
+    ///
+    EBBoxData<cent, data_t, ncomp>&
+    operator-=(const EBBoxData<cent, data_t, ncomp>& a_input)
+    {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator-= box mismatch");
+      m_regData -= a_input.m_regData;
+      m_irrData -= a_input.m_irrData;
+
+      return *this;
+    }
 
     template<unsigned int Csrc>
     void copy(const EBBoxData<cent, data_t, Csrc> & a_src,
@@ -53,9 +63,48 @@ namespace Proto
     {
       PROTO_ASSERT(false, "how did I get here");
     }
+    ///
+    EBBoxData<cent, data_t, ncomp>&
+    operator+=(const EBBoxData<cent, data_t, ncomp>& a_input)
+    {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator+= box mismatch");
+
+      m_regData += a_input.m_regData;
+      m_irrData += a_input.m_irrData;
+
+      return *this;
+    }
     
+    ///
+    EBBoxData<cent, data_t, ncomp>&
+    operator*=(const EBBoxData<cent, data_t, ncomp>& a_input)
+    {
+      PROTO_ASSERT((a_input.m_inputBox == m_inputBox), "operator*= box mismatch");
+      m_regData *= a_input.m_regData;
+      m_irrData *= a_input.m_irrData;
+
+      return *this;
+    }
 
 
+    inline
+    void scale(data_t                                a_scale)
+    {
+      EBBoxData<cent, data_t, ncomp> scalefab(m_inputBox, m_graph);
+      scalefab.setVal(a_scale);
+      (*this) *= scalefab;
+    }
+
+    inline
+    void incr(const EBBoxData<cent, data_t, ncomp>& a_input,
+              data_t                                a_scale)
+    {
+      EBBoxData<cent, data_t, ncomp> incramnt(m_inputBox, m_graph);
+      incramnt.setVal(0);
+      incramnt.scale(a_scale);
+      (*this) += incramnt;
+    }
+    
 
     ///
     virtual  void setVal(data_t a_val)

@@ -6,63 +6,10 @@ using Proto::Var;
 /****/
 //lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
 PROTO_KERNEL_START 
-unsigned int  assignationF(Var<Real, 1>     a_dst,
-                           Var<Real, 1>     a_src)
-{
-  a_dst(0) = a_src(0);
-  return 0;
-}
-PROTO_KERNEL_END(assignationF, assignation)
-
-//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
-PROTO_KERNEL_START 
-unsigned int  productizationF(Var<Real, 1>     a_dst,
-                              Var<Real, 1>     a_srcone,
-                              Var<Real, 1>     a_srctwo)
-{
-  a_dst(0) = a_srcone(0)*a_srctwo(0);
-  return 0;
-}
-PROTO_KERNEL_END(productizationF, productization)
-//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
-PROTO_KERNEL_START 
-unsigned int  incrementalismF(Var<Real, 1>     a_dst,
-                              Var<Real, 1>     a_src,
-                              Real             a_scale)
-{
-  a_dst(0) += a_scale*a_src(0);
-  return 0;
-}
-PROTO_KERNEL_END(incrementalismF, incrementalism)
-/***/
-PROTO_KERNEL_START 
-unsigned int  incrementaldimF(Var<Real, DIM>     a_dst,
-                              Var<Real, DIM>     a_src,
-                              Real             a_scale)
-{
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    a_dst(idir) += a_scale*a_src(idir);
-  }
-  return 0;
-}
-PROTO_KERNEL_END(incrementaldimF, incrementaldim)
-/****/
-PROTO_KERNEL_START 
-unsigned int  inflationaryF(Var<Real, 1>     a_dst,
-                            Real             a_scale)
-{
-  a_dst(0) *= a_scale;
-  return 0;
-}
-PROTO_KERNEL_END(inflationaryF, inflationary)
-/****/
-//lph comes in holding beta*div(F)--leaves holding alpha phi + beta div(F)
-PROTO_KERNEL_START 
 unsigned int  addAlphaPhiPtF(int a_pt[DIM],
                              Var<Real, 1>     a_lph,
-                             Var<Real, 1>     a_phi,
-                             Var<Real, 1>     a_kap,
+                           Var<Real, 1>     a_phi,
+                           Var<Real, 1>     a_kap,
                            Real    a_alpha,
                            Real    a_beta)
 {
