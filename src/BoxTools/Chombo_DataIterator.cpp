@@ -21,7 +21,7 @@ DataIndex
 DataIterator::
 operator[](int ivec) const
 {
-  ::Proto::DisjointBoxLayout::activeBox(ivec);
+//  ::Proto::DisjointBoxLayout::activeBox(ivec);
   return (DataIndex)((*m_indices)[ivec]);
 }
 

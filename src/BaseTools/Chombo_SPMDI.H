@@ -41,7 +41,7 @@ gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
   //make stuff for linearout
   void* loclBuf = malloc(isize);
   if (loclBuf == NULL)
-    MayDay::Error("out of memory in gather 1");
+    Chombo4::MayDay::Error("out of memory in gather 1");
 
   //put linearized T into its proper buffer
   linearOut(loclBuf, a_input);
@@ -66,7 +66,7 @@ gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
                            a_dest,  Chombo_MPI::comm);
 
   if (result1 != MPI_SUCCESS)
-    MayDay::Error("Gather<T> failed in MPI_Gather 1");
+    Chombo4::MayDay::Error("Gather<T> failed in MPI_Gather 1");
 
   //make memory for gather, linearin
   void* recdBuf = NULL;
@@ -81,7 +81,7 @@ gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
       recdBuf = malloc(itotsize);
       if (recdBuf == NULL)
         {
-          MayDay::Error("out of memory in gather 2");
+		Chombo4::MayDay::Error("out of memory in gather 2");
         }
     }
 
@@ -90,7 +90,7 @@ gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
                             recdBuf, vectSize, vectDisp, MPI_BYTE,
                             a_dest, Chombo_MPI::comm);
   if (result2 != MPI_SUCCESS)
-    MayDay::Error("Gather<T> failed in MPI_Gather 2");
+    Chombo4::MayDay::Error("Gather<T> failed in MPI_Gather 2");
 
   if (procID() == a_dest)
     {
@@ -137,7 +137,7 @@ broadcast(T& a_inAndOut,  int a_src)
 
   if (broadBuf == NULL)
   {
-    MayDay::Error("out of memory in broadcast");
+	  Chombo4::MayDay::Error("out of memory in broadcast");
   }
 
   //take inAndOut from src and put it into broadBuf
