@@ -139,22 +139,30 @@ bool run_test_irreg_copy()
   in.setVal(1);
   out.setVal(2);
 
-
   out.copy(in,bx,0,bx,0,1); 
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
   protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
+  bool check=true;
   for(int i = 0 ; i < size ; i++)
-    std::cout << checkPtr[i] << " ";
+    if(checkPtr[i] != 1) check=false;
+
+  if(!check)
+  {
+    for(int i = 0 ; i < size ; i++)
+      std::cout << checkPtr[i] << " ";
  
-  std::cout << std::endl;
+    std::cout << std::endl;
+  }
+  
 
   index.clear();
   free(ptr);  
-
-  return true;
+  free(checkPtr);
+ 
+  return check;
 }
 
 bool run_test_irreg_copy_partial()
@@ -202,6 +210,7 @@ bool run_test_irreg_copy_partial()
   }
   index.clear();
   free(ptr);  
+  free(checkPtr);
 
   return check;
 }
@@ -250,12 +259,68 @@ bool run_test_irreg_copy_partial_idst()
   }
   index.clear();
   free(ptr);  
+  free(checkPtr);  
 
   return check;
 }
 
 
-bool run_test_irreg_linear_in_partial()
+bool run_test_irreg_linear_full()
+{
+  unsigned int size = 8;
+  double* ptr = new double[size];
+  double* ptr2 = new double[size];
+  unsigned int inf  = 2;
+  unsigned int high = 4;
+  double inNumber   = 1;
+  double outNumber  = 2;
+  std::vector<Proto::EBIndex<Proto::CELL>> index;
+  Proto::Box bx(Proto::Point(0,0,0),Proto::Point(size-1,0,0));
+
+  test_irreg_data_fill(ptr,index,size);
+  index.clear();
+  test_irreg_data_fill(ptr2,index,size);
+  Proto::IrregData<Proto::CELL,double,1> in(bx, ptr2, index);
+  Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+
+
+  void* inWork;
+  size_t nBytes = size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
+  protoMalloc(inWork, nBytes);
+
+  in.setVal(inNumber);
+  out.setVal(outNumber);
+
+  /* test copy */
+  in.linearOut(inWork,bx,0,0); 
+  out.linearIn(inWork,bx,0,0); 
+
+  double* checkPtr = new double[size];
+  double* devicPtr = out.data();
+  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+
+  bool check=true;
+  for(int i = 0 ; i < size ; i++)
+    {
+      if(checkPtr[i] != inNumber) check=false;
+    }
+
+  if(!check)
+  {
+    for(int i = 0 ; i < size ; i++)
+      std::cout << checkPtr[i] << " ";
+ 
+    std::cout << std::endl;
+  }
+  index.clear();
+  free(ptr);  
+  free(ptr2);  
+  free(checkPtr);  
+
+  return check;
+}
+
+bool run_test_irreg_linear_partial()
 {
   unsigned int size = 8;
   double* ptr = new double[size];
@@ -269,10 +334,10 @@ bool run_test_irreg_linear_in_partial()
   Proto::Box bx2(Proto::Point(inf,0,0),Proto::Point(high,0,0));
 
   test_irreg_data_fill(ptr,index,size);
+  index.clear();
   test_irreg_data_fill(ptr2,index,size);
   Proto::IrregData<Proto::CELL,double,1> in(bx, ptr2, index);
   Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
-
 
   void* inWork;
   size_t nBytes = size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
@@ -310,6 +375,7 @@ bool run_test_irreg_linear_in_partial()
   index.clear();
   free(ptr);  
   free(ptr2);  
+  free(checkPtr);  
 
   return check;
 }

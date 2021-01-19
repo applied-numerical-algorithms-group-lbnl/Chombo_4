@@ -14,8 +14,9 @@ using std::shared_ptr;
 namespace Proto
 {
 
+
     template <CENTERING cent>
-    __device__
+    CUDA_DECORATION
     size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
     {
       size_t ivec = 0;
@@ -39,11 +40,9 @@ namespace Proto
       return ivec;
     }
 
-    template<CENTERING cent>
-    __device__
-    bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high)
+    CUDA_DECORATION
+    bool contains(const Point& pt, Point& a_low, Point& a_high)
     {
-      auto pt = a_in.m_pt;
       for(int idir = 0; idir < DIM; idir++)
       {
         if(pt[idir] < a_low[idir])
@@ -59,6 +58,56 @@ namespace Proto
     }
 
 
+    template<CENTERING cent>
+    CUDA_DECORATION
+    bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high)
+    {
+      auto pt = a_in.m_pt;
+      return contains(pt,a_low,a_high);
+    }
+
+    template <CENTERING cent>
+    CUDA_DECORATION
+    bool copyContains(const EBIndex<cent>& a_ind, Point & a_srcbox_low, Point & a_srcbox_high)
+    {
+      CENTERING thiscent = cent;
+
+      bool retval = false;
+      if((thiscent == CELL) || (thiscent == BOUNDARY))
+      {
+        retval = contains(a_ind.m_pt,a_srcbox_low,a_srcbox_high);
+      }
+      else if(thiscent == XFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(0, 1);
+        retval = (contains(lopt,a_srcbox_low,a_srcbox_high) 
+               || contains(hipt,a_srcbox_low,a_srcbox_high));
+      }
+      else if(thiscent ==  YFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(1, 1);
+        retval = (contains(lopt,a_srcbox_low,a_srcbox_high) 
+               || contains(hipt,a_srcbox_low,a_srcbox_high));
+      }
+#if DIM==3
+      else if(thiscent ==  ZFACE)
+      {
+        Point hipt = a_ind.m_pt;
+        Point lopt = a_ind.m_pt - Point::Basis(2, 1);
+        retval = (contains(lopt,a_srcbox_low,a_srcbox_high) 
+               || contains(hipt,a_srcbox_low,a_srcbox_high));
+      }
+#endif
+      else
+      {
+        PROTO_ASSERT(false, "unaccounted-for centering");
+      }
+      return retval;
+    }
+
+#ifdef PROTO_CUDA
     template <CENTERING cent, class data_t>
     __global__
     void EBBoxDataIndexer( unsigned int a_end, 
@@ -100,7 +149,7 @@ namespace Proto
     {
       char* tmp = (char*)a_buf;
       unsigned int size = ((unsigned int*) a_buf)[0];
-      tmp += 2*sizeof(unsigned int); // we need to aligne double*
+      tmp += sizeof(data_t); // we need to aligne double*
       data_t* data = (data_t*) tmp;
       tmp += a_ncomp*size*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
@@ -108,7 +157,7 @@ namespace Proto
       for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x )
       {
         EBIndex<cent>& pt = indicies[idx];
-        if( contains(pt,a_box_inf,a_box_high))
+        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
         {
           for(int icomp = 0; icomp < a_ncomp; icomp++)
           {
@@ -138,7 +187,7 @@ namespace Proto
         unsigned int *size = (unsigned int*) (tmp);
         *size = a_end;
       }
-      tmp += 2*sizeof(unsigned int); // we need to align double
+      tmp += sizeof(data_t); // we need to align double
       data_t* ptr = (data_t*) (tmp);
       tmp += a_ncomp*a_end*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) (tmp);
@@ -153,43 +202,97 @@ namespace Proto
       }
     }
 
-    template <CENTERING cent>
-    CUDA_DECORATION
-    bool copyContains(const EBIndex<cent>& a_ind, const Box & a_srcbox)
-    {
-      CENTERING thiscent = cent;
 
-      bool retval = false;
-      if((thiscent == CELL) || (thiscent == BOUNDARY))
+#else
+
+    template <CENTERING cent, class data_t>
+    void EBBoxDataIndexer( unsigned int a_end, 
+		EBIndex<cent>* a_indiciesSrc, unsigned int a_indiciesSizeSrc, 
+		EBIndex<cent>* a_indiciesDst, unsigned int a_indiciesSizeDst,
+		data_t* a_dst, const data_t* a_src, 
+                unsigned int a_idst, unsigned int a_isrc,
+		unsigned int a_inco,
+		Point a_box_inf, Point a_box_high)
+    {
+      for(unsigned idx = 0; idx < a_end ; idx ++)
       {
-        retval = a_srcbox.contains(a_ind.m_pt);
+        EBIndex<cent>& vof = a_indiciesDst[idx];
+        if( contains(vof,a_box_inf,a_box_high))
+        {
+          for(unsigned int ico = 0; ico < a_inco; ico++)
+          {
+            unsigned int isrc = a_isrc + ico;
+            unsigned int idst = a_idst + ico;
+            size_t indDst = index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
+            size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, isrc);
+            a_dst[indDst] = a_src[indSrc];
+          }
+        }
+
       }
-      else if(thiscent == XFACE)
-      {
-        Point hipt = a_ind.m_pt;
-        Point lopt = a_ind.m_pt - Point::Basis(0, 1);
-        retval = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
-      }
-      else if(thiscent ==  YFACE)
-      {
-        Point hipt = a_ind.m_pt;
-        Point lopt = a_ind.m_pt - Point::Basis(1, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
-      }
-#if DIM==3
-      else if(thiscent ==  ZFACE)
-      {
-        Point hipt = a_ind.m_pt;
-        Point lopt = a_ind.m_pt - Point::Basis(2, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
-      }
-#endif
-      else
-      {
-        PROTO_ASSERT(false, "unaccounted-for centering");
-      }
-      return retval;
     }
+
+   
+    template <CENTERING cent, class data_t>
+    void EBLinearIn(EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                void* a_buf, 
+		data_t* a_dst,
+                unsigned int a_ncomp,
+                Point a_box_inf, Point a_box_high)
+    {
+      char* tmp = (char*)a_buf;
+      unsigned int size = ((unsigned int*) a_buf)[0];
+      tmp += sizeof(data_t); // we need to aligne double*
+      data_t* data = (data_t*) tmp;
+      tmp += a_ncomp*size*sizeof(data_t);
+      EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
+
+      for(unsigned int idx = 0; idx < size ; idx ++)
+      {
+        EBIndex<cent>& pt = indicies[idx];
+        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        {
+          for(int icomp = 0; icomp < a_ncomp; icomp++)
+          {
+            size_t indxDst = index(a_indicies, a_indiciesSize, pt, icomp);
+            //size_t indxSrc = index(indicies, size, pt, icomp);
+            //a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
+            a_dst[indxDst+icomp*a_indiciesSize] = data[idx+icomp*size];
+          }
+        }
+      }
+   }
+
+    template <CENTERING cent, class data_t>
+    void EBLinearOut( unsigned int a_end,
+                EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                void* a_buf, 
+	        data_t* a_src,
+                unsigned int a_ncomp)
+    {
+
+      char* tmp = (char*)a_buf;
+      unsigned int *size = (unsigned int*) (tmp);
+      *size = a_end;
+      tmp += sizeof(data_t); // we need to align double
+      data_t* ptr = (data_t*) (tmp);
+      tmp += a_ncomp*a_end*sizeof(data_t);
+      EBIndex<cent>* indicies = (EBIndex<cent>*) (tmp);
+
+      for(unsigned int idx = 0 ; idx < a_end ; idx++)
+      {
+        indicies[idx] = a_indicies[idx];
+        for(int icomp = 0; icomp < a_ncomp; icomp++)
+        {
+          ptr[idx+icomp*a_end] = a_src[idx+icomp*a_indiciesSize];
+        }
+      }
+    }
+
+#endif
+
+
+
 ///
 /**
  */
@@ -209,7 +312,7 @@ namespace Proto
     {
       m_inputBox = a_box;
       unsigned int size = a_indicies.size();
-      protoMalloc(m_rawPtr,size*sizeof(data_t));
+      protoMalloc(m_rawPtr, size*sizeof(data_t));
       protoMemcpy(m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
       m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
@@ -457,10 +560,10 @@ namespace Proto
                          unsigned int a_startcomp,
                          unsigned int a_numcomps) const
     {
-      PR_TIME("HostIrregData::charsize");
+      PR_TIME("IrregData::charsize");
       using ProtoSer::linearCharBufSize;
       size_t retval = linearCharBufSize(m_inputBox);
-      retval += sizeof(int); //size of the vector;
+      retval += sizeof(data_t); //size is stored in a data_t type to avoid misaligned access on GPU
       const auto& data     = *this;
       const auto& indicies = *m_indicies;
       for(int ipt = 0; ipt < indicies.size(); ipt++)
@@ -478,50 +581,7 @@ namespace Proto
       }
       return retval;
     }
- 
 
-
-  /// recreates this object into a stream of bytes
-    inline
-    void energize(void*  a_buf) const
-    {
-      PR_TIME("IrregData::energize");
-      using ProtoSer::linearCharBufSize;
-      using ProtoSer::linearOutToCharBuf;
-      size_t charsiz = 0;
-      char*  charbuf = (char *) a_buf;
-      //input box
-      linearOutToCharBuf(charbuf, m_inputBox);
-      charbuf += linearCharBufSize(m_inputBox);
-      charsiz += linearCharBufSize(m_inputBox);
-
-      //size of the vector;
-      int vecsize = m_indicies->size();
-      protoMemcpy(charbuf,m_indicies_data,vecsize*sizeof(EBIndex<cent>),protoMemcpyDeviceToDevice);
-
-      size_t memsize = sizeof(EBIndex<cent>)*vecsize; 
-      charsiz += memsize;
-      charbuf += memsize;
-#ifdef PROTO_CUDA
-      memsize = sizeof(data_t)*vecsize*ncomp;
-      charsiz += memsize;
-      charbuf += memsize;
-#else
-      const auto& data     = *this;
-      //now output the actual data
-      for(int icomp = 0; icomp < ncomp; icomp++)
-      {
-        for(int ipt = 0; ipt < indicies.size(); ipt++)
-        {
-          auto pt = indicies[ipt];
-          const auto & dataval = data(pt, icomp);
-          linearOutToCharBuf(charbuf, dataval);
-          charsiz += linearCharBufSize(data(pt, icomp));
-          charbuf += linearCharBufSize(data(pt, icomp));
-        }
-      }
-#endif
-    }
 
     inline index_t* getDataIndicies()
     {
@@ -532,6 +592,7 @@ namespace Proto
     {
       return m_indicies_data;
     }
+
     inline
     void copy(const IrregData<cent, data_t, ncomp>& a_src,
               const Box& a_bxFrom, unsigned int a_isrc,
@@ -540,7 +601,7 @@ namespace Proto
     {
       PR_TIME("IrregData::copy");
       Box interBox = a_bxFrom & a_bxTo;
-#ifdef PROTO_CUDA
+//#ifdef PROTO_CUDA
       unsigned int size = m_indicies->size(); 
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/size;
@@ -557,7 +618,7 @@ namespace Proto
 			a_idst, a_isrc,
 			a_inco,
 			interBox.low(), interBox.high());
-#else
+/*#else
       for(int iind = 0; iind < m_indicies->size(); iind++)
       {
         auto& vof = (*m_indicies)[iind];
@@ -573,7 +634,7 @@ namespace Proto
           }
         }
       }
-#endif
+#endif */
     }
 
     inline
@@ -583,7 +644,6 @@ namespace Proto
                    unsigned int        a_numcomps) const
     {
       PR_TIME("IrregData::linearOut");
-#ifdef PROTO_CUDA
       unsigned int vecsize = m_indicies->size();
       const unsigned int threads = 256;
       const unsigned int blocks  = (vecsize + threads - 1) / threads; 
@@ -594,9 +654,6 @@ namespace Proto
                         a_buf,
                         m_rawPtr,
                         ncomp);
-#else
-   //deleted
-#endif
     }
 
     inline
@@ -606,7 +663,6 @@ namespace Proto
                    unsigned int           a_numcomps)
     {
       PR_TIME("IrregData::linearIn");
-#ifdef PROTO_CUDA
       unsigned int vecsize = m_indicies->size();
       protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 256,
                         m_indicies_data, vecsize,
@@ -614,11 +670,6 @@ namespace Proto
                         m_rawPtr,
                         ncomp,
                         a_bx.low(), a_bx.high());
-
-#else
-      IrregData<cent, data_t, ncomp> src(a_buf,a_bx,vercsize);
-      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps);
-#endif
     }
     ///
     static int preAllocatable()

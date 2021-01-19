@@ -22,7 +22,8 @@ int main()
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
   do_test("run_test_irreg_copy",run_test_irreg_copy);
   do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
-  do_test("run_test_irreg_linear_in_partial",run_test_irreg_linear_in_partial);
+  do_test("run_test_irreg_linear_partial",run_test_irreg_linear_partial);
+  do_test("run_test_irreg_linear_full",run_test_irreg_linear_full);
 
 //  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
   do_test("run_test_ebforall_init",run_test_ebforall_init);
