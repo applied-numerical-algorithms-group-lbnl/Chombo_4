@@ -165,9 +165,14 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
+  bool directToBottom = false;
+  pp.query("direct_to_bottom", directToBottom);
+  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
+                     stenname, dombcname, ebbcname, dombox,
+                     dataGhostIV, directToBottom);
+  
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
   Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   int numsolves = 1;
@@ -175,14 +180,14 @@ runTest(int a_argc, char* a_argv[])
   pout() << "number of solves = " <<  numsolves << endl;
   for(int isolve =0; isolve < numsolves; isolve++)
   {
-    pout() << "going into solve numbber " << isolve << endl;
+    pout() << "going into solve number " << isolve << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
       EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
       EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-      phibd.setVal(0.6);
-      rhsbd.setVal(1.0);
+      phibd.setVal(1.0);
+      rhsbd.setVal(0.0);
       corbd.setVal(0.0);
     }
 

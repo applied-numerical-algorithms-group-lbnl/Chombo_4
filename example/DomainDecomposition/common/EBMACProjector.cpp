@@ -97,7 +97,7 @@ project(EBLevelFluxData<1>   & a_velo,
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     
-//    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
     //get face fluxes and interpolate them to centroids
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -107,10 +107,8 @@ project(EBLevelFluxData<1>   & a_velo,
     }
     applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
-    ideb++;
   }
 }
-///
 void 
 EBMACProjector::
 setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval)
@@ -121,7 +119,7 @@ setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx
   {
     //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
     //using non-eb forall because box restriction in eb land is broken right now.   This will
-    //work if there nare no cut cells near the domain boundary
+    //work if there are no cut cells near the domain boundary
     auto& regdata = a_flux.m_xflux->getRegData();
     forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
   }

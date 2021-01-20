@@ -43,7 +43,7 @@ r.write('#/usr/bin/csh\n')
 for t in targets:
     d= t
     print(d)
-    comstr = " cd " + d + "; make pristine; make; cd " + top 
+    comstr = " cd " + d + "; make pristine; make -j10; cd " + top 
     echostr =  "\necho \" " + comstr + "\" \n"
     runstr =  "\n" + comstr + "\n"
     r.write(echostr)

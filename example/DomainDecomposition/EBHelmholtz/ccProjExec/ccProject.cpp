@@ -30,8 +30,7 @@ using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
 
-typedef Var<Real,DIM> Vec;
-typedef Var<Real,  1> Sca;
+
 /***/
 EBIBC getIBCs()
 {
