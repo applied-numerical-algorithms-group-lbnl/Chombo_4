@@ -106,19 +106,9 @@ project(EBLevelFluxData<1>   & a_velo,
                               a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
     }
     applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
-    subtractGradient(a_velo[dit[ibox]], a_gphi[dit[ibox]], grid);
+    a_velo -= a_gphi;
   }
 }
-///
-void 
-EBMACProjector::
-subtractGradient(EBFluxData<Real, 1>& a_velo,
-                 EBFluxData<Real, 1>& a_gphi,
-                 const Bx& a_grid) const
-{
-
-  a_velo -= a_gphi;
-}  
 void 
 EBMACProjector::
 setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval)
@@ -129,7 +119,7 @@ setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx
   {
     //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
     //using non-eb forall because box restriction in eb land is broken right now.   This will
-    //work if there nare no cut cells near the domain boundary
+    //work if there are no cut cells near the domain boundary
     auto& regdata = a_flux.m_xflux->getRegData();
     forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
   }
