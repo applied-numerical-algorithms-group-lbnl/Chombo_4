@@ -8,9 +8,9 @@
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigrid::s_useWCycle     = false;
-int  EBMultigrid::s_numSmoothDown = 4;
-int  EBMultigrid::s_numSmoothUp   = 4;
+bool EBMultigridLevel::s_useWCycle     = false;
+int  EBMultigridLevel::s_numSmoothDown = 4;
+int  EBMultigridLevel::s_numSmoothUp   = 4;
 
 /****/
 void 
@@ -65,7 +65,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
         const EBLevelBoxData<CELL, 1> & a_phi,
         bool a_doExchange) const
@@ -104,7 +104,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 }
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 preCond(EBLevelBoxData<CELL, 1>       & a_phi,
         const EBLevelBoxData<CELL, 1> & a_rhs) const
 {
@@ -116,7 +116,7 @@ preCond(EBLevelBoxData<CELL, 1>       & a_phi,
 /****/
 //for tga
 void
-EBMultigridLevel::
+EBPoissonOp::
 applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi) const
                     
@@ -178,21 +178,21 @@ vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
   return m_finest->vCycle(a_phi, a_rhs);
 }
 /***/
-EBMultigridLevel::
-EBMultigridLevel(dictionary_t                            & a_dictionary,
-                 shared_ptr<GeometryService<2> >         & a_geoserv,
-                 const Real                              & a_alpha,
-                 const Real                              & a_beta,
-                 const Real                              & a_dx,
-                 const DisjointBoxLayout                 & a_grids,
-                 const string                            & a_stenname,
-                 string                                    a_dombcname[2*DIM],
-                 const string                            & a_ebbcname,
-                 const Box                               & a_domain,
-                 const IntVect                           & a_nghost,
-                 bool a_directToBottom)
+EBPoissonOp::
+EBPoissonOp(dictionary_t                            & a_dictionary,
+            shared_ptr<GeometryService<2> >         & a_geoserv,
+            const Real                              & a_alpha,
+            const Real                              & a_beta,
+            const Real                              & a_dx,
+            const DisjointBoxLayout                 & a_grids,
+            const string                            & a_stenname,
+            string                                    a_dombcname[2*DIM],
+            const string                            & a_ebbcname,
+            const Box                               & a_domain,
+            const IntVect                           & a_nghost,
+            bool a_directToBottom):  EBMultigridLevel()
 {
-  CH_TIME("EBMultigridLevel::define");
+  CH_TIME("EBPoissonOp::define");
   m_depth = 0;
   m_directToBottom = a_directToBottom;
   m_alpha      = a_alpha;      
@@ -235,7 +235,7 @@ EBMultigridLevel(dictionary_t                            & a_dictionary,
 }
 /***/
 void
-EBMultigridLevel::
+EBPoissonOp::
 defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   PR_TIME("sgmglevel::defineCoarser");
@@ -256,7 +256,8 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
       m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
     }
     
-    m_coarser = shared_ptr<EBMultigridLevel>(new EBMultigridLevel(*this, a_geoserv));
+    m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
+    m_coarser->define(*this, a_geoserv);
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
@@ -264,9 +265,10 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
   }
 }
 /***/
-EBMultigridLevel::
-EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
-                 shared_ptr<GeometryService<2> >   & a_geoserv)
+void
+EBPoissonOp::
+define(const EBMultigridLevel            & a_finerLevel,
+       shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
@@ -277,18 +279,18 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
   coarsen(m_grids, a_finerLevel.m_grids,  2);      
 
   m_alpha      = a_finerLevel.m_alpha;      
-  m_beta       = a_finerLevel.m_beta;       
-  m_stenname   = a_finerLevel.m_stenname;   
-  m_neumname   = a_finerLevel.m_neumname;
+  m_beta       = a_finerLevel.m_beta;
+  EBPoissonOp* finer = (EBPoissonOp*)(& a_finerLevel);
+  m_stenname   = finer->m_stenname;   
+  m_neumname   = finer->m_neumname;
   for(int ivec = 0; ivec < 2*DIM; ivec++)
   {
-    m_dombcname[ivec]  = a_finerLevel.m_dombcname[ivec];
+    m_dombcname[ivec]  = finer->m_dombcname[ivec];
   }
-  m_ebbcname   = a_finerLevel.m_ebbcname;   
-
-  m_nghost     = a_finerLevel.m_nghost;
-  m_nghost     = a_finerLevel.m_nghost;
-  m_dictionary = a_finerLevel.m_dictionary;
+  m_ebbcname   = finer->m_ebbcname;   
+  m_nghost     = finer->m_nghost;
+  m_nghost     = finer->m_nghost;
+  m_dictionary = finer->m_dictionary;
 
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghost, m_graphs);
@@ -312,7 +314,7 @@ EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
 }
 
 void  
-EBMultigridLevel::
+EBPoissonOp::
 defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
 {
   m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
@@ -328,10 +330,10 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
-EBMultigridLevel::
+EBPoissonOp::
 fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
 {
-  CH_TIME("EBMultigridLevel::fillkappa");
+  CH_TIME("EBPoissonOp::fillkappa");
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -359,14 +361,14 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
 }
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_phi,
          const EBLevelBoxData<CELL, 1> & a_rhs,
          bool a_doExchange) const
                     
 {
-  CH_TIME("EBMultigridLevel::residual");
+  CH_TIME("EBPoissonOp::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
   applyOp(a_res, a_phi, a_doExchange);
@@ -387,12 +389,12 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
 }
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       int a_maxiter) const
 {
-  CH_TIME("EBMultigridLevel::relax");
+  CH_TIME("EBPoissonOp::relax");
   CH_assert(a_phi.ghostVect() ==   a_rhs.ghostVect());
   CH_assert(a_phi.ghostVect() == m_kappa.ghostVect());
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
@@ -456,7 +458,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
 }
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
                  const EBLevelBoxData<CELL, 1> & a_resf)
 {
@@ -479,7 +481,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
 }
 /****/
 void
-EBMultigridLevel::
+EBPoissonOp::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
                  const EBLevelBoxData<CELL, 1>& a_cor)
 {
@@ -500,45 +502,9 @@ prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
   }
 }
 /****/
-void 
-EBMultigridLevel::
-vCycle(EBLevelBoxData<CELL, 1>         & a_phi,
-       const EBLevelBoxData<CELL, 1>   & a_rhs)
-{
-
-  PR_TIME("sgmglevel::vcycle");
-  if(m_directToBottom)
-  {
-    bottom_solve(a_phi, a_rhs);
-  }
-  else
-  {
-    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothDown); 
-
-    if (m_hasCoarser)
-    {
-      residual(m_resid,a_phi,a_rhs);                      
-      //stencils for multilevel objects live with the finer level
-      restrictResidual(m_residC,m_resid);
-      m_deltaC.setVal(0.);
-      m_coarser->vCycle(m_deltaC,m_residC);
-      if(EBMultigrid::s_useWCycle)
-      {
-        m_coarser->vCycle(m_deltaC,m_residC);
-      }
-      prolongIncrement(a_phi,m_deltaC);
-    }
-    else
-    {
-      bottom_solve(a_phi, a_rhs);
-    }
-
-    relax(a_phi,a_rhs, EBMultigrid::s_numSmoothUp);
-  }
-}
 ///
 void
-EBMultigridLevel::
+EBPoissonOp::
 bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
              const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
@@ -571,12 +537,12 @@ bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
 }
 ///
 void
-EBMultigridLevel::
+EBPoissonOp::
 solve_bicgstab(EBLevelBoxData<CELL, 1>         & a_phi,
                const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
   ParmParse pp("bicgstab");
-  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBPoissonOp> bicgstab;
   Real tol   = 1.0e-6;
   Real hang  = 1.0e-8;
   Real small = 1.0e-16;
@@ -599,12 +565,12 @@ solve_bicgstab(EBLevelBoxData<CELL, 1>         & a_phi,
 }
 ///
 void
-EBMultigridLevel::
+EBPoissonOp::
 solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
             const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
   ParmParse pp("relax_solver");
-  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBMultigridLevel> bicgstab;
+  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBPoissonOp> bicgstab;
   Real tol   = 1.0e-6;
   int  imax  = 0;
 
@@ -616,7 +582,7 @@ solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
 ///
 #ifdef CH_USE_PETSC
 void
-EBMultigridLevel::
+EBPoissonOp::
 solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
             const EBLevelBoxData<CELL, 1>   & a_rhs)
 {

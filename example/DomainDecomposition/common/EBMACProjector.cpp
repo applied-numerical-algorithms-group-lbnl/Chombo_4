@@ -116,33 +116,8 @@ subtractGradient(EBFluxData<Real, 1>& a_velo,
                  EBFluxData<Real, 1>& a_gphi,
                  const Bx& a_grid) const
 {
-  Real scale = -1;
-  {
-    auto& velo = a_velo.m_xflux;
-    auto& gphi = a_gphi.m_xflux;
 
-    Bx inputBox = xflux.inputBox();
-    Bx validBox = grid.growHi(0, 1);
-    ebforall(inputBox, incrementalism, validBox, velo, gphi, scale);
-  }
-  {
-    auto& velo = a_velo.m_yflux;
-    auto& gphi = a_gphi.m_yflux;
-
-    Bx inputBox = yflux.inputBox();
-    Bx validBox = grid.growHi(1, 1);
-    ebforall(inputBox, incrementalism, validBox, velo, gphi, scale);
-  }
-#if DIM==3
-  {
-    auto& velo = a_velo.m_zflux;
-    auto& gphi = a_gphi.m_zflux;
-
-    Bx inputBox = velo.inputBox();
-    Bx validBox = grid.growHi(2, 1);
-    ebforall(inputBox, incrementalism, validBox, velo, gphi, scale);
-  }
-#endif  
+  a_velo -= a_gphi;
 }  
 void 
 EBMACProjector::

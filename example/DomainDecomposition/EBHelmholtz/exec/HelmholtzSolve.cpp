@@ -171,8 +171,8 @@ runTest(int a_argc, char* a_argv[])
                      stenname, dombcname, ebbcname, dombox,
                      dataGhostIV, directToBottom);
   
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
   Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   int numsolves = 1;
