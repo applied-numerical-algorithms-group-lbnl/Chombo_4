@@ -13,8 +13,6 @@ using std::vector;
 using std::shared_ptr;
 namespace Proto
 {
-
-
     template <CENTERING cent>
     CUDA_DECORATION
     size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
@@ -41,30 +39,11 @@ namespace Proto
     }
 
     CUDA_DECORATION
-    bool contains(const Point& pt, Point& a_low, Point& a_high)
-    {
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        if(pt[idir] < a_low[idir])
-        {
-            return false;
-        }
-        if(pt[idir] > a_high[idir])
-        {
-            return false;
-        }
-      }
-      return true;
-    }
-
+    inline bool contains(const Point& pt, Point& a_low, Point& a_high);
 
     template<CENTERING cent>
     CUDA_DECORATION
-    bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high)
-    {
-      auto pt = a_in.m_pt;
-      return contains(pt,a_low,a_high);
-    }
+    inline bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high);
 
     template <CENTERING cent>
     CUDA_DECORATION
@@ -123,7 +102,7 @@ namespace Proto
       if(idx < a_end)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
-        if( contains(vof,a_box_inf,a_box_high))
+        if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
         {
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
@@ -217,7 +196,7 @@ namespace Proto
       for(unsigned idx = 0; idx < a_end ; idx ++)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
-        if( contains(vof,a_box_inf,a_box_high))
+        if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
         {
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
@@ -602,17 +581,19 @@ namespace Proto
       PR_TIME("IrregData::copy");
       Box interBox = a_bxFrom & a_bxTo;
 //#ifdef PROTO_CUDA
-      unsigned int size = m_indicies->size(); 
+
+      auto indiciesSrc = a_src.getIndicies();
+      auto indiciesDataSrc = a_src.getDataIndicies();
+      unsigned int size = indiciesSrc->size(); 
+      //unsigned int size = m_indicies->size(); 
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/size;
 
-      auto indiciesSrc = a_src.getIndicies();
-      auto tt = a_src.getDataIndicies();
 
       protoLaunchKernel((EBBoxDataIndexer<cent,data_t>), blocks, threads, 
 			size, 
+                        indiciesDataSrc, indiciesSrc->size(),
 			m_indicies_data, m_indicies->size(),
-                        tt, indiciesSrc->size(),
 			m_rawPtr, 
 			a_src.data(), 
 			a_idst, a_isrc,
@@ -693,5 +674,6 @@ protected:
 
 }
 #include "Proto_IrregDataImplem.H"
+#include "Proto_IrregData.cpp"
 
 #endif

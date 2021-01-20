@@ -598,6 +598,8 @@ solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
   m_relaxSolver->solve(a_phi, a_rhs, imax, tol);
 }
 ///
+
+#ifdef SOMETHING
 void
 EBMultigridLevel::
 solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
@@ -605,5 +607,7 @@ solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
 {
   m_petscSolver->solve(a_phi, a_rhs);
 }
+#endif
+
 #include "Chombo_NamespaceFooter.H"
 /****/
