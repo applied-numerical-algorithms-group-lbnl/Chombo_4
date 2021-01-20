@@ -126,6 +126,61 @@ namespace Proto
       return ivec;
     }
 
+    IrregData<cent, data_t, ncomp>& 
+    operator+=(const IrregData<cent, data_t, ncomp> & a_input)
+    {
+      if((m_inputBox == a_input.m_inputBox))
+      {
+        unsigned int nsize = size();
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
+      }
+      return *this;
+    }
+
+
+    IrregData<cent, data_t, ncomp>& 
+    operator-=(const IrregData<cent, data_t, ncomp> & a_input)
+    {
+      if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
+      {
+        unsigned int nsize = size();
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
+      }
+      return *this;
+    }
+
+
+    IrregData<cent, data_t, ncomp>& 
+    operator*=(const IrregData<cent, data_t, ncomp> & a_input)
+    {
+      if(m_boxdefined && (m_inputBox == a_input.m_inputBox))
+      {
+        unsigned int nsize = size();
+        if(nsize == 0) return *this;
+        //int blockSize = 512;
+        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "operator+= not implemented for irreg datas of different sizes");
+      }
+      return *this;
+    }
     
     /// debugging only--will not work on the device
     data_t operator() (const index_t& a_vof, int a_comp) const

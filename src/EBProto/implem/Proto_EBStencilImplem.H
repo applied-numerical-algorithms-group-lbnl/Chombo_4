@@ -2,16 +2,6 @@
 #ifndef _Proto_EBStencilImplem_H_
 #define _Proto_EBStencilImplem_H_
 #include "Proto_EBHostData.H"
-PROTO_KERNEL_START
-unsigned int
-excrementF(Var<double, 1>     a_dst,
-          Var<double, 1>     a_src)
-{
-  a_dst(0) += a_src(0);
-  return 0;
-}
-PROTO_KERNEL_END(excrementF, excrement)
-
 namespace Proto
 {
   ///
@@ -209,11 +199,7 @@ namespace Proto
       EBBoxData< dstCenter, data_t, 1>   incr(a_dst.inputBox(), a_dst.ebgraph());
       incr.setVal(0.);
       applyITZ(incr, a_src, a_scale);
-
-      Box inputBox = a_dst.inputBox();
-      Box domain = a_dst.ebgraph().getDomain();
-      Box validBox = inputBox & domain;
-      ebforall(inputBox, excrement, validBox, a_dst, incr);
+      a_dst += incr;
     }
   }
               
