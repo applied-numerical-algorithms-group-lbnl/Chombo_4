@@ -20,7 +20,7 @@ class EBRelaxSolver;
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
 /** This not a design that conforms to any pattern I know.. 
     This is not designed with anything but code reuse in mind.   
-    Users are strong advised to just use the EBMultigrid API
+    Users are strongly advised to just use the EBMultigrid API
 */
 class EBMultigridLevel
 {
