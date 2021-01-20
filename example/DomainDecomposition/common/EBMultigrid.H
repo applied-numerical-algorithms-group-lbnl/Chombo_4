@@ -365,7 +365,11 @@ class EBMultigrid
 public:
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
 
-  /// 
+  /// Constant coefficient, named stencil
+  /**
+     When this constructor is called, it solves for the named stencil.
+     Usually we use this for constant-coefficient Helmholtz.
+   */
   EBMultigrid(dictionary_t                      & a_dictionary,
               shared_ptr<GeometryService<2> >   & a_geoserv,
               const Real                        & a_alpha,
@@ -457,10 +461,14 @@ public:
     m_finest->resetAlphaAndBeta(a_alpha, a_beta);
   }
 
-  /// 
+  ///
+  inline
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
-               bool a_doExchange = true) const;
+               bool a_doExchange = true) const
+  {
+    return m_finest->applyOp(a_lph, a_phi, a_doExchange);
+  }
 
 
   /// for TGA force bcs to be homogeneous neumann
@@ -471,10 +479,15 @@ public:
     m_finest->applyOpNeumann(a_lph, a_phi);
   }
 
+  inline
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
-                bool a_doExchange = true) const;
+                bool a_doExchange = true) const
+  {
+    PR_TIME("sgmg::resid");
+    return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
+  }
   
 private:
   
@@ -484,8 +497,13 @@ private:
   
 
   /// Multigrid v-cycle.
+  inline
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
-              const EBLevelBoxData<CELL, 1>& a_rhs);
+              const EBLevelBoxData<CELL, 1>& a_rhs)
+  {
+    PR_TIME("sgmg::vcycle");
+    return m_finest->vCycle(a_phi, a_rhs);
+  }
 
   /// average down residual to next coarser level.
   void restrictResidual(EBLevelBoxData<CELL, 1>      & a_resc,

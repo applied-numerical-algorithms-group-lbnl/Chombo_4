@@ -106,7 +106,7 @@ project(EBLevelFluxData<1>   & a_velo,
                               a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
     }
     applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
-    a_velo -= a_gphi;
+    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
   }
 }
 void 

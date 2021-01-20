@@ -148,35 +148,6 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
     ideb++;
   }
 }
-/****/
-void
-EBMultigrid::
-applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-        const EBLevelBoxData<CELL, 1> & a_phi,
-        bool a_doExchange) const
-{
-  return m_finest->applyOp(a_lph, a_phi, a_doExchange);
-}
-/***/
-void
-EBMultigrid::
-residual(EBLevelBoxData<CELL, 1>       & a_res,
-         const EBLevelBoxData<CELL, 1> & a_phi,
-         const EBLevelBoxData<CELL, 1> & a_rhs,
-         bool a_doExchange) const
-{
-  PR_TIME("sgmg::resid");
-  return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
-}
-/***/
-void
-EBMultigrid::
-vCycle(EBLevelBoxData<CELL, 1>       & a_phi,
-       const EBLevelBoxData<CELL, 1> & a_rhs)
-{
-  PR_TIME("sgmg::vcycle");
-  return m_finest->vCycle(a_phi, a_rhs);
-}
 /***/
 EBPoissonOp::
 EBPoissonOp(dictionary_t                            & a_dictionary,
