@@ -171,7 +171,7 @@ public:
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 2");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 2");
       }
     }
     else if(sum == 2)
@@ -219,7 +219,7 @@ public:
       }
       else
       {
-        MayDay::Error("sinesphere ran out of cases 2");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 2");
       }
     }
     else if(sum == 3)
@@ -289,7 +289,7 @@ public:
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 3");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 3");
         retval = 0;
       }
     }
@@ -391,13 +391,13 @@ public:
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 4");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      MayDay::Error("sinesphere ran out of deriv cases");
+      Chombo4::MayDay::Error("sinesphere ran out of deriv cases");
       retval = 0;
     }
         
@@ -524,7 +524,7 @@ public:
 #endif      
       else
       {
-        MayDay::Error("sinesphere ran out of cases 2");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 2");
       }
     }
     else if(sum == 2)
@@ -575,7 +575,7 @@ public:
       }
       else
       {
-        MayDay::Error("sinesphere ran out of cases 2");
+        Chombo4::MayDay::Error("sinesphere ran out of cases 2");
       }
     }
     else if(sum == 3)
@@ -654,7 +654,7 @@ public:
 #endif      
       else
       {
-        MayDay::Error("monomial ran out of cases 3");
+        Chombo4::MayDay::Error("monomial ran out of cases 3");
         retval = 0;
       }
     }
@@ -766,13 +766,13 @@ public:
 #endif      
       else
       {
-        MayDay::Error("monomial ran out of cases 4");
+        Chombo4::MayDay::Error("monomial ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      MayDay::Error("monomial ran out of deriv cases");
+      Chombo4::MayDay::Error("monomial ran out of deriv cases");
       retval = 0;
     }
 
@@ -780,7 +780,7 @@ public:
     Real diff = std::abs(retval - retval_simp);
     if(diff > tol)
     {
-      MayDay::Error("broken elegance");
+      Chombo4::MayDay::Error("broken elegance");
     }
     return retval_simp;
   }
