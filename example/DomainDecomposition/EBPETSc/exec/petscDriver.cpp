@@ -157,6 +157,7 @@ runTest(int a_argc, char* a_argv[])
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
 
   pout() << "setting values" << endl;
   Chombo4::DataIterator dit = grids.dataIterator();
@@ -170,11 +171,19 @@ runTest(int a_argc, char* a_argv[])
 
   solver.solve(phi, rhs);
 
+  EBMultigrid ebmg(dictionary, geoserv, alpha, beta, dx, grids,
+                   stenname, dombcname, ebbcname, domain.domainBox(),
+                   dataGhostIV, false);
+
+  ebmg.residual(res, phi, rhs);
+  Real errnorm = res.maxNorm(0);
+  
+  pout() << "norm of computed residual =  " << errnorm << endl;
   pout() << "writing to file " << endl;
 
   phi.writeToFileHDF5("phi.hdf5", 0.0);
   rhs.writeToFileHDF5("rhs.hdf5", 0.0);
-  
+  res.writeToFileHDF5("res.hdf5", 0.0);
   pout() << "exiting " << endl;
   return 0;
 }

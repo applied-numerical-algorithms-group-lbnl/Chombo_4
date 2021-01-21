@@ -18,80 +18,85 @@ using std::array;
 class EBMultigrid;
 class EBRelaxSolver;
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
+/** This not a design that conforms to any pattern I know.. 
+    This is not designed with anything but code reuse in mind.   
+    Users are strongly advised to just use the EBMultigrid API
+*/
 class EBMultigridLevel
 {
 public:
   friend class EBMultigrid;
 
-  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
+  static int  s_numSmoothDown ;
+  static int  s_numSmoothUp   ;
+  static bool s_useWCycle     ;
   
-  ///
-  EBMultigridLevel(dictionary_t                      & a_dictionary,
-                   shared_ptr<GeometryService<2> >   & a_geoserv,
-                   const Real                        & a_alpha,
-                   const Real                        & a_beta,
-                   const Real                        & a_dx,
-                   const DisjointBoxLayout           & a_grids,
-                   const string                      & a_stenname,
-                   string                              a_dombcname[2*DIM],
-                   const string                      & a_ebbcname,
-                   const Box                         & a_domain,
-                   const IntVect                     & a_nghost,
-                   bool a_directToBottomSolve = false);
-
-  ///make coarse from fine 
-  EBMultigridLevel(const EBMultigridLevel            & a_finerLevel,
-                   shared_ptr<GeometryService<2> >   & a_geoserv);
-
-  ///
-  void
-  preCond(EBLevelBoxData<CELL, 1>       & a_phi,
-          const EBLevelBoxData<CELL, 1> & a_rhs) const;
-
-  
-  ///  
-  ~EBMultigridLevel()
-  {
-  }
-
-  /// 
-  void residual(EBLevelBoxData<CELL, 1>       & a_res,
-                const EBLevelBoxData<CELL, 1> & a_phi,
-                const EBLevelBoxData<CELL, 1> & a_rhs,
-                bool a_doExchange = true) const;
-
-
-  /// 
-  void relax(EBLevelBoxData<CELL, 1>      & a_phi,
-             const EBLevelBoxData<CELL, 1>& a_rhs,
-             int a_niter) const;
-
-
-  /// average down residual to next coarser level.
-  void restrictResidual(EBLevelBoxData<CELL, 1>      & a_resc,
-                        const EBLevelBoxData<CELL, 1>& a_res);
-
-  /// Piecewise constant interpolation of coarse correction to increment fine solution.
-  void prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phiFine,
-                        const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
-
-
-  /// 
-  void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-               const EBLevelBoxData<CELL, 1> & a_phi,
-               bool a_doExchange = true) const;
-
-  ///for tga
-  void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
-                      const EBLevelBoxData<CELL, 1> & a_phi) const;
-
-  /// Multigrid v-cycle.
-  void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
-              const EBLevelBoxData<CELL, 1>& a_rhs);
-
+  Real                              m_alpha;   
+  Real                              m_beta;    
   std::shared_ptr<EBMultigridLevel> m_coarser;
+  EBLevelBoxData<CELL, 1>           m_kappa;
+  bool                              m_hasCoarser;
+  bool                              m_directToBottom;
+  EBLevelBoxData<CELL, 1>           m_resid;
+  EBLevelBoxData<CELL, 1>           m_deltaC;
+  EBLevelBoxData<CELL, 1>           m_residC;
+  DisjointBoxLayout                 m_grids;   
+  shared_ptr<LevelData<EBGraph> >   m_graphs;
+  IntVect                           m_nghost;
+  Box                               m_domain;
+  unsigned int                      m_depth;
+  Real                              m_dx;      
+  
+  /// Multigrid v-cycle.
+  inline void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
+                     const EBLevelBoxData<CELL, 1>& a_rhs)
+  {
 
+    PR_TIME("sgmglevel::vcycle");
+    if(m_directToBottom)
+    {
+      bottom_solve(a_phi, a_rhs);
+    }
+    else
+    {
+      relax(a_phi,a_rhs, EBMultigridLevel::s_numSmoothDown); 
+
+      if (m_hasCoarser)
+      {
+        residual(m_resid,a_phi,a_rhs);                      
+        //stencils for multilevel objects live with the finer level
+        restrictResidual(m_residC,m_resid);
+        m_deltaC.setVal(0.);
+        m_coarser->vCycle(m_deltaC,m_residC);
+        if(EBMultigridLevel::s_useWCycle)
+        {
+          m_coarser->vCycle(m_deltaC,m_residC);
+        }
+        prolongIncrement(a_phi,m_deltaC);
+      }
+      else
+      {
+        bottom_solve(a_phi, a_rhs);
+      }
+
+      relax(a_phi,a_rhs, EBMultigridLevel::s_numSmoothUp);
+    }
+  }
+  ///
+  EBMultigridLevel()
+  { }
+
+  ///make coarse from fine
+  virtual void 
+  define(const EBMultigridLevel            & a_finerLevel,
+         shared_ptr<GeometryService<2> >   & a_geoserv) =0;
+
+  ///
+  virtual void
+  preCond(EBLevelBoxData<CELL, 1>       & a_phi,
+          const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
+
+  
   EBLevelBoxData<CELL, 1> & getKappa()
   {
     return m_kappa;
@@ -107,7 +112,54 @@ public:
       m_coarser->resetAlphaAndBeta(a_alpha, a_beta);
     }
   }
+  
+  ///  
+  virtual ~EBMultigridLevel()
+  {
+  }
 
+  ///
+  virtual void
+  residual(EBLevelBoxData<CELL, 1>       & a_res,
+           const EBLevelBoxData<CELL, 1> & a_phi,
+           const EBLevelBoxData<CELL, 1> & a_rhs,
+           bool a_doExchange = true) const=0;
+
+
+  /// 
+  virtual void
+  relax(EBLevelBoxData<CELL, 1>      & a_phi,
+        const EBLevelBoxData<CELL, 1>& a_rhs,
+        int a_niter) const =0;
+
+
+  /// average down residual to next coarser level.
+  virtual void
+  restrictResidual(EBLevelBoxData<CELL, 1>      & a_resc,
+                   const EBLevelBoxData<CELL, 1>& a_res)=0;
+
+  /// Piecewise constant interpolation of coarse correction to increment fine solution.
+  virtual void
+  prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phiFine,
+                   const EBLevelBoxData<CELL, 1>& a_deltaCoarse)=0;
+
+
+  /// 
+  virtual void
+  applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
+          const EBLevelBoxData<CELL, 1> & a_phi,
+          bool a_doExchange = true) const=0;
+
+  ///for tga
+  virtual void
+  applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
+                 const EBLevelBoxData<CELL, 1> & a_phi) const=0;
+
+
+  virtual void
+  bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
+               const EBLevelBoxData<CELL, 1>&  a_rhs) = 0;
+  
   // needed for bicgstab
   inline void create(EBLevelBoxData<CELL, 1>&  a_dataholder) const
   {
@@ -175,8 +227,93 @@ public:
     }
   }
 
+
+};
+
+
+
+
+class EBPoissonOp: public EBMultigridLevel
+{
+public:
+  friend class EBMultigrid;
+
+  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
+  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
+  
+  ///
+  EBPoissonOp(dictionary_t                      & a_dictionary,
+                   shared_ptr<GeometryService<2> >   & a_geoserv,
+                   const Real                        & a_alpha,
+                   const Real                        & a_beta,
+                   const Real                        & a_dx,
+                   const DisjointBoxLayout           & a_grids,
+                   const string                      & a_stenname,
+                   string                              a_dombcname[2*DIM],
+                   const string                      & a_ebbcname,
+                   const Box                         & a_domain,
+                   const IntVect                     & a_nghost,
+                   bool a_directToBottomSolve = false);
+
+  ///make coarse from fine 
+  void
+  define(const EBMultigridLevel            & a_finerLevel,
+         shared_ptr<GeometryService<2> >   & a_geoserv);
+  
+  ///
+  void
+  preCond(EBLevelBoxData<CELL, 1>       & a_phi,
+          const EBLevelBoxData<CELL, 1> & a_rhs) const;
+
+  
+  ///  
+  virtual ~EBPoissonOp()
+  {
+  }
+
+  /// 
+  void residual(EBLevelBoxData<CELL, 1>       & a_res,
+                const EBLevelBoxData<CELL, 1> & a_phi,
+                const EBLevelBoxData<CELL, 1> & a_rhs,
+                bool a_doExchange = true) const;
+
+
+  /// 
+  void relax(EBLevelBoxData<CELL, 1>      & a_phi,
+             const EBLevelBoxData<CELL, 1>& a_rhs,
+             int a_niter) const;
+
+
+  /// average down residual to next coarser level.
+  void restrictResidual(EBLevelBoxData<CELL, 1>      & a_resc,
+                        const EBLevelBoxData<CELL, 1>& a_res);
+
+  /// Piecewise constant interpolation of coarse correction to increment fine solution.
+  void prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phiFine,
+                        const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
+
+
+  /// 
+  void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
+               const EBLevelBoxData<CELL, 1> & a_phi,
+               bool a_doExchange = true) const;
+
+  ///for tga
+  void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
+                      const EBLevelBoxData<CELL, 1> & a_phi) const;
+
+
+
   void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
                     const EBLevelBoxData<CELL, 1>&  a_rhs);
+  /// weak construction introduces unnecessary complications
+  /** but it sometimes proves useful in object-oriented code 
+      nobody should be making one of these outside the EBMultigrid context
+      so this unprotected weak construction is probably okay.
+      Blame Stroustrup for outlawing virtual constructors. */
+  EBPoissonOp()
+  {
+  }
 private:
 
   void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
@@ -185,24 +322,12 @@ private:
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   void  fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv);
 
-  /// weak construction introduces unnecessary complications
-  EBMultigridLevel()
-  {
-  }
 
   
-  bool   m_hasCoarser;
-  bool   m_directToBottom;
-  unsigned int m_depth;
-  Real                              m_alpha;   
-  Real                              m_beta;    
-  Real                              m_dx;      
-  DisjointBoxLayout                 m_grids;   
   string                            m_stenname;
   string                            m_neumname;
   string                            m_dombcname[2*DIM];
   string                            m_ebbcname;
-  shared_ptr<LevelData<EBGraph> >   m_graphs;
   dictionary_t                      m_dictionary;
 #if DIM==2
   static const unsigned int s_ncolors = 4;  
@@ -214,14 +339,8 @@ private:
   string                            m_restrictionName;
 
   string                            m_nobcname;
-  Box                               m_domain;
-  EBLevelBoxData<CELL, 1>           m_resid;
   EBLevelBoxData<CELL, 1>           m_diagW;
-  EBLevelBoxData<CELL, 1>           m_residC;
-  EBLevelBoxData<CELL, 1>           m_deltaC;
-  EBLevelBoxData<CELL, 1>           m_kappa;
 
-  IntVect m_nghost;
   Copier                            m_exchangeCopier;
   shared_ptr<EBRelaxSolver>         m_relaxSolver;
 #ifdef CH_USE_PETSC  
@@ -245,11 +364,12 @@ class EBMultigrid
 {
 public:
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
-  static int  s_numSmoothDown ;
-  static int  s_numSmoothUp   ;
-  static bool s_useWCycle     ;
 
-  /// 
+  /// Constant coefficient, named stencil
+  /**
+     When this constructor is called, it solves for the named stencil.
+     Usually we use this for constant-coefficient Helmholtz.
+   */
   EBMultigrid(dictionary_t                      & a_dictionary,
               shared_ptr<GeometryService<2> >   & a_geoserv,
               const Real                        & a_alpha,
@@ -268,19 +388,20 @@ public:
     {
       dombc[ivec] = a_dombcname;
     }
-    m_finest = std::shared_ptr<EBMultigridLevel>(
-      new EBMultigridLevel(a_dictionary, 
-                           a_geoserv,
-                           a_alpha,      
-                           a_beta,       
-                           a_dx,         
-                           a_grids,      
-                           a_stenname,   
-                           dombc,
-                           a_ebbcname,   
-                           a_domain, 
-                           a_nghost,
-                           a_directToBottom));
+    EBPoissonOp* finestfish = new EBPoissonOp(a_dictionary, 
+                                              a_geoserv,
+                                              a_alpha,      
+                                              a_beta,       
+                                              a_dx,         
+                                              a_grids,      
+                                              a_stenname,   
+                                              dombc,
+                                              a_ebbcname,   
+                                              a_domain, 
+                                              a_nghost,
+                                              a_directToBottom);
+    EBMultigridLevel* baseBelongToUs = static_cast<EBMultigridLevel*>(finestfish);
+    m_finest = std::shared_ptr<EBMultigridLevel>(baseBelongToUs);
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost, graphs);
@@ -302,8 +423,8 @@ public:
               const IntVect                     & a_nghost,
               bool a_directToBottomSolve = false)
   {
-    m_finest = std::shared_ptr<EBMultigridLevel>(
-      new EBMultigridLevel(a_dictionary, 
+    m_finest = std::shared_ptr<EBPoissonOp>(
+      new EBPoissonOp(a_dictionary, 
                            a_geoserv,
                            a_alpha,      
                            a_beta,       
@@ -340,10 +461,14 @@ public:
     m_finest->resetAlphaAndBeta(a_alpha, a_beta);
   }
 
-  /// 
+  ///
+  inline
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
-               bool a_doExchange = true) const;
+               bool a_doExchange = true) const
+  {
+    return m_finest->applyOp(a_lph, a_phi, a_doExchange);
+  }
 
 
   /// for TGA force bcs to be homogeneous neumann
@@ -354,20 +479,31 @@ public:
     m_finest->applyOpNeumann(a_lph, a_phi);
   }
 
-private:
-  
-  /// 
+  inline
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
-                bool a_doExchange = true) const;
+                bool a_doExchange = true) const
+  {
+    PR_TIME("sgmg::resid");
+    return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
+  }
+  
+private:
+  
+  /// 
 
   Real norm(const EBLevelBoxData<CELL, 1>       & a_res) const;
   
 
   /// Multigrid v-cycle.
+  inline
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
-              const EBLevelBoxData<CELL, 1>& a_rhs);
+              const EBLevelBoxData<CELL, 1>& a_rhs)
+  {
+    PR_TIME("sgmg::vcycle");
+    return m_finest->vCycle(a_phi, a_rhs);
+  }
 
   /// average down residual to next coarser level.
   void restrictResidual(EBLevelBoxData<CELL, 1>      & a_resc,
