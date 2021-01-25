@@ -558,7 +558,10 @@ namespace Proto
           retval += linearCharBufSize(data(pt, icomp));
         }
       }
-      return retval;
+      if(retval % sizeof(data_t) == 0) return retval;
+      else return ((retval/ sizeof(data_t) + 1) * sizeof(data_t));
+
+
     }
 
 
