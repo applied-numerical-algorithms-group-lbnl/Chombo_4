@@ -333,6 +333,10 @@ namespace Proto
     return 1;
   }
 
+  static int memTypeAllocation()
+  {
+    return 1;
+  }
   protected:
     EBBoxData(const            EBBoxData<cent, data_t, ncomp>& a_src);
     EBBoxData& operator=(const EBBoxData<cent, data_t, ncomp>& a_src);
@@ -453,7 +457,10 @@ namespace Proto
   template<typename Func, typename... Srcs>
   inline void ebforall(const Box& a_inputBox,
                        const Func & a_F,  Box a_box, Srcs&... a_srcs);
+
 }
+
+
 
 #include "implem/Proto_EBForAllImplem.H"
 #endif

@@ -20,7 +20,6 @@
 #include "Chombo_CH_Timer.H"
 #include "Chombo_NamespaceHeader.H"
 
-
 using std::sort;
 
 
@@ -422,9 +421,9 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   CH_TIME("MPI_allocateBuffers");
   m_buff = &(((Copier&)a_copier).m_buffers);
   a_dest.m_buff = m_buff;
-  
+
   CH_assert(a_srcComps.size() == a_destComps.size());
-  if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2) return;
+  if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2 && T::memTypeAllocation() != 1) return;
 
   if(s_verbosity > 0)
   {
@@ -581,36 +580,33 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   }
 
   // allocate send and receveive buffer space.
-  using ::Proto::BoxData;
-#ifdef PROTO_CUDA
-  const bool bufDevice = std::is_same<T, BoxData<Real,DIM+2>>::value;
-#endif
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
       protoFree((m_buff->m_sendbuffer));
     }
     else
     {
-      protoFree((m_buff->m_sendbuffer));
+      protoFreeHost((m_buff->m_sendbuffer));
     }
     
 #else
     free((m_buff->m_sendbuffer));
 #endif
+    m_buff->m_sendbuffer = NULL;
     if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
       
 #ifdef PROTO_CUDA 
-    if(bufDevice)  
+    if(T::memTypeAllocation())  
     {
       protoMalloc(m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
-      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+      protoHostAlloc(m_buff->m_sendbuffer,sendBufferSize);
     }
 #else
     (m_buff->m_sendbuffer) = malloc(sendBufferSize);
@@ -625,27 +621,28 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   if (recBufferSize > m_buff->m_reccapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
       protoFree(m_buff->m_recbuffer);
     }
     else
     {
-      free(m_buff->m_recbuffer);
+      protoFreeHost(m_buff->m_recbuffer);
     }
 #else
     free(m_buff->m_recbuffer);
 #endif
+    m_buff->m_recbuffer = NULL;
     if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
-      protoMalloc( m_buff->m_recbuffer,recBufferSize);
+      protoMalloc(m_buff->m_recbuffer,recBufferSize);
     }
     else
     {
-      m_buff->m_recbuffer = malloc(recBufferSize);
+      protoHostAlloc(m_buff->m_recbuffer,recBufferSize);
     }
 #else
     m_buff->m_recbuffer = malloc(recBufferSize);
@@ -774,7 +771,6 @@ void BoxLayoutData<T>::postSendsFromMe() const
   this->m_buff->numSends = m_buff->m_sendRequests.size();
 
   CH4_SPMD::CH_MaxMPISendSize = std::max<long long>(CH4_SPMD::CH_MaxMPISendSize, maxSize);
-
 }
 
 template<class T>

@@ -13,6 +13,8 @@ using std::vector;
 using std::shared_ptr;
 namespace Proto
 {
+
+#ifdef PROTO_CUDA
     template <CENTERING cent>
     CUDA_DECORATION
     size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
@@ -86,7 +88,6 @@ namespace Proto
       return retval;
     }
 
-#ifdef PROTO_CUDA
     template <CENTERING cent, class data_t>
     __global__
     void EBBoxDataIndexer( unsigned int a_end, 
@@ -534,7 +535,6 @@ namespace Proto
       return found;
     }
   
-    ///this DOES include sizeof(T)
     std::size_t charsize(const Box&   a_bx,
                          unsigned int a_startcomp,
                          unsigned int a_numcomps) const
@@ -543,25 +543,11 @@ namespace Proto
       using ProtoSer::linearCharBufSize;
       size_t retval = linearCharBufSize(m_inputBox);
       retval += sizeof(data_t); //size is stored in a data_t type to avoid misaligned access on GPU
-      const auto& data     = *this;
       const auto& indicies = *m_indicies;
-      for(int ipt = 0; ipt < indicies.size(); ipt++)
-      {
-        retval += linearCharBufSize(indicies[ipt]);
-      }
-
-      for(int icomp = 0; icomp < ncomp; icomp++)
-      {
-        for(int ipt = 0; ipt < indicies.size(); ipt++)
-        {
-          const auto& pt = indicies[ipt];
-          retval += linearCharBufSize(data(pt, icomp));
-        }
-      }
+      retval += indicies.size()*sizeof(cent);
+      retval += ncomp*indicies.size()*sizeof(data_t);
       if(retval % sizeof(data_t) == 0) return retval;
       else return ((retval/ sizeof(data_t) + 1) * sizeof(data_t));
-
-
     }
 
 
@@ -583,15 +569,11 @@ namespace Proto
     {
       PR_TIME("IrregData::copy");
       Box interBox = a_bxFrom & a_bxTo;
-//#ifdef PROTO_CUDA
-
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
       unsigned int size = indiciesSrc->size(); 
-      //unsigned int size = m_indicies->size(); 
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/size;
-
 
       protoLaunchKernel((EBBoxDataIndexer<cent,data_t>), blocks, threads, 
 			size, 
@@ -602,23 +584,6 @@ namespace Proto
 			a_idst, a_isrc,
 			a_inco,
 			interBox.low(), interBox.high());
-/*#else
-      for(int iind = 0; iind < m_indicies->size(); iind++)
-      {
-        auto& vof = (*m_indicies)[iind];
-        if((interBox.contains(vof.m_pt)) && (a_src.copyContains(vof, interBox)))
-        {
-          for(unsigned int ico = 0; ico < a_inco; ico++)
-          {
-            unsigned int isrc = a_isrc + ico;
-            unsigned int idst = a_idst + ico;
-            size_t ind = index(vof, idst);
-            m_rawPtr[ind] = a_src(vof, isrc);
-
-          }
-        }
-      }
-#endif */
     }
 
     inline
@@ -631,6 +596,7 @@ namespace Proto
       unsigned int vecsize = m_indicies->size();
       const unsigned int threads = 256;
       const unsigned int blocks  = (vecsize + threads - 1) / threads; 
+      assert(sizeof(data_t) >= sizeof(float));
 
       protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
                         vecsize,
@@ -648,6 +614,7 @@ namespace Proto
     {
       PR_TIME("IrregData::linearIn");
       unsigned int vecsize = m_indicies->size();
+      assert(sizeof(data_t) >= sizeof(float));
       protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 256,
                         m_indicies_data, vecsize,
                         a_buf,
@@ -659,7 +626,13 @@ namespace Proto
     static int preAllocatable()
     {
       return 2;
+    }\
+
+    static int memTypeAllocation()
+    {
+      return 1;
     }
+
 protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 

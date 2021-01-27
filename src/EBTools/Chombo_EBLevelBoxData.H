@@ -453,6 +453,7 @@ public:
       {
         fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
                 __FILE__, __LINE__, protoGetErrorString(err));
+	std::abort();
       }
 #else
       memcpy(dataptrDevi, dataptrHost, datSize);

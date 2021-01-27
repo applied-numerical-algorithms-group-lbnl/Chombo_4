@@ -813,6 +813,11 @@ namespace Proto
       return 2; // dyanmic allocatable.
     }
 
+    static int memTypeAllocation()
+    {
+      return 0;
+    }
+
     inline  
     void copy(const EBGraph              & a_dsrc,
               const Box                  & a_srcBox,
