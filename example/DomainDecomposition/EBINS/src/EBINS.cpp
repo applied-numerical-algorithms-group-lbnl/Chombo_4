@@ -194,22 +194,22 @@ computeDt(Real a_cfl) const
   CH_TIME("EBINS::computeDt");
   Real dtval;
   Real dtCFL = 999999999.;
-    Real maxvel = 0;
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      maxvel = std::max(maxvel, m_velo->maxNorm(idir));
-    }
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    maxvel = std::max(maxvel, m_velo->maxNorm(idir));
+  }
+  if(maxvel > 1.0e-16)
+  {
     dtCFL = a_cfl*m_dx/maxvel;
-    if(maxvel > 1.0e-16)
-    {
-      dtval = dtCFL;
-      pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
-    }    
-    else
-    {
-      pout() << "velocity seems to be zero--setting dt to dx" << endl;
-      dtval = m_dx;
-    }
+    dtval = dtCFL;
+    pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
+  }    
+  else
+  {
+    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    dtval = m_dx;
+  }
 
   ParmParse pp;
   Real dtStokes = m_dx*m_dx/m_viscosity;
