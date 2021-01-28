@@ -626,7 +626,7 @@ namespace Proto
     static int preAllocatable()
     {
       return 2;
-    }\
+    }
 
     static int memTypeAllocation()
     {
