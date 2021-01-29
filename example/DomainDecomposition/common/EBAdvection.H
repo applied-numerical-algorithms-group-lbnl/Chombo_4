@@ -41,7 +41,11 @@ public:
 
   virtual void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
                              const Real                & a_dt);
-  ///fills m_hybridDiv with hybrid divergence
+  ///
+  /**
+     Fills m_hybridDiv (public member) with hybrid divergence.
+     A strange user interface, I grant you.  I did not think I would need this back door
+  */
   virtual void 
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
                    const  Real               & a_dt);

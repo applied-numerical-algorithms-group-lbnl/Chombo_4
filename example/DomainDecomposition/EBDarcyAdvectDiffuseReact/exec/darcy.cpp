@@ -145,9 +145,28 @@ runNavierStokes()
   
   pout() << "initializing solver " << endl;
   pout() << "inflow outflow xdirection, noflow all other directions" << endl;
-  EBDarcy solver(brit, geoserv, grids, domain,  dx,
+  //Here I am creating an EBIBC to show the solvers what the boundary conditions are.
+  //This application fixes this particular bit of the problem so this should not be
+  //part of the public interface.   It does allow for a lot of code reuse, however,
+  //so I remain unapologetic.  --dtg
+  string  loSideDomainBC[DIM];
+  string  hiSideDomainBC[DIM];
+  loDomainBC[0] = string("inflow");
+  hiDomainBC[0] = string("inflow");
+  loDomainBC[1] = string("slip_wall");
+  hiDomainBC[1] = string("slip_wall");
+#if DIM===3  
+  loDomainBC[2] = string("slip_wall");
+  hiDomainBC[2] = string("slip_wall");
+#endif
+  string ebbc("no_slip_wall");       //just to put something in there (unneeded)
+  EBIBC ibcs(string("no_velo_ic"),   //just to put something in there (unneeded)
+             string("some_scal_ic"), //just to put something in there (hardwired for now)
+             loDomainBC, hiDomainBC);
+                    
+  EBDarcy solver(ibc, brit, geoserv, grids, domain,  dx,
                  viscosity, permerability, diffusivity,
-                 dataGhostIV, paraSolver);
+                 dataGhostIV, paraSolver, ibcs);
 
 
  auto &  velo = *(solver.m_velo);
