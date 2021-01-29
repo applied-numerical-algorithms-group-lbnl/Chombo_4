@@ -5,7 +5,7 @@ namespace Proto
 
 ///
 PointSet::
-PointSet(const ::Proto::Box& a_box)
+PointSet(const Box& a_box)
 {
   for(BoxIterator bit = a_box.begin(); bit != a_box.end();  ++bit)
   {

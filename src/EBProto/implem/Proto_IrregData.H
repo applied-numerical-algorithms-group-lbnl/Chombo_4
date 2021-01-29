@@ -305,6 +305,8 @@ namespace Proto
     ///
     virtual ~IrregData()
     {
+      protoFree(m_EBIrregDataPtr);
+      protoFree(m_indicies_data);
     }
 
     ///needed for leveldata
