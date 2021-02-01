@@ -8,16 +8,16 @@ using Proto::Var;
 /*******/
 EBDarcy::
 EBDarcy(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-      shared_ptr<GeometryService<2> >        & a_geoserv,
-      const DisjointBoxLayout                & a_grids,
-      const Box                              & a_domain,
-      const Real                             & a_dx,
-      const Real                             & a_viscosity
-      const Real                             & a_permeability
-      const Real                             & a_diffusivity,
-      const IntVect                          & a_nghost,
-      ParabolicSolverType                      a_solver,
-      EBIBC                                    a_ibc)
+        shared_ptr<GeometryService<2> >        & a_geoserv,
+        const DisjointBoxLayout                & a_grids,
+        const Box                              & a_domain,
+        const Real                             & a_dx,
+        const Real                             & a_viscosity,
+        const Real                             & a_permeability,
+        const Real                             & a_diffusivity,
+        const IntVect                          & a_nghost,
+        ParabolicSolverType                      a_solver,
+        EBIBC                                    a_ibc)
 {
   CH_TIME("EBDarcy::define");
   m_ibc           = a_ibc;
@@ -36,59 +36,44 @@ EBDarcy(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   
   m_velo     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
-  m_sour     = shared_ptr<EBLevelBoxData<CELL, DIM> >
-    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
-  m_rhs      = shared_ptr<EBLevelBoxData<CELL, DIM> >
-    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
-  m_divuu    = shared_ptr<EBLevelBoxData<CELL, DIM> >
-    (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_gphi     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
+  m_sour     = shared_ptr<EBLevelBoxData<CELL, 1> >
+    (new EBLevelBoxData<CELL,    1>(m_grids, m_nghost, m_graphs));
+  m_rhs      = shared_ptr<EBLevelBoxData<CELL, 1> >
+    (new EBLevelBoxData<CELL,    1>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+    (new EBLevelBoxData<CELL,    1>(m_grids, m_nghost, m_graphs));
 
   string stenname = StencilNames::Poisson2;
-  string bcname;
-  if(a_viscosity == 0)
+  string bcname = StencilNames::Neumann;
+
+  auto cell_dict = m_brit->m_cellToCell;
+  Real alpha = 1; Real beta = 1; //these get reset before solve
+  string helmnames[2*DIM];
+  a_ibc.scalarDiffusionStencilStrings(helmnames);
+  m_helmholtz = shared_ptr<EBMultigrid> 
+    (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
+                     stenname, helmnames, bcname, m_domain, m_nghost));
+
+  if(a_solver == BackwardEuler)
   {
-    bcname = StencilNames::Neumann;
-    m_eulerCalc = true;
+    m_heatSolver = shared_ptr<BaseEBParabolic>
+      (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == CrankNicolson)
+  {
+    m_heatSolver = shared_ptr<BaseEBParabolic>
+      (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == TGA)
+  {
+    m_heatSolver = shared_ptr<BaseEBParabolic>
+      (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
   }
   else
   {
-    bcname = StencilNames::Dirichlet;
-    m_eulerCalc = false;
-  }
-
-  auto cell_dict = m_brit->m_cellToCell;
-  if(!m_eulerCalc)
-  {
-    Real alpha = 1; Real beta = 1; //these get reset before solve
-    string helmnames[2*DIM];
-    a_ibc.scalarDiffusionStencilString(helmnames);
-    m_helmholtz = shared_ptr<EBMultigrid> 
-      (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnames, bcname, m_domain, m_nghost));
-
-    if(a_solver == BackwardEuler)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == CrankNicolson)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == TGA)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else
-    {
-      MayDay::Error("unaccounted-for solver type");
-    }
+    MayDay::Error("unaccounted-for solver type");
   }
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
@@ -115,7 +100,7 @@ run(unsigned int a_max_step,
 
   pout() << "initializing Darcy velocity field = potential flow solution"  << endl;
   pout() << "with inflow-outflow boundary conditions (xlow to xhigh)"  << endl;
-  initializeVelocity();
+  initializeVelocity(a_tol, a_maxIter);
 
   //get the time step
   if(usingFixedDt)
@@ -140,7 +125,7 @@ run(unsigned int a_max_step,
     pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
 
     pout() << "advecting and difussing and reacting and all that " << endl;
-    advanceScalar(dt);
+    advanceScalar(dt, a_tol, a_maxIter);
     m_step++;
     m_time += dt;
     if((doFileOutput) && (m_step % a_outputInterval == 0))
@@ -152,9 +137,10 @@ run(unsigned int a_max_step,
 /*******/ 
 void
 EBDarcy::
-initializeVelocity()
+initializeVelocity(Real         a_tol,
+                   unsigned int a_maxIter)
 {
- m_ccProj.project(m_velo, m_gphi);
+  m_ccProj->project(*m_velo, *m_gphi, a_tol, a_maxIter);
 }
     
 /*******/ 
@@ -203,32 +189,34 @@ getReactionSourceTerm()
 /*******/ 
 void
 EBDarcy::
-advanceScalar(Real a_dt)
-              
+advanceScalar(Real a_dt,
+              Real         a_tol,    
+              unsigned int a_maxIter)
 {
   auto& scal = *m_scal;
   CH_TIME("EBDarcy::advanceScalar");
   scal.exchange(m_exchangeCopier);
   //A strange user interface, I grant you.  I did not think I would need this back door
-  pout() << "get advection term divuphi" << idir << endl;
+  pout() << "get advection term divuphi" << endl;
   m_advectOp->hybridDivergence(scal, a_dt);
   //sets m_sour
-  pout() << "getting reaction term R" << idir << endl;
+  pout() << "getting reaction term R" << endl;
   getReactionSourceTerm();
-  EBLevelBoxData<CELL, 1>& divuphi = m_advectOp.m_hybriDiv;
+  EBLevelBoxData<CELL, 1>& divuphi = m_advectOp->m_hybridDiv;
 
-  pout() << "assembling  rhs = -divuphi + R" << idir << endl;
+  pout() << "assembling  rhs = -divuphi + R" << endl;
+  DataIterator dit = m_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
   {
     unsigned long long int numflopspt = 2;
     Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    auto & divuphifab =    divupphi[dit[ibox]];
+    auto & divuphifab =     divuphi[dit[ibox]];
     auto & reactsour  =   (*m_sour)[dit[ibox]];
     auto & rhs        =   (* m_rhs)[dit[ibox]];
 
-    ebforallInPlace(numflopspt, "ParabolicRHS", ParabolicRHS, grbx, sour, udel, gphi);
+    ebforallInPlace(numflopspt, "ParabolicRHS", ParabolicRHS, grbx, rhs, divuphifab, reactsour);
   }
-  pout() << "calling heat solver for variable " << idir << endl;
+  pout() << "calling heat solver for variable "  << endl;
   //advance the parabolic equation
   m_heatSolver->advanceOneStep((*m_scal), (*m_rhs), m_diffusivity, a_dt, a_tol, a_maxIter);
 }

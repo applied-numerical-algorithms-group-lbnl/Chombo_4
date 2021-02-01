@@ -7,7 +7,6 @@
 #include "EBParabolicIntegrators.H"
 #include "EBMACProjector.H"
 #include "EBCCProjector.H"
-#include "BCGVelAdvect.H"
 #include "EBIBC.H"
 #include "Chombo_NamespaceHeader.H"
 
@@ -31,6 +30,8 @@ public:
           const Box                              & a_domain,
           const Real                             & a_dx,
           const Real                             & a_viscosity,
+          const Real                             & a_permeability,
+          const Real                             & a_diffusivity,
           const IntVect                          & a_nghost,
           ParabolicSolverType a_solver,
           EBIBC               a_ibc);
@@ -42,7 +43,6 @@ public:
       Real         a_cfl,
       Real         a_fixedDt             = -1.0,
       Real         a_solverTolerance     = 1.0e-10,
-      unsigned int a_pressureInitIters   = 1,
       unsigned int a_maxSolverIterations = 27,
       int          a_outputInterval      = 1,
       Real         a_coveredval          = 0.0);
@@ -84,9 +84,15 @@ private:
   
   Real  computeDt(Real a_cfl) const;
 
-  void advanceScalar(Real a_dt);
+  void advanceScalar(Real a_dt,
+                     Real         a_tol,    
+                     unsigned int a_maxIter);
 
-  void initializeVelocity();
+  void getReactionSourceTerm();
+  void
+  initializeVelocity(Real         a_tol,
+                     unsigned int a_maxIter);
+
   void outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const;
   //forbidden for all the usual reasons
   EBDarcy();

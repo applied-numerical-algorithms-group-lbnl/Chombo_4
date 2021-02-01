@@ -49,9 +49,9 @@ runNavierStokes()
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
-  EBMultigrid::s_useWCycle     = useWCycle;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_useWCycle     = useWCycle;
   pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
@@ -129,33 +129,34 @@ runNavierStokes()
 
   pout() << "=============================================="  << endl;
 
-  pout() << "tolerance       = " << tol        << endl;
-  pout() << "maxIter         = " << maxIter    << endl;
-  pout() << "blob cen        = " << blobCen    << endl;
-  pout() << "geom cen        = " << geomCen    << endl;
-  pout() << "max vel mag     = " << maxVelMag  << endl;
-  pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
-  pout() << "max_step        = " << max_step   << endl;
-  pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
-  pout() << "viscosity       = " << viscosity  << endl;
+  pout() << "tolerance       = " << tol          << endl;
+  pout() << "maxIter         = " << maxIter      << endl;
+  pout() << "blob cen        = " << blobCen      << endl;
+  pout() << "geom cen        = " << geomCen      << endl;
+  pout() << "max vel mag     = " << maxVelMag    << endl;
+  pout() << "max vel rad     = " << maxVelRad    << endl;
+  pout() << "num_streams     = " << nStream      << endl;
+  pout() << "max_step        = " << max_step     << endl;
+  pout() << "max_time        = " << max_time     << endl;
+  pout() << "viscosity       = " << viscosity    << endl;
+  pout() << "diffusivity     = " << diffusivity  << endl;
+  pout() << "pereability     = " << permeability << endl;
   pout() << "=============================================="  << endl;
 
   
   pout() << "initializing solver " << endl;
   pout() << "inflow outflow xdirection, noflow all other directions" << endl;
   //Here I am creating an EBIBC to show the solvers what the boundary conditions are.
-  //This application fixes this particular bit of the problem so this should not be
+  //This application forces this particular bit of the problem so this should not be
   //part of the public interface.   It does allow for a lot of code reuse, however,
   //so I remain unapologetic.  --dtg
-  string  loSideDomainBC[DIM];
-  string  hiSideDomainBC[DIM];
+  string  loDomainBC[DIM];
+  string  hiDomainBC[DIM];
   loDomainBC[0] = string("inflow");
   hiDomainBC[0] = string("inflow");
   loDomainBC[1] = string("slip_wall");
   hiDomainBC[1] = string("slip_wall");
-#if DIM===3  
+#if DIM==3  
   loDomainBC[2] = string("slip_wall");
   hiDomainBC[2] = string("slip_wall");
 #endif
@@ -164,22 +165,23 @@ runNavierStokes()
              string("some_scal_ic"), //just to put something in there (hardwired for now)
              loDomainBC, hiDomainBC);
                     
-  EBDarcy solver(ibc, brit, geoserv, grids, domain,  dx,
-                 viscosity, permerability, diffusivity,
+  EBDarcy solver(brit, geoserv, grids, domain,  dx,
+                 viscosity, permeability, diffusivity,
                  dataGhostIV, paraSolver, ibcs);
 
 
  auto &  velo = *(solver.m_velo);
  auto &  scal = *(solver.m_scal);
 
-
+ 
   pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(scal, grids, dx, geomCen, geomRad, blobCen, blobRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
+  pout() << "starting      EBDarcy::run" << endl; 
   solver.run(max_step, max_time, cfl, fixedDt, tol,   maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
+  pout() << "finished with EBDarcy::run" << endl; 
   return 0;
 }
 
