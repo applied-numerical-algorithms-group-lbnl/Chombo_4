@@ -34,12 +34,9 @@ runNavierStokes()
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
   int outputInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
-
-  pp.get("nstream", nStream);
 
   pp.get("permeability" , permeability);
   pp.get("diffusivity" ,  diffusivity);
@@ -52,7 +49,6 @@ runNavierStokes()
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
   EBMultigridLevel::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
@@ -89,7 +85,7 @@ runNavierStokes()
   Real tol = 0.00001;
   int  maxIter = 10;
 
-  Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
+  Real blobCen, blobRad, viscosity;
   Real cfl            = 0.5;
 
   pp.get("maxIter"   , maxIter);
@@ -98,8 +94,6 @@ runNavierStokes()
   pp.get("blob_cen", blobCen);
   pp.get("blob_rad", blobRad);
   pp.get("viscosity", viscosity);
-  pp.get("max_vel_mag", maxVelMag);
-  pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
@@ -133,9 +127,6 @@ runNavierStokes()
   pout() << "maxIter         = " << maxIter      << endl;
   pout() << "blob cen        = " << blobCen      << endl;
   pout() << "geom cen        = " << geomCen      << endl;
-  pout() << "max vel mag     = " << maxVelMag    << endl;
-  pout() << "max vel rad     = " << maxVelRad    << endl;
-  pout() << "num_streams     = " << nStream      << endl;
   pout() << "max_step        = " << max_step     << endl;
   pout() << "max_time        = " << max_time     << endl;
   pout() << "viscosity       = " << viscosity    << endl;
