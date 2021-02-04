@@ -35,7 +35,7 @@ public:
         ParabolicSolverType a_solver,
         EBIBC               a_ibc,
         int                 a_num_species = 0,  
-        vector<Real> a_diffusionCoeffs = vector<Real>());, 
+        vector<Real> a_diffusionCoeffs = vector<Real>()); 
 
   /// set fixedDt to positive number to force that to be dt
   void 
@@ -61,7 +61,7 @@ public:
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_divuu;
   
   vector<Real> m_diffusionCoefs;
-  vector<shared_ptr<EBLevelBoxData<CELL, DIM> > > m_species;
+  vector<shared_ptr<EBLevelBoxData<CELL, 1> > > m_species;
 
   shared_ptr<EBAdvection>                m_advectOp;
   shared_ptr<EBCCProjector >             m_ccProj;

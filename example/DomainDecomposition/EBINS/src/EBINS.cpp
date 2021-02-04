@@ -16,8 +16,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const IntVect                          & a_nghost,
       ParabolicSolverType                      a_solver,
       EBIBC                                    a_ibc,
-      int                 a_num_species = 0,  
-      vector<Real> a_diffusionCoeffs = vector<Real>())
+      int                 a_num_species,  
+      vector<Real> a_diffusionCoeffs)
 {
   CH_TIME("EBINS::define");
   vector<Real> m_diffusionCoefs = a_diffusionCoeffs;
