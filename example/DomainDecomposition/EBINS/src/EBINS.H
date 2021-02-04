@@ -18,7 +18,13 @@ public:
 
   enum ParabolicSolverType {BackwardEuler=0, CrankNicolson, TGA};
   
-  /// 
+  ///
+  /**Strictly speaking num_species and diffusionCoefficients are 
+     not independent arguments since diffuisonCoefficients has
+     to be at least a_num_species long.   I could use the vector's size 
+     to be num_species but I find that API abstruse.   So the interface is clear,
+     albeit slightly overspecified.   I make no apologies.
+  */
   EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
         shared_ptr<GeometryService<2> >        & a_geoserv,
         const DisjointBoxLayout                & a_grids,
@@ -27,7 +33,9 @@ public:
         const Real                             & a_viscosity,
         const IntVect                          & a_nghost,
         ParabolicSolverType a_solver,
-        EBIBC               a_ibc);
+        EBIBC               a_ibc,
+        int                 a_num_species = 0,  
+        vector<Real> a_diffusionCoeffs = vector<Real>());, 
 
   /// set fixedDt to positive number to force that to be dt
   void 
@@ -51,6 +59,9 @@ public:
   shared_ptr<EBLevelBoxData<CELL, 1  > > m_scal;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_sour;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_divuu;
+  
+  vector<Real> m_diffusionCoefs;
+  vector<shared_ptr<EBLevelBoxData<CELL, DIM> > > m_species;
 
   shared_ptr<EBAdvection>                m_advectOp;
   shared_ptr<EBCCProjector >             m_ccProj;

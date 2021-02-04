@@ -15,9 +15,14 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const Real                             & a_viscosity,
       const IntVect                          & a_nghost,
       ParabolicSolverType                      a_solver,
-      EBIBC                                    a_ibc)
+      EBIBC                                    a_ibc,
+      int                 a_num_species = 0,  
+      vector<Real> a_diffusionCoeffs = vector<Real>())
 {
   CH_TIME("EBINS::define");
+  vector<Real> m_diffusionCoefs = a_diffusionCoeffs;
+  m_species.resize(a_num_species);
+  
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -40,7 +45,12 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-
+  for(int ispec = 0; ispec < a_num_species; ispec++)
+  {
+    m_species[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+  }
+  
   string stenname = StencilNames::Poisson2;
   string bcname;
   if(a_viscosity == 0)
