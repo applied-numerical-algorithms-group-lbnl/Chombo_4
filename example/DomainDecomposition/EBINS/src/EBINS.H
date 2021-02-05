@@ -58,6 +58,8 @@ public:
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_gphi;
   shared_ptr<EBLevelBoxData<CELL, 1  > > m_scal;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_sour;
+  shared_ptr<EBLevelBoxData<CELL, 1  > > m_rhsDiff;
+  shared_ptr<EBLevelBoxData<CELL, 1  > > m_sourDiff;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_divuu;
   
   vector<Real> m_diffusionCoefs;
@@ -66,9 +68,11 @@ public:
   shared_ptr<EBAdvection>                m_advectOp;
   shared_ptr<EBCCProjector >             m_ccProj;
   shared_ptr<EBMACProjector>             m_macProj;
-  shared_ptr<EBMultigrid>                m_helmholtz;
+  shared_ptr<EBMultigrid>                m_helmholtzVelo;
+  shared_ptr<EBMultigrid>                m_helmholtzSpec;
   shared_ptr<BCGVelAdvect>               m_bcgAdvect;
-  shared_ptr<BaseEBParabolic>            m_heatSolver;
+  shared_ptr<BaseEBParabolic>            m_heatSolverVelo;
+  shared_ptr<BaseEBParabolic>            m_heatSolverSpec;
   shared_ptr<LevelData<EBGraph> >        m_graphs;
   
   DisjointBoxLayout                      m_grids;
@@ -92,6 +96,8 @@ private:
   void getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter);
   //gets  ustar
   void advanceVelocityEuler(Real a_dt);
+  void getReactionSourceTerm(unsigned int a_ispec);
+  
   //gets  ustar
   void advanceVelocityNavierStokes(Real a_dt,                          
                                    Real a_tol,                         
@@ -107,6 +113,10 @@ private:
                                   unsigned int a_maxSolverIterations);
 
   void advanceScalar(Real a_dt);
+  
+  void advanceSpecies(Real a_dt,
+                      Real         a_tol,    
+                      unsigned int a_maxIter);
 
   void outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const;
   //forbidden for all the usual reasons
