@@ -453,7 +453,10 @@ advanceScalar(Real a_dt)
   auto& scal = *m_scal;
   CH_TIME("EBINS::advanceScalar");
   scal.exchange(m_exchangeCopier);
-  m_advectOp->advance(scal, a_dt);
+  Real fluxval;
+  ParmParse pp;
+  pp.get("scalar_inflow_value",   fluxval);
+  m_advectOp->advance(scal, a_dt, fluxval);
   scal.exchange(m_exchangeCopier);
 }
 /*******/ 
@@ -471,7 +474,12 @@ advanceSpecies(Real a_dt,
     spec.exchange(m_exchangeCopier);
     //A strange user interface, I grant you.  I did not think I would need this back door
     pout() << "get advection term divuphi" << endl;
-    m_advectOp->hybridDivergence(spec, a_dt);
+    Real fluxval;
+    ParmParse pp;
+    string scalname = string("species_inflow_value_") + to_string(ispec);
+    pp.get(scalname.c_str(),   fluxval);
+    
+    m_advectOp->hybridDivergence(spec, a_dt, fluxval);
     //sets m_sour
     pout() << "getting reaction term R" << endl;
     getReactionSourceTerm(ispec);

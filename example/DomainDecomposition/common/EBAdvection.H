@@ -31,7 +31,8 @@ public:
   /// advance one time step (via Trebotich et al.) in  an eb context
   void 
   advance(EBLevelBoxData<CELL, 1>   & a_scal,
-          const  Real               & a_dt);
+          const  Real               & a_dt,
+          Real a_inflowVal = 0);
 
   const EBLevelBoxData<CELL, 1> &
   getKappa() const
@@ -40,7 +41,8 @@ public:
   }
 
   virtual void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                             const Real                & a_dt);
+                             const Real                & a_dt,
+                             Real inflowVal = 0);
   ///
   /**
      Fills m_hybridDiv (public member) with hybrid divergence.
@@ -48,7 +50,8 @@ public:
   */
   virtual void 
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
-                   const  Real               & a_dt);
+                   const  Real               & a_dt,
+                   Real inflowVal = 0);
 
 
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
@@ -58,10 +61,11 @@ public:
   EBLevelBoxData<CELL, 1>                m_source;
 private:  
   virtual void applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
-                                  const DataIndex     & a_dit) const;
+                                  const DataIndex     & a_dit,
+                                  Real inflowVal = 0) const;
    
 protected:
-
+  
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
   DisjointBoxLayout                      m_grids;

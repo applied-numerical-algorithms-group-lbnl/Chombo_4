@@ -8,6 +8,12 @@ domain_bc_lo_2 = "slip_wall"
 domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 pressure_iterations = 0
+
+num_species = 3
+diffusion_coeff_0 = 0.1
+diffusion_coeff_2 = 0.01
+diffusion_coeff_3 = 0.001
+
 #domain size
 nx=       64
 use_stokes_dt = true

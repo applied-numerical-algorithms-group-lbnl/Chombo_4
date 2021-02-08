@@ -167,13 +167,25 @@ runNavierStokes()
   
   EBIBC ibc = getIBCs();
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver, ibc);
+  int num_species = 0;
+  pp.query("num_species", num_species);
+  vector<Real> diffusion_coeffs(num_species);
+  for(int ispec = 0; ispec < num_species; ispec++)
+  {
+    string diffname = string("diffusion_coeff_") + to_string(ispec);
+    Real thisco;
+    pp.get(diffname.c_str(), thisco);
+    diffusion_coeffs[ispec] = thisco;
+  }
+  
+  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
+               paraSolver, ibc, num_species, diffusion_coeffs);
 
 
  auto &  velo = *(solver.m_velo);
  auto &  scal = *(solver.m_scal);
 
-
+ 
   pout() << "initializing data " << endl;
   initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
 
