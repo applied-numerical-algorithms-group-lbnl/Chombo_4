@@ -32,10 +32,10 @@ public:
         const Real                             & a_dx,
         const Real                             & a_viscosity,
         const IntVect                          & a_nghost,
-        ParabolicSolverType a_solver,
-        EBIBC               a_ibc,
-        int                 a_num_species = 0,  
-        vector<Real> a_diffusionCoeffs = vector<Real>()); 
+        ParabolicSolverType                      a_solver,
+        EBIBC                                    a_ibc,
+        unsigned int                             a_num_species = 0,  
+        vector<Real> a_diffusionCoeffs = vector<Real>());
 
   /// set fixedDt to positive number to force that to be dt
   void 

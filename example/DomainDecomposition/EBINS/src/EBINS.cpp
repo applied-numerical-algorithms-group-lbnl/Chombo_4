@@ -16,11 +16,12 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const IntVect                          & a_nghost,
       ParabolicSolverType                      a_solver,
       EBIBC                                    a_ibc,
-      int                 a_num_species,  
+      unsigned int                             a_num_species,  
       vector<Real> a_diffusionCoeffs)
 {
   CH_TIME("EBINS::define");
-  vector<Real> m_diffusionCoefs = a_diffusionCoeffs;
+  m_diffusionCoefs = a_diffusionCoeffs;
+  PR_assert(m_diffusionCoefs.size() >= a_num_species);
   m_species.resize(a_num_species);
   
   m_brit                = a_brit;
@@ -499,7 +500,9 @@ advanceSpecies(Real a_dt,
     }
     pout() << "calling heat solver for variable "  << endl;
     //advance the parabolic equation
-    m_heatSolverSpec->advanceOneStep(spec, (*m_rhsDiff), m_diffusionCoefs[ispec], a_dt, a_tol, a_maxIter);
+    Real thiscoef = m_diffusionCoefs[ispec];
+    m_heatSolverSpec->advanceOneStep(spec, (*m_rhsDiff),
+                                     thiscoef, a_dt, a_tol, a_maxIter);
   }
 }
 void
@@ -515,12 +518,27 @@ outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) con
 {
   CH_TIME("EBINS::outputToFile");
   const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
-  string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
-  string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");
-  string filegphi = string("gphi.") + std::to_string(a_step) + string(".hdf5");
-  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  string filescal = string("scal.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  string filevelo = string("velo.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  string filegphi = string("gphi.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string filespec = string("spec_.") + std::to_string(ispec)
+      + string(".step_") + std::to_string(a_step) + string(".hdf5");
+    const auto& species = *(m_species[ispec]);
+    writeEBLevelHDF5<1>(filespec,  species, kappa,
+                        m_domain, m_graphs, a_coveredval,
+                        m_dx, a_dt, a_time);
+  }
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

@@ -182,12 +182,8 @@ runNavierStokes()
                paraSolver, ibc, num_species, diffusion_coeffs);
 
 
- auto &  velo = *(solver.m_velo);
- auto &  scal = *(solver.m_scal);
-
- 
-  pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+   pout() << "initializing data " << endl;
+   initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
 
   Real fixedDt = -1.0;//signals varaible dt
 

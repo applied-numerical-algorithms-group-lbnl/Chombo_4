@@ -11,9 +11,11 @@ pressure_iterations = 0
 
 num_species = 3
 diffusion_coeff_0 = 0.1
-diffusion_coeff_2 = 0.01
-diffusion_coeff_3 = 0.001
-
+diffusion_coeff_1 = 0.01
+diffusion_coeff_2 = 0.001
+species_inflow_value_0 = 0
+species_inflow_value_1 = 0
+species_inflow_value_2 = 0
 #domain size
 nx=       64
 use_stokes_dt = true
