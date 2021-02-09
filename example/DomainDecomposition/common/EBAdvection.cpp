@@ -11,6 +11,7 @@ const string EBAdvection::s_centInterpLabel= StencilNames::InterpToFaceCentroid;
 const string EBAdvection::s_slopeLowLabel  = StencilNames::SlopeLoRoot;                 //for low  side difference
 const string EBAdvection::s_slopeHighLabel = StencilNames::SlopeHiRoot;                 //for high side difference
 const string EBAdvection::s_diriLabel      = StencilNames::Dirichlet;                   //for diri bcs
+const string EBAdvection::s_neumLabel      = StencilNames::Neumann;                     //for neum bcs
 const string EBAdvection::s_extrLabel      = StencilNames::LinearExtrapolation;         //for neum bcs
 const string EBAdvection::s_divergeLabel   = StencilNames::DivergeFtoC;                 //for taking the divergence of face centered stuff to cell centered result
 const string EBAdvection::s_CtoFLowLabel   = StencilNames::CellToFaceLo;                //for getting stuff from low  side cells to faces
@@ -93,7 +94,7 @@ registerStencils()
 
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
-  m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerCellToFace( s_aveCToFLabel , s_neumLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
 
 
   m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
