@@ -532,7 +532,7 @@ outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) con
                         m_graphs, a_coveredval, m_dx, a_dt, a_time);
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
-    string filespec = string("spec_.") + std::to_string(ispec)
+    string filespec = string("spec_") + std::to_string(ispec)
       + string(".step_") + std::to_string(a_step) + string(".hdf5");
     const auto& species = *(m_species[ispec]);
     writeEBLevelHDF5<1>(filespec,  species, kappa,
