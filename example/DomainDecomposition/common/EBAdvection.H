@@ -83,6 +83,7 @@ protected:
   static const string s_slopeHighLabel;  //for cell centered slopes
   static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
   static const string s_diriLabel;       //label for dirichlet bcs
+  static const string s_neumLabel;       //label for neumann bcs
   static const string s_extrLabel;       //label for extrapolation bcs
   static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
   static const string s_CtoFLowLabel;    //for getting stuff from low  side cells to faces
