@@ -12,7 +12,7 @@ pressure_iterations = 0
 nx=       64
 use_stokes_dt = true
 #max number of time steps
-max_step =    100
+max_step =    1
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)

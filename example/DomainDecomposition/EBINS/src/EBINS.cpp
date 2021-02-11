@@ -363,6 +363,10 @@ advanceVelocityNavierStokes(Real a_dt,
     pout() << "calling heat solver for variable " << idir << endl;
     //advance the parabolic equation
     m_heatSolverVelo->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    string sourcefile = string("viscSource.") + std::to_string(idir) + string(".hdf5");
+    scalRHS.writeToFileHDF5(sourcefile, 0.);
+    sourcefile = string("viscVelo.") + std::to_string(idir) + string(".hdf5");
+    scalVelo.writeToFileHDF5(sourcefile, 0.);
   }
 }
 /*******/ 
