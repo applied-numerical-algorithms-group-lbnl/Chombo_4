@@ -43,6 +43,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  typedef HostIrregData<CELL,      IndMomDIM , 1>  EBData;
 
   ///
   /**
@@ -121,6 +122,28 @@ public:
     return m_zfacdata;
   }
 
+  ///Get eb moment in the x direction 
+  inline const shared_ptr<LevelData<EBData> >
+  getEBData_x() const
+  {
+    return m_ebdata[0];
+  }
+
+  ///Get eb moment in the y direction
+  inline const shared_ptr<LevelData<EBData> >
+  getEBData_y() const
+  {
+    return m_ebdata[1];
+  }
+
+#if DIM==3
+  ///Get eb moment in the z direction
+  inline const shared_ptr<LevelData<EBData> >
+  getEBData_z() const
+  {
+    return m_ebdata[2];
+  }
+#endif
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
@@ -357,6 +380,9 @@ private:
 
   ///
   shared_ptr<LevelData<ZFacData> >    m_zfacdata;
+
+  ///
+  shared_ptr<LevelData<EBData> >      m_ebdata[DIM];
     
   //origin                            
   RealVect                            m_origin;
@@ -410,7 +436,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-
+  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBData;
 
 
   ///
@@ -565,6 +591,29 @@ public:
   {
     return   (*this)[a_domain]->getZFaceData();
   }
+
+  ///Get eb moment in the x direction
+  inline shared_ptr<LevelData<EBData> >
+  getEBData_x(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBData_x();
+  }
+
+  ///Get eb moment in the y direction
+  inline shared_ptr<LevelData<EBData> >
+  getEBData_y(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBData_y();
+  }
+
+#if DIM==3
+  ///Get eb moment in the z direction
+  inline shared_ptr<LevelData<EBData> >
+  getEBData_z(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBData_z();
+  }
+#endif
 
   ///
   inline shared_ptr<LevelGeometryService<order> > operator[](const Box& a_domain)
