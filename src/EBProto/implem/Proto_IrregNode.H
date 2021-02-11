@@ -56,6 +56,7 @@ namespace Proto
       for(int idir = 0; idir < DIM; idir++)
       {
         m_normalPartialDeriv[idir].setToZero();
+        m_EBMomentsDir[idir].setToZero();
       }
 
       for(int iarc = 0; iarc < 2*DIM; iarc++)
@@ -72,6 +73,7 @@ namespace Proto
       for(int idir = 0; idir < DIM; idir++)
       {
         m_normalPartialDeriv[idir].setToZero();
+        m_EBMomentsDir[idir].setToZero();
       }
 
       for(int iarc = 0; iarc < 2*DIM; iarc++)
@@ -123,6 +125,7 @@ namespace Proto
     IndMomDIM m_EBMoments;
   
     IndMomDIM m_normalPartialDeriv[DIM];
+    IndMomDIM m_EBMomentsDir[DIM];
     ///face centered moments
     /// the moment at  the face associated with the  monomial with the input exponents 
     /**
