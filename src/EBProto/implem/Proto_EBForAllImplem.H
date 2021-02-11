@@ -209,10 +209,10 @@ namespace Proto
                  EBIrregStruct<cent, data_t, ncomp> * a_dst,Srcs... a_srcs)
   {
     const int N = a_Nvec;
-    //unsigned int stride = 256;
-    //unsigned int blocks = (N+stride-1)/stride;
+    unsigned int stride = 256;
+    unsigned int blocks = (N+stride-1)/stride;
 
-    //size_t smem = 0;
+    size_t smem = 0;
     protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, protoGetCurrentStream,
       0, N, a_F, a_dst, a_srcs...);
   }
