@@ -259,6 +259,10 @@ coarsenData(const LevelGeometryService &  a_finerLevel)
 #if DIM==3
     (*m_zfacdata)[dit[ibox]].define(vofBx, ebgraph);
 #endif
+    for(int idir = 0; idir < DIM; idir++)
+    { 
+      (*m_ebdata[idir])[dit[ibox]].define(vofBx, ebgraph);
+    }
 
     //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
@@ -331,36 +335,71 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
     EBIndex<BOUNDARY>     coarEBF = coarVoF.getCutFace();
     IndMomDIM& coarVoluMom  = (*m_voludata)[a_dit](coarVoF, 0);
     IndMomDIM& coarEBFaMom  = (*m_ebfadata)[a_dit](coarEBF, 0);
-    
+
+    IndMomDIM& coarEBMom_x  = (*m_ebdata[0])[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBMom_y  = (*m_ebdata[1])[a_dit](coarVoF, 0);
+#if DIM==3
+    IndMomDIM& coarEBMom_z  = (*m_ebdata[2])[a_dit](coarVoF, 0);
+#endif    
     vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
     coarVoluMom.setToZero();
     coarEBFaMom.setToZero();
+    coarEBMom_x.setToZero();
+    coarEBMom_y.setToZero();
+#if DIM==3
+    coarEBMom_z.setToZero();
+#endif    
+
     for(int ifine = 0; ifine < fineVoFs.size(); ifine++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
       EBIndex<BOUNDARY>     fineEBF = fineVoF.getCutFace();
       IndMomDIM fineVoluMom;
       IndMomDIM fineEBFaMom;
+      IndMomDIM fineEBMom_x;
+      IndMomDIM fineEBMom_y;
+#if DIM==3
+      IndMomDIM fineEBMom_z;
+#endif    
       if(fineEBGraph.isCovered(fineVoF.m_pt))
       {
         fineVoluMom.setToZero(); //not sure if this can happen
         fineEBFaMom.setToZero(); //not sure if this can happen
+        fineEBMom_x.setToZero(); //not sure if this can happen
+        fineEBMom_y.setToZero(); //not sure if this can happen
+#if DIM==3
+        fineEBMom_z.setToZero(); //not sure if this can happen
+#endif    
       }
       else if(fineEBGraph.isRegular(fineVoF.m_pt))
       {
         fineVoluMom.setToRegular(a_finerLevel.m_dx);
-        fineEBFaMom.setToZero(); 
+        fineEBFaMom.setToZero();
+        fineEBMom_x.setToZero(); 
+        fineEBMom_y.setToZero(); 
+#if DIM==3
+        fineEBMom_z.setToZero(); 
+#endif
       }
       else
       {
         fineVoluMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
         fineEBFaMom = (*(a_finerLevel.m_ebfadata))[a_dit](fineEBF, 0);
+        fineEBMom_x = (*(a_finerLevel.m_ebdata[0]))[a_dit](fineVoF, 0);
+        fineEBMom_y = (*(a_finerLevel.m_ebdata[1]))[a_dit](fineVoF, 0);
+#if DIM==3
+        fineEBMom_z = (*(a_finerLevel.m_ebdata[2]))[a_dit](fineVoF, 0);
+#endif
       }
 
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarVoluMom += finemom;  
       shiftAndIncrement(coarVoluMom, fineVoluMom, coarVoF, fineVoF, a_finerLevel);
       shiftAndIncrement(coarEBFaMom, fineEBFaMom, coarEBF, fineEBF, a_finerLevel);
-
+      shiftAndIncrement(coarEBMom_x, fineEBMom_x, coarVoF, fineVoF, a_finerLevel);
+      shiftAndIncrement(coarEBMom_y, fineEBMom_y, coarVoF, fineVoF, a_finerLevel);
+#if DIM==3
+      shiftAndIncrement(coarEBMom_z, fineEBMom_z, coarVoF, fineVoF, a_finerLevel);
+#endif
     }
   }
 }
