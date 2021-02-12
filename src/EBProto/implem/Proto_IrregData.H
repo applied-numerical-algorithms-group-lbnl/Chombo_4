@@ -134,7 +134,7 @@ namespace Proto
       tmp += a_ncomp*size*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
 
-      for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x )
+      for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
         if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
@@ -177,6 +177,7 @@ namespace Proto
         indicies[idx] = a_indicies[idx];
         for(int icomp = 0; icomp < a_ncomp; icomp++)
         {
+          //ptr[idx] = a_src[idx];
           ptr[idx+icomp*a_end] = a_src[idx+icomp*a_indiciesSize];
         }
       }
@@ -265,6 +266,7 @@ namespace Proto
         for(int icomp = 0; icomp < a_ncomp; icomp++)
         {
           ptr[idx+icomp*a_end] = a_src[idx+icomp*a_indiciesSize];
+          //ptr[idx] = a_src[idx];
         }
       }
     }
@@ -299,14 +301,19 @@ namespace Proto
       m_indicies->resize(size);
       for(int i = 0; i < size ; i++)
         (*m_indicies)[i] = a_indicies[i];
+
       defineEBIrregData();
     }
 
     ///
     virtual ~IrregData()
     {
-      protoFree(m_EBIrregDataPtr);
-      protoFree(m_indicies_data);
+      PR_TIME("~IrregData");
+      //protoFree(m_EBIrregDataPtr);
+      //protoFree(m_indicies_data);
+      m_EBIrregDataSharedPtr.reset();
+      m_indicies_shared_data.reset();
+      m_data.reset();
     }
 
     ///needed for leveldata
@@ -476,7 +483,10 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      defineEBIrregData();
+      EBIrregStruct<data_t,ncomp>* castPtr = (EBIrregStruct<data_t,ncomp>*) a_input.getEBIrregDataPtr().get();
+      m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<data_t,ncomp>>(castPtr, [](EBIrregStruct<data_t,ncomp>* p){}); // WARNING
+      //m_EBIrregDataSharedPtr  = a_input.getEBIrregDataPtr();
+      m_indicies_shared_data = a_input.getIndiciesData();
     }           
 
     //do not use this
@@ -489,6 +499,11 @@ namespace Proto
     shared_ptr<data_t> getData() const
     {
       return  m_data;
+    }
+
+    shared_ptr<index_t> getIndiciesData()
+    {
+      return m_indicies_shared_data;
     }
 
     inline void define(const Box& a_box,  const EBGraph& a_graph)
@@ -505,21 +520,29 @@ namespace Proto
 
     inline void defineEBIrregData()
     {
-      vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
-      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
+      PR_TIME("defineEBIrregData");
+      vector< EBIrregStruct<data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
+      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<data_t,ncomp>);
       protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+      m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<data_t,ncomp>>(m_EBIrregDataPtr, [](EBIrregStruct<data_t,ncomp>* p){protoFree(p);});
 
       memsize = sizeof(index_t) * m_indicies->size(); 
     
       protoMalloc(m_indicies_data,memsize);
       protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
+      m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, [](EBIndex<cent>* p){protoFree(p);});
 
     }
 
-    inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
+    inline shared_ptr<EBIrregStruct<data_t,ncomp>> getEBIrregDataPtr()
     {
-      return m_EBIrregDataPtr;
+      return m_EBIrregDataSharedPtr;
+    }
+
+    inline shared_ptr<EBIrregStruct<data_t,ncomp>> getEBIrregDataPtr(unsigned int ivec)
+    {
+      return m_EBIrregDataSharedPtr;
     }
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const
@@ -542,25 +565,24 @@ namespace Proto
                          unsigned int a_numcomps) const
     {
       PR_TIME("IrregData::charsize");
-      using ProtoSer::linearCharBufSize;
-      size_t retval = linearCharBufSize(m_inputBox);
+      size_t retval = 0; //linearCharBufSize(m_inputBox);
       retval += sizeof(data_t); //size is stored in a data_t type to avoid misaligned access on GPU
       const auto& indicies = *m_indicies;
-      retval += indicies.size()*sizeof(cent);
+      retval += indicies.size()*sizeof(index_t);
       retval += ncomp*indicies.size()*sizeof(data_t);
       if(retval % sizeof(data_t) == 0) return retval;
       else return ((retval/ sizeof(data_t) + 1) * sizeof(data_t));
     }
 
 
-    inline index_t* getDataIndicies()
+    inline shared_ptr<index_t> getDataIndicies()
     {
-      return m_indicies_data;
+      return m_indicies_shared_data;
     }
 
-    inline index_t* getDataIndicies() const
+    inline shared_ptr<index_t> getDataIndicies() const
     {
-      return m_indicies_data;
+      return m_indicies_shared_data;
     }
 
     inline
@@ -575,12 +597,12 @@ namespace Proto
       auto indiciesDataSrc = a_src.getDataIndicies();
       unsigned int size = indiciesSrc->size(); 
       unsigned int threads = 256;
-      unsigned int blocks = (threads + size - 1)/size;
+      unsigned int blocks = (threads + size - 1)/threads;
 
       protoLaunchKernel((EBBoxDataIndexer<cent,data_t>), blocks, threads, 
 			size, 
-                        indiciesDataSrc, indiciesSrc->size(),
-			m_indicies_data, m_indicies->size(),
+                        indiciesDataSrc.get(), indiciesSrc->size(),
+			m_indicies_shared_data.get(), m_indicies->size(),
 			m_rawPtr, 
 			a_src.data(), 
 			a_idst, a_isrc,
@@ -600,12 +622,17 @@ namespace Proto
       const unsigned int blocks  = (vecsize + threads - 1) / threads; 
       assert(sizeof(data_t) >= sizeof(float));
 
+      if(vecsize == 0) return;
+
+      assert(vecsize == m_indicies->size());
+
       protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
                         vecsize,
-                        m_indicies_data, m_indicies->size(),
+                        m_indicies_shared_data.get(), m_indicies->size(),
                         a_buf,
                         m_rawPtr,
                         ncomp);
+
     }
 
     inline
@@ -617,12 +644,15 @@ namespace Proto
       PR_TIME("IrregData::linearIn");
       unsigned int vecsize = m_indicies->size();
       assert(sizeof(data_t) >= sizeof(float));
-      protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 256,
-                        m_indicies_data, vecsize,
+      if(vecsize == 0) return;
+
+      protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 512,
+                        m_indicies_shared_data.get(), vecsize,
                         a_buf,
                         m_rawPtr,
                         ncomp,
                         a_bx.low(), a_bx.high());
+
     }
     ///
     static int preAllocatable()
@@ -638,14 +668,15 @@ namespace Proto
 protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);
 
-    /// for fast forall
     index_t*                             m_indicies_data = nullptr;
+    shared_ptr<index_t>           m_indicies_shared_data = nullptr;
     bool m_boxdefined;
     Box m_inputBox; //exists if defined as part of a boxdata
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;
     shared_ptr<data_t>                            m_data = nullptr;
     data_t*                                     m_rawPtr = nullptr;
-    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr = nullptr;
+    EBIrregStruct<data_t,ncomp>*              m_EBIrregDataPtr = nullptr;
+    shared_ptr<EBIrregStruct<data_t,ncomp>> m_EBIrregDataSharedPtr = nullptr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
   };

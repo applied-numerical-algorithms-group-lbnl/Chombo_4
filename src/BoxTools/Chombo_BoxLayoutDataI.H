@@ -335,7 +335,6 @@ void BoxLayoutData<T>::makeItSoEnd(
   completePendingSends(); // wait for sends from possible previous operation
 
   unpackReceivesToMe(a_destComps, a_op); // nullOp in uniprocessor mode
-
 }
 
 #ifndef CH_MPI
@@ -423,7 +422,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   a_dest.m_buff = m_buff;
 
   CH_assert(a_srcComps.size() == a_destComps.size());
-  if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2 && T::memTypeAllocation() != 1) return;
+  if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2) return;
 
   if(s_verbosity > 0)
   {
@@ -703,6 +702,7 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
     a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
                    entry.item->fromRegion, a_srcComps);
   }
+  protoDeviceSynchronize();
 }
 
 template<class T>
@@ -736,6 +736,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
 
   unsigned int next=0;
   long long maxSize = 0;
+
   for (int i=0; i<this->m_buff->numSends; ++i)
   {
     const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[next];
@@ -833,7 +834,6 @@ void BoxLayoutData<T>::postReceivesToMe() const
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
   CH4_SPMD::CH_MaxMPIRecvSize = std::max<long long>(CH4_SPMD::CH_MaxMPIRecvSize, maxSize);
-
 }
 
 template<class T>
@@ -842,7 +842,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
   const LDOperator<T>& a_op)
 {
   CH_TIME("unpack_messages");
-  
+
   if (this->m_buff->numReceives > 0)
   {
     m_buff->m_receiveStatus.resize(this->m_buff->numReceives);
@@ -857,7 +857,6 @@ void BoxLayoutData<T>::unpackReceivesToMe(
       //hell if I know what to do about failed messaging here
       //maybe a mayday::warning?
     }
-
     int isize = m_buff->m_toMe.size();
 #ifdef _OPENMP
     bool threadSafe = m_threadSafe && (a_op.threadSafe());
@@ -870,6 +869,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
                     entry.item->toRegion, a_destComps);
     }
   }
+  protoDeviceSynchronize();
 
   this->m_buff->numReceives = 0;
 
@@ -960,6 +960,7 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 //brian says this does not need conditionals because everyone is getting different buffers
   // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
   // #pragma omp parallel for
+
   for(int i=0; i<items; ++i)
   {
     const MotionItem& item = it[i];

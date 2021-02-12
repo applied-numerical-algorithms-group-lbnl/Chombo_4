@@ -10,7 +10,7 @@
 
 namespace Proto
 {
-  template <CENTERING cent, class data_t,  unsigned int ncomp>
+  template <class data_t, unsigned int ncomp>
   struct
   EBIrregStruct
   {

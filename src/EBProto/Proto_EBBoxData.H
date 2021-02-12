@@ -324,7 +324,8 @@ namespace Proto
     PR_assert((a_startcomp + a_numcomps-1) < ncomp);
     char* charbuf = (char*)a_buf;
     m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-    charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
+    unsigned int regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
+    charbuf += regsize;
     m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
   }
   ///

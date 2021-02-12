@@ -15,8 +15,10 @@ void do_test(std::string a_str, Func &fun)
 int main()
 {
 #ifdef PROTO_CUDA
-  cudaSetDevice(1);
+  cudaSetDevice(0);
 #endif
+  std::cout << " Unit tests " << std::endl;
+
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
@@ -24,7 +26,7 @@ int main()
   do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
   do_test("run_test_irreg_linear_partial",run_test_irreg_linear_partial);
   do_test("run_test_irreg_linear_full",run_test_irreg_linear_full);
-
+  do_test("run_test_irreg_linear_partial_aliasing_define",run_test_irreg_linear_partial_aliasing_define);
 //  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
   do_test("run_test_ebforall_init",run_test_ebforall_init);
   do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
@@ -38,5 +40,12 @@ int main()
   do_test("run_test_agg_stencil_scale_0",run_test_agg_stencil_scale_0);
   do_test("run_test_agg_stencil_scale_100",run_test_agg_stencil_scale_100);
   do_test("run_test_agg_stencil_scale_minus10",run_test_agg_stencil_scale_minus10);
+
+  std::cout << std::endl << " Stress tests " << std::endl;
+
+  do_test("run_test_irreg_copy_stress",run_test_irreg_copy_stress);
+  do_test("run_test_irreg_linear_full_stress",run_test_irreg_linear_full_stress);
+  do_test("run_test_irreg_linear_partial_aliasing_define_stress",run_test_irreg_linear_partial_aliasing_define_stress);
+
   return 0;
 }

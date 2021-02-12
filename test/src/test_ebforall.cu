@@ -113,7 +113,7 @@ bool run_test_ebforall_vec_indexer()
 
   // use this constructor to initialize data on the GPU
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
-  Proto::EBIrregStruct<Proto::CELL, double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
+  Proto::EBIrregStruct<double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr().get();
 
   protoLaunchKernel(vec_indexer, 1, size, //small test so nb block = 1
 			0, size,
