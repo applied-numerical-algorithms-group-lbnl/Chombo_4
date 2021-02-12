@@ -1,0 +1,18 @@
+
+PROTO_HOME =$(HOME)/_proto/proto
+DEPXX=mpiCC
+CXX=mpiCC
+
+export OMPI_CXX=nvcc
+
+CXXALLFLAGS := -std=c++11 -x cu --expt-extended-lambda
+CXXDBGFLAGS:= -g -G -DTHRUST_DEBUG $(CXXALLFLAGS)
+CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
+
+HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
+HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+#end mach dependent
+
+
+
+
