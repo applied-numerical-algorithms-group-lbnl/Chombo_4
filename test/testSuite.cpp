@@ -10,8 +10,14 @@ void do_test(std::string a_str, Func &fun)
   std::cout << "Do " << a_str << std::endl;
   bool b = fun();
   if(b) std::cout << "-> passed " << a_str << std::endl;
-  else std::cout << "-> failed " << a_str << std::endl;
+//  else std::cout << "-> failed " << a_str << std::endl;
+  else 
+  {
+	  std::cout << "-> failed " << a_str << std::endl;
+	  std::abort();
+  }
 }
+
 int main()
 {
 #ifdef PROTO_CUDA
@@ -19,6 +25,7 @@ int main()
 #endif
   std::cout << " Unit tests " << std::endl;
 
+  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
@@ -26,6 +33,7 @@ int main()
   do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
   do_test("run_test_irreg_linear_partial",run_test_irreg_linear_partial);
   do_test("run_test_irreg_linear_full",run_test_irreg_linear_full);
+//  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
   do_test("run_test_irreg_linear_partial_aliasing_define",run_test_irreg_linear_partial_aliasing_define);
 //  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
   do_test("run_test_ebforall_init",run_test_ebforall_init);
@@ -45,6 +53,7 @@ int main()
 
   do_test("run_test_irreg_copy_stress",run_test_irreg_copy_stress);
   do_test("run_test_irreg_linear_full_stress",run_test_irreg_linear_full_stress);
+  do_test("run_test_irreg_linear_partial_stress",run_test_irreg_linear_partial_stress);
   do_test("run_test_irreg_linear_partial_aliasing_define_stress",run_test_irreg_linear_partial_aliasing_define_stress);
 
   return 0;

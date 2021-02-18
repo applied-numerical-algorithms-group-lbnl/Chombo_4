@@ -2,7 +2,7 @@
 #include <implem/Proto_IrregData.H>
 #include "test_timer.H"
 
-#define MAX_ELEM 500000
+#define MAX_ELEM 100000
 
 void test_irreg_data_fill(double* ptr, std::vector<Proto::EBIndex<Proto::CELL>>& index, unsigned int size)
 {
@@ -369,9 +369,108 @@ bool run_test_irreg_linear_full_stress()
   return b;
 }
 
-bool run_test_irreg_linear_partial()
+
+bool run_test_irreg_linear_multiple()
 {
-  unsigned int size = 8;
+// a lot of realocation in this test
+  unsigned int size = 7;
+
+  unsigned int* sizes = new unsigned int[size];
+  unsigned int base = 3;
+  for(unsigned int i = 0; i < size ; i++)
+  {
+	sizes[i] = base;
+	base *= 3;
+  }
+
+  double inNumber   = 1;
+  double outNumber  = 2;
+  size_t nBytes = 0;
+
+  for(int id = 0 ; id < size ; id++)
+  {
+    std::vector<Proto::EBIndex<Proto::CELL>> index;
+    Proto::Box bx(Proto::Point(0,0,0),Proto::Point(sizes[id]-1,0,0));
+    double* ptr = new double[sizes[id]];
+
+    test_irreg_data_fill(ptr,index,sizes[id]);
+    Proto::IrregData<Proto::CELL,double,1> in(bx, ptr, index);
+    nBytes += in.charsize(bx,0,1); 
+    index.clear();
+    free(ptr);  
+  }
+
+  void* inWork;
+
+  protoMalloc(inWork, nBytes);
+
+  unsigned int shift = 0;
+
+
+  for(int id = 0 ; id < size ; id++)
+  {
+    bool check=true;
+    std::vector<Proto::EBIndex<Proto::CELL>> index;
+    Proto::Box bx(Proto::Point(0,0,0),Proto::Point(sizes[id]-1,0,0));
+    double* ptr = new double[sizes[id]];
+    double* ptr2 = new double[sizes[id]];
+
+    test_irreg_data_fill(ptr,index,sizes[id]);
+    Proto::IrregData<Proto::CELL,double,1> in(bx, ptr, index);
+    Proto::IrregData<Proto::CELL,double,1> out(bx, ptr, index);
+
+    in.setVal(inNumber + id);
+    out.setVal(outNumber);
+
+    char* work = (char*) (inWork);
+    work += shift;
+    void *buf = (void*) work;
+    /* test copy */
+    in.linearOut(buf,bx,0,0); 
+    out.linearIn(buf,bx,0,0); 
+
+    double* checkPtr = new double[sizes[id]];
+    double* devicPtr = out.data();
+    protoMemcpy(checkPtr,devicPtr,sizes[id]*sizeof(double),protoMemcpyDeviceToHost);
+
+    for(int i = 0 ; i < sizes[id] ; i++)
+    {
+      if(checkPtr[i] != inNumber + id) 
+      {
+             std::cout << " error for size equal to " << id << " idx = " << i << " res = " << checkPtr[i] << " iNumber = " << inNumber << " and id equal to " << sizes[id] << std::endl;
+	     check=false;
+      }
+    }
+
+    if(!check)
+    {
+      for(int i = 0 ; i < sizes[id] ; i++)
+        std::cout << checkPtr[i] << " ";
+ 
+      std::cout << std::endl;
+      free(checkPtr); 
+      index.clear();
+      free(ptr);  
+      free(ptr2);  
+      protoFree(inWork); 
+      return false;
+    }
+    free(checkPtr); 
+    
+    index.clear();
+    free(ptr);  
+    free(ptr2);  
+    shift += in.charsize(bx,0,1); 
+  }
+  protoFree(inWork); 
+
+
+  return true;
+}
+
+
+bool run_test_irreg_linear_partial_args(unsigned int size)
+{
   double* ptr = new double[size];
   double* ptr2 = new double[size];
   unsigned int inf  = 2;
@@ -429,6 +528,29 @@ bool run_test_irreg_linear_partial()
   return check;
 }
 
+bool run_test_irreg_linear_partial()
+{
+  unsigned int size = 8;
+  return run_test_irreg_linear_partial_args(size);
+}
+	  
+bool run_test_irreg_linear_partial_stress()
+{
+        test_timer timer;
+        unsigned int size = 64;
+        bool b =true;
+        while(size < MAX_ELEM && b)
+        {
+                timer.begin();
+                b = run_test_irreg_linear_partial_args(size);
+                timer.end();
+                if(b) std::cout << " run_test_irreg_linear_partial_stress_" << size << " ok ... " << timer.duration() << " ms" << std::endl;
+                else  std::cout << " error for size = " << size << std::endl;
+                size *= 2;
+        }
+
+  return b;
+}
 
 bool run_test_irreg_linear_partial_aliasing_define_args(unsigned int size)
 {

@@ -88,6 +88,17 @@ namespace Proto
       return retval;
     }
 
+    template<class data_t>
+    __global__
+    void printIrreg(const data_t* ptr, unsigned int size)
+    {
+      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+      if(idx < size)
+	printf(" irregData[%d] = %f \n",idx,ptr[idx]);	
+    }
+
+
     template <CENTERING cent, class data_t>
     __global__
     void EBBoxDataIndexer( unsigned int a_end, 
@@ -119,19 +130,18 @@ namespace Proto
     }
 
    
-    template <CENTERING cent, class data_t>
+    template <CENTERING cent, class data_t, unsigned int ncomp>
     __global__
     void EBLinearIn(EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
                 void* a_buf, 
 		data_t* a_dst,
-                unsigned int a_ncomp,
                 Point a_box_inf, Point a_box_high)
     {
       char* tmp = (char*)a_buf;
       unsigned int size = ((unsigned int*) a_buf)[0];
       tmp += sizeof(data_t); // we need to aligne double*
       data_t* data = (data_t*) tmp;
-      tmp += a_ncomp*size*sizeof(data_t);
+      tmp += ncomp*size*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
 
       for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
@@ -139,24 +149,23 @@ namespace Proto
         EBIndex<cent>& pt = indicies[idx];
         if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
         {
-          for(int icomp = 0; icomp < a_ncomp; icomp++)
+          for(int icomp = 0; icomp < ncomp; icomp++)
           {
             size_t indxDst = index(a_indicies, a_indiciesSize, pt, icomp);
-            //size_t indxSrc = index(indicies, size, pt, icomp);
-            //a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
+           // size_t indxSrc = index(indicies, size, pt, icomp);
+           // a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
             a_dst[indxDst+icomp*a_indiciesSize] = data[idx+icomp*size];
           }
         }
       }
    }
 
-    template <CENTERING cent, class data_t>
+    template <CENTERING cent, class data_t, unsigned int ncomp>
     __global__
     void EBLinearOut( unsigned int a_end,
-                EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
+                EBIndex<cent>* a_indicies, std::size_t a_indiciesSize,
                 void* a_buf, 
-	        data_t* a_src,
-                unsigned int a_ncomp)
+	        const data_t* a_src)
     {
       unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -164,22 +173,31 @@ namespace Proto
 
       if(threadIdx.x == 0 && blockIdx.x == 0)
       {
+//	printf("shift 1 = %d \n", sizeof(data_t));
+//	printf("shift 2 = %d \n", ncomp*a_end*sizeof(data_t));
+//	printf("ncomp = %d \n", ncomp);
+//	printf("a_end = %d \n", a_end);
+//	printf("sizeof %d \n", sizeof(data_t));
         unsigned int *size = (unsigned int*) (tmp);
         *size = a_end;
       }
       tmp += sizeof(data_t); // we need to align double
       data_t* ptr = (data_t*) (tmp);
-      tmp += a_ncomp*a_end*sizeof(data_t);
+      tmp += ncomp*a_end*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) (tmp);
+
 
       if(idx < a_end)
       {
-        indicies[idx] = a_indicies[idx];
-        for(int icomp = 0; icomp < a_ncomp; icomp++)
+        for(int icomp = 0; icomp < ncomp; icomp++)
         {
           //ptr[idx] = a_src[idx];
           ptr[idx+icomp*a_end] = a_src[idx+icomp*a_indiciesSize];
+//	  printf("EBLinearOut: idx = %d, size %d, data in %f, data out %f \n", idx, a_end, a_src[idx+icomp*a_indiciesSize], ptr[idx+icomp*a_end]);
         }
+//	printf("EBLinearOut: idx = %d, val = %f \n", idx, a_src[idx]);
+        indicies[idx] = a_indicies[idx];
+//	printf("EBLinearOut: after idx = %d, val = %f \n", idx, a_src[idx]);
       }
     }
 
@@ -565,13 +583,14 @@ namespace Proto
                          unsigned int a_numcomps) const
     {
       PR_TIME("IrregData::charsize");
-      size_t retval = 0; //linearCharBufSize(m_inputBox);
+//      auto indicies = *m_indicies; //linearCharBufSize(m_inputBox);
+      size_t retval = 0;
       retval += sizeof(data_t); //size is stored in a data_t type to avoid misaligned access on GPU
-      const auto& indicies = *m_indicies;
-      retval += indicies.size()*sizeof(index_t);
-      retval += ncomp*indicies.size()*sizeof(data_t);
-      if(retval % sizeof(data_t) == 0) return retval;
-      else return ((retval/ sizeof(data_t) + 1) * sizeof(data_t));
+      retval += m_indicies->size()*(sizeof(index_t) + ncomp*sizeof(data_t));
+
+      size_t align = sizeof(data_t);
+      if(retval % align != 0) retval = (retval/ sizeof(align) + 1) * sizeof(align);
+      return retval;
     }
 
 
@@ -610,6 +629,12 @@ namespace Proto
 			interBox.low(), interBox.high());
     }
 
+    // debug tool
+    inline void printIrr() const
+    {
+	protoLaunchKernel((printIrreg<data_t>), size(), 1, data(),size());
+    }
+
     inline
     void linearOut(void*               a_buf,
                    const Box       &   a_bx,
@@ -625,13 +650,14 @@ namespace Proto
       if(vecsize == 0) return;
 
       assert(vecsize == m_indicies->size());
+//      printIrr();
+      protoDeviceSynchronize();
 
-      protoLaunchKernel((EBLinearOut<cent,data_t>), blocks, threads,
+      protoLaunchKernel((EBLinearOut<cent,data_t,ncomp>), blocks, threads,
                         vecsize,
                         m_indicies_shared_data.get(), m_indicies->size(),
                         a_buf,
-                        m_rawPtr,
-                        ncomp);
+                        data());
 
     }
 
@@ -646,11 +672,11 @@ namespace Proto
       assert(sizeof(data_t) >= sizeof(float));
       if(vecsize == 0) return;
 
-      protoLaunchKernel((EBLinearIn<cent,data_t>), 1, 512,
+      protoDeviceSynchronize();
+      protoLaunchKernel((EBLinearIn<cent,data_t,ncomp>), 1, 512,
                         m_indicies_shared_data.get(), vecsize,
                         a_buf,
-                        m_rawPtr,
-                        ncomp,
+                        m_data.get(),
                         a_bx.low(), a_bx.high());
 
     }
