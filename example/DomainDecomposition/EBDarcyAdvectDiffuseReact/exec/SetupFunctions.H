@@ -72,7 +72,6 @@ void InitializeLineF(int          a_p[DIM],
 }
 PROTO_KERNEL_END(InitializeLineF, InitializeLine)
 
-PROTO_KERNEL_END(InitializeVCellConstF, InitializeVCellConst)
 ///
 shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
                                         Real  & a_geomRad,

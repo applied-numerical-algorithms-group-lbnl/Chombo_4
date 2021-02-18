@@ -51,7 +51,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         else if(bcstr == string("no_slip_wall"))
         {
-          setstuff = true;
+          setstuff = (idir == a_velcomp); //leave tangential vels alone in this context
           fluxval = 0;
         }
         else
@@ -114,6 +114,11 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
     }
     m_source.exchange(m_exchangeCopier);
     
+    string sourcefile = string("source.") + std::to_string(idir) + string(".hdf5");
+    m_source.writeToFileHDF5(sourcefile, 0.);
+
+    pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
+
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
@@ -307,7 +312,7 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       auto& scalar       =  scalarVelComp[dit[ibox]];
 
       //enforce boundary conditions with an iron fist.
-      applyVeloFluxBCs(scalarVelComp[dit[ibox]],  dit[ibox], ivar);
+      //applyVeloFluxBCs(scalarVelComp[dit[ibox]],  dit[ibox], ivar);
       
       EBFluxData<Real, 1>  centroidFlux(grown, graph);
       EBFluxData<Real, 1>  faceCentFlux(grown, graph);
@@ -324,6 +329,8 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
     }
     m_kappaDiv.exchange(m_exchangeCopier);
+    string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
+    m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
     //this computes the non-conservative divergence and puts it into m_nonConsDiv
     nonConsDiv();
     //this forms the hybrid divergence

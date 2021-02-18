@@ -240,8 +240,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
 }
 
 //=================================================
-void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
-                    EBLevelBoxData<CELL, DIM>   &  a_velocell,
+void initializeData(EBINS                       &  a_ins,
                     const DisjointBoxLayout     &  a_grids,
                     const Real                  &  a_dx,
                     const Real                  &  a_geomCen,
@@ -253,6 +252,9 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
                     EBIBC  a_ibc)
 {
   CH_TIME("InitialData");
+  auto& scalcell = *a_ins.m_scal;
+  auto& velocell = *a_ins.m_velo;
+  auto& species  = a_ins.m_species;
   DataIterator dit = a_grids.dataIterator();
 
   string whichvelo = a_ibc.m_veloIC;
@@ -284,10 +286,11 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
     MayDay::Error("bogus scal ic");
   }
 
+  pout() << "just making all the species spots" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     {
-      auto& scalfab = a_scalcell[dit[ibox]];
+      auto& scalfab = scalcell[dit[ibox]];
       unsigned long long int numflopsscal = 5*DIM +3;
       Bx scalbox = scalfab.box();
 
@@ -308,11 +311,19 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
       {
         MayDay::Error("unknown scalar ic");
       }
-      
+      for(int ispec = 0; ispec < species.size(); ispec++)
+      {
+        auto& spec = *species[ispec];
+        auto& specfab = spec[dit[ibox]];
+
+        ebforallInPlace_i(numflopsscal, "IntializeSpot", InitializeSpot,  scalbox, 
+                          specfab, a_blobCen, a_blobRad, a_dx);
+      }
+    
     }
 
     
-    auto& velofab = a_velocell[dit[ibox]];
+    auto& velofab = velocell[dit[ibox]];
     Bx velobox = velofab.box();
     if(whichvelo == string("vortex_0"))
     {

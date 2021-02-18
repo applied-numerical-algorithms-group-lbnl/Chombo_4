@@ -28,7 +28,7 @@ makefile_post = f_post.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec']
+targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec', 'DomainDecomposition/EBDarcyAdvectDiffuseReact/exec']
 
 top = os.getcwd()
 chombo_home = top + '/..'

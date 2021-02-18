@@ -34,12 +34,9 @@ runNavierStokes()
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
   int outputInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
-
-  pp.get("nstream", nStream);
 
   pp.get("permeability" , permeability);
   pp.get("diffusivity" ,  diffusivity);
@@ -49,10 +46,9 @@ runNavierStokes()
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
-  EBMultigrid::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_useWCycle     = useWCycle;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
@@ -89,7 +85,7 @@ runNavierStokes()
   Real tol = 0.00001;
   int  maxIter = 10;
 
-  Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
+  Real blobCen, blobRad, viscosity;
   Real cfl            = 0.5;
 
   pp.get("maxIter"   , maxIter);
@@ -98,8 +94,6 @@ runNavierStokes()
   pp.get("blob_cen", blobCen);
   pp.get("blob_rad", blobRad);
   pp.get("viscosity", viscosity);
-  pp.get("max_vel_mag", maxVelMag);
-  pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
@@ -129,38 +123,56 @@ runNavierStokes()
 
   pout() << "=============================================="  << endl;
 
-  pout() << "tolerance       = " << tol        << endl;
-  pout() << "maxIter         = " << maxIter    << endl;
-  pout() << "blob cen        = " << blobCen    << endl;
-  pout() << "geom cen        = " << geomCen    << endl;
-  pout() << "max vel mag     = " << maxVelMag  << endl;
-  pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
-  pout() << "max_step        = " << max_step   << endl;
-  pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
-  pout() << "viscosity       = " << viscosity  << endl;
+  pout() << "tolerance       = " << tol          << endl;
+  pout() << "maxIter         = " << maxIter      << endl;
+  pout() << "blob cen        = " << blobCen      << endl;
+  pout() << "geom cen        = " << geomCen      << endl;
+  pout() << "max_step        = " << max_step     << endl;
+  pout() << "max_time        = " << max_time     << endl;
+  pout() << "viscosity       = " << viscosity    << endl;
+  pout() << "diffusivity     = " << diffusivity  << endl;
+  pout() << "pereability     = " << permeability << endl;
   pout() << "=============================================="  << endl;
 
   
   pout() << "initializing solver " << endl;
   pout() << "inflow outflow xdirection, noflow all other directions" << endl;
+  //Here I am creating an EBIBC to show the solvers what the boundary conditions are.
+  //This application forces this particular bit of the problem so this should not be
+  //part of the public interface.   It does allow for a lot of code reuse, however,
+  //so I remain unapologetic.  --dtg
+  string  loDomainBC[DIM];
+  string  hiDomainBC[DIM];
+  loDomainBC[0] = string("inflow");
+  hiDomainBC[0] = string("inflow");
+  loDomainBC[1] = string("slip_wall");
+  hiDomainBC[1] = string("slip_wall");
+#if DIM==3  
+  loDomainBC[2] = string("slip_wall");
+  hiDomainBC[2] = string("slip_wall");
+#endif
+  string ebbc("no_slip_wall");       //just to put something in there (unneeded)
+  EBIBC ibcs(string("no_velo_ic"),   //just to put something in there (unneeded)
+             string("some_scal_ic"), //just to put something in there (hardwired for now)
+             loDomainBC, hiDomainBC);
+                    
   EBDarcy solver(brit, geoserv, grids, domain,  dx,
-                 viscosity, permerability, diffusivity,
-                 dataGhostIV, paraSolver);
+                 viscosity, permeability, diffusivity,
+                 dataGhostIV, paraSolver, ibcs);
 
 
  auto &  velo = *(solver.m_velo);
  auto &  scal = *(solver.m_scal);
 
-
+ 
   pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad);
+  initializeData(scal, grids, dx, geomCen, geomRad, blobCen, blobRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
+  pout() << "starting      EBDarcy::run" << endl; 
   solver.run(max_step, max_time, cfl, fixedDt, tol,   maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
+  pout() << "finished with EBDarcy::run" << endl; 
   return 0;
 }
 

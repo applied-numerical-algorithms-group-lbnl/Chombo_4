@@ -69,9 +69,9 @@ runNavierStokes()
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
-  EBMultigrid::s_useWCycle     = useWCycle;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_useWCycle     = useWCycle;
   pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
@@ -167,15 +167,23 @@ runNavierStokes()
   
   EBIBC ibc = getIBCs();
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver, ibc);
+  int num_species = 0;
+  pp.query("num_species", num_species);
+  vector<Real> diffusion_coeffs(num_species);
+  for(int ispec = 0; ispec < num_species; ispec++)
+  {
+    string diffname = string("diffusion_coeff_") + to_string(ispec);
+    Real thisco;
+    pp.get(diffname.c_str(), thisco);
+    diffusion_coeffs[ispec] = thisco;
+  }
+  
+  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
+               paraSolver, ibc, num_species, diffusion_coeffs);
 
 
- auto &  velo = *(solver.m_velo);
- auto &  scal = *(solver.m_scal);
-
-
-  pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+   pout() << "initializing data " << endl;
+   initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
 
   Real fixedDt = -1.0;//signals varaible dt
 

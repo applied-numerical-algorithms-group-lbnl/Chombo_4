@@ -31,7 +31,8 @@ public:
   /// advance one time step (via Trebotich et al.) in  an eb context
   void 
   advance(EBLevelBoxData<CELL, 1>   & a_scal,
-          const  Real               & a_dt);
+          const  Real               & a_dt,
+          Real a_inflowVal = 0);
 
   const EBLevelBoxData<CELL, 1> &
   getKappa() const
@@ -40,11 +41,17 @@ public:
   }
 
   virtual void  kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
-                             const Real                & a_dt);
-  ///fills m_hybridDiv with hybrid divergence
+                             const Real                & a_dt,
+                             Real inflowVal = 0);
+  ///
+  /**
+     Fills m_hybridDiv (public member) with hybrid divergence.
+     A strange user interface, I grant you.  I did not think I would need this back door
+  */
   virtual void 
   hybridDivergence(EBLevelBoxData<CELL, 1>   & a_scal,
-                   const  Real               & a_dt);
+                   const  Real               & a_dt,
+                   Real inflowVal = 0);
 
 
   EBLevelBoxData<CELL, 1>                m_hybridDiv;
@@ -54,10 +61,11 @@ public:
   EBLevelBoxData<CELL, 1>                m_source;
 private:  
   virtual void applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
-                                  const DataIndex     & a_dit) const;
+                                  const DataIndex     & a_dit,
+                                  Real inflowVal = 0) const;
    
 protected:
-
+  
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
   DisjointBoxLayout                      m_grids;
@@ -79,6 +87,7 @@ protected:
   static const string s_slopeHighLabel;  //for cell centered slopes
   static const string s_aveCToFLabel;    //get the velocity from cell centers to faces
   static const string s_diriLabel;       //label for dirichlet bcs
+  static const string s_neumLabel;       //label for neumann bcs
   static const string s_extrLabel;       //label for extrapolation bcs
   static const string s_divergeLabel;    //label incrementing  the divergence with face fluxes
   static const string s_CtoFLowLabel;    //for getting stuff from low  side cells to faces

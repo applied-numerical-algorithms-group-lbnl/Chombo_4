@@ -11,6 +11,7 @@ const string EBAdvection::s_centInterpLabel= StencilNames::InterpToFaceCentroid;
 const string EBAdvection::s_slopeLowLabel  = StencilNames::SlopeLoRoot;                 //for low  side difference
 const string EBAdvection::s_slopeHighLabel = StencilNames::SlopeHiRoot;                 //for high side difference
 const string EBAdvection::s_diriLabel      = StencilNames::Dirichlet;                   //for diri bcs
+const string EBAdvection::s_neumLabel      = StencilNames::Neumann;                     //for neum bcs
 const string EBAdvection::s_extrLabel      = StencilNames::LinearExtrapolation;         //for neum bcs
 const string EBAdvection::s_divergeLabel   = StencilNames::DivergeFtoC;                 //for taking the divergence of face centered stuff to cell centered result
 const string EBAdvection::s_CtoFLowLabel   = StencilNames::CellToFaceLo;                //for getting stuff from low  side cells to faces
@@ -93,7 +94,7 @@ registerStencils()
 
   m_brit->registerFaceStencil(s_centInterpLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag);
   //no flow means dirichlet boundary conditions for normal velocities
-  m_brit->registerCellToFace( s_aveCToFLabel , s_diriLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
+  m_brit->registerCellToFace( s_aveCToFLabel , s_neumLabel , s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
 
 
   m_brit->registerCellToFace( s_CtoFHighLabel, s_nobcsLabel, s_nobcsLabel, m_domain, m_domain, needDiag, Point::Ones());
@@ -308,7 +309,8 @@ getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
 void
 EBAdvection::
 applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
-                   const DataIndex     & a_dit) const
+                   const DataIndex     & a_dit,
+                   Real a_inflowVal) const
 {
   Box validBox = m_grids[a_dit];
 
@@ -333,9 +335,7 @@ applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         else if(bcstr == string("inflow"))
         {
-          setstuff = true;
-          ParmParse pp;
-          pp.get("scalar_inflow_value", fluxval);
+          fluxval = a_inflowVal;
         }
         else if(bcstr == string("slip_wall"))
         {
@@ -363,7 +363,7 @@ applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
 void
 EBAdvection::
 kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal, 
-             const Real& a_dt)
+             const Real& a_dt, Real a_inflowVal)
 {
   CH_TIME("EBAdvection::kappaConsDiv");
   a_scal.exchange(m_exchangeCopier);
@@ -395,7 +395,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
 
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-    applyScalarFluxBCs(centroidFlux,  dit[ibox]);
+    applyScalarFluxBCs(centroidFlux,  dit[ibox], a_inflowVal);
     auto& kapdiv =  m_kappaDiv[dit[ibox]];
     getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
 
@@ -448,11 +448,12 @@ redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
 void 
 EBAdvection::
 advance(EBLevelBoxData<CELL, 1>       & a_phi,
-        const  Real                   & a_dt)
+        const  Real                   & a_dt,
+        Real a_inflowVal)
 {
   
   CH_TIME("EBAdvection::advance");
-  hybridDivergence(a_phi,  a_dt);
+  hybridDivergence(a_phi,  a_dt, a_inflowVal);
 
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -495,12 +496,13 @@ kappaDivPlusOneMinKapDivNC(EBLevelBoxData<CELL, 1>       & a_hybridDiv)
 void 
 EBAdvection::
 hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
-                 const  Real                   & a_dt)
+                 const  Real                   & a_dt,
+                 Real a_inflowVal)
 {
   CH_TIME("EBAdvection::hybridDivergence");
   a_phi.exchange(m_exchangeCopier);
   //compute kappa div^c F
-  kappaConsDiv(a_phi, a_dt);
+  kappaConsDiv(a_phi, a_dt, a_inflowVal);
 
   //compute nonconservative divergence = volume weighted ave of div^c
   nonConsDiv();
