@@ -501,9 +501,7 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      EBIrregStruct<data_t,ncomp>* castPtr = (EBIrregStruct<data_t,ncomp>*) a_input.getEBIrregDataPtr().get();
-      m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<data_t,ncomp>>(castPtr, [](EBIrregStruct<data_t,ncomp>* p){}); // WARNING
-      //m_EBIrregDataSharedPtr  = a_input.getEBIrregDataPtr();
+      m_EBIrregDataSharedPtr  = dynamic_pointer_cast<EBIrregStruct<data_t,ncomp>>(a_input.getEBIrregDataPtr());
       m_indicies_shared_data = a_input.getIndiciesData();
     }           
 
