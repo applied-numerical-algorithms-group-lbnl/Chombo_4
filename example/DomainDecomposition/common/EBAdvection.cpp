@@ -245,10 +245,17 @@ getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
                   *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
                   *a_faceCentVelo.m_xflux);
 
+  /**/
   ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
                   *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
                   *a_faceCentVelo.m_yflux);
 
+  /**/
+  /**
+  ebforallInPlace_i(numflopspt, "UpwindedPt", UpwindedPt, a_upwindScal.m_yflux->box(),
+                    *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                    *a_faceCentVelo.m_yflux);
+  **/
 #if DIM==3
   ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
                   *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,

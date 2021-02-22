@@ -13,7 +13,7 @@ Point areaHi(2, 63);
 Bx areaBx(areaLo, areaHi);
 //which side of cell gets printed in face dumps
 Side::LoHiSide faceSideX = Side::Lo;
-Side::LoHiSide faceSideY = Side::Lo;
+Side::LoHiSide faceSideY = Side::Hi;
     
 
 void 
