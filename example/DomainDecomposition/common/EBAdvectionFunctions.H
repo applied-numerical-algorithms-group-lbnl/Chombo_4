@@ -97,13 +97,18 @@ unsigned int GetUpwindFluxF(Var<Real, 1>    a_flux,
   Real advVel  = a_faceVel(0);
   Real scaLo = a_scalLo(0);
   Real scaHi = a_scalHi(0);
-  if(advVel > 0.)
+  Real tol = 1.0e-12;
+  if(advVel > tol)
   {
     upwindScal = scaLo;
   }
-  else
+  else if(advVel < -tol)
   {
     upwindScal = scaHi;
+  }
+  else
+  {
+    upwindScal = 0.5*(scaLo + scaHi);
   }
   a_flux(0) = upwindScal*advVel;
   return 0;
