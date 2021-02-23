@@ -300,7 +300,7 @@ fullDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
   }
 }
 void 
-dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpLDCell1(EBLevelBoxData<CELL, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -314,7 +314,7 @@ dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
   }
 }
 void 
-dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
+dumpLDCellDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -331,7 +331,7 @@ dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
 
 
 void 
-dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
+dumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -376,7 +376,7 @@ dumpHost1(EBHostData<CELL, Real, 1>* dataPtr)
 
 
 void 
-dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+dumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -787,14 +787,14 @@ dumpLDFluxDIM(EBLevelFluxData<DIM>*  dataPtr)
 
 void dummyfunc()
 {
-  dumpLDDIM(NULL);
+  dumpLDCellDIM(NULL);
   dumpLDFluxDIM(NULL);
-  dumpLD1(NULL);
+  dumpLDCell1(NULL);
   dumpLDFlux1(NULL);
   dumpXFace(NULL);
   dumpYFace(NULL);
   dumpFlux1(NULL);
-  dumpEB1(NULL);
+  dumpCell1(NULL);
   dumpHost1(NULL);
   EBLevelBoxData<CELL,1>* phi1=nullptr;
   EBLevelBoxData<CELL,2>* phi2=nullptr;
@@ -802,17 +802,31 @@ void dummyfunc()
   phi2->dumpFile(0,0.1);
 }
 
-void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
+void dumpCell1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   genDumpCell1(dataPtr, areaLo, areaHi);
 }
-void dumpEBDIMArea(EBBoxData<CELL, Real, DIM>* dataPtr)
+void dumpCellDIMArea(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   genDumpCellDIM(dataPtr, areaLo, areaHi);
 }
 
 void 
-dumpLD1Area(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpLDCellDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, DIM>& data = *dataPtr;
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      cout << "ibox = " << ibox << ":" << endl;
+      dumpCellDIMArea(&data[dit[ibox]]);
+    }
+  }
+}
+void 
+dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -916,15 +930,15 @@ void dummyfunc_too()
 {
   dumpLDDIMArea(NULL);
   dumpLDFluxDIMArea(NULL);
-  dumpLD1Area(NULL);
+  dumpLDCell1Area(NULL);
   dumpLDFlux1Area(NULL);
   dumpXFace1Area(NULL);
   dumpYFace1Area(NULL);
   dumpXFaceDIMArea(NULL);
   dumpYFaceDIMArea(NULL);
   dumpFlux1Area(NULL);
-  dumpEB1Area(NULL);
-  dumpEBDIMArea(NULL);
+  dumpCell1Area(NULL);
+  dumpCellDIMArea(NULL);
   dumpBD1(NULL);
   dumpBDDIM(NULL);
 }
