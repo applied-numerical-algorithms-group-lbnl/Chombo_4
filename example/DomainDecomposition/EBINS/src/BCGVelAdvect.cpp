@@ -113,10 +113,11 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->applyOp(m_source, velcomp);
     }
     m_source.exchange(m_exchangeCopier);
-    
-    string sourcefile = string("source.") + std::to_string(idir) + string(".hdf5");
-    m_source.writeToFileHDF5(sourcefile, 0.);
 
+    //begin debug
+    //string sourcefile = string("source.") + std::to_string(idir) + string(".hdf5");
+    //m_source.writeToFileHDF5(sourcefile, 0.);
+    //end debug
     pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
 
     DataIterator dit = m_grids.dataIterator();
@@ -217,6 +218,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     m_source.exchange(m_exchangeCopier);
     DataIterator dit = m_grids.dataIterator();
+    int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
@@ -236,7 +238,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
       getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
-
+      ideb++;
     } //end loop over boxes
   }  // and loop over velocity directions
 
@@ -329,8 +331,12 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
     }
     m_kappaDiv.exchange(m_exchangeCopier);
-    string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
-    m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
+    
+    // begin debug
+    //string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
+    //m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
+    //end debug
+    
     //this computes the non-conservative divergence and puts it into m_nonConsDiv
     nonConsDiv();
     //this forms the hybrid divergence

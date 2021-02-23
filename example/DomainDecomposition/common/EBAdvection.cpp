@@ -200,7 +200,7 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
                     a_veccell, sourfab, idir, a_dt, m_dx);
 
 
-    //we need to get the low and high states from the cell-centered holders to the face centered ones.
+    //we need to get the low and high states from the cell-centered holders to the face centered ones
     //once we do that, we can solve the Rieman problem for the upwind state
     //i + 1/2 becomes the low  side of the face
     //i - 1/2 becomes the high side of the face
@@ -245,10 +245,17 @@ getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
                   *a_upwindScal.m_xflux, *a_scalLo.m_xflux, *a_scalHi.m_xflux,
                   *a_faceCentVelo.m_xflux);
 
+  /**/
   ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_yflux->box(),
                   *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
                   *a_faceCentVelo.m_yflux);
 
+  /**/
+  /**
+  ebforallInPlace_i(numflopspt, "UpwindedPt", UpwindedPt, a_upwindScal.m_yflux->box(),
+                    *a_upwindScal.m_yflux, *a_scalLo.m_yflux, *a_scalHi.m_yflux,
+                    *a_faceCentVelo.m_yflux);
+  **/
 #if DIM==3
   ebforallInPlace(numflopspt, "Upwinded", Upwinded, a_upwindScal.m_zflux->box(),
                   *a_upwindScal.m_zflux, *a_scalLo.m_zflux, *a_scalHi.m_zflux,

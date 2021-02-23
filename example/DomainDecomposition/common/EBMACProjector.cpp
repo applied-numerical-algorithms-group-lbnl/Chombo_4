@@ -80,19 +80,22 @@ project(EBLevelFluxData<1>   & a_velo,
   CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
-  pout() << "Writing to macprojRHS" << endl;
-  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
 
-//  //begin debug
+//begin debug
+//  pout() << "Writing to macprojRHS" << endl;
+//  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
 //  Real rhsmax = m_rhs.maxNorm(0);
 //  pout() << "rhs of mac projection = " << rhsmax << endl;
 //  exit(0);
-  //end debug
+//end debug
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
   pout() << "Writing to projPhi" << endl;
-  m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
+
+//begin debug
+  //m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
+//end  debug
 
   //gphi = grad(phi)
   //v := v - gphi
