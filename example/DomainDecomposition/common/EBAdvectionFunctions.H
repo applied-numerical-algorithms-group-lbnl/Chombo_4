@@ -99,54 +99,24 @@ unsigned int FluxMultiplyF(Var<Real, 1>    a_flux,
   return 0;
 }
 PROTO_KERNEL_END(FluxMultiplyF, FluxMultiply)
-//// pick scalup = upwind scalar and define flux = scalup*faceVel
-PROTO_KERNEL_START 
-unsigned int UpwindedPtF(int a_pt[DIM],
-                         Var<Real, 1>    a_upwind,
-                         Var<Real, 1>    a_scalLo,
-                         Var<Real, 1>    a_scalHi,
-                         Var<Real, 1>    a_faceVel)
-{
-  int ideb = 0;
-  if(a_pt[1] == 63)
-  {
-    ideb = 1;
-  }
-  Real upwindScal;
-  Real advVel  = a_faceVel(0);
-  Real scaLo = a_scalLo(0);
-  Real scaHi = a_scalHi(0);
-  Real tol  = 1.0e-12;
-  if(advVel > tol)
-  {
-    upwindScal = scaLo;
-  }
-  else if (advVel < (-tol))
-  {
-    upwindScal = scaHi;
-  }
-  else
-  {
-    upwindScal = 0.5*(scaLo + scaHi);
-  }
-  a_upwind(0) = upwindScal;
-  return 0;
-}
-PROTO_KERNEL_END(UpwindedPtF, UpwindedPt)
 
 
 PROTO_KERNEL_START 
 unsigned int UpwindedF(Var<Real, 1>    a_upwind,
                        Var<Real, 1>    a_scalLo,
                        Var<Real, 1>    a_scalHi,
-                       Var<Real, 1>    a_faceVel)
+                       Var<Real, 1>    a_faceVel,
+                       unsigned int a_facedir,
+                       unsigned int a_curcomp,
+                       unsigned int a_doingvel)
 {
-
   Real upwindScal;
   Real advVel  = a_faceVel(0);
   Real scaLo = a_scalLo(0);
   Real scaHi = a_scalHi(0);
   Real tol  = 1.0e-12;
+  bool doingvel   = (a_doingvel == 1);
+  bool normalcomp = (a_curcomp == a_facedir);
   if(advVel > tol)
   {
     upwindScal = scaLo;
@@ -154,6 +124,10 @@ unsigned int UpwindedF(Var<Real, 1>    a_upwind,
   else if (advVel < (-tol))
   {
     upwindScal = scaHi;
+  }
+  else if(doingvel && normalcomp)
+  {
+    upwindScal = 0.0;
   }
   else
   {

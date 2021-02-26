@@ -8,6 +8,7 @@
 
 //around point (4, 8)
 //Area functions
+//cell centered and please keep them in the domain
 Point areaLo(0, 60);
 Point areaHi(2, 63);                                    
 Bx areaBx(areaLo, areaHi);

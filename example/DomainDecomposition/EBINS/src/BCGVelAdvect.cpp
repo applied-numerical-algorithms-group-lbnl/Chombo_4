@@ -144,7 +144,9 @@ getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
       //get face fluxes and interpolate them to centroids
-      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
+      unsigned int curcomp  = idir;
+      unsigned int doingvel = 1;
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi, curcomp, doingvel);
       EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
       
       //now copy into the normal direction holder
@@ -237,7 +239,9 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       //get face fluxes and interpolate them to centroids
       EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
+      unsigned int curcomp  = vecDir;
+      unsigned int doingvel = 1;
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi, curcomp, doingvel);
       ideb++;
     } //end loop over boxes
   }  // and loop over velocity directions
