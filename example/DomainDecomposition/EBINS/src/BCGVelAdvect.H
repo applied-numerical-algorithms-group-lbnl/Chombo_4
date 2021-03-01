@@ -62,7 +62,9 @@ public:
 private:
   void applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
                         const DataIndex     & a_dit,
-                        int a_velcomp) const;
+                        EBFluxData<Real, 1> & a_scalarLo,
+                        EBFluxData<Real, 1> & a_scalarHi,
+                        unsigned int a_velcomp) const;
 protected:
 
   shared_ptr<EBMACProjector>    m_macproj;
@@ -84,6 +86,18 @@ protected:
                             const Real               & a_dt,
                             Real a_tolerance, unsigned int a_maxIter);    
 
+  void
+  applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
+                   const DataIndex     & a_dit,
+                   EBFluxData<Real, 1> & a_scalarLo,
+                   EBFluxData<Real, 1> & a_scalarHi,
+                   unsigned int curcomp);
+  
+  void copyExtrapolatedState(EBFluxData<Real, 1>& a_flux,
+                             EBFluxData<Real, 1>& a_scalarLo, 
+                             EBFluxData<Real, 1>& a_scalarHi, 
+                             int idir, Side::LoHiSide sit, Bx valbx);
+  
   void correctVectorVelocity();
 
   void operator=(const BCGVelAdvect& a_opin);

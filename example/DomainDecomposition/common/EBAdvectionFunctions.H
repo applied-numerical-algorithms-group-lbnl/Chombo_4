@@ -66,6 +66,25 @@ unsigned int setFluxValF(Var<Real, 1>    a_flux,
 PROTO_KERNEL_END(setFluxValF, setFluxVal)
 ////
 PROTO_KERNEL_START 
+unsigned int copyExtrapF(Var<Real, 1>    a_fluxval,
+                         Var<Real, 1>    a_scalarlo,
+                         Var<Real, 1>    a_scalarhi,
+                         int             a_sideSign)
+{
+  if(a_sideSign > 0)
+  {
+    a_fluxval(0) = a_scalarlo(0);
+  }
+  else
+  {
+    a_fluxval(0) = a_scalarhi(0);
+  }
+  return 0;
+}
+PROTO_KERNEL_END(copyExtrapF, copyExtrap)
+
+////
+PROTO_KERNEL_START 
 unsigned int HybridDivergenceF(Var<Real, 1>    a_hybridDiv,
                                Var<Real, 1>    a_kappaDiv,
                                Var<Real, 1>    a_nonConsDiv,
