@@ -80,12 +80,10 @@ protected:
                  EBFluxData<Real, 1>&  a_src,
                  int a_vecDir);
 
-  void getAdvectionVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
+  void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
                             const Real               & a_dt,
                             Real a_tolerance, unsigned int a_maxIter);    
 
-  void getMACVectorVelocity(EBLevelBoxData<CELL, DIM>& a_inputVel,
-                            const Real               & a_dt);
   void correctVectorVelocity();
 
   void operator=(const BCGVelAdvect& a_opin);

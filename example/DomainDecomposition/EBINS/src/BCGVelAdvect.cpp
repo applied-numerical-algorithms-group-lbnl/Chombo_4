@@ -75,94 +75,12 @@ hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                     Real a_tolerance, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::hybridDivergence");
-  //fills m_advectionVel with velocity extrapolated to its normal face and projected
-  getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
-
-  //using advectionVel for upwinding, this gets the vector compoents of velcity to faces
-  //this also gets corrected by teh gradient found in the previous step.
-  getMACVectorVelocity(a_inputVel, a_dt);
-
+  getMACVectorVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);    
   
   //lots of aliasing and smushing
   assembleDivergence(a_divuu, a_dt);
 }
 /*******/
-void  
-BCGVelAdvect::
-getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
-                     const Real                  & a_dt,
-                     Real a_tol, unsigned int a_maxIter)    
-{
-  CH_TIME("BCGAdvect::getAdvectionVelocity");
-  a_inputVel.exchange(m_exchangeCopier);
-  m_source.exchange(  m_exchangeCopier);
-
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    EBLevelBoxData<CELL, 1> velcomp;
-    velcomp.define<DIM>(a_inputVel, idir, m_graphs);
-    //source term = nu*lapl(ucomp);
-    if(m_eulerCalc)
-    {
-      m_source.setVal(0.);
-    }
-    else
-    {
-      Real alpha = 0; Real beta = m_viscosity;
-      m_helmholtz->resetAlphaAndBeta(alpha, beta);
-      m_helmholtz->applyOp(m_source, velcomp);
-    }
-    m_source.exchange(m_exchangeCopier);
-    
-    string sourcefile = string("source.") + std::to_string(idir) + string(".hdf5");
-    m_source.writeToFileHDF5(sourcefile, 0.);
-
-    pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
-
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
-      const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-
-      //this gets the low and high side states for the riemann problem
-      auto& scalfab = velcomp[dit[ibox]];
-
-      EBFluxData<Real, 1>  scalarHi(grown, graph);
-      EBFluxData<Real, 1>  scalarLo(grown, graph);
-      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
-      EBFluxData<Real, 1>  upwindScal(   grown, graph);
-      
-      auto & veccell = a_inputVel[dit[ibox]];
-      auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
-                           grown, graph, dit[ibox], ibox, a_dt);
-
-      //average velocities to face centers.
-      getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
-
-      //get face fluxes and interpolate them to centroids
-      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
-      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
-      
-      //now copy into the normal direction holder
-      copyComp(advvelfab, upwindScal, idir);
-
-    } //end loop over boxes
-  }  // and loop over velocity directions
-
-                                        
-  // now we need to project the mac velocity
-  pout() << "mac projecting advection velocity" << endl;
-
-  m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
-  m_advectionVel.exchange(m_exchangeCopier);
-  
-}
-/*******/
-
-
 void  
 BCGVelAdvect::      
 copyComp(EBFluxData<Real, 1>&  a_dst,
@@ -193,7 +111,8 @@ copyComp(EBFluxData<Real, 1>&  a_dst,
 void  
 BCGVelAdvect::
 getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
-                     const Real                  & a_dt)
+                     const Real                  & a_dt,
+                     Real a_tol, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::getMACVectorVelocity");
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
@@ -217,6 +136,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     m_source.exchange(m_exchangeCopier);
     DataIterator dit = m_grids.dataIterator();
+    int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
@@ -227,20 +147,36 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       auto& scalfab = velcomp[dit[ibox]];
       EBFluxData<Real, 1>  scalarHi(grown, graph);
       EBFluxData<Real, 1>  scalarLo(grown, graph);
+      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
+      EBFluxData<Real, 1>  upwindScal(   grown, graph);
+      
       auto & veccell = a_inputVel[dit[ibox]];
       auto & sourfab =   m_source[dit[ibox]];
       bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
                            grown, graph, dit[ibox], ibox, a_dt);
 
-      //get face fluxes and interpolate them to centroids
-      EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
-      EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi);
+      //average velocities to face centers.
+      getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
+      //get face fluxes and interpolate them to centroids
+      unsigned int curcomp  = vecDir;
+      unsigned int doingvel = 1;
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi, curcomp, doingvel);
+
+      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
+      
+      //now copy into the normal direction holder
+      copyComp(advvelfab, upwindScal, vecDir);
     } //end loop over boxes
   }  // and loop over velocity directions
 
-  //subtract off pure gradient part of the velocity field
+  // now we need to project the mac velocity
+  pout() << "mac projecting advection velocity" << endl;
+  m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
+  
+  m_advectionVel.exchange(m_exchangeCopier);
+
+  //subtract off pure gradient part of the velocity field in vector holder.
   correctVectorVelocity();
 }
 /*******/
@@ -329,8 +265,12 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
     }
     m_kappaDiv.exchange(m_exchangeCopier);
-    string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
-    m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
+    
+    // begin debug
+    //string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
+    //m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
+    //end debug
+    
     //this computes the non-conservative divergence and puts it into m_nonConsDiv
     nonConsDiv();
     //this forms the hybrid divergence

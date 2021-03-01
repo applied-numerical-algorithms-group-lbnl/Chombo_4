@@ -45,10 +45,10 @@ namespace Proto
   getEBIrregStruct(const vector<EBIndex<cent> >& a_indices,
                    IrregData<cent, data_t, ncomp>& a_s )
   {
-    vector< EBIrregStruct<data_t,ncomp> > retval;
+    vector< EBIrregStruct<data_t, ncomp> > retval;
     for(int ivec = 0; ivec < a_indices.size(); ivec++)
     {
-      EBIrregStruct<data_t,ncomp>  vecval;
+      EBIrregStruct<data_t, ncomp>  vecval;
       vecval.m_startPtr = a_s.data();
       vecval.m_varsize  = a_s.vecsize();
       vecval.m_offset   = a_s.index(a_indices[ivec], 0);
@@ -104,12 +104,12 @@ namespace Proto
   __device__ 
   inline Var<data_t, ncomp>
   cudaGetVar(unsigned int a_ivec,
-             EBIrregStruct<data_t,ncomp>* a_dst)
+             EBIrregStruct<data_t, ncomp>* a_dst)
   {
     Var<data_t, ncomp> retval;
 
-    const EBIrregStruct<data_t,ncomp>*  rawptr = a_dst;
-    const EBIrregStruct<data_t,ncomp>&  ugly   = rawptr[a_ivec];
+    const EBIrregStruct<data_t, ncomp>*  rawptr = a_dst;
+    const EBIrregStruct<data_t, ncomp>&  ugly   = rawptr[a_ivec];
     for(int icomp = 0; icomp < ncomp; icomp++)
     {
       retval.m_ptrs[icomp] = ugly.m_startPtr + (ugly.m_varsize*icomp);
@@ -160,12 +160,12 @@ namespace Proto
   template<typename data_t, unsigned int ncomp>
   inline Var<data_t, ncomp>
   getVar(unsigned int a_ivec,
-             EBIrregStruct<data_t,ncomp>* a_dst)
+             EBIrregStruct<data_t, ncomp>* a_dst)
   {
     Var<data_t, ncomp> retval;
 
-    const EBIrregStruct<data_t,ncomp>*  rawptr = a_dst;
-    const EBIrregStruct<data_t,ncomp>&  ugly   = rawptr[a_ivec];
+    const EBIrregStruct<data_t, ncomp>*  rawptr = a_dst;
+    const EBIrregStruct<data_t, ncomp>&  ugly   = rawptr[a_ivec];
 
     for(int icomp = 0; icomp < ncomp; icomp++)
     {
@@ -174,10 +174,10 @@ namespace Proto
     return retval;
   }
 
-  template<typename data_t,  unsigned int ncomp, typename Func, typename... Srcs>
+  template<typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
   inline void
   vec_indexer(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-		EBIrregStruct<data_t,ncomp>* a_dst, Srcs... a_srcs)
+		EBIrregStruct<data_t, ncomp>* a_dst, Srcs... a_srcs)
   {
     for(unsigned int ivec = a_begin; ivec < a_end; ivec++)
     {
@@ -246,7 +246,7 @@ namespace Proto
   inline  EBIrregStruct<data_t, ncomp>*
   protogetEBIrregStruct(IrregData<cent, data_t, ncomp>& a_s )
   {
-    return a_s.getEBIrregDataPtr().get();
+    return a_s.getEBIrregDataPtr();
   }
 
 //going into this srcs are IrregDatas and other stuff

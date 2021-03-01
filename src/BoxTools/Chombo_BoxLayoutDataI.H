@@ -589,9 +589,8 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
     }
     else
     {
-      protoFreeHost((m_buff->m_sendbuffer));
+      free(m_buff->m_sendbuffer);
     }
-    
 #else
     free((m_buff->m_sendbuffer));
 #endif

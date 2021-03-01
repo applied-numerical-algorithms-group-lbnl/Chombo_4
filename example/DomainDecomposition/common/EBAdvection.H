@@ -125,7 +125,9 @@ protected:
   getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
                  EBFluxData<Real, 1>&  a_faceCentVelo,
                  EBFluxData<Real, 1>&  a_scalLo,
-                 EBFluxData<Real, 1>&  a_scalHi);
+                 EBFluxData<Real, 1>&  a_scalHi,
+                 unsigned int a_curcomp, //for vel advection
+                 unsigned int doingvel); // 0 or 1
 
   void assembleFlux(EBFluxData<Real, 1>& a_fcflux,
                     EBFluxData<Real, 1>& a_scalar,

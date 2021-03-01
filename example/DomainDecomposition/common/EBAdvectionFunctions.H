@@ -88,29 +88,6 @@ PROTO_KERNEL_END(HybridDivergenceF, HybridDivergence)
 
 //// pick scalup = upwind scalar and define flux = scalup*faceVel
 PROTO_KERNEL_START 
-unsigned int GetUpwindFluxF(Var<Real, 1>    a_flux,
-                            Var<Real, 1>    a_scalLo,
-                            Var<Real, 1>    a_scalHi,
-                            Var<Real, 1>    a_faceVel)
-{
-  Real upwindScal;
-  Real advVel  = a_faceVel(0);
-  Real scaLo = a_scalLo(0);
-  Real scaHi = a_scalHi(0);
-  if(advVel > 0.)
-  {
-    upwindScal = scaLo;
-  }
-  else
-  {
-    upwindScal = scaHi;
-  }
-  a_flux(0) = upwindScal*advVel;
-  return 0;
-}
-PROTO_KERNEL_END(GetUpwindFluxF, GetUpwindFlux)
-//// pick scalup = upwind scalar and define flux = scalup*faceVel
-PROTO_KERNEL_START 
 unsigned int FluxMultiplyF(Var<Real, 1>    a_flux,
                            Var<Real, 1>    a_scal,
                            Var<Real, 1>    a_faceVel)
@@ -122,24 +99,39 @@ unsigned int FluxMultiplyF(Var<Real, 1>    a_flux,
   return 0;
 }
 PROTO_KERNEL_END(FluxMultiplyF, FluxMultiply)
-//// pick scalup = upwind scalar and define flux = scalup*faceVel
+
+
 PROTO_KERNEL_START 
 unsigned int UpwindedF(Var<Real, 1>    a_upwind,
                        Var<Real, 1>    a_scalLo,
                        Var<Real, 1>    a_scalHi,
-                       Var<Real, 1>    a_faceVel)
+                       Var<Real, 1>    a_faceVel,
+                       unsigned int a_facedir,
+                       unsigned int a_curcomp,
+                       unsigned int a_doingvel)
 {
   Real upwindScal;
   Real advVel  = a_faceVel(0);
   Real scaLo = a_scalLo(0);
   Real scaHi = a_scalHi(0);
-  if(advVel > 0.)
+  Real tol  = 1.0e-12;
+  bool doingvel   = (a_doingvel == 1);
+  bool normalcomp = (a_curcomp == a_facedir);
+  if(advVel > tol)
   {
     upwindScal = scaLo;
   }
-  else
+  else if (advVel < (-tol))
   {
     upwindScal = scaHi;
+  }
+  else if(doingvel && normalcomp)
+  {
+    upwindScal = 0.0;
+  }
+  else
+  {
+    upwindScal = 0.5*(scaLo + scaHi);
   }
   a_upwind(0) = upwindScal;
   return 0;

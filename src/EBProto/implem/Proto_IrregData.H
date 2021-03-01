@@ -327,8 +327,6 @@ namespace Proto
     virtual ~IrregData()
     {
       PR_TIME("~IrregData");
-      //protoFree(m_EBIrregDataPtr);
-      //protoFree(m_indicies_data);
       m_EBIrregDataSharedPtr.reset();
       m_indicies_shared_data.reset();
       m_data.reset();
@@ -501,7 +499,7 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      m_EBIrregDataSharedPtr  = dynamic_pointer_cast<EBIrregStruct<data_t,ncomp>>(a_input.getEBIrregDataPtr());
+      m_EBIrregDataSharedPtr  = dynamic_pointer_cast<EBIrregStruct<data_t,ncomp>>(a_input.getEBIrregDataSharedPtr());
       m_indicies_shared_data = a_input.getIndiciesData();
     }           
 
@@ -551,12 +549,12 @@ namespace Proto
 
     }
 
-    inline shared_ptr<EBIrregStruct<data_t,ncomp>> getEBIrregDataPtr()
+    inline EBIrregStruct<data_t, ncomp>* getEBIrregDataPtr()
     {
-      return m_EBIrregDataSharedPtr;
+      return m_EBIrregDataSharedPtr.get();
     }
 
-    inline shared_ptr<EBIrregStruct<data_t,ncomp>> getEBIrregDataPtr(unsigned int ivec)
+    inline shared_ptr<EBIrregStruct<data_t, ncomp>> getEBIrregDataSharedPtr() const
     {
       return m_EBIrregDataSharedPtr;
     }
@@ -699,7 +697,7 @@ protected:
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;
     shared_ptr<data_t>                            m_data = nullptr;
     data_t*                                     m_rawPtr = nullptr;
-    EBIrregStruct<data_t,ncomp>*              m_EBIrregDataPtr = nullptr;
+    EBIrregStruct<data_t,ncomp>*        m_EBIrregDataPtr = nullptr;
     shared_ptr<EBIrregStruct<data_t,ncomp>> m_EBIrregDataSharedPtr = nullptr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);

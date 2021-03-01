@@ -80,35 +80,33 @@ project(EBLevelFluxData<1>   & a_velo,
   CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
-  pout() << "Writing to macprojRHS" << endl;
-  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
 
-//  //begin debug
+//begin debug
+//  pout() << "Writing to macprojRHS" << endl;
+//  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
 //  Real rhsmax = m_rhs.maxNorm(0);
 //  pout() << "rhs of mac projection = " << rhsmax << endl;
 //  exit(0);
-  //end debug
+//end debug
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
-  pout() << "Writing to projPhi" << endl;
-  m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
+//begin debug
+  //  pout() << "Writing to projPhi" << endl;
+  //m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
+//end  debug
 
   //gphi = grad(phi)
   //v := v - gphi
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    //get face fluxes and interpolate them to centroids
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initToZero = true;
-      m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
-                              a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
-    }
+    bool initToZero = true;
+    m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
+                            a_gphi[dit[ibox]] ,m_phi[dit[ibox]], ibox, initToZero, 1.0);
+
     applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
   }
