@@ -46,9 +46,6 @@ namespace Proto
     ///
     virtual ~IrregData()
     {
-      PR_TIME("~IrregData");
-      m_EBIrregDataSharedPtr.reset();
-      m_data.reset();
     }
 
     ///needed for leveldata
@@ -218,7 +215,7 @@ namespace Proto
       m_inputBox       = a_input.inputBox();
       m_data           = a_input.getData();
       m_rawPtr         = a_input.dataPtr(a_comp);
-      m_EBIrregDataSharedPtr  = dynamic_pointer_cast<EBIrregStruct<data_t,ncomp>>(a_input.getEBIrregDataSharedPtr());
+      defineEBIrregData();
     }           
 
     //do not use this
@@ -247,21 +244,15 @@ namespace Proto
 
     inline void defineEBIrregData()
     {
-      vector< EBIrregStruct<data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
-      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<data_t, ncomp>);
+      vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
+      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
       protoMalloc(m_EBIrregDataPtr,memsize);
       protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
-      m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<data_t,ncomp>>(m_EBIrregDataPtr, [](EBIrregStruct<data_t,ncomp>* p){protoFree(p);});
     }
 
-    inline EBIrregStruct<data_t, ncomp>* getEBIrregDataPtr()
+    inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
     {
-      return m_EBIrregDataSharedPtr.get();
-    }
-
-    inline shared_ptr<EBIrregStruct<data_t, ncomp>> getEBIrregDataSharedPtr() const
-    {
-      return m_EBIrregDataSharedPtr;
+      return m_EBIrregDataPtr;
     }
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const
@@ -288,8 +279,7 @@ namespace Proto
     shared_ptr<vector<  index_t > >           m_indicies = nullptr;
     shared_ptr<data_t>                            m_data = nullptr;
     data_t*                                     m_rawPtr = nullptr;
-    EBIrregStruct<data_t, ncomp>* m_EBIrregDataPtr = nullptr;
-    shared_ptr<EBIrregStruct<data_t,ncomp>> m_EBIrregDataSharedPtr = nullptr;
+    EBIrregStruct<cent, data_t, ncomp>* m_EBIrregDataPtr = nullptr;
     IrregData(const IrregData<cent, data_t,ncomp>& a_src);
     IrregData& operator=(const IrregData<cent, data_t,ncomp>& a_src);
   };

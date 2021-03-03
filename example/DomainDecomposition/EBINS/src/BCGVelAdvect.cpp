@@ -33,13 +33,19 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         else if(bcstr == string("inflow"))
         {
-          Real fluxval = 0;
-          if(idir == a_velcomp)
+          //          if(idir == a_velcomp)
+          if(1)
           {
+            Real fluxval = 0;
             ParmParse pp;
             pp.get("velocity_inflow_value", fluxval);
+            EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
           }
-          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
+          else
+          {
+            //copy correct side of extrapolation to flux  (using extrapolated value as flux here)
+            copyExtrapolatedState(a_flux, a_scalarLo, a_scalarHi, idir, sit(),  valbx);
+          }
         }
         else if((bcstr == string("no_slip_wall")) || (bcstr == string("slip_wall")))
         {
