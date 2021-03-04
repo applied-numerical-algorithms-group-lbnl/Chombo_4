@@ -33,8 +33,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         else if(bcstr == string("inflow"))
         {
-          //          if(idir == a_velcomp)
-          if(1)
+          if(idir == a_velcomp)
           {
             Real fluxval = 0;
             ParmParse pp;
