@@ -340,6 +340,7 @@ advanceVelocityNavierStokes(Real a_dt,
   auto & velo  = *m_velo ;
   auto & divuu = *m_divuu;
   auto & gphi  = *m_gphi ;
+  int ideb = 0;
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -364,13 +365,9 @@ advanceVelocityNavierStokes(Real a_dt,
     //advance the parabolic equation
     m_heatSolverVelo->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
     
-    //begin debug    
-    //string sourcefile = string("viscSource.") + std::to_string(idir) + string(".hdf5");
-    //scalRHS.writeToFileHDF5(sourcefile, 0.);
-    //sourcefile = string("viscVelo.") + std::to_string(idir) + string(".hdf5");
-    //scalVelo.writeToFileHDF5(sourcefile, 0.);
-    //ened debug
+    ideb++;
   }
+ ideb++;
 }
 /*******/ 
 PROTO_KERNEL_START 
