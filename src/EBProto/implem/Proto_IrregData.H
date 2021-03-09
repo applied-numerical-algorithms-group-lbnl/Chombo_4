@@ -21,7 +21,20 @@ namespace Proto
     {
       size_t ivec = 0;
       bool found = false;
-      for(unsigned int i = 0; i < a_size; i++)
+//      for(unsigned int i = 0; i < a_size; i++)
+//      {        
+//        if(a_vof == a_indicies[i])
+//        {
+//          ivec = i;
+//          found = true;
+//          break;
+//        }
+//      }
+      int begin = 0;
+      int end = a_size;
+      int i = (begin + a_size)/2;
+
+      while(found == false && begin <= end)
       {        
         if(a_vof == a_indicies[i])
         {
@@ -29,7 +42,13 @@ namespace Proto
           found = true;
           break;
         }
+        if(a_vof <  a_indicies[i] )
+          end = i;
+	else
+	  begin = i;
+        i = (begin + end)/2;
       }
+
       if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
@@ -144,7 +163,7 @@ namespace Proto
       tmp += ncomp*size*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) tmp;
 
-      for(unsigned int idx = threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
+      for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
         if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
@@ -668,8 +687,14 @@ namespace Proto
       assert(sizeof(data_t) >= sizeof(float));
       if(vecsize == 0) return;
 
+      int numSMs;
+#ifdef PROTO_CUDA
+      int devId = 0;
+      cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
+
       protoDeviceSynchronize();
-      protoLaunchKernel((EBLinearIn<cent,data_t,ncomp>), 1, 512,
+      protoLaunchKernel((EBLinearIn<cent,data_t,ncomp>), 32*numSMs, 256,
                         m_indicies_shared_data.get(), vecsize,
                         a_buf,
                         m_data.get(),

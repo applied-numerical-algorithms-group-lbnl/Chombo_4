@@ -1,3 +1,5 @@
+#pragma once
+
 class test_timer
 {
 	public:

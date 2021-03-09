@@ -126,11 +126,6 @@ namespace Proto
   defineApplyITZ() 
   {
 #ifdef PROTO_CUDA
-/*      auto& vecStencil = sFused.getStencils();  
-      for(int ibc = 0; ibc < 2*DIM; ibc++)
-        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
-          vecStencil.push_back(&m_regStencilBCS[ibc][ivec]);
-   */   
       sFused.define(m_regStencilBCS, m_BCApplyBoxes, 2*DIM);
 #endif
   }
