@@ -6,7 +6,7 @@ DEPXX=g++
 CXX=g++
 
 CXXALLFLAGS := -std=c++11 -Wno-sign-compare -Wno-misleading-indentation -Wno-unknown-pragmas -Wno-format
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic 
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wno-variadic-macros
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 

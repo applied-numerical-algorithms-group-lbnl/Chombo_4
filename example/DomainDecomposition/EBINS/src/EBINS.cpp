@@ -15,9 +15,15 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const Real                             & a_viscosity,
       const IntVect                          & a_nghost,
       ParabolicSolverType                      a_solver,
-      EBIBC                                    a_ibc)
+      EBIBC                                    a_ibc,
+      unsigned int                             a_num_species,  
+      vector<Real> a_diffusionCoeffs)
 {
   CH_TIME("EBINS::define");
+  m_diffusionCoefs = a_diffusionCoeffs;
+  PR_assert(m_diffusionCoefs.size() >= a_num_species);
+  m_species.resize(a_num_species);
+  
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -40,7 +46,16 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-
+  m_sourDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
+    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+  m_rhsDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
+    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+  for(int ispec = 0; ispec < a_num_species; ispec++)
+  {
+    m_species[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+  }
+  
   string stenname = StencilNames::Poisson2;
   string bcname;
   if(a_viscosity == 0)
@@ -55,35 +70,56 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   }
 
   auto cell_dict = m_brit->m_cellToCell;
+  Real alpha = 1; Real beta = 1; //these get reset before solve
+  string helmnamesVelo[2*DIM];
+  string helmnamesSpec[2*DIM];
+  a_ibc.helmholtzStencilStrings(      helmnamesVelo);
+  a_ibc.scalarDiffusionStencilStrings(helmnamesSpec);
   if(!m_eulerCalc)
   {
-    Real alpha = 1; Real beta = 1; //these get reset before solve
-    string helmnames[2*DIM];
-    a_ibc.helmholtzStencilStrings(helmnames);
-    m_helmholtz = shared_ptr<EBMultigrid> 
+    m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnames, bcname, m_domain, m_nghost));
-
-    if(a_solver == BackwardEuler)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == CrankNicolson)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == TGA)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else
-    {
-      MayDay::Error("unaccounted-for solver type");
-    }
+                       stenname, helmnamesVelo, bcname, m_domain, m_nghost));
   }
+  m_helmholtzSpec = shared_ptr<EBMultigrid> 
+    (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
+                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost));
+
+  if(a_solver == BackwardEuler)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBBackwardEuler(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBBackwardEuler(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == CrankNicolson)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBCrankNicolson(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBCrankNicolson(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == TGA)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBTGA(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBTGA(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else
+  {
+    MayDay::Error("unaccounted-for solver type");
+  }
+
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
@@ -92,7 +128,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_macProj = m_ccProj->m_macprojector;
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
-    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+    (new BCGVelAdvect(m_macProj, m_helmholtzVelo, m_brit, m_geoserv, m_velo,
                       m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
 
 
@@ -151,6 +187,10 @@ run(unsigned int a_max_step,
 
     pout() << "advancing passive scalar" << endl;
     advanceScalar(dt);
+
+    pout() << "advancing species advection/diffusion" << endl;
+    advanceSpecies(dt, a_tol, a_maxIter);
+    
     m_step++;
     m_time += dt;
     if(!usingFixedDt)
@@ -194,22 +234,22 @@ computeDt(Real a_cfl) const
   CH_TIME("EBINS::computeDt");
   Real dtval;
   Real dtCFL = 999999999.;
-    Real maxvel = 0;
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      maxvel = std::max(maxvel, m_velo->maxNorm(idir));
-    }
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    maxvel = std::max(maxvel, m_velo->maxNorm(idir));
+  }
+  if(maxvel > 1.0e-16)
+  {
     dtCFL = a_cfl*m_dx/maxvel;
-    if(maxvel > 1.0e-16)
-    {
-      dtval = dtCFL;
-      pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
-    }    
-    else
-    {
-      pout() << "velocity seems to be zero--setting dt to dx" << endl;
-      dtval = m_dx;
-    }
+    dtval = dtCFL;
+    pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
+  }    
+  else
+  {
+    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    dtval = m_dx;
+  }
 
   ParmParse pp;
   Real dtStokes = m_dx*m_dx/m_viscosity;
@@ -271,6 +311,15 @@ advanceVelocityEuler(Real a_dt)
 }
 /*******/ 
 PROTO_KERNEL_START 
+void DiffusionRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuphi,
+                   Var<Real, 1>    a_source)
+{
+  a_rhs(0) = -a_divuphi(0) + a_source(0);
+}
+PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
+/*******/ 
+PROTO_KERNEL_START 
 void ParabolicRHSF(Var<Real, 1>    a_rhs,
                    Var<Real, 1>    a_divuu,
                    Var<Real, 1>    a_gradp)
@@ -291,6 +340,7 @@ advanceVelocityNavierStokes(Real a_dt,
   auto & velo  = *m_velo ;
   auto & divuu = *m_divuu;
   auto & gphi  = *m_gphi ;
+  int ideb = 0;
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -313,8 +363,11 @@ advanceVelocityNavierStokes(Real a_dt,
     }
     pout() << "calling heat solver for variable " << idir << endl;
     //advance the parabolic equation
-    m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    m_heatSolverVelo->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    
+    ideb++;
   }
+ ideb++;
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -402,13 +455,65 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
-  static int ideb = 0;
   auto& scal = *m_scal;
   CH_TIME("EBINS::advanceScalar");
   scal.exchange(m_exchangeCopier);
-  m_advectOp->advance(scal, a_dt);
+  Real fluxval;
+  ParmParse pp;
+  pp.get("scalar_inflow_value",   fluxval);
+  m_advectOp->advance(scal, a_dt, fluxval);
   scal.exchange(m_exchangeCopier);
-  ideb++;
+}
+/*******/ 
+void
+EBINS::
+advanceSpecies(Real a_dt,
+               Real         a_tol,    
+               unsigned int a_maxIter)
+{
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    pout() << "advancing species number "<< ispec << endl;
+    auto& spec = *m_species[ispec];
+
+    spec.exchange(m_exchangeCopier);
+    //A strange user interface, I grant you.  I did not think I would need this back door
+    pout() << "get advection term divuphi" << endl;
+    Real fluxval;
+    ParmParse pp;
+    string scalname = string("species_inflow_value_") + to_string(ispec);
+    pp.get(scalname.c_str(),   fluxval);
+    
+    m_advectOp->hybridDivergence(spec, a_dt, fluxval);
+    //sets m_sour
+    pout() << "getting reaction term R" << endl;
+    getReactionSourceTerm(ispec);
+    EBLevelBoxData<CELL, 1>& divuphi = m_advectOp->m_hybridDiv;
+
+    pout() << "assembling  rhs = -divuphi + R" << endl;
+    DataIterator dit = m_grids.dataIterator();
+    for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      unsigned long long int numflopspt = 2;
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & divuphifab =         divuphi[dit[ibox]];
+      auto & reactsour  =   (*m_sourDiff)[dit[ibox]];
+      auto & rhs        =   (* m_rhsDiff)[dit[ibox]];
+
+      ebforallInPlace(numflopspt, "DiffusionRHS", DiffusionRHS, grbx, rhs, divuphifab, reactsour);
+    }
+    pout() << "calling heat solver for variable "  << endl;
+    //advance the parabolic equation
+    Real thiscoef = m_diffusionCoefs[ispec];
+    m_heatSolverSpec->advanceOneStep(spec, (*m_rhsDiff),
+                                     thiscoef, a_dt, a_tol, a_maxIter);
+  }
+}
+void
+EBINS::
+getReactionSourceTerm(unsigned int a_ispec)
+{
+  m_sour->setVal(0.);
 }
 /*******/ 
 void
@@ -417,12 +522,27 @@ outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) con
 {
   CH_TIME("EBINS::outputToFile");
   const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
-  string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
-  string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");
-  string filegphi = string("gphi.") + std::to_string(a_step) + string(".hdf5");
-  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  string filescal = string("scal.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  string filevelo = string("velo.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  string filegphi = string("gphi.step_")
+    + std::to_string(a_step) + string(".hdf5");
+  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string filespec = string("spec_") + std::to_string(ispec)
+      + string(".step_") + std::to_string(a_step) + string(".hdf5");
+    const auto& species = *(m_species[ispec]);
+    writeEBLevelHDF5<1>(filespec,  species, kappa,
+                        m_domain, m_graphs, a_coveredval,
+                        m_dx, a_dt, a_time);
+  }
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

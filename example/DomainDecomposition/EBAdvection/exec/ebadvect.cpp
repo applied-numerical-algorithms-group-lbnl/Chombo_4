@@ -408,7 +408,10 @@ runAdvection(int a_argc, char* a_argv[])
 
   while((step < max_step) && (time < max_time))
   {
-    advectOp.advance(scalcell,  dt);
+    Real fluxval;
+    ParmParse pp;
+    pp.get("scalar_inflow_value",   fluxval);
+    advectOp.advance(scalcell,  dt, fluxval);
 
     pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;

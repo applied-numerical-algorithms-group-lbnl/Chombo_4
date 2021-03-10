@@ -133,8 +133,8 @@ namespace Proto
       {
         unsigned int nsize = size();
         if(nsize == 0) return *this;
-        //int blockSize = 512;
-        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
         protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
@@ -152,8 +152,8 @@ namespace Proto
       {
         unsigned int nsize = size();
         if(nsize == 0) return *this;
-        //int blockSize = 512;
-        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
         protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
@@ -171,8 +171,8 @@ namespace Proto
       {
         unsigned int nsize = size();
         if(nsize == 0) return *this;
-        //int blockSize = 512;
-        //int nBlocks = (nsize + blockSize - 1) / blockSize;
+        int blockSize = 512;
+        int nBlocks = (nsize + blockSize - 1) / blockSize;
         protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else

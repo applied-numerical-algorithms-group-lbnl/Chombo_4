@@ -16,53 +16,30 @@
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-#include "EBINS.H"
-#include "EBIBC.H"
+#include "EBDarcy.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
 
 #define MAX_ORDER 2
 /***/
-EBIBC getIBCs()
-{
-  string veloIC, scalIC;
-  string loDomBC[DIM];
-  string hiDomBC[DIM];
-  ParmParse pp;
-  pp.get("initial_velo", veloIC);
-  pp.get("initial_scal", scalIC);
-  using std::to_string;
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    string lostr = "domain_bc_lo_" + to_string(idir);
-    string histr = "domain_bc_hi_" + to_string(idir);
-    pp.get(lostr.c_str(), loDomBC[idir]);
-    pp.get(histr.c_str(), hiDomBC[idir]);
-  }
-  string ebbc("NoSlipWall");
-  EBIBC retval(veloIC, scalIC, loDomBC, hiDomBC, ebbc);
-  return retval;
-}
-/***/
 int
 runNavierStokes()
 {
 
   Real coveredval = -1;
-  Real nu         = -1.0;
+  Real permeability       = -1.0;
+  Real diffusivity        = -1.0;
   int nx          = 32;
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
   int outputInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
 
-  pp.get("nstream", nStream);
-
-  pp.get("viscosity" , nu);
+  pp.get("permeability" , permeability);
+  pp.get("diffusivity" ,  diffusivity);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
@@ -72,7 +49,6 @@ runNavierStokes()
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
   EBMultigridLevel::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "output interval = " << outputInterval  << endl;
@@ -109,9 +85,8 @@ runNavierStokes()
   Real tol = 0.00001;
   int  maxIter = 10;
 
-  Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
+  Real blobCen, blobRad, viscosity;
   Real cfl            = 0.5;
-  int pIters = 1;
 
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
@@ -119,29 +94,26 @@ runNavierStokes()
   pp.get("blob_cen", blobCen);
   pp.get("blob_rad", blobRad);
   pp.get("viscosity", viscosity);
-  pp.get("max_vel_mag", maxVelMag);
-  pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
   pp.get("output_interval", outputInterval);
-  pp.get("pressure_iterations", pIters);
   pp.get("cfl"  , cfl);
   int whichSolver;
   pp.get("parabolic_solver", whichSolver);
-  EBINS::ParabolicSolverType paraSolver;
+  EBDarcy::ParabolicSolverType paraSolver;
   if(whichSolver == 0)
   {
-    paraSolver = EBINS::BackwardEuler;
+    paraSolver = EBDarcy::BackwardEuler;
     pout() << "using backward Euler for parabolic solver"  << endl;
   }
   else if(whichSolver == 1)
   {
-    paraSolver = EBINS::CrankNicolson;
+    paraSolver = EBDarcy::CrankNicolson;
     pout() << "using Crank Nicolson for parabolic solver"  << endl;
   }
   else if(whichSolver == 2)
   {
-    paraSolver = EBINS::TGA;
+    paraSolver = EBDarcy::TGA;
     pout() << "using TGA for parabolic solver"  << endl;
   }
   else
@@ -151,44 +123,56 @@ runNavierStokes()
 
   pout() << "=============================================="  << endl;
 
-  pout() << "tolerance       = " << tol        << endl;
-  pout() << "maxIter         = " << maxIter    << endl;
-  pout() << "blob cen        = " << blobCen    << endl;
-  pout() << "geom cen        = " << geomCen    << endl;
-  pout() << "max vel mag     = " << maxVelMag  << endl;
-  pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
-  pout() << "max_step        = " << max_step   << endl;
-  pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
-  pout() << "viscosity       = " << viscosity  << endl;
+  pout() << "tolerance       = " << tol          << endl;
+  pout() << "maxIter         = " << maxIter      << endl;
+  pout() << "blob cen        = " << blobCen      << endl;
+  pout() << "geom cen        = " << geomCen      << endl;
+  pout() << "max_step        = " << max_step     << endl;
+  pout() << "max_time        = " << max_time     << endl;
+  pout() << "viscosity       = " << viscosity    << endl;
+  pout() << "diffusivity     = " << diffusivity  << endl;
+  pout() << "pereability     = " << permeability << endl;
   pout() << "=============================================="  << endl;
 
   
-  EBIBC ibc = getIBCs();
   pout() << "initializing solver " << endl;
-  int num_species = 0;
-  pp.query("num_species", num_species);
-  vector<Real> diffusion_coeffs(num_species);
-  for(int ispec = 0; ispec < num_species; ispec++)
-  {
-    string diffname = string("diffusion_coeff_") + to_string(ispec);
-    Real thisco;
-    pp.get(diffname.c_str(), thisco);
-    diffusion_coeffs[ispec] = thisco;
-  }
-  
-  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
-               paraSolver, ibc, num_species, diffusion_coeffs);
+  pout() << "inflow outflow xdirection, noflow all other directions" << endl;
+  //Here I am creating an EBIBC to show the solvers what the boundary conditions are.
+  //This application forces this particular bit of the problem so this should not be
+  //part of the public interface.   It does allow for a lot of code reuse, however,
+  //so I remain unapologetic.  --dtg
+  string  loDomainBC[DIM];
+  string  hiDomainBC[DIM];
+  loDomainBC[0] = string("inflow");
+  hiDomainBC[0] = string("inflow");
+  loDomainBC[1] = string("slip_wall");
+  hiDomainBC[1] = string("slip_wall");
+#if DIM==3  
+  loDomainBC[2] = string("slip_wall");
+  hiDomainBC[2] = string("slip_wall");
+#endif
+  string ebbc("no_slip_wall");       //just to put something in there (unneeded)
+  EBIBC ibcs(string("no_velo_ic"),   //just to put something in there (unneeded)
+             string("some_scal_ic"), //just to put something in there (hardwired for now)
+             loDomainBC, hiDomainBC);
+                    
+  EBDarcy solver(brit, geoserv, grids, domain,  dx,
+                 viscosity, permeability, diffusivity,
+                 dataGhostIV, paraSolver, ibcs);
 
 
-   pout() << "initializing data " << endl;
-   initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+ auto &  velo = *(solver.m_velo);
+ auto &  scal = *(solver.m_scal);
+
+ 
+  pout() << "initializing data " << endl;
+  initializeData(scal, grids, dx, geomCen, geomRad, blobCen, blobRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
-  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
+  pout() << "starting      EBDarcy::run" << endl; 
+  solver.run(max_step, max_time, cfl, fixedDt, tol,   maxIter, outputInterval, coveredval);
+  pout() << "finished with EBDarcy::run" << endl; 
   return 0;
 }
 

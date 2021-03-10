@@ -993,25 +993,6 @@ namespace Proto
                         double                                      a_dx,
                         Point                                       a_dstGrown)
   {
-    int facedir;
-    if(fcent == XFACE)
-    {
-      facedir = 0;
-    }
-    else if(fcent == YFACE)
-    {
-      facedir = 1;
-    }
-    else if(fcent == ZFACE)
-    {
-      facedir = 2;
-    }
-    else
-    {
-      PROTO_ASSERT(false, "bogus face direction");
-    }
-
-
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
 
@@ -1230,17 +1211,6 @@ namespace Proto
           a_stencil[ivof].add(face, weight);
         }
       }
-//begin debug
-#if DIM==2
-///      Point ivdeb(55,15);
-///      if(vof.m_pt == ivdeb)
-///      {
-///        cout << "divergence stencil for vof ivdeb = " << endl;
-///        a_stencil[ivof].print();
-///      }
-#endif
-//end debug
-
     }
     
     //no bcs here.
