@@ -128,10 +128,11 @@ makeTwoSpheres(int a_argc, char* a_argv[])
   std::vector<BaseIF*> both_spheres(2);
   both_spheres[0] = static_cast<BaseIF*>(sphere_one);
   both_spheres[1] = static_cast<BaseIF*>(sphere_two);
-  shared_ptr<BaseIF>  impfunc(new UnionIF(both_spheres));
-//  Bx domainpr = getProtoBox(domain.domainBox());
+  //shared_ptr<BaseIF>  union(new        UnionIF(both_spheres));
+  shared_ptr<BaseIF>     intersect(new IntersectionIF(both_spheres));
+  //shared_ptr<BaseIF>  compliment(new   ComplementIF(*inter));
   pout() << "defining geometry" << endl;
-  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
+  shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.domainBox(), grids, geomGhost));
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
 
   pout() << "making data" << endl;
