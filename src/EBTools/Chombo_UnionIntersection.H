@@ -25,7 +25,7 @@ public:
      fluid.
   */
   virtual double value(const Proto::IndexTM<int   ,DIM> & a_partialDerivative,
-                       const Proto::IndexTM<double,DIM>& a_point) const;
+                       const Proto::IndexTM<double,DIM> & a_point) const;
 
     
   /// factory method
@@ -58,6 +58,8 @@ private:
 
 };
 
+
+
 ///
 /**
     This implicit function is the maximum of two (of more) implicit
@@ -81,7 +83,7 @@ public:
   virtual ~IntersectionIF();
 
   virtual double value(const Proto::IndexTM<int,   DIM> & a_partialDerivative,
-                       const Proto::IndexTM<double,DIM>& a_point) const;
+                       const Proto::IndexTM<double,DIM> & a_point) const;
 
   virtual BaseIF* newImplicitFunction() const;
 
@@ -98,6 +100,40 @@ private:
   IntersectionIF();
   void operator=(const IntersectionIF& a_inputIF);
 
+};
+///
+/**
+    This implicit function is the negative of the implicit function with which
+    it is constructed.  This results in an implicit function whose interior is
+    the complement of the interior of the given implicit function (minus the
+    the surface).
+ */
+class ComplementIF: public Proto::BaseIF
+{
+public:
+  ///
+  /**
+      Constructor specifying the implicit function and whether to complement
+   */
+  ComplementIF(const BaseIF& a_impFunc);
+
+  /// Destructor
+  virtual ~ComplementIF();
+
+  virtual double value(const Proto::IndexTM<int,   DIM> & a_partialDerivative,
+                       const Proto::IndexTM<double,DIM> & a_point) const;
+
+  virtual BaseIF* newImplicitFunction() const;
+
+
+protected:
+
+  BaseIF* m_impFunc; // implicit function to complement
+
+private:
+  ComplementIF(const ComplementIF& a_inputIF);
+  ComplementIF();
+  void operator=(const ComplementIF& a_inputIF);
 };
 
 #include "Chombo_NamespaceFooter.H"

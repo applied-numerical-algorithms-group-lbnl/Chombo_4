@@ -194,5 +194,29 @@ void IntersectionIF::findClosest(const IndexTM<double, DIM> & a_point,
         }
     }
 }
+ComplementIF::
+ComplementIF(const BaseIF& a_impFunc)
+{
+  m_impFunc = a_impFunc.newImplicitFunction();
+}
+ComplementIF::~ComplementIF()
+{
+  delete m_impFunc;
+}
+double
+ComplementIF::
+value(const IndexTM<int ,  DIM> & a_partialDerivative,
+      const IndexTM<double,DIM> & a_point) const
+{
+  double impval = m_impFunc->value(a_partialDerivative, a_point);
+  double retval = -impval;  // this is the whole point of this class
+  return retval; 
+}
+BaseIF* ComplementIF::newImplicitFunction() const
+{
+  ComplementIF* unionPtr = new ComplementIF(*m_impFunc);
+
+  return static_cast<BaseIF*>(unionPtr);
+}
 
 #include "Chombo_NamespaceFooter.H"

@@ -1,0 +1,8 @@
+#two sphere inputs
+#domain size
+two_spheres.nx      =  64
+two_spheres.maxGrid =  32
+two_spheres.rad_one = 0.1
+two_spheres.rad_two = 0.2
+two_spheres.cen_one = 0.0 0.0 0.0
+two_spheres.cen_two = 1.0 1.0 1.0
