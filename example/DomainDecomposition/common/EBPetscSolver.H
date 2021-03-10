@@ -116,6 +116,41 @@ public:
     m_nz_init_guess = b;
   }
 
+  virtual
+  PetscErrorCode
+  getPetscMatrix(Mat       & a_mat)
+  {
+    a_mat=m_mat;
+    return 0;
+  }
+
+  virtual
+  PetscErrorCode
+  getGidsMapping(LevelData<EBHostData<CELL, int, 1> >       & a_gids)
+  {
+    using Chombo4::DataIterator;
+    IntVect gidghost = 4*IntVect::Unit;
+    a_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
+    DataIterator dit = m_grids.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      auto graph = (*m_graphs)[dit[ibox]];
+      auto grid  =     m_grids[dit[ibox]];
+      Bx  grbx = ProtoCh::getProtoBox(grid);
+      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+      {
+        auto vofs = graph.getVoFs(*bit);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          a_gids[dit[ibox]](vofs[ivof], 0) = m_gids[dit[ibox]](vofs[ivof], 0);
+        }
+      }
+    }
+    Chombo4::Copier exchangeCopier;
+    exchangeCopier.exchangeDefine(m_grids, gidghost);
+    a_gids.exchange(exchangeCopier);
+    return 0;
+  }
   
 private:
   int chomboToPetsc(Vec                           & a_dst,
@@ -486,7 +521,7 @@ private:
     CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
     CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
     int startgid = 0;
-    for(int iproc = 0; iproc < procID(); iproc++)
+    for(int iproc = 0; iproc < Proto::procID(); iproc++)
     {
       startgid += m_numPtsAllProc[iproc];
     }
