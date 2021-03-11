@@ -232,6 +232,83 @@ makeMollifiedBox(int a_argc, char* a_argv[])
   return 0;
 }
 
+/**************/
+int
+makeCylinderedSphere(int a_argc, char* a_argv[])
+{
+  Real coveredval = -1;
+  int nx      = 32;
+  int maxGrid = 32;
+  ParmParse pp("cylindered_sphere");
+    
+  pp.get("nx"     , nx);
+  pp.get("maxGrid", maxGrid);
+  
+  Real sphereRadius = 0.1;
+  Real cylinderRadius = 0.4;
+
+  pout() << "cylindered sphere (sphere/cyl center is domain center):"      << endl;
+  pp.get("sphere_radius"  , sphereRadius);
+  pp.get("cylinder_radius", cylinderRadius);
+  pout() << "nx              = " << nx       << endl;
+  pout() << "maxGrid         = " << maxGrid  << endl;
+  pout() << "sphere radius   = " << sphereRadius       << endl;
+  pout() << "cylinder radius = " << sphereRadius       << endl;
+  
+
+
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+// EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
+
+  Vector<Box> boxes;
+  unsigned int blockfactor = 8;
+  domainSplit(domain, boxes, maxGrid, blockfactor);
+  
+  Vector<int> procs;
+  pout() << "making grids" << endl;
+  LoadBalance(procs, boxes);
+  DisjointBoxLayout grids(boxes, procs, domain);
+  grids.printBalance();
+
+  IntVect dataGhostIV =   IntVect::Zero;
+  int geomGhost = 4;
+  RealVect origin = RealVect::Zero();
+  Real dx = 1.0/nx;
+  std::vector<BaseIF*> planes(2*DIM);
+  RealVect center = RealVect::Unit();
+  center *= 0.5;
+  
+  SimpleCylinderIF cylinder(center, cylinderRadius, true);
+  SimpleSphereIF     sphere(center,   sphereRadius, false);
+  vector<BaseIF*> bothIF(2, NULL);
+  bothIF[0] = static_cast<BaseIF*>(&cylinder);
+  bothIF[1] = static_cast<BaseIF*>(&sphere);
+
+  std::shared_ptr<BaseIF> magilla(new IntersectionIF(bothIF));
+  pout() << "defining geometry" << endl;
+  shared_ptr<GeometryService<MAX_ORDER> >
+    geoserv(new GeometryService<MAX_ORDER>(magilla, origin, dx, domain.domainBox(), grids, geomGhost));
+  
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+
+  pout() << "making data" << endl;
+  EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
+  fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
+  Real coveredVal = -1;
+  kappa.writeToFileHDF5(string("cylindered_sphere.hdf5"), coveredVal);
+
+  //clean up memory
+  for(int iplane = 0; iplane < 2*DIM; iplane++)
+  {
+    delete planes[iplane];
+  }
+  pout() << "exiting mollified box" << endl;
+  return 0;
+}
+
 #include "Chombo_NamespaceFooter.H"
 
 int main(int a_argc, char* a_argv[])
@@ -267,10 +344,17 @@ int main(int a_argc, char* a_argv[])
 
     pout() << "making two spheres" << endl;
     makeTwoSpheres(a_argc, a_argv);
+    
     pout() << "making the dreaded mollified box" << endl;
     Chombo4::makeMollifiedBox(a_argc, a_argv);
+
+#if DIM==3    
+    pout() << "making cylindered sphere" << endl;
+    Chombo4::makeCylinderedSphere(a_argc, a_argv);
+    
 //    pout() << "making packed spheres" << endl;
 //    Chombo4::make(a_argc, a_argv);
+#endif    
   }
 
   pout() << "printing time table " << endl;
