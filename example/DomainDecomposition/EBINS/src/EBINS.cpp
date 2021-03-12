@@ -2,6 +2,7 @@
 #include "EBINS.H"
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
+#include "Chombo_CH_HDF5.H"
 #include "Chombo_NamespaceHeader.H"
 #include "DebugFunctions.H"
 using Proto::Var;
@@ -579,6 +580,26 @@ readDataFromCheckpoint(Real         & a_curTime,
                        const string & a_checkpointName)
 {
   CH_TIME("EBINS::readDataFromCheckpointFile");
+
+  HDF5HeaderData header;
+  HDF5Handle handle(a_checkpointName.c_str(), HDF5Handle::OPEN_RDONLY);
+
+  header.readFromFile(handle);
+  a_curTime = header.m_real["cur_time"];
+  a_curStep = header.m_int ["cur_step"];
+
+  m_velo->readFromCheckPoint(    handle, string("velo"));
+  m_gphi->readFromCheckPoint(    handle, string("gphi"));
+  m_scal->readFromCheckPoint(    handle, string("scal"));
+  m_sour->readFromCheckPoint(    handle, string("sour"));
+  m_rhsDiff->readFromCheckPoint( handle, string("rhsDiff"));
+  m_sourDiff->readFromCheckPoint(handle, string("sourDiff"));
+  m_divuu->readFromCheckPoint(   handle, string("divuu"));
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string specname = string("spec_") + to_string(ispec);
+    m_species[ispec]->readFromCheckPoint(handle, specname);
+  }
 }
 /*******/
 void
@@ -586,6 +607,28 @@ EBINS::
 writeCheckpointFile()
 {
   CH_TIME("EBINS::writeCheckpointFile");
+  string checkpointName = string("check.step_") + to_string(m_step) + string(".hdf5");
+  HDF5HeaderData header;
+  
+
+  HDF5Handle handle(checkpointName.c_str(), HDF5Handle::CREATE);
+  header.m_real["cur_time"]               = m_time;
+  header.m_int ["cur_step"]               = m_step;  
+  header.writeToFile(handle);
+  
+  m_velo->writeToCheckPoint(    handle, string("velo"));
+  m_gphi->writeToCheckPoint(    handle, string("gphi"));
+  m_scal->writeToCheckPoint(    handle, string("scal"));
+  m_sour->writeToCheckPoint(    handle, string("sour"));
+  m_rhsDiff->writeToCheckPoint( handle, string("rhsDiff"));
+  m_sourDiff->writeToCheckPoint(handle, string("sourDiff"));
+  m_divuu->writeToCheckPoint(   handle, string("divuu"));
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string specname = string("spec_") + to_string(ispec);
+    m_species[ispec]->writeToCheckPoint(handle, specname);
+  }
+  
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"
