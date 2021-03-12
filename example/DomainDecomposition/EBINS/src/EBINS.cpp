@@ -23,7 +23,6 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_diffusionCoefs = a_diffusionCoeffs;
   PR_assert(m_diffusionCoefs.size() >= a_num_species);
   m_species.resize(a_num_species);
-  
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -31,7 +30,16 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
-
+  defineInternals(a_ibc, a_num_species, a_viscosity, a_solver);
+}  
+/*******/
+void
+EBINS::
+defineInternals(EBIBC                a_ibc,
+                unsigned int         a_num_species,
+                Real                 a_viscosity,
+                ParabolicSolverType  a_solver)
+{
   m_graphs = m_geoserv->getGraphs(m_domain);
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
   m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);
@@ -138,18 +146,26 @@ void
 EBINS::
 run(unsigned int a_max_step,
     Real         a_max_time,
+    unsigned int a_startingStep,
+    Real         a_startingTime,
     Real         a_cfl,
     Real         a_fixedDt,
     Real         a_tol,
     unsigned int a_numIterPres,
     unsigned int a_maxIter,
-    int          a_outputInterval,
+    int          a_plotfileInterval,
+    int          a_checkpointInterval,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");
-  bool usingFixedDt = (a_fixedDt > 0);
-  bool doFileOutput = (a_outputInterval > 0);
-  Real dt;
+  //Welcome to our standard interface that is at least not over specified.
+  //Negative intervals turn intervalled stuff off.
+  //Negative fixed time step means variable time step.
+  //It is a quixotic interface at best.
+  bool usingFixedDt     = (a_fixedDt            > 0);
+  bool writePlotfiles   = (a_plotfileInterval   > 0);
+  bool writeCheckpoints = (a_checkpointInterval > 0);
+
   //project the resulting field
   pout() << "projecting initial velocity"<< endl;
   auto & velo =  (*m_velo );
@@ -161,45 +177,53 @@ run(unsigned int a_max_step,
   //get the time step
   if(usingFixedDt)
   {
-    dt = a_fixedDt;
+    m_dt = a_fixedDt;
   }
   else
   {
-    dt = computeDt(a_cfl);
+    m_dt = computeDt(a_cfl);
   }
-
+  
   pout() << "getting initial pressure using fixed point iteration " << endl;
-  initializePressure(dt, a_tol, a_numIterPres, a_maxIter);
+  initializePressure(m_dt, a_tol, a_numIterPres, a_maxIter);
 
-  if(doFileOutput)
+  if(writePlotfiles)
   {
-    outputToFile(0, a_coveredVal, dt, 0.0);
+    writePlotFile(a_coveredVal);
+  }
+  if(writeCheckpoints)
+  {
+    writeCheckpointFile();
   }
 
-  m_time = 0;
-  m_step = 0;
+  m_step = a_startingStep;
+  m_time = a_startingTime;
   while((m_step < a_max_step) && (m_time < a_max_time))
   {
-    pout() << "step = " << m_step << ", time = " << m_time << " dt = " << dt << endl;
+    pout() << "step = " << m_step << ", time = " << m_time << " dt = " << m_dt << endl;
 
     pout() << "advancing velocity and pressure fields " << endl;
-    advanceVelocityAndPressure(dt, a_tol, a_maxIter);
+    advanceVelocityAndPressure(m_dt, a_tol, a_maxIter);
 
     pout() << "advancing passive scalar" << endl;
-    advanceScalar(dt);
+    advanceScalar(m_dt);
 
     pout() << "advancing species advection/diffusion" << endl;
-    advanceSpecies(dt, a_tol, a_maxIter);
+    advanceSpecies(m_dt, a_tol, a_maxIter);
     
     m_step++;
-    m_time += dt;
+    m_time += m_dt;
     if(!usingFixedDt)
     {
-      dt = computeDt(a_cfl);
+      m_dt = computeDt(a_cfl);
     }
-    if((doFileOutput) && (m_step % a_outputInterval == 0))
+    if((writePlotfiles) && (m_step % a_plotfileInterval == 0))
     {
-      outputToFile(m_step, a_coveredVal, dt, m_time);
+      writePlotFile(a_coveredVal);
+    }
+    if(writeCheckpoints)
+    {
+      writeCheckpointFile();
     }
   }
 }
@@ -455,8 +479,9 @@ EBINS::
 advanceScalar(Real a_dt)
               
 {
-  auto& scal = *m_scal;
   CH_TIME("EBINS::advanceScalar");
+  
+  auto& scal = *m_scal;
   scal.exchange(m_exchangeCopier);
   Real fluxval;
   ParmParse pp;
@@ -471,6 +496,7 @@ advanceSpecies(Real a_dt,
                Real         a_tol,    
                unsigned int a_maxIter)
 {
+  CH_TIME("EBINS::advanceSpecies");
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
     pout() << "advancing species number "<< ispec << endl;
@@ -513,37 +539,53 @@ void
 EBINS::
 getReactionSourceTerm(unsigned int a_ispec)
 {
+  CH_TIME("EBINS::getReactionSourceTerm");
   m_sour->setVal(0.);
 }
 /*******/ 
 void
 EBINS::
-outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const
+writePlotFile(Real a_coveredval) const
 {
-  CH_TIME("EBINS::outputToFile");
+  CH_TIME("EBINS::writePlotFile");
   const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
   string filescal = string("scal.step_")
-    + std::to_string(a_step) + string(".hdf5");
+    + std::to_string(m_step) + string(".hdf5");
   string filevelo = string("velo.step_")
-    + std::to_string(a_step) + string(".hdf5");
+    + std::to_string(m_step) + string(".hdf5");
   string filegphi = string("gphi.step_")
-    + std::to_string(a_step) + string(".hdf5");
+    + std::to_string(m_step) + string(".hdf5");
   writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain,
-                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
   writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain,
-                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
   writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain,
-                        m_graphs, a_coveredval, m_dx, a_dt, a_time);
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
     string filespec = string("spec_") + std::to_string(ispec)
-      + string(".step_") + std::to_string(a_step) + string(".hdf5");
+      + string(".step_") + std::to_string(m_step) + string(".hdf5");
     const auto& species = *(m_species[ispec]);
     writeEBLevelHDF5<1>(filespec,  species, kappa,
                         m_domain, m_graphs, a_coveredval,
-                        m_dx, a_dt, a_time);
+                        m_dx, m_dt, m_time);
   }
+}
+/*******/
+void
+EBINS::
+readDataFromCheckpoint(Real         & a_curTime,
+                       unsigned int & a_curStep,
+                       const string & a_checkpointName)
+{
+  CH_TIME("EBINS::readDataFromCheckpointFile");
+}
+/*******/
+void
+EBINS::
+writeCheckpointFile()
+{
+  CH_TIME("EBINS::writeCheckpointFile");
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"
-

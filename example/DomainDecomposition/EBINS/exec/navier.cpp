@@ -182,13 +182,37 @@ runNavierStokes()
                paraSolver, ibc, num_species, diffusion_coeffs);
 
 
-   pout() << "initializing data " << endl;
-   initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  unsigned int starting_step = 0;
+  Real         starting_time = 0;
+  string checkpointFile;
+  //If the input file specifies a checkpoint restart, do that.
+  if(pp.query("checkpoint_restart", checkpointFile))
+  {
+    //the current step and time are also stashed in the checkpoint file
+    pout() << "read data from checkpoint file " << checkpointFile << endl;
+    solver.readDataFromCheckpoint(starting_time, starting_step, checkpointFile);
+  }
+  else
+  {
+    //step and time already initialized to zero
+    pout() << "going into initialize data " << endl;
+    initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  }
+  /**
+     For convergence tests and other things, fixed time steps can be useful.
+     The fact that fixedDt is a negative number signals that we are using varaible dt in this case.
+     This is our weird interface that says sending something non-sensical as an argument
+     turns off that bit of functionality.    This quixotic interface has been standard
+     for at least thirty years.   At the very least, it is not over-specified 
+     and that can save a lot of code. --dtg 3-12-2021
+  **/
+  Real fixedDt = -1.0;
 
-  Real fixedDt = -1.0;//signals varaible dt
+  pout() << "startiing run" << endl;
+  solver.run(max_step, max_time, starting_step, starting_time,
+             cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
+  pout() << "finished run" << endl;
 
-  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
   return 0;
 }
 
