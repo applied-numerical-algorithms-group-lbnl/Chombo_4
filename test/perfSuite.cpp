@@ -28,17 +28,14 @@ int main()
   run_perf_irreg_linear_partial_args(50,10000);
   run_perf_irreg_linear_partial_args(20,10000);
   run_perf_irreg_linear_partial_args(10,10000);
-
-
- 
+/* 
   run_perf_irreg_linear_partial_graph_args(1000,10000);
   run_perf_irreg_linear_partial_graph_args(500,10000);
   run_perf_irreg_linear_partial_graph_args(100,10000);
   run_perf_irreg_linear_partial_graph_args(50,10000);
   run_perf_irreg_linear_partial_graph_args(20,10000);
   run_perf_irreg_linear_partial_graph_args(10,10000);
-
-/*
+*/
   run_perf_irreg_linear_partial_args(10000,100000);
   run_perf_irreg_linear_partial_args(1000,100000);
   run_perf_irreg_linear_partial_args(500,100000);
@@ -46,6 +43,5 @@ int main()
   run_perf_irreg_linear_partial_args(50,100000);
   run_perf_irreg_linear_partial_args(20,100000);
   run_perf_irreg_linear_partial_args(10,100000);
-*/
   return 0;
 }
