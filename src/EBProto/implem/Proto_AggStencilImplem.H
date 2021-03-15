@@ -223,6 +223,12 @@ namespace Proto
     }
   }
 ///
+/////
+template<typename T>
+struct pairPtr{
+  T* ptr[2];
+};
+
 #ifdef PROTO_CUDA
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
   void 
@@ -289,11 +295,6 @@ namespace Proto
         protoFree(d_stenstart);
       }
   }
-/////
-template<typename T>
-struct pairPtr{
-  T* ptr[2];
-};
 
   template <typename data_t>
   __global__

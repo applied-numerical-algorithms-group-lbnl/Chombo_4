@@ -6,12 +6,13 @@
 
 void test_irreg_data_fill(double* ptr, std::vector<Proto::EBIndex<Proto::CELL>>& index, unsigned int size)
 {
+  index.resize(size);
   for(int i = 0 ; i < size ; i++)
   {
     ptr[i] = i*2;
     Proto::Point p(i,0,0);
     Proto::EBIndex<Proto::CELL> e(p,i);
-    index.push_back(e);
+    index[i]=e;
   }
 }
 
