@@ -666,7 +666,6 @@ namespace Proto
 
       assert(vecsize == m_indicies->size());
 //      printIrr();
-      protoDeviceSynchronize();
 
       protoLaunchKernel((EBLinearOut<cent,data_t,ncomp>), blocks, threads,
                         vecsize,
@@ -693,7 +692,6 @@ namespace Proto
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 
-      protoDeviceSynchronize();
       protoLaunchKernel((EBLinearIn<cent,data_t,ncomp>), 32*numSMs, 256,
                         m_indicies_shared_data.get(), vecsize,
                         a_buf,

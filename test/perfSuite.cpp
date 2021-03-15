@@ -22,5 +22,8 @@ int main()
   run_perf_irreg_linear_full_args(40000);
   run_perf_irreg_linear_full_args(50000);
 
+  run_perf_irreg_linear_full_args(500000);
+  run_perf_irreg_linear_full_args(800000);
+  run_perf_irreg_linear_full_args(700000);
   return 0;
 }

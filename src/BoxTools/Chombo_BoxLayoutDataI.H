@@ -701,7 +701,6 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
     a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
                    entry.item->fromRegion, a_srcComps);
   }
-  protoDeviceSynchronize();
 }
 
 template<class T>
@@ -728,10 +727,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   m_buff->m_sendRequests.resize(this->m_buff->numSends);
   std::list<MPI_Request> extraRequests;
 
-#ifdef PROTO_CUDA
   protoDeviceSynchronize();
-#endif
-
 
   unsigned int next=0;
   long long maxSize = 0;
@@ -868,7 +864,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
                     entry.item->toRegion, a_destComps);
     }
   }
-  protoDeviceSynchronize();
+//  protoDeviceSynchronize();
 
   this->m_buff->numReceives = 0;
 
