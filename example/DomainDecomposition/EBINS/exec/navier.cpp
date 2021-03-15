@@ -55,27 +55,27 @@ runNavierStokes()
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
-  int outputInterval = -1;
+  int checkpointInterval = -1;
+  int   plotfileInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
 
-  pp.get("nstream", nStream);
 
   pp.get("viscosity" , nu);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
+  pp.get("plotfile_interval"  ,   plotfileInterval);
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
   EBMultigridLevel::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
+  pout() << "checkpoint interval = " << checkpointInterval  << endl;
+  pout() << "plotfile   interval = " <<   plotfileInterval  << endl;
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -123,7 +123,7 @@ runNavierStokes()
   pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
   pp.get("pressure_iterations", pIters);
   pp.get("cfl"  , cfl);
   int whichSolver;
@@ -157,7 +157,6 @@ runNavierStokes()
   pout() << "geom cen        = " << geomCen    << endl;
   pout() << "max vel mag     = " << maxVelMag  << endl;
   pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
   pout() << "max_step        = " << max_step   << endl;
   pout() << "max_time        = " << max_time   << endl;
   pout() << "pressure iter   = " << pIters     << endl;
@@ -210,7 +209,9 @@ runNavierStokes()
 
   pout() << "startiing run" << endl;
   solver.run(max_step, max_time, starting_step, starting_time,
-             cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
+             cfl, fixedDt, tol, pIters,  maxIter,
+             plotfileInterval, checkpointInterval,
+             coveredval);
   pout() << "finished run" << endl;
 
   return 0;

@@ -33,7 +33,8 @@ max_vel_mag = 1.0
 max_vel_rad = 0.25
 
 #negative to turn off output
-output_interval = 10
+plotfile_interval = 1
+checkpoint_interval = 1
 
 #value in hdf5 file of  covered data
 covered_value = 0.0

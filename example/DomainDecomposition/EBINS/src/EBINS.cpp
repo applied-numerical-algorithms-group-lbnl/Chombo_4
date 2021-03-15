@@ -159,6 +159,8 @@ run(unsigned int a_max_step,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");
+  m_step = a_startingStep;
+  m_time = a_startingTime;
   //Welcome to our standard interface that is at least not over specified.
   //Negative intervals turn intervalled stuff off.
   //Negative fixed time step means variable time step.
@@ -172,7 +174,16 @@ run(unsigned int a_max_step,
   auto & velo =  (*m_velo );
   auto & gphi =  (*m_gphi );
 
-  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are projecting the initial velocity."<< endl;
+    m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting velocity. " << endl;
+  }
+    
   velo.exchange(m_exchangeCopier);
 
   //get the time step
@@ -185,20 +196,26 @@ run(unsigned int a_max_step,
     m_dt = computeDt(a_cfl);
   }
   
-  pout() << "getting initial pressure using fixed point iteration " << endl;
-  initializePressure(m_dt, a_tol, a_numIterPres, a_maxIter);
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are " << endl;
+    pout() << "getting initial pressure using fixed point iteration " << endl;
+    initializePressure(m_dt, a_tol, a_numIterPres, a_maxIter);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting pressure." << endl;
+  }
 
-  if(writePlotfiles)
+  if(writePlotfiles && (m_step % a_plotfileInterval == 0))
   {
     writePlotFile(a_coveredVal);
   }
-  if(writeCheckpoints)
+  if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
   {
     writeCheckpointFile();
   }
 
-  m_step = a_startingStep;
-  m_time = a_startingTime;
   while((m_step < a_max_step) && (m_time < a_max_time))
   {
     pout() << "step = " << m_step << ", time = " << m_time << " dt = " << m_dt << endl;
@@ -218,11 +235,11 @@ run(unsigned int a_max_step,
     {
       m_dt = computeDt(a_cfl);
     }
-    if((writePlotfiles) && (m_step % a_plotfileInterval == 0))
+    if(writePlotfiles && (m_step % a_plotfileInterval == 0))
     {
       writePlotFile(a_coveredVal);
     }
-    if(writeCheckpoints)
+    if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
     {
       writeCheckpointFile();
     }
@@ -600,6 +617,7 @@ readDataFromCheckpoint(Real         & a_curTime,
     string specname = string("spec_") + to_string(ispec);
     m_species[ispec]->readFromCheckPoint(handle, specname);
   }
+  handle.close();
 }
 /*******/
 void
@@ -628,7 +646,7 @@ writeCheckpointFile()
     string specname = string("spec_") + to_string(ispec);
     m_species[ispec]->writeToCheckPoint(handle, specname);
   }
-  
+  handle.close();
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"
