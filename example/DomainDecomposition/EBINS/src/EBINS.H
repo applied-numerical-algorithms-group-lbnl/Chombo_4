@@ -34,19 +34,35 @@ public:
         const IntVect                          & a_nghost,
         ParabolicSolverType                      a_solver,
         EBIBC                                    a_ibc,
-        unsigned int                             a_num_species = 0,  
+        unsigned int                             a_num_species = 0,
         vector<Real> a_diffusionCoeffs = vector<Real>());
 
-  /// set fixedDt to positive number to force that to be dt
+  void readDataFromCheckpoint(Real         & a_curTime,
+                              unsigned int & a_curStep,
+                              const string & a_checkpointName);
+  
+  /// 
+  /**
+     Set fixedDt to positive number to force that to be dt.
+     Negative intervals turn intervalled stuff off (eg. if checkPointInterval < 0, no checkpointing)
+     Negative fixed time step means to use a variable time step.
+     This is our weird interface that says sending something non-sensical as an argument
+     turns off that bit of functionality.    This quixotic  interface has been standard
+     for at least thirty years.  At the very least, it is not over-specified 
+     and that can save a lot of code. --dtg 3-12-2021
+  */
   void 
   run(unsigned int a_max_step,
       Real         a_max_time,
+      unsigned int a_startingStep,
+      Real         a_startingTime,
       Real         a_cfl,
       Real         a_fixedDt             = -1.0,
       Real         a_solverTolerance     = 1.0e-10,
       unsigned int a_pressureInitIters   = 1,
       unsigned int a_maxSolverIterations = 27,
-      int          a_outputInterval      = 1,
+      int          a_plotfileInterval    = 1,  // how often to output data
+      int          a_checkpointInterval  = 1,  // how often to save the state.
       Real         a_coveredval          = 0.0);
 
 
@@ -83,13 +99,19 @@ public:
   Copier                                 m_exchangeCopier;
   Copier                                 m_copyCopier;
 
-
 private:
   
   unsigned int m_step;
   Real         m_time;
+  Real         m_dt;
   
   bool m_eulerCalc;
+
+  void  defineInternals(EBIBC                a_ibc,
+                        unsigned int         a_num_species,
+                        Real                 a_viscosity,
+                        ParabolicSolverType  a_solver);
+  
   void projectVelocityAndCorrectPressure(Real a_dt,
                                          Real a_tol,                         
                                          unsigned int a_maxIter);
@@ -118,7 +140,9 @@ private:
                       Real         a_tol,    
                       unsigned int a_maxIter);
 
-  void outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const;
+  void writeCheckpointFile();
+  
+  void writePlotFile(Real a_coveredval) const;
   //forbidden for all the usual reasons
   EBINS();
   EBINS(const EBINS& a_input);

@@ -129,7 +129,7 @@ setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx
   {
     //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
     //using non-eb forall because box restriction in eb land is broken right now.   This will
-    //work if there nare no cut cells near the domain boundary
+    //work if there are no cut cells near the domain boundary
     auto& regdata = a_flux.m_yflux->getRegData();
     forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
   }
@@ -138,7 +138,7 @@ setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx
   {
     //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
     //using non-eb forall because box restriction in eb land is broken right now.   This will
-    //work if there nare no cut cells near the domain boundary
+    //work if there are no cut cells near the domain boundary
     auto& regdata = a_flux.m_zflux->getRegData();
     forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
   }

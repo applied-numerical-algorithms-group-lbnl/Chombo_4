@@ -144,10 +144,10 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
-/*#ifdef PROTO_CUDA
+#ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
-#else*/
+#else
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
@@ -158,7 +158,7 @@ namespace Proto
                                            bcsrcbox, true, 1.0);
         }
       }
-//#endif
+#endif
     }
     if(!m_bcsOnly)
     {

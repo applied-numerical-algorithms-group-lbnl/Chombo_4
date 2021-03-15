@@ -552,6 +552,7 @@ namespace Proto
 
     inline void defineEBIrregData()
     {
+<<<<<<< HEAD
       PR_TIME("defineEBIrregData");
       vector< EBIrregStruct<data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<data_t,ncomp>);
@@ -572,9 +573,9 @@ namespace Proto
       return m_EBIrregDataSharedPtr.get();
     }
 
-    inline shared_ptr<EBIrregStruct<data_t, ncomp>> getEBIrregDataSharedPtr() const
+    inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()
     {
-      return m_EBIrregDataSharedPtr;
+      return m_EBIrregDataPtr;
     }
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const

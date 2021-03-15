@@ -4,8 +4,8 @@
 
 using std::vector;
 using std::shared_ptr;
-#include "EBProto.H"
 #include "Proto_EBGraph.H"
+#include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
 #include "Proto_Serialization.H"
 namespace Proto

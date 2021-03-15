@@ -293,6 +293,20 @@ public:
 #endif
   }
 
+  ///
+  void 
+  writeToCheckPoint(HDF5Handle& a_handle, string a_varname) const
+  {
+
+  }
+
+  ///
+  void 
+  readFromCheckPoint(HDF5Handle& a_handle, string a_varname) const
+  {
+
+  }
+  
   void dumpFile(int fileNumber, Real coveredValue) const
   {
     string filename = "tmp"+std::to_string(fileNumber)+".hdf5";
