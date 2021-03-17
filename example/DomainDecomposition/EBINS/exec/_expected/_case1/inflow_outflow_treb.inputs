@@ -1,3 +1,5 @@
+#true to set  initial pressure = nu*lapl(u)
+stokes_flow_initialization = false
 #checkpoint_restart = "check.step_5.hdf5"
 initial_velo = "zero"
 initial_scal = "blob_scal_0"

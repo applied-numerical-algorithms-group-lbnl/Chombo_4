@@ -24,6 +24,7 @@ public:
      to be at least a_num_species long.   I could use the vector's size 
      to be num_species but I find that API abstruse.   So the interface is clear,
      albeit slightly overspecified.   I make no apologies.
+
   */
   EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
         shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -50,6 +51,15 @@ public:
      turns off that bit of functionality.    This quixotic  interface has been standard
      for at least thirty years.  At the very least, it is not over-specified 
      and that can save a lot of code. --dtg 3-12-2021
+
+     Pressure initialization options (only applies if a_startingStep == 0):
+     1- Stokes flow initialization -- set gphi = nu*lapl*velo component wise 
+        (overrides all if a_stokesFlowInitialization is true)
+     2- Standard Treb mode -- initialize pressure with what comes out of 
+        the initial projection (v = P(v*), gp = (I-P)(v*).
+        For this set stokesFlowInitialization = false, numPressureIterations=0
+     3- Fixed point iteration for pressure a-la BCG.  
+        For this set stokesFlowInitialization = false, numPressureIterations > 0.
   */
   void 
   run(unsigned int a_max_step,
@@ -57,13 +67,14 @@ public:
       unsigned int a_startingStep,
       Real         a_startingTime,
       Real         a_cfl,
-      Real         a_fixedDt             = -1.0,
-      Real         a_solverTolerance     = 1.0e-10,
-      unsigned int a_pressureInitIters   = 1,
-      unsigned int a_maxSolverIterations = 27,
-      int          a_plotfileInterval    = 1,  // how often to output data
-      int          a_checkpointInterval  = 1,  // how often to save the state.
-      Real         a_coveredval          = 0.0);
+      Real         a_fixedDt,
+      Real         a_solverTolerance, 
+      unsigned int a_pressureInitIters,   
+      unsigned int a_maxSolverIterations ,
+      int          a_plotfileInterval,      // how often to output data
+      int          a_checkpointInterval,    // how often to save the state.
+      bool         a_stokesFlowInitialization,
+      Real         a_coveredval);  //for plot files
 
 
 
@@ -126,12 +137,14 @@ private:
                                    unsigned int a_maxSolverIterations);
 
   Real  computeDt(Real a_cfl) const;
-  void initializePressure(Real a_dt,
-                          Real a_tol,
-                          unsigned int a_numPressureIterations,
-                          unsigned int a_maxSolverIterations);
-  void advanceVelocityAndPressure(Real a_dt,                          
-                                  Real a_tol,                         
+  void initializePressure(Real         a_dt,
+                          Real         a_tol,
+                          unsigned int a_maxSolverIterations,
+                          bool         a_stokesFlowInitialization,
+                          unsigned int a_numPressureIterations);
+  
+  void advanceVelocityAndPressure(Real         a_dt,                          
+                                  Real         a_tol,                         
                                   unsigned int a_maxSolverIterations);
 
   void advanceScalar(Real a_dt);

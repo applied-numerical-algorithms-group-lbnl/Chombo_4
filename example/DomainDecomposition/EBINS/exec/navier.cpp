@@ -112,7 +112,8 @@ runNavierStokes()
   Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
   Real cfl            = 0.5;
   int pIters = 1;
-
+  bool stokesFlowInitialization;
+  pp.get("stokes_flow_initialization", stokesFlowInitialization);
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
   pp.get("covered_value", coveredval);
@@ -159,7 +160,6 @@ runNavierStokes()
   pout() << "max vel rad     = " << maxVelRad  << endl;
   pout() << "max_step        = " << max_step   << endl;
   pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
   pout() << "viscosity       = " << viscosity  << endl;
   pout() << "=============================================="  << endl;
 
@@ -188,7 +188,7 @@ runNavierStokes()
   if(pp.query("checkpoint_restart", checkpointFile))
   {
     //the current step and time are also stashed in the checkpoint file
-    pout() << "read data from checkpoint file " << checkpointFile << endl;
+    pout() << "Reading all data from a checkpoint file " << checkpointFile << endl;
     solver.readDataFromCheckpoint(starting_time, starting_step, checkpointFile);
   }
   else
@@ -196,6 +196,27 @@ runNavierStokes()
     //step and time already initialized to zero
     pout() << "going into initialize data " << endl;
     initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  }
+  if(starting_step == 0)
+  {
+    if(stokesFlowInitialization)
+    {
+      pout() << "Initializing pressure with gph = nu lapl(v)  (stokes flow initialization)" << endl;
+    }
+    else
+    {
+      if(pIters > 0)
+      {
+        pout() << "Using fixed point interation for initial pressure with "
+               << pIters << "iterations."  << endl;
+      }
+      else
+      {
+        pout() << "Standard Treb pressure initializtion:" << endl;
+        pout() << "initializing pressure with (I-P)(v*)." << endl;
+        pout() << "(gphi out of initial projection).    " << endl;
+      }
+    }
   }
   /**
      For convergence tests and other things, fixed time steps can be useful.
@@ -211,7 +232,7 @@ runNavierStokes()
   solver.run(max_step, max_time, starting_step, starting_time,
              cfl, fixedDt, tol, pIters,  maxIter,
              plotfileInterval, checkpointInterval,
-             coveredval);
+             stokesFlowInitialization, coveredval);
   pout() << "finished run" << endl;
 
   return 0;
