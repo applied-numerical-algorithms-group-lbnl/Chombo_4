@@ -120,11 +120,11 @@ namespace Proto
 
 
 
-  template< typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
   __global__
   void
   vec_indexer(unsigned int a_begin, unsigned int a_end, Func a_body, 
-              EBIrregStruct<data_t,ncomp>*  a_dst, Srcs... a_srcs)
+              EBIrregStruct<cent,data_t,ncomp>*  a_dst, Srcs... a_srcs)
   {
     int idx = threadIdx.x + blockIdx.x*blockDim.x;
     if (idx >= a_begin && idx < a_end)
@@ -134,11 +134,11 @@ namespace Proto
   }
 
 
-  template< typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
   __global__
   void
   vec_indexer_i(unsigned int a_begin, unsigned int a_end,Func a_body, 
-                EBIrregStruct<data_t,ncomp>*  a_dst, Srcs... a_srcs)
+                EBIrregStruct<cent,data_t,ncomp>*  a_dst, Srcs... a_srcs)
   {
     int idx = threadIdx.x + blockIdx.x*blockDim.x;
     if (idx >= a_begin && idx < a_end)
@@ -186,10 +186,10 @@ namespace Proto
        
   }
 
-  template<typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
   vec_indexer_i(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-		EBIrregStruct<data_t,ncomp>* a_dst, Srcs... a_srcs)
+		EBIrregStruct<cent,data_t,ncomp>* a_dst, Srcs... a_srcs)
   {
     for(unsigned int ivec = a_begin; ivec < a_end; ivec++)
     {
@@ -203,10 +203,10 @@ namespace Proto
 
 
 //going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template<typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
   protoVectorFunc(const Func& a_F, unsigned int a_Nvec, 
-                 EBIrregStruct<data_t,ncomp> * a_dst,Srcs... a_srcs)
+                 EBIrregStruct<cent,data_t,ncomp> * a_dst,Srcs... a_srcs)
   {
     PR_TIME("vec_indexer");
     const int N = a_Nvec;
@@ -220,10 +220,10 @@ namespace Proto
 
 
 //going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template<typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
   inline void
   protoVectorFunc_i(const Func& a_F, unsigned int a_Nvec, 
-                   EBIrregStruct<data_t,ncomp> * a_dst,Srcs... a_srcs)
+                   EBIrregStruct<cent,data_t,ncomp> * a_dst,Srcs... a_srcs)
   {
     PR_TIME("vec_indexer_i");
     const int N = a_Nvec;
