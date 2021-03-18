@@ -293,7 +293,7 @@ initializePressure(Real         a_dt,
       }
     }
   }
-  else if(a_maxIter > 0)
+  else if(a_numPressureIterations > 0)
   {
     pout() << "Getting initial pressure using fixed point iteration " << endl;
     gphi.setVal(0.);
