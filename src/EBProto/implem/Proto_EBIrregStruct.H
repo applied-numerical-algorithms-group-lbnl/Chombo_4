@@ -20,7 +20,7 @@ public:
     unsigned int   m_offset;
     Point          m_index;
 
-    template<unsigned int ncomp2>
+/*    template<unsigned int ncomp2>
     EBIrregStruct(EBIrregStruct<cent, data_t,ncomp2> a_in)
     {
       m_startPtr = a_in.m_startPtr;
@@ -28,6 +28,7 @@ public:
       m_offset   = a_in.m_offset;
       m_index    = a_in.m_index;
     }
+*/
 
     EBIrregStruct() : m_index()
     {
@@ -35,7 +36,7 @@ public:
       m_varsize  = 0;
       m_offset   = 0;
     }
-    virtual ~EBIrregStruct(){}
+    virtual ~EBIrregStruct(){};
    };
 
 }
