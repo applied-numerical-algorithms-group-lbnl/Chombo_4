@@ -79,36 +79,35 @@ public:
 
 
   //rule britannica
-  shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
-  shared_ptr<GeometryService<2> >        m_geoserv;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_velo;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_gphi;
-  shared_ptr<EBLevelBoxData<CELL, 1  > > m_scal;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_sour;
-  shared_ptr<EBLevelBoxData<CELL, 1  > > m_rhsDiff;
-  shared_ptr<EBLevelBoxData<CELL, 1  > > m_sourDiff;
-  shared_ptr<EBLevelBoxData<CELL, DIM> > m_divuu;
+  shared_ptr<EBEncyclopedia<2, Real> >          m_brit;
+  shared_ptr<GeometryService<2> >               m_geoserv;
+  shared_ptr<EBLevelBoxData<CELL, DIM> >        m_velo;
+  shared_ptr<EBLevelBoxData<CELL, DIM> >        m_gphi;
+  shared_ptr<EBLevelBoxData<CELL, 1  > >        m_scal;
+  shared_ptr<EBLevelBoxData<CELL, DIM> >        m_sour; 
+  shared_ptr<EBLevelBoxData<CELL, DIM> >        m_divuu;
   
-  vector<Real> m_diffusionCoefs;
+  vector<Real>                                  m_diffusionCoefs;
   vector<shared_ptr<EBLevelBoxData<CELL, 1> > > m_species;
+  vector<shared_ptr<EBLevelBoxData<CELL, 1> > > m_reactionRates;
 
-  shared_ptr<EBAdvection>                m_advectOp;
-  shared_ptr<EBCCProjector >             m_ccProj;
-  shared_ptr<EBMACProjector>             m_macProj;
-  shared_ptr<EBMultigrid>                m_helmholtzVelo;
-  shared_ptr<EBMultigrid>                m_helmholtzSpec;
-  shared_ptr<BCGVelAdvect>               m_bcgAdvect;
-  shared_ptr<BaseEBParabolic>            m_heatSolverVelo;
-  shared_ptr<BaseEBParabolic>            m_heatSolverSpec;
-  shared_ptr<LevelData<EBGraph> >        m_graphs;
-  
-  DisjointBoxLayout                      m_grids;
-  Box                                    m_domain;
-  IntVect                                m_nghost;
-  Real                                   m_dx;
-  Real                                   m_viscosity;
-  Copier                                 m_exchangeCopier;
-  Copier                                 m_copyCopier;
+  shared_ptr<EBAdvection>                       m_advectOp;
+  shared_ptr<EBCCProjector >                    m_ccProj;
+  shared_ptr<EBMACProjector>                    m_macProj;
+  shared_ptr<EBMultigrid>                       m_helmholtzVelo;
+  shared_ptr<EBMultigrid>                       m_helmholtzSpec;
+  shared_ptr<BCGVelAdvect>                      m_bcgAdvect;
+  shared_ptr<BaseEBParabolic>                   m_heatSolverVelo;
+  shared_ptr<BaseEBParabolic>                   m_heatSolverSpec;
+  shared_ptr<LevelData<EBGraph> >               m_graphs;
+                                                
+  DisjointBoxLayout                             m_grids;
+  Box                                           m_domain;
+  IntVect                                       m_nghost;
+  Real                                          m_dx;
+  Real                                          m_viscosity;
+  Copier                                        m_exchangeCopier;
+  Copier                                        m_copyCopier;
 
 private:
   
@@ -129,7 +128,7 @@ private:
   void getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter);
   //gets  ustar
   void advanceVelocityEuler(Real a_dt);
-  void getReactionSourceTerm(unsigned int a_ispec);
+  void getReactionRates();
   
   //gets  ustar
   void advanceVelocityNavierStokes(Real a_dt,                          

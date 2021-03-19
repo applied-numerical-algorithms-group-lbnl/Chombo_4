@@ -55,13 +55,11 @@ defineInternals(EBIBC                a_ibc,
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-  m_sourDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-  m_rhsDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
   for(int ispec = 0; ispec < a_num_species; ispec++)
   {
-    m_species[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
+    m_species[ispec]           = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+    m_reactionRates[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
       (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
   }
   
@@ -373,6 +371,15 @@ void EulerAdvanceF(Var<Real, DIM>    a_velo,
   }
 }
 PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
+/*******/ 
+PROTO_KERNEL_START 
+void SpeciesAdvanceF(Var<Real, 1>    a_species,
+                     Var<Real, 1>    a_rate,
+                     Real            a_dt)
+{
+  a_species(0) += a_dt*a_rate(0);
+}
+PROTO_KERNEL_END(SpeciesAdvanceF, SpeciesAdvance)
 
 /*******/ 
 void
@@ -400,10 +407,9 @@ advanceVelocityEuler(Real a_dt)
 /*******/ 
 PROTO_KERNEL_START 
 void DiffusionRHSF(Var<Real, 1>    a_rhs,
-                   Var<Real, 1>    a_divuphi,
-                   Var<Real, 1>    a_source)
+                   Var<Real, 1>    a_divuphi)
 {
-  a_rhs(0) = -a_divuphi(0) + a_source(0);
+  a_rhs(0) = -a_divuphi(0);
 }
 PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
 /*******/ 
@@ -561,6 +567,8 @@ advanceSpecies(Real a_dt,
                unsigned int a_maxIter)
 {
   CH_TIME("EBINS::advanceSpecies");
+  //Dethrone the dictaphone.
+  DataIterator dit = m_grids.dataIterator();
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
     pout() << "advancing species number "<< ispec << endl;
@@ -575,36 +583,54 @@ advanceSpecies(Real a_dt,
     pp.get(scalname.c_str(),   fluxval);
     
     m_advectOp->hybridDivergence(spec, a_dt, fluxval);
-    //sets m_sour
-    pout() << "getting reaction term R" << endl;
-    getReactionSourceTerm(ispec);
+    m_sour->setVal(0.);
     EBLevelBoxData<CELL, 1>& divuphi = m_advectOp->m_hybridDiv;
 
     pout() << "assembling  rhs = -divuphi + R" << endl;
-    DataIterator dit = m_grids.dataIterator();
+    EBLevelBoxData< CELL, 1> sourcomp;
+    sourcomp.define<DIM> (*m_sour, 0, m_graphs);
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
-      unsigned long long int numflopspt = 2;
       Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      auto & divuphifab =         divuphi[dit[ibox]];
-      auto & reactsour  =   (*m_sourDiff)[dit[ibox]];
-      auto & rhs        =   (* m_rhsDiff)[dit[ibox]];
-
-      ebforallInPlace(numflopspt, "DiffusionRHS", DiffusionRHS, grbx, rhs, divuphifab, reactsour);
+      auto & divuphifab =  divuphi[dit[ibox]];
+      auto & rhsfab     = sourcomp[dit[ibox]];
+      Bx inputBox = divuphifab.inputBox();
+      ebforall(inputBox, DiffusionRHS, grbx, rhsfab, divuphifab);
     }
     pout() << "calling heat solver for variable "  << endl;
     //advance the parabolic equation
     Real thiscoef = m_diffusionCoefs[ispec];
-    m_heatSolverSpec->advanceOneStep(spec, (*m_rhsDiff),
+    m_heatSolverSpec->advanceOneStep(spec, sourcomp,
                                      thiscoef, a_dt, a_tol, a_maxIter);
+
   }
+  pout() << "getting reaction rates and evolving species"   << endl;
+  getReactionRates();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    //this could get done once for all species if we knew the number
+    //of species at compile time.
+    for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+    {
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & specfab = (      *m_species[ispec])[dit[ibox]];
+      auto & ratefab = (*m_reactionRates[ispec])[dit[ibox]];
+      
+      Bx inputBox = ratefab.inputBox();
+      ebforall(inputBox, SpeciesAdvance, grbx, specfab, ratefab, m_dt);
+    }
+  }
+
 }
 void
 EBINS::
-getReactionSourceTerm(unsigned int a_ispec)
+getReactionRates()
 {
-  CH_TIME("EBINS::getReactionSourceTerm");
-  m_sour->setVal(0.);
+  CH_TIME("EBINS::getReactionRates");
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    m_reactionRates[ispec]->setVal(0.);
+  }
 }
 /*******/ 
 void
@@ -655,8 +681,6 @@ readDataFromCheckpoint(Real         & a_curTime,
   m_gphi->readFromCheckPoint(    handle, string("gphi"));
   m_scal->readFromCheckPoint(    handle, string("scal"));
   m_sour->readFromCheckPoint(    handle, string("sour"));
-  m_rhsDiff->readFromCheckPoint( handle, string("rhsDiff"));
-  m_sourDiff->readFromCheckPoint(handle, string("sourDiff"));
   m_divuu->readFromCheckPoint(   handle, string("divuu"));
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
@@ -684,8 +708,6 @@ writeCheckpointFile()
   m_gphi->writeToCheckPoint(    handle, string("gphi"));
   m_scal->writeToCheckPoint(    handle, string("scal"));
   m_sour->writeToCheckPoint(    handle, string("sour"));
-  m_rhsDiff->writeToCheckPoint( handle, string("rhsDiff"));
-  m_sourDiff->writeToCheckPoint(handle, string("sourDiff"));
   m_divuu->writeToCheckPoint(   handle, string("divuu"));
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
