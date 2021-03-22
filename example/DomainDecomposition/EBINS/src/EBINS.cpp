@@ -156,9 +156,12 @@ run(unsigned int a_max_step,
     unsigned int a_maxIter,
     int          a_plotfileInterval,
     int          a_checkpointInterval,
+    bool         a_stokesFlowInitialization,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");
+  m_step = a_startingStep;
+  m_time = a_startingTime;
   //Welcome to our standard interface that is at least not over specified.
   //Negative intervals turn intervalled stuff off.
   //Negative fixed time step means variable time step.
@@ -172,7 +175,16 @@ run(unsigned int a_max_step,
   auto & velo =  (*m_velo );
   auto & gphi =  (*m_gphi );
 
-  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are projecting the initial velocity."<< endl;
+    m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting velocity. " << endl;
+  }
+    
   velo.exchange(m_exchangeCopier);
 
   //get the time step
@@ -185,20 +197,25 @@ run(unsigned int a_max_step,
     m_dt = computeDt(a_cfl);
   }
   
-  pout() << "getting initial pressure using fixed point iteration " << endl;
-  initializePressure(m_dt, a_tol, a_numIterPres, a_maxIter);
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are  initializing  pressure." << endl;
+    initializePressure(m_dt, a_tol, a_maxIter, a_stokesFlowInitialization, a_numIterPres);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting pressure." << endl;
+  }
 
-  if(writePlotfiles)
+  if(writePlotfiles && (m_step % a_plotfileInterval == 0))
   {
     writePlotFile(a_coveredVal);
   }
-  if(writeCheckpoints)
+  if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
   {
     writeCheckpointFile();
   }
 
-  m_step = a_startingStep;
-  m_time = a_startingTime;
   while((m_step < a_max_step) && (m_time < a_max_time))
   {
     pout() << "step = " << m_step << ", time = " << m_time << " dt = " << m_dt << endl;
@@ -218,11 +235,11 @@ run(unsigned int a_max_step,
     {
       m_dt = computeDt(a_cfl);
     }
-    if((writePlotfiles) && (m_step % a_plotfileInterval == 0))
+    if(writePlotfiles && (m_step % a_plotfileInterval == 0))
     {
       writePlotFile(a_coveredVal);
     }
-    if(writeCheckpoints)
+    if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
     {
       writeCheckpointFile();
     }
@@ -233,23 +250,69 @@ void
 EBINS::
 initializePressure(Real         a_dt,
                    Real         a_tol,
-                   unsigned int a_numIterPres, 
-                   unsigned int a_maxIter)
+                   unsigned int a_maxIter,
+                   bool         a_stokesFlowInitialization,
+                   unsigned int a_numPressureIterations)
 {
   CH_TIME("EBINS::initializePressure");
   auto & velo =  (*m_velo );
   auto & gphi =  (*m_gphi );
 
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
-  Interval interv(0, DIM-1);
-  velo.copyTo(interv, velosave, interv, m_copyCopier);
-  //gphi.setVal(0.);
-  for(int iter = 0; iter < a_numIterPres; iter++)
+  if(a_stokesFlowInitialization)
   {
-    advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
-    velosave.copyTo(interv, velo, interv, m_copyCopier);
+    pout() << "Stokes flow initialization:" << endl;
+    pout() << "Setting gphi to nu*lapl(velo) componentwise." << endl;
+    //stencil string for normalizor with radius 1.
+    //this got registered in EBAdvection.
+    string ncdivstr     = StencilNames::NCDivergeRoot + string("1");  
+    string nobcsstr     = StencilNames::NoBC;
+    for(int vecDir =0; vecDir < DIM; vecDir++)
+    {
+      //using m_sour as scratch space.
+      EBLevelBoxData< CELL, 1> velocomp, gphicomp, sourcomp;
+      velocomp.define<DIM> (*m_velo, vecDir, m_graphs);
+      gphicomp.define<DIM> (*m_gphi, vecDir, m_graphs);
+      sourcomp.define<DIM> (*m_sour, vecDir, m_graphs);
+
+      Real alpha = 0; Real beta = m_viscosity;
+      m_helmholtzVelo->resetAlphaAndBeta(alpha, beta);
+      //puts nu*kappa*lapl(velo) into source
+      m_helmholtzVelo->applyOp(sourcomp, velocomp);
+      //normalize and put it into gphi
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        auto& ncdiv  = gphicomp[dit[ibox]];
+        auto& kapdiv = sourcomp[dit[ibox]];
+        //auto& kappa =       m_kappa[dit[ibox]];
+        const auto& stencil =
+          m_brit->m_cellToCell->getEBStencil(ncdivstr,nobcsstr, m_domain, m_domain, ibox);
+        bool initToZero = true;
+        stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
+      }
+    }
   }
-  gphi.exchange(m_exchangeCopier);
+  else if(a_numPressureIterations > 0)
+  {
+    pout() << "Getting initial pressure using fixed point iteration " << endl;
+    gphi.setVal(0.);
+    Interval interv(0, DIM-1);
+    velo.copyTo(interv, velosave, interv, m_copyCopier);
+    gphi.setVal(0.);
+    for(int iter = 0; iter < a_numPressureIterations; iter++)
+    {
+      advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
+      velosave.copyTo(interv, velo, interv, m_copyCopier);
+    }
+    gphi.exchange(m_exchangeCopier);
+  }
+  else
+  {
+    pout() << "Since there is no Stokes flow initialization and the number of pressure iterations == 0, " << endl;
+    pout() << "we are using the initial projection's pressure gradient as the initial  pressure." << endl;
+  }
+    
 }
 /*******/ 
 Real
@@ -508,7 +571,7 @@ advanceSpecies(Real a_dt,
     pout() << "get advection term divuphi" << endl;
     Real fluxval;
     ParmParse pp;
-    string scalname = string("species_inflow_value_") + to_string(ispec);
+    string scalname = string("species_inflow_value_") + to_string(ispec); // 
     pp.get(scalname.c_str(),   fluxval);
     
     m_advectOp->hybridDivergence(spec, a_dt, fluxval);
@@ -600,6 +663,7 @@ readDataFromCheckpoint(Real         & a_curTime,
     string specname = string("spec_") + to_string(ispec);
     m_species[ispec]->readFromCheckPoint(handle, specname);
   }
+  handle.close();
 }
 /*******/
 void
@@ -628,7 +692,7 @@ writeCheckpointFile()
     string specname = string("spec_") + to_string(ispec);
     m_species[ispec]->writeToCheckPoint(handle, specname);
   }
-  
+  handle.close();
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

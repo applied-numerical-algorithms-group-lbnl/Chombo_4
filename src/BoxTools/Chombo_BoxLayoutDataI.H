@@ -28,7 +28,8 @@ T* DefaultDataFactory<T>::create(const Box& box,
                                  int ncomps,
                                  const DataIndex& a_datInd) const
 {
-  return new T(box, ncomps);
+  Proto::Box bx = ProtoCh::getProtoBox(box);
+  return new T(bx, ncomps);
 }
 
 template<class T>

@@ -12,7 +12,6 @@
 using std::pow;
 
 #include "Chombo_BoxLayoutData.H"
-#include "Chombo_FluxBox.H"
 #ifdef CH_MPI
 #include "mpi.h"
 #endif
@@ -66,39 +65,7 @@ FArrayBox* FABAliasDataFactory::create(const Box& box, int ncomps, const DataInd
 
 //--FABAliasFlBxDataFactory
 
-FABAliasFlBxDataFactory::FABAliasFlBxDataFactory(
-  BoxLayoutData<FluxBox>* a_original,
-  const Interval&         a_interval,
-  const int               a_dir)
-  :
-  m_origPointer(a_original),
-  m_interval(a_interval),
-  m_dir(a_dir)
-{
-}
 
-void
-FABAliasFlBxDataFactory::define(
-  BoxLayoutData<FluxBox>* a_original,
-  const Interval&         a_interval,
-  const int               a_dir)
-{
-  m_origPointer = a_original;
-  m_interval    = a_interval;
-  m_dir         = a_dir;
-}
-
-FArrayBox*
-FABAliasFlBxDataFactory::create(const Box&       a_box,
-                                int              a_ncomps,
-                                const DataIndex& a_dataInd) const
-{
-  CH_assert(a_ncomps = m_interval.size());
-  FluxBox& origFlBx = m_origPointer->operator[](a_dataInd);
-  return new FArrayBox(m_interval, origFlBx[m_dir]);
-}
-
-//--FaceFabDataFactory
 
 FaceFabDataFactory::FaceFabDataFactory(const int a_dir)
   :
