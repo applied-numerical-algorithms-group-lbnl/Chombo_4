@@ -263,6 +263,10 @@ public:
   virtual void clear();
 
   ///
+  unsigned int getMemType() const;
+ 
+
+  ///
   /**
      The assignment operator.
 
