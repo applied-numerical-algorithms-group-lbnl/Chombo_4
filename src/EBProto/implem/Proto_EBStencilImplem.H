@@ -136,7 +136,8 @@ namespace Proto
   EBStencil<order, data_t, srcCenter, dstCenter>::
   applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
            const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-           double                                      a_scale)  const
+           double                                      a_scale,
+           bool                                        a_initToZero)  const
   {
     PR_TIME("EBStencil::applyITZ");
     
@@ -155,19 +156,18 @@ namespace Proto
         {
           Box bcsrcbox = m_BCApplyBoxes[ibc][ivec];
           m_regStencilBCS[ibc][ivec].apply(castSrc, castSrc,
-                                           bcsrcbox, true, 1.0);
+                                           bcsrcbox, a_initToZero, 1.0);
         }
       }
 //#endif
     }
     if(!m_bcsOnly)
     {
-      bool incrementOnly = false;
+      bool incrementOnly = !a_initToZero;
       //already set stuff to zero if necessary
-      bool initToZero    = true;
       m_regStencilInterior.apply(a_src.getRegData(), 
                                  a_dst.getRegData(),
-                                 m_regApplyBox, initToZero, a_scale);
+                                 m_regApplyBox, a_initToZero, a_scale);
 
       m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
     }
@@ -185,17 +185,7 @@ namespace Proto
         double                                     a_scale)  const
   {
     PR_TIME("EBStencil::apply");
-    if(a_initToZero)
-    {
-      applyITZ(a_dst, a_src, a_scale);
-    }
-    else
-    {
-      EBBoxData< dstCenter, data_t, 1>   incr(a_dst.inputBox(), a_dst.ebgraph());
-      incr.setVal(0.);
-      applyITZ(incr, a_src, a_scale);
-      a_dst += incr;
-    }
+    applyITZ(a_dst, a_src, a_scale,a_initToZero);
   }
               
 }
