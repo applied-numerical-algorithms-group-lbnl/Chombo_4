@@ -287,6 +287,7 @@ struct pairPtr{
   AggStencil<srcCenter, dstCenter, data_t>::
   cudaRelease()
   {
+    PR_TIME("AggStencil::cudaRealse");
     if(d_ebstencil != nullptr)
       {
         protoFree(d_ebstencil);
