@@ -177,6 +177,11 @@ namespace Proto
     {
       return 1; 
     }
+
+    static int memTypeAllocation()
+    {
+      return 0;
+    }
     
   protected:
     EBHostFluxData(const            EBHostFluxData<data_t, ncomp>& a_src);

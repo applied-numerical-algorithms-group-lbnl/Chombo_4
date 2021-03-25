@@ -126,11 +126,6 @@ namespace Proto
   defineApplyITZ() 
   {
 #ifdef PROTO_CUDA
-/*      auto& vecStencil = sFused.getStencils();  
-      for(int ibc = 0; ibc < 2*DIM; ibc++)
-        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
-          vecStencil.push_back(&m_regStencilBCS[ibc][ivec]);
-   */   
       sFused.define(m_regStencilBCS, m_BCApplyBoxes, 2*DIM);
 #endif
   }
@@ -141,7 +136,8 @@ namespace Proto
   EBStencil<order, data_t, srcCenter, dstCenter>::
   applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
            const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-           double                                      a_scale)  const
+           double                                      a_scale,
+           bool                                        a_initToZero)  const
   {
     PR_TIME("EBStencil::applyITZ");
     
@@ -149,10 +145,11 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
-#ifdef PROTO_CUDA
+      PR_TIME("domain_BC_apply");
+/*#ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
-#else
+#else*/
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
@@ -160,21 +157,26 @@ namespace Proto
         {
           Box bcsrcbox = m_BCApplyBoxes[ibc][ivec];
           m_regStencilBCS[ibc][ivec].apply(castSrc, castSrc,
-                                           bcsrcbox, true, 1.0);
+                                           bcsrcbox, a_initToZero, 1.0);
         }
       }
-#endif
+//#endif
     }
     if(!m_bcsOnly)
     {
-      bool incrementOnly = false;
+      bool incrementOnly = !a_initToZero;
       //already set stuff to zero if necessary
       bool initToZero    = true;
-      m_regStencilInterior.apply(a_src.getRegData(), 
-                                 a_dst.getRegData(),
-                                 m_regApplyBox, initToZero, a_scale);
-
-      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      {
+        PR_TIME("reg_stencil_apply");
+        m_regStencilInterior.apply(a_src.getRegData(), 
+                                   a_dst.getRegData(),
+                                   m_regApplyBox, initToZero, a_scale);
+      }
+      {
+        PR_TIME("irreg_stencil_apply");
+        m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      }
     }
     
   }
@@ -190,17 +192,7 @@ namespace Proto
         double                                     a_scale)  const
   {
     PR_TIME("EBStencil::apply");
-    if(a_initToZero)
-    {
-      applyITZ(a_dst, a_src, a_scale);
-    }
-    else
-    {
-      EBBoxData< dstCenter, data_t, 1>   incr(a_dst.inputBox(), a_dst.ebgraph());
-      incr.setVal(0.);
-      applyITZ(incr, a_src, a_scale);
-      a_dst += incr;
-    }
+    applyITZ(a_dst, a_src, a_scale,a_initToZero);
   }
               
 }

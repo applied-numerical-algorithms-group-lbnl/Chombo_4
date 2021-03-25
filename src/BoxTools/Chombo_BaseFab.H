@@ -588,6 +588,10 @@ public:
     return 0; // static preAllocatable
   }
 
+  static int memTypeAllocation()
+  {
+    return 0;
+  }
   /**
     Turns a_slice into a BaseFab that's the same as *this except that it's just
     one cell thick in the a_sliceSpec.direction-th direction, and its

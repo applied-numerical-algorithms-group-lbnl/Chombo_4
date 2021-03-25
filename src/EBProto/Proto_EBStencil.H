@@ -103,7 +103,8 @@ namespace Proto
     inline
     void applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
                   const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-                  double a_scale      = 1)  const;
+                  double a_scale      = 1,
+                  bool   a_initToZero = true) const;
                
 
     /// get the diagonal weights of the stencil
@@ -135,15 +136,15 @@ namespace Proto
     shared_ptr< AggStencil<srcCenter, dstCenter, data_t> >  m_irregStencil;
     shared_ptr<  EBBoxData<dstCenter, data_t, 1> >          m_diagonalWeights;
 
+#ifdef PROTO_CUDA
+    FusedStencil<data_t> sFused;
+#endif
 
     private:
     EBStencil();
     EBStencil(     const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
-#ifdef PROTO_CUDA
-    FusedStencil<data_t> sFused;
-#endif
   };
 }
 #include "implem/Proto_EBStencilImplem.H"
