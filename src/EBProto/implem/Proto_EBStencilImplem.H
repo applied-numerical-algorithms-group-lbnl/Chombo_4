@@ -144,6 +144,7 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs)
     {
+      PR_TIME("domain_BC_apply");
 /*#ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
@@ -165,11 +166,17 @@ namespace Proto
       bool incrementOnly = false;
       //already set stuff to zero if necessary
       bool initToZero    = true;
-      m_regStencilInterior.apply(a_src.getRegData(), 
-                                 a_dst.getRegData(),
-                                 m_regApplyBox, initToZero, a_scale);
+      {
+        PR_TIME("reg_stencil_apply");
+        m_regStencilInterior.apply(a_src.getRegData(), 
+                                   a_dst.getRegData(),
+                                   m_regApplyBox, initToZero, a_scale);
+      }
 
-      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      {
+        PR_TIME("irreg_stencil_apply");
+        m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      }
     }
     
   }
