@@ -237,11 +237,6 @@ namespace Proto
       return 1; 
     }
 
-    static int memTypeAllocation()
-    {
-      return 0;
-    }
-
   protected:
     EBHostData(const            EBHostData<cent, data_t, ncomp>& a_src);
     EBHostData& operator=(const EBHostData<cent, data_t, ncomp>& a_src);
