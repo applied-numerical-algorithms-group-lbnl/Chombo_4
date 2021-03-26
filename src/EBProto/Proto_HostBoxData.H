@@ -111,11 +111,6 @@ namespace Proto
       return 1; // dyanmic allocatable.
     }
 
-    static int memTypeAllocation()
-    {
-      return 0;
-    }
-
     ///
     inline const data_t& operator()(const Point& a_pt, 
                                     unsigned int  a_c) const;
