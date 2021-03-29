@@ -24,6 +24,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_diffusionCoefs = a_diffusionCoeffs;
   PR_assert(m_diffusionCoefs.size() >= a_num_species);
   m_species.resize(a_num_species);
+  m_reactionRates.resize(a_num_species);
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
