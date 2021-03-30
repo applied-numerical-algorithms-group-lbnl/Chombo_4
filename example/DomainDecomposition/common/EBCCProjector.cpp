@@ -77,7 +77,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
     Bx  grown   =  grid.grow(ProtoCh::getPoint(nghost));
 
-    //get face fluxes and interpolate them to centroids
+    //get the mac gradient at face centers.
     EBFluxData<Real, 1>         facegrad(grown, graph);
     //gphi = grad(phi)
     for(unsigned int idir = 0; idir < DIM; idir++)
