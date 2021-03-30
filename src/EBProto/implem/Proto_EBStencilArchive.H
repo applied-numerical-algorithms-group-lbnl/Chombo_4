@@ -350,6 +350,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
     EBStencilArchive() {}
     ~EBStencilArchive() {}
@@ -453,6 +454,40 @@ namespace Proto
                bool                                        a_periodiconly,
                Point                                       a_dstGrown);               
 
+    ///   returns true if there are domain boundary conditions
+    inline static bool
+    getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+                  vector<LocalStencil<CELL, double> >       & a_stencil,
+                  Stencil<double>                           & a_regStencilInterior,
+                  vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
+                  vector<Box>                                 a_BCApplyBoxes[2*DIM],
+                  Box                                       & a_regApplyBox,
+                  bool                                      & a_bcOnly,
+                  string                                      a_stencilName,
+                  string                                      a_domainBCName[2*DIM],
+                  string                                      a_ebbcName,
+                  const Box                                 & a_srcValid,
+                  const Box                                 & a_dstValid,
+                  const Box                                 & a_srcDomain,
+                  const Box                                 & a_dstDomain,
+                  const Point                               & a_srcGhost,
+                  const Point                               & a_dstGhost,
+                  const EBGraph                             & a_srcGraph,
+                  const EBGraph                             & a_dstGraph,
+                  const VoluData                            & a_voludata,
+                  const EBFaData                            & a_ebfadata,
+                  const XFacData                            & a_xfacdata,
+                  const YFacData                            & a_yfacdata,
+                  const ZFacData                            & a_zfacdata,
+                  const EBNormalData                        & a_ebnormxdata,
+                  const EBNormalData                        & a_ebnormydata,
+#if DIM==3
+                  const EBNormalData                        & a_ebnormzdata,
+#endif	       
+                  double                                      a_dx,
+                  bool                                        a_periodiconly,
+                  Point                                       a_dstGrown);
+
     inline static bool
     getDomainBCStencil(vector<Stencil<double> >                    a_regStencilBC[2*DIM],       
                        vector<Box>                                 a_BCApplyBoxes[2*DIM],
@@ -522,6 +557,11 @@ namespace Proto
                   const XFacData                            & a_xfacdata,
                   const YFacData                            & a_yfacdata,
                   const ZFacData                            & a_zfacdata,
+                  const EBNormalData                        & a_ebnormxdata,
+                  const EBNormalData                        & a_ebnormydata,
+#if DIM==3
+                  const EBNormalData                        & a_ebnormzdata,
+#endif	       
                   double                                      a_dx,
                   bool                                        a_periodiconly,
                   bool  a_forceAllNeumann);

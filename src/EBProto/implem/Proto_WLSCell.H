@@ -149,6 +149,7 @@ namespace Proto
 		    RealVect                 & a_faceLoc,
 		    IndMomDIM                & a_ebmom,
 		    RealVect                 & a_normal,
+		    vector<IndMomDIM>        & a_ebnorm,
                     double                     a_dx) const;
 
     void
@@ -174,6 +175,7 @@ namespace Proto
                      const XFacData                & a_xfacdata,
                      const YFacData                & a_yfacdata,
                      const ZFacData                & a_zfacdata,
+		     vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
 		     IndMomDIM                     & a_ebmom,
@@ -228,6 +230,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
   public:
 
     ///
@@ -240,6 +243,11 @@ namespace Proto
                            const XFacData                      & a_xfacdata,
                            const YFacData                      & a_yfacdata,
                            const ZFacData                      & a_zfacdata,
+ 			   const EBNormalData                  & a_ebnormxdata,
+                           const EBNormalData                  & a_ebnormydata,
+#if DIM==3
+                           const EBNormalData                  & a_ebnormzdata,
+#endif
                            const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
                            const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
                            const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,

@@ -253,11 +253,18 @@ private:
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
     shared_ptr< LevelData< VoluData >  > voldatpld = m_geoserv->getVoluData(  m_domain);
     shared_ptr< LevelData< EBFaData >  > ebfdatpld = m_geoserv->getEBFaceData(m_domain);
     shared_ptr< LevelData< XFacData >  > xfadatpld = m_geoserv->getXFaceData( m_domain);
     shared_ptr< LevelData< YFacData >  > yfadatpld = m_geoserv->getYFaceData( m_domain);
     shared_ptr< LevelData< ZFacData >  > zfadatpld = m_geoserv->getZFaceData( m_domain);
+
+    shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(m_domain);
+    shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(m_domain);
+#if DIM==3
+    shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(m_domain);
+#endif
 
     auto& voludata =(*voldatpld)[a_dit];
     auto& ebfadata =(*ebfdatpld)[a_dit];
@@ -265,6 +272,11 @@ private:
     auto& yfacdata =(*yfadatpld)[a_dit];
     auto& zfacdata =(*zfadatpld)[a_dit];
     auto& graph    =(*m_graphs )[a_dit];
+    auto& ebnorxdata =(*ebnorxdatpld)[a_dit];
+    auto& ebnorydata =(*ebnorydatpld)[a_dit];
+#if DIM==3
+    auto& ebnorzdata =(*ebnorzdatpld)[a_dit];
+#endif
     Box valid = m_grids[a_dit];
     Bx  valbx = ProtoCh::getProtoBox(valid);
     vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
@@ -272,15 +284,35 @@ private:
     bool                      bcsOnly = false;
     Bx                        regApplyBox;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
-    archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
-                          m_stencilName,  m_domainBCName, m_ebbcName,
-                          valbx, valbx,  domainbx, domainbx,
-                          m_ptghost,  m_ptghost,    
-                          graph,  graph,
-                          voludata,  ebfadata,    
-                          xfacdata,  yfacdata, zfacdata,    
-                          m_dx, false, Point::Zeros());
+    if(m_stencilName == string("Weighted_Least_Squares"))
+    {
+      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                            m_stencilName,  m_domainBCName, m_ebbcName,
+                            valbx, valbx,  domainbx, domainbx,
+                            m_ptghost,  m_ptghost,    
+                            graph,  graph,
+                            voludata,  ebfadata, 
+                            xfacdata,  yfacdata, zfacdata,   
+			    ebnorxdata, ebnorydata,
+#if DIM==3
+                            ebnorzdata,
+#endif 
+                            m_dx, false, Point::Zeros());
+ 
+    }
+    else
+    {
+      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                            m_stencilName,  m_domainBCName, m_ebbcName,
+                            valbx, valbx,  domainbx, domainbx,
+                            m_ptghost,  m_ptghost,    
+                            graph,  graph,
+                            voludata,  ebfadata,    
+                            xfacdata,  yfacdata, zfacdata,    
+                            m_dx, false, Point::Zeros());
+    }
 
     a_allIrregPoints.makeEmpty();
     for(int ipt = 0; ipt < a_dstVoFs.size(); ipt++)

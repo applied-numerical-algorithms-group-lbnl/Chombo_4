@@ -13,6 +13,7 @@ namespace Proto
 		  RealVect                 & a_faceLoc,
                   IndMomDIM                & a_ebmom,
 	          RealVect                 & a_normal,
+		  vector<IndMomDIM>        & a_ebnorm,
                   double                     a_dx) const
   {
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -36,7 +37,7 @@ namespace Proto
       {
         diffrv[idir] = diff[idir];
       }
-      a_ebmom.shift(diffrv);
+      a_ebnorm[idir].shift(diffrv);
 
       // the contribution to the flux matrix from the normal in this particular direction
       Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
@@ -49,7 +50,7 @@ namespace Proto
         if(pd > 0)
         {
           IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
-          fluxIncr(0, jmom) = pd*a_ebmom[pshift]*a_normal[idir];
+          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];
         }
         else
         {
@@ -733,6 +734,11 @@ namespace Proto
                          const XFacData                        & a_xfacdata,
                          const YFacData                        & a_yfacdata,
                          const ZFacData                        & a_zfacdata,
+			 const EBNormalData                    & a_ebnormxdata,
+                         const EBNormalData                    & a_ebnormydata,
+#if DIM==3
+                         const EBNormalData                    & a_ebnormzdata,
+#endif
                          const BaseWLSFlux<XFACE, order>  & a_xfaceflux,
                          const BaseWLSFlux<YFACE, order>  & a_yfaceflux,
                          const BaseWLSFlux<ZFACE, order>  & a_zfaceflux,
@@ -877,6 +883,12 @@ namespace Proto
       RealVect centroid, normal;
       double bndryArea, alpha;
       IndMomDIM ebmom = a_ebfadata(cutface, 0);
+      vector<IndMomDIM> ebnorm (3);
+      ebnorm[0] = a_ebnormxdata(a_vof, 0);
+      ebnorm[1] = a_ebnormydata(a_vof, 0);
+#if DIM==3
+      ebnorm[2] = a_ebnormzdata(a_vof, 0);
+#endif
       Normalizor<order>::normalizedBndryMoments(alpha, centroid, a_ebfadata,  cutface, a_graph, a_dx);
       Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,
                                                   a_voludata,
@@ -899,6 +911,7 @@ namespace Proto
                            a_xfacdata,
                            a_yfacdata,
                            a_zfacdata,
+			   ebnorm,
   			   a_ebbcName,
                            a_dombcName,
 			   ebmom,
@@ -1082,6 +1095,7 @@ namespace Proto
                    const XFacData                & a_xfacdata,
                    const YFacData                & a_yfacdata,
                    const ZFacData                & a_zfacdata,
+		   vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
 		   IndMomDIM                     & a_ebmom,
@@ -1129,7 +1143,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebmom, a_normal, a_dx);
+    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebmom, a_normal, a_ebnorm, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
