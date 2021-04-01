@@ -1,6 +1,7 @@
 #include <cmath>
 #include <memory>
 #include "EBCCProjector.H"
+#include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 /// 
 void
@@ -52,13 +53,10 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
 {
   CH_TIME("EBCCProjector::project");
   auto & rhs     = m_macprojector->m_rhs;
-  auto & brit    = m_macprojector->m_brit;
   auto & phi     = m_macprojector->m_phi;
-  auto & doma    = m_macprojector->m_domain;
   auto & solver  = m_macprojector->m_solver;
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
-  auto & nghost  = m_macprojector->m_nghost;
   
   a_velo.exchange(m_macprojector->m_exchangeCopier);
   
@@ -70,37 +68,81 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
+  bool useConservativeGradient = false;
+  ParmParse pp;
+  pp.query("use_conservative_gradient", useConservativeGradient);
+  if(useConservativeGradient)
+  {
+    pout() << "Using a **conservative discretization*** for the CC gradient." << endl;
+  }
+  else
+  {
+    pout() << "Using the ***average of MAC gradients*** for the CC gradient." << endl;
+  }
 
+  
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     const EBGraph  & graph = (*graphs)[dit[ibox]];
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
-    Bx  grown   =  grid.grow(ProtoCh::getPoint(nghost));
+    auto& phifab =    phi[dit[ibox]];
+    auto& gphfab = a_gphi[dit[ibox]];
+    auto& velfab = a_velo[dit[ibox]];
+    if(useConservativeGradient)
+    {
+      computeConservativeGradient(gphfab, phifab, graph, grid, ibox);
+    }
+    else
+    {
+      computeAverageFaceToCellGradient(gphfab, phifab, graph, grid, ibox);
+    }
 
-    //get the mac gradient at face centers.
-    EBFluxData<Real, 1>         facegrad(grown, graph);
-    //gphi = grad(phi)
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initZero = true;
-      //registered by the mac projector
-      auto& phifab = phi[dit[ibox]];
-      brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
-                            facegrad, phifab, idir, ibox, initZero, 1.0);
-    }
-    int ideb = 0;
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initZero = true;
-      EBBoxData<CELL, Real, 1> gradComp;
-      gradComp.define(a_gphi[dit[ibox]], idir);
-      brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
-                            gradComp, facegrad,  idir, ibox, initZero, 1.0);
-      ideb++;
-      
-    }
-    a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
+    velfab -= gphfab;
   }
+}
+void
+EBCCProjector::
+computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                                 EBBoxData<CELL, Real,   1> & a_phi,
+                                 const EBGraph              & a_graph,
+                                 const Bx                   & a_grid,
+                                 const unsigned int         & a_ibox)
+{
+  auto & nghost  = m_macprojector->m_nghost;
+  auto & doma    = m_macprojector->m_domain;
+  auto & brit    = m_macprojector->m_brit;
+  Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
+
+  //get the mac gradient at face centers.
+  EBFluxData<Real, 1>         facegrad(grown, a_graph);
+  //gphi = grad(phi)
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    bool initZero = true;
+    //registered by the mac projector
+    brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
+                          facegrad, a_phi, idir, a_ibox, initZero, 1.0);
+  }
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    bool initZero = true;
+    EBBoxData<CELL, Real, 1> gradComp;
+    gradComp.define(a_gph, idir);
+    brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
+                          gradComp, facegrad,  idir, a_ibox, initZero, 1.0);
+  }
+  return;
+}
+void
+EBCCProjector::
+computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                            EBBoxData<CELL, Real,   1> & a_phi,
+                            const EBGraph              & a_graph,
+                            const Bx                   & a_grid,
+                            const unsigned int         & a_ibox)
+{
+  MayDay::Error("not implemented");
+  return;
 }
 ///
 void 

@@ -1,17 +1,18 @@
-max_step        = 10
+max_step        = 5
 max_time        = 10
-checkpoint interval = 1
+checkpoint interval = -1
 plotfile   interval = -1
 defining geometry
 nx       = 64
 defining geometry
-maxGrid  = 64
+maxGrid  = 32
 creating grid hierarchy
 creating implicit function
-all regular geometry
+sphere
+geom_cen = 0.5
+geom_rad = 0.1
 creating geometry service
 defining finest GeometryService level
-creating coarser GeometryService level
 creating coarser GeometryService level
 creating coarser GeometryService level
 creating coarser GeometryService level
@@ -20,15 +21,15 @@ making dictionary
 inititializing data
 using backward Euler for parabolic solver
 ==============================================
-tolerance       = 1e-12
+tolerance       = 1e-08
 maxIter         = 27
 blob cen        = 0.3
-geom cen        = 0
+geom cen        = 0.5
 max vel mag     = 1
 max vel rad     = 0.25
-max_step        = 10
+max_step        = 5
 max_time        = 10
-viscosity       = 0.01
+viscosity       = 0.1
 ==============================================
 initializing solver 
 going into initialize data 
@@ -41,327 +42,304 @@ initializing pressure with (I-P)(v*).
 startiing run
 projecting initial velocity
 We are starting from scratch so we are projecting the initial velocity.
-EBMultigrid: tol = 1e-12,  max iter = 27
+EBMultigrid: tol = 1e-08,  max iter = 27
 EBMultigrid: iter = 0, |resid| = 6.400e+01
-EBMultigrid: iter = 1, |resid| = 8.084e-01, rate = 7.917e+01
-EBMultigrid: iter = 2, |resid| = 3.913e-03, rate = 2.066e+02
-EBMultigrid: iter = 3, |resid| = 1.017e-05, rate = 3.848e+02
-EBMultigrid: iter = 4, |resid| = 4.798e-08, rate = 2.120e+02
-EBMultigrid: iter = 5, |resid| = 2.427e-10, rate = 1.977e+02
-EBMultigrid: final     |resid| = 3.183e-12
-maxvel = 1.000e+00, dx = 1.562e-02, dt = 7.812e-03
+EBMultigrid: iter = 1, |resid| = 8.354e-01, rate = 7.661e+01
+EBMultigrid: iter = 2, |resid| = 4.050e-03, rate = 2.063e+02
+EBMultigrid: iter = 3, |resid| = 1.025e-05, rate = 3.953e+02
+EBMultigrid: final     |resid| = 5.111e-08
+Using the ***average of MAC gradients*** for the CC gradient.
+maxvel = 1.997e+00, dx = 1.562e-02, dt = 3.912e-03
+Using Stokes dt = 2.441e-03
 We are starting from scratch so we are  initializing  pressure.
 Since there is no Stokes flow initialization and the number of pressure iterations == 0, 
 we are using the initial projection's pressure gradient as the initial  pressure.
-step = 0, time = 0.000e+00 dt = 7.812e-03
+step = 0, time = 0.000e+00 dt = 2.441e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.048e+01
-EBMultigrid: iter = 1, |resid| = 3.094e-02, rate = 6.619e+02
-EBMultigrid: iter = 2, |resid| = 1.037e-04, rate = 2.984e+02
-EBMultigrid: iter = 3, |resid| = 3.950e-07, rate = 2.625e+02
-EBMultigrid: iter = 4, |resid| = 1.578e-09, rate = 2.503e+02
-EBMultigrid: final     |resid| = 8.598e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 2.004e+01
+EBMultigrid: iter = 1, |resid| = 1.139e-02, rate = 1.759e+03
+EBMultigrid: iter = 2, |resid| = 5.624e-05, rate = 2.025e+02
+EBMultigrid: final     |resid| = 1.960e-07
 calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.083e+00
-EBMultigrid: iter = 1, |resid| = 3.681e-08, rate = 2.943e+07
-EBMultigrid: final     |resid| = 8.882e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.776e+00
+EBMultigrid: iter = 1, |resid| = 2.670e-04, rate = 6.651e+03
+EBMultigrid: iter = 2, |resid| = 2.850e-08, rate = 9.369e+03
+EBMultigrid: final     |resid| = 3.114e-12
 calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.494e-02
-EBMultigrid: iter = 1, |resid| = 7.987e-11, rate = 3.122e+08
-EBMultigrid: final     |resid| = 3.469e-18
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.180e-01
+EBMultigrid: iter = 1, |resid| = 5.373e-05, rate = 1.523e+04
+EBMultigrid: final     |resid| = 3.004e-09
 cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.968e+01
-EBMultigrid: iter = 1, |resid| = 3.770e-02, rate = 5.221e+02
-EBMultigrid: iter = 2, |resid| = 1.274e-04, rate = 2.960e+02
-EBMultigrid: iter = 3, |resid| = 5.051e-07, rate = 2.521e+02
-EBMultigrid: iter = 4, |resid| = 1.964e-09, rate = 2.572e+02
-EBMultigrid: final     |resid| = 1.100e-11
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.805e+00
+EBMultigrid: iter = 1, |resid| = 2.978e-02, rate = 2.956e+02
+EBMultigrid: iter = 2, |resid| = 1.488e-04, rate = 2.002e+02
+EBMultigrid: iter = 3, |resid| = 5.237e-07, rate = 2.841e+02
+EBMultigrid: final     |resid| = 1.820e-09
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
-maxvel = 1.041e+00, dx = 1.562e-02, dt = 7.503e-03
-step = 1, time = 7.812e-03 dt = 7.503e-03
-advancing velocity and pressure fields 
-mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.055e+01
-EBMultigrid: iter = 1, |resid| = 2.188e-02, rate = 9.390e+02
-EBMultigrid: iter = 2, |resid| = 7.046e-05, rate = 3.106e+02
-EBMultigrid: iter = 3, |resid| = 2.721e-07, rate = 2.589e+02
-EBMultigrid: iter = 4, |resid| = 1.040e-09, rate = 2.617e+02
-EBMultigrid: final     |resid| = 5.872e-12
-calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.150e+00
-EBMultigrid: iter = 1, |resid| = 2.406e-08, rate = 4.779e+07
-EBMultigrid: final     |resid| = 4.441e-16
-calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 3.006e-01
-EBMultigrid: iter = 1, |resid| = 1.666e-09, rate = 1.805e+08
-EBMultigrid: final     |resid| = 5.551e-17
-cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.257e+01
-EBMultigrid: iter = 1, |resid| = 3.103e-02, rate = 7.275e+02
-EBMultigrid: iter = 2, |resid| = 1.027e-04, rate = 3.020e+02
-EBMultigrid: iter = 3, |resid| = 3.968e-07, rate = 2.589e+02
-EBMultigrid: iter = 4, |resid| = 1.515e-09, rate = 2.620e+02
-EBMultigrid: final     |resid| = 8.593e-12
-advancing passive scalar
-advancing species advection/diffusion
-maxvel = 1.066e+00, dx = 1.562e-02, dt = 7.330e-03
-step = 2, time = 1.532e-02 dt = 7.330e-03
-advancing velocity and pressure fields 
-mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.012e+01
-EBMultigrid: iter = 1, |resid| = 1.616e-02, rate = 1.245e+03
-EBMultigrid: iter = 2, |resid| = 5.260e-05, rate = 3.072e+02
-EBMultigrid: iter = 3, |resid| = 1.991e-07, rate = 2.642e+02
-EBMultigrid: iter = 4, |resid| = 7.613e-10, rate = 2.615e+02
-EBMultigrid: final     |resid| = 4.262e-12
-calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.123e+00
-EBMultigrid: iter = 1, |resid| = 1.869e-08, rate = 6.010e+07
-EBMultigrid: final     |resid| = 6.661e-16
-calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 4.252e-01
-EBMultigrid: iter = 1, |resid| = 1.692e-09, rate = 2.513e+08
+advancing species number 0
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.970e-01
+EBMultigrid: iter = 1, |resid| = 1.385e-04, rate = 7.199e+03
+EBMultigrid: final     |resid| = 9.600e-09
+advancing species number 1
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.970e-01
 EBMultigrid: final     |resid| = 1.110e-16
-cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.216e+01
-EBMultigrid: iter = 1, |resid| = 2.354e-02, rate = 9.413e+02
-EBMultigrid: iter = 2, |resid| = 7.975e-05, rate = 2.952e+02
-EBMultigrid: iter = 3, |resid| = 3.012e-07, rate = 2.647e+02
-EBMultigrid: iter = 4, |resid| = 1.165e-09, rate = 2.585e+02
-EBMultigrid: final     |resid| = 6.537e-12
-advancing passive scalar
-advancing species advection/diffusion
-maxvel = 1.085e+00, dx = 1.562e-02, dt = 7.202e-03
-step = 3, time = 2.265e-02 dt = 7.202e-03
+advancing species number 2
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.970e-01
+EBMultigrid: final     |resid| = 1.110e-16
+maxvel = 1.596e+00, dx = 1.562e-02, dt = 4.894e-03
+Using Stokes dt = 2.441e-03
+step = 1, time = 2.441e-03 dt = 2.441e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.964e+01
-EBMultigrid: iter = 1, |resid| = 1.268e-02, rate = 1.549e+03
-EBMultigrid: iter = 2, |resid| = 4.199e-05, rate = 3.020e+02
-EBMultigrid: iter = 3, |resid| = 1.550e-07, rate = 2.709e+02
-EBMultigrid: iter = 4, |resid| = 5.977e-10, rate = 2.593e+02
-EBMultigrid: final     |resid| = 3.293e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 6.049e+00
+EBMultigrid: iter = 1, |resid| = 1.242e-02, rate = 4.870e+02
+EBMultigrid: iter = 2, |resid| = 6.107e-05, rate = 2.034e+02
+EBMultigrid: iter = 3, |resid| = 2.053e-07, rate = 2.975e+02
+EBMultigrid: final     |resid| = 6.808e-10
 calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.119e+00
-EBMultigrid: iter = 1, |resid| = 1.540e-08, rate = 7.268e+07
-EBMultigrid: final     |resid| = 6.661e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.703e+00
+EBMultigrid: iter = 1, |resid| = 2.767e-04, rate = 6.155e+03
+EBMultigrid: iter = 2, |resid| = 2.869e-08, rate = 9.646e+03
+EBMultigrid: final     |resid| = 3.135e-12
 calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 4.898e-01
-EBMultigrid: iter = 1, |resid| = 1.636e-09, rate = 2.995e+08
-EBMultigrid: final     |resid| = 1.110e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.130e-01
+EBMultigrid: iter = 1, |resid| = 6.272e-05, rate = 1.296e+04
+EBMultigrid: final     |resid| = 3.652e-09
 cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.121e+01
-EBMultigrid: iter = 1, |resid| = 1.817e-02, rate = 1.167e+03
-EBMultigrid: iter = 2, |resid| = 6.378e-05, rate = 2.849e+02
-EBMultigrid: iter = 3, |resid| = 2.357e-07, rate = 2.706e+02
-EBMultigrid: iter = 4, |resid| = 9.274e-10, rate = 2.541e+02
-EBMultigrid: final     |resid| = 5.141e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.688e+00
+EBMultigrid: iter = 1, |resid| = 2.971e-02, rate = 2.924e+02
+EBMultigrid: iter = 2, |resid| = 1.458e-04, rate = 2.038e+02
+EBMultigrid: iter = 3, |resid| = 5.105e-07, rate = 2.855e+02
+EBMultigrid: final     |resid| = 1.786e-09
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
-maxvel = 1.097e+00, dx = 1.562e-02, dt = 7.120e-03
-step = 4, time = 2.985e-02 dt = 7.120e-03
+advancing species number 0
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.421e-01
+EBMultigrid: iter = 1, |resid| = 1.326e-04, rate = 7.107e+03
+EBMultigrid: final     |resid| = 9.296e-09
+advancing species number 1
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.909e-01
+EBMultigrid: final     |resid| = 1.110e-16
+advancing species number 2
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.960e-01
+EBMultigrid: final     |resid| = 1.110e-16
+maxvel = 1.532e+00, dx = 1.562e-02, dt = 5.101e-03
+Using Stokes dt = 2.441e-03
+step = 2, time = 4.883e-03 dt = 2.441e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.927e+01
-EBMultigrid: iter = 1, |resid| = 1.053e-02, rate = 1.830e+03
-EBMultigrid: iter = 2, |resid| = 3.557e-05, rate = 2.960e+02
-EBMultigrid: iter = 3, |resid| = 1.272e-07, rate = 2.796e+02
-EBMultigrid: iter = 4, |resid| = 4.985e-10, rate = 2.552e+02
-EBMultigrid: final     |resid| = 2.696e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 5.810e+00
+EBMultigrid: iter = 1, |resid| = 1.227e-02, rate = 4.734e+02
+EBMultigrid: iter = 2, |resid| = 6.026e-05, rate = 2.037e+02
+EBMultigrid: iter = 3, |resid| = 1.997e-07, rate = 3.018e+02
+EBMultigrid: final     |resid| = 7.000e-10
 calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.128e+00
-EBMultigrid: iter = 1, |resid| = 1.359e-08, rate = 8.299e+07
-EBMultigrid: final     |resid| = 6.661e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.613e+00
+EBMultigrid: iter = 1, |resid| = 2.795e-04, rate = 5.771e+03
+EBMultigrid: iter = 2, |resid| = 2.882e-08, rate = 9.698e+03
+EBMultigrid: final     |resid| = 3.150e-12
 calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.278e-01
-EBMultigrid: iter = 1, |resid| = 1.628e-09, rate = 3.242e+08
-EBMultigrid: final     |resid| = 1.110e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 7.299e-01
+EBMultigrid: iter = 1, |resid| = 6.442e-05, rate = 1.133e+04
+EBMultigrid: final     |resid| = 3.865e-09
 cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 2.044e+01
-EBMultigrid: iter = 1, |resid| = 1.454e-02, rate = 1.406e+03
-EBMultigrid: iter = 2, |resid| = 5.311e-05, rate = 2.737e+02
-EBMultigrid: iter = 3, |resid| = 1.908e-07, rate = 2.783e+02
-EBMultigrid: iter = 4, |resid| = 7.740e-10, rate = 2.466e+02
-EBMultigrid: final     |resid| = 4.215e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 7.353e+00
+EBMultigrid: iter = 1, |resid| = 2.754e-02, rate = 2.670e+02
+EBMultigrid: iter = 2, |resid| = 1.345e-04, rate = 2.048e+02
+EBMultigrid: iter = 3, |resid| = 4.706e-07, rate = 2.857e+02
+EBMultigrid: final     |resid| = 1.651e-09
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
-maxvel = 1.105e+00, dx = 1.562e-02, dt = 7.070e-03
-step = 5, time = 3.697e-02 dt = 7.070e-03
+advancing species number 0
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.908e-01
+EBMultigrid: iter = 1, |resid| = 1.270e-04, rate = 7.017e+03
+EBMultigrid: iter = 2, |resid| = 9.006e-09, rate = 1.410e+04
+EBMultigrid: final     |resid| = 6.953e-13
+advancing species number 1
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.848e-01
+EBMultigrid: final     |resid| = 1.110e-16
+advancing species number 2
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.950e-01
+EBMultigrid: final     |resid| = 1.110e-16
+maxvel = 1.503e+00, dx = 1.562e-02, dt = 5.197e-03
+Using Stokes dt = 2.441e-03
+step = 3, time = 7.324e-03 dt = 2.441e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.901e+01
-EBMultigrid: iter = 1, |resid| = 9.097e-03, rate = 2.090e+03
-EBMultigrid: iter = 2, |resid| = 3.141e-05, rate = 2.896e+02
-EBMultigrid: iter = 3, |resid| = 1.083e-07, rate = 2.901e+02
-EBMultigrid: iter = 4, |resid| = 4.338e-10, rate = 2.496e+02
-EBMultigrid: final     |resid| = 2.291e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 5.145e+00
+EBMultigrid: iter = 1, |resid| = 1.127e-02, rate = 4.565e+02
+EBMultigrid: iter = 2, |resid| = 5.577e-05, rate = 2.021e+02
+EBMultigrid: iter = 3, |resid| = 1.840e-07, rate = 3.031e+02
+EBMultigrid: final     |resid| = 6.763e-10
 calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.135e+00
-EBMultigrid: iter = 1, |resid| = 1.261e-08, rate = 9.007e+07
-EBMultigrid: final     |resid| = 6.661e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.568e+00
+EBMultigrid: iter = 1, |resid| = 2.818e-04, rate = 5.564e+03
+EBMultigrid: iter = 2, |resid| = 2.894e-08, rate = 9.738e+03
+EBMultigrid: final     |resid| = 3.161e-12
 calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.524e-01
-EBMultigrid: iter = 1, |resid| = 1.662e-09, rate = 3.324e+08
-EBMultigrid: final     |resid| = 1.110e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 6.715e-01
+EBMultigrid: iter = 1, |resid| = 6.510e-05, rate = 1.032e+04
+EBMultigrid: final     |resid| = 4.015e-09
 cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.991e+01
-EBMultigrid: iter = 1, |resid| = 1.202e-02, rate = 1.656e+03
-EBMultigrid: iter = 2, |resid| = 4.579e-05, rate = 2.625e+02
-EBMultigrid: iter = 3, |resid| = 1.612e-07, rate = 2.841e+02
-EBMultigrid: iter = 4, |resid| = 6.792e-10, rate = 2.373e+02
-EBMultigrid: final     |resid| = 3.552e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 6.081e+00
+EBMultigrid: iter = 1, |resid| = 2.554e-02, rate = 2.381e+02
+EBMultigrid: iter = 2, |resid| = 1.243e-04, rate = 2.055e+02
+EBMultigrid: iter = 3, |resid| = 4.354e-07, rate = 2.855e+02
+EBMultigrid: final     |resid| = 1.530e-09
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
-maxvel = 1.114e+00, dx = 1.562e-02, dt = 7.013e-03
-step = 6, time = 4.404e-02 dt = 7.013e-03
+advancing species number 0
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.427e-01
+EBMultigrid: iter = 1, |resid| = 1.217e-04, rate = 6.924e+03
+EBMultigrid: iter = 2, |resid| = 8.730e-09, rate = 1.394e+04
+EBMultigrid: final     |resid| = 6.781e-13
+advancing species number 1
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.781e-01
+EBMultigrid: final     |resid| = 2.220e-16
+advancing species number 2
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.936e-01
+EBMultigrid: final     |resid| = 1.110e-16
+maxvel = 1.486e+00, dx = 1.562e-02, dt = 5.256e-03
+Using Stokes dt = 2.441e-03
+step = 4, time = 9.766e-03 dt = 2.441e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.877e+01
-EBMultigrid: iter = 1, |resid| = 8.057e-03, rate = 2.329e+03
-EBMultigrid: iter = 2, |resid| = 2.841e-05, rate = 2.836e+02
-EBMultigrid: iter = 3, |resid| = 9.424e-08, rate = 3.015e+02
-EBMultigrid: iter = 4, |resid| = 3.872e-10, rate = 2.434e+02
-EBMultigrid: final     |resid| = 2.006e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 3.976e+00
+EBMultigrid: iter = 1, |resid| = 1.069e-02, rate = 3.719e+02
+EBMultigrid: iter = 2, |resid| = 5.302e-05, rate = 2.016e+02
+EBMultigrid: iter = 3, |resid| = 1.748e-07, rate = 3.033e+02
+EBMultigrid: final     |resid| = 6.398e-10
 calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.138e+00
-EBMultigrid: iter = 1, |resid| = 1.154e-08, rate = 9.868e+07
-EBMultigrid: final     |resid| = 6.661e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.537e+00
+EBMultigrid: iter = 1, |resid| = 2.838e-04, rate = 5.415e+03
+EBMultigrid: iter = 2, |resid| = 2.904e-08, rate = 9.770e+03
+EBMultigrid: final     |resid| = 3.174e-12
 calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.692e-01
-EBMultigrid: iter = 1, |resid| = 1.647e-09, rate = 3.456e+08
-EBMultigrid: final     |resid| = 1.110e-16
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 6.309e-01
+EBMultigrid: iter = 1, |resid| = 6.546e-05, rate = 9.638e+03
+EBMultigrid: final     |resid| = 4.137e-09
 cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.949e+01
-EBMultigrid: iter = 1, |resid| = 1.019e-02, rate = 1.913e+03
-EBMultigrid: iter = 2, |resid| = 4.042e-05, rate = 2.521e+02
-EBMultigrid: iter = 3, |resid| = 1.395e-07, rate = 2.896e+02
-EBMultigrid: iter = 4, |resid| = 6.104e-10, rate = 2.286e+02
-EBMultigrid: final     |resid| = 3.054e-12
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 5.111e+00
+EBMultigrid: iter = 1, |resid| = 2.391e-02, rate = 2.137e+02
+EBMultigrid: iter = 2, |resid| = 1.159e-04, rate = 2.063e+02
+EBMultigrid: iter = 3, |resid| = 4.064e-07, rate = 2.852e+02
+EBMultigrid: final     |resid| = 1.428e-09
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
-maxvel = 1.120e+00, dx = 1.562e-02, dt = 6.973e-03
-step = 7, time = 5.105e-02 dt = 6.973e-03
-advancing velocity and pressure fields 
-mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.859e+01
-EBMultigrid: iter = 1, |resid| = 7.304e-03, rate = 2.545e+03
-EBMultigrid: iter = 2, |resid| = 2.627e-05, rate = 2.781e+02
-EBMultigrid: iter = 3, |resid| = 8.360e-08, rate = 3.142e+02
-EBMultigrid: iter = 4, |resid| = 3.570e-10, rate = 2.341e+02
-EBMultigrid: final     |resid| = 1.782e-12
-calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.140e+00
-EBMultigrid: iter = 1, |resid| = 1.086e-08, rate = 1.050e+08
-EBMultigrid: final     |resid| = 6.661e-16
-calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.814e-01
-EBMultigrid: iter = 1, |resid| = 1.657e-09, rate = 3.509e+08
+advancing species number 0
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 7.975e-01
+EBMultigrid: iter = 1, |resid| = 1.168e-04, rate = 6.830e+03
+EBMultigrid: iter = 2, |resid| = 8.467e-09, rate = 1.379e+04
+EBMultigrid: final     |resid| = 6.624e-13
+advancing species number 1
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.707e-01
 EBMultigrid: final     |resid| = 1.110e-16
-cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.919e+01
-EBMultigrid: iter = 1, |resid| = 8.839e-03, rate = 2.171e+03
-EBMultigrid: iter = 2, |resid| = 3.646e-05, rate = 2.424e+02
-EBMultigrid: iter = 3, |resid| = 1.229e-07, rate = 2.967e+02
-EBMultigrid: iter = 4, |resid| = 5.605e-10, rate = 2.192e+02
-EBMultigrid: final     |resid| = 2.671e-12
-advancing passive scalar
-advancing species advection/diffusion
-maxvel = 1.124e+00, dx = 1.562e-02, dt = 6.949e-03
-step = 8, time = 5.802e-02 dt = 6.949e-03
-advancing velocity and pressure fields 
-mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.847e+01
-EBMultigrid: iter = 1, |resid| = 6.689e-03, rate = 2.761e+03
-EBMultigrid: iter = 2, |resid| = 2.460e-05, rate = 2.720e+02
-EBMultigrid: iter = 3, |resid| = 7.591e-08, rate = 3.240e+02
-EBMultigrid: iter = 4, |resid| = 3.357e-10, rate = 2.262e+02
-EBMultigrid: final     |resid| = 1.611e-12
-calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.143e+00
-EBMultigrid: iter = 1, |resid| = 1.046e-08, rate = 1.093e+08
-EBMultigrid: final     |resid| = 6.661e-16
-calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.906e-01
-EBMultigrid: iter = 1, |resid| = 1.690e-09, rate = 3.495e+08
+advancing species number 2
+get advection term divuphi
+getting reaction term R
+assembling  rhs = -divuphi + R
+calling heat solver for variable 
+EBMultigrid: tol = 1.000e-08,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.915e-01
 EBMultigrid: final     |resid| = 1.110e-16
-cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.899e+01
-EBMultigrid: iter = 1, |resid| = 7.829e-03, rate = 2.426e+03
-EBMultigrid: iter = 2, |resid| = 3.349e-05, rate = 2.338e+02
-EBMultigrid: iter = 3, |resid| = 1.096e-07, rate = 3.055e+02
-EBMultigrid: iter = 4, |resid| = 5.233e-10, rate = 2.095e+02
-EBMultigrid: final     |resid| = 2.380e-12
-advancing passive scalar
-advancing species advection/diffusion
-maxvel = 1.126e+00, dx = 1.562e-02, dt = 6.936e-03
-step = 9, time = 6.497e-02 dt = 6.936e-03
-advancing velocity and pressure fields 
-mac projecting advection velocity
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.839e+01
-EBMultigrid: iter = 1, |resid| = 6.190e-03, rate = 2.971e+03
-EBMultigrid: iter = 2, |resid| = 2.328e-05, rate = 2.659e+02
-EBMultigrid: iter = 3, |resid| = 6.987e-08, rate = 3.332e+02
-EBMultigrid: iter = 4, |resid| = 3.192e-10, rate = 2.189e+02
-EBMultigrid: final     |resid| = 1.469e-12
-calling heat solver for variable 0
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.145e+00
-EBMultigrid: iter = 1, |resid| = 1.027e-08, rate = 1.115e+08
-EBMultigrid: final     |resid| = 4.441e-16
-calling heat solver for variable 1
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 5.980e-01
-EBMultigrid: iter = 1, |resid| = 1.743e-09, rate = 3.430e+08
-EBMultigrid: final     |resid| = 1.110e-16
-cc projecting vel + gphi*dt
-EBMultigrid: tol = 1.000e-12,  max iter = 27
-EBMultigrid: iter = 0, |resid| = 1.885e+01
-EBMultigrid: iter = 1, |resid| = 7.055e-03, rate = 2.672e+03
-EBMultigrid: iter = 2, |resid| = 3.120e-05, rate = 2.262e+02
-EBMultigrid: iter = 3, |resid| = 9.877e-08, rate = 3.158e+02
-EBMultigrid: iter = 4, |resid| = 4.949e-10, rate = 1.996e+02
-EBMultigrid: final     |resid| = 2.176e-12
-advancing passive scalar
-advancing species advection/diffusion
-maxvel = 1.130e+00, dx = 1.562e-02, dt = 6.915e-03
+maxvel = 1.469e+00, dx = 1.562e-02, dt = 5.319e-03
+Using Stokes dt = 2.441e-03
 finished run
 printing time table 

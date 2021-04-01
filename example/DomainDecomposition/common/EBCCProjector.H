@@ -80,8 +80,20 @@ protected:
   void registerStencils();
 
 
-private:
+  void
+  computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                                   EBBoxData<CELL, Real,   1> & a_phi,
+                                   const EBGraph              & a_graph,
+                                   const Bx                   & a_grid,
+                                   const unsigned int         & a_ibox);
 
+  void
+  computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                              EBBoxData<CELL, Real,   1> & a_phi,
+                              const EBGraph              & a_graph,
+                              const Bx                   & a_grid,
+                              const unsigned int         & a_ibox);
+private:
   ///insert usual diatribe about strong vs. weak construction here
   void operator=(const EBCCProjector& a_opin);
   EBCCProjector();
