@@ -141,7 +141,25 @@ computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
                             const Bx                   & a_grid,
                             const unsigned int         & a_ibox)
 {
-  MayDay::Error("not implemented");
+
+  auto & nghost  = m_macprojector->m_nghost;
+  auto & doma    = m_macprojector->m_domain;
+  auto & brit    = m_macprojector->m_brit;
+  Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
+
+  //get phi at face centers.
+  EBFluxData<Real, 1>         phiFaceCent(grown, a_graph);
+  brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
+                        a_phi, phiFaceCent,  a_ibox, true, 1.0);
+
+  //interpolate phi to face centroids
+  EBFluxData<Real, 1>         phiCentroid(grown, a_graph);
+  //registered by the mac projector
+  EBFluxStencil<2, Real> stencils =
+      brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, doma, doma, a_ibox);
+  stencils.apply(phiCentroid, phiFaceCent, true, 1.0);  //true is to initialize to zero
+
+  MayDay::Error("not finished");
   return;
 }
 ///
