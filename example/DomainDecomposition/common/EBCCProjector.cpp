@@ -43,6 +43,14 @@ registerStencils()
     brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
   }
 
+  Point ghost = Point::Zeroes();
+  //these two are used in the conservative gradient
+  brit->m_cellToBoundary->registerStencil(StencilNames::CopyCellValueToCutFace,
+                                          StencilNames::NoBC, StencilNames::NoBC, doma, doma,
+                                          false, ghost);
+  brit->m_boundaryToCell->registerStencil(StencilNames::CutFaceIncrementToKappaDiv,
+                                          StencilNames::NoBC, StencilNames::NoBC, doma, doma,
+                                          false, ghost);
 }
 /// 
 void 
@@ -159,6 +167,16 @@ computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
       brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, doma, doma, a_ibox);
   stencils.apply(phiCentroid, phiFaceCent, true, 1.0);  //true is to initialize to zero
 
+  EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph);
+  //these two are used in the conservative gradient
+  auto copystenptr  = brit->m_cellToBoundary->getEBStencil(StencilNames::CopyCellValueToCutFace,
+                                                           StencilNames::NoBC, doma, doma, a_ibox);
+  copystenptr->apply(ebflux, a_phi, true, 1.0);
+  
+  auto ebdivstenptr = brit->m_boundaryToCell->getEBStencil(StencilNames::CutFaceIncrementToKappaDiv,
+                                                           StencilNames::NoBC, doma, doma, a_ibox);;
+
+  
   MayDay::Error("not finished");
   return;
 }

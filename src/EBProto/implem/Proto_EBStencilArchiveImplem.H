@@ -1958,8 +1958,8 @@ namespace Proto
                  1, 2);
   }
 
-
-  //boundary to cell
+#if 1
+  //cell to boundary
   template <int order>
   bool
   EBStencilArchive<CELL, BOUNDARY, order, double>::
@@ -1993,11 +1993,33 @@ namespace Proto
   {
     a_irregOnly = true;
     a_bcOnly = false;
-    cout << "not implemented" << endl;
-    abort();
+
+    PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
+    Box domain = a_srcGraph.getDomain();
+
+    if(a_stencilName == string("copy_cell_value_to_cut_face"))
+    {
+      a_dstVoFs = a_srcGraph.getCutFaces(a_srcValid);
+      a_stencil.resize(a_dstVoFs.size());
+      for(unsigned int idst = 0; idst < a_dstVoFs.size(); idst++)
+      {
+        auto& dstv = a_dstVoFs[idst];
+
+        EBIndex<CELL> srcVoF = getEBIndex<CELL, BOUNDARY>(dstv);
+          
+        double weight = 1.;
+        a_stencil[idst].clear();
+        a_stencil[idst].add(srcVoF, weight);
+      }
+    }
+    else
+    {
+      PROTO_ASSERT(false, "could not find  stencil name cell to eb");
+    }
+    return false;
   }
 
-  //cell to boundary
+  //boundary to cell
   template <int order>
   bool
   EBStencilArchive<BOUNDARY, CELL, order, double>::
@@ -2031,8 +2053,41 @@ namespace Proto
   {
     a_irregOnly = true;
     a_bcOnly = false;
-    cout << "not implemented" << endl;
-    abort();
+
+    PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
+    Box domain = a_srcGraph.getDomain();
+      
+    if(a_stencilName == string("cut_face_increment_to_kappa_div"))
+    {
+      a_dstVoFs = a_srcGraph.getIrregVoFs(a_srcValid);
+      a_stencil.resize(a_dstVoFs.size());
+      for(unsigned int idst = 0; idst < a_dstVoFs.size(); idst++)
+      {
+        auto& dstv = a_dstVoFs[idst];
+
+        EBIndex<BOUNDARY> srcCutFace=getEBIndex<BOUNDARY, CELL>(dstv);
+          
+        RealVect normal;
+        double bndryArea;
+        Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,   
+                                                    a_voludata,
+                                                    a_ebfadata,
+                                                    a_xfacdata,
+                                                    a_yfacdata,
+                                                    a_zfacdata, 
+                                                    dstv, a_srcGraph, a_dx);
+        double weight = bndryArea/a_dx;
+        a_stencil[idst].clear();
+        a_stencil[idst].add(srcCutFace, weight);
+      }
+    }
+    else
+    {
+      PROTO_ASSERT(false, "could not find  stencil name eb to cell");
+    }
+    return false;
+
   }
+#endif  
 }
 #endif

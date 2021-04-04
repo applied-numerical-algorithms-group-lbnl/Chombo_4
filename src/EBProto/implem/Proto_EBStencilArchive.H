@@ -4,6 +4,7 @@
 
 
 #include "EBProto.H"
+//#include "Proto_Normalizor.H"
 
 namespace Proto
 {
@@ -943,7 +944,7 @@ namespace Proto
     
   };
 
-
+#if 1
 
   ///
   /**
@@ -960,8 +961,9 @@ namespace Proto
     typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
     typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<BOUNDARY, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<CELL, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+
 
     EBStencilArchive() {}
     ~EBStencilArchive() {}
@@ -996,7 +998,6 @@ namespace Proto
                double                                      a_dx,
                bool                                        a_periodiconly, 
                Point                                       a_dstGrown);
-    
   };
 
   ///
@@ -1014,8 +1015,8 @@ namespace Proto
     typedef HostIrregData<CELL,      IndMomDIM , 1>  VoluData;
     typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<CELL, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<BOUNDARY, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
 
     EBStencilArchive() {}
     ~EBStencilArchive() {}
@@ -1050,11 +1051,10 @@ namespace Proto
                double                                      a_dx,
                bool                                        a_periodiconly, 
                Point                                       a_dstGrown);
-    
   };
-
-  
+#endif
 }
+
 #include "Proto_EBStencilArchiveImplem.H"
 
 #endif
