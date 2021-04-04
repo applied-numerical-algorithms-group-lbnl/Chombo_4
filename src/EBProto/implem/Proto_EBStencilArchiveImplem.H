@@ -2057,8 +2057,18 @@ namespace Proto
     PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
     Box domain = a_srcGraph.getDomain();
       
-    if(a_stencilName == string("cut_face_increment_to_kappa_div"))
+    if(a_stencilName.find("cut_face_increment_to_kappa_div_dir_") != std::string::npos)
     {
+
+      //figure out the radius
+      auto pos = a_stencilName.find_first_of("0123456789");
+      unsigned long longdir = 999;
+      if (std::string::npos != pos)
+      {
+        longdir = std::stoul(a_stencilName.substr(pos));
+      }
+      unsigned int graddir = longdir;
+
       a_dstVoFs = a_srcGraph.getIrregVoFs(a_srcValid);
       a_stencil.resize(a_dstVoFs.size());
       for(unsigned int idst = 0; idst < a_dstVoFs.size(); idst++)
@@ -2076,7 +2086,9 @@ namespace Proto
                                                     a_yfacdata,
                                                     a_zfacdata, 
                                                     dstv, a_srcGraph, a_dx);
-        double weight = bndryArea/a_dx;
+        double normcomp = normal[graddir];
+        //negative because of our very weird normal standard (inward facing)
+        double weight = -bndryArea*normcomp/a_dx; 
         a_stencil[idst].clear();
         a_stencil[idst].add(srcCutFace, weight);
       }

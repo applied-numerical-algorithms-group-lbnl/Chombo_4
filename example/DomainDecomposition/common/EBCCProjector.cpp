@@ -35,22 +35,30 @@ registerStencils()
   CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    //dirichlet at domain to get zero normal velocity at domain boundaries
-    //grown by one to allow interpolation to face centroids
-    brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
-    brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
-  }
+  auto & grids   = m_macprojector->m_grids;
 
+  //dirichlet at domain to get zero normal velocity at domain boundaries
+  //grown by one to allow interpolation to face centroids
+  brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
+  brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
+
+  //below here is stuff used in the conservative gradient
   Point ghost = Point::Zeroes();
-  //these two are used in the conservative gradient
+  m_copyToCopier.define(grids, grids);
+  bool needDiag = false;
+  m_nobcsLabel = StencilNames::NoBC;
+  m_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the normalizor 
+  brit->m_cellToCell->registerStencil(m_ncdivLabel , m_nobcsLabel, m_nobcsLabel, doma, doma, needDiag);
   brit->m_cellToBoundary->registerStencil(StencilNames::CopyCellValueToCutFace,
-                                          StencilNames::NoBC, StencilNames::NoBC, doma, doma,
-                                          false, ghost);
-  brit->m_boundaryToCell->registerStencil(StencilNames::CutFaceIncrementToKappaDiv,
-                                          StencilNames::NoBC, StencilNames::NoBC, doma, doma,
-                                          false, ghost);
+                                          m_nobcsLabel,  m_nobcsLabel, doma, doma,
+                                          needDiag, ghost);
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    m_conGradEBFluxName[idir] = StencilNames::CutFaceIncrementToKappaDiv + std::to_string(idir);
+    brit->m_boundaryToCell->registerStencil(m_conGradEBFluxName[idir],
+                                            m_nobcsLabel, m_nobcsLabel, doma, doma,
+                                            needDiag, ghost);
+  }
 }
 /// 
 void 
@@ -98,7 +106,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     auto& velfab = a_velo[dit[ibox]];
     if(useConservativeGradient)
     {
-      computeConservativeGradient(gphfab, phifab, graph, grid, ibox);
+      kappaConservativeGradient(gphfab, phifab, graph, grid, ibox);
     }
     else
     {
@@ -107,7 +115,53 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
 
     velfab -= gphfab;
   }
+  //conservative gradient really produces kappa*grad phi so
+  //we have to normalize
+  if(useConservativeGradient)
+  {
+    normalizeGradient(a_gphi);
+  }
 }
+
+///
+void EBCCProjector::
+normalizeGradient(EBLevelBoxData<CELL, DIM>& a_gphi)
+{
+  CH_TIME("EBCCProjector::normalizeGradient");
+  auto & grids          = m_macprojector->m_grids;
+  auto & graphs         = m_macprojector->m_graphs;
+  auto & nghost         = m_macprojector->m_nghost;
+  auto & exchangeCopier = m_macprojector->m_exchangeCopier;
+  auto & doma    = m_macprojector->m_domain;
+  auto & brit    = m_macprojector->m_brit;
+  
+  EBLevelBoxData<CELL, DIM>  kappaGrad(grids, nghost, graphs);
+  //right now gphi holds kappa * grad
+  Interval interv(0, DIM-1);
+  a_gphi.copyTo(interv, kappaGrad, interv, m_copyToCopier);
+  //this makes ncdiv = divF on regular cells
+  //and ncdiv = vol_weighted_ave(div) on cut cells
+  kappaGrad.exchange(exchangeCopier);
+  
+  DataIterator dit = grids.dataIterator();
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBLevelBoxData<CELL, 1> kappComp, gradComp;
+    gradComp.define<DIM>(a_gphi   , idir, graphs);
+    kappComp.define<DIM>(kappaGrad, idir, graphs);
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto& ncdiv  = gradComp[dit[ibox]];
+      auto& kapdiv = kappComp[dit[ibox]];
+
+      const auto& stencil = brit->m_cellToCell->getEBStencil(m_ncdivLabel,m_nobcsLabel,
+                                                             doma, doma, ibox);
+      bool initToZero = true;
+      stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
+    }
+  }
+}
+///
 void
 EBCCProjector::
 computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
@@ -116,6 +170,7 @@ computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
                                  const Bx                   & a_grid,
                                  const unsigned int         & a_ibox)
 {
+ CH_TIME("EBCCProjector::avefacetocell_gradient");
   auto & nghost  = m_macprojector->m_nghost;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
@@ -143,16 +198,18 @@ computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
 }
 void
 EBCCProjector::
-computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
-                            EBBoxData<CELL, Real,   1> & a_phi,
-                            const EBGraph              & a_graph,
-                            const Bx                   & a_grid,
-                            const unsigned int         & a_ibox)
+kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
+                          EBBoxData<CELL, Real,   1> & a_phi,
+                          const EBGraph              & a_graph,
+                          const Bx                   & a_grid,
+                          const unsigned int         & a_ibox)
 {
 
+ CH_TIME("EBCCProjector::kappaConservativeGradient");
   auto & nghost  = m_macprojector->m_nghost;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
+  auto & grids   = m_macprojector->m_grids;
   Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
 
   //get phi at face centers.
@@ -172,12 +229,31 @@ computeConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
   auto copystenptr  = brit->m_cellToBoundary->getEBStencil(StencilNames::CopyCellValueToCutFace,
                                                            StencilNames::NoBC, doma, doma, a_ibox);
   copystenptr->apply(ebflux, a_phi, true, 1.0);
-  
-  auto ebdivstenptr = brit->m_boundaryToCell->getEBStencil(StencilNames::CutFaceIncrementToKappaDiv,
-                                                           StencilNames::NoBC, doma, doma, a_ibox);;
 
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    EBBoxData<CELL, Real, 1> gradComp;
+    gradComp.define(a_kappaGrad, idir);
+
+    DataIterator dit = grids.dataIterator();
+    for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      //stencil for eb contribution to conservative gradient in this direction
+      auto ebdivstenptr = brit->m_boundaryToCell->getEBStencil(m_conGradEBFluxName[idir],
+                                                               StencilNames::NoBC, doma, doma, a_ibox);;
+      bool initToZero = true;
+
+      ebdivstenptr->apply(gradComp, ebflux, initToZero, 1.0);  
+
+      //stencil for face centroid fluxes is registered in the mac projector
+      //this not a nested loop because only the normal faces matter here.
+      initToZero = false;
+      brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, gradComp, phiCentroid,
+                            idir, ibox, initToZero, 1.0);
+    }
+  }
   
-  MayDay::Error("not finished");
+
   return;
 }
 ///

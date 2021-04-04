@@ -49,12 +49,10 @@ namespace StencilNames
 
   /// Stencil for addng the contribution of the cut face flux F to (kappa div F)
   /**
-     stencil weight = alpha/dx 
+     stencil weight = -alpha*normal[dir]/dx 
      where alpha is the boundary fraction of the cut face and dx is the grid spacing.
-     use this to increment kappa div F when you have the average normal flux F at the cut face.
-     This particular stencil assumes outward facing normal flux (hence the weight is *not* -alpha/dx).
    */
-  static const string CutFaceIncrementToKappaDiv("cut_face_increment_to_kappa_div");
+  static const string CutFaceIncrementToKappaDiv("cut_face_increment_to_kappa_div_dir_");
   
   /// for simple average from faces to cells
   /**
