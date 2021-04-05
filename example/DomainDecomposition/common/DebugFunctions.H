@@ -9,12 +9,16 @@
 //around point (4, 8)
 //Area functions
 //cell centered and please keep them in the domain
-Point areaLo(0, 60);
-Point areaHi(2, 63);                                    
-Bx areaBx(areaLo, areaHi);
+////upper left corner of 64^2
+//Point areaLo(0, 60);
+//Point areaHi(2, 63);
+//the bit underneath the circle rad=0.1, center = 0.5
+Point areaLo(30, 0);
+Point areaHi(33, 26);                                    
 //which side of cell gets printed in face dumps
 Side::LoHiSide faceSideX = Side::Lo;
 Side::LoHiSide faceSideY = Side::Hi;
+Bx areaBx(areaLo, areaHi);
     
 
 void 

@@ -113,13 +113,18 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
       computeAverageFaceToCellGradient(gphfab, phifab, graph, grid, ibox);
     }
 
-    velfab -= gphfab;
   }
   //conservative gradient really produces kappa*grad phi so
   //we have to normalize
   if(useConservativeGradient)
   {
     normalizeGradient(a_gphi);
+  }
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto& gphfab = a_gphi[dit[ibox]];
+    auto& velfab = a_velo[dit[ibox]];
+    velfab -= gphfab;
   }
 }
 
