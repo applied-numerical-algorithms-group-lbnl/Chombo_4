@@ -40,7 +40,7 @@ registerStencils()
   //dirichlet at domain to get zero normal velocity at domain boundaries
   //grown by one to allow interpolation to face centroids
   brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
-  brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
+ brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
 
   //below here is stuff used in the conservative gradient
   Point ghost = Point::Zeroes();
@@ -219,8 +219,8 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
 
   //get phi at face centers.
   EBFluxData<Real, 1>         phiFaceCent(grown, a_graph);
-  brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
-                        a_phi, phiFaceCent,  a_ibox, true, 1.0);
+  brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
+                        doma, phiFaceCent, a_phi,  a_ibox,  true, 1.0);
 
   //interpolate phi to face centroids
   EBFluxData<Real, 1>         phiCentroid(grown, a_graph);
