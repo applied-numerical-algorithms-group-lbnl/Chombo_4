@@ -13,11 +13,11 @@
 //Point areaLo(0, 60);
 //Point areaHi(2, 63);
 //the bit underneath the circle rad=0.1, center = 0.5
-Point areaLo(30, 0);
-Point areaHi(33, 26);                                    
+Point areaLo(28, 24);
+Point areaHi(30, 26);                                    
 //which side of cell gets printed in face dumps
 Side::LoHiSide faceSideX = Side::Lo;
-Side::LoHiSide faceSideY = Side::Hi;
+Side::LoHiSide faceSideY = Side::Lo;
 Bx areaBx(areaLo, areaHi);
     
 

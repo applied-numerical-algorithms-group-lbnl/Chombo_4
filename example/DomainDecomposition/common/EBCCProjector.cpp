@@ -235,26 +235,28 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
                                                            StencilNames::NoBC, doma, doma, a_ibox);
   copystenptr->apply(ebflux, a_phi, true, 1.0);
 
+  int ideb = 0;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     EBBoxData<CELL, Real, 1> gradComp;
     gradComp.define(a_kappaGrad, idir);
-
+    gradComp.setVal(0.); //because this is done via increments
+    
     DataIterator dit = grids.dataIterator();
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
       //stencil for eb contribution to conservative gradient in this direction
       auto ebdivstenptr = brit->m_boundaryToCell->getEBStencil(m_conGradEBFluxName[idir],
                                                                StencilNames::NoBC, doma, doma, a_ibox);;
-      bool initToZero = true;
 
-      ebdivstenptr->apply(gradComp, ebflux, initToZero, 1.0);  
-
+      bool initToZero = false;
       //stencil for face centroid fluxes is registered in the mac projector
       //this not a nested loop because only the normal faces matter here.
-      initToZero = false;
       brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, gradComp, phiCentroid,
                             idir, ibox, initToZero, 1.0);
+
+      ebdivstenptr->apply(gradComp, ebflux, initToZero, 1.0);  
+      ideb++;
     }
   }
   
