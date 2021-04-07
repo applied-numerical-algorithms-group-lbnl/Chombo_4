@@ -123,6 +123,7 @@ namespace Proto
                                  vector<LocalStencil<fcent, double> >      & a_stencil,
                                  Stencil<double>                           & a_regStencil,
                                  Box                                       & a_regApplyBox,
+                                 bool                                      & a_irregOnly,
                                  const Box                                 & a_validBox,
                                  const Box                                 & a_srcDomain,
                                  const Point                               & a_srcGhost,
@@ -133,6 +134,22 @@ namespace Proto
                                  const EBGraph                             & a_graph,
                                  const double                              & a_dx);
 
+    inline static bool
+    getDomainExtrapolationStencil(vector<EBIndex<fcent > >                  & a_dstFaces,
+                                  vector<LocalStencil<fcent, double> >      & a_stencil,
+                                  Stencil<double>                           & a_regStencil,
+                                  Box                                       & a_regApplyBox,
+                                  bool                                      & a_irregOnly,
+                                  const Box                                 & a_validBox,
+                                  const Box                                 & a_srcDomain,
+                                  const Point                               & a_srcGhost,
+                                  const Point                               & a_dstGhost,
+                                  const XFacData                            & a_xfacdata,
+                                  const YFacData                            & a_yfacdata,
+                                  const ZFacData                            & a_zfacdata,
+                                  const EBGraph                             & a_graph,
+                                  const double                              & a_dx);
+    
 
   };
 

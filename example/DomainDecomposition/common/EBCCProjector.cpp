@@ -59,6 +59,9 @@ registerStencils()
                                             m_nobcsLabel, m_nobcsLabel, doma, doma,
                                             needDiag, ghost);
   }
+  //extrapolates face values to domain boundaries
+  brit->registerFaceStencil(StencilNames::ExtrapToDomainFace,
+                            m_nobcsLabel, m_nobcsLabel,  doma, doma, needDiag);
 }
 /// 
 void 
@@ -225,10 +228,17 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   //interpolate phi to face centroids
   EBFluxData<Real, 1>         phiCentroid(grown, a_graph);
   //registered by the mac projector
-  EBFluxStencil<2, Real> stencils =
-      brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, doma, doma, a_ibox);
-  stencils.apply(phiCentroid, phiFaceCent, true, 1.0);  //true is to initialize to zero
+  EBFluxStencil<2, Real> centroidStencils =
+    brit->getFluxStencil(StencilNames::InterpToFaceCentroid, m_nobcsLabel, doma, doma, a_ibox);
+  EBFluxStencil<2, Real> domaExtrStencils =
+    brit->getFluxStencil(StencilNames::ExtrapToDomainFace  , m_nobcsLabel,  doma, doma, a_ibox);
 
+  //true is to initialize to zero
+  //get phi at centroids
+  centroidStencils.apply(phiCentroid, phiFaceCent, true, 1.0);  
+  //copy that and extrapolate to domain boundary faces
+  domaExtrStencils.apply(phiCentroid, phiCentroid, true, 1.0);  
+  
   EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph);
   //these two are used in the conservative gradient
   auto copystenptr  = brit->m_cellToBoundary->getEBStencil(StencilNames::CopyCellValueToCutFace,
@@ -246,13 +256,15 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
       //stencil for eb contribution to conservative gradient in this direction
-      auto ebdivstenptr = brit->m_boundaryToCell->getEBStencil(m_conGradEBFluxName[idir],
-                                                               StencilNames::NoBC, doma, doma, a_ibox);;
+      auto ebdivstenptr =
+        brit->m_boundaryToCell->getEBStencil(m_conGradEBFluxName[idir],
+                                             StencilNames::NoBC, doma, doma, a_ibox);;
 
       bool initToZero = false;
       //stencil for face centroid fluxes is registered in the mac projector
       //this not a nested loop because only the normal faces matter here.
-      brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, doma, gradComp, phiCentroid,
+      brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC,
+                            doma, gradComp, phiCentroid,
                             idir, ibox, initToZero, 1.0);
 
       ebdivstenptr->apply(gradComp, ebflux, initToZero, 1.0);  

@@ -1330,7 +1330,6 @@ namespace Proto
     {
 
       a_bcOnly = false;
-      a_irregOnly = false;
       if(a_stencilName == string("InterpolateToFaceCentroid"))
       {
         return
@@ -1338,6 +1337,25 @@ namespace Proto
                                        a_stencil,
                                        a_regStencil,
                                        a_regApplyBox,
+                                       a_irregOnly,
+                                       a_srcValid,
+                                       a_srcDomain,
+                                       a_srcGhost,
+                                       a_dstGhost,
+                                       a_xfacdata,
+                                       a_yfacdata,
+                                       a_zfacdata,
+                                       a_dstGraph,
+                                       a_dx);
+      }
+      else if(a_stencilName == string("extrap_to_domain_face"))
+      {
+        return
+          getDomainExtrapolationStencil(a_dstVoFs,
+                                       a_stencil,
+                                       a_regStencil,
+                                       a_regApplyBox,
+                                       a_irregOnly,
                                        a_srcValid,
                                        a_srcDomain,
                                        a_srcGhost,
@@ -1424,6 +1442,7 @@ namespace Proto
                                vector<LocalStencil<fcent, double> >      & a_stencil,
                                Stencil<double>                           & a_regStencil,
                                Box                                       & a_regApplyBox,
+                               bool                                      & a_irregOnly,
                                const Box                                 & a_validBox,
                                const Box                                 & a_srcDomain,
                                const Point                               & a_srcGhost,
@@ -1434,6 +1453,8 @@ namespace Proto
                                const EBGraph                             & a_graph,
                                const double                              & a_dx)
   {
+    //well defined in regular faces
+    a_irregOnly = false;
     int facedir;
     if(fcent == XFACE)
     {
@@ -1466,6 +1487,107 @@ namespace Proto
         Proto::getFaceCentroidInterpStencil(face, a_xfacdata, a_yfacdata, a_zfacdata, a_graph, a_dx);
     }
     //no bcs here.
+    return false;
+  }
+  template <CENTERING fcent, int order>
+  bool 
+  EBStencilArchive<fcent, fcent, order, double>::
+  getDomainExtrapolationStencil(vector<EBIndex<fcent > >                  & a_dstFaces,
+                                vector<LocalStencil<fcent, double> >      & a_stencil,
+                                Stencil<double>                           & a_regStencil,
+                                Box                                       & a_regApplyBox,
+                                bool                                      & a_irregOnly,
+                                const Box                                 & a_validBox,
+                                const Box                                 & a_srcDomain,
+                                const Point                               & a_srcGhost,
+                                const Point                               & a_dstGhost,
+                                const XFacData                            & a_xfacdata,
+                                const YFacData                            & a_yfacdata,
+                                const ZFacData                            & a_zfacdata,
+                                const EBGraph                             & a_graph,
+                                const double                              & a_dx)
+  {
+    int facedir;
+    if(fcent == XFACE)
+    {
+      facedir = 0;
+    }
+    else if(fcent == YFACE)
+    {
+      facedir = 1;
+    }
+    else if(fcent == ZFACE)
+    {
+      facedir = 2;
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bogus face direction");
+    }
+    //
+    a_irregOnly = true;
+    //no regular stencil span so we don't need to do anything fancy with dstFaces
+    //just copies where it is not extrapolating
+    a_regStencil = (1.0)*Shift(Point::Zeros());
+    a_regApplyBox = a_validBox.growHi(facedir, 1);
+    for(SideIterator sit; sit.ok(); ++sit)
+    {
+      Side::LoHiSide flipsd = flip(sit());
+      int ishift   = sign(flipsd);
+      Point pshift = Point::Basis(facedir, ishift);
+      
+      Box adjcell = a_validBox.adjCellSide(facedir, 1, sit());
+      Box bndry   = adjcell.shift(pshift);
+      for(auto bit = bndry.begin(); bit != bndry.end(); ++bit)
+      {
+        vector<EBIndex<CELL> > vofs = a_graph.getVoFs(*bit);
+        for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          auto vof = vofs[ivof];
+          vector<EBIndex<fcent> > bfaces = getFaces<fcent>(vof, sit(), a_graph);
+          for(unsigned int iface = 0; iface < bfaces.size(); iface++)
+          {
+            if(bfaces[iface].m_isBoundary)
+            {
+              auto dstface = bfaces[iface];
+              LocalStencil<fcent, double> locStencil;
+              EBIndex<fcent> nearface, farface;
+              bool hasnear, hasfar;
+              vector<EBIndex<fcent> > nearfaces = getFaces<fcent>(vof, flipsd, a_graph);
+              hasnear = (nearfaces.size() == 1);
+              if(hasnear)
+              {
+                nearface = nearfaces[0];
+                EBIndex<CELL> nextvof = nearface.getVoF(flipsd);
+                vector<EBIndex<fcent> > farfaces = getFaces<fcent>(nextvof, flipsd, a_graph);
+                hasfar = (farfaces.size() == 1);
+                if(hasfar)
+                {
+                  farface = farfaces[0];
+                }
+              }
+
+              if(hasnear && hasfar)
+              {
+                locStencil.add(nearface, 2.0);
+                locStencil.add( farface,-1.0);
+              }
+              else if(hasnear)
+              {
+                locStencil.add(nearface, 1.0);
+              }
+              if(hasnear || hasfar)
+              {
+                a_dstFaces.push_back(dstface);
+                a_stencil.push_back(locStencil);
+              }
+            }
+          } //end loop over faces
+        }//end loop over vofs at edge
+      }//end loop over cells at edge
+    }//end loop over sides of the input box
+
+    //no bcs here in the sense that we do not touch the source
     return false;
   }
 ///end face to cell

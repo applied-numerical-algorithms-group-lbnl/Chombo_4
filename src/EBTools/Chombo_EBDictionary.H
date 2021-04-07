@@ -46,6 +46,13 @@ namespace StencilNames
    */
   static const string CopyCellValueToCutFace("copy_cell_value_to_cut_face");
 
+  ///extrapolate face values to domain faces
+  /**
+     extrapolates face values to domain boundaries
+     domval = 2*nearval - farval
+   */
+  static const string ExtrapToDomainFace("extrap_to_domain_face");
+
 
   /// Stencil for addng the contribution of the cut face flux F to (kappa div F)
   /**
