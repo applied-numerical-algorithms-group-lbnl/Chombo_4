@@ -78,6 +78,38 @@ namespace Proto
                       a_periodiconly,
                       forceNeumann);
     }
+    else if (a_stencilName == string("Weighted_Least_Squares_All_Neumann"))
+    {
+      bool forceNeumann = true;
+      return
+        getWLSStencil(a_dstVoFs,
+                      a_stencil,
+                      a_regStencil,
+                      a_regStencilBCS,
+                      a_BCApplyBoxes,
+                      a_regApplyBox,
+                      a_stencilName,
+                      a_domainBCName,
+                      a_ebbcName,
+                      a_srcValid,
+                      a_srcDomain,
+                      a_srcGhost,
+                      a_dstGhost,
+                      a_srcGraph,
+                      a_voludata,
+                      a_ebfadata,
+                      a_xfacdata,
+                      a_yfacdata,
+                      a_zfacdata,
+                      a_ebnormxdata,
+                      a_ebnormydata,
+#if DIM==3
+                      a_ebnormzdata,
+#endif
+                      a_dx,
+                      a_periodiconly,
+                      forceNeumann);
+    }
     else
     {
       PR_error("stencil_archive_cell_cell::stencil string not found");
@@ -923,7 +955,7 @@ namespace Proto
     {
       //cout << "should not get here with no irregular cells" << endl;
       Point pt = a_dstVoFs[ivof].m_pt;
-      //cout << "point1 "<<pt<<endl;
+      cout << "point1 "<<pt<<endl;
       WLSStencil<order>::
         getWLSDivFStencil(a_stencil[ivof],
                                a_dstVoFs[ivof],
@@ -940,7 +972,10 @@ namespace Proto
       RealVect centroid;
       double kappa;
       Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
-      a_stencil[ivof]*= 1.0/(kappa*a_dx*a_dx);
+      a_stencil[ivof]*= 1.0/(a_dx*a_dx);
+      cout << "divF, ";
+      cout << "stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
+      a_stencil[ivof].print();
     }
     return true;
   }

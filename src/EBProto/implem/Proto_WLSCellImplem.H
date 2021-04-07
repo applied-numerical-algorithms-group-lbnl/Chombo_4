@@ -6,6 +6,47 @@ namespace Proto
 {
   
   template<CENTERING cent, int order>
+  Real
+  BaseWLSFlux<cent, order>::
+  computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
+                     const Vector<IndMomSDMinOne>   & a_facmom,
+                     const Vector<IndMomDIM>        & a_ebfmom,
+                     const int                        a_nvolneigh,
+                     double                           a_dx) const
+  {
+    Vector<Real> domBCValues, ebBCValues;
+    int nrows = a_facmom.size();
+    domBCValues.resize(nrows);
+    for(int iface = 0; iface < nrows; iface++)
+    {
+      //IndMomSDMinOne           & a_faceMom
+      //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
+      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
+      //if(!divideable)
+      //{
+      //  domBCValues[iface] = 0.;
+      //}
+    }
+    //a_domBCValue->getFaceAveValues( domBCValues, a_facNeighs, a_ebisBox, a_dx);
+    //a_EBBCValue->getEBFaceAveValues(ebBCValues,  a_ebfNeighs, a_ebisBox, a_dx);
+  
+    int nfac = a_facmom.size();
+    int nebf = a_ebfmom.size();
+  
+    Real inhomogTerm = 0.0;
+    for(int iface = 0; iface < nfac; iface++)
+    {
+      inhomogTerm += domBCValues[iface]*a_stencil(0, a_nvolneigh + iface);
+    }
+    for(int iface = 0; iface < nebf; iface++)
+    {
+      inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
+    }
+
+    return inhomogTerm;
+  }
+
+  template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
   getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
@@ -14,11 +55,13 @@ namespace Proto
                   IndMomDIM                & a_ebmom,
 	          RealVect                 & a_normal,
 		  vector<IndMomDIM>        & a_ebnorm,
+		  double                   & a_bndryArea,
                   double                     a_dx) const
   {
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
+    a_fluxMatrix.setVal(0.);
 
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
@@ -41,6 +84,7 @@ namespace Proto
 
       // the contribution to the flux matrix from the normal in this particular direction
       Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
+      fluxIncr.setVal(0.);
       for(momit.reset(); momit.ok(); ++momit)
       {
         IndexTM<int, DIM> p = momit();
@@ -50,7 +94,8 @@ namespace Proto
         if(pd > 0)
         {
           IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
-          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];
+          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];///(a_bndryArea*areaScaleFactor*POW(a_dx, momit().sum()));
+	  cout<<" bndryArea "<<a_bndryArea<<endl;
         }
         else
         {
@@ -58,6 +103,17 @@ namespace Proto
         }
       }
       a_fluxMatrix += fluxIncr;
+    }
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        Real pd = p[idir];
+        //get column number associated with this particular moment
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+      }
     }
    
   }
@@ -122,7 +178,7 @@ namespace Proto
         }
         // for readability, multiply by pd even though pd = 1
         //also pfaceshift is really p-e^d because we have set p
-        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift]/areaScaleFactor;
+        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift];///areaScaleFactor;
       }
       else
       {
@@ -192,7 +248,7 @@ namespace Proto
     Chombo4::LAPACKMatrix X, sT;
     int info = solveLSTSVD(X, MTWT, QT,
                            10,
-                           1.0e-10);
+                           1.0e-13);
 
     if(info != 0)
     {
@@ -313,6 +369,9 @@ namespace Proto
                               Vector<int>             & a_facneighDir,
 			      Vector<Side::LoHiSide>  & a_facneighSid,
 			      Vector<RealVect>        & a_ebfneighNorm,
+			      Vector<double>         & a_volneighFrac,
+                              Vector<double>         & a_ebfneighFrac,
+                              Vector<double>         & a_facneighFrac,
 			      double                    a_dx) const
   {
     Vector< EBIndex<XFACE> > Xfacneigh;
@@ -329,11 +388,16 @@ namespace Proto
       {
         volLoc[idir] = a_dx * (0.5 + volInd.m_pt[idir]);
       }
+      cout<< " vol order "<<volInd.m_pt<<endl;
       a_volneighLoc.push_back(volLoc);
 
       if(a_graph.isIrregular(volInd.m_pt))
       {
 	a_volmom.push_back(a_voludata(volInd, 0));
+	RealVect centroid;
+        double kappa;
+        Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volInd, a_graph, a_dx);
+	a_volneighFrac.push_back(kappa);
 	const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
 	a_ebfmom.push_back(a_ebfadata(ebf, 0));
         a_ebfneighLoc.push_back(volLoc);
@@ -344,10 +408,13 @@ namespace Proto
         Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,
             a_voludata, a_ebfadata, a_xfacdata, a_yfacdata, a_zfacdata, volInd, a_graph, a_dx);
 	a_ebfneighNorm.push_back(normal);
+	a_ebfneighFrac.push_back(bndryArea);
+        cout<< " eb order "<<volInd.m_pt<<endl;
       }
       else
       {
 	a_volmom.push_back(regVolMom);
+	a_volneighFrac.push_back(1.0);
       }
       int side = 0;
       for(SideIterator sit; sit.ok(); ++sit)
@@ -382,10 +449,15 @@ namespace Proto
     	      if(a_graph.isIrregular(volInd.m_pt))
               {
                 a_facmom.push_back(a_xfacdata(x_face, 0));
+		double   areaFrac;
+                RealVect centroid;
+                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, x_face, a_graph, a_dx);
+	        a_facneighFrac.push_back(areaFrac);
     	      }
     	      else
               {
                 a_facmom.push_back(regFaceMom);
+	        a_facneighFrac.push_back(1.0);
     	      }
               Xfacneigh.push_back(x_face);
               a_facneighLoc.push_back(XfaceLoc);
@@ -420,10 +492,15 @@ namespace Proto
               if(a_graph.isIrregular(volInd.m_pt))
               {
                 a_facmom.push_back(a_yfacdata(y_face, 0));
+		double   areaFrac;
+                RealVect centroid;
+                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, y_face, a_graph, a_dx);
+                a_facneighFrac.push_back(areaFrac);
               }
               else
               {
                 a_facmom.push_back(regFaceMom);
+                a_facneighFrac.push_back(1.0);
               }
               Yfacneigh.push_back(y_face);
               a_facneighLoc.push_back(YfaceLoc);
@@ -459,10 +536,15 @@ namespace Proto
               if(a_graph.isIrregular(volInd.m_pt))
               {
                 a_facmom.push_back(a_zfacdata(z_face, 0));
+		double   areaFrac;
+                RealVect centroid;
+                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, z_face, a_graph, a_dx);
+                a_facneighFrac.push_back(areaFrac);
               }
               else
               {
                 a_facmom.push_back(regFaceMom);
+                a_facneighFrac.push_back(1.0);
               }
               Zfacneigh.push_back(z_face);
               a_facneighLoc.push_back(ZfaceLoc);
@@ -492,6 +574,9 @@ namespace Proto
 			   Vector<int>            & a_facneighDir,
 			   Vector<Side::LoHiSide> & a_facneighSid,
 			   Vector<RealVect>       & a_ebfneighNorm,
+			   Vector<double>         & a_volneighFrac,
+                           Vector<double>         & a_ebfneighFrac,
+                           Vector<double>         & a_facneighFrac,
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const
   {
@@ -534,7 +619,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = a_volmom[irow][momit()]/(volScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = a_volmom[irow][momit()]/(a_volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = a_volmom[irow][momit()]/(a_volneighFrac[irow]*volScaleFactor);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -587,7 +673,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(areaScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(a_facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(a_facneighFrac[iface]*areaScaleFactor);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -632,7 +719,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = a_ebfmom[iebf][momit()]/(areaScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = a_ebfmom[iebf][momit()]/(a_ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = a_ebfmom[iebf][momit()]/(a_ebfneighFrac[iebf]*areaScaleFactor);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -669,7 +757,7 @@ namespace Proto
       if (a_dir == idir) faceLoc[idir] = a_dx * (a_face.m_pt[idir]);
     }
 
-    unsigned int radius = 1;
+    unsigned int radius = 2;
     Vector<int> weightDisVol;
     Vector<int> weightDisFac;
     Vector<int> weightDisEB;
@@ -680,6 +768,9 @@ namespace Proto
     Vector<RealVect> volneighLoc;
     Vector<RealVect> ebfneighLoc;
     Vector<RealVect> facneighLoc;
+    Vector<double> volneighFrac;
+    Vector<double> ebfneighFrac;
+    Vector<double> facneighFrac;
     Vector<RealVect> ebfneighNorm;
     Vector<int> facneighDir;
     Vector<Side::LoHiSide> facneighSid;
@@ -690,14 +781,16 @@ namespace Proto
 		                volmom, ebfmom, facmom,
 				volneighLoc, ebfneighLoc, facneighLoc,
 				weightDisVol, weightDisEB, weightDisFac,
-				facneighDir, facneighSid, ebfneighNorm, a_dx);
+				facneighDir, facneighSid, ebfneighNorm, 
+				volneighFrac, ebfneighFrac, facneighFrac, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
     getShiftedMomentMatrix(Mvol, faceLoc, a_dx, 
 		           volmom, ebfmom, facmom,
 		           volneighLoc, ebfneighLoc, facneighLoc,
-			   facneighDir, facneighSid, ebfneighNorm, 
+			   facneighDir, facneighSid, ebfneighNorm,
+			   volneighFrac, ebfneighFrac, facneighFrac, 
 			   a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
@@ -719,6 +812,7 @@ namespace Proto
       Real thisCo = phiCoef(0, ivof);
       int ivar = 0; //scalar
       a_sten.add(vols[ivof], thisCo);
+      cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
   }
@@ -783,11 +877,11 @@ namespace Proto
 				       0,
 				       faceMom, 
                                        a_dx);       
-        fluxStencil *= double(isign)*areaFrac;
-        a_vofStencil += fluxStencil;
         cout<<" stencilX face "<<xfaces[iface].m_pt<<endl;
         cout<<" fluxStencil "<<endl;
         fluxStencil.print();
+        fluxStencil *= double(isign);
+        a_vofStencil += fluxStencil;
 
       }
     }
@@ -824,7 +918,10 @@ namespace Proto
                                        1,
 				       faceMom, 
                                        a_dx);
-        fluxStencil *= double(isign)*areaFrac;
+	cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+        cout<<" fluxStencil "<<endl;
+        fluxStencil.print();
+        fluxStencil *= double(isign);
         a_vofStencil += fluxStencil;
       }
     }
@@ -876,12 +973,12 @@ namespace Proto
       a_vofStencil.print();
 
     LocalStencil<CELL, double> ebflux;
+    double bndryArea, alpha;
     if(a_graph.isIrregular(a_vof.m_pt))
     {
       EBIndex<BOUNDARY> cutface = a_vof.getCutFace();
       double weight; //for inhomogeneous bcs
       RealVect centroid, normal;
-      double bndryArea, alpha;
       IndMomDIM ebmom = a_ebfadata(cutface, 0);
       vector<IndMomDIM> ebnorm (3);
       ebnorm[0] = a_ebnormxdata(a_vof, 0);
@@ -916,6 +1013,7 @@ namespace Proto
                            a_dombcName,
 			   ebmom,
 			   normal,
+			   bndryArea,
                            a_dx);
       }
       else
@@ -929,7 +1027,14 @@ namespace Proto
     PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
     a_vofStencil.setBetaWeight(diagweight);
  
-    if(a_graph.isIrregular(a_vof.m_pt)) a_vofStencil += ebflux;
+    if(a_graph.isIrregular(a_vof.m_pt)) 
+    {
+      cout<<" stencil ebface "<<a_vof.m_pt<<endl;
+      cout<<" ebfluxStencil "<<endl;
+      ebflux.print();
+      //ebflux *= bndryArea;
+      a_vofStencil += ebflux;
+    }
 #if 0
     RealVect centroid, normal;
     double bndryArea, alpha;
@@ -1100,6 +1205,7 @@ namespace Proto
                    string                          a_dombcName[2*DIM],
 		   IndMomDIM                     & a_ebmom,
 		   RealVect                      & a_normal,
+		   double                        & a_bndryArea,
                    const double                  & a_dx) const
   {
     Chombo4::LAPACKMatrix::s_verbose = true;
@@ -1109,8 +1215,7 @@ namespace Proto
     {
       faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
     }
-    cout<<" nowww "<<a_face.m_pt<<endl;
-    unsigned int radius = 1;
+    unsigned int radius = 2;
     Vector<int> weightDisVol;
     Vector<int> weightDisFac;
     Vector<int> weightDisEB;
@@ -1121,6 +1226,9 @@ namespace Proto
     Vector<RealVect> volneighLoc;
     Vector<RealVect> ebfneighLoc;
     Vector<RealVect> facneighLoc;
+    Vector<double> volneighFrac;
+    Vector<double> ebfneighFrac;
+    Vector<double> facneighFrac;
     Vector<RealVect> ebfneighNorm;
     Vector<int> facneighDir;
     Vector<Side::LoHiSide> facneighSid;
@@ -1131,19 +1239,21 @@ namespace Proto
                                 volmom, ebfmom, facmom,
                                 volneighLoc, ebfneighLoc, facneighLoc,
                                 weightDisVol, weightDisEB, weightDisFac,
-                                facneighDir, facneighSid, ebfneighNorm, a_dx);
+                                facneighDir, facneighSid, ebfneighNorm, 
+				volneighFrac, ebfneighFrac, facneighFrac, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
     getShiftedMomentMatrix(Mvol, faceLoc, a_dx, 
 		           volmom, ebfmom, facmom,
 		           volneighLoc, ebfneighLoc, facneighLoc,
-			   facneighDir, facneighSid, ebfneighNorm, 
+			   facneighDir, facneighSid, ebfneighNorm,
+			   volneighFrac, ebfneighFrac, facneighFrac, 
 			   a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebmom, a_normal, a_ebnorm, a_dx);
+    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebmom, a_normal, a_ebnorm, a_bndryArea, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -1160,6 +1270,7 @@ namespace Proto
       Real thisCo = phiCoef(0, ivof);
       int ivar = 0; //scalar
       a_stencil.add(vols[ivof], thisCo);
+      cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
   }

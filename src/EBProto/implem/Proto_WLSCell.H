@@ -103,6 +103,9 @@ namespace Proto
                                 Vector<int>            & a_facneighDir,
 				Vector<Side::LoHiSide> & a_facneighSid,
 				Vector<RealVect>       & a_ebfneighNorm,
+				Vector<double>         & a_volneighFrac,
+                                Vector<double>         & a_ebfneighFrac,
+                                Vector<double>         & a_facneighFrac,
 				double                   a_dx) const;
 
     void
@@ -118,6 +121,9 @@ namespace Proto
 			   Vector<int>            & a_facneighDir,
 			   Vector<Side::LoHiSide> & a_facneighSid,
 			   Vector<RealVect>       & a_ebfneighNorm,
+			   Vector<double>         & a_volneighFrac,
+                           Vector<double>         & a_ebfneighFrac,
+                           Vector<double>         & a_facneighFrac,
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
 		           
@@ -150,6 +156,7 @@ namespace Proto
 		    IndMomDIM                & a_ebmom,
 		    RealVect                 & a_normal,
 		    vector<IndMomDIM>        & a_ebnorm,
+		    double                   & a_bndryArea,
                     double                     a_dx) const;
 
     void
@@ -180,7 +187,15 @@ namespace Proto
                      string                          a_dombcName[2*DIM],
 		     IndMomDIM                     & a_ebmom,
 		     RealVect                      & a_normal,
+		     double                        & a_bndryArea,
                      const double                  & a_dx) const;
+
+    Real
+    computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
+                     const Vector<IndMomSDMinOne>   & a_facmom,
+                     const Vector<IndMomDIM>        & a_ebfmom,
+                     const int                        a_nvolneigh,
+                     double                           a_dx) const;
 
     virtual ~BaseWLSFlux()
     {
