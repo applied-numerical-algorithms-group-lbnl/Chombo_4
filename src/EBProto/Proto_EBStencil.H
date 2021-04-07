@@ -46,6 +46,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
 
     /// internal constructor
    /** 
@@ -67,6 +68,32 @@ namespace Proto
               const XFacData    & a_xfacdata,
               const YFacData    & a_yfacdata,
               const ZFacData    & a_zfacdata, 
+              double              a_dx,
+              bool periodic_domain_bcs_only,
+              bool a_needDiagonalWeights = false,
+              Point a_growDst = Point::Zeros());
+
+    EBStencil(string              a_stencilName,
+              string              a_domainBCName[2*DIM],
+              string              a_ebbcName,
+              const Box         & a_srcValid,
+              const Box         & a_dstValid,
+              const Box         & a_srcDomain,
+              const Box         & a_dstDomain,
+              const Point       & a_srcGhost,
+              const Point       & a_dstGhost,
+              const EBGraph     & a_srcGraph,
+              const EBGraph     & a_dstGraph,
+              const VoluData    & a_voludata,
+              const EBFaData    & a_ebfadata,
+              const XFacData    & a_xfacdata,
+              const YFacData    & a_yfacdata,
+              const ZFacData    & a_zfacdata,
+	      const EBNorData   & a_ebnorxdata,
+	      const EBNorData   & a_ebnorydata,
+#if DIM==3	   
+	      const EBNorData   & a_ebnorzdata,
+#endif	      
               double              a_dx,
               bool periodic_domain_bcs_only,
               bool a_needDiagonalWeights = false,

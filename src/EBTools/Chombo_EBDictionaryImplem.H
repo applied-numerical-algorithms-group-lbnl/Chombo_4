@@ -56,7 +56,67 @@ EBDictionary(const shared_ptr<GeometryService<order> >   & a_geoserv,
   }
 }    
 
-///
+//
+template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+void
+EBDictionary<order, data_t, srcCenter, dstCenter>::
+registerStencilWLS(string a_stencilName,
+                string a_domainBCName[2*DIM],
+                string a_ebbcName,
+                Box    a_srcDomain,
+                Box    a_dstDomain,
+                bool   a_needDiagonalWeights,
+                Point  a_dstGrow)
+{
+  PR_assert(!m_isClosed);
+
+  stencilKey key;
+  key.m_ebbcName    = a_ebbcName;
+  key.m_stencilName = a_stencilName;
+  int dstIndex = getIndex(a_dstDomain);
+
+  
+  shared_ptr< LevelData< EBGraph  >  > graphS = m_geoserv->getGraphs(    a_srcDomain);
+  shared_ptr< LevelData< EBGraph  >  > graphD = m_geoserv->getGraphs(    a_dstDomain);
+  shared_ptr< LevelData< VoluData >  > voldat = m_geoserv->getVoluData(  a_srcDomain);
+  shared_ptr< LevelData< EBFaData >  > ebfdat = m_geoserv->getEBFaceData(a_srcDomain);
+  shared_ptr< LevelData< XFacData >  > xfadat = m_geoserv->getXFaceData( a_srcDomain);
+  shared_ptr< LevelData< YFacData >  > yfadat = m_geoserv->getYFaceData( a_srcDomain);
+  shared_ptr< LevelData< ZFacData >  > zfadat = m_geoserv->getZFaceData( a_srcDomain);
+
+  shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(a_srcDomain);
+  shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(a_srcDomain);
+#if DIM==3
+  shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(a_srcDomain);
+#endif
+
+  DataIterator dit = m_grids[dstIndex].dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Proto::Box gridbxS  = (*graphS)[dit[ibox]].validBox();
+    Proto::Box gridbxD  = (*graphD)[dit[ibox]].validBox();
+    Proto::Box domainbxS = ProtoCh::getProtoBox(a_srcDomain);
+    Proto::Box domainbxD = ProtoCh::getProtoBox(a_dstDomain);
+    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
+    shared_ptr<ebstencil_t> 
+      newsten               
+         ( new ebstencil_t(a_stencilName, a_domainBCName, a_ebbcName,
+                              gridbxS, gridbxD, domainbxS, domainbxD,
+                              m_srcGhost, m_dstGhost,
+                              (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
+                              (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
+                              (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
+			      (*ebnorxdatpld)[dit[ibox]], (*ebnorydatpld)[dit[ibox]],
+#if DIM==3
+                              (*ebnorzdatpld)[dit[ibox]],
+#endif			      
+                              m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
+
+    boxmap[key] = newsten;
+  }
+}
+
+//
 template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
 void
 EBDictionary<order, data_t, srcCenter, dstCenter>::
@@ -101,8 +161,7 @@ registerStencil(string a_stencilName,
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
                               m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
-
- 
+                              
     boxmap[key] = newsten;
   }
 }
