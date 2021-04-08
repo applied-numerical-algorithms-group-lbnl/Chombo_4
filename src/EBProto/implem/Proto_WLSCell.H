@@ -10,6 +10,70 @@
 
 namespace Proto
 {
+ 
+  ///class where phi is a monomial in x, y, z
+  template<int order> //order is so we can send in geometry info
+  class MonomialPhi
+  {
+  public:
+    typedef IndexTM<int,DIM> IndMomDIM;
+    ///
+    /** monomial is a funciton of x, y, z
+        a_power = (p1, p2, p3) 
+        a_point = (x0, y0, z0)
+        the monomial is (x-x0)^p1*(y-y0)^p2*(z-z0)^p3 */
+    MonomialPhi();
+  
+    ///
+    static inline Real getTaylorCoefficient(const RealVect   & a_x0,
+                                            const IndMomDIM  & a_p
+                                           ) 
+    {
+      IntVect m_power;
+      RealVect m_point;
+      Vector<int> powerVec;
+      Vector<Real> pointVec;
+
+      ParmParse pp;
+      pp.getarr("phi_power",powerVec,0,DIM);
+      pp.getarr("phi_point",pointVec,0,DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        m_point[idir] = pointVec[idir];
+        m_power[idir] = powerVec[idir];
+      }
+
+      Real retval = 1.0;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(a_p[idir] > m_power[idir])
+        {
+          return 0.;
+        }
+        else
+        {
+          Real prefix = 1.0;
+          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          {
+            prefix *= (m_power[idir] - ipre);
+          }
+          retval *= prefix*pow(a_x0[idir]-m_point[idir],m_power[idir]-a_p[idir])/factorial(a_p[idir]);
+        }
+      }
+    
+        return retval;
+    }
+
+  
+    virtual ~MonomialPhi()
+    {
+    }
+  
+  };
+
+
+	 
+
   template<int order>
   class Neighbors
   {
@@ -367,14 +431,14 @@ namespace Proto
     {
     }
 
-    virtual Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
-		                 const RealVect        & a_faceLoc,
-                                 int                     a_faceDir,
-                                 const Real              a_dx) const;
+    inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		                       const RealVect        & a_faceLoc,
+                                       int                     a_faceDir,
+                                       const Real              a_dx);
 
-    virtual Real getEBIntegral(const IndMomDIM  & a_ebfMom,
-                               const RealVect   & a_ebfLoc,
-                               const Real         a_dx) const;
+    inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
+                                     const RealVect   & a_ebfLoc,
+                                     const Real         a_dx); 
   
   };
 
@@ -394,86 +458,16 @@ namespace Proto
     {
     }
 
-    virtual Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
-		                 const RealVect        & a_faceLoc,
-                                 int                     a_faceDir,
-		                 const Real              a_dx) const;
+    inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		                       const RealVect        & a_faceLoc,
+                                       int                     a_faceDir,
+		                       const Real              a_dx); 
 
-    virtual Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
-		               const RealVect          & a_ebfLoc,
-                               const Real                a_dx) const;
+    inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
+                                     const RealVect          & a_ebfLoc,
+                                     const Real                a_dx);
  
   };
-
-
-  ///class where phi is a monomial in x, y, z
-  template<int order> //order is so we can send in geometry info
-  class MonomialPhi
-  {
-  public:
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    ///
-    /** monomial is a funciton of x, y, z
-        a_power = (p1, p2, p3) 
-        a_point = (x0, y0, z0)
-        the monomial is (x-x0)^p1*(y-y0)^p2*(z-z0)^p3 */
-    MonomialPhi(IntVect  a_power,
-                RealVect a_point);
-  
-    ///
-    virtual Real getTaylorCoefficient(const RealVect   & a_x0,
-                                      const IndMomDIM  & a_p
-                                      ) const
-    {
-      Real retval = 1.0;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        if(a_p[idir] > m_power[idir])
-        {
-          return 0.;
-        }
-        else
-        {
-          Real prefix = 1.0;
-          for(int ipre = 0; ipre < a_p[idir]; ipre++)
-          {
-            prefix *= (m_power[idir] - ipre);
-          }
-          retval *= prefix*pow(a_x0[idir]-m_point[idir],m_power[idir]-a_p[idir])/factorial(a_p[idir]);
-        }
-      }
-    
-        return retval;
-    }
-
-  
-    ///
-    virtual Real getPhiPoint(const RealVect   & a_x) const
-    {
-      Real retval = 1.;
-      for(int idir = 0; idir < DIM; idir++)
-        {
-          Real xdiff = a_x[idir] - m_point[idir];
-          Real factor= POW(xdiff, m_power[idir]);
-          retval *= factor;
-        }
-      return retval;
-    }
-  
-    virtual ~MonomialPhi()
-    {
-    }
-  
-  private:
-    IntVect  m_power;
-    RealVect m_point;
-  
-    //weak construction is a tool of decadence
-    MonomialPhi()
-    {
-    }
-  };
-
 
 }
 #include "Proto_WLSCellImplem.H"

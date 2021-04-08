@@ -893,6 +893,14 @@ namespace Proto
       cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
+    Real inhom = 0.0;
+    int nvolneigh = vols.size();
+    inhom = computeInhomogTerm(phiCoef, facmom, ebfmom,
+		               nvolneigh,
+			       facneighLoc, facneighDir, facneighSid,
+			       ebfneighLoc, ebfneighNorm,
+			       a_ebbcName, a_dombcName,
+			       a_dx);
   }
 
   template < int order>
@@ -1381,16 +1389,17 @@ namespace Proto
 
   }
 
+  //getIntegralNormalDerivative
   template < int order>
   Real
   NeumannExactSoln<order>::
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-	          const Real              a_dx) const 
+	          const Real              a_dx)  
   {
     Real retval = 0.0;
-    MomentIterator<DIM, order> momit;
+    MomentIterator<DIM-1, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int,DIM-1>  pSDMinOne = momit();
@@ -1413,73 +1422,60 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
  
-      IntVect power;
-      RealVect point;
-      Vector<int> powerVec;
-      Vector<Real> pointVec;
-
-      ParmParse pp;
-      pp.getarr("phi_power",powerVec,0,DIM);
-      pp.getarr("phi_point",pointVec,0,DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        point[idir] = pointVec[idir];
-        power[idir] = powerVec[idir];
-      }
-
-      MonomialPhi<order> mp(power,point);
-
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*mp.getTaylorCoefficient(a_faceLoc,pSpaceDim);
+      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
     }
   
     return retval;
   }
 
+  //getIntegralPhi
   template < int order>
   Real
   DirichletExactSoln<order>::
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-	          const Real              a_dx) const 
+	          const Real              a_dx) 
   {
     Real retval = 0.0;
-    MomentIterator<DIM, order> momit;
+    MomentIterator<DIM-1, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
     {
-      IndexTM<int,DIM> p = momit();
-      Real moment = a_faceMom[p];
+      IndexTM<int,DIM-1> pSDMinOne = momit();
+      IndexTM<int,DIM> pSpaceDim;
 
-      IntVect power;
-      RealVect point;
-      Vector<int> powerVec;
-      Vector<Real> pointVec;
-
-      ParmParse pp;
-      pp.getarr("phi_power",powerVec,0,DIM);
-      pp.getarr("phi_point",pointVec,0,DIM);
+      // face moment m_p is zero except when p[a_face.direction()] = 0 
+      int index = 0;
       for(int idir = 0; idir < DIM; idir++)
       {
-        point[idir] = pointVec[idir];
-        power[idir] = powerVec[idir];
+        if(idir == a_faceDir)
+        {
+          pSpaceDim[idir] = 0;
+        }
+        else
+        {
+          pSpaceDim[idir] = pSDMinOne[index];
+          index++;
+        }
       }
 
-      MonomialPhi<order> mp(power,point);
+      Real moment = a_faceMom[pSDMinOne];
 
-      retval += moment*mp.getTaylorCoefficient(a_faceLoc,p);
+      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
 
     }
 
     return retval;
   }
 
+  //getIntegralPhiAlongEB
   template < int order>
   Real
   DirichletExactSoln<order>::
   getEBIntegral(const IndMomDIM  & a_ebfMom,
 		const RealVect   & a_ebfLoc,
-	        const Real         a_dx) const 
+	        const Real         a_dx) 
   {
 
     Real retval = 0.0;
@@ -1489,35 +1485,20 @@ namespace Proto
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      IntVect power;
-      RealVect point;
-      Vector<int> powerVec;
-      Vector<Real> pointVec;
-
-      ParmParse pp;
-      pp.getarr("phi_power",powerVec,0,DIM);
-      pp.getarr("phi_point",pointVec,0,DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        point[idir] = pointVec[idir];
-        power[idir] = powerVec[idir];
-      }
-
-      MonomialPhi<order> mp(power,point);
-
-      retval += moment*mp.getTaylorCoefficient(a_ebfLoc,p);
+      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
 
     }
 
     return retval;
   }
 
+  //getIntegralGradPhiDotNormal
   template < int order>
   Real
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
 		const RealVect           & a_ebfLoc,
-	        const Real                 a_dx) const 
+	        const Real                 a_dx) 
   {
 
     Real retval = 0.0;
@@ -1534,23 +1515,7 @@ namespace Proto
 	  IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
 	  Real moment = a_ebfNormalMom[ndir][pShift];
   
-          IntVect power;
-          RealVect point;
-          Vector<int> powerVec;
-          Vector<Real> pointVec;
-    
-          ParmParse pp;
-          pp.getarr("phi_power",powerVec,0,DIM);
-          pp.getarr("phi_point",pointVec,0,DIM);
-          for(int idir = 0; idir < DIM; idir++)
-          {
-            point[idir] = pointVec[idir];
-            power[idir] = powerVec[idir];
-          }
-    
-          MonomialPhi<order> mp(power,point);
-    
-          retval += pd*moment*mp.getTaylorCoefficient(a_ebfLoc,p);
+          retval += pd*moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
 	}
       }
     }
@@ -1558,7 +1523,6 @@ namespace Proto
     return retval;
 
   }
-
 
 }
 #endif
