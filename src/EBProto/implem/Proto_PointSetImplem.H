@@ -2,7 +2,6 @@
 #define __Proto_PointSetImplem__
 namespace Proto
 {
-
 ///
 PointSet::
 PointSet(const Box& a_box)

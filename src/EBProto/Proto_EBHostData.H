@@ -237,11 +237,6 @@ namespace Proto
       return 1; 
     }
 
-    static int memTypeAllocation()
-    {
-      return 0;
-    }
-
   protected:
     EBHostData(const            EBHostData<cent, data_t, ncomp>& a_src);
     EBHostData& operator=(const EBHostData<cent, data_t, ncomp>& a_src);
@@ -258,7 +253,7 @@ namespace Proto
                  const Box& a_grid, unsigned int a_icomp) 
     {
       data_t maxval = 0; 
-      using Proto::BoxIterator;
+      //using Proto::BoxIterator;
       for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {
         Point pt = *bit;
@@ -283,7 +278,7 @@ namespace Proto
                      const Box& a_grid, unsigned int a_icomp)
   {
     data_t maxval = 0; 
-    using Proto::BoxIterator;
+    //using Proto::BoxIterator;
     for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
     {
       Point pt = *bit;

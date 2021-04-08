@@ -1,6 +1,6 @@
 max_step        = 10
 max_time        = 10
-checkpoint interval = 1
+checkpoint interval = -1
 plotfile   interval = -1
 defining geometry
 nx       = 64
@@ -28,7 +28,6 @@ max vel mag     = 1
 max vel rad     = 0.25
 max_step        = 10
 max_time        = 10
-pressure iter   = 0
 viscosity       = 0.01
 ==============================================
 initializing solver 
@@ -36,6 +35,9 @@ going into initialize data
 zero velocity in the interior (potential flow ic)
 calling initializespot for scalar 
 just making all the species spots
+Standard Treb pressure initializtion:
+initializing pressure with (I-P)(v*).
+(gphi out of initial projection).    
 startiing run
 projecting initial velocity
 We are starting from scratch so we are projecting the initial velocity.
@@ -47,9 +49,11 @@ EBMultigrid: iter = 3, |resid| = 1.017e-05, rate = 3.848e+02
 EBMultigrid: iter = 4, |resid| = 4.798e-08, rate = 2.120e+02
 EBMultigrid: iter = 5, |resid| = 2.427e-10, rate = 1.977e+02
 EBMultigrid: final     |resid| = 3.183e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 maxvel = 1.000e+00, dx = 1.562e-02, dt = 7.812e-03
-We are starting from scratch so we are 
-getting initial pressure using fixed point iteration 
+We are starting from scratch so we are  initializing  pressure.
+Since there is no Stokes flow initialization and the number of pressure iterations == 0, 
+we are using the initial projection's pressure gradient as the initial  pressure.
 step = 0, time = 0.000e+00 dt = 7.812e-03
 advancing velocity and pressure fields 
 mac projecting advection velocity
@@ -78,6 +82,7 @@ EBMultigrid: iter = 2, |resid| = 1.274e-04, rate = 2.960e+02
 EBMultigrid: iter = 3, |resid| = 5.051e-07, rate = 2.521e+02
 EBMultigrid: iter = 4, |resid| = 1.964e-09, rate = 2.572e+02
 EBMultigrid: final     |resid| = 1.100e-11
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.041e+00, dx = 1.562e-02, dt = 7.503e-03
@@ -109,6 +114,7 @@ EBMultigrid: iter = 2, |resid| = 1.027e-04, rate = 3.020e+02
 EBMultigrid: iter = 3, |resid| = 3.968e-07, rate = 2.589e+02
 EBMultigrid: iter = 4, |resid| = 1.515e-09, rate = 2.620e+02
 EBMultigrid: final     |resid| = 8.593e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.066e+00, dx = 1.562e-02, dt = 7.330e-03
@@ -140,6 +146,7 @@ EBMultigrid: iter = 2, |resid| = 7.975e-05, rate = 2.952e+02
 EBMultigrid: iter = 3, |resid| = 3.012e-07, rate = 2.647e+02
 EBMultigrid: iter = 4, |resid| = 1.165e-09, rate = 2.585e+02
 EBMultigrid: final     |resid| = 6.537e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.085e+00, dx = 1.562e-02, dt = 7.202e-03
@@ -171,6 +178,7 @@ EBMultigrid: iter = 2, |resid| = 6.378e-05, rate = 2.849e+02
 EBMultigrid: iter = 3, |resid| = 2.357e-07, rate = 2.706e+02
 EBMultigrid: iter = 4, |resid| = 9.274e-10, rate = 2.541e+02
 EBMultigrid: final     |resid| = 5.141e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.097e+00, dx = 1.562e-02, dt = 7.120e-03
@@ -202,6 +210,7 @@ EBMultigrid: iter = 2, |resid| = 5.311e-05, rate = 2.737e+02
 EBMultigrid: iter = 3, |resid| = 1.908e-07, rate = 2.783e+02
 EBMultigrid: iter = 4, |resid| = 7.740e-10, rate = 2.466e+02
 EBMultigrid: final     |resid| = 4.215e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.105e+00, dx = 1.562e-02, dt = 7.070e-03
@@ -233,6 +242,7 @@ EBMultigrid: iter = 2, |resid| = 4.579e-05, rate = 2.625e+02
 EBMultigrid: iter = 3, |resid| = 1.612e-07, rate = 2.841e+02
 EBMultigrid: iter = 4, |resid| = 6.792e-10, rate = 2.373e+02
 EBMultigrid: final     |resid| = 3.552e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.114e+00, dx = 1.562e-02, dt = 7.013e-03
@@ -264,6 +274,7 @@ EBMultigrid: iter = 2, |resid| = 4.042e-05, rate = 2.521e+02
 EBMultigrid: iter = 3, |resid| = 1.395e-07, rate = 2.896e+02
 EBMultigrid: iter = 4, |resid| = 6.104e-10, rate = 2.286e+02
 EBMultigrid: final     |resid| = 3.054e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.120e+00, dx = 1.562e-02, dt = 6.973e-03
@@ -295,6 +306,7 @@ EBMultigrid: iter = 2, |resid| = 3.646e-05, rate = 2.424e+02
 EBMultigrid: iter = 3, |resid| = 1.229e-07, rate = 2.967e+02
 EBMultigrid: iter = 4, |resid| = 5.605e-10, rate = 2.192e+02
 EBMultigrid: final     |resid| = 2.671e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.124e+00, dx = 1.562e-02, dt = 6.949e-03
@@ -326,6 +338,7 @@ EBMultigrid: iter = 2, |resid| = 3.349e-05, rate = 2.338e+02
 EBMultigrid: iter = 3, |resid| = 1.096e-07, rate = 3.055e+02
 EBMultigrid: iter = 4, |resid| = 5.233e-10, rate = 2.095e+02
 EBMultigrid: final     |resid| = 2.380e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.126e+00, dx = 1.562e-02, dt = 6.936e-03
@@ -357,6 +370,7 @@ EBMultigrid: iter = 2, |resid| = 3.120e-05, rate = 2.262e+02
 EBMultigrid: iter = 3, |resid| = 9.877e-08, rate = 3.158e+02
 EBMultigrid: iter = 4, |resid| = 4.949e-10, rate = 1.996e+02
 EBMultigrid: final     |resid| = 2.176e-12
+Using the ***average of MAC gradients*** for the CC gradient.
 advancing passive scalar
 advancing species advection/diffusion
 maxvel = 1.130e+00, dx = 1.562e-02, dt = 6.915e-03

@@ -13,7 +13,6 @@ namespace Proto
     std::sort(m_indicies->begin(), m_indicies->end());
     protoMalloc(m_rawPtr, size()*sizeof(data_t));
     m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
-//    defineEBIrregData();
   }
 
   ////

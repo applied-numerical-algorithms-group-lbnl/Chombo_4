@@ -124,6 +124,7 @@ namespace Proto
                            const Point                                     & a_dstGrown);
     bool m_hasDomainBCs;
     bool m_bcsOnly;
+    bool m_irregOnly;
     ///these 
     Stencil<double> m_regStencilInterior;
     //placeholder.  not sure what to do with domain bcs.
@@ -135,15 +136,15 @@ namespace Proto
     shared_ptr< AggStencil<srcCenter, dstCenter, data_t> >  m_irregStencil;
     shared_ptr<  EBBoxData<dstCenter, data_t, 1> >          m_diagonalWeights;
 
-#ifdef PROTO_CUDA
-    FusedStencil<data_t> sFused;
-#endif
 
     private:
     EBStencil();
     EBStencil(     const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
+#ifdef PROTO_CUDA
+    FusedStencil<data_t> sFused;
+#endif
   };
 }
 #include "implem/Proto_EBStencilImplem.H"

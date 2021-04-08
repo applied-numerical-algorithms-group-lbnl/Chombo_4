@@ -244,33 +244,47 @@ correctVectorVelocity()
 {
   CH_TIME("BCGAdvect::correctVectorVelocity");
   m_macGradient.exchange(m_exchangeCopier);
+  DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
-  {
-    EBLevelFluxData<1> facecomp;
-    facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
-
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      auto & advvelfab = m_advectionVel[dit[ibox]];
-      auto & veccomp   =       facecomp[dit[ibox]];
-      auto & macGrad   =  m_macGradient[dit[ibox]];
-      //first correct facedir==vecdir direction
-      //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
-      copyComp(veccomp, advvelfab, vecDir);
+      EBLevelFluxData<1> facecomp;
+      facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
 
-      for(unsigned int faceDir = 0; faceDir < DIM; faceDir++)
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
-        if(faceDir != vecDir)
+        auto & advvelfab = m_advectionVel[dit[ibox]];
+        auto & macGrad   =  m_macGradient[dit[ibox]];
+
+        EBCrossFaceStencil<2, Real> stencils =
+          m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
+
+        auto & velcomp  = facecomp[dit[ibox]];
+        for(unsigned int faceDir =0; faceDir < DIM; faceDir++)
         {
-          EBCrossFaceStencil<2, Real> stencils =
-            m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
-          bool initToZero = false;
-          Real scale = -1.0; //subtracting off gradient
-          stencils.apply(veccomp, macGrad, faceDir, vecDir, initToZero, scale);
+          unsigned int srcDir = vecDir;
+          unsigned int dstDir = faceDir;
+          if(faceDir == vecDir)
+          {
+            //when vecdir==facedir,
+            //substitutNe the advection velocity, which already has its gradient removed
+            //correct facedir==vecdir direction
+            copyComp(velcomp, advvelfab, vecDir);
+          }
+          else
+          {
+            //begin debug
+            //EBFluxData<Real,1> tangrad(velcomp.m_xflux->inputBox(), (*m_graphs)[dit[ibox]]);
+            //stencils.apply(tangrad, macGrad, true      ,  1.0);
+            //end debug
+
+            bool setToZero=false;  Real scale = -1;  //subtracting off gradient
+            stencils.apply(velcomp, macGrad, dstDir, srcDir, setToZero, scale);
+          }
+          ideb++;
         }
-      }
-    } // end loop over facedir
+    }
+    ideb++;
   }
   m_macVelocity.exchange(m_exchangeCopier);
 }

@@ -443,11 +443,6 @@ namespace Proto
     {
       return 2; 
     }
-
-    static int memTypeAllocation()
-    {
-      return 0;
-    }
     
     inline
     void copy(const HostIrregData<cent, data_t, ncomp>& a_src,

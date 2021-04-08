@@ -194,9 +194,6 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIME("EBLevelBoxData::exchange");
-    this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
-    
-/*
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
@@ -204,8 +201,6 @@ public:
     hostdata.exchange(copier);
 
     copyToDevice(*this, hostdata);
-*/
-
   }
 
   ///
@@ -475,7 +470,6 @@ public:
       {
         fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
                 __FILE__, __LINE__, protoGetErrorString(err));
-	std::abort();
       }
 #else
       memcpy(dataptrDevi, dataptrHost, datSize);
