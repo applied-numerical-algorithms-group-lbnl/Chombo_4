@@ -12,6 +12,13 @@ namespace Proto
                      const Vector<IndMomSDMinOne>   & a_facmom,
                      const Vector<IndMomDIM>        & a_ebfmom,
                      const int                        a_nvolneigh,
+		     const Vector<RealVect>         & a_facneighLoc,
+		     const Vector<int>              & a_facneighDir,
+                     const Vector<Side::LoHiSide>   & a_facneighSid,
+		     const Vector<RealVect>         & a_ebfneighLoc,
+	             const Vector<Vector<IndMomDIM> >& a_ebfneighNorm,
+		     string                           a_ebbcName,
+                     string                           a_dombcName[2*DIM],
                      double                           a_dx) const
   {
     Vector<Real> domBCValues, ebBCValues;
@@ -19,7 +26,31 @@ namespace Proto
     domBCValues.resize(nrows);
     for(int iface = 0; iface < nrows; iface++)
     {
-      //IndMomSDMinOne           & a_faceMom
+      RealVect a_faceLoc = a_facneighLoc[iface];
+      int a_faceDir = a_facneighDir[iface];
+      Side::LoHiSide a_faceSid = a_facneighSid[iface];
+      int index = ebp_index(a_faceDir, a_faceSid);
+      if(a_dombcName[index] == string("Neumann"))
+      {
+        domBCValues[iface] = NeumannExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+					       a_faceLoc,
+					       a_faceDir,
+					       a_dx);
+      }
+      else if(a_dombcName[index] == string("Dirichlet"))
+      {
+        domBCValues[iface] = DirichletExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+					       a_faceLoc,
+					       a_faceDir,
+					       a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
       //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
       //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
       //if(!divideable)
@@ -27,8 +58,37 @@ namespace Proto
       //  domBCValues[iface] = 0.;
       //}
     }
-    //a_domBCValue->getFaceAveValues( domBCValues, a_facNeighs, a_ebisBox, a_dx);
-    //a_EBBCValue->getEBFaceAveValues(ebBCValues,  a_ebfNeighs, a_ebisBox, a_dx);
+
+    nrows = a_ebfmom.size();
+    ebBCValues.resize(nrows);
+    for(int ivof = 0; ivof < nrows; ivof++)
+    {
+      RealVect a_ebfLoc = a_ebfneighLoc[ivof];
+      if(a_ebbcName == string("Neumann"))
+      {
+        ebBCValues[ivof] = NeumannExactSoln<order>::
+                               getEBIntegral(a_ebfneighNorm[ivof],
+				             a_ebfLoc,
+				             a_dx);
+      }
+      else if(a_ebbcName == string("Dirichlet"))
+      {
+        ebBCValues[ivof] = DirichletExactSoln<order>::
+                               getEBIntegral(a_ebfmom[ivof],
+				             a_ebfLoc,
+				             a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
+      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
+      //if(!divideable)
+      //{
+      //  ebBCValues[iface] = 0.;
+      //}
+    }
   
     int nfac = a_facmom.size();
     int nebf = a_ebfmom.size();
@@ -52,8 +112,6 @@ namespace Proto
   getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
                   const EBIndex<cent>      & a_face,
 		  RealVect                 & a_faceLoc,
-                  IndMomDIM                & a_ebmom,
-	          RealVect                 & a_normal,
 		  vector<IndMomDIM>        & a_ebnorm,
 		  double                   & a_bndryArea,
                   double                     a_dx) const
@@ -357,6 +415,11 @@ namespace Proto
                               const XFacData          & a_xfacdata,
                               const YFacData          & a_yfacdata,
                               const ZFacData          & a_zfacdata,
+			      const EBNormalData      & a_ebnormxdata,
+                              const EBNormalData      & a_ebnormydata,
+#if DIM==3
+                              const EBNormalData      & a_ebnormzdata,
+#endif
                               Vector<IndMomDIM>       & a_volmom,
                               Vector<IndMomDIM>       & a_ebfmom,
                               Vector<IndMomSDMinOne>  & a_facmom,
@@ -368,7 +431,7 @@ namespace Proto
                               Vector<int>             & a_weightDisFac,
                               Vector<int>             & a_facneighDir,
 			      Vector<Side::LoHiSide>  & a_facneighSid,
-			      Vector<RealVect>        & a_ebfneighNorm,
+			      Vector<Vector<IndMomDIM> >& a_ebfneighNorm,
 			      Vector<double>         & a_volneighFrac,
                               Vector<double>         & a_ebfneighFrac,
                               Vector<double>         & a_facneighFrac,
@@ -407,7 +470,13 @@ namespace Proto
         // Get normal and boundary area
         Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,
             a_voludata, a_ebfadata, a_xfacdata, a_yfacdata, a_zfacdata, volInd, a_graph, a_dx);
-	a_ebfneighNorm.push_back(normal);
+	Vector<IndMomDIM> ebnorm (DIM);
+        ebnorm[0] = a_ebnormxdata(volInd, 0);
+        ebnorm[1] = a_ebnormydata(volInd, 0);
+#if DIM==3
+        ebnorm[2] = a_ebnormzdata(volInd, 0);
+#endif
+	a_ebfneighNorm.push_back(ebnorm);
 	a_ebfneighFrac.push_back(bndryArea);
         cout<< " eb order "<<volInd.m_pt<<endl;
       }
@@ -573,7 +642,7 @@ namespace Proto
                            Vector<RealVect>       & a_facneighLoc,
 			   Vector<int>            & a_facneighDir,
 			   Vector<Side::LoHiSide> & a_facneighSid,
-			   Vector<RealVect>       & a_ebfneighNorm,
+			   Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
 			   Vector<double>         & a_volneighFrac,
                            Vector<double>         & a_ebfneighFrac,
                            Vector<double>         & a_facneighFrac,
@@ -742,6 +811,11 @@ namespace Proto
                          const XFacData             & a_xfacdata,
                          const YFacData             & a_yfacdata,
                          const ZFacData             & a_zfacdata,
+			 const EBNormalData         & a_ebnormxdata,
+                         const EBNormalData         & a_ebnormydata,
+#if DIM==3
+                         const EBNormalData         & a_ebnormzdata,
+#endif
 			 string                       a_ebbcName,
                          string                       a_dombcName[2*DIM],
                          const int                  & a_dir,
@@ -771,13 +845,17 @@ namespace Proto
     Vector<double> volneighFrac;
     Vector<double> ebfneighFrac;
     Vector<double> facneighFrac;
-    Vector<RealVect> ebfneighNorm;
+    Vector<Vector<IndMomDIM> > ebfneighNorm;
     Vector<int> facneighDir;
     Vector<Side::LoHiSide> facneighSid;
 
     getMomentsInfoFromNeighbors(vols,
 		                a_graph, a_voludata, a_ebfadata,
 				a_xfacdata, a_yfacdata, a_zfacdata,
+                                a_ebnormxdata, a_ebnormydata,
+#if DIM==3
+                                a_ebnormzdata,
+#endif				
 		                volmom, ebfmom, facmom,
 				volneighLoc, ebfneighLoc, facneighLoc,
 				weightDisVol, weightDisEB, weightDisFac,
@@ -872,6 +950,11 @@ namespace Proto
                                        a_xfacdata,
                                        a_yfacdata,
                                        a_zfacdata,
+				       a_ebnormxdata,
+				       a_ebnormydata,
+#if DIM==3
+				       a_ebnormzdata,
+#endif				  
 				       a_ebbcName,
 				       a_dombcName,
 				       0,
@@ -913,6 +996,11 @@ namespace Proto
                                        a_xfacdata,
                                        a_yfacdata,
                                        a_zfacdata,
+				       a_ebnormxdata,
+                                       a_ebnormydata,
+#if DIM==3
+                                       a_ebnormzdata,
+#endif
 				       a_ebbcName,
                                        a_dombcName,
                                        1,
@@ -953,6 +1041,11 @@ namespace Proto
                                            a_xfacdata,
                                            a_yfacdata,
                                            a_zfacdata,
+					   a_ebnormxdata,
+                                           a_ebnormydata,
+#if DIM==3
+                                           a_ebnormzdata,
+#endif
                                            a_ebbcName,
                                            a_dombcName,
                                            2,
@@ -980,7 +1073,7 @@ namespace Proto
       double weight; //for inhomogeneous bcs
       RealVect centroid, normal;
       IndMomDIM ebmom = a_ebfadata(cutface, 0);
-      vector<IndMomDIM> ebnorm (3);
+      vector<IndMomDIM> ebnorm (DIM);
       ebnorm[0] = a_ebnormxdata(a_vof, 0);
       ebnorm[1] = a_ebnormydata(a_vof, 0);
 #if DIM==3
@@ -1008,6 +1101,11 @@ namespace Proto
                            a_xfacdata,
                            a_yfacdata,
                            a_zfacdata,
+			   a_ebnormxdata,
+                           a_ebnormydata,
+#if DIM==3
+                           a_ebnormzdata,
+#endif
 			   ebnorm,
   			   a_ebbcName,
                            a_dombcName,
@@ -1166,11 +1264,10 @@ namespace Proto
   template < int order>
   void
   NeumannBC<order>::
-  getEBMoments(IndMomDIM      & a_ebfmom,
-	       RealVect       & a_ebfNorm)
+  getEBMoments(IndMomDIM         & a_ebfmom,
+	       Vector<IndMomDIM> & a_ebfNorm)
   {
     // important because we will sum over each of the dimensions
-    IndMomDIM ebfMom = a_ebfmom;
     MomentIterator<DIM, order> momit;
     a_ebfmom.setToZero();
     for(int idir = 0; idir < DIM; idir++)
@@ -1181,7 +1278,7 @@ namespace Proto
         IndexTM<int, DIM> jmom = momit();
         if(jmom[idir] > 0)
         {
-          a_ebfmom[jmom] += jmom[idir]*ebfMom[jmom-BASISV_TM<int,DIM>(idir)]*a_ebfNorm[idir];
+          a_ebfmom[jmom] += jmom[idir]*a_ebfNorm[idir][jmom-BASISV_TM<int,DIM>(idir)];
         }
       }
     }
@@ -1200,6 +1297,11 @@ namespace Proto
                    const XFacData                & a_xfacdata,
                    const YFacData                & a_yfacdata,
                    const ZFacData                & a_zfacdata,
+		   const EBNormalData            & a_ebnormxdata,
+                   const EBNormalData            & a_ebnormydata,
+#if DIM==3
+                   const EBNormalData            & a_ebnormzdata,
+#endif
 		   vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
@@ -1229,13 +1331,17 @@ namespace Proto
     Vector<double> volneighFrac;
     Vector<double> ebfneighFrac;
     Vector<double> facneighFrac;
-    Vector<RealVect> ebfneighNorm;
+    Vector<Vector<IndMomDIM> > ebfneighNorm;
     Vector<int> facneighDir;
     Vector<Side::LoHiSide> facneighSid;
 
     getMomentsInfoFromNeighbors(vols,
                                 a_graph, a_voludata, a_ebfadata,
                                 a_xfacdata, a_yfacdata, a_zfacdata,
+                                a_ebnormxdata, a_ebnormydata,
+#if DIM==3
+                                a_ebnormzdata,
+#endif				
                                 volmom, ebfmom, facmom,
                                 volneighLoc, ebfneighLoc, facneighLoc,
                                 weightDisVol, weightDisEB, weightDisFac,
@@ -1253,7 +1359,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebmom, a_normal, a_ebnorm, a_bndryArea, a_dx);
+    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebnorm, a_bndryArea, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -1275,6 +1381,184 @@ namespace Proto
 
   }
 
+  template < int order>
+  Real
+  NeumannExactSoln<order>::
+  getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		  const RealVect        & a_faceLoc,
+                  int                     a_faceDir,
+	          const Real              a_dx) const 
+  {
+    Real retval = 0.0;
+    MomentIterator<DIM, order> momit;
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int,DIM-1>  pSDMinOne = momit();
+      IndexTM<int,DIM>  pSpaceDim;
+      // face moment is zero unless p in face direction is 1 (because we take a derivative in 
+      // the face direction)
+      int index = 0;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(idir == a_faceDir)
+        {
+          pSpaceDim[idir] = 1;
+        }
+        else
+        {
+          pSpaceDim[idir] = pSDMinOne[index];
+          index++;
+        }
+      }
+
+      Real moment = a_faceMom[pSDMinOne];
+ 
+      IntVect power;
+      RealVect point;
+      Vector<int> powerVec;
+      Vector<Real> pointVec;
+
+      ParmParse pp;
+      pp.getarr("phi_power",powerVec,0,DIM);
+      pp.getarr("phi_point",pointVec,0,DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        point[idir] = pointVec[idir];
+        power[idir] = powerVec[idir];
+      }
+
+      MonomialPhi<order> mp(power,point);
+
+      // pSpaceDim[a_face.direction()] is 1 so no need to multiply
+      retval += moment*mp.getTaylorCoefficient(a_faceLoc,pSpaceDim);
+    }
   
+    return retval;
+  }
+
+  template < int order>
+  Real
+  DirichletExactSoln<order>::
+  getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		  const RealVect        & a_faceLoc,
+                  int                     a_faceDir,
+	          const Real              a_dx) const 
+  {
+    Real retval = 0.0;
+    MomentIterator<DIM, order> momit;
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int,DIM> p = momit();
+      Real moment = a_faceMom[p];
+
+      IntVect power;
+      RealVect point;
+      Vector<int> powerVec;
+      Vector<Real> pointVec;
+
+      ParmParse pp;
+      pp.getarr("phi_power",powerVec,0,DIM);
+      pp.getarr("phi_point",pointVec,0,DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        point[idir] = pointVec[idir];
+        power[idir] = powerVec[idir];
+      }
+
+      MonomialPhi<order> mp(power,point);
+
+      retval += moment*mp.getTaylorCoefficient(a_faceLoc,p);
+
+    }
+
+    return retval;
+  }
+
+  template < int order>
+  Real
+  DirichletExactSoln<order>::
+  getEBIntegral(const IndMomDIM  & a_ebfMom,
+		const RealVect   & a_ebfLoc,
+	        const Real         a_dx) const 
+  {
+
+    Real retval = 0.0;
+    MomentIterator<DIM, order> momit;
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int,DIM> p = momit();
+      Real moment = a_ebfMom[p];
+
+      IntVect power;
+      RealVect point;
+      Vector<int> powerVec;
+      Vector<Real> pointVec;
+
+      ParmParse pp;
+      pp.getarr("phi_power",powerVec,0,DIM);
+      pp.getarr("phi_point",pointVec,0,DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        point[idir] = pointVec[idir];
+        power[idir] = powerVec[idir];
+      }
+
+      MonomialPhi<order> mp(power,point);
+
+      retval += moment*mp.getTaylorCoefficient(a_ebfLoc,p);
+
+    }
+
+    return retval;
+  }
+
+  template < int order>
+  Real
+  NeumannExactSoln<order>::
+  getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
+		const RealVect           & a_ebfLoc,
+	        const Real                 a_dx) const 
+  {
+
+    Real retval = 0.0;
+    for(int ndir = 0; ndir < DIM; ndir++)
+    {
+      MomentIterator<DIM, order> momit;
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int,DIM> p = momit();
+        Real pd = p[ndir];
+
+        if(pd > 0)
+	{
+	  IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
+	  Real moment = a_ebfNormalMom[ndir][pShift];
+  
+          IntVect power;
+          RealVect point;
+          Vector<int> powerVec;
+          Vector<Real> pointVec;
+    
+          ParmParse pp;
+          pp.getarr("phi_power",powerVec,0,DIM);
+          pp.getarr("phi_point",pointVec,0,DIM);
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            point[idir] = pointVec[idir];
+            power[idir] = powerVec[idir];
+          }
+    
+          MonomialPhi<order> mp(power,point);
+    
+          retval += pd*moment*mp.getTaylorCoefficient(a_ebfLoc,p);
+	}
+      }
+    }
+
+    return retval;
+
+  }
+
+
 }
 #endif
