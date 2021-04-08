@@ -233,11 +233,11 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   EBFluxStencil<2, Real> domaExtrStencils =
     brit->getFluxStencil(StencilNames::ExtrapToDomainFace  , m_nobcsLabel,  doma, doma, a_ibox);
 
+  //copy that and extrapolate to domain boundary faces
+  domaExtrStencils.apply(phiFaceCent, phiFaceCent, true, 1.0);  
   //true is to initialize to zero
   //get phi at centroids
   centroidStencils.apply(phiCentroid, phiFaceCent, true, 1.0);  
-  //copy that and extrapolate to domain boundary faces
-  domaExtrStencils.apply(phiCentroid, phiCentroid, true, 1.0);  
   
   EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph);
   //these two are used in the conservative gradient

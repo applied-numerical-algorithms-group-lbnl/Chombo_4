@@ -1551,8 +1551,8 @@ namespace Proto
             {
               auto dstface = bfaces[iface];
               LocalStencil<fcent, double> locStencil;
-              EBIndex<fcent> nearface, farface;
-              bool hasnear, hasfar;
+              EBIndex<fcent> nearface, farface, farfarface;
+              bool hasnear, hasfar, hasfarfar;
               vector<EBIndex<fcent> > nearfaces = getFaces<fcent>(vof, flipsd, a_graph);
               hasnear = (nearfaces.size() == 1);
               if(hasnear)
@@ -1564,10 +1564,23 @@ namespace Proto
                 if(hasfar)
                 {
                   farface = farfaces[0];
+                  EBIndex<CELL> nextnextvof = farface.getVoF(flipsd);
+                  vector<EBIndex<fcent> > farfarfaces = getFaces<fcent>(nextnextvof, flipsd, a_graph);
+                  hasfarfar = farfarfaces.size() == 1;
+                  if(hasfarfar)
+                  {
+                    farfarface = farfarfaces[0];
+                  }
                 }
               }
 
-              if(hasnear && hasfar)
+              if(hasfarfar)
+              {
+                locStencil.add(  nearface, 3.0);
+                locStencil.add(   farface,-3.0);
+                locStencil.add(farfarface, 1.0);
+              }
+              else if(hasfar)
               {
                 locStencil.add(nearface, 2.0);
                 locStencil.add( farface,-1.0);

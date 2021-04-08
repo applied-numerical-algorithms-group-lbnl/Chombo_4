@@ -48,8 +48,8 @@ namespace StencilNames
 
   ///extrapolate face values to domain faces
   /**
-     extrapolates face values to domain boundaries
-     domval = 2*nearval - farval
+     extrapolates face values to domain boundaries (just copies across the vof)
+     domval = nearval
    */
   static const string ExtrapToDomainFace("extrap_to_domain_face");
 
