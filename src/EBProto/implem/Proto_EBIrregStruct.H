@@ -1,4 +1,3 @@
-
 #ifndef _Proto_EBIrregStruct_H_
 #define _Proto_EBIrregStruct_H_
 
@@ -20,16 +19,6 @@ public:
     unsigned int   m_offset;
     Point          m_index;
 
-/*    template<unsigned int ncomp2>
-    EBIrregStruct(EBIrregStruct<cent, data_t,ncomp2> a_in)
-    {
-      m_startPtr = a_in.m_startPtr;
-      m_varsize  = a_in.m_varsize;
-      m_offset   = a_in.m_offset;
-      m_index    = a_in.m_index;
-    }
-*/
-
     EBIrregStruct() : m_index()
     {
       m_startPtr = nullptr;
@@ -38,11 +27,6 @@ public:
     }
     virtual ~EBIrregStruct(){};
    };
-
 }
-
-
-
-
 
 #endif

@@ -669,7 +669,6 @@ namespace Proto
       if(vecsize == 0) return;
 
       assert(vecsize == m_indicies->size());
-//      printIrr();
 
       protoLaunchKernel((EBLinearOut<cent,data_t,ncomp>), blocks, threads,
                         vecsize,
