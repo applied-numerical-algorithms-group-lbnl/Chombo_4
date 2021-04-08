@@ -107,6 +107,7 @@ namespace Proto
     {
     }
 
+    CUDA_DECORATION
     bool operator< (const EBIndex<cent>& a_ind) const
     {
       bool retval = false;
@@ -121,6 +122,7 @@ namespace Proto
       return retval;
     }
 
+    CUDA_DECORATION
     bool operator==(const EBIndex<cent>& a_ind) const
     {
   
@@ -810,6 +812,11 @@ namespace Proto
     static int preAllocatable()
     {
       return 2; // dyanmic allocatable.
+    }
+
+    static int memTypeAllocation()
+    {
+      return 0;
     }
 
     inline  
