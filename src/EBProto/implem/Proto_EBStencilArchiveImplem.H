@@ -712,14 +712,16 @@ namespace Proto
                                bool                                        a_periodiconly,               
                                bool  a_forceNeumann)               
   {
-//    using std::cout;
-//    using std::endl;
-//    cout << "in secondorderpoissonstencil" << endl;
+
     a_regStencil = Stencil<double>::Laplacian();
-//    cout << "done with regular sten init" << endl;
+
     a_regStencil *= 1.0/(a_dx*a_dx);
-//    cout << "done with regular sten scaling" << endl;
-    a_regApplyBox = a_validBox;
+
+    Box grownBox =a_validBox.grow(1);
+    grownBox &= a_domain;
+    Box interiorBox = grownBox.grow(-1);
+    a_regApplyBox = interiorBox;
+    
     //this stencil has a span so we have to evaluate the stencil on a grown set of the irregular cells so the regular and irregular data actually talk
     getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph);
 //    cout << "done with getIrregLocations" << endl;
@@ -749,28 +751,109 @@ namespace Proto
                                a_dx);
     }
 
-//    cout << "starting with bc stencils" << endl;
-    if(!a_periodiconly)
+    ///add to the irregular set all regular volumes that are
+    ///adjacent to the domain boundary and create their stencils
+    string dombc[2*DIM];
+    for(int index = 0; index < 2*DIM; index++)
     {
-      string dombc[2*DIM];
-      for(int ivec = 0; ivec < 2*DIM; ivec++)
-      {
-        if(a_forceNeumann)
+      if(a_forceNeumann)
         {
-          dombc[ivec] = string("Neumann");
+          dombc[index] = string("Neumann");
         }
         else
         {
-          dombc[ivec] = a_domainBCName[ivec];
+          dombc[index] = a_domainBCName[index];
+        }
+    }
+
+    vector<LocalStencil<CELL, double> > boundaryStencils;
+    vector<EBIndex<     CELL        > > boundaryVolumes;
+    //get the volumes first
+    for(auto bit = a_validBox.begin(); bit != a_validBox.end(); ++bit)
+    {
+      auto pt = *bit;
+      bool addThisOne = false;
+      //cut cells are already accounted for
+      if(a_graph.isRegular(pt))
+      {
+        for(unsigned int idir = 0; idir < DIM; idir++)
+        {
+          for(SideIterator sit; sit.ok(); ++sit)
+          {
+            int isign = sign(sit());
+            Point shift = Point::Basis(idir, isign);
+            Point neigh = pt+shift;
+            if(!a_domain.contains(neigh))
+            {
+              addThisOne = true;
+            }
+          }
         }
       }
-//      cout << "going into getDomainBCs" << endl;
-      SecondOrderStencil<order>::
-        getDomainBCs(a_regStencilBC, a_BCApplyBoxes, dombc, a_validBox, a_graph.getDomain(), a_srcGhost);
-//      cout << "out of  getDomainBCs" << endl;
+      if(addThisOne)
+      {
+        EBIndex<CELL> vof;
+        vof.defineAsRegular(pt);
+        boundaryVolumes.push_back(vof);
+        LocalStencil<CELL, double> vofstencil;
+        getRegularPoissonBoundaryStencil(vofstencil, vof,
+                                         a_domain, a_dx, dombc);
+      }
     }
-    return true;
+
+    //insert the newly-treated-as-irregular stencils and volumes into the output
+    a_stencil.insert(a_stencil.end(), boundaryStencils.begin(), boundaryStencils.end());
+    a_dstVoFs.insert(a_dstVoFs.end(), boundaryVolumes.begin() , boundaryVolumes.end());
+    return false;  //we are now doing domain boundary conditions internally
   }
+  ////
+  template <int order>
+  void
+  EBStencilArchive<CELL, CELL,  order, double>::
+  getRegularPoissonBoundaryStencil(LocalStencil<CELL, double> & a_stencil,
+                                   EBIndex<CELL>              & a_startvof,
+                                   const Box                  & a_domain,
+                                   double                       a_dx,
+                                   string                       a_dombc[2*DIM])
+  {
+    a_stencil.clear();
+    Point pt = a_startvof.m_pt;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      for(SideIterator sit; sit.ok(); ++sit)
+      {
+        LocalStencil<CELL, double> fluxStencil;  
+        int iindex = ebp_index(idir, sit());
+        int isign = sign(sit());
+        Point shift = Point::Basis(idir, isign);
+        Point neigh = pt+shift;
+        EBIndex<CELL> neighvof;
+        neighvof.defineAsRegular(neigh);
+        if(a_domain.contains(neigh))
+        {
+          fluxStencil.add(neighvof  ,  1./a_dx);
+          fluxStencil.add(a_startvof, -1./a_dx);
+        }
+        else if(a_dombc[iindex] == string("Neumann"))
+        {
+          //no flux from a neumann boundary
+        }
+        else if(a_dombc[iindex] == string("Dirichlet"))
+        {
+          //with dirichlet,  we use the second order approximation
+          //that phineigh = - phistart
+          fluxStencil.add(a_startvof, -2./a_dx);
+        }
+        else
+        {
+          PROTO_ASSERT(false, "boundary condition string not  found");
+        }
+        a_stencil += fluxStencil;
+      }
+    }
+  }
+                                     
+                                     
   /***/
 /////////////end cell to cell
 
@@ -787,7 +870,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
-               bool                                      & a_irregOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
