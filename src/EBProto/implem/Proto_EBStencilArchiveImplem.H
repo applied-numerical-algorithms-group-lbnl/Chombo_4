@@ -852,6 +852,11 @@ namespace Proto
         a_stencil += fluxStencil;
       }
     }
+    //We need this for relaxation (and yes, this is easier than just saying -2*dim/h^2).
+    double diagweight;
+    bool foundVoF = a_stencil.getValueAtVoF(diagweight, a_startvof);
+    PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+    a_stencil.setBetaWeight(diagweight);
   }
                                      
                                      
