@@ -18,6 +18,8 @@ namespace Proto
   {
 
     PR_TIME("AggSten.constructor");
+    PROTO_ASSERT(a_dstVoFs.size() == a_stencil.size(), "mismatch in aggstencil construction");
+    
     m_ebstencil.resize(a_dstVoFs.size());
     m_dstAccess.resize(a_dstVoFs.size());
 

@@ -766,8 +766,8 @@ namespace Proto
         }
     }
 
-    vector<LocalStencil<CELL, double> > boundaryStencils;
-    vector<EBIndex<     CELL        > > boundaryVolumes;
+    vector<LocalStencil<CELL, double> > boundarySten;
+    vector<EBIndex<     CELL        > > boundaryVolu;
     //get the volumes first
     for(auto bit = a_validBox.begin(); bit != a_validBox.end(); ++bit)
     {
@@ -794,16 +794,17 @@ namespace Proto
       {
         EBIndex<CELL> vof;
         vof.defineAsRegular(pt);
-        boundaryVolumes.push_back(vof);
         LocalStencil<CELL, double> vofstencil;
         getRegularPoissonBoundaryStencil(vofstencil, vof,
                                          a_domain, a_dx, dombc);
+        boundaryVolu.push_back(vof);
+        boundarySten.push_back(vofstencil);
       }
     }
 
     //insert the newly-treated-as-irregular stencils and volumes into the output
-    a_stencil.insert(a_stencil.end(), boundaryStencils.begin(), boundaryStencils.end());
-    a_dstVoFs.insert(a_dstVoFs.end(), boundaryVolumes.begin() , boundaryVolumes.end());
+    a_stencil.insert(a_stencil.end(), boundarySten.begin(), boundarySten.end());
+    a_dstVoFs.insert(a_dstVoFs.end(), boundaryVolu.begin(), boundaryVolu.end());
     return false;  //we are now doing domain boundary conditions internally
   }
   ////
