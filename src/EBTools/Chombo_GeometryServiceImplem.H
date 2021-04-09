@@ -51,7 +51,7 @@ defineData()
   m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
   m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
   m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
-  for(int idir = 0; idir < DIM; idir++)
+  for(int idir = 0; idir < 3; idir++)
   {
     m_ebnormaldata[idir] = shared_ptr<LevelData<EBNormalData> > ( new LevelData<EBNormalData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
   }

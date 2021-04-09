@@ -86,9 +86,7 @@ registerStencilWLS(string a_stencilName,
 
   shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(a_srcDomain);
   shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(a_srcDomain);
-#if DIM==3
   shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(a_srcDomain);
-#endif
 
   DataIterator dit = m_grids[dstIndex].dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -107,9 +105,7 @@ registerStencilWLS(string a_stencilName,
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
 			      (*ebnorxdatpld)[dit[ibox]], (*ebnorydatpld)[dit[ibox]],
-#if DIM==3
                               (*ebnorzdatpld)[dit[ibox]],
-#endif			      
                               m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
 
     boxmap[key] = newsten;

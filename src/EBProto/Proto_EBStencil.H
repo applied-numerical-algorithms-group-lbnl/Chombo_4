@@ -91,9 +91,7 @@ namespace Proto
               const ZFacData    & a_zfacdata,
 	      const EBNorData   & a_ebnorxdata,
 	      const EBNorData   & a_ebnorydata,
-#if DIM==3	   
 	      const EBNorData   & a_ebnorzdata,
-#endif	      
               double              a_dx,
               bool periodic_domain_bcs_only,
               bool a_needDiagonalWeights = false,

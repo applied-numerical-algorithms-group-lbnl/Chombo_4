@@ -136,14 +136,12 @@ public:
     return m_ebnormaldata[1];
   }
 
-#if DIM==3
   ///Get eb moment in the z direction
   inline const shared_ptr<LevelData<EBNormalData> >
   getEBNormalData_z() const
   {
     return m_ebnormaldata[2];
   }
-#endif
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
@@ -382,7 +380,7 @@ private:
   shared_ptr<LevelData<ZFacData> >    m_zfacdata;
 
   ///
-  shared_ptr<LevelData<EBNormalData> >      m_ebnormaldata[DIM];
+  shared_ptr<LevelData<EBNormalData> >      m_ebnormaldata[3];
     
   //origin                            
   RealVect                            m_origin;
@@ -606,14 +604,12 @@ public:
     return (*this)[a_domain]->getEBNormalData_y();
   }
 
-#if DIM==3
   ///Get eb moment in the z direction
   inline shared_ptr<LevelData<EBNormalData> >
   getEBNormalData_z(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_z();
   }
-#endif
 
   ///
   inline shared_ptr<LevelGeometryService<order> > operator[](const Box& a_domain)

@@ -262,9 +262,7 @@ private:
 
     shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(m_domain);
     shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(m_domain);
-#if DIM==3
     shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(m_domain);
-#endif
 
     auto& voludata =(*voldatpld)[a_dit];
     auto& ebfadata =(*ebfdatpld)[a_dit];
@@ -274,9 +272,7 @@ private:
     auto& graph    =(*m_graphs )[a_dit];
     auto& ebnorxdata =(*ebnorxdatpld)[a_dit];
     auto& ebnorydata =(*ebnorydatpld)[a_dit];
-#if DIM==3
     auto& ebnorzdata =(*ebnorzdatpld)[a_dit];
-#endif
     Box valid = m_grids[a_dit];
     Bx  valbx = ProtoCh::getProtoBox(valid);
     vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
@@ -295,9 +291,7 @@ private:
                             voludata,  ebfadata, 
                             xfacdata,  yfacdata, zfacdata,   
 			    ebnorxdata, ebnorydata,
-#if DIM==3
                             ebnorzdata,
-#endif 
                             m_dx, false, Point::Zeros());
  
     }

@@ -38,9 +38,7 @@ namespace Proto
              const ZFacData                            & a_zfacdata,
 	     const EBNormalData                        & a_ebnormxdata,
              const EBNormalData                        & a_ebnormydata,
-#if DIM==3
              const EBNormalData                        & a_ebnormzdata,
-#endif	     
              double                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown)               
@@ -71,9 +69,7 @@ namespace Proto
                       a_zfacdata,
 		      a_ebnormxdata,
                       a_ebnormydata,
-#if DIM==3
                       a_ebnormzdata,
-#endif
                       a_dx,
                       a_periodiconly,
                       forceNeumann);
@@ -103,9 +99,7 @@ namespace Proto
                       a_zfacdata,
                       a_ebnormxdata,
                       a_ebnormydata,
-#if DIM==3
                       a_ebnormzdata,
-#endif
                       a_dx,
                       a_periodiconly,
                       forceNeumann);
@@ -906,9 +900,7 @@ namespace Proto
                 const ZFacData                            & a_zfacdata,
                 const EBNormalData                        & a_ebnormxdata,
                 const EBNormalData                        & a_ebnormydata,
-#if DIM==3
                 const EBNormalData                        & a_ebnormzdata,
-#endif		
                 double                                      a_dx,                         
                 bool                                        a_periodiconly,               
                 bool  a_forceNeumann)               
@@ -964,9 +956,7 @@ namespace Proto
                                a_ebfadata,
                                a_xfacdata, a_yfacdata, a_zfacdata,
 			       a_ebnormxdata, a_ebnormydata, 
-#if DIM==3
 			       a_ebnormzdata,
-#endif		
                                xflux, yflux, zflux, ebflux, ebbc, dombc,
                                a_dx);
       RealVect centroid;

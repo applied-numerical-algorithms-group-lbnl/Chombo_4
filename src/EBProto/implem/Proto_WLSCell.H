@@ -158,9 +158,7 @@ namespace Proto
                                 const ZFacData         & a_zfacdata,
 				const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
-#if DIM==3
                                 const EBNormalData     & a_ebnormzdata,
-#endif
 		                Vector<IndMomDIM>      & a_volmom, 
 				Vector<IndMomDIM>      & a_ebfmom,
                                 Vector<IndMomSDMinOne> & a_facmom,
@@ -199,6 +197,7 @@ namespace Proto
 		           
     void
     getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
+                           Real                       &  a_inhomogTerm, //for inhomogeneous bcs
                            const EBIndex<cent>        & a_face,
                            const EBGraph              & a_graph,
                            const VoluData             & a_voludata,
@@ -208,9 +207,7 @@ namespace Proto
                            const ZFacData             & a_zfacdata,
                            const EBNormalData         & a_ebnormxdata,
                            const EBNormalData         & a_ebnormydata,
-#if DIM==3
                            const EBNormalData         & a_ebnormzdata,
-#endif
 			   string                       a_ebbcName,
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
@@ -247,7 +244,7 @@ namespace Proto
 
     void
     getEBFluxStencil(LocalStencil<CELL, double>    &  a_facesten,
-                     double                        &  a_weight, //for inhomogeneous bcs
+                     Real                          &  a_inhomogTerm, //for inhomogeneous bcs
                      const EBIndex<cent>           &  a_face,
                      const EBGraph                 & a_graph,
                      const VoluData                & a_voludata,
@@ -257,9 +254,7 @@ namespace Proto
                      const ZFacData                & a_zfacdata,
 		     const EBNormalData            & a_ebnormxdata,
                      const EBNormalData            & a_ebnormydata,
-#if DIM==3
                      const EBNormalData            & a_ebnormzdata,
-#endif
 		     vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
@@ -345,9 +340,7 @@ namespace Proto
                            const ZFacData                      & a_zfacdata,
  			   const EBNormalData                  & a_ebnormxdata,
                            const EBNormalData                  & a_ebnormydata,
-#if DIM==3
                            const EBNormalData                  & a_ebnormzdata,
-#endif
                            const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
                            const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
                            const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,

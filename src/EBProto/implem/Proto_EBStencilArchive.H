@@ -481,9 +481,7 @@ namespace Proto
                   const ZFacData                            & a_zfacdata,
                   const EBNormalData                        & a_ebnormxdata,
                   const EBNormalData                        & a_ebnormydata,
-#if DIM==3
                   const EBNormalData                        & a_ebnormzdata,
-#endif	       
                   double                                      a_dx,
                   bool                                        a_periodiconly,
                   Point                                       a_dstGrown);
@@ -559,9 +557,7 @@ namespace Proto
                   const ZFacData                            & a_zfacdata,
                   const EBNormalData                        & a_ebnormxdata,
                   const EBNormalData                        & a_ebnormydata,
-#if DIM==3
                   const EBNormalData                        & a_ebnormzdata,
-#endif	       
                   double                                      a_dx,
                   bool                                        a_periodiconly,
                   bool  a_forceAllNeumann);

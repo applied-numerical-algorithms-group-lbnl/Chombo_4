@@ -84,9 +84,7 @@ namespace Proto
             const ZFacData    & a_zfacdata,
 	    const EBNorData   & a_ebnorxdata,
             const EBNorData   & a_ebnorydata,
-#if DIM==3	    
             const EBNorData   & a_ebnorzdata,
-#endif	    
             double              a_dx,
             bool                a_periodiconly,
             bool                a_needDiagonalWeights,
@@ -107,9 +105,7 @@ namespace Proto
                             a_voludata,  a_ebfadata,    
                             a_xfacdata,  a_yfacdata, a_zfacdata,
 			    a_ebnorxdata, a_ebnorydata,
-#if DIM==3
                             a_ebnorzdata,
-#endif			    
                             a_dx, a_periodiconly, a_dstGrown);
 
     if(m_hasDomainBCs) defineApplyITZ();

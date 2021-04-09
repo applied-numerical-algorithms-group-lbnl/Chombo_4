@@ -417,9 +417,7 @@ namespace Proto
                               const ZFacData          & a_zfacdata,
 			      const EBNormalData      & a_ebnormxdata,
                               const EBNormalData      & a_ebnormydata,
-#if DIM==3
                               const EBNormalData      & a_ebnormzdata,
-#endif
                               Vector<IndMomDIM>       & a_volmom,
                               Vector<IndMomDIM>       & a_ebfmom,
                               Vector<IndMomSDMinOne>  & a_facmom,
@@ -533,6 +531,7 @@ namespace Proto
               a_facneighDir.push_back(x_face.direction());
 	      a_facneighSid.push_back(sit());
               a_weightDisFac.push_back(a_weightDisVol[ivof]);
+              cout<< " xfac order "<<x_face.m_pt<<endl;
             }
           }
         }
@@ -576,6 +575,7 @@ namespace Proto
               a_facneighDir.push_back(y_face.direction());
 	      a_facneighSid.push_back(sit());
               a_weightDisFac.push_back(a_weightDisVol[ivof]);
+              cout<< " yfac order "<<y_face.m_pt<<endl;
             }
           }
         }
@@ -804,6 +804,7 @@ namespace Proto
   void
   BaseWLSFlux<cent, order>::
   getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
+                         Real                       & a_inhomogTerm, //for inhomogeneous bcs
                          const EBIndex<cent>        & a_face,
                          const EBGraph              & a_graph,
                          const VoluData             & a_voludata, 
@@ -813,9 +814,7 @@ namespace Proto
                          const ZFacData             & a_zfacdata,
 			 const EBNormalData         & a_ebnormxdata,
                          const EBNormalData         & a_ebnormydata,
-#if DIM==3
                          const EBNormalData         & a_ebnormzdata,
-#endif
 			 string                       a_ebbcName,
                          string                       a_dombcName[2*DIM],
                          const int                  & a_dir,
@@ -853,9 +852,7 @@ namespace Proto
 		                a_graph, a_voludata, a_ebfadata,
 				a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
-#if DIM==3
                                 a_ebnormzdata,
-#endif				
 		                volmom, ebfmom, facmom,
 				volneighLoc, ebfneighLoc, facneighLoc,
 				weightDisVol, weightDisEB, weightDisFac,
@@ -893,14 +890,13 @@ namespace Proto
       cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
-    Real inhom = 0.0;
     int nvolneigh = vols.size();
-    inhom = computeInhomogTerm(phiCoef, facmom, ebfmom,
-		               nvolneigh,
-			       facneighLoc, facneighDir, facneighSid,
-			       ebfneighLoc, ebfneighNorm,
-			       a_ebbcName, a_dombcName,
-			       a_dx);
+    a_inhomogTerm = computeInhomogTerm(phiCoef, facmom, ebfmom,
+		                       nvolneigh,
+                                       facneighLoc, facneighDir, facneighSid,
+                                       ebfneighLoc, ebfneighNorm,
+                                       a_ebbcName, a_dombcName,
+                                       a_dx);
   }
 
   template < int order>
@@ -916,9 +912,7 @@ namespace Proto
                          const ZFacData                        & a_zfacdata,
 			 const EBNormalData                    & a_ebnormxdata,
                          const EBNormalData                    & a_ebnormydata,
-#if DIM==3
                          const EBNormalData                    & a_ebnormzdata,
-#endif
                          const BaseWLSFlux<XFACE, order>  & a_xfaceflux,
                          const BaseWLSFlux<YFACE, order>  & a_yfaceflux,
                          const BaseWLSFlux<ZFACE, order>  & a_zfaceflux,
@@ -937,6 +931,7 @@ namespace Proto
       for (int iface = 0; iface < xfaces.size(); iface++)
       {
         LocalStencil<CELL, double> fluxStencil;
+        Real inhomogTerm; //for inhomogeneous bcs
         double   areaFrac;
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
@@ -951,7 +946,7 @@ namespace Proto
           faceMom.setToRegular(a_dx);
 	}
         cout<<" here "<<xfaces[iface].m_pt<<endl;
-        a_xfaceflux.getFaceCenteredStencil(fluxStencil, xfaces[iface],
+        a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, xfaces[iface],
                                        a_graph,
 				       a_voludata,
 				       a_ebfadata,    
@@ -960,15 +955,14 @@ namespace Proto
                                        a_zfacdata,
 				       a_ebnormxdata,
 				       a_ebnormydata,
-#if DIM==3
 				       a_ebnormzdata,
-#endif				  
 				       a_ebbcName,
 				       a_dombcName,
 				       0,
 				       faceMom, 
                                        a_dx);       
-        cout<<" stencilX face "<<xfaces[iface].m_pt<<endl;
+        cout<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+        cout<<" inhomogTerm Xface "<<inhomogTerm<<endl;
         cout<<" fluxStencil "<<endl;
         fluxStencil.print();
         fluxStencil *= double(isign);
@@ -984,6 +978,7 @@ namespace Proto
       for (int iface = 0; iface < yfaces.size(); iface++)
       {
         LocalStencil<CELL, double> fluxStencil;
+        Real inhomogTerm; //for inhomogeneous bcs
         double   areaFrac;
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, yfaces[iface], a_graph, a_dx);
@@ -997,7 +992,7 @@ namespace Proto
           faceMom.setToRegular(a_dx);
 	}
 
-	a_yfaceflux.getFaceCenteredStencil(fluxStencil, yfaces[iface],
+	a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, yfaces[iface],
                                        a_graph,
                                        a_voludata,
                                        a_ebfadata,
@@ -1006,15 +1001,14 @@ namespace Proto
                                        a_zfacdata,
 				       a_ebnormxdata,
                                        a_ebnormydata,
-#if DIM==3
                                        a_ebnormzdata,
-#endif
 				       a_ebbcName,
                                        a_dombcName,
                                        1,
 				       faceMom, 
                                        a_dx);
 	cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+        cout<<" inhomogTerm Yface "<<inhomogTerm<<endl;
         cout<<" fluxStencil "<<endl;
         fluxStencil.print();
         fluxStencil *= double(isign);
@@ -1029,6 +1023,7 @@ namespace Proto
       for (int iface = 0; iface < zfaces.size(); iface++)
       {
         LocalStencil<CELL, double> fluxStencil;
+        Real inhomogTerm; //for inhomogeneous bcs
         double   areaFrac;
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, zfaces[iface], a_graph, a_dx);
@@ -1042,7 +1037,7 @@ namespace Proto
           faceMom.setToRegular(a_dx);
 	}
 
-        a_zfaceflux.getFaceCenteredStencil(fluxStencil, zfaces[iface],
+        a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, zfaces[iface],
                                            a_graph,    
                                            a_voludata,
                                            a_ebfadata,
@@ -1051,9 +1046,7 @@ namespace Proto
                                            a_zfacdata,
 					   a_ebnormxdata,
                                            a_ebnormydata,
-#if DIM==3
                                            a_ebnormzdata,
-#endif
                                            a_ebbcName,
                                            a_dombcName,
                                            2,
@@ -1075,10 +1068,10 @@ namespace Proto
 
     LocalStencil<CELL, double> ebflux;
     double bndryArea, alpha;
+    Real inhomogTerm = 0.0; //for inhomogeneous bcs
     if(a_graph.isIrregular(a_vof.m_pt))
     {
       EBIndex<BOUNDARY> cutface = a_vof.getCutFace();
-      double weight; //for inhomogeneous bcs
       RealVect centroid, normal;
       IndMomDIM ebmom = a_ebfadata(cutface, 0);
       vector<IndMomDIM> ebnorm (DIM);
@@ -1101,7 +1094,7 @@ namespace Proto
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
-          a_ebflux.getEBFluxStencil(ebflux, weight,
+          a_ebflux.getEBFluxStencil(ebflux, inhomogTerm,
                            cutface,
                            a_graph,
                            a_voludata,
@@ -1111,9 +1104,7 @@ namespace Proto
                            a_zfacdata,
 			   a_ebnormxdata,
                            a_ebnormydata,
-#if DIM==3
                            a_ebnormzdata,
-#endif
 			   ebnorm,
   			   a_ebbcName,
                            a_dombcName,
@@ -1136,6 +1127,7 @@ namespace Proto
     if(a_graph.isIrregular(a_vof.m_pt)) 
     {
       cout<<" stencil ebface "<<a_vof.m_pt<<endl;
+      cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
       cout<<" ebfluxStencil "<<endl;
       ebflux.print();
       //ebflux *= bndryArea;
@@ -1297,7 +1289,7 @@ namespace Proto
   void
   BaseWLSFlux<cent, order>::
   getEBFluxStencil(LocalStencil<CELL, double>    & a_stencil,
-                   double                        & a_weight, //for inhomogeneous bcs
+                   Real                          & a_inhomogTerm, //for inhomogeneous bcs
                    const EBIndex<cent>           & a_face,
                    const EBGraph                 & a_graph,
                    const VoluData                & a_voludata,
@@ -1307,9 +1299,7 @@ namespace Proto
                    const ZFacData                & a_zfacdata,
 		   const EBNormalData            & a_ebnormxdata,
                    const EBNormalData            & a_ebnormydata,
-#if DIM==3
                    const EBNormalData            & a_ebnormzdata,
-#endif
 		   vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
@@ -1347,9 +1337,7 @@ namespace Proto
                                 a_graph, a_voludata, a_ebfadata,
                                 a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
-#if DIM==3
                                 a_ebnormzdata,
-#endif				
                                 volmom, ebfmom, facmom,
                                 volneighLoc, ebfneighLoc, facneighLoc,
                                 weightDisVol, weightDisEB, weightDisFac,
@@ -1386,6 +1374,14 @@ namespace Proto
       a_stencil.add(vols[ivof], thisCo);
       cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
+
+    int nvolneigh = vols.size();
+    a_inhomogTerm = computeInhomogTerm(phiCoef, facmom, ebfmom,
+                                       nvolneigh,
+                                       facneighLoc, facneighDir, facneighSid,
+                                       ebfneighLoc, ebfneighNorm,
+                                       a_ebbcName, a_dombcName,
+                                       a_dx);
 
   }
 
