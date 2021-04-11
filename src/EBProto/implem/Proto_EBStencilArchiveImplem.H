@@ -830,10 +830,11 @@ namespace Proto
         Point neigh = pt+shift;
         EBIndex<CELL> neighvof;
         neighvof.defineAsRegular(neigh);
+        double dxsq = a_dx*a_dx;
         if(a_domain.contains(neigh))
         {
-          fluxStencil.add(neighvof  ,  1./a_dx);
-          fluxStencil.add(a_startvof, -1./a_dx);
+          fluxStencil.add(neighvof  ,  1./dxsq);
+          fluxStencil.add(a_startvof, -1./dxsq);
         }
         else if(a_dombc[iindex] == string("Neumann"))
         {
@@ -843,7 +844,7 @@ namespace Proto
         {
           //with dirichlet,  we use the second order approximation
           //that phineigh = - phistart
-          fluxStencil.add(a_startvof, -2./a_dx);
+          fluxStencil.add(a_startvof, -2./dxsq);
         }
         else
         {
@@ -852,10 +853,8 @@ namespace Proto
         a_stencil += fluxStencil;
       }
     }
-    //We need this for relaxation (and yes, this is easier than just saying -2*dim/h^2).
-    double diagweight;
-    bool foundVoF = a_stencil.getValueAtVoF(diagweight, a_startvof);
-    PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+    //We need this for relaxation (ignore bc as regular code did)
+    double diagweight = -2.0*DIM/(a_dx*a_dx);
     a_stencil.setBetaWeight(diagweight);
   }
                                      
