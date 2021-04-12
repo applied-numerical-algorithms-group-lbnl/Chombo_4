@@ -12,9 +12,6 @@
 using std::pow;
 
 #include "Chombo_BoxLayoutData.H"
-#include "Chombo_FluxBox.H"
-//Thus did the sins of petsc through the unholy union of mpi.h with petsc.h
-//reflect sevenfold unto the generations of developers
 #ifdef CH_MPI
 #ifdef CH_USE_PETSC
 #include "petsc.h"
@@ -72,39 +69,7 @@ FArrayBox* FABAliasDataFactory::create(const Box& box, int ncomps, const DataInd
 
 //--FABAliasFlBxDataFactory
 
-FABAliasFlBxDataFactory::FABAliasFlBxDataFactory(
-  BoxLayoutData<FluxBox>* a_original,
-  const Interval&         a_interval,
-  const int               a_dir)
-  :
-  m_origPointer(a_original),
-  m_interval(a_interval),
-  m_dir(a_dir)
-{
-}
 
-void
-FABAliasFlBxDataFactory::define(
-  BoxLayoutData<FluxBox>* a_original,
-  const Interval&         a_interval,
-  const int               a_dir)
-{
-  m_origPointer = a_original;
-  m_interval    = a_interval;
-  m_dir         = a_dir;
-}
-
-FArrayBox*
-FABAliasFlBxDataFactory::create(const Box&       a_box,
-                                int              a_ncomps,
-                                const DataIndex& a_dataInd) const
-{
-  CH_assert(a_ncomps = m_interval.size());
-  FluxBox& origFlBx = m_origPointer->operator[](a_dataInd);
-  return new FArrayBox(m_interval, origFlBx[m_dir]);
-}
-
-//--FaceFabDataFactory
 
 FaceFabDataFactory::FaceFabDataFactory(const int a_dir)
   :

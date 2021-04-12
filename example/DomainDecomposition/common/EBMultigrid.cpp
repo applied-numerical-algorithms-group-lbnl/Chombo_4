@@ -551,6 +551,7 @@ solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
   m_relaxSolver->solve(a_phi, a_rhs, imax, tol);
 }
 ///
+
 #ifdef CH_USE_PETSC
 void
 EBPoissonOp::

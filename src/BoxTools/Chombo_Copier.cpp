@@ -36,7 +36,7 @@ CopierBuffer::~CopierBuffer()
 void CopierBuffer::clear()
 {
 #ifdef PROTO_CUDA
-  if (m_sendbuffer != NULL)
+  if(m_sendbuffer != NULL)
   {
     protoPointerAttributes att;
     protoPointerGetAttributes(&att, m_sendbuffer);
@@ -45,7 +45,7 @@ void CopierBuffer::clear()
 #else
     if(att.type == 2) protoFree(m_sendbuffer); // = 2-> device allocation
 #endif
-    else free(m_sendbuffer); 
+    else protoFreeHost(m_sendbuffer); 
   }
   
   if (m_recbuffer  != NULL) 
@@ -57,7 +57,7 @@ void CopierBuffer::clear()
 #else
     if(att.type == 2) protoFree(m_recbuffer);
 #endif
-    else free(m_recbuffer);	  
+    else protoFreeHost(m_recbuffer);	  
   }
 #else
   if (m_sendbuffer != NULL) free(m_sendbuffer);

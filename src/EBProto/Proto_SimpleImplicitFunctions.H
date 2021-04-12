@@ -88,6 +88,129 @@ namespace Proto
     }
   };
 
+///  Cylinder.
+/**
+   (x-xo)^2 + (y-y0)^2 + - r^2 = f(x,y,z)
+*/
+  class SimpleCylinderIF: public SimpleGeometry
+  {
+  public:
+    ///
+    SimpleCylinderIF(const RealVect& a_X0,
+                     const double  & a_R,
+                     const bool    & a_inside)
+    {
+      m_X0=       a_X0;    
+      m_R=        a_R;     
+      m_inside=   a_inside;
+    }
+
+    /// Destructor
+    virtual ~SimpleCylinderIF()
+    {
+    }
+
+    double
+    value(const IndexTM<double,DIM>& a_point) const
+    {
+  
+      RealVect X;
+      //note the 2.   z does not figure in here
+      for(int idir = 0; idir < 2; idir++)
+      {
+        X[idir] = a_point[idir] - m_X0[idir];
+      }
+
+      double retval = 0;
+      for(int idir = 0; idir < 2; idir++)
+      {
+        retval += (X[idir]*X[idir]);
+      }
+
+      retval -= m_R*m_R;
+      if(!m_inside)
+        retval = -retval;
+      return retval;
+    }
+
+    virtual double value(const IndexTM<int,DIM> & a_partialDerivative,
+                         const IndexTM<double,DIM>& a_point) const
+    {
+      int order = a_partialDerivative.sum();
+      double retval = LARGEREALVAL;
+
+      //note the 2.   z does not figure in here
+      RealVect X;
+      for(int idir = 0; idir < 2; idir++)
+      {
+        X[idir] = a_point[idir] - m_X0[idir];
+      }
+
+      if (order == 0)
+      {
+        retval = value(a_point);
+        return retval; //have to return here to avoid double neg
+      }
+      else if (order == 1)
+      {
+        bool found = false;
+        for(int idir = 0; idir < 2; idir++)
+        {
+          if(a_partialDerivative[idir] == 1)
+          {
+            retval = 2*X[idir];
+            found = true;
+          }
+        }
+        if(!found) //z deriv
+        {
+          retval = 0;
+        }
+      }
+      else if (order == 2)
+      {
+      
+        bool found = false;
+        //note the 2.   z does not figure in here
+        for(int idir = 0; idir < 2; idir++)
+        {
+          if(a_partialDerivative[idir] == 2)
+          {
+            found = true;
+            retval = 2;
+          }
+        }
+        if(!found) //mixed deriv or z deriv
+        {
+          retval = 0;
+        }
+      }
+      else
+      {
+        retval = 0.0;
+      }
+
+      if(!m_inside)
+        retval = -retval;
+      return retval;
+    }
+
+
+    virtual BaseIF* newImplicitFunction() const
+    {
+      SimpleCylinderIF* SimpleCylinderPtr = new SimpleCylinderIF(m_X0, m_R, m_inside);
+      return static_cast<BaseIF*>(SimpleCylinderPtr);
+    }
+
+  protected:
+    RealVect m_X0;
+    double   m_R;
+    bool     m_inside;
+
+  private:
+    SimpleCylinderIF();
+
+  };
 ///  Ellipsoid.
 /**
    ((x-xo)/A)^2 + ((y-y0)/B)^2 + ((z-z0)/C)^2 - r^2 = f(x,y,z)
@@ -212,6 +335,8 @@ namespace Proto
 
   };
 
+
+  
 
 
 /// Sphere
