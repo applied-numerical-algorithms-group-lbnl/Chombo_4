@@ -736,23 +736,6 @@ namespace Proto
     {
       ebbc = string("Neumann");
     }
-    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
-    {
-//      cout << "should not get here with no irregular cells" << endl;
-      Point pt = a_dstVoFs[ivof].m_pt;
-      SecondOrderStencil<order>::
-        get2ndOrderDivFStencil(a_stencil[ivof],
-                               a_dstVoFs[ivof],
-                               a_graph,
-                               a_voludata,
-                               a_ebfadata,
-                               a_xfacdata, a_yfacdata, a_zfacdata,
-                               xflux, yflux, zflux, ebbc,
-                               a_dx);
-    }
-
-    ///add to the irregular set all regular volumes that are
-    ///adjacent to the domain boundary and create their stencils
     string dombc[2*DIM];
     for(int index = 0; index < 2*DIM; index++)
     {
@@ -765,6 +748,23 @@ namespace Proto
           dombc[index] = a_domainBCName[index];
         }
     }
+    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    {
+//      cout << "should not get here with no irregular cells" << endl;
+      Point pt = a_dstVoFs[ivof].m_pt;
+      SecondOrderStencil<order>::
+        get2ndOrderDivFStencil(a_stencil[ivof],
+                               a_dstVoFs[ivof],
+                               a_graph,
+                               a_voludata,
+                               a_ebfadata,
+                               a_xfacdata, a_yfacdata, a_zfacdata,
+                               xflux, yflux, zflux, dombc, ebbc, 
+                               a_dx);
+    }
+
+    ///add to the irregular set all regular volumes that are
+    ///adjacent to the domain boundary and create their stencils
 
     vector<LocalStencil<CELL, double> > boundarySten;
     vector<EBIndex<     CELL        > > boundaryVolu;

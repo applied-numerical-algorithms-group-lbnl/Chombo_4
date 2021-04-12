@@ -1,4 +1,4 @@
-                                                                                                                                   
+                                                                                                                                  
 #ifndef _Proto_SecondOrderCellImplem_H_
 #define _Proto_SecondOrderCellImplem_H_
 #include "Proto_Normalizor.H"
@@ -114,6 +114,7 @@ namespace Proto
                      const EBIndex<cent>                          &  a_face,
                      const EBGraph                                &  a_graph,
                      const HostIrregData<cent, IndMomSDMinOne, 1> &  a_facdata,
+                     string                                          a_dombc,
                      double                                          a_dx) const
   {
 #if 1
@@ -132,7 +133,7 @@ namespace Proto
       EBIndex<cent>& face   = facesten.m_entries[isten].m_vof;
       double       & weight = facesten.m_entries[isten].m_weight;
       LocalStencil<CELL, double> centSten;
-      getFaceCenteredFluxStencil(centSten, face, a_graph, a_facdata, a_dx);
+      getFaceCenteredFluxStencil(centSten, face, a_graph, a_facdata, a_dombc, a_dx);
       centSten *= weight;
       a_sten   += centSten;
     }
@@ -147,13 +148,44 @@ namespace Proto
                              const EBIndex<cent>                          &  a_face,
                              const EBGraph                                &  a_graph,
                              const HostIrregData<cent, IndMomSDMinOne, 1> &  a_facdata,
+                             string                                          a_dombc,
                              double                                          a_dx) const
   {
     EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
     EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
     a_facesten.clear();
-    a_facesten.add(vofhi,  1./a_dx);
-    a_facesten.add(voflo, -1./a_dx);
+    if(!a_face.m_isBoundary)
+    {
+      a_facesten.add(vofhi,  1./a_dx);
+      a_facesten.add(voflo, -1./a_dx);
+    }
+    else if(a_dombc == string("Neumann"))
+    {
+      //zero flux here
+    }
+    else if(a_dombc == string("Dirichlet"))
+    {
+      //figure out low or high side
+      if(a_face.m_vofIDLo < 0)
+      {
+        a_facesten.add(vofhi,  2./a_dx);
+      }
+      else if(a_face.m_vofIDMe < 0)
+      {
+        a_facesten.add(vofhi,  -2./a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "logic error in getfacecenteredfluxstencil");
+      }
+      
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bc not found in getfacecenteredfluxstencil");
+    }
+    
+            
   }
 
   template < int order>
@@ -170,6 +202,7 @@ namespace Proto
                          const Base2ndOrderFlux<XFACE, order>  & a_xfaceflux,
                          const Base2ndOrderFlux<YFACE, order>  & a_yfaceflux,
                          const Base2ndOrderFlux<ZFACE, order>  & a_zfaceflux,
+                         string                                  a_dombc[2*DIM],
                          string                                  a_ebbcName,
                          double                                  a_dx)
   {
@@ -196,9 +229,11 @@ namespace Proto
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
 
+        int iindex = ebp_index(0, sit());
         a_xfaceflux.getCentroidStencil(fluxStencil, xfaces[iface],
                                        a_graph,    
-                                       a_xfacdata, 
+                                       a_xfacdata,
+                                       a_dombc[iindex],
                                        a_dx);       
         double factor = double(isign)*areaFrac/a_dx;
         fluxStencil *= factor;
@@ -216,9 +251,11 @@ namespace Proto
         double   areaFrac;
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, yfaces[iface], a_graph, a_dx);
+        int iindex = ebp_index(1, sit());
         a_yfaceflux.getCentroidStencil(fluxStencil, yfaces[iface],
                                        a_graph,    
-                                       a_yfacdata, 
+                                       a_yfacdata,
+                                       a_dombc[iindex],
                                        a_dx);       
 
         fluxStencil *= double(isign)*areaFrac/a_dx;
@@ -237,9 +274,11 @@ namespace Proto
         RealVect centroid;
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, zfaces[iface], a_graph, a_dx);
 
+        int iindex = ebp_index(1, sit());
         a_zfaceflux.getCentroidStencil(fluxStencil, zfaces[iface],
                                        a_graph,    
                                        a_zfacdata, 
+                                       a_dombc[iindex],
                                        a_dx);       
 
 
