@@ -123,6 +123,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -144,6 +145,7 @@ namespace Proto
              Point                                       a_dstGrown)               
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     if(a_stencilName == string("Domain_BC_Only"))
     {
       a_bcOnly = true;
@@ -985,6 +987,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1006,6 +1009,7 @@ namespace Proto
              Point                                       a_dstGrown)               
     {
       a_bcOnly = false;
+      a_irregOnly = false;
       if(a_stencilName == string("AverageCellToFace"))
       {
         return
@@ -1236,6 +1240,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1258,6 +1263,7 @@ namespace Proto
     {
 
       a_bcOnly = false;
+      a_irregOnly = false;
       if(a_stencilName == string("Divergence"))
       {
         return
@@ -1501,6 +1507,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1530,6 +1537,25 @@ namespace Proto
                                        a_stencil,
                                        a_regStencil,
                                        a_regApplyBox,
+                                       a_irregOnly,
+                                       a_srcValid,
+                                       a_srcDomain,
+                                       a_srcGhost,
+                                       a_dstGhost,
+                                       a_xfacdata,
+                                       a_yfacdata,
+                                       a_zfacdata,
+                                       a_dstGraph,
+                                       a_dx);
+      }
+      else if(a_stencilName == string("extrap_to_domain_face"))
+      {
+        return
+          getDomainExtrapolationStencil(a_dstVoFs,
+                                       a_stencil,
+                                       a_regStencil,
+                                       a_regApplyBox,
+                                       a_irregOnly,
                                        a_srcValid,
                                        a_srcDomain,
                                        a_srcGhost,
@@ -1616,6 +1642,7 @@ namespace Proto
                                vector<LocalStencil<fcent, double> >      & a_stencil,
                                Stencil<double>                           & a_regStencil,
                                Box                                       & a_regApplyBox,
+                               bool                                      & a_irregOnly,
                                const Box                                 & a_validBox,
                                const Box                                 & a_srcDomain,
                                const Point                               & a_srcGhost,
@@ -1626,6 +1653,8 @@ namespace Proto
                                const EBGraph                             & a_graph,
                                const double                              & a_dx)
   {
+    //well defined in regular faces
+    a_irregOnly = false;
     int facedir;
     if(fcent == XFACE)
     {
@@ -1660,6 +1689,120 @@ namespace Proto
     //no bcs here.
     return false;
   }
+  template <CENTERING fcent, int order>
+  bool 
+  EBStencilArchive<fcent, fcent, order, double>::
+  getDomainExtrapolationStencil(vector<EBIndex<fcent > >                  & a_dstFaces,
+                                vector<LocalStencil<fcent, double> >      & a_stencil,
+                                Stencil<double>                           & a_regStencil,
+                                Box                                       & a_regApplyBox,
+                                bool                                      & a_irregOnly,
+                                const Box                                 & a_validBox,
+                                const Box                                 & a_srcDomain,
+                                const Point                               & a_srcGhost,
+                                const Point                               & a_dstGhost,
+                                const XFacData                            & a_xfacdata,
+                                const YFacData                            & a_yfacdata,
+                                const ZFacData                            & a_zfacdata,
+                                const EBGraph                             & a_graph,
+                                const double                              & a_dx)
+  {
+    int facedir;
+    if(fcent == XFACE)
+    {
+      facedir = 0;
+    }
+    else if(fcent == YFACE)
+    {
+      facedir = 1;
+    }
+    else if(fcent == ZFACE)
+    {
+      facedir = 2;
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bogus face direction");
+    }
+    //
+    a_irregOnly = true;
+    //no regular stencil span so we don't need to do anything fancy with dstFaces
+    //just copies where it is not extrapolating
+    a_regStencil = (1.0)*Shift(Point::Zeros());
+    a_regApplyBox = a_validBox.growHi(facedir, 1);
+    for(SideIterator sit; sit.ok(); ++sit)
+    {
+      Side::LoHiSide flipsd = flip(sit());
+      int ishift   = sign(flipsd);
+      Point pshift = Point::Basis(facedir, ishift);
+      
+      Box adjcell = a_validBox.adjCellSide(facedir, 1, sit());
+      Box bndry   = adjcell.shift(pshift);
+      for(auto bit = bndry.begin(); bit != bndry.end(); ++bit)
+      {
+        vector<EBIndex<CELL> > vofs = a_graph.getVoFs(*bit);
+        for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          auto vof = vofs[ivof];
+          vector<EBIndex<fcent> > bfaces = getFaces<fcent>(vof, sit(), a_graph);
+          for(unsigned int iface = 0; iface < bfaces.size(); iface++)
+          {
+            if(bfaces[iface].m_isBoundary)
+            {
+              auto dstface = bfaces[iface];
+              LocalStencil<fcent, double> locStencil;
+              EBIndex<fcent> nearface, farface, farfarface;
+              bool hasnear, hasfar, hasfarfar;
+              vector<EBIndex<fcent> > nearfaces = getFaces<fcent>(vof, flipsd, a_graph);
+              hasnear = (nearfaces.size() == 1);
+              if(hasnear)
+              {
+                nearface = nearfaces[0];
+                EBIndex<CELL> nextvof = nearface.getVoF(flipsd);
+                vector<EBIndex<fcent> > farfaces = getFaces<fcent>(nextvof, flipsd, a_graph);
+                hasfar = (farfaces.size() == 1);
+                if(hasfar)
+                {
+                  farface = farfaces[0];
+                  EBIndex<CELL> nextnextvof = farface.getVoF(flipsd);
+                  vector<EBIndex<fcent> > farfarfaces = getFaces<fcent>(nextnextvof, flipsd, a_graph);
+                  hasfarfar = farfarfaces.size() == 1;
+                  if(hasfarfar)
+                  {
+                    farfarface = farfarfaces[0];
+                  }
+                }
+              }
+
+              if(hasfarfar)
+              {
+                locStencil.add(  nearface, 3.0);
+                locStencil.add(   farface,-3.0);
+                locStencil.add(farfarface, 1.0);
+              }
+              else if(hasfar)
+              {
+                locStencil.add(nearface, 2.0);
+                locStencil.add( farface,-1.0);
+              }
+              else if(hasnear)
+              {
+                locStencil.add(nearface, 1.0);
+              }
+              if(hasnear || hasfar)
+              {
+                a_dstFaces.push_back(dstface);
+                a_stencil.push_back(locStencil);
+              }
+            }
+          } //end loop over faces
+        }//end loop over vofs at edge
+      }//end loop over cells at edge
+    }//end loop over sides of the input box
+
+    //no bcs here in the sense that we do not touch the source
+    return false;
+  }
 ///end face to cell
 //now for the cross face stuff
 //
@@ -1685,6 +1828,7 @@ namespace Proto
                vector<Box>                                 a_BCApplyBoxes[2*DIM],       
                Box                                       & a_regApplyBox,
                bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
                string                                      a_stencilName,
                string                                      a_domainBCName[2*DIM],
                string                                      a_ebbcName,
@@ -1707,6 +1851,7 @@ namespace Proto
                unsigned int a_srcDir, unsigned int a_dstDir)    
     {
       a_bcOnly = false;
+      a_irregOnly = false;
       PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
       Box domain = a_srcGraph.getDomain();
       
@@ -1762,6 +1907,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1783,6 +1929,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<YFACE,XFACE, order>::
       getStencil(a_dstFaces,
                  a_stencil,               
@@ -1791,6 +1938,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -1825,6 +1973,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1846,6 +1995,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<XFACE,YFACE, order>::
       getStencil(a_dstFaces,
                  a_stencil,               
@@ -1854,6 +2004,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,           
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -1888,6 +2039,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1909,6 +2061,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<ZFACE,XFACE, order>::
       getStencil(a_dstFaces,
                  a_stencil,               
@@ -1917,6 +2070,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,           
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -1951,6 +2105,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+               bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -1972,6 +2127,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<XFACE,ZFACE, order>::
       getStencil(a_dstFaces,               
                  a_stencil,               
@@ -1980,6 +2136,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,           
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -2016,6 +2173,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -2037,6 +2195,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<ZFACE,YFACE, order>::
       getStencil(a_dstFaces,               
                  a_stencil,               
@@ -2045,6 +2204,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,           
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -2079,6 +2239,7 @@ namespace Proto
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
              string                                      a_stencilName,
              string                                      a_domainBCName[2*DIM],
              string                                      a_ebbcName,
@@ -2100,6 +2261,7 @@ namespace Proto
              Point                                       a_dstGrown)              
   {
     a_bcOnly = false;
+    a_irregOnly = false;
     return EBCrossStencilArchive<YFACE,ZFACE, order>::
       getStencil(a_dstFaces, 
                  a_stencil,               
@@ -2108,6 +2270,7 @@ namespace Proto
                  a_BCApplyBoxes,
                  a_regApplyBox,           
                  a_bcOnly,
+                 a_irregOnly,
                  a_stencilName,           
                  a_domainBCName,          
                  a_ebbcName,              
@@ -2130,8 +2293,148 @@ namespace Proto
                  1, 2);
   }
 
+#if 1
+  //cell to boundary
+  template <int order>
+  bool
+  EBStencilArchive<CELL, BOUNDARY, order, double>::
+  getStencil(vector<EBIndex<BOUNDARY> >                & a_dstVoFs,
+             vector<LocalStencil<CELL , double> >      & a_stencil,
+             Stencil<double>                           & a_regStencil,
+             vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
+             vector<Box>                                 a_BCApplyBoxes[2*DIM],       
+             Box                                       & a_regApplyBox,
+             bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
+             string                                      a_stencilName,
+             string                                      a_domainBCName[2*DIM],
+             string                                      a_ebbcName,
+             const Box                                 & a_srcValid,
+             const Box                                 & a_dstValid,
+             const Box                                 & a_srcDomain,
+             const Box                                 & a_dstDomain,
+             const Point                               & a_srcGhost,
+             const Point                               & a_dstGhost,
+             const EBGraph                             & a_srcGraph,
+             const EBGraph                             & a_dstGraph,
+             const VoluData                            & a_voludata,
+             const EBFaData                            & a_ebfadata,
+             const XFacData                            & a_xfacdata,
+             const YFacData                            & a_yfacdata,
+             const ZFacData                            & a_zfacdata,
+             double                                      a_dx,
+             bool                                        a_periodiconly, 
+             Point                                       a_dstGrown)
+  {
+    a_irregOnly = true;
+    a_bcOnly = false;
 
+    PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
+    Box domain = a_srcGraph.getDomain();
 
+    if(a_stencilName == string("copy_cell_value_to_cut_face"))
+    {
+      a_dstVoFs = a_srcGraph.getCutFaces(a_srcValid);
+      a_stencil.resize(a_dstVoFs.size());
+      for(unsigned int idst = 0; idst < a_dstVoFs.size(); idst++)
+      {
+        auto& dstv = a_dstVoFs[idst];
 
+        EBIndex<CELL> srcVoF = getEBIndex<CELL, BOUNDARY>(dstv);
+          
+        double weight = 1.;
+        a_stencil[idst].clear();
+        a_stencil[idst].add(srcVoF, weight);
+      }
+    }
+    else
+    {
+      PROTO_ASSERT(false, "could not find  stencil name cell to eb");
+    }
+    return false;
+  }
+
+  //boundary to cell
+  template <int order>
+  bool
+  EBStencilArchive<BOUNDARY, CELL, order, double>::
+  getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+             vector<LocalStencil<BOUNDARY, double> >   & a_stencil,
+             Stencil<double>                           & a_regStencil,
+             vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
+             vector<Box>                                 a_BCApplyBoxes[2*DIM],       
+             Box                                       & a_regApplyBox,
+             bool                                      & a_bcOnly,
+             bool                                      & a_irregOnly,
+             string                                      a_stencilName,
+             string                                      a_domainBCName[2*DIM],
+             string                                      a_ebbcName,
+             const Box                                 & a_srcValid,
+             const Box                                 & a_dstValid,
+             const Box                                 & a_srcDomain,
+             const Box                                 & a_dstDomain,
+             const Point                               & a_srcGhost,
+             const Point                               & a_dstGhost,
+             const EBGraph                             & a_srcGraph,
+             const EBGraph                             & a_dstGraph,
+             const VoluData                            & a_voludata,
+             const EBFaData                            & a_ebfadata,
+             const XFacData                            & a_xfacdata,
+             const YFacData                            & a_yfacdata,
+             const ZFacData                            & a_zfacdata,
+             double                                      a_dx,
+             bool                                        a_periodiconly, 
+             Point                                       a_dstGrown)
+  {
+    a_irregOnly = true;
+    a_bcOnly = false;
+
+    PR_assert( a_srcGraph.getDomain() == a_dstGraph.getDomain());
+    Box domain = a_srcGraph.getDomain();
+      
+    if(a_stencilName.find("cut_face_increment_to_kappa_div_dir_") != std::string::npos)
+    {
+
+      //figure out the radius
+      auto pos = a_stencilName.find_first_of("0123456789");
+      unsigned long longdir = 999;
+      if (std::string::npos != pos)
+      {
+        longdir = std::stoul(a_stencilName.substr(pos));
+      }
+      unsigned int graddir = longdir;
+
+      a_dstVoFs = a_srcGraph.getIrregVoFs(a_srcValid);
+      a_stencil.resize(a_dstVoFs.size());
+      for(unsigned int idst = 0; idst < a_dstVoFs.size(); idst++)
+      {
+        auto& dstv = a_dstVoFs[idst];
+
+        EBIndex<BOUNDARY> srcCutFace=getEBIndex<BOUNDARY, CELL>(dstv);
+          
+        RealVect normal;
+        double bndryArea;
+        Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,   
+                                                    a_voludata,
+                                                    a_ebfadata,
+                                                    a_xfacdata,
+                                                    a_yfacdata,
+                                                    a_zfacdata, 
+                                                    dstv, a_srcGraph, a_dx);
+        double normcomp = normal[graddir];
+        //negative because of our very weird normal standard (inward facing)
+        double weight = -bndryArea*normcomp/a_dx; 
+        a_stencil[idst].clear();
+        a_stencil[idst].add(srcCutFace, weight);
+      }
+    }
+    else
+    {
+      PROTO_ASSERT(false, "could not find  stencil name eb to cell");
+    }
+    return false;
+
+  }
+#endif  
 }
 #endif

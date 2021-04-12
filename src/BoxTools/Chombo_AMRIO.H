@@ -20,7 +20,6 @@
 #include "Chombo_REAL.H"
 #include "Chombo_Vector.H"
 #include "Chombo_FArrayBox.H"
-#include "Chombo_FluxBox.H"
 #include "Chombo_IntVectSet.H"
 #include "Chombo_RealVect.H"
 #include "Chombo_NamespaceHeader.H"

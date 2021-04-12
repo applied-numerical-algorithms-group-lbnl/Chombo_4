@@ -55,27 +55,27 @@ runNavierStokes()
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
-  int outputInterval = -1;
+  int checkpointInterval = -1;
+  int   plotfileInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
 
-  pp.get("nstream", nStream);
 
   pp.get("viscosity" , nu);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
+  pp.get("plotfile_interval"  ,   plotfileInterval);
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
   EBMultigridLevel::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
+  pout() << "checkpoint interval = " << checkpointInterval  << endl;
+  pout() << "plotfile   interval = " <<   plotfileInterval  << endl;
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -112,7 +112,8 @@ runNavierStokes()
   Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
   Real cfl            = 0.5;
   int pIters = 1;
-
+  bool stokesFlowInitialization;
+  pp.get("stokes_flow_initialization", stokesFlowInitialization);
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
   pp.get("covered_value", coveredval);
@@ -123,7 +124,7 @@ runNavierStokes()
   pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
   pp.get("pressure_iterations", pIters);
   pp.get("cfl"  , cfl);
   int whichSolver;
@@ -157,10 +158,8 @@ runNavierStokes()
   pout() << "geom cen        = " << geomCen    << endl;
   pout() << "max vel mag     = " << maxVelMag  << endl;
   pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
   pout() << "max_step        = " << max_step   << endl;
   pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
   pout() << "viscosity       = " << viscosity  << endl;
   pout() << "=============================================="  << endl;
 
@@ -182,13 +181,60 @@ runNavierStokes()
                paraSolver, ibc, num_species, diffusion_coeffs);
 
 
-   pout() << "initializing data " << endl;
-   initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  unsigned int starting_step = 0;
+  Real         starting_time = 0;
+  string checkpointFile;
+  //If the input file specifies a checkpoint restart, do that.
+  if(pp.query("checkpoint_restart", checkpointFile))
+  {
+    //the current step and time are also stashed in the checkpoint file
+    pout() << "Reading all data from a checkpoint file " << checkpointFile << endl;
+    solver.readDataFromCheckpoint(starting_time, starting_step, checkpointFile);
+  }
+  else
+  {
+    //step and time already initialized to zero
+    pout() << "going into initialize data " << endl;
+    initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  }
+  if(starting_step == 0)
+  {
+    if(stokesFlowInitialization)
+    {
+      pout() << "Initializing pressure with gph = nu lapl(v)  (stokes flow initialization)" << endl;
+    }
+    else
+    {
+      if(pIters > 0)
+      {
+        pout() << "Using fixed point interation for initial pressure with "
+               << pIters << "iterations."  << endl;
+      }
+      else
+      {
+        pout() << "Standard Treb pressure initializtion:" << endl;
+        pout() << "initializing pressure with (I-P)(v*)." << endl;
+        pout() << "(gphi out of initial projection).    " << endl;
+      }
+    }
+  }
+  /**
+     For convergence tests and other things, fixed time steps can be useful.
+     The fact that fixedDt is a negative number signals that we are using varaible dt in this case.
+     This is our weird interface that says sending something non-sensical as an argument
+     turns off that bit of functionality.    This quixotic interface has been standard
+     for at least thirty years.   At the very least, it is not over-specified 
+     and that can save a lot of code. --dtg 3-12-2021
+  **/
+  Real fixedDt = -1.0;
 
-  Real fixedDt = -1.0;//signals varaible dt
+  pout() << "startiing run" << endl;
+  solver.run(max_step, max_time, starting_step, starting_time,
+             cfl, fixedDt, tol, pIters,  maxIter,
+             plotfileInterval, checkpointInterval,
+             stokesFlowInitialization, coveredval);
+  pout() << "finished run" << endl;
 
-  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
   return 0;
 }
 

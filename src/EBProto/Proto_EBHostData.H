@@ -253,7 +253,7 @@ namespace Proto
                  const Box& a_grid, unsigned int a_icomp) 
     {
       data_t maxval = 0; 
-      using Proto::BoxIterator;
+      //using Proto::BoxIterator;
       for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {
         Point pt = *bit;
@@ -278,7 +278,7 @@ namespace Proto
                      const Box& a_grid, unsigned int a_icomp)
   {
     data_t maxval = 0; 
-    using Proto::BoxIterator;
+    //using Proto::BoxIterator;
     for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
     {
       Point pt = *bit;

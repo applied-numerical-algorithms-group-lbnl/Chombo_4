@@ -20,7 +20,6 @@
 #include "Chombo_CH_Timer.H"
 #include "Chombo_NamespaceHeader.H"
 
-
 using std::sort;
 
 
@@ -29,7 +28,8 @@ T* DefaultDataFactory<T>::create(const Box& box,
                                  int ncomps,
                                  const DataIndex& a_datInd) const
 {
-  return new T(box, ncomps);
+  Proto::Box bx = ProtoCh::getProtoBox(box);
+  return new T(bx, ncomps);
 }
 
 template<class T>
@@ -336,7 +336,6 @@ void BoxLayoutData<T>::makeItSoEnd(
   completePendingSends(); // wait for sends from possible previous operation
 
   unpackReceivesToMe(a_destComps, a_op); // nullOp in uniprocessor mode
-
 }
 
 #ifndef CH_MPI
@@ -422,7 +421,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   CH_TIME("MPI_allocateBuffers");
   m_buff = &(((Copier&)a_copier).m_buffers);
   a_dest.m_buff = m_buff;
-  
+
   CH_assert(a_srcComps.size() == a_destComps.size());
   if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2) return;
 
@@ -581,36 +580,32 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   }
 
   // allocate send and receveive buffer space.
-  using ::Proto::BoxData;
-#ifdef PROTO_CUDA
-  const bool bufDevice = std::is_same<T, BoxData<Real,DIM+2>>::value;
-#endif
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
       protoFree((m_buff->m_sendbuffer));
     }
     else
     {
-      free(m_buff->m_sendbuffer);
+      protoFreeHost(m_buff->m_sendbuffer);
     }
-    
 #else
     free((m_buff->m_sendbuffer));
 #endif
+    m_buff->m_sendbuffer = NULL;
     if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
       
 #ifdef PROTO_CUDA 
-    if(bufDevice)  
+    if(T::memTypeAllocation())  
     {
       protoMalloc(m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
-      (m_buff->m_sendbuffer) = malloc(sendBufferSize);
+      protoHostAlloc(m_buff->m_sendbuffer,sendBufferSize);
     }
 #else
     (m_buff->m_sendbuffer) = malloc(sendBufferSize);
@@ -625,27 +620,28 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   if (recBufferSize > m_buff->m_reccapacity)
   {
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
       protoFree(m_buff->m_recbuffer);
     }
     else
     {
-      free(m_buff->m_recbuffer);
+      protoFreeHost(m_buff->m_recbuffer);
     }
 #else
     free(m_buff->m_recbuffer);
 #endif
+    m_buff->m_recbuffer = NULL;
     if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
 #ifdef PROTO_CUDA
-    if(bufDevice) 
+    if(T::memTypeAllocation()) 
     {
-      protoMalloc( m_buff->m_recbuffer,recBufferSize);
+      protoMalloc(m_buff->m_recbuffer,recBufferSize);
     }
     else
     {
-      m_buff->m_recbuffer = malloc(recBufferSize);
+      protoHostAlloc(m_buff->m_recbuffer,recBufferSize);
     }
 #else
     m_buff->m_recbuffer = malloc(recBufferSize);
@@ -732,13 +728,11 @@ void BoxLayoutData<T>::postSendsFromMe() const
   m_buff->m_sendRequests.resize(this->m_buff->numSends);
   std::list<MPI_Request> extraRequests;
 
-#ifdef PROTO_CUDA
   protoDeviceSynchronize();
-#endif
-
 
   unsigned int next=0;
   long long maxSize = 0;
+
   for (int i=0; i<this->m_buff->numSends; ++i)
   {
     const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[next];
@@ -774,7 +768,6 @@ void BoxLayoutData<T>::postSendsFromMe() const
   this->m_buff->numSends = m_buff->m_sendRequests.size();
 
   CH4_SPMD::CH_MaxMPISendSize = std::max<long long>(CH4_SPMD::CH_MaxMPISendSize, maxSize);
-
 }
 
 template<class T>
@@ -837,7 +830,6 @@ void BoxLayoutData<T>::postReceivesToMe() const
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
   CH4_SPMD::CH_MaxMPIRecvSize = std::max<long long>(CH4_SPMD::CH_MaxMPIRecvSize, maxSize);
-
 }
 
 template<class T>
@@ -846,7 +838,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
   const LDOperator<T>& a_op)
 {
   CH_TIME("unpack_messages");
-  
+
   if (this->m_buff->numReceives > 0)
   {
     m_buff->m_receiveStatus.resize(this->m_buff->numReceives);
@@ -861,7 +853,6 @@ void BoxLayoutData<T>::unpackReceivesToMe(
       //hell if I know what to do about failed messaging here
       //maybe a mayday::warning?
     }
-
     int isize = m_buff->m_toMe.size();
 #ifdef _OPENMP
     bool threadSafe = m_threadSafe && (a_op.threadSafe());
@@ -874,6 +865,7 @@ void BoxLayoutData<T>::unpackReceivesToMe(
                     entry.item->toRegion, a_destComps);
     }
   }
+//  protoDeviceSynchronize();
 
   this->m_buff->numReceives = 0;
 
@@ -964,6 +956,7 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 //brian says this does not need conditionals because everyone is getting different buffers
   // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
   // #pragma omp parallel for
+
   for(int i=0; i<items; ++i)
   {
     const MotionItem& item = it[i];

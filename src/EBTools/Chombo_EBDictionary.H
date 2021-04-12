@@ -40,6 +40,30 @@ namespace StencilNames
   ///for correcting tangential velocity at faces
   static const string TanVelCorrect("Tangential_Velocity_Correction");
 
+  ///copy values in cell fab to fab over cut faces
+  /**
+     In Trebotich and Graves, when evaluating the conservative gradient,
+     the value of the pressure is required at the cut face.  One  way this is done
+     is to just use the pressure at the cell center for the cut face pressure. 
+     This stencil does this.   
+   */
+  static const string CopyCellValueToCutFace("copy_cell_value_to_cut_face");
+
+  ///extrapolate face values to domain faces
+  /**
+     extrapolates face values to domain boundaries (just copies across the vof)
+     domval = nearval
+   */
+  static const string ExtrapToDomainFace("extrap_to_domain_face");
+
+
+  /// Stencil for addng the contribution of the cut face flux F to (kappa div F)
+  /**
+     stencil weight = -alpha*normal[dir]/dx 
+     where alpha is the boundary fraction of the cut face and dx is the grid spacing.
+   */
+  static const string CutFaceIncrementToKappaDiv("cut_face_increment_to_kappa_div_dir_");
+  
   /// for simple average from faces to cells
   /**
     This is to get the velocity to faces in projection.
