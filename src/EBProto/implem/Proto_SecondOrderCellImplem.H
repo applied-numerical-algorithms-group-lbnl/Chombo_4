@@ -154,8 +154,9 @@ namespace Proto
     EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
     EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
     a_facesten.clear();
-    if(true)
-      //    if(!a_face.m_isBoundary)
+    int ideb = 0;
+    //if(true)
+    if(!a_face.m_isBoundary)
     {
       a_facesten.add(vofhi,  1./a_dx);
       a_facesten.add(voflo, -1./a_dx);
@@ -163,6 +164,7 @@ namespace Proto
     else if(a_dombc == string("Neumann"))
     {
       //zero flux here
+      ideb++;
     }
     else if(a_dombc == string("Dirichlet"))
     {
@@ -173,7 +175,7 @@ namespace Proto
       }
       else if(a_face.m_vofIDMe < 0)
       {
-        a_facesten.add(vofhi,  -2./a_dx);
+        a_facesten.add(voflo,  -2./a_dx);
       }
       else
       {
