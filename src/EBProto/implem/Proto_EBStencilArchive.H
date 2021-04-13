@@ -524,6 +524,14 @@ namespace Proto
                                  bool                                        a_periodiconly,
                                  bool  a_forceAllNeumann);               
 
+
+    //this does the above but only for regular cells at the domain boundary
+    inline static void
+    getRegularPoissonBoundaryStencil(LocalStencil<CELL, double> & a_stencil,
+                                     EBIndex<CELL>              & a_startvof,
+                                     const Box                  & a_domain,
+                                     double                       a_dx,
+                                     string                       a_dombc[2*DIM]);
     ///Restriction
     /**
        This  produces phi_coarse = Averate(phi_fine).
