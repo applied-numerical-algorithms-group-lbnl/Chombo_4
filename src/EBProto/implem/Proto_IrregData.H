@@ -548,7 +548,7 @@ namespace Proto
       return m_indicies_shared_data;
     }
 
-    inline void define(const Box& a_box,  const EBGraph& a_graph)
+    inline void define(const Box& a_box,  const EBGraph& a_graph, bool a_useStack = false)
     {
       this->m_boxdefined = true;
       this->m_inputBox   = a_box;
@@ -556,26 +556,44 @@ namespace Proto
       shared_ptr<vector<EBIndex<cent> > > indicies(new vector< EBIndex<cent> >() );
       *indicies = getIrregIndicies<cent>(interBox, a_graph);
 
-      define(indicies);
-      defineEBIrregData();
+      define(indicies, a_useStack);
+      defineEBIrregData(a_useStack);
     }
 
-    inline void defineEBIrregData()
+    inline void defineEBIrregData(bool a_stackAllocation = false)
     {
       PR_TIME("defineEBIrregData");
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
-      size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent,data_t,ncomp>);
-      protoMalloc(m_EBIrregDataPtr,memsize);
-      protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
-      m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(m_EBIrregDataPtr, [](EBIrregStruct<cent,data_t,ncomp>* p){protoFree(p);});
 
-      memsize = sizeof(index_t) * m_indicies->size(); 
-    
-      protoMalloc(m_indicies_data,memsize);
-      protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
-      m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, [](EBIndex<cent>* p){protoFree(p);});
+      if(a_stackAllocation)
+      {
+        PR_TIME("defineEBIrregData::StackAllocation");
+        StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+        size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent,data_t,ncomp>);
+        m_EBIrregDataPtr = (EBIrregStruct<cent,data_t,ncomp>*)(allocator.alloc(memsize));
+        protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+        // &(stack_deleter_boxdata) calls allocation.free
+        m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(m_EBIrregDataPtr, &(stack_deleter_boxdata));
 
-    }
+        memsize = sizeof(index_t) * m_indicies->size(); 
+        m_indicies_data = (index_t*)(allocator.alloc(memsize));
+        protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
+        m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, &(stack_deleter_boxdata));
+      }
+      else 
+      {
+        PR_TIME("defineEBIrregData::ProtoMalloc");
+        size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent,data_t,ncomp>);
+        protoMalloc(m_EBIrregDataPtr,memsize);
+        protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+        m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(m_EBIrregDataPtr, [](EBIrregStruct<cent,data_t,ncomp>* p){protoFree(p);});
+
+        memsize = sizeof(index_t) * m_indicies->size(); 
+        protoMalloc(m_indicies_data,memsize);
+        protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
+        m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, [](EBIndex<cent>* p){protoFree(p);});
+     } 
+  }
 
     inline EBIrregStruct<cent,data_t, ncomp>* getEBIrregDataPtr()
     {
@@ -602,7 +620,6 @@ namespace Proto
                          unsigned int a_numcomps) const
     {
       PR_TIME("IrregData::charsize");
-//      auto indicies = *m_indicies; //linearCharBufSize(m_inputBox);
       size_t retval = 0;
       retval += sizeof(data_t); //size is stored in a data_t type to avoid misaligned access on GPU
       retval += m_indicies->size()*(sizeof(index_t) + ncomp*sizeof(data_t));
@@ -714,7 +731,7 @@ namespace Proto
     }
 
 protected:
-    inline void define( const shared_ptr< vector< index_t > >& a_indicies);
+    inline void define( const shared_ptr< vector< index_t > >& a_indicies, bool a_stackAllocation = false);
 
     index_t*                             m_indicies_data = nullptr;
     shared_ptr<index_t>           m_indicies_shared_data = nullptr;

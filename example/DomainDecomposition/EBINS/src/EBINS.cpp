@@ -360,9 +360,10 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
   m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
   divuu.exchange(m_exchangeCopier);
 }
+#include "Chombo_NamespaceFooter.H"
 /*******/ 
 PROTO_KERNEL_START 
-void EulerAdvanceF(Var<Real, DIM>    a_velo,
+unsigned int EulerAdvanceF(Var<Real, DIM>    a_velo,
                    Var<Real, DIM>    a_divuu,
                    Var<Real, DIM>    a_gradp,
                    Real              a_dt)
@@ -371,6 +372,7 @@ void EulerAdvanceF(Var<Real, DIM>    a_velo,
   {
     a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
   }
+  return 0;
 }
 PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
 
@@ -416,6 +418,7 @@ void ParabolicRHSF(Var<Real, 1>    a_rhs,
 }
 PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
 
+#include "Chombo_NamespaceHeader.H"
 /*******/ 
 void
 EBINS::
@@ -457,6 +460,7 @@ advanceVelocityNavierStokes(Real a_dt,
   }
  ideb++;
 }
+#include "Chombo_NamespaceFooter.H"
 /*******/ 
 PROTO_KERNEL_START 
 void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
@@ -481,6 +485,7 @@ void DivideOutDtF(Var<Real, DIM>    a_gradp,
 }
 PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
 /*******/ 
+#include "Chombo_NamespaceHeader.H"
 void
 EBINS::
 projectVelocityAndCorrectPressure(Real a_dt,

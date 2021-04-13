@@ -7,12 +7,22 @@ namespace Proto
   template <CENTERING cent, class data_t,  unsigned int ncomp>
   void 
   IrregData<cent, data_t, ncomp>::
-  define(const shared_ptr<vector<index_t> >& a_indicies)
+  define(const shared_ptr<vector<index_t> >& a_indicies, bool a_stackAllocation)
   {
     m_indicies = a_indicies;
     std::sort(m_indicies->begin(), m_indicies->end());
-    protoMalloc(m_rawPtr, size()*sizeof(data_t));
-    m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
+
+    if(a_stackAllocation)
+    {
+      StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+      m_rawPtr = (data_t*)(allocator.alloc(size()*sizeof(data_t)));
+      m_data = ::std::shared_ptr<data_t>(m_rawPtr, &(stack_deleter_boxdata));
+    }
+    else
+    { 
+      protoMalloc(m_rawPtr, size()*sizeof(data_t));
+      m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
+    }
   }
 
   ////

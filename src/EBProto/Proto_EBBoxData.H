@@ -263,7 +263,7 @@ namespace Proto
       this->m_inputBox = a_box;
       this->m_graph = a_graph;
 
-      this->m_irrData.define(a_box, this->m_graph);  
+      this->m_irrData.define(a_box, this->m_graph, a_useStack);  
       this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
     }
 
