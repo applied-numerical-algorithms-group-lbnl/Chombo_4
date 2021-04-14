@@ -109,7 +109,7 @@ public:
   Real                                          m_viscosity;
   Copier                                        m_exchangeCopier;
   Copier                                        m_copyCopier;
-  CrunchInterface                               m_crunch;
+  shared_ptr<CrunchInterface>                   m_crunch;
 
 private:
   

@@ -32,6 +32,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
+  m_crunch = shared_ptr<CrunchInterface>
+    (new CrunchInterface(m_brit, m_geoserv, m_grids, m_domain));
   defineInternals(a_ibc, a_num_species, a_viscosity, a_solver);
 }  
 /*******/
@@ -632,7 +634,7 @@ getReactionRates()
   {
     m_reactionRates[ispec]->setVal(0.);
   }
-  m_crunch.getReactionRates(m_reactionRates, m_species);
+  m_crunch->getReactionRates(m_reactionRates, m_species);
 }
 /*******/ 
 void
