@@ -10,6 +10,70 @@
 
 namespace Proto
 {
+ 
+  ///class where phi is a monomial in x, y, z
+  template<int order> //order is so we can send in geometry info
+  class MonomialPhi
+  {
+  public:
+    typedef IndexTM<int,DIM> IndMomDIM;
+    ///
+    /** monomial is a funciton of x, y, z
+        a_power = (p1, p2, p3) 
+        a_point = (x0, y0, z0)
+        the monomial is (x-x0)^p1*(y-y0)^p2*(z-z0)^p3 */
+    MonomialPhi();
+  
+    ///
+    static inline Real getTaylorCoefficient(const RealVect   & a_x0,
+                                            const IndMomDIM  & a_p
+                                           ) 
+    {
+      IntVect m_power;
+      RealVect m_point;
+      Vector<int> powerVec;
+      Vector<Real> pointVec;
+
+      ParmParse pp;
+      pp.getarr("phi_power",powerVec,0,DIM);
+      pp.getarr("phi_point",pointVec,0,DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        m_point[idir] = pointVec[idir];
+        m_power[idir] = powerVec[idir];
+      }
+
+      Real retval = 1.0;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(a_p[idir] > m_power[idir])
+        {
+          return 0.;
+        }
+        else
+        {
+          Real prefix = 1.0;
+          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          {
+            prefix *= (m_power[idir] - ipre);
+          }
+          retval *= prefix*pow(a_x0[idir]-m_point[idir],m_power[idir]-a_p[idir])/factorial(a_p[idir]);
+        }
+      }
+    
+        return retval;
+    }
+
+  
+    virtual ~MonomialPhi()
+    {
+    }
+  
+  };
+
+
+	 
+
   template<int order>
   class Neighbors
   {
@@ -72,6 +136,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
     
     vector<EBIndex<CELL> >
     getFlapVoFs(const EBGraph       & a_graph,  
@@ -91,6 +156,9 @@ namespace Proto
                                 const XFacData         & a_xfacdata,
                                 const YFacData         & a_yfacdata,
                                 const ZFacData         & a_zfacdata,
+				const EBNormalData     & a_ebnormxdata,
+                                const EBNormalData     & a_ebnormydata,
+                                const EBNormalData     & a_ebnormzdata,
 		                Vector<IndMomDIM>      & a_volmom, 
 				Vector<IndMomDIM>      & a_ebfmom,
                                 Vector<IndMomSDMinOne> & a_facmom,
@@ -102,7 +170,10 @@ namespace Proto
                                 Vector<int>            & a_weightDisFac,
                                 Vector<int>            & a_facneighDir,
 				Vector<Side::LoHiSide> & a_facneighSid,
-				Vector<RealVect>       & a_ebfneighNorm,
+				Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
+				Vector<double>         & a_volneighFrac,
+                                Vector<double>         & a_ebfneighFrac,
+                                Vector<double>         & a_facneighFrac,
 				double                   a_dx) const;
 
     void
@@ -117,12 +188,16 @@ namespace Proto
                            Vector<RealVect>       & a_facneighLoc,
 			   Vector<int>            & a_facneighDir,
 			   Vector<Side::LoHiSide> & a_facneighSid,
-			   Vector<RealVect>       & a_ebfneighNorm,
+			   Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
+			   Vector<double>         & a_volneighFrac,
+                           Vector<double>         & a_ebfneighFrac,
+                           Vector<double>         & a_facneighFrac,
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
 		           
     void
     getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
+                           Real                       &  a_inhomogTerm, //for inhomogeneous bcs
                            const EBIndex<cent>        & a_face,
                            const EBGraph              & a_graph,
                            const VoluData             & a_voludata,
@@ -130,6 +205,9 @@ namespace Proto
                            const XFacData             & a_xfacdata,
                            const YFacData             & a_yfacdata,
                            const ZFacData             & a_zfacdata,
+                           const EBNormalData         & a_ebnormxdata,
+                           const EBNormalData         & a_ebnormydata,
+                           const EBNormalData         & a_ebnormzdata,
 			   string                       a_ebbcName,
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
@@ -147,8 +225,8 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
-		    IndMomDIM                & a_ebmom,
-		    RealVect                 & a_normal,
+		    vector<IndMomDIM>        & a_ebnorm,
+		    double                   & a_bndryArea,
                     double                     a_dx) const;
 
     void
@@ -166,7 +244,7 @@ namespace Proto
 
     void
     getEBFluxStencil(LocalStencil<CELL, double>    &  a_facesten,
-                     double                        &  a_weight, //for inhomogeneous bcs
+                     Real                          &  a_inhomogTerm, //for inhomogeneous bcs
                      const EBIndex<cent>           &  a_face,
                      const EBGraph                 & a_graph,
                      const VoluData                & a_voludata,
@@ -174,11 +252,30 @@ namespace Proto
                      const XFacData                & a_xfacdata,
                      const YFacData                & a_yfacdata,
                      const ZFacData                & a_zfacdata,
+		     const EBNormalData            & a_ebnormxdata,
+                     const EBNormalData            & a_ebnormydata,
+                     const EBNormalData            & a_ebnormzdata,
+		     vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
 		     IndMomDIM                     & a_ebmom,
 		     RealVect                      & a_normal,
+		     double                        & a_bndryArea,
                      const double                  & a_dx) const;
+
+    Real
+    computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
+                     const Vector<IndMomSDMinOne>   & a_facmom,
+                     const Vector<IndMomDIM>        & a_ebfmom,
+                     const int                        a_nvolneigh,
+		     const Vector<RealVect>         & a_facneighLoc,
+		     const Vector<int>              & a_facneighDir,
+                     const Vector<Side::LoHiSide>   & a_facneighSid,
+		     const Vector<RealVect>         & a_ebfneighLoc,
+	             const Vector<Vector<IndMomDIM> >& a_ebfneighNorm,
+		     string                           a_ebbcName,
+                     string                           a_dombcName[2*DIM],
+                     double                           a_dx) const;
 
     virtual ~BaseWLSFlux()
     {
@@ -228,6 +325,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
   public:
 
     ///
@@ -240,6 +338,9 @@ namespace Proto
                            const XFacData                      & a_xfacdata,
                            const YFacData                      & a_yfacdata,
                            const ZFacData                      & a_zfacdata,
+ 			   const EBNormalData                  & a_ebnormxdata,
+                           const EBNormalData                  & a_ebnormydata,
+                           const EBNormalData                  & a_ebnormzdata,
                            const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
                            const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
                            const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
@@ -302,9 +403,63 @@ namespace Proto
                    IndMomSDMinOne & a_facmom);
 
     inline static void
-    getEBMoments(IndMomDIM      & a_ebfmom,
-		 RealVect       & a_ebfNorm);
+    getEBMoments(IndMomDIM         & a_ebfmom,
+		 Vector<IndMomDIM> & a_ebfNorm);
 
+  };
+
+  template<int order> //order is so we can send in geometry info
+  class DirichletExactSoln
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+
+    DirichletExactSoln()
+    {
+    }
+
+    virtual ~DirichletExactSoln()
+    {
+    }
+
+    inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		                       const RealVect        & a_faceLoc,
+                                       int                     a_faceDir,
+                                       const Real              a_dx);
+
+    inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
+                                     const RealVect   & a_ebfLoc,
+                                     const Real         a_dx); 
+  
+  };
+
+  template<int order> //order is so we can send in geometry info
+  class NeumannExactSoln
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+
+    NeumannExactSoln()
+    {
+    }
+
+    virtual ~NeumannExactSoln()
+    {
+    }
+
+    inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
+		                       const RealVect        & a_faceLoc,
+                                       int                     a_faceDir,
+		                       const Real              a_dx); 
+
+    inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
+                                     const RealVect          & a_ebfLoc,
+                                     const Real                a_dx);
+ 
   };
 
 }

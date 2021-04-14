@@ -43,7 +43,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-  typedef HostIrregData<CELL,      IndMomDIM , 1>  EBData;
+  typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
   ///
   /**
@@ -123,27 +123,25 @@ public:
   }
 
   ///Get eb moment in the x direction 
-  inline const shared_ptr<LevelData<EBData> >
-  getEBData_x() const
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_x() const
   {
-    return m_ebdata[0];
+    return m_ebnormaldata[0];
   }
 
   ///Get eb moment in the y direction
-  inline const shared_ptr<LevelData<EBData> >
-  getEBData_y() const
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_y() const
   {
-    return m_ebdata[1];
+    return m_ebnormaldata[1];
   }
 
-#if DIM==3
   ///Get eb moment in the z direction
-  inline const shared_ptr<LevelData<EBData> >
-  getEBData_z() const
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_z() const
   {
-    return m_ebdata[2];
+    return m_ebnormaldata[2];
   }
-#endif
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
@@ -382,7 +380,7 @@ private:
   shared_ptr<LevelData<ZFacData> >    m_zfacdata;
 
   ///
-  shared_ptr<LevelData<EBData> >      m_ebdata[DIM];
+  shared_ptr<LevelData<EBNormalData> >      m_ebnormaldata[3];
     
   //origin                            
   RealVect                            m_origin;
@@ -436,7 +434,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBData;
+  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBNormalData;
 
 
   ///
@@ -593,27 +591,25 @@ public:
   }
 
   ///Get eb moment in the x direction
-  inline shared_ptr<LevelData<EBData> >
-  getEBData_x(const Box& a_domain)
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_x(const Box& a_domain)
   {
-    return (*this)[a_domain]->getEBData_x();
+    return (*this)[a_domain]->getEBNormalData_x();
   }
 
   ///Get eb moment in the y direction
-  inline shared_ptr<LevelData<EBData> >
-  getEBData_y(const Box& a_domain)
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_y(const Box& a_domain)
   {
-    return (*this)[a_domain]->getEBData_y();
+    return (*this)[a_domain]->getEBNormalData_y();
   }
 
-#if DIM==3
   ///Get eb moment in the z direction
-  inline shared_ptr<LevelData<EBData> >
-  getEBData_z(const Box& a_domain)
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_z(const Box& a_domain)
   {
-    return (*this)[a_domain]->getEBData_z();
+    return (*this)[a_domain]->getEBNormalData_z();
   }
-#endif
 
   ///
   inline shared_ptr<LevelGeometryService<order> > operator[](const Box& a_domain)

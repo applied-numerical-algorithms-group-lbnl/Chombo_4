@@ -51,9 +51,9 @@ defineData()
   m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
   m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
   m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
-  for(int idir = 0; idir < DIM; idir++)
+  for(int idir = 0; idir < 3; idir++)
   {
-    m_ebdata[idir] = shared_ptr<LevelData<EBData> > ( new LevelData<EBData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBData>()));
+    m_ebnormaldata[idir] = shared_ptr<LevelData<EBNormalData> > ( new LevelData<EBNormalData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
   }
 }
 /*********************************************/
@@ -121,7 +121,7 @@ defineFinestLevel(const RealVect               & a_origin,
 #endif
     for(int idir = 0; idir < DIM; idir++)
     {
-      (*m_ebdata[idir])[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]); 
+      (*m_ebnormaldata[idir])[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]); 
     }
     for(int inode = 0; inode < nodes.size(); inode++)
     {
@@ -132,7 +132,7 @@ defineFinestLevel(const RealVect               & a_origin,
       (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
       for(int idir = 0; idir < DIM; idir++)
       { 
-        (*m_ebdata[idir])[dit[ibox]](vof, 0)  = node.m_EBMomentsDir[idir];
+        (*m_ebnormaldata[idir])[dit[ibox]](vof, 0)  = node.m_EBNormalMomentsDir[idir];
       }
       for(SideIterator sit; sit.ok(); ++sit)
       {
@@ -178,7 +178,7 @@ exchange()
 #endif
   for(int idir = 0; idir < DIM; idir++)
   {
-    m_ebdata[idir]->exchange(m_exchangeCopier);
+    m_ebnormaldata[idir]->exchange(m_exchangeCopier);
   }
 }
   
@@ -261,7 +261,7 @@ coarsenData(const LevelGeometryService &  a_finerLevel)
 #endif
     for(int idir = 0; idir < DIM; idir++)
     { 
-      (*m_ebdata[idir])[dit[ibox]].define(vofBx, ebgraph);
+      (*m_ebnormaldata[idir])[dit[ibox]].define(vofBx, ebgraph);
     }
 
     //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
@@ -336,10 +336,10 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
     IndMomDIM& coarVoluMom  = (*m_voludata)[a_dit](coarVoF, 0);
     IndMomDIM& coarEBFaMom  = (*m_ebfadata)[a_dit](coarEBF, 0);
 
-    IndMomDIM& coarEBMom_x  = (*m_ebdata[0])[a_dit](coarVoF, 0);
-    IndMomDIM& coarEBMom_y  = (*m_ebdata[1])[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBMom_x  = (*m_ebnormaldata[0])[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBMom_y  = (*m_ebnormaldata[1])[a_dit](coarVoF, 0);
 #if DIM==3
-    IndMomDIM& coarEBMom_z  = (*m_ebdata[2])[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBMom_z  = (*m_ebnormaldata[2])[a_dit](coarVoF, 0);
 #endif    
     vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
     coarVoluMom.setToZero();
@@ -385,10 +385,10 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
       {
         fineVoluMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
         fineEBFaMom = (*(a_finerLevel.m_ebfadata))[a_dit](fineEBF, 0);
-        fineEBMom_x = (*(a_finerLevel.m_ebdata[0]))[a_dit](fineVoF, 0);
-        fineEBMom_y = (*(a_finerLevel.m_ebdata[1]))[a_dit](fineVoF, 0);
+        fineEBMom_x = (*(a_finerLevel.m_ebnormaldata[0]))[a_dit](fineVoF, 0);
+        fineEBMom_y = (*(a_finerLevel.m_ebnormaldata[1]))[a_dit](fineVoF, 0);
 #if DIM==3
-        fineEBMom_z = (*(a_finerLevel.m_ebdata[2]))[a_dit](fineVoF, 0);
+        fineEBMom_z = (*(a_finerLevel.m_ebnormaldata[2]))[a_dit](fineVoF, 0);
 #endif
       }
 
@@ -979,7 +979,7 @@ fillNewNode(inode               &     a_node,
     for(momit.reset(); momit.ok(); ++momit)
     {
       // Storing eb_x, eb_y and eb_z 
-      a_node.m_EBMomentsDir[idir][momit()] = copyEBMoments_dir[idir][momit()];
+      a_node.m_EBNormalMomentsDir[idir][momit()] = copyEBMoments_dir[idir][momit()];
     }
   }
   

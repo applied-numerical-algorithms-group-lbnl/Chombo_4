@@ -8,7 +8,109 @@
 namespace Proto
 {
   
-
+  ///this deep down in the bowels, everything is a template specialization
+  ///returns whether there are domain boundary conditions
+  template <int order>
+  bool 
+  EBStencilArchive<CELL, CELL,  order, double>::
+  getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+             vector<LocalStencil<CELL, double> >       & a_stencil,
+             Stencil<double>                           & a_regStencil,
+             vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
+             vector<Box>                                 a_BCApplyBoxes[2*DIM],       
+             Box                                       & a_regApplyBox,
+             bool                                      & a_bcOnly,
+             string                                      a_stencilName,
+             string                                      a_domainBCName[2*DIM],
+             string                                      a_ebbcName,
+             const Box                                 & a_srcValid,
+             const Box                                 & a_dstValid,
+             const Box                                 & a_srcDomain,
+             const Box                                 & a_dstDomain,
+             const Point                               & a_srcGhost,
+             const Point                               & a_dstGhost,
+             const EBGraph                             & a_srcGraph,
+             const EBGraph                             & a_dstGraph,
+             const VoluData                            & a_voludata,
+             const EBFaData                            & a_ebfadata,
+             const XFacData                            & a_xfacdata,
+             const YFacData                            & a_yfacdata,
+             const ZFacData                            & a_zfacdata,
+	     const EBNormalData                        & a_ebnormxdata,
+             const EBNormalData                        & a_ebnormydata,
+             const EBNormalData                        & a_ebnormzdata,
+             double                                      a_dx,
+             bool                                        a_periodiconly, 
+             Point                                       a_dstGrown)               
+  {
+    a_bcOnly = false;
+    if(a_stencilName == string("Weighted_Least_Squares"))
+    {
+      bool forceNeumann = false;
+      return
+        getWLSStencil(a_dstVoFs,
+                      a_stencil,
+                      a_regStencil,
+                      a_regStencilBCS,
+                      a_BCApplyBoxes,
+                      a_regApplyBox,
+                      a_stencilName,
+                      a_domainBCName,
+                      a_ebbcName,
+                      a_srcValid,
+                      a_srcDomain,
+                      a_srcGhost,
+                      a_dstGhost,
+                      a_srcGraph,
+                      a_voludata,
+                      a_ebfadata,
+                      a_xfacdata,
+                      a_yfacdata,
+                      a_zfacdata,
+		      a_ebnormxdata,
+                      a_ebnormydata,
+                      a_ebnormzdata,
+                      a_dx,
+                      a_periodiconly,
+                      forceNeumann);
+    }
+    else if (a_stencilName == string("Weighted_Least_Squares_All_Neumann"))
+    {
+      bool forceNeumann = true;
+      return
+        getWLSStencil(a_dstVoFs,
+                      a_stencil,
+                      a_regStencil,
+                      a_regStencilBCS,
+                      a_BCApplyBoxes,
+                      a_regApplyBox,
+                      a_stencilName,
+                      a_domainBCName,
+                      a_ebbcName,
+                      a_srcValid,
+                      a_srcDomain,
+                      a_srcGhost,
+                      a_dstGhost,
+                      a_srcGraph,
+                      a_voludata,
+                      a_ebfadata,
+                      a_xfacdata,
+                      a_yfacdata,
+                      a_zfacdata,
+                      a_ebnormxdata,
+                      a_ebnormydata,
+                      a_ebnormzdata,
+                      a_dx,
+                      a_periodiconly,
+                      forceNeumann);
+    }
+    else
+    {
+      PR_error("stencil_archive_cell_cell::stencil string not found");
+    }
+    return false;//never gets here but this shuts up some compilers;
+  }
+ 
   ///this deep down in the bowels, everything is a template specialization
   ///returns whether there are domain boundary conditions
   template <int order>
@@ -88,33 +190,6 @@ namespace Proto
                                      a_periodiconly,
                                      forceNeumann);            
 
-    }
-    else if(a_stencilName == string("Weighted_Least_Squares"))
-    {
-      bool forceNeumann = false;
-      return
-        getWLSStencil(a_dstVoFs,
-                      a_stencil,
-                      a_regStencil,
-                      a_regStencilBCS,
-                      a_BCApplyBoxes,
-                      a_regApplyBox,
-                      a_stencilName,
-                      a_domainBCName,
-                      a_ebbcName,
-                      a_srcValid,
-                      a_srcDomain,
-                      a_srcGhost,
-                      a_dstGhost,
-                      a_srcGraph,
-                      a_voludata,
-                      a_ebfadata,
-                      a_xfacdata,
-                      a_yfacdata,
-                      a_zfacdata,
-                      a_dx,
-                      a_periodiconly,
-                      forceNeumann);
     }
     else if(a_stencilName == string("Second_Order_Poisson_All_Neumann"))
     {
@@ -824,7 +899,10 @@ namespace Proto
                 const EBFaData                            & a_ebfadata,                   
                 const XFacData                            & a_xfacdata,                   
                 const YFacData                            & a_yfacdata,                   
-                const ZFacData                            & a_zfacdata,                   
+                const ZFacData                            & a_zfacdata,
+                const EBNormalData                        & a_ebnormxdata,
+                const EBNormalData                        & a_ebnormydata,
+                const EBNormalData                        & a_ebnormzdata,
                 double                                      a_dx,                         
                 bool                                        a_periodiconly,               
                 bool  a_forceNeumann)               
@@ -871,7 +949,7 @@ namespace Proto
     {
       //cout << "should not get here with no irregular cells" << endl;
       Point pt = a_dstVoFs[ivof].m_pt;
-      //cout << "point1 "<<pt<<endl;
+      cout << "point1 "<<pt<<endl;
       WLSStencil<order>::
         getWLSDivFStencil(a_stencil[ivof],
                                a_dstVoFs[ivof],
@@ -879,12 +957,17 @@ namespace Proto
                                a_voludata,
                                a_ebfadata,
                                a_xfacdata, a_yfacdata, a_zfacdata,
+			       a_ebnormxdata, a_ebnormydata, 
+			       a_ebnormzdata,
                                xflux, yflux, zflux, ebflux, ebbc, dombc,
                                a_dx);
       RealVect centroid;
       double kappa;
       Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
-      a_stencil[ivof]*= 1.0/(kappa*a_dx*a_dx);
+      a_stencil[ivof]*= 1.0/(a_dx*a_dx);
+      cout << "divF, ";
+      cout << "stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
+      a_stencil[ivof].print();
     }
     return true;
   }

@@ -191,9 +191,18 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
+  if(m_stenname == string("Weighted_Least_Squares") || m_stenname == string("Weighted_Least_Squares_All_Neumann"))
+  {
+    m_dictionary->registerStencilWLS(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
 
-  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
+    m_dictionary->registerStencilWLS(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
+  }
+  else
+  {
+    m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
+
+    m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
+  }
 
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv);
@@ -271,8 +280,14 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
-
+  if(m_stenname == string("Weighted_Least_Squares") || m_stenname == string("Weighted_Least_Squares_All_Neumann"))
+  {
+    m_dictionary->registerStencilWLS(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  }
+  else
+  {
+    m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  }
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv);
 

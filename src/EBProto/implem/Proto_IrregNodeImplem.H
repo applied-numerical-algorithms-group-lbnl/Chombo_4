@@ -12,7 +12,7 @@ namespace Proto
     for(int idir  = 0; idir < DIM; idir++)
     {
       m_normalPartialDeriv[idir].setToZero();
-      m_EBMomentsDir[idir].setToZero();
+      m_EBNormalMomentsDir[idir].setToZero();
     }
     for(int iface  = 0; iface < 2*DIM; iface++)
     {
@@ -31,7 +31,7 @@ namespace Proto
     for(int idir  = 0; idir < DIM; idir++)
     {
       m_normalPartialDeriv[idir].setToZero();
-      m_EBMomentsDir[idir].setToZero();
+      m_EBNormalMomentsDir[idir].setToZero();
     }
     m_volumeMoments.setRegular(a_dx);
     for(int iface  = 0; iface < 2*DIM; iface++)
