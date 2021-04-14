@@ -9,18 +9,21 @@ namespace Proto
   Real
   BaseWLSFlux<cent, order>::
   computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
-                     const Vector<IndMomSDMinOne>   & a_facmom,
-                     const Vector<IndMomDIM>        & a_ebfmom,
+		     Neighbors<order>               & a_neigh,
                      const int                        a_nvolneigh,
-		     const Vector<RealVect>         & a_facneighLoc,
-		     const Vector<int>              & a_facneighDir,
-                     const Vector<Side::LoHiSide>   & a_facneighSid,
-		     const Vector<RealVect>         & a_ebfneighLoc,
-	             const Vector<Vector<IndMomDIM> >& a_ebfneighNorm,
 		     string                           a_ebbcName,
                      string                           a_dombcName[2*DIM],
                      double                           a_dx) const
   {
+
+    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
+    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
+    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
+    Vector<RealVect> a_facneighLoc = a_neigh.m_facneighLoc;
+    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
+    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
+    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfneighLoc;
+
     Vector<Real> domBCValues, ebBCValues;
     int nrows = a_facmom.size();
     domBCValues.resize(nrows);
@@ -153,7 +156,6 @@ namespace Proto
         {
           IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
           fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];///(a_bndryArea*areaScaleFactor*POW(a_dx, momit().sum()));
-	  cout<<" bndryArea "<<a_bndryArea<<endl;
         }
         else
         {
@@ -250,32 +252,33 @@ namespace Proto
   void
   BaseWLSFlux<cent, order>::
   getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                       Vector<int>            & a_weightDisVol,
-                       Vector<int>            & a_weightDisFac,
-                       Vector<int>            & a_weightDisEB) const
-  {
-    int nrows = a_weightDisVol.size()+a_weightDisFac.size()+a_weightDisEB.size();
+		       Neighbors<order>       & a_neigh) const
+  { 
+    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
+    Vector<int> weightDisFac = a_neigh.m_weightDisFac;
+    Vector<int> weightDisEB = a_neigh.m_weightDisEB;
+
+    int nrows = weightDisVol.size()+weightDisFac.size()+weightDisEB.size();
     a_weights.define(nrows, nrows);
     a_weights.setVal(1.0);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
     int powerE = -3;
-    // same code as least squares solvers
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;
-      if (ineigh<a_weightDisVol.size())
+      if (ineigh<weightDisVol.size())
       {
-        int dist = a_weightDisVol[ineigh];
+        int dist = weightDisVol[ineigh];
         blerg = POW(dist,powerE);
       }
-      else if (ineigh>=a_weightDisVol.size() && ineigh<a_weightDisVol.size()+a_weightDisFac.size())
+      else if (ineigh>=weightDisVol.size() && ineigh<weightDisVol.size()+weightDisFac.size())
       {
-        int dist = a_weightDisFac[ineigh-a_weightDisVol.size()];
+        int dist = weightDisFac[ineigh-weightDisVol.size()];
         blerg = POW(dist,powerE);
       }
-      if (ineigh>=a_weightDisVol.size()+a_weightDisFac.size())
+      if (ineigh>=weightDisVol.size()+weightDisFac.size())
       {
-        int dist = a_weightDisEB[ineigh-a_weightDisVol.size()-a_weightDisFac.size()];
+        int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
         blerg = POW(dist,powerE);
       }
       a_weights(ineigh, ineigh) = blerg;
@@ -337,19 +340,20 @@ namespace Proto
   } 
 
   template<CENTERING cent, int order>
-  vector<EBIndex<CELL> >
+  Vector<EBIndex<CELL> >
   BaseWLSFlux<cent, order>::
   getVoFsNeighbors(const EBIndex<cent> & a_face,
                    unsigned int          a_radius,
-		   Vector<int>         & a_weightDisVol,
+		   Neighbors<order>    & a_neigh,
                    const EBGraph       & a_graph) const
   {
-    vector<EBIndex<CELL> > retval;
+    Vector<int>  weightDisVol;
+    Vector<EBIndex<CELL> > retval;
     if (cent == BOUNDARY) 
     {
       EBIndex<CELL> voflo = a_face.getVoF();
       retval.push_back(voflo);
-      a_weightDisVol.push_back(1);
+      weightDisVol.push_back(1);
     }
     else
     {
@@ -358,27 +362,27 @@ namespace Proto
       if (!a_face.m_isBoundary)
       {
         retval.push_back(voflo);
-        a_weightDisVol.push_back(1);      
+        weightDisVol.push_back(1);      
         retval.push_back(vofhi);	   
-        a_weightDisVol.push_back(1);      
+        weightDisVol.push_back(1);      
       } 
       else 
       { 
         if (a_face.m_vofIDMe>=0) 
         {
           retval.push_back(vofhi);
-          a_weightDisVol.push_back(1);
+          weightDisVol.push_back(1);
         }
         if (a_face.m_vofIDLo>=0) 
         {
           retval.push_back(voflo);
-          a_weightDisVol.push_back(1);
+          weightDisVol.push_back(1);
         }
       }
     }
     int startV = 0;
-    for (int irad = 1; irad<=a_radius; irad++){
-      //vector< EBIndex<CELL> > volsinclusive=  a_graph.getAllVoFsWithinRadius(voflo.m_pt, radius);
+    for (int irad = 1; irad<=a_radius; irad++)
+    {
       int neighSize = retval.size();
       for (int ineigh = startV; ineigh<neighSize; ineigh++){
         vector< EBIndex<CELL> > volsinclusive=  getFlapVoFs(a_graph, retval[ineigh]);
@@ -396,19 +400,20 @@ namespace Proto
           if (incl) 
           {
 	    retval.push_back(volsinclusive[ivof]);
-	    a_weightDisVol.push_back(irad+1);
+	    weightDisVol.push_back(irad+1);
 	  }
         }
       }
       startV = neighSize;
     }
+    a_neigh.setWeightDisVol(weightDisVol);
     return retval;
   }
 
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
-  getMomentsInfoFromNeighbors(vector<EBIndex<CELL> >  & a_vols,
+  getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> >  & a_vols,
 		              const EBGraph           & a_graph,
                               const VoluData          & a_voludata,
                               const EBFaData          & a_ebfadata,
@@ -418,29 +423,31 @@ namespace Proto
 			      const EBNormalData      & a_ebnormxdata,
                               const EBNormalData      & a_ebnormydata,
                               const EBNormalData      & a_ebnormzdata,
-                              Vector<IndMomDIM>       & a_volmom,
-                              Vector<IndMomDIM>       & a_ebfmom,
-                              Vector<IndMomSDMinOne>  & a_facmom,
-                              Vector<RealVect>        & a_volneighLoc,
-                              Vector<RealVect>        & a_ebfneighLoc,
-                              Vector<RealVect>        & a_facneighLoc,
-                              Vector<int>             & a_weightDisVol,
-                              Vector<int>             & a_weightDisEB,
-                              Vector<int>             & a_weightDisFac,
-                              Vector<int>             & a_facneighDir,
-			      Vector<Side::LoHiSide>  & a_facneighSid,
-			      Vector<Vector<IndMomDIM> >& a_ebfneighNorm,
-			      Vector<double>         & a_volneighFrac,
-                              Vector<double>         & a_ebfneighFrac,
-                              Vector<double>         & a_facneighFrac,
+		              Neighbors<order>        & a_neigh,
 			      double                    a_dx) const
   {
+    Vector<IndMomDIM> volmom, ebfmom;
+    Vector<IndMomSDMinOne> facmom;
+    Vector<RealVect> volneighLoc;
+    Vector<RealVect> ebfneighLoc;
+    Vector<RealVect> facneighLoc;
+    Vector<double> volneighFrac;
+    Vector<double> ebfneighFrac;
+    Vector<double> facneighFrac;
+    Vector<Vector<IndMomDIM> > ebfneighNorm;
+    Vector<int> facneighDir;
+    Vector<Side::LoHiSide> facneighSid;
+    Vector<int> weightDisFac;
+    Vector<int> weightDisEB;
+
     Vector< EBIndex<XFACE> > Xfacneigh;
     Vector< EBIndex<YFACE> > Yfacneigh;
     IndMomDIM regVolMom;
     regVolMom.setToRegular(a_dx);
     IndMomSDMinOne regFaceMom;
     regFaceMom.setToRegular(a_dx);
+    Vector<int> weightDisVol = a_neigh.m_weightDisVol; 
+
     for(int ivof = 0; ivof < a_vols.size(); ivof++)
     {
       RealVect volLoc;
@@ -450,19 +457,16 @@ namespace Proto
         volLoc[idir] = a_dx * (0.5 + volInd.m_pt[idir]);
       }
       cout<< " vol order "<<volInd.m_pt<<endl;
-      a_volneighLoc.push_back(volLoc);
+      volneighLoc.push_back(volLoc);
 
       if(a_graph.isIrregular(volInd.m_pt))
       {
-	a_volmom.push_back(a_voludata(volInd, 0));
+	volmom.push_back(a_voludata(volInd, 0));
 	RealVect centroid;
         double kappa;
         Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volInd, a_graph, a_dx);
-	a_volneighFrac.push_back(kappa);
+	volneighFrac.push_back(kappa);
 	const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
-	a_ebfmom.push_back(a_ebfadata(ebf, 0));
-        a_ebfneighLoc.push_back(volLoc);
-        a_weightDisEB.push_back(a_weightDisVol[ivof]);
 	RealVect normal;
         double bndryArea;
         // Get normal and boundary area
@@ -474,14 +478,18 @@ namespace Proto
 #if DIM==3
         ebnorm[2] = a_ebnormzdata(volInd, 0);
 #endif
-	a_ebfneighNorm.push_back(ebnorm);
-	a_ebfneighFrac.push_back(bndryArea);
+	cout<<" eb info "<<normal<<"  "<<bndryArea<<" "<<a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]<<endl;
+	ebfmom.push_back(a_ebfadata(ebf, 0));
+        ebfneighLoc.push_back(volLoc);
+        weightDisEB.push_back(weightDisVol[ivof]);
+	ebfneighNorm.push_back(ebnorm);
+	ebfneighFrac.push_back(bndryArea);
         cout<< " eb order "<<volInd.m_pt<<endl;
       }
       else
       {
-	a_volmom.push_back(regVolMom);
-	a_volneighFrac.push_back(1.0);
+	volmom.push_back(regVolMom);
+	volneighFrac.push_back(1.0);
       }
       int side = 0;
       for(SideIterator sit; sit.ok(); ++sit)
@@ -515,22 +523,22 @@ namespace Proto
               }
     	      if(a_graph.isIrregular(volInd.m_pt))
               {
-                a_facmom.push_back(a_xfacdata(x_face, 0));
+                facmom.push_back(a_xfacdata(x_face, 0));
 		double   areaFrac;
                 RealVect centroid;
                 Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, x_face, a_graph, a_dx);
-	        a_facneighFrac.push_back(areaFrac);
+	        facneighFrac.push_back(areaFrac);
     	      }
     	      else
               {
-                a_facmom.push_back(regFaceMom);
-	        a_facneighFrac.push_back(1.0);
+                facmom.push_back(regFaceMom);
+	        facneighFrac.push_back(1.0);
     	      }
               Xfacneigh.push_back(x_face);
-              a_facneighLoc.push_back(XfaceLoc);
-              a_facneighDir.push_back(x_face.direction());
-	      a_facneighSid.push_back(sit());
-              a_weightDisFac.push_back(a_weightDisVol[ivof]);
+              facneighLoc.push_back(XfaceLoc);
+              facneighDir.push_back(x_face.direction());
+	      facneighSid.push_back(sit());
+              weightDisFac.push_back(weightDisVol[ivof]);
               cout<< " xfac order "<<x_face.m_pt<<endl;
             }
           }
@@ -559,22 +567,22 @@ namespace Proto
               }     
               if(a_graph.isIrregular(volInd.m_pt))
               {
-                a_facmom.push_back(a_yfacdata(y_face, 0));
+                facmom.push_back(a_yfacdata(y_face, 0));
 		double   areaFrac;
                 RealVect centroid;
                 Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, y_face, a_graph, a_dx);
-                a_facneighFrac.push_back(areaFrac);
+                facneighFrac.push_back(areaFrac);
               }
               else
               {
-                a_facmom.push_back(regFaceMom);
-                a_facneighFrac.push_back(1.0);
+                facmom.push_back(regFaceMom);
+                facneighFrac.push_back(1.0);
               }
               Yfacneigh.push_back(y_face);
-              a_facneighLoc.push_back(YfaceLoc);
-              a_facneighDir.push_back(y_face.direction());
-	      a_facneighSid.push_back(sit());
-              a_weightDisFac.push_back(a_weightDisVol[ivof]);
+              facneighLoc.push_back(YfaceLoc);
+              facneighDir.push_back(y_face.direction());
+	      facneighSid.push_back(sit());
+              weightDisFac.push_back(weightDisVol[ivof]);
               cout<< " yfac order "<<y_face.m_pt<<endl;
             }
           }
@@ -604,28 +612,45 @@ namespace Proto
               }
               if(a_graph.isIrregular(volInd.m_pt))
               {
-                a_facmom.push_back(a_zfacdata(z_face, 0));
+                facmom.push_back(a_zfacdata(z_face, 0));
 		double   areaFrac;
                 RealVect centroid;
                 Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, z_face, a_graph, a_dx);
-                a_facneighFrac.push_back(areaFrac);
+                facneighFrac.push_back(areaFrac);
               }
               else
               {
-                a_facmom.push_back(regFaceMom);
-                a_facneighFrac.push_back(1.0);
+                facmom.push_back(regFaceMom);
+                facneighFrac.push_back(1.0);
               }
               Zfacneigh.push_back(z_face);
-              a_facneighLoc.push_back(ZfaceLoc);
-              a_facneighDir.push_back(z_face.direction());
-	      a_facneighSid.push_back(sit());
-              a_weightDisFac.push_back(a_weightDisVol[ivof]);
+              facneighLoc.push_back(ZfaceLoc);
+              facneighDir.push_back(z_face.direction());
+	      facneighSid.push_back(sit());
+              weightDisFac.push_back(weightDisVol[ivof]);
             }
           }
         }
 #endif
       }//End SideIterator loop
     }//End vol neighbors loop
+
+    a_neigh.setMomentsInfo(volmom, facmom,
+                           ebfmom, ebfneighNorm);
+    
+    a_neigh.setLocInfo(volneighLoc, facneighLoc,
+                       ebfneighLoc);
+      
+    a_neigh.setWeightDisFacAndEB(weightDisFac,
+                                 weightDisEB);
+
+    a_neigh.setFracInfo(volneighFrac,  
+                        ebfneighFrac,
+                        facneighFrac);
+
+    a_neigh.setAdditionalFaceInfo(facneighDir,
+                                  facneighSid);
+
   }
 
   template<CENTERING cent, int order>
@@ -634,25 +659,27 @@ namespace Proto
   getShiftedMomentMatrix(Chombo4::LAPACKMatrix    & a_Mvol,
                            RealVect               & a_faceLoc,
                            double                   a_dx,
-                           Vector<IndMomDIM>      & a_volmom,
-                           Vector<IndMomDIM>      & a_ebfmom,
-                           Vector<IndMomSDMinOne> & a_facmom,
-                           Vector<RealVect>       & a_volneighLoc,
-                           Vector<RealVect>       & a_ebfneighLoc,
-                           Vector<RealVect>       & a_facneighLoc,
-			   Vector<int>            & a_facneighDir,
-			   Vector<Side::LoHiSide> & a_facneighSid,
-			   Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
-			   Vector<double>         & a_volneighFrac,
-                           Vector<double>         & a_ebfneighFrac,
-                           Vector<double>         & a_facneighFrac,
+		           Neighbors<order>       & a_neigh,
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const
   {
+    Vector<IndMomDIM> volmom = a_neigh.m_volMom;
+    Vector<IndMomDIM> ebfmom = a_neigh.m_ebfMom;
+    Vector<IndMomSDMinOne> facmom = a_neigh.m_facMom;
+    Vector<RealVect> volneighLoc = a_neigh.m_volLoc;
+    Vector<RealVect> ebfneighLoc = a_neigh.m_ebfLoc;
+    Vector<RealVect> facneighLoc = a_neigh.m_facLoc;
+    Vector<int> facneighDir = a_neigh.m_facneighDir;
+    Vector<Side::LoHiSide> facneighSid = a_neigh.m_facneighSid;
+    Vector<Vector<IndMomDIM> > ebfneighNorm = a_neigh.getEBNormMoments();
+    Vector<double> volneighFrac = a_neigh.m_volneighFrac;
+    Vector<double> ebfneighFrac = a_neigh.m_ebfneighFrac;
+    Vector<double> facneighFrac = a_neigh.m_facneighFrac;
     Vector<IndMomDIM> fac2volmom;
-    int nvol = a_volmom.size();
-    int nfac = a_facmom.size();
-    int nebf = a_ebfmom.size();
+
+    int nvol = volmom.size();
+    int nfac = facmom.size();
+    int nebf = ebfmom.size();
     fac2volmom.resize(nfac);
 
     int nrows = nvol + nfac + nebf;
@@ -670,14 +697,14 @@ namespace Proto
     for(int irow = 0; irow < nvol; irow++)
     {
       //the moments start at the cell CENTER
-      RealVect diff = a_volneighLoc[irow];
+      RealVect diff = volneighLoc[irow];
       diff -= a_faceLoc;
       IndexTM<Real, DIM> diffrv;
       for(int idir = 0; idir < DIM; idir++)
         {
           diffrv[idir] = diff[idir];
         }
-      a_volmom[irow].shift(diffrv);
+      volmom[irow].shift(diffrv);
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
@@ -688,8 +715,9 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = a_volmom[irow][momit()]/(a_volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
-        a_Mvol(irow, icol) = a_volmom[irow][momit()]/(a_volneighFrac[irow]*volScaleFactor);
+        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor);
+        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volmom[irow][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -701,7 +729,7 @@ namespace Proto
     for(int iface = 0; iface < nfac; iface++)
     {
       int irow = nvol + iface;
-      RealVect diff = a_facneighLoc[iface];
+      RealVect diff = facneighLoc[iface];
       diff -= a_faceLoc;
       IndexTM<Real, DIM> diffrv;
       for(int idir = 0; idir < DIM; idir++)
@@ -709,22 +737,22 @@ namespace Proto
         diffrv[idir] = diff[idir];
       }
 
-      int a_faceDir = a_facneighDir[iface];
-      Side::LoHiSide a_faceSid = a_facneighSid[iface];
-      int index = ebp_index(a_faceDir, a_faceSid);
+      int a_faceDir = facneighDir[iface];
+      Side::LoHiSide faceSid = facneighSid[iface];
+      int index = ebp_index(a_faceDir, faceSid);
       if(a_dombcName[index] == string("Neumann"))
       {
         NeumannBC<order>::
           getFaceMoments(fac2volmom[iface],
                          a_faceDir,
-                         a_facmom[iface]);
+                         facmom[iface]);
       }
       else if(a_dombcName[index] == string("Dirichlet"))
       {
         DirichletBC<order>::
           getFaceMoments(fac2volmom[iface],
                          a_faceDir,
-                         a_facmom[iface]);
+                         facmom[iface]);
       }
       else
       {
@@ -742,8 +770,9 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(a_facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
-        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(a_facneighFrac[iface]*areaScaleFactor);
+        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor);
+        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(fac2volmom[iface][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -755,7 +784,7 @@ namespace Proto
     for(int iebf = 0; iebf < nebf; iebf++)
     {
       int irow = nvol + nfac + iebf;
-      RealVect diff = a_ebfneighLoc[iebf];
+      RealVect diff = ebfneighLoc[iebf];
       diff -= a_faceLoc;
       IndexTM<Real, DIM> diffrv;
       for(int idir = 0; idir < DIM; idir++)
@@ -766,8 +795,8 @@ namespace Proto
       if(a_ebbcName == string("Neumann"))
       {
         NeumannBC<order>::
-          getEBMoments(a_ebfmom[iebf],
-		       a_ebfneighNorm[iebf]);
+          getEBMoments(ebfmom[iebf],
+		       ebfneighNorm[iebf]);
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
@@ -777,7 +806,7 @@ namespace Proto
         PROTO_ASSERT(false, "could not find ebBC string");
       }
 
-      a_ebfmom[iebf].shift(diffrv);
+      ebfmom[iebf].shift(diffrv);
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
@@ -788,8 +817,9 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = a_ebfmom[iebf][momit()]/(a_ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
-        a_Mvol(irow, icol) = a_ebfmom[iebf][momit()]/(a_ebfneighFrac[iebf]*areaScaleFactor);
+        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
+        a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor);
+        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfmom[iebf][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -823,6 +853,8 @@ namespace Proto
   { 
     Chombo4::LAPACKMatrix::s_verbose = true; 
 
+    Neighbors<order> neighs;
+
     RealVect faceLoc;
     for (int idir = 0; idir < DIM; idir++)
     {
@@ -831,41 +863,19 @@ namespace Proto
     }
 
     unsigned int radius = 2;
-    Vector<int> weightDisVol;
-    Vector<int> weightDisFac;
-    Vector<int> weightDisEB;
-    vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, weightDisVol, a_graph);
-
-    Vector<IndMomDIM> volmom, ebfmom;
-    Vector<IndMomSDMinOne> facmom;
-    Vector<RealVect> volneighLoc;
-    Vector<RealVect> ebfneighLoc;
-    Vector<RealVect> facneighLoc;
-    Vector<double> volneighFrac;
-    Vector<double> ebfneighFrac;
-    Vector<double> facneighFrac;
-    Vector<Vector<IndMomDIM> > ebfneighNorm;
-    Vector<int> facneighDir;
-    Vector<Side::LoHiSide> facneighSid;
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
 
     getMomentsInfoFromNeighbors(vols,
 		                a_graph, a_voludata, a_ebfadata,
 				a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
                                 a_ebnormzdata,
-		                volmom, ebfmom, facmom,
-				volneighLoc, ebfneighLoc, facneighLoc,
-				weightDisVol, weightDisEB, weightDisFac,
-				facneighDir, facneighSid, ebfneighNorm, 
-				volneighFrac, ebfneighFrac, facneighFrac, a_dx);
+                                neighs, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
-    getShiftedMomentMatrix(Mvol, faceLoc, a_dx, 
-		           volmom, ebfmom, facmom,
-		           volneighLoc, ebfneighLoc, facneighLoc,
-			   facneighDir, facneighSid, ebfneighNorm,
-			   volneighFrac, ebfneighFrac, facneighFrac, 
+    getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
+		           neighs, 
 			   a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
@@ -874,7 +884,7 @@ namespace Proto
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
-    getWeightsMatrixFace(weights, weightDisVol, weightDisFac, weightDisEB);
+    getWeightsMatrixFace(weights, neighs);
 
     // Compute phiCoef
     Chombo4::LAPACKMatrix phiCoef;
@@ -890,13 +900,13 @@ namespace Proto
       cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
+#if 0
     int nvolneigh = vols.size();
-    a_inhomogTerm = computeInhomogTerm(phiCoef, facmom, ebfmom,
-		                       nvolneigh,
-                                       facneighLoc, facneighDir, facneighSid,
-                                       ebfneighLoc, ebfneighNorm,
+    a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
+				       nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
+#endif
   }
 
   template < int order>
@@ -1310,47 +1320,27 @@ namespace Proto
   {
     Chombo4::LAPACKMatrix::s_verbose = true;
 
+    Neighbors<order> neighs;
+
     RealVect faceLoc;
     for (int idir = 0; idir < DIM; idir++)
     {
       faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
     }
     unsigned int radius = 2;
-    Vector<int> weightDisVol;
-    Vector<int> weightDisFac;
-    Vector<int> weightDisEB;
-    vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, weightDisVol, a_graph);
-
-    Vector<IndMomDIM> volmom, ebfmom;
-    Vector<IndMomSDMinOne> facmom;
-    Vector<RealVect> volneighLoc;
-    Vector<RealVect> ebfneighLoc;
-    Vector<RealVect> facneighLoc;
-    Vector<double> volneighFrac;
-    Vector<double> ebfneighFrac;
-    Vector<double> facneighFrac;
-    Vector<Vector<IndMomDIM> > ebfneighNorm;
-    Vector<int> facneighDir;
-    Vector<Side::LoHiSide> facneighSid;
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
 
     getMomentsInfoFromNeighbors(vols,
                                 a_graph, a_voludata, a_ebfadata,
                                 a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
                                 a_ebnormzdata,
-                                volmom, ebfmom, facmom,
-                                volneighLoc, ebfneighLoc, facneighLoc,
-                                weightDisVol, weightDisEB, weightDisFac,
-                                facneighDir, facneighSid, ebfneighNorm, 
-				volneighFrac, ebfneighFrac, facneighFrac, a_dx);
+                                neighs, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
-    getShiftedMomentMatrix(Mvol, faceLoc, a_dx, 
-		           volmom, ebfmom, facmom,
-		           volneighLoc, ebfneighLoc, facneighLoc,
-			   facneighDir, facneighSid, ebfneighNorm,
-			   volneighFrac, ebfneighFrac, facneighFrac, 
+    getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
+		           neighs, 
 			   a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
@@ -1359,7 +1349,7 @@ namespace Proto
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
-    getWeightsMatrixFace(weights, weightDisVol, weightDisFac, weightDisEB);
+    getWeightsMatrixFace(weights, neighs);
 
     // Compute phiCoef
     Chombo4::LAPACKMatrix phiCoef;
@@ -1375,14 +1365,13 @@ namespace Proto
       cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
     }
 
+#if 0
     int nvolneigh = vols.size();
-    a_inhomogTerm = computeInhomogTerm(phiCoef, facmom, ebfmom,
+    a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
                                        nvolneigh,
-                                       facneighLoc, facneighDir, facneighSid,
-                                       ebfneighLoc, ebfneighNorm,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-
+#endif
   }
 
   //getIntegralNormalDerivative
