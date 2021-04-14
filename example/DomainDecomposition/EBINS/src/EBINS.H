@@ -9,6 +9,7 @@
 #include "EBCCProjector.H"
 #include "BCGVelAdvect.H"
 #include "EBIBC.H"
+#include "CrunchInterface.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///class to run the incompressible algorithm described in Trebotich, et al.
@@ -108,6 +109,7 @@ public:
   Real                                          m_viscosity;
   Copier                                        m_exchangeCopier;
   Copier                                        m_copyCopier;
+  CrunchInterface                               m_crunch;
 
 private:
   

@@ -632,6 +632,7 @@ getReactionRates()
   {
     m_reactionRates[ispec]->setVal(0.);
   }
+  m_crunch.getReactionRates(m_reactionRates, m_species);
 }
 /*******/ 
 void
