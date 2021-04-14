@@ -102,6 +102,7 @@ namespace Proto
                                const EBIndex<cent>                          &  a_face,
                                const EBGraph                                &  a_graph,
                                const HostIrregData<cent, IndMomSDMinOne, 1> &  a_facdata,
+                               string                                          a_dombc,
                                double                                          a_dx) const
     {
       //sometimes need other parts of this class
@@ -120,7 +121,9 @@ namespace Proto
                        const EBIndex<cent>                          &  a_face,
                        const EBGraph                                &  a_graph,
                        const HostIrregData<cent, IndMomSDMinOne, 1> &  a_facdata,
+                       string                                          a_dombc,
                        double                                          a_dx) const;
+
     
   };
   
@@ -140,11 +143,12 @@ namespace Proto
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
   public:
     inline void 
-    getFaceCenteredFluxStencil(LocalStencil<CELL, double>                  & a_facesten,
-                               const EBIndex<facecent>                     & a_face,
-                               const EBGraph                               & a_graph,
+    getFaceCenteredFluxStencil(LocalStencil<CELL, double>                      & a_facesten,
+                               const EBIndex<facecent>                         & a_face,
+                               const EBGraph                                   & a_graph,
                                const HostIrregData<facecent, IndMomSDMinOne, 1>& a_facedat,
-                               double                                        a_dx) const;
+                               string                                            a_dombc,
+                               double                                            a_dx) const;
  
     virtual ~Poisson2ndOrder()
     {
@@ -182,6 +186,7 @@ namespace Proto
                            const Base2ndOrderFlux<XFACE   , order>  & a_xfaceflux,
                            const Base2ndOrderFlux<YFACE   , order>  & a_yfaceflux,
                            const Base2ndOrderFlux<ZFACE   , order>  & a_zfaceflux,
+                           string                                  a_dombc[2*DIM],
                            string                                  a_ebbcName,
                            double                                     a_dx);
 
