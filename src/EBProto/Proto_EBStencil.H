@@ -124,6 +124,7 @@ namespace Proto
                            const Point                                     & a_dstGrown);
     bool m_hasDomainBCs;
     bool m_bcsOnly;
+    bool m_irregOnly;
     ///these 
     Stencil<double> m_regStencilInterior;
     //placeholder.  not sure what to do with domain bcs.
