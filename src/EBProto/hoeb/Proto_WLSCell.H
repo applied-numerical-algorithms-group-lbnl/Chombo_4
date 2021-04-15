@@ -2,7 +2,6 @@
 #ifndef _Proto_WLSCell_H_
 #define _Proto_WLSCell_H_
 
-#include "Proto_Normalizor.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_LAPACKMatrix.H"

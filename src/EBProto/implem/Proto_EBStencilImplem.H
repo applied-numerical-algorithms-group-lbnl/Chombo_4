@@ -97,18 +97,18 @@ namespace Proto
     vector< LocalStencil<srcCenter, data_t> > stencil;
 
     m_hasDomainBCs = 
-      archive_t::getStencil(dstVoFs, stencil, m_regStencilInterior, 
-                            m_regStencilBCS, m_BCApplyBoxes, m_regApplyBox, m_bcsOnly,
-                            a_stencilName,  a_domainBCName, a_ebbcName,
-                            a_srcValid,  a_dstValid,
-                            a_srcDomain, a_dstDomain,     
-                            a_srcGhost,  a_dstGhost,    
-                            a_srcGraph,  a_dstGraph,
-                            a_voludata,  a_ebfadata,    
-                            a_xfacdata,  a_yfacdata, a_zfacdata,
-			    a_ebnorxdata, a_ebnorydata,
-                            a_ebnorzdata,
-                            a_dx, a_periodiconly, a_dstGrown);
+      ho_t::getStencil(dstVoFs, stencil, m_regStencilInterior, 
+                       m_regStencilBCS, m_BCApplyBoxes, m_regApplyBox, m_bcsOnly,
+                       a_stencilName,  a_domainBCName, a_ebbcName,
+                       a_srcValid,  a_dstValid,
+                       a_srcDomain, a_dstDomain,     
+                       a_srcGhost,  a_dstGhost,    
+                       a_srcGraph,  a_dstGraph,
+                       a_voludata,  a_ebfadata,    
+                       a_xfacdata,  a_yfacdata, a_zfacdata,
+                       a_ebnorxdata, a_ebnorydata,
+                       a_ebnorzdata,
+                       a_dx, a_periodiconly, a_dstGrown);
 
     if(m_hasDomainBCs) defineApplyITZ();
 

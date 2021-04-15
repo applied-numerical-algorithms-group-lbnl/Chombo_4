@@ -245,6 +245,7 @@ private:
                            const Chombo4::DataIndex                     & a_dit)
   {
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
+    typedef Proto::EBStencilHO<CELL, CELL, order, Real> ho_t;
     using Chombo4::Box;
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
@@ -283,17 +284,17 @@ private:
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
     if(m_stencilName == string("Weighted_Least_Squares"))
     {
-      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
-                            m_stencilName,  m_domainBCName, m_ebbcName,
-                            valbx, valbx,  domainbx, domainbx,
-                            m_ptghost,  m_ptghost,    
-                            graph,  graph,
-                            voludata,  ebfadata, 
-                            xfacdata,  yfacdata, zfacdata,   
-			    ebnorxdata, ebnorydata,
-                            ebnorzdata,
-                            m_dx, false, Point::Zeros());
+      ho_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                       regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                       m_stencilName,  m_domainBCName, m_ebbcName,
+                       valbx, valbx,  domainbx, domainbx,
+                       m_ptghost,  m_ptghost,    
+                       graph,  graph,
+                       voludata,  ebfadata, 
+                       xfacdata,  yfacdata, zfacdata,   
+                       ebnorxdata, ebnorydata,
+                       ebnorzdata,
+                       m_dx, false, Point::Zeros());
  
     }
     else
