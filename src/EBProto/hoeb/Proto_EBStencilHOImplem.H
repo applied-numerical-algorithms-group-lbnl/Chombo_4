@@ -43,7 +43,7 @@ namespace Proto
              Point                                       a_dstGrown)               
   {
     a_bcOnly = false;
-    if(a_stencilName == string("Weighted_Least_Squares"))
+    if(a_stencilName == string("Weighted_Least_Squares_Poisson"))
     {
       bool forceNeumann = false;
       return
@@ -73,7 +73,7 @@ namespace Proto
                       a_periodiconly,
                       forceNeumann);
     }
-    else if (a_stencilName == string("Weighted_Least_Squares_All_Neumann"))
+    else if (a_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
     {
       bool forceNeumann = true;
       return

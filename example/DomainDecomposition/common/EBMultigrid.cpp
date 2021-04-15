@@ -191,7 +191,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
-  if(m_stenname == string("Weighted_Least_Squares") || m_stenname == string("Weighted_Least_Squares_All_Neumann"))
+  if(m_stenname == string("Weighted_Least_Squares_Poisson") || m_stenname == string("Weighted_Least_Squares_Poisson_All_Neumann"))
   {
     m_dictionary->registerStencilWLS(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
 
@@ -280,7 +280,7 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
-  if(m_stenname == string("Weighted_Least_Squares") || m_stenname == string("Weighted_Least_Squares_All_Neumann"))
+  if(m_stenname == string("Weighted_Least_Squares_Poisson") || m_stenname == string("Weighted_Least_Squares_Poisson_All_Neumann"))
   {
     m_dictionary->registerStencilWLS(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
   }

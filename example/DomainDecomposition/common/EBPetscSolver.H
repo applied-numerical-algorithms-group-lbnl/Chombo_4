@@ -282,7 +282,7 @@ private:
     bool                      irregOnly = false;
     Bx                        regApplyBox;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
-    if(m_stencilName == string("Weighted_Least_Squares"))
+    if(m_stencilName == string("Weighted_Least_Squares_Poisson"))
     {
       ho_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
                        regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
