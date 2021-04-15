@@ -73,6 +73,10 @@ namespace Proto
               bool a_needDiagonalWeights = false,
               Point a_growDst = Point::Zeros());
 
+    /// internal constructor
+   /** 
+       This constructor is specifically for Weighted Least Squares stencils 
+   */
     EBStencil(string              a_stencilName,
               string              a_domainBCName[2*DIM],
               string              a_ebbcName,

@@ -155,7 +155,7 @@ namespace Proto
         if(pd > 0)
         {
           IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
-          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];///(a_bndryArea*areaScaleFactor*POW(a_dx, momit().sum()));
+          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift]/(a_bndryArea*areaScaleFactor);
         }
         else
         {
@@ -185,6 +185,7 @@ namespace Proto
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
 	            IndMomSDMinOne           & a_faceMom,
+		    const double             & a_areaFrac,
                     double                     a_dx) const
   {
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -238,7 +239,7 @@ namespace Proto
         }
         // for readability, multiply by pd even though pd = 1
         //also pfaceshift is really p-e^d because we have set p
-        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift];///areaScaleFactor;
+        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift]/(a_areaFrac*areaScaleFactor);
       }
       else
       {
@@ -715,8 +716,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
-        a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor);
+        a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor);
         //a_Mvol(irow, icol) = volmom[irow][momit()]/(volmom[irow][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
@@ -770,8 +771,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
-        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor);
+        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor);
         //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(fac2volmom[iface][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
@@ -817,8 +818,8 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
-        a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor);
+        a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
+        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor);
         //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfmom[iebf][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
@@ -849,6 +850,7 @@ namespace Proto
                          string                       a_dombcName[2*DIM],
                          const int                  & a_dir,
 			 IndMomSDMinOne             & a_faceMom,
+			 const double               & a_areaFrac,
                          double                       a_dx) const
   { 
     Chombo4::LAPACKMatrix::s_verbose = true; 
@@ -880,7 +882,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getFaceFluxMatrix(Qshift, a_face, faceLoc, a_faceMom, a_dx);
+    getFaceFluxMatrix(Qshift, a_face, faceLoc, a_faceMom, a_areaFrac, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -970,6 +972,7 @@ namespace Proto
 				       a_dombcName,
 				       0,
 				       faceMom, 
+				       areaFrac,
                                        a_dx);       
         cout<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
         cout<<" inhomogTerm Xface "<<inhomogTerm<<endl;
@@ -1016,6 +1019,7 @@ namespace Proto
                                        a_dombcName,
                                        1,
 				       faceMom, 
+				       areaFrac,
                                        a_dx);
 	cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
         cout<<" inhomogTerm Yface "<<inhomogTerm<<endl;
@@ -1061,10 +1065,11 @@ namespace Proto
                                            a_dombcName,
                                            2,
 				           faceMom,
+					   areaFrac,
                                            a_dx);       
 
 
-        fluxStencil *= double(isign)*areaFrac;
+        fluxStencil *= double(isign);
         a_vofStencil += fluxStencil;
       }
     }
@@ -1140,7 +1145,7 @@ namespace Proto
       cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
       cout<<" ebfluxStencil "<<endl;
       ebflux.print();
-      //ebflux *= bndryArea;
+      //ebflux *= bndryArea/a_dx;
       a_vofStencil += ebflux;
     }
 #if 0

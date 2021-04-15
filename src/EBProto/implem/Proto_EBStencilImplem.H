@@ -64,7 +64,8 @@ namespace Proto
       }
     }
   }
-  //
+
+  //Constructor specifically for Weighted Least Squares stencils
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
   EBStencil<order, data_t, srcCenter, dstCenter>::
   EBStencil(string              a_stencilName,

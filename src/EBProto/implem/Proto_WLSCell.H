@@ -272,6 +272,7 @@ namespace Proto
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
 			   IndMomSDMinOne             & a_faceMom,
+			   const double               & a_areaFrac,
                            double                       a_dx) const;
 
     void
@@ -279,6 +280,7 @@ namespace Proto
                       const EBIndex<cent>      & a_face,
 		      RealVect                 & a_faceLoc,
 	              IndMomSDMinOne           & a_faceMom,
+	              const double             & a_areaFrac,
                       double                     a_dx) const;
 
     void
