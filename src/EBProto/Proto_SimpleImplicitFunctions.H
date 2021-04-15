@@ -513,6 +513,7 @@ namespace Proto
 
   public:
     /// Default constructor
+    /// Assumes normal facing outward from the interior
     PlaneIF(RealVect a_startPt, RealVect a_normal)
     {
       m_startPt = a_startPt;
@@ -538,7 +539,7 @@ namespace Proto
       {
         for(int idir = 0; idir < DIM; idir++)
         {
-          retval += m_normal[idir]*(m_startPt[idir] - a_point[idir]);
+          retval += -m_normal[idir]*(m_startPt[idir] - a_point[idir]);
         }
       }
       else if(a_partialDerivative.sum() == 1)
