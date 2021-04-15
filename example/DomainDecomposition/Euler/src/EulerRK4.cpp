@@ -156,7 +156,6 @@ maxWave(EulerState& a_State)
   EulerDX DX;
   DX.init(a_State);
   Reduction<Real,Op::Abs>& rxn = a_State.m_Rxn;
-  rxn.reset(); // initialize device pointer
   EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
   Real velmax = rxn.fetch();
   return velmax;
