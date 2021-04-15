@@ -54,7 +54,7 @@ for t in targets:
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
 
-    f.write('\nCPPFLAGS = -std=c++11\n')
+    f.write('\nCPPFLAGS = -std=c++14\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
@@ -80,11 +80,11 @@ for t in targets:
 
     if(args.opt) == 'DEBUG':
         if(args.cuda == 'TRUE'):
-            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler -g\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             if(args.hip) == 'TRUE':
-              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler -g\n")
               f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
             else:
               f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
@@ -108,7 +108,7 @@ for t in targets:
     if(args.cuda == 'TRUE'):
         f.write('\nCXX = nvcc \n DEP=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda --expt-relaxed-constexpr -arch=compute_70\n')
    
     if(args.hip == 'TRUE'):
         f.write('\nCXX = hipcc \n DEP=hipcc\n')
