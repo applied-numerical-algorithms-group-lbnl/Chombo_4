@@ -11,8 +11,8 @@ namespace Proto
   {
     m_indicies = a_indicies;
     std::sort(m_indicies->begin(), m_indicies->end());
-    protoMalloc(m_rawPtr, size()*sizeof(data_t));
-    m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
+    protoMalloc(MEMTYPE_DEFAULT,m_rawPtr, size()*sizeof(data_t));
+    m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(MEMTYPE_DEFAULT,p);});
   }
 
   ////
@@ -25,7 +25,9 @@ namespace Proto
     if(nsize == 0) return;
     int blockSize = 512;
     int nBlocks = (nsize + blockSize - 1) / blockSize;
-    protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Assign>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_val, nsize);
+    //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Assign>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_val, nsize);
+    protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,
+                               opKernel<data_t,BoxDataOp::Assign>>( nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_val, nsize);
   }
 
 }

@@ -145,7 +145,7 @@ public:
       Real*       hostPtr = hostfab.dataPtr(0);
       const Real* deviPtr = devifab.dataPtr(0);
 
-      protoMemcpyAsync(hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
+      protoMemcpyAsync( MEMTYPE_DEFAULT,hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 
@@ -163,7 +163,7 @@ public:
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);
 
-      protoMemcpyAsync( deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
+      protoMemcpyAsync(  MEMTYPE_DEFAULT,deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 
