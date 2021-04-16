@@ -243,16 +243,16 @@ namespace Proto
         uint64_t stenLenSize = numptsDst*(sizeof(uint64_t));
         uint64_t stStartSize = numptsDst*(sizeof(uint64_t));
         ///allocate memory on the device
-        protoMalloc(d_ebstencil, totStenSize);
-        protoMalloc(d_dstaccess, destAccSize);
-        protoMalloc(d_stensizes, stenLenSize);
-        protoMalloc(d_stenstart, stStartSize);
+        protoMalloc(DEVICE,d_ebstencil, totStenSize);
+        protoMalloc(DEVICE,d_dstaccess, destAccSize);
+        protoMalloc(DEVICE,d_stensizes, stenLenSize);
+        protoMalloc(DEVICE,d_stenstart, stStartSize);
 
         ///copy from the host
-        protoMemcpy(d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
 
         //figure out blocks and strides
         m_stride = 32;
@@ -285,10 +285,10 @@ namespace Proto
   {
     if(d_ebstencil != nullptr)
       {
-        protoFree(d_ebstencil);
-        protoFree(d_dstaccess);
-        protoFree(d_stensizes);
-        protoFree(d_stenstart);
+        protoFree(MEMTYPE_DEFAULT,d_ebstencil);
+        protoFree(MEMTYPE_DEFAULT,d_dstaccess);
+        protoFree(MEMTYPE_DEFAULT,d_stensizes);
+        protoFree(MEMTYPE_DEFAULT,d_stenstart);
       }
   }
 /////
