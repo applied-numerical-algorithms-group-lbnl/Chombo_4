@@ -1030,6 +1030,7 @@ namespace Proto
                           double                                      a_dx,
                           Point                                       a_dstGrown)
   {
+/*
     int facedir;
     if(fcent == XFACE)
     {
@@ -1047,6 +1048,7 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
+*/
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
 
@@ -1329,6 +1331,7 @@ namespace Proto
                           const EBGraph                             & a_graph,
                           double                                      a_dx)
   {
+  /*
     int facedir;
     if(fcent == XFACE)
     {
@@ -1346,7 +1349,7 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
-
+*/
     //reg stencil did not work here.
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;

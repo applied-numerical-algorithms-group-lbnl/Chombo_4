@@ -287,7 +287,7 @@ namespace Proto
   inline void
   protoEBForAllIrreg(const Func& a_F, 
                     IrregData<cent, data_t, ncomp>& a_dst,
-                    const Srcs&...  a_srcs)
+                    Srcs&&...  a_srcs)
   {
     //indicies into irreg vector that correspond to input box
     unsigned int vecsize = a_dst.vecsize();
@@ -368,7 +368,7 @@ namespace Proto
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg(const char*            a_timername,
-                            const Func & a_F,  Box a_box, Srcs&... a_srcs)
+                            const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
 
   {
     PR_TIME(a_timername);
@@ -379,7 +379,7 @@ namespace Proto
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg_i(const char*            a_timername,
-                              const Func & a_F,  Box a_box, Srcs&... a_srcs)
+                              const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
 
   {
     PR_TIME(a_timername);
@@ -414,7 +414,7 @@ namespace Proto
 ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall_i(const Box& a_inputBox,
-                         const Func & a_F,  Box a_box, Srcs&... a_srcs)
+                         const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
   {
     unsigned long long int numflops = 0;
 
@@ -424,7 +424,7 @@ namespace Proto
 ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall(const Box& a_inputBox,
-                       const Func & a_F,  Box a_box, Srcs&... a_srcs)
+                       const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
   {
     unsigned long long int numflops = 0;
 

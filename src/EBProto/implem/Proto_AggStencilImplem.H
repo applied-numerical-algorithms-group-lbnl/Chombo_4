@@ -298,9 +298,27 @@ struct pairPtr{
 };
 
   template <typename data_t>
-  __global__
+  struct aggStencilIndexer
+  {
+ 
+  static
+  inline void 
+  cpu(int a_begin, int a_end,
+		    pairPtr<const data_t>   dataPtrsSrc,
+		    pairPtr<data_t>         dataPtrsDst,
+                    const pair_t<data_t>*   a_ebstencil,
+                    const uint64_t*         a_stensizes,
+                    const uint64_t*         a_stenstart,
+                    const EBDataLoc*        a_dstaccess,
+                    bool                    a_incrementOnly,
+                    data_t                  a_scale)
+  {
+    assert(false);
+  }
+    
+  __device__ static
   void 
-  aggStencilIndexer(int a_begin, int a_end,
+  gpu(int a_begin, int a_end,
 		    pairPtr<const data_t>   dataPtrsSrc,
 		    pairPtr<data_t>         dataPtrsDst,
                     const pair_t<data_t>*   a_ebstencil,
@@ -338,6 +356,7 @@ struct pairPtr{
       else lphi += a_scale*acc;
     }
   }
+ };
 /////
 
   inline void v100tuning(int nbElems, int & nbBlocks, int &blockSize)
@@ -385,8 +404,9 @@ struct pairPtr{
     int stride, blocks;
     v100tuning(end-begin, blocks, stride);
 
-    //protoLaunchKernel(aggStencilIndexer, m_stride, m_blocks, 
-    protoLaunchKernel(aggStencilIndexer, blocks, stride,  
+    //protoLaunchKernel(aggStencilIndexer, blocks, stride,  
+    //  begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
+    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  
       begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
   }
 #endif
