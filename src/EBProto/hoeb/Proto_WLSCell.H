@@ -2,7 +2,6 @@
 #ifndef _Proto_WLSCell_H_
 #define _Proto_WLSCell_H_
 
-#include "Chombo_ParmParse.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_LAPACKMatrix.H"
 #include "EBProto.H"
@@ -253,7 +252,7 @@ namespace Proto
     //cells of radius one.
     Vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
-		     unsigned int          a_radius,
+		     const int             a_radius,
 		     Neighbors<order>    & a_neigh,
 		     const EBGraph       & a_graph) const;
 
@@ -369,7 +368,7 @@ namespace Proto
     {
     }
 
-    BaseWLSFlux(unsigned int & a_radius,
+    BaseWLSFlux(int          & a_radius,
 		int          & a_powerE,
 		bool           a_verbose=false)
     {
@@ -379,7 +378,7 @@ namespace Proto
     }
 
     //Radius needed for neighbors list around a face (Manhattan style)
-    unsigned int m_radius = 1;
+    int m_radius = 1;
     //Exponent for the distance between the VoFs and the face in the weights matrix
     int m_powerE = -3;
     //Boolean to enable print out statements for debugging
@@ -434,7 +433,7 @@ namespace Proto
     }
   };
 
-  //Class to compute Dirichlet BCs at faces and EB Faces.
+  //Class to compute Dirichlet BCs at faces and EB Faces for the Moment Matrix.
   template<int order>
   class DirichletBC
   {
@@ -458,7 +457,7 @@ namespace Proto
 
   };
 
-  //Class to compute Neumann BCs at faces and EB Faces.
+  //Class to compute Neumann BCs at faces and EB Faces for the Moment Matrix.
   template<int order> 
   class NeumannBC
   {
@@ -503,11 +502,13 @@ namespace Proto
     {
     }
 
+    //getIntegralPhi
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
                                        const Real              a_dx);
 
+    //getIntegralPhiAlongEB
     inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
                                      const RealVect   & a_ebfLoc,
                                      const Real         a_dx); 
@@ -531,11 +532,13 @@ namespace Proto
     {
     }
 
+    //getIntegralNormalDerivative
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
 		                       const Real              a_dx); 
 
+    //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
                                      const Real                a_dx);

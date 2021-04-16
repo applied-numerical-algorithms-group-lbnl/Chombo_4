@@ -4,333 +4,8 @@
 
 namespace Proto
 {
-  
-  template<CENTERING cent, int order>
-  Real
-  BaseWLSFlux<cent, order>::
-  computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
-		     Neighbors<order>               & a_neigh,
-                     const int                        a_nvolneigh,
-		     string                           a_ebbcName,
-                     string                           a_dombcName[2*DIM],
-                     double                           a_dx) const
-  {
 
-    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
-    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
-    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
-    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
-    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
-
-    Vector<Real> domBCValues, ebBCValues;
-    int nrows = a_facmom.size();
-    domBCValues.resize(nrows);
-    for(int iface = 0; iface < nrows; iface++)
-    {
-      RealVect a_faceLoc = a_facneighLoc[iface];
-      int a_faceDir = a_facneighDir[iface];
-      Side::LoHiSide a_faceSid = a_facneighSid[iface];
-      int index = ebp_index(a_faceDir, a_faceSid);
-      if(a_dombcName[index] == string("Neumann"))
-      {
-        domBCValues[iface] = NeumannExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-					       a_faceLoc,
-					       a_faceDir,
-					       a_dx);
-      }
-      else if(a_dombcName[index] == string("Dirichlet"))
-      {
-        domBCValues[iface] = DirichletExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-					       a_faceLoc,
-					       a_faceDir,
-					       a_dx);
-      }
-      else
-      {
-        PROTO_ASSERT(false, "could not find domBC string");
-      }
-
-      //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
-      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
-      //if(!divideable)
-      //{
-      //  domBCValues[iface] = 0.;
-      //}
-    }
-
-    nrows = a_ebfmom.size();
-    ebBCValues.resize(nrows);
-    for(int ivof = 0; ivof < nrows; ivof++)
-    {
-      RealVect a_ebfLoc = a_ebfneighLoc[ivof];
-      if(a_ebbcName == string("Neumann"))
-      {
-        ebBCValues[ivof] = NeumannExactSoln<order>::
-                               getEBIntegral(a_ebfneighNorm[ivof],
-				             a_ebfLoc,
-				             a_dx);
-      }
-      else if(a_ebbcName == string("Dirichlet"))
-      {
-        ebBCValues[ivof] = DirichletExactSoln<order>::
-                               getEBIntegral(a_ebfmom[ivof],
-				             a_ebfLoc,
-				             a_dx);
-      }
-      else
-      {
-        PROTO_ASSERT(false, "could not find domBC string");
-      }
-
-      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
-      //if(!divideable)
-      //{
-      //  ebBCValues[iface] = 0.;
-      //}
-    }
-  
-    int nfac = a_facmom.size();
-    int nebf = a_ebfmom.size();
-  
-    Real inhomogTerm = 0.0;
-    for(int iface = 0; iface < nfac; iface++)
-    {
-      inhomogTerm += domBCValues[iface]*a_stencil(0, a_nvolneigh + iface);
-    }
-    for(int iface = 0; iface < nebf; iface++)
-    {
-      inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
-    }
-
-    return inhomogTerm;
-  }
-
-  template<CENTERING cent, int order>
-  void
-  BaseWLSFlux<cent, order>::
-  getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
-                  const EBIndex<cent>      & a_face,
-		  RealVect                 & a_faceLoc,
-		  vector<IndMomDIM>        & a_ebnorm,
-		  double                   & a_bndryArea,
-                  double                     a_dx) const
-  {
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
-    MomentIterator<DIM, order> momit;
-    a_fluxMatrix.define(1, momit.size());
-    a_fluxMatrix.setVal(0.);
-
-    RealVect startLoc;
-    for (int idir = 0; idir < DIM; idir++)
-    {
-      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
-      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
-    }
-
-    for(int idir = 0; idir < DIM; idir++)
-    {
-
-      RealVect diff = startLoc;
-      diff -= a_faceLoc;
-      IndexTM<Real, DIM> diffrv;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        diffrv[idir] = diff[idir];
-      }
-      a_ebnorm[idir].shift(diffrv);
-
-      // the contribution to the flux matrix from the normal in this particular direction
-      Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
-      fluxIncr.setVal(0.);
-      for(momit.reset(); momit.ok(); ++momit)
-      {
-        IndexTM<int, DIM> p = momit();
-        Real pd = p[idir];
-        //get column number associated with this particular moment
-        int jmom = IndexedMoments<DIM, order>::indexOf(p);
-        if(pd > 0)
-        {
-          IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
-          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift]/(a_bndryArea*areaScaleFactor);
-        }
-        else
-        {
-          fluxIncr(0, jmom) = 0;
-        }
-      }
-      a_fluxMatrix += fluxIncr;
-    }
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      for(momit.reset(); momit.ok(); ++momit)
-      {
-        IndexTM<int, DIM> p = momit();
-        Real pd = p[idir];
-        //get column number associated with this particular moment
-        int jmom = IndexedMoments<DIM, order>::indexOf(p);
-        if(Chombo4::LAPACKMatrix::s_verbose)
-        {
-          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
-	}
-      }
-    }
-   
-  }
-
-  template<CENTERING cent, int order>
-  void
-  BaseWLSFlux<cent, order>::
-  getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
-                    const EBIndex<cent>      & a_face,
-		    RealVect                 & a_faceLoc,
-	            IndMomSDMinOne           & a_faceMom,
-		    const double             & a_areaFrac,
-                    double                     a_dx) const
-  {
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
-
-    RealVect startLoc;
-    for (int idir = 0; idir < DIM; idir++)
-    {
-      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
-      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
-    }
-    // shift center of moments to a_faceLoc.
-    // the moments are centered at the face center initially
-    RealVect diff = startLoc;
-    diff -= a_faceLoc;
-    IndexTM<Real, DIM-1> diffrv;
-    int index = 0;
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      if(idir != a_face.direction())
-      {
-        diffrv[index] = diff[idir];
-        index++;
-      }
-    }
-    a_faceMom.shift(diffrv);
-
-    MomentIterator<DIM, order> momit;
-    a_fluxMatrix.define(1, momit.size());
-    const int& faceDir = a_face.direction();
-    for(momit.reset(); momit.ok(); ++momit)
-    {
-      IndexTM<int, DIM> p = momit();
-      int pd = p[faceDir];
-    
-      int jmom = IndexedMoments<DIM, order>::indexOf(p);
-
-      //all other integrals are zero since along face
-      //(y-ybar) =0  so (y-ybar)^py = 0 unless py == 0.
-      if(pd == 1)
-      {
-        // pfaceshift are all components of p that are not in the faceDir direction
-        IndexTM<int, DIM-1> pfaceshift;
-        int index = 0;
-        for(int idir = 0; idir < DIM; idir++)
-        {
-           if(idir  != faceDir)
-           {
-             pfaceshift[index] =  p[idir];
-             index++;
-           }
-        }
-        // for readability, multiply by pd even though pd = 1
-        //also pfaceshift is really p-e^d because we have set p
-        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift]/(a_areaFrac*areaScaleFactor);
-      }
-      else
-      {
-        a_fluxMatrix(0, jmom) = 0;
-      }
-      if(Chombo4::LAPACKMatrix::s_verbose)
-      {
-        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
-      }
-    }
-  }
-
-  template<CENTERING cent, int order>
-  void
-  BaseWLSFlux<cent, order>::
-  getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-		       Neighbors<order>       & a_neigh) const
-  { 
-    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
-    Vector<int> weightDisFac = a_neigh.m_weightDisFac;
-    Vector<int> weightDisEB = a_neigh.m_weightDisEB;
-
-    int nrows = weightDisVol.size()+weightDisFac.size()+weightDisEB.size();
-    a_weights.define(nrows, nrows);
-    a_weights.setVal(1.0);
-    a_weights.setToIdentity(); //this sets all the off diagonals to zero
-    int powerE = m_powerE;
-    for(int ineigh = 0; ineigh < nrows; ineigh++)
-    {
-      Real blerg;
-      if (ineigh<weightDisVol.size())
-      {
-        int dist = weightDisVol[ineigh];
-        blerg = POW(dist,powerE);
-      }
-      else if (ineigh>=weightDisVol.size() && ineigh<weightDisVol.size()+weightDisFac.size())
-      {
-        int dist = weightDisFac[ineigh-weightDisVol.size()];
-        blerg = POW(dist,powerE);
-      }
-      if (ineigh>=weightDisVol.size()+weightDisFac.size())
-      {
-        int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
-        blerg = POW(dist,powerE);
-      }
-      a_weights(ineigh, ineigh) = blerg;
-      if(Chombo4::LAPACKMatrix::s_verbose)
-      {
-        ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
-      }
-    }
-  }
-
-  template<CENTERING cent, int order>
-  void
-  BaseWLSFlux<cent, order>::
-  getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
-                    Chombo4::LAPACKMatrix  & a_Qshift,
-                    Chombo4::LAPACKMatrix  & a_Mvol,
-                    Chombo4::LAPACKMatrix  & a_weights,
-                    double                   a_dx) const
-  {
-    Chombo4::LAPACKMatrix MT, WT, MTWT;
-    MT = a_Mvol;
-    MT.transpose();
-    WT = a_weights;
-    WT.transpose();
-    multiply(MTWT, MT, WT);
-
-    Chombo4::LAPACKMatrix QT;
-    QT = a_Qshift;
-    QT.transpose();
-
-    Chombo4::LAPACKMatrix X, sT;
-    int info = solveLSTSVD(X, MTWT, QT,
-                           10,
-                           1.0e-13);
-
-    if(info != 0)
-    {
-      Chombo4::MayDay::Warning("non zero info returned");
-    }
-
-    multiply(sT, WT, X);
-    a_phiCoef = sT;
-    a_phiCoef.transpose();
-  }
-
+  //Get neighbors VoFs through the faces of a specific cell.
   template<CENTERING cent, int order>
   vector<EBIndex<CELL> >
   BaseWLSFlux<cent, order>::
@@ -349,11 +24,15 @@ namespace Proto
     return retval;
   } 
 
+  //Get neighbors VoFs of a given face within a specific radius.
+  //Radius starts at one for the cells sharing the face, and 
+  //increases by one for the neighbor cells sharing a face with the original
+  //cells of radius one.
   template<CENTERING cent, int order>
   Vector<EBIndex<CELL> >
   BaseWLSFlux<cent, order>::
   getVoFsNeighbors(const EBIndex<cent> & a_face,
-                   unsigned int          a_radius,
+                   const int             a_radius,
 		   Neighbors<order>    & a_neigh,
                    const EBGraph       & a_graph) const
   {
@@ -420,6 +99,8 @@ namespace Proto
     return retval;
   }
 
+  //Gets all the moments and geometric info for the neighbors cells, boundary faces
+  //and EB faces. Stores all this info in the Neighbors object.
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
@@ -663,6 +344,7 @@ namespace Proto
 
   }
 
+  //Compute the Moments Matrix
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
@@ -836,10 +518,340 @@ namespace Proto
         }
       }
     }
+  }
 
- }
+  //Compute rhs matrix for a face
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                    const EBIndex<cent>      & a_face,
+		    RealVect                 & a_faceLoc,
+	            IndMomSDMinOne           & a_faceMom,
+		    const double             & a_areaFrac,
+                    double                     a_dx) const
+  {
+    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
 
-/*******************************/
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
+    }
+    // shift center of moments to a_faceLoc.
+    // the moments are centered at the face center initially
+    RealVect diff = startLoc;
+    diff -= a_faceLoc;
+    IndexTM<Real, DIM-1> diffrv;
+    int index = 0;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(idir != a_face.direction())
+      {
+        diffrv[index] = diff[idir];
+        index++;
+      }
+    }
+    a_faceMom.shift(diffrv);
+
+    MomentIterator<DIM, order> momit;
+    a_fluxMatrix.define(1, momit.size());
+    const int& faceDir = a_face.direction();
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int, DIM> p = momit();
+      int pd = p[faceDir];
+    
+      int jmom = IndexedMoments<DIM, order>::indexOf(p);
+
+      //all other integrals are zero since along face
+      //(y-ybar) =0  so (y-ybar)^py = 0 unless py == 0.
+      if(pd == 1)
+      {
+        // pfaceshift are all components of p that are not in the faceDir direction
+        IndexTM<int, DIM-1> pfaceshift;
+        int index = 0;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+           if(idir  != faceDir)
+           {
+             pfaceshift[index] =  p[idir];
+             index++;
+           }
+        }
+        // for readability, multiply by pd even though pd = 1
+        //also pfaceshift is really p-e^d because we have set p
+        a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift]/(a_areaFrac*areaScaleFactor);
+      }
+      else
+      {
+        a_fluxMatrix(0, jmom) = 0;
+      }
+      if(Chombo4::LAPACKMatrix::s_verbose)
+      {
+        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+      }
+    }
+  }
+
+  //Compute rhs matrix for a EB face
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                  const EBIndex<cent>      & a_face,
+		  RealVect                 & a_faceLoc,
+		  vector<IndMomDIM>        & a_ebnorm,
+		  double                   & a_bndryArea,
+                  double                     a_dx) const
+  {
+    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    MomentIterator<DIM, order> momit;
+    a_fluxMatrix.define(1, momit.size());
+    a_fluxMatrix.setVal(0.);
+
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
+    }
+
+    for(int idir = 0; idir < DIM; idir++)
+    {
+
+      RealVect diff = startLoc;
+      diff -= a_faceLoc;
+      IndexTM<Real, DIM> diffrv;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        diffrv[idir] = diff[idir];
+      }
+      a_ebnorm[idir].shift(diffrv);
+
+      // the contribution to the flux matrix from the normal in this particular direction
+      Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
+      fluxIncr.setVal(0.);
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        Real pd = p[idir];
+        //get column number associated with this particular moment
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        if(pd > 0)
+        {
+          IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
+          fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift]/(a_bndryArea*areaScaleFactor);
+        }
+        else
+        {
+          fluxIncr(0, jmom) = 0;
+        }
+      }
+      a_fluxMatrix += fluxIncr;
+    }
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        Real pd = p[idir];
+        //get column number associated with this particular moment
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        if(Chombo4::LAPACKMatrix::s_verbose)
+        {
+          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+	}
+      }
+    }
+   
+  }
+
+  //Compute weight matrix
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
+		       Neighbors<order>       & a_neigh) const
+  { 
+    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
+    Vector<int> weightDisFac = a_neigh.m_weightDisFac;
+    Vector<int> weightDisEB = a_neigh.m_weightDisEB;
+
+    int nrows = weightDisVol.size()+weightDisFac.size()+weightDisEB.size();
+    a_weights.define(nrows, nrows);
+    a_weights.setVal(1.0);
+    a_weights.setToIdentity(); //this sets all the off diagonals to zero
+    int powerE = m_powerE;
+    for(int ineigh = 0; ineigh < nrows; ineigh++)
+    {
+      Real blerg;
+      if (ineigh<weightDisVol.size())
+      {
+        int dist = weightDisVol[ineigh];
+        blerg = POW(dist,powerE);
+      }
+      else if (ineigh>=weightDisVol.size() && ineigh<weightDisVol.size()+weightDisFac.size())
+      {
+        int dist = weightDisFac[ineigh-weightDisVol.size()];
+        blerg = POW(dist,powerE);
+      }
+      if (ineigh>=weightDisVol.size()+weightDisFac.size())
+      {
+        int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
+        blerg = POW(dist,powerE);
+      }
+      a_weights(ineigh, ineigh) = blerg;
+      if(Chombo4::LAPACKMatrix::s_verbose)
+      {
+        ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+      }
+    }
+  }
+
+  //Compute stencil coefficients matrix
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
+                    Chombo4::LAPACKMatrix  & a_Qshift,
+                    Chombo4::LAPACKMatrix  & a_Mvol,
+                    Chombo4::LAPACKMatrix  & a_weights,
+                    double                   a_dx) const
+  {
+    Chombo4::LAPACKMatrix MT, WT, MTWT;
+    MT = a_Mvol;
+    MT.transpose();
+    WT = a_weights;
+    WT.transpose();
+    multiply(MTWT, MT, WT);
+
+    Chombo4::LAPACKMatrix QT;
+    QT = a_Qshift;
+    QT.transpose();
+
+    Chombo4::LAPACKMatrix X, sT;
+    int info = solveLSTSVD(X, MTWT, QT,
+                           10,
+                           1.0e-13);
+
+    if(info != 0)
+    {
+      Chombo4::MayDay::Warning("non zero info returned");
+    }
+
+    multiply(sT, WT, X);
+    a_phiCoef = sT;
+    a_phiCoef.transpose();
+  }
+
+  //Compute inhomogeneous term
+  template<CENTERING cent, int order>
+  Real
+  BaseWLSFlux<cent, order>::
+  computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
+		     Neighbors<order>               & a_neigh,
+                     const int                        a_nvolneigh,
+		     string                           a_ebbcName,
+                     string                           a_dombcName[2*DIM],
+                     double                           a_dx) const
+  {
+
+    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
+    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
+    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
+    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
+    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
+    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
+    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
+
+    Vector<Real> domBCValues, ebBCValues;
+    int nrows = a_facmom.size();
+    domBCValues.resize(nrows);
+    for(int iface = 0; iface < nrows; iface++)
+    {
+      RealVect a_faceLoc = a_facneighLoc[iface];
+      int a_faceDir = a_facneighDir[iface];
+      Side::LoHiSide a_faceSid = a_facneighSid[iface];
+      int index = ebp_index(a_faceDir, a_faceSid);
+      if(a_dombcName[index] == string("Neumann"))
+      {
+        domBCValues[iface] = NeumannExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+					       a_faceLoc,
+					       a_faceDir,
+					       a_dx);
+      }
+      else if(a_dombcName[index] == string("Dirichlet"))
+      {
+        domBCValues[iface] = DirichletExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+					       a_faceLoc,
+					       a_faceDir,
+					       a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
+      //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
+      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
+      //if(!divideable)
+      //{
+      //  domBCValues[iface] = 0.;
+      //}
+    }
+
+    nrows = a_ebfmom.size();
+    ebBCValues.resize(nrows);
+    for(int ivof = 0; ivof < nrows; ivof++)
+    {
+      RealVect a_ebfLoc = a_ebfneighLoc[ivof];
+      if(a_ebbcName == string("Neumann"))
+      {
+        ebBCValues[ivof] = NeumannExactSoln<order>::
+                               getEBIntegral(a_ebfneighNorm[ivof],
+				             a_ebfLoc,
+				             a_dx);
+      }
+      else if(a_ebbcName == string("Dirichlet"))
+      {
+        ebBCValues[ivof] = DirichletExactSoln<order>::
+                               getEBIntegral(a_ebfmom[ivof],
+				             a_ebfLoc,
+				             a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
+      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
+      //if(!divideable)
+      //{
+      //  ebBCValues[iface] = 0.;
+      //}
+    }
+  
+    int nfac = a_facmom.size();
+    int nebf = a_ebfmom.size();
+  
+    Real inhomogTerm = 0.0;
+    for(int iface = 0; iface < nfac; iface++)
+    {
+      inhomogTerm += domBCValues[iface]*a_stencil(0, a_nvolneigh + iface);
+    }
+    for(int iface = 0; iface < nebf; iface++)
+    {
+      inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
+    }
+
+    return inhomogTerm;
+  }
+
+  //Compute face centered flux stencil
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
@@ -873,7 +885,7 @@ namespace Proto
       if (a_dir == idir) faceLoc[idir] = a_dx * (a_face.m_pt[idir]);
     }
 
-    unsigned int radius = m_radius;
+    int radius = m_radius;
     Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
 
     getMomentsInfoFromNeighbors(vols,
@@ -919,6 +931,86 @@ namespace Proto
                                        a_dx);
   }
 
+  //Compute EB face stencil
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getEBFluxStencil(LocalStencil<CELL, double>    & a_stencil,
+                   Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                   const EBIndex<cent>           & a_face,
+                   const EBGraph                 & a_graph,
+                   const VoluData                & a_voludata,
+                   const EBFaData                & a_ebfadata,
+                   const XFacData                & a_xfacdata,
+                   const YFacData                & a_yfacdata,
+                   const ZFacData                & a_zfacdata,
+		   const EBNormalData            & a_ebnormxdata,
+                   const EBNormalData            & a_ebnormydata,
+                   const EBNormalData            & a_ebnormzdata,
+		   vector<IndMomDIM>             & a_ebnorm,
+		   string                          a_ebbcName,
+                   string                          a_dombcName[2*DIM],
+		   IndMomDIM                     & a_ebmom,
+		   RealVect                      & a_normal,
+		   double                        & a_bndryArea,
+                   const double                  & a_dx) const
+  {
+    Chombo4::LAPACKMatrix::s_verbose = m_verbose;
+
+    Neighbors<order> neighs;
+
+    RealVect faceLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+    }
+    int radius = m_radius;
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
+
+    getMomentsInfoFromNeighbors(vols,
+                                a_graph, a_voludata, a_ebfadata,
+                                a_xfacdata, a_yfacdata, a_zfacdata,
+                                a_ebnormxdata, a_ebnormydata,
+                                a_ebnormzdata,
+                                neighs, a_dx);
+
+    //first fill M with moments  shifted to the center of the face
+    Chombo4::LAPACKMatrix  Mvol;
+    getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
+		           neighs, 
+			   a_ebbcName, a_dombcName);
+
+    // RHS of stencil equation
+    Chombo4::LAPACKMatrix Qshift;
+    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebnorm, a_bndryArea, a_dx);
+
+    // Weights matrix
+    Chombo4::LAPACKMatrix weights;
+    getWeightsMatrixFace(weights, neighs);
+
+    // Compute phiCoef
+    Chombo4::LAPACKMatrix phiCoef;
+    getStencilWeights(phiCoef, Qshift, Mvol, weights, a_dx);
+
+    //Filling stencil
+    a_stencil.clear();
+    for(int ivof = 0; ivof < vols.size(); ivof++)
+    {
+      Real thisCo = phiCoef(0, ivof);
+      a_stencil.add(vols[ivof], thisCo);
+      if (m_verbose){
+        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+      }
+    }
+
+    int nvolneigh = vols.size();
+    a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
+                                       nvolneigh,
+                                       a_ebbcName, a_dombcName,
+                                       a_dx);
+  }
+
+  //Gets WLS flux divergence stencil
   template < int order>
   void
   WLSStencil<order>::
@@ -1083,8 +1175,6 @@ namespace Proto
     }
 #endif      
 
-//    if(ideb == 1)
-//    {
       cout << "before ebflux, ";
       cout << "stencil for " << a_vof.m_pt << ":" << endl;
       a_vofStencil.print();
@@ -1156,50 +1246,9 @@ namespace Proto
       //ebflux *= bndryArea/a_dx;
       a_vofStencil += ebflux;
     }
-#if 0
-    RealVect centroid, normal;
-    double bndryArea, alpha;
-    EBIndex<BOUNDARY> cutface = a_vof.getCutFace();
-    Normalizor<order>::normalizedBndryMoments(alpha, centroid, a_ebfadata,  cutface, a_graph, a_dx);
-    Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,   
-                                                a_voludata,
-                                                a_ebfadata,
-                                                a_xfacdata,
-                                                a_yfacdata,
-                                                a_zfacdata, 
-                                                a_vof, a_graph, a_dx);
-    //need the boundary area that preserves free stream instead of the moments version
-    alpha = bndryArea;
-    ebflux *= alpha/a_dx;
-
-//    if(ideb == 1)
-//    {
-//      cout << "ebflux after multiply " << endl;
-//      ebflux.print();
-//    }
-
-    //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
-    double diagweight;
-    bool foundVoF = a_vofStencil.getValueAtVoF(diagweight, a_vof);
-    PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-    a_vofStencil.setBetaWeight(diagweight);
-
-//    if(ideb == 1)
-//    {
-//      cout << "betaweight = " << diagweight << endl;
-//    }
-    
-    a_vofStencil += ebflux;
-
-//    if(ideb == 1)
-//    {
-//      cout << "after ebflux, ";
-//      cout << "stencil for " << a_vof.m_pt << ":" << endl;
-//      a_vofStencil.print();
-//    }
-#endif
   }
 
+  //Compute Dirichlet BCs at faces for the Moment Matrix.
   template < int order>
   void
   DirichletBC<order>::
@@ -1233,6 +1282,7 @@ namespace Proto
     }
   }
 
+  //Compute Neumann BCs at faces for the Moment Matrix.
   template < int order>
   void
   NeumannBC<order>::
@@ -1284,6 +1334,7 @@ namespace Proto
     }
   }
 
+  //Compute Neumann BCs at EB faces for the Moment Matrix.
   template < int order>
   void
   NeumannBC<order>::
@@ -1307,85 +1358,7 @@ namespace Proto
     }
   }
 
-  /***/
-  template<CENTERING cent, int order>
-  void
-  BaseWLSFlux<cent, order>::
-  getEBFluxStencil(LocalStencil<CELL, double>    & a_stencil,
-                   Real                          & a_inhomogTerm, //for inhomogeneous bcs
-                   const EBIndex<cent>           & a_face,
-                   const EBGraph                 & a_graph,
-                   const VoluData                & a_voludata,
-                   const EBFaData                & a_ebfadata,
-                   const XFacData                & a_xfacdata,
-                   const YFacData                & a_yfacdata,
-                   const ZFacData                & a_zfacdata,
-		   const EBNormalData            & a_ebnormxdata,
-                   const EBNormalData            & a_ebnormydata,
-                   const EBNormalData            & a_ebnormzdata,
-		   vector<IndMomDIM>             & a_ebnorm,
-		   string                          a_ebbcName,
-                   string                          a_dombcName[2*DIM],
-		   IndMomDIM                     & a_ebmom,
-		   RealVect                      & a_normal,
-		   double                        & a_bndryArea,
-                   const double                  & a_dx) const
-  {
-    Chombo4::LAPACKMatrix::s_verbose = m_verbose;
-
-    Neighbors<order> neighs;
-
-    RealVect faceLoc;
-    for (int idir = 0; idir < DIM; idir++)
-    {
-      faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
-    }
-    unsigned int radius = m_radius;
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
-
-    getMomentsInfoFromNeighbors(vols,
-                                a_graph, a_voludata, a_ebfadata,
-                                a_xfacdata, a_yfacdata, a_zfacdata,
-                                a_ebnormxdata, a_ebnormydata,
-                                a_ebnormzdata,
-                                neighs, a_dx);
-
-    //first fill M with moments  shifted to the center of the face
-    Chombo4::LAPACKMatrix  Mvol;
-    getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
-		           neighs, 
-			   a_ebbcName, a_dombcName);
-
-    // RHS of stencil equation
-    Chombo4::LAPACKMatrix Qshift;
-    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebnorm, a_bndryArea, a_dx);
-
-    // Weights matrix
-    Chombo4::LAPACKMatrix weights;
-    getWeightsMatrixFace(weights, neighs);
-
-    // Compute phiCoef
-    Chombo4::LAPACKMatrix phiCoef;
-    getStencilWeights(phiCoef, Qshift, Mvol, weights, a_dx);
-
-    //Filling stencil
-    a_stencil.clear();
-    for(int ivof = 0; ivof < vols.size(); ivof++)
-    {
-      Real thisCo = phiCoef(0, ivof);
-      a_stencil.add(vols[ivof], thisCo);
-      if (m_verbose){
-        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
-      }
-    }
-
-    int nvolneigh = vols.size();
-    a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-                                       nvolneigh,
-                                       a_ebbcName, a_dombcName,
-                                       a_dx);
-  }
-
+  //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
   //getIntegralNormalDerivative
   template < int order>
   Real
@@ -1426,6 +1399,7 @@ namespace Proto
     return retval;
   }
 
+  //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
   //getIntegralPhi
   template < int order>
   Real
@@ -1466,6 +1440,7 @@ namespace Proto
     return retval;
   }
 
+  //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
   //getIntegralPhiAlongEB
   template < int order>
   Real
@@ -1489,6 +1464,7 @@ namespace Proto
     return retval;
   }
 
+  //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
   //getIntegralGradPhiDotNormal
   template < int order>
   Real

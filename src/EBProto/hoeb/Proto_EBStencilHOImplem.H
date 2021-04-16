@@ -1,6 +1,7 @@
 
 #ifndef _Proto_EBStencilHOImplem_H_
 #define _Proto_EBStencilHOImplem_H_
+#include "Chombo_ParmParse.H"
 #include "../implem/Proto_Normalizor.H"
 #include "Proto_WLSCell.H"
 
@@ -154,14 +155,21 @@ namespace Proto
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
 
-    unsigned int radius = 2;
+    int radius = 2;
     int powerE = -3;
+    bool verbose = 0;
+
+    //Reading parameters from the inputs file for WLS stencils
+    ParmParse pp;
+    pp.get("radius"   , radius);
+    pp.get("powerE"   , powerE);
+    pp.query("verbose"   , verbose);
 
     //Creating the WLS fluxes needed for flux diveregence
-    BaseWLSFlux<XFACE, order> xflux(radius, powerE);
-    BaseWLSFlux<YFACE, order> yflux(radius, powerE);
-    BaseWLSFlux<ZFACE, order> zflux(radius, powerE);
-    BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE);
+    BaseWLSFlux<XFACE, order> xflux(radius, powerE, verbose);
+    BaseWLSFlux<YFACE, order> yflux(radius, powerE, verbose);
+    BaseWLSFlux<ZFACE, order> zflux(radius, powerE, verbose);
+    BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, verbose);
     string ebbc = a_ebbcName;
     string dombc[2*DIM];
 
