@@ -80,11 +80,11 @@ for t in targets:
 
     if(args.opt) == 'DEBUG':
         if(args.cuda == 'TRUE'):
-            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             if(args.hip) == 'TRUE':
-              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+              f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
               f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
             else:
               f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
