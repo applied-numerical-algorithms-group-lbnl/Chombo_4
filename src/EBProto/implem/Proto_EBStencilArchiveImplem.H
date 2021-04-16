@@ -1640,7 +1640,7 @@ namespace Proto
               auto dstface = bfaces[iface];
               LocalStencil<fcent, double> locStencil;
               EBIndex<fcent> nearface, farface, farfarface;
-              bool hasnear, hasfar, hasfarfar;
+              bool hasnear=false, hasfar=false, hasfarfar=false;
               vector<EBIndex<fcent> > nearfaces = getFaces<fcent>(vof, flipsd, a_graph);
               hasnear = (nearfaces.size() == 1) && (!nearfaces[0].m_isBoundary);
               if(hasnear)
