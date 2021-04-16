@@ -165,11 +165,6 @@ namespace Proto
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
 
-    //Creating the WLS fluxes needed for flux diveregence
-    BaseWLSFlux<XFACE, order> xflux(radius, powerE, verbose);
-    BaseWLSFlux<YFACE, order> yflux(radius, powerE, verbose);
-    BaseWLSFlux<ZFACE, order> zflux(radius, powerE, verbose);
-    BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, verbose);
     string ebbc = a_ebbcName;
     string dombc[2*DIM];
 
@@ -196,8 +191,22 @@ namespace Proto
     //Looping over all the valid VoFs
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
-      //Point pt = a_dstVoFs[ivof].m_pt;
-      //cout << "point1 "<<pt<<endl;
+      Point pt = a_dstVoFs[ivof].m_pt;
+      if (pt[0]==4 && pt[1]==4)
+      {
+	verbose = true;
+        cout << "point1 "<<pt<<endl;
+      }
+      else
+      {
+	verbose = false;
+      }
+
+      //Creating the WLS fluxes needed for flux diveregence
+      BaseWLSFlux<XFACE, order> xflux(radius, powerE, verbose);
+      BaseWLSFlux<YFACE, order> yflux(radius, powerE, verbose);
+      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, verbose);
+      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, verbose);
 
       //Computing the flux divergence stencil
       WLSStencil<order>::
@@ -216,9 +225,11 @@ namespace Proto
       double kappa;
       Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
       a_stencil[ivof]*= 1.0/(a_dx*a_dx);
-      //cout << "divF, ";
-      //cout << "stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
-      //a_stencil[ivof].print();
+      if (verbose) 
+      {
+        cout << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
+        a_stencil[ivof].print();
+      }
     }
     return true;
   }

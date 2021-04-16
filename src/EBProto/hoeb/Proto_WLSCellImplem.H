@@ -137,7 +137,11 @@ namespace Proto
     regVolMom.setToRegular(a_dx);
     IndMomSDMinOne regFaceMom;
     regFaceMom.setToRegular(a_dx);
-    Vector<int> weightDisVol = a_neigh.m_weightDisVol; 
+    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
+
+    Vector<Point> volp; 
+    Vector<Point> facp; 
+    Vector<Point> ebfp; 
 
     for(int ivof = 0; ivof < a_vols.size(); ivof++)
     {
@@ -147,7 +151,8 @@ namespace Proto
       {
         volLoc[idir] = a_dx * (0.5 + volInd.m_pt[idir]);
       }
-      cout<< " vol order "<<volInd.m_pt<<endl;
+      //cout<< " vol order "<<volInd.m_pt<<endl;
+      volp.push_back(volInd.m_pt);
       volneighLoc.push_back(volLoc);
 
       if(a_graph.isIrregular(volInd.m_pt))
@@ -169,13 +174,13 @@ namespace Proto
 #if DIM==3
         ebnorm[2] = a_ebnormzdata(volInd, 0);
 #endif
-	cout<<" eb info "<<normal<<"  "<<bndryArea<<" "<<a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]<<endl;
 	ebfmom.push_back(a_ebfadata(ebf, 0));
         ebfneighLoc.push_back(volLoc);
         weightDisEB.push_back(weightDisVol[ivof]);
 	ebfneighNorm.push_back(ebnorm);
 	ebfneighFrac.push_back(bndryArea);
-        cout<< " eb order "<<volInd.m_pt<<endl;
+        //cout<< " eb order "<<volInd.m_pt<<endl;
+        ebfp.push_back(volInd.m_pt);
       }
       else
       {
@@ -230,7 +235,8 @@ namespace Proto
               facneighDir.push_back(x_face.direction());
 	      facneighSid.push_back(sit());
               weightDisFac.push_back(weightDisVol[ivof]);
-              cout<< " xfac order "<<x_face.m_pt<<endl;
+              facp.push_back(x_face.m_pt);
+              //cout<< " xfac order "<<x_face.m_pt<<endl;
             }
           }
         }
@@ -274,7 +280,8 @@ namespace Proto
               facneighDir.push_back(y_face.direction());
 	      facneighSid.push_back(sit());
               weightDisFac.push_back(weightDisVol[ivof]);
-              cout<< " yfac order "<<y_face.m_pt<<endl;
+              facp.push_back(y_face.m_pt);
+              //cout<< " yfac order "<<y_face.m_pt<<endl;
             }
           }
         }
@@ -342,6 +349,22 @@ namespace Proto
     a_neigh.setAdditionalFaceInfo(facneighDir,
                                   facneighSid);
 
+    if (m_verbose)
+    {
+      cout<<" Index order for the matrices " << endl;
+      for (int i=0; i<volp.size(); i++)
+      {
+        cout<<" Vol "<<volp[i]<<endl;
+      }
+      for (int i=0; i<facp.size(); i++)
+      {
+        cout<<" Face "<<facp[i]<<endl;
+      }
+      for (int i=0; i<ebfp.size(); i++)
+      {
+        cout<<" EBFace "<<ebfp[i]<<endl;
+      }
+    }
   }
 
   //Compute the Moments Matrix
@@ -375,12 +398,16 @@ namespace Proto
     fac2volmom.resize(nfac);
 
     int nrows = nvol + nfac + nebf;
-    cout<< "nvol + nfac + nebf "<<nvol<<" "<<nfac<<" "<<nebf<<std::endl;
     MomentIterator<DIM, order> momit;
     int M = momit.size();
     int N = nrows;
     a_Mvol.define(N, M);
-    cout<< "MVOL "<<N<<" "<<M<<std::endl;
+    if (m_verbose) 
+    {
+      cout<< "Size Moments matrix "<<N<<" "<<M<<std::endl;
+      cout<< "With nvol + nfac + nebf "<<nvol<<" "<<nfac<<" "<<nebf<<std::endl;
+      cout<< "Moments matrix" <<endl;
+    }
   
     Real  volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -558,6 +585,7 @@ namespace Proto
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
     const int& faceDir = a_face.direction();
+    if (m_verbose) cout << " RHS - Face Flux Matrix " << endl;
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int, DIM> p = momit();
@@ -651,6 +679,7 @@ namespace Proto
       }
       a_fluxMatrix += fluxIncr;
     }
+    if (m_verbose)  cout << " RHS - EB Flux Matrix " << endl;
     for(int idir = 0; idir < DIM; idir++)
     {
       for(momit.reset(); momit.ok(); ++momit)
@@ -684,6 +713,7 @@ namespace Proto
     a_weights.setVal(1.0);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
     int powerE = m_powerE;
+    if (m_verbose)  cout << " Weights Matrix " << endl;
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;
@@ -915,6 +945,7 @@ namespace Proto
 
     //Filling stencil
     a_sten.clear();
+    if (m_verbose)  cout << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
@@ -994,6 +1025,7 @@ namespace Proto
 
     //Filling stencil
     a_stencil.clear();
+    if (m_verbose)  cout << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
@@ -1057,7 +1089,9 @@ namespace Proto
 	{
           faceMom.setToRegular(a_dx);
 	}
-        cout<<" here "<<xfaces[iface].m_pt<<endl;
+
+        if (a_xfaceflux.m_verbose) cout<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+
         a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, xfaces[iface],
                                        a_graph,
 				       a_voludata,
@@ -1073,11 +1107,13 @@ namespace Proto
 				       0,
 				       faceMom, 
 				       areaFrac,
-                                       a_dx);       
-        cout<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
-        cout<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-        cout<<" fluxStencil "<<endl;
-        fluxStencil.print();
+                                       a_dx);  
+        if (a_xfaceflux.m_verbose)
+	{	
+          cout<<" inhomogTerm Xface "<<inhomogTerm<<endl;
+          cout<<" fluxStencil "<<endl;
+          fluxStencil.print();
+	}
         fluxStencil *= double(isign);
         a_vofStencil += fluxStencil;
 
@@ -1105,6 +1141,8 @@ namespace Proto
           faceMom.setToRegular(a_dx);
 	}
 
+        if (a_yfaceflux.m_verbose) cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+
 	a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, yfaces[iface],
                                        a_graph,
                                        a_voludata,
@@ -1121,10 +1159,12 @@ namespace Proto
 				       faceMom, 
 				       areaFrac,
                                        a_dx);
-	cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
-        cout<<" inhomogTerm Yface "<<inhomogTerm<<endl;
-        cout<<" fluxStencil "<<endl;
-        fluxStencil.print();
+        if (a_yfaceflux.m_verbose)
+	{
+          cout<<" inhomogTerm Yface "<<inhomogTerm<<endl;
+          cout<<" fluxStencil "<<endl;
+          fluxStencil.print();
+	}
         fluxStencil *= double(isign);
         a_vofStencil += fluxStencil;
       }
@@ -1175,10 +1215,6 @@ namespace Proto
     }
 #endif      
 
-      cout << "before ebflux, ";
-      cout << "stencil for " << a_vof.m_pt << ":" << endl;
-      a_vofStencil.print();
-
     LocalStencil<CELL, double> ebflux;
     double bndryArea, alpha;
     Real inhomogTerm = 0.0; //for inhomogeneous bcs
@@ -1201,6 +1237,9 @@ namespace Proto
                                                   a_yfacdata,
                                                   a_zfacdata,
                                                   a_vof, a_graph, a_dx);
+
+      if (a_ebflux.m_verbose) cout<<" stencil ebface "<<a_vof.m_pt<<endl;
+
       if(a_ebbcName == string("Neumann"))
       {
         //neumann has no stencil
@@ -1208,23 +1247,23 @@ namespace Proto
       else if(a_ebbcName == string("Dirichlet"))
       {
           a_ebflux.getEBFluxStencil(ebflux, inhomogTerm,
-                           cutface,
-                           a_graph,
-                           a_voludata,
-                           a_ebfadata,
-                           a_xfacdata,
-                           a_yfacdata,
-                           a_zfacdata,
-			   a_ebnormxdata,
-                           a_ebnormydata,
-                           a_ebnormzdata,
-			   ebnorm,
-  			   a_ebbcName,
-                           a_dombcName,
-			   ebmom,
-			   normal,
-			   bndryArea,
-                           a_dx);
+                                    cutface,
+                                    a_graph,
+                                    a_voludata,
+                                    a_ebfadata,
+                                    a_xfacdata,
+                                    a_yfacdata,
+                                    a_zfacdata,
+                                    a_ebnormxdata,
+                                    a_ebnormydata,
+                                    a_ebnormzdata,
+                                    ebnorm,
+                                    a_ebbcName,
+                                    a_dombcName,
+                                    ebmom,
+                                    normal,
+                                    bndryArea,
+                                    a_dx);
       }
       else
       {
@@ -1239,10 +1278,12 @@ namespace Proto
  
     if(a_graph.isIrregular(a_vof.m_pt)) 
     {
-      cout<<" stencil ebface "<<a_vof.m_pt<<endl;
-      cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
-      cout<<" ebfluxStencil "<<endl;
-      ebflux.print();
+      if (a_ebflux.m_verbose)
+      {
+        cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
+        cout<<" ebfluxStencil "<<endl;
+        ebflux.print();
+      }
       //ebflux *= bndryArea/a_dx;
       a_vofStencil += ebflux;
     }
