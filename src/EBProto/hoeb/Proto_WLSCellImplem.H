@@ -19,10 +19,10 @@ namespace Proto
     Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
     Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
     Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-    Vector<RealVect> a_facneighLoc = a_neigh.m_facneighLoc;
+    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
     Vector<int> a_facneighDir = a_neigh.m_facneighDir;
     Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfneighLoc;
+    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
 
     Vector<Real> domBCValues, ebBCValues;
     int nrows = a_facmom.size();
@@ -172,7 +172,10 @@ namespace Proto
         Real pd = p[idir];
         //get column number associated with this particular moment
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
-        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+        if(Chombo4::LAPACKMatrix::s_verbose)
+        {
+          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+	}
       }
     }
    
@@ -245,7 +248,10 @@ namespace Proto
       {
         a_fluxMatrix(0, jmom) = 0;
       }
-      ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+      if(Chombo4::LAPACKMatrix::s_verbose)
+      {
+        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+      }
     }
   }
 
@@ -263,7 +269,7 @@ namespace Proto
     a_weights.define(nrows, nrows);
     a_weights.setVal(1.0);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
-    int powerE = -3;
+    int powerE = m_powerE;
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;
@@ -283,7 +289,10 @@ namespace Proto
         blerg = POW(dist,powerE);
       }
       a_weights(ineigh, ineigh) = blerg;
-      ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+      if(Chombo4::LAPACKMatrix::s_verbose)
+      {
+        ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+      }
     }
   }
 
@@ -853,7 +862,7 @@ namespace Proto
 			 const double               & a_areaFrac,
                          double                       a_dx) const
   { 
-    Chombo4::LAPACKMatrix::s_verbose = true; 
+    Chombo4::LAPACKMatrix::s_verbose = m_verbose; 
 
     Neighbors<order> neighs;
 
@@ -864,7 +873,7 @@ namespace Proto
       if (a_dir == idir) faceLoc[idir] = a_dx * (a_face.m_pt[idir]);
     }
 
-    unsigned int radius = 2;
+    unsigned int radius = m_radius;
     Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
 
     getMomentsInfoFromNeighbors(vols,
@@ -897,18 +906,17 @@ namespace Proto
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
-      int ivar = 0; //scalar
       a_sten.add(vols[ivof], thisCo);
-      cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
+      if (m_verbose){
+        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+      }
     }
 
-#if 0
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
 				       nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-#endif
   }
 
   template < int order>
@@ -1323,7 +1331,7 @@ namespace Proto
 		   double                        & a_bndryArea,
                    const double                  & a_dx) const
   {
-    Chombo4::LAPACKMatrix::s_verbose = true;
+    Chombo4::LAPACKMatrix::s_verbose = m_verbose;
 
     Neighbors<order> neighs;
 
@@ -1332,7 +1340,7 @@ namespace Proto
     {
       faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
     }
-    unsigned int radius = 2;
+    unsigned int radius = m_radius;
     Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
 
     getMomentsInfoFromNeighbors(vols,
@@ -1365,18 +1373,17 @@ namespace Proto
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
-      int ivar = 0; //scalar
       a_stencil.add(vols[ivof], thisCo);
-      cout<<"coef "<<vols[ivof].m_pt<<"  "<<thisCo<<endl;
+      if (m_verbose){
+        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+      }
     }
 
-#if 0
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
                                        nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-#endif
   }
 
   //getIntegralNormalDerivative

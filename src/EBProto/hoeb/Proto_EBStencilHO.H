@@ -30,6 +30,8 @@ namespace Proto
 
   ///
   /**
+   * EBStencil for high-order methods class. First implementation will get you
+   * the corrresponding stencil for Poisson operator.
    */
   template <int order>
   class EBStencilHO<CELL, CELL, order, double>
@@ -81,34 +83,34 @@ namespace Proto
                   bool                                        a_periodiconly,
                   Point                                       a_dstGrown);
 
-    ///WLS stencil
+    ///Gets WLS Poisson stencil
     inline static bool
-    getWLSStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
-                  vector<LocalStencil<CELL, double> >       & a_stencil,
-                  Stencil<double>                           & a_regStencilInterior,
-                  vector<Stencil<double> >                    a_regStencilBC[2*DIM],
-                  vector<Box>                                 a_BCApplyBoxes[2*DIM],
-                  Box                                       & a_regApplyBox,
-                  string                                      a_stencilName,
-                  string                                      a_domainBCName[2*DIM],
-                  string                                      a_ebbcName,
-                  const Box                                 & a_validBox,
-                  const Box                                 & a_domain,
-                  const Point                               & a_srcGhost,
-                  const Point                               & a_dstGhost,
-                  const EBGraph                             & a_graph,
-                  const VoluData                            & a_voludata,
-                  const EBFaData                            & a_ebfadata,
-                  const XFacData                            & a_xfacdata,
-                  const YFacData                            & a_yfacdata,
-                  const ZFacData                            & a_zfacdata,
-                  const EBNormalData                        & a_ebnormxdata,
-                  const EBNormalData                        & a_ebnormydata,
-                  const EBNormalData                        & a_ebnormzdata,
-                  double                                      a_dx,
-                  bool                                        a_periodiconly,
-                  bool  a_forceAllNeumann);
-    
+    getWLSPoissonStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+                         vector<LocalStencil<CELL, double> >       & a_stencil,
+                         Stencil<double>                           & a_regStencilInterior,
+                         vector<Stencil<double> >                    a_regStencilBC[2*DIM],
+                         vector<Box>                                 a_BCApplyBoxes[2*DIM],
+                         Box                                       & a_regApplyBox,
+                         string                                      a_stencilName,
+                         string                                      a_domainBCName[2*DIM],
+                         string                                      a_ebbcName,
+                         const Box                                 & a_validBox,
+                         const Box                                 & a_domain,
+                         const Point                               & a_srcGhost,
+                         const Point                               & a_dstGhost,
+                         const EBGraph                             & a_graph,
+                         const VoluData                            & a_voludata,
+                         const EBFaData                            & a_ebfadata,
+                         const XFacData                            & a_xfacdata,
+                         const YFacData                            & a_yfacdata,
+                         const ZFacData                            & a_zfacdata,
+                         const EBNormalData                        & a_ebnormxdata,
+                         const EBNormalData                        & a_ebnormydata,
+                         const EBNormalData                        & a_ebnormzdata,
+                         double                                      a_dx,
+                         bool                                        a_periodiconly,
+                         bool  a_forceAllNeumann);
+           
   };
 
 }

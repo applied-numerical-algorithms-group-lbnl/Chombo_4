@@ -70,6 +70,8 @@ namespace Proto
   
   };
 
+  //Class that will contain all the information related to neighbors VoFs,
+  //boundary faces and eb faces in a certain radius.
   template<int order>
   class Neighbors
   {
@@ -188,25 +190,43 @@ namespace Proto
       m_facneighSid = a_facneighSid;
     };
 
+    //Volume moments
     Vector<IndMomDIM>       m_volMom;
+    //Face moments
     Vector<IndMomSDMinOne>  m_facMom;
+    //EB Faces moments
     Vector<IndMomDIM>       m_ebfMom;
-    Vector<RealVect>        m_volLoc;
-    Vector<RealVect>        m_facLoc;
-    Vector<RealVect>        m_ebfLoc;
-    Vector<int>             m_weightDisVol;
-    Vector<int>             m_weightDisFac;
-    Vector<int>             m_weightDisEB;
-    Vector<double>          m_volneighFrac;
-    Vector<double>          m_ebfneighFrac;
-    Vector<double>          m_facneighFrac;
+    //EB Normal moments
     Vector<Vector<IndMomDIM> > m_ebfneighNorm;
+    //Cell location, will be the cell center
+    Vector<RealVect>        m_volLoc;
+    //Boundary Face location, will be the face center 
+    Vector<RealVect>        m_facLoc;
+    //EB Face location, will be the cell center containing the EB Face
+    Vector<RealVect>        m_ebfLoc;
+    //Contain the manhattan distance from the face 
+    //or EB face being evaluated to the cell
+    Vector<int>             m_weightDisVol;
+    //Contain the manhattan distance from the face 
+    //or EB face being evaluated to the boundary face
+    Vector<int>             m_weightDisFac;
+    //Contain the manhattan distance from the face
+    //or EB face being evaluated to the EB Face
+    Vector<int>             m_weightDisEB;
+    //Volume fraction
+    Vector<double>          m_volneighFrac;
+    //EB Face area fraction
+    Vector<double>          m_ebfneighFrac;
+    //Face area fraction
+    Vector<double>          m_facneighFrac;
+    //Face direction
     Vector<int>             m_facneighDir;
+    //Face Side -- lo or hi
     Vector<Side::LoHiSide>  m_facneighSid;
   
   };
 
-  ///stuff in common for all WLS flux calculations
+  //Main function calls for all WLS flux calculations
   template<CENTERING cent, int order>
   class BaseWLSFlux
   {
@@ -221,17 +241,24 @@ namespace Proto
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
-    
+   
+    //Get neighbors VoFs through the faces of a specific cell.
     vector<EBIndex<CELL> >
     getFlapVoFs(const EBGraph       & a_graph,  
 	              EBIndex<CELL> & a_start) const;
 
+    //Get neighbors VoFs of a given face within a specific radius.
+    //Radius starts at one for the cells sharing the face, and 
+    //increases by one for the neighbor cells sharing a face with the original
+    //cells of radius one.
     Vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
 		     unsigned int          a_radius,
 		     Neighbors<order>    & a_neigh,
 		     const EBGraph       & a_graph) const;
 
+    //Gets all the moments and geometric info for the neighbors cells, boundary faces
+    //and EB faces. Stores all this info in the Neighbors object.
     void
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
 		                const EBGraph          & a_graph,
@@ -246,6 +273,7 @@ namespace Proto
 				Neighbors<order>       & a_neigh,
 				double                   a_dx) const;
 
+    //Compute the Moments Matrix
     void
     getShiftedMomentMatrix(Chombo4::LAPACKMatrix  & a_Mvol,
 		           RealVect               & a_faceLoc,
@@ -254,9 +282,50 @@ namespace Proto
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
 		           
+    //Compute rhs matrix for a face
+    void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<cent>      & a_face,
+		      RealVect                 & a_faceLoc,
+	              IndMomSDMinOne           & a_faceMom,
+	              const double             & a_areaFrac,
+                      double                     a_dx) const;
+
+    //Compute rhs matrix for a EB face
+    void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+		    RealVect                 & a_faceLoc,
+		    vector<IndMomDIM>        & a_ebnorm,
+		    double                   & a_bndryArea,
+                    double                     a_dx) const;
+
+    //Compute weight matrix 
+    void
+    getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
+		         Neighbors<order>       & a_neigh) const;
+
+    //Compute stencil coefficients matrix 
+    void
+    getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
+		      Chombo4::LAPACKMatrix  & a_Qshift, 
+		      Chombo4::LAPACKMatrix  & a_Mvol, 
+		      Chombo4::LAPACKMatrix  & a_weights, 
+                      double                   a_dx) const;
+
+    //Compute inhomogeneous term
+    Real
+    computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
+                       Neighbors<order>                & a_neigh,
+                       const int                         a_nvolneigh,
+                       string                            a_ebbcName,
+                       string                            a_dombcName[2*DIM],
+                       double                            a_dx) const;
+
+    //Compute face centered flux stencil
     void
     getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
-                           Real                       &  a_inhomogTerm, //for inhomogeneous bcs
+                           Real                       & a_inhomogTerm, //for inhomogeneous bcs
                            const EBIndex<cent>        & a_face,
                            const EBGraph              & a_graph,
                            const VoluData             & a_voludata,
@@ -267,44 +336,18 @@ namespace Proto
                            const EBNormalData         & a_ebnormxdata,
                            const EBNormalData         & a_ebnormydata,
                            const EBNormalData         & a_ebnormzdata,
-			   string                       a_ebbcName,
+                           string                       a_ebbcName,
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
-			   IndMomSDMinOne             & a_faceMom,
-			   const double               & a_areaFrac,
+                           IndMomSDMinOne             & a_faceMom,
+                           const double               & a_areaFrac,
                            double                       a_dx) const;
 
+    //Compute EB face stencil
     void
-    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
-                      const EBIndex<cent>      & a_face,
-		      RealVect                 & a_faceLoc,
-	              IndMomSDMinOne           & a_faceMom,
-	              const double             & a_areaFrac,
-                      double                     a_dx) const;
-
-    void
-    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
-                    const EBIndex<cent>      & a_face,
-		    RealVect                 & a_faceLoc,
-		    vector<IndMomDIM>        & a_ebnorm,
-		    double                   & a_bndryArea,
-                    double                     a_dx) const;
-
-    void
-    getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-		         Neighbors<order>       & a_neigh) const;
-
-    void
-    getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
-		      Chombo4::LAPACKMatrix  & a_Qshift, 
-		      Chombo4::LAPACKMatrix  & a_Mvol, 
-		      Chombo4::LAPACKMatrix  & a_weights, 
-                      double                   a_dx) const;
-
-    void
-    getEBFluxStencil(LocalStencil<CELL, double>    &  a_facesten,
-                     Real                          &  a_inhomogTerm, //for inhomogeneous bcs
-                     const EBIndex<cent>           &  a_face,
+    getEBFluxStencil(LocalStencil<CELL, double>    & a_facesten,
+                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                     const EBIndex<cent>           & a_face,
                      const EBGraph                 & a_graph,
                      const VoluData                & a_voludata,
                      const EBFaData                & a_ebfadata,
@@ -322,51 +365,30 @@ namespace Proto
 		     double                        & a_bndryArea,
                      const double                  & a_dx) const;
 
-    Real
-    computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
-		       Neighbors<order>                & a_neigh,
-                       const int                         a_nvolneigh,
-                       string                            a_ebbcName,
-                       string                            a_dombcName[2*DIM],
-                       double                            a_dx) const;
-
     virtual ~BaseWLSFlux()
     {
     }
 
-    BaseWLSFlux()
+    BaseWLSFlux(unsigned int & a_radius,
+		int          & a_powerE,
+		bool           a_verbose=false)
     {
+      m_radius = a_radius;
+      m_powerE = a_powerE;
+      m_verbose = a_verbose;
     }
+
+    //Radius needed for neighbors list around a face (Manhattan style)
+    unsigned int m_radius = 1;
+    //Exponent for the distance between the VoFs and the face in the weights matrix
+    int m_powerE = -3;
+    //Boolean to enable print out statements for debugging
+    bool m_verbose = false;
     
   };
   
-  ///WLS Poisson flux
-  template<CENTERING cent, int order>
-  class PoissonWLS: public BaseWLSFlux<cent, order>
-  {
-
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef MomentIterator<DIM  , order> MomItDIM;
-    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
-    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
-    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-  public:
-
-    virtual ~PoissonWLS()
-    {
-    }
-
-    PoissonWLS()
-    {
-    }
-  };
-
-  ///some basic infrastructure to support the WLS stuff
-  template<int order>  //this is so we can send in the geometry informaion sanely
+  ///some basic infrastructure to support the WLS stencils
+  template<int order>  //this is so we can send in the geometry information
   class WLSStencil
   {
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -382,25 +404,26 @@ namespace Proto
   public:
 
     ///
+    //Gets WLS flux divergence stencil
     inline static void
-    getWLSDivFStencil(LocalStencil< CELL,  double>             & a_vofStencil,
-                           const EBIndex<CELL>                 & a_vof,
-                           const EBGraph                       & a_graph,
-                           const VoluData                      & a_voludata,
-                           const EBFaData                      & a_ebfadata,
-                           const XFacData                      & a_xfacdata,
-                           const YFacData                      & a_yfacdata,
-                           const ZFacData                      & a_zfacdata,
- 			   const EBNormalData                  & a_ebnormxdata,
-                           const EBNormalData                  & a_ebnormydata,
-                           const EBNormalData                  & a_ebnormzdata,
-                           const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                           const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                           const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                           const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
-                           string                                a_ebbcName,
-                           string                                a_dombcName[2*DIM],
-                           double                                a_dx);
+    getWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
+                      const EBIndex<CELL>                 & a_vof,
+                      const EBGraph                       & a_graph,
+                      const VoluData                      & a_voludata,
+                      const EBFaData                      & a_ebfadata,
+                      const XFacData                      & a_xfacdata,
+                      const YFacData                      & a_yfacdata,
+                      const ZFacData                      & a_zfacdata,
+                      const EBNormalData                  & a_ebnormxdata,
+                      const EBNormalData                  & a_ebnormydata,
+                      const EBNormalData                  & a_ebnormzdata,
+                      const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
+                      const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
+                      const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                      const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                      string                                a_ebbcName,
+                      string                                a_dombcName[2*DIM],
+                      double                                a_dx);
 
     virtual ~WLSStencil()
     {
@@ -411,7 +434,8 @@ namespace Proto
     }
   };
 
-  template<int order> //order is so we can send in geometry info
+  //Class to compute Dirichlet BCs at faces and EB Faces.
+  template<int order>
   class DirichletBC
   {
   public:
@@ -434,7 +458,8 @@ namespace Proto
 
   };
 
-  template<int order> //order is so we can send in geometry info
+  //Class to compute Neumann BCs at faces and EB Faces.
+  template<int order> 
   class NeumannBC
   {
   public:
@@ -461,7 +486,8 @@ namespace Proto
 
   };
 
-  template<int order> //order is so we can send in geometry info
+  //Class to compute Dirichlet BCs at faces and EB Faces. Required for inhomogeneous conditions.
+  template<int order> 
   class DirichletExactSoln
   {
   public:
@@ -488,7 +514,8 @@ namespace Proto
   
   };
 
-  template<int order> //order is so we can send in geometry info
+  //Class to compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
+  template<int order> 
   class NeumannExactSoln
   {
   public:
