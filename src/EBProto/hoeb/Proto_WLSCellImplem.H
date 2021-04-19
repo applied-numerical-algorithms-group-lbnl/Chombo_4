@@ -945,6 +945,7 @@ namespace Proto
 
     //Filling stencil
     a_sten.clear();
+    Real coef_acc = 0.0;
     if (m_verbose)  cout << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
@@ -953,6 +954,7 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
+      coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
@@ -960,6 +962,7 @@ namespace Proto
 				       nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
+    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<endl;
   }
 
   //Compute EB face stencil
@@ -1025,6 +1028,7 @@ namespace Proto
 
     //Filling stencil
     a_stencil.clear();
+    Real coef_acc = 0.0;
     if (m_verbose)  cout << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
@@ -1033,6 +1037,7 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
+      coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
@@ -1040,6 +1045,7 @@ namespace Proto
                                        nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
+    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<endl;
   }
 
   //Gets WLS flux divergence stencil

@@ -158,12 +158,18 @@ namespace Proto
     int radius = 2;
     int powerE = -3;
     bool verbose = 0;
+    Vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
     ParmParse pp;
     pp.get("radius"   , radius);
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
+
+    if (verbose)
+    {
+      pp.getarr("pt_verbose",ptVec,0,DIM);
+    } 
 
     string ebbc = a_ebbcName;
     string dombc[2*DIM];
@@ -192,10 +198,10 @@ namespace Proto
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       Point pt = a_dstVoFs[ivof].m_pt;
-      if (pt[0]==4 && pt[1]==4)
+      if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
       {
 	verbose = true;
-        cout << "point1 "<<pt<<endl;
+        cout << "Debugging Point "<<pt<<endl;
       }
       else
       {
