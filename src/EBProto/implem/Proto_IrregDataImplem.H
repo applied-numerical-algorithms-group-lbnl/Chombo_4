@@ -14,9 +14,17 @@ namespace Proto
 
     if(a_stackAllocation)
     {
-      StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-      m_rawPtr = (data_t*)(allocator.alloc(size()*sizeof(data_t)));
-      m_data = ::std::shared_ptr<data_t>(m_rawPtr, &(stack_deleter_boxdata));
+      if(size()==0)
+      {
+        m_rawPtr = nullptr;
+	m_data = ::std::shared_ptr<data_t>(nullptr);
+      }
+      else
+      {
+        StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
+        m_rawPtr = (data_t*)(allocator.alloc(size()*sizeof(data_t)));
+        m_data = ::std::shared_ptr<data_t>(m_rawPtr, &(stack_deleter_boxdata));
+      }
     }
     else
     { 
