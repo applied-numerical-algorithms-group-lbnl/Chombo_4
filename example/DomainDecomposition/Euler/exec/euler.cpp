@@ -318,8 +318,8 @@ void eulerRun(const RunParams& a_params)
 
   Reduction<Real> rxn = state.m_Rxn;
   Real maxwave = EulerOp::maxWave(*state.m_U, rxn);
-  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
-//  Real dt = a_params.dt;
+//  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
+  Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
 
   pout() << "after initializestate"<< endl;
@@ -346,8 +346,8 @@ void eulerRun(const RunParams& a_params)
 
     time += dt;
     
-    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
-    dt = std::min(1.1*dtold, dtnew);
+  //  Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
+  //  dt = std::min(1.1*dtold, dtnew);
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))
