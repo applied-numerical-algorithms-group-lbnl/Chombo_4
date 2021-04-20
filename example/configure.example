@@ -108,7 +108,7 @@ for t in targets:
     if(args.cuda == 'TRUE'):
         f.write('\nCXX = nvcc \n DEPXX=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-relaxed-constexpr --expt-extended-lambda -arch=compute_70\n')
    
     if(args.hip == 'TRUE'):
         f.write('\nCXX = hipcc \n DEPXX=hipcc\n')
