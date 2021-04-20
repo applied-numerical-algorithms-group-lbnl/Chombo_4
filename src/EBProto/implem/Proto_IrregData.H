@@ -569,16 +569,33 @@ namespace Proto
       {
         PR_TIME("defineEBIrregData::StackAllocation");
         StackAlloc& allocator  = Proto::DisjointBoxLayout::getStackAllocator();
-        size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent,data_t,ncomp>);
-        m_EBIrregDataPtr = (EBIrregStruct<cent,data_t,ncomp>*)(allocator.alloc(memsize));
-        protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
-        // &(stack_deleter_boxdata) calls allocation.free
-        m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(m_EBIrregDataPtr, &(stack_deleter_boxdata));
+	// IrregData can be empty, but we can't do zero-allocation on a stack.
+	if( hostvec.size() == 0)
+	{
+		m_EBIrregDataPtr = nullptr;
+		m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(nullptr);
+	}
+	else
+	{
+		size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent,data_t,ncomp>);
+        	m_EBIrregDataPtr = (EBIrregStruct<cent,data_t,ncomp>*)(allocator.alloc(memsize));
+        	protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+        	// &(stack_deleter_boxdata) calls allocation.free
+       		m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(m_EBIrregDataPtr, &(stack_deleter_boxdata));
+	}
 
-        memsize = sizeof(index_t) * m_indicies->size(); 
-        m_indicies_data = (index_t*)(allocator.alloc(memsize));
-        protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
-        m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, &(stack_deleter_boxdata));
+	if(m_indicies->size() == 0)
+	{
+		m_indicies_data = nullptr;
+		m_indicies_shared_data = ::std::shared_ptr<index_t>(nullptr);
+	}
+	else
+	{
+        	size_t memsize = sizeof(index_t) * m_indicies->size(); 
+        	m_indicies_data = (index_t*)(allocator.alloc(memsize));
+        	protoMemcpy(m_indicies_data,m_indicies->data(),memsize,protoMemcpyHostToDevice);
+        	m_indicies_shared_data = ::std::shared_ptr<index_t>(m_indicies_data, &(stack_deleter_boxdata));
+	}
       }
       else 
       {
