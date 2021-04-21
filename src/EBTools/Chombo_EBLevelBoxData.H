@@ -385,7 +385,7 @@ public:
         size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-        protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+        protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
         protoError err = protoGetLastError();
         if (err != protoSuccess)
         {
@@ -417,7 +417,7 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+      protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {
@@ -469,7 +469,7 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
+      protoMemcpy(DEVICE,dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {

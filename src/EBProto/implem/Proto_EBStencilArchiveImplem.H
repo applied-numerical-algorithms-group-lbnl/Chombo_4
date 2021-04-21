@@ -1030,6 +1030,7 @@ namespace Proto
                           double                                      a_dx,
                           Point                                       a_dstGrown)
   {
+/*
     int facedir;
     if(fcent == XFACE)
     {
@@ -1047,6 +1048,7 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
+*/
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
 
@@ -1329,6 +1331,7 @@ namespace Proto
                           const EBGraph                             & a_graph,
                           double                                      a_dx)
   {
+  /*
     int facedir;
     if(fcent == XFACE)
     {
@@ -1346,7 +1349,7 @@ namespace Proto
     {
       PROTO_ASSERT(false, "bogus face direction");
     }
-
+*/
     //reg stencil did not work here.
     a_regStencil = (1.0)*Shift(Point::Zeros());
     a_regApplyBox = a_validBox;
@@ -1640,21 +1643,21 @@ namespace Proto
               auto dstface = bfaces[iface];
               LocalStencil<fcent, double> locStencil;
               EBIndex<fcent> nearface, farface, farfarface;
-              bool hasnear, hasfar, hasfarfar;
+              bool hasnear=false, hasfar=false, hasfarfar=false;
               vector<EBIndex<fcent> > nearfaces = getFaces<fcent>(vof, flipsd, a_graph);
-              hasnear = (nearfaces.size() == 1);
+              hasnear = (nearfaces.size() == 1) && (!nearfaces[0].m_isBoundary);
               if(hasnear)
               {
                 nearface = nearfaces[0];
                 EBIndex<CELL> nextvof = nearface.getVoF(flipsd);
                 vector<EBIndex<fcent> > farfaces = getFaces<fcent>(nextvof, flipsd, a_graph);
-                hasfar = (farfaces.size() == 1);
+                hasfar = ((farfaces.size() == 1) && (!farfaces[0].m_isBoundary));
                 if(hasfar)
                 {
                   farface = farfaces[0];
                   EBIndex<CELL> nextnextvof = farface.getVoF(flipsd);
                   vector<EBIndex<fcent> > farfarfaces = getFaces<fcent>(nextnextvof, flipsd, a_graph);
-                  hasfarfar = farfarfaces.size() == 1;
+                  hasfarfar = ((farfarfaces.size() == 1) && (!farfarfaces[0].m_isBoundary));
                   if(hasfarfar)
                   {
                     farfarface = farfarfaces[0];

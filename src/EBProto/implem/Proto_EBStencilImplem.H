@@ -116,7 +116,7 @@ namespace Proto
           PROTO_ASSERT(false, "host and device sizes need to match here");
         }
         size_t datSize = sizeof(data_t)*fabsizeDevi;
-        protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
+        protoMemcpy(MEMTYPE_DEFAULT,dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
       }
     }
   }

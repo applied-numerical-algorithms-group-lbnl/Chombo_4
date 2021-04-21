@@ -430,35 +430,34 @@ namespace Proto
   template<typename Func, typename... Srcs>
   inline void ebforallInPlace(unsigned long long int a_num_flops_point,
                               const char*            a_timername,
-                              const Func & a_F,  Box a_box, Srcs&... a_srcs);
+                              const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 
 ///version that sends the point to the function
   template<typename Func, typename... Srcs>
   inline void ebforallInPlace_i(unsigned long long int a_num_flops_point,
                                 const char*            a_timername,
-                                const Func & a_F,  Box a_box, Srcs&... a_srcs);
+                                const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg(const char*            a_timername,
-                            const Func & a_F,  Box a_box, Srcs&... a_srcs);
+                            const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 
 
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg_i(const char*            a_timername,
-                              const Func & a_F,  Box a_box, Srcs&... a_srcs);
+                              const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 
   ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall_i(const Box& a_inputBox,
-                         const Func & a_F,  Box a_box, Srcs&... a_srcs);
+                         const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 
 ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall(const Box& a_inputBox,
-                       const Func & a_F,  Box a_box, Srcs&... a_srcs);
-
+                       const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
 }
 
 
