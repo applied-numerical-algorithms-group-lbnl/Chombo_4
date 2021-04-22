@@ -76,9 +76,9 @@ inline void test_agg_stencil_copy_to_gpu(T* a_host, T*& a_devi, unsigned int siz
 {
   unsigned int nbBytes = size * sizeof(T);
   T* tmp;
-  protoMalloc(tmp, nbBytes);
+  protoMalloc(MEMTYPE_DEFAULT, tmp, nbBytes);
   a_devi = tmp;
-  protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
+  protoMemcpy(MEMTYPE_DEFAULT, a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
 template<typename T>
@@ -88,9 +88,9 @@ inline void test_agg_stencil_copy_to_gpu_eb_stencil(T* a_host, T*& a_devi, uint6
   for(int i = 0; i<size ; i++) acc += sizes[i];
   unsigned int nbBytes = acc * sizeof(T);
   T* tmp;
-  protoMalloc(tmp, nbBytes);
+  protoMalloc(MEMTYPE_DEFAULT, tmp, nbBytes);
   a_devi = tmp;
-  protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
+  protoMemcpy(MEMTYPE_DEFAULT, a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
 template<typename T>
@@ -98,12 +98,12 @@ inline void test_agg_stencil_copy_to_gpu(pairPtr<T>& a_host, pairPtr<T>& a_devi,
 {
   unsigned int nbBytes = size * sizeof(T);
   T* tmp0; 
-  protoMalloc(tmp0, nbBytes);
-  protoMemcpy(tmp0,a_host.ptr[0],nbBytes,protoMemcpyHostToDevice);
+  protoMalloc(MEMTYPE_DEFAULT, tmp0, nbBytes);
+  protoMemcpy(MEMTYPE_DEFAULT, tmp0,a_host.ptr[0],nbBytes,protoMemcpyHostToDevice);
   a_devi.ptr[0] = tmp0;
   T* tmp1;
-  protoMalloc(tmp1, nbBytes);
-  protoMemcpy(tmp1,a_host.ptr[1],nbBytes,protoMemcpyHostToDevice);
+  protoMalloc(MEMTYPE_DEFAULT, tmp1, nbBytes);
+  protoMemcpy(MEMTYPE_DEFAULT, tmp1,a_host.ptr[1],nbBytes,protoMemcpyHostToDevice);
   a_devi.ptr[1] = tmp1;
   
 }
@@ -121,9 +121,9 @@ void test_agg_stencil_get_back_data(pairPtr<double>& a_host, pairPtr<double>& a_
   a_host.ptr[0] = new double[a_size];
   a_host.ptr[1] = new double[a_size];
 
-  protoMemcpy(a_host.ptr[0],a_devi.ptr[0],a_size*sizeof(double),protoMemcpyDeviceToHost);
-  protoMemcpy(a_host.ptr[1],a_devi.ptr[1],a_size*sizeof(double),protoMemcpyDeviceToHost);
-  protoDeviceSynchronize();
+  protoMemcpy(MEMTYPE_DEFAULT, a_host.ptr[0],a_devi.ptr[0],a_size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, a_host.ptr[1],a_devi.ptr[1],a_size*sizeof(double),protoMemcpyDeviceToHost);
+  protoDeviceSynchronizeGPU();
 }
 
 bool test_answer_kernel_only_using(pairPtr<double>& a_res, double a_val0, double a_val1, unsigned int a_size)

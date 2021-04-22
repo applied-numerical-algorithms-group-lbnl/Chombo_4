@@ -53,7 +53,9 @@ bool run_test_agg_stencil_kernel_only_using()
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
 
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+  		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,
@@ -125,7 +127,9 @@ bool run_test_agg_stencil_increment_only(bool b)
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
 
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,
@@ -298,7 +302,9 @@ bool run_test_agg_stencil_scale(double a_scale)
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
 
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,

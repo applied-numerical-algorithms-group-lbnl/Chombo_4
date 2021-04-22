@@ -21,7 +21,7 @@ bool run_test_ebforall_i_init()
 
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool result = test_ebforal_i_check_answer_init(checkPtr, size);
 
@@ -49,7 +49,7 @@ bool run_test_ebforall_i_kernel()
 
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool result = test_ebforal_i_check_answer(checkPtr, size);
   assert(result);
@@ -81,8 +81,8 @@ bool run_test_ebforall_i_kernel_box_no_impact()
   double* checkPtr_1 = new double[size];
   double* devicPtr_2 = fill_2.data();
   double* devicPtr_1 = fill_1.data();
-  protoMemcpy(checkPtr_2,devicPtr_2,size*sizeof(double),protoMemcpyDeviceToHost);
-  protoMemcpy(checkPtr_1,devicPtr_1,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr_2,devicPtr_2,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr_1,devicPtr_1,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool result = test_ebforal_i_check_same_result(checkPtr_1, checkPtr_2, size);
   assert(result);
@@ -94,6 +94,17 @@ bool run_test_ebforall_i_kernel_box_no_impact()
   return result;
 }
 #endif
+
+template<typename F, typename... T>
+void hackVecIndexer_i(unsigned int a_begin, unsigned int a_end, F func, Proto::EBIrregStruct<Proto::CELL,double, 1>* a_dst, T... args)
+{
+  unsigned int size = a_end - a_begin;
+  protoLaunchKernelT<MEMTYPE_DEFAULT, vecIndexer_i<Proto::CELL,double,1, F, T...>>
+			(
+				1, size, //small test so nb block = 1
+				0, size, func, a_dst, args...
+			);
+}
 
 bool run_test_ebforall_i_vec_indexer()
 {
@@ -109,16 +120,16 @@ bool run_test_ebforall_i_vec_indexer()
   Proto::IrregData<Proto::CELL,double,1> fill(bx, ptr, index);
   Proto::EBIrregStruct<Proto::CELL,double, 1>* eb_irreg_struct_ptr = fill.getEBIrregDataPtr();
 
-  protoLaunchKernel(vec_indexer_i, 1, size, //small test so nb block = 1
+  hackVecIndexer_i(
 			0, size,
 			kernel_test_forall_i_val,
 			eb_irreg_struct_ptr,
 			val
-			);
+		);
 			 
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool result = test_ebforal_i_check_answer_val(checkPtr, val, size);
   assert(result);

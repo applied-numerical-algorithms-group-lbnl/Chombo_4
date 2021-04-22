@@ -26,7 +26,7 @@ class test_timer
 	float duration()
 	{
 		float milliseconds;
-		protoDeviceSynchronize();
+		protoDeviceSynchronizeGPU();
 		cudaEventElapsedTime(&milliseconds, start, stop);
 		return milliseconds;
 	}
