@@ -20,15 +20,6 @@ namespace Proto
     {
       size_t ivec = 0;
       bool found = false;
-//      for(unsigned int i = 0; i < a_size; i++)
-//      {        
-//        if(a_vof == a_indicies[i])
-//        {
-//          ivec = i;
-//          found = true;
-//          break;
-//        }
-//      }
       int begin = 0;
       int end = a_size;
       int i = (begin + a_size)/2;
@@ -169,7 +160,6 @@ namespace Proto
             a_dst[indDst] = a_src[indSrc];
           }
         }
-
       }
     }
 #endif
