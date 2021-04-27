@@ -134,15 +134,52 @@ namespace Proto
     inline void setMomentsInfo (Vector<IndMomDIM>      & a_volMom,
 		                Vector<IndMomSDMinOne> & a_facMom,
 				Vector<IndMomDIM>      & a_ebfMom,
-				Vector<Vector<IndMomDIM> > & a_ebfneighNorm)
+				Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
+				Real                     a_dx)
     {
-      m_volMom = a_volMom;
-      m_facMom = a_facMom;
-      m_ebfMom = a_ebfMom;
+      m_volMom.resize(a_volMom.size());
+      for(int i = 0; i < a_volMom.size(); ++i)
+      {
+        IndMomDIM momspt = a_volMom[i];
+        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+        {
+          const IndexTM<int, DIM>& p = iter();
+          m_volMom[i][iter()] = momspt[iter()]/(a_dx*a_dx*POW(a_dx,p));
+        }
+      }
+      m_facMom.resize(a_facMom.size());
+      for(int i = 0; i < a_facMom.size(); ++i)
+      {
+        IndMomSDMinOne momspt = a_facMom[i];
+        for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+        {
+          const IndexTM<int, DIM-1>& p = iter();
+          m_facMom[i][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+        }
+      }
+      m_ebfMom.resize(a_ebfMom.size());
+      for(int i = 0; i < a_ebfMom.size(); ++i)
+      {
+        IndMomDIM momspt = a_ebfMom[i];
+        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+        {
+          const IndexTM<int, DIM>& p = iter();
+          m_ebfMom[i][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+        }
+      }
       m_ebfneighNorm.resize(a_ebfneighNorm.size());
       for (int i = 0; i < a_ebfneighNorm.size(); ++i)
       {
-        m_ebfneighNorm[i] = a_ebfneighNorm[i];
+        m_ebfneighNorm[i].resize(a_ebfneighNorm[i].size());
+	for(int j = 0; j < a_ebfneighNorm[i].size(); ++j)
+        {
+          IndMomDIM momspt = a_ebfneighNorm[i][j];
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM>& p = iter();
+            m_ebfneighNorm[i][j][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+          }
+        }
       }
     };
 
@@ -359,7 +396,6 @@ namespace Proto
 		     vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
-		     IndMomDIM                     & a_ebmom,
 		     RealVect                      & a_normal,
 		     double                        & a_bndryArea,
                      const double                  & a_dx) const;
@@ -422,6 +458,7 @@ namespace Proto
                       const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
                       string                                a_ebbcName,
                       string                                a_dombcName[2*DIM],
+		      Real                                & a_inhoTerm,
                       double                                a_dx);
 
     virtual ~WLSStencil()

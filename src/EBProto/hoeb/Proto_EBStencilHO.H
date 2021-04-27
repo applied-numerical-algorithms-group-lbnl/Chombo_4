@@ -55,6 +55,7 @@ namespace Proto
     inline static bool
     getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
                   vector<LocalStencil<CELL, double> >       & a_stencil,
+                  vector<double>                            & a_inhoContr,
                   Stencil<double>                           & a_regStencilInterior,
                   vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
                   vector<Box>                                 a_BCApplyBoxes[2*DIM],
@@ -87,6 +88,7 @@ namespace Proto
     inline static bool
     getWLSPoissonStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
                          vector<LocalStencil<CELL, double> >       & a_stencil,
+                         vector<double>                            & a_inhoContr,
                          Stencil<double>                           & a_regStencilInterior,
                          vector<Stencil<double> >                    a_regStencilBC[2*DIM],
                          vector<Box>                                 a_BCApplyBoxes[2*DIM],

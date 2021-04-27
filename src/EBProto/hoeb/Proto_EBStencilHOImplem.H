@@ -15,6 +15,7 @@ namespace Proto
   EBStencilHO<CELL, CELL,  order, double>::
   getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
              vector<LocalStencil<CELL, double> >       & a_stencil,
+             vector<double>                            & a_inhoContr,
              Stencil<double>                           & a_regStencil,
              vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
@@ -50,6 +51,7 @@ namespace Proto
       return
         getWLSPoissonStencil(a_dstVoFs,
                              a_stencil,
+                             a_inhoContr,
                              a_regStencil,
                              a_regStencilBCS,
                              a_BCApplyBoxes,
@@ -80,6 +82,7 @@ namespace Proto
       return
         getWLSPoissonStencil(a_dstVoFs,
                              a_stencil,
+                             a_inhoContr,
                              a_regStencil,
                              a_regStencilBCS,
                              a_BCApplyBoxes,
@@ -116,6 +119,7 @@ namespace Proto
   EBStencilHO<CELL, CELL,  order, double>::
   getWLSPoissonStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
                        vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                       vector<double>                            & a_inhoContr,
                        Stencil<double>                           & a_regStencil,         
                        vector<Stencil<double> >                    a_regStencilBC[2*DIM],       
                        vector<Box>                                 a_BCApplyBoxes[2*DIM],       
@@ -154,6 +158,7 @@ namespace Proto
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
+    a_inhoContr.resize(a_dstVoFs.size());
 
     int radius = 2;
     int powerE = -3;
@@ -198,14 +203,13 @@ namespace Proto
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       Point pt = a_dstVoFs[ivof].m_pt;
-      if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+      if (verbose)
       {
-	verbose = true;
-        cout << "Debugging Point "<<pt<<endl;
-      }
-      else
-      {
-	verbose = false;
+	if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+        {
+	  verbose = true;
+          cout << "Debugging Point "<<pt<<endl;
+        }
       }
 
       //Creating the WLS fluxes needed for flux diveregence
@@ -213,6 +217,7 @@ namespace Proto
       BaseWLSFlux<YFACE, order> yflux(radius, powerE, verbose);
       BaseWLSFlux<ZFACE, order> zflux(radius, powerE, verbose);
       BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, verbose);
+      Real inhoTerm = 0.0;
 
       //Computing the flux divergence stencil
       WLSStencil<order>::
@@ -225,16 +230,27 @@ namespace Proto
                           a_ebnormxdata, a_ebnormydata, 
                           a_ebnormzdata,
                           xflux, yflux, zflux, ebflux, ebbc, dombc,
+			  inhoTerm,
                           a_dx);
 
       RealVect centroid;
       double kappa;
       Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
       a_stencil[ivof]*= 1.0/(a_dx*a_dx);
+      inhoTerm*= 1.0/(a_dx*a_dx);
+      a_inhoContr[ivof] = inhoTerm;
+      //a_stencil[ivof].add(a_dstVoFs[ivof], inhoTerm);
       if (verbose) 
       {
         cout << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
         a_stencil[ivof].print();
+	Real accDivF = 0.0;
+	for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+        {
+          accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
+        }
+
+        cout << "For phi=1 acc " << accDivF << endl;
       }
     }
     return true;

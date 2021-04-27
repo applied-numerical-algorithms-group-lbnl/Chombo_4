@@ -95,9 +95,10 @@ namespace Proto
     m_periodic_domain_bcs_only = a_periodiconly;
     vector< EBIndex<dstCenter> >              dstVoFs;
     vector< LocalStencil<srcCenter, data_t> > stencil;
+    vector< double > inhoContr;
 
     m_hasDomainBCs = 
-      ho_t::getStencil(dstVoFs, stencil, m_regStencilInterior, 
+      ho_t::getStencil(dstVoFs, stencil, inhoContr, m_regStencilInterior, 
                        m_regStencilBCS, m_BCApplyBoxes, m_regApplyBox, m_bcsOnly,
                        a_stencilName,  a_domainBCName, a_ebbcName,
                        a_srcValid,  a_dstValid,
