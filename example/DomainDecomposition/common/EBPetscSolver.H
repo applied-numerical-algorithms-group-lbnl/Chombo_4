@@ -486,7 +486,7 @@ private:
     CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
     CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
     int startgid = 0;
-    for(int iproc = 0; iproc < procID(); iproc++)
+    for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
     {
       startgid += m_numPtsAllProc[iproc];
     }
