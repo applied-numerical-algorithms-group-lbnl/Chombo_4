@@ -184,7 +184,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     m_source.exchange(m_exchangeCopier);
     DataIterator dit = m_grids.dataIterator();
-    int ideb = 0;
+    //int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
