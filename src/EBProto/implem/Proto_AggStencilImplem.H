@@ -18,6 +18,8 @@ namespace Proto
   {
 
     PR_TIME("AggSten.constructor");
+    PROTO_ASSERT(a_dstVoFs.size() == a_stencil.size(), "mismatch in aggstencil construction");
+    
     m_ebstencil.resize(a_dstVoFs.size());
     m_dstAccess.resize(a_dstVoFs.size());
 
@@ -241,16 +243,16 @@ namespace Proto
         uint64_t stenLenSize = numptsDst*(sizeof(uint64_t));
         uint64_t stStartSize = numptsDst*(sizeof(uint64_t));
         ///allocate memory on the device
-        protoMalloc(d_ebstencil, totStenSize);
-        protoMalloc(d_dstaccess, destAccSize);
-        protoMalloc(d_stensizes, stenLenSize);
-        protoMalloc(d_stenstart, stStartSize);
+        protoMalloc(DEVICE,d_ebstencil, totStenSize);
+        protoMalloc(DEVICE,d_dstaccess, destAccSize);
+        protoMalloc(DEVICE,d_stensizes, stenLenSize);
+        protoMalloc(DEVICE,d_stenstart, stStartSize);
 
         ///copy from the host
-        protoMemcpy(d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
-        protoMemcpy(d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_dstaccess, m_dstAccess.data(),           destAccSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_stensizes, h_stenSizes.data(),           stenLenSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_stenstart, h_stenStart.data(),           stStartSize, protoMemcpyHostToDevice);
+        protoMemcpy(DEVICE,d_ebstencil, h_serializedStenInfo.data(),  totStenSize, protoMemcpyHostToDevice);
 
         //figure out blocks and strides
         m_stride = 32;
@@ -283,10 +285,10 @@ namespace Proto
   {
     if(d_ebstencil != nullptr)
       {
-        protoFree(d_ebstencil);
-        protoFree(d_dstaccess);
-        protoFree(d_stensizes);
-        protoFree(d_stenstart);
+        protoFree(MEMTYPE_DEFAULT,d_ebstencil);
+        protoFree(MEMTYPE_DEFAULT,d_dstaccess);
+        protoFree(MEMTYPE_DEFAULT,d_stensizes);
+        protoFree(MEMTYPE_DEFAULT,d_stenstart);
       }
   }
 /////
@@ -296,9 +298,27 @@ struct pairPtr{
 };
 
   template <typename data_t>
-  __global__
+  struct aggStencilIndexer
+  {
+ 
+  static
+  inline void 
+  cpu(int a_begin, int a_end,
+		    pairPtr<const data_t>   dataPtrsSrc,
+		    pairPtr<data_t>         dataPtrsDst,
+                    const pair_t<data_t>*   a_ebstencil,
+                    const uint64_t*         a_stensizes,
+                    const uint64_t*         a_stenstart,
+                    const EBDataLoc*        a_dstaccess,
+                    bool                    a_incrementOnly,
+                    data_t                  a_scale)
+  {
+    assert(false);
+  }
+    
+  __device__ static
   void 
-  aggStencilIndexer(int a_begin, int a_end,
+  gpu(int a_begin, int a_end,
 		    pairPtr<const data_t>   dataPtrsSrc,
 		    pairPtr<data_t>         dataPtrsDst,
                     const pair_t<data_t>*   a_ebstencil,
@@ -336,6 +356,7 @@ struct pairPtr{
       else lphi += a_scale*acc;
     }
   }
+ };
 /////
 
   inline void v100tuning(int nbElems, int & nbBlocks, int &blockSize)
@@ -383,8 +404,9 @@ struct pairPtr{
     int stride, blocks;
     v100tuning(end-begin, blocks, stride);
 
-    //protoLaunchKernel(aggStencilIndexer, m_stride, m_blocks, 
-    protoLaunchKernel(aggStencilIndexer, blocks, stride,  
+    //protoLaunchKernel(aggStencilIndexer, blocks, stride,  
+    //  begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
+    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  
       begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
   }
 #endif

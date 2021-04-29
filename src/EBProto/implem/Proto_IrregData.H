@@ -33,9 +33,9 @@ namespace Proto
     {
       m_inputBox = a_box;
       unsigned int size = a_indicies.size();
-      protoMalloc(m_rawPtr,size*sizeof(data_t));
-      protoMemcpy(m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
-      m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(p);});
+      protoMalloc(MEMTYPE_DEFAULT,m_rawPtr,size*sizeof(data_t));
+      protoMemcpy(MEMTYPE_DEFAULT,m_rawPtr, a_data, size*sizeof(data_t), protoMemcpyHostToDevice);
+      m_data = ::std::shared_ptr<data_t>(m_rawPtr, [](data_t* p){protoFree(MEMTYPE_DEFAULT,p);});
       m_indicies = ::std::shared_ptr<std::vector<index_t>>(new std::vector<index_t>[1], [](std::vector<index_t>* p) { delete[] p;});
       m_indicies->resize(size);
       for(int i = 0; i < size ; i++)
@@ -135,7 +135,8 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Add>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -154,7 +155,8 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t,BoxDataOp::Subtract>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -173,7 +175,8 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Multiply>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -246,8 +249,8 @@ namespace Proto
     {
       vector< EBIrregStruct<cent, data_t, ncomp> > hostvec = getEBIrregStruct(*m_indicies, *this);
       size_t memsize = hostvec.size()*sizeof(EBIrregStruct<cent, data_t, ncomp>);
-      protoMalloc(m_EBIrregDataPtr,memsize);
-      protoMemcpy(m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
+      protoMalloc(MEMTYPE_DEFAULT,m_EBIrregDataPtr,memsize);
+      protoMemcpy(MEMTYPE_DEFAULT,m_EBIrregDataPtr, hostvec.data(), memsize, protoMemcpyHostToDevice);
     }
 
     inline EBIrregStruct<cent, data_t, ncomp>* getEBIrregDataPtr()

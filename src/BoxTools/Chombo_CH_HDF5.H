@@ -16,6 +16,7 @@
 #ifdef CH_USE_HDF5  // if you don't have CH_USE_HDF5, then this file is useless
 
 #include <iostream>
+#include "Chombo_ProtoInterface.H"
 using std::cout;
 using std::endl;
 
@@ -34,7 +35,6 @@ using std::endl;
 #include "Chombo_LoadBalance.H"
 #include "Chombo_LayoutIterator.H"
 #include "Chombo_Vector.H"
-#include "Chombo_FluxBox.H"
 #include "Chombo_SPMD.H"
 
 #ifdef CH_MULTIDIM
@@ -817,12 +817,6 @@ inline void dataTypes(Vector<hid_t>& a_types, const FArrayBox& dummy)
   a_types[0] = H5T_NATIVE_REAL;
 }
 
-template <>
-inline void dataTypes(Vector<hid_t>& a_types, const FluxBox& dummy)
-{
-  a_types.resize(1);
-  a_types[0] = H5T_NATIVE_REAL;
-}
 
 template <>
 inline void dataSize(const BaseFab<int>& item, Vector<int>& a_sizes,
@@ -845,18 +839,6 @@ inline void dataSize(const FArrayBox& item, Vector<int>& a_sizes,
   a_sizes[0] = box.numPts() * comps.size();
 }
 
-template <>
-inline void dataSize(const FluxBox& item, Vector<int>& a_sizes,
-                     const Box& box, const Interval& comps)
-{
-  int& t = a_sizes[0];
-  t = 0;
-  for (int dir =0; dir<CH_SPACEDIM; dir++)
-    {
-      Box edgeBox(surroundingNodes(box,dir));
-      t += edgeBox.numPts()*comps.size();
-    }
-}
 
 template <>
 inline const char* name(const FArrayBox& a_dummySpecializationArg)
@@ -899,21 +881,30 @@ template <class T>
 inline void dataSize(const T& item, Vector<int>& a_sizes,
                      const Box& box, const Interval& comps)
 {
-  a_sizes[0] = item.size(box, comps);
+  Proto::Box bx = ProtoCh::getProtoBox(box);
+  unsigned int startcomp = comps.begin();
+  unsigned int numcomps  = comps.size();
+  a_sizes[0] = item.charsize(bx, startcomp, numcomps);
 }
 
 template <class T>
 inline void write(const T& item, Vector<void*>& a_allocatedBuffers,
                   const Box& box, const Interval& comps)
 {
-  item.linearOut(a_allocatedBuffers[0], box, comps);
+  Proto::Box bx = ProtoCh::getProtoBox(box);
+  unsigned int startcomp = comps.begin();
+  unsigned int numcomps  = comps.size();
+  item.linearOut(a_allocatedBuffers[0], bx, startcomp, numcomps);
 }
 
 template <class T>
 inline void read(T& item, Vector<void*>& a_allocatedBuffers,
                  const Box& box, const Interval& comps)
 {
-  item.linearIn(a_allocatedBuffers[0], box, comps);
+  Proto::Box bx = ProtoCh::getProtoBox(box);
+  unsigned int startcomp = comps.begin();
+  unsigned int numcomps  = comps.size();
+  item.linearIn(a_allocatedBuffers[0], bx, startcomp, numcomps);
 }
 
 template <class T>

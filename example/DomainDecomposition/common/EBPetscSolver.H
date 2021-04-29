@@ -236,9 +236,10 @@ private:
     vector<Bx >               BCApplyBoxes[2*DIM];
     bool                      bcsOnly = false;
     Bx                        regApplyBox;
+    bool                      irregOnly = false;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
     archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
                           m_stencilName,  m_domainBCName, m_ebbcName,
                           valbx, valbx,  domainbx, domainbx,
                           m_ptghost,  m_ptghost,    
@@ -486,7 +487,7 @@ private:
     CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
     CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
     int startgid = 0;
-    for(int iproc = 0; iproc < procID(); iproc++)
+    for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
     {
       startgid += m_numPtsAllProc[iproc];
     }

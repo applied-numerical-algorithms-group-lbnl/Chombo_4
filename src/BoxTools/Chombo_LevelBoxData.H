@@ -145,18 +145,7 @@ public:
       Real*       hostPtr = hostfab.dataPtr(0);
       const Real* deviPtr = devifab.dataPtr(0);
 
-#ifdef PROTO_CUDA
-      protoDeviceSynchronize();
-      protoMemcpyAsync(hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
-      protoError err = protoGetLastError();
-      if (err != protoSuccess)
-      {
-        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, protoGetErrorString(err));
-      }
-#else
-      memcpy(hostPtr, deviPtr, datSize);
-#endif
+      protoMemcpyAsync( MEMTYPE_DEFAULT,hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 
@@ -174,18 +163,7 @@ public:
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);
 
-#ifdef PROTO_CUDA
-      protoDeviceSynchronize();
-      protoMemcpyAsync( deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
-      protoError err = protoGetLastError();
-      if (err != protoSuccess)
-      {
-        fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                __FILE__, __LINE__, protoGetErrorString(err));
-      }
-#else
-      memcpy(deviPtr, hostPtr, datSize);
-#endif  
+      protoMemcpyAsync(  MEMTYPE_DEFAULT,deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 

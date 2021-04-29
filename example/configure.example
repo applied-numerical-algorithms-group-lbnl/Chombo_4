@@ -58,7 +58,7 @@ for t in targets:
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCPPFLAGS += -DPR_MPI -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
         f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
@@ -67,6 +67,7 @@ for t in targets:
         f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
 
     if(args.petsc == 'TRUE'):
+        f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables\n')
         f.write('\nCPPFLAGS += -DCH_USE_PETSC')
         f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
@@ -80,11 +81,11 @@ for t in targets:
 
     if(args.opt) == 'DEBUG':
         if(args.cuda == 'TRUE'):
-            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             if(args.hip) == 'TRUE':
-              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+              f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
               f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
             else:
               f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
@@ -106,12 +107,12 @@ for t in targets:
             f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
 
     if(args.cuda == 'TRUE'):
-        f.write('\nCXX = nvcc \n DEP=nvcc\n')
+        f.write('\nCXX = nvcc \n DEPXX=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-relaxed-constexpr --expt-extended-lambda -arch=compute_70\n')
    
     if(args.hip == 'TRUE'):
-        f.write('\nCXX = hipcc \n DEP=hipcc\n')
+        f.write('\nCXX = hipcc \n DEPXX=hipcc\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     
 
