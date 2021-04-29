@@ -129,7 +129,7 @@ public:
   {
     const VoluData & volmo = (*m_voludata)[a_dit];
     const EBGraph  & graph = (*m_graphs)[a_dit];
-    HostBoxData<        Real, 1>& reghost = a_kappa.getRegData();
+    auto& reghost = a_kappa.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_kappa.getIrrData();
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
     {

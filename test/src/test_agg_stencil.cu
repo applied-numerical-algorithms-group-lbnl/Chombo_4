@@ -2,7 +2,7 @@
 #include<implem/Proto_AggStencil.H>
 #include<implem/Proto_AggStencilImplem.H>
 using Proto::EBDataLoc;
-using Proto::pairPtr;
+//using Proto::pairPtr;
 using Proto::pair_t;
 #include<src/test_agg_stencil_stuff.cpp>
 
@@ -158,7 +158,8 @@ bool run_test_agg_stencil_increment_only_false()
 {
   return run_test_agg_stencil_increment_only(false);
 }
-
+//purge
+/*
 bool run_test_agg_stencil_cpu_versu_gpu()
 {
   unsigned int size_src = 8;
@@ -248,6 +249,7 @@ bool run_test_agg_stencil_cpu_versu_gpu()
 
   return check1 && check2;
 }
+*/
 
 bool run_test_agg_stencil_scale(double a_scale)
 {

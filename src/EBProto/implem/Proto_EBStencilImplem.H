@@ -40,7 +40,8 @@ namespace Proto
 
     m_hasDomainBCs = 
       archive_t::getStencil(dstVoFs, stencil, m_regStencilInterior, 
-                            m_regStencilBCS, m_BCApplyBoxes, m_regApplyBox, m_bcsOnly,
+                            m_regStencilBCS, m_BCApplyBoxes, m_regApplyBox,
+                            m_bcsOnly, m_irregOnly,
                             a_stencilName,  a_domainBCName, a_ebbcName,
                             a_srcValid,  a_dstValid,
                             a_srcDomain, a_dstDomain,     
@@ -115,17 +116,7 @@ namespace Proto
           PROTO_ASSERT(false, "host and device sizes need to match here");
         }
         size_t datSize = sizeof(data_t)*fabsizeDevi;
-#ifdef PROTO_CUDA
-        protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#else
-        memcpy(dataptrDevi, dataptrHost, datSize);
-#endif  
+        protoMemcpy(MEMTYPE_DEFAULT,dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
       }
     }
   }
@@ -157,20 +148,11 @@ namespace Proto
     
     //first set the boundary conditions at the domain box
     //this fills the ghost cells when the box abuts the domain.
-    if(m_hasDomainBCs)
+    if(m_hasDomainBCs && (!m_irregOnly))
     {
+      PR_TIME("bcs_apply");
 #ifdef PROTO_CUDA
       const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
-      /*std::vector<Box> vecBox;
-
-      for(int ibc = 0; ibc < 2*DIM; ibc++)
-      {
-        for(int ivec = 0; ivec < m_regStencilBCS[ibc].size(); ivec++)
-        {
-	  vecBox.push_back(m_BCApplyBoxes[ibc][ivec]);
-        }
-      }*/
-      //sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), vecBox.data(), true, 1.0);
       sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
 #else
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
@@ -187,12 +169,16 @@ namespace Proto
     }
     if(!m_bcsOnly)
     {
+      PR_TIME("actual_apply");
       bool incrementOnly = false;
       //already set stuff to zero if necessary
       bool initToZero    = true;
-      m_regStencilInterior.apply(a_src.getRegData(), 
-                                 a_dst.getRegData(),
-                                 m_regApplyBox, initToZero, a_scale);
+      if(!m_irregOnly)
+      {
+        m_regStencilInterior.apply(a_src.getRegData(), 
+                                   a_dst.getRegData(),
+                                   m_regApplyBox, initToZero, a_scale);
+      }
 
       m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
     }

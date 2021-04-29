@@ -2,7 +2,9 @@
 #include "EBINS.H"
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
+#include "Chombo_CH_HDF5.H"
 #include "Chombo_NamespaceHeader.H"
+#include "DebugFunctions.H"
 using Proto::Var;
 /*******/
 EBINS::
@@ -14,9 +16,15 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
       const Real                             & a_viscosity,
       const IntVect                          & a_nghost,
       ParabolicSolverType                      a_solver,
-      EBIBC                                    a_ibc)
+      EBIBC                                    a_ibc,
+      unsigned int                             a_num_species,  
+      vector<Real> a_diffusionCoeffs)
 {
   CH_TIME("EBINS::define");
+  m_diffusionCoefs = a_diffusionCoeffs;
+  PR_assert(m_diffusionCoefs.size() >= a_num_species);
+  m_species.resize(a_num_species);
+  m_reactionRates.resize(a_num_species);
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -24,7 +32,18 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
-
+  m_crunch = shared_ptr<CrunchInterface>
+    (new CrunchInterface(m_brit, m_geoserv, m_grids, m_domain));
+  defineInternals(a_ibc, a_num_species, a_viscosity, a_solver);
+}  
+/*******/
+void
+EBINS::
+defineInternals(EBIBC                a_ibc,
+                unsigned int         a_num_species,
+                Real                 a_viscosity,
+                ParabolicSolverType  a_solver)
+{
   m_graphs = m_geoserv->getGraphs(m_domain);
   m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
   m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);
@@ -39,7 +58,14 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-
+  for(int ispec = 0; ispec < a_num_species; ispec++)
+  {
+    m_species[ispec]           = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+    m_reactionRates[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+  }
+  
   string stenname = StencilNames::Poisson2;
   string bcname;
   if(a_viscosity == 0)
@@ -54,35 +80,56 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   }
 
   auto cell_dict = m_brit->m_cellToCell;
+  Real alpha = 1; Real beta = 1; //these get reset before solve
+  string helmnamesVelo[2*DIM];
+  string helmnamesSpec[2*DIM];
+  a_ibc.helmholtzStencilStrings(      helmnamesVelo);
+  a_ibc.scalarDiffusionStencilStrings(helmnamesSpec);
   if(!m_eulerCalc)
   {
-    Real alpha = 1; Real beta = 1; //these get reset before solve
-    string helmnames[2*DIM];
-    a_ibc.helmholtzStencilStrings(helmnames);
-    m_helmholtz = shared_ptr<EBMultigrid> 
+    m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnames, bcname, m_domain, m_nghost));
-
-    if(a_solver == BackwardEuler)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBBackwardEuler(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == CrankNicolson)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBCrankNicolson(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else if (a_solver == TGA)
-    {
-      m_heatSolver = shared_ptr<BaseEBParabolic>
-        (new EBTGA(m_helmholtz, m_geoserv, m_grids, m_domain, m_nghost));
-    }
-    else
-    {
-      MayDay::Error("unaccounted-for solver type");
-    }
+                       stenname, helmnamesVelo, bcname, m_domain, m_nghost));
   }
+  m_helmholtzSpec = shared_ptr<EBMultigrid> 
+    (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
+                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost));
+
+  if(a_solver == BackwardEuler)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBBackwardEuler(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBBackwardEuler(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == CrankNicolson)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBCrankNicolson(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBCrankNicolson(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else if (a_solver == TGA)
+  {
+    if(!m_eulerCalc)
+    {
+      m_heatSolverVelo = shared_ptr<BaseEBParabolic>
+        (new EBTGA(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost));
+    }
+    m_heatSolverSpec = shared_ptr<BaseEBParabolic>
+      (new EBTGA(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost));
+  }
+  else
+  {
+    MayDay::Error("unaccounted-for solver type");
+  }
+
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost));
   
@@ -91,7 +138,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_macProj = m_ccProj->m_macprojector;
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
-    (new BCGVelAdvect(m_macProj, m_helmholtz, m_brit, m_geoserv, m_velo,
+    (new BCGVelAdvect(m_macProj, m_helmholtzVelo, m_brit, m_geoserv, m_velo,
                       m_grids, m_domain, m_dx, m_viscosity, a_ibc, m_nghost, m_eulerCalc));
 
 
@@ -101,64 +148,101 @@ void
 EBINS::
 run(unsigned int a_max_step,
     Real         a_max_time,
+    unsigned int a_startingStep,
+    Real         a_startingTime,
     Real         a_cfl,
     Real         a_fixedDt,
     Real         a_tol,
     unsigned int a_numIterPres,
     unsigned int a_maxIter,
-    int          a_outputInterval,
+    int          a_plotfileInterval,
+    int          a_checkpointInterval,
+    bool         a_stokesFlowInitialization,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");
-  bool usingFixedDt = (a_fixedDt > 0);
-  bool doFileOutput = (a_outputInterval > 0);
-  Real dt;
+  m_step = a_startingStep;
+  m_time = a_startingTime;
+  //Welcome to our standard interface that is at least not over specified.
+  //Negative intervals turn intervalled stuff off.
+  //Negative fixed time step means variable time step.
+  //It is a quixotic interface at best.
+  bool usingFixedDt     = (a_fixedDt            > 0);
+  bool writePlotfiles   = (a_plotfileInterval   > 0);
+  bool writeCheckpoints = (a_checkpointInterval > 0);
+
   //project the resulting field
   pout() << "projecting initial velocity"<< endl;
   auto & velo =  (*m_velo );
   auto & gphi =  (*m_gphi );
 
-  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are projecting the initial velocity."<< endl;
+    m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting velocity. " << endl;
+  }
+    
   velo.exchange(m_exchangeCopier);
 
   //get the time step
   if(usingFixedDt)
   {
-    dt = a_fixedDt;
+    m_dt = a_fixedDt;
   }
   else
   {
-    dt = computeDt(a_cfl);
+    m_dt = computeDt(a_cfl);
+  }
+  
+  if(m_step == 0)
+  {
+    pout() << "We are starting from scratch so we are  initializing  pressure." << endl;
+    initializePressure(m_dt, a_tol, a_maxIter, a_stokesFlowInitialization, a_numIterPres);
+  }
+  else
+  {
+    pout() << "We are starting from a checkpoint so we just use the starting pressure." << endl;
   }
 
-  pout() << "getting initial pressure using fixed point iteration " << endl;
-  initializePressure(dt, a_tol, a_numIterPres, a_maxIter);
-
-  if(doFileOutput)
+  if(writePlotfiles && (m_step % a_plotfileInterval == 0))
   {
-    outputToFile(0, a_coveredVal, dt, 0.0);
+    writePlotFile(a_coveredVal);
+  }
+  if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
+  {
+    writeCheckpointFile();
   }
 
-  Real time = 0;
-  unsigned int step = 0;
-  while((step < a_max_step) && (time < a_max_time))
+  while((m_step < a_max_step) && (m_time < a_max_time))
   {
-    pout() << "step = " << step << ", time = " << time << " dt = " << dt << endl;
-    pout() << "advancing passive scalar " << endl;
-    advanceScalar(dt);
+    pout() << "step = " << m_step << ", time = " << m_time << " dt = " << m_dt << endl;
 
     pout() << "advancing velocity and pressure fields " << endl;
-    advanceVelocityAndPressure(dt, a_tol, a_maxIter);
+    advanceVelocityAndPressure(m_dt, a_tol, a_maxIter);
 
-    step++;
-    time += dt;
+    pout() << "advancing passive scalar" << endl;
+    advanceScalar(m_dt);
+
+    pout() << "advancing species advection/diffusion" << endl;
+    advanceSpecies(m_dt, a_tol, a_maxIter);
+    
+    m_step++;
+    m_time += m_dt;
     if(!usingFixedDt)
     {
-      dt = computeDt(a_cfl);
+      m_dt = computeDt(a_cfl);
     }
-    if((doFileOutput) && (step%a_outputInterval == 0))
+    if(writePlotfiles && (m_step % a_plotfileInterval == 0))
     {
-      outputToFile(step, a_coveredVal, dt, time);
+      writePlotFile(a_coveredVal);
+    }
+    if(writeCheckpoints && (m_step % a_checkpointInterval == 0))
+    {
+      writeCheckpointFile();
     }
   }
 }
@@ -167,23 +251,69 @@ void
 EBINS::
 initializePressure(Real         a_dt,
                    Real         a_tol,
-                   unsigned int a_numIterPres, 
-                   unsigned int a_maxIter)
+                   unsigned int a_maxIter,
+                   bool         a_stokesFlowInitialization,
+                   unsigned int a_numPressureIterations)
 {
   CH_TIME("EBINS::initializePressure");
   auto & velo =  (*m_velo );
   auto & gphi =  (*m_gphi );
 
   EBLevelBoxData<CELL, DIM> velosave(m_grids, m_nghost, m_graphs);
-  Interval interv(0, DIM-1);
-  velo.copyTo(interv, velosave, interv, m_copyCopier);
-  gphi.setVal(0.);
-  for(int iter = 0; iter < a_numIterPres; iter++)
+  if(a_stokesFlowInitialization)
   {
-    advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
-    velosave.copyTo(interv, velo, interv, m_copyCopier);
+    pout() << "Stokes flow initialization:" << endl;
+    pout() << "Setting gphi to nu*lapl(velo) componentwise." << endl;
+    //stencil string for normalizor with radius 1.
+    //this got registered in EBAdvection.
+    string ncdivstr     = StencilNames::NCDivergeRoot + string("1");  
+    string nobcsstr     = StencilNames::NoBC;
+    for(int vecDir =0; vecDir < DIM; vecDir++)
+    {
+      //using m_sour as scratch space.
+      EBLevelBoxData< CELL, 1> velocomp, gphicomp, sourcomp;
+      velocomp.define<DIM> (*m_velo, vecDir, m_graphs);
+      gphicomp.define<DIM> (*m_gphi, vecDir, m_graphs);
+      sourcomp.define<DIM> (*m_sour, vecDir, m_graphs);
+
+      Real alpha = 0; Real beta = m_viscosity;
+      m_helmholtzVelo->resetAlphaAndBeta(alpha, beta);
+      //puts nu*kappa*lapl(velo) into source
+      m_helmholtzVelo->applyOp(sourcomp, velocomp);
+      //normalize and put it into gphi
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        auto& ncdiv  = gphicomp[dit[ibox]];
+        auto& kapdiv = sourcomp[dit[ibox]];
+        //auto& kappa =       m_kappa[dit[ibox]];
+        const auto& stencil =
+          m_brit->m_cellToCell->getEBStencil(ncdivstr,nobcsstr, m_domain, m_domain, ibox);
+        bool initToZero = true;
+        stencil->apply(ncdiv, kapdiv, initToZero, 1.0);
+      }
+    }
   }
-  gphi.exchange(m_exchangeCopier);
+  else if(a_numPressureIterations > 0)
+  {
+    pout() << "Getting initial pressure using fixed point iteration " << endl;
+    gphi.setVal(0.);
+    Interval interv(0, DIM-1);
+    velo.copyTo(interv, velosave, interv, m_copyCopier);
+    gphi.setVal(0.);
+    for(int iter = 0; iter < a_numPressureIterations; iter++)
+    {
+      advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
+      velosave.copyTo(interv, velo, interv, m_copyCopier);
+    }
+    gphi.exchange(m_exchangeCopier);
+  }
+  else
+  {
+    pout() << "Since there is no Stokes flow initialization and the number of pressure iterations == 0, " << endl;
+    pout() << "we are using the initial projection's pressure gradient as the initial  pressure." << endl;
+  }
+    
 }
 /*******/ 
 Real
@@ -192,30 +322,32 @@ computeDt(Real a_cfl) const
 {
   CH_TIME("EBINS::computeDt");
   Real dtval;
-  ParmParse pp;
-  bool use_stokes_dt = false;
-  pp.query("use_stokes_dt", use_stokes_dt);
-  if(use_stokes_dt)
+  Real dtCFL = 999999999.;
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
   {
-    dtval = m_dx*m_dx/m_viscosity;
+    maxvel = std::max(maxvel, m_velo->maxNorm(idir));
   }
+  if(maxvel > 1.0e-16)
+  {
+    dtCFL = a_cfl*m_dx/maxvel;
+    dtval = dtCFL;
+    pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
+  }    
   else
   {
-    Real maxvel = 0;
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      maxvel = std::max(maxvel, m_velo->maxNorm(idir));
-    }
-    if(maxvel > 1.0e-16)
-    {
-      dtval = a_cfl*m_dx/maxvel;
-      pout() << "maxvel = " << maxvel << ", dx = " << m_dx << ", dt = " << dtval << endl;
-    }    
-    else
-    {
-      pout() << "velocity seems to be zero--setting dt to dx" << endl;
-      dtval = m_dx;
-    }
+    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    dtval = m_dx;
+  }
+
+  ParmParse pp;
+  Real dtStokes = m_dx*m_dx/m_viscosity;
+  bool use_stokes_dt = false;
+  pp.query("use_stokes_dt", use_stokes_dt);
+  if(use_stokes_dt && dtCFL > dtStokes)
+  {
+    dtval = dtStokes;
+    pout() << "Using Stokes dt = " << dtval << endl;
   }
   return dtval;
 }
@@ -224,7 +356,10 @@ void
 EBINS::
 getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)    
 {
-  m_bcgAdvect->hybridVecDivergence(*m_divuu, *m_velo, a_dt, a_tol, a_maxIter);
+  auto& divuu = *m_divuu;
+  auto& velo  = *m_velo;
+  m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
+  divuu.exchange(m_exchangeCopier);
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -239,6 +374,15 @@ void EulerAdvanceF(Var<Real, DIM>    a_velo,
   }
 }
 PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
+/*******/ 
+PROTO_KERNEL_START 
+void SpeciesAdvanceF(Var<Real, 1>    a_species,
+                     Var<Real, 1>    a_rate,
+                     Real            a_dt)
+{
+  a_species(0) += a_dt*a_rate(0);
+}
+PROTO_KERNEL_END(SpeciesAdvanceF, SpeciesAdvance)
 
 /*******/ 
 void
@@ -265,6 +409,14 @@ advanceVelocityEuler(Real a_dt)
 }
 /*******/ 
 PROTO_KERNEL_START 
+void DiffusionRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuphi)
+{
+  a_rhs(0) = -a_divuphi(0);
+}
+PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
+/*******/ 
+PROTO_KERNEL_START 
 void ParabolicRHSF(Var<Real, 1>    a_rhs,
                    Var<Real, 1>    a_divuu,
                    Var<Real, 1>    a_gradp)
@@ -285,6 +437,7 @@ advanceVelocityNavierStokes(Real a_dt,
   auto & velo  = *m_velo ;
   auto & divuu = *m_divuu;
   auto & gphi  = *m_gphi ;
+  int ideb = 0;
   DataIterator dit = m_grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -307,8 +460,11 @@ advanceVelocityNavierStokes(Real a_dt,
     }
     pout() << "calling heat solver for variable " << idir << endl;
     //advance the parabolic equation
-    m_heatSolver->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    m_heatSolverVelo->advanceOneStep(scalVelo, scalRHS, m_viscosity, a_dt, a_tol, a_maxIter);
+    
+    ideb++;
   }
+ ideb++;
 }
 /*******/ 
 PROTO_KERNEL_START 
@@ -380,8 +536,6 @@ advanceVelocityAndPressure(Real a_dt,
   //get udelu
   getAdvectiveDerivative(a_dt, a_tol, a_maxIter);
 
-//  m_divuu->writeToFileHDF5(string("divuu.hdf5"), 0.0);
-
   if(m_eulerCalc)
   {
     advanceVelocityEuler(a_dt);
@@ -399,24 +553,172 @@ advanceScalar(Real a_dt)
               
 {
   CH_TIME("EBINS::advanceScalar");
-  EBLevelBoxData<CELL, 1> source(m_grids, m_nghost, m_graphs);
-  m_advectOp->advance(*m_scal, a_dt);
+  
+  auto& scal = *m_scal;
+  scal.exchange(m_exchangeCopier);
+  Real fluxval;
+  ParmParse pp;
+  pp.get("scalar_inflow_value",   fluxval);
+  m_advectOp->advance(scal, a_dt, fluxval);
+  scal.exchange(m_exchangeCopier);
 }
 /*******/ 
 void
 EBINS::
-outputToFile(unsigned int a_step, Real a_coveredval, Real a_dt, Real a_time) const
+advanceSpecies(Real a_dt,
+               Real         a_tol,    
+               unsigned int a_maxIter)
 {
-  CH_TIME("EBINS::outputToFile");
-  const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
-  string filescal = string("scal.") + std::to_string(a_step) + string(".hdf5");
-  string filevelo = string("velo.") + std::to_string(a_step) + string(".hdf5");
-  string filegphi = string("gphi.") + std::to_string(a_step) + string(".hdf5");
-  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
-  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain, m_graphs, a_coveredval, m_dx, a_dt, a_time);
+  CH_TIME("EBINS::advanceSpecies");
+  //Dethrone the dictaphone.
+  DataIterator dit = m_grids.dataIterator();
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    pout() << "advancing species number "<< ispec << endl;
+    auto& spec = *m_species[ispec];
 
+    spec.exchange(m_exchangeCopier);
+    //A strange user interface, I grant you.  I did not think I would need this back door
+    pout() << "get advection term divuphi" << endl;
+    Real fluxval;
+    ParmParse pp;
+    string scalname = string("species_inflow_value_") + to_string(ispec); // 
+    pp.get(scalname.c_str(),   fluxval);
+    
+    m_advectOp->hybridDivergence(spec, a_dt, fluxval);
+    m_sour->setVal(0.);
+    EBLevelBoxData<CELL, 1>& divuphi = m_advectOp->m_hybridDiv;
+
+    pout() << "assembling  rhs = -divuphi + R" << endl;
+    EBLevelBoxData< CELL, 1> sourcomp;
+    sourcomp.define<DIM> (*m_sour, 0, m_graphs);
+    for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & divuphifab =  divuphi[dit[ibox]];
+      auto & rhsfab     = sourcomp[dit[ibox]];
+      Bx inputBox = divuphifab.inputBox();
+      ebforall(inputBox, DiffusionRHS, grbx, rhsfab, divuphifab);
+    }
+    pout() << "calling heat solver for variable "  << endl;
+    //advance the parabolic equation
+    Real thiscoef = m_diffusionCoefs[ispec];
+    m_heatSolverSpec->advanceOneStep(spec, sourcomp,
+                                     thiscoef, a_dt, a_tol, a_maxIter);
+
+  }
+  pout() << "getting reaction rates and evolving species"   << endl;
+  getReactionRates();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    //this could get done once for all species if we knew the number
+    //of species at compile time.
+    for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+    {
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & specfab = (      *m_species[ispec])[dit[ibox]];
+      auto & ratefab = (*m_reactionRates[ispec])[dit[ibox]];
+      
+      Bx inputBox = ratefab.inputBox();
+      ebforall(inputBox, SpeciesAdvance, grbx, specfab, ratefab, m_dt);
+    }
+  }
+
+}
+void
+EBINS::
+getReactionRates()
+{
+  CH_TIME("EBINS::getReactionRates");
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    m_reactionRates[ispec]->setVal(0.);
+  }
+  m_crunch->getReactionRates(m_reactionRates, m_species);
+}
+/*******/ 
+void
+EBINS::
+writePlotFile(Real a_coveredval) const
+{
+  CH_TIME("EBINS::writePlotFile");
+  const EBLevelBoxData<CELL, 1> & kappa = m_advectOp->m_kappa;
+  string filescal = string("scal.step_")
+    + std::to_string(m_step) + string(".hdf5");
+  string filevelo = string("velo.step_")
+    + std::to_string(m_step) + string(".hdf5");
+  string filegphi = string("gphi.step_")
+    + std::to_string(m_step) + string(".hdf5");
+  writeEBLevelHDF5<1>(  filescal,  *m_scal, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
+  writeEBLevelHDF5<DIM>(filevelo,  *m_velo, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
+  writeEBLevelHDF5<DIM>(filegphi,  *m_gphi, kappa, m_domain,
+                        m_graphs, a_coveredval, m_dx, m_dt, m_time);
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string filespec = string("spec_") + std::to_string(ispec)
+      + string(".step_") + std::to_string(m_step) + string(".hdf5");
+    const auto& species = *(m_species[ispec]);
+    writeEBLevelHDF5<1>(filespec,  species, kappa,
+                        m_domain, m_graphs, a_coveredval,
+                        m_dx, m_dt, m_time);
+  }
+}
+/*******/
+void
+EBINS::
+readDataFromCheckpoint(Real         & a_curTime,
+                       unsigned int & a_curStep,
+                       const string & a_checkpointName)
+{
+  CH_TIME("EBINS::readDataFromCheckpointFile");
+
+  HDF5HeaderData header;
+  HDF5Handle handle(a_checkpointName.c_str(), HDF5Handle::OPEN_RDONLY);
+
+  header.readFromFile(handle);
+  a_curTime = header.m_real["cur_time"];
+  a_curStep = header.m_int ["cur_step"];
+
+  m_velo->readFromCheckPoint(    handle, string("velo"));
+  m_gphi->readFromCheckPoint(    handle, string("gphi"));
+  m_scal->readFromCheckPoint(    handle, string("scal"));
+  m_sour->readFromCheckPoint(    handle, string("sour"));
+  m_divuu->readFromCheckPoint(   handle, string("divuu"));
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string specname = string("spec_") + to_string(ispec);
+    m_species[ispec]->readFromCheckPoint(handle, specname);
+  }
+  handle.close();
+}
+/*******/
+void
+EBINS::
+writeCheckpointFile()
+{
+  CH_TIME("EBINS::writeCheckpointFile");
+  string checkpointName = string("check.step_") + to_string(m_step) + string(".hdf5");
+  HDF5HeaderData header;
+  
+
+  HDF5Handle handle(checkpointName.c_str(), HDF5Handle::CREATE);
+  header.m_real["cur_time"]               = m_time;
+  header.m_int ["cur_step"]               = m_step;  
+  header.writeToFile(handle);
+  
+  m_velo->writeToCheckPoint(    handle, string("velo"));
+  m_gphi->writeToCheckPoint(    handle, string("gphi"));
+  m_scal->writeToCheckPoint(    handle, string("scal"));
+  m_sour->writeToCheckPoint(    handle, string("sour"));
+  m_divuu->writeToCheckPoint(   handle, string("divuu"));
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    string specname = string("spec_") + to_string(ispec);
+    m_species[ispec]->writeToCheckPoint(handle, specname);
+  }
+  handle.close();
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"
-

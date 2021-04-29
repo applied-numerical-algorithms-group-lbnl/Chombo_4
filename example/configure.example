@@ -18,7 +18,7 @@ parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [
 
 args = parser.parse_args()
 
-print args
+print(args)
 
 f_pref = open('Makefile.prefix','r')
 f_post = open('Makefile.postfix','r')
@@ -28,7 +28,7 @@ makefile_post = f_post.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec']
+targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec', 'DomainDecomposition/EBDarcyAdvectDiffuseReact/exec', 'DomainDecomposition/EBMenagerie/exec']
 
 top = os.getcwd()
 chombo_home = top + '/..'
@@ -42,8 +42,8 @@ r.write('#/usr/bin/csh\n')
 
 for t in targets:
     d= t
-    print d
-    comstr = " cd " + d + "; make pristine; make; cd " + top 
+    print(d)
+    comstr = " cd " + d + "; make pristine; make -j10; cd " + top 
     echostr =  "\necho \" " + comstr + "\" \n"
     runstr =  "\n" + comstr + "\n"
     r.write(echostr)
@@ -58,7 +58,7 @@ for t in targets:
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCPPFLAGS += -DPR_MPI -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
         f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
@@ -67,6 +67,7 @@ for t in targets:
         f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
 
     if(args.petsc == 'TRUE'):
+        f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables\n')
         f.write('\nCPPFLAGS += -DCH_USE_PETSC')
         f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
@@ -78,42 +79,40 @@ for t in targets:
     if(args.prec == 'DOUBLE'):
         f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
-    if args.opt == 'DEBUG':
-        if args.hip == 'FALSE':
-	  f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
-	if args.cuda == 'TRUE':
-            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+    if(args.opt) == 'DEBUG':
+        if(args.cuda == 'TRUE'):
+            f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            if args.hip == 'TRUE':
-              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            if(args.hip) == 'TRUE':
+              f.write("\nCXXGPUFLAGS:= -g -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
               f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
-	    else:
+            else:
               f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
-        if args.opt == 'HIGH':
-	    if args.hip == 'FALSE':
+        if(args.opt == 'HIGH'):
+          if(args.hip == 'FALSE'):
                f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
         else:
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
-        if args.cuda == 'TRUE':
+        if(args.cuda == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
-        if args.hip == 'TRUE':
+        if(args.hip == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
             f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
 
-    if args.cuda == 'TRUE':
-        f.write('\nCXX = nvcc \n DEP=nvcc\n')
+    if(args.cuda == 'TRUE'):
+        f.write('\nCXX = nvcc \n DEPXX=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-relaxed-constexpr --expt-extended-lambda -arch=compute_70\n')
    
-    if args.hip == 'TRUE':
-        f.write('\nCXX = hipcc \n DEP=hipcc\n')
+    if(args.hip == 'TRUE'):
+        f.write('\nCXX = hipcc \n DEPXX=hipcc\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     
 

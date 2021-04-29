@@ -1,0 +1,20 @@
+#!/bin/bash
+#BSUB -nnodes 512
+#BSUB -P GEO127
+#BSUB -J euler
+#BSUB -W 0:50
+#BSUB -o Euler.%J
+NNODES=512
+NAME_DIR=current-perf-512nodes
+DIR=/gpfs/alpine/geo127/scratch/rprat/$NAME_DIR
+EXE=main.exe
+INPUT=512node.in
+rm -rf $DIR
+mkdir $DIR
+cp $EXE $DIR/$EXE
+cp $INPUT $DIR/$INPUT
+cd $DIR
+date
+jsrun --smpiargs="-gpu" -E LD_PRELOAD=/opt/ibm/spectrum_mpi/lib/pami_471/libpami.so -n $NNODES -a 1 -c 1 -g 1 -l CPU-CPU -d packed -b packed:1 ./$EXE $INPUT
+echo " dir = $DIR"
+rm core*

@@ -29,7 +29,7 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencil.H"
 #include "implem/Proto_MinimalCCCM.H"
@@ -73,6 +73,10 @@ using Proto::RealVect;
 using Proto::SimpleEllipsoidIF;
 using Proto::Stencil;
 using Proto::EBStencilArchive;
+using Chombo4::DisjointBoxLayout;
+using Chombo4::DataIterator;
+using Chombo4::DataIndex;
+using Chombo4::Copier;
 
 typedef Proto::Box Bx;
 using ProtoCh::getProtoBox;

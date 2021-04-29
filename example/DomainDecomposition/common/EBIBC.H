@@ -88,6 +88,15 @@ public:
   }
 
 
+  void scalarDiffusionStencilStrings(string a_bcnames[2*DIM]) const
+  {
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      a_bcnames[ivec] = StencilNames::Neumann;
+    }
+  }
+  
+
   void projectionStencilStrings(string a_bcnames[2*DIM]) const
   {
     for(int ivec = 0; ivec < 2*DIM; ivec++)

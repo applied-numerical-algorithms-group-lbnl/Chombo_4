@@ -6,7 +6,21 @@
 ///will not work on device--debugging use only
 
 
-using Proto::Var;
+//around point (4, 8)
+//Area functions
+//cell centered and please keep them in the domain
+////upper left corner of 64^2
+Point areaLo(0, 0);
+Point areaHi(2, 10);
+//the bit underneath the circle rad=0.1, center = 0.5
+//Point areaLo(28, 24);
+//Point areaHi(30, 26);                                    
+//which side of cell gets printed in face dumps
+Side::LoHiSide faceSideX = Side::Lo;
+Side::LoHiSide faceSideY = Side::Lo;
+Bx areaBx(areaLo, areaHi);
+    
+
 void 
 dumpVecRV(Vector<RealVect>* a_dataPtr)
 {
@@ -291,7 +305,7 @@ fullDumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
   }
 }
 void 
-dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpLDCell1(EBLevelBoxData<CELL, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -305,7 +319,7 @@ dumpLD1(EBLevelBoxData<CELL, 1>* dataPtr)
   }
 }
 void 
-dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
+dumpLDCellDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -322,7 +336,7 @@ dumpLDDIM(EBLevelBoxData<CELL, DIM>* dataPtr)
 
 
 void 
-dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
+dumpCell1(EBBoxData<CELL, Real, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -367,7 +381,7 @@ dumpHost1(EBHostData<CELL, Real, 1>* dataPtr)
 
 
 void 
-dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
+dumpCellDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -385,7 +399,8 @@ dumpEBDIM(EBBoxData<CELL, Real, DIM>* dataPtr)
 void 
 genDumpXFace1(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr,
               Point lodeb,
-              Point hideb)
+              Point hideb,
+              Side::LoHiSide faceSide)
 {
   if(dataPtr != NULL)
   {
@@ -414,7 +429,7 @@ genDumpXFace1(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr,
             bool printLines = false;
             if(vofs.size() >  0)
             {
-              vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Lo);
+              vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], faceSide);
               if(faces.size() == 0)
               {
                 printLines = true;
@@ -457,7 +472,7 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
     Bx area = databox & graph.getDomain();
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpXFace1(dataPtr, lodeb, hideb);
+    genDumpXFace1(dataPtr, lodeb, hideb, faceSideX);
   }
 }
 
@@ -465,7 +480,8 @@ dumpXFace(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
 void 
 genDumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr, 
                 Point lodeb,
-                Point hideb)
+                Point hideb,
+                Side::LoHiSide faceSide)
 {
   if(dataPtr != NULL)
   {
@@ -500,7 +516,7 @@ genDumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr,
               bool printLines = false;
               if(vofs.size() >  0)
               {
-                vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], Side::Lo);
+                vector< EBIndex<XFACE> >faces = graph.getXFaces(vofs[0], faceSide);
                 if(faces.size() == 0)
                 {
                   printLines = true;
@@ -544,7 +560,7 @@ dumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
 
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpXFaceDIM(dataPtr, lodeb, hideb);
+    genDumpXFaceDIM(dataPtr, lodeb, hideb, faceSideX);
   }
 }
 
@@ -552,7 +568,8 @@ dumpXFaceDIM(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
 void 
 genDumpYFace1(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr,
               Point lodeb,
-              Point hideb)
+              Point hideb,
+              Side::LoHiSide faceSide)
 {
   if(dataPtr != NULL)
   {
@@ -582,7 +599,7 @@ genDumpYFace1(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr,
           bool printLines = false;
           if(vofs.size() >  0)
           {
-            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
+            vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], faceSide);
             if(faces.size() == 0)
             {
               printLines = true;
@@ -627,14 +644,15 @@ dumpYFace(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
     Bx area = databox & graph.getDomain();             // 
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpYFace1(dataPtr, lodeb, hideb);
+    genDumpYFace1(dataPtr, lodeb, hideb, faceSideY);
   }
 }
 
 
 void 
 genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
-                Point lodeb, Point hideb)
+                Point lodeb, Point hideb,
+                Side::LoHiSide faceSide)
 {
   if(dataPtr != NULL)
   {
@@ -667,7 +685,7 @@ genDumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr,
               bool printLines = false;
               if(vofs.size() >  0)
               {
-                vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], Side::Lo);
+                vector< EBIndex<YFACE> >faces = graph.getYFaces(vofs[0], faceSide);
                 if(faces.size() == 0)
                 {
                   printLines = true;
@@ -713,7 +731,7 @@ dumpYFaceDIM(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
     Bx area = databox & graph.getDomain();
     Point lodeb = area.low();
     Point hideb = area.high();
-    genDumpYFaceDIM(dataPtr, lodeb, hideb);
+    genDumpYFaceDIM(dataPtr, lodeb, hideb, faceSideY);
   }
 }
 
@@ -774,14 +792,14 @@ dumpLDFluxDIM(EBLevelFluxData<DIM>*  dataPtr)
 
 void dummyfunc()
 {
-  dumpLDDIM(NULL);
+  dumpLDCellDIM(NULL);
   dumpLDFluxDIM(NULL);
-  dumpLD1(NULL);
+  dumpLDCell1(NULL);
   dumpLDFlux1(NULL);
   dumpXFace(NULL);
   dumpYFace(NULL);
   dumpFlux1(NULL);
-  dumpEB1(NULL);
+  dumpCell1(NULL);
   dumpHost1(NULL);
   EBLevelBoxData<CELL,1>* phi1=nullptr;
   EBLevelBoxData<CELL,2>* phi2=nullptr;
@@ -789,22 +807,31 @@ void dummyfunc()
   phi2->dumpFile(0,0.1);
 }
 
-//around point (4, 8)
-
-Point lodebarea(3 , 6);
-Point hidebarea(5 , 10 );                                    
-
-void dumpEB1Area(EBBoxData<CELL, Real, 1>* dataPtr)
+void dumpCell1Area(EBBoxData<CELL, Real, 1>* dataPtr)
 {
-  genDumpCell1(dataPtr, lodebarea, hidebarea);
+  genDumpCell1(dataPtr, areaLo, areaHi);
 }
-void dumpEBDIMArea(EBBoxData<CELL, Real, DIM>* dataPtr)
+void dumpCellDIMArea(EBBoxData<CELL, Real, DIM>* dataPtr)
 {
-  genDumpCellDIM(dataPtr, lodebarea, hidebarea);
+  genDumpCellDIM(dataPtr, areaLo, areaHi);
 }
 
 void 
-dumpLD1Area(EBLevelBoxData<CELL, 1>* dataPtr)
+dumpLDCellDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, DIM>& data = *dataPtr;
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      cout << "ibox = " << ibox << ":" << endl;
+      dumpCellDIMArea(&data[dit[ibox]]);
+    }
+  }
+}
+void 
+dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
 {
   if(dataPtr != NULL)
   {
@@ -813,7 +840,7 @@ dumpLD1Area(EBLevelBoxData<CELL, 1>* dataPtr)
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      genDumpCell1(&data[dit[ibox]], lodebarea, hidebarea);
+      genDumpCell1(&data[dit[ibox]], areaLo, areaHi);
     }
   }
 }
@@ -827,29 +854,29 @@ dumpLDDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       cout << "ibox = " << ibox << ":" << endl;
-      genDumpCellDIM(&data[dit[ibox]], lodebarea, hidebarea);
+      genDumpCellDIM(&data[dit[ibox]], areaLo, areaHi);
     }
   }
 }
 void 
 dumpXFaceDIMArea(shared_ptr<EBBoxData<XFACE, Real, DIM> >* dataPtr)
 {
-  genDumpXFaceDIM(dataPtr, lodebarea, hidebarea);
+  genDumpXFaceDIM(dataPtr, areaLo, areaHi, faceSideX);
 }
 void 
 dumpXFace1Area(shared_ptr<EBBoxData<XFACE, Real, 1> >* dataPtr)
 {
-  genDumpXFace1(dataPtr, lodebarea, hidebarea);
+  genDumpXFace1(dataPtr, areaLo, areaHi,  faceSideX);
 }
 void 
 dumpYFaceDIMArea(shared_ptr<EBBoxData<YFACE, Real, DIM> >* dataPtr)
 {
-  genDumpYFaceDIM(dataPtr, lodebarea, hidebarea);
+  genDumpYFaceDIM(dataPtr, areaLo, areaHi, faceSideY);
 }
 void 
 dumpYFace1Area(shared_ptr<EBBoxData<YFACE, Real, 1> >* dataPtr)
 {
-  genDumpYFace1(dataPtr, lodebarea, hidebarea);
+  genDumpYFace1(dataPtr, areaLo, areaHi, faceSideY);
 }
 
 void 
@@ -908,15 +935,15 @@ void dummyfunc_too()
 {
   dumpLDDIMArea(NULL);
   dumpLDFluxDIMArea(NULL);
-  dumpLD1Area(NULL);
+  dumpLDCell1Area(NULL);
   dumpLDFlux1Area(NULL);
   dumpXFace1Area(NULL);
   dumpYFace1Area(NULL);
   dumpXFaceDIMArea(NULL);
   dumpYFaceDIMArea(NULL);
   dumpFlux1Area(NULL);
-  dumpEB1Area(NULL);
-  dumpEBDIMArea(NULL);
+  dumpCell1Area(NULL);
+  dumpCellDIMArea(NULL);
   dumpBD1(NULL);
   dumpBDDIM(NULL);
 }

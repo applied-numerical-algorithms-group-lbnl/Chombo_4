@@ -13,7 +13,7 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-#include "implem/Proto_LevelData.H"
+//#include "implem/Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
 #include <implem/Proto_StencilImplem.H>
@@ -124,6 +124,7 @@ namespace Proto
                            const Point                                     & a_dstGrown);
     bool m_hasDomainBCs;
     bool m_bcsOnly;
+    bool m_irregOnly;
     ///these 
     Stencil<double> m_regStencilInterior;
     //placeholder.  not sure what to do with domain bcs.

@@ -1658,32 +1658,32 @@ namespace CH4_SPMD
 
 //Box specialization of linearSize
 template < >
-int linearSize(const Box& a_input);
+int linearSize(const Chombo4::Box& a_input);
 
-//Box specialization of linearIn
+//Chombo4::Box specialization of linearIn
 template < >
-void linearIn(Box& a_outputT, const void* const a_inBuf);
+void linearIn(Chombo4::Box& a_outputT, const void* const a_inBuf);
 
-//Box specialization of linearOut
+//Chombo4::Box specialization of linearOut
 template < >
-void linearOut(void* const a_outBuf, const Box& a_inputT);
+void linearOut(void* const a_outBuf, const Chombo4::Box& a_inputT);
 
 
-//vector<Box>  specialization
+//vector<Chombo4::Box>  specialization
 template < >
-int linearSize(const Vector<Box>& a_input);
+int linearSize(const Vector<Chombo4::Box>& a_input);
 template < >
-void linearIn(Vector<Box>& a_outputT, const void* const inBuf);
+void linearIn(Vector<Chombo4::Box>& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const Vector<Box>& a_inputT);
+void linearOut(void* const a_outBuf, const Vector<Chombo4::Box>& a_inputT);
 
-//vector<vector<Box> > specialization
+//vector<vector<Chombo4::Box> > specialization
 template < >
-int linearSize(const Vector<Vector<Box> >& a_input);
+int linearSize(const Vector<Vector<Chombo4::Box> >& a_input);
 template < >
-void linearIn(Vector<Vector<Box> >& a_outputT, const void* const inBuf);
+void linearIn(Vector<Vector<Chombo4::Box> >& a_outputT, const void* const inBuf);
 template < >
-void linearOut(void* const a_outBuf, const Vector<Vector<Box> >& a_inputT);
+void linearOut(void* const a_outBuf, const Vector<Vector<Chombo4::Box> >& a_inputT);
 
 }
 #include "Chombo_NamespaceHeader.H"

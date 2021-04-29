@@ -81,10 +81,6 @@ runTest(int a_argc, char* a_argv[])
   pout() << "maxIter   = " << maxIter    << endl;
   pout() << "nstream = " << nStream  << endl;
 
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
-
   RealVect ABC, X0;
   ABC[0] = A;
   ABC[1] = B;
@@ -98,13 +94,13 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  DisjointBoxLayout grids = vecgrids[0];
+  Chombo4::DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
   IntVect dataGhostIV =   2*IntVect::Unit;
@@ -126,7 +122,7 @@ runTest(int a_argc, char* a_argv[])
 
   pout() << "making dictionary" << endl;
 
-  vector<Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
   {
@@ -160,7 +156,7 @@ runTest(int a_argc, char* a_argv[])
     ebbcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at EB" << endl;
   }
-  Box dombox = domain.domainBox();
+  Chombo4::Box dombox = domain.domainBox();
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
@@ -169,34 +165,35 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
-  DataIterator dit = grids.dataIterator();
+  bool directToBottom = false;
+  pp.query("direct_to_bottom", directToBottom);
+  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
+                     stenname, dombcname, ebbcname, dombox,
+                     dataGhostIV, directToBottom);
+  
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   int numsolves = 1;
   pp.query("num_solves", numsolves);
-#ifdef PROTO_CUDA
-  int whichgpu = 0;
-  pp.query("which_gpu", whichgpu);
-  cudaSetDevice(whichgpu);
-#endif  
+  pout() << "number of solves = " <<  numsolves << endl;
   for(int isolve =0; isolve < numsolves; isolve++)
   {
-    pout() << "solve numbber " << isolve << endl;
+    pout() << "going into solve number " << isolve << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
       EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
       EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-      phibd.setVal(0.6);
-      rhsbd.setVal(1.0);
+      phibd.setVal(1.0);
+      rhsbd.setVal(0.0);
       corbd.setVal(0.0);
     }
 
     solver.solve(phi, rhs, tol, maxIter, false);
   }
-  pout() << "writing to file " << endl;
+  pout() << "done with solves " << endl;
   
 //  auto& kappa = solver.getKappa();
 //  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
@@ -210,10 +207,16 @@ runTest(int a_argc, char* a_argv[])
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
 #endif
+#endif
+  
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("helmholtz.time.table");
   {
@@ -230,8 +233,13 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+  pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+#else  
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
+#endif
 #endif
   return 0;
 }

@@ -21,7 +21,7 @@ inline void test_agg_stencil_alloc(EBDataLoc*& a_ptr, unsigned int a_size, int  
 }
 
 template<typename T>
-inline void test_agg_stencil_alloc(pairPtr<T>& a_data, unsigned int a_size)
+inline void test_agg_stencil_alloc(Proto::pairPtr<T>& a_data, unsigned int a_size)
 {
   a_data.ptr[1] = new T[a_size];
   a_data.ptr[0] = new T[a_size];
@@ -75,7 +75,9 @@ template<typename T>
 inline void test_agg_stencil_copy_to_gpu(T* a_host, T*& a_devi, unsigned int size)
 {
   unsigned int nbBytes = size * sizeof(T);
-  protoMalloc(&a_devi, nbBytes);
+  T* tmp;
+  protoMalloc(tmp, nbBytes);
+  a_devi = tmp;
   protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
@@ -85,7 +87,9 @@ inline void test_agg_stencil_copy_to_gpu_eb_stencil(T* a_host, T*& a_devi, uint6
   int acc = 0;
   for(int i = 0; i<size ; i++) acc += sizes[i];
   unsigned int nbBytes = acc * sizeof(T);
-  protoMalloc(&a_devi, nbBytes);
+  T* tmp;
+  protoMalloc(tmp, nbBytes);
+  a_devi = tmp;
   protoMemcpy(a_devi,a_host,nbBytes,protoMemcpyHostToDevice);
 }
 
@@ -93,10 +97,15 @@ template<typename T>
 inline void test_agg_stencil_copy_to_gpu(pairPtr<T>& a_host, pairPtr<T>& a_devi, unsigned int size)
 {
   unsigned int nbBytes = size * sizeof(T);
-  protoMalloc(&a_devi.ptr[0], nbBytes);
-  protoMemcpy(a_devi.ptr[0],a_host.ptr[0],nbBytes,protoMemcpyHostToDevice);
-  protoMalloc(&a_devi.ptr[1], nbBytes);
-  protoMemcpy(a_devi.ptr[1],a_host.ptr[1],nbBytes,protoMemcpyHostToDevice);
+  T* tmp0; 
+  protoMalloc(tmp0, nbBytes);
+  protoMemcpy(tmp0,a_host.ptr[0],nbBytes,protoMemcpyHostToDevice);
+  a_devi.ptr[0] = tmp0;
+  T* tmp1;
+  protoMalloc(tmp1, nbBytes);
+  protoMemcpy(tmp1,a_host.ptr[1],nbBytes,protoMemcpyHostToDevice);
+  a_devi.ptr[1] = tmp1;
+  
 }
 
 
@@ -117,7 +126,7 @@ void test_agg_stencil_get_back_data(pairPtr<double>& a_host, pairPtr<double>& a_
   protoDeviceSynchronize();
 }
 
-bool test_answer_kernel_only_using(pairPtr<double> a_res, double a_val0, double a_val1, unsigned int a_size)
+bool test_answer_kernel_only_using(pairPtr<double>& a_res, double a_val0, double a_val1, unsigned int a_size)
 {
   int compt_0 = 0;
   int compt_1 = 0;

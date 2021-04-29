@@ -55,33 +55,27 @@ runNavierStokes()
   int  max_step   = 10;
   Real max_time   = 1.0;
   int numSmooth  = 4;
-  int nStream    = 8;
-  int outputInterval = -1;
+  int checkpointInterval = -1;
+  int   plotfileInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
 
-  pp.get("nstream", nStream);
 
   pp.get("viscosity" , nu);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
+  pp.get("plotfile_interval"  ,   plotfileInterval);
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
-  EBMultigrid::s_useWCycle     = useWCycle;
-  pout() << "nStream         = " << nStream         << endl;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_useWCycle     = useWCycle;
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
-
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
-
-
+  pout() << "checkpoint interval = " << checkpointInterval  << endl;
+  pout() << "plotfile   interval = " <<   plotfileInterval  << endl;
 
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -91,8 +85,8 @@ runNavierStokes()
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<DisjointBoxLayout> vecgrids;
-  Vector<Box>               vecdomains;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Vector<Chombo4::Box>               vecdomains;
   Vector<Real> vecdx;
   int whichGeom;
 
@@ -110,15 +104,16 @@ runNavierStokes()
 
   pout() << "inititializing data"   << endl;
   
-  Box domain              = vecdomains[0];
-  DisjointBoxLayout grids =   vecgrids[0];
+  Chombo4::Box domain              = vecdomains[0];
+  Chombo4::DisjointBoxLayout grids =   vecgrids[0];
   Real tol = 0.00001;
   int  maxIter = 10;
 
   Real blobCen, blobRad, maxVelMag, maxVelRad, viscosity;
   Real cfl            = 0.5;
   int pIters = 1;
-
+  bool stokesFlowInitialization;
+  pp.get("stokes_flow_initialization", stokesFlowInitialization);
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
   pp.get("covered_value", coveredval);
@@ -129,7 +124,7 @@ runNavierStokes()
   pp.get("max_vel_rad", maxVelRad);
   pp.get("max_step"  , max_step);
   pp.get("max_time"  , max_time);
-  pp.get("output_interval", outputInterval);
+  pp.get("checkpoint_interval", checkpointInterval);
   pp.get("pressure_iterations", pIters);
   pp.get("cfl"  , cfl);
   int whichSolver;
@@ -152,7 +147,7 @@ runNavierStokes()
   }
   else
   {
-    MayDay::Error("unrecognized solver type input");
+    Chombo4::MayDay::Error("unrecognized solver type input");
   }
 
   pout() << "=============================================="  << endl;
@@ -163,30 +158,83 @@ runNavierStokes()
   pout() << "geom cen        = " << geomCen    << endl;
   pout() << "max vel mag     = " << maxVelMag  << endl;
   pout() << "max vel rad     = " << maxVelRad  << endl;
-  pout() << "num_streams     = " << nStream    << endl;
   pout() << "max_step        = " << max_step   << endl;
   pout() << "max_time        = " << max_time   << endl;
-  pout() << "pressure iter   = " << pIters     << endl;
   pout() << "viscosity       = " << viscosity  << endl;
   pout() << "=============================================="  << endl;
 
   
   EBIBC ibc = getIBCs();
   pout() << "initializing solver " << endl;
-  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, paraSolver, ibc);
+  int num_species = 0;
+  pp.query("num_species", num_species);
+  vector<Real> diffusion_coeffs(num_species);
+  for(int ispec = 0; ispec < num_species; ispec++)
+  {
+    string diffname = string("diffusion_coeff_") + to_string(ispec);
+    Real thisco;
+    pp.get(diffname.c_str(), thisco);
+    diffusion_coeffs[ispec] = thisco;
+  }
+  
+  EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
+               paraSolver, ibc, num_species, diffusion_coeffs);
 
 
- auto &  velo = *(solver.m_velo);
- auto &  scal = *(solver.m_scal);
+  unsigned int starting_step = 0;
+  Real         starting_time = 0;
+  string checkpointFile;
+  //If the input file specifies a checkpoint restart, do that.
+  if(pp.query("checkpoint_restart", checkpointFile))
+  {
+    //the current step and time are also stashed in the checkpoint file
+    pout() << "Reading all data from a checkpoint file " << checkpointFile << endl;
+    solver.readDataFromCheckpoint(starting_time, starting_step, checkpointFile);
+  }
+  else
+  {
+    //step and time already initialized to zero
+    pout() << "going into initialize data " << endl;
+    initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
+  }
+  if(starting_step == 0)
+  {
+    if(stokesFlowInitialization)
+    {
+      pout() << "Initializing pressure with gph = nu lapl(v)  (stokes flow initialization)" << endl;
+    }
+    else
+    {
+      if(pIters > 0)
+      {
+        pout() << "Using fixed point interation for initial pressure with "
+               << pIters << "iterations."  << endl;
+      }
+      else
+      {
+        pout() << "Standard Treb pressure initializtion:" << endl;
+        pout() << "initializing pressure with (I-P)(v*)." << endl;
+        pout() << "(gphi out of initial projection).    " << endl;
+      }
+    }
+  }
+  /**
+     For convergence tests and other things, fixed time steps can be useful.
+     The fact that fixedDt is a negative number signals that we are using varaible dt in this case.
+     This is our weird interface that says sending something non-sensical as an argument
+     turns off that bit of functionality.    This quixotic interface has been standard
+     for at least thirty years.   At the very least, it is not over-specified 
+     and that can save a lot of code. --dtg 3-12-2021
+  **/
+  Real fixedDt = -1.0;
 
+  pout() << "startiing run" << endl;
+  solver.run(max_step, max_time, starting_step, starting_time,
+             cfl, fixedDt, tol, pIters,  maxIter,
+             plotfileInterval, checkpointInterval,
+             stokesFlowInitialization, coveredval);
+  pout() << "finished run" << endl;
 
-  pout() << "initializing data " << endl;
-  initializeData(scal, velo, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
-
-  Real fixedDt = -1.0;//signals varaible dt
-
-  solver.run(max_step, max_time, cfl, fixedDt, tol, pIters,  maxIter, outputInterval, coveredval);
-  pout() << "exiting run" << endl;
   return 0;
 }
 
@@ -194,10 +242,16 @@ runNavierStokes()
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //In what must be some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
 #endif
+#endif
+
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("navier.time.table");
   {
@@ -214,8 +268,13 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+  pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+#else  
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
+#endif
 #endif
   return 0;
 }

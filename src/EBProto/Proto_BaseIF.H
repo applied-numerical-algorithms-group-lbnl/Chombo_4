@@ -4,7 +4,7 @@
 #include "Proto_RealVect.H"
 #include "implem/Proto_IndexTM.H"
 #include "Proto_Point.H"
-#include "implem/Proto_IndexedMoments.H"
+#include "Proto_Box.H"
 
 
 namespace Proto
@@ -20,7 +20,7 @@ namespace Proto
   {
 
   public:
-
+    
     /// Default constructor
     BaseIF()
     {
@@ -42,7 +42,7 @@ namespace Proto
 
     
     //.overwrite if you have a fast way of knowing if a whole region is regular
-    virtual bool entireBoxRegular(const Box     & a_box,
+    virtual bool entireBoxRegular(const Proto::Box     & a_box,
                                   const RealVect& a_origin,
                                   const double  & a_dx)
     {
@@ -50,9 +50,9 @@ namespace Proto
     }
 
     ///overwrite if you have a fast way of knowing if a whole region is regular
-    virtual bool entireBoxCovered(const Box& a_box,
+    virtual bool entireBoxCovered(const Proto::Box&       a_box,
                                   const RealVect& a_origin,
-                                  const double& a_dx)
+                                  const double&   a_dx)
     {
       return false;
     }

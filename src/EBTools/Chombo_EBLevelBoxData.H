@@ -288,13 +288,35 @@ public:
 #endif
   }
 
+  ///
+  void 
+  writeToCheckPoint(HDF5Handle& a_handle, string a_varname) const
+  {
+    LevelData<EBHostData<cent, Real, NUMCOMPS> >
+      hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    write(a_handle, hostdata, a_varname.c_str());
+  }
+
+  ///
+  void 
+  readFromCheckPoint(HDF5Handle& a_handle, string a_varname) 
+  {
+    auto grids = this->disjointBoxLayout();
+    Interval interv(0, NUMCOMPS-1);
+    LevelData<EBHostData<cent, Real, NUMCOMPS> >
+      hostdata(grids, NUMCOMPS, this->m_ghost, hostfactory_t(m_graphs));
+    read(a_handle, hostdata, a_varname, grids, interv, false);
+    copyToDevice(*this,     hostdata);
+  }
+  
   void dumpFile(int fileNumber, Real coveredValue) const
   {
     string filename = "tmp"+std::to_string(fileNumber)+".hdf5";
     writeToFileHDF5(filename, coveredValue);
   }
 
-  /// this is for hdf5 stuff as multivalued stuff will be lost
+  /// This is for plotfiles only  as multivalued stuff will be lost.
   static 
   void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
                      const LevelData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
@@ -317,7 +339,7 @@ public:
       {
         Point pt = ivsit();
         IntVect iv = ProtoCh::getIntVect(pt);
-        if(!ebgraph.isCovered(pt))
+        if(!ebgraph.isCovered(pt)) //covered data is set with the setVal above
         {
           //might just work for cell centered data
           EBIndex<cent> ebind;
@@ -358,7 +380,7 @@ public:
         size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-        protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+        protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
         protoError err = protoGetLastError();
         if (err != protoSuccess)
         {
@@ -390,7 +412,7 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+      protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {
@@ -442,7 +464,7 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
+      protoMemcpy(DEVICE,dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {
@@ -474,7 +496,7 @@ public:
 
     EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
     copyToHost(hostdat, difference);
-    Real maxval = hostdat.maxNorm(a_grid, a_icomp);
+    Real maxval = Proto::maxNormCell(hostdat, a_grid, a_icomp);
     int retval = 0;
     if(maxval > a_tol)
     {
@@ -534,7 +556,7 @@ writeEBLevelHDF5(const string& a_filename,
       IntVect iv = ProtoCh::getIntVect(pt);
       if(ebgraph.isCovered(pt))
       {
-        fabu(iv, NUMCOMPS) = 0;
+        fabu(iv, NUMCOMPS) = 0; //kappa = 0
       }
       else
       {

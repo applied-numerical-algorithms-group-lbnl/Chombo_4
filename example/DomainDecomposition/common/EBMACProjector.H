@@ -76,10 +76,16 @@ public:
 
   Copier                                 m_exchangeCopier;
 
+  static void setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval);
+
 private:
   
   void
-  applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+  applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                              const DataIndex     & a_dit);
+
+  void
+  applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                               const DataIndex     & a_dit);
   
   void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);
@@ -99,7 +105,11 @@ private:
   shared_ptr<EBMultigrid>                m_solver;
 
 
-
+  //dont ask
+  void
+  subtractGradient(EBFluxData<Real, 1>& a_velo,
+                   EBFluxData<Real, 1>& a_gphi,
+                   const Bx& a_grid) const;
   void operator=(const EBMACProjector& a_opin);
   EBMACProjector();
 

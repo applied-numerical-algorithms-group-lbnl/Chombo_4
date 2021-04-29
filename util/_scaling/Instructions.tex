@@ -1,0 +1,58 @@
+\documentclass{article}
+\title{CPScale Instruction Manual}
+\author{Dan Graves}
+\begin{document}
+\maketitle
+\section{Introduction}
+
+This docuement describes how to use CPScale, the Chombo/Proto scaling
+infrastructure.    Given a template for an input file, a template for
+a batch script and some command line inputs, CPScale produces a
+directory  for a series of runs which comprise a weak scaling test.
+CPScale also generates a script to submit the jobs.   Between each
+scale, the grid refinement is doubled.   Both the MPI ranks and the
+processor count are multiplied by eight.
+
+For now, the pattern for number of nodes is fixed at 1, 8, 64....
+nnnn
+\section{Command Line Arguments}
+  \begin{itemize}
+\item \tt{--help} provides helpful information (mostly what these
+  arguments mean).
+\item \tt{--procs}  The minimum number of MPI process.  Say, for
+  example this is 3.   Then the next run in the scaling test will have
+  24 processes and so on.   This should be smaller than the number of
+  CPUs per node on the target machine.
+\item \tt{--input} name the input file template.   Examples are
+  provided.   Relative path is okay to use here.  pp
+\item \tt{--batch} name the batch file template.   Examples are
+  provided.   Relative path is okay to use here.pp
+\item \tt{--max\_proc}  maximum number of MPI processes to use here.
+  This is a not-to-exceed number so the largest run can be smaller
+  than this.
+\item \tt{--executable\_name} Name of the executable you want run.
+  Absolute paths are best here but if you must use a relative path,
+  remember that this will be run from a directory two levels deeper
+  than the one you are in.   So if you run this script in the same
+  directory that you have your executable, prefix the name with
+  "../..''.
+\item \tt{--nx}  Resolution of smallest calculation.
+\item \tt{--prefix} Name of the test (directory will have this in the name).  
+\end{itemize}
+
+
+\section{Usage pattern}
+
+Say a user has an executable file named \tt{blah.exe} in her directory
+"/home/awesomeuser/execfiles''.   She wants 2 processes per node up to
+128 processes.   She has an input template called \tt{inputs} and a
+batch template called \tt{batch}.   The wants the minimum resolution
+in each directon to be 64.   The command would look like
+\begin{verbatim}
+<prompt>  ./configure.scaling --nx=64 --input=inputs --batch=batch \
+            --executable_name="/home/awesomeuser/execfiles/main.exe" \
+           --procs=2 --max_proc=128
+\end{verbatim}
+
+  
+\end{document}

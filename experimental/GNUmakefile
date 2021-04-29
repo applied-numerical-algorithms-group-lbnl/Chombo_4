@@ -39,7 +39,7 @@ DEPXX=nvcc
 export OMPI_CXX=nvcc
 
 CXXALLFLAGS := #-std=c++11
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pg #-pedantic 
+CXXDBGFLAGS:=$(CXXALLFLAGS) -O0 -g -pg #-pedantic 
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3 -use_fast_math
 MPI_DIR=/usr/lib/openmpi
 LAPACKLIBS = -llapacke -llapack
@@ -56,10 +56,8 @@ LIBS     += $(HDFLIBFLAGS)
  
 CXXFLAGS += -DCH_USE_DOUBLE
 
-CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
-
-#CXXFLAGS+=$(CXXDBGFLAGS)
-CXXFLAGS+=$(CXXOPTFLAGS) 
+CXXFLAGS+=$(CXXDBGFLAGS)
+#CXXFLAGS+=$(CXXOPTFLAGS) 
 
 CPPFLAGS += -I../../common
 CPPFLAGS += -DCH_USE_HDF5 
@@ -80,9 +78,9 @@ CPPFLAGS += -I$(MPI)/include/
 #
 # Uncomment next three lines to run on GPU (device), comment to run on CPU (host)
 #
-CXX=nvcc
+CXX=nvcc -g
 CPPFLAGS += -DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70
-CUDALIBS = -lcusolver -lcudart
+CUDALIBS = -lcusolver -lcudart -lnvToolsExt
 #
 #####
 

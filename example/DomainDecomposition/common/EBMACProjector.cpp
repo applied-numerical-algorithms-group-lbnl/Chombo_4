@@ -81,38 +81,77 @@ project(EBLevelFluxData<1>   & a_velo,
   // set rhs = kappa*div (vel)
   kappaDivU(m_rhs, a_velo);
 
-//  //begin debug
+//begin debug
+//  pout() << "Writing to macprojRHS" << endl;
+//  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
 //  Real rhsmax = m_rhs.maxNorm(0);
 //  pout() << "rhs of mac projection = " << rhsmax << endl;
 //  exit(0);
-  //end debug
+//end debug
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
+//begin debug
+  //  pout() << "Writing to projPhi" << endl;
+  //m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
+//end  debug
 
   //gphi = grad(phi)
   //v := v - gphi
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     
-//    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-    //get face fluxes and interpolate them to centroids
-    for(unsigned int idir = 0; idir < DIM; idir++)
-    {
-      bool initToZero = true;
-      m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
-                              a_gphi[dit[ibox]] ,m_phi[dit[ibox]], idir, ibox, initToZero, 1.0);
-    }
+    Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+    bool initToZero = true;
+    m_brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, m_domain,
+                            a_gphi[dit[ibox]] ,m_phi[dit[ibox]], ibox, initToZero, 1.0);
+
+    applyGradBoundaryConditions(a_gphi[dit[ibox]], dit[ibox]);
     a_velo[dit[ibox]] -= a_gphi[dit[ibox]];
-    ideb++;
+  }
+}
+void 
+EBMACProjector::
+setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval)
+{  
+  Bx faceBx = valbx.faceBox(idir, sit);
+  //unsigned long long int numflopspt = 0;
+  if(idir == 0)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regdata = a_flux.m_xflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+  else if(idir == 1)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regdata = a_flux.m_yflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+#if DIM==3          
+  else if(idir == 2)
+  {
+    //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regdata = a_flux.m_zflux->getRegData();
+    forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+  }
+#endif
+  else
+  {
+    MayDay::Error("bogus idir");
   }
 }
 ///
 void 
 EBMACProjector::
-applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+applyVeloBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                             const DataIndex     & a_dit)
 {
   Box validBox = m_grids[a_dit];
@@ -159,30 +198,72 @@ applyFluxBoundaryConditions(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
+          setFaceStuff(idir, sit(),  a_flux, valbx, fluxval);
         }
       }
     }
   }
+}
+///
+void 
+EBMACProjector::
+applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
+                            const DataIndex     & a_dit)
+{
+  Box validBox = m_grids[a_dit];
+
+  Bx dombx = ProtoCh::getProtoBox(m_domain);
+  Bx valbx = ProtoCh::getProtoBox(validBox);
+  for(SideIterator sit; sit.ok(); ++sit)
+    {
+      Point dombnd = dombx.boundary(sit());
+      Point valbnd = valbx.boundary(sit());
+      for(int idir = 0; idir < DIM; idir++)
+        {
+          if(dombnd[idir] == valbnd[idir])
+            {
+              int index = ebp_index(idir, sit());
+              string bcstr = m_ebibc.m_domainBC[index];
+              Real fluxval = 0;
+
+              if(bcstr != string("outflow"))
+                {
+                  Bx faceBx = valbx.faceBox(idir, sit());
+                  //unsigned long long int numflopspt = 0;
+                  if(idir == 0)
+                    {
+                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
+                      //using non-eb forall because box restriction in eb land is broken right now.   This will
+                      //work if there nare no cut cells near the domain boundary
+                      auto& regdata = a_flux.m_xflux->getRegData();
+                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+                    }
+                  else if(idir == 1)
+                    {
+                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
+                      //using non-eb forall because box restriction in eb land is broken right now.   This will
+                      //work if there nare no cut cells near the domain boundary
+                      auto& regdata = a_flux.m_yflux->getRegData();
+                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+                    }
+#if DIM==3          
+                  else if(idir == 2)
+                    {
+                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
+                      //using non-eb forall because box restriction in eb land is broken right now.   This will
+                      //work if there nare no cut cells near the domain boundary
+                      auto& regdata = a_flux.m_zflux->getRegData();
+                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
+                    }
+#endif
+                  else
+                    {
+                      MayDay::Error("bogus idir");
+                    }
+                }
+            }
+        }
+    }
 }   
 ///
 void 
@@ -209,7 +290,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
     stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-    applyFluxBoundaryConditions(centroidFlux, dit[ibox]);
+    applyVeloBoundaryConditions(centroidFlux, dit[ibox]);
 
     auto& kapdiv =  m_rhs[dit[ibox]];
     kapdiv.setVal(0.);
@@ -218,11 +299,6 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
       bool initToZero = false;
       m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
                               idir, ibox, initToZero, 1.0);
-//      //begin debug
-//      using std::to_string;
-//      string prefix = string("m_rhs") + string(", idir=") + to_string(idir) + string(", ibox = ") + to_string(ibox) + string(":");
-//      maxLocCell(kapdiv, grid, prefix);
-      //end debug
     }
     ideb++;
   }

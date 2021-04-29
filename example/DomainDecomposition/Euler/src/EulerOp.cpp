@@ -29,10 +29,10 @@ Stencil<Real> EulerOp::s_deconvolve_f[DIM];
 Stencil<Real> EulerOp::s_interp_H[DIM];
 Stencil<Real> EulerOp::s_interp_L[DIM];
 Stencil<Real> EulerOp::s_divergence[DIM];
-Copier          EulerOp::s_exchangeCopier;
+Chombo4::Copier EulerOp::s_exchangeCopier;
 
-typedef BoxData<Real,1,1,1> PScalar;
-typedef BoxData<Real,NUMCOMPS,1,1> PVector;
+typedef BoxData<Real,1,MEMTYPE_DEFAULT,1,1> PScalar;
+typedef BoxData<Real,NUMCOMPS,MEMTYPE_DEFAULT,1,1> PVector;
 using ::Proto::forall;
 using ::Proto::forallOp;
 

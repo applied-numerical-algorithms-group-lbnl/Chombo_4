@@ -1,3 +1,6 @@
+#true to set  initial pressure = nu*lapl(u)
+stokes_flow_initialization = false
+
 initial_velo = "zero"
 initial_scal = "blob_scal_0"
 #also available: slip_wall, inflow, outflow
@@ -8,6 +11,14 @@ domain_bc_lo_2 = "slip_wall"
 domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 pressure_iterations = 0
+
+num_species = 3
+diffusion_coeff_0 = 0.1
+diffusion_coeff_1 = 0.01
+diffusion_coeff_2 = 0.001
+species_inflow_value_0 = 0
+species_inflow_value_1 = 0
+species_inflow_value_2 = 0
 #domain size
 nx=       64
 use_stokes_dt = true
@@ -33,7 +44,8 @@ max_vel_mag = 1.0
 max_vel_rad = 0.25
 
 #negative to turn off output
-output_interval = 10
+plotfile_interval = 1
+checkpoint_interval = 1
 
 #value in hdf5 file of  covered data
 covered_value = 0.0

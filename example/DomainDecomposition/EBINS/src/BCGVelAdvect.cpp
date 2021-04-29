@@ -8,7 +8,9 @@ void
 BCGVelAdvect::
 applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
                  const DataIndex     & a_dit,
-                 int a_velcomp) const
+                 EBFluxData<Real, 1> & a_scalarLo,
+                 EBFluxData<Real, 1> & a_scalarHi,
+                 unsigned int a_velcomp)
 {
   Box validBox = m_grids[a_dit];
 
@@ -24,67 +26,94 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
       {
         int index = ebp_index(idir, sit());
         string bcstr = m_ebibc.m_domainBC[index];
-        bool setstuff = true;
-        Real fluxval = 0;
         if(bcstr == string("outflow"))
         {
-          //do nothing, the upwind state should already be correct
-          setstuff = false;
+          //copy correct side of extrapolation to flux  (using extrapolated value as flux here)
+          copyExtrapolatedState(a_flux, a_scalarLo, a_scalarHi, idir, sit(),  valbx);
         }
         else if(bcstr == string("inflow"))
         {
-          setstuff = true;
           if(idir == a_velcomp)
           {
+            Real fluxval = 0;
             ParmParse pp;
             pp.get("velocity_inflow_value", fluxval);
+            EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
           }
           else
           {
-            fluxval = 0;
+            //copy correct side of extrapolation to flux  (using extrapolated value as flux here)
+            copyExtrapolatedState(a_flux, a_scalarLo, a_scalarHi, idir, sit(),  valbx);
           }
         }
-        else if(bcstr == string("slip_wall"))
+        else if((bcstr == string("no_slip_wall")) || (bcstr == string("slip_wall")))
         {
-          setstuff = (idir == a_velcomp); //leave tangential vels alone in this context
-          fluxval = 0;
-        }
-        else if(bcstr == string("no_slip_wall"))
-        {
-          setstuff = true;
-          fluxval = 0;
+          if(a_velcomp== idir)
+          {
+            Real fluxval = 0;
+            EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
+          }
+          else
+          {
+            //copy correct side of extrapolation to flux  (using extrapolated value as flux here)
+            copyExtrapolatedState(a_flux, a_scalarLo, a_scalarHi, idir, sit(),  valbx);
+          }
         }
         else
         {
           MayDay::Error("EBAdvection: unrecognized bc");
         }
-        if(setstuff)
-        {
-          Bx faceBx = valbx.faceBox(idir, sit());
-          unsigned long long int numflopspt = 0;
-          if(idir == 0)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-          }
-          else if(idir == 1)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-          }
-#if DIM==3          
-          else if(idir == 2)
-          {
-            ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-          }
-#endif
-          else
-          {
-            MayDay::Error("bogus idir");
-          }
-        }
       }
     }
   }
 }   
+/*******/
+void 
+BCGVelAdvect::
+copyExtrapolatedState(EBFluxData<Real, 1>& a_flux,
+                      EBFluxData<Real, 1>& a_scalarLo, 
+                      EBFluxData<Real, 1>& a_scalarHi, 
+                      int idir, Side::LoHiSide sit, Bx valbx)
+{
+  Bx faceBx = valbx.faceBox(idir, sit);
+  int isign = sign(sit);
+  //unsigned long long int numflopspt = 0;
+  if(idir == 0)
+  {
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regflux =     a_flux.m_xflux->getRegData();
+    auto& regsclo = a_scalarLo.m_xflux->getRegData();
+    auto& regschi = a_scalarHi.m_xflux->getRegData();
+    forallInPlaceBase(copyExtrap, faceBx, regflux, regsclo, regschi, isign);
+  }
+  else if(idir == 1)
+  {
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regflux =     a_flux.m_yflux->getRegData();
+    auto& regsclo = a_scalarLo.m_yflux->getRegData();
+    auto& regschi = a_scalarHi.m_yflux->getRegData();
+    forallInPlaceBase(copyExtrap, faceBx, regflux, regsclo, regschi, isign);
+  }
+#if DIM==3          
+  else if(idir == 2)
+  {
+    //using non-eb forall because box restriction in eb land is broken right now.   This will
+    //work if there are no cut cells near the domain boundary
+    auto& regflux =     a_flux.m_zflux->getRegData();
+    auto& regsclo = a_scalarLo.m_zflux->getRegData();
+    auto& regschi = a_scalarHi.m_zflux->getRegData();
+    forallInPlaceBase(copyExtrap, faceBx, regflux, regsclo, regschi, isign);
+  }
+#endif
+  else
+  {
+    MayDay::Error("bogus idir");
+  }
+}
+                      
+                      
 /*******/
 void 
 BCGVelAdvect::
@@ -94,94 +123,12 @@ hybridVecDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
                     Real a_tolerance, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::hybridDivergence");
-  //fills m_macScal with velocity extrapolated to its normal face and projected
-  getAdvectionVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);
-
-  //using macScal for upwinding, this gets the vector compoents of velcity to faces
-  //this also gets corrected by teh gradient found in the previous step.
-  getMACVectorVelocity(a_inputVel, a_dt);
-
+  getMACVectorVelocity(a_inputVel, a_dt, a_tolerance, a_maxIter);    
+  
   //lots of aliasing and smushing
   assembleDivergence(a_divuu, a_dt);
 }
 /*******/
-void  
-BCGVelAdvect::
-getAdvectionVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
-                     const Real                  & a_dt,
-                     Real a_tol, unsigned int a_maxIter)    
-{
-  CH_TIME("BCGAdvect::getAdvectionVelocity");
-  a_inputVel.exchange(m_exchangeCopier);
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    EBLevelBoxData<CELL, 1> velcomp;
-    velcomp.define<DIM>(a_inputVel, idir, m_graphs);
-    //source term = nu*lapl(ucomp);
-    if(m_eulerCalc)
-    {
-      m_source.setVal(0.);
-    }
-    else
-    {
-      Real alpha = 0; Real beta = m_viscosity;
-      m_helmholtz->resetAlphaAndBeta(alpha, beta);
-      m_helmholtz->applyOp(m_source, velcomp);
-    }
-
-    pout()  << "max norm of source term for advection = " << m_source.maxNorm(0) << endl;
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
-      const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-
-      //this gets the low and high side states for the riemann problem
-      auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
-      auto & veccell = a_inputVel[dit[ibox]];
-      auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
-                           grown, graph, dit[ibox], ibox, a_dt);
-
-      //get face fluxes and interpolate them to centroids
-      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
-      EBFluxData<Real, 1>  upwindScal(   grown, graph);
-      //average velocities to face centers.
-      getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
-
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
-      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
-      
-      //now copy into the normal direction holder
-      copyComp(advvelfab, upwindScal, idir);
-
-    } //end loop over boxes
-  }  // and loop over velocity directions
-
-  //begin debug
-//  pout()  << "max norm of advection velocity before projection = " 
-//          << m_advectionVel.maxNorm(0) << endl;
-
-  // now we need to project the mac velocity
-  pout() << "mac projecting advection velocity" << endl;
-  //end debug
-
-  m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
-  m_advectionVel.exchange(m_exchangeCopier);
-//  //begin debug
-//  pout()  << "max norm of advection velocity after projection = " 
-//          << m_advectionVel.maxNorm(0) << endl;
-//  pout() << "leaving getAdvectionVelocity" << endl;
-//
-  //end debug
-
-}
-/*******/
-
-
 void  
 BCGVelAdvect::      
 copyComp(EBFluxData<Real, 1>&  a_dst,
@@ -212,7 +159,8 @@ copyComp(EBFluxData<Real, 1>&  a_dst,
 void  
 BCGVelAdvect::
 getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
-                     const Real                  & a_dt)
+                     const Real                  & a_dt,
+                     Real a_tol, unsigned int a_maxIter)    
 {
   CH_TIME("BCGAdvect::getMACVectorVelocity");
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
@@ -236,6 +184,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
     m_source.exchange(m_exchangeCopier);
     DataIterator dit = m_grids.dataIterator();
+    //int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
       Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
@@ -244,22 +193,42 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
 
       //this gets the low and high side states for the riemann problem
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalHi(grown, graph);
-      EBFluxData<Real, 1>  scalLo(grown, graph);
+      EBFluxData<Real, 1>  scalarHi(grown, graph);
+      EBFluxData<Real, 1>  scalarLo(grown, graph);
+      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
+      EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
+      
       auto & veccell = a_inputVel[dit[ibox]];
       auto & sourfab =   m_source[dit[ibox]];
-      bcgExtrapolateScalar(scalLo, scalHi, veccell, scalfab, sourfab,
+      bcgExtrapolateScalar(scalarLo, scalarHi, veccell, scalfab, sourfab,
                            grown, graph, dit[ibox], ibox, a_dt);
 
-      //get face fluxes and interpolate them to centroids
-      EBFluxData<Real, 1>&  faceCentVelo = m_advectionVel[dit[ibox]];
-      EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
-      getUpwindState(upwindScal, faceCentVelo, scalLo, scalHi);
+      //average velocities to face centers.
+      getFaceCenteredVel( faceCentVelo, dit[ibox], ibox);
 
+      //get face fluxes and interpolate them to centroids
+      unsigned int curcomp  = vecDir;
+      unsigned int doingvel = 1;
+      getUpwindState(upwindScal, faceCentVelo, scalarLo, scalarHi, curcomp, doingvel);
+
+      //enforce boundary conditions with an iron fist.
+      applyVeloFluxBCs(upwindScal,  dit[ibox], 
+                       scalarLo, scalarHi, curcomp);
+      
+      EBFluxData<Real, 1>& advvelfab = m_advectionVel[dit[ibox]];
+      
+      //now copy into the normal direction holder
+      copyComp(advvelfab, upwindScal, vecDir);
     } //end loop over boxes
   }  // and loop over velocity directions
 
-  //subtract off pure gradient part of the velocity field
+  // now we need to project the mac velocity
+  pout() << "mac projecting advection velocity" << endl;
+  m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter);
+  
+  m_advectionVel.exchange(m_exchangeCopier);
+
+  //subtract off pure gradient part of the velocity field in vector holder.
   correctVectorVelocity();
 }
 /*******/
@@ -275,33 +244,47 @@ correctVectorVelocity()
 {
   CH_TIME("BCGAdvect::correctVectorVelocity");
   m_macGradient.exchange(m_exchangeCopier);
+  DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
-  {
-    EBLevelFluxData<1> facecomp;
-    facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
-
-    DataIterator dit = m_grids.dataIterator();
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      auto & advvelfab = m_advectionVel[dit[ibox]];
-      auto & veccomp   =       facecomp[dit[ibox]];
-      auto & macGrad   =  m_macGradient[dit[ibox]];
-      //first correct facedir==vecdir direction
-      //if the two directions are the same, substitute the advection velocity, which already has its gradient removed
-      copyComp(veccomp, advvelfab, vecDir);
+      EBLevelFluxData<1> facecomp;
+      facecomp.define<DIM>(m_macVelocity, vecDir, m_graphs);
 
-      for(unsigned int faceDir = 0; faceDir < DIM; faceDir++)
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
-        if(faceDir != vecDir)
+        auto & advvelfab = m_advectionVel[dit[ibox]];
+        auto & macGrad   =  m_macGradient[dit[ibox]];
+
+        EBCrossFaceStencil<2, Real> stencils =
+          m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
+
+        auto & velcomp  = facecomp[dit[ibox]];
+        for(unsigned int faceDir =0; faceDir < DIM; faceDir++)
         {
-          EBCrossFaceStencil<2, Real> stencils =
-            m_brit->getCrossFaceStencil(StencilNames::TanVelCorrect, StencilNames::NoBC, m_domain, m_domain, ibox);
-          bool initToZero = false;
-          Real scale = -1.0; //subtracting off gradient
-          stencils.apply(veccomp, macGrad, faceDir, vecDir, initToZero, scale);
+          unsigned int srcDir = vecDir;
+          unsigned int dstDir = faceDir;
+          if(faceDir == vecDir)
+          {
+            //when vecdir==facedir,
+            //substitutNe the advection velocity, which already has its gradient removed
+            //correct facedir==vecdir direction
+            copyComp(velcomp, advvelfab, vecDir);
+          }
+          else
+          {
+            //begin debug
+            //EBFluxData<Real,1> tangrad(velcomp.m_xflux->inputBox(), (*m_graphs)[dit[ibox]]);
+            //stencils.apply(tangrad, macGrad, true      ,  1.0);
+            //end debug
+
+            bool setToZero=false;  Real scale = -1;  //subtracting off gradient
+            stencils.apply(velcomp, macGrad, dstDir, srcDir, setToZero, scale);
+          }
+          ideb++;
         }
-      }
-    } // end loop over facedir
+    }
+    ideb++;
   }
   m_macVelocity.exchange(m_exchangeCopier);
 }
@@ -339,15 +322,18 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       //interpolate flux to centroids
       stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
 
-      //enforce boundary conditions with an iron fist.
-      applyVeloFluxBCs(centroidFlux,  dit[ibox], ivar);
-      
       scalar.define(m_macVelocity[dit[ibox]], ivar);
 
       auto& kapdiv =  m_kappaDiv[dit[ibox]];
       getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
     }
     m_kappaDiv.exchange(m_exchangeCopier);
+    
+    // begin debug
+    //string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");
+    //m_kappaDiv.writeToFileHDF5(sourcefile, 0.);
+    //end debug
+    
     //this computes the non-conservative divergence and puts it into m_nonConsDiv
     nonConsDiv();
     //this forms the hybrid divergence

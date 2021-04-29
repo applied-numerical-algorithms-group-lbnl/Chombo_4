@@ -76,12 +76,30 @@ public:
 
   shared_ptr<EBMACProjector> m_macprojector;
 protected:
-
+  string m_conGradEBFluxName[DIM];
+  string m_ncdivLabel;
+  string m_nobcsLabel;
+  Copier m_copyToCopier;
   void registerStencils();
 
 
-private:
+  void
+  computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                                   EBBoxData<CELL, Real,   1> & a_phi,
+                                   const EBGraph              & a_graph,
+                                   const Bx                   & a_grid,
+                                   const unsigned int         & a_ibox);
 
+  void
+  kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                            EBBoxData<CELL, Real,   1> & a_phi,
+                            const EBGraph              & a_graph,
+                            const Bx                   & a_grid,
+                            const unsigned int         & a_ibox);
+  
+  ///turns kappa grad into grad by volume weighted averaging
+  void normalizeGradient(EBLevelBoxData<CELL, DIM>& a_gphi);
+private:
   ///insert usual diatribe about strong vs. weak construction here
   void operator=(const EBCCProjector& a_opin);
   EBCCProjector();
