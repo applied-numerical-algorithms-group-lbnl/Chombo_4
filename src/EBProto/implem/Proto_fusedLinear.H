@@ -1,5 +1,6 @@
 #pragma once
-
+#include "Chombo_Copier.H"
+#include "Chombo_ProtoInterface.H"
 
 template <CENTERING cent, class data_t>
 __global__
@@ -15,41 +16,48 @@ void kernel_ebcopy
                 Point* a_box_inf, Point* a_box_high
 )
 {
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	EBBoxDataIndexer<cent,data_t> kernel;
+    	for(int it = 0; it < numberOfIteration; it++)
+		kernel.gpu(a_end[it], a_indiciesSrc[it], a_indiciesSizeSrc[it], a_indiciesDst[it], a_indiciesSizeDst[it], a_dst[it], a_src[it], a_idst[it], a_isrc[it], a_inco[it], a_box_inf[it], a_box_high[it]);
+/*    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    for(int it = 0; it < numberOfIteration, it++)
+    for(int it = 0; it < numberOfIteration; it++)
       if(idx < a_end[it])
       {
         EBIndex<cent>& vof = a_indiciesDst[it][idx];
         if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
         {
 #pragma unroll
-          for(unsigned int ico = 0; ico < a_inco; ico++)
+          for(unsigned int ico = 0; ico < a_inco[it]; ico++)
           {
-            unsigned int isrc = a_isrc + ico;
-            unsigned int idst = a_idst + ico;
+            unsigned int isrc = a_isrc[it] + ico;
+            unsigned int idst = a_idst[it] + ico;
             size_t indDst = index(a_indiciesDst[it], a_indiciesSizeDst[it], vof, idst[it]);
             size_t indSrc = index(a_indiciesSrc[it], a_indiciesSizeSrc[it], vof, isrc[it]);
             a_dst[it][indDst] = a_src[it][indSrc];
           }
         }
       }
-
+*/
 }
 
 
 
 
-template <CENTERING cent, class data_t>
+template <CENTERING cent, class data_t, unsigned int ncomp>
 class EBBoxDataIndexerFused
 {
 public:
 	EBBoxDataIndexerFused(){}
 
+	~EBBoxDataIndexerFused()
+	{
+		free();
+	}
 
 	void allocateCopy(unsigned int a_numberOfIteration)
 	{
-		if(isAllocated)
+		if(m_isAllocated)
 		{
 			assert(a_numberOfIteration == m_numberOfIteration);
 			return;
@@ -72,44 +80,53 @@ public:
 		protoMalloc(MEMTYPE_DEFAULT, m_indiciesSrc, size);
 		m_indiciesSizeDst = m_indiciesSrc + a_numberOfIteration;
 
-		bytes = sizeof(data_t*)
+		bytes = sizeof(data_t*);
 		nPtr  = 2;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_src, size);
 		m_dst = m_src + a_numberOfIteration;
 
-		bytes = sizeof(Proto::Point*)
+		bytes = sizeof(Proto::Point*);
 		nPtr  = 2;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_box_inf, size);
 		m_box_high = m_box_inf + a_numberOfIteration;
 
-		isAllocated = true;
+		m_isAllocated = true;
 	}
 
-	void fillparams( copyiterator a_copier, BoxLayoutData<T>& a_dst, const Interval& a_srcComps)
+
+	template<class T>
+	//void fillparams(CopyIterator a_copier, BoxLayoutData<T>& a_dst, const Interval& a_srcComps)
+	void fillparams(Chombo4::CopyIterator a_copier, T& a_dst, T& a_src, unsigned int a_dstComps_begin, unsigned int a_srcComps_begin, unsigned int a_srcComps_size)
 	{
+		if(m_isAllocated == true) return;
 
 		int items=a_copier.size();
-		assert(m_numberofiteration==items);
+		assert(m_numberOfIteration==items);
   		for (int n=0; n<items; n++)
   		{	
-    			const motionitem& item = it[n];
-
+    			const Chombo4::MotionItem& item = a_copier[n];
+      			::Proto::Box bxFr = ::ProtoCh::getProtoBox(item.fromRegion);
+      			::Proto::Box bxTo = ::ProtoCh::getProtoBox(item.toRegion);
+			::Proto::Box inter = bxFr & bxTo;
     			fillparam(n, 
-				a_dest[item.toindex].getIrregData(), 
-            			a_src[item.fromindex].getIrregData(),
-           			item.toregion.begin(),
-				a_srcComps.begin(),a_srcComps.size());
+				a_dst[item.toIndex].getIrregData(), 
+            			a_src[item.fromIndex].getIrregData(),
+           			a_dstComps_begin,
+				a_srcComps_begin,a_srcComps_size,
+				inter
+			);
   		}
 	}
 
 	void fillparam(
 		unsigned int a_it, 
-		irregdata<cent, data_t, ncomp>& a_dst, 
-		irregdata<cent, data_t, ncomp>& a_src, 
-		unsigned int a_idst, unsigned int a_src, 
-		unsigned int a_inco
+		IrregData<cent, data_t, ncomp>& a_dst, 
+		IrregData<cent, data_t, ncomp>& a_src, 
+		unsigned int a_idst, unsigned int a_isrc, 
+		unsigned int a_inco,
+		Proto::Box a_box
 	)
 	{
 		
@@ -123,30 +140,30 @@ public:
 			a_idst, a_isrc,						// unsigned int* a_idst, unsigned int* a_isrc,
                 	a_inco, 						// unsigned int* a_inco,
                 	a_box.low(), a_box.high()
-		)
+		);
 	}
 
 
 	void fillone(   unsigned int it, unsigned int end, 
-			ebindex<cent>* indiciessrc, ebindex<cent>* indiciesdst,
-			unsigned int indiciessizesrc, unsigned int indiciessizedst,
+			EBIndex<cent>* indiciesSrc, EBIndex<cent>* indiciesDst,
+			unsigned int indiciesSizeSrc, unsigned int indiciesSizeDst,
 			data_t* src, data_t* dst,
 			unsigned int idst, unsigned int isrc, unsigned int inco,
-			proto::point box_inf, proto::point box_high
+			Proto::Point box_inf, Proto::Point box_high
 		)
 	{
 		m_end[it] 		= end;
-		m_indiciessrc[it] 	= indiciessrc;
-		m_indiciesdst[it] 	= indiciesdst;
-		m_indiciessizesrc[it] 	= indiciessizesrc;
-		m_indiciessizedst[it] 	= indiciessizedst;
+		m_indiciesSrc[it] 	= indiciesSrc;
+		m_indiciesDst[it] 	= indiciesDst;
+		m_indiciesSizeSrc[it] 	= indiciesSizeSrc;
+		m_indiciesSizeDst[it] 	= indiciesSizeDst;
 		m_src[it] 		= src;
 		m_dst[it] 		= dst;
 		m_idst[it] 		= idst;
 		m_isrc[it] 		= isrc;
 		m_inco[it] 		= inco;
 		m_box_inf[it] 		= box_inf;
-		m_box_high[it] 		= m_box_high;
+		m_box_high[it] 		= box_high;
 	}
 
 	void launch()
@@ -166,49 +183,65 @@ public:
 		);
 	}
 
+	void free()
+	{
+		protoFree(MEMTYPE_DEFAULT,m_end);
+		protoFree(MEMTYPE_DEFAULT,m_indiciesSrc);
+		protoFree(MEMTYPE_DEFAULT,m_indiciesDst);
+		protoFree(MEMTYPE_DEFAULT,m_indiciesSizeSrc);
+		protoFree(MEMTYPE_DEFAULT,m_indiciesSizeDst);
+		protoFree(MEMTYPE_DEFAULT,m_src);
+		protoFree(MEMTYPE_DEFAULT,m_dst);
+		protoFree(MEMTYPE_DEFAULT,m_dst);
+		protoFree(MEMTYPE_DEFAULT,m_idst);
+		protoFree(MEMTYPE_DEFAULT,m_isrc);
+		protoFree(MEMTYPE_DEFAULT,m_inco);
+		protoFree(MEMTYPE_DEFAULT,m_box_inf);
+		protoFree(MEMTYPE_DEFAULT,m_box_high);
+	}
+
 
 public:
-	m_numberofiteration = 0;
-	bool isallocated = false;
-	unsigned int* m_end = nullptr;
-	ebindex<cent>** m_indiciessrc = nullptr;
-	ebindex<cent>** m_indiciesdst = nullptr;
-	unsigned int* m_indiciessizesrc = nullptr;
-	unsigned int* m_indiciessizedst = nullptr;
-	data_t** m_src = nullptr;
-	data_t** m_dst = nullptr;
-	unsigned int* m_idst = nullptr;
-	unsigned int* m_isrc = nullptr;
-	unsigned int* m_inco = nullptr;
-	proto::point* m_box_inf = nullptr;
-	proto::point* m_box_high = nullptr;
+	unsigned int m_numberOfIteration 	= 0;
+	bool m_isAllocated 			= false;
+	unsigned int* m_end 			= nullptr;
+	EBIndex<cent>** m_indiciesSrc 		= nullptr;
+	EBIndex<cent>** m_indiciesDst 		= nullptr;
+	unsigned int* m_indiciesSizeSrc		= nullptr;
+	unsigned int* m_indiciesSizeDst 	= nullptr;
+	data_t** m_src 				= nullptr;
+	data_t** m_dst 				= nullptr;
+	unsigned int* m_idst 			= nullptr;
+	unsigned int* m_isrc 			= nullptr;
+	unsigned int* m_inco 			= nullptr;
+	Proto::Point* m_box_inf 		= nullptr;
+	Proto::Point* m_box_high 		= nullptr;
 };
 
 
-template <centering cent, class data_t, unsigned int ncomp>
+template <CENTERING cent, class data_t, unsigned int ncomp>
 __global__
 void kernel_eblinearout
 (
 	unsigned int a_numberofiteration,
 	unsigned int* a_end,
-	ebindex<cent>** a_indicies, std::size_t* a_indiciessize,
+	EBIndex<cent>** a_indicies, std::size_t* a_indiciessize,
 	void** a_buf,
 	const data_t** a_src
 )
 {
-	EBLinearOut kernel;
+	Proto::EBLinearOut<cent, data_t, ncomp> kernel;
 	for(unsigned int it = 0 ; it < a_numberofiteration ; it++)
 		kernel.gpu(a_end[it], a_indicies[it], a_indiciessize[it], a_buf[it], a_src[it]);
 }
 
 
-template <centering cent, class data_t, unsigned int ncomp>
+template <CENTERING cent, class data_t, unsigned int ncomp>
 class EBLinearOutFused
 {
 	EBLinearOutFused() {}
 
-
-	void allocate(unsigned int a_numberOfIaeration)
+	void allocate(unsigned int a_numberOfIteration)
 	{
 		if(isAllocated)
 		{
@@ -228,12 +261,12 @@ class EBLinearOutFused
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_indiciesSrc, size);
 
-		bytes = sizeof(const data_t*)
+		bytes = sizeof(const data_t*);
 		nPtr  = 1;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_src, size);
 
-		bytes = sizeof(void*)
+		bytes = sizeof(void*);
 		nPtr  = 1;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_dst, size);
@@ -242,17 +275,17 @@ class EBLinearOutFused
 	}
 
 	template<typename T>
-        void fillparams( CopierBuffer* a_buffer, const BoxLayoutData<T>& a_src, const Interval& a_srcComps)
+        void fillparams( Chombo4::CopierBuffer* a_buffer, T& a_src, unsigned int a_srcComps_begin, unsigned int a_srcComps_size)
         {
-		int m_numberofiteration = a_buff->m_fromMe.size();
+		int m_numberofiteration = a_buffer->m_fromMe.size();
 
 		for (unsigned int i=0; i< m_numberofiteration; ++i)
 		{
-			const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[i];
+			const Chombo4::CopierBuffer::bufEntry& entry = a_buffer->m_fromMe[i];
 			char* charbuf = (char*)entry.bufPtr; // 
-			auto regDat = a_src[entry.item->fromIndex].getRegData();
-			::Proto::Box bx = ProtoCh::getProtoBox(entry.item->fromRegion);
-			unsigned int regsize = regData.charsize(bx, a_srcComps.begin(), a_srcComps.size());
+			auto regData = a_src[entry.item->fromIndex].getRegData();
+			Proto::Box bx = ProtoCh::getProtoBox(entry.item->fromRegion);
+			unsigned int regsize = regData.charsize(bx, a_srcComps_begin, a_srcComps_size);
     			charbuf += regsize;
 			fillparam(i, charbuf, a_src[entry.item->fromIndex].getIrregData());
 		}
@@ -262,7 +295,7 @@ class EBLinearOutFused
         void fillparam(
                 unsigned int a_it,
                 void* a_dst,
-                irregdata<cent, data_t, ncomp>& a_src
+                IrregData<cent, data_t, ncomp>& a_src
         )
         {
 
@@ -271,8 +304,8 @@ class EBLinearOutFused
                         a_it,
                         a_src.getindicies().size(),                             // a_end
                         a_src.getindicies().get(), a_src.getindicies().size(),  // ebindex<cent>** a_indiciessrc, unsigned int* a_indiciessizesrc,
-                        a_dst, a_src.data(),                             	// void** a_dst, const data_t** a_src,
-                )
+                        a_dst, a_src.data()                             	// void** a_dst, const data_t** a_src,
+                );
         }
 
 
@@ -292,27 +325,28 @@ class EBLinearOutFused
 	void launch()
 	{
 		const unsigned int threads = 256;
-		const unsigned int nBlocks = (a_numberofiteration + threads -1)/threads;
+		const unsigned int nBlocks = (m_numberOfIteration + threads -1)/threads;
 		protoLaunchKernel(kernel_eblinearout, nBlocks, threads,
 					m_end, 
-					m_indicies,
-					m_indiciessize,
-					m_buf, m_src
+					m_indiciesSrc,
+					m_indiciesSizeSrc,
+					m_dst, m_src
 		);
 	}
 
 public:
-        m_numberOfIteration = 0;
-        bool isAllocated = false;
-        unsigned int* m_end = nullptr;
-        EBIndex<cent>** m_indiciesSrc = nullptr;
-        unsigned int* m_indiciesSizeSrc = nullptr;
-        const data_t** m_src = nullptr;
-        void** m_dst = nullptr;
+
+        unsigned int m_numberOfIteration 	= 0;
+        bool isAllocated 			= false;
+        unsigned int* m_end 			= nullptr;
+        EBIndex<cent>** m_indiciesSrc 		= nullptr;
+        unsigned int* m_indiciesSizeSrc 	= nullptr;
+        const data_t** m_src 			= nullptr;
+        void** m_dst 				= nullptr;
 };
 
 
-template <centering cent, class data_t, unsigned int ncomp>
+template <CENTERING cent, class data_t, unsigned int ncomp>
 __global__
 void kernel_eblinearin
 (
@@ -323,18 +357,18 @@ void kernel_eblinearin
         Point* a_box_inf, Point* a_box_high
 )
 {
-	EBLinearIn kernel;
+	EBLinearIn<cent,data_t,ncomp> kernel;
 	for(unsigned int it = 0 ; it < a_numberofiteration ; it++)
-		kernel.gpu(a_end[it], a_indicies[it], a_indiciessize[it], a_buf[it], a_dst[it],a_box_inf[it], a_box_high[it]);
+		kernel.gpu(a_indicies[it], a_indiciesSize[it], a_buf[it], a_dst[it],a_box_inf[it], a_box_high[it]);
 }
 
-template <centering cent, class data_t, unsigned int ncomp>
+template <CENTERING cent, class data_t, unsigned int ncomp>
 class EBLinearInFused
 {
-	EBLinearOutFused() {}
+	EBLinearInFused() {}
 
 
-	void allocate(unsigned int a_numberOfIaeration)
+	void allocate(unsigned int a_numberOfIteration)
 	{
 		if(isAllocated)
 		{
@@ -346,47 +380,47 @@ class EBLinearInFused
 		unsigned int bytes = sizeof(unsigned int);
 		unsigned int nPtr  = 1;
 		unsigned int size  = bytes*nPtr*a_numberOfIteration;
-		protoMalloc(MEMTYPE_DEFAULT, m_indiciesSize, size);
+		protoMalloc(MEMTYPE_DEFAULT, m_indiciesSizeDst, size);
 
 		bytes = sizeof(EBIndex<cent>*);
 		nPtr  = 1;
 		size  = bytes*nPtr*a_numberOfIteration;
-		protoMalloc(MEMTYPE_DEFAULT, m_indiciesSrc, size);
+		protoMalloc(MEMTYPE_DEFAULT, m_indiciesDst, size);
 
-		bytes = sizeof(void*)
+		bytes = sizeof(void*);
 		nPtr  = 1;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_dst, size);
 
-		bytes = sizeof(data_t*)
+		bytes = sizeof(data_t*);
 		nPtr  = 1;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_dst, size);
 
-		bytes = sizeof(Point*)
+		bytes = sizeof(Proto::Point*);
 		nPtr  = 2;
 		size  = bytes*nPtr*a_numberOfIteration;
 		protoMalloc(MEMTYPE_DEFAULT, m_box_inf, size);
-		a_box_high = m_box_inf + m_numberOfIteration;
+		m_box_high = m_box_inf + m_numberOfIteration;
 
 		isAllocated = true;
 	}
 
 //later
 	template<typename T>
-        void fillparams( CopierBuffer* a_buffer, dst BoxLayoutData<T>& a_dst, const Interval& a_destComps)
+        void fillparams( Chombo4::CopierBuffer* a_buffer, T& a_dst, unsigned int a_destComps_begin, unsigned int a_destComps_size)
         {
-		int m_numberofiteration = a_buff->m_toMe.size();
+		int m_numberofiteration = a_buffer->m_toMe.size();
 
 		for (unsigned int i=0; i< m_numberofiteration; ++i)
 		{
-			const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
+			const Chombo4::CopierBuffer::bufEntry& entry = a_buffer->m_toMe[i];
 			char* charbuf = (char*)entry.bufPtr; // 
-			auto regDat = a_src[entry.item->fromIndex].getRegData();
-			::Proto::Box bx = ProtoCh::getProtoBox(entry.item->ToRegion);
-			unsigned int regsize = regData.charsize(bx, a_destComps.begin(), a_destComps.size());
+			auto regData = a_dst[entry.item->fromIndex].getRegData();
+			::Proto::Box bx = ProtoCh::getProtoBox(entry.item->toRegion);
+			unsigned int regsize = regData.charsize(bx, a_destComps_begin, a_destComps_size);
     			charbuf += regsize;
-			fillparam(i, charbuf, a_dst[entry.item->ToIndex].getIrregData(), bx);
+			fillparam(i, charbuf, a_dst[entry.item->toIndex].getIrregData(), bx);
 		}
 
 	}
@@ -394,32 +428,29 @@ class EBLinearInFused
         void fillparam(
                 unsigned int a_it,
                 void* a_dst,
-                irregdata<cent, data_t, ncomp>& a_src,
+                IrregData<cent, data_t, ncomp>& a_src,
 		::Proto::Box a_bx
         )
         {
-
                 fillone
                 (
                         a_it,
-                        a_src.getindicies().size(),                             // a_end
                         a_src.getindicies().get(), a_src.getindicies().size(),  // ebindex<cent>** a_indiciessrc, unsigned int* a_indiciessizesrc,
                         a_dst, a_src.data(),                             	// void** a_dst, const data_t** a_src,
 			a_bx.low(), a_bx.high()
-                )
+                );
         }
 
 
-        void fillOne(   unsigned int it, unsigned int end,
-                        EBIndex<cent>* indiciesSrc, 
-                        unsigned int indiciesSizeSrc,
-                        void* buf, data* dst, 
+        void fillOne(   unsigned int it, 
+                        EBIndex<cent>* indiciesDst, 
+                        unsigned int indiciesSizeDst,
+                        void* buf, data_t* dst, 
 			Point box_inf, Point box_high
                 )
         {
-                m_end[it]               = end;
-                m_indiciesSrc[it]       = indiciesSrc;
-                m_indiciesSizeSrc[it]   = indiciesSizeSrc;
+                m_indiciesDst[it]       = indiciesDst;
+                m_indiciesSizeDst[it]   = indiciesSizeDst;
                 m_buf[it]               = buf;
                 m_dst[it]               = dst;
                 m_box_inf[it]           = box_inf;
@@ -429,11 +460,11 @@ class EBLinearInFused
 	void launch()
 	{
 		const unsigned int threads = 256;
-		const unsigned int nBlocks = (a_numberofiteration + threads -1)/threads;
+		const unsigned int nBlocks = (m_numberOfIteration + threads -1)/threads;
 		protoLaunchKernel(kernel_eblinearout, nBlocks, threads,
 					m_numberOfIteration,
-					m_indicies,
-					m_indiciessize,
+					m_indiciesDst,
+					m_indiciesSizeDst,
 					m_buf, m_dst,
 					m_box_inf,
 					m_box_high
@@ -444,8 +475,8 @@ public:
         unsigned int m_numberOfIteration = 0;
         bool isAllocated 		= false;
         unsigned int* m_end 		= nullptr;
-        EBIndex<cent>** m_indiciesSrc 	= nullptr;
-        unsigned int* m_indiciesSizeSrc = nullptr;
+        EBIndex<cent>** m_indiciesDst 	= nullptr;
+        unsigned int* m_indiciesSizeDst = nullptr;
         void** m_buf 			= nullptr;
         data_t** m_dst 			= nullptr;
 	Proto::Point *m_box_inf 	= nullptr;

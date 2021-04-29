@@ -325,6 +325,15 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
             a_srcComps);
 
   }
+
+#ifdef FUSED
+  EBBoxDataIndexerFused copyKernelFused;
+  copyKernelFused.allocateCopy(items);
+  std::cout << " We tried to fuse " << items << " kernels " << std::endl;
+  copyKernelFused.fillparams(a_copier, a_dest, a_src, a_dstComps.begin(), a_srcComps.begin(), a_srcComps.size(), );
+  copyKernelFused.launch();
+#endif
+
 }
 
 template<class T>

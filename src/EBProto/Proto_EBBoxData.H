@@ -9,6 +9,7 @@
 #include "Proto.H"
 #include "EBProto.H"
 #include "implem/Proto_IrregData.H"
+#include "implem/Proto_fusedLinear.H"
 using std::vector;
 using std::shared_ptr;
 namespace Proto
@@ -67,8 +68,10 @@ namespace Proto
         m_regData.copy(a_src.m_regData, a_srcBox, a_srcComp, a_destBox, a_destComp, a_numcomp);
       }
       {
+#ifndef FUSED
         PR_TIME("copy_irr_data");
         m_irrData.copy(a_src.m_irrData, a_srcBox, a_srcComp, a_destBox, a_destComp, a_numcomp);
+#endif
       }
     }
     ///
@@ -312,7 +315,9 @@ namespace Proto
     char* charbuf = (char*)a_buf;
     m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
     charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
+//#ifndef FUSED
     m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
+//#endif
   }
 
   virtual void linearOut(void*               a_buf,
@@ -326,7 +331,9 @@ namespace Proto
     m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
     unsigned int regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
     charbuf += regsize;
+//#ifndef FUSED
     m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
+//#endif
   }
   ///
   static int preAllocatable()
