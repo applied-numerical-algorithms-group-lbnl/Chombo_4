@@ -5,6 +5,7 @@
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_LAPACKMatrix.H"
 #include "EBProto.H"
+#include "Proto_EBExactSolutions.H"
 
 namespace Proto
 {
@@ -61,6 +62,34 @@ namespace Proto
     
         return retval;
     }
+
+    static inline Real getTaylorCoefficient(const RealVect   & a_x0,
+                                            const IndMomDIM  & a_p,
+                                            const IntVect    & a_power,
+                                            const RealVect   & a_point
+                                           )
+    {
+      Real retval = 1.0;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(a_p[idir] > a_power[idir])
+        {
+          return 0.;
+        }
+        else
+        {
+          Real prefix = 1.0;
+          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          {
+            prefix *= (a_power[idir] - ipre);
+          }
+          retval *= prefix*pow(a_x0[idir]-a_point[idir],a_power[idir]-a_p[idir])/factorial(a_p[idir]);
+        }
+      }
+
+        return retval;
+    }
+
 
   
     virtual ~MonomialPhi()
@@ -354,6 +383,7 @@ namespace Proto
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
                        Neighbors<order>                & a_neigh,
                        const int                         a_nvolneigh,
+		       RealVect                        & a_faceLoc,
                        string                            a_ebbcName,
                        string                            a_dombcName[2*DIM],
                        double                            a_dx) const;

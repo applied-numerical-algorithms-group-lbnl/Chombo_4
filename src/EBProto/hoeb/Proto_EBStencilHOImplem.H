@@ -203,20 +203,25 @@ namespace Proto
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       Point pt = a_dstVoFs[ivof].m_pt;
+      bool pt_verbose = false;
       if (verbose)
       {
 	if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
         {
-	  verbose = true;
+	  pt_verbose = true;
           cout << "Debugging Point "<<pt<<endl;
+        }
+	else
+        {
+          pt_verbose = false;
         }
       }
 
       //Creating the WLS fluxes needed for flux diveregence
-      BaseWLSFlux<XFACE, order> xflux(radius, powerE, verbose);
-      BaseWLSFlux<YFACE, order> yflux(radius, powerE, verbose);
-      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, verbose);
-      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, verbose);
+      BaseWLSFlux<XFACE, order> xflux(radius, powerE, pt_verbose);
+      BaseWLSFlux<YFACE, order> yflux(radius, powerE, pt_verbose);
+      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, pt_verbose);
+      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, pt_verbose);
       Real inhoTerm = 0.0;
 
       //Computing the flux divergence stencil
@@ -239,8 +244,7 @@ namespace Proto
       a_stencil[ivof]*= 1.0/(a_dx*a_dx);
       inhoTerm*= 1.0/(a_dx*a_dx);
       a_inhoContr[ivof] = inhoTerm;
-      //a_stencil[ivof].add(a_dstVoFs[ivof], inhoTerm);
-      if (verbose) 
+      if (pt_verbose) 
       {
         cout << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
         a_stencil[ivof].print();
@@ -250,7 +254,7 @@ namespace Proto
           accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
         }
 
-        cout << "For phi=1 acc " << accDivF << endl;
+        cout << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
       }
     }
     return true;

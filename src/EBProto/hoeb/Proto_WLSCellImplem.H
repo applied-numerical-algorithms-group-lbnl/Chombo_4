@@ -787,6 +787,7 @@ namespace Proto
   computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
 		     Neighbors<order>               & a_neigh,
                      const int                        a_nvolneigh,
+		     RealVect                       & a_faceLoc,
 		     string                           a_ebbcName,
                      string                           a_dombcName[2*DIM],
                      double                           a_dx) const
@@ -807,7 +808,7 @@ namespace Proto
     domBCValues.resize(nrows);
     for(int iface = 0; iface < nrows; iface++)
     {
-      RealVect a_faceLoc = a_facneighLoc[iface];
+      RealVect a_faceLocDiff = a_facneighLoc[iface];
       int a_faceDir = a_facneighDir[iface];
       Side::LoHiSide a_faceSid = a_facneighSid[iface];
       int index = ebp_index(a_faceDir, a_faceSid);
@@ -815,7 +816,7 @@ namespace Proto
       {
         domBCValues[iface] = NeumannExactSoln<order>::
                                getFaceIntegral(a_facmom[iface],
-					       a_faceLoc,
+					       a_faceLocDiff,
 					       a_faceDir,
 					       a_dx);
       }
@@ -823,7 +824,7 @@ namespace Proto
       {
         domBCValues[iface] = DirichletExactSoln<order>::
                                getFaceIntegral(a_facmom[iface],
-					       a_faceLoc,
+					       a_faceLocDiff,
 					       a_faceDir,
 					       a_dx);
       }
@@ -838,7 +839,7 @@ namespace Proto
       }
       else
       {
-        domBCValues[iface] = domBCValues[iface]/facneighFrac[iface];
+        domBCValues[iface] = domBCValues[iface]/(facneighFrac[iface]*a_dx);
       }
       //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
       //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
@@ -852,19 +853,19 @@ namespace Proto
     ebBCValues.resize(nrows);
     for(int ivof = 0; ivof < nrows; ivof++)
     {
-      RealVect a_ebfLoc = a_ebfneighLoc[ivof];
+      RealVect a_ebfLocDiff = a_ebfneighLoc[ivof]; 
       if(a_ebbcName == string("Neumann"))
       {
         ebBCValues[ivof] = NeumannExactSoln<order>::
                                getEBIntegral(a_ebfneighNorm[ivof],
-				             a_ebfLoc,
+				             a_ebfLocDiff,
 				             a_dx);
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
         ebBCValues[ivof] = DirichletExactSoln<order>::
                                getEBIntegral(a_ebfmom[ivof],
-				             a_ebfLoc,
+				             a_ebfLocDiff,
 				             a_dx);
       }
       else
@@ -878,7 +879,7 @@ namespace Proto
       }
       else
       {
-        ebBCValues[ivof] = ebBCValues[ivof]/ebfneighFrac[ivof];
+        ebBCValues[ivof] = ebBCValues[ivof]/(ebfneighFrac[ivof]*a_dx);
       }
       //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
       //if(!divideable)
@@ -891,15 +892,14 @@ namespace Proto
     int nebf = a_ebfmom.size();
   
     Real inhomogTerm = 0.0;
-    Real phiFaceBC = 0.0;
-    Real phiEBBC = 0.0;
     for(int iface = 0; iface < nfac; iface++)
     {
-      inhomogTerm += phiFaceBC*domBCValues[iface]*a_stencil(0, a_nvolneigh + iface);
+      inhomogTerm += domBCValues[iface]*a_stencil(0, a_nvolneigh + iface);
     }
     for(int iface = 0; iface < nebf; iface++)
     {
-      inhomogTerm += phiEBBC*ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
+      inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
+      if (m_verbose) cout<<" ebbc val "<<ebBCValues[iface]<<"  coef "<<a_stencil(0, a_nvolneigh + nfac + iface)<<endl;
     }
 
     return inhomogTerm;
@@ -978,15 +978,15 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      coef_acc += thisCo;
+      coef_acc += thisCo*neighs.m_volLoc[ivof][0];
     }
 
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-				       nvolneigh,
+				       nvolneigh, faceLoc,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<endl;
+    if (m_verbose) cout<<"For phi=x "<<coef_acc<<" "<<a_inhomogTerm<<endl;
   }
 
   //Compute EB face stencil
@@ -1060,15 +1060,15 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      coef_acc += thisCo;
+      coef_acc += thisCo*neighs.m_volLoc[ivof][0];
     }
 
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-                                       nvolneigh,
+                                       nvolneigh, faceLoc,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<endl;
+    if (m_verbose) cout<<"For phi=x "<<coef_acc<<" "<<a_inhomogTerm<<endl;
   }
 
   //Gets WLS flux divergence stencil
@@ -1154,7 +1154,7 @@ namespace Proto
           cout<<" fluxStencil "<<endl;
           fluxStencil.print();
 	}
-	double factor = double(isign)*areaFrac;
+	double factor = double(isign);
         fluxStencil *= factor;
 	a_inhoTerm += inhomogTerm*factor;
         a_vofStencil += fluxStencil;
@@ -1217,7 +1217,7 @@ namespace Proto
           cout<<" fluxStencil "<<endl;
           fluxStencil.print();
 	}
-	double factor = double(isign)*areaFrac;
+	double factor = double(isign);
         fluxStencil *= factor;
 	a_inhoTerm += inhomogTerm*factor;
         a_vofStencil += fluxStencil;
@@ -1273,7 +1273,7 @@ namespace Proto
                                            a_dx);       
 
 
-	double factor = double(isign)*areaFrac;
+	double factor = double(isign);
         fluxStencil *= factor;
 	a_inhoTerm += inhomogTerm*factor;
         a_vofStencil += fluxStencil;
@@ -1360,10 +1360,11 @@ namespace Proto
       if (a_ebflux.m_verbose)
       {
         cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
+        cout<<" alpha "<<alpha<<" bndryArea "<<bndryArea<<endl;
         cout<<" ebfluxStencil "<<endl;
         ebflux.print();
       }
-      double factor = bndryArea;
+      double factor = 1.0;
       ebflux *= factor;
       a_inhoTerm += inhomogTerm*factor;
       a_vofStencil += ebflux;
@@ -1555,7 +1556,8 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
 
-      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
+      //retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
+      retval += moment*(a_dx*POW(a_dx,pSDMinOne))*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
 
     }
 
@@ -1573,13 +1575,74 @@ namespace Proto
   {
 
     Real retval = 0.0;
+
+    vector<pair<Point, Real> > entries;
+    std::pair<Point, Real> mono;
+    mono.first = Point::Zeros();
+    mono.first[0] = 0;
+    mono.second = 0.3*0.3 - 2.0*(0.5*0.5);
+    entries.push_back(mono);
+  
+    std::pair<Point, Real> mono2;
+    mono2.first = Point::Zeros();
+    mono2.first[0] = 2;
+    mono2.second = -1;
+    entries.push_back(mono2);
+  
+    std::pair<Point, Real> mono3;
+    mono3.first = Point::Zeros();
+    mono3.first[1] = 2;
+    mono3.second = -1;
+    entries.push_back(mono3);
+  
+    std::pair<Point, Real> mono4;
+    mono4.first = Point::Zeros();
+    mono4.first[0] = 1;
+    mono4.second = 2.0*0.5;
+    entries.push_back(mono4);
+  
+    std::pair<Point, Real> mono5;
+    mono5.first = Point::Zeros();
+    mono5.first[1] = 1;
+    mono5.second = 2.0*0.5;
+    entries.push_back(mono5);
+  
+    std::pair<Point, Real> mono6;
+    mono6.first = Point::Zeros();
+    mono6.first[1] = 0;
+    mono6.second = 1.0;
+
+    //PolynomialEF<order> phigen(entries);
+    MonomialEF<order> phigen(mono6);
+
     MomentIterator<DIM, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
+      Real aux = 0.0;
+      IntVect pow;
+      pow[0]=0;pow[1]=0;
+      RealVect po;
+      po[0]=0;po[1]=0;
+      //aux += ((0.3*0.3/(a_dx*a_dx)))*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc/a_dx,p,pow,po);
+      //aux += 1.0*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p,pow,po);
+      //pow[0]=2;pow[1]=0;
+      //po[0]=0.5/a_dx;po[1]=0;
+      pow[0]=1;pow[1]=0;
+      po[0]=0.0;po[1]=0;
+      aux += MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p,pow,po);
+      //pow[0]=0;pow[1]=2;
+      //po[0]=0;po[1]=0.5/a_dx;
+      pow[0]=0;pow[1]=1;
+      po[0]=0;po[1]=0.0;
+      //aux += MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc/a_dx,p,pow,po);
+      //retval += moment*(a_dx*POW(a_dx,p))*aux;
+      //cout<<" retval "<<retval<<" loc "<<a_ebfLoc<<"  moment "<<moment<<endl;
+      //retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
+      retval += moment*(a_dx*POW(a_dx,p))*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
+      //retval += moment*(a_dx*POW(a_dx,p))*phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
 
     }
 
