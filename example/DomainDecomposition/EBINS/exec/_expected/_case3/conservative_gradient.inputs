@@ -1,3 +1,4 @@
+mac_proj.direct_to_bottom_solve = false
 use_conservative_gradient = true
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
