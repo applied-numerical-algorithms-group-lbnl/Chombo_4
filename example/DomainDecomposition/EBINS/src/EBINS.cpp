@@ -3,6 +3,72 @@
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_CH_HDF5.H"
+/*******/ 
+/*******/ 
+PROTO_KERNEL_START 
+void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
+                      Var<Real, DIM>    a_gradp,
+                      Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) += a_dt*(a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(AddDtGphiToVeloF, AddDtGphiToVelo)
+/*******/ 
+PROTO_KERNEL_START 
+void DivideOutDtF(Var<Real, DIM>    a_gradp,
+                  Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_gradp(idir) /= a_dt;
+  }
+}
+PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
+/*******/ 
+PROTO_KERNEL_START 
+void EulerAdvanceF(Var<Real, DIM>    a_velo,
+                   Var<Real, DIM>    a_divuu,
+                   Var<Real, DIM>    a_gradp,
+                   Real              a_dt)
+{
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
+/*******/ 
+PROTO_KERNEL_START 
+void SpeciesAdvanceF(Var<Real, 1>    a_species,
+                     Var<Real, 1>    a_rate,
+                     Real            a_dt)
+{
+  a_species(0) += a_dt*a_rate(0);
+}
+PROTO_KERNEL_END(SpeciesAdvanceF, SpeciesAdvance)
+
+/*******/ 
+PROTO_KERNEL_START 
+void DiffusionRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuphi)
+{
+  a_rhs(0) = -a_divuphi(0);
+}
+PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
+/*******/ 
+PROTO_KERNEL_START 
+void ParabolicRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuu,
+                   Var<Real, 1>    a_gradp)
+{
+  a_rhs(0) = -a_divuu(0) - a_gradp(0);
+}
+PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
+
+/*******/ 
 #include "Chombo_NamespaceHeader.H"
 #include "DebugFunctions.H"
 using Proto::Var;
@@ -362,29 +428,6 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
   divuu.exchange(m_exchangeCopier);
 }
 /*******/ 
-PROTO_KERNEL_START 
-void EulerAdvanceF(Var<Real, DIM>    a_velo,
-                   Var<Real, DIM>    a_divuu,
-                   Var<Real, DIM>    a_gradp,
-                   Real              a_dt)
-{
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
-  }
-}
-PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
-/*******/ 
-PROTO_KERNEL_START 
-void SpeciesAdvanceF(Var<Real, 1>    a_species,
-                     Var<Real, 1>    a_rate,
-                     Real            a_dt)
-{
-  a_species(0) += a_dt*a_rate(0);
-}
-PROTO_KERNEL_END(SpeciesAdvanceF, SpeciesAdvance)
-
-/*******/ 
 void
 EBINS::
 advanceVelocityEuler(Real a_dt)
@@ -407,25 +450,6 @@ advanceVelocityEuler(Real a_dt)
                     velofab, udelfab, gphifab, a_dt);
   }
 }
-/*******/ 
-PROTO_KERNEL_START 
-void DiffusionRHSF(Var<Real, 1>    a_rhs,
-                   Var<Real, 1>    a_divuphi)
-{
-  a_rhs(0) = -a_divuphi(0);
-}
-PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
-/*******/ 
-PROTO_KERNEL_START 
-void ParabolicRHSF(Var<Real, 1>    a_rhs,
-                   Var<Real, 1>    a_divuu,
-                   Var<Real, 1>    a_gradp)
-{
-  a_rhs(0) = -a_divuu(0) - a_gradp(0);
-}
-PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
-
-/*******/ 
 void
 EBINS::
 advanceVelocityNavierStokes(Real a_dt,                          
@@ -466,30 +490,6 @@ advanceVelocityNavierStokes(Real a_dt,
   }
  ideb++;
 }
-/*******/ 
-PROTO_KERNEL_START 
-void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
-                      Var<Real, DIM>    a_gradp,
-                      Real              a_dt)
-{
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    a_velo(idir) += a_dt*(a_gradp(idir));
-  }
-}
-PROTO_KERNEL_END(AddDtGphiToVeloF, AddDtGphiToVelo)
-/*******/ 
-PROTO_KERNEL_START 
-void DivideOutDtF(Var<Real, DIM>    a_gradp,
-                  Real              a_dt)
-{
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    a_gradp(idir) /= a_dt;
-  }
-}
-PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
-/*******/ 
 void
 EBINS::
 projectVelocityAndCorrectPressure(Real a_dt,
