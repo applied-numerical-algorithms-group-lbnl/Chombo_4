@@ -4,7 +4,7 @@
 #include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real minVal(Real vala, Real valb)
 {
@@ -21,7 +21,7 @@ inline Real minVal(Real vala, Real valb)
 }
 
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real absVal(Real vala)
 {
@@ -39,7 +39,7 @@ inline Real absVal(Real vala)
 
 
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real cpySign(Real vala, Real signval)
 {
