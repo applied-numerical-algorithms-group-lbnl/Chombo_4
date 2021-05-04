@@ -669,7 +669,9 @@ namespace Proto
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/threads;
 
-      protoLaunchKernelT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 
+      if(size == 0) return;
+
+      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0,  Proto::DisjointBoxLayout::getCurrentStream(), 
 			size, 
                         indiciesDataSrc.get(), indiciesSrc->size(),
 			m_indicies_shared_data.get(), m_indicies->size(),

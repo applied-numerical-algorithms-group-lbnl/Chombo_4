@@ -308,6 +308,12 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 {
 
   CH_TIME("local copying");
+#ifdef cudaGraph
+#ifdef PROTO_CUDA
+  Copier* copier = const_cast<Copier*> (&a_copier) ; 
+  CUDAGRAPH& test = copier->getCudaGraph();
+
+  auto testFunc = [&] () {
   CopyIterator it(a_copier, CopyIterator::LOCAL);  
   int items=it.size();
 #ifdef _OPENMP
@@ -325,16 +331,33 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
             a_srcComps);
 
   }
+  };
 
-#ifdef FUSED
-  EBBoxDataIndexerFused copyKernelFused;
-  copyKernelFused.allocateCopy(items);
-  std::cout << " We tried to fuse " << items << " kernels " << std::endl;
-  copyKernelFused.fillparams(a_copier, a_dest, a_src, a_dstComps.begin(), a_srcComps.begin(), a_srcComps.size(), );
-  copyKernelFused.launch();
+  test.capture(testFunc);
+  test.launch();
+#endif
+#else
+  CopyIterator it(a_copier, CopyIterator::LOCAL);  
+  int items=it.size();
+#ifdef _OPENMP
+  bool threadSafe = m_threadSafe && (a_op.threadSafe());
 #endif
 
+  for (int n=0; n<items; n++)
+  {
+    const MotionItem& item = it[n];
+
+    a_op.op(a_dest[item.toIndex], item.fromRegion,
+            a_destComps,
+            item.toRegion,
+            a_src[item.fromIndex],
+            a_srcComps);
+  }
+#endif
 }
+
+
+
 
 template<class T>
 void BoxLayoutData<T>::makeItSoEnd(
