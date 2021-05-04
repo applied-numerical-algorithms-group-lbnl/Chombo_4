@@ -1,3 +1,5 @@
+/*! \file os3d_newton.cpp */
+
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -22,14 +24,17 @@
 
 using namespace shape;
 
-// SIGN(A,B) returns the value of A with the sign of B.
-//
+/// SIGN(A,B) returns the value of A with the sign of B.
+///
 double sign(const double A, const double B)
 {
   // If B >= 0 then the result is ABS(A), else it is -ABS(A).
   return( B >= 0.0 ? fabs(A) : -fabs(A) );
 }
 
+/// void printMatrix(int m, int n, const double*A, int lda, const char* name)
+///
+///
 void printMatrix(int m, int n, const double*A, int lda, const char* name)
 {
   for(int row = 0 ; row < m ; row++){
@@ -40,6 +45,9 @@ void printMatrix(int m, int n, const double*A, int lda, const char* name)
   }
 }
 
+/// void printSolution(int n, const double* b)
+///
+///
 void printSolution(int n, const double* b)
 {
   printf("solution: [");
@@ -48,6 +56,9 @@ void printSolution(int n, const double* b)
   printf("]\n");
 }
 
+/// void print_matrix(const int n, double *A_2d, double *b_1d, const char *name)
+///
+///
 void print_matrix(const int n,
 		  /* const */ double *A_2d,
 		  /* const */ double *b_1d,
@@ -65,6 +76,106 @@ void print_matrix(const int n,
     }
 }
 
+/// void print_jacobian(const int n, double *A)
+///
+///
+void print_jacobian(const int n, double *A)
+{
+  fprintf(stderr,"os3d_newton [J]: dim: %d\n", n);
+  for(size_t i = 0; i < n; ++i)
+    {
+      for(size_t j = 0; j < n; ++j)
+	fprintf(stderr,"%.2e\t", get2D(A,i,j,n,n));
+      fprintf(stderr,"\n");
+    }
+}
+
+/// int os3d_newton()
+///
+/// Operator Splitting 3-Dimensional Reactive Transport (OS3D)
+///
+/// Description of formal parameters:
+///
+/// \param ncomp: number of independent chemical components in the system, N_{c}
+/// \param nspec: total number of aqueous species in the system, N_{tot}
+/// \param nkin: number of mineral reactions in the kinematic mechanism
+/// \param nrct: 
+/// \param ngas
+/// \param ikin
+/// \param nexchange
+/// \param nexch_sec 
+/// \param nsurf
+/// \param nsurf_sec
+/// \param npot
+/// \param ndecay
+/// \param neqn
+/// \param igamma
+/// \param delt
+/// \param corrmax
+/// \param jx
+/// \param jy 
+/// \param jz
+/// \param iterat 
+/// \param icvg 
+/// \param nx
+/// \param ny
+/// \param nz
+/// \param AqueousToBulk
+/// \param ntemp
+/// \param sp10_4d
+/// \param t_3d
+/// \param adh_1d
+/// \param bdh_1d
+/// \param bdot_1d
+/// \param adhcoeff_1d
+/// \param bdhcoeff_1d
+/// \param bdtcoeff_1d
+/// \param sion_3d
+/// \param ulab_1d
+/// \param acmp_1d
+/// \param chg_1d
+/// \param gam_4d
+/// \param muaq_2d
+/// \param sp_4d
+/// \param keqaq_4d
+/// \param s_4d
+/// \param snorm_2d
+/// \param dppt_4d
+/// \param u_rate_4d
+/// \param nreactmin_1d
+/// \param actenergy_2d
+/// \param silog_2d
+/// \param siln_2d
+/// \param si_2d
+/// \param surf_1d
+/// \param area_4d
+/// \param rmin_2d
+/// \param pre_rmin_2d
+/// \param ndepend_2d
+/// \param idepend_3d
+/// \param depend_3d
+/// \param itot_min_3d
+/// \param AffinityDepend1_2d
+/// \param rate0_2d
+/// \param volmol_1d
+/// \param mumin_3d
+/// \param keqmin_5d
+/// \param sppTMP_1d
+/// \param jac_rmin_3d
+/// \param ivolume_1d
+/// \param jac_sat_1d
+/// \param fjac_5d
+/// \param por_3d
+/// \param ro_3d
+/// \param H2Oreacted_3d
+/// \param xgram_3d
+/// \param xgramOld_3d
+/// \param sn_4d
+/// \param distrib_1d
+/// \param fxx_1d
+/// \param fxmax_1d
+/// \param satliq_3d
+/// 
 int os3d_newton(enum Target target,
 		const int ncomp,
 		const int nspec,
@@ -314,7 +425,9 @@ int os3d_newton(enum Target target,
 		nz,
 		muaq_2d,
 		sp10_4d);
-  
+
+      print_jacobian(neqn, &fjac_loc[0][0]);
+
       reaction(ncomp,
 	       neqn,
 	       nkin,
@@ -704,7 +817,7 @@ int os3d_newton(enum Target target,
       double time_taken =
 	std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       total_time_taken += time_taken; 
-	}
+	} // if( target == HOST)...{
 
       if( DEBUG )
       	{

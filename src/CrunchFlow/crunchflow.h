@@ -1,3 +1,68 @@
+/*! \file crunchflow.h */
+
+/*! \file crunchflow.h
+ *
+ * \brief Chombo-Crunch header for CrunchFlow
+ *
+ * Chombo-Crunch [1] is an application code for simulating reactive
+ * transport processes at the pore scale in subsurface flows. It makes
+ * use of the Chombo [5] framework to solve incompressible flow
+ * (Navier-Stokes equations) and conservative transport
+ * (advection-diffusion of species concentrations). Reactive transport
+ * is modeled in Chombo-Crunch by a sequential non-iterative approach
+ * whereby a point-by-point algorithm for computing aqueous phase
+ * species concentrations is accessed in the CrunchFlow [6]
+ * multicomponent geochemistry module. An embedded boundary, volume of
+ * fluid discretization and gridding approach in Chombo allows for
+ * explicit resolution of reactions at the interface between fluid and
+ * mineral. The underlying iterative approach for solving
+ * multicomponent geochemical networks in CrunchFlow is adopted from
+ * the Operator Splitting 3-Dimensional Reactive Transport
+ * (OS3D)/Global Implicit Multicomponent Reactive Transport (GIMRT)
+ * software framework developed by C. I. Steefel [2]. GIMRT models
+ * aqueous phase reactive transport with a one step or global implicit
+ * approach while OS3D separately solves the reaction and transport
+ * components of a governing equation for the conservation of solute
+ * mass [3, 4]. Chombo-Crunch uses an implementation of the solute
+ * concentration solver that is part of OS3D/GIMRT included in the
+ * CrunchFlow application to solve for corrections to primary aqueous
+ * phase species concentrations, δCj, at each transport-time step,
+ * based on system temperature and initial primary and secondary
+ * species concentrations Cj and Ci, respectively.  The original
+ * GIMRT/OS3D framework was written in Fortran. The GIMRT/OS3D Fortran
+ * code has ben translated into into a standard C/C++ language
+ * implementation.
+ *
+ * [1] D. Trebotich and D. T. Graves. "Chombo-Crunch."
+ * https://docs.nersc.gov/performance/case-studies/chombo-crunch/
+ * (accessed December 22, 2020.
+ *
+ * [2] C. I. Steefel et al., "Reactive transport codes for subsurface
+ * environmental simulation," Computational Geosciences, vol. 19,
+ * no. 3, pp. 445-478, 2015/06/01 2015, doi:
+ * 10.1007/s10596-014-9443-x.
+ *
+ * [3] os3D/GIMRT Software for Modeling
+ * Multicomponent-Multidimensional Reactive Transport User Manual &
+ * Programmer’s Guide. (May 6,1996). Pacific Northwest National
+ * Laboratory, Richland, Washington 99352, U.S.A.
+ *
+ * [4] C. I. Steefel and A. C. Lasaga, "A coupled model for transport
+ * of multiple chemical species and kinetic precipitation/dissolution
+ * reactions with application to reactive flow in single phase
+ * hydrothermal systems," American Journal of Science, vol. 294,
+ * no. 5, p. 529, 1994, doi: 10.2475/ajs.294.5.529.  
+ *
+ * [5] M. Adams et al., "Chombo Software Package for AMR Applications
+ * - Design Document," Lawrence Berkeley National Laboratory.  
+ * 
+ * [6] CrunchFlow Software for Modeling Multicomponent Reactive Flow
+ * and Transport User's Manual. (October 12, 2009). Earth Sciences
+ * Division, Lawrence Berkeley National Laboratory, Berkeley, CA 94720
+ * USA.
+ *
+ */
+
 #include <stdbool.h>
 
 #define DEBUG 0
@@ -33,15 +98,31 @@ enum Target {HOST, DEVICE};
 //      REAL(DP), PARAMETER                                  :: tk=273.15
 #define TK 273.15
 
+// These flat array macros assume C style referencing (i.e. indices start from 0)
+//
+#define get2D(A,i,j,Ni,Nj) (A[(i)*(Nj) + (j)])
+#define get3D(A,i,j,k,Ni,Nj,Nk) (A[(i) * (Nj) * (Nk) + (j) * (Nk) + (k)])
+#define get4D(A,i,j,k,l,Ni,Nj,Nk,Nl) (A[(i) * (Nj) * (Nk) * (Nl) + (j) * (Nk) * (Nl) + (k) * (Nl) + (l)])
+
 struct species
 {
+  /// molecular compound name
   char *name;
-  double nu; // stoichiometric coefficient
-  struct species *next;
+
+  /// stoichiometric coefficient
+  double nu;
+
+  /// self-referential structure, pointer to next species in linked-list
+  struct species *next; 
 };
 
 typedef struct species Species;
 
+/**
+ * Structure that defines an independent chemical component in a
+ * system.
+ *
+ */
 struct component
 {
   char *name;
@@ -52,6 +133,10 @@ struct component
   
 typedef struct component Component;
 
+/**
+ * Structure that defines an aqueous complexation reaction.
+ *
+ */
 struct complex
 {
   char *name;
@@ -76,6 +161,10 @@ struct mineral
 
 typedef struct mineral Mineral;
 
+/**
+ * Structure that defines a reaction pathway.
+ *
+ */
 struct pathway
 {
   char *name;
@@ -559,6 +648,15 @@ int initialize(const int ncompchombo,
 	       const int ny, 
 	       const int nz);
 
+/*! \fn int os3d_newton()
+ *
+ * \brief Operator Splitting 3-Dimensional Reactive Transport (OS3D)
+ *
+ * Description of formal parameters:
+ *
+ * \param ncomp: number of independent chemical components in the system, N_{c}
+ * \param nspec: total number of aqueous species in the system, N_{tot}
+ */
 int os3d_newton(enum Target target,
 		const int ncomp,
 		const int nspec,

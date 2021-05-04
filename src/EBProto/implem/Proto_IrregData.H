@@ -671,7 +671,7 @@ namespace Proto
 
       if(size == 0) return;
 
-      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0,  Proto::DisjointBoxLayout::getCurrentStream(), 
+      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
 			size, 
                         indiciesDataSrc.get(), indiciesSrc->size(),
 			m_indicies_shared_data.get(), m_indicies->size(),

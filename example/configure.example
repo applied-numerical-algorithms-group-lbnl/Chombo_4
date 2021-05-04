@@ -58,7 +58,7 @@ for t in targets:
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCPPFLAGS += -DPR_MPI -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
         f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
@@ -67,6 +67,7 @@ for t in targets:
         f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
 
     if(args.petsc == 'TRUE'):
+        f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables\n')
         f.write('\nCPPFLAGS += -DCH_USE_PETSC')
         f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')

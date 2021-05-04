@@ -1,10 +1,10 @@
 #ifndef __EBAdvectionFunctions__
 #define __EBAdvectionFunctions__
 #define PI 3.141592653589793
-#include "Chombo_NamespaceHeader.H"
+//#include "Chombo_NamespaceHeader.H"
 using Proto::Var;
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real minVal(Real vala, Real valb)
 {
@@ -21,7 +21,7 @@ inline Real minVal(Real vala, Real valb)
 }
 
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real absVal(Real vala)
 {
@@ -39,7 +39,7 @@ inline Real absVal(Real vala)
 
 
 #ifdef PROTO_CUDA
-__device__
+CUDA_DECORATION
 #endif
 inline Real cpySign(Real vala, Real signval)
 {
@@ -248,6 +248,6 @@ unsigned int ExtrapolateScalF(Var<Real, 1>       a_scal_imh_nph,
 PROTO_KERNEL_END(ExtrapolateScalF, ExtrapolateScal)
 
 
-#include "Chombo_NamespaceFooter.H"
+//#include "Chombo_NamespaceFooter.H"
 
 #endif
