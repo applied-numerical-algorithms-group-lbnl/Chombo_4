@@ -120,8 +120,8 @@ using Chombo4::LevelBoxData;
   shared_ptr<EBMultigrid> 
     solver(new EBMultigrid (dictionary, a_geoserv, alpha, beta, a_dx, a_grids, stenname, dombcname, ebbcname, domain, a_dataGhostIV));
 
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
 
   return solver;
 
