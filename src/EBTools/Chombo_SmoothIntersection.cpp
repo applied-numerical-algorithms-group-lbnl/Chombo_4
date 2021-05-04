@@ -1,29 +1,12 @@
-#ifdef CH_LANG_CC
-/*
- *      _______              __
- *     / ___/ /  ___  __ _  / /  ___
- *    / /__/ _ \/ _ \/  V \/ _ \/ _ \
- *    \___/_//_/\___/_/_/_/_.__/\___/
- *    Please refer to Copyright.txt, in Chombo's root directory.
- */
-#endif
-
-#include "SmoothIntersection.H"
-#include "SmoothAbsoluteValue.H"
-#include "EBArith.H"
+#include "Chombo_SmoothIntersection.H"
+#include "Chombo_SmoothAbsoluteValue.H"
 #include <iomanip>
-#include "NamespaceHeader.H"
+#include "Chombo_NamespaceHeader.H"
 
 SmoothIntersection::
 SmoothIntersection(const Vector<BaseIF *>& a_impFuncs,
                    const Real            & a_delta)
 {
-  m_ivDebug = IntVect(D_DECL(39,42,0));
-  VolIndex vofDebug(m_ivDebug,0);
-  m_dxDebug = 1./64.;
-  m_rvDebug = EBArith::getVoFLocation(vofDebug, m_dxDebug ,RealVect::Zero);
-
-
   if (a_impFuncs.size() == 0)
     {
       MayDay::Abort("Construction of SmoothIntersection requires at least one implicit function.");
@@ -192,23 +175,6 @@ value(const RealVect& a_point) const
                          closestIF, nextClosestIF);
       
 
-      ////debug
-      //RealVect diff  = a_point - m_rvDebug;
-      //Real len = diff.vectorLength();
-      //if(len < m_dxDebug)
-      //  {
-      //    Real fval = m_impFuncs[0]->value(a_point);
-      //    Real gval = m_impFuncs[1]->value(a_point);
-      //    pout()     << setprecision(6)
-      //               << setiosflags(ios::showpoint)
-      //               << setiosflags(ios::scientific);
-      //    pout() << "at point " << a_point;
-      //    pout()     << setprecision(3)
-      //               << setiosflags(ios::showpoint)
-      //               << setiosflags(ios::scientific);
-      //    pout() << ", fval = "  << fval << ", gval = " << gval << ", retval = " << retval << endl;
-      //  }
-      ////end debug
       
     }
   return retval;
@@ -228,23 +194,6 @@ derivative(const IntVect & a_deriv,
     }
   else
     {
-      ////debug
-      //RealVect diff  = a_point - m_rvDebug;
-      //Real len = diff.vectorLength();
-      //if(len < m_dxDebug && a_deriv == BASISV(1))
-      //  {
-      //    //HERE!!!
-      //    IvSpaceDim ivderiv;
-      //    RvSpaceDim rvpoint;
-      //    EBArith::convertToITM(rvpoint, a_point);
-      //    EBArith::convertToITM(ivderiv, a_deriv);
-      //    Real fval = m_impFuncs[0]->value(ivderiv, rvpoint);
-      //    Real gval = m_impFuncs[1]->value(ivderiv, rvpoint);
-      //    Real fminusg = fval - gval;
-      //    pout() << "here I am" << endl;
-      //
-      //  }
-      ////end debug
 
       // Maximum of the implicit functions values
       int  closestIF;
@@ -260,25 +209,6 @@ derivative(const IntVect & a_deriv,
       retval = smoothMax(a_deriv, a_point,
                          closestIF, nextClosestIF);
 
-      ////debug
-      //if(len < m_dxDebug)
-      //  {
-      //    IvSpaceDim ivderiv;
-      //    RvSpaceDim rvpoint;
-      //    EBArith::convertToITM(rvpoint, a_point);
-      //    EBArith::convertToITM(ivderiv, a_deriv);
-      //    Real fval = m_impFuncs[0]->value(ivderiv, rvpoint);
-      //    Real gval = m_impFuncs[1]->value(ivderiv, rvpoint);
-      //    pout()     << setprecision(6)
-      //               << setiosflags(ios::showpoint)
-      //               << setiosflags(ios::scientific);
-      //    pout() << "at point " << a_point ;
-      //    pout()     << setprecision(3)
-      //               << setiosflags(ios::showpoint)
-      //               << setiosflags(ios::scientific);
-      //    pout() << ", der = "<< a_deriv << ", fdx = "  << fval << ", gdx = " << gval << ", ret = " << retval << endl;
-      //  }
-      ////end debug
     }
   return retval;
 }
@@ -293,4 +223,4 @@ newImplicitFunction() const
   return static_cast<BaseIF*>(intersectionPtr);
 }
 
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"

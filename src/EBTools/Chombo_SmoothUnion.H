@@ -1,23 +1,11 @@
-#ifdef CH_LANG_CC
-/*
- *      _______              __
- *     / ___/ /  ___  __ _  / /  ___
- *    / /__/ _ \/ _ \/  V \/ _ \/ _ \
- *    \___/_//_/\___/_/_/_/_.__/\___/
- *    Please refer to Copyright.txt, in Chombo's root directory.
- */
-#endif
+#ifndef _ch4_SMOOTHUNION_H_
+#define _ch4_SMOOTHUNION_H_
 
-#ifndef _SMOOTHUNION_H_
-#define _SMOOTHUNION_H_
+#include "Chombo_MayDay.H"
+#include "Chombo_RealVect.H"
+#include "Proto_BaseIF.H"
 
-#include "MayDay.H"
-#include "RealVect.H"
-#include "Vector.H"
-
-#include "BaseIF.H"
-
-#include "NamespaceHeader.H"
+#include "Chombo_NamespaceHeader.H"
 
 ///
 /**
@@ -36,7 +24,7 @@ public:
   /**
      Constructor specifying any number of implicit functions as inputs.
   */
-  SmoothUnion(const Vector<BaseIF*>& a_impFuncs,
+  SmoothUnion(const std::vector<BaseIF*>& a_impFuncs,
                      const Real           & a_delta);
 
   /// Destructor
@@ -46,46 +34,36 @@ public:
   /**
       Return the value of the function at a_point.
    */
-  virtual Real value(const RealVect& a_point) const;
+  virtual Real value(const IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real derivative(const  IntVect& a_deriv,
-                          const RealVect& a_point) const;
+  virtual Real derivative(const  IndexTM<int,   DIM>& a_deriv,
+                          const IndexTM<double, DIM>& a_point) const;
 
 
   virtual BaseIF* newImplicitFunction() const;
 
   //min(a,b) = 0.5*(a+b - | a-b |)
-  virtual Real smoothMin(const  IntVect & a_deriv,
-                         const RealVect & a_point,
+  virtual Real smoothMin(const  IndexTM<int,   DIM> & a_deriv,
+                         const IndexTM<double, DIM> & a_point,
                          const  int     & a_closestIF,
                          const  int     & a_nextClosestIF) const;
 
   void findClosest(int            & a_closestIF, 
                    int            & a_nextClosestIF,
                    int            & a_numWithinDelta,
-                   const RealVect & a_point) const;
+                   const IndexTM<double, DIM> & a_point) const;
 protected:
-  int             m_numFuncs; // number of implicit functions
-  Vector<BaseIF*> m_impFuncs; // implicit functions
-  Real            m_delta   ; //smoothing length scale
+  int                  m_numFuncs; // number of implicit functions
+  std::vector<BaseIF*> m_impFuncs; // implicit functions
+  Real                 m_delta   ; //smoothing length scale
 
 private:
-  SmoothUnion()
-  {
-    MayDay::Abort("SmoothUnion uses strong construction");
-  }
+  SmoothUnion();
+  SmoothUnion(const SmoothUnion& a_inputIF);
+  void operator=(const SmoothUnion& a_inputIF);
 
-  SmoothUnion(const SmoothUnion& a_inputIF)
-  {
-    MayDay::Abort("SmoothUnion does not have copy construction");
-  }
-
-  void operator=(const SmoothUnion& a_inputIF)
-  {
-    MayDay::Abort("SmoothUnion doesn't allow assignment");
-  }
 };
 
-#include "NamespaceFooter.H"
+#include "Chombo_NamespaceFooter.H"
 #endif

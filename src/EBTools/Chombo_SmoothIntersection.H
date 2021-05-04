@@ -1,21 +1,9 @@
-#ifdef CH_LANG_CC
-/*
- *      _______              __
- *     / ___/ /  ___  __ _  / /  ___
- *    / /__/ _ \/ _ \/  V \/ _ \/ _ \
- *    \___/_//_/\___/_/_/_/_.__/\___/
- *    Please refer to Copyright.txt, in Chombo's root directory.
- */
-#endif
+#ifndef _ch4_SMOOTHINTERSECTION_H_
+#define _ch4_SMOOTHINTERSECTION_H_
 
-#ifndef _SMOOTHINTERSECTION_H_
-#define _SMOOTHINTERSECTION_H_
-
-#include "MayDay.H"
-#include "RealVect.H"
-#include "Vector.H"
-
-#include "BaseIF.H"
+#include "Chombo_MayDay.H"
+#include "Chombo_RealVect.H"
+#include "Chombo_BaseIF.H"
 
 #include "NamespaceHeader.H"
 
@@ -36,8 +24,8 @@ public:
   /**
      Constructor specifying any number of implicit functions as inputs.
   */
-  SmoothIntersection(const Vector<BaseIF*>& a_impFuncs,
-                     const Real           & a_delta);
+  SmoothIntersection(const std::vector<BaseIF*>& a_impFuncs,
+                     const Real                & a_delta);
 
   /// Destructor
   virtual ~SmoothIntersection();
@@ -71,33 +59,16 @@ public:
                    const RealVect & a_point) const;
 
 protected:
-  int             m_numFuncs; // number of implicit functions
-  Vector<BaseIF*> m_impFuncs; // implicit functions
-  Real            m_delta   ; //smoothing length scale
+  int                 m_numFuncs; // number of implicit functions
+  std::ector<BaseIF*> m_impFuncs; // implicit functions
+  Real                m_delta   ; //smoothing length scale
 
-
-  //debug stuff
-   IntVect  m_ivDebug;
-   Real     m_dxDebug;
-  RealVect  m_rvDebug;
-
-  
 
 private:
-  SmoothIntersection()
-  {
-    MayDay::Abort("SmoothIntersection uses strong construction");
-  }
+  SmoothIntersection();
+  SmoothIntersection(const SmoothIntersection& a_inputIF);
+  void operator=(    const SmoothIntersection& a_inputIF);
 
-  SmoothIntersection(const SmoothIntersection& a_inputIF)
-  {
-    MayDay::Abort("SmoothIntersection does not have copy construction");
-  }
-
-  void operator=(const SmoothIntersection& a_inputIF)
-  {
-    MayDay::Abort("SmoothIntersection doesn't allow assignment");
-  }
 };
 
 #include "NamespaceFooter.H"

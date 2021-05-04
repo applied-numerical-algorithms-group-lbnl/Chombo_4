@@ -7,49 +7,6 @@
 /// and most importantly
 /// C) The equality of mixed derivs.
 
-int SmoothAbsoluteValue::s_knownFunc = -1;
-
-///if s_knownFunc is set, check against known answer
-void 
-SmoothAbsoluteValue::
-checkAgainstKnown(const    Real  & a_myAnswer,
-                  const  IntVect & a_deriv,
-                  const RealVect & a_point) const
-{
-  if((s_knownFunc == 1) && (a_deriv.sum() <= 4))
-    {
-      Real tol = 1.0e-9;
-      DoubleRampExact cramp(m_d, m_pi);
-      Real rightAns = cramp.value(a_deriv, a_point);
-      if(std::abs(rightAns - a_myAnswer) > tol)
-        {
-          pout() << "error detected at point = " << a_point << ", deriv = " << a_deriv <<  endl;
-          MayDay::Warning("double ramp fault");
-        }
-    }
-  else if((s_knownFunc == 2) && (a_deriv.sum() <= 4))
-    {
-      Real tol = 1.0e-7;
-      DoubleSphereExact cramp(m_d, m_pi);
-      Real rightAns = cramp.value(a_deriv, a_point);
-      if(std::abs(rightAns - a_myAnswer) > tol)
-        {
-          pout() << "error detected at point = " << a_point << ", deriv = " << a_deriv <<  endl;
-          MayDay::Warning("double sphere fault");
-        }
-    }
-  else if((s_knownFunc == 3) && (a_deriv.sum() <= 4) && (SpaceDim == 2))
-    {
-      Real tol = 1.0e-7;
-      OffsetSphereExact cramp(m_d, m_pi);
-      Real rightAns = cramp.value(a_deriv, a_point);
-      if(std::abs(rightAns - a_myAnswer) > tol)
-        {
-          pout() << "error detected at point = " << a_point << ", deriv = " << a_deriv <<  endl;
-          MayDay::Warning("offset sphere fault");
-        }
-    }
-}
 
 ///
 bool 
@@ -1048,7 +1005,6 @@ smoothAbsFMinusG(const  IntVect& a_deriv,
           Real gval = (*m_g).value(a_deriv, a_point);
           retval = std::abs(fval-gval);
         }
-      checkAgainstKnown(retval, a_deriv, a_point);
     }
   if(isBogus(retval))
     {

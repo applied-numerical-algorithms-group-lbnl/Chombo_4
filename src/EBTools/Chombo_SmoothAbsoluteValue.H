@@ -4,7 +4,7 @@
 #include "Chombo_MayDay.H"
 #include "Chombo_RealVect.H"
 #include "Chombo_IntVect.H"
-#include "Chombo_BaseIF.H"
+#include "Proto_BaseIF.H"
 
 #include "Chombo_NamespaceHeader.H"
 
@@ -22,25 +22,6 @@ class SmoothAbsoluteValue
 {
 public:
 
-  ///
-  /**
-     Set a known f and g (from short list I have programmed) to check answer against
-     1 = double ramp with 
-     ramp_normal_0 = 2. 1. 0.
-     ramp_normal_1 = -2. 1. 0.
-     ramp_point_0 = 0. 1. 0.
-     ramp_point_1 = 1. 1. 0.
-
-     2 = double sphere with
-     sphere_center_0 = 0 0 0
-     sphere_center_1 = 1 0 0
-     sphere_radius_0 = 0.75
-     sphere_radius_1 = 0.75
-  */
-  static void setKnownFunction(int a_whichfunc)
-  {
-    s_knownFunc = a_whichfunc;
-  }
   
   ///
   SmoothAbsoluteValue(const BaseIF*   a_f,
@@ -106,10 +87,6 @@ protected:
   ///just checks nan
   bool isBogus(const Real& a_number) const;
 
-  ///if s_knownFunc is set, check against known answer
-  void checkAgainstKnown(const    Real  & a_myAnswer,
-                         const  IntVect & a_deriv,
-                         const RealVect & a_point) const;
 
                               
   //the two implicit functions are owned by others
@@ -120,158 +97,12 @@ protected:
 
   //pi, you know, pi = 4atan(1)
   Real m_pi;
-  ///for debugging against known functions
-  static int s_knownFunc;
+
 private:
 
-  SmoothAbsoluteValue(const SmoothAbsoluteValue& a_inputIF)
-  {
-    MayDay::Abort("SmoothAbsoluteValue doesn't allow copy construction");
-  }
-
- SmoothAbsoluteValue()
-  {
-    MayDay::Abort("SmoothAbsoluteValue uses strong construction");
-  }
-
-  void operator=(const SmoothAbsoluteValue& a_inputIF)
-  {
-    MayDay::Abort("SmoothAbsoluteValue doesn't allow assignment");
-  }
-};
-///
-/**
-   offset sphere test case
-   The mac daddy of test cases
-   Test case where 
-   f: (x-  0  )^2 + (y-  0  )^2 + (z-  0  )^2 -  (1/2)^2;
-   g: (x-(1/2))^2 + (y-(1/2))^2 + (z-(1/2))^2 -  (1/4)^2;
-   sphere_center_0 = 0 0 0
-   sphere_center_1 = 0.5 0.5 0.5
-   sphere_radius_0 = 0.5
-   sphere_radius_1 = 0.25
-**/
-class OffsetSphereExact
-{
-public:
-  OffsetSphereExact(const Real & a_delta,
-                    const Real & a_pi)
-  {
-    m_d  = a_delta;
-    m_pi = a_pi;
-  }
-
-  ~OffsetSphereExact()
-  {
-  }
-
-  ///this one calls the other functions
-  Real value(const  IntVect& a_deriv,
-             const RealVect& a_point) const;
-
-  
-  ///
-  Real valueAem(const RealVect& a_point) const;
-
-  
-  ///
-  Real firstDerivAem(const  IntVect& a_deriv,
-                     const RealVect& a_point) const;
-
-  
-  ///
-  Real secondDerivAem(const  IntVect& a_deriv,
-                      const RealVect& a_point) const;
-
-  
-  ///
-  Real thirdDerivAem(const  IntVect& a_deriv,
-                     const RealVect& a_point) const;
-
-  
-  ///
-  Real fourthDerivAem(const  IntVect& a_deriv,
-                      const RealVect& a_point) const;
-private:
-  void getXYIXIY(int & a_ix, int& a_iy, 
-                 Real& a_x, Real& a_y,
-                 const int &   a_xderivVal,
-                 const  IntVect& a_deriv,
-                 const RealVect& a_point) const;
-
-  OffsetSphereExact()
-  {
-    MayDay::Error("this uses strong construction");
-  }
-
-  Real m_d;
-  Real m_pi;
-
-};
-
-
-///
-/**
-   Double sphere test case
-   Test case where 
-f(x,y,z) = x^2 + y^2 + z^2 -  0.75^2
-g(x,y,z) = (x-1)^2 + y^2 + z^2 - 0.75^2
-g(x,y,z) = (-2*(x-1) + (y - 1))
-f(x,y.z) - g(x,y,z) = x^2 - (x-1)^2
-sphere_center_0 = 0 0 0
-sphere_center_1 = 1 0 0
-sphere_radius_0 = 0.75
-sphere_radius_1 = 0.75
-**/
-class DoubleSphereExact
-{
-public:
-  DoubleSphereExact(const Real & a_delta,
-                  const Real & a_pi)
-  {
-    m_d  = a_delta;
-    m_pi = a_pi;
-  }
-
-  ~DoubleSphereExact()
-  {
-  }
-
-  ///this one calls the other functions
-  Real value(const  IntVect& a_deriv,
-             const RealVect& a_point) const;
-
-  
-  ///
-  Real valueAem(const RealVect& a_point) const;
-
-  
-  ///
-  Real firstDerivAem(const  IntVect& a_deriv,
-                     const RealVect& a_point) const;
-
-  
-  ///
-  Real secondDerivAem(const  IntVect& a_deriv,
-                      const RealVect& a_point) const;
-
-  
-  ///
-  Real thirdDerivAem(const  IntVect& a_deriv,
-                     const RealVect& a_point) const;
-
-  
-  ///
-  Real fourthDerivAem(const  IntVect& a_deriv,
-                      const RealVect& a_point) const;
-private:
-  DoubleSphereExact()
-  {
-    MayDay::Error("this uses strong construction");
-  }
-
-  Real m_d;
-  Real m_pi;
+  SmoothAbsoluteValue();
+  SmoothAbsoluteValue(const SmoothAbsoluteValue& a_inputIF);
+  void operator=(     const SmoothAbsoluteValue& a_inputIF);
 
 };
 
