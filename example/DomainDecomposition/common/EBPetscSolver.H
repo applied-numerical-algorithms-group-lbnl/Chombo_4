@@ -100,16 +100,19 @@ public:
     using Chombo4::DataIterator;
     CH_TIME("EBPetscSolver::solve");
     CH_assert(  a_rhs.ghostVect() == a_phi.ghostVect());
-    EBLevelBoxData<CELL, 1>& rhs = const_cast<EBLevelBoxData<CELL, 1>&>(a_rhs);
-    rhs.exchange(m_exchangeCopier);
+    EBLevelBoxData<CELL, 1> rhs;
+    rhs.define(m_grids, m_ivghost, m_graphs);
 
     DataIterator dit = m_grids.dataIterator();
     int ideb  = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      auto& rhsfab = rhs[dit[ibox]];
+      auto& newrhsfab = rhs[dit[ibox]];
+      auto& rhsfab = a_rhs[dit[ibox]];
       auto& inhofab = m_inhoContr[dit[ibox]];
-      rhsfab -= inhofab;
+      newrhsfab.setVal(0.0);
+      newrhsfab += rhsfab;
+      newrhsfab -= inhofab;
       ideb++;
     }
     rhs.exchange(m_exchangeCopier);
@@ -194,6 +197,11 @@ public:
       ideb++;
     }
     m_inhoContr.exchange(m_exchangeCopier);
+  }
+
+  EBLevelBoxData<CELL, 1> & getKappa()
+  {
+    return m_kappa;
   }
 
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
