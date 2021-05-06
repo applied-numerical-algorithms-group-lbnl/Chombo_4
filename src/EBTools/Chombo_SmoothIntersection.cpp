@@ -4,7 +4,7 @@
 #include "Chombo_NamespaceHeader.H"
 
 SmoothIntersection::
-SmoothIntersection(const Vector<BaseIF *>& a_impFuncs,
+SmoothIntersection(const std::vector<BaseIF *>& a_impFuncs,
                    const Real            & a_delta)
 {
   if (a_impFuncs.size() == 0)
@@ -16,7 +16,7 @@ SmoothIntersection(const Vector<BaseIF *>& a_impFuncs,
   m_numFuncs = a_impFuncs.size();
 
 
-  // Vector of implicit function pointers
+  // std::vector of implicit function pointers
   m_impFuncs.resize(m_numFuncs, NULL);
 
   // Make copies of the implicit functions
@@ -51,8 +51,8 @@ SmoothIntersection::
 ////
 Real           
 SmoothIntersection::
-smoothMax(const  IntVect & a_deriv,
-          const  RealVect& a_point,
+smoothMax(const  IndexTM<int,   DIM> & a_deriv,
+          const  IndexTM<double, DIM>& a_point,
           const  int     & a_closestIF,
           const  int     & a_nextClosestIF) const
           
@@ -69,8 +69,8 @@ smoothMax(const  IntVect & a_deriv,
   SmoothAbsoluteValue smoothie(ffunc, gfunc, m_delta);
   Real wval;
   int icase;
-  Real fval = ffunc->value(a_point);
-  Real gval = gfunc->value(a_point);
+  Real fval = ffunc->value(IndexTM<int, DIM>::Zero, a_point);
+  Real gval = gfunc->value(IndexTM<int, DIM>::Zero, a_point);
   Real fder = ffunc->value(a_deriv, a_point);
   Real gder = gfunc->value(a_deriv, a_point);
   smoothie.getWCase(icase, wval, a_point);
@@ -100,7 +100,7 @@ SmoothIntersection::
 findClosest(int            & a_closestIF, 
             int            & a_nextClosestIF,
             int            & a_numWithinDelta,
-            const RealVect & a_point) const
+            const IndexTM<double, DIM> & a_point) const
 {
   CH_assert(m_numFuncs > 0);
 
@@ -112,7 +112,7 @@ findClosest(int            & a_closestIF,
   for (int ifunc = 0; ifunc < m_numFuncs; ifunc++)
     {
       Real cur;
-      cur = m_impFuncs[ifunc]->value(a_point);
+      cur = m_impFuncs[ifunc]->value(IndexTM<int, DIM>::Zero, a_point);
       if (cur > valueClosest)
         {
           valueClosest = cur;
@@ -128,7 +128,7 @@ findClosest(int            & a_closestIF,
       if(ifunc != a_closestIF)
         {
           Real cur;
-          cur = m_impFuncs[ifunc]->value(a_point);
+          cur = m_impFuncs[ifunc]->value(IndexTM<int, DIM>::Zero, a_point);
           if(cur > valueNextClosest)
             {
               valueNextClosest = cur;
@@ -140,50 +140,16 @@ findClosest(int            & a_closestIF,
   if(!foundNextClosest && (m_numFuncs > 1)) MayDay::Error("logic error smoothie1");
 
   a_numWithinDelta = 0;
-  if(Abs(valueClosest)     < m_delta) a_numWithinDelta++;
-  if(Abs(valueNextClosest) < m_delta) a_numWithinDelta++;
+  if(std::abs(valueClosest)     < m_delta) a_numWithinDelta++;
+  if(std::abs(valueNextClosest) < m_delta) a_numWithinDelta++;
     
 }
 
-
 ////
 Real 
 SmoothIntersection::
-value(const RealVect& a_point) const
-{
-
-  Real retval;
-  if(m_numFuncs < 2)
-    {
-      retval = m_impFuncs[0]->value(a_point);
-    }
-  else
-    {
-      // Maximum of the implicit functions values
-      int  closestIF;
-      int  nextClosestIF;
-      int  numWithinDelta;
-  
-
-      findClosest(closestIF, 
-                  nextClosestIF,
-                  numWithinDelta,
-                  a_point);
-
-
-      retval = smoothMax(IntVect::Zero, a_point,
-                         closestIF, nextClosestIF);
-      
-
-      
-    }
-  return retval;
-}
-////
-Real 
-SmoothIntersection::
-derivative(const IntVect & a_deriv,
-           const RealVect& a_point) const
+value(const IndexTM<int,   DIM>  & a_deriv,
+      const IndexTM<double, DIM>& a_point) const
 {
 
   Real retval;

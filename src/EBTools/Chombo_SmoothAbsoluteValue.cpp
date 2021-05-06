@@ -21,7 +21,7 @@ isBogus(const Real& a_number) const
 }
 Real 
 SmoothAbsoluteValue::
-valueAem(const RealVect& a_point) const
+valueAem(const IndexTM<double, DIM>& a_point) const
 {
 
   Real wval; 
@@ -75,8 +75,8 @@ valueAem(const RealVect& a_point) const
 ///
 Real 
 SmoothAbsoluteValue::
-firstDerivAem(const  IntVect& a_deriv,
-              const RealVect& a_point) const
+firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+              const IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 1);
   Real wval; 
@@ -84,8 +84,8 @@ firstDerivAem(const  IntVect& a_deriv,
   getWCase(icase, wval, a_point);
   CH_assert(icase == 0);
   //values of the two functions
-  Real fval = (*m_f).value(a_point);
-  Real gval = (*m_g).value(a_point);
+  Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+  Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
   //derivatives of the two functions
   Real dfx = (*m_f).value(a_deriv, a_point);
@@ -111,8 +111,8 @@ firstDerivAem(const  IntVect& a_deriv,
 ///
 Real 
 SmoothAbsoluteValue::
-secondDerivAem(const  IntVect& a_deriv,
-               const RealVect& a_point) const
+secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+               const IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 2);
   Real wval; 
@@ -122,7 +122,8 @@ secondDerivAem(const  IntVect& a_deriv,
 
   //true for dxx dyy dzz, false for dxy dyz dxz
   //the two cases have different forms.
-  bool doublex = (a_deriv.max() == 2);
+  int maxval = a_deriv.max();
+  bool doublex = (maxval == 2);
 
   Real retval = 0;
   if(doublex)
@@ -142,8 +143,8 @@ secondDerivAem(const  IntVect& a_deriv,
           MayDay::Error("logic error aem2.0");
         }
 
-      IntVect dx  = BASISV(ix);
-      IntVect dxx = 2*dx;
+      IndexTM<int,   DIM> dx  = IndexTM<int,DIM>::BASISV(ix);
+      IndexTM<int,   DIM> dxx = 2*dx;
       //derivatives
       Real  dfx  = (*m_f).value( dx    , a_point);
       Real  dfxx = (*m_f).value( dxx   , a_point);
@@ -152,8 +153,8 @@ secondDerivAem(const  IntVect& a_deriv,
       Real  dgxx = (*m_g).value( dxx   , a_point);
 
 
-      Real fval = (*m_f).value(a_point);
-      Real gval = (*m_g).value(a_point);
+      Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       ///(%i14) Aem_xx: diff(Aem_x,x);                                                  
       ///                                                                               
@@ -202,9 +203,9 @@ secondDerivAem(const  IntVect& a_deriv,
         {
           MayDay::Error("logic error aem2.1");
         }
-      IntVect dx  = BASISV(ix);
-      IntVect dy  = BASISV(iy);
-      IntVect dxy = dx + dy;
+      IndexTM<int,   DIM> dx  = IndexTM<int,DIM>::BASISV(ix);
+      IndexTM<int,   DIM> dy  = IndexTM<int,DIM>::BASISV(iy);
+      IndexTM<int,   DIM> dxy = dx + dy;
 
       Real dfx  = (*m_f).value( dx  , a_point);
       Real dfy  = (*m_f).value( dy  , a_point);
@@ -214,8 +215,8 @@ secondDerivAem(const  IntVect& a_deriv,
       Real dgy  = (*m_g).value( dy  , a_point);
       Real dgxy = (*m_g).value( dxy , a_point);
 
-      Real fval = (*m_f).value(a_point);
-      Real gval = (*m_g).value(a_point);
+      Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       //(%i21) Aem_xy: diff(Aem_x,y);
       //
@@ -246,8 +247,8 @@ secondDerivAem(const  IntVect& a_deriv,
 ///
 Real
 SmoothAbsoluteValue::
-thirdDerivAem(const  IntVect& a_deriv,
-              const RealVect& a_point) const
+thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+              const IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 3);
   Real wval; 
@@ -277,9 +278,9 @@ thirdDerivAem(const  IntVect& a_deriv,
         {
           MayDay::Error("logic error aem3.0");
         }
-      IntVect  dx   = BASISV(ix);
-      IntVect  dxx  = 2*dx;
-      IntVect  dxxx = 3*dx;        
+      IndexTM<int,   DIM>  dx   = IndexTM<int,DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxx  = 2*dx;
+      IndexTM<int,   DIM>  dxxx = 3*dx;        
 
       Real  dfx   = (*m_f).value( dx   , a_point);
       Real  dfxx  = (*m_f).value( dxx  , a_point);
@@ -289,8 +290,8 @@ thirdDerivAem(const  IntVect& a_deriv,
       Real  dgxx  = (*m_g).value( dxx  , a_point);
       Real  dgxxx = (*m_g).value( dxxx , a_point);
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int,DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int,DIM>::Zero, a_point);
 
       //(%i28) Aem_xxx: diff(Aem_xx,x);
       //
@@ -341,11 +342,11 @@ thirdDerivAem(const  IntVect& a_deriv,
           MayDay::Error("logic error aem3.1");
         }
 
-      IntVect  dx   = BASISV(ix);
-      IntVect  dy   = BASISV(iy);
-      IntVect  dxx  = 2*dx;
-      IntVect  dxy  = dx  + dy;
-      IntVect  dxxy = dxx + dy;
+      IndexTM<int,   DIM>  dx   = IndexTM<int,DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dy   = IndexTM<int,DIM>::BASISV(iy);
+      IndexTM<int,   DIM>  dxx  = 2*dx;
+      IndexTM<int,   DIM>  dxy  = dx  + dy;
+      IndexTM<int,   DIM>  dxxy = dxx + dy;
 
 
       Real  dfx   = (*m_f).value( dx   , a_point);
@@ -360,8 +361,8 @@ thirdDerivAem(const  IntVect& a_deriv,
       Real  dgxy  = (*m_g).value( dxy  , a_point);
       Real  dgxxy = (*m_g).value( dxxy , a_point);
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       //(%i38) Aem_xxy: diff(Aem_xx,y);
       //
@@ -400,13 +401,13 @@ thirdDerivAem(const  IntVect& a_deriv,
   else if(xyz)
     {
 
-      IntVect  dx   = BASISV(0);
-      IntVect  dy   = BASISV(1);
-      IntVect  dz   = BASISV(2);
-      IntVect  dxy  = dx  + dy;
-      IntVect  dxz  = dx  + dz;
-      IntVect  dyz  = dy  + dz;
-      IntVect  dxyz = dx  + dy + dz;
+      IndexTM<int,   DIM>  dx   = BASISV(0);
+      IndexTM<int,   DIM>  dy   = BASISV(1);
+      IndexTM<int,   DIM>  dz   = BASISV(2);
+      IndexTM<int,   DIM>  dxy  = dx  + dy;
+      IndexTM<int,   DIM>  dxz  = dx  + dz;
+      IndexTM<int,   DIM>  dyz  = dy  + dz;
+      IndexTM<int,   DIM>  dxyz = dx  + dy + dz;
 
       Real fval  = (*m_f).value(a_point);
       Real gval  = (*m_g).value(a_point);
@@ -477,8 +478,8 @@ thirdDerivAem(const  IntVect& a_deriv,
 ///
 Real
 SmoothAbsoluteValue::
-fourthDerivAem(const  IntVect& a_deriv,
-               const RealVect& a_point) const
+fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+               const IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 4);
 
@@ -509,14 +510,14 @@ fourthDerivAem(const  IntVect& a_deriv,
         }
       if(!found) MayDay::Error("logic error gs4.0");
 
-      IntVect  dx    =    BASISV(ix);
-      IntVect  dxx   =  2*BASISV(ix);
-      IntVect  dxxx  =  3*BASISV(ix);
-      IntVect  dxxxx =  4*BASISV(ix);
+      IndexTM<int,   DIM>  dx    =    IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxx   =  2*IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxxx  =  3*IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxxxx =  4*IndexTM<int, DIM>::BASISV(ix);
 
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int,DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int,DIM>::Zero, a_point);
 
       Real  dfx    =  (*m_f).value( dx    , a_point);
       Real  dfxx   =  (*m_f).value( dxx   , a_point);
@@ -587,22 +588,22 @@ fourthDerivAem(const  IntVect& a_deriv,
       if((!foundx)||(!foundy)) MayDay::Error("logic error sab4.05");
 
 
-      IntVect  dx    =   BASISV(ix);
-      IntVect  dy    =   BASISV(iy);
-      IntVect  dxx   = 2*BASISV(ix);
-      IntVect  dxxx  = 3*BASISV(ix);
-      IntVect  dxy   = dx   + dy;
-      IntVect  dxxy  = dxx  + dy;
-      IntVect  dxxxy = dxxx + dy;
+      IndexTM<int,   DIM>  dx    =   IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dy    =   IndexTM<int, DIM>::BASISV(iy);
+      IndexTM<int,   DIM>  dxx   = 2*IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxxx  = 3*IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dxy   = dx   + dy;
+      IndexTM<int,   DIM>  dxxy  = dxx  + dy;
+      IndexTM<int,   DIM>  dxxxy = dxxx + dy;
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx    = (*m_f).value(  dx    , a_point);
       Real  dfy    = (*m_f).value(  dy    , a_point);
       Real  dfxx   = (*m_f).value(  dxx   , a_point);
       Real  dfxxx  = (*m_f).value(  dxxx  , a_point);
-            Real  dfxy   = (*m_f).value(  dxy   , a_point);
+      Real  dfxy   = (*m_f).value(  dxy   , a_point);
       Real  dfxxy  = (*m_f).value(  dxxy  , a_point);
       Real  dfxxxy = (*m_f).value(  dxxxy , a_point);
 
@@ -686,17 +687,17 @@ fourthDerivAem(const  IntVect& a_deriv,
         }
       if(!foundx || !foundy) MayDay::Error("logic error aemxxyy");
 
-      IntVect  dx    =   BASISV(ix);
-      IntVect  dy    =   BASISV(iy);
-      IntVect  dxx   = 2*BASISV(ix);
-      IntVect  dyy   = 2*BASISV(iy);
-      IntVect  dxy   = dx   + dy ;
-      IntVect  dxxy  = dxx  + dy ;
-      IntVect  dxxyy = dxx  + dyy;
-      IntVect  dxyy  = dx   + dyy;
+      IndexTM<int,   DIM>  dx    =   IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dy    =   IndexTM<int, DIM>::BASISV(iy);
+      IndexTM<int,   DIM>  dxx   = 2*IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dyy   = 2*IndexTM<int, DIM>::BASISV(iy);
+      IndexTM<int,   DIM>  dxy   = dx   + dy ;
+      IndexTM<int,   DIM>  dxxy  = dxx  + dy ;
+      IndexTM<int,   DIM>  dxxyy = dxx  + dyy;
+      IndexTM<int,   DIM>  dxyy  = dx   + dyy;
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx    =(*m_f).value( dx     , a_point);
       Real  dfy    =(*m_f).value( dy     , a_point);
@@ -805,17 +806,17 @@ fourthDerivAem(const  IntVect& a_deriv,
             }
         }
       if(!foundx || !foundy || !foundz) MayDay::Error("logic error xxyz");
-      IntVect  dx     =   BASISV(ix);
-      IntVect  dy     =   BASISV(iy);
-      IntVect  dz     =   BASISV(iz);
-      IntVect  dxx    = 2*BASISV(ix);
-      IntVect  dxy    = dx   + dy ;
-      IntVect  dxz    = dx   + dz ;
-      IntVect  dyz    = dy   + dz ;
-      IntVect  dxxy   = dxx  + dy ;
-      IntVect  dxxz   = dxx  + dz ;
-      IntVect  dxyz   = dx   + dy + dz;
-      IntVect  dxxyz  = dxz  + dy + dz;
+      IndexTM<int,   DIM>  dx     =   BASISV(ix);
+      IndexTM<int,   DIM>  dy     =   BASISV(iy);
+      IndexTM<int,   DIM>  dz     =   BASISV(iz);
+      IndexTM<int,   DIM>  dxx    = 2*BASISV(ix);
+      IndexTM<int,   DIM>  dxy    = dx   + dy ;
+      IndexTM<int,   DIM>  dxz    = dx   + dz ;
+      IndexTM<int,   DIM>  dyz    = dy   + dz ;
+      IndexTM<int,   DIM>  dxxy   = dxx  + dy ;
+      IndexTM<int,   DIM>  dxxz   = dxx  + dz ;
+      IndexTM<int,   DIM>  dxyz   = dx   + dy + dz;
+      IndexTM<int,   DIM>  dxxyz  = dxz  + dy + dz;
 
       Real fval  = (*m_f).value(a_point);
       Real gval  = (*m_g).value(a_point);
@@ -941,10 +942,10 @@ void
 SmoothAbsoluteValue::
 getWCase(int            & a_case,
          Real           & a_wval,
-         const RealVect & a_point)const
+         const IndexTM<double, DIM> & a_point)const
 {
-  Real fofx = (*m_f).value(a_point);
-  Real gofx = (*m_g).value(a_point);
+  Real fofx = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+  Real gofx = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
   a_wval  = fofx-gofx;
   if(a_wval >= m_d)
     {
@@ -962,8 +963,8 @@ getWCase(int            & a_case,
 ///
 Real 
 SmoothAbsoluteValue::
-smoothAbsFMinusG(const  IntVect& a_deriv,
-                 const RealVect& a_point) const
+smoothAbsFMinusG(const  IndexTM<int,   DIM>& a_deriv,
+                 const IndexTM<double, DIM>& a_point) const
 {
   Real retval = 0;
   int order = a_deriv.sum();

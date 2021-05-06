@@ -39,8 +39,8 @@ public:
   {; }
 
   ///
-  virtual Real smoothAbsFMinusG(const  IntVect& a_deriv,
-                                const RealVect& a_point) const;
+  virtual Real smoothAbsFMinusG(const  IndexTM<int,   DIM>& a_deriv,
+                                const IndexTM<double, DIM>& a_point) const;
 
   ///
   /**
@@ -49,8 +49,18 @@ public:
   */
   void getWCase(int            & a_case,
                 Real           & a_wval,
-                const RealVect & a_point)const;
+                const IndexTM<double, DIM> & a_point)const;
 
+  // gives x^p (thought to be cheaper than calling the system function because of the int)
+  static Real POW(Real a_x, int a_p)
+  {
+    Real retval = 1;
+    for(unsigned int ipow = 0; ipow < a_p; ipow++)
+    {
+      retval *= a_x;
+    }
+    return retval;
+  }
 protected:
 
   ///
@@ -66,23 +76,23 @@ protected:
    */
 
 
-  virtual Real valueAem(const RealVect& a_point) const;
+  virtual Real valueAem(const IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real firstDerivAem(const  IntVect& a_deriv,
-                             const RealVect& a_point) const;
+  virtual Real firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+                             const IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real secondDerivAem(const  IntVect& a_deriv,
-                              const RealVect& a_point) const;
+  virtual Real secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+                              const IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real thirdDerivAem(const  IntVect& a_deriv,
-                             const RealVect& a_point) const;
+  virtual Real thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+                             const IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real fourthDerivAem(const  IntVect& a_deriv,
-                              const RealVect& a_point) const;
+  virtual Real fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
+                              const IndexTM<double, DIM>& a_point) const;
 
   ///just checks nan
   bool isBogus(const Real& a_number) const;

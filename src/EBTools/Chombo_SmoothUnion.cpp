@@ -117,7 +117,7 @@ findClosest(int            & a_closestIF,
   for (int ifunc = 0; ifunc < m_numFuncs; ifunc++)
   {
     Real cur;
-    cur = m_impFuncs[ifunc]->value(a_point);
+    cur = m_impFuncs[ifunc]->value(IndexTM<int,DIM>::Zero, a_point);
     if (cur < valueClosest)
     {
       valueClosest = cur;
@@ -133,7 +133,7 @@ findClosest(int            & a_closestIF,
     if(ifunc != a_closestIF)
     {
       Real cur;
-      cur = m_impFuncs[ifunc]->value(a_point);
+      cur = m_impFuncs[ifunc]->value(IndexTM<int, DIM>::Zero, a_point);
       if(cur < valueNextClosest)
       {
         valueNextClosest = cur;

@@ -31,14 +31,8 @@ public:
   virtual ~SmoothUnion();
 
   ///
-  /**
-      Return the value of the function at a_point.
-   */
-  virtual Real value(const IndexTM<double, DIM>& a_point) const;
-
-  ///
-  virtual Real derivative(const  IndexTM<int,   DIM>& a_deriv,
-                          const IndexTM<double, DIM>& a_point) const;
+  virtual Real value(const  IndexTM<int,   DIM>& a_deriv,
+                     const IndexTM<double, DIM>& a_point) const;
 
 
   virtual BaseIF* newImplicitFunction() const;

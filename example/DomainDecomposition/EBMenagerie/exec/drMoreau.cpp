@@ -158,13 +158,15 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   vector<RealVect> centers(num_spheres);
   RealVect centercenter = RealVect::Unit();
   centercenter *= 0.5;
-  
-#if DIM==3
-  centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
-  centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
-  centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1);
-  centers[3] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1);
+  RealVect offsetx = offsetmag*BASISREALV(0);
+  RealVect offsety = offsetmag*BASISREALV(1);
+#if DIM==2
+  centers[0] = centercenter - offsetx - offsety;
+  centers[1] = centercenter + offsetx - offsety;
+  centers[2] = centercenter - offsetx + offsety;
+  centers[3] = centercenter + offsetx + offsety;
 #else
+  RealVect offsetz = offsetmag*BASISREALV(2);
   centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
   centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
   centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
@@ -175,7 +177,7 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   centers[7] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
 #endif  
 
-  pout() << "intersecting sphere case with rad = : " << rad;      << endl;
+  pout() << "intersecting sphere case with rad = : " << rad   << endl;
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
     pout() << "center[" << icen << "] = " << centers[icen] << endl;
@@ -209,7 +211,7 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
     SimpleSphereIF* sphereptr = new SimpleSphereIF(centers[icen], rad, inside);
-    spheres[cen] = static_cast<BaseIF*>(sphereptr);
+    spheres[icen] = static_cast<BaseIF*>(sphereptr);
   }
   shared_ptr<BaseIF>     intersect(new IntersectionIF(spheres));
   pout() << "defining geometry" << endl;
@@ -224,9 +226,12 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
   kappa.writeToFileHDF5(string("intersecting_spheres_kappa.hdf5"), coveredVal);
-  
-  delete sphere_one;
-  delete sphere_two;
+
+  for(int icen = 0; icen < num_spheres; icen++)
+  {
+    delete spheres[icen];
+    spheres[icen] = NULL;
+  }
   pout() << "exiting intersectingSpheres" << endl;
   return 0;
 }
@@ -254,7 +259,7 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   RealVect centercenter = RealVect::Unit();
   centercenter *= 0.5;
   
-#if DIM==3
+#if DIM==2
   centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
   centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
   centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1);
@@ -270,7 +275,7 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   centers[7] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
 #endif  
 
-  pout() << "smoothed intersecting sphere case with rad = : " << rad;      << endl;
+  pout() << "smoothed intersecting sphere case with rad = : " << rad     << endl;
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
     pout() << "center[" << icen << "] = " << centers[icen] << endl;
@@ -304,10 +309,10 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
     SimpleSphereIF* sphereptr = new SimpleSphereIF(centers[icen], rad, inside);
-    spheres[cen] = static_cast<BaseIF*>(sphereptr);
+    spheres[icen] = static_cast<BaseIF*>(sphereptr);
   }
   Real delta = 0.1*dx;
-  shared_ptr<BaseIF>     intersect(new SmoothIntersectionIF(spheres, dx));
+  shared_ptr<BaseIF>     intersect(new SmoothIntersection(spheres, dx));
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
     geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.
@@ -321,8 +326,12 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   Real coveredVal = -1;
   kappa.writeToFileHDF5(string("smoothed_intersecting_spheres_kappa.hdf5"), coveredVal);
   
-  delete sphere_one;
-  delete sphere_two;
+  for(int icen = 0; icen < num_spheres; icen++)
+  {
+    delete spheres[icen];
+    spheres[icen] = NULL;
+  }
+
   pout() << "exiting intersectingSpheres" << endl;
   return 0;
 }
