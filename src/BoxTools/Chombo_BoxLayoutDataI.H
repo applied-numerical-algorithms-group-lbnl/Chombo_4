@@ -618,7 +618,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree((m_buff->m_sendbuffer));
+      protoFree(MEMTYPE_DEFAULT,(m_buff->m_sendbuffer));
     }
     else
     {
@@ -633,7 +633,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA 
     if(T::memTypeAllocation())  
     {
-      protoMalloc(m_buff->m_sendbuffer,sendBufferSize);
+      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
@@ -654,7 +654,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree(m_buff->m_recbuffer);
+      protoFree(MEMTYPE_DEFAULT,m_buff->m_recbuffer);
     }
     else
     {
@@ -669,7 +669,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoMalloc(m_buff->m_recbuffer,recBufferSize);
+      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_recbuffer,recBufferSize);
     }
     else
     {
@@ -760,7 +760,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   m_buff->m_sendRequests.resize(this->m_buff->numSends);
   std::list<MPI_Request> extraRequests;
 
-  protoDeviceSynchronize();
+  protoDeviceSynchronizeGPU();
 
   unsigned int next=0;
   long long maxSize = 0;
