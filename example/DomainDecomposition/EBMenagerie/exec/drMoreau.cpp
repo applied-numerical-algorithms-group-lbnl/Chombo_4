@@ -149,12 +149,21 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
 
   //put one sphere in each quadrant or octant
 #if DIM==2
-  const unsigned int num_spheres = 4;
+  const unsigned int num_spheres = 5;
 #else
-  const unsigned int num_spheres = 8;
+  const unsigned int num_spheres = 9;
 #endif  
   Real rad = 0.1;
-  Real offsetmag = rad; 
+  Real offsetmag = 1.1*rad; 
+  pp.get("radius", rad);
+  pp.get("offsetmag", offsetmag);
+  pout() << "nx      = " << nx       << endl;
+  Real dx = 1.0/nx;
+  
+  pout() << "dx      = " << dx       << endl;
+  pout() << "maxGrid = " << maxGrid  << endl;
+  pout() << "radius = " << rad << endl;
+  pout() << "offset = " << offsetmag << endl;
   vector<RealVect> centers(num_spheres);
   RealVect centercenter = RealVect::Unit();
   centercenter *= 0.5;
@@ -165,16 +174,18 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   centers[1] = centercenter + offsetx - offsety;
   centers[2] = centercenter - offsetx + offsety;
   centers[3] = centercenter + offsetx + offsety;
+  centers[4] = centercenter;
 #else
   RealVect offsetz = offsetmag*BASISREALV(2);
-  centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[3] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[4] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[5] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[6] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[7] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
+  centers[0] = centercenter - offsetx - offsety - offsetz;
+  centers[1] = centercenter + offsetx - offsety - offsetz;
+  centers[2] = centercenter - offsetx + offsety - offsetz;
+  centers[3] = centercenter + offsetx + offsety - offsetz;
+  centers[4] = centercenter - offsetx - offsety + offsetz;
+  centers[5] = centercenter + offsetx - offsety + offsetz;
+  centers[6] = centercenter - offsetx + offsety + offsetz;
+  centers[7] = centercenter + offsetx + offsety + offsetz;
+  centers[8] = centercenter;
 #endif  
 
   pout() << "intersecting sphere case with rad = : " << rad   << endl;
@@ -182,8 +193,6 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   {
     pout() << "center[" << icen << "] = " << centers[icen] << endl;
   }
-  pout() << "nx      = " << nx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
@@ -204,7 +213,6 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   IntVect::Zero;
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
-  Real dx = 1.0/nx;
 
   std::vector<BaseIF*> spheres(num_spheres);
   bool inside = false;
@@ -242,37 +250,55 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
-  ParmParse pp("intersecting_spheres");
+  ParmParse pp("smoothed_intersecting_spheres");
     
   pp.get("nx"     , nx);
   pp.get("maxGrid", maxGrid);
 
   //put one sphere in each quadrant or octant
 #if DIM==2
-  const unsigned int num_spheres = 4;
+  const unsigned int num_spheres = 5;
 #else
-  const unsigned int num_spheres = 8;
+  const unsigned int num_spheres = 9;
 #endif  
   Real rad = 0.1;
-  Real offsetmag = rad; 
+  Real offsetmag = 1.1*rad; 
+  Real dx = 1.0/nx;
+  Real deltamag = 0.1;
+  Real delta = deltamag*dx;
+  pp.get("radius", rad);
+  pp.get("offsetmag", offsetmag);
+  pp.get("deltamag" , deltamag);
+  pout() << "nx      = " << nx       << endl;
+  pout() << "dx      = " << dx       << endl;
+  pout() << "maxGrid = " << maxGrid  << endl;
+  pout() << "radius  = " << rad << endl;
+  pout() << "offset  = " << offsetmag << endl;
+  pout() << "delta   = " << deltamag << "*dx = " << delta << endl;
+  
   vector<RealVect> centers(num_spheres);
   RealVect centercenter = RealVect::Unit();
   centercenter *= 0.5;
+  RealVect offsetx = offsetmag*BASISREALV(0);
+  RealVect offsety = offsetmag*BASISREALV(1);
   
 #if DIM==2
-  centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
-  centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1);
-  centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1);
-  centers[3] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1);
+  centers[0] = centercenter - offsetx - offsety;
+  centers[1] = centercenter + offsetx - offsety;
+  centers[2] = centercenter - offsetx + offsety;
+  centers[3] = centercenter + offsetx + offsety;
+  centers[4] = centercenter;
 #else
-  centers[0] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[1] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[2] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[3] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) - offsetmag*BASISREALV(2);
-  centers[4] = centercenter - offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[5] = centercenter + offsetmag*BASISREALV(0)- offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[6] = centercenter - offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
-  centers[7] = centercenter + offsetmag*BASISREALV(0)+ offsetmag*BASISREALV(1) + offsetmag*BASISREALV(2);
+  RealVect offsetz = offsetmag*BASISREALV(2);
+  centers[0] = centercenter - offsetx - offsety - offsetz;
+  centers[1] = centercenter + offsetx - offsety - offsetz;
+  centers[2] = centercenter - offsetx + offsety - offsetz;
+  centers[3] = centercenter + offsetx + offsety - offsetz;
+  centers[4] = centercenter - offsetx - offsety + offsetz;
+  centers[5] = centercenter + offsetx - offsety + offsetz;
+  centers[6] = centercenter - offsetx + offsety + offsetz;
+  centers[7] = centercenter + offsetx + offsety + offsetz;
+  centers[8] = centercenter ;
 #endif  
 
   pout() << "smoothed intersecting sphere case with rad = : " << rad     << endl;
@@ -280,8 +306,6 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   {
     pout() << "center[" << icen << "] = " << centers[icen] << endl;
   }
-  pout() << "nx      = " << nx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
@@ -302,7 +326,6 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   IntVect::Zero;
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
-  Real dx = 1.0/nx;
 
   std::vector<BaseIF*> spheres(num_spheres);
   bool inside = false;
@@ -311,7 +334,6 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
     SimpleSphereIF* sphereptr = new SimpleSphereIF(centers[icen], rad, inside);
     spheres[icen] = static_cast<BaseIF*>(sphereptr);
   }
-  Real delta = 0.1*dx;
   shared_ptr<BaseIF>     intersect(new SmoothIntersection(spheres, dx));
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
@@ -332,7 +354,7 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
     spheres[icen] = NULL;
   }
 
-  pout() << "exiting intersectingSpheres" << endl;
+  pout() << "exiting smoothed intersectingSpheres" << endl;
   return 0;
 }
 /**************/
