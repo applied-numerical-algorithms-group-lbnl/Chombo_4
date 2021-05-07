@@ -195,8 +195,8 @@ runProjection(int a_argc, char* a_argv[])
   pout() << "max_vel_rad     = " << max_vel_rad     << endl;
   pout() << "num_streams     = " << nStream         << endl;
 
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
+//  EBMultigrid::s_numSmoothUp   = numSmooth;
+//  EBMultigrid::s_numSmoothDown = numSmooth;
 
   Real dx = 1.0/nx;
   Vector<Chombo4::DisjointBoxLayout> vecgrids;

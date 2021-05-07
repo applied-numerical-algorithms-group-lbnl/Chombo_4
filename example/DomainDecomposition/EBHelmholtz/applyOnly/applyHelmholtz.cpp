@@ -177,8 +177,8 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  lph(grids, dataGhostIV, graphs);
 
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids, stenname, dombcname, ebbcname, dombox, dataGhostIV);
-  EBMultigrid::s_numSmoothUp   = numSmooth;
-  EBMultigrid::s_numSmoothDown = numSmooth;
+//  EBMultigrid::s_numSmoothUp   = numSmooth;
+//  EBMultigrid::s_numSmoothDown = numSmooth;
   Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
   for(int ibox = 0; ibox < dit.size(); ibox++)
