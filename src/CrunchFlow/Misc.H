@@ -83,7 +83,7 @@ constexpr inline int ipow<0>(int M) {return 1;}
 
 inline int ipow(int a, int b)
 {
-  CH_assert(b>=0);
+  PR_assert(b>=0);
   int rtn = 1;
   for (; b>0; b--)
   {
