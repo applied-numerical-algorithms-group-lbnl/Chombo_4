@@ -361,7 +361,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
-		    vector<IndMomDIM>        & a_ebnorm,
+		    Vector<IndMomDIM>        & a_ebnorm,
 		    double                   & a_bndryArea,
                     double                     a_dx) const;
 
@@ -423,7 +423,7 @@ namespace Proto
 		     const EBNormalData            & a_ebnormxdata,
                      const EBNormalData            & a_ebnormydata,
                      const EBNormalData            & a_ebnormzdata,
-		     vector<IndMomDIM>             & a_ebnorm,
+		     Vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
 		     RealVect                      & a_normal,
@@ -436,11 +436,13 @@ namespace Proto
 
     BaseWLSFlux(int          & a_radius,
 		int          & a_powerE,
+		vector<pair<Point, Real> > & a_entries,
 		bool           a_verbose=false)
     {
       m_radius = a_radius;
       m_powerE = a_powerE;
       m_verbose = a_verbose;
+      m_entries = a_entries;
     }
 
     //Radius needed for neighbors list around a face (Manhattan style)
@@ -449,6 +451,8 @@ namespace Proto
     int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
+    //Entries for polynomial exact solution generator
+    vector<pair<Point, Real> > m_entries;
     
   };
   
@@ -573,11 +577,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
+		                       PolynomialEF<order>   & a_phigen,
                                        const Real              a_dx);
 
     //getIntegralPhiAlongEB
     inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
                                      const RealVect   & a_ebfLoc,
+		                     PolynomialEF<order>   & a_phigen,
                                      const Real         a_dx); 
   
   };
@@ -603,11 +609,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
+		                       PolynomialEF<order>   & a_phigen,
 		                       const Real              a_dx); 
 
     //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
+		                     PolynomialEF<order>     & a_phigen,
                                      const Real                a_dx);
  
   };

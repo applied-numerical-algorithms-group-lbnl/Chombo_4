@@ -151,23 +151,14 @@ namespace Proto
       {
         volLoc[idir] = a_dx * (0.5 + volInd.m_pt[idir]);
       }
-      //cout<< " vol order "<<volInd.m_pt<<endl;
       volp.push_back(volInd.m_pt);
       volneighLoc.push_back(volLoc);
 
       if(a_graph.isIrregular(volInd.m_pt))
       {
 	volmom.push_back(a_voludata(volInd, 0));
-	RealVect centroid;
-        double kappa;
-        Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volInd, a_graph, a_dx);
-	volneighFrac.push_back(kappa);
+	volneighFrac.push_back(a_voludata(volInd, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM));
 	const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
-	RealVect normal;
-        double bndryArea;
-        // Get normal and boundary area
-        Normalizor<order>::getNormalAndBoundaryArea(bndryArea, normal,
-            a_voludata, a_ebfadata, a_xfacdata, a_yfacdata, a_zfacdata, volInd, a_graph, a_dx);
 	Vector<IndMomDIM> ebnorm (DIM);
         ebnorm[0] = a_ebnormxdata(volInd, 0);
         ebnorm[1] = a_ebnormydata(volInd, 0);
@@ -178,8 +169,7 @@ namespace Proto
         ebfneighLoc.push_back(volLoc);
         weightDisEB.push_back(weightDisVol[ivof]);
 	ebfneighNorm.push_back(ebnorm);
-	ebfneighFrac.push_back(bndryArea);
-        //cout<< " eb order "<<volInd.m_pt<<endl;
+	ebfneighFrac.push_back(a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM-1));
         ebfp.push_back(volInd.m_pt);
       }
       else
@@ -220,10 +210,7 @@ namespace Proto
     	      if(a_graph.isIrregular(volInd.m_pt))
               {
                 facmom.push_back(a_xfacdata(x_face, 0));
-		double   areaFrac;
-                RealVect centroid;
-                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, x_face, a_graph, a_dx);
-	        facneighFrac.push_back(areaFrac);
+	        facneighFrac.push_back(a_xfacdata(x_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
     	      }
     	      else
               {
@@ -236,7 +223,6 @@ namespace Proto
 	      facneighSid.push_back(sit());
               weightDisFac.push_back(weightDisVol[ivof]);
               facp.push_back(x_face.m_pt);
-              //cout<< " xfac order "<<x_face.m_pt<<endl;
             }
           }
         }
@@ -265,10 +251,7 @@ namespace Proto
               if(a_graph.isIrregular(volInd.m_pt))
               {
                 facmom.push_back(a_yfacdata(y_face, 0));
-		double   areaFrac;
-                RealVect centroid;
-                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, y_face, a_graph, a_dx);
-                facneighFrac.push_back(areaFrac);
+	        facneighFrac.push_back(a_yfacdata(y_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
               }
               else
               {
@@ -281,7 +264,6 @@ namespace Proto
 	      facneighSid.push_back(sit());
               weightDisFac.push_back(weightDisVol[ivof]);
               facp.push_back(y_face.m_pt);
-              //cout<< " yfac order "<<y_face.m_pt<<endl;
             }
           }
         }
@@ -311,10 +293,7 @@ namespace Proto
               if(a_graph.isIrregular(volInd.m_pt))
               {
                 facmom.push_back(a_zfacdata(z_face, 0));
-		double   areaFrac;
-                RealVect centroid;
-                Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, z_face, a_graph, a_dx);
-                facneighFrac.push_back(areaFrac);
+	        facneighFrac.push_back(a_zfacdata(z_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
               }
               else
               {
@@ -435,9 +414,7 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]*volScaleFactor*POW(a_dx, momit().sum()));
         a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]);
-        //a_Mvol(irow, icol) = volmom[irow][momit()]/(volmom[irow][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -490,9 +467,7 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]*areaScaleFactor*POW(a_dx, momit().sum()));
         a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]);
-        //a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(fac2volmom[iface][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -537,9 +512,7 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]*areaScaleFactor*POW(a_dx, momit().sum()));
         a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
-        //a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfmom[iebf][IndexTM<int,DIM>::Zero]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -612,7 +585,6 @@ namespace Proto
         }
         // for readability, multiply by pd even though pd = 1
         //also pfaceshift is really p-e^d because we have set p
-        //a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift]/(a_areaFrac*areaScaleFactor);
         a_fluxMatrix(0, jmom) = pd*a_faceMom[pfaceshift];
       }
       else
@@ -633,7 +605,7 @@ namespace Proto
   getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
                   const EBIndex<cent>      & a_face,
 		  RealVect                 & a_faceLoc,
-		  vector<IndMomDIM>        & a_ebnorm,
+		  Vector<IndMomDIM>        & a_ebnorm,
 		  double                   & a_bndryArea,
                   double                     a_dx) const
   {
@@ -646,7 +618,6 @@ namespace Proto
     for (int idir = 0; idir < DIM; idir++)
     {
       startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
-      //if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
     }
 
     for(int idir = 0; idir < DIM; idir++)
@@ -673,7 +644,6 @@ namespace Proto
         if(pd > 0)
         {
           IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
-          //fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift]/(a_bndryArea*areaScaleFactor);
           fluxIncr(0, jmom) = pd*a_ebnorm[idir][pshift];
         }
         else
@@ -802,6 +772,7 @@ namespace Proto
     Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
     Vector<double> ebfneighFrac = a_neigh.m_ebfneighFrac;
     Vector<double> facneighFrac = a_neigh.m_facneighFrac;
+    PolynomialEF<order> phigen(m_entries);
 
     Vector<Real> domBCValues, ebBCValues;
     int nrows = a_facmom.size();
@@ -818,6 +789,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
 					       a_faceLocDiff,
 					       a_faceDir,
+					       phigen,
 					       a_dx);
       }
       else if(a_dombcName[index] == string("Dirichlet"))
@@ -826,6 +798,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
 					       a_faceLocDiff,
 					       a_faceDir,
+					       phigen,
 					       a_dx);
       }
       else
@@ -841,12 +814,6 @@ namespace Proto
       {
         domBCValues[iface] = domBCValues[iface]/(facneighFrac[iface]*a_dx);
       }
-      //domBCValues[iface] = getFaceIntegral(a_faces[iface], a_ebisBox, a_dx);
-      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
-      //if(!divideable)
-      //{
-      //  domBCValues[iface] = 0.;
-      //}
     }
 
     nrows = a_ebfmom.size();
@@ -859,6 +826,7 @@ namespace Proto
         ebBCValues[ivof] = NeumannExactSoln<order>::
                                getEBIntegral(a_ebfneighNorm[ivof],
 				             a_ebfLocDiff,
+					     phigen,
 				             a_dx);
       }
       else if(a_ebbcName == string("Dirichlet"))
@@ -866,6 +834,7 @@ namespace Proto
         ebBCValues[ivof] = DirichletExactSoln<order>::
                                getEBIntegral(a_ebfmom[ivof],
 				             a_ebfLocDiff,
+					     phigen,
 				             a_dx);
       }
       else
@@ -881,11 +850,6 @@ namespace Proto
       {
         ebBCValues[ivof] = ebBCValues[ivof]/(ebfneighFrac[ivof]*a_dx);
       }
-      //bool divideable = divideByArea(a_aveValues[iface], a_faces[iface], a_ebisBox, a_dx);
-      //if(!divideable)
-      //{
-      //  ebBCValues[iface] = 0.;
-      //}
     }
   
     int nfac = a_facmom.size();
@@ -978,7 +942,8 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      coef_acc += thisCo*neighs.m_volLoc[ivof][0];
+      //coef_acc += thisCo*neighs.m_volLoc[ivof][0];
+      coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
@@ -986,7 +951,7 @@ namespace Proto
 				       nvolneigh, faceLoc,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=x "<<coef_acc<<" "<<a_inhomogTerm<<endl;
+    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
   //Compute EB face stencil
@@ -1005,7 +970,7 @@ namespace Proto
 		   const EBNormalData            & a_ebnormxdata,
                    const EBNormalData            & a_ebnormydata,
                    const EBNormalData            & a_ebnormzdata,
-		   vector<IndMomDIM>             & a_ebnorm,
+		   Vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
 		   RealVect                      & a_normal,
@@ -1060,7 +1025,8 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      coef_acc += thisCo*neighs.m_volLoc[ivof][0];
+      //coef_acc += thisCo*neighs.m_volLoc[ivof][0];
+      coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
@@ -1068,7 +1034,7 @@ namespace Proto
                                        nvolneigh, faceLoc,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=x "<<coef_acc<<" "<<a_inhomogTerm<<endl;
+    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
   //Gets WLS flux divergence stencil
@@ -1288,7 +1254,7 @@ namespace Proto
     {
       EBIndex<BOUNDARY> cutface = a_vof.getCutFace();
       RealVect centroid, normal;
-      vector<IndMomDIM> ebnorm (DIM);
+      Vector<IndMomDIM> ebnorm (DIM);
       ebnorm[0] = a_ebnormxdata(a_vof, 0);
       for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
       {
@@ -1323,26 +1289,39 @@ namespace Proto
       if(a_ebbcName == string("Neumann"))
       {
         //neumann has no stencil
+	RealVect faceLoc;
+        for (int idir = 0; idir < DIM; idir++)
+        {
+          faceLoc[idir] = a_dx * (0.5 + cutface.m_pt[idir]);
+        }
+        PolynomialEF<order> phigen(a_ebflux.m_entries);
+	inhomogTerm = NeumannExactSoln<order>::
+                               getEBIntegral(ebnorm,
+                                             faceLoc,
+					     phigen,
+                                             a_dx);
+	inhomogTerm = inhomogTerm/(a_dx);
+
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
-          a_ebflux.getEBFluxStencil(ebflux, inhomogTerm,
-                                    cutface,
-                                    a_graph,
-                                    a_voludata,
-                                    a_ebfadata,
-                                    a_xfacdata,
-                                    a_yfacdata,
-                                    a_zfacdata,
-                                    a_ebnormxdata,
-                                    a_ebnormydata,
-                                    a_ebnormzdata,
-                                    ebnorm,
-                                    a_ebbcName,
-                                    a_dombcName,
-                                    normal,
-                                    bndryArea,
-                                    a_dx);
+        a_ebflux.getEBFluxStencil(ebflux, inhomogTerm,
+                                  cutface,
+                                  a_graph,
+                                  a_voludata,
+                                  a_ebfadata,
+                                  a_xfacdata,
+                                  a_yfacdata,
+                                  a_zfacdata,
+                                  a_ebnormxdata,
+                                  a_ebnormydata,
+                                  a_ebnormzdata,
+                                  ebnorm,
+                                  a_ebbcName,
+                                  a_dombcName,
+                                  normal,
+                                  bndryArea,
+                                  a_dx);
       }
       else
       {
@@ -1364,9 +1343,7 @@ namespace Proto
         cout<<" ebfluxStencil "<<endl;
         ebflux.print();
       }
-      double factor = 1.0;
-      ebflux *= factor;
-      a_inhoTerm += inhomogTerm*factor;
+      a_inhoTerm += inhomogTerm;
       a_vofStencil += ebflux;
     }
   }
@@ -1489,6 +1466,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
+		  PolynomialEF<order>   & a_phigen,
 	          const Real              a_dx)  
   {
     Real retval = 0.0;
@@ -1516,7 +1494,7 @@ namespace Proto
       Real moment = a_faceMom[pSDMinOne];
  
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
+      retval += moment*(a_dx*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
     }
   
     return retval;
@@ -1530,6 +1508,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
+		  PolynomialEF<order>   & a_phigen,
 	          const Real              a_dx) 
   {
     Real retval = 0.0;
@@ -1556,8 +1535,7 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
 
-      //retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
-      retval += moment*(a_dx*POW(a_dx,pSDMinOne))*MonomialPhi<order>::getTaylorCoefficient(a_faceLoc,pSpaceDim);
+      retval += moment*(a_dx*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
 
     }
 
@@ -1571,49 +1549,11 @@ namespace Proto
   DirichletExactSoln<order>::
   getEBIntegral(const IndMomDIM  & a_ebfMom,
 		const RealVect   & a_ebfLoc,
+		PolynomialEF<order>   & a_phigen,
 	        const Real         a_dx) 
   {
 
     Real retval = 0.0;
-
-    vector<pair<Point, Real> > entries;
-    std::pair<Point, Real> mono;
-    mono.first = Point::Zeros();
-    mono.first[0] = 0;
-    mono.second = 0.3*0.3 - 2.0*(0.5*0.5);
-    entries.push_back(mono);
-  
-    std::pair<Point, Real> mono2;
-    mono2.first = Point::Zeros();
-    mono2.first[0] = 2;
-    mono2.second = -1;
-    entries.push_back(mono2);
-  
-    std::pair<Point, Real> mono3;
-    mono3.first = Point::Zeros();
-    mono3.first[1] = 2;
-    mono3.second = -1;
-    entries.push_back(mono3);
-  
-    std::pair<Point, Real> mono4;
-    mono4.first = Point::Zeros();
-    mono4.first[0] = 1;
-    mono4.second = 2.0*0.5;
-    entries.push_back(mono4);
-  
-    std::pair<Point, Real> mono5;
-    mono5.first = Point::Zeros();
-    mono5.first[1] = 1;
-    mono5.second = 2.0*0.5;
-    entries.push_back(mono5);
-  
-    std::pair<Point, Real> mono6;
-    mono6.first = Point::Zeros();
-    mono6.first[1] = 0;
-    mono6.second = 1.0;
-
-    //PolynomialEF<order> phigen(entries);
-    MonomialEF<order> phigen(mono6);
 
     MomentIterator<DIM, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
@@ -1621,28 +1561,7 @@ namespace Proto
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      Real aux = 0.0;
-      IntVect pow;
-      pow[0]=0;pow[1]=0;
-      RealVect po;
-      po[0]=0;po[1]=0;
-      //aux += ((0.3*0.3/(a_dx*a_dx)))*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc/a_dx,p,pow,po);
-      //aux += 1.0*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p,pow,po);
-      //pow[0]=2;pow[1]=0;
-      //po[0]=0.5/a_dx;po[1]=0;
-      pow[0]=1;pow[1]=0;
-      po[0]=0.0;po[1]=0;
-      aux += MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p,pow,po);
-      //pow[0]=0;pow[1]=2;
-      //po[0]=0;po[1]=0.5/a_dx;
-      pow[0]=0;pow[1]=1;
-      po[0]=0;po[1]=0.0;
-      //aux += MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc/a_dx,p,pow,po);
-      //retval += moment*(a_dx*POW(a_dx,p))*aux;
-      //cout<<" retval "<<retval<<" loc "<<a_ebfLoc<<"  moment "<<moment<<endl;
-      //retval += moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
-      retval += moment*(a_dx*POW(a_dx,p))*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
-      //retval += moment*(a_dx*POW(a_dx,p))*phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
+      retval += moment*(a_dx*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
 
     }
 
@@ -1656,6 +1575,7 @@ namespace Proto
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
 		const RealVect           & a_ebfLoc,
+		PolynomialEF<order>      & a_phigen,
 	        const Real                 a_dx) 
   {
 
@@ -1673,7 +1593,7 @@ namespace Proto
 	  IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
 	  Real moment = a_ebfNormalMom[ndir][pShift];
   
-          retval += pd*moment*MonomialPhi<order>::getTaylorCoefficient(a_ebfLoc,p);
+          retval += pd*moment*(a_dx*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
 	}
       }
     }
