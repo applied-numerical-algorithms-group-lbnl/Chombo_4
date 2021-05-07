@@ -353,7 +353,6 @@ namespace Proto
                       const EBIndex<cent>      & a_face,
 		      RealVect                 & a_faceLoc,
 	              IndMomSDMinOne           & a_faceMom,
-	              const double             & a_areaFrac,
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
@@ -362,7 +361,6 @@ namespace Proto
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
 		    Vector<IndMomDIM>        & a_ebnorm,
-		    double                   & a_bndryArea,
                     double                     a_dx) const;
 
     //Compute weight matrix 
@@ -383,7 +381,6 @@ namespace Proto
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
                        Neighbors<order>                & a_neigh,
                        const int                         a_nvolneigh,
-		       RealVect                        & a_faceLoc,
                        string                            a_ebbcName,
                        string                            a_dombcName[2*DIM],
                        double                            a_dx) const;
@@ -406,7 +403,6 @@ namespace Proto
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
                            IndMomSDMinOne             & a_faceMom,
-                           const double               & a_areaFrac,
                            double                       a_dx) const;
 
     //Compute EB face stencil
@@ -426,8 +422,6 @@ namespace Proto
 		     Vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
-		     RealVect                      & a_normal,
-		     double                        & a_bndryArea,
                      const double                  & a_dx) const;
 
     virtual ~BaseWLSFlux()

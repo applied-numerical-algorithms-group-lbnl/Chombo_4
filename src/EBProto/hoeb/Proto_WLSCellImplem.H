@@ -529,7 +529,6 @@ namespace Proto
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
 	            IndMomSDMinOne           & a_faceMom,
-		    const double             & a_areaFrac,
                     double                     a_dx) const
   {
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -606,7 +605,6 @@ namespace Proto
                   const EBIndex<cent>      & a_face,
 		  RealVect                 & a_faceLoc,
 		  Vector<IndMomDIM>        & a_ebnorm,
-		  double                   & a_bndryArea,
                   double                     a_dx) const
   {
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -630,7 +628,7 @@ namespace Proto
       {
         diffrv[idir] = diff[idir]/a_dx;
       }
-      //a_ebnorm[idir].shift(diffrv);
+      a_ebnorm[idir].shift(diffrv);
 
       // the contribution to the flux matrix from the normal in this particular direction
       Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
@@ -757,7 +755,6 @@ namespace Proto
   computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
 		     Neighbors<order>               & a_neigh,
                      const int                        a_nvolneigh,
-		     RealVect                       & a_faceLoc,
 		     string                           a_ebbcName,
                      string                           a_dombcName[2*DIM],
                      double                           a_dx) const
@@ -889,7 +886,6 @@ namespace Proto
                          string                       a_dombcName[2*DIM],
                          const int                  & a_dir,
 			 IndMomSDMinOne             & a_faceMom,
-			 const double               & a_areaFrac,
                          double                       a_dx) const
   { 
     Chombo4::LAPACKMatrix::s_verbose = m_verbose; 
@@ -921,7 +917,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getFaceFluxMatrix(Qshift, a_face, faceLoc, a_faceMom, a_areaFrac, a_dx);
+    getFaceFluxMatrix(Qshift, a_face, faceLoc, a_faceMom, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -942,13 +938,12 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      //coef_acc += thisCo*neighs.m_volLoc[ivof][0];
       coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-				       nvolneigh, faceLoc,
+				       nvolneigh, 
                                        a_ebbcName, a_dombcName,
                                        a_dx);
     if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
@@ -973,8 +968,6 @@ namespace Proto
 		   Vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
-		   RealVect                      & a_normal,
-		   double                        & a_bndryArea,
                    const double                  & a_dx) const
   {
     Chombo4::LAPACKMatrix::s_verbose = m_verbose;
@@ -1004,7 +997,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebnorm, a_bndryArea, a_dx);
+    getEBFluxMatrix(Qshift, a_face, faceLoc, a_ebnorm, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -1025,13 +1018,12 @@ namespace Proto
       if (m_verbose){
         cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
-      //coef_acc += thisCo*neighs.m_volLoc[ivof][0];
       coef_acc += thisCo;
     }
 
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-                                       nvolneigh, faceLoc,
+                                       nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
     if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
@@ -1112,7 +1104,6 @@ namespace Proto
 				       a_dombcName,
 				       0,
 				       faceMom, 
-				       areaFrac,
                                        a_dx);  
         if (a_xfaceflux.m_verbose)
 	{	
@@ -1175,7 +1166,6 @@ namespace Proto
                                        a_dombcName,
                                        1,
 				       faceMom, 
-				       areaFrac,
                                        a_dx);
         if (a_yfaceflux.m_verbose)
 	{
@@ -1235,7 +1225,6 @@ namespace Proto
                                            a_dombcName,
                                            2,
 				           faceMom,
-					   areaFrac,
                                            a_dx);       
 
 
@@ -1319,8 +1308,6 @@ namespace Proto
                                   ebnorm,
                                   a_ebbcName,
                                   a_dombcName,
-                                  normal,
-                                  bndryArea,
                                   a_dx);
       }
       else
