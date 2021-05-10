@@ -401,9 +401,9 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
   else if(xyz)
     {
 
-      IndexTM<int,   DIM>  dx   = BASISV(0);
-      IndexTM<int,   DIM>  dy   = BASISV(1);
-      IndexTM<int,   DIM>  dz   = BASISV(2);
+      IndexTM<int,   DIM>  dx   = IndexTM<int, DIM>::BASISV(0);
+      IndexTM<int,   DIM>  dy   = IndexTM<int, DIM>::BASISV(1);
+      IndexTM<int,   DIM>  dz   = IndexTM<int, DIM>::BASISV(2);
       IndexTM<int,   DIM>  dxy  = dx  + dy;
       IndexTM<int,   DIM>  dxz  = dx  + dz;
       IndexTM<int,   DIM>  dyz  = dy  + dz;
@@ -806,10 +806,10 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
             }
         }
       if(!foundx || !foundy || !foundz) MayDay::Error("logic error xxyz");
-      IndexTM<int,   DIM>  dx     =   BASISV(ix);
-      IndexTM<int,   DIM>  dy     =   BASISV(iy);
-      IndexTM<int,   DIM>  dz     =   BASISV(iz);
-      IndexTM<int,   DIM>  dxx    = 2*BASISV(ix);
+      IndexTM<int,   DIM>  dx     =   IndexTM<int, DIM>::BASISV(ix);
+      IndexTM<int,   DIM>  dy     =   IndexTM<int, DIM>::BASISV(iy);
+      IndexTM<int,   DIM>  dz     =   IndexTM<int, DIM>::BASISV(iz);
+      IndexTM<int,   DIM>  dxx    = 2*IndexTM<int, DIM>::BASISV(ix);
       IndexTM<int,   DIM>  dxy    = dx   + dy ;
       IndexTM<int,   DIM>  dxz    = dx   + dz ;
       IndexTM<int,   DIM>  dyz    = dy   + dz ;
