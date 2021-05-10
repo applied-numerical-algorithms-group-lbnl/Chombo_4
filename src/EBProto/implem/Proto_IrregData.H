@@ -698,7 +698,7 @@ namespace Proto
 
       assert(vecsize == m_indicies->size());
 
-      protoLaunchKernelT<MEMTYPE_DEFAULT,EBLinearOut<cent,data_t,ncomp>>(blocks, threads,
+      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearOut<cent,data_t,ncomp>>(blocks, threads, 0, protoGetCurrentStream, 
                         vecsize,
                         m_indicies_shared_data.get(), m_indicies->size(),
                         a_buf,
@@ -723,7 +723,7 @@ namespace Proto
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 
-      protoLaunchKernelT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256,
+      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 0, protoGetCurrentStream, 
                         m_indicies_shared_data.get(), vecsize,
                         a_buf,
                         m_data.get(),

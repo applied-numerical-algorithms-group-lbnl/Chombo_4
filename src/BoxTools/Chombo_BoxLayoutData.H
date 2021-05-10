@@ -425,6 +425,15 @@ protected:
   bool            m_threadSafe;
   bool            m_isdefined;
 
+#ifdef cudaGraph
+#ifdef PROTO_CUDA
+  CUDAGRAPH graphLinearIn;
+  CUDAGRAPH graphLinearOut;
+  CUDAGRAPH& getCudaGraphLinearIn() {return graphLinearIn;}
+  CUDAGRAPH& getCudaGraphLinearOut() {return graphLinearOut;}
+#endif
+#endif
+
   friend class LevelData<T>;
 
   void setVector(const BoxLayoutData<T>& da,
