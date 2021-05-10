@@ -386,11 +386,11 @@ private:
               string bcstr = m_domainBCName[index];
               if(bcstr == StencilNames::Dirichlet)
               {
-                //a_localSten.add(a_vof, -coefs[isten]);
+                a_localSten.add(a_vof, -coefs[isten]);
               }
               else if(bcstr == StencilNames::Neumann)
               {
-                //a_localSten.add(a_vof,  coefs[isten]);
+                a_localSten.add(a_vof,  coefs[isten]);
               }
             }
           }
@@ -471,6 +471,8 @@ private:
                             voludata,  ebfadata,    
                             xfacdata,  yfacdata, zfacdata,    
                             m_dx, false, Point::Zeros());
+      
+      inhoContr.assign(a_dstVoFs.size(),0.0);
     }
 
     a_allIrregPoints.makeEmpty();
@@ -559,21 +561,24 @@ private:
         Bx grbx = ProtoCh::getProtoBox(grid);
         //add stencils for cells that are in the regular stencil regime to the irregular
         //set.   This includes adjusting for boundary condtions
-        for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+	if(m_stencilName != string("Weighted_Least_Squares_Poisson"))
         {
-          auto pt = *bit;
-          if(graph.isCovered(pt))
+          for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
           {
-            //do nothing
-          }
-          else if(!irregSet.contains(pt))
-          {
-            EBIndex<CELL> vof;
-            vof.defineAsRegular(pt);
-            LocalStencil<CELL, Real> regSten;
-            getLocalRegularStencil(regSten,  vof, regStencilInterior);
-            //dstVoFs.push_back(vof);
-            //wstencil.push_back(regSten);
+            auto pt = *bit;
+            if(graph.isCovered(pt))
+            {
+              //do nothing
+            }
+            else if(!irregSet.contains(pt))
+            {
+              EBIndex<CELL> vof;
+              vof.defineAsRegular(pt);
+              LocalStencil<CELL, Real> regSten;
+              getLocalRegularStencil(regSten,  vof, regStencilInterior);
+              dstVoFs.push_back(vof);
+              wstencil.push_back(regSten);
+            }
           }
         }
         //now create the matrix
