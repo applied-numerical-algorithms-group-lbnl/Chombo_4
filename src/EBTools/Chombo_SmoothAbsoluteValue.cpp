@@ -409,8 +409,8 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       IndexTM<int,   DIM>  dyz  = dy  + dz;
       IndexTM<int,   DIM>  dxyz = dx  + dy + dz;
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx   = (*m_f).value( dx   , a_point);
       Real  dfy   = (*m_f).value( dy   , a_point);
@@ -818,8 +818,8 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       IndexTM<int,   DIM>  dxyz   = dx   + dy + dz;
       IndexTM<int,   DIM>  dxxyz  = dxz  + dy + dz;
 
-      Real fval  = (*m_f).value(a_point);
-      Real gval  = (*m_g).value(a_point);
+      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
 
       Real   dfx     =(*m_f).value( dx     , a_point);
       Real   dfy     =(*m_f).value( dy     , a_point);
