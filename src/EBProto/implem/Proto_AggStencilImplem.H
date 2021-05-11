@@ -403,7 +403,9 @@ struct pairPtr{
 
     // m_stride or m_blocks doesn't fit. This function is temporary used.
     int stride, blocks;
-    v100tuning(end-begin, blocks, stride);
+//    v100tuning(end-begin, blocks, stride);
+    stride = 256;
+    blocks = (end + stride - 1) / stride;
 
     //protoLaunchKernel(aggStencilIndexer, blocks, stride,  
     //  begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);

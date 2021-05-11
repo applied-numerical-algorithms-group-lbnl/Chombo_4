@@ -232,6 +232,7 @@ namespace Proto
           {
             a_dst[indxDst] = data[indxSrc];
             indxDst += a_indiciesSize;
+            indxSrc += size;
           }
         }
       }
