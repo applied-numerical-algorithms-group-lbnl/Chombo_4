@@ -19,17 +19,18 @@ namespace Proto
     size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
     {
       size_t ivec = 0;
-      bool found = false;
+//      bool found = false;
       int begin = 0;
       int end = a_size;
       int i = (begin + a_size)/2;
 
-      while(found == false && begin <= end)
+      //while(found == false && begin <= end)
+      while(begin <= end)
       {        
         if(a_vof == a_indicies[i])
         {
           ivec = i;
-          found = true;
+//          found = true;
           break;
         }
         if(a_vof <  a_indicies[i] )
@@ -39,11 +40,11 @@ namespace Proto
         i = (begin + end)/2;
       }
 
-      if(!found)
+/*      if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
       }
-
+*/
       ivec += a_ivar* a_size;
 
       return ivec;
@@ -148,16 +149,17 @@ namespace Proto
       if(idx < a_end)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
-        if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
+        //if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
+        if( copyContains(vof,a_box_inf,a_box_high))
         {
+          size_t indDst = idx + a_indiciesSizeDst*a_idst;//index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
+          size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
 #pragma unroll
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
-            unsigned int isrc = a_isrc + ico;
-            unsigned int idst = a_idst + ico;
-            size_t indDst = index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
-            size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, isrc);
             a_dst[indDst] = a_src[indSrc];
+            indDst += a_indiciesSizeDst;
+            indSrc += a_indiciesSizeSrc;
           }
         }
       }
@@ -220,15 +222,16 @@ namespace Proto
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
-        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        //if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        if(copyContains(pt,a_box_inf,a_box_high))
         {
+          size_t indxDst = index(a_indicies, a_indiciesSize, pt, 0);
+          size_t indxSrc = idx;
 #pragma unroll
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            size_t indxDst = index(a_indicies, a_indiciesSize, pt, icomp);
-           // size_t indxSrc = index(indicies, size, pt, icomp);
-           // a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
-            a_dst[indxDst+icomp*a_indiciesSize] = data[idx+icomp*size];
+            a_dst[indxDst] = data[indxSrc];
+            indxDst += a_indiciesSize;
           }
         }
       }
