@@ -186,20 +186,45 @@ public:
     return retval;
   }
   
-  ///
+  /// register stencil version for existing archived stencils.
   /**
      diagonal weights are for relaxation--expensive to compute so leave them out if you do not need them
      dest grow is how many cells to grow valid box for destination.
+
+     This is the registerStencil a user ought to use if she wants a 
+     known, named, and archived stencil.
+     All the existing stencils have a corresponding  entry in StencilNames.
+     If the stencil name does not exist in the EBStencilArchive, that is a run time error.
   */
-  inline void registerStencil(string a_stencilName,
-                              string a_domainBCName[2*DIM],
-                              string a_ebbcName,
-                              Box    a_srcDomain,
-                              Box    a_dstDomain,
-                              bool needDiagonalWeights = false,
-                              Point  a_destGrow = Point::Zeros());
+  inline void
+  registerStencil(string a_stencilName,
+                  string a_domainBCName[2*DIM],
+                  string a_ebbcName,
+                  Box    a_srcDomain,
+                  Box    a_dstDomain,
+                  bool needDiagonalWeights = false,
+                  Point  a_destGrow = Point::Zeros());
 
-
+  /// register stencil version for algorithm developers
+  /**
+     If you know what stencil you want and you just want to use EBStencil to execute the stencil, 
+     use this constructor.
+   */
+  inline void
+  registerStencil(string a_stencilName,
+                  string a_ebbcName,
+                  const vector<EBIndex<dstCenter> >               & a_dstVoFs,
+                  const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
+                  const Stencil<data_t>                           & a_regStencilInterior,
+                  const Box                                       & a_regApplyBox,
+                  const Box                                       & a_srcValid,
+                  const Box                                       & a_dstValid,
+                  const Box                                       & a_srcDomain,
+                  const Box                                       & a_dstDomain,
+                  const Point                                     & a_srcGhost,
+                  const Point                                     & a_dstGhost,
+                  bool                                              a_needDiagonalWeights);
+  
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
                               string a_ebbcName,

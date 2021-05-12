@@ -61,6 +61,54 @@ template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
 void
 EBDictionary<order, data_t, srcCenter, dstCenter>::
 registerStencil(string a_stencilName,
+                string a_ebbcName,
+                const vector<EBIndex<dstCenter> >               & a_dstVoFs,
+                const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
+                const Stencil<data_t>                           & a_regStencilInterior,
+                const Box                                       & a_regApplyBox,
+                const Box                                       & a_srcValid,
+                const Box                                       & a_dstValid,
+                const Box                                       & a_srcDomain,
+                const Box                                       & a_dstDomain,
+                const Point                                     & a_srcGhost,
+                const Point                                     & a_dstGhost,
+                bool                                              a_needDiagonalWeights)
+{
+  PR_assert(!m_isClosed);
+
+  stencilKey key;
+  key.m_ebbcName    = a_ebbcName;
+  key.m_stencilName = a_stencilName;
+  int dstIndex = getIndex(a_dstDomain);
+
+  
+  shared_ptr< LevelData< EBGraph  >  > ldgraphS = m_geoserv->getGraphs(    a_srcDomain);
+  shared_ptr< LevelData< EBGraph  >  > ldgraphD = m_geoserv->getGraphs(    a_dstDomain);
+
+  DataIterator dit = m_grids[dstIndex].dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    const auto& srcGraph = (*ldgraphS)[dit[ibox]];
+    const auto& dstGraph = (*ldgraphD)[dit[ibox]];
+    Proto::Box srcValid  = srcGraph.validBox();
+    Proto::Box dstValid  = dstGraph.validBox();
+    Proto::Box srcDomain = ProtoCh::getProtoBox(a_srcDomain);
+    Proto::Box dstDomain = ProtoCh::getProtoBox(a_dstDomain);
+    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
+    shared_ptr<ebstencil_t> 
+      newsten
+      ( new ebstencil_t(a_dstVoFs, a_stencil, a_regStencilInterior, a_regApplyBox,
+                        srcGraph, dstGraph, srcValid, dstValid, srcDomain, dstDomain,
+                        a_srcGhost, a_dstGhost, a_needDiagonalWeights) );
+    boxmap[key] = newsten;
+  }
+  
+}
+///
+template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+void
+EBDictionary<order, data_t, srcCenter, dstCenter>::
+registerStencil(string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
                 Box    a_srcDomain,
