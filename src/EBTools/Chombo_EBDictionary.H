@@ -223,6 +223,7 @@ public:
                   const Box                                       & a_dstDomain,
                   const Point                                     & a_srcGhost,
                   const Point                                     & a_dstGhost,
+                  bool                                              a_irregOnly,
                   bool                                              a_needDiagonalWeights);
   
   inline void registerStencil(string a_stencilName,

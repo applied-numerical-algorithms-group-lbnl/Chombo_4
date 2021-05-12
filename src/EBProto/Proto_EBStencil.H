@@ -54,6 +54,8 @@ namespace Proto
         In both cases, the user really should get her EBStencil through EBDictionary::registerStencil 
         (which calls this constructor or the other constructor if needed). EBDictionary maintains
         a cache of registered stencils so they never have to be defined twice.
+
+        If you want only the aggstencil bit to be executed, send irregOnly=true.
     */
     EBStencil(const vector<EBIndex<dstCenter> >               & a_dstVoFs,
               const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
@@ -67,6 +69,7 @@ namespace Proto
               const Box                                       & a_dstDomain,
               const Point                                     & a_srcGhost,
               const Point                                     & a_dstGhost,
+              bool                                              a_irregOnly,
               bool                                              a_needDiagonalWeights);
   
 

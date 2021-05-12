@@ -25,12 +25,13 @@ namespace Proto
             const Box                                       & a_dstDomain,
             const Point                                     & a_srcGhost,
             const Point                                     & a_dstGhost,
+            bool                                              a_irregOnly,
             bool                                              a_needDiagonalWeights)
   {
     m_periodic_domain_bcs_only = false;
     m_hasDomainBCs = false;  //that technology is going away
     m_bcsOnly      = false;
-    m_irregOnly    = false;  //not needed for now
+    m_irregOnly    = a_irregOnly; //if you want to only run the AggStencil
     
     m_regStencilInterior = a_regStencilInterior;
     m_regApplyBox        = a_regApplyBox;

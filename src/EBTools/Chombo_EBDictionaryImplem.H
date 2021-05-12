@@ -72,6 +72,7 @@ registerStencil(string a_stencilName,
                 const Box                                       & a_dstDomain,
                 const Point                                     & a_srcGhost,
                 const Point                                     & a_dstGhost,
+                bool                                              a_irregOnly,
                 bool                                              a_needDiagonalWeights)
 {
   PR_assert(!m_isClosed);
@@ -99,7 +100,7 @@ registerStencil(string a_stencilName,
       newsten
       ( new ebstencil_t(a_dstVoFs, a_stencil, a_regStencilInterior, a_regApplyBox,
                         srcGraph, dstGraph, srcValid, dstValid, srcDomain, dstDomain,
-                        a_srcGhost, a_dstGhost, a_needDiagonalWeights) );
+                        a_srcGhost, a_dstGhost, a_irregOnly, a_needDiagonalWeights));
     boxmap[key] = newsten;
   }
   

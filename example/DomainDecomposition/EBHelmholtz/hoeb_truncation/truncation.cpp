@@ -22,40 +22,58 @@
 
 /****/
 void
-defineStencil(string a_stencilName,
-              string a_ebbcName,
+defineStencil(string                                   & a_stencilName,
+              string                                   & a_ebbcName,
               vector<EBIndex<CELL> >                   & a_dstVoFs,
               vector<LocalStencil<CELL, Real> >        & a_stencil,
               Stencil<Real>                            & a_regStencilInterior,
-              Proto::Box                               & a_regApplyBox,
-              Proto::Box                               & a_srcValid,
-              Proto::Box                               & a_dstValid,
-              Proto::Box                               & a_srcDomain,
-              Proto::Box                               & a_dstDomain,
+              Chombo4::Box                               & a_regApplyBox,
+              Chombo4::Box                               & a_srcValid,
+              Chombo4::Box                               & a_dstValid,
+              Chombo4::Box                               & a_srcDomain,
+              Chombo4::Box                               & a_dstDomain,
               Proto::Point                             & a_srcGhost,
               Proto::Point                             & a_dstGhost,
+              bool                                     & a_irregOnly,
               bool                                     & a_needDiagonalWeights)
 {
+  
   a_needDiagonalWeights = true;
+  a_irregOnly           = true;
 }
 /****/
 void
-defineGeometry(int a_argc, char* a_argv[])
+fillData(EBLevelBoxData<CELL,   1>&  a_phiexac,
+         EBLevelBoxData<CELL,   1>&  a_lphcalc)
 {
 }
+/****/
+shared_ptr<BaseIF> 
+defineImplicitFunction()
+{
+  RealVect center = 0.5*RealVect::Unit();
+  Real radius = 0.1;
+  bool inside = false;
+  Parmparse pp;
+  std::vector<Real> centvec;
+  pp.get("radius", radius);
+  pp.get("inside", inside);
+  pp.getarr("center", centvec, 0, DIM);
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    center[idir] = centvec[idir];
+  }
+  SimpleSphereIF* sphereptr = new SimpleSphereIF(center, radius, inside);
+  shared_ptr<BaseIF> retval(static_cast<BaseIF*>(sphereptr));
+  return retval;
+}
+
 int
-runTest(int a_argc, char* a_argv[])
+runTest()
 {
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
-  Real x0 = 0.5;
-  Real y0 = 0.5;
-  Real z0 = 0.5;
-  Real A = 1.0;
-  Real B = 1.0;
-  Real C = 1.0;
-  Real R = 0.25;
   Real alpha = 1.0;
   Real beta = -0.001;
     
@@ -69,13 +87,6 @@ runTest(int a_argc, char* a_argv[])
   pp.get("max_grid"  , maxGrid);
   pp.get("alpha"     , alpha);
   pp.get("beta"      , beta);
-  pp.get("x0"        , x0);
-  pp.get("y0"        , y0);
-  pp.get("z0"        , z0);
-  pp.get("A"         , A);
-  pp.get("B"         , B);
-  pp.get("C"         , C);
-  pp.get("R"         , R);         
   pp.get("coveredval", coveredval);         
 
   pout() << "nx        = " << nx       << endl;
@@ -90,15 +101,6 @@ runTest(int a_argc, char* a_argv[])
   pout() << "alpha     = " << alpha    << endl;
   pout() << "beta      = " << beta    << endl;
 
-  RealVect ABC, X0;
-  ABC[0] = A;
-  ABC[1] = B;
-  X0[0] = x0;
-  X0[1] = y0;
-#if DIM==3
-  ABC[2] = C;
-  X0[2] = z0;
-#endif
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
@@ -138,19 +140,20 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
     dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
-  string a_stencilName;
-  string a_ebbcName;
-  const vector<EBIndex<dstCenter> >               dstVoFs;
-  const vector<LocalStencil<srcCenter;  data_t> > stencil;
-  const Stencil<data_t>                           regStencilInterior;
-  const Box                                       regApplyBox;
-  const Box                                       srcValid;
-  const Box                                       dstValid;
-  const Box                                       srcDomain;
-  const Box                                       dstDomain;
-  const Point                                     srcGhost;
-  const Point                                     dstGhost;
-  bool                                            needDiagonalWeights;
+  string stencilName;
+  string ebbcName;
+  vector<     EBIndex<CELL>  >        dstVoFs;
+  vector<LocalStencil<CELL, Real> >   stencil;
+  Stencil<Real>                       regStencilInterior;
+  Chombo4::Box                          regApplyBox;
+  Chombo4::Box                          srcValid;
+  Chombo4::Box                          dstValid;
+  Chombo4::Box                          srcDomain;
+  Chombo4::Box                          dstDomain;
+  Point                               srcGhost;
+  Point                               dstGhost;
+  bool                                irregOnly;
+  bool                                needDiagonalWeights;
 
   defineStencil(stencilName,        
                 ebbcName,           
@@ -163,7 +166,8 @@ runTest(int a_argc, char* a_argv[])
                 srcDomain,          
                 dstDomain,          
                 srcGhost,           
-                dstGhost,           
+                dstGhost,
+                irregOnly,
                 needDiagonalWeights);
   
   ///registering stencil
@@ -178,7 +182,8 @@ runTest(int a_argc, char* a_argv[])
                               srcDomain,          
                               dstDomain,          
                               srcGhost,           
-                              dstGhost,           
+                              dstGhost,
+                              irregOnly,
                               needDiagonalWeights);
   
   
@@ -191,16 +196,11 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  lphexac(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  error(grids, dataGhostIV, graphs);
 
-  fillData(phi, lphi, 
+  fillData(phiexac, lphiexac); 
 
-  solver.solve(phi, rhs, tol, maxIter, false);
 
   pout() << "writing to file " << endl;
   
-//  auto& kappa = solver.getKappa();
-//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
   pout() << "exiting " << endl;
   return 0;
