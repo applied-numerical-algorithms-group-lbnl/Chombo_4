@@ -720,7 +720,11 @@ namespace Proto
       int numSMs;
 #ifdef PROTO_CUDA
       int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
 #endif
 
       protoLaunchKernelT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256,

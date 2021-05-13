@@ -200,6 +200,7 @@ runTest(int a_argc, char* a_argv[])
 //  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
 //  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
+  CH_TIMER_REPORT();
   pout() << "exiting " << endl;
   return 0;
 }
@@ -231,7 +232,6 @@ int main(int a_argc, char* a_argv[])
   }
 
   pout() << "printing time table " << endl;
-  CH_TIMER_REPORT();
 #ifdef CH_MPI
 #ifdef CH_USE_PETSC
   pout() << "about to call petsc Finalize" << std::endl;
