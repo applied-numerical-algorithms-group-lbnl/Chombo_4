@@ -157,7 +157,7 @@ using Chombo4::LevelBoxData;
   pout() << "output interval = " << outputInterval  << endl;
 
 #ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
+  //Proto::DisjointBoxLayout::setNumStreams(nStream);
 #endif
 
 

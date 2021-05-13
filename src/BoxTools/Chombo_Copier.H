@@ -127,6 +127,8 @@ protected:
 
 };
 
+
+
 /// A strange but true thing to make copying from one boxlayoutdata to another fast
 /**
   class to handle the organization of data from a LevelData to a BoxLayoutData
@@ -148,6 +150,45 @@ protected:
   interface to MotionItems that specify the required work.  LevelData
   provides the copyTo methods.
 */
+
+#ifdef PROTO_CUDA
+#ifdef cudaGraph
+class CUDAGRAPH
+{
+  public:
+  template<class Func>
+  void capture(Func& fun)
+  {
+    if(graphCreated) return; 
+    std::cout << " capture " << std::endl;
+    stream =  Proto::DisjointBoxLayout::getCurrentStream();
+    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+    fun();
+    cudaStreamEndCapture(stream, &graph);
+    cudaGraphInstantiate(&instance, graph, NULL, NULL, 0);
+    graphCreated=true;
+  }
+
+  ~CUDAGRAPH()
+  {
+    std::cout << " destructor " << std::endl;
+  }
+
+  void launch()
+  {
+    std::cout << " launch " << std::endl;
+    cudaGraphLaunch(instance, stream);
+    cudaStreamSynchronize(stream);
+  }
+
+private:
+  cudaStream_t stream = (cudaStream_t) 0;
+  bool graphCreated=false;
+  cudaGraph_t graph;
+  cudaGraphExec_t instance;
+};
+#endif
+#endif
 
 class Copier
 {
@@ -347,6 +388,14 @@ protected:
 
   // sneaky end-around to problem of getting physDomains in derived classes
   const ProblemDomain& getPhysDomain(const DisjointBoxLayout& a_level) const;
+
+#ifdef PROTO_CUDA
+#ifdef cudaGraph
+  public:
+  CUDAGRAPH graph;
+  CUDAGRAPH& getCudaGraph() {return graph;}
+#endif
+#endif
 };
 
 std::ostream& operator<<(std::ostream& os, const Copier& copier);

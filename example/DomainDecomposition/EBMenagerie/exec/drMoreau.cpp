@@ -18,27 +18,14 @@
 #include "Chombo_EBChombo.H"
 #include "Proto_SimpleImplicitFunctions.H"
 #include "Chombo_UnionIntersection.H"
+#include "Chombo_SmoothIntersection.H"
+#include "Chombo_SmoothUnion.H"
 #include <iomanip>
 
 #include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2
-
-using std::cout;
-using std::endl;
-using std::shared_ptr;
-
-
-void
-dumpPPS(const PointSet* a_ivs)
-{
-  for(PointSetIterator ivsit(*a_ivs);  ivsit.ok(); ++ivsit)
-  {
-    std::cout << ivsit() << " " ;
-  }
-  std::cout << std::endl;
- }
-
+///we print out data = the volume fraction field
 void  
 fillKappa(EBLevelBoxData<CELL, 1>&  a_kappa,
           const shared_ptr<GeometryService<2> >   & a_geoserv,
@@ -62,6 +49,8 @@ fillKappa(EBLevelBoxData<CELL, 1>&  a_kappa,
     EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
   }
 }
+
+/**************/
 int
 makeTwoSpheres(int a_argc, char* a_argv[])
 {
@@ -143,6 +132,229 @@ makeTwoSpheres(int a_argc, char* a_argv[])
   delete sphere_one;
   delete sphere_two;
   pout() << "exiting twoSpheres" << endl;
+  return 0;
+}
+
+/**************/
+int
+makeIntersectingSpheres(int a_argc, char* a_argv[])
+{
+  Real coveredval = -1;
+  int nx      = 32;
+  int maxGrid = 32;
+  ParmParse pp("intersecting_spheres");
+    
+  pp.get("nx"     , nx);
+  pp.get("maxGrid", maxGrid);
+
+  //put one sphere in each quadrant or octant
+#if DIM==2
+  const unsigned int num_spheres = 5;
+#else
+  const unsigned int num_spheres = 9;
+#endif  
+  Real rad = 0.1;
+  Real offsetmag = 1.1*rad; 
+  pp.get("radius", rad);
+  pp.get("offsetmag", offsetmag);
+  pout() << "nx      = " << nx       << endl;
+  Real dx = 1.0/nx;
+  
+  pout() << "dx      = " << dx       << endl;
+  pout() << "maxGrid = " << maxGrid  << endl;
+  pout() << "radius = " << rad << endl;
+  pout() << "offset = " << offsetmag << endl;
+  vector<RealVect> centers(num_spheres);
+  RealVect centercenter = RealVect::Unit();
+  centercenter *= 0.5;
+  RealVect offsetx = offsetmag*BASISREALV(0);
+  RealVect offsety = offsetmag*BASISREALV(1);
+#if DIM==2
+  centers[0] = centercenter - offsetx - offsety;
+  centers[1] = centercenter + offsetx - offsety;
+  centers[2] = centercenter - offsetx + offsety;
+  centers[3] = centercenter + offsetx + offsety;
+  centers[4] = centercenter;
+#else
+  RealVect offsetz = offsetmag*BASISREALV(2);
+  centers[0] = centercenter - offsetx - offsety - offsetz;
+  centers[1] = centercenter + offsetx - offsety - offsetz;
+  centers[2] = centercenter - offsetx + offsety - offsetz;
+  centers[3] = centercenter + offsetx + offsety - offsetz;
+  centers[4] = centercenter - offsetx - offsety + offsetz;
+  centers[5] = centercenter + offsetx - offsety + offsetz;
+  centers[6] = centercenter - offsetx + offsety + offsetz;
+  centers[7] = centercenter + offsetx + offsety + offsetz;
+  centers[8] = centercenter;
+#endif  
+
+  pout() << "intersecting sphere case with rad = : " << rad   << endl;
+  for(unsigned int icen = 0; icen < num_spheres; icen++)
+  {
+    pout() << "center[" << icen << "] = " << centers[icen] << endl;
+  }
+
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+  // EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
+
+  Vector<Box> boxes;
+  unsigned int blockfactor = 8;
+  domainSplit(domain, boxes, maxGrid, blockfactor);
+  
+  Vector<int> procs;
+  pout() << "making grids" << endl;
+  LoadBalance(procs, boxes);
+  DisjointBoxLayout grids(boxes, procs, domain);
+  grids.printBalance();
+
+  IntVect dataGhostIV =   IntVect::Zero;
+  int geomGhost = 4;
+  RealVect origin = RealVect::Zero();
+
+  std::vector<BaseIF*> spheres(num_spheres);
+  bool inside = false;
+  for(unsigned int icen = 0; icen < num_spheres; icen++)
+  {
+    SimpleSphereIF* sphereptr = new SimpleSphereIF(centers[icen], rad, inside);
+    spheres[icen] = static_cast<BaseIF*>(sphereptr);
+  }
+  shared_ptr<BaseIF>     intersect(new IntersectionIF(spheres));
+  pout() << "defining geometry" << endl;
+  shared_ptr<GeometryService<MAX_ORDER> >
+    geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.
+                                           domainBox(), grids, geomGhost));
+  
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+
+  pout() << "making data" << endl;
+  EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
+  fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
+  Real coveredVal = -1;
+  kappa.writeToFileHDF5(string("intersecting_spheres_kappa.hdf5"), coveredVal);
+
+  for(int icen = 0; icen < num_spheres; icen++)
+  {
+    delete spheres[icen];
+    spheres[icen] = NULL;
+  }
+  pout() << "exiting intersectingSpheres" << endl;
+  return 0;
+}
+/**************/
+int
+makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
+{
+  Real coveredval = -1;
+  int nx      = 32;
+  int maxGrid = 32;
+  ParmParse pp("smoothed_intersecting_spheres");
+    
+  pp.get("nx"     , nx);
+  pp.get("maxGrid", maxGrid);
+
+  //put one sphere in each quadrant or octant
+#if DIM==2
+  const unsigned int num_spheres = 5;
+#else
+  const unsigned int num_spheres = 9;
+#endif  
+  Real rad = 0.1;
+  Real offsetmag = 1.1*rad; 
+  Real dx = 1.0/nx;
+  Real deltamag = 0.1;
+  Real delta = deltamag*dx;
+  pp.get("radius", rad);
+  pp.get("offsetmag", offsetmag);
+  pp.get("deltamag" , deltamag);
+  pout() << "nx      = " << nx       << endl;
+  pout() << "dx      = " << dx       << endl;
+  pout() << "maxGrid = " << maxGrid  << endl;
+  pout() << "radius  = " << rad << endl;
+  pout() << "offset  = " << offsetmag << endl;
+  pout() << "delta   = " << deltamag << "*dx = " << delta << endl;
+  
+  vector<RealVect> centers(num_spheres);
+  RealVect centercenter = RealVect::Unit();
+  centercenter *= 0.5;
+  RealVect offsetx = offsetmag*BASISREALV(0);
+  RealVect offsety = offsetmag*BASISREALV(1);
+  
+#if DIM==2
+  centers[0] = centercenter - offsetx - offsety;
+  centers[1] = centercenter + offsetx - offsety;
+  centers[2] = centercenter - offsetx + offsety;
+  centers[3] = centercenter + offsetx + offsety;
+  centers[4] = centercenter;
+#else
+  RealVect offsetz = offsetmag*BASISREALV(2);
+  centers[0] = centercenter - offsetx - offsety - offsetz;
+  centers[1] = centercenter + offsetx - offsety - offsetz;
+  centers[2] = centercenter - offsetx + offsety - offsetz;
+  centers[3] = centercenter + offsetx + offsety - offsetz;
+  centers[4] = centercenter - offsetx - offsety + offsetz;
+  centers[5] = centercenter + offsetx - offsety + offsetz;
+  centers[6] = centercenter - offsetx + offsety + offsetz;
+  centers[7] = centercenter + offsetx + offsety + offsetz;
+  centers[8] = centercenter ;
+#endif  
+
+  pout() << "smoothed intersecting sphere case with rad = : " << rad     << endl;
+  for(unsigned int icen = 0; icen < num_spheres; icen++)
+  {
+    pout() << "center[" << icen << "] = " << centers[icen] << endl;
+  }
+
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+  // EB and periodic do not mix
+  ProblemDomain domain(domLo, domHi);
+
+  Vector<Box> boxes;
+  unsigned int blockfactor = 8;
+  domainSplit(domain, boxes, maxGrid, blockfactor);
+  
+  Vector<int> procs;
+  pout() << "making grids" << endl;
+  LoadBalance(procs, boxes);
+  DisjointBoxLayout grids(boxes, procs, domain);
+  grids.printBalance();
+
+  IntVect dataGhostIV =   IntVect::Zero;
+  int geomGhost = 4;
+  RealVect origin = RealVect::Zero();
+
+  std::vector<BaseIF*> spheres(num_spheres);
+  bool inside = false;
+  for(unsigned int icen = 0; icen < num_spheres; icen++)
+  {
+    SimpleSphereIF* sphereptr = new SimpleSphereIF(centers[icen], rad, inside);
+    spheres[icen] = static_cast<BaseIF*>(sphereptr);
+  }
+  shared_ptr<BaseIF>     intersect(new SmoothIntersection(spheres, dx));
+  pout() << "defining geometry" << endl;
+  shared_ptr<GeometryService<MAX_ORDER> >
+    geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.
+                                           domainBox(), grids, geomGhost));
+  
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+
+  pout() << "making data" << endl;
+  EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
+  fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
+  Real coveredVal = -1;
+  kappa.writeToFileHDF5(string("smoothed_intersecting_spheres_kappa.hdf5"), coveredVal);
+  
+  for(int icen = 0; icen < num_spheres; icen++)
+  {
+    delete spheres[icen];
+    spheres[icen] = NULL;
+  }
+
+  pout() << "exiting smoothed intersectingSpheres" << endl;
   return 0;
 }
 /**************/
@@ -348,12 +560,15 @@ int main(int a_argc, char* a_argv[])
     pout() << "making the dreaded mollified box" << endl;
     Chombo4::makeMollifiedBox(a_argc, a_argv);
 
+    pout() << "making intersecting spheres (unsmoothed)" << endl;
+    Chombo4::makeIntersectingSpheres(a_argc, a_argv);
+
+    pout() << "making intersecting spheres (smoothed)" << endl;
+    Chombo4::makeSmoothedIntersectingSpheres(a_argc, a_argv);
+    
 #if DIM==3    
     pout() << "making cylindered sphere" << endl;
     Chombo4::makeCylinderedSphere(a_argc, a_argv);
-    
-//    pout() << "making packed spheres" << endl;
-//    Chombo4::make(a_argc, a_argv);
 #endif    
   }
 

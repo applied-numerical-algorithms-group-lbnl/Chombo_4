@@ -55,6 +55,38 @@ namespace Proto
   template<typename T, int N=DIM> class IndexTM: public GenericArithmeticable< T,IndexTM<T,N> >
   {
   public:
+    static IndexTM<T, N> BASISV(int idir)
+    {
+      IndexTM<T,N> retval = Zero;
+      retval[idir] = 1;
+      return retval;
+    }
+    T max() const
+    {
+      T retval = (*this)[0];
+      for(int idir = 1; idir < N; idir++)
+      {
+        T dirval  =(*this)[idir];
+        if(dirval > retval)
+        {
+          retval = dirval;
+        }
+      }
+      return retval;
+    }
+
+    T min() const
+    {
+      T retval = (*this)[0];
+      for(int idir = 0; idir < (N-1); idir++)
+      {
+        if((*this)[idir] < retval)
+        {
+          retval = (*this)[idir];
+        }
+      }
+      return retval;
+    }
     /**
        \name Constructors and Accessors
        See derived class IndexTM for more constructors.
@@ -341,6 +373,7 @@ namespace Proto
     */
     IndexTM& max(const IndexTM & a_p);
 
+    
     ///
     /**
        Modifies this IndexTM by multiplying each component by a scalar.
@@ -460,6 +493,7 @@ namespace Proto
       }
       return retval;
     }
+
   protected:
     IndexTM(const char*);// used to build Zero and Unit static members
 

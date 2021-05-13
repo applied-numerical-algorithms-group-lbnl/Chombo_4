@@ -260,10 +260,6 @@ void eulerRun(const RunParams& a_params)
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
 
-#ifdef PROTO_CUDA
-  ::Proto::DisjointBoxLayout::setNumStreams(a_params.numstream);
-#endif
-
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
@@ -346,8 +342,8 @@ void eulerRun(const RunParams& a_params)
 
     time += dt;
     
-//    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
-//    dt = std::min(1.1*dtold, dtnew);
+  //  Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
+  //  dt = std::min(1.1*dtold, dtnew);
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))

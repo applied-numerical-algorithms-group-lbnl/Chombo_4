@@ -672,6 +672,7 @@ readDataFromCheckpoint(Real         & a_curTime,
                        unsigned int & a_curStep,
                        const string & a_checkpointName)
 {
+#ifdef CH_HDF5
   CH_TIME("EBINS::readDataFromCheckpointFile");
 
   HDF5HeaderData header;
@@ -692,12 +693,14 @@ readDataFromCheckpoint(Real         & a_curTime,
     m_species[ispec]->readFromCheckPoint(handle, specname);
   }
   handle.close();
+#endif
 }
 /*******/
 void
 EBINS::
 writeCheckpointFile()
 {
+#ifdef CH_HDF5
   CH_TIME("EBINS::writeCheckpointFile");
   string checkpointName = string("check.step_") + to_string(m_step) + string(".hdf5");
   HDF5HeaderData header;
@@ -719,6 +722,7 @@ writeCheckpointFile()
     m_species[ispec]->writeToCheckPoint(handle, specname);
   }
   handle.close();
+#endif
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

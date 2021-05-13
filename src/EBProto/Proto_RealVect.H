@@ -45,6 +45,16 @@ namespace Proto
       }
     }
 
+    RealVect operator*(const double& a_scale) const 
+    {
+      RealVect retval = *this;
+      for(unsigned int idir = 0; idir < DIM; idir++)
+      {
+        retval *= a_scale;
+        return retval;
+      }
+      return retval;
+    }
     ///
     /**
        The copy constructor.
@@ -496,6 +506,87 @@ namespace Proto
   }
 
 
+  inline
+  RealVect
+  operator* (double           s,
+             const RealVect&  p)
+  {
+    RealVect retval = p;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] *= s;
+    }
+    return retval;
+  }
+
+
+  inline
+  RealVect
+  operator+ (double           s,
+             const RealVect&  p)
+  {
+    RealVect retval = p;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] += s;
+    }
+    return retval;
+  }
+
+  inline
+  RealVect
+  operator- (double           s,
+             const RealVect&  p)
+  {
+    RealVect retval = p;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] -= s;
+    }
+    return retval;
+  }
+
+
+  inline
+  RealVect
+  operator* (const RealVect&  s,
+             const RealVect&  p)
+  {
+    RealVect retval = p;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] *= s[idir];
+    }
+    return retval;
+  }
+
+
+  inline
+  RealVect
+  operator+ (const RealVect&  s,
+             const RealVect&  p)
+  {
+    RealVect retval = p;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] += s[idir];
+    }
+    return retval;
+  }
+
+  inline
+  RealVect
+  operator- (const RealVect&  s,
+             const RealVect&  p)
+  {
+    RealVect retval = s;
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] -= p[idir];
+    }
+    return retval;
+  }
+  
   inline RealVect BASISREALV(int idir)
   {
     RealVect retval = RealVect::Zero();
