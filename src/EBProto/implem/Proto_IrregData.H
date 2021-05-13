@@ -341,7 +341,8 @@ namespace Proto
     }
 
     ///
-    virtual ~IrregData()
+    ~IrregData()
+    //virtual ~IrregData()
     {
       PR_TIME("~IrregData");
       m_EBIrregDataSharedPtr.reset();
@@ -721,7 +722,7 @@ namespace Proto
       assert(sizeof(data_t) >= sizeof(float));
       if(vecsize == 0) return;
 
-      int numSMs;
+      int numSMs=1;
 #ifdef PROTO_CUDA
       int devId = 0;
 #ifdef PROTO_HIP
