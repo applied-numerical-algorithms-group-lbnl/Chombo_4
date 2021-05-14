@@ -38,7 +38,25 @@ namespace Proto
 	  begin = i;
         i = (begin + end)/2;
       }
+/*
+      while (begin <= end) 
+      {
+        int mid = begin + (begin - end) / 2;
 
+        if (a_indicies[mid] == a_vof)
+        {
+          ivec = i;
+          found = true;
+          break;
+        }
+
+        if (a_indicies[mid] < a_vof)
+          begin = mid + 1;
+
+        else
+         end = mid - 1;
+      }
+*/
       if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
@@ -148,16 +166,17 @@ namespace Proto
       if(idx < a_end)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
-        if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
+        //if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
+        if( copyContains(vof,a_box_inf,a_box_high))
         {
+          size_t indDst = idx + a_indiciesSizeDst*a_idst;//index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
+          size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
 #pragma unroll
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
-            unsigned int isrc = a_isrc + ico;
-            unsigned int idst = a_idst + ico;
-            size_t indDst = index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
-            size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, isrc);
             a_dst[indDst] = a_src[indSrc];
+            indDst += a_indiciesSizeDst;
+            indSrc += a_indiciesSizeSrc;
           }
         }
       }
@@ -220,15 +239,17 @@ namespace Proto
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
-        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        //if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        if(copyContains(pt,a_box_inf,a_box_high))
         {
+          size_t indxDst = index(a_indicies, a_indiciesSize, pt, 0);
+          size_t indxSrc = idx;
 #pragma unroll
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            size_t indxDst = index(a_indicies, a_indiciesSize, pt, icomp);
-           // size_t indxSrc = index(indicies, size, pt, icomp);
-           // a_dst[indxDst+icomp*a_indiciesSize] = data[indxSrc+icomp*size];
-            a_dst[indxDst+icomp*a_indiciesSize] = data[idx+icomp*size];
+            a_dst[indxDst] = data[indxSrc];
+            indxDst += a_indiciesSize;
+            indxSrc += size;
           }
         }
       }
@@ -337,7 +358,8 @@ namespace Proto
     }
 
     ///
-    virtual ~IrregData()
+    ~IrregData()
+    //virtual ~IrregData()
     {
       PR_TIME("~IrregData");
       m_EBIrregDataSharedPtr.reset();
@@ -665,7 +687,7 @@ namespace Proto
       Box interBox = a_bxFrom & a_bxTo;
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
-      unsigned int size = indiciesSrc->size(); 
+      unsigned int size = m_indicies->size(); 
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/threads;
 
@@ -717,10 +739,14 @@ namespace Proto
       assert(sizeof(data_t) >= sizeof(float));
       if(vecsize == 0) return;
 
-      int numSMs;
+      int numSMs=1;
 #ifdef PROTO_CUDA
       int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
 #endif
 
       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 0, protoGetCurrentStream, 
