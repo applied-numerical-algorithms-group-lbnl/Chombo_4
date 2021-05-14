@@ -65,11 +65,11 @@ registerStencil(string a_stencilName,
                 const vector<EBIndex<dstCenter> >               & a_dstVoFs,
                 const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
                 const Stencil<data_t>                           & a_regStencilInterior,
-                const Box                                       & a_regApplyBox,
-                const Box                                       & a_srcValid,
-                const Box                                       & a_dstValid,
-                const Box                                       & a_srcDomain,
-                const Box                                       & a_dstDomain,
+                const Proto::Box                                & a_regApplyBox,
+                const Proto::Box                                & a_srcValid,
+                const Proto::Box                                & a_dstValid,
+                const Proto::Box                                & a_srcDomain,
+                const Proto::Box                                & a_dstDomain,
                 const Point                                     & a_srcGhost,
                 const Point                                     & a_dstGhost,
                 bool                                              a_irregOnly,
@@ -80,11 +80,13 @@ registerStencil(string a_stencilName,
   stencilKey key;
   key.m_ebbcName    = a_ebbcName;
   key.m_stencilName = a_stencilName;
-  int dstIndex = getIndex(a_dstDomain);
+  Box ch_srcDom = ProtoCh::getBox(a_srcDomain);
+  Box ch_dstDom = ProtoCh::getBox(a_dstDomain);
+  int dstIndex = getIndex(ch_dstDom);
 
   
-  shared_ptr< LevelData< EBGraph  >  > ldgraphS = m_geoserv->getGraphs(    a_srcDomain);
-  shared_ptr< LevelData< EBGraph  >  > ldgraphD = m_geoserv->getGraphs(    a_dstDomain);
+  shared_ptr< LevelData< EBGraph  >  > ldgraphS = m_geoserv->getGraphs(ch_srcDom);
+  shared_ptr< LevelData< EBGraph  >  > ldgraphD = m_geoserv->getGraphs(ch_dstDom);
 
   DataIterator dit = m_grids[dstIndex].dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -93,14 +95,11 @@ registerStencil(string a_stencilName,
     const auto& dstGraph = (*ldgraphD)[dit[ibox]];
     Proto::Box srcValid  = srcGraph.validBox();
     Proto::Box dstValid  = dstGraph.validBox();
-    Proto::Box srcDomain = ProtoCh::getProtoBox(a_srcDomain);
-    Proto::Box dstDomain = ProtoCh::getProtoBox(a_dstDomain);
     std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
-    shared_ptr<ebstencil_t> 
-      newsten
-      ( new ebstencil_t(a_dstVoFs, a_stencil, a_regStencilInterior, a_regApplyBox,
-                        srcGraph, dstGraph, srcValid, dstValid, srcDomain, dstDomain,
-                        a_srcGhost, a_dstGhost, a_irregOnly, a_needDiagonalWeights));
+    shared_ptr<ebstencil_t>
+      newsten(new ebstencil_t(a_dstVoFs, a_stencil, a_regStencilInterior, a_regApplyBox,
+                              srcGraph, dstGraph, srcValid, dstValid, a_srcDomain, a_dstDomain,
+                              a_srcGhost, a_dstGhost, a_irregOnly, a_needDiagonalWeights));
     boxmap[key] = newsten;
   }
   

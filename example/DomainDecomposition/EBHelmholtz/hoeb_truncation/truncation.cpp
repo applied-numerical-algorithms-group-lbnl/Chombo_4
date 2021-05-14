@@ -27,16 +27,24 @@ defineStencil(string                                   & a_stencilName,
               vector<EBIndex<CELL> >                   & a_dstVoFs,
               vector<LocalStencil<CELL, Real> >        & a_stencil,
               Stencil<Real>                            & a_regStencilInterior,
-              Chombo4::Box                               & a_regApplyBox,
-              Chombo4::Box                               & a_srcValid,
-              Chombo4::Box                               & a_dstValid,
-              Chombo4::Box                               & a_srcDomain,
-              Chombo4::Box                               & a_dstDomain,
+              Proto::Box                               & a_regApplyBox,
+              Proto::Box                               & a_srcValid,
+              Proto::Box                               & a_dstValid,
+              Proto::Box                               & a_srcDomain,
+              Proto::Box                               & a_dstDomain,
               Proto::Point                             & a_srcGhost,
               Proto::Point                             & a_dstGhost,
               bool                                     & a_irregOnly,
               bool                                     & a_needDiagonalWeights)
 {
+  ParmParse pp;
+    
+  int dombc = 1;
+  int ebbc  = 1;
+  pp.get("domainBC"  , dombc);
+  pp.get("EBBC"      , ebbc);
+  pout() << "domainBC"  << " = " <<  dombc      << endl;
+  pout() << "EBBC"      << " = " <<  ebbc       << endl;
   
   a_needDiagonalWeights = true;
   a_irregOnly           = true;
@@ -49,12 +57,12 @@ fillData(EBLevelBoxData<CELL,   1>&  a_phiexac,
 }
 /****/
 shared_ptr<BaseIF> 
-defineImplicitFunction()
+getImplicitFunction()
 {
   RealVect center = 0.5*RealVect::Unit();
   Real radius = 0.1;
   bool inside = false;
-  Parmparse pp;
+  ParmParse pp;
   std::vector<Real> centvec;
   pp.get("radius", radius);
   pp.get("inside", inside);
@@ -77,29 +85,22 @@ runTest()
   Real alpha = 1.0;
   Real beta = -0.001;
     
-  int dombc = 1;
-  int ebbc  = 1;
+
   ParmParse pp;
-    
-  pp.get("domainBC"  , dombc);
-  pp.get("EBBC"      , ebbc);
+
   pp.get("nx"        , nx);
   pp.get("max_grid"  , maxGrid);
   pp.get("alpha"     , alpha);
   pp.get("beta"      , beta);
   pp.get("coveredval", coveredval);         
 
-  pout() << "nx        = " << nx       << endl;
-  pout() << "maxGrid   = " << maxGrid  << endl;
-  pout() << "x0        = " << x0       << endl;
-  pout() << "y0        = " << y0       << endl;
-  pout() << "z0        = " << z0       << endl;
-  pout() << "A         = " << A        << endl;
-  pout() << "B         = " << B        << endl;
-  pout() << "C         = " << C        << endl;
-  pout() << "R         = " << R        << endl;
-  pout() << "alpha     = " << alpha    << endl;
-  pout() << "beta      = " << beta    << endl;
+
+  pout() << "nx"        << " = " <<  nx         << endl;
+  pout() << "max_grid"  << " = " <<  maxGrid    << endl;
+  pout() << "alpha"     << " = " <<  alpha      << endl;
+  pout() << "beta"      << " = " <<  beta       << endl;
+  pout() << "coveredval"<< " = " <<  coveredval << endl;         
+  
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
@@ -120,7 +121,7 @@ runTest()
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
 //  Real dx = 1.0;
-  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, true));
+  shared_ptr<BaseIF>    impfunc = getImplicitFunction();
 //  Bx domainpr = getProtoBox(domain.domainBox());
 
   pout() << "defining geometry" << endl;
@@ -142,18 +143,18 @@ runTest()
 
   string stencilName;
   string ebbcName;
-  vector<     EBIndex<CELL>  >        dstVoFs;
-  vector<LocalStencil<CELL, Real> >   stencil;
-  Stencil<Real>                       regStencilInterior;
-  Chombo4::Box                          regApplyBox;
-  Chombo4::Box                          srcValid;
-  Chombo4::Box                          dstValid;
-  Chombo4::Box                          srcDomain;
-  Chombo4::Box                          dstDomain;
-  Point                               srcGhost;
-  Point                               dstGhost;
-  bool                                irregOnly;
-  bool                                needDiagonalWeights;
+  vector<     EBIndex<CELL>  >          dstVoFs;
+  vector<LocalStencil<CELL, Real> >     stencil;
+  Stencil<Real>                         regStencilInterior;
+  Proto::Box                            regApplyBox;
+  Proto::Box                            srcValid;
+  Proto::Box                            dstValid;
+  Proto::Box                            srcDomain;
+  Proto::Box                            dstDomain;
+  Point                                 srcGhost;
+  Point                                 dstGhost;
+  bool                                  irregOnly;
+  bool                                  needDiagonalWeights;
 
   defineStencil(stencilName,        
                 ebbcName,           
@@ -196,7 +197,7 @@ runTest()
   EBLevelBoxData<CELL,   1>  lphexac(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  error(grids, dataGhostIV, graphs);
 
-  fillData(phiexac, lphiexac); 
+  fillData(phiexac, lphexac); 
 
 
   pout() << "writing to file " << endl;
@@ -223,7 +224,7 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runTest(a_argc, a_argv);
+    runTest();
   }
 
   pout() << "printing time table " << endl;
