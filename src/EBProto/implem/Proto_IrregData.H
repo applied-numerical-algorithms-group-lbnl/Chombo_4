@@ -644,7 +644,7 @@ namespace Proto
       retval += m_indicies->size()*(sizeof(index_t) + ncomp*sizeof(data_t));
 
       size_t align = sizeof(data_t);
-      if(retval % align != 0) retval = (retval/ sizeof(align) + 1) * sizeof(align);
+      if(retval % align != 0) retval = (retval/ align + 1) * align;
       return retval;
     }
 

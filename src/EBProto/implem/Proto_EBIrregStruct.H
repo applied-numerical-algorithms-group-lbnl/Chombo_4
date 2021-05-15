@@ -25,7 +25,8 @@ public:
       m_varsize  = 0;
       m_offset   = 0;
     }
-    virtual ~EBIrregStruct(){};
+    ~EBIrregStruct(){};
+    //virtual ~EBIrregStruct(){};
    };
 }
 
