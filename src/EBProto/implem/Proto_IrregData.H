@@ -19,18 +19,17 @@ namespace Proto
     size_t  index(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar) 
     {
       size_t ivec = 0;
-//      bool found = false;
+      bool found = false;
       int begin = 0;
       int end = a_size;
       int i = (begin + a_size)/2;
 
-      //while(found == false && begin <= end)
-      while(begin <= end)
+      while(found == false && begin <= end)
       {        
         if(a_vof == a_indicies[i])
         {
           ivec = i;
-//          found = true;
+          found = true;
           break;
         }
         if(a_vof <  a_indicies[i] )
@@ -39,12 +38,30 @@ namespace Proto
 	  begin = i;
         i = (begin + end)/2;
       }
+/*
+      while (begin <= end) 
+      {
+        int mid = begin + (begin - end) / 2;
 
-/*      if(!found)
+        if (a_indicies[mid] == a_vof)
+        {
+          ivec = i;
+          found = true;
+          break;
+        }
+
+        if (a_indicies[mid] < a_vof)
+          begin = mid + 1;
+
+        else
+         end = mid - 1;
+      }
+*/
+      if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
       }
-*/
+
       ivec += a_ivar* a_size;
 
       return ivec;
@@ -341,7 +358,8 @@ namespace Proto
     }
 
     ///
-    virtual ~IrregData()
+    ~IrregData()
+    //virtual ~IrregData()
     {
       PR_TIME("~IrregData");
       m_EBIrregDataSharedPtr.reset();
@@ -669,7 +687,7 @@ namespace Proto
       Box interBox = a_bxFrom & a_bxTo;
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
-      unsigned int size = indiciesSrc->size(); 
+      unsigned int size = m_indicies->size(); 
       unsigned int threads = 256;
       unsigned int blocks = (threads + size - 1)/threads;
 
@@ -721,10 +739,14 @@ namespace Proto
       assert(sizeof(data_t) >= sizeof(float));
       if(vecsize == 0) return;
 
-      int numSMs;
+      int numSMs=1;
 #ifdef PROTO_CUDA
       int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
 #endif
 
       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 0, protoGetCurrentStream, 

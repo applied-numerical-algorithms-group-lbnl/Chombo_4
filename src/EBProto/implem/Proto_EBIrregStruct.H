@@ -26,7 +26,6 @@ public:
       m_offset   = 0;
     }
     ~EBIrregStruct(){};
-    //virtual ~EBIrregStruct(){};
    };
 }
 

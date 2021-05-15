@@ -783,7 +783,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   m_buff->m_sendRequests.resize(this->m_buff->numSends);
   std::list<MPI_Request> extraRequests;
 
-  protoDeviceSynchronizeGPU();
+  protoDeviceSynchronize(T::memTypeAllocation());
 
   unsigned int next=0;
   long long maxSize = 0;
