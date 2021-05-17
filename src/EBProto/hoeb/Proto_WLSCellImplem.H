@@ -133,6 +133,7 @@ namespace Proto
 
     Vector< EBIndex<XFACE> > Xfacneigh;
     Vector< EBIndex<YFACE> > Yfacneigh;
+    Vector< EBIndex<ZFACE> > Zfacneigh;
     IndMomDIM regVolMom;
     regVolMom.setToRegular(a_dx);
     IndMomSDMinOne regFaceMom;
@@ -770,6 +771,7 @@ namespace Proto
     Vector<double> ebfneighFrac = a_neigh.m_ebfneighFrac;
     Vector<double> facneighFrac = a_neigh.m_facneighFrac;
     PolynomialEF<order> phigen(m_entries);
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     Vector<Real> domBCValues, ebBCValues;
     int nrows = a_facmom.size();
@@ -809,7 +811,7 @@ namespace Proto
       }
       else
       {
-        domBCValues[iface] = domBCValues[iface]/(facneighFrac[iface]*a_dx);
+        domBCValues[iface] = domBCValues[iface]/(facneighFrac[iface]*areaScaleFactor);
       }
     }
 
@@ -845,7 +847,7 @@ namespace Proto
       }
       else
       {
-        ebBCValues[ivof] = ebBCValues[ivof]/(ebfneighFrac[ivof]*a_dx);
+        ebBCValues[ivof] = ebBCValues[ivof]/(ebfneighFrac[ivof]*areaScaleFactor);
       }
     }
   
@@ -1055,6 +1057,8 @@ namespace Proto
   {
     PR_TIME("getWLSDivFStencil");
     a_vofStencil.clear();
+    Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     for (SideIterator sit; sit.ok(); ++sit)
     {
@@ -1075,7 +1079,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
 	}
 	else
@@ -1084,7 +1088,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
 	}
 
@@ -1137,7 +1141,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
 	}
 	else
@@ -1146,7 +1150,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
 	}
 
@@ -1198,7 +1202,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           } 
 	}
 	else
@@ -1207,7 +1211,7 @@ namespace Proto
 	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM-1>& p = iter();
-            faceMom[iter()] = faceMom[iter()]/(a_dx*POW(a_dx,p));
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
 	}
 
@@ -1248,20 +1252,20 @@ namespace Proto
       for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
       {
         const IndexTM<int, DIM>& p = iter();
-        ebnorm[0][iter()] = ebnorm[0][iter()]/(a_dx*POW(a_dx,p));
+        ebnorm[0][iter()] = ebnorm[0][iter()]/(areaScaleFactor*POW(a_dx,p));
       }
       ebnorm[1] = a_ebnormydata(a_vof, 0);
       for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
       {
         const IndexTM<int, DIM>& p = iter();
-        ebnorm[1][iter()] = ebnorm[1][iter()]/(a_dx*POW(a_dx,p));
+        ebnorm[1][iter()] = ebnorm[1][iter()]/(areaScaleFactor*POW(a_dx,p));
       }
 #if DIM==3
       ebnorm[2] = a_ebnormzdata(a_vof, 0);
       for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
       {
         const IndexTM<int, DIM>& p = iter();
-        ebnorm[2][iter()] = ebnorm[2][iter()]/(a_dx*POW(a_dx,p));
+        ebnorm[2][iter()] = ebnorm[2][iter()]/(areaScaleFactor*POW(a_dx,p));
       }
 #endif
       Normalizor<order>::normalizedBndryMoments(alpha, centroid, a_ebfadata,  cutface, a_graph, a_dx);
@@ -1289,7 +1293,7 @@ namespace Proto
                                              faceLoc,
 					     phigen,
                                              a_dx);
-	inhomogTerm = inhomogTerm/(a_dx);
+	inhomogTerm = inhomogTerm/(areaScaleFactor);
 
       }
       else if(a_ebbcName == string("Dirichlet"))
@@ -1457,6 +1461,7 @@ namespace Proto
 	          const Real              a_dx)  
   {
     Real retval = 0.0;
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM-1, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
     {
@@ -1481,7 +1486,7 @@ namespace Proto
       Real moment = a_faceMom[pSDMinOne];
  
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*(a_dx*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
     }
   
     return retval;
@@ -1499,6 +1504,7 @@ namespace Proto
 	          const Real              a_dx) 
   {
     Real retval = 0.0;
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM-1, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
     {
@@ -1522,7 +1528,7 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
 
-      retval += moment*(a_dx*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
 
     }
 
@@ -1541,6 +1547,7 @@ namespace Proto
   {
 
     Real retval = 0.0;
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     MomentIterator<DIM, order> momit;
     for(momit.reset(); momit.ok(); ++momit)
@@ -1548,7 +1555,7 @@ namespace Proto
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      retval += moment*(a_dx*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
 
     }
 
@@ -1567,6 +1574,7 @@ namespace Proto
   {
 
     Real retval = 0.0;
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
     for(int ndir = 0; ndir < DIM; ndir++)
     {
       MomentIterator<DIM, order> momit;
@@ -1580,7 +1588,7 @@ namespace Proto
 	  IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
 	  Real moment = a_ebfNormalMom[ndir][pShift];
   
-          retval += pd*moment*(a_dx*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
+          retval += pd*moment*(areaScaleFactor*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
 	}
       }
     }

@@ -167,13 +167,15 @@ namespace Proto
 				Real                     a_dx)
     {
       m_volMom.resize(a_volMom.size());
+      Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+      Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
       for(int i = 0; i < a_volMom.size(); ++i)
       {
         IndMomDIM momspt = a_volMom[i];
         for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
         {
           const IndexTM<int, DIM>& p = iter();
-          m_volMom[i][iter()] = momspt[iter()]/(a_dx*a_dx*POW(a_dx,p));
+          m_volMom[i][iter()] = momspt[iter()]/(volScaleFactor*POW(a_dx,p));
         }
       }
       m_facMom.resize(a_facMom.size());
@@ -183,7 +185,7 @@ namespace Proto
         for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
         {
           const IndexTM<int, DIM-1>& p = iter();
-          m_facMom[i][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+          m_facMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
         }
       }
       m_ebfMom.resize(a_ebfMom.size());
@@ -193,7 +195,7 @@ namespace Proto
         for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
         {
           const IndexTM<int, DIM>& p = iter();
-          m_ebfMom[i][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+          m_ebfMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
         }
       }
       m_ebfneighNorm.resize(a_ebfneighNorm.size());
@@ -206,7 +208,7 @@ namespace Proto
           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
           {
             const IndexTM<int, DIM>& p = iter();
-            m_ebfneighNorm[i][j][iter()] = momspt[iter()]/(a_dx*POW(a_dx,p));
+            m_ebfneighNorm[i][j][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
           }
         }
       }

@@ -230,7 +230,11 @@ namespace Proto
       bool pt_verbose = false;
       if (verbose)
       {
+#if DIM==3
+	if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
+#else
 	if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+#endif
         {
 	  pt_verbose = true;
           cout << "Debugging Point "<<pt<<endl;
