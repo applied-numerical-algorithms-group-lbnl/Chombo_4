@@ -50,6 +50,7 @@ defineStencil(string                                   & a_stencilName,
   a_needDiagonalWeights = true;
   a_irregOnly           = true;
 }
+/**
 {
   string stencilName;
   string ebbcName;
@@ -111,32 +112,8 @@ defineStencil(string                                   & a_stencilName,
   pout() << "exiting " << endl;
   return 0;
 }
+**/
 /****/
-void
-fillData(EBLevelBoxData<CELL,   1>&  a_phiexac,
-         EBLevelBoxData<CELL,   1>&  a_lphcalc)
-{
-}
-/****/
-shared_ptr<BaseIF> 
-getImplicitFunction()
-{
-  RealVect center = 0.5*RealVect::Unit();
-  Real radius = 0.1;
-  bool inside = false;
-  ParmParse pp;
-  std::vector<Real> centvec;
-  pp.get("radius", radius);
-  pp.get("inside", inside);
-  pp.getarr("center", centvec, 0, DIM);
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    center[idir] = centvec[idir];
-  }
-  SimpleSphereIF* sphereptr = new SimpleSphereIF(center, radius, inside);
-  shared_ptr<BaseIF> retval(static_cast<BaseIF*>(sphereptr));
-  return retval;
-}
 
 
 //int
@@ -272,33 +249,121 @@ getImplicitFunction()
 //
 
 
+
+/****/
+shared_ptr<BaseIF> 
+getImplicitFunction()
+{
+  RealVect center = 0.5*RealVect::Unit();
+  Real radius = 0.1;
+  bool inside = false;
+  ParmParse pp;
+  std::vector<Real> centvec;
+  pp.get("radius", radius);
+  pp.get("inside", inside);
+  pp.getarr("center", centvec, 0, DIM);
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    center[idir] = centvec[idir];
+  }
+  SimpleSphereIF* sphereptr = new SimpleSphereIF(center, radius, inside);
+  shared_ptr<BaseIF> retval(static_cast<BaseIF*>(sphereptr));
+  return retval;
+}
+
 /****/
 void
-getData(EBLevelBoxData<CELL, 1>                        &  a_phi,
-        EBLevelBoxData<CELL, 1>                        &  a_lph,
+fillPhi(EBLevelBoxData<CELL, 1>                        &  a_phi,
         const shared_ptr<LevelData<EBGraph> >          &  a_graphs,
         const Chombo4::DisjointBoxLayout               &  a_grids,
         const Chombo4::Box                             &  a_domFine,
         const Real                                     &  a_dx,
-        shared_ptr<EBDictionary<2, Real, CELL, CELL> > &  a_dictionary,
-        shared_ptr< GeometryService<2> >               &  a_geoserv)
+        const shared_ptr< GeometryService<2> >         &  a_geoserv)
 {
         
 }
 /****/
 void
-getError(EBLevelBoxData<CELL,   1> & errCoar, lphMedi, lphCoar,
-         graphsMedi, gridsMedi, domMedi, dxMedi,
-         graphsCoar, gridsCoar, domCoar, dxCoar,
-         dictionary, geoserv)
+restrictKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klpFToC,
+                  const EBLevelBoxData<CELL, 1>                          &  a_klpFine,
+                  const shared_ptr<LevelData<EBGraph> >                  &  a_graphsFine,
+                  const Chombo4::DisjointBoxLayout                       &  a_gridsFine,
+                  const Chombo4::Box                                     &  a_domFine,
+                  const Real                                             &  a_dxFine,
+                  const shared_ptr<LevelData<EBGraph> >                  &  a_graphsCoar,
+                  const Chombo4::DisjointBoxLayout                       &  a_gridsCoar,
+                  const Chombo4::Box                                     &  a_domCoar,
+                  const Real                                             &  a_dxCoar,
+                  const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
+                  const shared_ptr< GeometryService<2> >                 &  a_geoserv)
+{
+        
+}
+/****/
+void
+getKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klp,
+             const EBLevelBoxData<CELL, 1>                          &  a_phi,
+             const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
+             const Chombo4::DisjointBoxLayout                       &  a_grids,
+             const Chombo4::Box                                     &  a_domFine,
+             const Real                                             &  a_dx,
+             const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
+             const shared_ptr< GeometryService<2> >                 &  a_geoserv)
+{
+        
+}
+/*******/ 
+PROTO_KERNEL_START 
+void subtractionTractionF(Var<Real, 1>    a_error,
+                          Var<Real, 1>    a_klpFtoC,
+                          Var<Real, 1>    a_klpCoar)
+{
+  a_error(0) = a_klpFtoC(0) - a_klpCoar(0);
+}
+PROTO_KERNEL_END(subtractionTractionF, subtractionTraction)
+/****/
+void
+getKLPhiError(EBLevelBoxData<CELL,   1>                              &  a_errCoar, 
+              const shared_ptr<LevelData<EBGraph> >                  &  a_graphsFine,
+              const Chombo4::DisjointBoxLayout                       &  a_gridsFine,
+              const Chombo4::Box                                     &  a_domFine,
+              const Real                                             &  a_dxFine,
+              const shared_ptr<LevelData<EBGraph> >                  &  a_graphsCoar,
+              const Chombo4::DisjointBoxLayout                       &  a_gridsCoar,
+              const Chombo4::Box                                     &  a_domCoar,
+              const Real                                             &  a_dxCoar,
+              const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
+              const shared_ptr< GeometryService<2> >                 &  a_geoserv)
 {
   IntVect dataGhostIV =   4*IntVect::Unit;
-  EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, graphsFine);
-  EBLevelBoxData<CELL,   1>  phiCoar(a_gridsCoar, dataGhostIV, graphsCoar);
-  EBLevelBoxData<CELL,   1>  lphFine(a_gridsFine, dataGhostIV, graphsFine);
-  EBLevelBoxData<CELL,   1>  lphCoar(a_gridsCoar, dataGhostIV, graphsCoar);
-  getData(phiFine, lphFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_dictionary, a_geoserv);
-  getData(phiCoar, lphCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_dictionary, a_geoserv);
+  EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, a_graphsFine);
+  EBLevelBoxData<CELL,   1>  phiCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
+  EBLevelBoxData<CELL,   1>  klpFine(a_gridsFine, dataGhostIV, a_graphsFine);
+  EBLevelBoxData<CELL,   1>  klpCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
+  EBLevelBoxData<CELL,   1>  klpFtoC(a_gridsCoar, dataGhostIV, a_graphsCoar);
+  
+  fillPhi(phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_geoserv);
+  fillPhi(phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_geoserv);
+
+  getKappaLphi(klpFine, phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_dictionary, a_geoserv);
+  getKappaLphi(klpCoar, phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_dictionary, a_geoserv);
+
+  restrictKappaLphi(klpFtoC, klpFine,
+                    a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar,
+                    a_graphsFine, a_gridsFine, a_domFine, a_dxFine,                    
+                    a_dictionary, a_geoserv);
+
+  //error = Ave(klphifine) - klphicoar 
+  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& ftocfab =   klpFtoC[dit[ibox]];
+    auto& coarfab =   klpCoar[dit[ibox]];
+    auto& errfab  = a_errCoar[dit[ibox]];
+    auto  inputbx = ftocfab.inputBox();
+    auto  validbx = (*a_graphsCoar)[dit[ibox]].validBox();
+    ebforall(inputbx, subtractionTraction, validbx, errfab, ftocfab, coarfab);
+  }
 }
 
 /****/
@@ -348,12 +413,7 @@ runTest()
   
   shared_ptr<BaseIF>    impfunc = getImplicitFunction();
   pout() << "defining geometry" << endl;
-  GeometryService<2>* geomptr =
-    new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
-  shared_ptr< GeometryService<2> >  geoserv(geomptr);
-
-  pout() << "making dictionary" << endl;
-
+  Real dx = 1.0/(Real(nx));
   vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
@@ -361,9 +421,16 @@ runTest()
     vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
     vecdx    [ilev] =           2*vecdx[ilev-1];
   }
+  
   Real dxFine = vecdx[0];
   Real dxMedi = vecdx[1];
   Real dxCoar = vecdx[2];
+  GeometryService<2>* geomptr =
+    new GeometryService<2>(impfunc, origin, dxFine, domain.domainBox(), vecgrids, geomGhost);
+  shared_ptr< GeometryService<2> >  geoserv(geomptr);
+
+  pout() << "making dictionary" << endl;
+
   Chombo4::Box domFine = vecdomain[0];
   Chombo4::Box domMedi = vecdomain[1];
   Chombo4::Box domCoar = vecdomain[2];
@@ -376,39 +443,48 @@ runTest()
   shared_ptr<EBDictionary<2, Real, CELL, CELL> >  dictionary
     (new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
-
-  getError(errMedi, 
-           graphsFine, gridsFine, domFine, dxFine,
-           graphsMedi, gridsMedi, domMedi, dxMedi,
-           dictionary, geoserv);
-
-  getError(errCoar, 
-           graphsMedi, gridsMedi, domMedi, dxMedi,
-           graphsCoar, gridsCoar, domCoar, dxCoar,
-           dictionary, geoserv);
-
+  EBLevelBoxData<CELL,   1>  errMedi(gridsMedi, dataGhostIV, graphsMedi);
+  EBLevelBoxData<CELL,   1>  errCoar(gridsCoar, dataGhostIV, graphsCoar);
   
-  Real errMedi = errMedi.maxNorm(0);
-  Real errCoar = errCoar.maxNorm(0);
+
+  getKLPhiError(errMedi, 
+                graphsFine, gridsFine, domFine, dxFine,
+                graphsMedi, gridsMedi, domMedi, dxMedi,
+                dictionary, geoserv);
+
+  getKLPhiError(errCoar, 
+                graphsMedi, gridsMedi, domMedi, dxMedi,
+                graphsCoar, gridsCoar, domCoar, dxCoar,
+                dictionary, geoserv);
+
+
+  //Norm!
+  Real normMedi = errMedi.maxNorm(0);
+  Real normCoar = errCoar.maxNorm(0);
 
   Real tol = 1.0e-16;
   Real order = 0;
-  if((errCoar > tol) && (errMedi > tol))
+  if((normCoar > tol) && (normMedi > tol))
   {
-    order = log(errCoar/errMedi)/log(2.0);
+    order = log(normCoar/normMedi)/log(2.0);
   }
-  pout() << "||errMedi||_max = " << errMedi << std::endl;
-  pout() << "||errCoar||_max = " << errCoar << std::endl;
-  pout() << "Richardson truncation error order = " << order << std::endl;
+  pout() << "||klphi errMedi||_max = " << normMedi << std::endl;
+  pout() << "||klphi errCoar||_max = " << normCoar << std::endl;
+  pout() << "Richardson truncation error order for kappa(L(phi))= " << order << std::endl;
   return 0;
 }
 
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
+#endif
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("trunc.time.table");
@@ -426,8 +502,13 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+  pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+#else  
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
+#endif
 #endif
   return 0;
 }

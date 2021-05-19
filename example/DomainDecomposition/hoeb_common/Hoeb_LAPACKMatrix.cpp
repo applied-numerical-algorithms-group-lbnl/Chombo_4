@@ -376,7 +376,7 @@ multiply(LAPACKMatrix& a_product,
   char TRANS = 'N'; // no transposes
   Real ALPHA = 1.;
   Real BETA = 0.;
-  LAPACK(GEMM,gemm)(&TRANS, &TRANS, &nr1, &nc2, &nc1, &ALPHA,
+  HOEB_LAPACK(GEMM,gemm)(&TRANS, &TRANS, &nr1, &nc2, &nc1, &ALPHA,
               a_left.dataPtr(), &nr1,
               a_right.dataPtr(), &nc1, &BETA,
               a_product.dataPtr(), &nr1);
@@ -414,8 +414,8 @@ invert()
   Real *WORK = new Real[LWORK];
 
 
-  LAPACK(GETRF,getrf)(&N,&N,A,&N,IPIV,&INFO);
-  LAPACK(GETRI,getri)(&N,A,&N,IPIV,WORK,&LWORK,&INFO);
+  HOEB_LAPACK(GETRF,getrf)(&N,&N,A,&N,IPIV,&INFO);
+  HOEB_LAPACK(GETRI,getri)(&N,A,&N,IPIV,WORK,&LWORK,&INFO);
   if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
@@ -579,7 +579,7 @@ pseudoInvertUsingQR()
   int LWORK = 2*M*N; // allowing block size of 2*M, which is plenty
   LAPACKMatrix WORK(LWORK, 1);
   int INFO;
-  LAPACK(GEQRF,geqrf)(&M, &N, dataPtr(), &M,
+  HOEB_LAPACK(GEQRF,geqrf)(&M, &N, dataPtr(), &M,
                TAU.dataPtr(), WORK.dataPtr(), &LWORK, &INFO);
   if (INFO != 0)
     {
@@ -594,7 +594,7 @@ pseudoInvertUsingQR()
   LAPACKMatrix Xt(*this);
 
   // Generate the M by N matrix Q, and store it in Xt.
-  LAPACK(ORGQR,orgqr)(&M, &N, &N, Xt.dataPtr(),
+  HOEB_LAPACK(ORGQR,orgqr)(&M, &N, &N, Xt.dataPtr(),
                &M, TAU.dataPtr(), WORK.dataPtr(), &LWORK, &INFO);
   if (INFO != 0)
     {
@@ -608,7 +608,7 @@ pseudoInvertUsingQR()
   char TRANSA = 'T';
   char DIAG = 'N';
   Real ALPHA = 1.;
-  LAPACK(TRSM,trsm)(&SIDE, &UPLO, &TRANSA, &DIAG, &M, &N, &ALPHA,
+  HOEB_LAPACK(TRSM,trsm)(&SIDE, &UPLO, &TRANSA, &DIAG, &M, &N, &ALPHA,
               dataPtr(), &M, Xt.dataPtr(), &M);
   
   *this = Xt;
@@ -661,7 +661,7 @@ Real getInverseOfConditionNumber(const LAPACKMatrix& A)
   int INFO;
 
   int *IPIV = new int[N+1];
-  LAPACK(GETRF,getrf)(&N,&N,tempA.m_data,&N,IPIV,&INFO);
+  HOEB_LAPACK(GETRF,getrf)(&N,&N,tempA.m_data,&N,IPIV,&INFO);
 //  if(INFO != 0)
 //    {
 //      MayDay::Warning(" info flag from lapack");
@@ -681,7 +681,7 @@ Real getInverseOfConditionNumber(const LAPACKMatrix& A)
       
   const int minMN = 20;
   int IWORK[25*minMN];
-  LAPACK(GECON,gecon)(&NORM, &N, tempA.m_data, &LDA, &ANORM, &rcond, WORK.dataPtr(), IWORK, &INFO);
+  HOEB_LAPACK(GECON,gecon)(&NORM, &N, tempA.m_data, &LDA, &ANORM, &rcond, WORK.dataPtr(), IWORK, &INFO);
 
   delete[] IPIV;
 
@@ -704,7 +704,7 @@ Real getInverseOfUpperTriangularConditionNumber(const LAPACKMatrix& A)
   int INFO;
 
   int *IPIV = new int[N];
-  LAPACK(TRCON,trcon)(&NORM, &UPLO, &DIAG, &N, A.dataPtr(), &M,
+  HOEB_LAPACK(TRCON,trcon)(&NORM, &UPLO, &DIAG, &N, A.dataPtr(), &M,
                &rcond, WORK.dataPtr(), IPIV, &INFO);
   if (INFO != 0)
     {
@@ -744,7 +744,7 @@ int solveLeastSquares(LAPACKMatrix& A, LAPACKMatrix& B)
   char TRANS = 'N';
   int INFO;
 
-  LAPACK(GELS,gels)(&TRANS, &M, &N, &NRHS, A.dataPtr(), &LDA, 
+  HOEB_LAPACK(GELS,gels)(&TRANS, &M, &N, &NRHS, A.dataPtr(), &LDA, 
          B.dataPtr(), &LDB, WORK.dataPtr(), LWORK, &INFO);
 
   if(INFO != 0)
@@ -783,7 +783,7 @@ int solveLeastSquaresTranspose(LAPACKMatrix& A, LAPACKMatrix& B)
   char TRANS = 'T';
   int INFO;
 
-  LAPACK(GELS,gels)(&TRANS, &M, &N, &NRHS, A.dataPtr(), &LDA, 
+  HOEB_LAPACK(GELS,gels)(&TRANS, &M, &N, &NRHS, A.dataPtr(), &LDA, 
          B.dataPtr(), &LDB, WORK.dataPtr(), LWORK, &INFO);
 
   if(INFO != 0)
@@ -881,7 +881,7 @@ int solveLSTSVDOnce(LAPACKMatrix& A, LAPACKMatrix& B)
   // - save a copy of the RHS to check the residual
   LAPACKMatrix Bcopy = B;
 
-  LAPACK(GELSD,gelsd)(&N, &M, &NRHS, At.dataPtr(), &LDA, 
+  HOEB_LAPACK(GELSD,gelsd)(&N, &M, &NRHS, At.dataPtr(), &LDA, 
           B.dataPtr(), &LDB, S, &RCOND, &RANK,
           WORK.dataPtr(), LWORK, IWORK, &INFO);
 
@@ -905,7 +905,7 @@ int solveLSTSVDOnce(LAPACKMatrix& A, LAPACKMatrix& B)
   Real BETA = -1;
   int INCX = 1;
   int INCY = 1;
-  LAPACK(GEMV,gemv)(&TRANS, &M, &N, &ALPHA, A.dataPtr(), &M, 
+  HOEB_LAPACK(GEMV,gemv)(&TRANS, &M, &N, &ALPHA, A.dataPtr(), &M, 
          B.dataPtr(), &INCX, &BETA, Bcopy.dataPtr(), &INCY);
   
   //  CH_assert(Bcopy.m_ncol == 1);
@@ -1016,12 +1016,12 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   int RANK;
 
   X = LAPACKMatrix(N,NRHS);
-  // LAPACK(GELSD,gelsd) destroys A, so send in a copy instead
+  // HOEB_LAPACK(GELSD,gelsd) destroys A, so send in a copy instead
   LAPACKMatrix Acopy = A;
   if(M >= N)
     {
       LAPACKMatrix temp = B;
-      LAPACK(GELSD,gelsd)(&M, &N, &NRHS, Acopy.dataPtr(), &LDA, 
+      HOEB_LAPACK(GELSD,gelsd)(&M, &N, &NRHS, Acopy.dataPtr(), &LDA, 
               temp.dataPtr(), &LDB, S, &RCOND, &RANK,
               WORK.dataPtr(), LWORK, IWORK, &INFO);
 
@@ -1044,7 +1044,7 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
               temp(irow, icol) = B(irow, icol);
             }
         }
-      LAPACK(GELSD,gelsd)(&M, &N, &NRHS, Acopy.dataPtr(), &LDA, 
+      HOEB_LAPACK(GELSD,gelsd)(&M, &N, &NRHS, Acopy.dataPtr(), &LDA, 
               temp.dataPtr(), &LDB, S, &RCOND, &RANK,
               WORK.dataPtr(), LWORK, IWORK, &INFO);
 
@@ -1067,7 +1067,7 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   // TO DO: put in check on residuals (see LSTSVDOnce with two arguments)
   // - double-check the residual, toss a warning if it's non-zero
   WORK.setVal(0);
-  // LAPACK(GEMV,gemv) sets Y = alpha*A*X + beta*Y
+  // HOEB_LAPACK(GEMV,gemv) sets Y = alpha*A*X + beta*Y
   char TRANS = 'N'; // compute A*X and not A'*X
   Real ALPHA = 1;
   Real BETA = -1;
@@ -1075,7 +1075,7 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   int INCY = 1;
   LAPACKMatrix Bcopy = B;
   LAPACKMatrix Acast = A; // copy of A that is not const
-  LAPACK(GEMV,gemv)(&TRANS, &M, &N, &ALPHA, Acast.dataPtr(), &M, 
+  HOEB_LAPACK(GEMV,gemv)(&TRANS, &M, &N, &ALPHA, Acast.dataPtr(), &M, 
          X.dataPtr(), &INCX, &BETA, Bcopy.dataPtr(), &INCY);
   
   //  CH_assert(Bcopy.m_ncol == 1);
@@ -1133,7 +1133,7 @@ int solveEqualityConstrainedLS(LAPACKMatrix& A, LAPACKMatrix& c, LAPACKMatrix& B
   LAPACKMatrix work(lwork,1);
   work.setVal(0);
   int info;
-  LAPACK(GGLSE,gglse)(&M, &N, &P, A.dataPtr(), &LDA, B.dataPtr(), &LDB, 
+  HOEB_LAPACK(GGLSE,gglse)(&M, &N, &P, A.dataPtr(), &LDA, B.dataPtr(), &LDB, 
           c.dataPtr(), d.dataPtr(), x.dataPtr(), work.dataPtr(), &lwork, &info);
   int INFO = info;
   if(INFO != 0)
@@ -1192,7 +1192,7 @@ int solveReducedRankLS(LAPACKMatrix& A, LAPACKMatrix& b)
   TAU.setVal(0);
 
   int INFO;
-  LAPACK(GEQRF,geqrf)(&N, &M, At.dataPtr(), &N,
+  HOEB_LAPACK(GEQRF,geqrf)(&N, &M, At.dataPtr(), &N,
           TAU.dataPtr(), WORK.dataPtr(), LWORK, &INFO);
 
   if(INFO != 0)
@@ -1209,7 +1209,7 @@ int solveReducedRankLS(LAPACKMatrix& A, LAPACKMatrix& b)
   char SIDE = 'L';
   char TRANS = 'T';
   int NRHS =  b.m_ncol;
-  LAPACK(ORMQR,ormqr)(&SIDE, &TRANS, &N, &NRHS, &N, 
+  HOEB_LAPACK(ORMQR,ormqr)(&SIDE, &TRANS, &N, &NRHS, &N, 
           At.dataPtr(), &N, TAU.dataPtr(), b.dataPtr(), &N,
           WORK.dataPtr(), LWORK, &INFO);
 
@@ -1225,7 +1225,7 @@ int solveReducedRankLS(LAPACKMatrix& A, LAPACKMatrix& b)
   char UPLO = 'U';
   TRANS = 'N';
   char DIAG = 'N';
-  LAPACK(TRTRS,trtrs)(&UPLO, &TRANS, &DIAG, &N, &NRHS, 
+  HOEB_LAPACK(TRTRS,trtrs)(&UPLO, &TRANS, &DIAG, &N, &NRHS, 
           At.dataPtr(), &N, b.dataPtr(), &N, &INFO);
   if(INFO != 0)
     {
