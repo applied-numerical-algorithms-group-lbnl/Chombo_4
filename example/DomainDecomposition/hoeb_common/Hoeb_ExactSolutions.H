@@ -114,8 +114,8 @@ namespace hoeb
     virtual Real getDerivative(IvDIM    a_deriv,
                                RealVect a_loc)
     {
-      Real x = a_loc[0];
-      Real y = a_loc[1];
+      Real x = a_loc[0] - m_center[0];
+      Real y = a_loc[1] - m_center[1];
       Real x2 = x*x;
       Real x3 = x*x*x;
       Real x4 = x*x*x*x;
@@ -130,7 +130,7 @@ namespace hoeb
       Real r02 = m_radius*m_radius;
       Real z2 = 0;
 #if DIM==3
-      Real z = a_loc[2];
+      Real z = a_loc[2] - m_center[2];
       z2 = z*z;
       Real z3 = z*z*z;
       Real z4 = z*z*z*z;
@@ -410,16 +410,16 @@ namespace hoeb
     {
     }
 
-    SineSphereEF(Real a_radius,
-                 Real a_center)
+    SineSphereEF(Real     a_radius,
+                 RealVect a_center)
     {
       m_radius = a_radius;
       m_center = a_center;
     }
 
   private:
-    Real  m_radius;
-    Real  m_center;
+    Real      m_radius;
+    RealVect  m_center;
   
     SineSphereEF()
     {

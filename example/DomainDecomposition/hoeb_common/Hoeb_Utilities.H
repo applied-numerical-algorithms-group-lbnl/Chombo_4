@@ -1,0 +1,64 @@
+#ifndef __hoeb_utilities__
+#define __hoeb_utilities__
+#include "Proto.H"
+#include "Chombo_EBChombo.H"
+#include "Chombo_EBLevelBoxData.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_EBDictionary.H"
+#include "Hoeb_LAPACKMatrix.H"
+#define HOEB_MAX_ORDER 4
+
+namespace hoeb
+{
+  //get the stencil for the laplacian described in Devendran, et al.
+  extern void
+  dharshiLaplStencil(string                                 & a_stencilName,
+                     string                                 & a_ebbcName,
+                     vector<EBIndex<CELL> >                 & a_dstVoFs,
+                     vector<LocalStencil<CELL, Real> >      & a_stencil,
+                     Stencil<Real>                          & a_regStencilInterior,
+                     Proto::Box                             & a_regApplyBox,
+                     Proto::Box                             & a_srcValid,
+                     Proto::Box                             & a_dstValid,
+                     Proto::Box                             & a_srcDomain,
+                     Proto::Box                             & a_dstDomain,
+                     Proto::Point                           & a_srcGhost,
+                     Proto::Point                           & a_dstGhost,
+                     bool                                   & a_irregOnly,
+                     bool                                   & a_needDiagonalWeights,
+                     const shared_ptr<LevelData<EBGraph> >  &  a_graphs,
+                     const Chombo4::DisjointBoxLayout       &  a_grids,
+                     const Chombo4::Box                     &  a_domFine,
+                     const Real                             &  a_dx);
+
+  //return an implicit function based on stuff in the input file
+  extern shared_ptr<BaseIF> getImplicitFunction();
+
+  ///
+  /**
+     Fill in scalar from exactsolutions class
+  */
+  extern void
+  fillPhi(EBLevelBoxData<CELL, 1>                                &  a_phi,
+          const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
+          const Chombo4::DisjointBoxLayout                       &  a_grids,
+          const Chombo4::Box                                     &  a_domFine,
+          const Real                                             &  a_dx,
+          const shared_ptr< GeometryService<HOEB_MAX_ORDER> >    &  a_geoserv);
+
+  /****/
+  extern void
+  restrictKappaLphi(EBLevelBoxData<CELL, 1>                                           &  a_klpFToC,
+                    const EBLevelBoxData<CELL, 1>                                     &  a_klpFine,
+                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+                    const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
+                    const Chombo4::Box                                                &  a_domFine,
+                    const Real                                                        &  a_dxFine,
+                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+                    const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
+                    const Chombo4::Box                                                &  a_domCoar,
+                    const Real                                                        &  a_dxCoar,
+                    const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
+                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
+}
+#endif

@@ -19,118 +19,21 @@
 #include "Proto_DebugHooks.H"
 #include "DebugFunctions.H"
 #include "Hoeb_ExactSolutions.H"
+//this one defines HOEB_MAX_ORDER
+#include "Hoeb_Utilities.H"
 #include <iomanip>
 
-/****/
-void
-defineStencil(string                                 & a_stencilName,
-              string                                 & a_ebbcName,
-              vector<EBIndex<CELL> >                 & a_dstVoFs,
-              vector<LocalStencil<CELL, Real> >      & a_stencil,
-              Stencil<Real>                          & a_regStencilInterior,
-              Proto::Box                             & a_regApplyBox,
-              Proto::Box                             & a_srcValid,
-              Proto::Box                             & a_dstValid,
-              Proto::Box                             & a_srcDomain,
-              Proto::Box                             & a_dstDomain,
-              Proto::Point                           & a_srcGhost,
-              Proto::Point                           & a_dstGhost,
-              bool                                   & a_irregOnly,
-              bool                                   & a_needDiagonalWeights,
-              const shared_ptr<LevelData<EBGraph> >  &  a_graphs,
-              const Chombo4::DisjointBoxLayout       &  a_grids,
-              const Chombo4::Box                     &  a_domFine,
-              const Real                             &  a_dx)
-{
-  ParmParse pp;
-    
-  int dombc = 1;
-  int ebbc  = 1;
-  pp.get("domainBC"  , dombc);
-  pp.get("EBBC"      , ebbc);
-  pout() << "domainBC"  << " = " <<  dombc      << endl;
-  pout() << "EBBC"      << " = " <<  ebbc       << endl;
-  
-  a_needDiagonalWeights = true;
-  a_irregOnly           = true;
-}
-
-
-/****/
-shared_ptr<BaseIF> 
-getImplicitFunction()
-{
-  RealVect center = 0.5*RealVect::Unit();
-  Real radius = 0.1;
-  bool inside = false;
-  ParmParse pp;
-  std::vector<Real> centvec;
-  pp.get("radius", radius);
-  pp.get("inside", inside);
-  pp.getarr("center", centvec, 0, DIM);
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    center[idir] = centvec[idir];
-  }
-  SimpleSphereIF* sphereptr = new SimpleSphereIF(center, radius, inside);
-  shared_ptr<BaseIF> retval(static_cast<BaseIF*>(sphereptr));
-  return retval;
-}
 
 /****/
 void
-fillPhi(EBLevelBoxData<CELL, 1>                        &  a_phi,
-        const shared_ptr<LevelData<EBGraph> >          &  a_graphs,
-        const Chombo4::DisjointBoxLayout               &  a_grids,
-        const Chombo4::Box                             &  a_domFine,
-        const Real                                     &  a_dx,
-        const shared_ptr< GeometryService<2> >         &  a_geoserv)
-{
-        
-}
-/****/
-void
-restrictKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klpFToC,
-                  const EBLevelBoxData<CELL, 1>                          &  a_klpFine,
-                  const shared_ptr<LevelData<EBGraph> >                  &  a_graphsFine,
-                  const Chombo4::DisjointBoxLayout                       &  a_gridsFine,
-                  const Chombo4::Box                                     &  a_domFine,
-                  const Real                                             &  a_dxFine,
-                  const shared_ptr<LevelData<EBGraph> >                  &  a_graphsCoar,
-                  const Chombo4::DisjointBoxLayout                       &  a_gridsCoar,
-                  const Chombo4::Box                                     &  a_domCoar,
-                  const Real                                             &  a_dxCoar,
-                  const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
-                  const shared_ptr< GeometryService<2> >                 &  a_geoserv)
-{
-  std::string  nobcname        = string("no_bcs");
-  std::string  restrictionName = string("Multigrid_Restriction");
-  string dombc[2*DIM];
-  for(unsigned int idom = 0; idom < 2*DIM;  idom++)
-  {
-    dombc[idom] = nobcname;
-  }
-  a_dictionary->registerStencil(restrictionName, dombc, nobcname, a_domFine, a_domCoar, false);
-  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
-  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
-  {
-    auto      & coarfab = a_klpFToC[dit[ibox]];
-    const auto& finefab = a_klpFine[dit[ibox]];
-    auto stencil = a_dictionary->getEBStencil(restrictionName, nobcname, a_domFine, a_domCoar, ibox);
-    //set resc = Ave(resf) (true is initToZero)
-    stencil->apply(coarfab, finefab,  true, 1.0);
-  }
-}
-/****/
-void
-getKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klp,
-             const EBLevelBoxData<CELL, 1>                          &  a_phi,
-             const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
-             const Chombo4::DisjointBoxLayout                       &  a_grids,
-             const Chombo4::Box                                     &  a_domFine,
-             const Real                                             &  a_dx,
-             const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
-             const shared_ptr< GeometryService<2> >                 &  a_geoserv)
+getKappaLphi(EBLevelBoxData<CELL, 1>                                            &  a_klp,
+             const EBLevelBoxData<CELL, 1>                                      &  a_phi,
+             const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+             const Chombo4::DisjointBoxLayout                                   &  a_grids,
+             const Chombo4::Box                                                 &  a_domain,
+             const Real                                                         &  a_dx,
+             const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  &  a_dictionary,
+             const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv)
 {
   string stencilName;
   string ebbcName;
@@ -147,24 +50,25 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klp,
   bool                                  irregOnly;
   bool                                  needDiagonalWeights;
 
-  defineStencil(stencilName,        
-                ebbcName,           
-                dstVoFs,            
-                stencil,            
-                regStencilInterior, 
-                regApplyBox,        
-                srcValid,           
-                dstValid,           
-                srcDomain,          
-                dstDomain,          
-                srcGhost,           
-                dstGhost,
-                irregOnly,
-                needDiagonalWeights,
-                a_graphs,
-                a_grids,
-                a_domFine,
-                a_dx);
+  hoeb::
+  dharshiLaplStencil(stencilName,        
+                     ebbcName,           
+                     dstVoFs,            
+                     stencil,            
+                     regStencilInterior, 
+                     regApplyBox,        
+                     srcValid,           
+                     dstValid,           
+                     srcDomain,          
+                     dstDomain,          
+                     srcGhost,           
+                     dstGhost,
+                     irregOnly,
+                     needDiagonalWeights,
+                     a_graphs,
+                     a_grids,
+                     a_domain,
+                     a_dx);
   
   ///registering stencil
   a_dictionary->registerStencil(stencilName,        
@@ -181,12 +85,12 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klp,
                               dstGhost,
                               irregOnly,
                               needDiagonalWeights);
-  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+  Chombo4::DataIterator dit = a_grids.dataIterator();
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto      & lphfab = a_klp[dit[ibox]];
     const auto& phifab = a_phi[dit[ibox]];
-    auto stencil = a_dictionary->getEBStencil(stencilName, ebbcName, a_domFine, a_domCoar, ibox);
+    auto stencil = a_dictionary->getEBStencil(stencilName, ebbcName, a_domain, a_domain, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(lphfab, phifab,  true, 1.0);
   }
@@ -202,17 +106,17 @@ void subtractionTractionF(Var<Real, 1>    a_error,
 PROTO_KERNEL_END(subtractionTractionF, subtractionTraction)
 /****/
 void
-getKLPhiError(EBLevelBoxData<CELL,   1>                              &  a_errCoar, 
-              const shared_ptr<LevelData<EBGraph> >                  &  a_graphsFine,
-              const Chombo4::DisjointBoxLayout                       &  a_gridsFine,
-              const Chombo4::Box                                     &  a_domFine,
-              const Real                                             &  a_dxFine,
-              const shared_ptr<LevelData<EBGraph> >                  &  a_graphsCoar,
-              const Chombo4::DisjointBoxLayout                       &  a_gridsCoar,
-              const Chombo4::Box                                     &  a_domCoar,
-              const Real                                             &  a_dxCoar,
-              const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
-              const shared_ptr< GeometryService<2> >                 &  a_geoserv)
+getKLPhiError(EBLevelBoxData<CELL,   1>                                           &  a_errCoar, 
+              const shared_ptr<LevelData<EBGraph> >                               &  a_graphsFine,
+              const Chombo4::DisjointBoxLayout                                    &  a_gridsFine,
+              const Chombo4::Box                                                  &  a_domFine,
+              const Real                                                          &  a_dxFine,
+              const shared_ptr<LevelData<EBGraph> >                               &  a_graphsCoar,
+              const Chombo4::DisjointBoxLayout                                    &  a_gridsCoar,
+              const Chombo4::Box                                                  &  a_domCoar,
+              const Real                                                          &  a_dxCoar,
+              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >   &  a_dictionary,
+              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                 &  a_geoserv)
 {
   IntVect dataGhostIV =   4*IntVect::Unit;
   EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, a_graphsFine);
@@ -221,13 +125,13 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                              &  a_errCoa
   EBLevelBoxData<CELL,   1>  klpCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
   EBLevelBoxData<CELL,   1>  klpFtoC(a_gridsCoar, dataGhostIV, a_graphsCoar);
   
-  fillPhi(phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_geoserv);
-  fillPhi(phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_geoserv);
+  hoeb::fillPhi(phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_geoserv);
+  hoeb::fillPhi(phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_geoserv);
 
   getKappaLphi(klpFine, phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_dictionary, a_geoserv);
   getKappaLphi(klpCoar, phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_dictionary, a_geoserv);
 
-  restrictKappaLphi(klpFtoC, klpFine,
+  hoeb::restrictKappaLphi(klpFtoC, klpFine,
                     a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar,
                     a_graphsFine, a_gridsFine, a_domFine, a_dxFine,                    
                     a_dictionary, a_geoserv);
@@ -252,30 +156,22 @@ runTest()
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
-  Real alpha = 1.0;
-  Real beta = -0.001;
     
-
   ParmParse pp;
 
   pp.get("nx"        , nx);
   pp.get("max_grid"  , maxGrid);
-  pp.get("alpha"     , alpha);
-  pp.get("beta"      , beta);
   pp.get("coveredval", coveredval);         
 
 
   pout() << "nx"        << " = " <<  nx         << endl;
   pout() << "max_grid"  << " = " <<  maxGrid    << endl;
-  pout() << "alpha"     << " = " <<  alpha      << endl;
-  pout() << "beta"      << " = " <<  beta       << endl;
   pout() << "coveredval"<< " = " <<  coveredval << endl;         
   
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
-// EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
 
   Vector<Chombo4::DisjointBoxLayout> vecgrids;
@@ -290,7 +186,7 @@ runTest()
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   
-  shared_ptr<BaseIF>    impfunc = getImplicitFunction();
+  shared_ptr<BaseIF>    impfunc = hoeb::getImplicitFunction();
   pout() << "defining geometry" << endl;
   Real dx = 1.0/(Real(nx));
   vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
@@ -304,9 +200,11 @@ runTest()
   Real dxFine = vecdx[0];
   Real dxMedi = vecdx[1];
   Real dxCoar = vecdx[2];
-  GeometryService<2>* geomptr =
-    new GeometryService<2>(impfunc, origin, dxFine, domain.domainBox(), vecgrids, geomGhost);
-  shared_ptr< GeometryService<2> >  geoserv(geomptr);
+  GeometryService<HOEB_MAX_ORDER>* geomptr =
+    new GeometryService<HOEB_MAX_ORDER>
+    (impfunc, origin, dxFine, domain.domainBox(), vecgrids, geomGhost);
+  
+  shared_ptr< GeometryService<HOEB_MAX_ORDER> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
 
@@ -319,8 +217,9 @@ runTest()
   shared_ptr<LevelData<EBGraph> > graphsCoar = geoserv->getGraphs(domCoar);
 
   
-  shared_ptr<EBDictionary<2, Real, CELL, CELL> >  dictionary
-    (new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
+  shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  dictionary
+    (new     EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL>
+     (geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
   EBLevelBoxData<CELL,   1>  errMedi(gridsMedi, dataGhostIV, graphsMedi);
   EBLevelBoxData<CELL,   1>  errCoar(gridsCoar, dataGhostIV, graphsCoar);
