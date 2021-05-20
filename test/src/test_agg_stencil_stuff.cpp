@@ -123,7 +123,9 @@ void test_agg_stencil_get_back_data(pairPtr<double>& a_host, pairPtr<double>& a_
 
   protoMemcpy(MEMTYPE_DEFAULT, a_host.ptr[0],a_devi.ptr[0],a_size*sizeof(double),protoMemcpyDeviceToHost);
   protoMemcpy(MEMTYPE_DEFAULT, a_host.ptr[1],a_devi.ptr[1],a_size*sizeof(double),protoMemcpyDeviceToHost);
+#ifdef PROTO_CUDA
   protoDeviceSynchronizeGPU();
+#endif
 }
 
 bool test_answer_kernel_only_using(pairPtr<double>& a_res, double a_val0, double a_val1, unsigned int a_size)
