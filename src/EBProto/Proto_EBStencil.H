@@ -19,6 +19,9 @@
 #include <implem/Proto_StencilImplem.H>
 #include <implem/Proto_FusedStencil.H>
 
+//for HOEB
+#include "hoeb/Proto_EBStencilHO.H"
+
 using std::shared_ptr;
 using std::vector;
 
@@ -36,6 +39,7 @@ namespace Proto
 
   public:
     typedef EBStencilArchive<srcCenter, dstCenter, order, data_t> archive_t;
+    typedef EBStencilHO<srcCenter, dstCenter, order, data_t> ho_t;
 
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
@@ -73,6 +77,10 @@ namespace Proto
               bool a_needDiagonalWeights = false,
               Point a_growDst = Point::Zeros());
 
+    /// internal constructor
+   /** 
+       This constructor is specifically for Weighted Least Squares stencils 
+   */
     EBStencil(string              a_stencilName,
               string              a_domainBCName[2*DIM],
               string              a_ebbcName,
