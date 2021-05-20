@@ -770,7 +770,6 @@ namespace Proto
     Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
     Vector<double> ebfneighFrac = a_neigh.m_ebfneighFrac;
     Vector<double> facneighFrac = a_neigh.m_facneighFrac;
-    PolynomialEF<order> phigen(m_entries);
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     Vector<Real> domBCValues, ebBCValues;
@@ -788,7 +787,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
 					       a_faceLocDiff,
 					       a_faceDir,
-					       phigen,
+					       m_exactSol,
 					       a_dx);
       }
       else if(a_dombcName[index] == string("Dirichlet"))
@@ -797,7 +796,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
 					       a_faceLocDiff,
 					       a_faceDir,
-					       phigen,
+					       m_exactSol,
 					       a_dx);
       }
       else
@@ -825,7 +824,7 @@ namespace Proto
         ebBCValues[ivof] = NeumannExactSoln<order>::
                                getEBIntegral(a_ebfneighNorm[ivof],
 				             a_ebfLocDiff,
-					     phigen,
+					     m_exactSol,
 				             a_dx);
       }
       else if(a_ebbcName == string("Dirichlet"))
@@ -833,7 +832,7 @@ namespace Proto
         ebBCValues[ivof] = DirichletExactSoln<order>::
                                getEBIntegral(a_ebfmom[ivof],
 				             a_ebfLocDiff,
-					     phigen,
+					     m_exactSol,
 				             a_dx);
       }
       else
@@ -1287,11 +1286,10 @@ namespace Proto
         {
           faceLoc[idir] = a_dx * (0.5 + cutface.m_pt[idir]);
         }
-        PolynomialEF<order> phigen(a_ebflux.m_entries);
 	inhomogTerm = NeumannExactSoln<order>::
                                getEBIntegral(ebnorm,
                                              faceLoc,
-					     phigen,
+					     a_ebflux.m_exactSol,
                                              a_dx);
 	inhomogTerm = inhomogTerm/(areaScaleFactor);
 
@@ -1457,7 +1455,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-		  PolynomialEF<order>   & a_phigen,
+                  const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	          const Real              a_dx)  
   {
     Real retval = 0.0;
@@ -1486,7 +1484,7 @@ namespace Proto
       Real moment = a_faceMom[pSDMinOne];
  
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*m_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
     }
   
     return retval;
@@ -1500,7 +1498,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		  const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-		  PolynomialEF<order>   & a_phigen,
+                  const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	          const Real              a_dx) 
   {
     Real retval = 0.0;
@@ -1528,7 +1526,7 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
 
-      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_phigen.getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*m_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
 
     }
 
@@ -1542,7 +1540,7 @@ namespace Proto
   DirichletExactSoln<order>::
   getEBIntegral(const IndMomDIM  & a_ebfMom,
 		const RealVect   & a_ebfLoc,
-		PolynomialEF<order>   & a_phigen,
+		const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	        const Real         a_dx) 
   {
 
@@ -1555,7 +1553,7 @@ namespace Proto
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      retval += moment*(areaScaleFactor*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,p))*m_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
 
     }
 
@@ -1569,7 +1567,7 @@ namespace Proto
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
 		const RealVect           & a_ebfLoc,
-		PolynomialEF<order>      & a_phigen,
+		const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	        const Real                 a_dx) 
   {
 
@@ -1588,7 +1586,7 @@ namespace Proto
 	  IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
 	  Real moment = a_ebfNormalMom[ndir][pShift];
   
-          retval += pd*moment*(areaScaleFactor*POW(a_dx,p))*a_phigen.getDerivative(p,a_ebfLoc)/(p.factorial());
+          retval += pd*moment*(areaScaleFactor*POW(a_dx,p))*m_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
 	}
       }
     }

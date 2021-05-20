@@ -162,38 +162,18 @@ namespace Proto
 
     int radius = 2;
     int powerE = -3;
-    int num_mono = 0;
     bool verbose = 0;
+    int exactSolution = 1;
     Vector<int> ptVec;
-    Vector<int> phiPowerX;
-    Vector<int> phiPowerY;
-    Vector<int> phiPowerZ;
-    Vector<Real> phiCoef;
 
     //Reading parameters from the inputs file for WLS stencils
     ParmParse pp;
     pp.get("radius"   , radius);
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
-    pp.get("phi_num_mono"   , num_mono);
-    pp.getarr("phi_power_x",phiPowerX,0,num_mono);
-    pp.getarr("phi_power_y",phiPowerY,0,num_mono);
-    pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
-    pp.getarr("phi_coef",phiCoef,0,num_mono);
 
-    vector<pair<Point, Real> > entries;
-    for (int i=0; i<num_mono; i++)
-    {
-      std::pair<Point, Real> mono;
-      mono.first = Point::Zeros();
-      mono.first[0] = phiPowerX[i];
-      mono.first[1] = phiPowerY[i];
-#if DIM==3
-      mono.first[2] = phiPowerZ[i];
-#endif
-      mono.second = phiCoef[i];
-      entries.push_back(mono);
-    }
+    //Exact solution
+    pp.get("exact_solution",exactSolution);
 
     if (verbose)
     {
@@ -246,10 +226,10 @@ namespace Proto
       }
 
       //Creating the WLS fluxes needed for flux diveregence
-      BaseWLSFlux<XFACE, order> xflux(radius, powerE, entries, pt_verbose);
-      BaseWLSFlux<YFACE, order> yflux(radius, powerE, entries, pt_verbose);
-      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, entries, pt_verbose);
-      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, entries, pt_verbose);
+      BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
+      BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
+      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
+      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
       Real inhoTerm = 0.0;
 
       //Computing the flux divergence stencil

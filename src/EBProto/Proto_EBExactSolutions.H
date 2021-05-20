@@ -843,4 +843,160 @@ private:
   }
 };
 
+///class where phi is a product of one dimensional cosines
+template <unsigned int order>
+class OneDimCosProduct: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*cos(pi*m1*(x-x0))*cos(pi*m2*(y-y0))*cos(pi*m3*(z-z0))
+      a_amp = A
+      a_freq = (m1,m2,m3)
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x0)
+  {
+    Real retval = m_amp;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      Real prefix = 1.0;
+      for(int ipre = 0; ipre < a_p[idir]; ipre++)
+      {
+        prefix *= m_PI*m_freq[idir];
+      }          
+      if(a_p[idir]%2 == 0)
+      {
+        retval *= pow(-1.,a_p[idir]/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+      } 
+      else
+      {
+        retval *= pow(-1.,(a_p[idir]+1)/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+      } 
+    }
+  
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+  {
+    Real retval = 1.;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      Real xdiff = a_x[idir] - m_center[idir];
+
+      Real arg = xdiff*m_PI*m_freq[idir];
+      Real factor= cos(arg);
+      retval *= factor;
+    }
+    return retval;
+  }
+
+  virtual ~OneDimCosProduct()
+  {
+  }
+
+  OneDimCosProduct(Real     a_amp,
+                   IntVect  a_freq,
+                   RealVect a_center)
+  {   
+    m_amp = a_amp;
+    m_freq = a_freq;
+    m_center = a_center;
+  } 
+
+private:
+  Real      m_amp;
+  IntVect   m_freq;
+  RealVect  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  OneDimCosProduct()
+  {
+  }
+};
+
+///class where phi is a product of one dimensional sines
+template <unsigned int order>
+class OneDimSinProduct: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*sin(pi*m1*(x-x0))*sin(pi*m2*(y-y0))*sin(pi*m3*(z-z0))
+      a_amp = A
+      a_freq = (m1,m2,m3)
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x0)
+  {
+    Real retval = m_amp;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      Real prefix = 1.0;
+      for(int ipre = 0; ipre < a_p[idir]; ipre++)
+      {
+        prefix *= m_PI*m_freq[idir];
+      }
+      if(a_p[idir]%2 == 0)
+      {
+        retval *= pow(-1.,a_p[idir]/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+      }
+      else
+      {
+        retval *= pow(-1.,(a_p[idir]-1)/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+      }
+    }
+  
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+  {
+    Real retval = 1.;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      Real xdiff = a_x[idir] - m_center[idir];
+
+      Real arg = xdiff*m_PI*m_freq[idir];
+      Real factor= sin(arg);
+      retval *= factor;
+    }
+    return retval;
+  }
+
+  virtual ~OneDimSinProduct()
+  {
+  }
+
+  OneDimSinProduct(Real     a_amp,
+                   IntVect  a_freq,
+                   RealVect a_center)
+  {   
+    m_amp = a_amp;
+    m_freq = a_freq;
+    m_center = a_center;
+  } 
+
+private:
+  Real      m_amp;
+  IntVect   m_freq;
+  RealVect  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  OneDimSinProduct()
+  {
+  }
+};
+
 #endif

@@ -432,13 +432,65 @@ namespace Proto
 
     BaseWLSFlux(int          & a_radius,
 		int          & a_powerE,
-		vector<pair<Point, Real> > & a_entries,
+		int          & a_exactSolFun,
 		bool           a_verbose=false)
     {
       m_radius = a_radius;
       m_powerE = a_powerE;
       m_verbose = a_verbose;
-      m_entries = a_entries;
+      ParmParse pp;
+
+      if (a_exactSolFun == 1)
+      {
+        Vector<int> phiPowerX; 
+        Vector<int> phiPowerY;
+        Vector<int> phiPowerZ; 
+        Vector<Real> phiCoef;
+        int num_mono = 0;
+
+        pp.get("phi_num_mono"   , num_mono);
+        pp.getarr("phi_power_x",phiPowerX,0,num_mono);
+        pp.getarr("phi_power_y",phiPowerY,0,num_mono);
+        pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
+        pp.getarr("phi_coef",phiCoef,0,num_mono);
+    
+        vector<pair<Point, Real> > entries;
+        for (int i=0; i<num_mono; i++)
+        {
+          std::pair<Point, Real> mono;
+          mono.first = Point::Zeros();
+          mono.first[0] = phiPowerX[i];
+          mono.first[1] = phiPowerY[i];
+#if DIM==3
+          mono.first[2] = phiPowerZ[i];
+#endif
+          mono.second = phiCoef[i];
+          entries.push_back(mono);
+        }
+
+        m_exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
+      }
+      else if (a_exactSolFun == 2 || a_exactSolFun == 3)
+      {
+        Real amplitude;
+        pp.get("phi_amp",amplitude);
+  
+        IntVect frequency;
+        RealVect center;
+        Vector<int> freqVec;
+        Vector<Real> centerVec;
+  
+        pp.getarr("phi_freq",freqVec,0,DIM);
+        pp.getarr("phi_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          frequency[idir] = freqVec[idir];
+          center[idir] = centerVec[idir];
+        }
+
+        if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+        if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+      }
     }
 
     //Radius needed for neighbors list around a face (Manhattan style)
@@ -447,8 +499,8 @@ namespace Proto
     int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
-    //Entries for polynomial exact solution generator
-    vector<pair<Point, Real> > m_entries;
+    //Exact solution calss holding different function types
+    shared_ptr<BaseExactSolution<order> >  m_exactSol;
     
   };
   
@@ -573,13 +625,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-		                       PolynomialEF<order>   & a_phigen,
+				       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
                                        const Real              a_dx);
 
     //getIntegralPhiAlongEB
     inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
                                      const RealVect   & a_ebfLoc,
-		                     PolynomialEF<order>   & a_phigen,
+				     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
                                      const Real         a_dx); 
   
   };
@@ -605,13 +657,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
 		                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-		                       PolynomialEF<order>   & a_phigen,
+				       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 		                       const Real              a_dx); 
 
     //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
-		                     PolynomialEF<order>     & a_phigen,
+				     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
                                      const Real                a_dx);
  
   };
