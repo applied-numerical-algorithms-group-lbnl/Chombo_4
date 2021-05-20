@@ -663,6 +663,7 @@ namespace Proto
 
       size_t align = sizeof(data_t);
       if(retval % align != 0) retval = (retval/ align + 1) * align;
+
       return retval;
     }
 
