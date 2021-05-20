@@ -33,6 +33,9 @@ namespace StencilNames
      Add the radius to get the stencil for ncdiv = sum_rad (kappa div)/sum_rad(kappa)
   */
   static const string NCDivergeRoot("Volume_Weighted_Averaging_rad_"); 
+
+  //restriction assuming quantity is already kappa weighted.
+  static const string MultigridRestriction("Multigrid_Restriction");
   
   ///for correcting tangential velocity at faces
   static const string TanVelCorrect("Tangential_Velocity_Correction");

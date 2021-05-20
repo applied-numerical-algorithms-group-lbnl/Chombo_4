@@ -23,20 +23,24 @@
 
 /****/
 void
-defineStencil(string                                   & a_stencilName,
-              string                                   & a_ebbcName,
-              vector<EBIndex<CELL> >                   & a_dstVoFs,
-              vector<LocalStencil<CELL, Real> >        & a_stencil,
-              Stencil<Real>                            & a_regStencilInterior,
-              Proto::Box                               & a_regApplyBox,
-              Proto::Box                               & a_srcValid,
-              Proto::Box                               & a_dstValid,
-              Proto::Box                               & a_srcDomain,
-              Proto::Box                               & a_dstDomain,
-              Proto::Point                             & a_srcGhost,
-              Proto::Point                             & a_dstGhost,
-              bool                                     & a_irregOnly,
-              bool                                     & a_needDiagonalWeights)
+defineStencil(string                                 & a_stencilName,
+              string                                 & a_ebbcName,
+              vector<EBIndex<CELL> >                 & a_dstVoFs,
+              vector<LocalStencil<CELL, Real> >      & a_stencil,
+              Stencil<Real>                          & a_regStencilInterior,
+              Proto::Box                             & a_regApplyBox,
+              Proto::Box                             & a_srcValid,
+              Proto::Box                             & a_dstValid,
+              Proto::Box                             & a_srcDomain,
+              Proto::Box                             & a_dstDomain,
+              Proto::Point                           & a_srcGhost,
+              Proto::Point                           & a_dstGhost,
+              bool                                   & a_irregOnly,
+              bool                                   & a_needDiagonalWeights,
+              const shared_ptr<LevelData<EBGraph> >  &  a_graphs,
+              const Chombo4::DisjointBoxLayout       &  a_grids,
+              const Chombo4::Box                     &  a_domFine,
+              const Real                             &  a_dx)
 {
   ParmParse pp;
     
@@ -50,204 +54,6 @@ defineStencil(string                                   & a_stencilName,
   a_needDiagonalWeights = true;
   a_irregOnly           = true;
 }
-/**
-{
-  string stencilName;
-  string ebbcName;
-  vector<     EBIndex<CELL>  >          dstVoFs;
-  vector<LocalStencil<CELL, Real> >     stencil;
-  Stencil<Real>                         regStencilInterior;
-  Proto::Box                            regApplyBox;
-  Proto::Box                            srcValid;
-  Proto::Box                            dstValid;
-  Proto::Box                            srcDomain;
-  Proto::Box                            dstDomain;
-  Point                                 srcGhost;
-  Point                                 dstGhost;
-  bool                                  irregOnly;
-  bool                                  needDiagonalWeights;
-
-  defineStencil(stencilName,        
-                ebbcName,           
-                dstVoFs,            
-                stencil,            
-                regStencilInterior, 
-                regApplyBox,        
-                srcValid,           
-                dstValid,           
-                srcDomain,          
-                dstDomain,          
-                srcGhost,           
-                dstGhost,
-                irregOnly,
-                needDiagonalWeights);
-  
-  ///registering stencil
-  dictionary->registerStencil(stencilName,        
-                              ebbcName,           
-                              dstVoFs,            
-                              stencil,            
-                              regStencilInterior, 
-                              regApplyBox,        
-                              srcValid,           
-                              dstValid,           
-                              srcDomain,          
-                              dstDomain,          
-                              srcGhost,           
-                              dstGhost,
-                              irregOnly,
-                              needDiagonalWeights);
-  
-  
-  Chombo4::Box dombox = domain.domainBox();
-  pout() << "making data" << endl;
-  EBLevelBoxData<CELL,   1>  error(grids, dataGhostIV, graphs);
-
-  fillData(phiexac, lphexac); 
-
-
-  pout() << "writing to file " << endl;
-  
-  
-  pout() << "exiting " << endl;
-  return 0;
-}
-**/
-/****/
-
-
-//int
-//runTest()
-//{
-//  Real coveredval = -1;
-//  int nx      = 32;
-//  int maxGrid = 32;
-//  Real alpha = 1.0;
-//  Real beta = -0.001;
-//    
-//
-//  ParmParse pp;
-//
-//  pp.get("nx"        , nx);
-//  pp.get("max_grid"  , maxGrid);
-//  pp.get("alpha"     , alpha);
-//  pp.get("beta"      , beta);
-//  pp.get("coveredval", coveredval);         
-//
-//
-//  pout() << "nx"        << " = " <<  nx         << endl;
-//  pout() << "max_grid"  << " = " <<  maxGrid    << endl;
-//  pout() << "alpha"     << " = " <<  alpha      << endl;
-//  pout() << "beta"      << " = " <<  beta       << endl;
-//  pout() << "coveredval"<< " = " <<  coveredval << endl;         
-//  
-//
-//  IntVect domLo = IntVect::Zero;
-//  IntVect domHi  = (nx - 1)*IntVect::Unit;
-//
-//// EB and periodic do not mix
-//  Chombo4::ProblemDomain domain(domLo, domHi);
-//
-//  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-//  pout() << "making grids" << endl;
-//  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
-//
-//  Chombo4::DisjointBoxLayout grids = vecgrids[0];
-//  grids.printBalance();
-//
-//  IntVect dataGhostIV =   2*IntVect::Unit;
-//  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-//  int geomGhost = 4;
-//  RealVect origin = RealVect::Zero();
-//  Real dx = 1.0/nx;
-////  Real dx = 1.0;
-//  shared_ptr<BaseIF>    impfunc = getImplicitFunction();
-////  Bx domainpr = getProtoBox(domain.domainBox());
-//
-//  pout() << "defining geometry" << endl;
-//  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
-////  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids[0], geomGhost);
-//  shared_ptr< GeometryService<2> >  geoserv(geomptr);
-//
-//  pout() << "making dictionary" << endl;
-//
-//  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
-//  vector<Real>   vecdx    (vecgrids.size(), dx);
-//  for(int ilev = 1; ilev < vecgrids.size(); ilev++)
-//  {
-//    vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
-//    vecdx    [ilev] =           2*vecdx[ilev-1];
-//  }
-//  shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-//    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
-//
-//  string stencilName;
-//  string ebbcName;
-//  vector<     EBIndex<CELL>  >          dstVoFs;
-//   vector<LocalStencil<CELL, Real> >     stencil;
-//  Stencil<Real>                         regStencilInterior;
-//  Proto::Box                            regApplyBox;
-//  Proto::Box                            srcValid;
-//  Proto::Box                            dstValid;
-//  Proto::Box                            srcDomain;
-//  Proto::Box                            dstDomain;
-//  Point                                 srcGhost;
-//  Point                                 dstGhost;
-//  bool                                  irregOnly;
-//  bool                                  needDiagonalWeights;
-//
-//  defineStencil(stencilName,        
-//                ebbcName,           
-//                dstVoFs,            
-//                stencil,            
-//                regStencilInterior, 
-//                regApplyBox,        
-//                srcValid,           
-//                dstValid,           
-//                srcDomain,          
-//                dstDomain,          
-//                srcGhost,           
-//                dstGhost,
-//                irregOnly,
-//                needDiagonalWeights);
-//  
-//  ///registering stencil
-//  dictionary->registerStencil(stencilName,        
-//                              ebbcName,           
-//                              dstVoFs,            
-//                              stencil,            
-//                              regStencilInterior, 
-//                              regApplyBox,        
-//                              srcValid,           
-//                              dstValid,           
-//                              srcDomain,          
-//                              dstDomain,          
-//                              srcGhost,           
-//                              dstGhost,
-//                              irregOnly,
-//                              needDiagonalWeights);
-//  
-//  
-//  Chombo4::Box dombox = domain.domainBox();
-//  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
-//
-//  pout() << "making data" << endl;
-//  EBLevelBoxData<CELL,   1>  phiexac(grids, dataGhostIV, graphs);
-//  EBLevelBoxData<CELL,   1>  lphcalc(grids, dataGhostIV, graphs);
-//  EBLevelBoxData<CELL,   1>  lphexac(grids, dataGhostIV, graphs);
-//  EBLevelBoxData<CELL,   1>  error(grids, dataGhostIV, graphs);
-//
-//  fillData(phiexac, lphexac); 
-//
-//
-//  pout() << "writing to file " << endl;
-//  
-//  
-//  pout() << "exiting " << endl;
-//  return 0;
-//}
-//
-
 
 
 /****/
@@ -297,7 +103,23 @@ restrictKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_kl
                   const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
                   const shared_ptr< GeometryService<2> >                 &  a_geoserv)
 {
-        
+  std::string  nobcname        = string("no_bcs");
+  std::string  restrictionName = string("Multigrid_Restriction");
+  string dombc[2*DIM];
+  for(unsigned int idom = 0; idom < 2*DIM;  idom++)
+  {
+    dombc[idom] = nobcname;
+  }
+  a_dictionary->registerStencil(restrictionName, dombc, nobcname, a_domFine, a_domCoar, false);
+  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto      & coarfab = a_klpFToC[dit[ibox]];
+    const auto& finefab = a_klpFine[dit[ibox]];
+    auto stencil = a_dictionary->getEBStencil(restrictionName, nobcname, a_domFine, a_domCoar, ibox);
+    //set resc = Ave(resf) (true is initToZero)
+    stencil->apply(coarfab, finefab,  true, 1.0);
+  }
 }
 /****/
 void
@@ -310,7 +132,64 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                &  a_klp,
              const shared_ptr<EBDictionary<2, Real, CELL, CELL> >   &  a_dictionary,
              const shared_ptr< GeometryService<2> >                 &  a_geoserv)
 {
-        
+  string stencilName;
+  string ebbcName;
+  vector<     EBIndex<CELL>  >          dstVoFs;
+  vector<LocalStencil<CELL, Real> >     stencil;
+  Stencil<Real>                         regStencilInterior;
+  Proto::Box                            regApplyBox;
+  Proto::Box                            srcValid;
+  Proto::Box                            dstValid;
+  Proto::Box                            srcDomain;
+  Proto::Box                            dstDomain;
+  Point                                 srcGhost;
+  Point                                 dstGhost;
+  bool                                  irregOnly;
+  bool                                  needDiagonalWeights;
+
+  defineStencil(stencilName,        
+                ebbcName,           
+                dstVoFs,            
+                stencil,            
+                regStencilInterior, 
+                regApplyBox,        
+                srcValid,           
+                dstValid,           
+                srcDomain,          
+                dstDomain,          
+                srcGhost,           
+                dstGhost,
+                irregOnly,
+                needDiagonalWeights,
+                a_graphs,
+                a_grids,
+                a_domFine,
+                a_dx);
+  
+  ///registering stencil
+  a_dictionary->registerStencil(stencilName,        
+                              ebbcName,           
+                              dstVoFs,            
+                              stencil,            
+                              regStencilInterior, 
+                              regApplyBox,        
+                              srcValid,           
+                              dstValid,           
+                              srcDomain,          
+                              dstDomain,          
+                              srcGhost,           
+                              dstGhost,
+                              irregOnly,
+                              needDiagonalWeights);
+  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    auto      & lphfab = a_klp[dit[ibox]];
+    const auto& phifab = a_phi[dit[ibox]];
+    auto stencil = a_dictionary->getEBStencil(stencilName, ebbcName, a_domFine, a_domCoar, ibox);
+    //set resc = Ave(resf) (true is initToZero)
+    stencil->apply(lphfab, phifab,  true, 1.0);
+  }
 }
 /*******/ 
 PROTO_KERNEL_START 
