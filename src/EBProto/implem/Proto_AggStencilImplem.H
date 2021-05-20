@@ -360,29 +360,6 @@ struct pairPtr{
  };
 /////
 
-  inline void v100tuning(int nbElems, int & nbBlocks, int &blockSize)
-  {
-    // determine the best block size and block dim
-    blockSize = 256;
-    nbBlocks = ( nbElems + blockSize - 1)/ blockSize;
-    if(nbBlocks < 80)
-    {
-      // On V100 we want at least 80 blocks;
-      nbBlocks = 80;
-      // figure out what is the blockSize for 80 blocks
-      // 
-      blockSize = ( nbElems + nbBlocks - 1) / nbBlocks;
-      // as we use __syncthreads(), we want that stride modulo 32 is equal to 0
-      int coeff = blockSize / 32;
-      if(coeff > 0)
-      {
-        blockSize = coeff * 32;
-        // recompute the number of blocks > 80
-        nbBlocks = ( nbElems + blockSize - 1) / nbBlocks;
-      }
-    }
-  }
-
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
   void 
   AggStencil<    srcCenter, dstCenter, data_t>::
