@@ -1,9 +1,106 @@
-#-on_error_attach_debugger
-#-ksp_monitor
 -ksp_converged_reason
-#-mat_view :a.m:ascii_matlab
 -ksp_max_it 10000
 -ksp_rtol 1.0e-16
--pc_type gamg
+-pc_type hypre
 -pc_gamg_sym_graph true
-
+#
+#-on_error_attach_debugger
+#-ksp_monitor
+#-memory_info
+##-malloc_log
+##-proj_mac_pc_mg_type full
+##-proj_mac_pc_mg_cycle_type w
+#-proj_mac_ksp_type gmres
+#-proj_mac_ksp_max_it 50
+#-proj_mac_ksp_rtol 1.e-12
+#-proj_mac_ksp_norm_type unpreconditioned
+#-proj_mac_ksp_converged_reason
+#-proj_mac_ksp_monitor_max
+##-proj_mac_pc_type gamg
+#-proj_mac_pc_type hypre
+#-proj_mac_pc_gamg_sym_graph true
+#-proj_mac_pc_gamg_square_graph 20
+#-proj_mac_pc_gamg_type agg
+#-proj_mac_pc_gamg_repartition false
+##-proj_mac_pc_gamg_process_eq_limit 1
+##-proj_mac_pc_gamg_coarse_eq_limit 1
+#-proj_mac_pc_gamg_agg_nsmooths 1
+##-proj_mac_mg_levels_ksp_type chebyshev
+#-proj_mac_mg_levels_ksp_type richardson
+#-proj_mac_mg_levels_ksp_richardson_scale 0.9
+##-proj_mac_mg_levels_ksp_chebyshev_estimate_eigenvalues 0,0.1,0,1.1
+#-proj_mac_mg_levels_pc_type sor
+##-proj_mac_mg_levels_pc_type jacobi
+#-proj_mac_mg_levels_ksp_max_it 1
+#-proj_mac_pc_gamg_threshold .02
+#-proj_mac_pc_gamg_verbose 2
+##-proj_mac_ksp_view
+##-proj_mac_pc_mg_log
+##-proj_mac_pc_gamg_use_agg_gasm true
+##-proj_mac_gamg_est_ksp_view
+#-proj_mac_gamg_est_ksp_max_it 20
+##-proj_mac_gamg_est_ksp_type gmres
+#-proj_mac_gamg_est_ksp_gmres_restart 50
+#-proj_mac_pc_hypre_type boomeramg
+#-proj_mac_pc_hypre_boomeramg_no_CF true
+#-proj_mac_pc_hypre_boomeramg_agg_nl 1
+#-proj_mac_pc_hypre_boomeramg_coarsen_type HMIS
+#-proj_mac_pc_hypre_boomeramg_interp_type ext+i
+##-proj_mac_pc_hypre_boomeramg_P_max 4
+##-proj_mac_pc_hypre_boomeramg_agg_num_paths 2
+##-proj_mac_pc_hypre_boomeramg_print_statistics
+##-proj_mac_pc_hypre_boomeramg_relax_type_coarse symmetric-SOR/Jacobi
+##-proj_mac_pc_hypre_boomeramg_grid_sweeps_coarse 4
+#-proj_mac_pc_ml_Threshold 0.01
+#-proj_mac_pc_ml_EnergyMinimization 2
+#-proj_mac_pc_ml_PrintLevel 1
+##-mat_ascii_output_large
+##-mat_view_matlab
+#-visc_ksp_max_it 50
+#-visc_ksp_rtol 1.e-12
+#-visc_ksp_converged_reason
+#-visc_ksp_monitor_max
+#-visc_ksp_norm_type unpreconditioned
+#-visc_pc_type jacobi
+#-visc_pc_gamg_sym_graph true
+#-visc_pc_gamg_square_graph true
+#-visc_pc_gamg_type agg
+#-visc_pc_gamg_repartition false
+#-visc_pc_gamg_agg_nsmooths 1
+#-visc_mg_levels_ksp_type richardson
+#-visc_mg_levels_pc_type sor
+#-visc_mg_levels_ksp_max_it 1
+#-visc_pc_gamg_threshold .02
+#-visc_pc_hypre_type boomeramg
+#-visc_pc_hypre_boomeramg_no_CF true
+#-visc_pc_hypre_boomeramg_agg_nl 1
+#-visc_pc_hypre_boomeramg_coarsen_type HMIS
+#-visc_pc_hypre_boomeramg_interp_type ext+i
+##-visc_ksp_view
+#-diff_ksp_max_it 50
+#-diff_ksp_rtol 1.e-12
+#-diff_ksp_converged_reason
+#-diff_ksp_monitor_max
+#-diff_ksp_norm_type unpreconditioned
+#-diff_pc_type jacobi
+#-diff_pc_gamg_sym_graph true
+#-diff_pc_gamg_square_graph true
+#-diff_pc_gamg_type agg
+#-diff_pc_gamg_repartition false
+#-diff_pc_gamg_agg_nsmooths 1
+#-diff_mg_levels_ksp_type richardson
+#-diff_mg_levels_pc_type sor
+#-diff_mg_levels_ksp_max_it 1
+#-diff_pc_gamg_threshold .02
+#-diff_pc_hypre_type boomeramg
+#-diff_pc_hypre_boomeramg_no_CF true
+#-diff_pc_hypre_boomeramg_agg_nl 1
+#-diff_pc_hypre_boomeramg_coarsen_type HMIS
+#-diff_pc_hypre_boomeramg_interp_type ext+i
+#-log_summary
+#-matrap false
+##-info
+#-options_left
+##-help
+#
+#

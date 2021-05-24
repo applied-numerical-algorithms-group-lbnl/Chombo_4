@@ -308,6 +308,12 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
 {
 
   CH_TIME("local copying");
+#ifdef cudaGraph
+#ifdef PROTO_CUDA
+  Copier* copier = const_cast<Copier*> (&a_copier) ; 
+  CUDAGRAPH& test = copier->getCudaGraph();
+
+  auto testFunc = [&] () {
   CopyIterator it(a_copier, CopyIterator::LOCAL);  
   int items=it.size();
 #ifdef _OPENMP
@@ -325,7 +331,33 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
             a_srcComps);
 
   }
+  };
+
+  test.capture(testFunc);
+  test.launch();
+#endif
+#else
+  CopyIterator it(a_copier, CopyIterator::LOCAL);  
+  int items=it.size();
+#ifdef _OPENMP
+  bool threadSafe = m_threadSafe && (a_op.threadSafe());
+#endif
+
+  for (int n=0; n<items; n++)
+  {
+    const MotionItem& item = it[n];
+
+    a_op.op(a_dest[item.toIndex], item.fromRegion,
+            a_destComps,
+            item.toRegion,
+            a_src[item.fromIndex],
+            a_srcComps);
+  }
+#endif
 }
+
+
+
 
 template<class T>
 void BoxLayoutData<T>::makeItSoEnd(
@@ -586,7 +618,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree((m_buff->m_sendbuffer));
+      protoFree(MEMTYPE_DEFAULT,(m_buff->m_sendbuffer));
     }
     else
     {
@@ -601,7 +633,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA 
     if(T::memTypeAllocation())  
     {
-      protoMalloc(m_buff->m_sendbuffer,sendBufferSize);
+      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
@@ -622,7 +654,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree(m_buff->m_recbuffer);
+      protoFree(MEMTYPE_DEFAULT,m_buff->m_recbuffer);
     }
     else
     {
@@ -637,7 +669,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoMalloc(m_buff->m_recbuffer,recBufferSize);
+      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_recbuffer,recBufferSize);
     }
     else
     {
@@ -694,6 +726,28 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
                                                       const LDOperator<T>& a_op) const
 {
   CH_TIME("write Data to buffers");
+
+#ifdef cudaGraph
+#ifdef PROTO_CUDA
+  BoxLayoutData<T>* buff = const_cast<BoxLayoutData<T>*> (&a_copier) ; 
+  CUDAGRAPH& test = buff->getCudaGraphLinearIn();
+
+  auto testFunc = [&] () {
+    int isize = m_buff->m_fromMe.size();
+
+    for (unsigned int i=0; i< isize; ++i)
+    {
+      const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[i];
+      a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
+                   entry.item->fromRegion, a_srcComps);
+    }
+  };
+
+  test.capture(testFunc);
+  test.launch();
+#endif
+#else
+
   int isize = m_buff->m_fromMe.size();
 
   for (unsigned int i=0; i< isize; ++i)
@@ -702,6 +756,7 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
     a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
                    entry.item->fromRegion, a_srcComps);
   }
+#endif
 }
 
 template<class T>
@@ -728,7 +783,7 @@ void BoxLayoutData<T>::postSendsFromMe() const
   m_buff->m_sendRequests.resize(this->m_buff->numSends);
   std::list<MPI_Request> extraRequests;
 
-  protoDeviceSynchronize();
+  protoDeviceSynchronize(T::memTypeAllocation());
 
   unsigned int next=0;
   long long maxSize = 0;
@@ -853,6 +908,33 @@ void BoxLayoutData<T>::unpackReceivesToMe(
       //hell if I know what to do about failed messaging here
       //maybe a mayday::warning?
     }
+
+
+#ifdef cudaGraph
+#ifdef PROTO_CUDA
+//  auto* buff = const_cast<Copier*> (&a_copier) ; 
+  CUDAGRAPH& test = m_buff->getCudaGraphLinearIn();
+
+  auto testFunc = [&] () {
+
+    int isize = m_buff->m_toMe.size();
+#ifdef _OPENMP
+    bool threadSafe = m_threadSafe && (a_op.threadSafe());
+#endif
+//#pragma omp parallel for if(threadSafe)
+    for (unsigned int i=0; i< isize; ++i)
+    {
+      const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
+      a_op.linearIn(this->operator[](entry.item->toIndex), entry.bufPtr,
+                    entry.item->toRegion, a_destComps);
+   }
+  };
+
+  test.capture(testFunc);
+  test.launch();
+#endif
+#else
+
     int isize = m_buff->m_toMe.size();
 #ifdef _OPENMP
     bool threadSafe = m_threadSafe && (a_op.threadSafe());
@@ -864,10 +946,9 @@ void BoxLayoutData<T>::unpackReceivesToMe(
       a_op.linearIn(this->operator[](entry.item->toIndex), entry.bufPtr,
                     entry.item->toRegion, a_destComps);
     }
-  }
-//  protoDeviceSynchronize();
-
+#endif
   this->m_buff->numReceives = 0;
+  }
 
 }
 

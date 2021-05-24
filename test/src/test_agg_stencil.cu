@@ -52,8 +52,10 @@ bool run_test_agg_stencil_kernel_only_using()
   pairPtr<const double> const_data_ptrs_src_device = {data_ptrs_src_device.ptr[0],data_ptrs_src_device.ptr[1]};
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
-
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+#ifdef PROTO_CUDA
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+  		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,
@@ -65,6 +67,11 @@ bool run_test_agg_stencil_kernel_only_using()
 			increment_only,
 			scale		
 		);
+#else
+  std::cout << " cpu version is not implemented " << std::endl;
+  return true;
+#endif
+
   pairPtr<double> result = {nullptr,nullptr};
   test_agg_stencil_get_back_data(result, data_ptrs_dst_device, size_dst);
 
@@ -125,7 +132,10 @@ bool run_test_agg_stencil_increment_only(bool b)
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
 
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+#ifdef PROTO_CUDA
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,
@@ -137,6 +147,10 @@ bool run_test_agg_stencil_increment_only(bool b)
 			increment_only,
 			scale		
 		);
+#else
+  std::cout << " cpu version is not implemented " << std::endl;
+  return true;
+#endif
   pairPtr<double> result = {nullptr,nullptr};
   test_agg_stencil_get_back_data(result, data_ptrs_dst_device, size_dst);
 
@@ -297,8 +311,10 @@ bool run_test_agg_stencil_scale(double a_scale)
   pairPtr<const double> const_data_ptrs_src_device = {data_ptrs_src_device.ptr[0],data_ptrs_src_device.ptr[1]};
   const pair_t<double>* const_eb_stencil_device = (const pair_t<double>*)(eb_stencil_device);
 
-
-  protoLaunchKernel(Proto::aggStencilIndexer, 1, size_src,
+#ifdef PROTO_CUDA
+  protoLaunchKernelT<MEMTYPE_DEFAULT,Proto::aggStencilIndexer<double>>
+		(
+			1, size_src,
 			(int)(begin), 
 			(int)(end),
 			const_data_ptrs_src_device,
@@ -310,6 +326,10 @@ bool run_test_agg_stencil_scale(double a_scale)
 			increment_only,
 			scale		
 		);
+#else
+  std::cout << " cpu version is not implemented " << std::endl;
+  return true;
+#endif
   pairPtr<double> result = {nullptr,nullptr};
   test_agg_stencil_get_back_data(result, data_ptrs_dst_device, size_dst);
 

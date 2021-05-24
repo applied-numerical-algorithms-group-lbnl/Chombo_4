@@ -24,12 +24,6 @@
 #include "ShapeArray.H"
 #include "crunchflow.h"
 
-// These flat array macros assume C style referencing (i.e. indices start from 0)
-//
-#define get2D(A,i,j,Ni,Nj) (A[(i)*(Nj) + (j)])
-#define get3D(A,i,j,k,Ni,Nj,Nk) (A[(i) * (Nj) * (Nk) + (j) * (Nk) + (k)])
-#define get4D(A,i,j,k,l,Ni,Nj,Nk,Nl) (A[(i) * (Nj) * (Nk) * (Nl) + (j) * (Nk) * (Nl) + (k) * (Nl) + (l)])
-
 using namespace shape;
 
 void print(double* A, const int n, const char *s)
@@ -409,9 +403,9 @@ void assemble_local(enum Target target,
   assert(cudaSuccess == cudaStat);
   
   double *dxgram;
-  cudaStat = cudaMalloc ((void**)&dxgram, sizeof(double) * nz+2 * ny+2 * nx+3 );
+  cudaStat = cudaMalloc ((void**)&dxgram, sizeof(double) * (nz+2) * (ny+2) * (nx+3) );
   assert(cudaSuccess == cudaStat);
-  cudaStat = cudaMemcpy (dxgram, xgram_3d, sizeof(double) * nz+2 * ny+2 * nx+3, cudaMemcpyHostToDevice );
+  cudaStat = cudaMemcpy (dxgram, xgram_3d, sizeof(double) * (nz+2) * (ny+2) * (nx+3), cudaMemcpyHostToDevice );
   assert(cudaSuccess == cudaStat);
   
   assemble_local_kernel<<<1, 1>>>(daaa,

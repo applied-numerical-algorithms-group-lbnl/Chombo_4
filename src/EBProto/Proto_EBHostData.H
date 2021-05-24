@@ -157,7 +157,7 @@ namespace Proto
       this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
     }
 
-    HostBoxData<        data_t, ncomp>& getRegData()
+    BoxData<data_t, ncomp, HOST>& getRegData()
     {
       return m_regData;
     }
@@ -237,12 +237,18 @@ namespace Proto
       return 1; 
     }
 
+    static int memTypeAllocation()
+    {
+      return 0;
+    }
+
   protected:
     EBHostData(const            EBHostData<cent, data_t, ncomp>& a_src);
     EBHostData& operator=(const EBHostData<cent, data_t, ncomp>& a_src);
 
     Box m_inputBox;
-    HostBoxData<        data_t, ncomp>     m_regData;
+    //HostBoxData<        data_t, ncomp>     m_regData;
+    BoxData<data_t, ncomp, HOST> m_regData;
     HostIrregData<cent, data_t, ncomp>     m_irrData;
     EBGraph                                m_graph;
   };
@@ -253,7 +259,7 @@ namespace Proto
                  const Box& a_grid, unsigned int a_icomp) 
     {
       data_t maxval = 0; 
-      //using Proto::BoxIterator;
+      using Proto::BoxIterator;
       for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {
         Point pt = *bit;
@@ -278,7 +284,7 @@ namespace Proto
                      const Box& a_grid, unsigned int a_icomp)
   {
     data_t maxval = 0; 
-    //using Proto::BoxIterator;
+    using Proto::BoxIterator;
     for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
     {
       Point pt = *bit;

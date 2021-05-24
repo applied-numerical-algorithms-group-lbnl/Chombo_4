@@ -194,6 +194,9 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIME("EBLevelBoxData::exchange");
+    this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
+    
+/*
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
@@ -201,6 +204,8 @@ public:
     hostdata.exchange(copier);
 
     copyToDevice(*this, hostdata);
+*/
+
   }
 
   ///
@@ -380,7 +385,7 @@ public:
         size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-        protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+        protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
         protoError err = protoGetLastError();
         if (err != protoSuccess)
         {
@@ -412,7 +417,7 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+      protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {
@@ -464,12 +469,13 @@ public:
       size_t datSize = sizeof(Real)*fabsizeDevi;
 
 #ifdef PROTO_CUDA
-      protoMemcpy(dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
+      protoMemcpy(DEVICE,dataptrDevi, dataptrHost, datSize, protoMemcpyHostToDevice);
       protoError err = protoGetLastError();
       if (err != protoSuccess)
       {
         fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
                 __FILE__, __LINE__, protoGetErrorString(err));
+	std::abort();
       }
 #else
       memcpy(dataptrDevi, dataptrHost, datSize);

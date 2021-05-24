@@ -3,6 +3,72 @@
 #include "EBParabolicIntegrators.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_CH_HDF5.H"
+/*******/ 
+/*******/ 
+PROTO_KERNEL_START 
+void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
+                      Var<Real, DIM>    a_gradp,
+                      Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) += a_dt*(a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(AddDtGphiToVeloF, AddDtGphiToVelo)
+/*******/ 
+PROTO_KERNEL_START 
+void DivideOutDtF(Var<Real, DIM>    a_gradp,
+                  Real              a_dt)
+{
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_gradp(idir) /= a_dt;
+  }
+}
+PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
+/*******/ 
+PROTO_KERNEL_START 
+void EulerAdvanceF(Var<Real, DIM>    a_velo,
+                   Var<Real, DIM>    a_divuu,
+                   Var<Real, DIM>    a_gradp,
+                   Real              a_dt)
+{
+  for(unsigned int idir = 0; idir < DIM; idir++)
+  {
+    a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
+  }
+}
+PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
+/*******/ 
+PROTO_KERNEL_START 
+void SpeciesAdvanceF(Var<Real, 1>    a_species,
+                     Var<Real, 1>    a_rate,
+                     Real            a_dt)
+{
+  a_species(0) += a_dt*a_rate(0);
+}
+PROTO_KERNEL_END(SpeciesAdvanceF, SpeciesAdvance)
+
+/*******/ 
+PROTO_KERNEL_START 
+void DiffusionRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuphi)
+{
+  a_rhs(0) = -a_divuphi(0);
+}
+PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
+/*******/ 
+PROTO_KERNEL_START 
+void ParabolicRHSF(Var<Real, 1>    a_rhs,
+                   Var<Real, 1>    a_divuu,
+                   Var<Real, 1>    a_gradp)
+{
+  a_rhs(0) = -a_divuu(0) - a_gradp(0);
+}
+PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
+
+/*******/ 
 #include "Chombo_NamespaceHeader.H"
 #include "DebugFunctions.H"
 using Proto::Var;
@@ -24,6 +90,7 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_diffusionCoefs = a_diffusionCoeffs;
   PR_assert(m_diffusionCoefs.size() >= a_num_species);
   m_species.resize(a_num_species);
+  m_reactionRates.resize(a_num_species);
   m_brit                = a_brit;
   m_geoserv             = a_geoserv;
   m_grids               = a_grids;
@@ -31,6 +98,8 @@ EBINS(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_dx                  = a_dx;
   m_nghost              = a_nghost;
   m_viscosity           = a_viscosity;
+  m_crunch = shared_ptr<CrunchInterface>
+    (new CrunchInterface(m_brit, m_geoserv, m_grids, m_domain));
   defineInternals(a_ibc, a_num_species, a_viscosity, a_solver);
 }  
 /*******/
@@ -55,13 +124,11 @@ defineInternals(EBIBC                a_ibc,
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
   m_scal     = shared_ptr<EBLevelBoxData<CELL, 1  > >
     (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-  m_sourDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
-  m_rhsDiff  = shared_ptr<EBLevelBoxData<CELL, 1  > >
-    (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
   for(int ispec = 0; ispec < a_num_species; ispec++)
   {
-    m_species[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
+    m_species[ispec]           = shared_ptr<EBLevelBoxData<CELL, 1  > >
+      (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
+    m_reactionRates[ispec]     = shared_ptr<EBLevelBoxData<CELL, 1  > >
       (new EBLevelBoxData<CELL, 1  >(m_grids, m_nghost, m_graphs));
   }
   
@@ -361,20 +428,6 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
   divuu.exchange(m_exchangeCopier);
 }
 /*******/ 
-PROTO_KERNEL_START 
-void EulerAdvanceF(Var<Real, DIM>    a_velo,
-                   Var<Real, DIM>    a_divuu,
-                   Var<Real, DIM>    a_gradp,
-                   Real              a_dt)
-{
-  for(unsigned int idir = 0; idir < DIM; idir++)
-  {
-    a_velo(idir) -= a_dt*(a_divuu(idir) + a_gradp(idir));
-  }
-}
-PROTO_KERNEL_END(EulerAdvanceF, EulerAdvance)
-
-/*******/ 
 void
 EBINS::
 advanceVelocityEuler(Real a_dt)
@@ -397,26 +450,6 @@ advanceVelocityEuler(Real a_dt)
                     velofab, udelfab, gphifab, a_dt);
   }
 }
-/*******/ 
-PROTO_KERNEL_START 
-void DiffusionRHSF(Var<Real, 1>    a_rhs,
-                   Var<Real, 1>    a_divuphi,
-                   Var<Real, 1>    a_source)
-{
-  a_rhs(0) = -a_divuphi(0) + a_source(0);
-}
-PROTO_KERNEL_END(DiffusionRHSF, DiffusionRHS)
-/*******/ 
-PROTO_KERNEL_START 
-void ParabolicRHSF(Var<Real, 1>    a_rhs,
-                   Var<Real, 1>    a_divuu,
-                   Var<Real, 1>    a_gradp)
-{
-  a_rhs(0) = -a_divuu(0) - a_gradp(0);
-}
-PROTO_KERNEL_END(ParabolicRHSF, ParabolicRHS)
-
-/*******/ 
 void
 EBINS::
 advanceVelocityNavierStokes(Real a_dt,                          
@@ -457,30 +490,6 @@ advanceVelocityNavierStokes(Real a_dt,
   }
  ideb++;
 }
-/*******/ 
-PROTO_KERNEL_START 
-void AddDtGphiToVeloF(Var<Real, DIM>    a_velo,
-                      Var<Real, DIM>    a_gradp,
-                      Real              a_dt)
-{
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    a_velo(idir) += a_dt*(a_gradp(idir));
-  }
-}
-PROTO_KERNEL_END(AddDtGphiToVeloF, AddDtGphiToVelo)
-/*******/ 
-PROTO_KERNEL_START 
-void DivideOutDtF(Var<Real, DIM>    a_gradp,
-                  Real              a_dt)
-{
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    a_gradp(idir) /= a_dt;
-  }
-}
-PROTO_KERNEL_END(DivideOutDtF, DivideOutDt)
-/*******/ 
 void
 EBINS::
 projectVelocityAndCorrectPressure(Real a_dt,
@@ -561,6 +570,8 @@ advanceSpecies(Real a_dt,
                unsigned int a_maxIter)
 {
   CH_TIME("EBINS::advanceSpecies");
+  //Dethrone the dictaphone.
+  DataIterator dit = m_grids.dataIterator();
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
     pout() << "advancing species number "<< ispec << endl;
@@ -575,36 +586,55 @@ advanceSpecies(Real a_dt,
     pp.get(scalname.c_str(),   fluxval);
     
     m_advectOp->hybridDivergence(spec, a_dt, fluxval);
-    //sets m_sour
-    pout() << "getting reaction term R" << endl;
-    getReactionSourceTerm(ispec);
+    m_sour->setVal(0.);
     EBLevelBoxData<CELL, 1>& divuphi = m_advectOp->m_hybridDiv;
 
     pout() << "assembling  rhs = -divuphi + R" << endl;
-    DataIterator dit = m_grids.dataIterator();
+    EBLevelBoxData< CELL, 1> sourcomp;
+    sourcomp.define<DIM> (*m_sour, 0, m_graphs);
     for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
     {
-      unsigned long long int numflopspt = 2;
       Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-      auto & divuphifab =         divuphi[dit[ibox]];
-      auto & reactsour  =   (*m_sourDiff)[dit[ibox]];
-      auto & rhs        =   (* m_rhsDiff)[dit[ibox]];
-
-      ebforallInPlace(numflopspt, "DiffusionRHS", DiffusionRHS, grbx, rhs, divuphifab, reactsour);
+      auto & divuphifab =  divuphi[dit[ibox]];
+      auto & rhsfab     = sourcomp[dit[ibox]];
+      Bx inputBox = divuphifab.inputBox();
+      ebforall(inputBox, DiffusionRHS, grbx, rhsfab, divuphifab);
     }
     pout() << "calling heat solver for variable "  << endl;
     //advance the parabolic equation
     Real thiscoef = m_diffusionCoefs[ispec];
-    m_heatSolverSpec->advanceOneStep(spec, (*m_rhsDiff),
+    m_heatSolverSpec->advanceOneStep(spec, sourcomp,
                                      thiscoef, a_dt, a_tol, a_maxIter);
+
   }
+  pout() << "getting reaction rates and evolving species"   << endl;
+  getReactionRates();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    //this could get done once for all species if we knew the number
+    //of species at compile time.
+    for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+    {
+      Bx grbx = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+      auto & specfab = (      *m_species[ispec])[dit[ibox]];
+      auto & ratefab = (*m_reactionRates[ispec])[dit[ibox]];
+      
+      Bx inputBox = ratefab.inputBox();
+      ebforall(inputBox, SpeciesAdvance, grbx, specfab, ratefab, m_dt);
+    }
+  }
+
 }
 void
 EBINS::
-getReactionSourceTerm(unsigned int a_ispec)
+getReactionRates()
 {
-  CH_TIME("EBINS::getReactionSourceTerm");
-  m_sour->setVal(0.);
+  CH_TIME("EBINS::getReactionRates");
+  for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
+  {
+    m_reactionRates[ispec]->setVal(0.);
+  }
+  m_crunch->getReactionRates(m_reactionRates, m_species);
 }
 /*******/ 
 void
@@ -642,6 +672,7 @@ readDataFromCheckpoint(Real         & a_curTime,
                        unsigned int & a_curStep,
                        const string & a_checkpointName)
 {
+#ifdef CH_HDF5
   CH_TIME("EBINS::readDataFromCheckpointFile");
 
   HDF5HeaderData header;
@@ -655,8 +686,6 @@ readDataFromCheckpoint(Real         & a_curTime,
   m_gphi->readFromCheckPoint(    handle, string("gphi"));
   m_scal->readFromCheckPoint(    handle, string("scal"));
   m_sour->readFromCheckPoint(    handle, string("sour"));
-  m_rhsDiff->readFromCheckPoint( handle, string("rhsDiff"));
-  m_sourDiff->readFromCheckPoint(handle, string("sourDiff"));
   m_divuu->readFromCheckPoint(   handle, string("divuu"));
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
@@ -664,12 +693,14 @@ readDataFromCheckpoint(Real         & a_curTime,
     m_species[ispec]->readFromCheckPoint(handle, specname);
   }
   handle.close();
+#endif
 }
 /*******/
 void
 EBINS::
 writeCheckpointFile()
 {
+#ifdef CH_HDF5
   CH_TIME("EBINS::writeCheckpointFile");
   string checkpointName = string("check.step_") + to_string(m_step) + string(".hdf5");
   HDF5HeaderData header;
@@ -684,8 +715,6 @@ writeCheckpointFile()
   m_gphi->writeToCheckPoint(    handle, string("gphi"));
   m_scal->writeToCheckPoint(    handle, string("scal"));
   m_sour->writeToCheckPoint(    handle, string("sour"));
-  m_rhsDiff->writeToCheckPoint( handle, string("rhsDiff"));
-  m_sourDiff->writeToCheckPoint(handle, string("sourDiff"));
   m_divuu->writeToCheckPoint(   handle, string("divuu"));
   for(unsigned int ispec = 0; ispec < m_species.size(); ispec++)
   {
@@ -693,6 +722,7 @@ writeCheckpointFile()
     m_species[ispec]->writeToCheckPoint(handle, specname);
   }
   handle.close();
+#endif
 }
 /*******/ 
 #include "Chombo_NamespaceFooter.H"

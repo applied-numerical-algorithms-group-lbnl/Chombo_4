@@ -243,7 +243,7 @@ getUpwindState(EBFluxData<Real, 1>&  a_upwindScal,
 {
   CH_TIME("EBAdvection::getUpwindState");
   unsigned long long int numflopspt = 0;
-  unsigned int doingvel = 0;
+  //unsigned int doingvel = 0;
   
   {
     unsigned int facedir = 0;

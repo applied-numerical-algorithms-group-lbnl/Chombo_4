@@ -1,4 +1,3 @@
-
 #ifndef _Proto_EBIrregStruct_H_
 #define _Proto_EBIrregStruct_H_
 
@@ -8,18 +7,26 @@
 #include "Proto_Box.H"
 #include "EBProto.H"
 
-namespace Proto
-{
+ namespace Proto
+ {
   template <CENTERING cent, class data_t,  unsigned int ncomp>
-  struct
+  class
   EBIrregStruct
   {
+public:
     data_t*        m_startPtr;
     unsigned int   m_varsize;
     unsigned int   m_offset;
     Point          m_index;
-  };
 
+    EBIrregStruct() : m_index()
+    {
+      m_startPtr = nullptr;
+      m_varsize  = 0;
+      m_offset   = 0;
+    }
+    ~EBIrregStruct(){};
+   };
 }
 
 #endif

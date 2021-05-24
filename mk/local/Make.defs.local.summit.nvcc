@@ -1,5 +1,5 @@
 
-PROTO_HOME =$(HOME)/_proto/proto
+PROTO_HOME =$(HOME)/proto
 
 LIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
 

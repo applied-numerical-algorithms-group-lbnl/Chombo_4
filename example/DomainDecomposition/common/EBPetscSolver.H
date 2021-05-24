@@ -170,7 +170,7 @@ public:
       Bx  grbx = inhodat.inputBox();
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
       EBHostData<CELL, Real, 1> hostdat(grbx, graph);
-      HostBoxData<        Real, 1>& reghost = hostdat.getRegData();
+      BoxData<        Real, 1>& reghost = hostdat.getRegData();
       HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
 
       for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
@@ -441,8 +441,8 @@ private:
     vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
     vector<Bx >               BCApplyBoxes[2*DIM];
     bool                      bcsOnly = false;
-    bool                      irregOnly = false;
     Bx                        regApplyBox;
+    bool                      irregOnly = false;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
     if(m_stencilName == string("Weighted_Least_Squares_Poisson"))
     {
@@ -461,15 +461,14 @@ private:
     }
     else
     {
-      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                            regStencilBCS, BCApplyBoxes, regApplyBox, 
-			    bcsOnly, irregOnly,
+      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior,
+                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
                             m_stencilName,  m_domainBCName, m_ebbcName,
                             valbx, valbx,  domainbx, domainbx,
-                            m_ptghost,  m_ptghost,    
+                            m_ptghost,  m_ptghost,
                             graph,  graph,
-                            voludata,  ebfadata,    
-                            xfacdata,  yfacdata, zfacdata,    
+                            voludata,  ebfadata,
+                            xfacdata,  yfacdata, zfacdata,
                             m_dx, false, Point::Zeros());
       
       inhoContr.assign(a_dstVoFs.size(),0.0);
@@ -719,7 +718,7 @@ private:
     CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
     CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
     int startgid = 0;
-    for(int iproc = 0; iproc < Proto::procID(); iproc++)
+    for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
     {
       startgid += m_numPtsAllProc[iproc];
     }

@@ -25,7 +25,12 @@ int main()
 #endif
   std::cout << " Unit tests " << std::endl;
 
-  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
+  do_test("run_test_ebforall_init",run_test_ebforall_init);
+  do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
+  do_test("run_test_ebforall_vec_indexer",run_test_ebforall_vec_indexer);
+  do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
+  do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
+  do_test("run_test_ebforall_i_vec_indexer",run_test_ebforall_i_vec_indexer);
   do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
   do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
   do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
@@ -33,15 +38,10 @@ int main()
   do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
   do_test("run_test_irreg_linear_partial",run_test_irreg_linear_partial);
   do_test("run_test_irreg_linear_full",run_test_irreg_linear_full);
+  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
 //  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
   do_test("run_test_irreg_linear_partial_aliasing_define",run_test_irreg_linear_partial_aliasing_define);
 //  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
-  do_test("run_test_ebforall_init",run_test_ebforall_init);
-  do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
-  do_test("run_test_ebforall_vec_indexer",run_test_ebforall_vec_indexer);
-  do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
-  do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
-  do_test("run_test_ebforall_i_vec_indexer",run_test_ebforall_i_vec_indexer);
   do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
   do_test("run_test_agg_stencil_increment_only_true",run_test_agg_stencil_increment_only_true);
   do_test("run_test_agg_stencil_increment_only_false",run_test_agg_stencil_increment_only_false);

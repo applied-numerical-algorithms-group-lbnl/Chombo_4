@@ -1,18 +1,31 @@
 #two sphere inputs
 #domain size
-two_spheres.nx      =  32
+two_spheres.nx      =  64
 two_spheres.maxGrid =  32
 two_spheres.rad_one = 0.2
 two_spheres.rad_two = 0.4
 two_spheres.cen_one = 0.0 0.0 0.0
 two_spheres.cen_two = 1.0 1.0 1.0
 
-mollified_box.nx      =  32
+intersecting_spheres.nx      =  256
+intersecting_spheres.maxGrid =  64
+intersecting_spheres.radius  =  0.1
+intersecting_spheres.offsetmag = 0.095
+
+
+smoothed_intersecting_spheres.nx      =  256
+smoothed_intersecting_spheres.maxGrid =  64
+smoothed_intersecting_spheres.radius  =  0.1
+smoothed_intersecting_spheres.offsetmag = 0.095
+smoothed_intersecting_spheres.deltamag = 3.0
+
+
+mollified_box.nx      =  64
 mollified_box.maxGrid =  32
 mollified_box.width   = 0.2
 mollified_box.center  = 0.5 0.5 0.5
 
-cylindered_sphere.nx              = 32
+cylindered_sphere.nx              = 64
 cylindered_sphere.maxGrid         = 32
 cylindered_sphere.sphere_radius   = 0.1
 cylindered_sphere.cylinder_radius = 0.4

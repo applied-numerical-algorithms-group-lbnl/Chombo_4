@@ -40,7 +40,6 @@ namespace Proto
     virtual double value(const IndexTM<int   ,DIM> & a_partialDerivative,
                          const IndexTM<double,DIM>& a_point) const = 0;
 
-    
     //.overwrite if you have a fast way of knowing if a whole region is regular
     virtual bool entireBoxRegular(const Proto::Box     & a_box,
                                   const RealVect& a_origin,

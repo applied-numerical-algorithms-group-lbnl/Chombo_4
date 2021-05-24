@@ -10,11 +10,11 @@ CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 #LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I/usr/local/anag/pkg/hdf5-1.8.7.serial/include 
-HDFLIBFLAGS=-L/usr/local/anag/pkg/hdf5-1.8.7.serial/lib -lhdf5_hl -lhdf5 -lz 
+HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
+HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz 
 EFENCEFLAGS = -L/usr/lib -lefence
 
-PETSC_DIR   = /usr/local/anag/pkg/petsc-3.11.3
+PETSC_DIR   = $(ANAG_PETSC_DIR)
 SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
 include $(PETSC_DIR)/lib/petsc/conf/variables
 

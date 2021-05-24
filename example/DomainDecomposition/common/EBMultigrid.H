@@ -55,6 +55,7 @@ public:
     PR_TIME("sgmglevel::vcycle");
     if(m_directToBottom)
     {
+      pout() << "going directly to bottom solve" << endl;
       bottom_solve(a_phi, a_rhs);
     }
     else

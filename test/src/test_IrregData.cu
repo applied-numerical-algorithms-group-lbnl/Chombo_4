@@ -84,7 +84,7 @@ bool run_test_irreg_data_use_constructor()
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 #else
   double* checkPtr = fill.data();
 #endif  
@@ -112,7 +112,7 @@ bool run_test_irreg_data_set_val()
 #ifdef PROTO_CUDA
   double* checkPtr = new double[size];
   double* devicPtr = fill.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 #else
   double* checkPtr = fill.data();
 #endif  
@@ -146,7 +146,7 @@ bool run_test_irreg_copy_args(unsigned int size)
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -215,7 +215,7 @@ bool run_test_irreg_copy_partial()
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -268,7 +268,7 @@ bool run_test_irreg_copy_partial_idst()
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -311,7 +311,7 @@ bool run_test_irreg_linear_full_args(unsigned int size)
 
   void* inWork;
   size_t nBytes = in.charsize(bx,0,1);//size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
-  protoMalloc(inWork, nBytes);
+  protoMalloc(MEMTYPE_DEFAULT, inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
@@ -322,7 +322,7 @@ bool run_test_irreg_linear_full_args(unsigned int size)
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -341,7 +341,7 @@ bool run_test_irreg_linear_full_args(unsigned int size)
   free(ptr);  
   free(ptr2);  
   free(checkPtr); 
-  protoFree(inWork); 
+  protoFree(MEMTYPE_DEFAULT, inWork); 
 
   return check;
 }
@@ -403,7 +403,7 @@ bool run_test_irreg_linear_multiple()
 
   void* inWork;
 
-  protoMalloc(inWork, nBytes);
+  protoMalloc(MEMTYPE_DEFAULT, inWork, nBytes);
 
   unsigned int shift = 0;
 
@@ -432,7 +432,7 @@ bool run_test_irreg_linear_multiple()
 
     double* checkPtr = new double[sizes[id]];
     double* devicPtr = out.data();
-    protoMemcpy(checkPtr,devicPtr,sizes[id]*sizeof(double),protoMemcpyDeviceToHost);
+    protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,sizes[id]*sizeof(double),protoMemcpyDeviceToHost);
 
     for(int i = 0 ; i < sizes[id] ; i++)
     {
@@ -453,7 +453,7 @@ bool run_test_irreg_linear_multiple()
       index.clear();
       free(ptr);  
       free(ptr2);  
-      protoFree(inWork); 
+      protoFree(MEMTYPE_DEFAULT, inWork); 
       return false;
     }
     free(checkPtr); 
@@ -463,7 +463,7 @@ bool run_test_irreg_linear_multiple()
     free(ptr2);  
     shift += in.charsize(bx,0,1); 
   }
-  protoFree(inWork); 
+  protoFree(MEMTYPE_DEFAULT, inWork); 
 
 
   return true;
@@ -490,7 +490,7 @@ bool run_test_irreg_linear_partial_args(unsigned int size)
 
   void* inWork;
   size_t nBytes = in.charsize(bx2,0,1);//size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
-  protoMalloc(inWork, nBytes);
+  protoMalloc(MEMTYPE_DEFAULT, inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
@@ -501,7 +501,7 @@ bool run_test_irreg_linear_partial_args(unsigned int size)
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -525,7 +525,7 @@ bool run_test_irreg_linear_partial_args(unsigned int size)
   free(ptr);  
   free(ptr2);  
   free(checkPtr);  
-  protoFree(inWork);
+  protoFree(MEMTYPE_DEFAULT, inWork);
   return check;
 }
 
@@ -580,7 +580,7 @@ bool run_test_irreg_linear_partial_aliasing_define_args(unsigned int size)
 
   void* inWork;
   size_t nBytes = in.charsize(bx2,0,1);//size*(sizeof(double)+sizeof(EBIndex<Proto::CELL>)) + 2*sizeof(unsigned int);
-  protoMalloc(inWork, nBytes);
+  protoMalloc(MEMTYPE_DEFAULT, inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
@@ -591,7 +591,7 @@ bool run_test_irreg_linear_partial_aliasing_define_args(unsigned int size)
 
   double* checkPtr = new double[size];
   double* devicPtr = out.data();
-  protoMemcpy(checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
+  protoMemcpy(MEMTYPE_DEFAULT, checkPtr,devicPtr,size*sizeof(double),protoMemcpyDeviceToHost);
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
@@ -615,7 +615,7 @@ bool run_test_irreg_linear_partial_aliasing_define_args(unsigned int size)
   free(ptr);  
   free(ptr2);  
   free(checkPtr);  
-  protoFree(inWork);
+  protoFree(MEMTYPE_DEFAULT, inWork);
 
   return check;
 }
