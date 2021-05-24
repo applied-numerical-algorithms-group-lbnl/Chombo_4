@@ -224,7 +224,7 @@ namespace Proto
     for (SideIterator sit; sit.ok(); ++sit)
     {
       vector< EBIndex<XFACE> > xfaces = a_graph.getXFaces(a_vof, sit());
-      int isign = sign(sit());
+
       for (int iface = 0; iface < xfaces.size(); iface++)
       {
         LocalStencil<CELL, double> fluxStencil;

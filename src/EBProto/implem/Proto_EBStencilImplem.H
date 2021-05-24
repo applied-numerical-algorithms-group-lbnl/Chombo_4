@@ -15,8 +15,6 @@ namespace Proto
   EBStencil<order, data_t, srcCenter, dstCenter>::
   EBStencil(const vector<EBIndex<dstCenter> >               & a_dstVoFs,
             const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
-            const Stencil<data_t>                           & a_regStencilInterior,
-            const Box                                       & a_regApplyBox,
             const EBGraph                                   & a_srcGraph,
             const EBGraph                                   & a_dstGraph,
             const Box                                       & a_srcValid,
@@ -25,28 +23,19 @@ namespace Proto
             const Box                                       & a_dstDomain,
             const Point                                     & a_srcGhost,
             const Point                                     & a_dstGhost,
-            bool                                              a_irregOnly,
             bool                                              a_needDiagonalWeights)
   {
     m_periodic_domain_bcs_only = false;
     m_hasDomainBCs = false;  //that technology is going away
     m_bcsOnly      = false;
-    m_irregOnly    = a_irregOnly; //if you want to only run the AggStencil
+    m_irregOnly    = true; //we are only running the aggstencil
     
-    m_regStencilInterior = a_regStencilInterior;
-    m_regApplyBox        = a_regApplyBox;
-
-    vector< EBIndex<dstCenter> >              dstVoFs;
-    vector< LocalStencil<srcCenter, data_t> > stencil;
-    if(!m_bcsOnly)
+    m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
+      (new AggStencil<srcCenter, dstCenter, data_t>(a_dstVoFs, a_stencil, a_srcGraph, a_dstGraph,
+                                                    a_srcValid, a_dstValid, a_srcGhost, a_dstGhost));
+    if(a_needDiagonalWeights)
     {
-      m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
-        (new AggStencil<srcCenter, dstCenter, data_t>(a_dstVoFs, a_stencil, a_srcGraph, a_dstGraph,
-                                                      a_srcValid, a_dstValid, a_srcGhost, a_dstGhost));
-      if(a_needDiagonalWeights)
-      {
-        computeDiagonalWeights(a_dstVoFs, a_stencil, a_dstGraph, a_dstValid, a_dstGhost);
-      }
+      computeDiagonalWeights(a_dstVoFs, a_stencil, a_dstGraph, a_dstValid, a_dstGhost);
     }
   }
 

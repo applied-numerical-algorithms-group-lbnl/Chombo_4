@@ -35,57 +35,56 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                            
              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  &  a_dictionary,
              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv)
 {
-  string stencilName;
-  string ebbcName;
-  vector<     EBIndex<CELL>  >          dstVoFs;
-  vector<LocalStencil<CELL, Real> >     stencil;
-  Stencil<Real>                         regStencilInterior;
-  Proto::Box                            regApplyBox;
-  Proto::Box                            srcValid;
-  Proto::Box                            dstValid;
-  Proto::Box                            srcDomain;
-  Proto::Box                            dstDomain;
-  Point                                 srcGhost;
-  Point                                 dstGhost;
-  bool                                  irregOnly;
-  bool                                  needDiagonalWeights;
 
-  hoeb::
-  dharshiLaplStencil(stencilName,        
-                     ebbcName,           
-                     dstVoFs,            
-                     stencil,            
-                     regStencilInterior, 
-                     regApplyBox,        
-                     srcValid,           
-                     dstValid,           
-                     srcDomain,          
-                     dstDomain,          
-                     srcGhost,           
-                     dstGhost,
-                     irregOnly,
-                     needDiagonalWeights,
-                     a_graphs,
-                     a_grids,
-                     a_domain,
-                     a_dx);
-  
-  ///registering stencil
-  a_dictionary->registerStencil(stencilName,        
-                              ebbcName,           
-                              dstVoFs,            
-                              stencil,            
-                              regStencilInterior, 
-                              regApplyBox,        
-                              srcValid,           
-                              dstValid,           
-                              srcDomain,          
-                              dstDomain,          
-                              srcGhost,           
-                              dstGhost,
-                              irregOnly,
-                              needDiagonalWeights);
   Chombo4::DataIterator dit = a_grids.dataIterator();
+  //register it for every box
+  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    string stencilName;
+    string ebbcName;
+    vector<     EBIndex<CELL>  >          dstVoFs;
+    vector<LocalStencil<CELL, Real> >     stencil;
+    Proto::Box                            srcValid;
+    Proto::Box                            dstValid;
+    Proto::Box                            srcDomain;
+    Proto::Box                            dstDomain;
+    Point                                 srcGhost;
+    Point                                 dstGhost;
+    bool                                  needDiagonalWeights;
+    
+    hoeb::
+      dharshiLaplStencil(stencilName,        
+                         ebbcName,           
+                         dstVoFs,            
+                         stencil,            
+                         srcValid,           
+                         dstValid,           
+                         srcDomain,          
+                         dstDomain,          
+                         srcGhost,           
+                         dstGhost,
+                         needDiagonalWeights,
+                         a_geoserv,
+                         a_grids,
+                         a_domain,
+                         a_dx,
+                         ibox);
+  
+    ///registering stencil
+    a_dictionary->registerStencil(stencilName,        
+                                  ebbcName,           
+                                  dstVoFs,            
+                                  stencil,            
+                                  srcValid,           
+                                  dstValid,           
+                                  srcDomain,          
+                                  dstDomain,          
+                                  srcGhost,           
+                                  dstGhost,
+                                  needDiagonalWeights,
+                                  ibox);
+  }
+  //now apply it
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto      & lphfab = a_klp[dit[ibox]];

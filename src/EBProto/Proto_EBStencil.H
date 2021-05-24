@@ -55,12 +55,11 @@ namespace Proto
         (which calls this constructor or the other constructor if needed). EBDictionary maintains
         a cache of registered stencils so they never have to be defined twice.
 
-        If you want only the aggstencil bit to be executed, send irregOnly=true.
+        Only the AggStencil bit will be executed so you have to create a stencil 
+        for every point in the box (not just the cut cells)
     */
     EBStencil(const vector<EBIndex<dstCenter> >               & a_dstVoFs,
               const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
-              const Stencil<data_t>                           & a_regStencilInterior,
-              const Box                                       & a_regApplyBox,
               const EBGraph                                   & a_srcGraph,
               const EBGraph                                   & a_dstGraph,
               const Box                                       & a_srcValid,
@@ -69,7 +68,6 @@ namespace Proto
               const Box                                       & a_dstDomain,
               const Point                                     & a_srcGhost,
               const Point                                     & a_dstGhost,
-              bool                                              a_irregOnly,
               bool                                              a_needDiagonalWeights);
   
 

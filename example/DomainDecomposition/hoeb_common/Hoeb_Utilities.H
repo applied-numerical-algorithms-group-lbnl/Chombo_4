@@ -10,26 +10,50 @@
 
 namespace hoeb
 {
+  ///
+  /**
+     Return integral F dA  (do NOT divide out the area).
+     For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
+  */
+  
+  template <CENTERING cent>
+  LocalStencil<CELL, Real> 
+  getDharshiIntFluxDAStencil(const EBIndex<cent>                            & a_face,
+                             const EBIndex<CELL>                            & a_startingVoF,
+                             const std::string                              & a_dombcname,
+                             const std::string                              & a_ebbcname,
+                             const EBGraph                                  & a_graph,
+                             const HostIrregData<CELL    ,  IndMomDIM , 1>  & voldat,
+                             const HostIrregData<BOUNDARY,  IndMomDIM , 1>  & ebfdat,
+                             const HostIrregData<XFACE, IndMomSDMinOne, 1>  & xfadat,
+                             const HostIrregData<YFACE, IndMomSDMinOne, 1>  & yfadat,
+                             const HostIrregData<ZFACE, IndMomSDMinOne, 1>  & zfadat,
+                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir)
+  {
+    //facedir == -1 means the EB
+    LocalStencil<CELL, Real>  retval;
+
+    return retval;
+  }
+
   //get the stencil for the laplacian described in Devendran, et al.
-  extern void
-  dharshiLaplStencil(string                                 & a_stencilName,
-                     string                                 & a_ebbcName,
-                     vector<EBIndex<CELL> >                 & a_dstVoFs,
-                     vector<LocalStencil<CELL, Real> >      & a_stencil,
-                     Stencil<Real>                          & a_regStencilInterior,
-                     Proto::Box                             & a_regApplyBox,
-                     Proto::Box                             & a_srcValid,
-                     Proto::Box                             & a_dstValid,
-                     Proto::Box                             & a_srcDomain,
-                     Proto::Box                             & a_dstDomain,
-                     Proto::Point                           & a_srcGhost,
-                     Proto::Point                           & a_dstGhost,
-                     bool                                   & a_irregOnly,
-                     bool                                   & a_needDiagonalWeights,
-                     const shared_ptr<LevelData<EBGraph> >  &  a_graphs,
-                     const Chombo4::DisjointBoxLayout       &  a_grids,
-                     const Chombo4::Box                     &  a_domFine,
-                     const Real                             &  a_dx);
+  void
+  dharshiLaplStencil(string                                              & a_stencilName,
+                     string                                              & a_ebbcName,
+                     vector<EBIndex<CELL> >                              & a_dstVoFs,
+                     vector<LocalStencil<CELL, Real> >                   & a_stencil,
+                     Proto::Box                                          & a_srcValid,
+                     Proto::Box                                          & a_dstValid,
+                     Proto::Box                                          & a_srcDomain,
+                     Proto::Box                                          & a_dstDomain,
+                     Proto::Point                                        & a_srcGhost,
+                     Proto::Point                                        & a_dstGhost,
+                     bool                                                & a_needDiagonalWeights,
+                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                     const Chombo4::DisjointBoxLayout                    & a_grids,
+                     const Chombo4::Box                                  & a_domFine,
+                     const Real                                          & a_dx,
+                     unsigned int                                          a_ibox);
 
   //return an implicit function based on stuff in the input file
   extern shared_ptr<BaseIF> getImplicitFunction();

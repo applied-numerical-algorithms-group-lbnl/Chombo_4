@@ -6,42 +6,108 @@
 namespace hoeb
 {
   /******/  
+  LocalStencil<CELL, Real> 
+  getFullDharshiStencil(const EBIndex<CELL>                            & a_vof,
+                        const std::string                              & a_dombcname,
+                        const std::string                              & a_ebbcname,
+                        const EBGraph                                  & a_graph,
+                        const HostIrregData<CELL    ,  IndMomDIM , 1>  & voldat,
+                        const HostIrregData<BOUNDARY,  IndMomDIM , 1>  & ebfdat,
+                        const HostIrregData<XFACE, IndMomSDMinOne, 1>  & xfadat,
+                        const HostIrregData<YFACE, IndMomSDMinOne, 1>  & yfadat,
+                        const HostIrregData<ZFACE, IndMomSDMinOne, 1>  & zfadat,
+                        Real a_alpha, Real a_beta, Real a_dx)                            
+    {
+      LocalStencil<CELL, Real> vofsten;
+      //use the age-old trick of building up the stencil by construction
+      for(SideIterator sit; sit.ok(); ++sit)
+      {
+        {
+          int isign = sign(sit());
+          auto xfaces = a_graph.getXFaces(a_vof, sit());
+          for(int iface = 0; iface < xfaces.size(); iface++)
+          {
+            LocalStencil<CELL, Real>
+              fluxsten = getDharshiFaceFluxStencil<XFACE>(face,
+                                                          a_vof,          
+                                                          a_dombcname,    
+                                                          a_ebbcname,     
+                                                          a_graph,        
+                                                          voldat,         
+                                                          ebfdat,         
+                                                          xfadat,         
+                                                          yfadat,         
+                                                          zfadat,         
+                                                          a_alpha, a_beta, a_dx, 0);
+            Real factor = Real(isign)
+          }
+      }
+    }
+
+  /******/  
   void
-  dharshiLaplStencil(string                                 & a_stencilName,
-                     string                                 & a_ebbcName,
-                     vector<EBIndex<CELL> >                 & a_dstVoFs,
-                     vector<LocalStencil<CELL, Real> >      & a_stencil,
-                     Stencil<Real>                          & a_regStencilInterior,
-                     Proto::Box                             & a_regApplyBox,
-                     Proto::Box                             & a_srcValid,
-                     Proto::Box                             & a_dstValid,
-                     Proto::Box                             & a_srcDomain,
-                     Proto::Box                             & a_dstDomain,
-                     Proto::Point                           & a_srcGhost,
-                     Proto::Point                           & a_dstGhost,
-                     bool                                   & a_irregOnly,
-                     bool                                   & a_needDiagonalWeights,
-                     const shared_ptr<LevelData<EBGraph> >  &  a_graphs,
-                     const Chombo4::DisjointBoxLayout       &  a_grids,
-                     const Chombo4::Box                     &  a_domFine,
-                     const Real                             &  a_dx)
+  dharshiLaplStencil(string                                              & a_stencilName,
+                     string                                              & a_ebbcName,
+                     vector<EBIndex<CELL> >                              & a_dstVoFs,
+                     vector<LocalStencil<CELL, Real> >                   & a_stencil,
+                     Proto::Box                                          & a_srcValid,
+                     Proto::Box                                          & a_dstValid,
+                     Proto::Box                                          & a_srcDomain,
+                     Proto::Box                                          & a_dstDomain,
+                     Proto::Point                                        & a_srcGhost,
+                     Proto::Point                                        & a_dstGhost,
+                     bool                                                & a_needDiagonalWeights,
+                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                     const Chombo4::DisjointBoxLayout                    & a_grids,
+                     const Chombo4::Box                                  & a_domFine,
+                     const Real                                          & a_dx,
+                     unsigned int                                          a_ibox)
 
   {
+    /* just in case a fit of madness causes me to use geometric multigrid */
+    a_needDiagonalWeights = true;
+    
     Chombo4::ParmParse pp;
     
     Real alpha = 1.0;
     Real beta = -0.001;
-    int dombc = 1;
-    int ebbc  = 1;
-    pp.get("domainBC"  , dombc);
-    pp.get("EBBC"      , ebbc);
+    string dombcname, ebbcname;
+    pp.get("domainBC"  , dombcname);
+    pp.get("EBBC"      , ebbcname);
     pp.get("alpha"     , alpha);
     pp.get("beta"      , beta);
     pout() << "domainBC"  << " = " <<  dombc      << endl;
     pout() << "EBBC"      << " = " <<  ebbc       << endl;
-  
-    a_needDiagonalWeights = true;
-    a_irregOnly           = true;
+    a_stencilName = string("Dharshi_Laplacian");
+
+    const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
+    const auto & voldatldptr = a_geoserv->getVoluData(  a_srcDomain);
+    const auto & ebfdatldptr = a_geoserv->getEBFaceData(a_srcDomain);
+    const auto & xfadatldptr = a_geoserv->getXFaceData( a_srcDomain);
+    const auto & yfadatldptr = a_geoserv->getYFaceData( a_srcDomain);
+    const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
+
+    const auto & graphs = (*graphsldptr)[dit[a_ibox]];
+    const auto & voldat = (*voldatldptr)[dit[a_ibox]];
+    const auto & ebfdat = (*ebfdatldptr)[dit[a_ibox]];
+    const auto & xfadat = (*xfadatldptr)[dit[a_ibox]];
+    const auto & yfadat = (*yfadatldptr)[dit[a_ibox]];
+    const auto & zfadat = (*zfadatldptr)[dit[a_ibox]];
+    
+    for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
+    {
+      auto vofs = (*graphs)[dit[a_ibox]].getVoFs(*bit);
+      for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        LocalStencil<CELL, Real> vofsten = getFullDharshiStencil(vofs[ivof],
+                                                                 dombcname, ebbcname,
+                                                                 graphs,voldat,ebfdat,
+                                                                 xfadat,yfadat,zfadat,
+                                                                 alpha, beta, a_dx);
+        a_dstVoFs.push_back(vofs[ivof]);
+        a_stencil.push_back(vofsten);
+      }
+    }
   }
 
   shared_ptr<BaseIF> getImplicitFunction()

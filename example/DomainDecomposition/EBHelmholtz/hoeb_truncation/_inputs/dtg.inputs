@@ -12,6 +12,6 @@ inside = true
 
 #value in hdf5 file of  covered data
 coveredval = -0.001
-# 0 neumann, 1 dirichlet
-domainBC     = 0
-EBBC         = 1
+
+domainBC     = Dirichlet
+EBBC         = Dirichlet

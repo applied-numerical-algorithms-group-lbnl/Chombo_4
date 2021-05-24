@@ -64,16 +64,14 @@ registerStencil(string a_stencilName,
                 string a_ebbcName,
                 const vector<EBIndex<dstCenter> >               & a_dstVoFs,
                 const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
-                const Stencil<data_t>                           & a_regStencilInterior,
-                const Proto::Box                                & a_regApplyBox,
                 const Proto::Box                                & a_srcValid,
                 const Proto::Box                                & a_dstValid,
                 const Proto::Box                                & a_srcDomain,
                 const Proto::Box                                & a_dstDomain,
                 const Point                                     & a_srcGhost,
                 const Point                                     & a_dstGhost,
-                bool                                              a_irregOnly,
-                bool                                              a_needDiagonalWeights)
+                bool                                              a_needDiagonalWeights,
+                unsigned int                                      a_ibox)
 {
   PR_assert(!m_isClosed);
 
@@ -89,19 +87,17 @@ registerStencil(string a_stencilName,
   shared_ptr< LevelData< EBGraph  >  > ldgraphD = m_geoserv->getGraphs(ch_dstDom);
 
   DataIterator dit = m_grids[dstIndex].dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    const auto& srcGraph = (*ldgraphS)[dit[ibox]];
-    const auto& dstGraph = (*ldgraphD)[dit[ibox]];
-    Proto::Box srcValid  = srcGraph.validBox();
-    Proto::Box dstValid  = dstGraph.validBox();
-    std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][ibox];
-    shared_ptr<ebstencil_t>
-      newsten(new ebstencil_t(a_dstVoFs, a_stencil, a_regStencilInterior, a_regApplyBox,
-                              srcGraph, dstGraph, srcValid, dstValid, a_srcDomain, a_dstDomain,
-                              a_srcGhost, a_dstGhost, a_irregOnly, a_needDiagonalWeights));
-    boxmap[key] = newsten;
-  }
+
+  const auto& srcGraph = (*ldgraphS)[dit[a_ibox]];
+  const auto& dstGraph = (*ldgraphD)[dit[a_ibox]];
+  Proto::Box srcValid  = srcGraph.validBox();
+  Proto::Box dstValid  = dstGraph.validBox();
+  std::map<stencilKey, shared_ptr<ebstencil_t> >& boxmap = m_registeredStencils[dstIndex][a_ibox];
+  shared_ptr<ebstencil_t>
+    newsten(new ebstencil_t(a_dstVoFs, a_stencil, 
+                            srcGraph, dstGraph, srcValid, dstValid, a_srcDomain, a_dstDomain,
+                            a_srcGhost, a_dstGhost,  a_needDiagonalWeights));
+  boxmap[key] = newsten;
   
 }
 ///
@@ -148,7 +144,7 @@ registerStencil(string a_stencilName,
                               (*graphS)[dit[ibox]],(*graphD)[dit[ibox]],
                               (*voldat)[dit[ibox]], (*ebfdat)[dit[ibox]],
                               (*xfadat)[dit[ibox]], (*yfadat)[dit[ibox]], (*zfadat)[dit[ibox]],
-                              m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off periodic
+                              m_dx[dstIndex], false, a_needDiagonalWeights, a_dstGrow));  //false is to turn off eriodic
 
  
     boxmap[key] = newsten;

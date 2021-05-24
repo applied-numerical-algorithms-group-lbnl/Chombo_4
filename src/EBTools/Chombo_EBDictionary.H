@@ -211,23 +211,24 @@ public:
   /// register stencil version for algorithm developers
   /**
      If you know what stencil you want and you just want to use EBStencil to execute the stencil, 
-     use this constructor.
+     use this registerStencil option.    
+     Only the AggStencil bit will be executed so there has to be an entry
+     corresponding to  every cell for which  you want to have an answer.   You have to call this for 
+     every box as well.
    */
   inline void
   registerStencil(string a_stencilName,
                   string a_ebbcName,
                   const vector<EBIndex<dstCenter> >               & a_dstVoFs,
                   const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
-                  const Stencil<data_t>                           & a_regStencilInterior,
-                  const Proto::Box                                & a_regApplyBox,
                   const Proto::Box                                & a_srcValid,
                   const Proto::Box                                & a_dstValid,
                   const Proto::Box                                & a_srcDomain,
                   const Proto::Box                                & a_dstDomain,
                   const Point                                     & a_srcGhost,
                   const Point                                     & a_dstGhost,
-                  bool                                              a_irregOnly,
-                  bool                                              a_needDiagonalWeights);
+                  bool                                              a_needDiagonalWeights,
+                  unsigned int                                      a_ibox);
   
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
