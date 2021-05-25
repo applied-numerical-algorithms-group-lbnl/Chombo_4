@@ -10,6 +10,9 @@
 
 namespace hoeb
 {
+  extern vector<EBIndex<CELL> >
+  getVoFNeighbors(const EBIndex<CELL> & a_startingVoF,
+                  const EBGraph       & a_graph);
   ///
   /**
      Return integral F dA  (do NOT divide out the area).
@@ -17,7 +20,7 @@ namespace hoeb
   */
   
   template <CENTERING cent>
-  LocalStencil<CELL, Real> 
+  inline LocalStencil<CELL, Real> 
   getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
                              const EBIndex<CELL>                                 & a_startingVoF,
                              const std::string                                   & a_dombcname,
@@ -25,13 +28,7 @@ namespace hoeb
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                              Proto::Box                                          & a_srcDomain,
                              unsigned int a_ibox,                              
-                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir)
-  {
-    //facedir == -1 means the EB
-    LocalStencil<CELL, Real>  retval;
-
-    return retval;
-  }
+                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir);
 
   //get the stencil for the laplacian described in Devendran, et al.
   void
@@ -82,4 +79,5 @@ namespace hoeb
                     const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
 }
+#include "Hoeb_UtilitiesImplem.H"
 #endif
