@@ -95,6 +95,13 @@ public:
   }
 
   ///
+  inline DisjointBoxLayout const
+  getDBL()
+  {
+    return m_grids;
+  }
+  
+  ///
   inline const shared_ptr<LevelData<EBFaData> >
   getEBFaceData() const
   {
@@ -422,6 +429,7 @@ template <int order>
 class GeometryService
 {
 
+
 public:
 
   typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -604,6 +612,11 @@ public:
     return (*this)[a_domain]->getEBNormalData_y();
   }
 
+  inline DisjointBoxLayout getDBL(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getDBL();
+  }
+  
   ///Get eb moment in the z direction
   inline shared_ptr<LevelData<EBNormalData> >
   getEBNormalData_z(const Box& a_domain)

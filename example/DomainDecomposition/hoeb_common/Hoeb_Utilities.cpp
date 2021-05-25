@@ -11,15 +11,20 @@ namespace hoeb
                         const std::string                                   & a_dombcname,
                         const std::string                                   & a_ebbcname,
                         const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                        Real a_alpha, Real a_beta, Real a_dx)                            
+                        Proto::Box                                          & a_srcDomain,
+                        unsigned int a_ibox, Real a_alpha, Real a_beta, Real a_dx) 
   {
     LocalStencil<CELL, Real> vofsten;
     //use the age-old trick of building up the stencil by construction
+    auto dbl = a_geoserv->getDBL(a_srcDomain);
+    auto dit = dbl.dataIterator();
+    const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
+    const auto & graph = (*graphsldptr)[dit[a_ibox]];
     for(SideIterator sit; sit.ok(); ++sit)
     {
       int isign = sign(sit());
       {                                                // 
-        auto xfaces = a_graph.getXFaces(a_vof, sit());
+        auto xfaces = graph.getXFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < xfaces.size(); iface++)
         {
           auto face = xfaces[iface];
@@ -28,14 +33,14 @@ namespace hoeb
                                                          a_vof,          
                                                          a_dombcname,    
                                                          a_ebbcname,
-                                                         a_geoserv,
+                                                         a_geoserv, a_srcDomain, a_ibox,
                                                          a_alpha, a_beta, a_dx, 0);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
       }
       {                                                // 
-        auto yfaces = a_graph.getYFaces(a_vof, sit());
+        auto yfaces = graph.getYFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < yfaces.size(); iface++)
         {
           auto face = yfaces[iface];
@@ -44,7 +49,7 @@ namespace hoeb
                                                          a_vof,          
                                                          a_dombcname,    
                                                          a_ebbcname,
-                                                         a_geoserv,
+                                                         a_geoserv, a_srcDomain, a_ibox,
                                                          a_alpha, a_beta, a_dx, 1);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
@@ -52,7 +57,7 @@ namespace hoeb
       }
 #if DIM==3      
       {                                                // 
-        auto zfaces = a_graph.getZFaces(a_vof, sit());
+        auto zfaces = graph.getZFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < zfaces.size(); iface++)
         {
           auto face = zfaces[iface];
@@ -61,26 +66,27 @@ namespace hoeb
                                                          a_vof,          
                                                          a_dombcname,    
                                                          a_ebbcname,
-                                                         a_geoserv,
+                                                         a_geoserv, a_srcDomain, a_ibox,
                                                          a_alpha, a_beta, a_dx, 2);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
       }
 #endif
-      {
-        EBIndex<BOUNDARY> face = a_vof.getCutFace();
-        LocalStencil<CELL, Real>
-          fluxsten = getDharshiIntFluxDAStencil<BOUNDARY>(face,
-                                                          a_vof,          
-                                                          a_dombcname,    
-                                                          a_ebbcname,
-                                                          a_geoserv,
-                                                          a_alpha, a_beta, a_dx, -1);
-        vofsten += fluxsten;
-      }
-      return vofsten;
     }
+    {
+      EBIndex<BOUNDARY> face = a_vof.getCutFace();
+      LocalStencil<CELL, Real>
+        fluxsten = getDharshiIntFluxDAStencil<BOUNDARY>(face,
+                                                        a_vof,          
+                                                        a_dombcname,    
+                                                        a_ebbcname,
+                                                        a_geoserv, a_srcDomain, a_ibox,
+                                                        a_alpha, a_beta, a_dx, -1);
+      vofsten += fluxsten;
+    }
+    return vofsten;
+  }
 
   /******/  
   void
@@ -114,8 +120,8 @@ namespace hoeb
     pp.get("EBBC"      , ebbcname);
     pp.get("alpha"     , alpha);
     pp.get("beta"      , beta);
-    pout() << "domainBC"  << " = " <<  dombc      << endl;
-    pout() << "EBBC"      << " = " <<  ebbc       << endl;
+    pout() << "domainBC"  << " = " <<  dombcname      << endl;
+    pout() << "EBBC"      << " = " <<  ebbcname       << endl;
     a_stencilName = string("Dharshi_Laplacian");
 
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
@@ -124,15 +130,16 @@ namespace hoeb
     const auto & xfadatldptr = a_geoserv->getXFaceData( a_srcDomain);
     const auto & yfadatldptr = a_geoserv->getYFaceData( a_srcDomain);
     const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
-
+    const auto & dbl         = a_geoserv->getDBL(a_srcDomain);
+    auto dit = dbl.dataIterator();
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
-      auto vofs = (*graphs)[dit[a_ibox]].getVoFs(*bit);
+      auto vofs = (*graphsldptr)[dit[a_ibox]].getVoFs(*bit);
       for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
       {
         LocalStencil<CELL, Real> vofsten = getFullDharshiStencil(vofs[ivof],
                                                                  dombcname, ebbcname,
-                                                                 a_geoserv,
+                                                                 a_geoserv, a_srcDomain, a_ibox,
                                                                  alpha, beta, a_dx);
         a_dstVoFs.push_back(vofs[ivof]);
         a_stencil.push_back(vofsten);

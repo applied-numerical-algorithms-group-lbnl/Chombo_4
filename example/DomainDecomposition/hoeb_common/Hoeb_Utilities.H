@@ -23,6 +23,8 @@ namespace hoeb
                              const std::string                                   & a_dombcname,
                              const std::string                                   & a_ebbcname,
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                             Proto::Box                                          & a_srcDomain,
+                             unsigned int a_ibox,                              
                              Real a_alpha, Real a_beta, Real a_dx, int a_facedir)
   {
     //facedir == -1 means the EB
