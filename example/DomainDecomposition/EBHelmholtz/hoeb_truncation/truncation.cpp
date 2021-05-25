@@ -83,15 +83,15 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                            
                                   dstGhost,
                                   needDiagonalWeights,
                                   ibox);
-  }
-  //now apply it
-  for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
-  {
-    auto      & lphfab = a_klp[dit[ibox]];
-    const auto& phifab = a_phi[dit[ibox]];
-    auto stencil = a_dictionary->getEBStencil(stencilName, ebbcName, a_domain, a_domain, ibox);
-    //set resc = Ave(resf) (true is initToZero)
-    stencil->apply(lphfab, phifab,  true, 1.0);
+    //now apply it
+    for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto      & lphfab = a_klp[dit[ibox]];
+      const auto& phifab = a_phi[dit[ibox]];
+      auto stencil = a_dictionary->getEBStencil(stencilName, ebbcName, a_domain, a_domain, ibox);
+      //set resc = Ave(resf) (true is initToZero)
+      stencil->apply(lphfab, phifab,  true, 1.0);
+    }
   }
 }
 /*******/ 

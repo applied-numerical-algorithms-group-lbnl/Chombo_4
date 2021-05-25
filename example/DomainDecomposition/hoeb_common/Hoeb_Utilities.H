@@ -18,16 +18,11 @@ namespace hoeb
   
   template <CENTERING cent>
   LocalStencil<CELL, Real> 
-  getDharshiIntFluxDAStencil(const EBIndex<cent>                            & a_face,
-                             const EBIndex<CELL>                            & a_startingVoF,
-                             const std::string                              & a_dombcname,
-                             const std::string                              & a_ebbcname,
-                             const EBGraph                                  & a_graph,
-                             const HostIrregData<CELL    ,  IndMomDIM , 1>  & voldat,
-                             const HostIrregData<BOUNDARY,  IndMomDIM , 1>  & ebfdat,
-                             const HostIrregData<XFACE, IndMomSDMinOne, 1>  & xfadat,
-                             const HostIrregData<YFACE, IndMomSDMinOne, 1>  & yfadat,
-                             const HostIrregData<ZFACE, IndMomSDMinOne, 1>  & zfadat,
+  getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
+                             const EBIndex<CELL>                                 & a_startingVoF,
+                             const std::string                                   & a_dombcname,
+                             const std::string                                   & a_ebbcname,
+                             const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                              Real a_alpha, Real a_beta, Real a_dx, int a_facedir)
   {
     //facedir == -1 means the EB

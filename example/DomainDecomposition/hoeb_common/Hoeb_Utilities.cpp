@@ -7,41 +7,79 @@ namespace hoeb
 {
   /******/  
   LocalStencil<CELL, Real> 
-  getFullDharshiStencil(const EBIndex<CELL>                            & a_vof,
-                        const std::string                              & a_dombcname,
-                        const std::string                              & a_ebbcname,
-                        const EBGraph                                  & a_graph,
-                        const HostIrregData<CELL    ,  IndMomDIM , 1>  & voldat,
-                        const HostIrregData<BOUNDARY,  IndMomDIM , 1>  & ebfdat,
-                        const HostIrregData<XFACE, IndMomSDMinOne, 1>  & xfadat,
-                        const HostIrregData<YFACE, IndMomSDMinOne, 1>  & yfadat,
-                        const HostIrregData<ZFACE, IndMomSDMinOne, 1>  & zfadat,
+  getFullDharshiStencil(const EBIndex<CELL>                                 & a_vof,
+                        const std::string                                   & a_dombcname,
+                        const std::string                                   & a_ebbcname,
+                        const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                         Real a_alpha, Real a_beta, Real a_dx)                            
+  {
+    LocalStencil<CELL, Real> vofsten;
+    //use the age-old trick of building up the stencil by construction
+    for(SideIterator sit; sit.ok(); ++sit)
     {
-      LocalStencil<CELL, Real> vofsten;
-      //use the age-old trick of building up the stencil by construction
-      for(SideIterator sit; sit.ok(); ++sit)
-      {
+      int isign = sign(sit());
+      {                                                // 
+        auto xfaces = a_graph.getXFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < xfaces.size(); iface++)
         {
-          int isign = sign(sit());
-          auto xfaces = a_graph.getXFaces(a_vof, sit());
-          for(int iface = 0; iface < xfaces.size(); iface++)
-          {
-            LocalStencil<CELL, Real>
-              fluxsten = getDharshiFaceFluxStencil<XFACE>(face,
+          auto face = xfaces[iface];
+          LocalStencil<CELL, Real>
+            fluxsten = getDharshiIntFluxDAStencil<XFACE>(face,
+                                                         a_vof,          
+                                                         a_dombcname,    
+                                                         a_ebbcname,
+                                                         a_geoserv,
+                                                         a_alpha, a_beta, a_dx, 0);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+      {                                                // 
+        auto yfaces = a_graph.getYFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < yfaces.size(); iface++)
+        {
+          auto face = yfaces[iface];
+          LocalStencil<CELL, Real>
+            fluxsten = getDharshiIntFluxDAStencil<YFACE>(face,
+                                                         a_vof,          
+                                                         a_dombcname,    
+                                                         a_ebbcname,
+                                                         a_geoserv,
+                                                         a_alpha, a_beta, a_dx, 1);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+#if DIM==3      
+      {                                                // 
+        auto zfaces = a_graph.getZFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < zfaces.size(); iface++)
+        {
+          auto face = zfaces[iface];
+          LocalStencil<CELL, Real>
+            fluxsten = getDharshiIntFluxDAStencil<ZFACE>(face,
+                                                         a_vof,          
+                                                         a_dombcname,    
+                                                         a_ebbcname,
+                                                         a_geoserv,
+                                                         a_alpha, a_beta, a_dx, 2);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+#endif
+      {
+        EBIndex<BOUNDARY> face = a_vof.getCutFace();
+        LocalStencil<CELL, Real>
+          fluxsten = getDharshiIntFluxDAStencil<BOUNDARY>(face,
                                                           a_vof,          
                                                           a_dombcname,    
-                                                          a_ebbcname,     
-                                                          a_graph,        
-                                                          voldat,         
-                                                          ebfdat,         
-                                                          xfadat,         
-                                                          yfadat,         
-                                                          zfadat,         
-                                                          a_alpha, a_beta, a_dx, 0);
-            Real factor = Real(isign)
-          }
+                                                          a_ebbcname,
+                                                          a_geoserv,
+                                                          a_alpha, a_beta, a_dx, -1);
+        vofsten += fluxsten;
       }
+      return vofsten;
     }
 
   /******/  
@@ -87,13 +125,6 @@ namespace hoeb
     const auto & yfadatldptr = a_geoserv->getYFaceData( a_srcDomain);
     const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
 
-    const auto & graphs = (*graphsldptr)[dit[a_ibox]];
-    const auto & voldat = (*voldatldptr)[dit[a_ibox]];
-    const auto & ebfdat = (*ebfdatldptr)[dit[a_ibox]];
-    const auto & xfadat = (*xfadatldptr)[dit[a_ibox]];
-    const auto & yfadat = (*yfadatldptr)[dit[a_ibox]];
-    const auto & zfadat = (*zfadatldptr)[dit[a_ibox]];
-    
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
       auto vofs = (*graphs)[dit[a_ibox]].getVoFs(*bit);
@@ -101,8 +132,7 @@ namespace hoeb
       {
         LocalStencil<CELL, Real> vofsten = getFullDharshiStencil(vofs[ivof],
                                                                  dombcname, ebbcname,
-                                                                 graphs,voldat,ebfdat,
-                                                                 xfadat,yfadat,zfadat,
+                                                                 a_geoserv,
                                                                  alpha, beta, a_dx);
         a_dstVoFs.push_back(vofs[ivof]);
         a_stencil.push_back(vofsten);
