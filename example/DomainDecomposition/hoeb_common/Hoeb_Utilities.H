@@ -28,7 +28,8 @@ namespace hoeb
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                              Proto::Box                                          & a_srcDomain,
                              unsigned int a_ibox,                              
-                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir);
+                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir,
+                             Side::LoHiSide a_vofside);
 
   //get the stencil for the laplacian described in Devendran, et al.
   void

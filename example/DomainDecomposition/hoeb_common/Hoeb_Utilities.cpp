@@ -5,40 +5,6 @@
 
 namespace hoeb
 {
-  vector<EBIndex<CELL> >
-  getVoFNeighbors(const EBIndex<CELL> & a_startingVoF,
-                  const EBGraph       & a_graph)
-  {
-    //need at least as many neighbors as we have coefficients.
-    static const int minsize = IndexedMoments<DIM, HOEB_MAX_ORDER>::size();
-    int radius = 3;
-    int maxrad = 4;
-    ParmParse pp;
-    pp.get("default_neighbor_radius", radius);
-    pp.get("maximum_neighbor_radius", maxrad);
-    PR_assert(radius <= maxrad);
-    bool hadEnough = false;
-    vector<EBIndex<CELL> > neighbors;
-    while(!hadEnough)
-    {
-      Bx ptbx(a_startingVoF.m_pt, a_startingVoF.m_pt);
-      Bx neibx = ptbx.grow(radius);
-      neibx &= a_graph.getDomain();
-      neighbors.clear();
-      for(auto bit = neibx.begin(); bit != neibx.end(); ++bit)
-      {
-        auto vofs = a_graph.getVoFs(*bit);
-        neighbors.insert(neighbors.end(), vofs.begin(), vofs.end());
-      }
-      //if we have too few neighbors, expand the radius
-      hadEnough =((radius >= maxrad) || (neighbors.size() >= minsize));
-      if(!hadEnough)
-      {
-        radius++;
-      }
-    }
-    return neighbors;
-  }
   /******/  
   LocalStencil<CELL, Real> 
   getFullDharshiStencil(const EBIndex<CELL>                                 & a_vof,
@@ -68,7 +34,7 @@ namespace hoeb
                                                          a_dombcname,    
                                                          a_ebbcname,
                                                          a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 0);
+                                                         a_alpha, a_beta, a_dx, 0, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -84,7 +50,7 @@ namespace hoeb
                                                          a_dombcname,    
                                                          a_ebbcname,
                                                          a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 1);
+                                                         a_alpha, a_beta, a_dx, 1, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -101,7 +67,7 @@ namespace hoeb
                                                          a_dombcname,    
                                                          a_ebbcname,
                                                          a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 2);
+                                                         a_alpha, a_beta, a_dx, 2, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -116,7 +82,7 @@ namespace hoeb
                                                         a_dombcname,    
                                                         a_ebbcname,
                                                         a_geoserv, a_srcDomain, a_ibox,
-                                                        a_alpha, a_beta, a_dx, -1);
+                                                        a_alpha, a_beta, a_dx, -1, Side::Invalid);
       vofsten += fluxsten;
     }
     //need to divide by dx^d to get kappa*lapl(phi)
