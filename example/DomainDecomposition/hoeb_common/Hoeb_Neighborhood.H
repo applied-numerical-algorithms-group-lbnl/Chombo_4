@@ -11,10 +11,13 @@
 
 namespace hoeb
 {
-  struct Neighborhood
+  
+  template <CENTERING srccent>
+  class Neighborhood
   {
   public:
-    vector<EBIndex<CELL> >       m_volumes;
+    //stencil information (so templated on where src not dst)
+    vector<EBIndex<srccent> >       m_volumes;
     vector<EBIndex<XFACE> >      m_xfacesDiri;
     vector<EBIndex<YFACE> >      m_yfacesDiri;
     vector<EBIndex<ZFACE> >      m_zfacesDiri;
@@ -23,8 +26,8 @@ namespace hoeb
     vector<EBIndex<ZFACE> >      m_zfacesNeum;
     vector<EBIndex<BOUNDARY> > m_cutfacesDiri;
     vector<EBIndex<BOUNDARY> > m_cutfacesNeum;
-    //starting location    
-    RealVect a_xbar;
+
+    
     //number of degrees of freedom.  need to know this to make
     //sure our matricies have sufficient entries
     unsigned int size()
@@ -75,13 +78,21 @@ namespace hoeb
     }
   }
                                     
-  template <CENTERING cent>
-  inline Neighborhood
-  getNeighbors(const EBIndex<cent>& a_start,
-               const EBGraph      & a_graph,
-               const string         a_dombcname[2*DIM],
-               const string       & a_ebbcname,
-               const int          & a_facedir)
+  template <CENTERING dstcent, CENTERING srccent>
+  inline Neighborhood<srccent>
+  getNeighbors(const EBIndex<dstcent>& a_start,
+               const EBGraph         & a_graph,
+               const string            a_dombcname[2*DIM],
+               const string          & a_ebbcname,
+               const int             & a_facedir);
+
+  template <CENTERING dstcent>
+  inline Neighborhood<CELL>
+  getNeighbors(const EBIndex<dstcent>& a_start,
+               const EBGraph         & a_graph,
+               const string            a_dombcname[2*DIM],
+               const string          & a_ebbcname,
+               const int             & a_facedir)
   {
     //need at least as many neighbors as we have coefficients.
     static const int minsize = IndexedMoments<DIM, HOEB_MAX_ORDER>::size();
@@ -92,7 +103,7 @@ namespace hoeb
     pp.get("maximum_neighbor_radius", maxrad);
     PR_assert(radius <= maxrad);
     bool hadEnough = false;
-    Neighborhood retval;
+    Neighborhood <CELL> retval;
     while(!hadEnough)
     {
       Point lo = a_start.m_pt;

@@ -3,6 +3,71 @@
 #include "Hoeb_Neighborhood.H"
 namespace hoeb
 {
+  template <unsigned int D, CENTERING cent>
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getIndexedMoment(const EBIndex<cent>                                              &   a_index,
+                   const HostIrregData<cent, IndexedMoments<D, HOEB_MAX_ORDER>, 1> &   a_irregfab,
+                   const EBGraph                                                    &   a_graph,
+                   const Real                                                       &   a_dx)
+  {
+    IndexedMoments<D, HOEB_MAX_ORDER> retval;
+    
+    if(a_graph.isRegular(a_index.m_pt))
+    {
+      retval.setToRegular(a_dx);
+    }
+    else if(a_graph.isIrregular(a_index.m_pt))
+    {
+      retval = a_irregfab(a_index, 0);
+    }
+    else
+    {
+      PROTO_ASSERT(false, "should not get here by construction");
+    }
+    return retval;
+  }
+  /******/  
+  template <CENTERING cent>
+  LAPACKMatrix
+  getMomentMatrix(const Neighborhood<cent>                            & a_block,
+                  const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                  const Chombo4::Box                                  & a_srcDomain,
+                  const RealVect                                      & a_xbar,
+                  unsigned int                                          a_ibox,
+                  Real                                                  a_dx)
+  {
+    typedef IndexedMoments<DIM  , HOEB_MAX_ORDER> IndMomDIM;
+    typedef IndexedMoments<DIM-1, HOEB_MAX_ORDER> IndMomSDMinOne;
+    unsigned int Pcols = IndMomDIM::size();
+    unsigned int Nrows = a_block.size();
+    LAPACKMatrix retval(Nrows, Pcols);
+    
+    auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
+    
+    const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
+    const auto & volmomldptr =  a_geoserv->getVoluData(a_srcDomain);
+    
+    const auto & graph     = (*graphsldptr)[dit[a_ibox]];
+    const auto & volmomfab = (*volmomldptr)[dit[a_ibox]];
+
+    unsigned int currentRow = 0;
+    for(unsigned int ivol = 0; ivol < a_block.m_volumes.size(); ivol++)
+    {
+      EBIndex<cent> vof    = a_block.m_volumes[ivol];
+      IndexedMoments<DIM  , HOEB_MAX_ORDER>
+        volmom = getIndexedMoment<DIM, cent>(vof, volmomfab, graph, a_dx);
+      for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        unsigned int currentCol = IndMomDIM::indexOf(momind);
+        retval(currentRow, currentCol) = volmom[momind];
+      }
+      currentRow++;
+    }
+
+    //now for the dirichlet domain faces
+    return retval;
+  }
   ///
   /**
      Return integral F dA  (do NOT divide out the area).
@@ -26,10 +91,17 @@ namespace hoeb
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     LocalStencil<CELL, Real>  retval;
 
-    //first let us get the cases where we don't have to do anything.
-    if(((a_facedir==-1)         && (a_ebbcname  == string("Neumann"))))
+    if(a_facedir==-1)
     {
-      return retval;
+      if(a_ebbcname  == string("Neumann"))
+      {
+        return retval;
+      }
+      else
+      {
+        PROTO_ASSERT(false, "not implemented");
+      }
+          
     }
     else if ((a_facedir >= 0) && a_face.m_isBoundary)
     {
@@ -38,13 +110,19 @@ namespace hoeb
       {
         return retval;
       }
+      else
+      {
+        PROTO_ASSERT(false, "not implemented");
+      }
     }
     else
     {
-      Neighborhood  block =
-        getNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
+      Neighborhood<CELL>  block =
+        getNeighbors<cent, CELL>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
+      RealVect xbar =   getFaceLocation(a_face, a_dx, a_facedir);
+
       //this matrix contains all the moments and boundary condition constraints
-      LAPACKMatrix momMat;
+      LAPACKMatrix momMat = getMomentMatrix<CELL>(block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx);
     }
     return retval;
   }
