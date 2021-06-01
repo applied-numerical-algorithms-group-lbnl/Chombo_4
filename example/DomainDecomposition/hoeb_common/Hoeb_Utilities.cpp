@@ -5,10 +5,23 @@
 
 namespace hoeb
 {
+  RealVect
+  getVoFLocation(const EBIndex<CELL>& a_face,
+                 Real                 a_dx,
+                 int                  a_facedir)
+  {
+    RealVect retval;
+    auto pt = a_face.m_pt; //high size of the face
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = a_dx*(0.5 + Real(pt[idir]));
+    }
+    return retval;
+  }
   /******/  
   LocalStencil<CELL, Real> 
   getFullDharshiStencil(const EBIndex<CELL>                                 & a_vof,
-                        const std::string                                   & a_dombcname,
+                        const std::string                                     a_dombcname[2*DIM],
                         const std::string                                   & a_ebbcname,
                         const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                         Proto::Box                                          & a_srcDomain,
@@ -140,13 +153,18 @@ namespace hoeb
     const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
     const auto & dbl         = a_geoserv->getDBL(a_srcDomain);
     auto dit = dbl.dataIterator();
+    string dombcarray[2*DIM];
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      dombcarray[ivec] = dombcname;
+    }
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
       auto vofs = (*graphsldptr)[dit[a_ibox]].getVoFs(*bit);
       for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
       {
         LocalStencil<CELL, Real> vofsten = getFullDharshiStencil(vofs[ivof],
-                                                                 dombcname, ebbcname,
+                                                                 dombcarray, ebbcname,
                                                                  a_geoserv, a_srcDomain, a_ibox,
                                                                  alpha, beta, a_dx);
         a_dstVoFs.push_back(vofs[ivof]);

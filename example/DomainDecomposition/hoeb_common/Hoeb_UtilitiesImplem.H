@@ -26,6 +26,27 @@ namespace hoeb
     }
     return retval;
   }
+  template <CENTERING cent>
+  inline RealVect
+  getFaceLocation(const EBIndex<cent>& a_face,
+                  Real                 a_dx,
+                  int                  a_facedir)
+  {
+    RealVect retval;
+    auto pt = a_face.m_pt; //high size of the face
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(idir == a_facedir)
+      {
+        retval[idir] = a_dx*Real(pt[idir]);
+      }
+      else
+      {
+        retval[idir] = a_dx*(0.5 + Real(pt[idir]));
+      }
+    }
+    return retval;
+  }
   /******/  
   template <CENTERING cent>
   LAPACKMatrix
@@ -77,10 +98,10 @@ namespace hoeb
   LocalStencil<CELL, Real> 
   getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
                              const EBIndex<CELL>                                 & a_startingVoF,
-                             const std::string                                    a_dombcname[2*DIM],
+                             const std::string                                     a_dombcname[2*DIM],
                              const std::string                                   & a_ebbcname,
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                             Proto::Box                                          & a_srcDomain,
+                             const Chombo4::Box                                  & a_srcDomain,
                              unsigned int a_ibox,                              
                              Real a_alpha, Real a_beta, Real a_dx, int a_facedir,
                              Side::LoHiSide a_vofside)
@@ -118,8 +139,11 @@ namespace hoeb
     else
     {
       Neighborhood<CELL>  block =
-        getNeighbors<cent, CELL>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
-      RealVect xbar =   getFaceLocation(a_face, a_dx, a_facedir);
+        getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
+      const EBIndex<cent>& face = a_face;
+      Real                 dx = a_dx;
+      int                  facedir = a_facedir;
+      RealVect xbar =   getFaceLocation(face, dx, facedir);
 
       //this matrix contains all the moments and boundary condition constraints
       LAPACKMatrix momMat = getMomentMatrix<CELL>(block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx);

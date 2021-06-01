@@ -24,7 +24,7 @@ namespace hoeb
   LAPACKMatrix
   getMomentMatrix(const Neighborhood<cent>                            & a_block,
                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                  const Box                                           & a_srcDomain,
+                  const Chombo4::Box                                  & a_srcDomain,
                   const RealVect                                      & a_xbar,
                   unsigned int                                          a_ibox,
                   Real                                                  a_dx);
@@ -39,10 +39,10 @@ namespace hoeb
   inline LocalStencil<CELL, Real> 
   getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
                              const EBIndex<CELL>                                 & a_startingVoF,
-                             const std::string                                   & a_dombcname,
+                             const std::string                                     a_dombcname[2*DIM],
                              const std::string                                   & a_ebbcname,
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                             Proto::Box                                          & a_srcDomain,
+                             const Chombo4::Box                                  & a_srcDomain,
                              unsigned int a_ibox,                              
                              Real a_alpha, Real a_beta, Real a_dx, int a_facedir,
                              Side::LoHiSide a_vofside);
@@ -52,38 +52,13 @@ namespace hoeb
   inline RealVect
   getFaceLocation(const EBIndex<cent>& a_face,
                   Real                 a_dx,
-                  int                  a_facedir)
-  {
-    RealVect retval;
-    auto pt = a_face.m_pt; //high size of the face
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      if(idir == a_facedir)
-      {
-        retval[idir] = a_dx*Real(pt[idir]);
-      }
-      else
-      {
-        retval[idir] = a_dx*(0.5 + Real(pt[idir]));
-      }
-      return retval;
-    }
-  }
+                  int                  a_facedir);
   
   ///get location of cell center of a volume
-  inline RealVect
+  RealVect
   getVoFLocation(const EBIndex<CELL>& a_face,
                  Real                 a_dx,
-                 int                  a_facedir)
-  {
-    RealVect retval;
-    auto pt = a_face.m_pt; //high size of the face
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      retval[idir] = a_dx*(0.5 + Real(pt[idir]));
-    }
-    return retval;
-  }
+                 int                  a_facedir);
 
   //get the stencil for the laplacian described in Devendran, et al.
   void

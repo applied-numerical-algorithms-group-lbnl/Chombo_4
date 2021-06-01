@@ -30,7 +30,7 @@ namespace hoeb
     
     //number of degrees of freedom.  need to know this to make
     //sure our matricies have sufficient entries
-    unsigned int size()
+    unsigned int size() const
     {
       unsigned int retval = 0;
       retval +=      m_volumes.size();
@@ -88,11 +88,11 @@ namespace hoeb
 
   template <CENTERING dstcent>
   inline Neighborhood<CELL>
-  getNeighbors(const EBIndex<dstcent>& a_start,
-               const EBGraph         & a_graph,
-               const string            a_dombcname[2*DIM],
-               const string          & a_ebbcname,
-               const int             & a_facedir)
+  getCellNeighbors(const EBIndex<dstcent>& a_start,
+                   const EBGraph         & a_graph,
+                   const string            a_dombcname[2*DIM],
+                   const string          & a_ebbcname,
+                   const int             & a_facedir)
   {
     //need at least as many neighbors as we have coefficients.
     static const int minsize = IndexedMoments<DIM, HOEB_MAX_ORDER>::size();
