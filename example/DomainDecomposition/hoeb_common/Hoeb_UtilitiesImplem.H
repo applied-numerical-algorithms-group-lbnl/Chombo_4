@@ -87,6 +87,15 @@ namespace hoeb
     }
 
     //now for the dirichlet domain faces
+    for(unsigned int ivol = 0; ivol < a_block.m_xfacesDiri.size(); ivol++)
+    {
+    }
+    for(unsigned int ivol = 0; ivol < a_block.m_yfacesDiri.size(); ivol++)
+    {
+      
+    }
+#if DIM==3
+#endif    
     return retval;
   }
   ///
