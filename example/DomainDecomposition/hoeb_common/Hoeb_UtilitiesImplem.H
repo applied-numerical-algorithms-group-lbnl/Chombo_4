@@ -47,6 +47,47 @@ namespace hoeb
     }
     return retval;
   }
+  ///
+  template <unsigned int D>
+  IndexTM<int, D-1>
+  getFaceIndexFromVol(const  IndexTM<int, D>& a_volind, int a_facedir)
+  {
+    IndexTM<int, D-1> retval;
+    int ifac = 0;
+    for(int ivol = 0; ivol < D; ivol++)
+    {
+      if(ivol != a_facedir)
+      {
+        retval[ifac] = a_volind[ivol];
+        ifac++;
+      }
+    }
+    return retval;
+  }
+  ///
+  template <unsigned int D>
+  IndexedMoments<D, HOEB_MAX_ORDER>
+  getVolMomFromFacMom(const IndexedMoments<D-1, HOEB_MAX_ORDER>& a_facmom,
+                      int a_facedir)
+  {
+    IndexedMoments<D, HOEB_MAX_ORDER> retval;
+    for(MomentIterator< D, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+    {
+      IndexTM<int, D> volpow = momit();
+      Real momval;
+      if(volpow[a_facedir] > 0) //no derivs in this direction
+      {
+        momval = 0;
+      }
+      else
+      {
+        IndexTM<int, D-1> facpow = getFaceIndexFromVol<DIM>(volpow, a_facedir);
+        momval = a_facmom[facpow];
+      }
+      retval[volpow] = momval;
+    }
+    return retval;
+  }
   /******/  
   template <CENTERING cent>
   LAPACKMatrix
@@ -72,32 +113,65 @@ namespace hoeb
     const auto & volmomfab = (*volmomldptr)[dit[a_ibox]];
 
     unsigned int currentRow = 0;
-    for(unsigned int ivol = 0; ivol < a_block.m_volumes.size(); ivol++)
     {
-      EBIndex<cent> vof    = a_block.m_volumes[ivol];
-      IndexedMoments<DIM  , HOEB_MAX_ORDER>
-        volmom = getIndexedMoment<DIM, cent>(vof, volmomfab, graph, a_dx);
-      for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+      //volumes
+      for(unsigned int ivol = 0; ivol < a_block.m_volumes.size(); ivol++)
       {
-        auto momind = momit();
-        unsigned int currentCol = IndMomDIM::indexOf(momind);
-        retval(currentRow, currentCol) = volmom[momind];
+        EBIndex<cent> vof    = a_block.m_volumes[ivol];
+        IndexedMoments<DIM  , HOEB_MAX_ORDER>
+          volmom = getIndexedMoment<DIM, cent>(vof, volmomfab, graph, a_dx);
+        for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+        {
+          auto momind = momit();
+          unsigned int currentCol = IndMomDIM::indexOf(momind);
+          retval(currentRow, currentCol) = volmom[momind];
+        }
+        currentRow++;
       }
-      currentRow++;
     }
-
-    //now for the dirichlet domain faces
-    for(unsigned int ivol = 0; ivol < a_block.m_xfacesDiri.size(); ivol++)
     {
+      //now for the dirichlet domain x faces
+      const auto & xfacldptr  =  a_geoserv->getXFaceData(a_srcDomain);
+      const auto & xfacdatfab = (*xfacldptr)[dit[a_ibox]];
+      //      addDirichletRow<XFACE>(retval, xfac
+      for(unsigned int ivol = 0; ivol < a_block.m_xfacesDiri.size(); ivol++)
+      {
+        const auto & face = a_block.m_xfacesDiri[ivol];
+        IndexedMoments<DIM-1, HOEB_MAX_ORDER>
+          facmom = getIndexedMoment<DIM-1, XFACE>(face, xfacdatfab, graph, a_dx);
+        //need to translate this into higher dim because that is what the matrix sees
+        int facedir = 0;
+        IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = getVolMomFromFacMom<DIM>(facmom, facedir);
+        for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+        {
+          auto momind = momit();
+          unsigned int currentCol = IndMomDIM::indexOf(momind);
+          retval(currentRow, currentCol) = volmom[momind];
+        }
+        currentRow++;
+      }
     }
-    for(unsigned int ivol = 0; ivol < a_block.m_yfacesDiri.size(); ivol++)
     {
+      //now for the dirichlet domain y faces
+      for(unsigned int ivol = 0; ivol < a_block.m_yfacesDiri.size(); ivol++)
+      {
+        const auto & face = a_block.m_yfacesDiri[ivol];
       
+      }
     }
 #if DIM==3
+    {
+      //now for the dirichlet domain z faces
+      for(unsigned int ivol = 0; ivol < a_block.m_zfacesDiri.size(); ivol++)
+      {
+        const auto & face = a_block.m_zFacesDiri[ivol];
+      }
+    }
 #endif    
     return retval;
-  }
+  }  
+
+
   ///
   /**
      Return integral F dA  (do NOT divide out the area).

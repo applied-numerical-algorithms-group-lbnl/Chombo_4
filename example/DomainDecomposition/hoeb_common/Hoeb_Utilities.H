@@ -11,7 +11,7 @@
 
 namespace hoeb
 {
-  
+  /// extract data if it is there, use regular if not
   template <unsigned int D, CENTERING cent>
   inline IndexedMoments<D, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<cent>                                              &   a_index,
@@ -19,7 +19,7 @@ namespace hoeb
                    const EBGraph                                                    &   a_graph,
                    const Real                                                       &   a_dx);
   
-  ///
+  /// get the dreaded M from the neighborhood
   template <CENTERING cent>
   LAPACKMatrix
   getMomentMatrix(const Neighborhood<cent>                            & a_block,
@@ -60,7 +60,7 @@ namespace hoeb
                  Real                 a_dx,
                  int                  a_facedir);
 
-  //get the stencil for the laplacian described in Devendran, et al.
+  ///get the stencil for the laplacian described in Devendran, et al.
   void
   dharshiLaplStencil(string                                              & a_stencilName,
                      string                                              & a_ebbcName,
@@ -79,14 +79,14 @@ namespace hoeb
                      const Real                                          & a_dx,
                      unsigned int                                          a_ibox);
 
-  //return an implicit function based on stuff in the input file
-  extern shared_ptr<BaseIF> getImplicitFunction();
+  ///return an implicit function based on stuff in the input file
+  shared_ptr<BaseIF> getImplicitFunction();
 
   ///
   /**
      Fill in scalar from exactsolutions class
   */
-  extern void
+  void
   fillPhi(EBLevelBoxData<CELL, 1>                                &  a_phi,
           const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
           const Chombo4::DisjointBoxLayout                       &  a_grids,
@@ -94,8 +94,10 @@ namespace hoeb
           const Real                                             &  a_dx,
           const shared_ptr< GeometryService<HOEB_MAX_ORDER> >    &  a_geoserv);
 
-  /****/
-  extern void
+  ///
+  /**
+   **/
+  void
   restrictKappaLphi(EBLevelBoxData<CELL, 1>                                           &  a_klpFToC,
                     const EBLevelBoxData<CELL, 1>                                     &  a_klpFine,
                     const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
@@ -108,6 +110,19 @@ namespace hoeb
                     const Real                                                        &  a_dxCoar,
                     const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
+
+  ///
+  template <unsigned int D>
+  inline 
+  IndexTM<int, D-1>
+  getFaceIndexFromVol(const  IndexTM<int, D>& a_volind, int a_facedir);
+
+  ///
+  template <unsigned int D>
+  inline 
+  IndexedMoments<D, HOEB_MAX_ORDER>
+  getVolMomFromFacMom(const IndexedMoments<D-1, HOEB_MAX_ORDER>& a_facmom,
+                      int a_facedir);
 }
 #include "Hoeb_UtilitiesImplem.H"
 #endif

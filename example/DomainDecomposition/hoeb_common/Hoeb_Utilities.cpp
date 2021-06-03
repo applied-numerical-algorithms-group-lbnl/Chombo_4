@@ -5,6 +5,7 @@
 
 namespace hoeb
 {
+  
   RealVect
   getVoFLocation(const EBIndex<CELL>& a_face,
                  Real                 a_dx,
