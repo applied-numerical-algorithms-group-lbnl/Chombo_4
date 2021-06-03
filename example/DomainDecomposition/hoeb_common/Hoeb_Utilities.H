@@ -54,11 +54,7 @@ namespace hoeb
                   Real                 a_dx,
                   int                  a_facedir);
   
-  ///get location of cell center of a volume
-  RealVect
-  getVoFLocation(const EBIndex<CELL>& a_face,
-                 Real                 a_dx,
-                 int                  a_facedir);
+
 
   ///get the stencil for the laplacian described in Devendran, et al.
   void

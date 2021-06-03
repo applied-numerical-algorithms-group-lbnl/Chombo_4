@@ -6,19 +6,6 @@
 namespace hoeb
 {
   
-  RealVect
-  getVoFLocation(const EBIndex<CELL>& a_face,
-                 Real                 a_dx,
-                 int                  a_facedir)
-  {
-    RealVect retval;
-    auto pt = a_face.m_pt; //high size of the face
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      retval[idir] = a_dx*(0.5 + Real(pt[idir]));
-    }
-    return retval;
-  }
   /******/  
   LocalStencil<CELL, Real> 
   getFullDharshiStencil(const EBIndex<CELL>                                 & a_vof,
