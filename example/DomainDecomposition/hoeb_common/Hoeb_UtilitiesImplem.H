@@ -32,7 +32,7 @@ namespace hoeb
   template <unsigned int D, CENTERING cent>
   inline IndexedMoments<D, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<cent>                                              &   a_index,
-                   const HostIrregData<cent, IndexedMoments<D, HOEB_MAX_ORDER>, 1> &   a_irregfab,
+                   const HostIrregData<cent, IndexedMoments<D, HOEB_MAX_ORDER>, 1>  &   a_irregfab,
                    const EBGraph                                                    &   a_graph,
                    const Real                                                       &   a_dx)
   {
@@ -60,6 +60,7 @@ namespace hoeb
   {
     RealVect retval;
     auto pt = a_face.m_pt; //high size of the face
+    //this will work for cell centers or boundary faces as well
     for(int idir = 0; idir < DIM; idir++)
     {
       if(idir == a_facedir)
@@ -114,6 +115,104 @@ namespace hoeb
     }
     return retval;
   }
+  /*************/
+  inline IndexedMoments<DIM, HOEB_MAX_ORDER>
+  getEBIndexedMoment(const EBIndex<BOUNDARY>                             & a_face,
+                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                     const Chombo4::Box                                  & a_srcDomain,
+                     const Chombo4::DataIndex                            & a_datind,
+                     const EBGraph                                       & a_graph,
+                     int a_normDir, Real a_dx)
+  {
+    IndexedMoments<DIM, HOEB_MAX_ORDER> retval;
+    //have to do this because the ebnormal moments have a cell type
+    EBIndex<CELL> vof = a_face.getVoF();
+    if(a_normDir == 0)
+    {
+      const auto   xnormMomLDptr = a_geoserv->getEBNormalData_x(a_srcDomain);
+      const auto & xnormmomfab = (*xnormMomLDptr)[a_datind];
+      getIndexedMoment<DIM, CELL>(vof, xnormmomfab, a_graph, a_dx);
+    }
+    else if(a_normDir == 1)
+    {
+      const auto   ynormMomLDptr = a_geoserv->getEBNormalData_y(a_srcDomain);
+      const auto & ynormmomfab = (*ynormMomLDptr)[a_datind];
+      getIndexedMoment<DIM, CELL>(vof, ynormmomfab, a_graph, a_dx);
+    }
+#if DIM==3
+    else if(a_normDir == 2)
+    {
+      const auto   znormMomLDptr = a_geoserv->getEBNormalData_z(a_srcDomain);
+      const auto & znormmomfab = (*znormMomLDptr)[a_datind];
+      getIndexedMoment<DIM,CELL>(vof, znormmomfab, a_graph, a_dx);
+    }
+#endif
+    else
+    {
+      PROTO_ASSERT(false, "getshiftedindexedmoment: bogus normdir");
+    }
+    return retval;
+  }
+  ////
+  inline void
+  shiftMomentAndFillRow(LAPACKMatrix                            & a_mat,
+                        IndexedMoments<    DIM, HOEB_MAX_ORDER> & a_bcmom,
+                        const IndexTM<Real, DIM>                & a_xbardistance,
+                        const unsigned int                      & a_currentRow)
+  {
+                          
+    //shift so it has the same xbar
+    a_bcmom.shift(a_xbardistance);
+    for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+    {
+      auto momind = momit();
+      unsigned int currentCol = IndexedMoments<DIM, HOEB_MAX_ORDER>::indexOf(momind);
+      a_mat(a_currentRow, currentCol) = a_bcmom[momind];
+    }
+  }
+  /////
+  inline void
+  fillMatrixRowForEBBC(LAPACKMatrix                                        & a_mat,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_srcDomain,
+                       const EBIndex<BOUNDARY>                             & a_face,
+                       const EBGraph                                       & a_graph,
+                       const IndexTM<Real, DIM>                            & a_xbardistance,
+                       const Chombo4::DataIndex                            & a_datind,
+                       const unsigned int                                  & a_currentRow,
+                       int a_facedir, Real a_dx, string a_bcname)
+  {
+    IndexedMoments<    DIM, HOEB_MAX_ORDER> bcmom;
+    for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+    {
+      auto momind = momit();
+      Real bcval = 0;
+      for(unsigned  int normDir = 0; normDir < DIM; normDir++)
+      {
+        IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
+          getEBIndexedMoment(a_face, a_geoserv, a_srcDomain,
+                             a_datind, a_graph, normDir, a_dx);
+
+
+        if(a_bcname == string("Dirichlet"))
+        {
+          bcval  += normMom[momind];
+        }
+        else if(a_bcname == string("Neumann"))
+        {
+          if(momind[normDir] > 0)
+          {
+            int pd = momind[normDir];
+            IndexTM<int, DIM> derind =momind - IndexTM<int, DIM>::BASISV(normDir);
+            Real derval = normMom[derind];
+            bcval  += pd*derval;
+          }
+        }
+      }
+      bcmom[momind] = bcval;
+    }
+    shiftMomentAndFillRow(a_mat, bcmom, a_xbardistance, a_currentRow);
+  }
 
   ///
   template < CENTERING cent>
@@ -124,10 +223,8 @@ namespace hoeb
    const EBIndex<cent>                                                  & a_face,
    const EBGraph                                                        & a_graph,
    const IndexTM<Real, DIM>                                             & a_xbardistance,
-   const unsigned int                                                     a_currentRow,
-   int                                                                    a_facedir,
-   Real                                                                   a_dx,
-   string                                                                 a_bcname)
+   const unsigned int                                                   & a_currentRow,
+   int a_facedir, Real  a_dx, string a_bcname)
   {
                        
     IndexedMoments<DIM-1, HOEB_MAX_ORDER>
@@ -160,15 +257,7 @@ namespace hoeb
     {
       PROTO_ASSERT(false, "fillmatrixrow: bogus bc name");
     }
-    //shift so it has the same xbar
-    bcmom.shift(a_xbardistance);
-    for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
-    {
-      auto momind = momit();
-      unsigned int currentCol = IndexedMoments<DIM, HOEB_MAX_ORDER>::indexOf(momind);
-      a_mat(a_currentRow, currentCol) = bcmom[momind];
-    }
-
+    shiftMomentAndFillRow(a_mat, bcmom, a_xbardistance, a_currentRow);
   }
   /******/  
   template <CENTERING cent>
@@ -290,7 +379,35 @@ namespace hoeb
         currentRow++;
       }
     }
-#endif    
+#endif
+    {
+      //Cut faces
+      for(unsigned int ivol = 0; ivol < a_block.m_cutfacesDiri.size(); ivol++)
+      {
+        const auto & face = a_block.m_cutfacesDiri[ivol];
+        //-1 gets the cell centered location
+        RealVect vofloc = getFaceLocation<BOUNDARY>(face, a_dx, -1);
+        IndexTM<Real, DIM> distance = getIndexDistance(vofloc, a_xbar);
+        fillMatrixRowForEBBC(retval, a_geoserv, a_srcDomain, face, graph, distance,
+                             dit[a_ibox], currentRow, 2, a_dx, 
+                             string("Dirichlet"));
+      
+        currentRow++;
+      }
+      for(unsigned int ivol = 0; ivol < a_block.m_cutfacesNeum.size(); ivol++)
+      {
+        const auto & face = a_block.m_cutfacesNeum[ivol];
+        //-1 gets the cell centered location
+        RealVect vofloc = getFaceLocation<BOUNDARY>(face, a_dx, -1);
+        IndexTM<Real, DIM> distance = getIndexDistance(vofloc, a_xbar);
+        fillMatrixRowForEBBC(retval, a_geoserv, a_srcDomain, face, graph, distance,
+                             dit[a_ibox], currentRow, 2, a_dx, 
+                             string("Neumann"));
+      
+        currentRow++;
+      }
+    }
+
     return retval;
   }  
 
@@ -318,17 +435,13 @@ namespace hoeb
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     LocalStencil<CELL, Real>  retval;
 
+    //when I know the answer, short circuit all the other stuff and return it
     if(a_facedir==-1)
     {
       if(a_ebbcname  == string("Neumann"))
       {
         return retval;
       }
-      else
-      {
-        PROTO_ASSERT(false, "not implemented");
-      }
-          
     }
     else if ((a_facedir >= 0) && a_face.m_isBoundary)
     {
@@ -337,13 +450,10 @@ namespace hoeb
       {
         return retval;
       }
-      else
-      {
-        PROTO_ASSERT(false, "not implemented");
-      }
     }
     else
     {
+      //get the neighborhood near the target face
       Neighborhood<CELL>  block =
         getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
       const EBIndex<cent>& face = a_face;
@@ -353,6 +463,8 @@ namespace hoeb
 
       //this matrix contains all the moments and boundary condition constraints
       LAPACKMatrix momMat = getMomentMatrix<CELL>(block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx);
+
+      
     }
     return retval;
   }

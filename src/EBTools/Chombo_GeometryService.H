@@ -43,6 +43,8 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  //this ought to have a boundary type but 
+  //in this case boundary and cell have the same semantic
   typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
   ///
