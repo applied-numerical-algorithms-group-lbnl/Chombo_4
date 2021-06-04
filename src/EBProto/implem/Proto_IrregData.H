@@ -74,9 +74,14 @@ namespace Proto
     CUDA_DECORATION
     inline bool contains(EBIndex<cent>& a_in, const Point& a_low, const Point& a_high);
 
+#ifndef PROTO_CUDA
+#define FORCE_INLINE inline
+#else  
+#define FORCE_INLINE __forceinline__
+#endif  
     template <CENTERING cent>
     CUDA_DECORATION
-    __forceinline__ bool copyContains(const EBIndex<cent>& a_ind, const Point & a_srcbox_low, const Point & a_srcbox_high)
+    FORCE_INLINE bool copyContains(const EBIndex<cent>& a_ind, const Point & a_srcbox_low, const Point & a_srcbox_high)
     {
       CENTERING thiscent = cent;
 
