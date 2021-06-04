@@ -182,15 +182,15 @@ namespace Proto
   {
     using std::cout;  
 
-    cout    << std::setprecision(8)
+    pout()  << std::setprecision(8)
             << std::setiosflags(std::ios::showpoint)
             << std::setiosflags(std::ios::scientific);
   
     using std::endl;
-    cout << "index \t  moment  " << endl;
+    pout() << "index \t  moment  " << endl;
     for(MomentIterator<Dim, P> iter; iter.ok(); ++iter)
     {
-      cout <<  iter() << "\t" << (*this)[iter()] << endl;
+      pout() <<  iter() << "\t" << (*this)[iter()] << endl;
     }
 
   }
