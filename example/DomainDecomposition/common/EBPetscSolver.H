@@ -156,46 +156,41 @@ public:
   //need the inhomogeoneous contribution in a data holder 
   void
   fillInhoContr(const vector<double>   & a_inhoContr,
-		const vector< EBIndex<CELL> > & a_dstVoFs)
+		const vector< EBIndex<CELL> > & a_dstVoFs,
+                const Chombo4::DataIndex & a_dit)
   {
     using Chombo4::DataIterator;
     CH_TIME("EBPetscSolver::fillInhoContr"); 
-    DataIterator dit = m_grids.dataIterator();
-    int ideb = 0;
-    for(int ibox = 0; ibox < dit.size(); ++ibox)
-    {
-      auto& inhodat = m_inhoContr[dit[ibox]];
-      inhodat.setVal(0.0);
-      auto grid =m_grids[dit[ibox]];
-      Bx  grbx = inhodat.inputBox();
-      const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-      EBHostData<CELL, Real, 1> hostdat(grbx, graph);
-      BoxData<        Real, 1>& reghost = hostdat.getRegData();
-      HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
+    auto& inhodat = m_inhoContr[a_dit];
+    inhodat.setVal(0.0);
+    auto grid =m_grids[a_dit];
+    Bx  grbx = inhodat.inputBox();
+    const EBGraph  & graph = (*m_graphs)[a_dit];
+    EBHostData<CELL, Real, 1> hostdat(grbx, graph);
+    BoxData<        Real, 1>& reghost = hostdat.getRegData();
+    HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
 
-      for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    {
+      auto vof    =   a_dstVoFs[ivof];
+      auto pt     =   a_dstVoFs[ivof].m_pt;
+      if(graph.isRegular(pt))
       {
-        auto vof    =   a_dstVoFs[ivof];
-	auto pt     =   a_dstVoFs[ivof].m_pt;
-	if(graph.isRegular(pt))
-        {
-          reghost(pt, 0) = a_inhoContr[ivof];
-        }
-        else if(graph.isCovered(pt))
-        {
-          reghost(pt, 0) = 0.0;
-        }
-        else
-        {
-	  reghost(pt  , 0) = a_inhoContr[ivof];
-	  irrhost(vof , 0) = a_inhoContr[ivof];
-	}
+        reghost(pt, 0) = a_inhoContr[ivof];
       }
-      // now copy to the device
-      EBLevelBoxData<CELL, 1>::copyToDevice(inhodat, hostdat);
-  
-      ideb++;
+      else if(graph.isCovered(pt))
+      {
+        reghost(pt, 0) = 0.0;
+      }
+      else
+      {
+        reghost(pt  , 0) = a_inhoContr[ivof];
+        irrhost(vof , 0) = a_inhoContr[ivof];
+      }
     }
+    // now copy to the device
+    EBLevelBoxData<CELL, 1>::copyToDevice(inhodat, hostdat);
+  
     m_inhoContr.exchange(m_exchangeCopier);
   }
 
@@ -233,7 +228,7 @@ public:
       ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
       ideb++;
     }
-    m_kappa.exchange(m_exchangeCopier);
+    //m_kappa.exchange(m_exchangeCopier);
   }
 
   /****/
@@ -480,7 +475,7 @@ private:
       a_allIrregPoints |= a_dstVoFs[ipt].m_pt;
     }
 
-    fillInhoContr(inhoContr,a_dstVoFs);
+    fillInhoContr(inhoContr,a_dstVoFs,a_dit);
 
     return 0;
   }
@@ -501,6 +496,7 @@ private:
     LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
     
     DataIterator dit = m_grids.dataIterator();
+    int vec_pos = 0;
     for (int ibox=0;ibox< dit.size(); ibox++)
     {
       auto& hostfab =   hostDst[dit[ibox]];
@@ -515,7 +511,8 @@ private:
         {
           auto vof = vofs[ivof];
           PetscInt ki = m_gids[dit[ibox]](vof, 0);
-          hostfab(vof, 0) = arr[ki];
+          hostfab(vof, 0) = arr[vec_pos];
+	  vec_pos++;
         }
       }
     }
