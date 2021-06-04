@@ -232,6 +232,7 @@ int main(int a_argc, char* a_argv[])
   }
 
   pout() << "printing time table " << endl;
+  CH_TIMER_REPORT();
 #ifdef CH_MPI
 #ifdef CH_USE_PETSC
   pout() << "about to call petsc Finalize" << std::endl;

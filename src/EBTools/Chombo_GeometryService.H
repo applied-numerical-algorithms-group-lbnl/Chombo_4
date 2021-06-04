@@ -43,6 +43,9 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  //this ought to have a boundary type but 
+  //in this case boundary and cell have the same semantic
+  typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
   ///
   /**
@@ -94,6 +97,13 @@ public:
   }
 
   ///
+  inline DisjointBoxLayout const
+  getDBL()
+  {
+    return m_grids;
+  }
+  
+  ///
   inline const shared_ptr<LevelData<EBFaData> >
   getEBFaceData() const
   {
@@ -121,6 +131,26 @@ public:
     return m_zfacdata;
   }
 
+  ///Get eb moment in the x direction 
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_x() const
+  {
+    return m_ebnormaldata[0];
+  }
+
+  ///Get eb moment in the y direction
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_y() const
+  {
+    return m_ebnormaldata[1];
+  }
+
+  ///Get eb moment in the z direction
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_z() const
+  {
+    return m_ebnormaldata[2];
+  }
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
@@ -153,6 +183,43 @@ public:
 
           reghost(pt  , 0) = kappavof;
           irrhost(vof , 0) = kappavof;
+        }
+      }
+    }
+  }
+
+  /// fill data holder with values of the EBFaceData.
+  inline void fillEBFaceData(EBHostData<CELL,Real, 1> & a_ebfacedata,
+                             const Box                & a_grbx ,
+                             const DataIndex          & a_dit) const
+  { 
+    const EBFaData & ebfmo = (*m_ebfadata)[a_dit];
+    const EBGraph  & graph = (*m_graphs)[a_dit];
+    BoxData<        Real, 1>& reghost = a_ebfacedata.getRegData();
+    HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
+    for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+    { 
+      Point pt  = ProtoCh::getPoint(bit());
+      if(graph.isRegular(pt))
+      {
+        reghost(pt, 0) = 0.0;
+      }
+      else if(graph.isCovered(pt))
+      {
+        reghost(pt, 0) = 0.0;
+      }
+      else
+      { 
+        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+        for(int ivec = 0; ivec < vofs.size(); ivec++)
+        {
+          const EBIndex<CELL>& vof = vofs[ivec];
+          const EBIndex<BOUNDARY> ebf = vof.getCutFace();
+          const IndMomDIM&  momspt = ebfmo(ebf, 0);
+          double ebfacevof = momspt[0]/m_dx;
+
+          reghost(pt  , 0) = ebfacevof;
+          irrhost(vof , 0) = ebfacevof;
         }
       }
     }
@@ -320,6 +387,9 @@ private:
 
   ///
   shared_ptr<LevelData<ZFacData> >    m_zfacdata;
+
+  ///
+  shared_ptr<LevelData<EBNormalData> >      m_ebnormaldata[3];
     
   //origin                            
   RealVect                            m_origin;
@@ -361,6 +431,7 @@ template <int order>
 class GeometryService
 {
 
+
 public:
 
   typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -373,7 +444,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-
+  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBNormalData;
 
 
   ///
@@ -489,6 +560,17 @@ public:
     
     (*this)[a_domain]->fillKappa(a_kappa, a_grid, a_dit);
   }
+
+  /// fill a data holder in with eb face data
+  inline void
+  fillEBFaceData(EBHostData<CELL,Real, 1>& a_ebfdata,
+                 const Box                & a_grid ,
+                 const DataIndex          & a_dit,
+                 const Box                & a_domain) const
+  { 
+
+    (*this)[a_domain]->fillEBFaceData(a_ebfdata, a_grid, a_dit);
+  }
       
   ///
   inline shared_ptr<LevelData<EBFaData> >
@@ -516,6 +598,32 @@ public:
   getZFaceData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getZFaceData();
+  }
+
+  ///Get eb moment in the x direction
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_x(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBNormalData_x();
+  }
+
+  ///Get eb moment in the y direction
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_y(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBNormalData_y();
+  }
+
+  inline DisjointBoxLayout getDBL(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getDBL();
+  }
+  
+  ///Get eb moment in the z direction
+  inline shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData_z(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getEBNormalData_z();
   }
 
   ///
