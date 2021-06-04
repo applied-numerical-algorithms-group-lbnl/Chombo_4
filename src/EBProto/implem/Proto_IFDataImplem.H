@@ -346,7 +346,7 @@ namespace Proto
        the stuff below makes convergence tests do weird things
        but makes for better answers
     */
-    if(0)
+    if(1)
     {
       if (m_intersections.size() == 0)
       {
