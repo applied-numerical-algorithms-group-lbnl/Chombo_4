@@ -262,7 +262,8 @@ namespace hoeb
   /******/  
   template <CENTERING cent>
   LAPACKMatrix
-  getMomentMatrix(const Neighborhood<cent>                            & a_block,
+  getMomentMatrix(LAPACKMatrix                                        & a_weights,
+                  const Neighborhood<cent>                            & a_block,
                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                   const Chombo4::Box                                  & a_srcDomain,
                   const RealVect                                      & a_xbar,
@@ -274,6 +275,7 @@ namespace hoeb
     unsigned int Pcols = IndMomDIM::size();
     unsigned int Nrows = a_block.size();
     LAPACKMatrix retval(Nrows, Pcols);
+    a_weights.define(Nrows, 1);
     
     auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
     
@@ -300,6 +302,7 @@ namespace hoeb
           unsigned int currentCol = IndMomDIM::indexOf(momind);
           retval(currentRow, currentCol) = volmom[momind];
         }
+        a_weights(currentRow, 0) = a_block.m_volumesWgt[currentRow];
         currentRow++;
       }
     }
@@ -315,6 +318,7 @@ namespace hoeb
         fillMatrixRowForDomBC<XFACE>(retval, xfacdatfab, face, graph, distance,
                                      currentRow, 0, a_dx, string("Dirichlet"));
 
+        a_weights(currentRow,0) = a_block.m_xfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_xfacesNeum.size(); ivol++)
@@ -325,6 +329,7 @@ namespace hoeb
         fillMatrixRowForDomBC<XFACE>(retval, xfacdatfab, face, graph, distance,
                                      currentRow, 0, a_dx, string("Neumann"));
 
+        a_weights(currentRow,0) = a_block.m_xfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -340,6 +345,7 @@ namespace hoeb
         fillMatrixRowForDomBC<YFACE>(retval, yfacdatfab, face, graph, distance,
                                      currentRow, 1, a_dx, string("Dirichlet"));
       
+        a_weights(currentRow,0) = a_block.m_yfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_yfacesNeum.size(); ivol++)
@@ -350,6 +356,7 @@ namespace hoeb
         fillMatrixRowForDomBC<YFACE>(retval, yfacdatfab, face, graph, distance,
                                      currentRow, 1, a_dx, string("Neumann"));
       
+        a_weights(currentRow,0) = a_block.m_yfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -366,6 +373,7 @@ namespace hoeb
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
                                      currentRow, 2, a_dx, string("Dirichlet"));
       
+        a_weights(currentRow,0) = a_block.m_zfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_zfacesNeum.size(); ivol++)
@@ -376,6 +384,7 @@ namespace hoeb
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
                                      currentRow, 2, a_dx, string("Neumann"));
       
+        a_weights(currentRow,0) = a_block.m_zfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -392,6 +401,7 @@ namespace hoeb
                              dit[a_ibox], currentRow, 2, a_dx, 
                              string("Dirichlet"));
       
+        a_weights(currentRow,0) = a_block.m_cutfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_cutfacesNeum.size(); ivol++)
@@ -404,6 +414,7 @@ namespace hoeb
                              dit[a_ibox], currentRow, 2, a_dx, 
                              string("Neumann"));
       
+        a_weights(currentRow,0) = a_block.m_cutfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -462,10 +473,13 @@ namespace hoeb
       RealVect xbar =   getFaceLocation(face, dx, facedir);
 
       //this matrix contains all the moments and boundary condition constraints
-      LAPACKMatrix momMat = getMomentMatrix<CELL>(block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx);
+      LAPACKMatrix weight;
+      LAPACKMatrix momMat = getMomentMatrix<CELL>(weight, block, a_geoserv,
+                                                  a_srcDomain, xbar, a_ibox, a_dx);
 
       //Moore-Penrose inverse of the moment matrix is calulcated using weighted least squares
       LAPACKMatrix mpinvMat;
+      
     }
     return retval;
   }

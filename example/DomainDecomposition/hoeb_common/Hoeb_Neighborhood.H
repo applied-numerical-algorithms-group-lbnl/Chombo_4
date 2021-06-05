@@ -130,9 +130,9 @@ namespace hoeb
     for(int ivec = 0 ; ivec < a_indices.size(); ivec++)
     {
       Real distance = getDistance<startcent, veccent>(a_indices[ivec], a_start);
-      a_wgt[ivec] = Proto::POW(distance, ipow);
+      Real invwgt = Proto::POW(distance, ipow);
+      a_wgt[ivec] = 1.0/invwgt;
     }
-
   }
   //done as dx=1
   template <CENTERING srccent, CENTERING dstcent>
