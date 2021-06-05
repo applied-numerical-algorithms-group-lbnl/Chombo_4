@@ -131,20 +131,20 @@ namespace hoeb
     {
       const auto   xnormMomLDptr = a_geoserv->getEBNormalData_x(a_srcDomain);
       const auto & xnormmomfab = (*xnormMomLDptr)[a_datind];
-      getIndexedMoment<DIM, CELL>(vof, xnormmomfab, a_graph, a_dx);
+      retval = getIndexedMoment<DIM, CELL>(vof, xnormmomfab, a_graph, a_dx);
     }
     else if(a_normDir == 1)
     {
       const auto   ynormMomLDptr = a_geoserv->getEBNormalData_y(a_srcDomain);
       const auto & ynormmomfab = (*ynormMomLDptr)[a_datind];
-      getIndexedMoment<DIM, CELL>(vof, ynormmomfab, a_graph, a_dx);
+      retval = getIndexedMoment<DIM, CELL>(vof, ynormmomfab, a_graph, a_dx);
     }
 #if DIM==3
     else if(a_normDir == 2)
     {
       const auto   znormMomLDptr = a_geoserv->getEBNormalData_z(a_srcDomain);
       const auto & znormmomfab = (*znormMomLDptr)[a_datind];
-      getIndexedMoment<DIM,CELL>(vof, znormmomfab, a_graph, a_dx);
+      retval = getIndexedMoment<DIM,CELL>(vof, znormmomfab, a_graph, a_dx);
     }
 #endif
     else
