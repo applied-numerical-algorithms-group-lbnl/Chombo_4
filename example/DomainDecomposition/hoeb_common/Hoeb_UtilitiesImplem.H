@@ -464,7 +464,8 @@ namespace hoeb
       //this matrix contains all the moments and boundary condition constraints
       LAPACKMatrix momMat = getMomentMatrix<CELL>(block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx);
 
-      
+      //Moore-Penrose inverse of the moment matrix is calulcated using weighted least squares
+      LAPACKMatrix mpinvMat;
     }
     return retval;
   }

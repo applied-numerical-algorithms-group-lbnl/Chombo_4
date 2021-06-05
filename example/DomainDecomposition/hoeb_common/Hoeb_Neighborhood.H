@@ -6,7 +6,9 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
+#include "Chombo_ParmParse.H"
 #include "Hoeb_LAPACKMatrix.H"
+#include "implem/Proto_Factorial.H"
 #define HOEB_MAX_ORDER 4
 
 namespace hoeb
@@ -27,6 +29,16 @@ namespace hoeb
     vector<EBIndex<BOUNDARY> > m_cutfacesDiri;
     vector<EBIndex<BOUNDARY> > m_cutfacesNeum;
 
+    //weights used in WLS
+    vector<Real>      m_volumesWgt;
+    vector<Real>   m_xfacesDiriWgt;
+    vector<Real>   m_yfacesDiriWgt;
+    vector<Real>   m_zfacesDiriWgt;
+    vector<Real>   m_xfacesNeumWgt;
+    vector<Real>   m_yfacesNeumWgt;
+    vector<Real>   m_zfacesNeumWgt;
+    vector<Real> m_cutfacesDiriWgt;
+    vector<Real> m_cutfacesNeumWgt;
     
     //number of degrees of freedom.  need to know this to make
     //sure our matricies have sufficient entries
@@ -86,6 +98,58 @@ namespace hoeb
                const string          & a_ebbcname,
                const int             & a_facedir);
 
+  ///Cartesian distance with unit dx, bounded by 0.5
+  template <CENTERING startcent, CENTERING veccent>
+  inline Real 
+  getDistance( const EBIndex<veccent  >  & a_end,
+               const EBIndex<startcent>  & a_start)
+  {
+    //doing Cartesian distance
+    Real sqval = 0;
+    //ignoring dx, half values since we are flooring
+    for(int idir =0; idir < DIM; idir++)
+    {
+      Real dist = Real(a_end.m_pt[idir] - a_start.m_pt[idir]); 
+      sqval += dist*dist;
+    }
+    Real retval = sqrt(sqval);
+    retval = std::min(retval, 0.5);
+    return retval;
+  }
+  //done as dx=1
+  template <CENTERING veccent, CENTERING startcent>
+  inline void
+  setWgtSection( vector<Real >                   & a_wgt,
+                 const vector<EBIndex<veccent> > & a_indices, 
+                 const        EBIndex<startcent> & a_start)
+  {
+    int ipow = 5;
+    ParmParse pp;
+    pp.query("neighborhood_weight_power", ipow);
+    a_wgt.resize(a_indices.size());
+    for(int ivec = 0 ; ivec < a_indices.size(); ivec++)
+    {
+      Real distance = getDistance<startcent, veccent>(a_indices[ivec], a_start);
+      a_wgt[ivec] = Proto::POW(distance, ipow);
+    }
+
+  }
+  //done as dx=1
+  template <CENTERING srccent, CENTERING dstcent>
+  inline void
+  setNeighborWeights( Neighborhood<srccent>    & a_block,
+                      const EBIndex<dstcent>   & a_start)
+  {
+    setWgtSection<srccent ,dstcent>(a_block.     m_volumesWgt, a_block.     m_volumes,  a_start);
+    setWgtSection<XFACE   ,dstcent>(a_block.  m_xfacesDiriWgt, a_block.  m_xfacesDiri,  a_start);
+    setWgtSection<YFACE   ,dstcent>(a_block.  m_yfacesDiriWgt, a_block.  m_yfacesDiri,  a_start);
+    setWgtSection<ZFACE   ,dstcent>(a_block.  m_zfacesDiriWgt, a_block.  m_zfacesDiri,  a_start);
+    setWgtSection<XFACE   ,dstcent>(a_block.  m_xfacesNeumWgt, a_block.  m_xfacesNeum,  a_start);
+    setWgtSection<YFACE   ,dstcent>(a_block.  m_yfacesNeumWgt, a_block.  m_yfacesNeum,  a_start);
+    setWgtSection<ZFACE   ,dstcent>(a_block.  m_zfacesNeumWgt, a_block.  m_zfacesNeum,  a_start);
+    setWgtSection<BOUNDARY,dstcent>(a_block.m_cutfacesDiriWgt, a_block.m_cutfacesDiri,  a_start);
+    setWgtSection<BOUNDARY,dstcent>(a_block.m_cutfacesNeumWgt, a_block.m_cutfacesNeum,  a_start);
+  }
   template <CENTERING dstcent>
   inline Neighborhood<CELL>
   getCellNeighbors(const EBIndex<dstcent>& a_start,
@@ -194,6 +258,7 @@ namespace hoeb
         radius++;
       }
     }
+    setNeighborWeights(retval, a_start);
     return retval;
   }
 
