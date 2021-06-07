@@ -52,6 +52,71 @@ namespace hoeb
     }
     return retval;
   }
+  /******/
+  template <unsigned int D, CENTERING cent>
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getIndexedMoment(const EBIndex<cent>                                 & a_index,
+                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                   const Chombo4::Box                                  & a_srcDomain,
+                   unsigned int                                          a_ibox,
+                   Real                                                  a_dx)
+  {
+    IndexedMoments<D, HOEB_MAX_ORDER>   retval;
+    PROTO_ASSERT(false, "should not get here");
+    return retval;
+  }
+
+  ///template specialization for x
+  template <unsigned int D >
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getIndexedMoment(const EBIndex<XFACE>                                & a_index,
+                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                   const Chombo4::Box                                  & a_srcDomain,
+                   unsigned int                                          a_ibox,
+                   Real                                                  a_dx)
+  {
+    auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
+    const auto & xfacldptr  =  a_geoserv->getXFaceData(a_srcDomain);
+    const auto & xfacdatfab = (*xfacldptr)[dit[a_ibox]];
+    const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
+    const auto & graph     = (*graphsldptr)[dit[a_ibox]];
+    return getIndexedMoment<DIM-1,XFACE>(a_index, xfacdatfab, graph, a_dx);
+  }
+  ///template specialization for y
+  template <unsigned int D >
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getIndexedMoment(const EBIndex<YFACE>                                &   a_index,
+                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                   const Chombo4::Box                                  & a_srcDomain,
+                   unsigned int                                          a_ibox,
+                   Real                                                  a_dx)
+  {
+    auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
+    const auto & yfacldptr  =  a_geoserv->getYFaceData(a_srcDomain);
+    const auto & yfacdatfab = (*yfacldptr)[dit[a_ibox]];
+    const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
+    const auto & graph     = (*graphsldptr)[dit[a_ibox]];
+    return getIndexedMoment<DIM-1, YFACE>(a_index, yfacdatfab, graph, a_dx);
+  }
+  ///template specialization for z
+  template <unsigned int D >
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getIndexedMoment(const EBIndex<ZFACE>                                & a_index,
+                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                   const Chombo4::Box                                  & a_srcDomain,
+                   unsigned int                                          a_ibox,
+                   Real                                                  a_dx,
+                   int                                                   a_facedir)
+
+  {
+    auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
+    const auto & zfacldptr  =  a_geoserv->getZFaceData(a_srcDomain);
+    const auto & zfacdatfab = (*zfacldptr)[dit[a_ibox]];
+    const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
+    const auto & graph     = (*graphsldptr)[dit[a_ibox]];
+    return getIndexedMoment<DIM-1, ZFACE>(a_index, zfacdatfab, graph, a_dx);
+  }
+  
   template <CENTERING cent>
   inline RealVect
   getFaceLocation(const EBIndex<cent>& a_face,
@@ -275,8 +340,8 @@ namespace hoeb
     unsigned int Pcols = IndMomDIM::size();
     unsigned int Nrows = a_block.size();
     LAPACKMatrix retval(Nrows, Pcols);
-    a_weights.define(Nrows, 1);
-    
+    a_weights.define(Nrows, Nrows);
+    a_weights.setVal(0.);
     auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
     
     const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
@@ -302,7 +367,7 @@ namespace hoeb
           unsigned int currentCol = IndMomDIM::indexOf(momind);
           retval(currentRow, currentCol) = volmom[momind];
         }
-        a_weights(currentRow, 0) = a_block.m_volumesWgt[currentRow];
+        a_weights(currentRow, currentRow) = a_block.m_volumesWgt[currentRow];
         currentRow++;
       }
     }
@@ -318,7 +383,7 @@ namespace hoeb
         fillMatrixRowForDomBC<XFACE>(retval, xfacdatfab, face, graph, distance,
                                      currentRow, 0, a_dx, string("Dirichlet"));
 
-        a_weights(currentRow,0) = a_block.m_xfacesDiriWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_xfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_xfacesNeum.size(); ivol++)
@@ -329,7 +394,7 @@ namespace hoeb
         fillMatrixRowForDomBC<XFACE>(retval, xfacdatfab, face, graph, distance,
                                      currentRow, 0, a_dx, string("Neumann"));
 
-        a_weights(currentRow,0) = a_block.m_xfacesNeumWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_xfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -345,7 +410,7 @@ namespace hoeb
         fillMatrixRowForDomBC<YFACE>(retval, yfacdatfab, face, graph, distance,
                                      currentRow, 1, a_dx, string("Dirichlet"));
       
-        a_weights(currentRow,0) = a_block.m_yfacesDiriWgt[ivol];
+        a_weights(currentRow, currentRow) = a_block.m_yfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_yfacesNeum.size(); ivol++)
@@ -356,7 +421,7 @@ namespace hoeb
         fillMatrixRowForDomBC<YFACE>(retval, yfacdatfab, face, graph, distance,
                                      currentRow, 1, a_dx, string("Neumann"));
       
-        a_weights(currentRow,0) = a_block.m_yfacesNeumWgt[ivol];
+        a_weights(currentRow, currentRow) = a_block.m_yfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -373,7 +438,7 @@ namespace hoeb
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
                                      currentRow, 2, a_dx, string("Dirichlet"));
       
-        a_weights(currentRow,0) = a_block.m_zfacesDiriWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_zfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_zfacesNeum.size(); ivol++)
@@ -384,7 +449,7 @@ namespace hoeb
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
                                      currentRow, 2, a_dx, string("Neumann"));
       
-        a_weights(currentRow,0) = a_block.m_zfacesNeumWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_zfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -401,7 +466,7 @@ namespace hoeb
                              dit[a_ibox], currentRow, 2, a_dx, 
                              string("Dirichlet"));
       
-        a_weights(currentRow,0) = a_block.m_cutfacesDiriWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_cutfacesDiriWgt[ivol];
         currentRow++;
       }
       for(unsigned int ivol = 0; ivol < a_block.m_cutfacesNeum.size(); ivol++)
@@ -414,7 +479,7 @@ namespace hoeb
                              dit[a_ibox], currentRow, 2, a_dx, 
                              string("Neumann"));
       
-        a_weights(currentRow,0) = a_block.m_cutfacesNeumWgt[ivol];
+        a_weights(currentRow,currentRow) = a_block.m_cutfacesNeumWgt[ivol];
         currentRow++;
       }
     }
@@ -423,6 +488,88 @@ namespace hoeb
   }  
 
 
+  //Moore-Penrose inverse of the moment matrix is calulcated using weighted least squares
+  inline LAPACKMatrix
+  getMoorePenroseInverse(const LAPACKMatrix & a_M)
+  {
+    LAPACKMatrix MT = a_M;
+    MT.transpose();
+
+    LAPACKMatrix retval;
+    multiply(retval, MT, a_M);
+    retval.invert();
+    return retval;
+  }
+  ///
+  inline      LAPACKMatrix
+  getStencilMatrix(const LAPACKMatrix & a_Qmat,
+                   const LAPACKMatrix & a_Gmat)
+  {
+    LAPACKMatrix Smat;
+
+    return Smat;
+  }
+
+   
+  ///
+  template <CENTERING cent>
+  inline LAPACKMatrix
+  getDharshiQMatrix(const EBIndex<cent>                                 & a_face,
+                    const Neighborhood<CELL>                            & a_block,
+                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                    const Chombo4::Box                                  & a_srcDomain,
+                    const RealVect                                      & a_xbar,
+                    unsigned int                                          a_ibox,
+                    Real                                                  a_dx,
+                    int                                                   a_facedir)
+  {
+    IndexedMoments<DIM-1, HOEB_MAX_ORDER> 
+      facmom = getIndexedMoment<DIM-1, cent>(a_face, a_geoserv, a_srcDomain, a_ibox, a_dx);
+    IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = getVolMomFromFacMom<DIM>(facmom, a_facedir);
+
+    RealVect facloc = hoeb::getFaceLocation<cent>(a_face, a_dx, a_facedir);
+    IndexTM<Real, DIM> distance = getIndexDistance(facloc, a_xbar);
+    volmom.shift(distance);
+
+    LAPACKMatrix Qmat;
+
+
+    for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+    {
+      auto momind = momit();
+      Real matval = 0;
+      if(momind[a_facedir] > 0)
+      {
+        int pd = momind[a_facedir];
+        IndexTM<int, DIM> derind =momind - IndexTM<int, DIM>::BASISV(a_facedir);
+        Real derval = volmom[derind];
+        matval = pd*derval;
+      }
+      unsigned int currentCol = IndexedMoments<DIM, HOEB_MAX_ORDER>::indexOf(momind);
+      Qmat(0,currentCol) = matval;
+    }
+    
+    return Qmat;
+  }
+
+  ///
+  inline 
+  LocalStencil<CELL, Real>
+  getStencilFromMatrix(const LAPACKMatrix      & a_stenmat,
+                       const Neighborhood<CELL>& a_block)
+  {
+    LocalStencil<CELL, Real> retval;
+    for(unsigned int ivol = 0; ivol < a_block.m_volumes.size(); ivol++)
+    {
+      const auto& vof = a_block.m_volumes[ivol];
+      //this depends upon the volumes being the first bits
+      Real wgt = a_stenmat(ivol, 0);
+      retval.add(vof, wgt);
+    }
+
+    return retval;
+  }
+                       
   ///
   /**
      Return integral F dA  (do NOT divide out the area).
@@ -445,7 +592,6 @@ namespace hoeb
     auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     LocalStencil<CELL, Real>  retval;
-
     //when I know the answer, short circuit all the other stuff and return it
     if(a_facedir==-1)
     {
@@ -465,8 +611,8 @@ namespace hoeb
     else
     {
       //get the neighborhood near the target face
-      Neighborhood<CELL>  block =
-        getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
+      hoeb::Neighborhood<CELL>  block =
+        hoeb::getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
       const EBIndex<cent>& face = a_face;
       Real                 dx = a_dx;
       int                  facedir = a_facedir;
@@ -474,12 +620,24 @@ namespace hoeb
 
       //this matrix contains all the moments and boundary condition constraints
       LAPACKMatrix weight;
-      LAPACKMatrix momMat = getMomentMatrix<CELL>(weight, block, a_geoserv,
-                                                  a_srcDomain, xbar, a_ibox, a_dx);
+      LAPACKMatrix Mmat = getMomentMatrix<CELL>(weight, block, a_geoserv,
+                                                a_srcDomain, xbar, a_ibox, a_dx);
 
-      //Moore-Penrose inverse of the moment matrix is calulcated using weighted least squares
-      LAPACKMatrix mpinvMat;
+      LAPACKMatrix Gmat; //G = WM
+      multiply(Gmat, weight, Mmat);
       
+      //Moore-Penrose inverse of the moment matrix
+      //is calulcated using weighted least squares
+      //because G is weighted version of M
+      LAPACKMatrix mpinvMat = getMoorePenroseInverse(Gmat);
+
+      //this is the matrix that defines the operator
+      LAPACKMatrix Qmat =
+        getDharshiQMatrix<cent>(a_face, block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx, a_facedir);
+
+      LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat);
+      
+      retval = hoeb::getStencilFromMatrix(Smat, block);
     }
     return retval;
   }
