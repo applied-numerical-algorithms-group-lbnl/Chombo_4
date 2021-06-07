@@ -117,7 +117,10 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                                         
               const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >   &  a_dictionary,
               const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                 &  a_geoserv)
 {
-  IntVect dataGhostIV =   4*IntVect::Unit;
+  ParmParse pp;
+  int nghost;
+  pp.get("num_ghost_cells", nghost);
+  IntVect dataGhostIV =   nghost*IntVect::Unit;
   EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, a_graphsFine);
   EBLevelBoxData<CELL,   1>  phiCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
   EBLevelBoxData<CELL,   1>  klpFine(a_gridsFine, dataGhostIV, a_graphsFine);
@@ -159,7 +162,7 @@ runTest()
   ParmParse pp;
 
   pp.get("nx"        , nx);
-  pp.get("max_grid"  , maxGrid);
+  pp.get("maxGrid"  , maxGrid);
   pp.get("coveredval", coveredval);         
 
 

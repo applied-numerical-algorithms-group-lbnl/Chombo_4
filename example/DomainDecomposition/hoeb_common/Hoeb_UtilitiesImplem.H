@@ -5,11 +5,11 @@ namespace hoeb
 {
   /******/
   inline RealVect
-  getVoFLocation(const EBIndex<CELL>& a_face,
+  getVoFLocation(const EBIndex<CELL>& a_vof,
                  Real                 a_dx)
   {
     RealVect retval;
-    auto pt = a_face.m_pt; //high size of the face
+    auto pt = a_vof.m_pt; 
     for(int idir = 0; idir < DIM; idir++)
     {
       retval[idir] = a_dx*(0.5 + Real(pt[idir]));

@@ -119,18 +119,21 @@ namespace hoeb
   {
     /* just in case a fit of madness causes me to use geometric multigrid */
     a_needDiagonalWeights = true;
-    
+
     Chombo4::ParmParse pp;
     
     Real alpha = 1.0;
     Real beta = -0.001;
-    string dombcname, ebbcname;
+    string dombcname;
+    int nghost;
+    pp.get("num_ghost_cells", nghost);
     pp.get("domainBC"  , dombcname);
-    pp.get("EBBC"      , ebbcname);
+    pp.get("EBBC"      , a_ebbcName);
     pp.get("alpha"     , alpha);
     pp.get("beta"      , beta);
     pout() << "domainBC"  << " = " <<  dombcname      << endl;
-    pout() << "EBBC"      << " = " <<  ebbcname       << endl;
+    pout() << "EBBC"      << " = " <<  a_ebbcName     << endl;
+    
     a_stencilName = string("Dharshi_Laplacian");
 
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
@@ -141,6 +144,16 @@ namespace hoeb
     const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
     const auto & dbl         = a_geoserv->getDBL(a_srcDomain);
     auto dit = dbl.dataIterator();
+
+    const auto & graph = (*graphsldptr)[dit[a_ibox]];
+    a_srcValid  = graph.validBox();
+    a_dstValid  = graph.validBox();
+    a_srcDomain = graph.getDomain();
+    a_dstDomain = graph.getDomain();
+    a_srcGhost  = Point::Ones(nghost);
+    a_dstGhost  = Point::Ones(nghost);
+    a_needDiagonalWeights = true;
+    
     string dombcarray[2*DIM];
     for(int ivec = 0; ivec < 2*DIM; ivec++)
     {
@@ -148,11 +161,11 @@ namespace hoeb
     }
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
-      auto vofs = (*graphsldptr)[dit[a_ibox]].getVoFs(*bit);
+      auto vofs = graph.getVoFs(*bit);
       for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
       {
         LocalStencil<CELL, Real> vofsten = getFullDharshiStencil(vofs[ivof],
-                                                                 dombcarray, ebbcname,
+                                                                 dombcarray, a_ebbcName,
                                                                  a_geoserv, a_srcDomain, a_ibox,
                                                                  alpha, beta, a_dx);
         a_dstVoFs.push_back(vofs[ivof]);
