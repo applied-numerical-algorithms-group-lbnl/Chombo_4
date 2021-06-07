@@ -503,10 +503,17 @@ namespace hoeb
   ///
   inline      LAPACKMatrix
   getStencilMatrix(const LAPACKMatrix & a_Qmat,
-                   const LAPACKMatrix & a_Gmat)
+                   const LAPACKMatrix & a_Gmat,
+                   const LAPACKMatrix & a_GTGinvMat)
   {
+    LAPACKMatrix GTmat = a_Gmat;
+    GTmat.transpose();
+    //thi9s is (gtg)-1 GT
+    LAPACKMatrix gtginvgtMat;
+    multiply(gtginvgtMat, a_GTGinvMat, GTmat);
+    
     LAPACKMatrix Smat;
-
+    multiply(Smat, a_Qmat, gtginvgtMat);
     return Smat;
   }
 
@@ -629,13 +636,13 @@ namespace hoeb
       //Moore-Penrose inverse of the moment matrix
       //is calulcated using weighted least squares
       //because G is weighted version of M
-      LAPACKMatrix mpinvMat = getMoorePenroseInverse(Gmat);
+      LAPACKMatrix GTGinvMat = getMoorePenroseInverse(Gmat);
 
       //this is the matrix that defines the operator
       LAPACKMatrix Qmat =
         getDharshiQMatrix<cent>(a_face, block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx, a_facedir);
 
-      LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat);
+      LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat, GTGinvMat);
       
       retval = hoeb::getStencilFromMatrix(Smat, block);
     }
