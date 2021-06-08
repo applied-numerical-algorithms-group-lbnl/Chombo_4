@@ -29,13 +29,11 @@ namespace hoeb
         for(unsigned int iface = 0; iface < xfaces.size(); iface++)
         {
           auto face = xfaces[iface];
-          LocalStencil<CELL, Real>
-            fluxsten = getDharshiIntFluxDAStencil<XFACE>(face,
-                                                         a_vof,          
-                                                         a_dombcname,    
-                                                         a_ebbcname,
-                                                         a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 0, sit());
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<XFACE>(face,
+                                              a_vof,a_dombcname,a_ebbcname,
+                                              a_geoserv, a_srcDomain, a_ibox,
+                                              a_alpha, a_beta, a_dx, 0, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -45,13 +43,11 @@ namespace hoeb
         for(unsigned int iface = 0; iface < yfaces.size(); iface++)
         {
           auto face = yfaces[iface];
-          LocalStencil<CELL, Real>
-            fluxsten = getDharshiIntFluxDAStencil<YFACE>(face,
-                                                         a_vof,          
-                                                         a_dombcname,    
-                                                         a_ebbcname,
-                                                         a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 1, sit());
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<YFACE>(face,
+                                              a_vof,a_dombcname,a_ebbcname,
+                                              a_geoserv, a_srcDomain, a_ibox,
+                                              a_alpha, a_beta, a_dx, 1, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -62,13 +58,11 @@ namespace hoeb
         for(unsigned int iface = 0; iface < zfaces.size(); iface++)
         {
           auto face = zfaces[iface];
-          LocalStencil<CELL, Real>
-            fluxsten = getDharshiIntFluxDAStencil<ZFACE>(face,
-                                                         a_vof,          
-                                                         a_dombcname,    
-                                                         a_ebbcname,
-                                                         a_geoserv, a_srcDomain, a_ibox,
-                                                         a_alpha, a_beta, a_dx, 2, sit());
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<ZFACE>(face,
+                                              a_vof, a_dombcname, a_ebbcname,
+                                              a_geoserv, a_srcDomain, a_ibox,
+                                              a_alpha, a_beta, a_dx, 2, sit());
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -78,12 +72,11 @@ namespace hoeb
     {
       EBIndex<BOUNDARY> face = a_vof.getCutFace();
       LocalStencil<CELL, Real>
-        fluxsten = getDharshiIntFluxDAStencil<BOUNDARY>(face,
-                                                        a_vof,          
-                                                        a_dombcname,    
-                                                        a_ebbcname,
-                                                        a_geoserv, a_srcDomain, a_ibox,
-                                                        a_alpha, a_beta, a_dx, -1, Side::Invalid);
+        fluxsten =
+        getDharshiIntFluxDAStencil<BOUNDARY>(face,
+                                             a_vof,a_dombcname,a_ebbcname,
+                                             a_geoserv, a_srcDomain, a_ibox,
+                                             a_alpha, a_beta, a_dx, -1, Side::Invalid);
       vofsten += fluxsten;
     }
     //need to divide by dx^d to get kappa*lapl(phi)
@@ -97,7 +90,7 @@ namespace hoeb
     return vofsten;
   }
 
-  /******/  
+  /******/
   void
   dharshiLaplStencil(string                                              & a_stencilName,
                      string                                              & a_ebbcName,
@@ -112,14 +105,15 @@ namespace hoeb
                      bool                                                & a_needDiagonalWeights,
                      const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                      const Chombo4::DisjointBoxLayout                    & a_grids,
-                     const Chombo4::Box                                  & a_domFine,
+                     const Chombo4::Box                                  & a_domain,
                      const Real                                          & a_dx,
                      unsigned int                                          a_ibox)
 
   {
     /* just in case a fit of madness causes me to use geometric multigrid */
     a_needDiagonalWeights = true;
-
+    a_srcDomain = ProtoCh::getProtoBox(a_domain);
+    a_dstDomain = ProtoCh::getProtoBox(a_domain);
     Chombo4::ParmParse pp;
     
     Real alpha = 1.0;
@@ -148,8 +142,6 @@ namespace hoeb
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     a_srcValid  = graph.validBox();
     a_dstValid  = graph.validBox();
-    a_srcDomain = graph.getDomain();
-    a_dstDomain = graph.getDomain();
     a_srcGhost  = Point::Ones(nghost);
     a_dstGhost  = Point::Ones(nghost);
     a_needDiagonalWeights = true;

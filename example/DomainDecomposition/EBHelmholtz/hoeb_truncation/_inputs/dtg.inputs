@@ -13,5 +13,7 @@ inside = true
 #value in hdf5 file of  covered data
 coveredval = -0.001
 num_ghost_cells = 4
+default_neighbor_radius = 3
+maximum_neighbor_radius = 4
 domainBC     = Dirichlet
 EBBC         = Dirichlet

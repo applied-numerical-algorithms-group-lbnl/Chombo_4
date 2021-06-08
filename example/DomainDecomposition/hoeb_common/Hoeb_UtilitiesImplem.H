@@ -52,7 +52,7 @@ namespace hoeb
     }
     return retval;
   }
-  /******/
+  /***
   template <unsigned int D, CENTERING cent>
   inline IndexedMoments<D, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<cent>                                 & a_index,
@@ -66,9 +66,9 @@ namespace hoeb
     return retval;
   }
 
+  ***/
   ///template specialization for x
-  template <unsigned int D >
-  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<XFACE>                                & a_index,
                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                    const Chombo4::Box                                  & a_srcDomain,
@@ -83,8 +83,7 @@ namespace hoeb
     return getIndexedMoment<DIM-1,XFACE>(a_index, xfacdatfab, graph, a_dx);
   }
   ///template specialization for y
-  template <unsigned int D >
-  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<YFACE>                                &   a_index,
                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                    const Chombo4::Box                                  & a_srcDomain,
@@ -99,8 +98,7 @@ namespace hoeb
     return getIndexedMoment<DIM-1, YFACE>(a_index, yfacdatfab, graph, a_dx);
   }
   ///template specialization for z
-  template <unsigned int D >
-  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
   getIndexedMoment(const EBIndex<ZFACE>                                & a_index,
                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                    const Chombo4::Box                                  & a_srcDomain,
@@ -187,7 +185,24 @@ namespace hoeb
                      const Chombo4::Box                                  & a_srcDomain,
                      const Chombo4::DataIndex                            & a_datind,
                      const EBGraph                                       & a_graph,
-                     int a_normDir, Real a_dx)
+                     Real a_dx)
+  {
+    IndexedMoments<DIM, HOEB_MAX_ORDER> retval;
+    //have to do this because the ebnormal moments have a cell type
+    const auto   ebMomLDptr = a_geoserv->getEBFaceData(a_srcDomain);
+    const auto & ebmomfab = (*ebMomLDptr)[a_datind];
+    retval = getIndexedMoment<DIM, BOUNDARY>(a_face, ebmomfab, a_graph, a_dx);
+
+    return retval;
+  }
+  /*************/
+  inline IndexedMoments<DIM, HOEB_MAX_ORDER>
+  getEBNormalMoment(const EBIndex<BOUNDARY>                             & a_face,
+                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                    const Chombo4::Box                                  & a_srcDomain,
+                    const Chombo4::DataIndex                            & a_datind,
+                    const EBGraph                                       & a_graph,
+                    unsigned int a_normDir, Real a_dx)
   {
     IndexedMoments<DIM, HOEB_MAX_ORDER> retval;
     //have to do this because the ebnormal moments have a cell type
@@ -248,33 +263,34 @@ namespace hoeb
                        int a_facedir, Real a_dx, string a_bcname)
   {
     IndexedMoments<    DIM, HOEB_MAX_ORDER> bcmom;
-    for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+    if(a_bcname == string("Dirichlet"))
     {
-      auto momind = momit();
-      Real bcval = 0;
-      for(unsigned  int normDir = 0; normDir < DIM; normDir++)
+      bcmom =  getEBIndexedMoment(a_face, a_geoserv, a_srcDomain,
+                                  a_datind, a_graph, a_dx);
+    }
+    else if(a_bcname == string("Neumann"))
+    {
+      bcmom.setVal(0.);
+      for(unsigned int normDir = 0; normDir < DIM; normDir++)
       {
-        IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
-          getEBIndexedMoment(a_face, a_geoserv, a_srcDomain,
-                             a_datind, a_graph, normDir, a_dx);
-
-
-        if(a_bcname == string("Dirichlet"))
+        for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
         {
-          bcval  += normMom[momind];
-        }
-        else if(a_bcname == string("Neumann"))
-        {
+          auto momind = momit();
+          Real bcval = 0;
+          
+          IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
+            getEBNormalMoment(a_face, a_geoserv, a_srcDomain,
+                              a_datind, a_graph, normDir, a_dx);
+
           if(momind[normDir] > 0)
           {
             int pd = momind[normDir];
             IndexTM<int, DIM> derind =momind - IndexTM<int, DIM>::BASISV(normDir);
             Real derval = normMom[derind];
-            bcval  += pd*derval;
+            bcmom[momind] += pd*derval;
           }
         }
       }
-      bcmom[momind] = bcval;
     }
     shiftMomentAndFillRow(a_mat, bcmom, a_xbardistance, a_currentRow);
   }
@@ -528,10 +544,11 @@ namespace hoeb
                     const RealVect                                      & a_xbar,
                     unsigned int                                          a_ibox,
                     Real                                                  a_dx,
-                    int                                                   a_facedir)
+                    int                                                   a_facedir,
+                    const Chombo4::DataIndex                            & a_datind)
   {
     IndexedMoments<DIM-1, HOEB_MAX_ORDER> 
-      facmom = getIndexedMoment<DIM-1, cent>(a_face, a_geoserv, a_srcDomain, a_ibox, a_dx);
+      facmom = getIndexedMoment(a_face, a_geoserv, a_srcDomain, a_ibox, a_dx);
     IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = getVolMomFromFacMom<DIM>(facmom, a_facedir);
 
     RealVect facloc = hoeb::getFaceLocation<cent>(a_face, a_dx, a_facedir);
@@ -559,6 +576,45 @@ namespace hoeb
     return Qmat;
   }
 
+  ///template specialization to get the eb flux q matrix
+  template < >
+  inline LAPACKMatrix
+  getDharshiQMatrix(const EBIndex<BOUNDARY>                             & a_face,
+                    const Neighborhood<CELL>                            & a_block,
+                    const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                    const Chombo4::Box                                  & a_srcDomain,
+                    const RealVect                                      & a_xbar,
+                    unsigned int                                          a_ibox,
+                    Real                                                  a_dx,
+                    int                                                   a_facedir,
+                    const Chombo4::DataIndex                            & a_datind)
+  {
+    LAPACKMatrix Qmat;
+    Qmat.setVal(0.);
+    const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
+    const auto & graph = (*graphsldptr)[a_datind];
+    for(unsigned int normDir = 0; normDir < DIM; normDir++)
+    {
+      IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
+        getEBNormalMoment(a_face, a_geoserv, a_srcDomain,
+                          a_datind, graph, normDir, a_dx);
+        
+      for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        if(momind[normDir] > 0)
+        {
+          int pd = momind[normDir];
+          IndexTM<int, DIM> derind =momind - IndexTM<int, DIM>::BASISV(normDir);
+          Real derval = normMom[derind];
+          unsigned int currentCol = IndexedMoments<DIM, HOEB_MAX_ORDER>::indexOf(momind);
+          Qmat(0,currentCol) += pd*derval;
+        }
+      }
+    }
+    return Qmat;
+  }
+  
   ///
   inline 
   LocalStencil<CELL, Real>
@@ -597,7 +653,8 @@ namespace hoeb
     //facedir == -1 means the EB
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
     auto dit = a_geoserv->getDBL(a_srcDomain).dataIterator();
-    const auto & graph = (*graphsldptr)[dit[a_ibox]];
+    const auto & datind = dit[a_ibox];
+    const auto & graph = (*graphsldptr)[datind];
     LocalStencil<CELL, Real>  retval;
     //when I know the answer, short circuit all the other stuff and return it
     if(a_facedir==-1)
@@ -640,7 +697,8 @@ namespace hoeb
 
       //this is the matrix that defines the operator
       LAPACKMatrix Qmat =
-        getDharshiQMatrix<cent>(a_face, block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx, a_facedir);
+        getDharshiQMatrix<cent>
+        (a_face, block, a_geoserv, a_srcDomain, xbar, a_ibox, a_dx, a_facedir, datind);
 
       LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat, GTGinvMat);
       

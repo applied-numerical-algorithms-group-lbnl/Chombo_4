@@ -35,7 +35,7 @@ namespace hoeb
      For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
   */
   
-  template <CENTERING cent>
+  template <CENTERING cent, unsigned int D>
   inline LocalStencil<CELL, Real> 
   getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
                              const EBIndex<CELL>                                 & a_startingVoF,
@@ -71,7 +71,7 @@ namespace hoeb
                      bool                                                & a_needDiagonalWeights,
                      const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                      const Chombo4::DisjointBoxLayout                    & a_grids,
-                     const Chombo4::Box                                  & a_domFine,
+                     const Chombo4::Box                                  & a_domain,
                      const Real                                          & a_dx,
                      unsigned int                                          a_ibox);
 
