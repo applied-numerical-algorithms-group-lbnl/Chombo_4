@@ -126,7 +126,7 @@ namespace Proto
     */
     EBFluxData(const Box& a_box, const EBGraph& a_graph, bool a_useStack=false)
     {
-      define(a_box, a_graph);
+      define(a_box, a_graph, a_useStack);
     }
     
     /// define all data
