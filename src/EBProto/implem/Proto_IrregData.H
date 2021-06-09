@@ -719,8 +719,6 @@ namespace Proto
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
       unsigned int size = m_indicies->size(); 
-      unsigned int threads = 256;
-      unsigned int blocks = (threads + size - 1)/threads;
 
       if(size == 0 || indiciesSrc->size()==0) return;
 
@@ -733,6 +731,8 @@ namespace Proto
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 #endif
+      //unsigned int threads = 256;
+      //unsigned int blocks = (threads + size - 1)/threads;
       //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 0, protoGetCurrentStream, 
 			size, 
