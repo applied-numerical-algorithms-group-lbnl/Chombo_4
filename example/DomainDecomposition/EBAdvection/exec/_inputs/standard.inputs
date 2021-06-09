@@ -1,6 +1,7 @@
 #domain size
-nx=       128
+nx=       64
 #max number of time steps
+scalar_inflow_value = 0
 max_step =    1000
 #maximum time
 max_time =    10.0
