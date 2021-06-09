@@ -670,7 +670,6 @@ public:
 
   inline uint64_t hash(const IntVect& origin, const IntVect& blockingFactor) const; 
 
-#ifdef USE_PROTO
     IntVect(Proto::Point a_pt)
     {
         for (int ii = 0; ii < DIM; ii++)
@@ -683,7 +682,6 @@ public:
     {
         return Proto::Point(vect);
     }
-#endif
 
 protected:
   //

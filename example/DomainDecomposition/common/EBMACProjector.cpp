@@ -295,7 +295,8 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
     Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
 
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1>  centroidFlux(grown, graph);
+    bool useStack = true;
+    EBFluxData<Real, 1>  centroidFlux(grown, graph, useStack);
     EBFluxStencil<2, Real> stencils =
       m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
     EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];

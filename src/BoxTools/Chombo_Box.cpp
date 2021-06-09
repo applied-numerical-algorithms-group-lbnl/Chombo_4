@@ -249,6 +249,13 @@ void Box::define (const IntVect& small,
 {
   smallend = small;
   bigend=big;
+  //begin debug
+  int ideb  = 0;
+  if(!(small <= big))
+  {
+    ideb = 1;
+  }
+  //end debug
   CH_assert (small <= big);
   computeBoxLen();
 }

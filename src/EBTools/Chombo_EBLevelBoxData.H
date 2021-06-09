@@ -490,12 +490,13 @@ public:
               unsigned int a_icomp,
               Real a_tol)
   {
+    bool useStack = true;
     Bx      inbox = a_calculatedAns.inputBox();
     EBGraph graph = a_calculatedAns.ebgraph();
     CH_assert(inbox == a_referenceAns.inputBox());
   
   
-    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph);
+    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph, useStack);
     difference.setVal(0.);
     difference += a_calculatedAns;
     difference -= a_referenceAns;
