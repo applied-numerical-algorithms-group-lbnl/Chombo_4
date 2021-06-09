@@ -20,7 +20,7 @@ NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
 OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 
 
-LIBS = 
+LIBS = $(LAPACKLIBS)
 
 CXXALLFLAGS := 
 CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'

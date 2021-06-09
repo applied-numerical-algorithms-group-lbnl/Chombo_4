@@ -51,6 +51,10 @@ defineData()
   m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
   m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
   m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
+  for(int idir = 0; idir < 3; idir++)
+  {
+    m_ebnormaldata[idir] = shared_ptr<LevelData<EBNormalData> > ( new LevelData<EBNormalData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
+  }
 }
 /*********************************************/
 template<int order>
@@ -115,6 +119,10 @@ defineFinestLevel(const RealVect               & a_origin,
 #if DIM==3
     (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
 #endif
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      (*m_ebnormaldata[idir])[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]); 
+    }
     for(int inode = 0; inode < nodes.size(); inode++)
     {
       const IrregNode<order>& node = nodes[inode];
@@ -122,6 +130,10 @@ defineFinestLevel(const RealVect               & a_origin,
       EBIndex<BOUNDARY> ebf = vof.getCutFace();
       (*m_voludata)[dit[ibox]](vof, 0)  = node.m_volumeMoments;
       (*m_ebfadata)[dit[ibox]](ebf, 0)  = node.m_EBMoments;
+      for(int idir = 0; idir < DIM; idir++)
+      { 
+        (*m_ebnormaldata[idir])[dit[ibox]](vof, 0)  = node.m_EBNormalMomentsDir[idir];
+      }
       for(SideIterator sit; sit.ok(); ++sit)
       {
         vector<EBIndex<XFACE> > xfaces = (*m_graphs)[dit[ibox]].getXFaces(vof, sit());
@@ -164,6 +176,10 @@ exchange()
 #if DIM==3
   m_zfacdata->exchange(m_exchangeCopier);
 #endif
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    m_ebnormaldata[idir]->exchange(m_exchangeCopier);
+  }
 }
   
 /*********************************************/
@@ -243,6 +259,10 @@ coarsenData(const LevelGeometryService &  a_finerLevel)
 #if DIM==3
     (*m_zfacdata)[dit[ibox]].define(vofBx, ebgraph);
 #endif
+    for(int idir = 0; idir < DIM; idir++)
+    { 
+      (*m_ebnormaldata[idir])[dit[ibox]].define(vofBx, ebgraph);
+    }
 
     //EBGraph& coarEBGraph = (*m_graphs)[dit[ibox]];
     //this deals with the fine to coarse thing
@@ -315,36 +335,71 @@ coarsenVoFData(const vector< EBIndex<CELL> >  & a_coarVoFs,
     EBIndex<BOUNDARY>     coarEBF = coarVoF.getCutFace();
     IndMomDIM& coarVoluMom  = (*m_voludata)[a_dit](coarVoF, 0);
     IndMomDIM& coarEBFaMom  = (*m_ebfadata)[a_dit](coarEBF, 0);
-    
+
+    IndMomDIM& coarEBMom_x  = (*m_ebnormaldata[0])[a_dit](coarVoF, 0);
+    IndMomDIM& coarEBMom_y  = (*m_ebnormaldata[1])[a_dit](coarVoF, 0);
+#if DIM==3
+    IndMomDIM& coarEBMom_z  = (*m_ebnormaldata[2])[a_dit](coarVoF, 0);
+#endif    
     vector< EBIndex<CELL> > fineVoFs = coarEBGraph.refine(coarVoF);
     coarVoluMom.setToZero();
     coarEBFaMom.setToZero();
+    coarEBMom_x.setToZero();
+    coarEBMom_y.setToZero();
+#if DIM==3
+    coarEBMom_z.setToZero();
+#endif    
+
     for(int ifine = 0; ifine < fineVoFs.size(); ifine++)
     {
       const EBIndex<CELL> & fineVoF = fineVoFs[ifine];
       EBIndex<BOUNDARY>     fineEBF = fineVoF.getCutFace();
       IndMomDIM fineVoluMom;
       IndMomDIM fineEBFaMom;
+      IndMomDIM fineEBMom_x;
+      IndMomDIM fineEBMom_y;
+#if DIM==3
+      IndMomDIM fineEBMom_z;
+#endif    
       if(fineEBGraph.isCovered(fineVoF.m_pt))
       {
         fineVoluMom.setToZero(); //not sure if this can happen
         fineEBFaMom.setToZero(); //not sure if this can happen
+        fineEBMom_x.setToZero(); //not sure if this can happen
+        fineEBMom_y.setToZero(); //not sure if this can happen
+#if DIM==3
+        fineEBMom_z.setToZero(); //not sure if this can happen
+#endif    
       }
       else if(fineEBGraph.isRegular(fineVoF.m_pt))
       {
         fineVoluMom.setToRegular(a_finerLevel.m_dx);
-        fineEBFaMom.setToZero(); 
+        fineEBFaMom.setToZero();
+        fineEBMom_x.setToZero(); 
+        fineEBMom_y.setToZero(); 
+#if DIM==3
+        fineEBMom_z.setToZero(); 
+#endif
       }
       else
       {
         fineVoluMom = (*(a_finerLevel.m_voludata))[a_dit](fineVoF, 0);
         fineEBFaMom = (*(a_finerLevel.m_ebfadata))[a_dit](fineEBF, 0);
+        fineEBMom_x = (*(a_finerLevel.m_ebnormaldata[0]))[a_dit](fineVoF, 0);
+        fineEBMom_y = (*(a_finerLevel.m_ebnormaldata[1]))[a_dit](fineVoF, 0);
+#if DIM==3
+        fineEBMom_z = (*(a_finerLevel.m_ebnormaldata[2]))[a_dit](fineVoF, 0);
+#endif
       }
 
       //moments are not scaled so this is a straight addition after shift because of ( x - xbar)^p coarVoluMom += finemom;  
       shiftAndIncrement(coarVoluMom, fineVoluMom, coarVoF, fineVoF, a_finerLevel);
       shiftAndIncrement(coarEBFaMom, fineEBFaMom, coarEBF, fineEBF, a_finerLevel);
-
+      shiftAndIncrement(coarEBMom_x, fineEBMom_x, coarVoF, fineVoF, a_finerLevel);
+      shiftAndIncrement(coarEBMom_y, fineEBMom_y, coarVoF, fineVoF, a_finerLevel);
+#if DIM==3
+      shiftAndIncrement(coarEBMom_z, fineEBMom_z, coarVoF, fineVoF, a_finerLevel);
+#endif
     }
   }
 }
@@ -832,7 +887,7 @@ fillNewNode(inode               &     a_node,
   {
     double cellCent = (a_iv[idir]+ 0.5)*m_dx;
     point[idir] = cellCent;
-  }  
+  }
 
   NormalDerivativeNew<DIM> normalDerivative;
 
@@ -848,15 +903,85 @@ fillNewNode(inode               &     a_node,
                                   &ifSlicer);
 
   for (int idir = 0; idir < DIM; ++idir)
-  {
+  { 
     MomItDIM momit;
     for(momit.reset(); momit.ok(); ++momit)
-    {
+    { 
       double derivVal = ndMap[momit()][idir];
       a_node.m_normalPartialDeriv[idir][momit()] = derivVal;
     }
   }
 
+  // Move eb-moments from cell center coord to local coord
+  IndexTM<double,DIM> delta = thisVof.m_IFData.m_localCoord.m_origin;
+  delta                  -= thisVof.m_IFData.m_cellCenterCoord.m_origin;
+
+  map<IndexTM<int,DIM>,double > copyEBMoments = thisVof.m_EBmoments;
+  for (typename map<IndexTM<int,DIM>,double >::const_iterator it = copyEBMoments.begin(); it != copyEBMoments.end(); ++it)
+  {
+    IndexTM<int,DIM> mono = it->first;
+    thisVof.m_EBmoments[mono] = thisVof.changeMomentCoordinates(copyEBMoments, mono, delta);
+  }
+
+  // Computing and storing the eb-moments as the sum of of the boundary normal moments
+  vector<map<IndexTM<int,DIM>,double > > copyEBMoments_dir (DIM,thisVof.m_EBmoments);
+  // Iterate over dimensions
+  for (int idir = 0; idir < DIM; ++idir)
+  {
+    // Iterate over monomials of the eb moments
+    for (typename map<IndexTM<int,DIM>,double >::const_iterator it = thisVof.m_EBmoments.begin(); it != thisVof.m_EBmoments.end(); ++it)
+    {
+      IndexTM<int,DIM> mono = it->first;
+      int aux = 0;
+      // Add the Taylor series terms
+      for (int orderA = 1; orderA <= 2*order+1; orderA++)
+      { 
+        vector<IndexTM<int,DIM> > taylorMonomials;
+        generateMultiIndices(taylorMonomials,orderA);
+
+        for (int i = 0; i < taylorMonomials.size(); i++)
+        { 
+          const IndexTM<int,DIM> & taylorMonomial = taylorMonomials[i];
+
+          IndexTM<int,DIM> totalMonomial = mono + taylorMonomial;
+
+          if (thisVof.m_EBmoments.find(totalMonomial) !=
+              thisVof.m_EBmoments.end())
+          {
+            double normalDerivative = thisVof.m_IFData.m_normalDerivatives[taylorMonomial][idir];
+            double normal = thisVof.m_IFData.m_normalDerivatives[IndexTM<int,DIM>::Zero][idir];
+            double fact = pfactorial(taylorMonomial);
+
+            double moment = thisVof.m_EBmoments[totalMonomial];
+            // Sum of the boundary normal moments
+            if (aux==0) copyEBMoments_dir[idir][mono] = copyEBMoments_dir[idir][mono] * normal;
+            copyEBMoments_dir[idir][mono] += normalDerivative * moment / fact;
+            aux++;
+          }
+        }
+      }
+    }
+  }
+
+  // Move eb-moments from local coord to cell-center coord
+  delta = thisVof.m_IFData.m_cellCenterCoord.m_origin;
+  delta                  -= thisVof.m_IFData.m_localCoord .m_origin;
+
+  for (int idir = 0; idir < DIM; ++idir)
+  {  
+    map<IndexTM<int,DIM>,double > copyEBMoments2 = copyEBMoments_dir[idir];
+    for (typename map<IndexTM<int,DIM>,double >::const_iterator it = copyEBMoments2.begin(); it != copyEBMoments2.end(); ++it)
+    { 
+      IndexTM<int,DIM> mono = it->first;
+      copyEBMoments_dir[idir][mono] = thisVof.changeMomentCoordinates(copyEBMoments2, mono, delta);
+    }
+    MomItDIM momit;
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      // Storing eb_x, eb_y and eb_z 
+      a_node.m_EBNormalMomentsDir[idir][momit()] = copyEBMoments_dir[idir][momit()];
+    }
+  }
   
   Iv2 bdId;
   for(SideIterator sit; sit.ok(); ++sit)

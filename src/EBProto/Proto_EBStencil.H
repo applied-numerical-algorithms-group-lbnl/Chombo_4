@@ -47,10 +47,41 @@ namespace Proto
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
 
-    /// internal constructor
-   /** 
-       The user really gets her EBStencil through EBDictionary (which calls this constructor) 
-   */
+    /// Constructor for algorithm developers
+    /** 
+        If you are designing a stencil and want it executed via EBStencil, use this constructor.
+        Users wishing to just used named, existing stencils should use the other constructor.
+        In both cases, the user really should get her EBStencil through EBDictionary::registerStencil 
+        (which calls this constructor or the other constructor if needed). EBDictionary maintains
+        a cache of registered stencils so they never have to be defined twice.
+
+        Only the AggStencil bit will be executed so you have to create a stencil 
+        for every point in the box (not just the cut cells)
+    */
+    EBStencil(const vector<EBIndex<dstCenter> >               & a_dstVoFs,
+              const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
+              const EBGraph                                   & a_srcGraph,
+              const EBGraph                                   & a_dstGraph,
+              const Box                                       & a_srcValid,
+              const Box                                       & a_dstValid,
+              const Box                                       & a_srcDomain,
+              const Box                                       & a_dstDomain,
+              const Point                                     & a_srcGhost,
+              const Point                                     & a_dstGhost,
+              bool                                              a_needDiagonalWeights);
+  
+
+    /// Constructor for named, archived stencils.
+    /** 
+        Users wishing to just used named, existing stencils should use this constructor.
+        This just asks the EBStencilArchive for the stencil, so if the stencil is not there, 
+        it will be a run time error.
+        If you are designing a stencil and want it executed via EBStencil, use the other constructor
+        so you can actually just specify what it  is.
+        In both cases, the user really should get her EBStencil through EBDictionary::registerStencil 
+       (which calls this constructor or the other constructor if needed). EBDictionary maintains
+       a cache of registered stencils so they never have to be defined twice.
+    */
     EBStencil(string              a_stencilName,
               string              a_domainBCName[2*DIM],
               string              a_ebbcName,
@@ -66,12 +97,11 @@ namespace Proto
               const EBFaData    & a_ebfadata,
               const XFacData    & a_xfacdata,
               const YFacData    & a_yfacdata,
-              const ZFacData    & a_zfacdata, 
+              const ZFacData    & a_zfacdata,
               double              a_dx,
-              bool periodic_domain_bcs_only,
-              bool a_needDiagonalWeights = false,
-              Point a_growDst = Point::Zeros());
-
+              bool                a_periodiconly,
+              bool                a_needDiagonalWeights,
+              Point               a_dstGrown);
     ~EBStencil()
     {
 //      using std::cout;

@@ -178,14 +178,15 @@ computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
                                  const Bx                   & a_grid,
                                  const unsigned int         & a_ibox)
 {
- CH_TIME("EBCCProjector::avefacetocell_gradient");
+  bool useStack = true;
+  CH_TIME("EBCCProjector::avefacetocell_gradient");
   auto & nghost  = m_macprojector->m_nghost;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
   Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
 
   //get the mac gradient at face centers.
-  EBFluxData<Real, 1>         facegrad(grown, a_graph);
+  EBFluxData<Real, 1>         facegrad(grown, a_graph, useStack);
   //gphi = grad(phi)
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -212,7 +213,7 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
                           const Bx                   & a_grid,
                           const unsigned int         & a_ibox)
 {
-
+  bool useStack = true;
  CH_TIME("EBCCProjector::kappaConservativeGradient");
   auto & nghost  = m_macprojector->m_nghost;
   auto & doma    = m_macprojector->m_domain;
@@ -221,12 +222,12 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
 
   //get phi at face centers.
-  EBFluxData<Real, 1>         phiFaceCent(grown, a_graph);
+  EBFluxData<Real, 1>         phiFaceCent(grown, a_graph, useStack);
   brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
                         doma, phiFaceCent, a_phi,  a_ibox,  true, 1.0);
 
   //interpolate phi to face centroids
-  EBFluxData<Real, 1>         phiCentroid(grown, a_graph);
+  EBFluxData<Real, 1>         phiCentroid(grown, a_graph, useStack);
   //registered by the mac projector
   EBFluxStencil<2, Real> centroidStencils =
     brit->getFluxStencil(StencilNames::InterpToFaceCentroid, m_nobcsLabel, doma, doma, a_ibox);
@@ -239,7 +240,7 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   //get phi at centroids
   centroidStencils.apply(phiCentroid, phiFaceCent, true, 1.0);  
   
-  EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph);
+  EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph, useStack);
   //these two are used in the conservative gradient
   auto copystenptr  = brit->m_cellToBoundary->getEBStencil(StencilNames::CopyCellValueToCutFace,
                                                            StencilNames::NoBC, doma, doma, a_ibox);
@@ -281,6 +282,7 @@ EBCCProjector::
 kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
           EBLevelBoxData<CELL, DIM> & a_velo)
 {
+  bool useStack = true;
   CH_TIME("EBCCProjector::kappaDivU");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
@@ -299,8 +301,8 @@ kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
     Bx  grown   =  grid.grow(ProtoCh::getPoint(nghost));
 
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1>         centroidv(grown, graph);
-    EBFluxData<Real, 1>         facecentv(grown, graph);
+    EBFluxData<Real, 1>         centroidv(grown, graph, useStack);
+    EBFluxData<Real, 1>         facecentv(grown, graph, useStack);
 
     EBBoxData<CELL, Real, DIM>& inputvelo =  a_velo[dit[ibox]];
     //this one was registered by the mac projector

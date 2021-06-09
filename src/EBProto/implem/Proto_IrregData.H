@@ -74,9 +74,14 @@ namespace Proto
     CUDA_DECORATION
     inline bool contains(EBIndex<cent>& a_in, const Point& a_low, const Point& a_high);
 
+#ifndef PROTO_CUDA
+#define FORCE_INLINE inline
+#else  
+#define FORCE_INLINE __forceinline__
+#endif  
     template <CENTERING cent>
     CUDA_DECORATION
-    __forceinline__ bool copyContains(const EBIndex<cent>& a_ind, const Point & a_srcbox_low, const Point & a_srcbox_high)
+    FORCE_INLINE bool copyContains(const EBIndex<cent>& a_ind, const Point & a_srcbox_low, const Point & a_srcbox_high)
     {
       CENTERING thiscent = cent;
 
@@ -714,8 +719,6 @@ namespace Proto
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
       unsigned int size = m_indicies->size(); 
-      unsigned int threads = 256;
-      unsigned int blocks = (threads + size - 1)/threads;
 
       if(size == 0 || indiciesSrc->size()==0) return;
 
@@ -728,6 +731,8 @@ namespace Proto
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 #endif
+      //unsigned int threads = 256;
+      //unsigned int blocks = (threads + size - 1)/threads;
       //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 0, protoGetCurrentStream, 
 			size, 
