@@ -106,7 +106,6 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
     auto& phifab =    phi[dit[ibox]];
     auto& gphfab = a_gphi[dit[ibox]];
-    auto& velfab = a_velo[dit[ibox]];
     if(useConservativeGradient)
     {
       kappaConservativeGradient(gphfab, phifab, graph, grid, ibox);
