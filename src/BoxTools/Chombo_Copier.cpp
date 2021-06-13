@@ -45,7 +45,7 @@ void CopierBuffer::clear()
 #else
     if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #endif
-   // else {protoFreeHost(m_sendbuffer);} 
+    else {protoFreeHost(m_sendbuffer);} 
   }
   
   if (m_recbuffer  != NULL) 
@@ -57,7 +57,7 @@ void CopierBuffer::clear()
 #else
     if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_recbuffer);}
 #endif
-   // else { protoFreeHost(m_recbuffer);}	  
+    else { protoFreeHost(m_recbuffer);}	  
   }
 #else
   if (m_sendbuffer != NULL) free(m_sendbuffer);
