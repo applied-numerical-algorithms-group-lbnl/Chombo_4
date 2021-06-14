@@ -71,6 +71,10 @@ public:
   virtual ~CopierBuffer();
 
   void clear();
+  template<typename T>
+  void reallocate(unsigned int a_sendBufferSize, 
+                  unsigned int a_recBufferSize, 
+                  unsigned int s_verbosity);
 
   bool isDefined(int ncomps) const
   { return ncomps == m_ncomps;}
