@@ -385,6 +385,7 @@ struct pairPtr{
     stride = 256;
     blocks = (end + stride - 1) / stride;
 
+    if(end - begin == 0) return;
     //protoLaunchKernel(aggStencilIndexer, blocks, stride,  
     //  begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
     protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  

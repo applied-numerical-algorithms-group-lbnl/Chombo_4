@@ -24,24 +24,10 @@ namespace Proto
       int end = a_size;
       int i = (begin + a_size)/2;
 
-      while(found == false && begin <= end)
-      {        
-        if(a_vof == a_indicies[i])
-        {
-          ivec = i;
-          found = true;
-          break;
-        }
-        if(a_vof <  a_indicies[i] )
-          end = i;
-	else
-	  begin = i;
-        i = (begin + end)/2;
-      }
-/*
       while (begin <= end) 
       {
-        int mid = begin + (begin - end) / 2;
+        //int mid = begin + (begin - end) / 2;
+        int mid = (begin + end) / 2;
 
         if (a_indicies[mid] == a_vof)
         {
@@ -52,11 +38,10 @@ namespace Proto
 
         if (a_indicies[mid] < a_vof)
           begin = mid + 1;
-
         else
          end = mid - 1;
       }
-*/
+
       if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
