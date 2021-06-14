@@ -70,11 +70,11 @@ void CopierBuffer::clear()
   m_ncomps = 0;
 }
 
-// template T is used to know what kind of memory is used. Maybe we could extend the memtype here.
-template<typename T>
-void CopierBuffer::reallocate(unsigned int a_sendBufferSize, unsigned int a_recBufferSize, unsigned int s_verbosity)
+void CopierBuffer::reallocate(unsigned int a_sendBufferSize, 
+			      unsigned int a_recBufferSize, 
+			      unsigned int s_verbosity, 
+			      bool Mem)
 {
-  auto Mem = T::memTypeAllocation();
   auto fun = [Mem] (void* a_ptr, unsigned int a_size)
   {
     if(Mem)
@@ -104,7 +104,7 @@ void CopierBuffer::reallocate(unsigned int a_sendBufferSize, unsigned int a_recB
   if(a_recBufferSize > m_reccapacity) 
   {
     fun(m_recbuffer, a_recBufferSize);
-    if (s_verbosity > 0) pout()<<"malloc send buffer "<<a_recBufferSize<<std::endl;
+    if (s_verbosity > 0) pout()<<"malloc recv buffer "<<a_recBufferSize<<std::endl;
     m_reccapacity = a_recBufferSize;
     assert(m_recbuffer!=nullptr);
   }

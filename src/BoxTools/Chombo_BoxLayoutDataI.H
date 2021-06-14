@@ -612,7 +612,8 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   }
 
   // allocate send and receveive buffer space.
-  m_buff->reallocate<T>(sendBufferSize,recBufferSize, s_verbosity);
+  bool mem = T::memTypeAllocation(); // return 1 if device 
+  m_buff->reallocate(sendBufferSize,recBufferSize, s_verbosity, mem);
 
   char* nextFree = (char*)(m_buff->m_sendbuffer);
   if (m_buff->m_fromMe.size() > 0)
