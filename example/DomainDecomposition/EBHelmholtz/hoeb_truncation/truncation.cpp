@@ -134,8 +134,8 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                                         
   getKappaLphi(klpCoar, phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_dictionary, a_geoserv);
 
   hoeb::restrictKappaLphi(klpFtoC, klpFine,
-                    a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar,
                     a_graphsFine, a_gridsFine, a_domFine, a_dxFine,                    
+                    a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar,
                     a_dictionary, a_geoserv);
 
   //error = Ave(klphifine) - klphicoar 
