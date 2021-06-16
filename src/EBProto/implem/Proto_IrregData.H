@@ -21,8 +21,7 @@ namespace Proto
       size_t ivec = 0;
       bool found = false;
       int begin = 0;
-      int end = a_size;
-      int i = (begin + a_size)/2;
+      int end = a_size - 1;
 
       while (begin <= end) 
       {
@@ -31,7 +30,7 @@ namespace Proto
 
         if (a_indicies[mid] == a_vof)
         {
-          ivec = i;
+          ivec = mid;
           found = true;
           break;
         }
@@ -431,6 +430,8 @@ namespace Proto
     ///
     inline size_t  index(const EBIndex<cent>& a_vof, const int& a_ivar) const
     {
+      //return Proto::index((*m_indicies).data(), m_indicies->size(), a_vof, a_ivar);
+
       size_t ivec = 0;
       bool found = false;
       for(unsigned int i = 0; i < m_indicies->size(); i++)
@@ -654,6 +655,29 @@ namespace Proto
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const
     {
+/*      size_t ivec = 0;
+      int begin = 0;
+      int end = m_indicies->size();
+
+      while (begin <= end)
+      {
+        //int mid = begin + (begin - end) / 2;
+        int mid = (begin + end) / 2;
+
+        if ((*m_indicies)[mid] == a_ind)
+        {
+          ivec = mid;
+          return true;
+        }
+
+        if ((*m_indicies)[mid] < a_ind)
+          begin = mid + 1;
+        else
+         end = mid - 1;
+      }
+      return false;
+*/
+
       bool found = false;
       //this should probably be a smarter search.   maybe sort them?
       for(int ivec = 0;(ivec < m_indicies->size() && !found); ivec++)
@@ -665,6 +689,7 @@ namespace Proto
       }
 
       return found;
+
     }
   
     std::size_t charsize(const Box&   a_bx,
