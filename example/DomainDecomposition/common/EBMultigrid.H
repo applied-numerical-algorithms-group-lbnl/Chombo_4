@@ -35,6 +35,7 @@ public:
   Real                              m_beta;    
   std::shared_ptr<EBMultigridLevel> m_coarser;
   EBLevelBoxData<CELL, 1>           m_kappa;
+  EBLevelBoxData<CELL, 1>           m_inhoContr;
   bool                              m_hasCoarser;
   bool                              m_directToBottom;
   EBLevelBoxData<CELL, 1>           m_resid;
@@ -64,7 +65,7 @@ public:
 
       if (m_hasCoarser)
       {
-        residual(m_resid,a_phi,a_rhs);                      
+        residual(m_resid,a_phi,a_rhs, false);                      
         //stencils for multilevel objects live with the finer level
         restrictResidual(m_residC,m_resid);
         m_deltaC.setVal(0.);
@@ -124,8 +125,8 @@ public:
   residual(EBLevelBoxData<CELL, 1>       & a_res,
            const EBLevelBoxData<CELL, 1> & a_phi,
            const EBLevelBoxData<CELL, 1> & a_rhs,
+           bool addinhoContr = false,
            bool a_doExchange = true) const=0;
-
 
   /// 
   virtual void
@@ -149,12 +150,14 @@ public:
   virtual void
   applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
           const EBLevelBoxData<CELL, 1> & a_phi,
+          bool addinhoContr = false,
           bool a_doExchange = true) const=0;
 
   ///for tga
   virtual void
   applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
-                 const EBLevelBoxData<CELL, 1> & a_phi) const=0;
+                 const EBLevelBoxData<CELL, 1> & a_phi,
+                 bool addinhoContr = false) const=0;
 
 
   virtual void
@@ -276,8 +279,8 @@ public:
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
+                bool addinhoContr = false,
                 bool a_doExchange = true) const;
-
 
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
@@ -297,13 +300,25 @@ public:
   /// 
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
+               bool addinhoContr = false,
                bool a_doExchange = true) const;
+
 
   ///for tga
   void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
-                      const EBLevelBoxData<CELL, 1> & a_phi) const;
+                      const EBLevelBoxData<CELL, 1> & a_phi,
+                      bool addinhoContr = false) const;
 
+  //Just needed to fill inhomogeneous contribution data holder
+  int
+  getStencilComponents(const shared_ptr<GeometryService<2> >   & a_geoserv,
+                       const Chombo4::DataIndex & a_dit);
 
+  // Fill inhomogeoneous contribution data holder
+  void
+  fillInhoContr(const vector<double>   & a_inhoContr,
+                const vector< EBIndex<CELL> > & a_dstVoFs,
+                const Chombo4::DataIndex & a_dit);
 
   void bottom_solve(EBLevelBoxData<CELL, 1>      &  a_phi,
                     const EBLevelBoxData<CELL, 1>&  a_rhs);
@@ -466,28 +481,30 @@ public:
   inline
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
+               bool addinhoContr = false,
                bool a_doExchange = true) const
   {
-    return m_finest->applyOp(a_lph, a_phi, a_doExchange);
+    return m_finest->applyOp(a_lph, a_phi, addinhoContr, a_doExchange);
   }
-
 
   /// for TGA force bcs to be homogeneous neumann
   inline
   void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
-                      const EBLevelBoxData<CELL, 1> & a_phi) const
+                      const EBLevelBoxData<CELL, 1> & a_phi,
+                      bool addinhoContr = false) const
   {
-    m_finest->applyOpNeumann(a_lph, a_phi);
+    m_finest->applyOpNeumann(a_lph, a_phi, addinhoContr);
   }
 
   inline
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
+		bool addinhoContr = false,
                 bool a_doExchange = true) const
   {
     PR_TIME("sgmg::resid");
-    return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
+    return m_finest->residual(a_res, a_phi, a_rhs, addinhoContr, a_doExchange);
   }
   
 private:

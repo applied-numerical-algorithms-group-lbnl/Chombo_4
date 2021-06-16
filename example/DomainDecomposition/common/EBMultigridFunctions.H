@@ -103,6 +103,26 @@ unsigned int  gsrbResidF(int     a_pt[DIM],
 }
 PROTO_KERNEL_END(gsrbResidF, gsrbResid)
 /****/
+/****/
+PROTO_KERNEL_START 
+unsigned int  jacobiResidF(int     a_pt[DIM],
+                           Var<Real, 1>     a_phi,
+                           Var<Real, 1>     a_res,
+                           Var<Real, 1>     a_diag,
+                           Var<Real, 1>     a_kappa,
+                           Real    a_alpha,
+                           Real    a_beta,
+                           Real    a_dx)
+{
+    Real phival = a_phi(0);
+    Real resval = a_res(0);
+    Real kappval = a_kappa(0);
+    double lambda = -(a_dx*a_dx)/(16.0);
+    a_phi(0) = phival + lambda*resval;
+  return 0;
+}
+PROTO_KERNEL_END(jacobiResidF, jacobiResid)
+/****/
 #include "Chombo_NamespaceFooter.H"
 /****/
 #endif
