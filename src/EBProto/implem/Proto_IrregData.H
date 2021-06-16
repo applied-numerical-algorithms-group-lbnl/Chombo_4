@@ -22,7 +22,6 @@ namespace Proto
       bool found = false;
       int begin = 0;
       int end = a_size;
-      int i = (begin + a_size)/2;
 
       while (begin <= end) 
       {
@@ -31,7 +30,7 @@ namespace Proto
 
         if (a_indicies[mid] == a_vof)
         {
-          ivec = i;
+          ivec = mid;
           found = true;
           break;
         }
