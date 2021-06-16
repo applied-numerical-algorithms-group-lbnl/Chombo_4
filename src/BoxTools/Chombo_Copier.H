@@ -63,19 +63,19 @@ class CopierBuffer
 public:
 
   ///null constructor, copy constructor and operator= can be compiler defined.
-  CopierBuffer():m_ncomps(0), m_sendbuffer(NULL), m_sendcapacity(0),
-                 m_recbuffer(NULL), m_reccapacity(0)
+  CopierBuffer():m_ncomps(0), m_sendbuffer(nullptr), m_sendcapacity(0),
+                 m_recbuffer(nullptr), m_reccapacity(0)
   {}
 
   ///
   virtual ~CopierBuffer();
 
   void clear();
-  template<typename T>
+
   void reallocate(unsigned int a_sendBufferSize, 
                   unsigned int a_recBufferSize, 
-                  unsigned int s_verbosity);
-
+                  unsigned int s_verbosity,
+                  bool a_mem);
   bool isDefined(int ncomps) const
   { return ncomps == m_ncomps;}
 

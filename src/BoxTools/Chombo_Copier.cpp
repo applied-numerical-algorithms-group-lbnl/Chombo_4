@@ -70,41 +70,49 @@ void CopierBuffer::clear()
   m_ncomps = 0;
 }
 
-// template T is used to know what kind of memory is used. Maybe we could extend the memtype here.
-template<typename T>
-void CopierBuffer::reallocate(unsigned int a_sendBufferSize, unsigned int a_recBufferSize, unsigned int s_verbosity)
+void CopierBuffer::reallocate(unsigned int a_sendBufferSize, 
+			      unsigned int a_recBufferSize, 
+			      unsigned int s_verbosity, 
+			      bool Mem)
 {
-  auto Mem = T::memTypeAllocation();
-  auto fun = [Mem] (void* a_ptr, unsigned int a_size)
+  auto fun = [Mem] (void*& a_ptr, unsigned int a_size)
   {
-    if(Mem)
+    void* tmp = a_ptr;
 #ifdef PROTO_CUDA
+    if(tmp != nullptr) 
     {
-      if(a_ptr != nullptr) {protoFree(MEMTYPE_DEFAULT,a_ptr);}
-      protoMalloc(MEMTYPE_DEFAULT,a_ptr,a_size);
+      if(isDeviceMemory(tmp)) {protoFree(MEMTYPE_DEFAULT, tmp);}
+      else {protoFreeHost(tmp);}
+    }
+
+    if(Mem)
+    {
+      protoMalloc(MEMTYPE_DEFAULT,tmp,a_size);
     }
     else
     {
-      if(a_ptr != nullptr) protoFreeHost(a_ptr);
-      protoHostAlloc(a_ptr,a_size);
+      protoHostAlloc(tmp,a_size);
     }
 #else
-    if(a_ptr != nullptr) free((m_buff->m_sendbuffer));
-    a_ptr = malloc(a_size);
+    if(tmp != nullptr) free(tmp);
+    tmp = malloc(a_size);
 #endif
+
+    a_ptr = tmp;
   };
 
   if(a_sendBufferSize > m_sendcapacity) 
   {
-    fun(m_sendbuffer, a_sendBufferSize);
+    fun(this->m_sendbuffer, a_sendBufferSize);
     if (s_verbosity > 0) pout()<<"malloc send buffer "<<a_sendBufferSize<<std::endl;
     m_sendcapacity = a_sendBufferSize;
+    assert(m_sendbuffer!=nullptr);
   }
 
   if(a_recBufferSize > m_reccapacity) 
   {
-    fun(m_recbuffer, a_recBufferSize);
-    if (s_verbosity > 0) pout()<<"malloc send buffer "<<a_recBufferSize<<std::endl;
+    fun(this->m_recbuffer, a_recBufferSize);
+    if (s_verbosity > 0) pout()<<"malloc recv buffer "<<a_recBufferSize<<std::endl;
     m_reccapacity = a_recBufferSize;
     assert(m_recbuffer!=nullptr);
   }
