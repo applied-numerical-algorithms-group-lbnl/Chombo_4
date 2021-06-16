@@ -178,12 +178,11 @@ namespace Proto
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < a_end ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
-        const bool do_it = copyContains<cent>(vof,a_box_inf,a_box_high);
+        const bool do_it = copyContains<cent>(vof,a_box_inf,a_box_high) && contains(vof,a_box_inf,a_box_high);
         if(do_it)
         {
           size_t indDst = idx + a_indiciesSizeDst*a_idst;
           size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
-	  __syncthreads();
 
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
@@ -192,7 +191,6 @@ namespace Proto
             indSrc += a_indiciesSizeSrc;
           }
         }
-	__syncthreads();
       }
   }
 #endif
@@ -253,8 +251,8 @@ namespace Proto
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
-        //if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
-        if(copyContains<cent>(pt,a_box_inf,a_box_high))
+        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        //if(copyContains<cent>(pt,a_box_inf,a_box_high))
         {
           size_t indxDst = index(a_indicies, a_indiciesSize, pt, 0);
           size_t indxSrc = idx;
