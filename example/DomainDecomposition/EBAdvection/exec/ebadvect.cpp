@@ -385,6 +385,7 @@ runAdvection(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  scalcell(grids, dataGhostIV, graphs);
 
   shared_ptr<EBLevelBoxData<CELL, DIM> >  velocell(new EBLevelBoxData<CELL, DIM>(grids, dataGhostIV, graphs));
+  velocell->setVal(0.);
   initializeData(scalcell, *velocell, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
 
 

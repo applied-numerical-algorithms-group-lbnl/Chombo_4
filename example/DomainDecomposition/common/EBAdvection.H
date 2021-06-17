@@ -101,6 +101,7 @@ protected:
                  unsigned int                                     a_idir,
                  int                                              a_ibox)
   {
+    a_fcvel.setVal(0.);
     EBBoxData<CELL, Real, 1> cellcomp;
     cellcomp.define<DIM>(a_velcc, a_idir);
     // stencils to average velocities from cells to faces
