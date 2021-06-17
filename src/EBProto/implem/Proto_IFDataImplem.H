@@ -345,8 +345,9 @@ namespace Proto
     /**
        the stuff below makes convergence tests do weird things
        but makes for better answers
+       dtg-- this is broken and needs to go away --dtg
     */
-    if(1)
+    if(0)
     {
       if (m_intersections.size() == 0)
       {
