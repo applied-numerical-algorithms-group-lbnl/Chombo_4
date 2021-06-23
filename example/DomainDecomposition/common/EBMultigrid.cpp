@@ -330,6 +330,8 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& kappdat = m_kappa[dit[ibox]];
+    auto& inhofab = m_inhoContr[dit[ibox]];
+    inhofab.setVal(0.0);
     auto grid =m_grids[dit[ibox]];
     Bx  grbx = kappdat.inputBox();
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
@@ -350,11 +352,14 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
   }
   m_kappa.exchange(m_exchangeCopier);
 
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
-  {
-    getStencilComponents(a_geoserv, dit[ibox]);
+  if(m_stenname == string("Weighted_Least_Squares_Poisson") || m_stenname == string("Weighted_Least_Squares_Poisson_All_Neumann"))
+  {  
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      getStencilComponents(a_geoserv, dit[ibox]);
+    }
+    m_inhoContr.exchange(m_exchangeCopier);
   }
-  m_inhoContr.exchange(m_exchangeCopier);
 }
 
 //Just needed to fill inhomogeneous contribution data holder
