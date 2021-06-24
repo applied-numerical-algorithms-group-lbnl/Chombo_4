@@ -188,13 +188,16 @@ namespace Proto
                const data_t                              & a_scale,
                bool                                        a_incrementOnly) const;
 
-    //avoiding std::pair because cuda
-
-    ///EBDataLoc defined in Proto_EBBoxData.H
-    typedef vector< pair_t<data_t>  > stencil_t;
+#ifdef COUNTER
+    unsigned int getCounterVofs();
+    unsigned int getCounterRegVof();
+    unsigned int getCounterZeroWeight();
+    unsigned int getCounterTotSten();
+#endif
 
   protected:
-    ///this stuff lives on the host
+    //  /this stuff lives on the host
+    typedef vector< pair_t<data_t>  > stencil_t;
     vector<stencil_t>    m_ebstencil;
     vector<EBDataLoc>    m_dstAccess;
 
@@ -212,6 +215,12 @@ namespace Proto
                   const vector<uint64_t>          &   h_stenStart);
 
     void hostRelease();
+
+#ifdef COUNTER
+    unsigned int m_counterTotSten = 0;
+    unsigned int m_counterRegVof = 0;
+    unsigned int m_counterZeroWeight = 0;
+#endif
 
 #ifdef PROTO_CUDA
     void cudaPrep(const vector<pair_t<data_t> >   &   h_serializedStenInfo,
@@ -232,11 +241,28 @@ namespace Proto
     //this is for flop counts
     int  m_flopsThisApply = 0;        
 
+#ifdef NEWSTRUCT
+    /// this stuff lives on the pinned memory
+    uint16_t*         d_stenLen = nullptr;
+    bool*             d_destMeshType = nullptr;
+    uint64_t*         d_destOffset = nullptr;
+    bool*             d_srcMeshType = nullptr;
+    uint64_t*         d_srcOffset = nullptr;
+    data_t*           d_srcWeight = nullptr;
+
+// for compilation
+    pair_t<data_t>*      d_ebstencil = nullptr;
+    EBDataLoc*           d_dstaccess = nullptr;
+    uint64_t*            d_stensizes = nullptr;
+    uint64_t*            d_stenstart = nullptr;
+#else
+
     /// this stuff lives on the device
     pair_t<data_t>*      d_ebstencil = nullptr;
     EBDataLoc*           d_dstaccess = nullptr;
     uint64_t*            d_stensizes = nullptr;
     uint64_t*            d_stenstart = nullptr;
+#endif
 
     Box m_srcBox, m_dstBox;
   private:

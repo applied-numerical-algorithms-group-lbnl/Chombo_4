@@ -147,6 +147,13 @@ namespace Proto
     {
       return m_diagonalWeights;
     }
+
+    inline 
+    shared_ptr< AggStencil<srcCenter, dstCenter, data_t> >& getAggStencil()
+    {
+      return m_irregStencil;
+    }
+
   protected:
     void
     computeDiagonalWeights(const vector< EBIndex<dstCenter> >              & a_dstVoFs,

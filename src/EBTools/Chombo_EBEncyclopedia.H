@@ -136,6 +136,74 @@ public:
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,XFACE   > >    m_zFaceToXFace;
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,YFACE   > >    m_zFaceToYFace;
 
+  void print()
+  {
+    std::cout << "m_cellToCell" << std::endl;
+    m_cellToCell->print(); 
+ 
+   std::cout << "m_xFaceToXFace" << std::endl;
+    m_xFaceToXFace->print(); 
+
+   std::cout << "m_yFaceToYFace" << std::endl;
+    m_yFaceToYFace->print(); 
+
+   std::cout << "m_zFaceToZFace" << std::endl;
+    m_zFaceToZFace->print(); 
+
+
+
+
+   std::cout << "m_cellToXFace" << std::endl;
+    m_cellToXFace->print(); 
+
+   std::cout << "m_cellToYFace" << std::endl;
+    m_cellToYFace->print(); 
+
+   std::cout << "m_cellToZFace" << std::endl;
+    m_cellToZFace->print(); 
+
+   std::cout << "m_cellToBoundary" << std::endl;
+    m_cellToBoundary->print(); 
+   
+
+
+   std::cout << "m_xFaceToCell" << std::endl;
+    m_xFaceToCell->print(); 
+
+   std::cout << "m_yFaceToCell" << std::endl;
+    m_yFaceToCell->print(); 
+
+   std::cout << "m_cellToZFace" << std::endl;
+    m_cellToZFace->print(); 
+
+   std::cout << "m_boundaryToCell" << std::endl;
+    m_boundaryToCell->print(); 
+ 
+
+
+   std::cout << "m_xFaceToYFace" << std::endl;
+    m_xFaceToYFace->print(); 
+
+   std::cout << "m_xFaceToZFace" << std::endl;
+    m_xFaceToZFace->print(); 
+
+
+
+   std::cout << "m_yFaceToXFace" << std::endl;
+    m_yFaceToXFace->print(); 
+
+   std::cout << "m_yFaceToZFace" << std::endl;
+    m_yFaceToZFace->print(); 
+
+
+
+   std::cout << "m_zFaceToXFace" << std::endl;
+    m_zFaceToXFace->print(); 
+
+   std::cout << "m_zFaceToYFace" << std::endl;
+    m_zFaceToYFace->print(); 
+  }
+
   //register a stencil cells to face things
   inline void registerCellToFace (string a_stencilName,
                                   string a_domainBCName,

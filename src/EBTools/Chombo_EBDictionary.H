@@ -171,6 +171,31 @@ public:
                Point  a_ghost);
   
 
+  void print()
+  {
+    for(auto& itRegisteredStencils : m_registeredStencils)
+    {
+	for(auto& itVec : itRegisteredStencils)
+		for(auto& itMap : itVec)
+		{
+			std::cout << " boundary conditions: " << itMap.first.m_ebbcName << " stencil name: " << itMap.first.m_stencilName;
+#ifdef COUNTER
+			shared_ptr<ebstencil_t>& ebstencil = itMap.second;
+			auto& aggStencil = ebstencil->getAggStencil();
+			unsigned int counterVofs       = aggStencil->getCounterVofs();
+			unsigned int counterTotSten    = aggStencil->getCounterTotSten();
+			unsigned int counterRegVof     = aggStencil->getCounterRegVof();
+			unsigned int counterZeroWeight = aggStencil->getCounterZeroWeight();
+			std::cout << " counterVofs: "      << counterVofs;
+			std::cout << " counterTotSten: "    << counterTotSten; 
+			std::cout << " counterRegVof: "     << counterRegVof;
+			std::cout << " counterZeroWeight: " << counterZeroWeight;
+#endif
+			std::cout << std::endl;
+		}
+    }
+  }
+
   int getIndex(const Box& a_dstDomain)
   {
     bool found = false;
