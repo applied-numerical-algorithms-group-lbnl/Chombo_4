@@ -9,6 +9,140 @@
 
 namespace Proto
 {
+  template<int order> 
+  class BaseExactVelocity
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+
+    bool locationBased() const
+    {
+      return m_locationBased;
+    }
+  
+    ///most of our examples are location based
+    BaseExactVelocity(bool a_locationBased = true)
+    {
+      m_locationBased = a_locationBased;
+    }
+  
+    ///
+    /**
+     */
+    virtual IndMomDIM getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                                             const int        & a_velcomp
+                                            ) const
+    {
+      Chombo4::MayDay::Error("not implemented--only for location based vels");
+      IndMomDIM retval;
+      retval.setToZero();
+      return retval;
+    }
+ 
+    virtual RealVect getVelocityAtPoint(const RealVect& a_x) const
+    {
+      Chombo4::MayDay::Error("not implemented--only implemented for derived classes");
+      RealVect retval;
+      return retval;
+    }
+
+
+    virtual ~BaseExactVelocity()
+    {
+    }
+  
+  
+  protected:
+  
+    bool m_locationBased;
+  
+  };
+  
+  ///
+  /**
+   */
+  template<int order> 
+  class ConstantVectorVel: public BaseExactVelocity<order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+ 
+    ///  
+    /**
+     */
+    ConstantVectorVel(const RealVect & a_value)
+      :BaseExactVelocity<order>(true) // this is location based
+    {
+      m_value = a_value;
+    }
+  
+    ///
+    /**
+     */
+    virtual IndMomDIM getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                                             const int        & a_velcomp) const;
+  
+  
+    virtual RealVect getVelocityAtPoint(const RealVect& a_x) const;
+  
+    virtual ~ConstantVectorVel()
+    {
+    }
+  
+  private:
+    //weak construction is bad
+    ConstantVectorVel();
+  
+    RealVect m_value;
+  };
+
+  ///
+  /**
+   */
+  template<int order> 
+  class SolidBodyRotVel: public BaseExactVelocity<order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+  
+    ///  
+    /**
+     */
+    SolidBodyRotVel(const Real     & a_omega,
+                    const RealVect & a_center)
+      :BaseExactVelocity<order>(true) // this is location based
+    {
+      m_omega  = a_omega;
+      m_center = a_center;
+    }
+  
+    ///
+    /**
+     */
+    virtual IndMomDIM getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                                             const int        & a_velcomp) const;
+  
+  
+    virtual RealVect getVelocityAtPoint(const RealVect& a_x) const;
+  
+    virtual ~SolidBodyRotVel()
+    {
+    }
+  
+  private:
+    //weak construction is bad
+    SolidBodyRotVel();
+  
+    RealVect m_center;
+    Real     m_omega;
+  
+  };
  
   ///class where phi is a monomial in x, y, z
   template<int order> //order is so we can send in geometry info
@@ -320,9 +454,11 @@ namespace Proto
     //cells of radius one.
     Vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
+                     const EBIndex<CELL> & a_vof,
 		     const int             a_radius,
 		     Neighbors<order>    & a_neigh,
-		     const EBGraph       & a_graph) const;
+		     const EBGraph       & a_graph,
+                     int                   a_neighType) const;
 
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
@@ -338,6 +474,7 @@ namespace Proto
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata,
 				Neighbors<order>       & a_neigh,
+                                int                    & a_neighType,
 				double                   a_dx) const;
 
     //Compute the Moments Matrix
@@ -350,7 +487,7 @@ namespace Proto
                            string                   a_dombcName[2*DIM]) const;
 		           
     //Compute rhs matrix for a face
-    void
+    virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
 		      RealVect                 & a_faceLoc,
@@ -358,7 +495,7 @@ namespace Proto
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
-    void
+    virtual void
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
 		    RealVect                 & a_faceLoc,
@@ -391,6 +528,7 @@ namespace Proto
     void
     getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
                            Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                           const EBIndex<CELL>        & a_vof,
                            const EBIndex<cent>        & a_face,
                            const EBGraph              & a_graph,
                            const VoluData             & a_voludata,
@@ -405,12 +543,14 @@ namespace Proto
                            string                       a_dombcName[2*DIM],
                            const int                  & a_dir,
                            IndMomSDMinOne             & a_faceMom,
+                           int                        & a_neighType,
                            double                       a_dx) const;
 
     //Compute EB face stencil
     void
     getEBFluxStencil(LocalStencil<CELL, double>    & a_facesten,
                      Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                     const EBIndex<CELL>           & a_vof,
                      const EBIndex<cent>           & a_face,
                      const EBGraph                 & a_graph,
                      const VoluData                & a_voludata,
@@ -424,6 +564,7 @@ namespace Proto
 		     Vector<IndMomDIM>             & a_ebnorm,
 		     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
+                     int                           & a_neighType,
                      const double                  & a_dx) const;
 
     virtual ~BaseWLSFlux()
@@ -499,11 +640,86 @@ namespace Proto
     int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
-    //Exact solution calss holding different function types
+    //Exact solution class holding different function types
     shared_ptr<BaseExactSolution<order> >  m_exactSol;
     
   };
+
+  //Main function calls for ExactVelAdvectionWLS flux calculations
+  template<CENTERING cent, int order>
+  class ExactVelAdvectionWLSFlux: public BaseWLSFlux<cent,order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    using BaseWLSFlux<cent,order>::BaseWLSFlux;
+
+    //Compute rhs matrix for a face
+    virtual void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<cent>      & a_face,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      double                     a_dx) const;
+
+    //Compute rhs matrix for a EB face
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    double                     a_dx) const;
+
+    virtual ~ExactVelAdvectionWLSFlux()
+    {
+    }
+
+    ExactVelAdvectionWLSFlux(int          & a_radius,
+                             int          & a_powerE,
+			     int          & a_exactSolFun,
+                             bool           a_verbose=false) 
+    :BaseWLSFlux<cent, order>(a_radius,
+                              a_powerE,
+                              a_exactSolFun,
+                              a_verbose)
+    {
+      ParmParse pp;
+      int exactVel = 1;
+      //Exact solution     
+      pp.get("exactVel",exactVel);
   
+      if (exactVel == 1)
+      {
+        RealVect centerVel;
+        Real omega;
+        pp.get("vel_omega",omega);
+  
+        Vector<Real> centerVec;
+  
+        pp.getarr("vel_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          centerVel[idir] = centerVec[idir];
+        }
+  
+	m_exactVel = shared_ptr<BaseExactVelocity<order> >(new SolidBodyRotVel<order>(omega, centerVel));
+      }
+    }
+
+    //Exact velocity class holding different function types
+    shared_ptr<BaseExactVelocity<order> >  m_exactVel;
+
+  };
+
   ///some basic infrastructure to support the WLS stencils
   template<int order>  //this is so we can send in the geometry information
   class WLSStencil
@@ -521,27 +737,51 @@ namespace Proto
   public:
 
     ///
-    //Gets WLS flux divergence stencil
+    //Gets Laplacian WLS flux divergence stencil
     inline static void
-    getWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
-                      const EBIndex<CELL>                 & a_vof,
-                      const EBGraph                       & a_graph,
-                      const VoluData                      & a_voludata,
-                      const EBFaData                      & a_ebfadata,
-                      const XFacData                      & a_xfacdata,
-                      const YFacData                      & a_yfacdata,
-                      const ZFacData                      & a_zfacdata,
-                      const EBNormalData                  & a_ebnormxdata,
-                      const EBNormalData                  & a_ebnormydata,
-                      const EBNormalData                  & a_ebnormzdata,
-                      const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                      const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                      const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                      const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
-                      string                                a_ebbcName,
-                      string                                a_dombcName[2*DIM],
-		      Real                                & a_inhoTerm,
-                      double                                a_dx);
+    getLaplaWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
+                           const EBIndex<CELL>                 & a_vof,
+                           const EBGraph                       & a_graph,
+                           const VoluData                      & a_voludata,
+                           const EBFaData                      & a_ebfadata,
+                           const XFacData                      & a_xfacdata,
+                           const YFacData                      & a_yfacdata,
+                           const ZFacData                      & a_zfacdata,
+                           const EBNormalData                  & a_ebnormxdata,
+                           const EBNormalData                  & a_ebnormydata,
+                           const EBNormalData                  & a_ebnormzdata,
+                           const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
+                           const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
+                           const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                           const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                           string                                a_ebbcName,
+                           string                                a_dombcName[2*DIM],
+                           Real                                & a_inhoTerm,
+                           int                                 & a_neighType,
+                           double                                a_dx);
+
+    //Gets Advection WLS flux divergence stencil
+    inline static void
+    getAdvWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
+                         const EBIndex<CELL>                 & a_vof,
+                         const EBGraph                       & a_graph,
+                         const VoluData                      & a_voludata,
+                         const EBFaData                      & a_ebfadata,
+                         const XFacData                      & a_xfacdata,
+                         const YFacData                      & a_yfacdata,
+                         const ZFacData                      & a_zfacdata,
+                         const EBNormalData                  & a_ebnormxdata,
+                         const EBNormalData                  & a_ebnormydata,
+                         const EBNormalData                  & a_ebnormzdata,
+                         const ExactVelAdvectionWLSFlux<XFACE   , order>  & a_xfaceflux,
+                         const ExactVelAdvectionWLSFlux<YFACE   , order>  & a_yfaceflux,
+                         const ExactVelAdvectionWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                         const ExactVelAdvectionWLSFlux<BOUNDARY, order>  & a_ebflux,
+                         string                                a_ebbcName,
+                         string                                a_dombcName[2*DIM],
+                         Real                                & a_inhoTerm,
+                         int                                 & a_neighType,
+                         double                                a_dx);
 
     virtual ~WLSStencil()
     {

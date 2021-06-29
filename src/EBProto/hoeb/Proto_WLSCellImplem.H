@@ -11,6 +11,7 @@ namespace Proto
   BaseWLSFlux<cent, order>::
   getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start) const
   {
+    PR_TIME("getFlapVoFs");
     vector<EBIndex<CELL> > retval;
 
     for(int idir  = 0; idir <  DIM; idir++)
@@ -32,45 +33,58 @@ namespace Proto
   Vector<EBIndex<CELL> >
   BaseWLSFlux<cent, order>::
   getVoFsNeighbors(const EBIndex<cent> & a_face,
+                   const EBIndex<CELL> & a_vof,
                    const int             a_radius,
 		   Neighbors<order>    & a_neigh,
-                   const EBGraph       & a_graph) const
+                   const EBGraph       & a_graph,
+		   int                   a_neighType) const
   {
+    PR_TIME("getVoFsNeighbors");
     Vector<int>  weightDisVol;
     Vector<EBIndex<CELL> > retval;
-    if (cent == BOUNDARY) 
+    MomentIterator<DIM,order> momit;
+    if (a_neighType)
     {
-      EBIndex<CELL> voflo = a_face.getVoF();
-      retval.push_back(voflo);
+      retval.push_back(a_vof);
       weightDisVol.push_back(1);
     }
     else
     {
-      EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
-      EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
-      if (!a_face.m_isBoundary)
+      if (cent == BOUNDARY) 
       {
+        EBIndex<CELL> voflo = a_face.getVoF();
         retval.push_back(voflo);
-        weightDisVol.push_back(1);      
-        retval.push_back(vofhi);	   
-        weightDisVol.push_back(1);      
-      } 
-      else 
-      { 
-        if (a_face.m_vofIDMe>=0) 
-        {
-          retval.push_back(vofhi);
-          weightDisVol.push_back(1);
-        }
-        if (a_face.m_vofIDLo>=0) 
+        weightDisVol.push_back(1);
+      }
+      else
+      {
+        EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
+        EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
+        if (!a_face.m_isBoundary)
         {
           retval.push_back(voflo);
-          weightDisVol.push_back(1);
+          weightDisVol.push_back(1);      
+          retval.push_back(vofhi);	   
+          weightDisVol.push_back(1);      
+        } 
+        else 
+        { 
+          if (a_face.m_vofIDMe>=0) 
+          {
+            retval.push_back(vofhi);
+            weightDisVol.push_back(1);
+          }
+          if (a_face.m_vofIDLo>=0) 
+          {
+            retval.push_back(voflo);
+            weightDisVol.push_back(1);
+          }
         }
       }
     }
     int startV = 0;
-    for (int irad = 1; irad<=a_radius; irad++)
+    int new_rad = a_radius;
+    for (int irad = 1; irad<=new_rad; irad++)
     {
       int neighSize = retval.size();
       for (int ineigh = startV; ineigh<neighSize; ineigh++){
@@ -94,6 +108,7 @@ namespace Proto
         }
       }
       startV = neighSize;
+      if (irad==new_rad && retval.size()<=momit.size()) new_rad++;
     }
     a_neigh.setWeightDisVol(weightDisVol);
     return retval;
@@ -115,8 +130,10 @@ namespace Proto
                               const EBNormalData      & a_ebnormydata,
                               const EBNormalData      & a_ebnormzdata,
 		              Neighbors<order>        & a_neigh,
+                              int                     & a_neighType,
 			      double                    a_dx) const
   {
+    PR_TIME("getMomentsInfoFromNeighbors");
     Vector<IndMomDIM> volmom, ebfmom;
     Vector<IndMomSDMinOne> facmom;
     Vector<RealVect> volneighLoc;
@@ -159,6 +176,7 @@ namespace Proto
       {
 	volmom.push_back(a_voludata(volInd, 0));
 	volneighFrac.push_back(a_voludata(volInd, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM));
+	if (a_neighType==0){
 	const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
 	Vector<IndMomDIM> ebnorm (DIM);
         ebnorm[0] = a_ebnormxdata(volInd, 0);
@@ -172,12 +190,14 @@ namespace Proto
 	ebfneighNorm.push_back(ebnorm);
 	ebfneighFrac.push_back(a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM-1));
         ebfp.push_back(volInd.m_pt);
+	}
       }
       else
       {
 	volmom.push_back(regVolMom);
 	volneighFrac.push_back(1.0);
       }
+if (a_neighType==0){
       int side = 0;
       for(SideIterator sit; sit.ok(); ++sit)
       {
@@ -311,6 +331,7 @@ namespace Proto
         }
 #endif
       }//End SideIterator loop
+      }
     }//End vol neighbors loop
 
     a_neigh.setMomentsInfo(volmom, facmom,
@@ -332,18 +353,18 @@ namespace Proto
 
     if (m_verbose)
     {
-      cout<<" Index order for the matrices " << endl;
+      pout()<<" Index order for the matrices " << endl;
       for (int i=0; i<volp.size(); i++)
       {
-        cout<<" Vol "<<volp[i]<<endl;
+        pout()<<" Vol "<<volp[i]<<endl;
       }
       for (int i=0; i<facp.size(); i++)
       {
-        cout<<" Face "<<facp[i]<<endl;
+        pout()<<" Face "<<facp[i]<<endl;
       }
       for (int i=0; i<ebfp.size(); i++)
       {
-        cout<<" EBFace "<<ebfp[i]<<endl;
+        pout()<<" EBFace "<<ebfp[i]<<endl;
       }
     }
   }
@@ -359,6 +380,7 @@ namespace Proto
 			   string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const
   {
+    PR_TIME("getShiftedMomentMatrix");
     Vector<IndMomDIM> volmom = a_neigh.m_volMom;
     Vector<IndMomDIM> ebfmom = a_neigh.m_ebfMom;
     Vector<IndMomSDMinOne> facmom = a_neigh.m_facMom;
@@ -385,13 +407,14 @@ namespace Proto
     a_Mvol.define(N, M);
     if (m_verbose) 
     {
-      cout<< "Size Moments matrix "<<N<<" "<<M<<std::endl;
-      cout<< "With nvol + nfac + nebf "<<nvol<<" "<<nfac<<" "<<nebf<<std::endl;
-      cout<< "Moments matrix" <<endl;
+      pout()<< "Size Moments matrix "<<N<<" "<<M<<std::endl;
+      pout()<< "With nvol + nfac + nebf "<<nvol<<" "<<nfac<<" "<<nebf<<std::endl;
+      pout()<< "Moments matrix" <<endl;
     }
   
     Real  volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    double eps = 1e-9;
 
     //Adding volume moments
     for(int irow = 0; irow < nvol; irow++)
@@ -415,7 +438,21 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]);
+	if (volneighFrac[irow] < eps)
+        {
+	  if (icol == 0)
+          {
+            a_Mvol(irow, icol) = 1.0;
+          }
+          else
+          {
+            a_Mvol(irow, icol) = 0.0;
+          }
+        }
+        else
+        {
+          a_Mvol(irow, icol) = volmom[irow][momit()]/(volneighFrac[irow]);
+        }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -468,7 +505,21 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]);
+        if (facneighFrac[iface] < eps)
+        {
+          if (icol == 0)
+          {
+            a_Mvol(irow, icol) = 1.0;
+          }
+          else
+          {
+            a_Mvol(irow, icol) = 0.0;
+          }
+        }
+        else
+        {
+          a_Mvol(irow, icol) = fac2volmom[iface][momit()]/(facneighFrac[iface]);
+        }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -513,7 +564,21 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
+        if (ebfneighFrac[iebf] < eps)
+        {
+          if (icol == 0)
+          {
+            a_Mvol(irow, icol) = 1.0;
+          }
+          else
+          {
+            a_Mvol(irow, icol) = 0.0;
+          }
+        }
+        else
+        {
+          a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
+        }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -532,6 +597,7 @@ namespace Proto
 	            IndMomSDMinOne           & a_faceMom,
                     double                     a_dx) const
   {
+    PR_TIME("getFaceFluxMatrix");
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
 
     RealVect startLoc;
@@ -560,7 +626,7 @@ namespace Proto
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
     const int& faceDir = a_face.direction();
-    if (m_verbose) cout << " RHS - Face Flux Matrix " << endl;
+    if (m_verbose) pout() << " RHS - Face Flux Matrix " << endl;
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int, DIM> p = momit();
@@ -608,6 +674,7 @@ namespace Proto
 		  Vector<IndMomDIM>        & a_ebnorm,
                   double                     a_dx) const
   {
+    PR_TIME("getEBFluxMatrix");
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
@@ -652,7 +719,7 @@ namespace Proto
       }
       a_fluxMatrix += fluxIncr;
     }
-    if (m_verbose)  cout << " RHS - EB Flux Matrix " << endl;
+    if (m_verbose)  pout() << " RHS - EB Flux Matrix " << endl;
     for(int idir = 0; idir < DIM; idir++)
     {
       for(momit.reset(); momit.ok(); ++momit)
@@ -677,6 +744,7 @@ namespace Proto
   getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
 		       Neighbors<order>       & a_neigh) const
   { 
+    PR_TIME("getWeightsMatrixFace");
     Vector<int> weightDisVol = a_neigh.m_weightDisVol;
     Vector<int> weightDisFac = a_neigh.m_weightDisFac;
     Vector<int> weightDisEB = a_neigh.m_weightDisEB;
@@ -686,7 +754,7 @@ namespace Proto
     a_weights.setVal(1.0);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
     int powerE = m_powerE;
-    if (m_verbose)  cout << " Weights Matrix " << endl;
+    if (m_verbose)  pout() << " Weights Matrix " << endl;
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;
@@ -723,6 +791,7 @@ namespace Proto
                     Chombo4::LAPACKMatrix  & a_weights,
                     double                   a_dx) const
   {
+    PR_TIME("getStencilWeights");
     Chombo4::LAPACKMatrix MT, WT, MTWT;
     MT = a_Mvol;
     MT.transpose();
@@ -760,7 +829,7 @@ namespace Proto
                      string                           a_dombcName[2*DIM],
                      double                           a_dx) const
   {
-
+    PR_TIME("computeInhomogTerm");
     Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
     Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
     Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
@@ -861,7 +930,7 @@ namespace Proto
     for(int iface = 0; iface < nebf; iface++)
     {
       inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
-      if (m_verbose) cout<<" ebbc val "<<ebBCValues[iface]<<"  coef "<<a_stencil(0, a_nvolneigh + nfac + iface)<<endl;
+      if (m_verbose) pout()<<" ebbc val "<<ebBCValues[iface]<<"  coef "<<a_stencil(0, a_nvolneigh + nfac + iface)<<endl;
     }
 
     return inhomogTerm;
@@ -873,6 +942,7 @@ namespace Proto
   BaseWLSFlux<cent, order>::
   getFaceCenteredStencil(LocalStencil<CELL, double> & a_sten,
                          Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                         const EBIndex<CELL>        & a_vof,
                          const EBIndex<cent>        & a_face,
                          const EBGraph              & a_graph,
                          const VoluData             & a_voludata, 
@@ -887,8 +957,10 @@ namespace Proto
                          string                       a_dombcName[2*DIM],
                          const int                  & a_dir,
 			 IndMomSDMinOne             & a_faceMom,
+                         int                        & a_neighType,
                          double                       a_dx) const
   { 
+    PR_TIME("getFaceCenteredStencil");
     Chombo4::LAPACKMatrix::s_verbose = m_verbose; 
 
     Neighbors<order> neighs;
@@ -901,14 +973,15 @@ namespace Proto
     }
 
     int radius = m_radius;
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
-
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, a_vof, radius, neighs, a_graph, a_neighType);
+    MomentIterator<DIM,order> momit;
+    if (vols.size()<=momit.size()) pout()<<"DANGER: NUMBER OF NEIGHS "<<vols.size()<<" and NUMBER OF coef "<<momit.size()<<endl;
     getMomentsInfoFromNeighbors(vols,
 		                a_graph, a_voludata, a_ebfadata,
 				a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
                                 a_ebnormzdata,
-                                neighs, a_dx);
+                                neighs, a_neighType, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
@@ -931,13 +1004,13 @@ namespace Proto
     //Filling stencil
     a_sten.clear();
     Real coef_acc = 0.0;
-    if (m_verbose)  cout << " Coefs Matrix " << endl;
+    if (m_verbose)  pout() << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
       a_sten.add(vols[ivof], thisCo);
       if (m_verbose){
-        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+        pout()<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
       coef_acc += thisCo;
     }
@@ -947,7 +1020,7 @@ namespace Proto
 				       nvolneigh, 
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
+    if (m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
   //Compute EB face stencil
@@ -956,6 +1029,7 @@ namespace Proto
   BaseWLSFlux<cent, order>::
   getEBFluxStencil(LocalStencil<CELL, double>    & a_stencil,
                    Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                   const EBIndex<CELL>           & a_vof,
                    const EBIndex<cent>           & a_face,
                    const EBGraph                 & a_graph,
                    const VoluData                & a_voludata,
@@ -969,8 +1043,10 @@ namespace Proto
 		   Vector<IndMomDIM>             & a_ebnorm,
 		   string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
+                   int                           & a_neighType,
                    const double                  & a_dx) const
   {
+    PR_TIME("getEBFluxStencil");
     Chombo4::LAPACKMatrix::s_verbose = m_verbose;
 
     Neighbors<order> neighs;
@@ -981,14 +1057,14 @@ namespace Proto
       faceLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
     }
     int radius = m_radius;
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, radius, neighs, a_graph);
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, a_vof, radius, neighs, a_graph, 0);
 
     getMomentsInfoFromNeighbors(vols,
                                 a_graph, a_voludata, a_ebfadata,
                                 a_xfacdata, a_yfacdata, a_zfacdata,
                                 a_ebnormxdata, a_ebnormydata,
                                 a_ebnormzdata,
-                                neighs, a_dx);
+                                neighs, a_neighType, a_dx);
 
     //first fill M with moments  shifted to the center of the face
     Chombo4::LAPACKMatrix  Mvol;
@@ -1011,13 +1087,13 @@ namespace Proto
     //Filling stencil
     a_stencil.clear();
     Real coef_acc = 0.0;
-    if (m_verbose)  cout << " Coefs Matrix " << endl;
+    if (m_verbose)  pout() << " Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
       a_stencil.add(vols[ivof], thisCo);
       if (m_verbose){
-        cout<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+        pout()<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
       }
       coef_acc += thisCo;
     }
@@ -1027,14 +1103,14 @@ namespace Proto
                                        nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) cout<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
+    if (m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
-  //Gets WLS flux divergence stencil
+  //Gets Laplacian WLS flux divergence stencil
   template < int order>
   void
   WLSStencil<order>::
-  getWLSDivFStencil(LocalStencil< CELL,  double>          & a_vofStencil,
+  getLaplaWLSDivFStencil(LocalStencil< CELL,  double>          & a_vofStencil,
                          const EBIndex<CELL>                   & a_vof,
                          const EBGraph                         & a_graph,
                          const VoluData                        & a_voludata,
@@ -1052,9 +1128,10 @@ namespace Proto
                          string                             a_ebbcName,
                          string                             a_dombcName[2*DIM],
 			 Real                               & a_inhoTerm,
+                         int                                & a_neighType,
                          double                                  a_dx)
   {
-    PR_TIME("getWLSDivFStencil");
+    PR_TIME("getLaplaWLSDivFStencil");
     a_vofStencil.clear();
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -1091,9 +1168,9 @@ namespace Proto
           }
 	}
 
-        if (a_xfaceflux.m_verbose) cout<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+        if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
 
-        a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, xfaces[iface],
+        a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
                                        a_graph,
 				       a_voludata,
 				       a_ebfadata,    
@@ -1106,12 +1183,13 @@ namespace Proto
 				       a_ebbcName,
 				       a_dombcName,
 				       0,
-				       faceMom, 
+				       faceMom,
+				       a_neighType, 
                                        a_dx);  
         if (a_xfaceflux.m_verbose)
 	{	
-          cout<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-          cout<<" fluxStencil "<<endl;
+          pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
+          pout()<<" fluxStencil "<<endl;
           fluxStencil.print();
 	}
 	double factor = double(isign);
@@ -1153,9 +1231,9 @@ namespace Proto
           }
 	}
 
-        if (a_yfaceflux.m_verbose) cout<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+        if (a_yfaceflux.m_verbose) pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;
 
-	a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, yfaces[iface],
+	a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, yfaces[iface],
                                        a_graph,
                                        a_voludata,
                                        a_ebfadata,
@@ -1169,11 +1247,12 @@ namespace Proto
                                        a_dombcName,
                                        1,
 				       faceMom, 
+				       a_neighType, 
                                        a_dx);
         if (a_yfaceflux.m_verbose)
 	{
-          cout<<" inhomogTerm Yface "<<inhomogTerm<<endl;
-          cout<<" fluxStencil "<<endl;
+          pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
+          pout()<<" fluxStencil "<<endl;
           fluxStencil.print();
 	}
 	double factor = double(isign);
@@ -1214,7 +1293,7 @@ namespace Proto
           }
 	}
 
-        a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, zfaces[iface],
+        a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, zfaces[iface],
                                            a_graph,    
                                            a_voludata,
                                            a_ebfadata,
@@ -1228,6 +1307,7 @@ namespace Proto
                                            a_dombcName,
                                            2,
 				           faceMom,
+				           a_neighType, 
                                            a_dx);       
 
 
@@ -1276,7 +1356,7 @@ namespace Proto
                                                   a_zfacdata,
                                                   a_vof, a_graph, a_dx);
 
-      if (a_ebflux.m_verbose) cout<<" stencil ebface "<<a_vof.m_pt<<endl;
+      if (a_ebflux.m_verbose) pout()<<" stencil ebface "<<a_vof.m_pt<<endl;
 
       if(a_ebbcName == string("Neumann"))
       {
@@ -1296,7 +1376,7 @@ namespace Proto
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
-        a_ebflux.getEBFluxStencil(ebflux, inhomogTerm,
+        a_ebflux.getEBFluxStencil(ebflux, inhomogTerm, a_vof,
                                   cutface,
                                   a_graph,
                                   a_voludata,
@@ -1310,6 +1390,7 @@ namespace Proto
                                   ebnorm,
                                   a_ebbcName,
                                   a_dombcName,
+				  a_neighType, 
                                   a_dx);
       }
       else
@@ -1327,14 +1408,431 @@ namespace Proto
     {
       if (a_ebflux.m_verbose)
       {
-        cout<<" inhomogTerm ebface "<<inhomogTerm<<endl;
-        cout<<" alpha "<<alpha<<" bndryArea "<<bndryArea<<endl;
-        cout<<" ebfluxStencil "<<endl;
+        pout()<<" inhomogTerm ebface "<<inhomogTerm<<endl;
+        pout()<<" alpha "<<alpha<<" bndryArea "<<bndryArea<<endl;
+        pout()<<" ebfluxStencil "<<endl;
         ebflux.print();
       }
       a_inhoTerm += inhomogTerm;
       a_vofStencil += ebflux;
     }
+  }
+
+  //Gets Advection Laplacian WLS flux divergence stencil
+  template < int order>
+  void
+  WLSStencil<order>::
+  getAdvWLSDivFStencil(LocalStencil< CELL,  double>          & a_vofStencil,
+                         const EBIndex<CELL>                   & a_vof,
+                         const EBGraph                         & a_graph,
+                         const VoluData                        & a_voludata,
+                         const EBFaData                        & a_ebfadata,
+                         const XFacData                        & a_xfacdata,
+                         const YFacData                        & a_yfacdata,
+                         const ZFacData                        & a_zfacdata,
+			 const EBNormalData                    & a_ebnormxdata,
+                         const EBNormalData                    & a_ebnormydata,
+                         const EBNormalData                    & a_ebnormzdata,
+                         const ExactVelAdvectionWLSFlux<XFACE, order>  & a_xfaceflux,
+                         const ExactVelAdvectionWLSFlux<YFACE, order>  & a_yfaceflux,
+                         const ExactVelAdvectionWLSFlux<ZFACE, order>  & a_zfaceflux,
+                         const ExactVelAdvectionWLSFlux<BOUNDARY, order>  & a_ebflux,
+                         string                             a_ebbcName,
+                         string                             a_dombcName[2*DIM],
+			 Real                               & a_inhoTerm,
+                         int                                & a_neighType,
+                         double                                  a_dx)
+  {
+    PR_TIME("getAdvWLSDivFStencil");
+    a_vofStencil.clear();
+    Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
+
+    for (SideIterator sit; sit.ok(); ++sit)
+    {
+      vector< EBIndex<XFACE> > xfaces = a_graph.getXFaces(a_vof, sit());
+      int isign = sign(sit());
+      for (int iface = 0; iface < xfaces.size(); iface++)
+      {
+        LocalStencil<CELL, double> fluxMStencil;
+        LocalStencil<CELL, double> fluxPStencil;
+        LocalStencil<CELL, double> fluxStencil;
+        EBIndex<CELL> voflo = xfaces[iface].getVoF(Side::Lo);
+        EBIndex<CELL> vofhi = xfaces[iface].getVoF(Side::Hi);
+        Real inhomogTerm=0.0; //for inhomogeneous bcs
+        double   areaFrac;
+        RealVect centroid;
+        Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
+
+        RealVect faceLoc;
+        for (int idir = 0; idir < DIM; idir++)
+        {
+          faceLoc[idir] = a_dx * (0.5 + xfaces[iface].m_pt[idir]);
+          if (idir == 0) faceLoc[idir] = a_dx * (xfaces[iface].m_pt[idir]);
+        }
+        RealVect v_faceLoc = a_xfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
+
+        IndMomSDMinOne faceMom;
+	if (areaFrac < 1.0) 
+	{
+          faceMom = a_xfacdata(xfaces[iface], 0); 
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          }
+	}
+	else
+	{
+          faceMom.setToRegular(a_dx);
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          }
+	}
+
+        if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+
+        if (!xfaces[iface].m_isBoundary){
+          a_xfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, xfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,    
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         0,
+                                         faceMom,
+                                         a_neighType, 
+                                         a_dx); 
+  
+          a_xfaceflux.getFaceCenteredStencil(fluxPStencil, inhomogTerm, vofhi, xfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         0,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+          RealVect centroidM; 
+          double kappaM;
+          Normalizor<order>::normalizedVoluMoments(kappaM, centroidM, a_voludata, voflo, a_graph, a_dx);
+          RealVect centroidP;
+          double kappaP;
+          Normalizor<order>::normalizedVoluMoments(kappaP, centroidP, a_voludata, vofhi, a_graph, a_dx);
+          Real expD = 1.0;
+          Real distM = POW(abs(centroidM[0]-0.5),expD);
+          Real distP = POW(abs(centroidP[0]+0.5),expD);;
+          fluxMStencil *= distP/(distM+distP);
+          fluxPStencil *= distM/(distM+distP);
+  	  //fluxStencil += fluxMStencil;
+  	  //fluxStencil += fluxPStencil;
+  	  if (v_faceLoc[0]>=0.0){
+            fluxStencil += fluxMStencil;
+  	  }else{
+            fluxStencil += fluxPStencil;
+          }
+        }else{
+          a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         0,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+        }
+        if (a_xfaceflux.m_verbose)
+	{	
+          pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
+          pout()<<" fluxStencil "<<endl;
+          fluxStencil.print();
+	}
+	double factor = double(isign);
+        fluxStencil *= factor;
+	a_inhoTerm += inhomogTerm*factor;
+        a_vofStencil += fluxStencil;
+
+      }
+    }
+
+    for (SideIterator sit; sit.ok(); ++sit)
+    {
+      vector< EBIndex<YFACE> > yfaces = a_graph.getYFaces(a_vof, sit());
+      int isign = sign(sit());
+      for (int iface = 0; iface < yfaces.size(); iface++)
+      {
+        LocalStencil<CELL, double> fluxMStencil;
+        LocalStencil<CELL, double> fluxPStencil;
+        LocalStencil<CELL, double> fluxStencil;
+        EBIndex<CELL> voflo = yfaces[iface].getVoF(Side::Lo);
+        EBIndex<CELL> vofhi = yfaces[iface].getVoF(Side::Hi);
+        Real inhomogTerm = 0.0; //for inhomogeneous bcs
+        double   areaFrac;
+        RealVect centroid;
+        Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, yfaces[iface], a_graph, a_dx);
+
+        RealVect faceLoc;
+        for (int idir = 0; idir < DIM; idir++)
+        {
+          faceLoc[idir] = a_dx * (0.5 + yfaces[iface].m_pt[idir]);
+          if (idir == 1) faceLoc[idir] = a_dx * (yfaces[iface].m_pt[idir]);
+        }
+        RealVect v_faceLoc = a_yfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
+
+        IndMomSDMinOne faceMom;
+	if (areaFrac < 1.0) 
+	{
+          faceMom = a_yfacdata(yfaces[iface], 0);
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          }
+	}
+	else
+	{
+          faceMom.setToRegular(a_dx);
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          }
+	}
+
+        if (a_yfaceflux.m_verbose) pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+
+        if (!yfaces[iface].m_isBoundary){
+          a_yfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, yfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         1,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+  
+          a_yfaceflux.getFaceCenteredStencil(fluxPStencil, inhomogTerm, vofhi, yfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         1,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+          RealVect centroidM;
+          double kappaM;
+          Normalizor<order>::normalizedVoluMoments(kappaM, centroidM, a_voludata, voflo, a_graph, a_dx);
+          RealVect centroidP;
+          double kappaP;
+          Normalizor<order>::normalizedVoluMoments(kappaP, centroidP, a_voludata, vofhi, a_graph, a_dx);
+          Real expD = 1.0;
+          Real distM = POW(abs(centroidM[1]-0.5),expD);
+          Real distP = POW(abs(centroidP[1]+0.5),expD);
+          fluxMStencil *= distP/(distM+distP);
+          fluxPStencil *= distM/(distM+distP);
+          //fluxStencil += fluxMStencil;
+          //fluxStencil += fluxPStencil;
+          if (v_faceLoc[1]>=0.0){
+            fluxStencil += fluxMStencil;
+          }else{
+            fluxStencil += fluxPStencil;
+          }
+        }else{
+          a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, yfaces[iface],
+                                             a_graph,
+                                             a_voludata,
+                                             a_ebfadata,
+                                             a_xfacdata,
+                                             a_yfacdata,
+                                             a_zfacdata,
+                                             a_ebnormxdata,
+                                             a_ebnormydata,
+                                             a_ebnormzdata,
+                                             a_ebbcName,
+                                             a_dombcName,
+                                             1,
+                                             faceMom, 
+                                             a_neighType, 
+                                             a_dx);
+        }
+        if (a_yfaceflux.m_verbose)
+	{
+          pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
+          pout()<<" fluxStencil "<<endl;
+          fluxStencil.print();
+	}
+	double factor = double(isign);
+        fluxStencil *= factor;
+	a_inhoTerm += inhomogTerm*factor;
+        a_vofStencil += fluxStencil;
+      }
+    }
+#if DIM==3
+    for (SideIterator sit; sit.ok(); ++sit)
+    {
+      vector< EBIndex<ZFACE> > zfaces = a_graph.getZFaces(a_vof, sit());
+      int isign = sign(sit());
+      for (int iface = 0; iface < zfaces.size(); iface++)
+      {
+        LocalStencil<CELL, double> fluxMStencil;
+        LocalStencil<CELL, double> fluxPStencil;
+        LocalStencil<CELL, double> fluxStencil;
+        Real inhomogTerm; //for inhomogeneous bcs
+        double   areaFrac;
+        RealVect centroid;
+        Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, zfaces[iface], a_graph, a_dx);
+        RealVect faceLoc;
+        for (int idir = 0; idir < DIM; idir++)
+        {
+          faceLoc[idir] = a_dx * (0.5 + zfaces[iface].m_pt[idir]);
+          if (idir == 2) faceLoc[idir] = a_dx * (zfaces[iface].m_pt[idir]);
+        }
+        RealVect v_faceLoc = a_yfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
+
+        IndMomSDMinOne faceMom;
+	if (areaFrac < 1.0) 
+	{
+          faceMom = a_zfacdata(zfaces[iface], 0);
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          } 
+	}
+	else
+	{
+          faceMom.setToRegular(a_dx);
+	  for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+          }
+	}
+
+        if (!zfaces[iface].m_isBoundary){
+          a_zfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, zfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         2,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+  
+          a_zfaceflux.getFaceCenteredStencil(fluxPStencil, inhomogTerm, vofhi, zfaces[iface],
+                                         a_graph,
+                                         a_voludata,
+                                         a_ebfadata,
+                                         a_xfacdata,
+                                         a_yfacdata,
+                                         a_zfacdata,
+                                         a_ebnormxdata,
+                                         a_ebnormydata,
+                                         a_ebnormzdata,
+                                         a_ebbcName,
+                                         a_dombcName,
+                                         2,
+                                         faceMom,
+                                         a_neighType,
+                                         a_dx);
+          RealVect centroidM;
+          double kappaM;
+          Normalizor<order>::normalizedVoluMoments(kappaM, centroidM, a_voludata, voflo, a_graph, a_dx);
+          RealVect centroidP;
+          double kappaP;
+          Normalizor<order>::normalizedVoluMoments(kappaP, centroidP, a_voludata, vofhi, a_graph, a_dx);
+          Real expD = 1.0;
+          Real distM = POW(abs(centroidM[2]-0.5),expD);
+          Real distP = POW(abs(centroidP[2]+0.5),expD);
+          fluxMStencil *= distP/(distM+distP);
+          fluxPStencil *= distM/(distM+distP);
+          //fluxStencil += fluxMStencil;
+          //fluxStencil += fluxPStencil;
+          if (v_faceLoc[2]>=0.0){
+            fluxStencil += fluxMStencil;
+          }else{
+            fluxStencil += fluxPStencil;
+          }
+        }else{
+ 
+          a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, zfaces[iface],
+                                             a_graph,    
+                                             a_voludata,
+                                             a_ebfadata,
+                                             a_xfacdata,
+                                             a_yfacdata,
+                                             a_zfacdata,
+                                             a_ebnormxdata,
+                                             a_ebnormydata,
+                                             a_ebnormzdata,
+                                             a_ebbcName,
+                                             a_dombcName,
+                                             2,
+                                             faceMom,
+                                             a_neighType, 
+                                             a_dx);       
+
+        }
+	double factor = double(isign);
+        fluxStencil *= factor;
+	a_inhoTerm += inhomogTerm*factor;
+        a_vofStencil += fluxStencil;
+      }
+    }
+#endif      
+
+    //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
+    double diagweight;
+    bool foundVoF = a_vofStencil.getValueAtVoF(diagweight, a_vof);
+    PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+    a_vofStencil.setBetaWeight(diagweight);
   }
 
   //Compute Dirichlet BCs at faces for the Moment Matrix.
@@ -1345,6 +1843,7 @@ namespace Proto
                  int              a_faceDir,
                  IndMomSDMinOne & a_facmom)
   {
+    PR_TIME("getFaceMomentsDirichletBC");
     MomentIterator<DIM, order> momit;
 
     for(momit.reset(); momit.ok(); ++momit)
@@ -1379,6 +1878,7 @@ namespace Proto
                  int              a_faceDir,
                  IndMomSDMinOne & a_facmom)
   {
+    PR_TIME("getFaceMomentsNeumannBC");
     MomentIterator<DIM, order> momit;
     IndMomDIM volmom;
 
@@ -1430,6 +1930,7 @@ namespace Proto
   getEBMoments(IndMomDIM         & a_ebfmom,
 	       Vector<IndMomDIM> & a_ebfNorm)
   {
+    PR_TIME("getEBMomentsNeumannBC");
     // important because we will sum over each of the dimensions
     MomentIterator<DIM, order> momit;
     a_ebfmom.setToZero();
@@ -1458,6 +1959,7 @@ namespace Proto
                   const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	          const Real              a_dx)  
   {
+    PR_TIME("getFaceIntegralNeumannExactSoln");
     Real retval = 0.0;
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM-1, order> momit;
@@ -1501,6 +2003,7 @@ namespace Proto
                   const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	          const Real              a_dx) 
   {
+    PR_TIME("getFaceIntegralDirichletExactSoln");
     Real retval = 0.0;
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM-1, order> momit;
@@ -1543,6 +2046,7 @@ namespace Proto
 		const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	        const Real         a_dx) 
   {
+    PR_TIME("getEBIntegralDirichletExactSoln");
 
     Real retval = 0.0;
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -1570,6 +2074,7 @@ namespace Proto
 		const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
 	        const Real                 a_dx) 
   {
+    PR_TIME("getEBIntegralNeumannExactSoln");
 
     Real retval = 0.0;
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -1594,6 +2099,225 @@ namespace Proto
     return retval;
 
   }
+
+  //Compute rhs matrix for a face
+  template<CENTERING cent, int order>
+  void
+  ExactVelAdvectionWLSFlux<cent, order>::
+  getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                    const EBIndex<cent>      & a_face,
+		    RealVect                 & a_faceLoc,
+	            IndMomSDMinOne           & a_faceMom,
+                    double                     a_dx) const
+  {
+    PR_TIME("getFaceFluxMatrix");
+    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    int a_faceDir = a_face.direction();
+
+    MomentIterator<DIM, order> momit;
+    IndMomDIM facemomDIM;
+
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      if(momit()[a_faceDir] == 0)
+      {
+        IndexTM<int,DIM-1> areaMomIndex;
+        int index = 0;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          if(idir  != a_faceDir)
+          {
+            areaMomIndex[index] =  momit()[idir];
+            index++;
+          }
+        }
+        IndexTM<int, DIM> p = momit();
+        facemomDIM[momit()] = a_faceMom[areaMomIndex];
+      }
+      else
+      {
+        facemomDIM[momit()] = 0.0;
+      }
+    }
+
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
+    }
+    // shift center of moments to a_faceLoc.
+    // the moments are centered at the face center initially
+    RealVect diff = startLoc;
+    diff -= a_faceLoc;
+    IndexTM<Real, DIM> diffrv;
+    int index = 0;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(idir != a_face.direction())
+      {
+        diffrv[index] = diff[idir]/a_dx;
+        index++;
+      }
+    }
+    //facemomDIM.shift(diffrv);
+
+    IndMomDIM velCoeff = m_exactVel->getVelCompTaylorCoeffs(a_faceLoc, a_face.direction());
+
+    a_fluxMatrix.define(1, momit.size());
+    a_fluxMatrix.setVal(0.);
+    const int& faceDir = a_face.direction();
+    if (this->m_verbose) pout() << " RHS - Adv Face Flux Matrix " << endl;
+    for(momit.reset(); momit.ok(); ++momit)
+    {   
+      IndexTM<int, DIM> p = momit();
+      int icol = IndexedMoments<DIM, order>::indexOf(p);
+      a_fluxMatrix(0, icol) = 0.0;
+    
+      MomentIterator<DIM, order> velMomit;
+      for(velMomit.reset(); velMomit.ok(); ++velMomit)
+      {
+        IndexTM<int, DIM> q = velMomit();
+        IndexTM<int, DIM> pPlusQ = p+q;
+        Real diffterm = 0;
+  
+        if(pPlusQ.sum() <= order)
+        {   
+          a_fluxMatrix(0,icol) += velCoeff[q]*facemomDIM[pPlusQ] + diffterm;
+        }
+      }
+        if(Chombo4::LAPACKMatrix::s_verbose)
+        {
+          ::pout() << ",icol = "  << icol <<  ", Q(0,icol) = " << a_fluxMatrix(0, icol) << endl;
+        }
+    }
+  }
+  /***/
+
+  //Compute rhs matrix for a EB face
+  template<CENTERING cent, int order>
+  void
+  ExactVelAdvectionWLSFlux<cent, order>::
+  getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                  const EBIndex<cent>      & a_face,
+		  RealVect                 & a_faceLoc,
+		  Vector<IndMomDIM>        & a_ebnorm,
+                  double                     a_dx) const
+  {
+    PR_TIME("getEBFluxMatrix");
+    Chombo4::MayDay::Error("should never get here  (eb flux always = 0)"); 
+  }
+
+  template<int order>
+  RealVect
+  ConstantVectorVel<order>::
+  getVelocityAtPoint(const RealVect& a_x) const
+  { 
+    return m_value;
+  } 
+      
+  /***/
+  template<int order>
+  IndexedMoments<DIM  , order>
+  ConstantVectorVel<order>::
+  getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                         const int        & a_velcomp) const
+  {
+    IndMomDIM retval;
+    for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
+      {
+        const IndexTM<int, DIM>& p = momit();
+        int orderP = p.sum();
+        if(orderP == 0)
+          {
+            retval[p] = m_value[a_velcomp];
+          }
+        else
+          {
+            retval[p] =  0;
+          }
+      }
+  
+    //taylor coeff so divide by p! (no need because all derivs zero)
+    //retval.divideByFactorial();
+    return retval;
+  }
+
+/***/
+template<int order>
+RealVect
+SolidBodyRotVel<order>::
+getVelocityAtPoint(const RealVect& a_x) const
+{
+  RealVect rvec = a_x - m_center;
+  RealVect retval;
+  retval[0] = -m_omega*(rvec[1]);
+  retval[1] = m_omega*(rvec[0]);
+  for(int idir = 2; idir < DIM; idir++)
+    {
+      retval[idir] = 0.0;
+    }
+
+  return retval;
+}
+
+/***/
+template<int order>
+IndexedMoments<DIM  , order>
+SolidBodyRotVel<order>::
+getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                       const int        & a_velcomp) const
+{
+  IndMomDIM retval;
+  RealVect rvec = a_x0 - m_center;
+  for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
+    {
+      const IndexTM<int, DIM>& p = momit();
+      int orderP = p.sum();
+      //vel = C*(-y, x)
+      if(orderP == 0)
+        {
+          if(a_velcomp == 0)
+            {
+              retval[p] = -m_omega*(rvec[1]);
+            }
+          else if(a_velcomp == 1)
+            {
+              retval[p] =  m_omega*(rvec[0]);
+            }
+          else
+            {
+              retval[p] =  0;
+            }
+        }
+      else if (orderP == 1)
+        {
+          if((a_velcomp == 0) &&  (p[1]== 1))
+            {
+              retval[p] = -m_omega;
+            }
+          else if((a_velcomp == 1) &&  (p[0]== 1))
+            {
+              retval[p] =  m_omega;
+            }
+          else
+            {
+              retval[p] = 0;
+            }
+        }
+      else //no higher orders 
+        {
+          retval[p] =  0;
+        }
+
+    }
+
+  //taylor coeff so divide by p! (no need because only first derivs non zero)
+  //retval.divideByFactorial();
+  return retval;
+}
+
+
 
 }
 #endif
