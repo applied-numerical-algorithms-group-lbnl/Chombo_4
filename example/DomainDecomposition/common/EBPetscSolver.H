@@ -72,7 +72,7 @@ public:
 
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
 
-    if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
+    if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Advection"))
     {
       m_ebdictionary->registerStencilWLS(m_stencilName, m_domainBCName, m_ebbcName, m_domain, m_domain, true);
     }
@@ -439,7 +439,7 @@ private:
     Bx                        regApplyBox;
     bool                      irregOnly = false;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
-    if(m_stencilName == string("Weighted_Least_Squares_Poisson"))
+    if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Advection"))
     {
       ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior, 
                        regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
@@ -557,7 +557,7 @@ private:
         Bx grbx = ProtoCh::getProtoBox(grid);
         //add stencils for cells that are in the regular stencil regime to the irregular
         //set.   This includes adjusting for boundary condtions
-	if(m_stencilName != string("Weighted_Least_Squares_Poisson"))
+	if(m_stencilName != string("Weighted_Least_Squares_Poisson") || m_stencilName != string("Weighted_Least_Squares_Advection"))
         {
           for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
           {

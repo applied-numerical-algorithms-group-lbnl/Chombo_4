@@ -19,6 +19,7 @@ namespace StencilNames
 
   ///WLS stencil
   static const string PoissonWLS("Weighted_Least_Squares_Poisson");
+  static const string AdvectionWLS("Weighted_Least_Squares_Advection");
 
   ///Signals Dirichlet BCs
   static const string Dirichlet("Dirichlet");
