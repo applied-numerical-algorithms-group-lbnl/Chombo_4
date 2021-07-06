@@ -279,6 +279,10 @@ void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
   // If there is nothing to recv/send, don't go into these functions
   // and allocate memory that will not be freed later.  (ndk)
   // The #ifdef CH_MPI is for the m_buff->m_toMe and m_buff->m_fromMe
+#ifdef PROTO_CUDA
+  protoDeviceSynchronizeGPU();
+#endif
+
   {
     CH_TIME("post_messages");
     this->m_buff->numReceives = m_buff->m_toMe.size();
