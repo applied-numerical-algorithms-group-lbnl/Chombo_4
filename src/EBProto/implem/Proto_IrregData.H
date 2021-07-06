@@ -150,31 +150,6 @@ namespace Proto
 		const Point& a_box_inf, const Point& a_box_high
     )
     {
-/*  
-    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-      if(idx < a_end)
-      {
-        EBIndex<cent>& vof = a_indiciesDst[idx];
-        const bool do_it = copyContains(vof,a_box_inf,a_box_high);
-        //if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
-        if(do_it)
-        {
-          size_t indDst = idx + a_indiciesSizeDst*a_idst;//index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
-          size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
-	  __syncthreads();
-
-#pragma unroll
-          for(unsigned int ico = 0; ico < a_inco; ico++)
-          {
-            a_dst[indDst] = a_src[indSrc];
-            indDst += a_indiciesSizeDst;
-            indSrc += a_indiciesSizeSrc;
-          }
-        }
-      }
-*/
-    
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < a_end ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
@@ -192,7 +167,7 @@ namespace Proto
           }
         }
       }
-  }
+    }
 #endif
   };
    
@@ -311,8 +286,6 @@ namespace Proto
 	        const data_t* a_src
     )
     {
-      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
       char* tmp = (char*)a_buf;
 
       if(threadIdx.x == 0 && blockIdx.x == 0)
@@ -325,7 +298,7 @@ namespace Proto
       tmp += ncomp*a_end*sizeof(data_t);
       EBIndex<cent>* indicies = (EBIndex<cent>*) (tmp);
 
-      if(idx < a_end)
+      for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < a_end ; idx += blockDim.x  * gridDim.x)
       {
         indicies[idx] = a_indicies[idx];
 #pragma unroll
@@ -468,8 +441,7 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Add>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
-        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Add>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Add>>(nBlocks, blockSize, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -488,8 +460,7 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Subtract>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
-        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t,BoxDataOp::Subtract>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelT<MEMTYPE_DEFAULT, opKernel<data_t,BoxDataOp::Subtract>>(nBlocks, blockSize, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -508,8 +479,7 @@ namespace Proto
         if(nsize == 0) return *this;
         int blockSize = 512;
         int nBlocks = (nsize + blockSize - 1) / blockSize;
-        //protoLaunchKernelMemAsync((opKernel<data_t,BoxDataOp::Multiply>), nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
-        protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Multiply>>(nBlocks, blockSize, 0, protoGetCurrentStream, m_rawPtr, a_input.m_rawPtr, nsize);
+        protoLaunchKernelT<MEMTYPE_DEFAULT, opKernel<data_t, BoxDataOp::Multiply>>(nBlocks, blockSize, m_rawPtr, a_input.m_rawPtr, nsize);
       }
       else
       {
@@ -553,9 +523,6 @@ namespace Proto
       m_rawPtr         = a_input.dataPtr(a_comp);
       EBIrregStruct<cent,data_t,ncomp> *tmp = (EBIrregStruct<cent,data_t,ncomp>*) a_input.getEBIrregDataSharedPtr().get();
       m_EBIrregDataSharedPtr = ::std::shared_ptr<EBIrregStruct<cent,data_t,ncomp>>(tmp, [](EBIrregStruct<cent,data_t,ncomp>* p){});
-
-
-      //m_EBIrregDataSharedPtr  = dynamic_pointer_cast<EBIrregStruct<cent,data_t,ncomp>>(a_input.getEBIrregDataSharedPtr());
       m_indicies_shared_data = a_input.getIndiciesData();
     }           
 
@@ -653,29 +620,6 @@ namespace Proto
 
     inline bool hasIndex(const EBIndex<cent>& a_ind) const
     {
-/*      size_t ivec = 0;
-      int begin = 0;
-      int end = m_indicies->size();
-
-      while (begin <= end)
-      {
-        //int mid = begin + (begin - end) / 2;
-        int mid = (begin + end) / 2;
-
-        if ((*m_indicies)[mid] == a_ind)
-        {
-          ivec = mid;
-          return true;
-        }
-
-        if ((*m_indicies)[mid] < a_ind)
-          begin = mid + 1;
-        else
-         end = mid - 1;
-      }
-      return false;
-*/
-
       bool found = false;
       //this should probably be a smarter search.   maybe sort them?
       for(int ivec = 0;(ivec < m_indicies->size() && !found); ivec++)
@@ -739,10 +683,7 @@ namespace Proto
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 #endif
-      //unsigned int threads = 256;
-      //unsigned int blocks = (threads + size - 1)/threads;
-      //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
-      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 0, protoGetCurrentStream, 
+      protoLaunchKernelT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 
 			size, 
                         indiciesDataSrc.get(), indiciesSrc->size(),
 			m_indicies_shared_data.get(), m_indicies->size(),
@@ -765,11 +706,16 @@ namespace Proto
       const unsigned int blocks  = (vecsize + threads - 1) / threads; 
       assert(sizeof(data_t) >= sizeof(float));
 
-      if(vecsize == 0) return;
-
-      assert(vecsize == m_indicies->size());
-
-      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearOut<cent,data_t,ncomp>>(blocks, threads, 0, protoGetCurrentStream, 
+      int numSMs=1;
+#ifdef PROTO_CUDA
+      int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
+      cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
+#endif
+      protoLaunchKernelT<MEMTYPE_DEFAULT,EBLinearOut<cent,data_t,ncomp>>(32*numSMs, 256,
                         vecsize,
                         m_indicies_shared_data.get(), m_indicies->size(),
                         a_buf,
@@ -798,7 +744,7 @@ namespace Proto
 #endif
 #endif
 
-      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 0, protoGetCurrentStream, 
+      protoLaunchKernelT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 
                         m_indicies_shared_data.get(), vecsize,
                         a_buf,
                         m_data.get(),
