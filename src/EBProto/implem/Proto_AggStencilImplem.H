@@ -483,27 +483,48 @@ struct pairPtr{
                     bool                    a_incrementOnly,
                     data_t                  a_scale)
   {
+// test
+    __shared__ const data_t* tmpSrc[2];
+    __shared__ data_t* tmpDst[2];
+    __shared__ const data_t* Src[512][2];
+    __shared__ data_t* Dst[512][2];
 
-    int idx = a_begin + threadIdx.x+blockIdx.x*blockDim.x;
+    if(threadIdx.x == 0)
+    {
+      tmpSrc[0] = dataPtrsSrc.ptr[0];
+      tmpSrc[1] = dataPtrsSrc.ptr[1];
+      tmpDst[0] = dataPtrsDst.ptr[0];
+      tmpDst[1] = dataPtrsDst.ptr[1];
+    }
+
+    __syncthreads();
+
+    Src[threadIdx.x][0] = tmpSrc[0];
+    Src[threadIdx.x][1] = tmpSrc[1];
+    Dst[threadIdx.x][0] = tmpDst[0];
+    Dst[threadIdx.x][1] = tmpDst[1];
     
-    if(idx< a_end)
+    unsigned int stride = blockDim.x  * gridDim.x;
+
+    for(unsigned int idx = a_begin + blockIdx.x * blockDim.x + threadIdx.x ; idx < a_end ; idx += stride)
     {
       const uint64_t startInd = a_stenstart[idx];
-      const uint64_t stenSize = a_stensizes[idx];
-      data_t* dst = dataPtrsDst.ptr[a_dstMeshType[idx]];
-
+      const uint16_t stenSize = a_stensizes[idx];
       data_t acc = 0;
 
       #pragma loop unroll
-      for(uint64_t isten = 0; isten < stenSize; isten++)
+      for(uint16_t isten = 0; isten < stenSize; isten++)
       {
 	uint64_t srcIdx = startInd + isten;
         const data_t weight = a_srcWeight[srcIdx];
-	const data_t* src = dataPtrsSrc.ptr[a_srcMeshType[srcIdx]];
+	const data_t* src = Src[threadIdx.x][a_srcMeshType[srcIdx]];
         const data_t phi = src[a_srcOffset[srcIdx]];
         acc += weight*phi;
       }
+
+      data_t* dst = Dst[threadIdx.x][a_dstMeshType[idx]];
       data_t& lphi = dst[a_dstOffset[idx]];
+
       if(!a_incrementOnly)
       {
         lphi = a_scale*acc;
@@ -598,7 +619,16 @@ struct pairPtr{
     if(end - begin == 0) return;
 		    
 #ifdef NEWSTRUCT
-    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  
+      int numSMs=1;
+#ifdef PROTO_CUDA
+      int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
+      cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
+#endif
+    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>(32*numSMs, 512,  
       begin, end, srcPtr, dstPtr, d_stenLen, d_stenstart, d_destMeshType, d_destOffset, d_srcMeshType, d_srcOffset, d_srcWeight, a_incrementOnly, a_scale); 
 #else
     protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  
