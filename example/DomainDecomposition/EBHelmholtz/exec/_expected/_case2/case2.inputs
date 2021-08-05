@@ -5,8 +5,8 @@ nx=       64
 maxIter=    27
 #number of cuda streams (if used)
 nStream=  8
-alpha = 0.0
-beta = 1.0
+alpha = 1.0
+beta = -1.0e-3
 tolerance = 1.0e-10
 #max grid size in domain decomposition
 maxGrid=  32
@@ -29,7 +29,5 @@ coveredval = -0.001
 domainBC     = 0
 EBBC         = 1
 numSmooth  = 4
-inside_regular = true
-#R=        0.1
-#inside_regular = false
-
+R=        0.1
+inside_regular = false
