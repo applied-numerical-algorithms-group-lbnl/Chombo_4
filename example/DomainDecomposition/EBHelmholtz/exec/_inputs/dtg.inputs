@@ -29,3 +29,4 @@ coveredval = -0.001
 domainBC     = 0
 EBBC         = 1
 numSmooth  = 4
+inside_regular = true

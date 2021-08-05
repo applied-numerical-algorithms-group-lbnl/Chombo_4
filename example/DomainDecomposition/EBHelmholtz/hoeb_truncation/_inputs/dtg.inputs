@@ -17,3 +17,27 @@ default_neighbor_radius = 3
 maximum_neighbor_radius = 4
 domainBC     = Dirichlet
 EBBC         = Dirichlet
+<<<<<<< Updated upstream
+=======
+# can be SineSphere, Polynomial
+#which_phi = SineSphere
+which_phi = Polynomial
+polynomial_num_terms = 1
+polynomial_coefficient_0 = 1.0
+polynomial_coefficient_1 = 1.0
+polynomial_coefficient_2 = 1.0
+polynomial_powers_0      = 1 0 0
+polynomial_powers_1      = 0 2 0
+polynomial_powers_2      = 0 0 2
+bool do_phi_test = true
+bool do_klp_test = false
+#so far can be plane or sphere
+#which_geom = "sphere"
+center =       0.5 0.5 0.5
+radius =   0.45
+inside = true
+which_geom = "plane"
+plane_startpt = 0. 0. 0.
+plane_normal = 1. 1. 0.
+
+>>>>>>> Stashed changes
