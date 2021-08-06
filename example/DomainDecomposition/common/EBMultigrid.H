@@ -98,7 +98,10 @@ public:
   virtual void
   preCond(EBLevelBoxData<CELL, 1>       & a_phi,
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
-
+  
+  virtual void
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv) = 0;
+  
   
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -116,7 +119,7 @@ public:
     }
     if(!m_hasCoarser || m_directToBottom)
     {
-      defineBottomSolvers(m_geoserv);
+      this->defineBottomSolvers(m_geoserv);
     }
   }
   
