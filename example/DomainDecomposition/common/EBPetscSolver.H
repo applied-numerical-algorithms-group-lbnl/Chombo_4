@@ -56,6 +56,7 @@ public:
     m_dx           =    a_dx;
     m_alpha        =    a_alpha;
     m_beta         =    a_beta;
+    m_nz_init_guess = true;
     m_prestring[0] = '\0';
     for(int iface = 0; iface < 2*DIM; iface++)
     {
@@ -68,6 +69,12 @@ public:
 
     m_kappa.define(m_grids, m_ivghost, m_graphs);
     m_inhoContr.define(m_grids, m_ivghost, m_graphs);
+    Chombo4::DataIterator dit = m_grids.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+        auto& inhofab = m_inhoContr[dit[ibox]];
+        inhofab.setVal(0.0);
+      }
     m_diagW.define(m_grids, m_ivghost, m_graphs);
 
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
@@ -156,7 +163,7 @@ public:
   //need the inhomogeoneous contribution in a data holder 
   void
   fillInhoContr(const vector<double>   & a_inhoContr,
-		const vector< EBIndex<CELL> > & a_dstVoFs,
+                const vector< EBIndex<CELL> > & a_dstVoFs,
                 const Chombo4::DataIndex & a_dit)
   {
     using Chombo4::DataIterator;
@@ -176,7 +183,7 @@ public:
       auto pt     =   a_dstVoFs[ivof].m_pt;
       if(graph.isRegular(pt))
       {
-        reghost(pt, 0) = a_inhoContr[ivof];
+        reghost(pt, 0) = m_beta*a_inhoContr[ivof];
       }
       else if(graph.isCovered(pt))
       {
@@ -184,8 +191,8 @@ public:
       }
       else
       {
-        reghost(pt  , 0) = a_inhoContr[ivof];
-        irrhost(vof , 0) = a_inhoContr[ivof];
+        reghost(pt  , 0) = m_beta*a_inhoContr[ivof];
+        irrhost(vof , 0) = m_beta*a_inhoContr[ivof];
       }
     }
     // now copy to the device
@@ -193,6 +200,12 @@ public:
   
     m_inhoContr.exchange(m_exchangeCopier);
   }
+
+  Real getAlpha()
+    {return m_alpha;}
+
+  Real getBeta()
+    {return m_beta;}
 
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -235,7 +248,7 @@ public:
   void
   applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
           const EBLevelBoxData<CELL, 1> & a_phi,
-          bool a_doExchange) const
+          bool a_doExchange = true) const
   
   {
     using Chombo4::DataIterator;
@@ -260,14 +273,14 @@ public:
       //set lphi = kappa* div(F)
       stencil->apply(lphfab, phifab,  true, 1.0);
       //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
-      Chombo4::Box grid =m_grids[dit[ibox]];
+      Chombo4::Box grid = m_grids[dit[ibox]];
       Bx  grbx = getProtoBox(grid);
       auto& kapfab = m_kappa[dit[ibox]];
   
       //pout() << "going into add alphaphi" << endl;
       Bx inputBox = lphfab.inputBox();
       ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
-      lphfab += inhofab; 
+      lphfab += inhofab;
       ideb++;
     }
   }
@@ -525,7 +538,7 @@ private:
   
   virtual PetscInt formMatrix()
   {
-    
+    CH_TIME("EBPetscSolver::formMatrix");
     {
       using Chombo4::DataIterator;
       char str[256];
@@ -582,6 +595,7 @@ private:
         {
           auto vof    =   dstVoFs[ivof];
           auto& stenc =  wstencil[ivof];
+          const Real kappa  = m_kappa[dit[ibox]](vof, 0);
           int irow = m_gids[dit[ibox]](vof, 0); 
           for(int ivof = 0; ivof < stenc.size(); ivof++)
           {
@@ -590,7 +604,7 @@ private:
             Real weight = m_beta*stenwgt;
             if(stenvof == vof)
             {
-              weight += m_alpha;
+              weight += kappa*m_alpha;
             }
             int icol = m_gids[dit[ibox]](stenvof, 0);  
             PetscInt irowpet = irow;
@@ -613,6 +627,7 @@ private:
   }
   virtual PetscInt setupSolver()
   {
+    CH_TIME("EBPetscSolver::setupSolver");
     // create solvers
     PetscBool ism = PETSC_FALSE;
 #if PETSC_VERSION_GE(3,7,0)
