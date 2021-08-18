@@ -321,6 +321,12 @@ public:
     writeToFileHDF5(filename, coveredValue);
   }
 
+  void dumpFile(std::string fileName, Real coveredValue) const
+  {
+    string filename = fileName+".hdf5";
+    writeToFileHDF5(filename, coveredValue);
+  }
+
   /// This is for plotfiles only  as multivalued stuff will be lost.
   static 
   void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
