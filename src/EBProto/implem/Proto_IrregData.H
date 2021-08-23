@@ -51,6 +51,27 @@ namespace Proto
       return ivec;
     }
 
+    template <CENTERING cent>
+    __device__
+    size_t  indexV2(EBIndex<cent>* a_indicies, unsigned int a_size, EBIndex<cent>& a_vof, int a_ivar, bool& a_found) 
+    {
+      a_found = false;
+      unsigned int ivec = -1;
+      for(unsigned int idx = threadIdx.x ; idx < a_size ; idx += blockDim.x)
+      {
+	if(a_vof == a_indicies[idx])
+	{
+		a_found = true;
+		ivec = idx;
+	}
+      }
+
+      ivec += a_ivar* a_size;
+
+      return ivec;
+    }
+
+
     CUDA_DECORATION
     inline bool contains(const Point& pt, const Point& a_low, const Point& a_high);
 
@@ -171,6 +192,62 @@ namespace Proto
 #endif
   };
    
+  template <CENTERING cent, class data_t>
+  struct EBBoxDataIndexerOneByOne
+  {
+    static
+    inline void
+    cpu(
+                unsigned int a_end, 
+		EBIndex<cent>* a_indiciesSrc, unsigned int a_indiciesSizeSrc, 
+		EBIndex<cent>* a_indiciesDst, unsigned int a_indiciesSizeDst,
+		data_t* a_dst, const data_t* a_src, 
+                unsigned int a_idst, unsigned int a_isrc,
+                unsigned int a_inco,
+		const Point& a_box_inf, const Point& a_box_high
+    )
+    {
+	std::cout << "not implemented" << std::endl;
+    }
+    
+
+#ifdef PROTO_CUDA
+    __device__ static
+    void
+    gpu(
+                unsigned int a_end, 
+		EBIndex<cent>* a_indiciesSrc, unsigned int a_indiciesSizeSrc, 
+		EBIndex<cent>* a_indiciesDst, unsigned int a_indiciesSizeDst,
+		data_t* a_dst, const data_t* a_src, 
+                unsigned int a_idst, unsigned int a_isrc,
+		unsigned int a_inco,
+		const Point& a_box_inf, const Point& a_box_high
+    )
+    {
+
+      unsigned int idx = blockIdx.x;
+      {
+        EBIndex<cent>& vof = a_indiciesDst[idx];
+        const bool do_it = copyContains<cent>(vof,a_box_inf,a_box_high) && contains(vof,a_box_inf,a_box_high);
+        if(do_it)
+        {
+	  bool found = false;
+          size_t indDst = idx + a_indiciesSizeDst*a_idst;
+          size_t indSrc = indexV2(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc, found);
+
+	  if(found)
+          for(unsigned int ico = 0; ico < a_inco; ico++)
+          {
+            a_dst[indDst] = a_src[indSrc];
+            indDst += a_indiciesSizeDst;
+            indSrc += a_indiciesSizeSrc;
+          }
+        }
+      }
+    }
+#endif
+  };
+
   template <CENTERING cent, class data_t, unsigned int ncomp>
   struct EBLinearIn
   {
@@ -674,6 +751,7 @@ namespace Proto
 
       if(size == 0 || indiciesSrc->size()==0) return;
 
+
       int numSMs=1;
 #ifdef PROTO_CUDA
       int devId = 0;
@@ -692,7 +770,20 @@ namespace Proto
 			a_idst, a_isrc,
 			a_inco,
 			interBox.low(), interBox.high());
-    }
+
+      /*
+      protoLaunchKernelT<MEMTYPE_DEFAULT,EBBoxDataIndexerOneByOne<cent,data_t>>(size, 32, 
+			size, 
+                        indiciesDataSrc.get(), indiciesSrc->size(),
+			m_indicies_shared_data.get(), m_indicies->size(),
+			m_rawPtr, 
+			a_src.data(), 
+			a_idst, a_isrc,
+			a_inco,
+			interBox.low(), interBox.high());
+	*/
+
+	}
 
     inline
     void linearOut(void*               a_buf,

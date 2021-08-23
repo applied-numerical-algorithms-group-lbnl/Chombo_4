@@ -486,8 +486,8 @@ struct pairPtr{
 // test
     __shared__ const data_t* tmpSrc[2];
     __shared__ data_t* tmpDst[2];
-    __shared__ const data_t* Src[512][2];
-    __shared__ data_t* Dst[512][2];
+    __shared__ const data_t* Src[128][2];
+    __shared__ data_t* Dst[128][2];
 
     if(threadIdx.x == 0)
     {
@@ -628,7 +628,7 @@ struct pairPtr{
       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
 #endif
 #endif
-    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>(32*numSMs, 512,  
+    protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>(10*numSMs, 64,  
       begin, end, srcPtr, dstPtr, d_stenLen, d_stenstart, d_destMeshType, d_destOffset, d_srcMeshType, d_srcOffset, d_srcWeight, a_incrementOnly, a_scale); 
 #else
     protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  

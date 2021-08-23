@@ -56,8 +56,8 @@ int
 runTest(int a_argc, char* a_argv[])
 {
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  int nx      = 64;
-  int maxGrid = 32;
+  int nx      = 128;
+  int maxGrid = 64;
 
   Real alpha = 1.0;
   Real beta = -0.001;

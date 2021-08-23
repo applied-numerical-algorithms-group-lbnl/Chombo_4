@@ -98,7 +98,8 @@ namespace Proto
     inline
     void scale(data_t                                a_scale)
     {
-      EBBoxData<cent, data_t, ncomp> scalefab(m_inputBox, m_graph);
+      const bool useStack = true;
+      EBBoxData<cent, data_t, ncomp> scalefab(m_inputBox, m_graph, useStack);
       scalefab.setVal(a_scale);
       (*this) *= scalefab;
     }
@@ -107,7 +108,8 @@ namespace Proto
     void incr(const EBBoxData<cent, data_t, ncomp>& a_input,
               data_t                                a_scale)
     {
-      EBBoxData<cent, data_t, ncomp> incramnt(m_inputBox, m_graph);
+      const bool useStack = true;
+      EBBoxData<cent, data_t, ncomp> incramnt(m_inputBox, m_graph, useStack);
       incramnt.setVal(0);
       incramnt.scale(a_scale);
       (*this) += incramnt;
@@ -262,6 +264,10 @@ namespace Proto
     {
       this->m_inputBox = a_box;
       this->m_graph = a_graph;
+      if(a_useStack)
+      {
+        PR_TIME("EBBoxData::Define::stack is true");
+      }
 
       this->m_irrData.define(a_box, this->m_graph, a_useStack);  
       this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now

@@ -230,7 +230,8 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     runTest(a_argc, a_argv);
   }
-
+  Proto::memInfo& tmpInfo = Proto::memInfo::getMemInfo();
+  tmpInfo.printInfo();
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI

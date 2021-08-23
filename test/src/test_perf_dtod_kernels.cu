@@ -20,7 +20,7 @@ void run_perf_irreg_data_copy_args(unsigned int size)
   out.copy(in,bx,0,bx,0,1);
   t_copy.end();
 
-  std::cout << " run_test_perf_copy_irreg_data_" << size << " ... " << t_copy.duration() << " ms" << std::endl;
+  std::cout << " run_test_perf_copy_irreg_data_" << size << " ... " << t_copy.duration() << " ms or we copy" << size*1000/t_copy.duration() << " elem/s" << std::endl;
 
   index.clear();
   free(ptr);
@@ -46,7 +46,7 @@ void run_perf_irreg_linear_full_args(unsigned int size)
 
   void* inWork;
   size_t nBytes = in.charsize(bx,0,1);
-  protoMalloc(inWork, nBytes);
+  protoMalloc(DEVICE,inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
@@ -64,7 +64,7 @@ void run_perf_irreg_linear_full_args(unsigned int size)
   index.clear();
   free(ptr);  
   free(ptr2);  
-  protoFree(inWork); 
+  protoFree(DEVICE,inWork); 
 }
 
 
@@ -101,7 +101,7 @@ void run_perf_irreg_linear_partial_args(unsigned int sizebox,unsigned int size)
     end += sizebox;
   }
 
-  protoMalloc(inWork, nBytes);
+  protoMalloc(DEVICE,inWork, nBytes);
   in.setVal(inNumber);
   out.setVal(outNumber);
 
@@ -143,7 +143,7 @@ void run_perf_irreg_linear_partial_args(unsigned int sizebox,unsigned int size)
   index.clear();
   free(ptr);
   free(ptr2);
-  protoFree(inWork);
+  protoFree(DEVICE,inWork);
 }
 
 
@@ -180,7 +180,7 @@ void run_perf_irreg_linear_partial_graph_args(unsigned int sizebox,unsigned int 
     end += sizebox;
   }
 
-  protoMalloc(inWork, nBytes);
+  protoMalloc(DEVICE,inWork, nBytes);
   in.setVal(inNumber);
   out.setVal(outNumber);
 
@@ -227,5 +227,5 @@ void run_perf_irreg_linear_partial_graph_args(unsigned int sizebox,unsigned int 
   index.clear();
   free(ptr);
   free(ptr2);
-  protoFree(inWork);
+  protoFree(DEVICE,inWork);
 }

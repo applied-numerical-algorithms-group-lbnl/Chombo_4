@@ -89,15 +89,29 @@ namespace Proto
   }
 
 #ifdef PROTO_CUDA
-/*
   template<typename T>
-//  __device__ 
+  __device__ 
   inline T&
-  cudaGetVar(T& a_s)
+  cudaGetVarOld(T& a_s)
   {
     return a_s;
   }
-*/
+
+  template<CENTERING cent, typename data_t, unsigned int ncomp>
+  __device__ 
+  inline Var<data_t, ncomp>
+  cudaGetVarOld(EBIrregStruct<cent, data_t, ncomp>* a_dst)
+  {
+    Var<data_t, ncomp> retval;
+
+    data_t*  rawptr = a_dst->m_startPtr;
+    unsigned int varsize = a_dst->m_varsize;
+    for(int icomp = 0; icomp < ncomp; icomp++)
+    {
+      retval.m_ptrs[icomp] = rawptr + varsize*icomp;
+    }
+    return retval;
+  }
 
   template<CENTERING cent, typename data_t, unsigned int ncomp>
 //  __device__ 
@@ -114,6 +128,8 @@ namespace Proto
     }
     return retval;
   }
+
+
 
 //
 #endif
@@ -182,14 +198,13 @@ namespace Proto
         }
     }*/
    static inline void cpu(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-      //EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
-      Srcs... a_srcs)
+      EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
+      //Srcs... a_srcs)
     {
       int idx = threadIdx.x + blockIdx.x*blockDim.x;
       if (idx >= a_begin && idx < a_end)
         {
-          //a_body(cudaGetVar(a_dst), cudaGetVar(a_srcs)...);
-          a_body(a_srcs...);
+          a_F(cudaGetVarOld(a_dst), cudaGetVarOld(a_srcs)...);
         }
     }
 
@@ -197,14 +212,13 @@ namespace Proto
     
   __device__ static void
   gpu(unsigned int a_begin, unsigned int a_end, const Func& a_body, 
-      //EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
-      Srcs... a_srcs)
+      EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
+      //Srcs... a_srcs)
     {
       int idx = threadIdx.x + blockIdx.x*blockDim.x;
       if (idx >= a_begin && idx < a_end)
         {
-          //a_body(cudaGetVar(a_dst), cudaGetVar(a_srcs)...);
-          a_body(a_srcs...);
+          a_body(cudaGetVarOld(a_dst), cudaGetVarOld(a_srcs)...);
         }
     }
 
@@ -230,14 +244,14 @@ namespace Proto
 */
     static inline void
     cpu(unsigned int a_begin, unsigned int a_end, const Func& a_body, 
-        //EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
         EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
+        //EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
     {
       int idx = 0;
       if (idx >= a_begin && idx < a_end)
         {
-          //a_body(a_dst[idx].m_index.m_tuple, cudaGetVar(a_dst), cudaGetVar(a_srcs)...);
-          a_body(a_dst[idx].m_index.m_tuple, a_srcs...);
+          a_body(a_dst[idx].m_index.m_tuple, cudaGetVarOld(a_dst), cudaGetVarOld(a_srcs)...);
+          //a_body(a_dst[idx].m_index.m_tuple, a_srcs...);
         }
     }
 #ifdef PROTO_CUDA
@@ -249,21 +263,21 @@ namespace Proto
       int idx = threadIdx.x + blockIdx.x*blockDim.x;
       if (idx >= a_begin && idx < a_end)
         {
-          //a_body(a_dst[idx].m_index.m_tuple, cudaGetVar(a_dst), cudaGetVar(a_srcs)...);
-	  Point p = a_dst[idx].m_index;
-      	  a_body(p.m_tuple, a_srcs...);
+          a_body(a_dst[idx].m_index.m_tuple, cudaGetVarOld(a_dst), cudaGetVarOld(a_srcs)...);
+	  //Point p = a_dst[idx].m_index;
+      	  //a_body(p.m_tuple, a_srcs...);
         }
     }
 #endif
   };
 
 //going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  //template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
-  template<typename Func, typename... Srcs>
+  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  //template<typename Func, typename... Srcs>
   inline void
   protoVectorFunc(const Func& a_F, unsigned int a_Nvec, 
-                 //EBIrregStruct<cent, data_t, ncomp> * a_dst, const Srcs&... a_srcs)
-                 const Srcs&... a_srcs)
+                 EBIrregStruct<cent, data_t, ncomp> * a_dst, const Srcs&... a_srcs)
+                 //const Srcs&... a_srcs)
   {
     PR_TIME("vec_indexer");
     const int N = a_Nvec;
@@ -273,10 +287,10 @@ namespace Proto
     size_t smem = 0;
     Box bx; //useless parameter
     //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, vecIndexer<cent,data_t,ncomp,Func,Srcs...>>( blocks, stride, smem, protoGetCurrentStream,
-    //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, indexer_test<Func,Srcs...>( blocks, stride, smem, protoGetCurrentStream,
-    protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, indexer<Func,Srcs...>>( blocks, stride, smem, protoGetCurrentStream,
-                               0, N, bx, a_F, a_srcs...);
-                               //0, N, a_F, a_dst, a_srcs...);
+    protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, vecIndexer<cent,data_t,ncomp,Func,Srcs...>>( blocks, stride, smem, protoGetCurrentStream,
+   // protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, indexer<Func,Srcs...>>( blocks, stride, smem, protoGetCurrentStream,
+                               //0, N, a_F, a_srcs...);
+                               0, N, a_F, a_dst, a_srcs...);
     
   }
 
@@ -302,6 +316,19 @@ namespace Proto
 
   }
 
+  template <typename T>
+  inline T protogetEBIrregStructOld(T& a_T)
+  {
+    return a_T;
+  }
+
+  template <CENTERING cent, typename  data_t, unsigned int ncomp>
+  inline  EBIrregStruct<cent, data_t, ncomp> *
+  //inline  EBIrregStruct<cent, data_t, ncomp>*
+  protogetEBIrregStructOld(IrregData<cent, data_t, ncomp>& a_s )
+  {
+    return a_s.getEBIrregDataPtr();
+  }
 
   template <typename T>
   inline T protogetEBIrregStruct(T& a_T)
@@ -329,8 +356,8 @@ namespace Proto
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {
-      protoVectorFunc(a_F, vecsize, protogetEBIrregStruct(a_dst), 
-                     (protogetEBIrregStruct(a_srcs))...);
+      protoVectorFunc(a_F, vecsize, protogetEBIrregStructOld(a_dst), 
+                     (protogetEBIrregStructOld(a_srcs))...);
 
     }
   }
@@ -347,8 +374,8 @@ namespace Proto
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
     {
-      protoVectorFunc_i(a_F, vecsize, a_dst.getEBIrregDataPtr(), protogetEBIrregStruct(a_dst), 
-                       (protogetEBIrregStruct(a_srcs))...);
+      protoVectorFunc_i(a_F, vecsize, protogetEBIrregStructOld(a_dst), 
+                       (protogetEBIrregStructOld(a_srcs))...);
 
     }
   }
