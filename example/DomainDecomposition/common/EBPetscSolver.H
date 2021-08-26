@@ -56,7 +56,7 @@ public:
     m_dx           =    a_dx;
     m_alpha        =    a_alpha;
     m_beta         =    a_beta;
-    m_nz_init_guess = true;
+    m_nz_init_guess = false;
     m_prestring[0] = '\0';
     for(int iface = 0; iface < 2*DIM; iface++)
     {
@@ -201,10 +201,10 @@ public:
     m_inhoContr.exchange(m_exchangeCopier);
   }
 
-  Real getAlpha()
+  Real getAlpha() const
     {return m_alpha;}
 
-  Real getBeta()
+  Real getBeta() const
     {return m_beta;}
 
   EBLevelBoxData<CELL, 1> & getKappa()
@@ -766,12 +766,11 @@ private:
   PetscInt m_NN;
   bool m_nz_init_guess;
 
-
   shared_ptr<GeometryService<order> >  m_geoserv;
   shared_ptr< dictionary_t>            m_ebdictionary;
   shared_ptr<LevelData<EBGraph> >      m_graphs;
-  Chombo4::DisjointBoxLayout                    m_grids;
-  Chombo4::Box                                  m_domain;
+  Chombo4::DisjointBoxLayout           m_grids;
+  Chombo4::Box                         m_domain;
   Real                                 m_dx;
   
   string m_stencilName;
