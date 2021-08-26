@@ -184,7 +184,7 @@ poutAll() const
         {
           //          pout() << "(" << irow  << "," << icol << ")";
           Real val = (*this)(irow, icol);
-          pout()    << setprecision(4)
+          pout()    << setprecision(15)
                       << setiosflags(ios::showpoint)
                       << setiosflags(ios::scientific);
           pout() << val;
@@ -991,21 +991,25 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
                     const LAPACKMatrix& A, 
                     const LAPACKMatrix& B)
 {
-  CH_TIME("LAPACKMatrix::solveLSTSVDOnce2");
+  CH_TIMERS("LAPACKMatrix::solveLSTSVDOnce2");
+  CH_TIMER("setVal1", t1);
+  CH_TIMER("setVal2", t2);
   int M = A.m_nrow;
   int N = A.m_ncol;
   int NRHS = B.m_ncol;
   int LDA = M;
   int LDB = std::max(M,N);
 
-  int maxMxN = 40000;
+  int maxMxN = 4000;
 
   int minMN = std::min(M,N);
   //int LWORK = maxMxN;
     int LWORK[2] = {1,1};
    LWORK[0] = maxMxN;
   LAPACKMatrix WORK(1, maxMxN);
+  CH_START(t1);
   WORK.setVal(0);
+  CH_STOP(t1);
   Real* S = new Real[minMN];
   int* IWORK = new int[25*minMN];
   
@@ -1065,7 +1069,9 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
 
   // TO DO: put in check on residuals (see LSTSVDOnce with two arguments)
   // - double-check the residual, toss a warning if it's non-zero
+  CH_START(t2);
   WORK.setVal(0);
+  CH_STOP(t2);
   // LAPACK(GEMV,gemv) sets Y = alpha*A*X + beta*Y
   char TRANS = 'N'; // compute A*X and not A'*X
   Real ALPHA = 1;
