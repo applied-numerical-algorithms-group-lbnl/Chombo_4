@@ -632,6 +632,16 @@ namespace Proto
         if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
         if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
       }
+      else if (a_exactSolFun == 4)
+        {
+          Real rad;
+          pp.get("phi_rad", rad);
+          Real cen;
+          pp.get("phi_cen", cen);
+
+          m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+
+        }
     }
 
     //Radius needed for neighbors list around a face (Manhattan style)

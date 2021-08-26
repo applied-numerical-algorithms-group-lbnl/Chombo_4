@@ -26,7 +26,8 @@ public:
   Real operator()(const EBGraph & a_graph,
                   const Real    & a_dx,
                   const VoluData& a_voldat,
-                  const EBIndex<CELL>   & a_vof)
+                  const EBIndex<CELL>   & a_vof,
+                  const IvDIM & a_baseDeriv = IvDIM::Zero)
   {
     Real retval = 0;
     RealVect centloc;
@@ -53,12 +54,17 @@ public:
     for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
     {
       IvDIM  power = momit();
-      Real   deriv = getDerivative(power, centloc);
-      int   idenom = (power.factorial());
-      Real   denom = (Real)(idenom);
-      Real   momen = moments[power];
-      Real   incre = deriv*momen/denom;
-      retval += incre;
+      IvDIM  derivPower = power + a_baseDeriv;
+      // higher derivatives are not supported, but solutions still should be globally 4th order
+      if (derivPower.sum() <= 4)
+        {
+          Real   deriv = getDerivative(derivPower, centloc);
+          int   idenom = (power.factorial());
+          Real   denom = (Real)(idenom);
+          Real   momen = moments[power];
+          Real   incre = deriv*momen/denom;
+          retval += incre;
+        }
     }
     Real minvol = 1.0e-16;
     if(volu > minvol)
@@ -112,8 +118,8 @@ public:
   virtual Real getDerivative(IvDIM    a_deriv,
                              RealVect a_loc)
   {
-    Real x = a_loc[0];
-    Real y = a_loc[1];
+    Real x = a_loc[0] - m_center;
+    Real y = a_loc[1] - m_center;
     Real x2 = x*x;
     Real x3 = x*x*x;
     Real x4 = x*x*x*x;
@@ -128,7 +134,7 @@ public:
     Real r02 = m_radius*m_radius;
     Real z2 = 0;
 #if DIM==3
-    Real z = a_loc[2];
+    Real z = a_loc[2] - m_center;
     z2 = z*z;
     Real z3 = z*z*z;
     Real z4 = z*z*z*z;
@@ -776,12 +782,13 @@ public:
       retval = 0;
     }
 
-    Real tol = 1.0e-16;
+    Real tol = 1.0e-13;
     Real diff = std::abs(retval - retval_simp);
     if(diff > tol)
-    {
-      Chombo4::MayDay::Error("broken elegance");
-    }
+      {
+        pout() << diff << std::endl;
+        Chombo4::MayDay::Error("broken elegance");
+      }
     return retval_simp;
   }
   virtual ~MonomialEF()
