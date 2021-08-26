@@ -195,6 +195,9 @@ namespace Proto
     int powerE = -3;
     bool verbose = 0;
     int exactSolution = 1;
+    //Neighbor list type. 0-FaceBased or 1-CellBased
+    int neighListType = 0;
+
     Vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
@@ -202,6 +205,7 @@ namespace Proto
     pp.get("radius"   , radius);
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
+    pp.query("neighListType"   , neighListType);
 
     //Exact solution
     pp.get("exact_solution",exactSolution);
@@ -262,11 +266,10 @@ namespace Proto
       BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
       BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
       Real inhoTerm = 0.0;
-      //Neighbor list type. 0-FaceBased or 1-CellBased
-      int neighType = 0;
 
       //Computing the flux divergence stencil
-      WLSStencil<order>::
+      WLSStencil<order> lapSten;
+      lapSten.
         getLaplaWLSDivFStencil(a_stencil[ivof],
                           a_dstVoFs[ivof],
                           a_graph,
@@ -277,7 +280,7 @@ namespace Proto
                           a_ebnormzdata,
                           xflux, yflux, zflux, ebflux, ebbc, dombc,
 			  inhoTerm,
-                          neighType,
+                          neighListType,
                           a_dx);
 
       RealVect centroid;
@@ -347,6 +350,9 @@ namespace Proto
     int powerE = -3;
     bool verbose = 0;
     int exactSolution = 1;
+    //Neighbor list type. 0-FaceBased or 1-CellBased
+    int neighListType = 1;
+
     Vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
@@ -354,6 +360,7 @@ namespace Proto
     pp.get("radius"   , radius);
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
+    pp.query("neighListType"   , neighListType);
 
     //Exact solution
     pp.get("exact_solution",exactSolution);
@@ -414,11 +421,10 @@ namespace Proto
       ExactVelAdvectionWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
       ExactVelAdvectionWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
       Real inhoTerm = 0.0;
-      //Neighbor list type. 0-FaceBased or 1-CellBased
-      int neighType = 1;
 
       //Computing the flux divergence stencil
-      WLSStencil<order>::
+      WLSStencil<order> advSten;
+      advSten.
         getAdvWLSDivFStencil(a_stencil[ivof],
                           a_dstVoFs[ivof],
                           a_graph,
@@ -429,18 +435,18 @@ namespace Proto
                           a_ebnormzdata,
                           xflux, yflux, zflux, ebflux, ebbc, dombc,
 			  inhoTerm,
-                          neighType,
+                          neighListType,
                           a_dx);
 
-#if 0
+#if 1
       //Creating the WLS fluxes needed for flux diveregence
-      BaseWLSFlux<XFACE, order> xfluxL(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<YFACE, order> yfluxL(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<ZFACE, order> zfluxL(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<BOUNDARY, order> ebfluxL(radius, powerE, exactSolution, pt_verbose);
+      BaseWLSFlux<XFACE, order> xfluxL(radius, powerE, exactSolution, false);
+      BaseWLSFlux<YFACE, order> yfluxL(radius, powerE, exactSolution, false);
+      BaseWLSFlux<ZFACE, order> zfluxL(radius, powerE, exactSolution, false);
+      BaseWLSFlux<BOUNDARY, order> ebfluxL(radius, powerE, exactSolution, false);
 
-      neighType = 1;
-      WLSStencil<order>::
+      WLSStencil<order> lapSten;
+      lapSten.
         getLaplaWLSDivFStencil(diff_stencil[ivof],
                           a_dstVoFs[ivof],
                           a_graph,
@@ -451,21 +457,17 @@ namespace Proto
                           a_ebnormzdata,
                           xfluxL, yfluxL, zfluxL, ebfluxL, ebbc, dombc,
                           inhoTerm,
-                          neighType,
+                          neighListType,
                           a_dx);
 #endif
       RealVect centroid;
       double kappa;
       Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
       a_stencil[ivof]*= 1.0/(a_dx);
-      //diff_stencil[ivof]*= 1.0/(a_dx*a_dx);
-      //Real factor= POW(1.0, 1-order);
-      //factor *= 1.0;
-      //Real diffco = -factor*POW(a_dx, order);
-      //Real diffco = -factor;
-      //diff_stencil[ivof] *= diffco;
+      diff_stencil[ivof]*= 1.0/(a_dx*a_dx);
+      diff_stencil[ivof] *= -POW(a_dx, order+1);
       inhoTerm*= 1.0/(a_dx);
-      //a_stencil[ivof]+=diff_stencil[ivof];
+      a_stencil[ivof]+=diff_stencil[ivof];
       a_inhoContr[ivof] = inhoTerm;
       if (pt_verbose) 
       {

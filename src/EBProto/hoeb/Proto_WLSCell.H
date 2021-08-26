@@ -503,9 +503,10 @@ namespace Proto
                     double                     a_dx) const;
 
     //Compute weight matrix 
-    void
+    virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-		         Neighbors<order>       & a_neigh) const;
+		         Neighbors<order>       & a_neigh,
+		         RealVect               & a_faceLoc) const;
 
     //Compute stencil coefficients matrix 
     void
@@ -650,6 +651,8 @@ namespace Proto
     int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
+    //Flux type. 0-Laplacian, 1-Advection
+    int m_fluxType = 0;
     //Exact solution class holding different function types
     shared_ptr<BaseExactSolution<order> >  m_exactSol;
     
@@ -689,6 +692,12 @@ namespace Proto
                     Vector<IndMomDIM>        & a_ebnorm,
                     double                     a_dx) const;
 
+    //Compute weight matrix 
+    virtual void
+    getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
+                         Neighbors<order>       & a_neigh,
+                         RealVect               & a_faceLoc) const;
+
     virtual ~ExactVelAdvectionWLSFlux()
     {
     }
@@ -702,6 +711,7 @@ namespace Proto
                               a_exactSolFun,
                               a_verbose)
     {
+      this->m_fluxType = 1;
       ParmParse pp;
       int exactVel = 1;
       //Exact solution     
@@ -748,7 +758,7 @@ namespace Proto
 
     ///
     //Gets Laplacian WLS flux divergence stencil
-    inline static void
+    inline void
     getLaplaWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
                            const EBIndex<CELL>                 & a_vof,
                            const EBGraph                       & a_graph,
@@ -771,7 +781,7 @@ namespace Proto
                            double                                a_dx);
 
     //Gets Advection WLS flux divergence stencil
-    inline static void
+    inline void
     getAdvWLSDivFStencil(LocalStencil< CELL,  double>        & a_vofStencil,
                          const EBIndex<CELL>                 & a_vof,
                          const EBGraph                       & a_graph,
@@ -793,6 +803,40 @@ namespace Proto
                          int                                 & a_neighType,
                          double                                a_dx);
 
+    inline
+    LocalStencil< CELL,  double>
+    getLapFluxStencil(LocalStencil< CELL,  double> & a_fluxMStencil, 
+                      LocalStencil< CELL,  double> & a_fluxPStencil, 
+                      const EBIndex<CELL>          & a_voflo, 
+                      const EBIndex<CELL>          & a_vofhi, 
+                      int                            a_dir,
+                      const VoluData               & a_voludata, 
+                      const EBGraph                & a_graph, 
+                      double                         a_dx);
+
+    inline
+    double
+    getLapinhomogTerm(double                       & a_inhomogTermM,
+                      double                       & a_inhomogTermP, 
+                      const EBIndex<CELL>          & a_voflo, 
+                      const EBIndex<CELL>          & a_vofhi,
+                      int                            a_dir,
+                      const VoluData               & a_voludata,
+                      const EBGraph                & a_graph,
+                      double                         a_dx);
+ 
+    inline
+    LocalStencil< CELL,  double>
+    getAdvFluxStencil(LocalStencil< CELL,  double> & a_fluxMStencil, 
+                      LocalStencil< CELL,  double> & a_fluxPStencil, 
+                      const EBIndex<CELL>          & a_voflo, 
+                      const EBIndex<CELL>          & a_vofhi, 
+                      const RealVect               & a_v_faceLoc, 
+                      int                            a_dir,
+                      const VoluData               & a_voludata, 
+                      const EBGraph                & a_graph, 
+                      double                         a_dx);
+
     virtual ~WLSStencil()
     {
     }
@@ -800,6 +844,13 @@ namespace Proto
     WLSStencil()
     {
     }
+
+    std::map<EBIndex<XFACE>,LocalStencil<CELL, double> > xfacesFluxStencil;
+    std::map<EBIndex<YFACE>,LocalStencil<CELL, double> > yfacesFluxStencil;
+    std::map<EBIndex<ZFACE>,LocalStencil<CELL, double> > zfacesFluxStencil;
+    std::map<EBIndex<XFACE>,double> xfacesInhTerm;
+    std::map<EBIndex<YFACE>,double> yfacesInhTerm;
+    std::map<EBIndex<ZFACE>,double> zfacesInhTerm;
   };
 
   //Class to compute Dirichlet BCs at faces and EB Faces for the Moment Matrix.
