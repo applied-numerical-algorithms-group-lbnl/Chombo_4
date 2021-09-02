@@ -7,6 +7,60 @@
 
 namespace Proto
 {
+  template <int order>
+  void
+  EBStencilHO<CELL, CELL,  order, double>::
+  printWLSStencil(int                                  radius,
+                  const LocalStencil< CELL,  double> & a_stencil,
+                  const Point                        & a_vofPt) 
+  {
+    for (int j = radius+1; j>=-(radius+1); j--)
+    {
+      for (int i = -(radius+1); i<=radius+1; i++)
+      {
+        bool act = false;
+        for(int ivec =  0; ivec < a_stencil.size(); ivec++)
+        {
+          if (a_vofPt[0]+i==a_stencil.m_entries[ivec].m_vof.m_pt[0] &&
+              a_vofPt[1]+j==a_stencil.m_entries[ivec].m_vof.m_pt[1])
+          {
+            pout()<<"("<<a_stencil.m_entries[ivec].m_vof.m_pt[0]<<","<<a_stencil.m_entries[ivec].m_vof.m_pt[1]<<") ";                
+            act = true;
+          }
+        }
+        if (!act) pout()<<"("<<a_vofPt[0]+i<<","<<a_vofPt[1]+j<<") ";
+      }
+      pout()<<endl;
+    }
+    pout()    << std::setprecision(1);
+    for (int j = radius+1; j>=-(radius+1); j--)
+    {
+      for (int i = -(radius+1); i<=radius+1; i++)
+      { 
+        bool act = false;
+        for(int ivec =  0; ivec < a_stencil.size(); ivec++)
+        {
+          if (a_vofPt[0]+i==a_stencil.m_entries[ivec].m_vof.m_pt[0] &&
+              a_vofPt[1]+j==a_stencil.m_entries[ivec].m_vof.m_pt[1])
+          {
+            if(a_stencil.m_entries[ivec].m_weight<0.0)
+            {
+              pout()<<"-"<<abs(a_stencil.m_entries[ivec].m_weight)<<"  ";
+            }
+            else
+            {                
+              pout()<<" "<<abs(a_stencil.m_entries[ivec].m_weight)<<"  ";
+            }
+            act = true;
+          } 
+        }
+        if (!act) pout()<<"   N/A  "<<"  ";
+      }
+      pout()<<endl;
+    }
+    pout()    << std::setprecision(16);
+  }
+
   //Gets high-order stencil. First implementation gives you the stencil for Poisson operator
   //All Neumann stencil is needed for EBMultigrid, it still needs to be checked.
   //Returns whether there are domain boundary conditions
@@ -292,14 +346,16 @@ namespace Proto
       if (pt_verbose) 
       {
         pout() << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
-        a_stencil[ivof].print();
+        //a_stencil[ivof].print();
+        printWLSStencil(radius, a_stencil[ivof], a_dstVoFs[ivof].m_pt);
 	Real accDivF = 0.0;
 	for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
         {
           accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
         }
 
-        pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+        //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+        pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
       }
     }
     return true;
@@ -472,7 +528,8 @@ namespace Proto
       if (pt_verbose) 
       {
         pout() << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
-        a_stencil[ivof].print();
+        //a_stencil[ivof].print();
+        printWLSStencil(radius, a_stencil[ivof], a_dstVoFs[ivof].m_pt);
 	Real accDivF = 0.0;
 	for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
         {

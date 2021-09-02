@@ -50,7 +50,12 @@ namespace Proto
 
     EBStencilHO() {}
     ~EBStencilHO() {}
-    
+
+    inline static void 
+    printWLSStencil(int                                  radius,
+                    const LocalStencil< CELL,  double> & a_stencil,
+                    const Point                        & a_vofPt); 
+   
     ///   returns true if there are domain boundary conditions
     inline static bool
     getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,

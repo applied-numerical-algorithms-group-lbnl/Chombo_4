@@ -807,6 +807,7 @@ namespace Proto
     LocalStencil< CELL,  double>
     getLapFluxStencil(LocalStencil< CELL,  double> & a_fluxMStencil, 
                       LocalStencil< CELL,  double> & a_fluxPStencil, 
+                      RealVect                     & a_centroid,
                       const EBIndex<CELL>          & a_voflo, 
                       const EBIndex<CELL>          & a_vofhi, 
                       int                            a_dir,
@@ -818,6 +819,7 @@ namespace Proto
     double
     getLapinhomogTerm(double                       & a_inhomogTermM,
                       double                       & a_inhomogTermP, 
+                      RealVect                     & a_centroid,
                       const EBIndex<CELL>          & a_voflo, 
                       const EBIndex<CELL>          & a_vofhi,
                       int                            a_dir,
