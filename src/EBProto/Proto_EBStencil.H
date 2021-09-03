@@ -17,7 +17,6 @@
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
 #include <implem/Proto_StencilImplem.H>
-#include <implem/Proto_FusedStencil.H>
 
 using std::shared_ptr;
 using std::vector;
@@ -167,11 +166,6 @@ namespace Proto
     Box                       m_regApplyBox;
     shared_ptr< AggStencil<srcCenter, dstCenter, data_t> >  m_irregStencil;
     shared_ptr<  EBBoxData<dstCenter, data_t, 1> >          m_diagonalWeights;
-
-// disable for debugging
-//#ifdef PROTO_CUDA
-//    FusedStencil<data_t> sFused;
-//#endif
 
     private:
     EBStencil();
