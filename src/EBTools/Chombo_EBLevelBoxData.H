@@ -194,9 +194,10 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIME("EBLevelBoxData::exchange");
+#if 1
     this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
+#else
     
-/*
     LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
@@ -204,8 +205,7 @@ public:
     hostdata.exchange(copier);
 
     copyToDevice(*this, hostdata);
-*/
-
+#endif
   }
 
   ///
@@ -496,12 +496,13 @@ public:
               unsigned int a_icomp,
               Real a_tol)
   {
+    bool useStack = true;
     Bx      inbox = a_calculatedAns.inputBox();
     EBGraph graph = a_calculatedAns.ebgraph();
     CH_assert(inbox == a_referenceAns.inputBox());
   
   
-    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph);
+    EBBoxData<cent, Real, NUMCOMPS> difference(inbox, graph, useStack);
     difference.setVal(0.);
     difference += a_calculatedAns;
     difference -= a_referenceAns;

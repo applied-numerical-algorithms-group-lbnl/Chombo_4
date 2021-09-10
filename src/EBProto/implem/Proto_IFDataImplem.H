@@ -345,6 +345,7 @@ namespace Proto
     /**
        the stuff below makes convergence tests do weird things
        but makes for better answers
+       dtg-- this is broken and needs to go away --dtg
     */
     if(1)
     {

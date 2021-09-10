@@ -13,6 +13,35 @@ namespace Proto
   */
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
   EBStencil<order, data_t, srcCenter, dstCenter>::
+  EBStencil(const vector<EBIndex<dstCenter> >               & a_dstVoFs,
+            const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
+            const EBGraph                                   & a_srcGraph,
+            const EBGraph                                   & a_dstGraph,
+            const Box                                       & a_srcValid,
+            const Box                                       & a_dstValid,
+            const Box                                       & a_srcDomain,
+            const Box                                       & a_dstDomain,
+            const Point                                     & a_srcGhost,
+            const Point                                     & a_dstGhost,
+            bool                                              a_needDiagonalWeights)
+  {
+    m_periodic_domain_bcs_only = false;
+    m_hasDomainBCs = false;  //that technology is going away
+    m_bcsOnly      = false;
+    m_irregOnly    = true; //we are only running the aggstencil
+    
+    m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
+      (new AggStencil<srcCenter, dstCenter, data_t>(a_dstVoFs, a_stencil, a_srcGraph, a_dstGraph,
+                                                    a_srcValid, a_dstValid, a_srcGhost, a_dstGhost));
+    if(a_needDiagonalWeights)
+    {
+      computeDiagonalWeights(a_dstVoFs, a_stencil, a_dstGraph, a_dstValid, a_dstGhost);
+    }
+  }
+
+
+  template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
+  EBStencil<order, data_t, srcCenter, dstCenter>::
   EBStencil(string              a_stencilName,
             string              a_domainBCName[2*DIM],
             string              a_ebbcName,
@@ -186,9 +215,7 @@ namespace Proto
   EBStencil<order, data_t, srcCenter, dstCenter>::
   defineApplyITZ() 
   {
-//#ifdef PROTO_CUDA
-//      sFused.define(m_regStencilBCS, m_BCApplyBoxes, 2*DIM);
-//#endif
+
   }
 
   ///
@@ -206,10 +233,6 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     if(m_hasDomainBCs && (!m_irregOnly))
     {
-/*#ifdef PROTO_CUDA
-      const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
-      sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
-#else*/
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
@@ -220,7 +243,6 @@ namespace Proto
                                            bcsrcbox, a_initToZero, 1.0);
         }
       }
-//#endif
     }
     if(!m_bcsOnly)
     {

@@ -160,7 +160,6 @@ class CUDAGRAPH
   void capture(Func& fun)
   {
     if(graphCreated) return; 
-    std::cout << " capture " << std::endl;
     stream =  Proto::DisjointBoxLayout::getCurrentStream();
     cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
     fun();
@@ -171,12 +170,10 @@ class CUDAGRAPH
 
   ~CUDAGRAPH()
   {
-    std::cout << " destructor " << std::endl;
   }
 
   void launch()
   {
-    std::cout << " launch " << std::endl;
     cudaGraphLaunch(instance, stream);
     cudaStreamSynchronize(stream);
   }

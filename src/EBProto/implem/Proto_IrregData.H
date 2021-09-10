@@ -22,41 +22,25 @@ namespace Proto
       bool found = false;
       int begin = 0;
       int end = a_size;
-      int i = (begin + a_size)/2;
 
-      while(found == false && begin <= end)
-      {        
-        if(a_vof == a_indicies[i])
-        {
-          ivec = i;
-          found = true;
-          break;
-        }
-        if(a_vof <  a_indicies[i] )
-          end = i;
-	else
-	  begin = i;
-        i = (begin + end)/2;
-      }
-/*
       while (begin <= end) 
       {
-        int mid = begin + (begin - end) / 2;
+        //int mid = begin + (begin - end) / 2;
+        int mid = (begin + end) / 2;
 
         if (a_indicies[mid] == a_vof)
         {
-          ivec = i;
+          ivec = mid;
           found = true;
           break;
         }
 
         if (a_indicies[mid] < a_vof)
           begin = mid + 1;
-
         else
          end = mid - 1;
       }
-*/
+
       if(!found)
       {
         PROTO_ASSERT(found, "vof not found");
@@ -68,15 +52,20 @@ namespace Proto
     }
 
     CUDA_DECORATION
-    inline bool contains(const Point& pt, Point& a_low, Point& a_high);
+    inline bool contains(const Point& pt, const Point& a_low, const Point& a_high);
 
     template<CENTERING cent>
     CUDA_DECORATION
-    inline bool contains(EBIndex<cent>& a_in, Point& a_low, Point& a_high);
+    inline bool contains(EBIndex<cent>& a_in, const Point& a_low, const Point& a_high);
 
+#ifndef PROTO_CUDA
+#define FORCE_INLINE inline
+#else  
+#define FORCE_INLINE __forceinline__
+#endif  
     template <CENTERING cent>
     CUDA_DECORATION
-    bool copyContains(const EBIndex<cent>& a_ind, Point & a_srcbox_low, Point & a_srcbox_high)
+    FORCE_INLINE bool copyContains(const EBIndex<cent>& a_ind, const Point & a_srcbox_low, const Point & a_srcbox_high)
     {
       CENTERING thiscent = cent;
 
@@ -127,7 +116,7 @@ namespace Proto
 		data_t* a_dst, const data_t* a_src, 
                 unsigned int a_idst, unsigned int a_isrc,
                 unsigned int a_inco,
-		Point a_box_inf, Point a_box_high
+		const Point& a_box_inf, const Point& a_box_high
     )
     {
       for(unsigned idx = 0; idx < a_end ; idx ++)
@@ -158,19 +147,23 @@ namespace Proto
 		data_t* a_dst, const data_t* a_src, 
                 unsigned int a_idst, unsigned int a_isrc,
 		unsigned int a_inco,
-		Point a_box_inf, Point a_box_high
+		const Point& a_box_inf, const Point& a_box_high
     )
     {
-      unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+/*  
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
       if(idx < a_end)
       {
         EBIndex<cent>& vof = a_indiciesDst[idx];
+        const bool do_it = copyContains(vof,a_box_inf,a_box_high);
         //if( contains(vof,a_box_inf,a_box_high) && copyContains(vof,a_box_inf,a_box_high))
-        if( copyContains(vof,a_box_inf,a_box_high))
+        if(do_it)
         {
           size_t indDst = idx + a_indiciesSizeDst*a_idst;//index(a_indiciesDst, a_indiciesSizeDst, vof, idst);
           size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
+	  __syncthreads();
+
 #pragma unroll
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
@@ -180,7 +173,26 @@ namespace Proto
           }
         }
       }
-    }
+*/
+    
+      for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < a_end ; idx += blockDim.x  * gridDim.x)
+      {
+        EBIndex<cent>& vof = a_indiciesDst[idx];
+        const bool do_it = copyContains<cent>(vof,a_box_inf,a_box_high) && contains(vof,a_box_inf,a_box_high);
+        if(do_it)
+        {
+          size_t indDst = idx + a_indiciesSizeDst*a_idst;
+          size_t indSrc = index(a_indiciesSrc, a_indiciesSizeSrc, vof, a_isrc);
+
+          for(unsigned int ico = 0; ico < a_inco; ico++)
+          {
+            a_dst[indDst] = a_src[indSrc];
+            indDst += a_indiciesSizeDst;
+            indSrc += a_indiciesSizeSrc;
+          }
+        }
+      }
+  }
 #endif
   };
    
@@ -193,7 +205,7 @@ namespace Proto
     		EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
                 void* a_buf, 
 		data_t* a_dst,
-                Point a_box_inf, Point a_box_high
+                const Point& a_box_inf, const Point& a_box_high
     )
     {
       char* tmp = (char*)a_buf;
@@ -226,7 +238,7 @@ namespace Proto
 		EBIndex<cent>* a_indicies, unsigned int a_indiciesSize,
                 void* a_buf, 
 		data_t* a_dst,
-                Point a_box_inf, Point a_box_high
+                const Point& a_box_inf, const Point& a_box_high
     )
     {
       char* tmp = (char*)a_buf;
@@ -239,8 +251,8 @@ namespace Proto
       for(unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x ; idx < size ; idx += blockDim.x  * gridDim.x)
       {
         EBIndex<cent>& pt = indicies[idx];
-        //if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
-        if(copyContains(pt,a_box_inf,a_box_high))
+        if( contains(pt,a_box_inf,a_box_high) && copyContains(pt,a_box_inf,a_box_high))
+        //if(copyContains<cent>(pt,a_box_inf,a_box_high))
         {
           size_t indxDst = index(a_indicies, a_indiciesSize, pt, 0);
           size_t indxSrc = idx;
@@ -689,12 +701,22 @@ namespace Proto
       auto indiciesSrc = a_src.getIndicies();
       auto indiciesDataSrc = a_src.getDataIndicies();
       unsigned int size = m_indicies->size(); 
-      unsigned int threads = 256;
-      unsigned int blocks = (threads + size - 1)/threads;
 
       if(size == 0 || indiciesSrc->size()==0) return;
 
-      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
+      int numSMs=1;
+#ifdef PROTO_CUDA
+      int devId = 0;
+#ifdef PROTO_HIP
+      hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+#else
+      cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+#endif
+#endif
+      //unsigned int threads = 256;
+      //unsigned int blocks = (threads + size - 1)/threads;
+      //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream, 
+      protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 0, protoGetCurrentStream, 
 			size, 
                         indiciesDataSrc.get(), indiciesSrc->size(),
 			m_indicies_shared_data.get(), m_indicies->size(),

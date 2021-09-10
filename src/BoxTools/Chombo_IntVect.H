@@ -670,7 +670,6 @@ public:
 
   inline uint64_t hash(const IntVect& origin, const IntVect& blockingFactor) const; 
 
-#ifdef USE_PROTO
     IntVect(Proto::Point a_pt)
     {
         for (int ii = 0; ii < DIM; ii++)
@@ -683,7 +682,6 @@ public:
     {
         return Proto::Point(vect);
     }
-#endif
 
 protected:
   //
@@ -712,6 +710,7 @@ protected:
 };
 #include "Chombo_NamespaceFooter.H"
 using Chombo4::IntVect;
+//namespace std { template <> inline constexpr bool less<IntVect>::operator()(const IntVect& a, const IntVect& b) const { return a.lexLT(b);}
 namespace std { template <> inline bool less<IntVect>::operator()(const IntVect& a, const IntVect& b) const { return a.lexLT(b);}
 }
 //#include "Chombo_NamespaceVar.H"

@@ -37,6 +37,9 @@ namespace StencilNames
      Add the radius to get the stencil for ncdiv = sum_rad (kappa div)/sum_rad(kappa)
   */
   static const string NCDivergeRoot("Volume_Weighted_Averaging_rad_"); 
+
+  //restriction assuming quantity is already kappa weighted.
+  static const string MultigridRestriction("Multigrid_Restriction");
   
   ///for correcting tangential velocity at faces
   static const string TanVelCorrect("Tangential_Velocity_Correction");
@@ -191,18 +194,46 @@ public:
     return retval;
   }
   
-  ///
+  /// register stencil version for existing archived stencils.
   /**
      diagonal weights are for relaxation--expensive to compute so leave them out if you do not need them
      dest grow is how many cells to grow valid box for destination.
+
+     This is the registerStencil a user ought to use if she wants a 
+     known, named, and archived stencil.
+     All the existing stencils have a corresponding  entry in StencilNames.
+     If the stencil name does not exist in the EBStencilArchive, that is a run time error.
   */
-  inline void registerStencil(string a_stencilName,
-                              string a_domainBCName[2*DIM],
-                              string a_ebbcName,
-                              Box    a_srcDomain,
-                              Box    a_dstDomain,
-                              bool needDiagonalWeights = false,
-                              Point  a_destGrow = Point::Zeros());
+  inline void
+  registerStencil(string a_stencilName,
+                  string a_domainBCName[2*DIM],
+                  string a_ebbcName,
+                  Box    a_srcDomain,
+                  Box    a_dstDomain,
+                  bool needDiagonalWeights = false,
+                  Point  a_destGrow = Point::Zeros());
+
+  /// register stencil version for algorithm developers
+  /**
+     If you know what stencil you want and you just want to use EBStencil to execute the stencil, 
+     use this registerStencil option.    
+     Only the AggStencil bit will be executed so there has to be an entry
+     corresponding to  every cell for which  you want to have an answer.   You have to call this for 
+     every box as well.
+   */
+  inline void
+  registerStencil(string a_stencilName,
+                  string a_ebbcName,
+                  const vector<EBIndex<dstCenter> >               & a_dstVoFs,
+                  const vector<LocalStencil<srcCenter,  data_t> > & a_stencil,
+                  const Proto::Box                                & a_srcValid,
+                  const Proto::Box                                & a_dstValid,
+                  const Proto::Box                                & a_srcDomain,
+                  const Proto::Box                                & a_dstDomain,
+                  const Point                                     & a_srcGhost,
+                  const Point                                     & a_dstGhost,
+                  bool                                              a_needDiagonalWeights,
+                  unsigned int                                      a_ibox);
 
   inline void registerStencilWLS(string a_stencilName,
                               string a_domainBCName[2*DIM],
@@ -233,7 +264,7 @@ public:
                     a_needDiagonalWeights,
                     a_destGrow);
   }
-
+ 
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
                               string a_ebbcName,

@@ -145,15 +145,24 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   bool initToZero = true;
   //compute slopes of the solution 
   //(low and high centered) in each direction
-  EBBoxData<CELL, Real, DIM> slopeLoNor(a_grown, a_graph); 
-  EBBoxData<CELL, Real, DIM> slopeHiNor(a_grown, a_graph);
+
+  bool useStack = true;
+  EBBoxData<CELL, Real, DIM> slopeLoNor(a_grown, a_graph, useStack); 
+  EBBoxData<CELL, Real, DIM> slopeHiNor(a_grown, a_graph, useStack);
   //compute slopes of the solution + dt*sourcce 
   //(low and high centered) in each direction (for tangential ders)
-  EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph); 
-  EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph);
+  EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph, useStack); 
+  EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph, useStack);
 
+  
   //vel + 0.5*dt*source for Minion (Michael, not the yellow guys) stability fix
-  EBBoxData<CELL, Real, 1> minion(a_grown, a_graph);
+  EBBoxData<CELL, Real, 1> minion(a_grown, a_graph, useStack);
+
+  slopeLoNor.setVal(0.); 
+  slopeHiNor.setVal(0.);
+  slopeLoTan.setVal(0.); 
+  slopeHiTan.setVal(0.);
+  minion.setVal(0.);
   {
     unsigned int nflop = 3;
     ebforallInPlace(nflop, "Minioned", Minioned, a_grown,  
@@ -187,8 +196,8 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
     //scalar extrapolated to low side and high side face
-    EBBoxData<CELL, Real, 1> scal_imh_nph(a_grown, a_graph);
-    EBBoxData<CELL, Real, 1> scal_iph_nph(a_grown, a_graph);
+    EBBoxData<CELL, Real, 1> scal_imh_nph(a_grown, a_graph, useStack);
+    EBBoxData<CELL, Real, 1> scal_iph_nph(a_grown, a_graph, useStack);
     //extrapolate in space and time to get the inputs to the Riemann problem
     unsigned long long int numflopspt = 21 + 4*DIM;
     auto& sourfab = a_source;
@@ -284,19 +293,20 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
   //first we compute the slopes of the data
   //then we extrapolate in space and time
   //then we solve the riemann problem to get the flux
+  bool useStack = true;
   auto& veloLD = *m_veloCell;
   Bx   grid   =  ProtoCh::getProtoBox(m_grids[a_dit]);
   Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
   const EBGraph  & graph = (*m_graphs)[a_dit];
   EBBoxData<CELL, Real, DIM>& veccell = veloLD[a_dit];
 
-  EBFluxData<Real, 1>  scalHi(grown, graph);
-  EBFluxData<Real, 1>  scalLo(grown, graph);
+  EBFluxData<Real, 1>  scalHi(grown, graph, useStack);
+  EBFluxData<Real, 1>  scalLo(grown, graph, useStack);
   auto & sourfab = m_source[a_dit];
   bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
                        grown, graph, a_dit, a_ibox, a_dt);
 
-  EBFluxData<Real, 1>  upwindScal(   grown, graph);
+  EBFluxData<Real, 1>  upwindScal(   grown, graph, useStack);
   unsigned int curcomp  = 0;
   unsigned int doingvel = 0;
   getUpwindState(upwindScal, a_fcvel,  scalLo, scalHi, curcomp, doingvel);
@@ -387,6 +397,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
   // kappa* div(u scal)
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
+  bool useStack = true;
   for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
   {
     Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
@@ -394,9 +405,9 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
 
     const EBGraph  & graph = (*m_graphs)[dit[ibox]];
     //get face fluxes and interpolate them to centroids
-    EBFluxData<Real, 1>  centroidFlux(grown, graph);
-    EBFluxData<Real, 1>  faceCentFlux(grown, graph);
-    EBFluxData<Real, 1>  faceCentVel( grown, graph);
+    EBFluxData<Real, 1>  centroidFlux(grown, graph, useStack);
+    EBFluxData<Real, 1>  faceCentFlux(grown, graph, useStack);
+    EBFluxData<Real, 1>  faceCentVel( grown, graph, useStack);
     //average velocities to face centers.
     getFaceCenteredVel( faceCentVel, dit[ibox], ibox);
 

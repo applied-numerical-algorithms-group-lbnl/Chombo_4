@@ -665,6 +665,7 @@ bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
   }
   else if(which_solver == string("relax"))
   {
+    pout()<<".";
     solve_relax(a_phi, a_rhs);
   }
 #ifdef CH_USE_PETSC    
@@ -713,7 +714,7 @@ solve_relax(EBLevelBoxData<CELL, 1>         & a_phi,
             const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
   ParmParse pp("relax_solver");
-  typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBPoissonOp> bicgstab;
+  //typedef BiCGStabSolver<EBLevelBoxData<CELL, 1>, EBPoissonOp> bicgstab;
   Real tol   = 1.0e-6;
   int  imax  = 0;
 

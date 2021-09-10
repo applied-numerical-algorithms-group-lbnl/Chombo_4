@@ -192,10 +192,11 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       const EBGraph  & graph = (*m_graphs)[dit[ibox]];
 
       //this gets the low and high side states for the riemann problem
+      bool useStack = true;
       auto& scalfab = velcomp[dit[ibox]];
-      EBFluxData<Real, 1>  scalarHi(grown, graph);
-      EBFluxData<Real, 1>  scalarLo(grown, graph);
-      EBFluxData<Real, 1>  faceCentVelo( grown, graph);
+      EBFluxData<Real, 1>  scalarHi(grown, graph, useStack);
+      EBFluxData<Real, 1>  scalarLo(grown, graph, useStack);
+      EBFluxData<Real, 1>  faceCentVelo( grown, graph, useStack);
       EBFluxData<Real, 1>&  upwindScal   =       facecomp[dit[ibox]];
       
       auto & veccell = a_inputVel[dit[ibox]];
@@ -312,9 +313,9 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
 
       auto& faceCentVel  = m_advectionVel[dit[ibox]];
       auto& scalar       =  scalarVelComp[dit[ibox]];
-
-      EBFluxData<Real, 1>  centroidFlux(grown, graph);
-      EBFluxData<Real, 1>  faceCentFlux(grown, graph);
+      bool useStack = true;
+      EBFluxData<Real, 1>  centroidFlux(grown, graph, useStack);
+      EBFluxData<Real, 1>  faceCentFlux(grown, graph, useStack);
 
       assembleFlux(faceCentFlux, scalar, faceCentVel);
 

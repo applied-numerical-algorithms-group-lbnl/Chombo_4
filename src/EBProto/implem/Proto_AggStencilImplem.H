@@ -37,8 +37,9 @@ namespace Proto
 
       m_flopsThisApply = 0;        
 
-      EBBoxData<srcCenter, data_t, 1> srcData(srcbox, a_srcGraph);
-      EBBoxData<dstCenter, data_t, 1> dstData(dstbox, a_dstGraph);
+      bool useStack = true;
+      EBBoxData<srcCenter, data_t, 1> srcData(srcbox, a_srcGraph, useStack);
+      EBBoxData<dstCenter, data_t, 1> dstData(dstbox, a_dstGraph, useStack);
 
       vector<uint64_t>  h_stenSizes(a_dstVoFs.size());
       vector<uint64_t>  h_stenStart(a_dstVoFs.size());
@@ -384,6 +385,7 @@ struct pairPtr{
     stride = 256;
     blocks = (end + stride - 1) / stride;
 
+    if(end - begin == 0) return;
     //protoLaunchKernel(aggStencilIndexer, blocks, stride,  
     //  begin, end, srcPtr, dstPtr, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
     protoLaunchKernelT<MEMTYPE_DEFAULT,aggStencilIndexer<data_t>>( blocks, stride,  

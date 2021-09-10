@@ -43,6 +43,8 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  //this ought to have a boundary type but 
+  //in this case boundary and cell have the same semantic
   typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
   ///
@@ -94,6 +96,13 @@ public:
     return m_voludata;
   }
 
+  ///
+  inline DisjointBoxLayout const
+  getDBL()
+  {
+    return m_grids;
+  }
+  
   ///
   inline const shared_ptr<LevelData<EBFaData> >
   getEBFaceData() const
@@ -186,7 +195,7 @@ public:
   { 
     const EBFaData & ebfmo = (*m_ebfadata)[a_dit];
     const EBGraph  & graph = (*m_graphs)[a_dit];
-    BoxData<        Real, 1>& reghost = a_ebfacedata.getRegData();
+    BoxData<        Real, 1, HOST>& reghost = a_ebfacedata.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
     { 
@@ -422,6 +431,7 @@ template <int order>
 class GeometryService
 {
 
+
 public:
 
   typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -604,6 +614,11 @@ public:
     return (*this)[a_domain]->getEBNormalData_y();
   }
 
+  inline DisjointBoxLayout getDBL(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getDBL();
+  }
+  
   ///Get eb moment in the z direction
   inline shared_ptr<LevelData<EBNormalData> >
   getEBNormalData_z(const Box& a_domain)

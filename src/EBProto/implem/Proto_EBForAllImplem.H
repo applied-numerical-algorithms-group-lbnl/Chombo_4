@@ -46,14 +46,13 @@ namespace Proto
                    IrregData<cent, data_t, ncomp>& a_s )
   {
     vector< EBIrregStruct<cent, data_t, ncomp> > retval;
+    retval.resize(a_indices.size());
     for(int ivec = 0; ivec < a_indices.size(); ivec++)
     {
-      EBIrregStruct<cent, data_t, ncomp>  vecval;
-      vecval.m_startPtr = a_s.data();
-      vecval.m_varsize  = a_s.vecsize();
-      vecval.m_offset   = a_s.index(a_indices[ivec], 0);
-      vecval.m_index    = a_indices[ivec].m_pt;
-      retval.push_back(vecval);
+      retval[ivec].m_startPtr = a_s.data();
+      retval[ivec].m_varsize  = a_s.vecsize();
+      retval[ivec].m_offset   = a_s.index(a_indices[ivec], 0);
+      retval[ivec].m_index    = a_indices[ivec].m_pt;
     }
 
 

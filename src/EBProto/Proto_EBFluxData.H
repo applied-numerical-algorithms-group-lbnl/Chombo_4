@@ -34,10 +34,10 @@ namespace Proto
     /// sets all face data to the input value
     inline void setVal(data_t a_val)
     {
-      m_xflux.setVal(a_val);
-      m_yflux.setVal(a_val);
+      m_xflux->setVal(a_val);
+      m_yflux->setVal(a_val);
 #if DIM==3      
-      m_zflux.setVal(a_val);
+      m_zflux->setVal(a_val);
 #endif      
     }
 
@@ -126,7 +126,7 @@ namespace Proto
     */
     EBFluxData(const Box& a_box, const EBGraph& a_graph, bool a_useStack=false)
     {
-      define(a_box, a_graph);
+      define(a_box, a_graph, a_useStack);
     }
     
     /// define all data
