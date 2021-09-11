@@ -75,18 +75,8 @@ public:
         auto& inhofab = m_inhoContr[dit[ibox]];
         inhofab.setVal(0.0);
       }
-    m_diagW.define(m_grids, m_ivghost, m_graphs);
 
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
-
-    if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Advection"))
-    {
-      m_ebdictionary->registerStencilWLS(m_stencilName, m_domainBCName, m_ebbcName, m_domain, m_domain, true);
-    }
-    else
-    {
-      m_ebdictionary->registerStencil(m_stencilName, m_domainBCName, m_ebbcName, m_domain, m_domain, true);
-    }
 
     fillKappa(a_geoserv);
 
@@ -232,13 +222,6 @@ public:
       // now copy to the device
       EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
   
-      shared_ptr<ebstencil_t>                  stencil  = m_ebdictionary->getEBStencil(m_stencilName, m_ebbcName, m_domain, m_domain, ibox);
-      shared_ptr< EBBoxData<CELL, Real, 1> >   diagptr  = stencil->getDiagonalWeights();
-      auto& diagGhost = m_diagW[dit[ibox]];
-      auto& stendiag = *diagptr;
-      Bx inputBox = diagGhost.inputBox();
-  
-      ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
       ideb++;
     }
     //m_kappa.exchange(m_exchangeCopier);
@@ -268,10 +251,8 @@ public:
       auto& phifab = a_phi[dit[ibox]];
       auto& lphfab = a_lph[dit[ibox]];
       auto& inhofab = m_inhoContr[dit[ibox]];
-      shared_ptr<ebstencil_t> stencil =
-        m_ebdictionary->getEBStencil(m_stencilName, m_ebbcName, m_domain, m_domain, ibox);
       //set lphi = kappa* div(F)
-      stencil->apply(lphfab, phifab,  true, 1.0);
+      m_stencil[ibox]->apply(lphfab, phifab, 1.0, true);
       //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
       Chombo4::Box grid = m_grids[dit[ibox]];
       Bx  grbx = getProtoBox(grid);
@@ -320,7 +301,13 @@ public:
     a_gids.exchange(exchangeCopier);
     return 0;
   }
-  
+ 
+  inline const vector<shared_ptr<ebstencil_t> >
+  getStencil() const
+  {
+    return m_stencil;
+  }
+
 private:
   int chomboToPetsc(Vec                           & a_dst,
                     const EBLevelBoxData<CELL, 1> & a_deviceSrc)
@@ -411,7 +398,8 @@ private:
                            vector< Proto::LocalStencil<CELL, Real> >  & a_wstencil,
                            Proto::Stencil<Real>                       & a_regStencilInterior,
                            PointSet                            & a_allIrregPoints,
-                           const Chombo4::DataIndex                     & a_dit)
+                           const Chombo4::DataIndex                     & a_dit,
+                           int                                            a_ibox)
   {
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef Proto::EBStencilHO<CELL, CELL, order, Real> ho_t;
@@ -490,6 +478,10 @@ private:
 
     fillInhoContr(inhoContr,a_dstVoFs,a_dit);
 
+    m_stencil[a_ibox] = shared_ptr<ebstencil_t >
+        (new ebstencil_t(a_dstVoFs, a_wstencil, graph, graph,
+                         valbx, valbx, domainbx, domainbx, m_ptghost, m_ptghost, false));
+
     return 0;
   }
 
@@ -556,6 +548,7 @@ private:
       ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
 #endif
       DataIterator dit = m_grids.dataIterator();
+      m_stencil.resize(dit.size());
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         vector< EBIndex<CELL> >            dstVoFs;
@@ -563,7 +556,7 @@ private:
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
         //use strings to get stencil for this particular operator.
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox]);
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox);
         
         auto& graph = (*m_graphs)[dit[ibox]];
         auto  grid  =     m_grids[dit[ibox]];
@@ -797,8 +790,8 @@ private:
 
   EBLevelBoxData<CELL, 1> m_kappa;
   EBLevelBoxData<CELL, 1> m_inhoContr;
-  EBLevelBoxData<CELL, 1> m_diagW;
   Chombo4::Copier m_exchangeCopier;
+  vector<shared_ptr<ebstencil_t> > m_stencil;
 };
 
 #endif
