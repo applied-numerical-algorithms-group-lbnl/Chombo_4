@@ -446,9 +446,45 @@ namespace Proto
                 new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
               }
           }
+          Point pt = vofInd.m_pt;
+          bool pt_verbose = false;
+          if (verbose)
+          {
+#if DIM==3
+            if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
+#else
+            if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+#endif
+            {
+   	    pt_verbose = true;
+              pout() << "Debugging Point "<<pt<<endl;
+            }
+    	  else
+            {
+              pt_verbose = false;
+            }
+          }
+ 
           a_stencil[ivof] = new_stencil; 
           a_inhoContr[ivof] = row_inhoContr[kk]; 
           kk++;
+
+          if (pt_verbose) 
+          {
+            pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
+            //a_stencil[ivof].print();
+            printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+            Real accDivF = 0.0;
+            for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+            {
+              accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
+            }
+    
+            pout() << "Original pt " << row_index[kk-1].m_pt[0] <<" , "<<row_index[kk-1].m_pt[1]<< endl;
+            pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
+          }
+ 
+
         }
       }
     }
@@ -682,7 +718,8 @@ namespace Proto
             accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
           }
   
-          pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+          //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+          pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
         }
       }
     }
@@ -722,12 +759,49 @@ namespace Proto
                 new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
               }
           }
+          Point pt = vofInd.m_pt;
+          bool pt_verbose = false;
+          if (verbose)
+          {
+#if DIM==3
+            if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
+#else
+            if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+#endif
+            {
+   	    pt_verbose = true;
+              pout() << "Debugging Point "<<pt<<endl;
+            }
+    	  else
+            {
+              pt_verbose = false;
+            }
+          }
+ 
           a_stencil[ivof] = new_stencil; 
           a_inhoContr[ivof] = row_inhoContr[kk]; 
           kk++;
+
+          if (pt_verbose) 
+          {
+            pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
+            //a_stencil[ivof].print();
+            printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+            Real accDivF = 0.0;
+            for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+            {
+              accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
+            }
+    
+            pout() << "Original pt " << row_index[kk-1].m_pt[0] <<" , "<<row_index[kk-1].m_pt[1]<< endl;
+            pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
+          }
+ 
+
         }
       }
     }
+
 
     return true;
   }
