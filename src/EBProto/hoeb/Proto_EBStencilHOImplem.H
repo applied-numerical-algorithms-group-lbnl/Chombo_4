@@ -292,72 +292,167 @@ namespace Proto
       }
     }
 
-    //Looping over all the valid VoFs
-    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    int ncells = 32;
+    int nrepRows = -1;
+    pp.get("nx"   , ncells);
+    pp.query("nrepRows"   , nrepRows);
+    vector<map<int,int > > map1;
+    map<pair<int,int>,EBIndex<CELL> > map2;
+    map1.resize(ncells);
+
+    for(int k=0; k<ncells; k++)
     {
-      Point pt = a_dstVoFs[ivof].m_pt;
-      bool pt_verbose = false;
-      if (verbose)
+      //Looping over all the valid VoFs
+      for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
-#if DIM==3
-	if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
-#else
-	if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
-#endif
+        Point pt = a_dstVoFs[ivof].m_pt;
+        pair<int,int> ptPair (pt[0],pt[1]);
+        map2[ptPair] = a_dstVoFs[ivof];
+        if (pt[1]==k)
         {
-	  pt_verbose = true;
-          pout() << "Debugging Point "<<pt<<endl;
+          map1[k][pt[0]] = ivof;
         }
-	else
-        {
-          pt_verbose = false;
-        }
-      }
-
-      //Creating the WLS fluxes needed for flux diveregence
-      BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
-      BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
-      Real inhoTerm = 0.0;
-
-      //Computing the flux divergence stencil
-      WLSStencil<order> lapSten;
-      lapSten.
-        getLaplaWLSDivFStencil(a_stencil[ivof],
-                          a_dstVoFs[ivof],
-                          a_graph,
-                          a_voludata,
-                          a_ebfadata,
-                          a_xfacdata, a_yfacdata, a_zfacdata,
-                          a_ebnormxdata, a_ebnormydata, 
-                          a_ebnormzdata,
-                          xflux, yflux, zflux, ebflux, ebbc, dombc,
-			  inhoTerm,
-                          neighListType,
-                          a_dx);
-
-      RealVect centroid;
-      double kappa;
-      Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
-      a_stencil[ivof]*= 1.0/(a_dx*a_dx);
-      inhoTerm*= 1.0/(a_dx*a_dx);
-      a_inhoContr[ivof] = inhoTerm;
-      if (pt_verbose) 
-      {
-        pout() << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
-        //a_stencil[ivof].print();
-        printWLSStencil(radius, a_stencil[ivof], a_dstVoFs[ivof].m_pt);
-	Real accDivF = 0.0;
-	for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
-        {
-          accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
-        }
-
-        //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
-        pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
       }
     }
+
+    map<int,int >::iterator it;
+    map<pair<int,int>,EBIndex<CELL> >::iterator it2;
+    vector<LocalStencil<CELL, double> > row_stencil;
+    vector<double> row_inhoContr;
+    vector<EBIndex<CELL> > row_index;
+
+    int initRep = nrepRows;
+    while(initRep<2*radius)
+    {
+      initRep += nrepRows;
+    }
+
+    if (nrepRows == -1)
+    {
+      initRep = 0;
+      nrepRows = ncells;
+    }
+
+    //Looping over all the valid VoFs
+    for(int k = initRep; k<initRep + nrepRows; k++)
+    {
+      for (it = map1[k].begin(); it != map1[k].end(); it++)
+      {
+      //for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+      //{
+        //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        int ivof = it->second;
+        EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        Point pt = vofInd.m_pt;
+        bool pt_verbose = false;
+        if (verbose)
+        {
+#if DIM==3
+          if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
+#else
+          if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+#endif
+          {
+ 	    pt_verbose = true;
+            pout() << "Debugging Point "<<pt<<endl;
+          }
+  	  else
+          {
+            pt_verbose = false;
+          }
+        }
+  
+        //Creating the WLS fluxes needed for flux diveregence
+        BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
+        BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
+        BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
+        BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
+        Real inhoTerm = 0.0;
+  
+        //Computing the flux divergence stencil
+        WLSStencil<order> lapSten;
+        lapSten.
+          getLaplaWLSDivFStencil(a_stencil[ivof],
+                            vofInd,
+                            a_graph,
+                            a_voludata,
+                            a_ebfadata,
+                            a_xfacdata, a_yfacdata, a_zfacdata,
+                            a_ebnormxdata, a_ebnormydata, 
+                            a_ebnormzdata,
+                            xflux, yflux, zflux, ebflux, ebbc, dombc,
+                            inhoTerm,
+                            neighListType,
+                            a_dx);
+  
+        RealVect centroid;
+        double kappa;
+        Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
+        a_stencil[ivof]*= 1.0/(a_dx*a_dx);
+        inhoTerm*= 1.0/(a_dx*a_dx);
+        a_inhoContr[ivof] = inhoTerm;
+        row_stencil.push_back(a_stencil[ivof]);
+        row_inhoContr.push_back(a_inhoContr[ivof]);
+        row_index.push_back(vofInd);
+        if (pt_verbose) 
+        {
+          pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
+          //a_stencil[ivof].print();
+          printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+          Real accDivF = 0.0;
+          for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+          {
+            accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
+          }
+  
+          //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+          pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
+        }
+      }
+    }
+
+    if (nrepRows != ncells)
+    {
+      int kk =0;
+      for(int k = 0; k<map1.size(); k++)
+      {
+        for (it = map1[k].begin(); it != map1[k].end(); it++)
+        {
+          if (k>=initRep && k<initRep + nrepRows) continue;
+          int ivof = it->second;
+          if (kk==row_stencil.size()) kk=0;
+          EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+          int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
+          int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
+          LocalStencil<CELL, double> new_stencil;
+          for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
+          {
+              int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
+              int pt_y = row_stencil[kk].m_entries[ivec].m_vof.m_pt[1] + difj;
+              if (pt_y < 0) {
+                pt_y += ncells;
+                pt_x += ncells/nrepRows;
+                if (difi==0) pt_x -= ncells/nrepRows;
+              }
+              if (pt_y > ncells-1) {
+                pt_y -= ncells;
+                pt_x -= ncells/nrepRows;
+                if (difi==0) pt_x += ncells/nrepRows;
+              }
+              pair<int,int> pairPt (pt_x,pt_y);
+              it2 = map2.find(pairPt);
+              if (it2 != map2.end())
+              {
+                new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
+              }
+          }
+          a_stencil[ivof] = new_stencil; 
+          a_inhoContr[ivof] = row_inhoContr[kk]; 
+          kk++;
+        }
+      }
+    }
+
     return true;
   }
   /***/
@@ -449,96 +544,191 @@ namespace Proto
       }
     }
 
-    //Looping over all the valid VoFs
-    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    int ncells = 32;
+    int nrepRows = -1;
+    pp.get("nx"   , ncells);
+    pp.query("nrepRows"   , nrepRows);
+    vector<map<int,int > > map1;
+    map<pair<int,int>,EBIndex<CELL> > map2;
+    map1.resize(ncells);
+
+    for(int k=0; k<ncells; k++)
     {
-      Point pt = a_dstVoFs[ivof].m_pt;
-      bool pt_verbose = false;
-      if (verbose)
+      //Looping over all the valid VoFs
+      for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
-#if DIM==3
-	if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
-#else
-	if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
-#endif
+        Point pt = a_dstVoFs[ivof].m_pt;
+        pair<int,int> ptPair (pt[0],pt[1]);
+        map2[ptPair] = a_dstVoFs[ivof];
+        if (pt[1]==k)
         {
-	  pt_verbose = true;
-          pout() << "Debugging Point "<<pt<<endl;
+          map1[k][pt[0]] = ivof;
         }
-	else
-        {
-          pt_verbose = false;
-        }
-      }
-
-      //Creating the WLS fluxes needed for flux diveregence
-      ExactVelAdvectionWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
-      ExactVelAdvectionWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
-      ExactVelAdvectionWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
-      ExactVelAdvectionWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
-      Real inhoTerm = 0.0;
-
-      //Computing the flux divergence stencil
-      WLSStencil<order> advSten;
-      advSten.
-        getAdvWLSDivFStencil(a_stencil[ivof],
-                          a_dstVoFs[ivof],
-                          a_graph,
-                          a_voludata,
-                          a_ebfadata,
-                          a_xfacdata, a_yfacdata, a_zfacdata,
-                          a_ebnormxdata, a_ebnormydata, 
-                          a_ebnormzdata,
-                          xflux, yflux, zflux, ebflux, ebbc, dombc,
-			  inhoTerm,
-                          neighListType,
-                          a_dx);
-
-#if 1
-      //Creating the WLS fluxes needed for flux diveregence
-      BaseWLSFlux<XFACE, order> xfluxL(radius, powerE, exactSolution, false);
-      BaseWLSFlux<YFACE, order> yfluxL(radius, powerE, exactSolution, false);
-      BaseWLSFlux<ZFACE, order> zfluxL(radius, powerE, exactSolution, false);
-      BaseWLSFlux<BOUNDARY, order> ebfluxL(radius, powerE, exactSolution, false);
-
-      WLSStencil<order> lapSten;
-      lapSten.
-        getLaplaWLSDivFStencil(diff_stencil[ivof],
-                          a_dstVoFs[ivof],
-                          a_graph,
-                          a_voludata,
-                          a_ebfadata,
-                          a_xfacdata, a_yfacdata, a_zfacdata,
-                          a_ebnormxdata, a_ebnormydata,
-                          a_ebnormzdata,
-                          xfluxL, yfluxL, zfluxL, ebfluxL, ebbc, dombc,
-                          inhoTerm,
-                          neighListType,
-                          a_dx);
-#endif
-      RealVect centroid;
-      double kappa;
-      Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_dstVoFs[ivof], a_graph, a_dx);
-      a_stencil[ivof]*= 1.0/(a_dx);
-      diff_stencil[ivof]*= 1.0/(a_dx*a_dx);
-      diff_stencil[ivof] *= -POW(a_dx, order+1);
-      inhoTerm*= 1.0/(a_dx);
-      a_stencil[ivof]+=diff_stencil[ivof];
-      a_inhoContr[ivof] = inhoTerm;
-      if (pt_verbose) 
-      {
-        pout() << "divF stencil for " << a_dstVoFs[ivof].m_pt << ":" << endl;
-        //a_stencil[ivof].print();
-        printWLSStencil(radius, a_stencil[ivof], a_dstVoFs[ivof].m_pt);
-	Real accDivF = 0.0;
-	for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
-        {
-          accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
-        }
-
-        pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
       }
     }
+
+    map<int,int >::iterator it;
+    map<pair<int,int>,EBIndex<CELL> >::iterator it2;
+    vector<LocalStencil<CELL, double> > row_stencil;
+    vector<double> row_inhoContr;
+    vector<EBIndex<CELL> > row_index;
+
+    int initRep = nrepRows;
+    while(initRep<2*radius)
+    {
+      initRep += nrepRows;
+    }
+
+    if (nrepRows == -1)
+    {
+      initRep = 0;
+      nrepRows = ncells;
+    }
+
+    //Looping over all the valid VoFs
+    for(int k = initRep; k<initRep + nrepRows; k++)
+    {
+      for (it = map1[k].begin(); it != map1[k].end(); it++)
+      {
+      //for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+      //{
+        //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        int ivof = it->second;
+        EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        Point pt = vofInd.m_pt;
+        bool pt_verbose = false;
+        if (verbose)
+        {
+#if DIM==3
+  	  if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
+#else
+  	  if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
+#endif
+          {
+  	  pt_verbose = true;
+            pout() << "Debugging Point "<<pt<<endl;
+          }
+  	  else
+          {
+            pt_verbose = false;
+          }
+        }
+  
+        //Creating the WLS fluxes needed for flux diveregence
+        ExactVelAdvectionWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
+        ExactVelAdvectionWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
+        ExactVelAdvectionWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
+        ExactVelAdvectionWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
+        Real inhoTerm = 0.0;
+  
+        //Computing the flux divergence stencil
+        WLSStencil<order> advSten;
+        advSten.
+          getAdvWLSDivFStencil(a_stencil[ivof],
+                            vofInd,
+                            a_graph,
+                            a_voludata,
+                            a_ebfadata,
+                            a_xfacdata, a_yfacdata, a_zfacdata,
+                            a_ebnormxdata, a_ebnormydata, 
+                            a_ebnormzdata,
+                            xflux, yflux, zflux, ebflux, ebbc, dombc,
+                            inhoTerm,
+                            neighListType,
+                            a_dx);
+  
+#if 1
+        //Creating the WLS fluxes needed for flux diveregence
+        BaseWLSFlux<XFACE, order> xfluxL(radius, powerE, exactSolution, false);
+        BaseWLSFlux<YFACE, order> yfluxL(radius, powerE, exactSolution, false);
+        BaseWLSFlux<ZFACE, order> zfluxL(radius, powerE, exactSolution, false);
+        BaseWLSFlux<BOUNDARY, order> ebfluxL(radius, powerE, exactSolution, false);
+  
+        WLSStencil<order> lapSten;
+        lapSten.
+          getLaplaWLSDivFStencil(diff_stencil[ivof],
+                            vofInd,
+                            a_graph,
+                            a_voludata,
+                            a_ebfadata,
+                            a_xfacdata, a_yfacdata, a_zfacdata,
+                            a_ebnormxdata, a_ebnormydata,
+                            a_ebnormzdata,
+                            xfluxL, yfluxL, zfluxL, ebfluxL, ebbc, dombc,
+                            inhoTerm,
+                            neighListType,
+                            a_dx);
+#endif
+        RealVect centroid;
+        double kappa;
+        Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
+        a_stencil[ivof]*= 1.0/(a_dx);
+        diff_stencil[ivof]*= 1.0/(a_dx*a_dx);
+        diff_stencil[ivof] *= -POW(a_dx, order+1);
+        inhoTerm*= 1.0/(a_dx);
+        //a_stencil[ivof]+=diff_stencil[ivof];
+        a_inhoContr[ivof] = inhoTerm;
+        row_stencil.push_back(a_stencil[ivof]);
+        row_inhoContr.push_back(a_inhoContr[ivof]);
+        row_index.push_back(vofInd);
+        if (pt_verbose) 
+        {
+          pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
+          //a_stencil[ivof].print();
+          printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+          Real accDivF = 0.0;
+  	  for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+          {
+            accDivF += a_stencil[ivof].m_entries[ivec].m_weight;
+          }
+  
+          pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
+        }
+      }
+    }
+
+    if (nrepRows != ncells)
+    {
+      int kk =0;
+      for(int k = 0; k<map1.size(); k++)
+      {
+        for (it = map1[k].begin(); it != map1[k].end(); it++)
+        {
+          if (k>=initRep && k<initRep + nrepRows) continue;
+          int ivof = it->second;
+          if (kk==row_stencil.size()) kk=0;
+          EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+          int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
+          int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
+          LocalStencil<CELL, double> new_stencil;
+          for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
+          {
+              int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
+              int pt_y = row_stencil[kk].m_entries[ivec].m_vof.m_pt[1] + difj;
+              if (pt_y < 0) {
+                pt_y += ncells;
+                pt_x += ncells/nrepRows;
+                if (difi==0) pt_x -= ncells/nrepRows;
+              }
+              if (pt_y > ncells-1) {
+                pt_y -= ncells;
+                pt_x -= ncells/nrepRows;
+                if (difi==0) pt_x += ncells/nrepRows;
+              }
+              pair<int,int> pairPt (pt_x,pt_y);
+              it2 = map2.find(pairPt);
+              if (it2 != map2.end())
+              {
+                new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
+              }
+          }
+          a_stencil[ivof] = new_stencil; 
+          a_inhoContr[ivof] = row_inhoContr[kk]; 
+          kk++;
+        }
+      }
+    }
+
     return true;
   }
   /***/
