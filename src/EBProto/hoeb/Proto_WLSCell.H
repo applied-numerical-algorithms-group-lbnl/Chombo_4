@@ -847,6 +847,7 @@ namespace Proto
     LocalStencil< CELL,  double>
     getAdvFluxStencil(LocalStencil< CELL,  double> & a_fluxMStencil, 
                       LocalStencil< CELL,  double> & a_fluxPStencil, 
+                      RealVect                     & a_centroid,
                       const EBIndex<CELL>          & a_voflo, 
                       const EBIndex<CELL>          & a_vofhi, 
                       const RealVect               & a_v_faceLoc, 

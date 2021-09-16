@@ -1715,6 +1715,7 @@ namespace Proto
   WLSStencil<order>::
   getAdvFluxStencil(LocalStencil< CELL,  double> & a_fluxMStencil,
                     LocalStencil< CELL,  double> & a_fluxPStencil, 
+                    RealVect                     & a_centroid,
                     const EBIndex<CELL>          & a_voflo, 
                     const EBIndex<CELL>          & a_vofhi,
                     const RealVect               & a_v_faceLoc,
@@ -1731,15 +1732,22 @@ namespace Proto
     double kappaP;
     Normalizor<order>::normalizedVoluMoments(kappaP, centroidP, a_voludata, a_vofhi, a_graph, a_dx);
     Real expD = 1.0;
+    Real distM = 1.0;
+    Real distP = 1.0;
+    if (a_dir == 0 ){
+      distM = POW(POW(POW(abs(centroidM[0]-0.5),2)+POW(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
+      distP = POW(POW(POW(abs(centroidP[0]+0.5),2)+POW(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
+    }else if (a_dir == 1){
+      distM = POW(POW(POW(abs(centroidM[1]-0.5),2)+POW(abs(centroidM[0]-a_centroid[0]),2),0.5),expD);
+      distP = POW(POW(POW(abs(centroidP[1]+0.5),2)+POW(abs(centroidP[0]-a_centroid[0]),2),0.5),expD);
+    }
     if (a_v_faceLoc[a_dir]>=0.0){
       //expD = 1.0;
     }else{
       //expD = 1.0;
     }
-    //Real distM = POW(POW(POW(abs(centroidM[0]-0.5),2)+POW(abs(centroidM[1]-centroid[1]),2),0.5),expD);
-    //Real distP = POW(POW(POW(abs(centroidP[0]+0.5),2)+POW(abs(centroidP[1]-centroid[1]),2),0.5),expD);
-    Real distM = POW(abs(centroidM[a_dir]-0.5),expD);
-    Real distP = POW(abs(centroidP[a_dir]+0.5),expD);
+    //Real distM = POW(abs(centroidM[a_dir]-0.5),expD);
+    //Real distP = POW(abs(centroidP[a_dir]+0.5),expD);
     a_fluxMStencil *= distP/(distM+distP);
     a_fluxPStencil *= distM/(distM+distP);
     //fluxStencil += a_fluxMStencil;
@@ -1876,7 +1884,7 @@ namespace Proto
                                                a_neighType,
                                                a_dx);
 
-            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, voflo, vofhi, v_faceLoc, 0, a_voludata, a_graph, a_dx);
+            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 0, a_voludata, a_graph, a_dx);
             //if (a_xfaceflux.m_verbose)
             //{
             //  pout()<<" xflux"<<endl;
@@ -2012,7 +2020,7 @@ namespace Proto
                                            faceMom,
                                            a_neighType,
                                            a_dx);
-            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, voflo, vofhi, v_faceLoc, 1, a_voludata, a_graph, a_dx);
+            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 1, a_voludata, a_graph, a_dx);
             //if (a_yfaceflux.m_verbose)
             //{
             //  pout()<<" yflux"<<endl;
@@ -2143,7 +2151,7 @@ namespace Proto
                                            faceMom,
                                            a_neighType,
                                            a_dx);
-            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, voflo, vofhi, v_faceLoc, 2, a_voludata, a_graph, a_dx);
+            fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 2, a_voludata, a_graph, a_dx);
           }else{
             a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, zfaces[iface],
                                                a_graph,    
