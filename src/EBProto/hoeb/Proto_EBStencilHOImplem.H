@@ -582,7 +582,8 @@ namespace Proto
 
     int ncells = 32;
     int nrepRows = -1;
-    pp.get("nx"   , ncells);
+    //pp.get("nx"   , ncells);
+    ncells = 1.0/a_dx;
     pp.query("nrepRows"   , nrepRows);
     vector<map<int,int > > map1;
     map<pair<int,int>,EBIndex<CELL> > map2;
