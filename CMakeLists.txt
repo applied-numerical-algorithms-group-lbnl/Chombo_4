@@ -39,7 +39,7 @@ endif()
 message(STATUS "Dimensionality: ${DIM}\n   Precision: ${PREC}")
 
 add_library(chombo_compiler_flags INTERFACE)
-add_compile_definitions(DIM=${DIM})
+add_compile_definitions(DIM=${DIM} CH_SPACEDIM=${DIM})
 if(NOT DEFINED PROTO_HOME)
     set(PROTO_HOME $ENV{HOME}/proto CACHE STRING "Proto home directory")
 endif()

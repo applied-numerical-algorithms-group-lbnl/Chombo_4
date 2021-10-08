@@ -98,7 +98,7 @@ testBox()
   const Box b2(IntVect( 12 ), IntVect( 15 ));
   const long numPtsB2 = 4;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 << 15;
 #else
   const long n = 1 << 30;
@@ -111,7 +111,7 @@ testBox()
   const Box b2(IntVect( 12,  4 ), IntVect( 15, 15 ));
   const long numPtsB2 = 4*12;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 << 15;
 #else
   const long n = 1 << 30;
@@ -124,7 +124,7 @@ testBox()
   const Box b2(IntVect( 12, 12,  4 ), IntVect( 15, 15, 15 ));
   const long numPtsB2 = 4*4*12;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 << 10;
 #else
   const long n = 1 << 20;
@@ -137,7 +137,7 @@ testBox()
   const Box b2(IntVect( 12, 12, 12, 4 ), IntVect( 15, 15, 15, 15 ));
   const long numPtsB2 = 4*4*4*12;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 <<  7;
 #else
   const long n = 1 << 15;
@@ -150,7 +150,7 @@ testBox()
   const Box b2(IntVect( 12, 12, 12, 12, 4 ), IntVect( 15, 15, 15, 15, 15));
   const long numPtsB2 = 4*4*4*4*12;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 <<  6;
 #else
   const long n = 1 << 12;
@@ -163,7 +163,7 @@ testBox()
   const Box b2(IntVect(12, 12, 12, 12, 12, 4), IntVect(15, 15, 15, 15, 15,15));
   const long numPtsB2 = 4*4*4*4*4*12;
 
-#if !CH_USE_64
+#if !CH_USE_DOUBLE
   const long n = 1 <<  5;
 #else
   const long n = 1 << 10;
