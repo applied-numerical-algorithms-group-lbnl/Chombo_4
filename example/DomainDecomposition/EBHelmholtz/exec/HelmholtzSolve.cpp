@@ -4,52 +4,22 @@
 
 
 #include "EBProto.H"
-#include "EBLevelBoxData.H"
-#include "LevelData.H"
-#include "BaseFab.H"
+#include "Chombo_EBLevelBoxData.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_BaseFab.H"
 
-#include "ParmParse.H"
-#include "LoadBalance.H"
-#include "ProtoInterface.H"
-#include "BRMeshRefine.H"
-#include "GeometryService.H"
-#include "EBDictionary.H"
+#include "Chombo_ParmParse.H"
+#include "Chombo_LoadBalance.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_BRMeshRefine.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_EBDictionary.H"
+#include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
-#include "EBChombo.H"
+#include "Proto_DebugHooks.H"
+#include "DebugFunctions.H"
 #include <iomanip>
 
-
-using std::cout;
-using std::endl;
-using std::shared_ptr;
-
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
-using     std::cout;
-using     std::endl;
-using     std::shared_ptr;
-using   Proto::BaseIF;
-using   Proto::SimpleEllipsoidIF;
-using   Proto::CENTERING;
-using   Proto::CELL;
-using Proto::PointSet;
-using Proto::PointSetIterator;
-
-void
-dumpPPS(const PointSet* a_ivs)
-{
-  for(PointSetIterator ivsit(*a_ivs);  ivsit.ok(); ++ivsit)
-  {
-    std::cout << ivsit() << " " ;
-  }
-  std::cout << std::endl;
- }
 
 int
 runTest(int a_argc, char* a_argv[])
@@ -70,6 +40,7 @@ runTest(int a_argc, char* a_argv[])
     
   int  maxIter = 10;
   int nStream    = 8;
+  int numSmooth  = 2;
   int dombc = 1;
   int ebbc  = 1;
   ParmParse pp;
@@ -91,6 +62,7 @@ runTest(int a_argc, char* a_argv[])
   pp.get("C"         , C);
   pp.get("R"         , R);         
   pp.get("coveredval", coveredval);         
+  pp.get("numSmooth" , numSmooth);         
 
   pout() << "nx        = " << nx       << endl;
   pout() << "maxGrid   = " << maxGrid  << endl;
@@ -104,13 +76,10 @@ runTest(int a_argc, char* a_argv[])
   pout() << "alpha     = " << alpha    << endl;
   pout() << "beta      = " << beta    << endl;
   pout() << "tolerance = " << tol    << endl;
+  pout() << "numSmooth = " << numSmooth    << endl;
 
   pout() << "maxIter   = " << maxIter    << endl;
   pout() << "nstream = " << nStream  << endl;
-
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
 
   RealVect ABC, X0;
   ABC[0] = A;
@@ -125,95 +94,113 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
 // EB and periodic do not mix
-  ProblemDomain domain(domLo, domHi);
+  Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
-  unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
-  
-  Vector<int> procs;
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
-  LoadBalance(procs, boxes);
-  DisjointBoxLayout grids(boxes, procs, domain);
+  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+
+  Chombo4::DisjointBoxLayout grids = vecgrids[0];
   grids.printBalance();
 
-  IntVect dataGhostIV =   IntVect::Unit;
-  Point   dataGhostPt = getPoint(dataGhostIV); 
+  IntVect dataGhostIV =   2*IntVect::Unit;
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
-  shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
-  Bx domainpr = getProtoBox(domain.domainBox());
+//  Real dx = 1.0;
+  bool insideRegular = false;
+  pp.get("inside_regular", insideRegular);
+                          
+  shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
+//  Bx domainpr = getProtoBox(domain.domainBox());
+
   pout() << "defining geometry" << endl;
-  shared_ptr<GeometryService<2> >  geoserv(new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
+  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
+//  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids[0], geomGhost);
+  shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
   pout() << "making dictionary" << endl;
+
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Real>   vecdx    (vecgrids.size(), dx);
+  for(int ilev = 1; ilev < vecgrids.size(); ilev++)
+  {
+    vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
+    vecdx    [ilev] =           2*vecdx[ilev-1];
+  }
   shared_ptr<EBDictionary<2, Real, CELL, CELL> > 
-    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx));
+    dictionary(new EBDictionary<2, Real, CELL, CELL>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
   
 //  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  string stenname("Second_Order_Poisson");
+  string stenname = StencilNames::Poisson2;
   string dombcname, ebbcname;
   if(dombc == 0)
   {
-    dombcname = string("Neumann");
+    dombcname = StencilNames::Neumann;
     pout() << "using Neumann BCs at domain" << endl;
   }
   else
   {
-    dombcname = string("Dirichlet");
+    dombcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at domain" << endl;
   }
 
   if(ebbc == 0)
   {
-    ebbcname = string("Neumann");
+    ebbcname = StencilNames::Neumann;
     pout() << "using Neumann BCs at EB" << endl;
   }
   else
   {
-    ebbcname = string("Dirichlet");
+    ebbcname = StencilNames::Dirichlet;
     pout() << "using Dirichlet BCs at EB" << endl;
   }
-
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  Chombo4::Box dombox = domain.domainBox();
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
+  EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  EBMultigrid solver(dictionary, alpha, beta, dx, grids, stenname, dombcname, ebbcname, domain.domainBox(), dataGhostIV, dataGhostIV);
-  DataIterator dit = grids.dataIterator();
+  bool directToBottom = false;
+  pp.query("direct_to_bottom", directToBottom);
+  EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
+                     stenname, dombcname, ebbcname, dombox,
+                     dataGhostIV, directToBottom);
+  
+  EBMultigridLevel::s_numSmoothUp   = numSmooth;
+  EBMultigridLevel::s_numSmoothDown = numSmooth;
+  Chombo4::DataIterator dit = grids.dataIterator();
   pout() << "setting values" << endl;
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+  int numsolves = 1;
+  pp.query("num_solves", numsolves);
+  pout() << "number of solves = " <<  numsolves << endl;
+  for(int isolve =0; isolve < numsolves; isolve++)
   {
-    EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
-    EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
-    phibd.setVal(0.0);
-    rhsbd.setVal(-1.0);
-  }
+    pout() << "going into solve number " << isolve << endl;
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
+      EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
+      phibd.setVal(1.0);
+      rhsbd.setVal(0.0);
+      corbd.setVal(0.0);
+    }
 
-  solver.residual(res, phi, rhs);
-  Real initres = res.maxNorm(0);
-  int iter = 0;
-  pout() << "solving with initial residual = " << initres << endl;
-  Real resnorm = initres;
-  while((iter < maxIter) && (resnorm > tol*initres))
-  {
-    solver.vCycle(phi,rhs);
-    solver.residual(res, phi, rhs);
-    resnorm = res.maxNorm(0);
-    pout() << "iter = " << iter << ", |resid| = " << resnorm << endl;
-    iter++;
+    solver.solve(phi, rhs, tol, maxIter, false);
   }
-
-  pout() << "writing to file " << endl;
+  pout() << "done with solves " << endl;
   
-  phi.writeToFileHDF5("phi.hdf5",  -1.0);
-  rhs.writeToFileHDF5("rhs.hdf5",   0.0);
-  res.writeToFileHDF5("res.hdf5",   0.0);
+//  auto& kappa = solver.getKappa();
+//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
+//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
+  CH_TIMER_REPORT();
   pout() << "exiting " << endl;
   return 0;
 }
@@ -221,12 +208,18 @@ runTest(int a_argc, char* a_argv[])
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
 #endif
+#endif
+  
   //needs to be called after MPI_Init
-  CH_TIMER_SETFILE("ebapply.time.table");
+  CH_TIMER_SETFILE("helmholtz.time.table");
   {
     if (a_argc < 2)
     {
@@ -241,8 +234,13 @@ int main(int a_argc, char* a_argv[])
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+  pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+#else  
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
+#endif
 #endif
   return 0;
 }

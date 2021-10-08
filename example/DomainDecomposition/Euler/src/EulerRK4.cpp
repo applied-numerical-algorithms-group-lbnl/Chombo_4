@@ -9,11 +9,11 @@
 #endif
 
 #include "EulerRK4.H"
-#include "DataIterator.H"
-#include "ProtoInterface.H"
+#include "Chombo_DataIterator.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_NamespaceHeader.H"
+//using   ::Proto::Point;
 
-using   Proto::Point;
-typedef Proto::Box Bx;
 
 /****/
 EulerState::
@@ -32,7 +32,7 @@ increment(const EulerDX & a_DX)
   LevelBoxData<NUMCOMPS> & delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     data[dit[ibox]] += delta[dit[ibox]];
@@ -49,10 +49,11 @@ increment(Real        & a_weight,
   LevelBoxData<NUMCOMPS>& delta = *(a_DX.m_DU);
   
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+
+ for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    BoxData<Real, NUMCOMPS>& incr = delta[dit[ibox]];
+    BoxData<Real, NUMCOMPS> incr(delta[dit[ibox]].box());
+    delta[dit[ibox]].copyTo(incr); 
     incr *= a_weight;
     data[dit[ibox]] += incr;
   }
@@ -65,10 +66,15 @@ init(const EulerState& a_State)
 {
   CH_TIME("EulerDX::init");
   m_grids = a_State.m_grids;
-  m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
+
+  if(m_DU == NULL)
+    m_DU = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
+
+  if(U_ave == NULL)
+    U_ave = shared_ptr<LevelBoxData<NUMCOMPS> >(new LevelBoxData<NUMCOMPS>(m_grids, a_State.m_U->ghostVect()));
 
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     (*m_DU)[dit[ibox]].setVal(0.);
@@ -82,7 +88,7 @@ operator*=(const Real& a_weight)
 {
   CH_TIME("EulerDX::operator*=");
   DataIterator dit = m_grids.dataIterator();
-#pragma omp parallel
+//#pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     (*m_DU)[dit[ibox]] *= a_weight;
@@ -103,32 +109,37 @@ operator()(EulerDX& a_DX,
   CH_TIMER("RK arithmetic_no_comm",  trk);
 
   CH_START(tdef);
-  int ncomp  =  a_State.m_U->nComp();
-  IntVect gv =  a_State.m_U->ghostVect();
+  //int ncomp  =  a_State.m_U->nComp();
+  //IntVect gv =  a_State.m_U->ghostVect();
   DisjointBoxLayout grids = a_State.m_grids;
-  LevelBoxData<NUMCOMPS>  U_ave(grids, gv);
+
   LevelBoxData<NUMCOMPS>&  delta = *(a_DX.m_DU);
   CH_STOP(tdef);
 
   CH_START(tcop);
-  Interval interv(0, ncomp-1);
-  Copier copier(grids, grids);
-  a_State.m_U->copyTo(interv, U_ave, interv, copier);
+  //Interval interv(0, ncomp-1);
+  //Copier copier(grids, grids);
+  
+  LevelBoxData<NUMCOMPS>&  U_ave= *(a_DX.U_ave); 
+
+  DataIterator it = grids.dataIterator();
+  int nbox = it.size();
+  for (int ibox = 0; ibox < nbox; ibox++)
+  {
+    a_State.m_U->operator[](it[ibox]).copyTo(U_ave[it[ibox]]);
+  }
   CH_STOP(tcop);
 
-
   CH_START(trk);
+
   DataIterator dit = grids.dataIterator();
-#pragma omp parallel
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     U_ave[dit[ibox]] += delta[dit[ibox]];
   }
 
-  Real velmax = EulerOp::step(*a_DX.m_DU, U_ave);
-  a_State.m_velSave = std::max(a_State.m_velSave,velmax);
+  EulerOp::step(*a_DX.m_DU, U_ave, a_State.m_Rxn);
 
-#pragma omp parallel
   for(int ibox = 0; ibox <  dit.size(); ibox++)
   {
     delta[dit[ibox]] *= a_dt;
@@ -144,6 +155,9 @@ maxWave(EulerState& a_State)
   CH_TIME("EulerRKOp::maxwave_init");
   EulerDX DX;
   DX.init(a_State);
-  Real velmax = EulerOp::step(*(DX.m_DU),*(a_State.m_U));
+  Reduction<Real,Op::Abs>& rxn = a_State.m_Rxn;
+  EulerOp::step(*(DX.m_DU),*(a_State.m_U), rxn);
+  Real velmax = rxn.fetch();
   return velmax;
 }
+#include "Chombo_NamespaceFooter.H"

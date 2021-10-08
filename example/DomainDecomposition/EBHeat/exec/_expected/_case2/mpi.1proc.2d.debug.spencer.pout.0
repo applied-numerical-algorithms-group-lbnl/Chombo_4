@@ -1,0 +1,118 @@
+MPI INIT called
+nStream         = 8
+max_step        = 10
+max_time        = 1
+output interval = 1
+defining geometry
+nx       = 64
+defining geometry
+maxGrid  = 64
+creating grid hierarchy
+creating implicit function
+sphere
+geom_cen = 0.5
+geom_rad = 0.45
+creating geometry service
+defining finest GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+making dictionary
+inititializing data
+blob_cen = 0.25
+blob_rad = 0.1
+calling initializespot for scalar rhs 
+setting the dt = dx
+defining Helmholtz solver 
+num smooths = 4using Dirichlet BCs at domain
+using Neumann BCs at EB
+Diffusion coeficient = 0.01
+tolerance = 1e-13
+maxIter   = 27
+using backward Euler for time integration
+running heat equation operator
+EBMultigrid: tol = 1e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.516e-02
+EBMultigrid: iter = 1, |resid| = 1.605e-05, rate = 9.443e+02
+EBMultigrid: iter = 2, |resid| = 1.021e-08, rate = 1.573e+03
+EBMultigrid: iter = 3, |resid| = 7.657e-12, rate = 1.333e+03
+EBMultigrid: iter = 4, |resid| = 6.179e-15, rate = 1.239e+03
+EBMultigrid: final     |resid| = 1.214e-17
+ step = 0 time = 0.000e+00 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 2.844e-02
+EBMultigrid: iter = 1, |resid| = 3.098e-05, rate = 9.181e+02
+EBMultigrid: iter = 2, |resid| = 1.997e-08, rate = 1.551e+03
+EBMultigrid: iter = 3, |resid| = 1.507e-11, rate = 1.325e+03
+EBMultigrid: iter = 4, |resid| = 1.219e-14, rate = 1.236e+03
+EBMultigrid: final     |resid| = 2.082e-17
+ step = 1 time = 1.562e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 4.016e-02
+EBMultigrid: iter = 1, |resid| = 4.492e-05, rate = 8.940e+02
+EBMultigrid: iter = 2, |resid| = 2.934e-08, rate = 1.531e+03
+EBMultigrid: iter = 3, |resid| = 2.227e-11, rate = 1.318e+03
+EBMultigrid: iter = 4, |resid| = 1.808e-14, rate = 1.232e+03
+EBMultigrid: final     |resid| = 2.776e-17
+ step = 2 time = 3.125e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 5.059e-02
+EBMultigrid: iter = 1, |resid| = 5.803e-05, rate = 8.718e+02
+EBMultigrid: iter = 2, |resid| = 3.836e-08, rate = 1.513e+03
+EBMultigrid: iter = 3, |resid| = 2.926e-11, rate = 1.311e+03
+EBMultigrid: iter = 4, |resid| = 2.381e-14, rate = 1.229e+03
+EBMultigrid: final     |resid| = 4.857e-17
+ step = 3 time = 4.688e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 5.995e-02
+EBMultigrid: iter = 1, |resid| = 7.039e-05, rate = 8.516e+02
+EBMultigrid: iter = 2, |resid| = 4.705e-08, rate = 1.496e+03
+EBMultigrid: iter = 3, |resid| = 3.608e-11, rate = 1.304e+03
+EBMultigrid: iter = 4, |resid| = 2.945e-14, rate = 1.225e+03
+EBMultigrid: final     |resid| = 4.163e-17
+ step = 4 time = 6.250e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 6.841e-02
+EBMultigrid: iter = 1, |resid| = 8.211e-05, rate = 8.331e+02
+EBMultigrid: iter = 2, |resid| = 5.545e-08, rate = 1.481e+03
+EBMultigrid: iter = 3, |resid| = 4.271e-11, rate = 1.298e+03
+EBMultigrid: iter = 4, |resid| = 3.493e-14, rate = 1.223e+03
+EBMultigrid: final     |resid| = 4.857e-17
+ step = 5 time = 7.812e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 7.613e-02
+EBMultigrid: iter = 1, |resid| = 9.326e-05, rate = 8.163e+02
+EBMultigrid: iter = 2, |resid| = 6.358e-08, rate = 1.467e+03
+EBMultigrid: iter = 3, |resid| = 4.920e-11, rate = 1.292e+03
+EBMultigrid: iter = 4, |resid| = 4.040e-14, rate = 1.218e+03
+EBMultigrid: final     |resid| = 6.939e-17
+ step = 6 time = 9.375e-02 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.321e-02
+EBMultigrid: iter = 1, |resid| = 1.039e-04, rate = 8.008e+02
+EBMultigrid: iter = 2, |resid| = 7.147e-08, rate = 1.454e+03
+EBMultigrid: iter = 3, |resid| = 5.553e-11, rate = 1.287e+03
+EBMultigrid: iter = 4, |resid| = 4.564e-14, rate = 1.217e+03
+EBMultigrid: final     |resid| = 8.327e-17
+ step = 7 time = 1.094e-01 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 8.975e-02
+EBMultigrid: iter = 1, |resid| = 1.141e-04, rate = 7.866e+02
+EBMultigrid: iter = 2, |resid| = 7.914e-08, rate = 1.442e+03
+EBMultigrid: iter = 3, |resid| = 6.172e-11, rate = 1.282e+03
+EBMultigrid: iter = 4, |resid| = 5.081e-14, rate = 1.215e+03
+EBMultigrid: final     |resid| = 8.327e-17
+ step = 8 time = 1.250e-01 time step = 1.562e-02
+EBMultigrid: tol = 1.000e-13,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 9.584e-02
+EBMultigrid: iter = 1, |resid| = 1.239e-04, rate = 7.737e+02
+EBMultigrid: iter = 2, |resid| = 8.659e-08, rate = 1.431e+03
+EBMultigrid: iter = 3, |resid| = 6.779e-11, rate = 1.277e+03
+EBMultigrid: iter = 4, |resid| = 5.594e-14, rate = 1.212e+03
+EBMultigrid: final     |resid| = 8.327e-17
+ step = 9 time = 1.406e-01 time step = 1.562e-02
+exiting runAdvection
+printing time table 
+about to call MPI Finalize

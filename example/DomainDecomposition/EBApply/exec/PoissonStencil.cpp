@@ -4,18 +4,22 @@
 
 
 #include "EBProto.H"
-#include "EBLevelBoxData.H"
-#include "LevelData.H"
-#include "BaseFab.H"
+#include "Chombo_EBLevelBoxData.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_BaseFab.H"
 
-#include "ParmParse.H"
-#include "LoadBalance.H"
-#include "ProtoInterface.H"
-#include "BRMeshRefine.H"
-#include "GeometryService.H"
-#include "EBDictionary.H"
-#include "EBChombo.H"
+#include "Chombo_ParmParse.H"
+#include "Chombo_LoadBalance.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_BRMeshRefine.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_GeometryService.H"
+#include "Chombo_EBDictionary.H"
+#include "Chombo_EBChombo.H"
+#include "Proto_SimpleImplicitFunctions.H"
 #include <iomanip>
+
+#include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2
 
@@ -23,23 +27,6 @@ using std::cout;
 using std::endl;
 using std::shared_ptr;
 
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
-using     std::cout;
-using     std::endl;
-using     std::shared_ptr;
-using   Proto::BaseIF;
-using   Proto::SimpleEllipsoidIF;
-using   Proto::CENTERING;
-using   Proto::CELL;
-using Proto::PointSet;
-using Proto::PointSetIterator;
 
 void
 dumpPPS(const PointSet* a_ivs)
@@ -123,25 +110,25 @@ runTest(int a_argc, char* a_argv[])
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
 
-  IntVect dataGhostIV =   IntVect::Unit;
-  Point   dataGhostPt = getPoint(dataGhostIV); 
+  IntVect dataGhostIV =   4*IntVect::Unit;
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
   Real dx = 1.0/nx;
-  shared_ptr<BaseIF>                       impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
-  Bx domainpr = getProtoBox(domain.domainBox());
+  shared_ptr<BaseIF>                       impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, false));
+//  Bx domainpr = getProtoBox(domain.domainBox());
   pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(impfunc, origin, dx, domain.domainBox(), grids, geomGhost));
 
   pout() << "making dictionary" << endl;
-  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dataGhostPt, dataGhostPt, dx);
+  EBDictionary<2, Real, CELL, CELL> dictionary(geoserv, grids, domain.domainBox(), dx, dataGhostPt);
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   string stenname("Second_Order_Poisson");
   string dombcname("Dirichlet");
   string  ebbcname("Dirichlet");
 
   pout() << "registering stencil" << endl;
-  dictionary.registerStencil(stenname, dombcname, ebbcname);
+  dictionary.registerStencil(stenname, dombcname, ebbcname, domain.domainBox(), domain.domainBox());
 
   shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
 
@@ -170,7 +157,7 @@ runTest(int a_argc, char* a_argv[])
 //#pragma omp parallel for
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, ibox);
+      shared_ptr<ebstencil_t> stencil = dictionary.getEBStencil(stenname, ebbcname, domain.domainBox(), domain.domainBox(), ibox);
       stencil->apply(dstData[dit[ibox]], srcData[dit[ibox]]);
     }
   }
@@ -180,6 +167,7 @@ runTest(int a_argc, char* a_argv[])
   return 0;
 }
 
+#include "Chombo_NamespaceFooter.H"
 
 int main(int a_argc, char* a_argv[])
 {
@@ -197,7 +185,7 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runTest(a_argc, a_argv);
+    Chombo4::runTest(a_argc, a_argv);
   }
 
   pout() << "printing time table " << endl;

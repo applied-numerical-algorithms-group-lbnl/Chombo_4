@@ -1,16 +1,18 @@
-
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=g++
-CXX=g++
+EFENCEFLAGS = -L/usr/lib -lefence
+PETSC_DIR   = $(HOME)/src/petsc-3.13.5
+include $(PETSC_DIR)/lib/petsc/conf/variables
+DEPXX=clang++
+CXX=clang++
 
-CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
+CXXALLFLAGS := -Wall  -std=c++11 
+CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
-HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 
+HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 -ldl
 #end mach dependent
 
 

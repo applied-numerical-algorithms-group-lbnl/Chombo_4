@@ -1,0 +1,16 @@
+
+PROTO_HOME =$(HOME)/proto
+
+export OMPI_CXX=hipcc
+
+ROCM_PATH=$(OLCF_ROCM_ROOT)
+CPPFLAGS+=-I$(ROCM_PATH)/rocthrust/include/ -I$(ROCM_PATH)/rocprim/include/ -I$(ROCM_PATH)/include/roctracer -I/sw/spock/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/roctracer-dev-4.2.0-ycw2lk5wqksnpdtzbgbgx257hgflin44/roctracer/include/
+CXXFLAGS+=--amdgpu-target=gfx908 -Wno-non-c-typedef-for-linkage -Wno-unused-command-line-argument
+LIBS+= -L/$(ROCM_PATH)/lib/ -L/sw/spock/spack-envs/base/opt/linux-sles15-x86_64/gcc-7.5.0/roctracer-dev-4.2.0-ycw2lk5wqksnpdtzbgbgx257hgflin44/roctracer/lib/
+LIBS+= -lroctx64
+
+#end mach dependent
+
+
+
+

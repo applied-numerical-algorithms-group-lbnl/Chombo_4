@@ -6,25 +6,31 @@ import platform
 
 parser = ArgumentParser()
 
-parser.add_argument('--dim', type=int, help='dimensionality to build executables [3]',default='2')
-parser.add_argument('--opt',  choices=['DEBUG', 'TRUE'],help='compiler optimization [DEBUG]',default='DEBUG')
-parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [TRUE]',default='FALSE')
-parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [FALSE]',default='TRUE')
+parser.add_argument('--dim', type=int, help='dimensionality to build executables [2]',default='2')
+parser.add_argument('--opt',  choices=['DEBUG', 'TRUE', 'HIGH'],help='compiler optimization [DEBUG]',default='DEBUG')
+parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
+parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [TRUE]',default='TRUE')
+parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
 parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
+parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--stack', help='define how many GB to allocate to the stack', choices=['1GB', '2GB', '4GB'], default='4GB')
+
 
 args = parser.parse_args()
 
-print args
+print(args)
 
 f_pref = open('Makefile.prefix','r')
 f_post = open('Makefile.postfix','r')
+
 makefile_pref = f_pref.read()
 makefile_post = f_post.read()
 f_pref.close()
 f_post.close()
 
-targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply', 'DomainDecomposition/EBHelmholtz']
+targets=['DomainDecomposition/Euler/exec','DomainDecomposition/Euler/exchangeTest',  'DomainDecomposition/EBApply/exec','DomainDecomposition/EBApply/noebsten','DomainDecomposition/EBApply/ebforall','DomainDecomposition/EBApply/exchange','DomainDecomposition/EBApply/serialization', 'DomainDecomposition/EBHelmholtz/exec','DomainDecomposition/EBHelmholtz/truncation','DomainDecomposition/EBHelmholtz/applyOnly', 'DomainDecomposition/EBHelmholtz/macProjExec','DomainDecomposition/EBHelmholtz/ccProjExec','DomainDecomposition/EBHeat/exec', 'DomainDecomposition/EBAdvection/exec','DomainDecomposition/EBSmallTest/exec', 'DomainDecomposition/EBPETSc/exec', 'DomainDecomposition/EBINS/exec', 'DomainDecomposition/EBDarcyAdvectDiffuseReact/exec', 'DomainDecomposition/EBMenagerie/exec', 'DomainDecomposition/EBHelmholtz/hoeb_truncation']
 
 top = os.getcwd()
 chombo_home = top + '/..'
@@ -33,41 +39,104 @@ f_mach_dep = open('Make.defs.local','r')
 mach_dep = f_mach_dep.read()
 f_mach_dep.close()
 os.chdir(top)
+r = open('compile.example','w')
+r.write('#/usr/bin/csh\n')
 
 for t in targets:
-    d= t+'/exec'
-    print d
+    d= t
+    print(d)
+    comstr = " cd " + d + "; make pristine; make -j10; cd " + top 
+    echostr =  "\necho \" " + comstr + "\" \n"
+    runstr =  "\n" + comstr + "\n"
+    r.write(echostr)
+    r.write(runstr)
     os.chdir(d)
     f = open('GNUmakefile','w')
     f.write('\nCHOMBO_HOME := ' + chombo_home)
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
+    hoebs = 'hoeb_'
+    if hoebs in t:
+        f.write('\nSRC += $(wildcard ../../hoeb_common/*.cpp) \n')
+        f.write('\nVPATH +=  ../../hoeb_common/\n')              
 
+    f.write('\nCPPFLAGS = -std=c++11\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCPPFLAGS += -DCH_MPI -DPR_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_HDF5')
-        f.write('\nCPPFLAGS += $(HDFINCFLAGS)')
+        f.write('\nCPPFLAGS += -DCH_USE_HDF5 \n')
+        f.write('\nCPPFLAGS += $(HDFINCFLAGS)\n')
+        f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
+        if(args.mpi == 'TRUE'):
+            f.write('\nCPPFLAGS += -DH5_HAVE_PARALLEL\n')
+
+    if(args.petsc == 'TRUE'):
+        f.write('\nCPPFLAGS += -DCH_USE_PETSC')
+        f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
+        f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
+
+    if(args.efence == 'TRUE'):
+        f.write('\nLIBS     += $(EFENCEFLAGS) \n')
+
 
     if(args.prec == 'DOUBLE'):
-        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE')
+        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
 
-    if args.opt == 'DEBUG':
-        f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) ')
+    if(args.opt) == 'DEBUG':
+        if(args.cuda == 'TRUE'):
+            f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+        else:
+            if(args.hip) == 'TRUE':
+              f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+              f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+            else:
+              f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
-        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) ')
+        if(args.opt == 'HIGH'):
+          if(args.hip == 'FALSE'):
+               f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
+        else:
+            f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
+        if(args.cuda == 'TRUE'):
+            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+        else:
+            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+        if(args.hip == 'TRUE'):
+            f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+        else:
+            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+
+    if(args.cuda == 'TRUE'):
+        f.write('\nCXX = nvcc \n DEP=nvcc\n')
+        f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
    
+    if(args.hip == 'TRUE'):
+        f.write('\nCXX = hipcc \n DEP=hipcc\n')
+        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
+    
+    if args.stack == '1GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=1073741824')
+    elif args.stack == '2GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=2147483648')
+    elif args.stack == '4GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=4294967296')
 
-    if args.cuda == 'TRUE':
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda')
-        if args.opt == 'DEBUG':
-            f.write('\nCXXFLAGS+=-G -DTHRUST_DEBUG')
 
-    f.write(makefile_post);
+    f.write(makefile_post)
+    if hoebs in t:
+        f.write('\nCPPFLAGS += -I../../hoeb_common \n')
  
     os.chdir(top)
     f.close()
+    
 
+r.close()
+os.system('chmod +x compile.example')

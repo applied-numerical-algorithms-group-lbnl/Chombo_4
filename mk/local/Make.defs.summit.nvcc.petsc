@@ -1,0 +1,19 @@
+DEPXX=g++
+CXX=nvcc
+PETSC_DIR=/gpfs/alpine/world-shared/geo127/petsc_install/arch-opt-gnu-cuda
+PETSC_ARCH=""
+include $(PETSC_DIR)/lib/petsc/conf/variables
+
+PROTO_HOME =$(SCRATCH)/_proto/proto
+
+export OMPI_CXX=nvcc
+
+MPILIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
+
+HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
+HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+#end mach dependent
+
+
+
+

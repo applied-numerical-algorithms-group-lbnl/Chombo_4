@@ -13,12 +13,12 @@
 
 #include "EulerOp.H"
 #include "Proto.H"
-#include "LevelBoxData.H"
-
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_NamespaceHeader.H"
 
 class EulerDX;
 using std::shared_ptr;
-using Proto::BoxData;
+using ::Proto::BoxData;
 
 ///
 class EulerState
@@ -29,10 +29,10 @@ public:
   EulerState(shared_ptr<LevelBoxData<NUMCOMPS> >a_U);
   void increment(const EulerDX& a_DX);
   //for max wave speeds
-  Real m_velSave;
   shared_ptr<LevelBoxData<NUMCOMPS> > m_U;
   DisjointBoxLayout m_grids;
   Copier m_exchangeCopier;
+  Reduction<Real,Op::Abs> m_Rxn;
 };
 
 ///
@@ -42,6 +42,7 @@ public:
   EulerDX(){};
   ~EulerDX(){};
   shared_ptr<LevelBoxData<NUMCOMPS> > m_DU;
+  shared_ptr<LevelBoxData<NUMCOMPS> > U_ave;
   DisjointBoxLayout m_grids;
 
   void increment(Real& a_weight,const EulerDX& a_incr);
@@ -63,4 +64,5 @@ public:
   static Real maxWave(EulerState& a_State);
 };
 
+#include "Chombo_NamespaceFooter.H"
 #endif

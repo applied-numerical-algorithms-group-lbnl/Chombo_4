@@ -1,4 +1,6 @@
 # Chombo
+## Courtesy of the Applied Numerical Algorithms Group
+## Lawrence Berkeley National Laboratory
 
 ## Introduction
 This version of Chombo is fortran-free and depends on the Proto infrasturcture  for performance portability.

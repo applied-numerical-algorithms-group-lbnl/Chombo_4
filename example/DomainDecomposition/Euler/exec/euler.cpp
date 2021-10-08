@@ -21,46 +21,51 @@
 #include <sstream>
 
 #include "Proto.H"
+#include "EulerOp.H"
 #include "EulerRK4.H"
-#include "LevelBoxData.H"
-#include "LevelData.H"
-#include "BaseFab.H"
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_LevelData.H"
+#include "Chombo_BaseFab.H"
+#include "Chombo_BFM.H"
 
-#include "ParmParse.H"
-#include "LoadBalance.H"
-#include "ProtoInterface.H"
-#include "BRMeshRefine.H"
+#include "Chombo_ParmParse.H"
+#include "Chombo_LoadBalance.H"
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_BRMeshRefine.H"
+#include "Chombo_AMRIO.H"
 #include <string>
 #include <iostream>
 #include <sstream>
 
-#include "Box.H"
+#include "Chombo_BFM.H"
+
+#include "Chombo_Box.H"
+#include "Chombo_EBChombo.H"
+
+#ifdef _OPENMP
+#include<omp.h>
+#endif
 
 #define PI 3.141592653589793
 
 
-typedef Proto::Var<Real,DIM> V;
-typedef Proto::Var<Real,NUMCOMPS> State;
-
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
-using   Proto::Stencil;
-using   Proto::RK4;
-using   ProtoCh::getPoint;
-using   ProtoCh::getProtoBox;
-using   ProtoCh::getIntVect;
-using   ProtoCh::getBox;
+typedef ::Proto::Var<Real,DIM> V;
+typedef ::Proto::Var<Real,NUMCOMPS> State;
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
+using   ::Proto::Stencil;
+using   ::Proto::RK4;
+using   ::Proto::Reduction;
+using   ::ProtoCh::getPoint;
+using   ::ProtoCh::getProtoBox;
+using   ::ProtoCh::getIntVect;
+using   ::ProtoCh::getBox;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
 
-string convertInt(int number)
-{
-  std::stringstream ss;//create a stringstream
-  ss << number;//add number to the stream
-  return ss.str();//return a string with the contents of the stream
-}
+
 
 class RunParams
 {
@@ -75,6 +80,7 @@ public:
     domsize  = 1.0;
     cfl      = 0.1;
     numstream= 8;
+	dt = 0.0;
     resetDx();
   }
 
@@ -88,6 +94,7 @@ public:
   Real gamma;
   Real dx;
   Real cfl;
+  Real dt;
   void resetDx()
   {
     dx = domsize/nx;
@@ -114,6 +121,7 @@ public:
     pout() << "CFL number          =  "   << cfl       << endl;
     pout() << "gamma               =  "   << gamma     << endl;
     pout() << "num streams         =  "   << numstream << endl;
+    pout() << "Selected dt         =  "   << dt        << endl;
   }
 };                  
 ////////////
@@ -129,6 +137,7 @@ parseInputs(RunParams& a_params)
   pp.get("domain_size"        , a_params.domsize);
   pp.get("cfl"                , a_params.cfl);
   pp.get("num_streams"        , a_params.numstream);
+  pp.get("forced_dt"          , a_params.dt);
   a_params.resetDx();
   a_params.print();
 }
@@ -175,37 +184,94 @@ PROTO_KERNEL_END(iotaFuncF,iotaFunc)
 
 /***/
 void 
-writeData(int step, LevelBoxData<NUMCOMPS> & a_U)
+writeData(int step, const Chombo4::LevelBoxData<NUMCOMPS> & a_U, Real a_time, Real a_dt, Real a_dx, Real a_nx)
 {
-#ifdef CH_USE_HDF5
-  string filename = string("state.step") + convertInt(step) + "." + convertInt(DIM) + string("d.hdf5");
-  a_U.writeToFileHDF5(filename);
+	#ifdef CH_USE_HDF5
+  string filename = std::string("state.step") + std::to_string(step) + "." + std::to_string(DIM) + std::string("d.hdf5");
+
+  //a_U.writeToFileHDF5(filename);
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::DataIterator;
+  Vector<DisjointBoxLayout> vectGrids(1,a_U.getBoxes());
+  const Chombo4::Box domain = vectGrids[0].getDomain();
+  Vector<LevelData<FArrayBox>* > vectData(1,NULL);
+  IntVect ghostVect = NGHOST*IntVect::Unit;
+  LevelData<FArrayBox>* level_data = new LevelData<FArrayBox>(vectGrids[0], NUMCOMPS, ghostVect);
+  //write to host here
+  LevelBoxData<NUMCOMPS>::copyToHost(*level_data, a_U);
+
+  // single level
+  Vector<int> refRatio(1,2); 
+  int numLevels = 1;
+
+  DataIterator dit = vectGrids[0].dataIterator();
+  Real maxRho = 0;
+  for(dit.begin(); dit.ok(); ++dit)
+    {
+      Chombo4::Box b = vectGrids[0][dit];
+      BFM1<CH_SPACEDIM>(
+		level_data->operator[](dit).dataPtr(),
+		b, 
+		0, 
+		1, 
+		b, 
+		[&maxRho](Real* v){ maxRho = std::max(*v, maxRho);}
+	);
+    }
+  std::cout<<"max Rho "<<maxRho<<"\n";
+  
+  Vector<string> vectNames(NUMCOMPS);
+  vectNames[0] = "rho";
+  vectNames[1] = "momentum_x";
+  vectNames[2] = "momentum_y";
+  vectNames[3] = "energy";
+#if CH_SPACEDIM==3
+  vectNames[3] = "momentum_z";
+  vectNames[4] = "energy";
+#endif
+  
+
+  vectData[0] = level_data;
+  
+
+  WriteAMRHierarchyHDF5(filename,
+                      vectGrids,
+                      vectData,
+                      vectNames,
+                      domain,
+                      a_dx,
+                      a_dt,
+                      a_time,
+                      refRatio,
+                      numLevels);
+
+   delete level_data;
 #endif
 }
 /***/
+
 void eulerRun(const RunParams& a_params)
 {
+
+
   CH_TIME("eulerRun");
   Real tstop = a_params.tmax;
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
 
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(a_params.nstream);
-#endif
-
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
 
-  ProblemDomain domain(domLo, domHi, is_periodic);
+  Chombo4::ProblemDomain domain(domLo, domHi, is_periodic);
 
-  Vector<Box> boxes;
+  Vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
   domainSplit(domain, boxes, a_params.maxgrid, blockfactor);
   Vector<int> procs;
   LoadBalance(procs, boxes);
-  DisjointBoxLayout grids(boxes, procs, domain);
+  Chombo4::DisjointBoxLayout grids(boxes, procs, domain);
 //  LevelData<FArrayBox> fabdata(grids, NUMCOMPS, 4*IntVect::Unit);
 //  fabdata.exchange();
 
@@ -213,24 +279,26 @@ void eulerRun(const RunParams& a_params)
   //not the most elegant solution but it works for single level
   EulerOp::s_dx    = a_params.dx;
   EulerOp::s_gamma = a_params.gamma;
-
+  using Chombo4::LevelBoxData;
   shared_ptr<LevelBoxData<NUMCOMPS> > Uptr(new LevelBoxData<NUMCOMPS>(grids, nGhost*IntVect::Unit));
   LevelBoxData<NUMCOMPS> &  U = *Uptr;
+
 
   EulerState state(Uptr);
   RK4<EulerState,EulerRK4Op,EulerDX> rk4;
   
+  pout() << "before initializestate"<< endl;
+  using Chombo4::DataIterator;
+  DataIterator dit = grids.dataIterator();
+
+  // This constructor can't be called in the next loop
   Stencil<Real> Lap2nd = Stencil<Real>::Laplacian();
 
-  pout() << "before initializestate"<< endl;
-
-  DataIterator dit = grids.dataIterator();
-#pragma omp parallel for
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-
-    Box grid = grids[dit[ibox]];
-    Bx valid = getProtoBox(grid);
+ 
+    //Box grid = grids[dit[ibox]];
+    // Bx valid = getProtoBox(grid);
     Bx grnbx = U[dit[ibox]].box();
     BoxData<Real, DIM> x(grnbx);
     forallInPlace_p(iotaFunc, grnbx, x, EulerOp::s_dx);
@@ -244,39 +312,43 @@ void eulerRun(const RunParams& a_params)
   }
 
 
-  Real maxwave = EulerOp::maxWave(*state.m_U);
-  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
+  Reduction<Real> rxn = state.m_Rxn;
+  Real maxwave = EulerOp::maxWave(*state.m_U, rxn);
+//  Real dt = .25*a_params.cfl*a_params.dx/maxwave;
+  Real dt = a_params.dt;
   pout() << "initial maximum wave speed = " << maxwave << ", dt = "<< dt << endl;
 
   pout() << "after initializestate"<< endl;
   U.exchange(state.m_exchangeCopier);
 
+  // init Time
   Real time = 0.;
 
   pout() << "starting time loop"<< endl;
   if(a_params.outinterv > 0)
   {
-    writeData(0, U);
+    writeData(0, U,time,dt,a_params.dx, a_params.nx);
   }
-  for (int k = 0;(k < maxStep) && (time < tstop);k++)
+  for (int k = 1;(k <= maxStep) && (time < tstop);k++)
   {
+    rxn.reset();
     {
       CH_TIME("rk4_advance");
       rk4.advance(time,dt,state);
     }
     //this was computed during the advance.
     //so the standard trick is to reuse it.
-    maxwave = state.m_velSave;
+    maxwave = gatherMaxWave(rxn.fetch());
 
     time += dt;
-
-    Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
-    dt = std::min(1.1*dtold, dtnew);
+    
+  //  Real dtnew = a_params.cfl*a_params.dx/maxwave; Real dtold = dt;
+  //  dt = std::min(1.1*dtold, dtnew);
 
     pout() <<"nstep = " << k << " time = " << time << ", dt = " << dt << endl;
     if((a_params.outinterv > 0) && (k%a_params.outinterv == 0))
     {
-      writeData(k+1, U);
+      writeData(k, U,time,dt,a_params.dx, a_params.nx);
     }
   }
 

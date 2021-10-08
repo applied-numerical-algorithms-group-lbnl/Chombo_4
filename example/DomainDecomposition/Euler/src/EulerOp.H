@@ -14,20 +14,25 @@
 #pragma once
 
 #include "Proto.H"
-#include "LevelBoxData.H"
-#include "BaseFab.H"
-#include "Copier.H"
-
+#include "Chombo_LevelBoxData.H"
+#include "Chombo_BaseFab.H"
+#include "Chombo_Copier.H"
+#include "Chombo_NamespaceHeader.H"
 constexpr unsigned int NUMCOMPS=DIM+2;
 
 #define NGHOST 4
-typedef Proto::Box Bx;
-using   Proto::Point;
-using   Proto::BoxData;
+typedef ::Proto::Box Bx;
+using   ::Proto::Point;
+using   ::Proto::BoxData;
 using     std::cout;
 using     std::endl;
 using     std::shared_ptr;
-using   Proto::Stencil;
+using   ::Proto::Stencil;
+using   Op = ::Proto::Operation;
+using   ::Proto::Reduction;
+
+//global reduction of each processor's max wave
+Real gatherMaxWave(Real maxwaveproc);
 
 class EulerOp
 {
@@ -38,20 +43,23 @@ public:
   static Real s_gamma;
 
   /// Compute the Right-Hand side, conforming to the RK4 interface.
-  static Real step(LevelBoxData<NUMCOMPS>& a_Rhs,
-                   LevelBoxData<NUMCOMPS>& a_U);
+  static void step(LevelBoxData<NUMCOMPS>& a_Rhs,
+                   LevelBoxData<NUMCOMPS>& a_U,
+                   Reduction<Real,Op::Abs>& a_Rxn);
 
   //for initial time step
-  static Real maxWave(LevelBoxData<NUMCOMPS>& a_U);
+  static Real maxWave(LevelBoxData<NUMCOMPS>& a_U, 
+                      Reduction<Real,Op::Abs>& a_Rxn); 
 
   EulerOp(){};
   ~EulerOp(){};
 
 private:
   // all the messy internals.
-  static Real proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
-                           const BoxData<Real,NUMCOMPS>& a_U,
-                           const Bx& a_dbx0);
+  static void proto_step(BoxData<Real,NUMCOMPS>& a_Rhs,
+                         const BoxData<Real,NUMCOMPS>& a_U,
+                         const Bx& a_dbx0,
+                         Reduction<Real,Op::Abs>& a_Rxn);
 
   /// called internally from step
   static void define(const DisjointBoxLayout& a_grids,
@@ -68,5 +76,5 @@ private:
   static Copier          s_exchangeCopier;
 
 };
-
+#include "Chombo_NamespaceFooter.H"
 #endif
