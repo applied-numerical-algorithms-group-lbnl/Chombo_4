@@ -11,10 +11,10 @@
 #ifndef _Chombo_BOXLAYOUT_H_
 #define _Chombo_BOXLAYOUT_H_
 
+#include "Chombo_DataIndex.H"
 #include "Chombo_Box.H"
 #include "Chombo_Vector.H"
 #include "Chombo_RefCountedPtr.H"
-#include "Chombo_DataIndex.H"
 #include "Chombo_SPMD.H"
 #include "Chombo_LoHiSide.H"
 #include "Chombo_ProblemDomain.H"
