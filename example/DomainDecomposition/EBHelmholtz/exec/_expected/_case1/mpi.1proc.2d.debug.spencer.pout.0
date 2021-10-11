@@ -1,0 +1,64 @@
+MPI INIT called
+nx        = 64
+maxGrid   = 32
+x0        = 0.5
+y0        = 0.5
+z0        = 0.5
+A         = 1
+B         = 1
+C         = 1
+R         = 0.1
+alpha     = 1
+beta      = -0.01
+tolerance = 1e-10
+numSmooth = 4
+maxIter   = 27
+nstream = 8
+making grids
+bl: number of boxes on proc 0 = 4
+defining geometry
+defining finest GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+making dictionary
+using Dirichlet BCs at domain
+using Dirichlet BCs at EB
+making data
+setting values
+number of solves = 1
+going into solve number 0
+EBMultigrid: tol = 1e-10,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 1.648e+02
+EBMultigrid: iter = 1, |resid| = 9.339e+00, rate = 1.765e+01
+EBMultigrid: iter = 2, |resid| = 4.276e+00, rate = 2.184e+00
+EBMultigrid: iter = 3, |resid| = 1.936e+00, rate = 2.209e+00
+EBMultigrid: iter = 4, |resid| = 8.756e-01, rate = 2.211e+00
+EBMultigrid: iter = 5, |resid| = 3.960e-01, rate = 2.211e+00
+EBMultigrid: iter = 6, |resid| = 1.791e-01, rate = 2.211e+00
+EBMultigrid: iter = 7, |resid| = 8.103e-02, rate = 2.211e+00
+EBMultigrid: iter = 8, |resid| = 3.665e-02, rate = 2.211e+00
+EBMultigrid: iter = 9, |resid| = 1.658e-02, rate = 2.211e+00
+EBMultigrid: iter = 10, |resid| = 7.498e-03, rate = 2.211e+00
+EBMultigrid: iter = 11, |resid| = 3.391e-03, rate = 2.211e+00
+EBMultigrid: iter = 12, |resid| = 1.534e-03, rate = 2.211e+00
+EBMultigrid: iter = 13, |resid| = 6.938e-04, rate = 2.211e+00
+EBMultigrid: iter = 14, |resid| = 3.138e-04, rate = 2.211e+00
+EBMultigrid: iter = 15, |resid| = 1.420e-04, rate = 2.211e+00
+EBMultigrid: iter = 16, |resid| = 6.421e-05, rate = 2.211e+00
+EBMultigrid: iter = 17, |resid| = 2.904e-05, rate = 2.211e+00
+EBMultigrid: iter = 18, |resid| = 1.314e-05, rate = 2.211e+00
+EBMultigrid: iter = 19, |resid| = 5.942e-06, rate = 2.211e+00
+EBMultigrid: iter = 20, |resid| = 2.688e-06, rate = 2.211e+00
+EBMultigrid: iter = 21, |resid| = 1.216e-06, rate = 2.211e+00
+EBMultigrid: iter = 22, |resid| = 5.498e-07, rate = 2.211e+00
+EBMultigrid: iter = 23, |resid| = 2.487e-07, rate = 2.211e+00
+EBMultigrid: iter = 24, |resid| = 1.125e-07, rate = 2.211e+00
+EBMultigrid: iter = 25, |resid| = 5.088e-08, rate = 2.211e+00
+EBMultigrid: iter = 26, |resid| = 2.301e-08, rate = 2.211e+00
+EBMultigrid: final     |resid| = 1.041e-08
+done with solves 
+exiting 
+printing time table 
+about to call MPI Finalize

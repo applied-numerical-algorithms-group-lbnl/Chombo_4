@@ -15,6 +15,8 @@ parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOU
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
 parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
 parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--stack', help='define how many GB to allocate to the stack', choices=['1GB', '2GB', '4GB'], default='4GB')
+
 
 args = parser.parse_args()
 
@@ -120,6 +122,13 @@ for t in targets:
         f.write('\nCXX = hipcc \n DEP=hipcc\n')
         f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     
+    if args.stack == '1GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=1073741824')
+    elif args.stack == '2GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=2147483648')
+    elif args.stack == '4GB':
+        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=4294967296')
+
 
     f.write(makefile_post)
     if hoebs in t:

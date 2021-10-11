@@ -154,8 +154,15 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   EBBoxData<CELL, Real, DIM> slopeLoTan(a_grown, a_graph, useStack); 
   EBBoxData<CELL, Real, DIM> slopeHiTan(a_grown, a_graph, useStack);
 
+  
   //vel + 0.5*dt*source for Minion (Michael, not the yellow guys) stability fix
   EBBoxData<CELL, Real, 1> minion(a_grown, a_graph, useStack);
+
+  slopeLoNor.setVal(0.); 
+  slopeHiNor.setVal(0.);
+  slopeLoTan.setVal(0.); 
+  slopeHiTan.setVal(0.);
+  minion.setVal(0.);
   {
     unsigned int nflop = 3;
     ebforallInPlace(nflop, "Minioned", Minioned, a_grown,  

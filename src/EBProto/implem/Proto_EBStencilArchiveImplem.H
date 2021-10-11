@@ -481,22 +481,22 @@ namespace Proto
                          const EBGraph                             & a_dstGraph,                      
                          unsigned long                               a_icolor)               
   {
+    //done sparsely, g
     a_regApplyBox = a_srcValid;
     a_regStencil  = Stencil<double>();
     Point colorpt = getColor(a_icolor);
-    a_regStencil  =  (0.0)*Shift(Point::Zeros());
+    a_regStencil  =  (1.0)*Shift(Point::Zeros());
     a_regStencil.destRatio() = Point::Ones(2);
-//    a_regStencil.destShift() = colorpt;
-//    //since the regular sencil has no span
-//    // BUT it has  a shift and so on so I will make it grown.
-    PointSet irregset(a_dstValid);
-    for(PointSetIterator ivsit(irregset); ivsit.ok(); ++ivsit)
+    a_regStencil.destShift() = colorpt;
+    vector<EBIndex<CELL> > coarsePts = a_srcGraph.getIrregVoFs(a_srcValid);
+    a_dstVoFs.resize(0);
+    //need to treat all vofs that are refinements of an irregular cell as irregular
+    for(unsigned int icoarse = 0; icoarse < coarsePts.size(); icoarse++)
     {
-      vector<EBIndex<CELL> > vofs = a_dstGraph.getVoFs(ivsit());
-      a_dstVoFs.insert(a_dstVoFs.end(), vofs.begin(), vofs.end());
+      auto& vofcoar = coarsePts[icoarse];
+      vector<EBIndex<CELL> > fineVoFs = a_srcGraph.refine(vofcoar);
+      a_dstVoFs.insert(a_dstVoFs.end(), fineVoFs.begin(), fineVoFs.end());
     }
-//    a_dstVoFs = a_dstGraph.getIrregVoFs(a_dstValid);
-
     
     a_stencil.resize(a_dstVoFs.size());
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
@@ -517,7 +517,6 @@ namespace Proto
       
       a_stencil[ivof].add(coarVoF, weight);
     }
-
     return false;//no domain boundary conditions needed here
   }
 
