@@ -12,7 +12,7 @@
 #define _Chombo_DATAINDEX_H_
 
 #include "Proto.H"
-#include "Proto_parstream.H"
+#include "Chombo_parstream.H"
 #include <cstdlib>
 #include <iostream>
 #include "Chombo_MayDay.H"
@@ -28,7 +28,7 @@ class LayoutIterator;
 #endif /* WRAPPER */
 
 using std::endl;
-using Proto::pout;
+
 
 ///An index for LayoutIterator
 class LayoutIndex

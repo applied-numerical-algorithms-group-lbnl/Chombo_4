@@ -19,7 +19,6 @@ using std::setprecision;
 using std::setiosflags;
 using std::endl;
 using std::ios;
-
 /// Use this in place of std::cout for program output.
 /**
  * Replaces std::cout in most of the Chombo code.  In serial this just
@@ -55,4 +54,7 @@ void setPoutBaseName(const std::string & a_Name);
 const std::string & poutFileName();
 
 #include "Chombo_BaseNamespaceFooter.H"
+using Chombo4::pout;
+using Chombo4::setPoutBaseName;
+using Chombo4::poutFileName;
 #endif // _PARSTREAM_H_
