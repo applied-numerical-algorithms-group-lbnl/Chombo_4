@@ -51,8 +51,8 @@ SmoothUnion::
 ////
 Real           
 SmoothUnion::
-smoothMin(const  IndexTM<int,   DIM> & a_deriv,
-          const  IndexTM<double, DIM>& a_point,
+smoothMin(const  Proto::IndexTM<int,   DIM> & a_deriv,
+          const  Proto::IndexTM<double, DIM>& a_point,
           const  int     & a_closestIF,
           const  int     & a_nextClosestIF) const
           
@@ -70,8 +70,8 @@ smoothMin(const  IndexTM<int,   DIM> & a_deriv,
   Real wval;
   int icase;
   
-  Real fval = ffunc->value(IndexTM<int, DIM>::Zero, a_point);
-  Real gval = gfunc->value(IndexTM<int, DIM>::Zero, a_point);
+  Real fval = ffunc->value(Proto::IndexTM<int, DIM>::Zero, a_point);
+  Real gval = gfunc->value(Proto::IndexTM<int, DIM>::Zero, a_point);
   Real fder = ffunc->value(a_deriv, a_point);
   Real gder = gfunc->value(a_deriv, a_point);
   smoothie.getWCase(icase, wval, a_point);
@@ -102,7 +102,7 @@ SmoothUnion::
 findClosest(int            & a_closestIF, 
             int            & a_nextClosestIF,
             int            & a_numWithinDelta,
-            const IndexTM<double, DIM> & a_point) const
+            const Proto::IndexTM<double, DIM> & a_point) const
 {
   CH_assert(m_numFuncs > 0);
 
@@ -117,7 +117,7 @@ findClosest(int            & a_closestIF,
   for (int ifunc = 0; ifunc < m_numFuncs; ifunc++)
   {
     Real cur;
-    cur = m_impFuncs[ifunc]->value(IndexTM<int,DIM>::Zero, a_point);
+    cur = m_impFuncs[ifunc]->value(Proto::IndexTM<int,DIM>::Zero, a_point);
     if (cur < valueClosest)
     {
       valueClosest = cur;
@@ -133,7 +133,7 @@ findClosest(int            & a_closestIF,
     if(ifunc != a_closestIF)
     {
       Real cur;
-      cur = m_impFuncs[ifunc]->value(IndexTM<int, DIM>::Zero, a_point);
+      cur = m_impFuncs[ifunc]->value(Proto::IndexTM<int, DIM>::Zero, a_point);
       if(cur < valueNextClosest)
       {
         valueNextClosest = cur;
@@ -153,8 +153,8 @@ findClosest(int            & a_closestIF,
 ////
 Real 
 SmoothUnion::
-value(const IndexTM<int,    DIM> & a_deriv,
-      const IndexTM<double, DIM> & a_point) const
+value(const Proto::IndexTM<int,    DIM> & a_deriv,
+      const Proto::IndexTM<double, DIM> & a_point) const
 {
 
   Real retval;
@@ -183,13 +183,13 @@ value(const IndexTM<int,    DIM> & a_deriv,
 }
 
 ////
-BaseIF* 
+Proto::BaseIF* 
 SmoothUnion::
 newImplicitFunction() const
 {
   SmoothUnion* intersectionPtr = new SmoothUnion(m_impFuncs, m_delta);
 
-  return static_cast<BaseIF*>(intersectionPtr);
+  return static_cast<Proto::BaseIF*>(intersectionPtr);
 }
 
 #include "Chombo_NamespaceFooter.H"

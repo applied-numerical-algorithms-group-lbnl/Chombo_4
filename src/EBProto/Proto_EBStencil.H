@@ -17,7 +17,9 @@
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
 #include <implem/Proto_StencilImplem.H>
+#ifdef PROTO_CUDA
 #include <implem/Proto_FusedStencil.H>
+#endif
 
 using std::shared_ptr;
 using std::vector;

@@ -8,8 +8,8 @@
  */
 #endif
 
-#ifndef _PARSTREAM_H_
-#define _PARSTREAM_H_
+#ifndef _Chombo_PARSTREAM_H_
+#define _Chombo_PARSTREAM_H_
 
 #include <iostream>
 #include <iomanip>
@@ -19,6 +19,7 @@ using std::setprecision;
 using std::setiosflags;
 using std::endl;
 using std::ios;
+
 /// Use this in place of std::cout for program output.
 /**
  * Replaces std::cout in most of the Chombo code.  In serial this just

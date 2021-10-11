@@ -195,7 +195,7 @@ public:
   { 
     const EBFaData & ebfmo = (*m_ebfadata)[a_dit];
     const EBGraph  & graph = (*m_graphs)[a_dit];
-    BoxData<        Real, 1, HOST>& reghost = a_ebfacedata.getRegData();
+    BoxData<        Real, 1, Proto::HOST>& reghost = a_ebfacedata.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
     { 
