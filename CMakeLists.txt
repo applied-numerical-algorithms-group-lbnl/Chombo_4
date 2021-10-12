@@ -63,7 +63,6 @@ endif()
 if(NOT DEFINED ${PETSC_DIR})
     set(PETSC_DIR $ENV{PETSC_DIR} CACHE PATH "PETSc root")
     set(PETSC_ARCH $ENV{PETSC_ARCH} CACHE PATH "PETSc arch")
-    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake)
 endif()
 
 # setup packages
