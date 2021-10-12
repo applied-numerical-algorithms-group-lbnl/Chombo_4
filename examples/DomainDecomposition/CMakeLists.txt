@@ -1,4 +1,4 @@
-blt_import_library(NAME CBlas INCLUDES ${CBLAS_DIR}/include
+blt_import_library(NAME PETSc INCLUDES ${PETSC_DIR}/include
     TREAT_INCLUDES_AS_SYSTEM ON)
 add_subdirectory(common)
 add_subdirectory(hoeb_common)

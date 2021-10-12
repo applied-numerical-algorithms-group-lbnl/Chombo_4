@@ -1,5 +1,5 @@
-blt_import_library(NAME Lapack INCLUDES ${LAPACK_DIR}/LAPACKE/include
-    TREAT_INCLUDES_AS_SYSTEM ON)
+#blt_import_library(NAME Lapack INCLUDES ${LAPACK_DIR}/LAPACKE/include
+#    TREAT_INCLUDES_AS_SYSTEM ON)
 add_subdirectory(BaseTools)
 add_subdirectory(EBProto)
 add_subdirectory(BoxTools)

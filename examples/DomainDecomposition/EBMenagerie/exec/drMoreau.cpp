@@ -22,6 +22,8 @@
 #include "Chombo_SmoothUnion.H"
 #include <iomanip>
 
+using Proto::BASISREALV, Proto::SimpleSphereIF, 
+      Proto::PlaneIF, Proto::SimpleCylinderIF;
 #include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2

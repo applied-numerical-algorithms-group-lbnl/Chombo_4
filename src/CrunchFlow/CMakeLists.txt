@@ -43,5 +43,5 @@ blt_add_library(NAME CrunchFlow
     reaction.cpp
     satcalc.cpp
     totconc.cpp
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON Lapack chombo_compiler_flags)
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/LAPACKE/include
+    DEPENDS_ON LAPACK::LAPACK chombo_compiler_flags)

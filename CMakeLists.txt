@@ -48,13 +48,22 @@ endif()
 
 project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
+add_compile_definitions(CH_USE_PETSC)
 
 if(NOT DEFINED ${LAPACK_DIR})
-    set(LAPACK_DIR $ENV{LAPACK_DIR})
+    set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")
+    find_package(LAPACK REQUIRED)
 endif()
 
-if(NOT DEFINED ${CBLAS_DIR})
-    set(CBLAS_DIR $ENV{CBLAS_DIR})
+if(NOT DEFINED ${BLAS_DIR})
+    set(BLAS_DIR $ENV{BLAS_DIR} CACHE PATH "BLAS root")
+    find_package(BLAS REQUIRED)
+endif()
+
+if(NOT DEFINED ${PETSC_DIR})
+    set(PETSC_DIR $ENV{PETSC_DIR} CACHE PATH "PETSc root")
+    set(PETSC_ARCH $ENV{PETSC_ARCH} CACHE PATH "PETSc arch")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake)
 endif()
 
 # setup packages
