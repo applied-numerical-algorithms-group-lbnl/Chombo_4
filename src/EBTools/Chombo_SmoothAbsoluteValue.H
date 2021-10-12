@@ -5,7 +5,7 @@
 #include "Chombo_RealVect.H"
 #include "Chombo_IntVect.H"
 #include "Proto_BaseIF.H"
-
+#include "implem/Proto_IndexTM.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///
@@ -24,8 +24,8 @@ public:
 
   
   ///
-  SmoothAbsoluteValue(const BaseIF*   a_f,
-                      const BaseIF*   a_g,
+  SmoothAbsoluteValue(const Proto::BaseIF*   a_f,
+                      const Proto::BaseIF*   a_g,
                       const Real  &   a_delta)
   {
     m_f  = a_f;
@@ -39,8 +39,8 @@ public:
   {; }
 
   ///
-  virtual Real smoothAbsFMinusG(const  IndexTM<int,   DIM>& a_deriv,
-                                const IndexTM<double, DIM>& a_point) const;
+  virtual Real smoothAbsFMinusG(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                                const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///
   /**
@@ -49,7 +49,7 @@ public:
   */
   void getWCase(int            & a_case,
                 Real           & a_wval,
-                const IndexTM<double, DIM> & a_point)const;
+                const Proto::IndexTM<double, DIM> & a_point)const;
 
   // gives x^p (thought to be cheaper than calling the system function because of the int)
   static Real POW(Real a_x, int a_p)
@@ -76,23 +76,23 @@ protected:
    */
 
 
-  virtual Real valueAem(const IndexTM<double, DIM>& a_point) const;
+  virtual Real valueAem(const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-                             const IndexTM<double, DIM>& a_point) const;
+  virtual Real firstDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                             const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-                              const IndexTM<double, DIM>& a_point) const;
+  virtual Real secondDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                              const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-                             const IndexTM<double, DIM>& a_point) const;
+  virtual Real thirdDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                             const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///
-  virtual Real fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-                              const IndexTM<double, DIM>& a_point) const;
+  virtual Real fourthDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                              const Proto::IndexTM<double, DIM>& a_point) const;
 
   ///just checks nan
   bool isBogus(const Real& a_number) const;
@@ -100,8 +100,8 @@ protected:
 
                               
   //the two implicit functions are owned by others
-  const BaseIF*   m_f;
-  const BaseIF*   m_g;
+  const Proto::BaseIF*   m_f;
+  const Proto::BaseIF*   m_g;
   //delta = the smoothing length scale
   Real m_d;
 

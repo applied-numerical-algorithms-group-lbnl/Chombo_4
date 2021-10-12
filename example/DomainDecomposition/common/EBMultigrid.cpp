@@ -165,6 +165,8 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
 {
   CH_TIME("EBPoissonOp::define");
   m_depth = 0;
+  m_geoserv = a_geoserv;
+  
   m_directToBottom = a_directToBottom;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
@@ -244,7 +246,7 @@ define(const EBMultigridLevel            & a_finerLevel,
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
   m_directToBottom = false;
-
+  m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
   coarsen(m_grids, a_finerLevel.m_grids,  2);      
