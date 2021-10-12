@@ -17,4 +17,5 @@ blt_add_library(NAME common HEADERS
     EBMACProjector.cpp
     EBMultigrid.cpp
     EBParabolicIntegrators.cpp
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS_ON EBTools BaseTools)

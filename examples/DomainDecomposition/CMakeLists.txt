@@ -1,8 +1,10 @@
+blt_import_library(NAME CBlas INCLUDES ${CBLAS_DIR}/include
+    TREAT_INCLUDES_AS_SYSTEM ON)
 add_subdirectory(common)
 add_subdirectory(hoeb_common)
 add_subdirectory(EBAdvection)
 add_subdirectory(EBApply)
-add_subdirectory(EBCrunch)
+#add_subdirectory(EBCrunch)
 add_subdirectory(EBDarcyAdvectDiffuseReact)
 add_subdirectory(EBHeat)
 add_subdirectory(EBHelmholtz)

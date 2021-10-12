@@ -180,7 +180,7 @@ namespace hoeb
     {
       center[idir] = centvec[idir];
     }
-    SimpleSphereIF* sphereptr = new SimpleSphereIF(center, radius, inside);
+    Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
     shared_ptr<BaseIF> retval(static_cast<BaseIF*>(sphereptr));
     return retval;
   }

@@ -139,7 +139,7 @@ namespace hoeb
   }
   ///
   template <unsigned int D>
-  IndexTM<int, D-1>
+  inline IndexTM<int, D-1>
   getFaceIndexFromVol(const  IndexTM<int, D>& a_volind, int a_facedir)
   {
     IndexTM<int, D-1> retval;
@@ -156,7 +156,7 @@ namespace hoeb
   }
   ///
   template <unsigned int D>
-  IndexedMoments<D, HOEB_MAX_ORDER>
+  inline IndexedMoments<D, HOEB_MAX_ORDER>
   getVolMomFromFacMom(const IndexedMoments<D-1, HOEB_MAX_ORDER>& a_facmom,
                       int a_facedir)
   {

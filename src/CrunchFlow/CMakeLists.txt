@@ -31,17 +31,17 @@ blt_add_library(NAME CrunchFlow
     MayDay.cpp
     SpeciesLocal.cpp
     assemble_local.cpp
-    #fit.cpp
-    #fitgamma.cpp
+    fit.cpp
+    fitgamma.cpp
     fx_local.cpp
     gamma.cpp
     jac_local.cpp
     jacmin.cpp
     keqcalc2.cpp
-    #os3d_newton.cpp
+    os3d_newton.cpp
     parstream.cpp
     reaction.cpp
     satcalc.cpp
     totconc.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON chombo_compiler_flags)
+    DEPENDS_ON Lapack chombo_compiler_flags)

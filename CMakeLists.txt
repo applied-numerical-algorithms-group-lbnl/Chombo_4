@@ -49,6 +49,14 @@ endif()
 project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
 
+if(NOT DEFINED ${LAPACK_DIR})
+    set(LAPACK_DIR $ENV{LAPACK_DIR})
+endif()
+
+if(NOT DEFINED ${CBLAS_DIR})
+    set(CBLAS_DIR $ENV{CBLAS_DIR})
+endif()
+
 # setup packages
 if(ENABLE_CUDA OR ENABLE_HIP)
     if(ENABLE_CUDA AND ENABLE_HIP)
@@ -141,7 +149,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older 
 set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
 add_compile_definitions(CXXSTD=${CMAKE_CXX_STANDARD})
 
-blt_import_library(NAME proto DEPENDS_ON chombo_compiler_flags
+blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags
     INCLUDES ${PROTO_HOME}/include)
 
 add_subdirectory(src)
