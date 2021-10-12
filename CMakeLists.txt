@@ -9,10 +9,6 @@ if(hasParent)
     set(CHOMBO_LOADED "${Chombo_VERSION_MAJOR}.${Chombo_VERSION_MINOR}" PARENT_SCOPE)
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older standard if C++11 unavailable
-set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
-
 # setup basics
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose build type, \
@@ -28,7 +24,7 @@ option(ENABLE_OPENMP "Build using OpenMP" OFF)
 option(ENABLE_CUDA "Build using CUDA" OFF)
 option(ENABLE_HIP "Build using HIP" OFF)
 option(ENABLE_HDF5 "Build using HDF5" OFF)
-option(ENABLE_TESTS "Build tests" ON)
+option(ENABLE_TESTS "Build tests" OFF)
 option(ENABLE_EXAMPLES "Build examples" ON)
 
 set(DIM 2 CACHE STRING "Dimensionality of examples")
@@ -36,10 +32,11 @@ set(PREC DOUBLE CACHE STRING "Precision of examples")
 if(PREC STREQUAL DOUBLE)
     add_compile_definitions(PR_USE_DOUBLE)
 endif()
-message(STATUS "Dimensionality: ${DIM}\n   Precision: ${PREC}")
+set(STACK 4294967296 CACHE STRING "Proto stack size")
+message(STATUS "Dimensionality: ${DIM}\tPrecision: ${PREC}\tStack: ${STACK}")
 
 add_library(chombo_compiler_flags INTERFACE)
-add_compile_definitions(DIM=${DIM} CH_SPACEDIM=${DIM})
+add_compile_definitions(DIM=${DIM} CH_SPACEDIM=${DIM} PR_STACK_ALLOC=${STACK})
 if(NOT DEFINED PROTO_HOME)
     set(PROTO_HOME $ENV{HOME}/proto CACHE STRING "Proto home directory")
 endif()
@@ -50,6 +47,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
+add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
 
 # setup packages
 if(ENABLE_CUDA OR ENABLE_HIP)
@@ -135,13 +133,16 @@ if (NOT BLT_LOADED)
       endif ()
   endif ()
 
-# Default to C++11 if not set so GTest/GMock can build
-  if (NOT BLT_CXX_STD)
-      set(BLT_CXX_STD "c++11" CACHE STRING "")
-  endif()
-
   include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 endif()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older standard if C++11 unavailable
+set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
+add_compile_definitions(CXXSTD=${CMAKE_CXX_STANDARD})
+
+blt_import_library(NAME proto DEPENDS_ON chombo_compiler_flags
+    INCLUDES ${PROTO_HOME}/include)
 
 add_subdirectory(src)
 
