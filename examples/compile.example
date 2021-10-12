@@ -1,0 +1,81 @@
+#/usr/bin/csh
+
+echo "  cd DomainDecomposition/Euler/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/Euler/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/Euler/exchangeTest; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/Euler/exchangeTest; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBApply/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBApply/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBApply/noebsten; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBApply/noebsten; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBApply/ebforall; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBApply/ebforall; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBApply/exchange; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBApply/exchange; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBApply/serialization; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBApply/serialization; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/truncation; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/truncation; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/applyOnly; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/applyOnly; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/macProjExec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/macProjExec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/ccProjExec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/ccProjExec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHeat/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHeat/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBAdvection/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBAdvection/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBSmallTest/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBSmallTest/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBPETSc/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBPETSc/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBINS/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBINS/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBDarcyAdvectDiffuseReact/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBDarcyAdvectDiffuseReact/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBMenagerie/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBMenagerie/exec; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example
+
+echo "  cd DomainDecomposition/EBHelmholtz/hoeb_truncation; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example" 
+
+ cd DomainDecomposition/EBHelmholtz/hoeb_truncation; make pristine; make -j10; cd /Users/danielwaters/chombo_4/example

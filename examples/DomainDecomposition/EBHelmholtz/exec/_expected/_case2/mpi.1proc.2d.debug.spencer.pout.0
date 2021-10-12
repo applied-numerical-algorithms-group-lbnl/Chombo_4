@@ -1,0 +1,45 @@
+MPI INIT called
+nx        = 64
+maxGrid   = 32
+x0        = 0.5
+y0        = 0.5
+z0        = 0.5
+A         = 1
+B         = 1
+C         = 1
+R         = 0.1
+alpha     = 1
+beta      = -0.001
+tolerance = 1e-10
+numSmooth = 4
+maxIter   = 27
+nstream = 8
+making grids
+bl: number of boxes on proc 0 = 4
+defining geometry
+defining finest GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+creating coarser GeometryService level
+making dictionary
+using Neumann BCs at domain
+using Dirichlet BCs at EB
+making data
+setting values
+number of solves = 1
+going into solve number 0
+EBMultigrid: tol = 1e-10,  max iter = 27
+EBMultigrid: iter = 0, |resid| = 2.861e+00
+EBMultigrid: iter = 1, |resid| = 2.471e-01, rate = 1.158e+01
+EBMultigrid: iter = 2, |resid| = 1.270e-02, rate = 1.946e+01
+EBMultigrid: iter = 3, |resid| = 6.417e-04, rate = 1.980e+01
+EBMultigrid: iter = 4, |resid| = 3.221e-05, rate = 1.992e+01
+EBMultigrid: iter = 5, |resid| = 1.614e-06, rate = 1.996e+01
+EBMultigrid: iter = 6, |resid| = 8.081e-08, rate = 1.997e+01
+EBMultigrid: iter = 7, |resid| = 4.046e-09, rate = 1.997e+01
+EBMultigrid: final     |resid| = 2.026e-10
+done with solves 
+exiting 
+printing time table 
+about to call MPI Finalize

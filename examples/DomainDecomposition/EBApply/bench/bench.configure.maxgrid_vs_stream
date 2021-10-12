@@ -1,0 +1,88 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+import datetime
+
+parser = ArgumentParser()
+
+parser.add_argument('--min_stream',  type=int, help='minimum number of streams'  , default='1')
+parser.add_argument('--max_stream',  type=int, help='minimum number of streams'  , default='16')
+parser.add_argument('--min_grid' ,  type=int, help='minimum max box size '  , default='8')
+parser.add_argument('--max_grid' ,  type=int, help='maximum max box size '  , default='64')
+
+parser.add_argument('--input'               ,  help='input file prefix'         , default='./inputs')
+parser.add_argument('--batch'               ,  help='batch file name'           , default='./batch')
+parser.add_argument('--dir'                 ,  help='directory prefix'          , default='_benchmark_')
+parser.add_argument('--subcomm'             ,  help='submission script command' , default='bsub')
+args = parser.parse_args()
+
+print args
+inputsname = args.input
+batchname  = args.batch
+dirname    = args.dir
+commname   = args.subcomm
+mingrid    = args.min_grid
+maxgrid    = args.max_grid
+minstream    = args.min_stream
+maxstream    = args.max_stream
+
+f_input = open(inputsname,'r')
+f_batch = open(batchname, 'r')
+inputs_prefix  = f_input.read()
+batch_template = f_batch.read()
+
+f_input.close()
+f_batch.close()
+
+targets=['DomainDecomposition/Euler',  'DomainDecomposition/EBApply']
+
+top = os.getcwd()
+now = datetime.datetime.now()
+start_dir = top + "/"  + dirname + str(now.month) + "." + str(now.day) + "." + str(now.year)
+if not(os.path.isdir(start_dir)):
+    print "creating " + start_dir
+    os.mkdir(start_dir)
+
+runscriptname = "runscript.sh"
+frunscript = open(runscriptname, 'w')
+frunscript.write("#!/bin/csh\n");
+
+grid   = mingrid
+while grid <= maxgrid:
+    stream = minstream 
+    while stream <= maxstream:
+        print "stream =  " + str(stream) + ", maxGrid = " + str(grid)
+        bench_dir = start_dir + "/_maxgrid" + str(grid) + "_nstream" + str(stream)
+        if not(os.path.isdir(bench_dir)):
+            print "creating " + bench_dir
+            os.mkdir(bench_dir)
+        inputfilename = bench_dir + "/inputs"
+        finputs = open(inputfilename,'w')
+        finputs.write(inputs_prefix)
+        finputs.write("\n#input by configure script\n")
+        maxgridstring = "maxGrid = " + str(grid)+ "\n"
+        finputs.write(maxgridstring)
+        streamstring = "nstream = " + str(stream) + "\n"
+        finputs.write(streamstring)
+        finputs.close()
+        batchfilename = bench_dir + "/batch"
+        fbatch = open(batchfilename, 'w')
+        fbatch.write(batch_template)
+
+        runcomm = "cd " + bench_dir + "; "
+        frunscript.write(runcomm);
+        runcomm =  commname + " batch \n"
+        frunscript.write(runcomm);
+        runcomm =  "cd " + top + "\n"
+        frunscript.write(runcomm);
+        stream *= 2
+    grid *= 2
+    
+frunscript.close()
+runcomm = "chmod +x " + runscriptname
+print runcomm + "\n"
+os.system(runcomm)
+
+
