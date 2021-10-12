@@ -11,10 +11,12 @@
 #ifndef _Chombo_DATAINDEX_H_
 #define _Chombo_DATAINDEX_H_
 
+#include "Proto.H"
+#include "Chombo_parstream.H"
 #include <cstdlib>
 #include <iostream>
 #include "Chombo_MayDay.H"
-#include "Chombo_parstream.H"
+//#include "Chombo_parstream.H"
 #include "Chombo_NamespaceHeader.H"
 
 #ifndef WRAPPER
@@ -26,6 +28,8 @@ class LayoutIterator;
 #endif /* WRAPPER */
 
 using std::endl;
+
+
 ///An index for LayoutIterator
 class LayoutIndex
 {
@@ -83,7 +87,7 @@ public:
   */
   virtual void output() const
   {
-    pout() << *this << endl;
+    Chombo4::pout() << *this << endl;
   }
 
   friend std::ostream& operator<< (std::ostream&   os,

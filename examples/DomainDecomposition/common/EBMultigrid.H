@@ -47,7 +47,9 @@ public:
   unsigned int                      m_depth;
   Real                              m_dx;      
   
-  /// Multigrid v-cycle.
+  shared_ptr<GeometryService<2> >   m_geoserv;
+  
+/// Multigrid v-cycle.
   inline void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
                      const EBLevelBoxData<CELL, 1>& a_rhs)
   {
@@ -96,7 +98,10 @@ public:
   virtual void
   preCond(EBLevelBoxData<CELL, 1>       & a_phi,
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
-
+  
+  virtual void
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv) = 0;
+  
   
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -111,6 +116,10 @@ public:
     if(m_hasCoarser)
     {
       m_coarser->resetAlphaAndBeta(a_alpha, a_beta);
+    }
+    if(!m_hasCoarser || m_directToBottom)
+    {
+      this->defineBottomSolvers(m_geoserv);
     }
   }
   
