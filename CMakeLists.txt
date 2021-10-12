@@ -48,7 +48,7 @@ endif()
 
 project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
-add_compile_definitions(CH_USE_PETSC)
+#add_compile_definitions(CH_USE_PETSC)
 
 if(NOT DEFINED ${LAPACK_DIR})
     set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")

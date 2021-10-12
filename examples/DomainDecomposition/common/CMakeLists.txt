@@ -18,4 +18,4 @@ blt_add_library(NAME common HEADERS
     EBMultigrid.cpp
     EBParabolicIntegrators.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON EBTools BaseTools PETSc)
+    DEPENDS_ON EBTools BaseTools) # PETSc)

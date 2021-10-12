@@ -510,9 +510,10 @@ extern"C" {
     // stoichchombo(1,1:nkin,1:ncomp) = mumin(1,1:nkin,1:ncomp)
     for(int i = 0; i < ncomp; ++i)
       for(int j = 0; j < nkin; ++j)
-        for(int k = 0; k < np; ++k)
+        for(int k = 0; k < np; ++k) {
           size_t idx = i*nkin*np+j*np+k;
-          stoichchombo[idx] = mumin[idx];
+          stoichchombo[i][j][k] = mumin[idx];
+        }
   
     for(int k = 0; k < nz; ++k)
       for(int j = 0; j < ny; ++j)
@@ -587,7 +588,7 @@ extern"C" {
           break; // no more species in list
       }
 
-      t = temp;
+      t[0] = temp;
 
       if (!strcmp(solutions[i].name,"inlet"))
       {

@@ -39,8 +39,8 @@ Stencil<Real> MHDOp::s_behind_shift[DIM];
 Stencil<Real> MHDOp::s_copy_f[DIM];
 Copier          MHDOp::s_exchangeCopier;
 
-typedef BoxData<Real,1,1,1> PScalar;
-typedef BoxData<Real,NUMCOMPS,1,1> PVector;
+typedef BoxData<Real,1,::Proto::MEMTYPE_DEFAULT,1,1> PScalar;
+typedef BoxData<Real,NUMCOMPS,::Proto::MEMTYPE_DEFAULT,1,1> PVector;
 
 
 

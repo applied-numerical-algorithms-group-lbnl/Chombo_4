@@ -60,7 +60,9 @@ dumpPS(PointSet* dataPtr)
   }
 }
 
-#if DIM==2
+#if DIM==2 
+Point lodeb(52, 14);
+Point hideb(56, 19);
 void 
 dumpBDDIM(BoxData<Real, DIM>* dataPtr)
 {
@@ -97,7 +99,6 @@ dumpBDDIM(BoxData<Real, DIM>* dataPtr)
 
 void 
 dumpBD1(BoxData< Real, 1>* dataPtr)
-  
 {
 if(dataPtr != NULL)
   {
@@ -121,6 +122,45 @@ if(dataPtr != NULL)
           cout << " ";
         }
         cout  << data(pt, 0) << "  ";
+      }
+      cout << endl;
+    }
+  }
+}
+
+void
+dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    Bx area(lodeb, hideb);
+
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    cout << "data region contains:" << endl;
+    for(int j = hideb[1]; j >= lodeb[1]; j--)
+    {
+      for(int i = lodeb[0]; i <= hideb[0]; i++)
+      {
+        Point pt(i,j);
+        if(databox.contains(pt))
+        {
+          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+          cout << pt << ":";
+          if(vofs.size() >  0)
+          {
+            cout  << data(vofs[0], 0) << "  ";
+          }
+          else
+          {
+            cout  << "------------" << "  ";
+          }
+        }
       }
       cout << endl;
     }
