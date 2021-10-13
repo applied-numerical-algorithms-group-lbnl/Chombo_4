@@ -1,13 +1,12 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
-
-
+#include <iomanip>
+#include <gtest/gtest.h>
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_BaseFab.H"
-
 #include "Chombo_ParmParse.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_ProtoInterface.H"
@@ -15,11 +14,8 @@
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-
-
 #include "Chombo_EBLevelFluxData.H"
 
-#include <iomanip>
 #define PI 3.1419
 using Proto::Var;
 /****/
@@ -52,8 +48,7 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
 }
 PROTO_KERNEL_END(setPhiPtF, setPhiPt)
 
-int
-runTest(int a_argc, char* a_argv[])
+int runTest()
 {
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   int nx      = 64;
@@ -150,6 +145,10 @@ runTest(int a_argc, char* a_argv[])
   return 0;
 }
 
+TEST(StressCase, runTest) {
+    int retval = runTest();
+    EXPECT_EQ(retval,0);
+}
 
 int main(int a_argc, char* a_argv[])
 {
@@ -160,7 +159,7 @@ int main(int a_argc, char* a_argv[])
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
 
-  runTest(a_argc, a_argv);
+  int result = RUN_ALL_TESTS();
 
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
@@ -169,5 +168,5 @@ int main(int a_argc, char* a_argv[])
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
-  return 0;
+  return result;
 }

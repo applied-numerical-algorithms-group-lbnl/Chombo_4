@@ -1,13 +1,12 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
-
-
+#include <iomanip>
+#include <gtest/gtest.h>
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_BaseFab.H"
-
 #include "Chombo_ParmParse.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_ProtoInterface.H"
@@ -15,11 +14,8 @@
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-
-
 #include "Chombo_EBLevelFluxData.H"
 
-#include <iomanip>
 #define PI 3.1419
 using Proto::Var;
 /****/
@@ -63,7 +59,7 @@ unsigned int  setPhiPtF(int              a_pt[DIM],
 PROTO_KERNEL_END(setPhiPtF, setPhiPt)
 
 int
-runTest(int a_argc, char* a_argv[])
+runTest()
 {
   int nx      = 64;
   int maxGrid = 32;
@@ -134,9 +130,13 @@ runTest(int a_argc, char* a_argv[])
   return 0;
 }
 
+TEST(forallTest, runTest) {
+    EXPECT_EQ(runTest(),0);
+}
 
 int main(int a_argc, char* a_argv[])
 {
+  ::testing::InitGoogleTest(&a_argc,a_argv);
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   pout() << "MPI INIT called" << std::endl;
@@ -144,7 +144,7 @@ int main(int a_argc, char* a_argv[])
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
 
-  runTest(a_argc, a_argv);
+  int result = RUN_ALL_TESTS();
 
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
@@ -153,5 +153,5 @@ int main(int a_argc, char* a_argv[])
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
-  return 0;
+  return result;
 }

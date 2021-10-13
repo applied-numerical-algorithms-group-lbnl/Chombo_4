@@ -1,60 +1,94 @@
 #include<iostream>
+#include<gtest/gtest.h>
 #include "src/test_IrregData.cu"
 #include "src/test_ebforall.cu"
 #include "src/test_ebforall_i.cu"
 #include "src/test_agg_stencil.cu"
 
-template<typename Func>
-void do_test(std::string a_str, Func &fun)
-{
-  std::cout << "Do " << a_str << std::endl;
-  bool b = fun();
-  if(b) std::cout << "-> passed " << a_str << std::endl;
-//  else std::cout << "-> failed " << a_str << std::endl;
-  else 
-  {
-	  std::cout << "-> failed " << a_str << std::endl;
-	  std::abort();
-  }
+TEST(testSuite,run_test_ebforall_init) {
+    EXPECT_TRUE(run_test_ebforall_init());
+}
+TEST(testSuite,run_test_ebforall_kernel) {
+    EXPECT_TRUE(run_test_ebforall_kernel());
+}
+TEST(testSuite,run_test_ebforall_vec_indexer) {
+    EXPECT_TRUE(run_test_ebforall_vec_indexer());
+}
+TEST(testSuite,run_test_ebforall_i_init) {
+    EXPECT_TRUE(run_test_ebforall_i_init());
+}
+TEST(testSuite,run_test_ebforall_i_kernel) {
+    EXPECT_TRUE(run_test_ebforall_i_kernel());
+}
+TEST(testSuite,run_test_ebforall_i_vec_indexer) {
+    EXPECT_TRUE(run_test_ebforall_i_vec_indexer());
+}
+TEST(testSuite,run_test_irreg_data_empty) {
+    EXPECT_TRUE(run_test_irreg_data_empty());
+}
+TEST(testSuite,run_test_irreg_data_use_constructor) {
+    EXPECT_TRUE(run_test_irreg_data_use_constructor());
+}
+TEST(testSuite,run_test_irreg_data_set_val) {
+    EXPECT_TRUE(run_test_irreg_data_set_val());
+}
+TEST(testSuite,run_test_irreg_copy) {
+    EXPECT_TRUE(run_test_irreg_copy());
+}
+TEST(testSuite,run_test_irreg_copy_partial) {
+    EXPECT_TRUE(run_test_irreg_copy_partial());
+}
+TEST(testSuite,run_test_irreg_linear_partial) {
+    EXPECT_TRUE(run_test_irreg_linear_partial());
+}
+TEST(testSuite,run_test_irreg_linear_full) {
+    EXPECT_TRUE(run_test_irreg_linear_full());
+}
+TEST(testSuite,run_test_irreg_linear_multiple) {
+    EXPECT_TRUE(run_test_irreg_linear_multiple());
+}
+//  TEST(testSuite,run_test_irreg_linear_multiple);
+TEST(testSuite,run_test_irreg_linear_partial_aliasing_define) {
+    EXPECT_TRUE(run_test_irreg_linear_partial_aliasing_define());
+}
+//  TEST(testSuite,run_test_irreg_copy_partial_idst); // test is not correct
+TEST(testSuite,run_test_agg_stencil_kernel_only_using) {
+    EXPECT_TRUE(run_test_agg_stencil_kernel_only_using());
+}
+TEST(testSuite,run_test_agg_stencil_increment_only_true) {
+    EXPECT_TRUE(run_test_agg_stencil_increment_only_true());
+}
+TEST(testSuite,run_test_agg_stencil_increment_only_false) {
+    EXPECT_TRUE(run_test_agg_stencil_increment_only_false());
+}
+TEST(testSuite,run_test_agg_stencil_scale_0) {
+    EXPECT_TRUE(run_test_agg_stencil_scale_0());
+}
+TEST(testSuite,run_test_agg_stencil_scale_100) {
+    EXPECT_TRUE(run_test_agg_stencil_scale_100());
+}
+TEST(testSuite,run_test_agg_stencil_scale_minus10) {
+    EXPECT_TRUE(run_test_agg_stencil_scale_minus10());
+}
+TEST(testSuite,run_test_irreg_copy_stress) {
+    EXPECT_TRUE(run_test_irreg_copy_stress());
+}
+TEST(testSuite,run_test_irreg_linear_full_stress) {
+    EXPECT_TRUE(run_test_irreg_linear_full_stress());
+}
+TEST(testSuite,run_test_irreg_linear_partial_stress) {
+    EXPECT_TRUE(run_test_irreg_linear_partial_stress());
+}
+TEST(testSuite,run_test_irreg_linear_partial_aliasing_define_stress) {
+    EXPECT_TRUE(run_test_irreg_linear_partial_aliasing_define_stress());
 }
 
 int main()
 {
+  ::testing::InitGoogleTest();
 #ifdef PROTO_CUDA
   cudaSetDevice(0);
 #endif
-  std::cout << " Unit tests " << std::endl;
-
-  do_test("run_test_ebforall_init",run_test_ebforall_init);
-  do_test("run_test_ebforall_kernel",run_test_ebforall_kernel);
-  do_test("run_test_ebforall_vec_indexer",run_test_ebforall_vec_indexer);
-  do_test("run_test_ebforall_i_init",run_test_ebforall_i_init);
-  do_test("run_test_ebforall_i_kernel",run_test_ebforall_i_kernel);
-  do_test("run_test_ebforall_i_vec_indexer",run_test_ebforall_i_vec_indexer);
-  do_test("run_test_irreg_data_empty",run_test_irreg_data_empty);
-  do_test("run_test_irreg_data_use_constructor",run_test_irreg_data_use_constructor);
-  do_test("run_test_irreg_data_set_val",run_test_irreg_data_set_val);
-  do_test("run_test_irreg_copy",run_test_irreg_copy);
-  do_test("run_test_irreg_copy_partial",run_test_irreg_copy_partial);
-  do_test("run_test_irreg_linear_partial",run_test_irreg_linear_partial);
-  do_test("run_test_irreg_linear_full",run_test_irreg_linear_full);
-  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
-//  do_test("run_test_irreg_linear_multiple",run_test_irreg_linear_multiple);
-  do_test("run_test_irreg_linear_partial_aliasing_define",run_test_irreg_linear_partial_aliasing_define);
-//  do_test("run_test_irreg_copy_partial_idst",run_test_irreg_copy_partial_idst); // test is not correct
-  do_test("run_test_agg_stencil_kernel_only_using",run_test_agg_stencil_kernel_only_using);
-  do_test("run_test_agg_stencil_increment_only_true",run_test_agg_stencil_increment_only_true);
-  do_test("run_test_agg_stencil_increment_only_false",run_test_agg_stencil_increment_only_false);
-  do_test("run_test_agg_stencil_scale_0",run_test_agg_stencil_scale_0);
-  do_test("run_test_agg_stencil_scale_100",run_test_agg_stencil_scale_100);
-  do_test("run_test_agg_stencil_scale_minus10",run_test_agg_stencil_scale_minus10);
-
-  std::cout << std::endl << " Stress tests " << std::endl;
-
-  do_test("run_test_irreg_copy_stress",run_test_irreg_copy_stress);
-  do_test("run_test_irreg_linear_full_stress",run_test_irreg_linear_full_stress);
-  do_test("run_test_irreg_linear_partial_stress",run_test_irreg_linear_partial_stress);
-  do_test("run_test_irreg_linear_partial_aliasing_define_stress",run_test_irreg_linear_partial_aliasing_define_stress);
-
+  RUN_ALL_TESTS();
   return 0;
 }
