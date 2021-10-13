@@ -1,3 +1,4 @@
+#include <gtest/gtest.h>
 #include "Proto.H"
 #include "EBProto.H"
 #include "Chombo_EBChombo.H"
@@ -6,11 +7,7 @@
 #include "Chombo_IntVect.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_GeometryService.H"
-using namespace Proto;
 using Chombo4::LevelData;
-
-
-
 
 ///  after this are specific to the test
 typedef Var<Real,DIM> V;
@@ -137,33 +134,70 @@ int checkAns(EBBoxData<CELL, Real, DIM>& calc,
   }
   return 0;
 }
-int main(int argc, char* argv[])
-{
-  using Chombo4::Box;
-  using Chombo4::DisjointBoxLayout;
-  int nx = 16;
+using Chombo4::Box;
+using Chombo4::DisjointBoxLayout;
+int nx = 16;
 
-  Box domain(IntVect::Zero, (nx-1)*IntVect::Unit);
-  Vector<Box> boxes(1, domain);
-  Vector<int> procs(1, 0);
-  Real dx = 1.0/domain.size(0);
-  std::array<bool, DIM> periodic;
-  for(int idir = 0; idir < DIM; idir++) periodic[idir]=true;
-  DisjointBoxLayout grids(boxes, procs);
+Box domain(IntVect::Zero, (nx-1)*IntVect::Unit);
+Vector<Box> boxes(1, domain);
+Vector<int> procs(1, 0);
+Real dx = 1.0/domain.size(0);
+std::array<bool, DIM> periodic;
+for(int idir = 0; idir < DIM; idir++) periodic[idir]=true;
+DisjointBoxLayout grids(boxes, procs);
 
-  int geomGhost = 0;
+int geomGhost = 0;
 
-  RealVect ABC = RealVect::Unit();
-  RealVect X0  = RealVect::Unit();
-  X0 *= 0.5;
-  
-  RealVect origin= RealVect::Zero();
-  Real R = 0.25;
-  shared_ptr<BaseIF>              impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
-  shared_ptr<GeometryService<2> > geoserv(new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost));
-  shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(domain);
+RealVect ABC = RealVect::Unit();
+RealVect X0  = RealVect::Unit();
+X0 *= 0.5;
 
-  Chombo4::DataIterator dit = grids.dataIterator();
+RealVect origin= RealVect::Zero();
+Real R = 0.25;
+shared_ptr<BaseIF>              impfunc(new SimpleEllipsoidIF(ABC, X0, R, false));
+shared_ptr<GeometryService<2> > geoserv(new GeometryService<2>(impfunc, origin, dx, domain, grids, geomGhost));
+shared_ptr<Chombo4::LevelData<EBGraph>  > graphs = geoserv->getGraphs(domain);
+Chombo4::DataIterator dit = grids.dataIterator();
+
+TEST(testLibEBForAll,checkU) {
+  int cval;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = grids[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(grid);
+    EBBoxData<CELL, Real, DIM> U(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
+
+    Real uval = 1;
+    ebforall(grbx, UsetU, grbx, U, uval);
+    cval = checkAns(U, reference, uval, grid);
+    if(cval != 0)
+      return;
+  }
+  EXPECT_EQ(cval,0);
+}
+
+TEST(testLibEBForAll,checkV) {
+  int dval;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = grids[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(grid);
+    EBBoxData<CELL, Real, DIM> V(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
+
+    Real vval = 2;
+    int vvar = -1;
+    ebforall(grbx, VsetV, grbx, V, vval, vvar);  //tweaking signature to clarify compilers job
+    dval = checkAns(V, reference, vval, grid);
+    if(dval != 0)
+      return;
+  }
+  EXPECT_EQ(dval,0);
+}
+
+TEST(testLibEBForAll,checkW) {
+  int eval;
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     Box grid = grids[dit[ibox]];
@@ -171,77 +205,79 @@ int main(int argc, char* argv[])
     EBBoxData<CELL, Real, DIM> U(grbx,(*graphs)[dit[ibox]]);
     EBBoxData<CELL, Real, DIM> V(grbx,(*graphs)[dit[ibox]]);
     EBBoxData<CELL, Real, DIM> W(grbx,(*graphs)[dit[ibox]]);
-    
     EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
 
-    Real uval = 1;
-    Real vval = 2;
-    ebforall(grbx, UsetU, grbx, U, uval);
-    int cval = checkAns(U, reference, uval, grid);
-    if(cval != 0)
-    {
-      printf("checkU FAILED\n");
-      return cval;
-    }
-    
-    int vvar = -1;
-    ebforall(grbx, VsetV, grbx, V, vval, vvar);  //tweaking signature to clarify compilers job
-    int dval = checkAns(V, reference, vval, grid);
-    if(dval != 0)
-    {
-      printf("checkV FAILED\n");
-      return dval;
-    }
-    
     Real wval = 3;
     ebforall(grbx, WsetWtoUplusV, grbx, W, U, V, wval);
-    int eval = checkAns(W, reference, wval, grid);
+    eval = checkAns(W, reference, wval, grid);
     if(eval != 0)
-    {
-      printf("checkW FAILED\n");
-      return eval;
-    }
-
-    uval = 2;
-    vval = 5;
-    wval = 7;
-    //printf("going into setUpt\n");
-    ebforall_i(grbx, setUpt, grbx, U, uval);
-    int fval = checkAns(U, reference, uval, grid);
-    if(fval != 0)
-    {
-      printf("checkUpt FAILED\n");
-      return fval;
-    }
-    
-    //printf("going into setVpt\n");
-    ebforall_i(grbx, setVpt, grbx, V, vval, vvar);
-    int gval = checkAns(V, reference, vval, grid);
-    if(gval != 0)
-    {
-      printf("checkVpt FAILED\n");
-      return gval;
-    }
-
-    //printf("going into setWpt\n");
-    ebforall_i(grbx, setWtoUplusVpt, grbx, W, U, V, wval);
-    int hval = checkAns(W, reference, wval, grid);
-    if(hval != 0)
-    {
-      printf("checkWpt FAILED\n");
-      return hval;
-    }
-
+      return;
   }
-
-  printf("testLibEBForall PASSED\n");
-  return 0;
+  EXPECT_EQ(eval,0);
 }
 
+TEST(testLibEBForAll,checkUpt) {
+  int fval;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = grids[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(grid);
+    EBBoxData<CELL, Real, DIM> U(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
 
+    Real uval = 2;
+    //printf("going into setUpt\n");
+    ebforall_i(grbx, setUpt, grbx, U, uval);
+    fval = checkAns(U, reference, uval, grid);
+    if(fval != 0)
+      return;
+  }
+  EXPECT_EQ(fval,0);
+}
 
+TEST(testLibEBForAll,checkVpt) {
+  int gval;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = grids[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(grid);
+    EBBoxData<CELL, Real, DIM> V(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
 
+    Real vval = 5;
+    int vvar = -1;
+    //printf("going into setVpt\n");
+    ebforall_i(grbx, setVpt, grbx, V, vval, vvar);
+    gval = checkAns(V, reference, vval, grid);
+    if(gval != 0)
+      return;
+  }
+  EXPECT_EQ(gval,0);
+}
 
+TEST(testLibEBForAll,checkWpt) {
+  int hval;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box grid = grids[dit[ibox]];
+    Bx grbx = ProtoCh::getProtoBox(grid);
+    EBBoxData<CELL, Real, DIM> U(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> V(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> W(grbx,(*graphs)[dit[ibox]]);
+    EBBoxData<CELL, Real, DIM> reference(grbx,(*graphs)[dit[ibox]]);
 
-
-
+    Real wval = 7;
+    //printf("going into setWpt\n");
+    ebforall_i(grbx, setWtoUplusVpt, grbx, W, U, V, wval);
+    hval = checkAns(W, reference, wval, grid);
+    if(hval != 0)
+      return;
+  }
+  EXPECT_EQ(hval,0);
+}
+int main(int argc, char* argv[])
+{
+  ::testing::InitGoogleTest(&argc,argv);
+  RUN_ALL_TESTS();
+  return 0;
+}

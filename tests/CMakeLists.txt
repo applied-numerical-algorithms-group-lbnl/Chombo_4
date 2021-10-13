@@ -20,9 +20,9 @@ blt_add_test(NAME helmholtzExact COMMAND helmholtzExact)
 blt_add_executable(NAME iota SOURCES iota.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS_ON Headers gtest)
 blt_add_test(NAME iota COMMAND iota)
-blt_add_executable(NAME testLibEBForAll SOURCES testLibEBForAll.cpp
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS_ON Headers gtest)
-blt_add_test(NAME testLibEBForAll COMMAND testLibEBForAll)
+#blt_add_executable(NAME testLibEBForAll SOURCES testLibEBForAll.cpp
+#    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS_ON Headers gtest)
+#blt_add_test(NAME testLibEBForAll COMMAND testLibEBForAll)
 blt_add_executable(NAME testSuite SOURCES testSuite.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS_ON Headers gtest)
 blt_add_test(NAME testSuite COMMAND testSuite)
