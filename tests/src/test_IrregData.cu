@@ -272,10 +272,11 @@ bool run_test_irreg_copy_partial_idst()
 
   bool check=true;
   for(int i = 0 ; i < size ; i++)
-    if(i>=inf + shift && i <= high + shift)
+    if(i>=inf + shift && i <= high + shift) {
       if(checkPtr[i] != inNumber) check=false;
-    else
+    } else {
       if(checkPtr[i] != outNumber) check=false;
+    }
 
   if(!check)
   {

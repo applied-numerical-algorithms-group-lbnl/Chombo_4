@@ -99,7 +99,7 @@ template<typename F, typename... T>
 void hackVecIndexer_i(unsigned int a_begin, unsigned int a_end, F func, Proto::EBIrregStruct<Proto::CELL,double, 1>* a_dst, T... args)
 {
   unsigned int size = a_end - a_begin;
-  protoLaunchKernelT<MEMTYPE_DEFAULT, vecIndexer_i<Proto::CELL,double,1, F, T...>>
+  protoLaunchKernelT<Proto::MEMTYPE_DEFAULT, vecIndexer_i<Proto::CELL,double,1, F, T...>>
 			(
 				1, size, //small test so nb block = 1
 				0, size, func, a_dst, args...

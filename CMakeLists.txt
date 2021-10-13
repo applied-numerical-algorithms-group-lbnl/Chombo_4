@@ -24,7 +24,7 @@ option(ENABLE_OPENMP "Build using OpenMP" OFF)
 option(ENABLE_CUDA "Build using CUDA" OFF)
 option(ENABLE_HIP "Build using HIP" OFF)
 option(ENABLE_HDF5 "Build using HDF5" OFF)
-option(ENABLE_TESTS "Build tests" OFF)
+option(ENABLE_TESTS "Build tests" ON)
 option(ENABLE_EXAMPLES "Build examples" ON)
 
 set(DIM 2 CACHE STRING "Dimensionality of examples")
@@ -148,6 +148,8 @@ if (NOT BLT_LOADED)
           git submodule update")
       endif ()
   endif ()
+
+  set(BLT_CXX_STD "c++14" CACHE STRING "BLT C++ standard")
 
   include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 endif()

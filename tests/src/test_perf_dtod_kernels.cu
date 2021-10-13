@@ -46,7 +46,7 @@ void run_perf_irreg_linear_full_args(unsigned int size)
 
   void* inWork;
   size_t nBytes = in.charsize(bx,0,1);
-  protoMalloc(inWork, nBytes);
+  protoMalloc(Proto::MEMTYPE_DEFAULT,inWork, nBytes);
 
   in.setVal(inNumber);
   out.setVal(outNumber);
@@ -64,7 +64,7 @@ void run_perf_irreg_linear_full_args(unsigned int size)
   index.clear();
   free(ptr);  
   free(ptr2);  
-  protoFree(inWork); 
+  protoFree(Proto::MEMTYPE_DEFAULT,inWork); 
 }
 
 
@@ -101,7 +101,7 @@ void run_perf_irreg_linear_partial_args(unsigned int sizebox,unsigned int size)
     end += sizebox;
   }
 
-  protoMalloc(inWork, nBytes);
+  protoMalloc(Proto::MEMTYPE_DEFAULT,inWork, nBytes);
   in.setVal(inNumber);
   out.setVal(outNumber);
 
@@ -143,7 +143,7 @@ void run_perf_irreg_linear_partial_args(unsigned int sizebox,unsigned int size)
   index.clear();
   free(ptr);
   free(ptr2);
-  protoFree(inWork);
+  protoFree(Proto::MEMTYPE_DEFAULT,inWork);
 }
 
 
@@ -180,7 +180,7 @@ void run_perf_irreg_linear_partial_graph_args(unsigned int sizebox,unsigned int 
     end += sizebox;
   }
 
-  protoMalloc(inWork, nBytes);
+  protoMalloc(Proto::MEMTYPE_DEFAULT,inWork, nBytes);
   in.setVal(inNumber);
   out.setVal(outNumber);
 
@@ -227,5 +227,5 @@ void run_perf_irreg_linear_partial_graph_args(unsigned int sizebox,unsigned int 
   index.clear();
   free(ptr);
   free(ptr2);
-  protoFree(inWork);
+  protoFree(Proto::MEMTYPE_DEFAULT,inWork);
 }

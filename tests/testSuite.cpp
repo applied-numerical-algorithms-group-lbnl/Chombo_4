@@ -1,8 +1,8 @@
 #include<iostream>
-#include<src/test_IrregData.cu>
-#include<src/test_ebforall.cu>
-#include<src/test_ebforall_i.cu>
-#include<src/test_agg_stencil.cu>
+#include "src/test_IrregData.cu"
+#include "src/test_ebforall.cu"
+#include "src/test_ebforall_i.cu"
+#include "src/test_agg_stencil.cu"
 
 template<typename Func>
 void do_test(std::string a_str, Func &fun)

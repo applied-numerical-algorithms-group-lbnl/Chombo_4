@@ -7,6 +7,7 @@ import platform
 parser = ArgumentParser()
 
 parser.add_argument('--dim', type=int, help='dimensionality to build executables [2]',default='2')
+parser.add_argument('--stack', type=int, help='Proto\'s stack space',default='4294967296')
 parser.add_argument('--opt',  choices=['DEBUG', 'TRUE', 'HIGH'],help='compiler optimization [DEBUG]',default='DEBUG')
 parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
 parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [TRUE]',default='TRUE')
@@ -46,8 +47,9 @@ r.write('#/usr/bin/csh\n')
 
 f.write('\nCHOMBO_HOME := ' + chombo_home)
 f.write('\nDIM := ' + str(args.dim)+"\n")
+f.write('\nPR_STACK_ALLOC := ' + str(args.stack)+"\n")
 f.write(makefile_pref);
-f.write('\nCPPFLAGS = -std=c++11\n')
+f.write('\nCPPFLAGS = -std=c++11 -DPR_STACK_ALLOC=' + str(args.stack) + '\n')
 f.write(mach_dep);
 
 if args.mpi == 'TRUE':
@@ -122,8 +124,20 @@ for file in glob.glob("*.cpp"):
     print(targetname)
     f.write(targetname);
     f.write(" ");
-    runstr = "\n./" + targetname + " |& tee "  + basename + ".out \n"
+    runstr = "\n./" + targetname + " | tee "  + basename + ".out \n"
     r.write(runstr)
+
+if args.cuda is 'TRUE':
+    for file in glob.glob("*.cu"):
+        print(file)
+        basename = file.strip(".cu")
+        print(basename)
+        targetname = basename + ".exe"
+        print(targetname)
+        f.write(targetname);
+        f.write(" ");
+        runstr = "\n./" + targetname + " | tee "  + basename + ".out \n"
+        r.write(runstr)
 
 f.write("\n");
 f.write(makefile_post);

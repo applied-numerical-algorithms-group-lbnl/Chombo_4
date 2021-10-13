@@ -17,7 +17,8 @@ void test_ebforall_fill(double* a_ptr, std::vector<Proto::EBIndex<Proto::CELL>>&
   }
 }
 
-using Proto::Var;
+using Proto::Var; using Proto::MEMTYPE_DEFAULT; using Proto::pairPtr; 
+using Proto::vecIndexer; using Proto::vecIndexer_i;
 /****/
 PROTO_KERNEL_START
 unsigned int  kernel_test_forallF(Var<double, 1>  a_in)

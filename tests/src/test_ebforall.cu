@@ -1,5 +1,5 @@
 #include<iostream>
-#include<src/test_ebforall_stuff.cpp>
+#include "src/test_ebforall_stuff.cpp"
 
 bool run_test_ebforall_init()
 {
@@ -17,7 +17,7 @@ bool run_test_ebforall_init()
 
   double a = 0;
 
-  std::cout << " memtype =" << MEMTYPE_DEFAULT << std::endl;
+  std::cout << " memtype =" << Proto::MEMTYPE_DEFAULT << std::endl;
   
   protoEBForAllIrreg(init_test_forall, fill, a);
 
@@ -107,7 +107,7 @@ template<typename F, typename... T>
 void hackVecIndexer(unsigned int a_begin, unsigned int a_end, F func, Proto::EBIrregStruct<Proto::CELL,double, 1>* a_dst, T... args)
 {
   unsigned int size = a_end - a_begin;
-  protoLaunchKernelT<MEMTYPE_DEFAULT, vecIndexer<Proto::CELL,double,1, F, T...>>
+  protoLaunchKernelT<Proto::MEMTYPE_DEFAULT, vecIndexer<Proto::CELL,double,1, F, T...>>
 			(
 				1, size, //small test so nb block = 1
 				0, size, func, a_dst, args...
