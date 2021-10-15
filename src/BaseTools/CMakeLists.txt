@@ -29,6 +29,5 @@ blt_add_library(NAME BaseTools
     Chombo_ParmParse.cpp
     Chombo_SPMD.cpp
     Chombo_parstream.cpp
-    INCLUDES ${PROTO_HOME}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON Proto chombo_compiler_flags)
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS_ON Proto chombo_compiler_flags ${LIB_DEP})

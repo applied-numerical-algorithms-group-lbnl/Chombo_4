@@ -1,3 +1,6 @@
+if(ENABLE_CUDA)
+    list(APPEND ${LIB_DEP} cuda_runtime)
+endif()
 blt_add_library(NAME CrunchFlow
     HEADERS
     BaseNamespaceFooter.H
@@ -44,4 +47,7 @@ blt_add_library(NAME CrunchFlow
     satcalc.cpp
     totconc.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/LAPACKE/include
-    DEPENDS_ON LAPACK::LAPACK chombo_compiler_flags)
+    DEPENDS_ON LAPACK::LAPACK chombo_compiler_flags ${LIB_DEP})
+if(ENABLE_CUDA)
+    target_link_libraries(CrunchFlow PUBLIC CUDA::cusolver)
+endif()

@@ -27,6 +27,9 @@
 #ifdef CH_MPI
 using CH4_SPMD::Chombo_MPI;
 #endif
+#ifdef PROTO_CUDA
+using Proto::DEVICE;
+#endif
 template<unsigned int srcComp, unsigned int dstComp>
 class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, dstComp> >
 {

@@ -10,5 +10,5 @@ blt_add_library(NAME EBProto HEADERS EBProto.H
     Proto_HostBoxData.H
     Proto_RealVect.H
     Proto_SimpleImplicitFunctions.H
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/implem
-    DEPENDS_ON chombo_compiler_flags)
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS_ON chombo_compiler_flags Proto ${LIB_DEP})

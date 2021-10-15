@@ -30,12 +30,12 @@ Box grid = domain;
 
 TEST(FuncMess, InPlaceTestU) {
     forallInPlace(UsetU, grid, U, uval);
-    protoDeviceSynchronize();
+    protoDeviceSynchronize(MEMTYPE_DEFAULT);
     EXPECT_EQ(U.absMax(),uval);
 }
 TEST(FuncMess, InPlaceTestV) {
     forallInPlace(VsetV, grid, V, vval);
-    protoDeviceSynchronize();
+    protoDeviceSynchronize(MEMTYPE_DEFAULT);
     EXPECT_EQ(V.absMax(),vval);
 }
 

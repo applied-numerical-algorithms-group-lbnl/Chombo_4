@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14.2)
+cmake_minimum_required(VERSION 3.18)
 
 if(DEFINED CHOMBO_LOADED)
     return() # Chombo has already been loaded by encompassing CMake project
@@ -50,17 +50,28 @@ project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
 #add_compile_definitions(CH_USE_PETSC)
 
-if(NOT DEFINED ${LAPACK_DIR})
-    set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")
-    find_package(LAPACK REQUIRED)
+if(NOT DEFINED LAPACK_DIR)
+    if (DEFINED ENV{OLCF_NETLIB_LAPACK_ROOT})
+        set(LAPACK_DIR $ENV{OLCF_NETLIB_LAPACK_ROOT} CACHE PATH "LAPACK root")
+    elseif(DEFINED ENV{LAPACK_DIR})
+        set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")
+    else()
+        message(FATAL_ERROR "LAPACK directory could not be determined")
+    endif()
+endif()
+find_package(LAPACK REQUIRED)
+
+if(NOT DEFINED BLAS_DIR)
+    if (DEFINED ENV{OLCF_OPENBLAS_ROOT})
+        set(BLAS_DIR $ENV{OLCF_OPENBLAS_ROOT} CACHE PATH "BLAS root")
+    elseif(DEFINED ENV{BLAS_DIR})
+        set(BLAS_DIR $ENV{BLAS_DIR} CACHE PATH "BLAS root")
+    else()
+        message(FATAL_ERROR "BLAS directory could not be determined")
+    endif()
 endif()
 
-if(NOT DEFINED ${BLAS_DIR})
-    set(BLAS_DIR $ENV{BLAS_DIR} CACHE PATH "BLAS root")
-    find_package(BLAS REQUIRED)
-endif()
-
-if(NOT DEFINED ${PETSC_DIR})
+if(NOT DEFINED PETSC_DIR)
     set(PETSC_DIR $ENV{PETSC_DIR} CACHE PATH "PETSc root")
     set(PETSC_ARCH $ENV{PETSC_ARCH} CACHE PATH "PETSc arch")
 endif()
@@ -71,6 +82,7 @@ if(ENABLE_CUDA OR ENABLE_HIP)
         message(FATAL_ERROR "Must specify at most one of CUDA and HIP")
     endif()
     target_compile_definitions(chombo_compiler_flags INTERFACE CHOMBO_CUDA)
+    add_compile_definitions(PROTO_CUDA)
     if(CMAKE_BUILD_TYPE STREQUAL Debug)
         set(CMAKE_CUDA_FLAGS " -G")
         target_compile_definitions(chombo_compiler_flags INTERFACE THRUST_DEBUG)
@@ -99,6 +111,7 @@ if(ENABLE_CUDA OR ENABLE_HIP)
         set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE PATH "Setting for BLT")
         set(CMAKE_CUDA_SEPARABLE_COMPILATION ON CACHE BOOL "")
         enable_language(CUDA)
+        find_package(CUDAToolkit)
         if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
             set(CMAKE_CUDA_ARCHITECTURES 70 CACHE STRING "Compute architecture needed by NVCC")
         endif()
@@ -159,8 +172,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older 
 set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
 add_compile_definitions(CXXSTD=${CMAKE_CXX_STANDARD})
 
-blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags
-    INCLUDES ${PROTO_HOME}/include)
+blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags ${LIB_DEP}
+    INCLUDES ${PROTO_HOME}/include ${PROTO_HOME}/include/implem
+    TREAT_INCLUDES_AS_SYSTEM OFF GLOBAL ON)
+if(ENABLE_CUDA)
+    target_link_libraries(Proto INTERFACE CUDA::nvToolsExt)
+endif()
 
 add_subdirectory(src)
 

@@ -17,10 +17,9 @@
 #include "Chombo_BoxIterator.H"
 #include "Chombo_SPMD.H"
 #include "Chombo_CH_Timer.H"
-
 #include "Chombo_parstream.H"
 #include <chrono>
-
+#include "Proto_MemType.H"
 #include <vector>
 #include "Chombo_NamespaceHeader.H"
 
@@ -41,9 +40,9 @@ void CopierBuffer::clear()
     protoPointerAttributes att;
     protoPointerGetAttributes(&att, m_sendbuffer);
 #ifdef PROTO_HIP
-    if(att.memoryType == hipMemoryTypeDevice) { protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
+    if(att.memoryType == hipMemoryTypeDevice) { protoFree(Proto::MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #else
-    if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
+    if(att.type == 2) {protoFree(Proto::MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #endif
     else {protoFreeHost(m_sendbuffer);} 
   }
@@ -55,7 +54,7 @@ void CopierBuffer::clear()
 #ifdef PROTO_HIP
     if(att.memoryType == hipMemoryTypeDevice) {protoFree(MEMTYPE_DEFAULT,m_recbuffer);}
 #else
-    if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_recbuffer);}
+    if(att.type == 2) {protoFree(Proto::MEMTYPE_DEFAULT,m_recbuffer);}
 #endif
     else { protoFreeHost(m_recbuffer);}	  
   }

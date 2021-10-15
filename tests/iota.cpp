@@ -69,7 +69,6 @@ TEST(Iota, FuncIntPoint) {
       fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
               __FILE__, __LINE__, protoGetErrorString(err));
       printf("iota FAILED ");
-      return -1;
     }
 #endif
     double orig = x.absMax();
@@ -77,13 +76,12 @@ TEST(Iota, FuncIntPoint) {
     //printf(" calling point iota function\n");
     forallInPlaceBaseOp_p(numflops, "point_version",iotaFuncPoint, dbx1, x, s_dx);
 #ifdef PROTO_CUDA
-    protoError err = protoGetLastError();
+    err = protoGetLastError();
     if (err != protoSuccess)
     {
       fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
               __FILE__, __LINE__, protoGetErrorString(err));
       printf("iota FAILED ");
-      return -1;
     }
 #endif
     EXPECT_EQ(orig,x.absMax());

@@ -276,7 +276,6 @@ namespace hoeb
         for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
         {
           auto momind = momit();
-          Real bcval = 0;
           
           IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
             getEBNormalMoment(a_face, a_geoserv, a_srcDomain,

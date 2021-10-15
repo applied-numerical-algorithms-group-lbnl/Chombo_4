@@ -3,6 +3,7 @@
 #include "test_timer.H"
 
 #define MAX_ELEM 100000
+using Proto::MemType;
 
 void test_irreg_data_fill(double* ptr, std::vector<Proto::EBIndex<Proto::CELL>>& index, unsigned int size)
 {
@@ -297,8 +298,6 @@ bool run_test_irreg_linear_full_args(unsigned int size)
 {
   double* ptr = new double[size];
   double* ptr2 = new double[size];
-  unsigned int inf  = 2;
-  unsigned int high = 4;
   double inNumber   = 1;
   double outNumber  = 2;
   std::vector<Proto::EBIndex<Proto::CELL>> index;

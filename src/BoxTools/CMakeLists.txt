@@ -25,5 +25,5 @@ blt_add_library(NAME BoxTools SOURCES Chombo_AMRIO.cpp Chombo_BRMeshRefine.cpp
     Chombo_ReductionCopier.H Chombo_SPACE.H Chombo_SliceSpec.H
     Chombo_SpreadingCopier.H Chombo_Stencil.H Chombo_TimedDataIterator.H
     Chombo_TreeIntVectSet.H
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${PROTO_HOME}/include
-    DEPENDS_ON BaseTools EBProto chombo_compiler_flags)
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS_ON BaseTools EBProto Proto chombo_compiler_flags ${LIB_DEP})

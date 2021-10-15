@@ -155,7 +155,7 @@ int main(int a_argc, char* a_argv[])
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
 
-  RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
 
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
@@ -164,5 +164,5 @@ int main(int a_argc, char* a_argv[])
   pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
-  return 0;
+  return result;
 }

@@ -89,6 +89,6 @@ int main()
 #ifdef PROTO_CUDA
   cudaSetDevice(0);
 #endif
-  RUN_ALL_TESTS();
-  return 0;
+  int result = RUN_ALL_TESTS();
+  return result;
 }

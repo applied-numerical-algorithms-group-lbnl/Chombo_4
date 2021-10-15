@@ -57,8 +57,6 @@ void keqcalc2(const int ncomp,
     }
   msub = 0;
 
-  double tmp = 0;
-
   for (int k = 1; k <= nrct; ++k) 
     {
       for (int npIndex = 1; npIndex <= nreactmin[k-1]; ++npIndex) 
