@@ -1,4 +1,3 @@
-message(STATUS "LIB_DEP = " ${LIB_DEP} CUDA::nvToolsExt)
 blt_add_executable(NAME applyHelmholtz SOURCES applyHelmholtz.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} DEPENDS_ON Headers gtest Proto ${LIB_DEP} CUDA::nvToolsExt)
 blt_add_test(NAME applyHelmholtz COMMAND applyHelmholtz)

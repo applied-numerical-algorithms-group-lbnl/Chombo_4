@@ -3,7 +3,7 @@
 #define ___Proto_SimpleImplicitFunctions__H__
 
 #include "Proto_RealVect.H"
-#include "implem/Proto_IndexTM.H"
+#include "Proto_IndexTM.H"
 #include "Proto_BaseIF.H"
 namespace Proto
 {

@@ -1,5 +1,5 @@
 #include "EBProto.H"
-#include <implem/Proto_IrregData.H>
+#include "Proto_IrregData.H"
 #include "test_timer.H"
 
 #define MAX_ELEM 100000

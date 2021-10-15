@@ -8,4 +8,4 @@ blt_add_library(NAME EBINS
     CrunchInterface.cpp
     EBINS.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON Headers common)
+    DEPENDS_ON Headers common ${LIB_DEP})

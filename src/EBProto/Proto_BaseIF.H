@@ -2,7 +2,7 @@
 #define __proto_BASEIF_H_
 
 #include "Proto_RealVect.H"
-#include "implem/Proto_IndexTM.H"
+#include "Proto_IndexTM.H"
 #include "Proto_Point.H"
 #include "Proto_Box.H"
 

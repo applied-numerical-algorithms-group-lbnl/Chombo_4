@@ -2,7 +2,7 @@
 #define _PROTO_HostBoxData_H_
 
 #include "Proto_Box.H"
-#include "implem/Proto_Serialization.H"
+#include "Proto_Serialization.H"
 
 namespace Proto
 {
@@ -168,5 +168,5 @@ namespace Proto
 
 } //end Proto namespace
 
-#include "implem/Proto_HostBoxDataImplem.H"
+#include "Proto_HostBoxDataImplem.H"
 #endif //end include guard

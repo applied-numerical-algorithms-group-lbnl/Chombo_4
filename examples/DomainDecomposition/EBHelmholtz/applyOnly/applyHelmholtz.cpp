@@ -191,7 +191,7 @@ runTest(int a_argc, char* a_argv[])
     lphbd.setVal(0.0);
   }
 
-  int step = 0; Real time = 0;
+  Real time = 0;
   Real dt = dx;
 
   const EBLevelBoxData<CELL, 1> & kappa = solver.getKappa();

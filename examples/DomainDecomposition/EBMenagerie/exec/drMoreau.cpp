@@ -22,8 +22,8 @@
 #include "Chombo_SmoothUnion.H"
 #include <iomanip>
 
-using Proto::BASISREALV, Proto::SimpleSphereIF, 
-      Proto::PlaneIF, Proto::SimpleCylinderIF;
+using Proto::BASISREALV; using Proto::SimpleSphereIF; 
+using Proto::PlaneIF; using Proto::SimpleCylinderIF;
 #include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2
@@ -37,7 +37,6 @@ fillKappa(EBLevelBoxData<CELL, 1>&  a_kappa,
 {
   CH_TIME("fillkappa");
   DataIterator dit = a_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& kappdat = a_kappa[dit[ibox]];

@@ -18,4 +18,4 @@ blt_add_library(NAME EBTools HEADERS
     Chombo_SmoothUnion.cpp
     Chombo_UnionIntersection.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
-    DEPENDS_ON BaseTools BoxTools Proto chombo_compiler_flags ${LIB_DEP})
+    DEPENDS_ON BaseTools BoxTools EBProto Proto chombo_compiler_flags ${LIB_DEP})

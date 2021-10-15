@@ -4,7 +4,7 @@
 #include "Chombo_MayDay.H"
 #include "Chombo_RealVect.H"
 #include "Proto_BaseIF.H"
-#include "implem/Proto_IndexTM.H"
+#include "Proto_IndexTM.H"
 
 namespace Chombo4
 {

@@ -52,12 +52,10 @@ runTest(int a_argc, char* a_argv[])
   Real C = 1.0;
   Real R = 0.25;
   int nIter       = 10;
-  int nStream    = 8;
   ParmParse pp;
     
   pp.get("nx"     , nx);
   pp.get("niter"  , nIter);
-  pp.get("nstream", nStream);
   pp.get("maxGrid", maxGrid);
   pp.get("x0"     , x0);
   pp.get("y0"     , y0);
@@ -79,11 +77,6 @@ runTest(int a_argc, char* a_argv[])
   pout() << "R       = " << R        << endl;
 
   pout() << "nIter   = " << nIter    << endl;
-  pout() << "nstream = " << nStream  << endl;
-
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(nStream);
-#endif
 
   RealVect ABC, X0;
   ABC[0] = A;

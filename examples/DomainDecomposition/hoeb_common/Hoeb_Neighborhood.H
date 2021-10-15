@@ -8,7 +8,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_ParmParse.H"
 #include "Hoeb_LAPACKMatrix.H"
-#include "implem/Proto_Factorial.H"
+#include "Proto_Factorial.H"
 #define HOEB_MAX_ORDER 4
 
 namespace hoeb

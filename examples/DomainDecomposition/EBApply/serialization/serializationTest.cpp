@@ -19,7 +19,7 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBLevelFluxData.H"
 #include "DebugFunctions.H"
-#include "implem/Proto_HostIrregData.H"
+#include "Proto_HostIrregData.H"
 #include <iomanip>
 
 #include "Chombo_NamespaceHeader.H"

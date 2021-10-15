@@ -350,10 +350,6 @@ void MHDRun(const RunParams& a_params)
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
 
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(a_params.nstream);
-#endif
-
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;
   constexpr bool is_periodic[] = {true, true, true};
