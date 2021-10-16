@@ -1,67 +1,15 @@
 blt_add_library(NAME EBProto HEADERS
     EBProto.H
-    Proto_AggStencil.H
-    Proto_AggStencilImplem.H
     Proto_BaseIF.H
-    Proto_Contains.H
-    Proto_CoordinateSystem.H
-    Proto_CoordinateSystemImplem.H
-    Proto_CutCellMoments.H
-    Proto_CutCellMomentsImplem.H
     Proto_EBBoxData.H
     Proto_EBDictionary.H
-    Proto_EBDictionaryImplem.H
     Proto_EBFluxData.H
-    Proto_EBForAllImplem.H
     Proto_EBGraph.H
-    Proto_EBGraphImplem.H
     Proto_EBHostData.H
     Proto_EBHostFluxData.H
-    Proto_EBIrregStruct.H
     Proto_EBStencil.H
-    Proto_EBStencilArchive.H
-    Proto_EBStencilArchiveImplem.H
-    Proto_EBStencilImplem.H
-    Proto_Factorial.H
-    Proto_GenericArithmetic.H
-    Proto_GenericArithmeticImplem.H
     Proto_HostBoxData.H
-    Proto_HostBoxDataImplem.H
-    Proto_HostIrregData.H
-    Proto_IFData.H
-    Proto_IFDataImplem.H
-    Proto_IFSlicer.H
-    Proto_IFSlicerImplem.H
-    Proto_IndexTM.H
-    Proto_IndexTMImplem.H
-    Proto_IndexedMoments.H
-    Proto_IndexedMomentsImplem.H
-    Proto_IrregData.H
-    Proto_IrregDataImplem.H
-    Proto_IrregGraph.H
-    Proto_IrregNode.H
-    Proto_IrregNodeImplem.H
-    Proto_LSProblem.H
-    Proto_LSProblemImplem.H
-    Proto_LSquares.H
-    Proto_LSquaresImplem.H
-    Proto_Metaprograms.H
-    Proto_MinimalCCCM.H
-    Proto_MinimalCCCMImplem.H
-    Proto_MomentIterator.H
-    Proto_Moments.H
-    Proto_MomentsImplem.H
-    Proto_MultiIndex.H
-    Proto_NormalDerivativeNew.H
-    Proto_Normalizor.H
-    Proto_Notation.H
-    Proto_PointSet.H
-    Proto_PointSetImplem.H
     Proto_RealVect.H
-    Proto_SecondOrderCell.H
-    Proto_SecondOrderCellImplem.H
-    Proto_Serialization.H
     Proto_SimpleImplicitFunctions.H
-    Proto_fusedLinear.H
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/implem
     DEPENDS_ON chombo_compiler_flags Proto ${LIB_DEP})

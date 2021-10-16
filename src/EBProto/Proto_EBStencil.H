@@ -16,7 +16,7 @@
 //#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencilArchive.H"
-#include "Proto_StencilImplem.H"
+#include "Proto_Stencil.H"
 
 using std::shared_ptr;
 using std::vector;
