@@ -1735,11 +1735,11 @@ namespace Proto
     Real distM = 1.0;
     Real distP = 1.0;
     if (a_dir == 0 ){
-      distM = POW(POW(POW(abs(centroidM[0]-0.5),2)+POW(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
-      distP = POW(POW(POW(abs(centroidP[0]+0.5),2)+POW(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
+      distM = POW(pow(POW(abs(centroidM[0]-0.5),2)+POW(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
+      distP = POW(pow(POW(abs(centroidP[0]+0.5),2)+POW(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
     }else if (a_dir == 1){
-      distM = POW(POW(POW(abs(centroidM[1]-0.5),2)+POW(abs(centroidM[0]-a_centroid[0]),2),0.5),expD);
-      distP = POW(POW(POW(abs(centroidP[1]+0.5),2)+POW(abs(centroidP[0]-a_centroid[0]),2),0.5),expD);
+      distM = POW(pow(POW(abs(centroidM[1]-0.5),2)+POW(abs(centroidM[0]-a_centroid[0]),2),0.5),expD);
+      distP = POW(pow(POW(abs(centroidP[1]+0.5),2)+POW(abs(centroidP[0]-a_centroid[0]),2),0.5),expD);
     }
     if (a_v_faceLoc[a_dir]>=0.0){
       //expD = 1.0;
@@ -1748,13 +1748,18 @@ namespace Proto
     }
     //Real distM = POW(abs(centroidM[a_dir]-0.5),expD);
     //Real distP = POW(abs(centroidP[a_dir]+0.5),expD);
-    a_fluxMStencil *= distP/(distM+distP);
-    a_fluxPStencil *= distM/(distM+distP);
+    //a_fluxMStencil *= distP/(distM+distP);
+    //a_fluxPStencil *= distM/(distM+distP);
     //fluxStencil += a_fluxMStencil;
     //fluxStencil += a_fluxPStencil;
-    if (a_v_faceLoc[a_dir]>=0.0){
+    if (a_v_faceLoc[a_dir]>1e-9){
       fluxStencil += a_fluxMStencil;
+    }else if (a_v_faceLoc[a_dir]<-1e-9){
+      fluxStencil += a_fluxPStencil;
     }else{
+      a_fluxMStencil *= 0.5;
+      a_fluxPStencil *= 0.5;
+      fluxStencil += a_fluxMStencil;
       fluxStencil += a_fluxPStencil;
     }
     return fluxStencil;
