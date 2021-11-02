@@ -446,7 +446,7 @@ namespace Proto
     //Get neighbors VoFs through the faces of a specific cell.
     vector<EBIndex<CELL> >
     getFlapVoFs(const EBGraph       & a_graph,  
-	              EBIndex<CELL> & a_start) const;
+	              const EBIndex<CELL> & a_start) const;
 
     //Get neighbors VoFs of a given face within a specific radius.
     //Radius starts at one for the cells sharing the face, and 
@@ -455,71 +455,71 @@ namespace Proto
     Vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
                      const EBIndex<CELL> & a_vof,
-		     const int             a_radius,
-		     Neighbors<order>    & a_neigh,
-		     const EBGraph       & a_graph,
+                     const int             a_radius,
+                     Neighbors<order>    & a_neigh,
+                     const EBGraph       & a_graph,
                      int                   a_neighType) const;
 
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
     void
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
-		                const EBGraph          & a_graph,
+                                const EBGraph          & a_graph,
                                 const VoluData         & a_voludata,
                                 const EBFaData         & a_ebfadata,
                                 const XFacData         & a_xfacdata,
                                 const YFacData         & a_yfacdata,
                                 const ZFacData         & a_zfacdata,
-				const EBNormalData     & a_ebnormxdata,
+                                const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata,
-				Neighbors<order>       & a_neigh,
-                                int                    & a_neighType,
-				double                   a_dx) const;
+                                const Neighbors<order> & a_neigh,
+                                int                      a_neighType,
+                                double                   a_dx) const;
 
     //Compute the Moments Matrix
     void
     getShiftedMomentMatrix(Chombo4::LAPACKMatrix  & a_Mvol,
-		           RealVect               & a_faceLoc,
-			   double                   a_dx,
-		           Neighbors<order>       & a_neigh,
-			   string                   a_ebbcName,
+                           RealVect               & a_faceLoc,
+                           double                   a_dx,
+                           const Neighbors<order> & a_neigh,
+                           string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
 		           
     //Compute rhs matrix for a face
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
-		      RealVect                 & a_faceLoc,
-	              IndMomSDMinOne           & a_faceMom,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
     virtual void
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
-		    RealVect                 & a_faceLoc,
-		    Vector<IndMomDIM>        & a_ebnorm,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
                     double                     a_dx) const;
 
     //Compute weight matrix 
     virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-		         Neighbors<order>       & a_neigh,
-		         RealVect               & a_faceLoc) const;
+                         const Neighbors<order> & a_neigh,
+                         RealVect               & a_faceLoc) const;
 
     //Compute stencil coefficients matrix 
     void
-    getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
-		      Chombo4::LAPACKMatrix  & a_Qshift, 
-		      Chombo4::LAPACKMatrix  & a_Mvol, 
-		      Chombo4::LAPACKMatrix  & a_weights, 
-                      double                   a_dx) const;
+    getStencilWeights(Chombo4::LAPACKMatrix        & a_phiCoef,
+                      const Chombo4::LAPACKMatrix  & a_Qshift,
+                      const Chombo4::LAPACKMatrix  & a_Mvol,
+                      const Chombo4::LAPACKMatrix  & a_weights,
+                      double                         a_dx) const;
 
     //Compute inhomogeneous term
     Real
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
-                       Neighbors<order>                & a_neigh,
+                       const Neighbors<order>          & a_neigh,
                        const int                         a_nvolneigh,
                        string                            a_ebbcName,
                        string                            a_dombcName[2*DIM],
@@ -542,9 +542,9 @@ namespace Proto
                            const EBNormalData         & a_ebnormzdata,
                            string                       a_ebbcName,
                            string                       a_dombcName[2*DIM],
-                           const int                  & a_dir,
+                           const int                    a_dir,
                            IndMomSDMinOne             & a_faceMom,
-                           int                        & a_neighType,
+                           int                          a_neighType,
                            double                       a_dx) const;
 
     //Compute EB face stencil
@@ -559,14 +559,14 @@ namespace Proto
                      const XFacData                & a_xfacdata,
                      const YFacData                & a_yfacdata,
                      const ZFacData                & a_zfacdata,
-		     const EBNormalData            & a_ebnormxdata,
+                     const EBNormalData            & a_ebnormxdata,
                      const EBNormalData            & a_ebnormydata,
                      const EBNormalData            & a_ebnormzdata,
-		     Vector<IndMomDIM>             & a_ebnorm,
-		     string                          a_ebbcName,
+                     Vector<IndMomDIM>             & a_ebnorm,
+                     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
-                     int                           & a_neighType,
-                     const double                  & a_dx) const;
+                     int                             a_neighType,
+                     const double                    a_dx) const;
 
     virtual ~BaseWLSFlux()
     {

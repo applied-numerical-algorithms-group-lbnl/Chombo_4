@@ -8,7 +8,7 @@ namespace Proto
   template<CENTERING cent, int order>
   vector<EBIndex<CELL> >
   BaseWLSFlux<cent, order>::
-  getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start) const
+  getFlapVoFs(const EBGraph& a_graph, const EBIndex<CELL>& a_start) const
   {
     PR_TIME("getFlapVoFs");
     vector<EBIndex<CELL> > retval;
@@ -128,8 +128,8 @@ namespace Proto
                               const EBNormalData      & a_ebnormxdata,
                               const EBNormalData      & a_ebnormydata,
                               const EBNormalData      & a_ebnormzdata,
-                              Neighbors<order>        & a_neigh,
-                              int                     & a_neighType,
+                              const Neighbors<order>  & a_neigh,
+                              int                       a_neighType,
                               double                    a_dx) const
   {
     PR_TIME("getMomentsInfoFromNeighbors");
@@ -375,7 +375,7 @@ namespace Proto
   getShiftedMomentMatrix(Chombo4::LAPACKMatrix    & a_Mvol,
                            RealVect               & a_faceLoc,
                            double                   a_dx,
-                           Neighbors<order>       & a_neigh,
+                           const Neighbors<order> & a_neigh,
                            string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const
   {
@@ -741,7 +741,7 @@ namespace Proto
   void
   BaseWLSFlux<cent, order>::
   getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                       Neighbors<order>       & a_neigh,
+                       const Neighbors<order> & a_neigh,
                        RealVect               & a_faceLoc) const
   { 
     PR_TIME("getWeightsMatrixFace");
@@ -798,11 +798,11 @@ namespace Proto
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
-  getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
-                    Chombo4::LAPACKMatrix  & a_Qshift,
-                    Chombo4::LAPACKMatrix  & a_Mvol,
-                    Chombo4::LAPACKMatrix  & a_weights,
-                    double                   a_dx) const
+  getStencilWeights(Chombo4::LAPACKMatrix        & a_phiCoef,
+                    const Chombo4::LAPACKMatrix  & a_Qshift,
+                    const Chombo4::LAPACKMatrix  & a_Mvol,
+                    const Chombo4::LAPACKMatrix  & a_weights,
+                    double                         a_dx) const
   {
     PR_TIME("getStencilWeights");
     Chombo4::LAPACKMatrix MT, WT, MTWT;
@@ -836,7 +836,7 @@ namespace Proto
   Real
   BaseWLSFlux<cent, order>::
   computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
-                     Neighbors<order>               & a_neigh,
+                     const Neighbors<order>         & a_neigh,
                      const int                        a_nvolneigh,
                      string                           a_ebbcName,
                      string                           a_dombcName[2*DIM],
@@ -968,9 +968,9 @@ namespace Proto
                          const EBNormalData         & a_ebnormzdata,
                          string                       a_ebbcName,
                          string                       a_dombcName[2*DIM],
-                         const int                  & a_dir,
+                         const int                    a_dir,
                          IndMomSDMinOne             & a_faceMom,
-                         int                        & a_neighType,
+                         int                          a_neighType,
                          double                       a_dx) const
   { 
     PR_TIME("getFaceCenteredStencil");
@@ -1056,8 +1056,8 @@ namespace Proto
                    Vector<IndMomDIM>             & a_ebnorm,
                    string                          a_ebbcName,
                    string                          a_dombcName[2*DIM],
-                   int                           & a_neighType,
-                   const double                  & a_dx) const
+                   int                             a_neighType,
+                   const double                    a_dx) const
   {
     PR_TIME("getEBFluxStencil");
     Chombo4::LAPACKMatrix::s_verbose = m_verbose;
