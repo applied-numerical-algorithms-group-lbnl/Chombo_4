@@ -10,8 +10,8 @@
 //Area functions
 //cell centered and please keep them in the domain
 ////upper left corner of 64^2
-Point areaLo(0, 0);
-Point areaHi(2, 10);
+Point areaLo(28, 21);
+Point areaHi(31, 31);
 //the bit underneath the circle rad=0.1, center = 0.5
 //Point areaLo(28, 24);
 //Point areaHi(30, 26);                                    
@@ -19,8 +19,16 @@ Point areaHi(2, 10);
 Side::LoHiSide faceSideX = Side::Lo;
 Side::LoHiSide faceSideY = Side::Lo;
 Bx areaBx(areaLo, areaHi);
-    
 
+#ifdef CH_USE_HDF5
+void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)
+{
+  if(a_data != NULL)
+  {
+    a_data->writeToFileHDF5(string("debug.hdf5"), 0.0);
+  }
+}
+#endif
 void 
 dumpVecRV(Vector<RealVect>* a_dataPtr)
 {
@@ -946,6 +954,9 @@ void dummyfunc_too()
   dumpCellDIMArea(NULL);
   dumpBD1(NULL);
   dumpBDDIM(NULL);
+#ifdef CH_USE_HDF5
+  writeLDCell1(NULL);
+#endif  
 }
 #endif
 #include "Chombo_NamespaceFooter.H"

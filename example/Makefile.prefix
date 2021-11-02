@@ -12,8 +12,8 @@ SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp)
 VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
 VPATH +=  $(CHOMBO_HOME)/src/EBTools 
 
-CXXALLFLAGS := 
-CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
+CHOMBO_CXXALLFLAGS := 
+CHOMBO_CXXGPUFLAGS := --compiler-options='$(CHOMBO_CXXALLFLAGS)'
 
 NODIRSRC = $(notdir $(SRC))
 NODIROBJ = $(subst .cpp,.o,$(NODIRSRC))
@@ -22,5 +22,5 @@ OBJ=$(patsubst %.o,o/%.o, $(NODIROBJ))
 
 LIBS = $(LAPACKLIBS)
 
-CXXALLFLAGS := 
-CXXGPUFLAGS := --compiler-options='$(CXXALLFLAGS)'
+CHOMBO_CXXALLFLAGS := 
+CHOMBO_CXXGPUFLAGS := --compiler-options='$(CHOMBO_CXXALLFLAGS)'

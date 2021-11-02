@@ -1,15 +1,15 @@
 
-CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
-CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
-CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
-CPPFLAGS += -I../../common
-CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
+CHOMBO_CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
+CHOMBO_CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+CHOMBO_CPPFLAGS += -I../../common
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
 
 
-
-LINK=$(CXX)
+#need to use depxx because petsc links with g++
+LINK=$(DEPXX)
 OBJDIR = o
 DEPDIR = d
 TARGET = main.exe
@@ -40,8 +40,8 @@ endif
 
 $(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
 	@mkdir -p $(OBJDIR)
-	$(DEPXX) $(DEPFLAGS) $(CPPFLAGS) $< 
-	$(CXX) -c -o $@ $< $(CXXFLAGS) $(CPPFLAGS) 
+	$(DEPXX) $(DEPFLAGS) $(CHOMBO_CPPFLAGS) $< 
+	$(CXX) -c -o $@ $< $(CHOMBO_CXXFLAGS) $(CHOMBO_CPPFLAGS) 
 
 all: $(TARGET)
 

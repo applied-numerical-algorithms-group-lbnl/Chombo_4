@@ -44,21 +44,10 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
   string bcnames[2*DIM];
   m_ebibc.projectionStencilStrings(bcnames);
 
-  bool directToBottom = false;
-  ParmParse pp("mac_proj");
-  pp.query("direct_to_bottom_solve", directToBottom);
-  if(directToBottom)
-  {
-    pout() << "using bottom solver  directly for projections "<< endl;
-  }
-  else
-  {
-    pout() << "using geometric multigrid   for projections "<< endl;
-  }
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
                      StencilNames::Poisson2, bcnames, StencilNames::Neumann,
-                     m_domain, m_nghost, directToBottom));
+                     m_domain, m_nghost, string("mac_proj")));
 
   registerStencils();
 }

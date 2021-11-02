@@ -89,7 +89,7 @@ advanceOneStep( EBLevelBoxData<CELL, 1>       &  a_phi,
   Real alpha = 1;
   Real beta = -a_dt*a_diffCoef;
   m_diffusionSolver->resetAlphaAndBeta(alpha, beta);
-  m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations);
+  m_diffusionSolver->solve(a_phi, m_rhs, a_tolerance, a_maxIterations, false);
 }
 
 ///

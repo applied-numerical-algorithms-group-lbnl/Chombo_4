@@ -115,12 +115,12 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                                         
               const Chombo4::Box                                                  &  a_domCoar,
               const Real                                                          &  a_dxCoar,
               const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >   &  a_dictionary,
-              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                 &  a_geoserv)
+              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                 &  a_geoserv,
+              string a_stencilname)
 {
   ParmParse pp;
-  int nghost;
-  pp.get("num_ghost_cells", nghost);
-  IntVect dataGhostIV =   nghost*IntVect::Unit;
+  int nghost = 6;
+  IntVect dataGhostIV = nghost*IntVect::Unit;
   EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, a_graphsFine);
   EBLevelBoxData<CELL,   1>  phiCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
   EBLevelBoxData<CELL,   1>  klpFine(a_gridsFine, dataGhostIV, a_graphsFine);
@@ -150,10 +150,52 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                                         
     ebforall(inputbx, subtractionTraction, validbx, errfab, ftocfab, coarfab);
   }
 }
+/****/
+void
+getICError(EBLevelBoxData<CELL,   1>                                           &  a_errCoar, 
+           const shared_ptr<LevelData<EBGraph> >                               &  a_graphsFine,
+           const Chombo4::DisjointBoxLayout                                    &  a_gridsFine,
+           const Chombo4::Box                                                  &  a_domFine,
+           const Real                                                          &  a_dxFine,
+           const shared_ptr<LevelData<EBGraph> >                               &  a_graphsCoar,
+           const Chombo4::DisjointBoxLayout                                    &  a_gridsCoar,
+           const Chombo4::Box                                                  &  a_domCoar,
+           const Real                                                          &  a_dxCoar,
+           const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >   &  a_dictionary,
+           const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                 &  a_geoserv)
+{
+  ParmParse pp;
+  int nghost = 6;
+
+  IntVect dataGhostIV =   nghost*IntVect::Unit;
+  EBLevelBoxData<CELL,   1>  phiFine(a_gridsFine, dataGhostIV, a_graphsFine);
+  EBLevelBoxData<CELL,   1>  phiCoar(a_gridsCoar, dataGhostIV, a_graphsCoar);
+  EBLevelBoxData<CELL,   1>  phiFtoC(a_gridsCoar, dataGhostIV, a_graphsCoar);
+  
+  hoeb::fillPhi(phiFine, a_graphsFine, a_gridsFine, a_domFine, a_dxFine, a_geoserv);
+  hoeb::fillPhi(phiCoar, a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar, a_geoserv);
+
+  hoeb::restrictPhi(phiFtoC, phiFine,
+                    a_graphsFine, a_gridsFine, a_domFine, a_dxFine,                    
+                    a_graphsCoar, a_gridsCoar, a_domCoar, a_dxCoar,
+                    a_dictionary, a_geoserv);
+
+  //error = Ave(phifine) - phicoar 
+  Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+  for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    auto& ftocfab =   phiFtoC[dit[ibox]];
+    auto& coarfab =   phiCoar[dit[ibox]];
+    auto& errfab  = a_errCoar[dit[ibox]];
+    auto  inputbx = ftocfab.inputBox();
+    auto  validbx = (*a_graphsCoar)[dit[ibox]].validBox();
+    ebforall(inputbx, subtractionTraction, validbx, errfab, ftocfab, coarfab);
+  }
+}
 
 /****/
 int
-runTest()
+runTruncationErrorTest(string a_stencilname)
 {
   Real coveredval = -1;
   int nx      = 32;
@@ -183,9 +225,9 @@ runTest()
   Chombo4::DisjointBoxLayout gridsFine = vecgrids[0];
   Chombo4::DisjointBoxLayout gridsMedi = vecgrids[1];
   Chombo4::DisjointBoxLayout gridsCoar = vecgrids[2];
-  IntVect dataGhostIV =   4*IntVect::Unit;
+  IntVect dataGhostIV =   6*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-  int geomGhost = 4;
+  int geomGhost = 6;
   RealVect origin = RealVect::Zero();
   
   shared_ptr<BaseIF>    impfunc = hoeb::getImplicitFunction();
@@ -230,12 +272,12 @@ runTest()
   getKLPhiError(errMedi, 
                 graphsFine, gridsFine, domFine, dxFine,
                 graphsMedi, gridsMedi, domMedi, dxMedi,
-                dictionary, geoserv);
+                dictionary, geoserv, a_stencilname);
 
   getKLPhiError(errCoar, 
                 graphsMedi, gridsMedi, domMedi, dxMedi,
                 graphsCoar, gridsCoar, domCoar, dxCoar,
-                dictionary, geoserv);
+                dictionary, geoserv, a_stencilname);
 
 
   //Norm!
@@ -254,6 +296,120 @@ runTest()
   return 0;
 }
 
+/****/
+int
+runInitialConditionTest()
+{
+  Real coveredval = -1;
+  int nx      = 32;
+  int maxGrid = 32;
+    
+  ParmParse pp;
+
+  pp.get("nx"        , nx);
+  pp.get("maxGrid"  , maxGrid);
+  pp.get("coveredval", coveredval);         
+
+
+  pout() << "nx"        << " = " <<  nx         << endl;
+  pout() << "max_grid"  << " = " <<  maxGrid    << endl;
+  pout() << "coveredval"<< " = " <<  coveredval << endl;         
+  
+
+  IntVect domLo = IntVect::Zero;
+  IntVect domHi  = (nx - 1)*IntVect::Unit;
+
+  Chombo4::ProblemDomain domain(domLo, domHi);
+
+  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  pout() << "making grids" << endl;
+  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+
+  Chombo4::DisjointBoxLayout gridsFine = vecgrids[0];
+  Chombo4::DisjointBoxLayout gridsMedi = vecgrids[1];
+  Chombo4::DisjointBoxLayout gridsCoar = vecgrids[2];
+  IntVect dataGhostIV =   6*IntVect::Unit;
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
+  int geomGhost = 6;
+  RealVect origin = RealVect::Zero();
+  
+  shared_ptr<BaseIF>    impfunc = hoeb::getImplicitFunction();
+  pout() << "defining geometry" << endl;
+  Real dx = 1.0/(Real(nx));
+  vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
+  vector<Real>   vecdx    (vecgrids.size(), dx);
+  for(int ilev = 1; ilev < vecgrids.size(); ilev++)
+  {
+    vecdomain[ilev] = coarsen(vecdomain[ilev-1], 2);
+    vecdx    [ilev] =           2*vecdx[ilev-1];
+  }
+  
+  Real dxFine = vecdx[0];
+  Real dxMedi = vecdx[1];
+  Real dxCoar = vecdx[2];
+  GeometryService<HOEB_MAX_ORDER>* geomptr =
+    new GeometryService<HOEB_MAX_ORDER>
+    (impfunc, origin, dxFine, domain.domainBox(), vecgrids, geomGhost);
+  
+  shared_ptr< GeometryService<HOEB_MAX_ORDER> >  geoserv(geomptr);
+
+  pout() << "making dictionary" << endl;
+
+  Chombo4::Box domFine = vecdomain[0];
+  Chombo4::Box domMedi = vecdomain[1];
+  Chombo4::Box domCoar = vecdomain[2];
+
+  shared_ptr<LevelData<EBGraph> > graphsFine = geoserv->getGraphs(domFine);
+  shared_ptr<LevelData<EBGraph> > graphsMedi = geoserv->getGraphs(domMedi);
+  shared_ptr<LevelData<EBGraph> > graphsCoar = geoserv->getGraphs(domCoar);
+
+  
+  shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  dictionary
+    (new     EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL>
+     (geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
+
+  EBLevelBoxData<CELL,   1>  errMedi(gridsMedi, dataGhostIV, graphsMedi);
+  EBLevelBoxData<CELL,   1>  errCoar(gridsCoar, dataGhostIV, graphsCoar);
+  
+
+  getICError(errMedi, 
+                graphsFine, gridsFine, domFine, dxFine,
+                graphsMedi, gridsMedi, domMedi, dxMedi,
+                dictionary, geoserv);
+
+  getICError(errCoar, 
+                graphsMedi, gridsMedi, domMedi, dxMedi,
+                graphsCoar, gridsCoar, domCoar, dxCoar,
+                dictionary, geoserv);
+
+
+  //Norm!
+  Real normMedi = errMedi.maxNorm(0);
+  Real normCoar = errCoar.maxNorm(0);
+
+  Real tol = 1.0e-16;
+  Real order = 0;
+  if((normCoar > tol) && (normMedi > tol))
+  {
+    order = log(normCoar/normMedi)/log(2.0);
+  }
+  pout() << "||IC errMedi||_max = " << normMedi << std::endl;
+  pout() << "||IC errCoar||_max = " << normCoar << std::endl;
+  pout() << "Richardson truncation error order for IC= " << order << std::endl;
+  return 0;
+  return 0;
+}
+/****/
+int
+runTests()
+{
+
+  int errcode0 = runInitialConditionTest()          ; hoeb::checkError(errcode0, "initial_condition");
+  int errcode1 = runTruncationErrorTest("Schwartz") ; hoeb::checkError(errcode1, "Schwartz_stencil");
+  int errcode2 = runTruncationErrorTest("Devendran"); hoeb::checkError(errcode2, "Devendran_stencil");
+  return errcode0 + 10*errcode1 + 100*errcode2;
+}
+/****/
 
 int main(int a_argc, char* a_argv[])
 {
@@ -276,7 +432,7 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runTest();
+    runTests();
   }
 
   pout() << "printing time table " << endl;

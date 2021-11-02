@@ -37,7 +37,8 @@ namespace Proto
 
       m_flopsThisApply = 0;        
 
-      bool useStack = true;
+      //turning on the stack here is a terrible idea because nothing else uses it
+      bool useStack = false; 
       EBBoxData<srcCenter, data_t, 1> srcData(srcbox, a_srcGraph, useStack);
       EBBoxData<dstCenter, data_t, 1> dstData(dstbox, a_dstGraph, useStack);
 

@@ -194,7 +194,7 @@ public:
   virtual void exchange(const Copier& copier)
   {
     CH_TIME("EBLevelBoxData::exchange");
-#if 1
+#if 0
     this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
 #else
     

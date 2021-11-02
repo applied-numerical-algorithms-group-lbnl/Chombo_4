@@ -1,9 +1,10 @@
+PETSC_DIR =/home/graves/_petsc/_mpi
 
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=mpiCC
-CXX=mpiCC
+DEPXX=mpicxx
+CXX=mpicxx
 #hdf5 does not compile on this machine without -fpermissive
-CXXALLFLAGS := -fpermissive -I$(ANAG_OPENMPI_INC) -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CXXALLFLAGS := -fpermissive -I$(ANAG_OPENMPI_INC) -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas
 CXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)
 CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
 HDF5_ROOT = $(ANAG_HDF5_DIR)
@@ -12,8 +13,7 @@ HDFINCFLAGS=-I$(HDF5_ROOT)/include
 HDFLIBFLAGS=-L$(HDF5_ROOT)/lib -lhdf5 -lz
 
 
-PETSC_DIR   = /home/graves/petsc/mpi
-SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
+include $(PETSC_DIR)/lib/petsc/conf/variables
 #end mach dependent
 
 

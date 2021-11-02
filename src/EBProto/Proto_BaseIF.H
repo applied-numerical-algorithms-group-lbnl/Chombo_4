@@ -1,5 +1,5 @@
-#ifndef __proto_BASEIF_H_
-#define __proto_BASEIF_H_
+#ifndef _proto_BASEIF_H_
+#define _proto_BASEIF_H_
 
 #include "Proto_RealVect.H"
 #include "implem/Proto_IndexTM.H"

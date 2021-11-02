@@ -11,8 +11,8 @@
 #ifndef _Chombo_DISJOINTBOXLAYOUT_H_
 #define _Chombo_DISJOINTBOXLAYOUT_H_
 
-#include "Chombo_BoxLayout.H"
 #include "Chombo_Vector.H"
+#include "Chombo_BoxLayout.H"
 #include "Chombo_ProblemDomain.H"
 #include "Chombo_NamespaceHeader.H"
 
