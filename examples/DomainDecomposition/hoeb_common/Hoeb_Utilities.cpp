@@ -7,6 +7,14 @@ namespace hoeb
 {
   
   /******/  
+  void checkError(int a_errcode, string a_prefix)
+  {
+    if(a_errcode != 0)
+    {
+      pout() << "warning: " << a_prefix << " output error code = "  << a_errcode << endl;
+    }
+  }
+  /******/  
   LocalStencil<CELL, Real> 
   getFullDharshiStencil(const EBIndex<CELL>                                 & a_vof,
                         const std::string                                     a_dombcname[2*DIM],
@@ -110,8 +118,8 @@ namespace hoeb
                      unsigned int                                          a_ibox)
 
   {
-    /* just in case a fit of madness causes me to use geometric multigrid */
-    a_needDiagonalWeights = true;
+    /* geometric multigrid is not a great idea here*/
+    a_needDiagonalWeights = false;
     a_srcDomain = ProtoCh::getProtoBox(a_domain);
     a_dstDomain = ProtoCh::getProtoBox(a_domain);
     Chombo4::ParmParse pp;
@@ -230,6 +238,7 @@ namespace hoeb
         {
           auto& vof = vofs[ivof];
           Real phival = phigen(graph, a_dx, voldat, vof);
+          hostdata[dit[ibox]](vof, 0) = phival;
         }
       }
     }
@@ -264,6 +273,40 @@ namespace hoeb
     {
       auto      & coarfab = a_klpFToC[dit[ibox]];
       const auto& finefab = a_klpFine[dit[ibox]];
+      auto stencil = a_dictionary->getEBStencil(restrictionName, nobcname, a_domFine, a_domCoar, ibox);
+      //set resc = Ave(resf) (true is initToZero)
+      stencil->apply(coarfab, finefab,  true, 1.0);
+    }
+  }
+
+  /****/
+  void
+  restrictPhi(EBLevelBoxData<CELL, 1>                                           &  a_phiFToC,
+                   const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
+                   const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+                   const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
+                   const Chombo4::Box                                                &  a_domFine,
+                   const Real                                                        &  a_dxFine,
+                   const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+                   const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
+                   const Chombo4::Box                                                &  a_domCoar,
+                   const Real                                                        &  a_dxCoar,
+                   const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
+                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv)
+  {
+    std::string  nobcname        = string("no_bcs");
+    std::string  restrictionName = string("Rho_Restriction");
+    string dombc[2*DIM];
+    for(unsigned int idom = 0; idom < 2*DIM;  idom++)
+    {
+      dombc[idom] = nobcname;
+    }
+    a_dictionary->registerStencil(restrictionName, dombc, nobcname, a_domFine, a_domCoar, false);
+    Chombo4::DataIterator dit = a_gridsCoar.dataIterator();
+    for(unsigned int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto      & coarfab = a_phiFToC[dit[ibox]];
+      const auto& finefab = a_phiFine[dit[ibox]];
       auto stencil = a_dictionary->getEBStencil(restrictionName, nobcname, a_domFine, a_domCoar, ibox);
       //set resc = Ave(resf) (true is initToZero)
       stencil->apply(coarfab, finefab,  true, 1.0);

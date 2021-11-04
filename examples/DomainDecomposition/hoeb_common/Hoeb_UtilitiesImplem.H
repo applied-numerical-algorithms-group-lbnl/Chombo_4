@@ -554,7 +554,9 @@ namespace hoeb
     IndexTM<Real, DIM> distance = getIndexDistance(facloc, a_xbar);
     volmom.shift(distance);
 
-    LAPACKMatrix Qmat;
+    typedef IndexedMoments<DIM  , HOEB_MAX_ORDER> IndMomDIM;
+    unsigned int Pcols = IndMomDIM::size();
+    LAPACKMatrix Qmat(1, Pcols);
 
 
     for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)

@@ -24,9 +24,9 @@
 #include "Chombo_IntVect.H"
 #include "Chombo_LoHiSide.H"
 #include "Chombo_SPMD.H"
-#include "Proto.H"
 #include "Chombo_NamespaceHeader.H"
 
+#include "Proto.H"
 
 struct SliceSpec;
 

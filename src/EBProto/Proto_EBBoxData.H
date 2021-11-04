@@ -61,15 +61,7 @@ namespace Proto
               unsigned int               a_destComp,
               unsigned int               a_numcomp)
     {
-      PR_TIME("EBBoxData::copy");
-      {
-        PR_TIME("copy_reg_data");
-        m_regData.copy(a_src.m_regData, a_srcBox, a_srcComp, a_destBox, a_destComp, a_numcomp);
-      }
-      {
-        PR_TIME("copy_irr_data");
-        m_irrData.copy(a_src.m_irrData, a_srcBox, a_srcComp, a_destBox, a_destComp, a_numcomp);
-      }
+      PROTO_ASSERT(false, "how did I get here");
     }
     ///
     EBBoxData<cent, data_t, ncomp>&
@@ -263,7 +255,7 @@ namespace Proto
       this->m_inputBox = a_box;
       this->m_graph = a_graph;
 
-      this->m_irrData.define(a_box, this->m_graph, a_useStack);  
+      this->m_irrData.define(a_box, this->m_graph);  
       this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
     }
 
@@ -292,13 +284,9 @@ namespace Proto
                                unsigned int a_startcomp,
                                unsigned int a_numcomps) const
   {
-    PR_TIME("EBBoxData::charsize");
-    PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-    size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-    size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
-    size_t sumsize = regsize + irrsize;
+    PROTO_ASSERT(false, "should not get here");
 
-    return sumsize;
+    return 0;
   }
 
 
@@ -307,14 +295,7 @@ namespace Proto
                          unsigned int           a_startcomp,
                          unsigned int           a_numcomps)
   {
-    PR_TIME("EBBoxData::linearIn");
-    PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-    char* charbuf = (char*)a_buf;
-    m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-    charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-//#ifndef FUSED
-    m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-//#endif
+    PROTO_ASSERT(false, "should not get here");
   }
 
   virtual void linearOut(void*               a_buf,
@@ -322,15 +303,7 @@ namespace Proto
                          unsigned int        a_startcomp,
                          unsigned int        a_numcomps) const
   {
-    PR_TIME("EBBoxData::linearOut");
-    PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-    char* charbuf = (char*)a_buf;
-    m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-    unsigned int regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-    charbuf += regsize;
-//#ifndef FUSED
-    m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-//#endif
+    PROTO_ASSERT(false, "should not get here");
   }
   ///
   static int preAllocatable()
@@ -427,7 +400,7 @@ namespace Proto
   }
 
 
-
+/*
 
 
 ///version that does not send the point to the function
@@ -462,6 +435,7 @@ namespace Proto
   template<typename Func, typename... Srcs>
   inline void ebforall(const Box& a_inputBox,
                        const Func & a_F,  const Box& a_box, Srcs&... a_srcs);
+*/
 }
 
 

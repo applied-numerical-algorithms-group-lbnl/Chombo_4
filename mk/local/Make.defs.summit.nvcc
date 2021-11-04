@@ -1,6 +1,6 @@
 
 PROTO_HOME =$(HOME)/_proto/proto
-
+DEPXX=g++
 export OMPI_CXX=nvcc
 
 MPILIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport

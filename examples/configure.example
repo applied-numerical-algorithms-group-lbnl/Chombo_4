@@ -17,7 +17,6 @@ parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALS
 parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
 parser.add_argument('--stack', help='define how many GB to allocate to the stack', choices=['1GB', '2GB', '4GB'], default='4GB')
 
-
 args = parser.parse_args()
 
 print(args)
@@ -60,23 +59,23 @@ for t in targets:
         f.write('\nSRC += $(wildcard ../../hoeb_common/*.cpp) \n')
         f.write('\nVPATH +=  ../../hoeb_common/\n')              
 
-    f.write('\nCPPFLAGS = -std=c++11\n')
+    f.write('\nCHOMBO_CPPFLAGS = -std=c++14\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
-        f.write('\nCPPFLAGS += -DCH_MPI -DPR_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_MPI -DPR_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
         f.write('\nLIBS     += $(MPILIBS)')
 
     if(args.hdf5 == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_HDF5 \n')
-        f.write('\nCPPFLAGS += $(HDFINCFLAGS)\n')
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_USE_HDF5 \n')
+        f.write('\nCHOMBO_CPPFLAGS += $(HDFINCFLAGS)\n')
         f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
         if(args.mpi == 'TRUE'):
-            f.write('\nCPPFLAGS += -DH5_HAVE_PARALLEL\n')
+            f.write('\nCHOMBO_CPPFLAGS += -DH5_HAVE_PARALLEL\n')
 
     if(args.petsc == 'TRUE'):
-        f.write('\nCPPFLAGS += -DCH_USE_PETSC')
-        f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_USE_PETSC')
+        f.write('\nCHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
 
     if(args.efence == 'TRUE'):
@@ -84,18 +83,25 @@ for t in targets:
 
 
     if(args.prec == 'DOUBLE'):
-        f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
+        f.write('\nCHOMBO_CXXFLAGS += -DCH_USE_DOUBLE\n')
+
+    if args.stack == '1GB':
+      f.write('\nCHOMBO_CXXFLAGS+= -DPR_STACK_ALLOC=1073741824')
+    elif args.stack == '2GB':
+      f.write('\nCHOMBO_CXXFLAGS+= -DPR_STACK_ALLOC=2147483648')
+    elif args.stack == '4GB':
+      f.write('\nCHOMBO_CXXFLAGS+= -DPR_STACK_ALLOC=4294967296')
 
     if(args.opt) == 'DEBUG':
         if(args.cuda == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
             if(args.hip) == 'TRUE':
               f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
-              f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+              f.write('\nCHOMBO_CXXFLAGS+=$(CXXGPUFLAGS) \n')
             else:
-              f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
+              f.write('\nCHOMBO_CXXFLAGS+=$(CXXDBGFLAGS) \n')
     else:
         if(args.opt == 'HIGH'):
           if(args.hip == 'FALSE'):
@@ -104,35 +110,28 @@ for t in targets:
             f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
         if(args.cuda == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
         if(args.hip == 'TRUE'):
             f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
-            f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CXXGPUFLAGS) \n')
         else:
-            f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
 
     if(args.cuda == 'TRUE'):
         f.write('\nCXX = nvcc \n DEP=nvcc\n')
         f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA -x cu --expt-relaxed-constexpr --expt-extended-lambda -arch=compute_70\n')
+        f.write('\nCHOMBO_CXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
    
     if(args.hip == 'TRUE'):
         f.write('\nCXX = hipcc \n DEP=hipcc\n')
-        f.write('\nCXXFLAGS+=-DPROTO_CUDA -DPROTO_HIP\n')
+        f.write('\nCHOMBO_CXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
     
-    if args.stack == '1GB':
-        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=1073741824')
-    elif args.stack == '2GB':
-        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=2147483648')
-    elif args.stack == '4GB':
-        f.write('\nCPPFLAGS+= -DPR_STACK_ALLOC=4294967296')
-
 
     f.write(makefile_post)
     if hoebs in t:
-        f.write('\nCPPFLAGS += -I../../hoeb_common \n')
+        f.write('\nCHOMBO_CPPFLAGS += -I../../hoeb_common \n')
  
     os.chdir(top)
     f.close()

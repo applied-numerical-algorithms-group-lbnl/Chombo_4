@@ -46,13 +46,14 @@ namespace Proto
                    IrregData<cent, data_t, ncomp>& a_s )
   {
     vector< EBIrregStruct<cent, data_t, ncomp> > retval;
-    retval.resize(a_indices.size());
     for(int ivec = 0; ivec < a_indices.size(); ivec++)
     {
-      retval[ivec].m_startPtr = a_s.data();
-      retval[ivec].m_varsize  = a_s.vecsize();
-      retval[ivec].m_offset   = a_s.index(a_indices[ivec], 0);
-      retval[ivec].m_index    = a_indices[ivec].m_pt;
+      EBIrregStruct<cent, data_t, ncomp>  vecval;
+      vecval.m_startPtr = a_s.data();
+      vecval.m_varsize  = a_s.vecsize();
+      vecval.m_offset   = a_s.index(a_indices[ivec], 0);
+      vecval.m_index    = a_indices[ivec].m_pt;
+      retval.push_back(vecval);
     }
 
 
@@ -116,8 +117,38 @@ namespace Proto
     return retval;
   }
 
+
+
+
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
+  __global__
+  void
+  vec_indexer(unsigned int a_begin, unsigned int a_end,Func a_body, 
+              EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
+  {
+    int idx = threadIdx.x + blockIdx.x*blockDim.x;
+    if (idx >= a_begin && idx < a_end)
+    {
+      a_body(cudaGetVar(idx, a_dst), cudaGetVar(idx, a_srcs)...);
+    }
+  }
+
+
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
+  __global__
+  void
+  vec_indexer_i(unsigned int a_begin, unsigned int a_end,Func a_body, 
+                EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
+  {
+    int idx = threadIdx.x + blockIdx.x*blockDim.x;
+    if (idx >= a_begin && idx < a_end)
+    {
+      a_body(a_dst[idx].m_index.m_tuple, cudaGetVar(idx, a_dst), cudaGetVar(idx, a_srcs)...);
+    }
+  }
+
 //
-#endif
+#else
 
   template<typename T>
   inline T
@@ -143,7 +174,6 @@ namespace Proto
     return retval;
   }
 
-  /*
   template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
   inline void
   vec_indexer(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
@@ -156,10 +186,10 @@ namespace Proto
        
   }
 
-  template<CENTERING cent, typename data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
   inline void
   vec_indexer_i(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-		EBIrregStruct<cent,data_t,ncomp>* a_dst, Srcs... a_srcs)
+		EBIrregStruct<cent, data_t, ncomp>* a_dst, Srcs... a_srcs)
   {
     for(unsigned int ivec = a_begin; ivec < a_end; ivec++)
     {
@@ -168,103 +198,47 @@ namespace Proto
     }
        
   }
-  */
-
-
-  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
-  struct vecIndexer
-  {
-    static inline void cpu(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-                           EBIrregStruct<cent, data_t, ncomp>* a_dst, Srcs... a_srcs)
-    {
-      for(unsigned int ivec = a_begin; ivec < a_end; ivec++)
-        {
-          a_F(getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
-        }
-    }
-
-#ifdef PROTO_CUDA
-    
-  __device__ static void
-  gpu(unsigned int a_begin, unsigned int a_end, const Func& a_body, 
-      EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
-    {
-      int idx = threadIdx.x + blockIdx.x*blockDim.x;
-      if (idx >= a_begin && idx < a_end)
-        {
-          a_body(cudaGetVar(idx, a_dst), cudaGetVar(idx, a_srcs)...);
-        }
-    }
-
 
 #endif
-       
-  };
 
-  
-  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
-  struct vecIndexer_i
-  {
-    static inline void
-    cpu(unsigned int a_begin, unsigned int a_end, const Func& a_F, 
-          EBIrregStruct<cent, data_t, ncomp>* a_dst, Srcs... a_srcs)
-    {
-      for(unsigned int ivec = a_begin; ivec < a_end; ivec++)
-        {
-          Point pt = a_dst[ivec].m_index;
-          a_F(pt.m_tuple, getVar(ivec, a_dst), (getVar(ivec, a_srcs))...);
-        }
-    }
-#ifdef PROTO_CUDA
-    __device__ static void
-    gpu(unsigned int a_begin, unsigned int a_end, const Func& a_body, 
-        EBIrregStruct<cent, data_t, ncomp>*  a_dst, Srcs... a_srcs)
-    {
-      int idx = threadIdx.x + blockIdx.x*blockDim.x;
-      if (idx >= a_begin && idx < a_end)
-        {
-          a_body(a_dst[idx].m_index.m_tuple, cudaGetVar(idx, a_dst), cudaGetVar(idx, a_srcs)...);
-        }
-    }
-#endif
-  };
-  
+
 //going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
   inline void
   protoVectorFunc(const Func& a_F, unsigned int a_Nvec, 
-                 EBIrregStruct<cent, data_t, ncomp> * a_dst, const Srcs&... a_srcs)
+                 EBIrregStruct<cent, data_t, ncomp> * a_dst,Srcs... a_srcs)
   {
-    PR_TIME("vec_indexer");
     const int N = a_Nvec;
+
+#ifdef PROTO_CUDA
+    size_t smem = 0;
     unsigned int stride = 256;
     unsigned int blocks = (N+stride-1)/stride;
-
-    size_t smem = 0;
-    // protoLaunchKernelMemAsync(vec_indexer, blocks, stride, smem, protoGetCurrentStream,
-    //   0, N, a_F, a_dst, a_srcs...);
-    protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, vecIndexer<cent,data_t,ncomp,Func,Srcs...>>( blocks, stride, smem, protoGetCurrentStream,
-                               0, N, a_F, a_dst, a_srcs...);
-    
+    protoLaunchKernelMemAsyncGPU(vec_indexer, blocks, stride, smem, protoGetCurrentStream,
+      0, N, a_F, a_dst, a_srcs...);
+#else
+    vec_indexer(0, N, a_F, a_dst, a_srcs...);
+#endif
   }
 
 
 //going into this srcs are EBIrregStruct<cent, data_t, ncomp>* and other stuff
-  template<CENTERING cent, typename  data_t, unsigned int ncomp, typename Func, typename... Srcs>
+  template<CENTERING cent, typename data_t,unsigned int ncomp,  typename Func, typename... Srcs>
   inline void
   protoVectorFunc_i(const Func& a_F, unsigned int a_Nvec, 
-                   EBIrregStruct<cent, data_t, ncomp> * a_dst, const Srcs&... a_srcs)
+                   EBIrregStruct<cent, data_t, ncomp> * a_dst,Srcs... a_srcs)
   {
-    PR_TIME("vec_indexer_i");
     const int N = a_Nvec;
+    
+#ifdef PROTO_CUDA
     unsigned int stride = 256;
     unsigned int blocks = (N+stride-1)/stride;
-    
     size_t smem = 0;
-    // protoLaunchKernelMemAsync(vec_indexer_i, blocks, stride, smem, protoGetCurrentStream,
-    //   0, N, a_F, a_dst, a_srcs...);
-    protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT, vecIndexer_i<cent,data_t,ncomp,Func,Srcs...>>(blocks, stride, smem, protoGetCurrentStream,
-                              0, N, a_F, a_dst, a_srcs...);
+    protoLaunchKernelMemAsyncGPU(vec_indexer_i, blocks, stride, smem, protoGetCurrentStream,
+      0, N, a_F, a_dst, a_srcs...);
+#else
+    vec_indexer_i(0, N, a_F, a_dst, a_srcs...);
+#endif
   }
 
 
@@ -286,9 +260,8 @@ namespace Proto
   inline void
   protoEBForAllIrreg(const Func& a_F, 
                     IrregData<cent, data_t, ncomp>& a_dst,
-                    Srcs&&...  a_srcs)
+                    Srcs&...  a_srcs)
   {
-
     //indicies into irreg vector that correspond to input box
     unsigned int vecsize = a_dst.vecsize();
     if(vecsize > 0)
@@ -320,9 +293,8 @@ namespace Proto
   ///
   template<typename Func, typename... Srcs>
   inline void
-  protoEBforall(const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+  protoEBforall(const Func & a_F, const Box a_box, Srcs&... a_srcs)
   {
-    PR_TIME("protoEBforall");	  
     forallInPlaceBase(a_F, a_box, (getBoxData(a_srcs))...);
     protoEBForAllIrreg(a_F, getIrregData(a_srcs)...);
   }
@@ -330,7 +302,7 @@ namespace Proto
 
   template<typename Func, typename... Srcs>
   inline void
-  protoEBforall_i(const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+  protoEBforall_i(const Func & a_F, const Box a_box, Srcs&... a_srcs)
   {
     forallInPlace_i(a_F, a_box, (getBoxData(a_srcs))...);
     protoEBForAllIrreg_i(a_F, getIrregData(a_srcs)...);
@@ -340,13 +312,14 @@ namespace Proto
   template<typename Func, typename... Srcs>
   inline void ebforallInPlace(unsigned long long int a_num_flops_point,
                               const char*            a_timername,
-                              const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                              const Func & a_F, const Box a_box, Srcs&... a_srcs)
   {
     PR_TIME(a_timername);
 
     unsigned long long int boxfloops = a_num_flops_point*a_box.size();
 
     protoEBforall(a_F, a_box, a_srcs...);
+//    protoDeviceSynchronize();
 
     PR_FLOPS(boxfloops);
   }
@@ -355,7 +328,7 @@ namespace Proto
   template<typename Func, typename... Srcs>
   inline void ebforallInPlace_i(unsigned long long int a_num_flops_point,
                                 const char*            a_timername,
-                                const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                                const Func & a_F, const  Box a_box, Srcs&... a_srcs)
   {
     PR_TIME(a_timername);
 
@@ -368,7 +341,7 @@ namespace Proto
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg(const char*            a_timername,
-                            const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                            const Func & a_F, const Box a_box, Srcs&... a_srcs)
 
   {
     PR_TIME(a_timername);
@@ -379,7 +352,7 @@ namespace Proto
   ///version that only touches cut cells
   template<typename Func, typename... Srcs>
   inline void ebforallIrreg_i(const char*            a_timername,
-                              const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                              const Func & a_F, const Box a_box, Srcs&... a_srcs)
 
   {
     PR_TIME(a_timername);
@@ -414,7 +387,7 @@ namespace Proto
 ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall_i(const Box& a_inputBox,
-                         const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                         const Func & a_F,  Box a_box, Srcs&... a_srcs)
   {
     unsigned long long int numflops = 0;
 
@@ -424,7 +397,7 @@ namespace Proto
 ///simplest version
   template<typename Func, typename... Srcs>
   inline void ebforall(const Box& a_inputBox,
-                       const Func & a_F,  const Box& a_box, Srcs&... a_srcs)
+                       const Func & a_F,  Box a_box, Srcs&... a_srcs)
   {
     unsigned long long int numflops = 0;
 
