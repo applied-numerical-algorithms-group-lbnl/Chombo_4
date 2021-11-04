@@ -1006,4 +1006,203 @@ private:
   }
 };
 
+///class where phi is a gaussian blob
+template <unsigned int order>
+class GaussianBlob: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*exp(-m*(x-x0)^2+(y-y0)^2+(z-z0)^2)
+      m_coeff = A
+      m_dfac = m
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x0)
+  {
+    Real retval = 0.0;
+    Real dist2 = 0.;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      dist2 += pow(a_x0[idir] - m_center[idir],2.0);
+    }
+
+    int sum = a_p.sum();
+    if(sum == 0)
+    {
+      retval = m_coeff * exp(-m_dfac * dist2);
+    }
+    else if(sum == 1)
+    {
+      if(a_p[0]== 1)
+      {
+        retval = -m_dfac*(2.0*(a_x0[0]-m_center[0]))*m_coeff * exp(-m_dfac * dist2);
+      }
+      else if (a_p[1]== 1)
+      {
+        retval = -m_dfac*(2.0*(a_x0[1]-m_center[1]))*m_coeff * exp(-m_dfac * dist2);
+      }
+#if DIM==3      
+      else if(a_p[2] == 1)
+      {
+        retval = -m_dfac*(2.0*(a_x0[2]-m_center[2]))*m_coeff * exp(-m_dfac * dist2);
+      }
+#endif      
+      else
+      {
+        Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
+      }
+    }
+    else if(sum == 2)
+    {
+      if((a_p[0]== 1) && (a_p[1]== 1))
+      {
+        retval = 4.*m_coeff*pow(m_dfac,2)*(a_x0[0]-m_center[0])*(a_x0[1]-m_center[1])*exp(-m_dfac * dist2);
+      }
+      else if(a_p[0]== 2)
+      {
+        retval = -2*m_coeff*m_dfac*(exp(-m_dfac * dist2) - 2.*m_dfac*(pow(a_x0[0]-m_center[0],2))*exp(-m_dfac * dist2));
+      }
+      else if(a_p[1]== 2)
+      {
+
+        retval = -2*m_coeff*m_dfac*(exp(-m_dfac * dist2) - 2.*m_dfac*(pow(a_x0[1]-m_center[1],2))*exp(-m_dfac * dist2));
+      }
+      else
+      {
+        Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
+      }
+    }
+    else if(sum == 3)
+    {
+      if(a_p[0] == 3)
+      {
+        retval = -2*m_coeff*m_dfac*(4.*pow(m_dfac,2.0)*(pow(a_x0[0]-m_center[0],3))*exp(-m_dfac * dist2) 
+                                   -6*m_dfac*a_x0[0]*exp(-m_dfac * dist2)
+                                   +6*m_dfac*m_center[0]*exp(-m_dfac * dist2));
+      }
+      else if(a_p[1] == 3)
+      {
+        retval = -2*m_coeff*m_dfac*(4.*pow(m_dfac,2.0)*(pow(a_x0[1]-m_center[1],3))*exp(-m_dfac * dist2) 
+                                   -6*m_dfac*a_x0[1]*exp(-m_dfac * dist2)
+                                   +6*m_dfac*m_center[1]*exp(-m_dfac * dist2));
+
+      }
+      else if( (a_p[0] == 2) && (a_p[1]==1))
+      {
+        retval = -2*m_coeff*m_dfac*(4.*pow(m_dfac,2.0)*(pow(a_x0[0]-m_center[0],2))*(pow(a_x0[1]-m_center[1],1))*exp(-m_dfac * dist2) 
+                                   -2*m_dfac*(pow(a_x0[1]-m_center[1],1))*exp(-m_dfac * dist2));
+ 
+      }
+      else if( (a_p[0] == 1) && (a_p[1]==2))
+      {
+        retval = -2*m_coeff*m_dfac*(4.*pow(m_dfac,2.0)*(pow(a_x0[0]-m_center[0],1))*(pow(a_x0[1]-m_center[1],2))*exp(-m_dfac * dist2) 
+                                   -2*m_dfac*(pow(a_x0[0]-m_center[0],1))*exp(-m_dfac * dist2));
+ 
+      }
+      else
+      {
+        Chombo4::MayDay::Error("gaussianBlob ran out of cases 3");
+        retval = 0;
+      }
+    }
+    else if(sum==4)
+    {
+      if(a_p[0] == 4)
+      {
+        retval = -2*m_coeff*m_dfac*(-8.*pow(m_dfac,3.0)*(pow(a_x0[0]-m_center[0],4))*exp(-m_dfac * dist2) 
+                                   +12.*pow(m_dfac,2.0)*pow(a_x0[0],2)*exp(-m_dfac * dist2)
+                                   +12.*pow(m_dfac,2.0)*pow(m_center[0],2)*exp(-m_dfac * dist2)
+                                   -24.*pow(m_dfac,2.0)*a_x0[0]*m_center[0]*exp(-m_dfac * dist2)
+                                   +12.*pow(m_dfac,2.0)*(pow(a_x0[0]-m_center[0],2))*exp(-m_dfac * dist2)
+                                   -6.*m_dfac*exp(-m_dfac * dist2));
+ 
+      }
+      else if(a_p[1] == 4)
+      {
+        retval = -2*m_coeff*m_dfac*(-8.*pow(m_dfac,3.0)*(pow(a_x0[1]-m_center[1],4))*exp(-m_dfac * dist2) 
+                                   +12.*pow(m_dfac,2.0)*pow(a_x0[1],2)*exp(-m_dfac * dist2)
+                                   +12.*pow(m_dfac,2.0)*pow(m_center[1],2)*exp(-m_dfac * dist2)
+                                   -24.*pow(m_dfac,2.0)*a_x0[1]*m_center[1]*exp(-m_dfac * dist2)
+                                   +12.*pow(m_dfac,2.0)*(pow(a_x0[1]-m_center[1],2))*exp(-m_dfac * dist2)
+                                   -6.*m_dfac*exp(-m_dfac * dist2));
+ 
+      }
+      else if( (a_p[0] == 3) && (a_p[1] == 1))
+      {
+        retval = -2*m_coeff*m_dfac*(-8.*pow(m_dfac,3.0)*(pow(a_x0[0]-m_center[0],3))*(pow(a_x0[1]-m_center[1],1))*exp(-m_dfac * dist2) 
+                                   +12.*pow(m_dfac,2.0)*a_x0[0]*(pow(a_x0[1]-m_center[1],1))*exp(-m_dfac * dist2)
+                                   -12.*pow(m_dfac,2.0)*m_center[0]*(pow(a_x0[1]-m_center[1],1))*exp(-m_dfac * dist2));
+ 
+      }
+      else if( (a_p[0] == 1) && (a_p[1] == 3))
+      {
+        retval = -2*m_coeff*m_dfac*(-8.*pow(m_dfac,3.0)*(pow(a_x0[1]-m_center[1],3))*(pow(a_x0[0]-m_center[0],1))*exp(-m_dfac * dist2)
+                                   +12.*pow(m_dfac,2.0)*a_x0[1]*(pow(a_x0[0]-m_center[0],1))*exp(-m_dfac * dist2)
+                                   -12.*pow(m_dfac,2.0)*m_center[1]*(pow(a_x0[0]-m_center[0],1))*exp(-m_dfac * dist2));
+      }
+      else if( (a_p[0] == 2) && (a_p[1] == 2))
+      {
+        retval = -2*m_coeff*m_dfac*(4.*pow(m_dfac,2.0)*(pow(a_x0[0]-m_center[0],2))*(-2.*m_dfac*(pow(a_x0[1]-m_center[1],2))*exp(-m_dfac * dist2)
+                                                                                     +exp(-m_dfac * dist2))
+                                                        -2*m_dfac*(-2.*m_dfac*(pow(a_x0[1]-m_center[1],2))*exp(-m_dfac * dist2)
+                                                                   +exp(-m_dfac * dist2)));
+      }
+      else
+      {
+        Chombo4::MayDay::Error("gaussianBlob ran out of cases 4");
+        retval = 0;
+      }
+    }
+    else
+    {
+      Chombo4::MayDay::Error("gaussianBlob ran out of deriv cases");
+      retval = 0;
+    }
+  
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+  {
+    Real retval = 1.;
+    Real dist2 = 0.;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      dist2 += pow(a_x[idir] - m_center[idir],2.0);
+    }
+    retval *= m_coeff * exp(-m_dfac * dist2);
+    return retval;
+  }
+
+  virtual ~GaussianBlob()
+  {
+  }
+
+  GaussianBlob(Real     a_coeff,
+               Real     a_dfac,
+               RealVect a_center)
+  {   
+    m_coeff = a_coeff;
+    m_dfac = a_dfac;
+    m_center = a_center;
+  } 
+
+private:
+  Real      m_coeff;
+  Real      m_dfac;
+  RealVect  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  GaussianBlob()
+  {
+  }
+};
+
+
 #endif
