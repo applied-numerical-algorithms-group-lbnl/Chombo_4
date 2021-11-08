@@ -1,5 +1,7 @@
 
 #include <iostream>
+#include "Chombo_ProtoInterface.H"
+
 using std::cerr;
 
 #ifndef __EBEExactSolutions__

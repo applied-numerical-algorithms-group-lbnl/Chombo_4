@@ -572,78 +572,94 @@ namespace Proto
     {
     }
 
-    BaseWLSFlux(int          & a_radius,
-		int          & a_powerE,
-		int          & a_exactSolFun,
-		bool           a_verbose=false)
-    {
-      m_radius = a_radius;
-      m_powerE = a_powerE;
-      m_verbose = a_verbose;
-      ParmParse pp;
+    BaseWLSFlux()
+      {}
 
-      if (a_exactSolFun == 1)
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                int           a_fluxType=0,
+                bool          a_verbose=false)
       {
-        Vector<int> phiPowerX; 
-        Vector<int> phiPowerY;
-        Vector<int> phiPowerZ; 
-        Vector<Real> phiCoef;
-        int num_mono = 0;
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        m_exactSol = a_exactSol;
+        m_fluxType = a_fluxType;
+      }
 
-        pp.get("phi_num_mono"   , num_mono);
-        pp.getarr("phi_power_x",phiPowerX,0,num_mono);
-        pp.getarr("phi_power_y",phiPowerY,0,num_mono);
-        pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
-        pp.getarr("phi_coef",phiCoef,0,num_mono);
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                int           a_exactSolFun,
+                bool          a_verbose=false)
+      {
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        ParmParse pp;
+
+        if (a_exactSolFun == 1)
+          {
+            Vector<int> phiPowerX;
+            Vector<int> phiPowerY;
+            Vector<int> phiPowerZ;
+            Vector<Real> phiCoef;
+            int num_mono = 0;
+
+            pp.get("phi_num_mono"   , num_mono);
+            pp.getarr("phi_power_x",phiPowerX,0,num_mono);
+            pp.getarr("phi_power_y",phiPowerY,0,num_mono);
+            pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
+            pp.getarr("phi_coef",phiCoef,0,num_mono);
     
-        vector<pair<Point, Real> > entries;
-        for (int i=0; i<num_mono; i++)
-        {
-          std::pair<Point, Real> mono;
-          mono.first = Point::Zeros();
-          mono.first[0] = phiPowerX[i];
-          mono.first[1] = phiPowerY[i];
+            vector<pair<Point, Real> > entries;
+            for (int i=0; i<num_mono; i++)
+              {
+                std::pair<Point, Real> mono;
+                mono.first = Point::Zeros();
+                mono.first[0] = phiPowerX[i];
+                mono.first[1] = phiPowerY[i];
 #if DIM==3
-          mono.first[2] = phiPowerZ[i];
+                mono.first[2] = phiPowerZ[i];
 #endif
-          mono.second = phiCoef[i];
-          entries.push_back(mono);
-        }
+                mono.second = phiCoef[i];
+                entries.push_back(mono);
+              }
 
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
-      }
-      else if (a_exactSolFun == 2 || a_exactSolFun == 3)
-      {
-        Real amplitude;
-        pp.get("phi_amp",amplitude);
+            m_exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
+          }
+        else if (a_exactSolFun == 2 || a_exactSolFun == 3)
+          {
+            Real amplitude;
+            pp.get("phi_amp",amplitude);
   
-        IntVect frequency;
-        RealVect center;
-        Vector<int> freqVec;
-        Vector<Real> centerVec;
+            IntVect frequency;
+            RealVect center;
+            Vector<int> freqVec;
+            Vector<Real> centerVec;
   
-        pp.getarr("phi_freq",freqVec,0,DIM);
-        pp.getarr("phi_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          frequency[idir] = freqVec[idir];
-          center[idir] = centerVec[idir];
-        }
+            pp.getarr("phi_freq",freqVec,0,DIM);
+            pp.getarr("phi_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                frequency[idir] = freqVec[idir];
+                center[idir] = centerVec[idir];
+              }
 
-        if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-        if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+          }
+        else if (a_exactSolFun == 4)
+          {
+            Real rad;
+            pp.get("phi_rad", rad);
+            Real cen;
+            pp.get("phi_cen", cen);
+
+            m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+
+          }
       }
-      else if (a_exactSolFun == 4)
-        {
-          Real rad;
-          pp.get("phi_rad", rad);
-          Real cen;
-          pp.get("phi_cen", cen);
-
-          m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-
-        }
-    }
 
     //Radius needed for neighbors list around a face (Manhattan style)
     int m_radius = 1;
@@ -702,54 +718,54 @@ namespace Proto
     {
     }
 
-    ExactVelAdvectionWLSFlux(int          & a_radius,
-                             int          & a_powerE,
-			     int          & a_exactSolFun,
-                             bool           a_verbose=false) 
-    :BaseWLSFlux<cent, order>(a_radius,
-                              a_powerE,
-                              a_exactSolFun,
-                              a_verbose)
-    {
-      this->m_fluxType = 1;
-      ParmParse pp;
-      int exactVel = 1;
-      //Exact solution     
-      pp.get("exactVel",exactVel);
-  
-      if (exactVel == 1)
+    ExactVelAdvectionWLSFlux(int          a_radius,
+                             int          a_powerE,
+                             int          a_exactSolFun,
+                             bool         a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius,
+                                a_powerE,
+                                a_exactSolFun,
+                                a_verbose)
       {
-        RealVect centerVel;
-        Real omega;
-        pp.get("vel_omega",omega);
+        this->m_fluxType = 1;
+        ParmParse pp;
+        int exactVel = 1;
+        //Exact solution
+        pp.get("exactVel",exactVel);
   
-        Vector<Real> centerVec;
+        if (exactVel == 1)
+          {
+            RealVect centerVel;
+            Real omega;
+            pp.get("vel_omega",omega);
   
-        pp.getarr("vel_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          centerVel[idir] = centerVec[idir];
-        }
+            Vector<Real> centerVec;
   
-	m_exactVel = shared_ptr<BaseExactVelocity<order> >(new SolidBodyRotVel<order>(omega, centerVel));
+            pp.getarr("vel_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                centerVel[idir] = centerVec[idir];
+              }
+  
+            m_exactVel = shared_ptr<BaseExactVelocity<order> >(new SolidBodyRotVel<order>(omega, centerVel));
+          }
+        else if (exactVel == 2)
+          {
+            RealVect centerVel;
+            Vector<Real> velVec;
+
+            pp.getarr("vel_vec",velVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                centerVel[idir] = velVec[idir];
+              }
+
+            Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2),0.5);
+            centerVel = centerVel/mag;
+
+            m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
+          }
       }
-      else if (exactVel == 2)
-      {
-        RealVect centerVel;
-        Vector<Real> velVec;
-
-        pp.getarr("vel_vec",velVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          centerVel[idir] = velVec[idir];
-        }
-
-        Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2),0.5);
-        centerVel = centerVel/mag;
-
-        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
-      }     
-    }
 
     //Exact velocity class holding different function types
     shared_ptr<BaseExactVelocity<order> >  m_exactVel;
@@ -818,6 +834,32 @@ namespace Proto
                          Real                                & a_inhoTerm,
                          int                                 & a_neighType,
                          double                                a_dx);
+
+    //Gets WLS flux divergence stencil in a direction
+    // return a vector of stencils, one per component
+    inline void
+    getWLSDivFCompStencil(LocalStencil<CELL, double>    & a_vofStencilx,
+                          LocalStencil<CELL, double>    & a_vofStencily,
+                          LocalStencil<CELL, double>    & a_vofStencilz,
+                          const EBIndex<CELL>                 & a_vof,
+                          const EBGraph                       & a_graph,
+                          const VoluData                      & a_voludata,
+                          const EBFaData                      & a_ebfadata,
+                          const XFacData                      & a_xfacdata,
+                          const YFacData                      & a_yfacdata,
+                          const ZFacData                      & a_zfacdata,
+                          const EBNormalData                  & a_ebnormxdata,
+                          const EBNormalData                  & a_ebnormydata,
+                          const EBNormalData                  & a_ebnormzdata,
+                          const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
+                          const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
+                          const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                          const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                          string                                a_ebbcName,
+                          string                                a_dombcName[2*DIM],
+                          Real                                & a_inhoTerm,
+                          int                                 & a_neighType,
+                          double                                a_dx);
 
     inline
     LocalStencil< CELL,  double>
