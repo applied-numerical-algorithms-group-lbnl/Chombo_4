@@ -272,6 +272,95 @@ namespace Proto
 
       return found;
     }
+
+    void copy(const IrregData<cent, data_t, ncomp>& a_src,
+               const Box& a_bxFrom, unsigned int a_isrc,
+               const Box& a_bxTo  , unsigned int a_idst,
+               unsigned int a_inco)
+     {
+       PR_TIME("IrregData::copy");
+       Box interBox = a_bxFrom & a_bxTo;
+       auto indiciesSrc = a_src.getIndicies();
+       auto indiciesDataSrc = a_src.getDataIndicies();
+       unsigned int size = m_indicies->size();
+
+       if(size == 0 || indiciesSrc->size()==0) return;
+
+       int numSMs=1;
+ #ifdef PROTO_CUDA
+       int devId = 0;
+ #ifdef PROTO_HIP
+       hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+ #else
+       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+ #endif
+ #endif
+       //unsigned int threads = 256;
+       //unsigned int blocks = (threads + size - 1)/threads;
+       //protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(blocks, threads, 0, protoGetCurrentStream,
+       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBBoxDataIndexer<cent,data_t>>(32*numSMs, 256, 0, protoGetCurrentStream,
+ 			size,
+                         indiciesDataSrc.get(), indiciesSrc->size(),
+ 			m_indicies_shared_data.get(), m_indicies->size(),
+ 			m_rawPtr,
+ 			a_src.data(),
+ 			a_idst, a_isrc,
+ 			a_inco,
+ 			interBox.low(), interBox.high());
+     }
+
+     inline
+     void linearOut(void*               a_buf,
+                    const Box       &   a_bx,
+                    unsigned int        a_startcomp,
+                    unsigned int        a_numcomps) const
+     {
+       PR_TIME("IrregData::linearOut");
+       unsigned int vecsize = m_indicies->size();
+       const unsigned int threads = 256;
+       const unsigned int blocks  = (vecsize + threads - 1) / threads;
+       assert(sizeof(data_t) >= sizeof(float));
+
+       if(vecsize == 0) return;
+
+       assert(vecsize == m_indicies->size());
+
+       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearOut<cent,data_t,ncomp>>(blocks, threads, 0, protoGetCurrentStream,
+                         vecsize,
+                         m_indicies_shared_data.get(), m_indicies->size(),
+                         a_buf,
+                         data());
+
+     }
+
+     inline
+     void  linearIn(void*                  a_buf,
+                    const Box       &      a_bx,
+                    unsigned int           a_startcomp,
+                    unsigned int           a_numcomps)
+     {
+       PR_TIME("IrregData::linearIn");
+       unsigned int vecsize = m_indicies->size();
+       assert(sizeof(data_t) >= sizeof(float));
+       if(vecsize == 0) return;
+
+       int numSMs=1;
+ #ifdef PROTO_CUDA
+       int devId = 0;
+ #ifdef PROTO_HIP
+       hipDeviceGetAttribute(&numSMs, hipDeviceAttributeMultiprocessorCount, devId);
+ #else
+       cudaDeviceGetAttribute(&numSMs, cudaDevAttrMultiProcessorCount, devId);
+ #endif
+ #endif
+
+       protoLaunchKernelMemAsyncT<MEMTYPE_DEFAULT,EBLinearIn<cent,data_t,ncomp>>(32*numSMs, 256, 0, protoGetCurrentStream,
+                         m_indicies_shared_data.get(), vecsize,
+                         a_buf,
+                         m_data.get(),
+                         a_bx.low(), a_bx.high());
+
+     }
   
   protected:
     inline void define( const shared_ptr< vector< index_t > >& a_indicies);

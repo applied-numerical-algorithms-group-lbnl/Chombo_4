@@ -29,7 +29,8 @@ $(DEPFILES):
 DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d 
 
 ifeq ($(CXX),nvcc)
-LIBS+= -lnvToolsExt
+#broke the build
+#LIBS+= -lnvToolsExt
 endif
 
 ifeq ($(DEPXX),nvcc)
