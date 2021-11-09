@@ -276,7 +276,7 @@ namespace hoeb
         for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)
         {
           auto momind = momit();
-          Real bcval = 0;
+          //Real bcval = 0;
           
           IndexedMoments<DIM, HOEB_MAX_ORDER> normMom=
             getEBNormalMoment(a_face, a_geoserv, a_srcDomain,
@@ -555,7 +555,9 @@ namespace hoeb
     IndexTM<Real, DIM> distance = getIndexDistance(facloc, a_xbar);
     volmom.shift(distance);
 
-    LAPACKMatrix Qmat;
+    typedef IndexedMoments<DIM  , HOEB_MAX_ORDER> IndMomDIM;
+    unsigned int Pcols = IndMomDIM::size();
+    LAPACKMatrix Qmat(1, Pcols);
 
 
     for(MomentIterator<DIM, HOEB_MAX_ORDER> momit; momit.ok(); ++momit)

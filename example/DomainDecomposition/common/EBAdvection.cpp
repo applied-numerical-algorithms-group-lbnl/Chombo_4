@@ -164,9 +164,16 @@ bcgExtrapolateScalar(EBFluxData<Real, 1>            & a_scalLo,
   slopeHiTan.setVal(0.);
   minion.setVal(0.);
   {
+    /**
     unsigned int nflop = 3;
     ebforallInPlace(nflop, "Minioned", Minioned, a_grown,  
                     minion, a_scal, a_source, a_dt);
+    ebforall_i(a_grown, MinionedPt, a_grown,  
+               minion, a_scal, a_source, a_dt);
+    **/
+    unsigned int nflop = 3;
+    ebforallInPlace_i(nflop, "MinionedPt", MinionedPt, a_grown,  
+                      minion, a_scal, a_source, a_dt);
 
   }
   int istoop = 0;

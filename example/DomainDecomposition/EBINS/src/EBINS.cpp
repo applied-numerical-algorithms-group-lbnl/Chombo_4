@@ -155,11 +155,11 @@ defineInternals(EBIBC                a_ibc,
   {
     m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnamesVelo, bcname, m_domain, m_nghost));
+                       stenname, helmnamesVelo, bcname, m_domain, m_nghost, string("heat")));
   }
   m_helmholtzSpec = shared_ptr<EBMultigrid> 
     (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost));
+                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost, string("species")));
 
   if(a_solver == BackwardEuler)
   {
@@ -227,6 +227,7 @@ run(unsigned int a_max_step,
     Real         a_coveredVal)
 {
   CH_TIME("EBINS::run");
+  pout() << "inside run" << endl;
   m_step = a_startingStep;
   m_time = a_startingTime;
   //Welcome to our standard interface that is at least not over specified.
@@ -603,8 +604,11 @@ advanceSpecies(Real a_dt,
     pout() << "calling heat solver for variable "  << endl;
     //advance the parabolic equation
     Real thiscoef = m_diffusionCoefs[ispec];
-    m_heatSolverSpec->advanceOneStep(spec, sourcomp,
-                                     thiscoef, a_dt, a_tol, a_maxIter);
+    {
+      CH_TIME("heat_solve");
+      m_heatSolverSpec->advanceOneStep(spec, sourcomp,
+                                       thiscoef, a_dt, a_tol, a_maxIter);
+    }
 
   }
   pout() << "getting reaction rates and evolving species"   << endl;

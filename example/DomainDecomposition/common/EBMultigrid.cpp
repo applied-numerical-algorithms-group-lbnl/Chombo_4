@@ -54,7 +54,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
     a_phi += m_cor;
     residual(m_res, a_phi, a_rhs, true);
-
+    
     resnormold = resnorm;
     resnorm = m_res.maxNorm(0);
 
@@ -161,13 +161,13 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             const string                            & a_ebbcname,
             const Box                               & a_domain,
             const IntVect                           & a_nghost,
-            bool a_directToBottom):  EBMultigridLevel()
+            string a_prefix):  EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
+  m_prefix = a_prefix;
+  getDToB();
   m_depth = 0;
   m_geoserv = a_geoserv;
-  
-  m_directToBottom = a_directToBottom;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
   m_dx         = a_dx;         
@@ -200,7 +200,10 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv);
 
-  defineCoarserObjects(a_geoserv);
+  if(!m_directToBottom)
+  {
+    defineCoarserObjects(a_geoserv);
+  }
   if(!m_hasCoarser || m_directToBottom)
   {
     defineBottomSolvers(a_geoserv);
@@ -245,7 +248,8 @@ define(const EBMultigridLevel            & a_finerLevel,
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
-  m_directToBottom = false;
+  m_prefix = a_finerLevel.m_prefix;
+  getDToB();
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -278,8 +282,10 @@ define(const EBMultigridLevel            & a_finerLevel,
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv);
 
-
-  defineCoarserObjects(a_geoserv);
+  if(!m_directToBottom)
+  {
+    defineCoarserObjects(a_geoserv);
+  }
   if(!m_hasCoarser || m_directToBottom)
   {
     defineBottomSolvers(a_geoserv);
@@ -293,12 +299,19 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
   m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
 #ifdef CH_USE_PETSC
 
-  Point pghost= ProtoCh::getPoint(m_nghost);
-  EBPetscSolver<2>* ptrd = 
-    (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
-                          m_stenname, m_dombcname, m_ebbcname,
-                          m_dx, m_alpha, m_beta, pghost));
-  m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
+  ParmParse pp(m_prefix.c_str());
+  string which_solver("relax");
+  pp.query("bottom_solver", which_solver);
+
+  if(which_solver == string("petsc"))
+  {
+    Point pghost= ProtoCh::getPoint(m_nghost);
+    EBPetscSolver<2>* ptrd = 
+      (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
+                            m_stenname, m_dombcname, m_ebbcname,
+                            m_dx, m_alpha, m_beta, pghost));
+    m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
+  }
 #endif    
 }
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -359,6 +372,8 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     Bx inputBox = resfab.inputBox();
     ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
+
+  a_res.exchange(m_exchangeCopier);
 }
 /****/
 void
@@ -373,7 +388,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
-  ParmParse pp;
+  ParmParse pp(m_prefix.c_str());
   bool do_lazy_relax = false;
   bool one_exchange_per_relax = false;
   pp.query("do_lazy_relax", do_lazy_relax);
@@ -394,15 +409,11 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
           doExchange = (iter==0);
         }
       }
-      //begin debug
-      //      EBLevelBoxData<CELL, 1> &  rhs = (EBLevelBoxData<CELL, 1> &) a_rhs;
-      //      rhs.exchange(m_exchangeCopier);
-      //end debug
+
       residual(resid, a_phi, a_rhs, doExchange);
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
-        //shared_ptr<ebstencil_t>                  stencil  = m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
 
         Box grid = m_grids[dit[ibox]];
         Bx  grbx = getProtoBox(grid);
@@ -481,12 +492,9 @@ EBPoissonOp::
 bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
              const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
-#ifdef CH_USE_PETSC
-  string which_solver("petsc");
-#else    
-  string which_solver("bicgstab");
-#endif    
-  ParmParse pp;
+
+  string which_solver("relax");
+  ParmParse pp(m_prefix.c_str());
 
   pp.query("bottom_solver", which_solver);
   if(which_solver == string("bicgstab"))
@@ -495,7 +503,6 @@ bottom_solve(EBLevelBoxData<CELL, 1>         & a_phi,
   }
   else if(which_solver == string("relax"))
   {
-    pout()<<".";
     solve_relax(a_phi, a_rhs);
   }
 #ifdef CH_USE_PETSC    

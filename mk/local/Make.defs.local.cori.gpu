@@ -8,8 +8,11 @@ CXXALLFLAGS := #-std=c++11
 CXXDBGFLAGS:=$(CXXALLFLAGS) -g #-pedantic 
 CXXOPTFLAGS:=$(CXXALLFLAGS) -O3 -use_fast_math
 
-CPPFLAGS +=-I$(OPENMPI_DIR)/include/
-LIBS +=-L$(OPENMPI_DIR)/lib -lmpi
+LIBS +=-L$(MVAPICH2_DIR)/lib -lmpi 
+
+
+CPPFLAGS +=-I$(MVAPICH2_DIR)/include/
+
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack

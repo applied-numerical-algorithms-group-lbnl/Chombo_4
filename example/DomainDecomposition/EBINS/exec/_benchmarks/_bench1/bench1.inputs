@@ -82,3 +82,18 @@ bicgstab.small    = 1.0e-16
 bicgstab.imax     = 0
 bicgstab.nrestart = 27
 bicgstab.verbosity = 1
+heat.direct_to_bottom_solve = false
+heat.bottom_solver = "relax"
+heat.do_lazy_relax =  true
+heat.one_exchange_per_relax = true
+
+species.direct_to_bottom_solve = false
+species.bottom_solver = "relax"
+species.do_lazy_relax =  true
+species.one_exchange_per_relax = true
+
+mac_proj.direct_to_bottom_solve = true
+mac_proj.bottom_solver = "petsc"
+#mac_proj.bottom_solver = bicgstab
+mac_proj.do_lazy_relax =  false
+mac_proj.one_exchange_per_relax = false

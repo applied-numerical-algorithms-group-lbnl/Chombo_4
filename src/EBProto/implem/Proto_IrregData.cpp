@@ -1,5 +1,5 @@
 #pragma once
-
+#if 0
 namespace Proto
 {
     CUDA_DECORATION
@@ -28,5 +28,5 @@ namespace Proto
       return contains(pt,a_low,a_high);
     }
 }
-
+#endif
 
