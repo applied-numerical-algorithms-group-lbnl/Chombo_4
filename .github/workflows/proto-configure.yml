@@ -1,0 +1,15 @@
+version: "2.4"
+dependencies:
+  - project: applied-numerical-algorithms-group-lbnl/proto
+  - project: applied-numerical-algorithms-group-lbnl/Chombo_4
+    dependencies:
+      - project: applied-numerical-algorithms-group-lbnl/proto
+    mapping:
+      dependencies:
+        default:
+          - source: configure
+            target: configure
+      dependent:
+        default:
+          - source: configure
+            target: configure
