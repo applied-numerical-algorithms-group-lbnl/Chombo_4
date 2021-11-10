@@ -20,6 +20,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      
+    - name: Github action build chain. Cross-repo builds
+      id: build-chain
+      uses: kiegroup/github-action-build-chain@v2.4
+      with:
+        definition-file: ${{github.workspace}}/.github/workflows/proto-config.yml
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -35,11 +43,3 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
-      
-    - name: Github action build chain. Cross-repo builds
-      id: build-chain
-      uses: kiegroup/github-action-build-chain@v2.4
-      with:
-        definition-file: ${{github.workspace}}/.github/workflows/proto-config.yml
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
