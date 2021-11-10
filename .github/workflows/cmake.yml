@@ -25,7 +25,7 @@ jobs:
       id: build-chain
       uses: kiegroup/github-action-build-chain@v2.4
       with:
-        definition-file: ${{github.workspace}}/.github/workflows/proto-config.yml
+        definition-file: ${{github.workspace}}/.github/workflows/proto-configure.yml
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
