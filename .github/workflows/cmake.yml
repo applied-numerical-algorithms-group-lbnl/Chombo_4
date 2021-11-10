@@ -39,3 +39,7 @@ jobs:
     - name: Github action build chain. Cross-repo builds
       id: build-chain
       uses: kiegroup/github-action-build-chain@v2.4
+      with:
+        definition-file: ${{github.workspace}}/.github/workflows/proto-config.yml
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
