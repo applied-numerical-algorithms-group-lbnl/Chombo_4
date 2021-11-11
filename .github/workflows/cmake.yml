@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Proto and Chombo Build
     steps:
+      - uses: actions/checkout@v2
       - name: Build Chain
         uses: kiegroup/github-action-build-chain@v2.6.17
         with:
@@ -26,7 +27,12 @@ jobs:
           logger-level: 'debug'
           annotations-prefix: ${{ runner.os }}
       - name: Configure CMake
-        uses: actions/checkout@v2
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Run Make
+        working-directory: ${{github.workspace}}/build
+        run: make -j
+      - name: Run Google Test
+        working-directory: ${{github.workspace}}/build
+        run: make test
