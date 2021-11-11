@@ -1,4 +1,11 @@
 version: "2.4"
+
+on:
+  push:
+    branches: [ configure ]
+  pull_request:
+    branches: [ configure ]
+
 dependencies:
   - project: applied-numerical-algorithms-group-lbnl/proto
   - project: applied-numerical-algorithms-group-lbnl/Chombo_4

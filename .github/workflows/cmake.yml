@@ -9,6 +9,7 @@ on:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
+  #  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
 jobs:
   build:
@@ -26,9 +27,6 @@ jobs:
       uses: kiegroup/github-action-build-chain@v2.4
       with:
         definition-file: ${{github.workspace}}/.github/workflows/proto-configure.yml
-        logger-level: 'debug'
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
