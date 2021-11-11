@@ -26,6 +26,7 @@ jobs:
       uses: kiegroup/github-action-build-chain@v2.4
       with:
         definition-file: ${{github.workspace}}/.github/workflows/proto-configure.yml
+        logger-level: 'debug'
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
