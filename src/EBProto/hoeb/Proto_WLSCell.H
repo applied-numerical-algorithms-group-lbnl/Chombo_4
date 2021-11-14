@@ -674,6 +674,75 @@ namespace Proto
     
   };
 
+    //Main function calls for all WLS flux calculations
+  template<int order>
+  class BaseWLSCell : private BaseWLSFlux<CELL, order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+
+    //Get neighbors VoFs of a given face within a specific radius.
+    //Radius starts at one for the cells sharing the face, and
+    //increases by one for the neighbor cells sharing a face with the original
+    //cells of radius one.
+    Vector<EBIndex<CELL> >
+    getVoFsNeighbors(const EBIndex<CELL> & a_vof,
+                     const int             a_radius,
+                     Neighbors<order>    & a_neigh,
+                     const EBGraph       & a_graph) const;
+
+    //Compute cell stencil
+    void
+    getCellStencil(LocalStencil<CELL, double> & a_sten,
+                   Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                   const EBIndex<CELL>        & a_vof,
+                   const EBGraph              & a_graph,
+                   const VoluData             & a_voludata,
+                   const EBFaData             & a_ebfadata,
+                   const XFacData             & a_xfacdata,
+                   const YFacData             & a_yfacdata,
+                   const ZFacData             & a_zfacdata,
+                   const EBNormalData         & a_ebnormxdata,
+                   const EBNormalData         & a_ebnormydata,
+                   const EBNormalData         & a_ebnormzdata,
+                   string                       a_ebbcName,
+                   string                       a_dombcName[2*DIM],
+                   const int                    a_dir,
+                   IndMomSDMinOne             & a_faceMom,
+                   double                       a_dx) const;
+
+    virtual ~BaseWLSCell()
+    {
+    }
+
+    BaseWLSCell()
+      {}
+
+    BaseWLSCell(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                bool          a_verbose=false)
+      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSol, 0, a_verbose)
+      {}
+
+    BaseWLSCell(int           a_radius,
+                int           a_powerE,
+                int           a_exactSolFun,
+                bool          a_verbose=false)
+      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
+      {}
+  };
+
   //Main function calls for ExactVelAdvectionWLS flux calculations
   template<CENTERING cent, int order>
   class ExactVelAdvectionWLSFlux: public BaseWLSFlux<cent,order>
@@ -835,7 +904,33 @@ namespace Proto
                          int                                 & a_neighType,
                          double                                a_dx);
 
-    //Gets WLS flux divergence stencil in a direction
+    //Gets WLS stencil for each component the gradient of a scalar
+    // return a vector of stencils, one per component
+    inline void
+    getWLSGradStencil(LocalStencil<CELL, double>    & a_vofStencilx,
+                      LocalStencil<CELL, double>    & a_vofStencily,
+                      LocalStencil<CELL, double>    & a_vofStencilz,
+                      const EBIndex<CELL>                 & a_vof,
+                      const EBGraph                       & a_graph,
+                      const VoluData                      & a_voludata,
+                      const EBFaData                      & a_ebfadata,
+                      const XFacData                      & a_xfacdata,
+                      const YFacData                      & a_yfacdata,
+                      const ZFacData                      & a_zfacdata,
+                      const EBNormalData                  & a_ebnormxdata,
+                      const EBNormalData                  & a_ebnormydata,
+                      const EBNormalData                  & a_ebnormzdata,
+                      const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
+                      const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
+                      const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                      const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                      string                                a_ebbcName,
+                      string                                a_dombcName[2*DIM],
+                      vector<Real>                                & a_inhoTerm,
+                      int                                 & a_neighType,
+                      double                                a_dx);
+
+        //Gets WLS flux divergence stencil in a direction
     // return a vector of stencils, one per component
     inline void
     getWLSDivFCompStencil(LocalStencil<CELL, double>    & a_vofStencilx,

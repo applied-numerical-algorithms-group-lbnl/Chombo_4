@@ -177,6 +177,36 @@ namespace Proto
                                 bool  a_forceAllNeumann,
                                 const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution);
 
+    ///Gets WLS Divergence stencil
+    inline static bool
+    getWLSGradientStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+                          vector<vector<LocalStencil<CELL, double> > >      & a_stencil,
+                          vector<vector<double> >                            & a_inhoContr,
+                          Stencil<double>                           & a_regStencilInterior,
+                          vector<Stencil<double> >                    a_regStencilBC[2*DIM],
+                          vector<Box>                                 a_BCApplyBoxes[2*DIM],
+                          Box                                       & a_regApplyBox,
+                          string                                      a_stencilName,
+                          string                                      a_domainBCName[2*DIM],
+                          string                                      a_ebbcName,
+                          const Box                                 & a_validBox,
+                          const Box                                 & a_domain,
+                          const Point                               & a_srcGhost,
+                          const Point                               & a_dstGhost,
+                          const EBGraph                             & a_graph,
+                          const VoluData                            & a_voludata,
+                          const EBFaData                            & a_ebfadata,
+                          const XFacData                            & a_xfacdata,
+                          const YFacData                            & a_yfacdata,
+                          const ZFacData                            & a_zfacdata,
+                          const EBNormalData                        & a_ebnormxdata,
+                          const EBNormalData                        & a_ebnormydata,
+                          const EBNormalData                        & a_ebnormzdata,
+                          double                                      a_dx,
+                          bool                                        a_periodiconly,
+                          bool  a_forceAllNeumann,
+                          const shared_ptr<BaseExactSolution<order> >& a_boundarySolution);
+
   };
 
 }
