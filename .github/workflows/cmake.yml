@@ -22,9 +22,11 @@ jobs:
       - uses: actions/checkout@master
         with:
           repository: git@bitbucket.org:berkleleylab/proto.git
+          submodules: true
           path: ./proto
       - uses: actions/checkout@master
         with:
+          submodules: true
           path: ./chombo
 
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
