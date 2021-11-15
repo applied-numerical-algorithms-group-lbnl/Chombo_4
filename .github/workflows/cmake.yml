@@ -32,13 +32,13 @@ jobs:
         # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
         # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       - name: Configure Proto
-        run: cmake -B ${{github.workspace}}/proto/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/proto/build -S ${{github.workspace}}/proto -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Make Proto
         working-directory: ${{github.workspace}}/proto/build
         run: make -j
 
       - name: Configure Chombo
-        run: cmake -B ${{github.workspace}}/chombo/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/chombo/build -S ${{github.workspace}}/chombo -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Make Chombo
         working-directory: ${{github.workspace}}/chombo/build
         run: make -j
