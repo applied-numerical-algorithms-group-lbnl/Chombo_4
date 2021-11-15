@@ -96,7 +96,8 @@ namespace Proto
              const EBNormalData                        & a_ebnormzdata,
              double                                      a_dx,
              bool                                        a_periodiconly, 
-             Point                                       a_dstGrown)               
+             Point                                       a_dstGrown,
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
   {
     a_bcOnly = false;
     if(a_stencilName == string("Weighted_Least_Squares_Poisson"))
@@ -128,7 +129,8 @@ namespace Proto
                              a_ebnormzdata,
                              a_dx,
                              a_periodiconly,
-                             forceNeumann);
+                             forceNeumann,
+                             a_boundarySolutions);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
     {
@@ -159,7 +161,8 @@ namespace Proto
                              a_ebnormzdata,
                              a_dx,
                              a_periodiconly,
-                             forceNeumann);
+                             forceNeumann,
+                             a_boundarySolutions);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Advection"))
     {
@@ -227,7 +230,8 @@ namespace Proto
                        const EBNormalData                        & a_ebnormzdata,
                        double                                      a_dx,                         
                        bool                                        a_periodiconly,               
-                       bool  a_forceNeumann)               
+                       bool  a_forceNeumann,
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
   {
 //    using std::pout();
 //    using std::endl;
@@ -262,7 +266,10 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    pp.get("exact_solution",exactSolution);
+    if (a_boundarySolutions == nullptr)
+      {
+        pp.get("exact_solution",exactSolution);
+      }
 
     if (verbose)
     {
@@ -363,10 +370,32 @@ namespace Proto
         }
   
         //Creating the WLS fluxes needed for flux diveregence
-        BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
-        BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
-        BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
-        BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
+        // BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
+        // BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
+        // BaseWLSFlux<ZFACE, order> zflux(radius, powerE, exactSolution, pt_verbose);
+        // BaseWLSFlux<BOUNDARY, order> ebflux(radius, powerE, exactSolution, pt_verbose);
+        //Creating the WLS fluxes needed for flux divergence - U on a face
+        BaseWLSFlux<XFACE, order> xflux;
+        BaseWLSFlux<YFACE, order> yflux;
+        BaseWLSFlux<ZFACE, order> zflux;
+        BaseWLSFlux<BOUNDARY, order> ebflux;
+        if (a_boundarySolutions == nullptr)
+          {
+            //pout() << "Using uniform div boundary values" << std::endl;
+            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
+            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
+            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
+            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, exactSolution, pt_verbose);
+          }
+        else
+          {
+            //pout() << "Using specified div boundary values" << std::endl;
+            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+          }
+
         Real inhoTerm = 0.0;
   
         //Computing the flux divergence stencil
@@ -865,7 +894,10 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    pp.get("exact_solution",exactSolution);
+    if (a_boundarySolutions.size() == 0)
+      {
+        pp.get("exact_solution",exactSolution);
+      }
 
     if (verbose)
       {
@@ -1170,7 +1202,10 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    pp.get("exact_solution",exactSolution);
+    if (a_boundarySolutions == nullptr)
+      {
+        pp.get("exact_solution",exactSolution);
+      }
 
     if (verbose)
       {

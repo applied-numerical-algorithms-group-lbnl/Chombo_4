@@ -45,7 +45,8 @@ public:
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
-                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost)
+                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
+                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
   {
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
@@ -77,6 +78,7 @@ public:
       }
 
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
+    m_boundarySolutions = a_boundarySolutions;
 
     fillKappa(a_geoserv);
 
@@ -399,7 +401,8 @@ private:
                            Proto::Stencil<Real>                       & a_regStencilInterior,
                            PointSet                            & a_allIrregPoints,
                            const Chombo4::DataIndex                     & a_dit,
-                           int                                            a_ibox)
+                           int                                            a_ibox,
+                           const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
   {
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef Proto::EBStencilHO<CELL, CELL, order, Real> ho_t;
@@ -452,7 +455,8 @@ private:
                        xfacdata,  yfacdata, zfacdata,   
                        ebnorxdata, ebnorydata,
                        ebnorzdata,
-                       m_dx, false, Point::Zeros());
+                       m_dx, false, Point::Zeros(),
+                       a_boundarySolutions);
  
     }
     else
@@ -556,7 +560,7 @@ private:
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
         //use strings to get stencil for this particular operator.
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox);
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox, m_boundarySolutions);
         
         auto& graph = (*m_graphs)[dit[ibox]];
         auto  grid  =     m_grids[dit[ibox]];
@@ -792,6 +796,8 @@ private:
   EBLevelBoxData<CELL, 1> m_inhoContr;
   Chombo4::Copier m_exchangeCopier;
   vector<shared_ptr<ebstencil_t> > m_stencil;
+
+  shared_ptr<BaseExactSolution<order> > m_boundarySolutions = nullptr;
 };
 
 #endif

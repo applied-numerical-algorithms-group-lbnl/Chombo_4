@@ -87,7 +87,8 @@ namespace Proto
                   const EBNormalData                        & a_ebnormzdata,
                   double                                      a_dx,
                   bool                                        a_periodiconly,
-                  Point                                       a_dstGrown);
+               Point                                       a_dstGrown,
+               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr);
 
     ///Gets WLS Poisson stencil
     inline static bool
@@ -116,7 +117,8 @@ namespace Proto
                          const EBNormalData                        & a_ebnormzdata,
                          double                                      a_dx,
                          bool                                        a_periodiconly,
-                         bool  a_forceAllNeumann);
+                         bool  a_forceAllNeumann,
+                         const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr);
 
     ///Gets WLS Advection stencil
     inline static bool
