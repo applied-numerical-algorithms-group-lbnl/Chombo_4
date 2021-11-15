@@ -19,12 +19,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup default branch
-        run: git config --global init.defaultBranch configure
       - uses: actions/checkout@master
         with:
-          repository: git@bitbucket.org:berkleleylab/proto.git
-          submodules: true
+          repository: applied-numerical-algorithms-group-lbnl/Proto
+          submodules: false # will be true for real proto
           path: ${{github.workspace}}/proto
       - uses: actions/checkout@master
         with:
