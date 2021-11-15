@@ -19,6 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Setup default branch
+        run: git config --global init.defaultBranch configure
       - uses: actions/checkout@master
         with:
           repository: git@bitbucket.org:berkleleylab/proto.git
