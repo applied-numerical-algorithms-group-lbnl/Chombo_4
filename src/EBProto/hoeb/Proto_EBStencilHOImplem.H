@@ -7,6 +7,67 @@
 
 namespace Proto
 {
+
+  template <int order>
+  vector<EBIndex<CELL> >
+  EBStencilHO<CELL, CELL,  order, double>::
+  getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start)
+  {
+    PR_TIME("getFlapVoFs");
+    vector<EBIndex<CELL> > retval;
+
+    for(int idir  = 0; idir <  DIM; idir++)
+    {
+      for(SideIterator sit; sit.ok(); ++sit)
+      {
+        vector<EBIndex<CELL> > neighbors = a_graph.getNeighborVoFs(a_start, idir, sit());
+        retval.insert(retval.end(), neighbors.begin(), neighbors.end());
+      }
+    }
+    return retval;
+  } 
+
+  template <int order>
+  bool
+  EBStencilHO<CELL, CELL,  order, double>::
+  isRegularStencil(const EBIndex<CELL> & a_vof,
+                   const int             a_radius,
+                   const EBGraph       & a_graph)
+  {
+    PR_TIME("isRegularStencil");
+    bool retval;
+    Vector<EBIndex<CELL> > vof_cont;
+    vof_cont.push_back(a_vof);
+    int startV = 0;
+    for (int irad = 1; irad<=a_radius; irad++)
+    {
+      int neighSize = vof_cont.size();
+      for (int ineigh = startV; ineigh<neighSize; ineigh++){
+        vector< EBIndex<CELL> > volsinclusive=  getFlapVoFs(a_graph, vof_cont[ineigh]);
+        for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
+        {
+          bool incl = true;
+          for(int ivof2 = 0; ivof2 < vof_cont.size(); ivof2++)
+          {
+            if (volsinclusive[ivof]==vof_cont[ivof2])
+            {
+              incl=false;
+              break;
+            }
+          }
+          if (incl) 
+          {
+            vof_cont.push_back(volsinclusive[ivof]);
+          }
+        }
+      }
+      startV = neighSize;
+    }
+    if (a_radius==3 && vof_cont.size()==41) retval = true;
+    else retval = false;
+    return retval;
+  }
+
   template <int order>
   void
   EBStencilHO<CELL, CELL,  order, double>::
@@ -14,6 +75,7 @@ namespace Proto
                   const LocalStencil< CELL,  double> & a_stencil,
                   const Point                        & a_vofPt) 
   {
+    pout()<<setprecision(16)<<scientific;
     for (int j = radius+1; j>=-(radius+1); j--)
     {
       for (int i = -(radius+1); i<=radius+1; i++)
@@ -32,7 +94,7 @@ namespace Proto
       }
       pout()<<endl;
     }
-    pout()    << std::setprecision(1);
+    //pout()    << std::setprecision(1);
     for (int j = radius+1; j>=-(radius+1); j--)
     {
       for (int i = -(radius+1); i<=radius+1; i++)
@@ -54,7 +116,7 @@ namespace Proto
             act = true;
           } 
         }
-        if (!act) pout()<<"   N/A  "<<"  ";
+        if (!act) pout()<<"          N/A        "<<"  ";
       }
       pout()<<endl;
     }
@@ -301,7 +363,8 @@ namespace Proto
 
     int ncells = 32;
     int nrepRows = -1;
-    pp.get("nx"   , ncells);
+    //pp.get("nx"   , ncells);
+    ncells = 1.0/a_dx;
     pp.query("nrepRows"   , nrepRows);
     vector<map<int,int > > map1;
     map<pair<int,int>,EBIndex<CELL> > map2;
@@ -553,13 +616,11 @@ namespace Proto
                          bool                                        a_periodiconly,               
                          bool  a_forceNeumann)               
   {
-    vector<LocalStencil<CELL, double> > diff_stencil;
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(a_dstVoFs.size());
-    diff_stencil.resize(a_dstVoFs.size());
     a_inhoContr.resize(a_dstVoFs.size());
 
     int radius = 2;
@@ -651,6 +712,9 @@ namespace Proto
       nrepRows = ncells;
     }
 
+    bool storeRegSten = false;
+    LocalStencil<CELL, double> regSten;
+    Real regInhContr;
     //Looping over all the valid VoFs
     for(int k = initRep; k<initRep + nrepRows; k++)
     {
@@ -661,6 +725,7 @@ namespace Proto
         //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
         int ivof = it->second;
         EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        bool isReg = isRegularStencil(vofInd, radius, a_graph);
         Point pt = vofInd.m_pt;
         bool pt_verbose = false;
         if (verbose)
@@ -679,7 +744,10 @@ namespace Proto
             pt_verbose = false;
           }
         }
-  
+
+        //if (!isReg || (isReg && !storeRegSten))
+        if (1)
+        {
         //Creating the WLS fluxes needed for flux diveregence
         ExactVelAdvectionWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
         ExactVelAdvectionWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
@@ -703,37 +771,25 @@ namespace Proto
                             neighListType,
                             a_dx);
   
-#if 1
-        //Creating the WLS fluxes needed for flux diveregence
-        BaseWLSFlux<XFACE, order> xfluxL(radius, powerE, exactSolution, false);
-        BaseWLSFlux<YFACE, order> yfluxL(radius, powerE, exactSolution, false);
-        BaseWLSFlux<ZFACE, order> zfluxL(radius, powerE, exactSolution, false);
-        BaseWLSFlux<BOUNDARY, order> ebfluxL(radius, powerE, exactSolution, false);
-  
-        WLSStencil<order> lapSten;
-        lapSten.
-          getLaplaWLSDivFStencil(diff_stencil[ivof],
-                            vofInd,
-                            a_graph,
-                            a_voludata,
-                            a_ebfadata,
-                            a_xfacdata, a_yfacdata, a_zfacdata,
-                            a_ebnormxdata, a_ebnormydata,
-                            a_ebnormzdata,
-                            xfluxL, yfluxL, zfluxL, ebfluxL, ebbc, dombc,
-                            inhoTerm,
-                            neighListType,
-                            a_dx);
-#endif
         RealVect centroid;
         double kappa;
         Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
-        a_stencil[ivof]*= 1.0/(a_dx);
-        diff_stencil[ivof]*= 1.0/(a_dx*a_dx);
-        diff_stencil[ivof] *= -POW(a_dx, order+1);
+        a_stencil[ivof]*= 1.0/(kappa*a_dx);
         inhoTerm*= 1.0/(a_dx);
-        //a_stencil[ivof]+=diff_stencil[ivof];
-        a_inhoContr[ivof] = inhoTerm;
+        //a_inhoContr[ivof] = inhoTerm;
+        a_inhoContr[ivof] = 0.0;
+        if (isReg)
+        {
+          regSten = a_stencil[ivof];
+          regInhContr = a_inhoContr[ivof];
+          storeRegSten = true;  
+        }
+        }
+        else
+        {
+          a_stencil[ivof] = regSten;
+          a_inhoContr[ivof] = regInhContr;
+        }
         row_stencil.push_back(a_stencil[ivof]);
         row_inhoContr.push_back(a_inhoContr[ivof]);
         row_index.push_back(vofInd);

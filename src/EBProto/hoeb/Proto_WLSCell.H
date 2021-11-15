@@ -48,12 +48,21 @@ namespace Proto
       return retval;
     }
 
+    virtual void setDx(const Real a_dx)
+    {
+      m_dx = a_dx;
+    }
+
+    virtual Real getDx()
+    {
+      return m_dx;
+    }
 
     virtual ~BaseExactVelocity()
     {
     }
   
-  
+    Real m_dx; 
   protected:
   
     bool m_locationBased;
@@ -99,6 +108,56 @@ namespace Proto
   
     RealVect m_value;
   };
+
+  ///
+  /**
+   */
+  template<int order> 
+  class PoiseuilleVectorVel: public BaseExactVelocity<order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+ 
+    ///  
+    /**
+     */
+    PoiseuilleVectorVel(const Real & a_centerValue,
+                        const Real & a_wallValue,
+                        const Real & a_radius,
+                        const RealVect & a_center)
+      :BaseExactVelocity<order>(true) // this is location based
+    {
+      m_centerValue = a_centerValue;
+      m_wallValue = a_wallValue;
+      m_center = a_center;
+      m_radius = a_radius;
+    }
+  
+    ///
+    /**
+     */
+    virtual IndMomDIM getVelCompTaylorCoeffs(const RealVect   & a_x0,
+                                             const int        & a_velcomp) const;
+  
+  
+    virtual RealVect getVelocityAtPoint(const RealVect& a_x) const;
+  
+    virtual ~PoiseuilleVectorVel()
+    {
+    }
+  
+  private:
+    //weak construction is bad
+    PoiseuilleVectorVel();
+  
+    RealVect m_center;
+    Real m_radius;
+    Real m_centerValue;
+    Real m_wallValue;
+  };
+
 
   ///
   /**
@@ -490,8 +549,14 @@ namespace Proto
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
+<<<<<<< HEAD
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
+=======
+		      RealVect                 & a_faceLoc,
+	              IndMomSDMinOne           & a_faceMom,
+                      double                     a_signNormal,
+>>>>>>> cd87d4e8367b647d6d5cc7912b030c4b87fec26d
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
@@ -544,7 +609,12 @@ namespace Proto
                            string                       a_dombcName[2*DIM],
                            const int                    a_dir,
                            IndMomSDMinOne             & a_faceMom,
+<<<<<<< HEAD
                            int                          a_neighType,
+=======
+                           int                        & a_neighType,
+                           double                       a_signNormal, 
+>>>>>>> cd87d4e8367b647d6d5cc7912b030c4b87fec26d
                            double                       a_dx) const;
 
     //Compute EB face stencil
@@ -638,28 +708,46 @@ namespace Proto
             Vector<int> freqVec;
             Vector<Real> centerVec;
   
-            pp.getarr("phi_freq",freqVec,0,DIM);
-            pp.getarr("phi_center",centerVec,0,DIM);
-            for(int idir = 0; idir < DIM; idir++)
-              {
-                frequency[idir] = freqVec[idir];
-                center[idir] = centerVec[idir];
-              }
+        pp.getarr("phi_freq",freqVec,0,DIM);
+        pp.getarr("phi_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          frequency[idir] = freqVec[idir];
+          center[idir] = centerVec[idir];
+        }
 
-            if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-            if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
-          }
-        else if (a_exactSolFun == 4)
-          {
-            Real rad;
-            pp.get("phi_rad", rad);
-            Real cen;
-            pp.get("phi_cen", cen);
-
-            m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-
-          }
+        if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+        if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
       }
+      else if (a_exactSolFun == 4)
+      {
+        Real rad;
+        pp.get("phi_rad", rad);
+        Real cen;
+        pp.get("phi_cen", cen);
+
+        m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+      }
+      else if (a_exactSolFun == 5)
+      {
+        Real coeff;
+        pp.get("phi_coeff",coeff);
+
+        Real dfac;
+        pp.get("phi_dfac",dfac);
+
+        RealVect center;
+        Vector<Real> centerVec;
+
+        pp.getarr("phi_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          center[idir] = centerVec[idir];
+        }
+
+        m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
+      }
+    }
 
     //Radius needed for neighbors list around a face (Manhattan style)
     int m_radius = 1;
@@ -767,6 +855,7 @@ namespace Proto
                       const EBIndex<cent>      & a_face,
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
+                      double                     a_signNormal,
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
@@ -832,9 +921,30 @@ namespace Proto
             Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2),0.5);
             centerVel = centerVel/mag;
 
-            m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
-          }
-      }
+        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
+      }    
+      else if (exactVel == 3)
+      {
+        RealVect centerVel;
+        Vector<Real> centerVec;
+
+        pp.getarr("vel_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          centerVel[idir] = centerVec[idir];
+        }
+
+        Real centerMagVel;
+        Real wallVel;
+        Real radiusVel;
+        pp.get("centerMagVel",centerMagVel);
+        pp.get("wallVel",wallVel);
+        pp.get("radiusVel",radiusVel);
+ 
+        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new PoiseuilleVectorVel<order>(centerMagVel, wallVel, radiusVel, centerVel));
+      }     
+ 
+    }
 
     //Exact velocity class holding different function types
     shared_ptr<BaseExactVelocity<order> >  m_exactVel;

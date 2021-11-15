@@ -51,6 +51,14 @@ namespace Proto
     EBStencilHO() {}
     ~EBStencilHO() {}
 
+    inline static vector<EBIndex<CELL> >
+    getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start); 
+
+    inline static bool 
+    isRegularStencil(const EBIndex<CELL> & a_vof,
+                     const int             a_radius,
+                     const EBGraph       & a_graph);
+
     inline static void 
     printWLSStencil(int                                  radius,
                     const LocalStencil< CELL,  double> & a_stencil,
