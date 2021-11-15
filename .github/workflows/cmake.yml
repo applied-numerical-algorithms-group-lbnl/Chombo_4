@@ -22,6 +22,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Clone Proto
         run: git clone git@bitbucket.org:berkeleylab/proto.git
+        with:
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Configure Proto
         run: cmake -B ${{github.workspace}}/proto -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Configure Chombo
