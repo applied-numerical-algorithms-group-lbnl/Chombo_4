@@ -25,7 +25,7 @@ jobs:
         #  submodules: false # will be true for real proto
         #  path: ${{github.workspace}}/proto
       - name: Checkout Proto
-        run: git clone -b configure git@bitbucket.org/berkeleylab/proto.git
+        run: git clone -b configure git@bitbucket.org:berkeleylab/proto.git
       - uses: actions/checkout@master
         with:
           submodules: true
