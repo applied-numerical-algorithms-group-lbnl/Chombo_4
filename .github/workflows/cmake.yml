@@ -19,11 +19,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@master
-        with:
-          repository: applied-numerical-algorithms-group-lbnl/Proto
-          submodules: false # will be true for real proto
-          path: ${{github.workspace}}/proto
+        #  - uses: actions/checkout@master
+        #with:
+        #  repository: applied-numerical-algorithms-group-lbnl/Proto
+        #  submodules: false # will be true for real proto
+        #  path: ${{github.workspace}}/proto
+      - name: Checkout Proto
+        run: git clone -b configure git@bitbucket.org/berkeleylab/proto.git
       - uses: actions/checkout@master
         with:
           submodules: true
