@@ -534,6 +534,8 @@ namespace Proto
                                 const EBNormalData     & a_ebnormzdata,
                                 const Neighbors<order> & a_neigh,
                                 int                      a_neighType,
+                                string                   a_ebbcName,
+                                string                   a_dombcName[2*DIM],
                                 double                   a_dx) const;
 
     //Compute the Moments Matrix
@@ -549,14 +551,9 @@ namespace Proto
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
-<<<<<<< HEAD
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
-=======
-		      RealVect                 & a_faceLoc,
-	              IndMomSDMinOne           & a_faceMom,
                       double                     a_signNormal,
->>>>>>> cd87d4e8367b647d6d5cc7912b030c4b87fec26d
                       double                     a_dx) const;
 
     //Compute rhs matrix for a EB face
@@ -609,12 +606,8 @@ namespace Proto
                            string                       a_dombcName[2*DIM],
                            const int                    a_dir,
                            IndMomSDMinOne             & a_faceMom,
-<<<<<<< HEAD
-                           int                          a_neighType,
-=======
                            int                        & a_neighType,
                            double                       a_signNormal, 
->>>>>>> cd87d4e8367b647d6d5cc7912b030c4b87fec26d
                            double                       a_dx) const;
 
     //Compute EB face stencil

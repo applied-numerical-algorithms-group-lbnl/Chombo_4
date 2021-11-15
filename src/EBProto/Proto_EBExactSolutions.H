@@ -29,7 +29,7 @@ public:
                   const Real    & a_dx,
                   const VoluData& a_voldat,
                   const EBIndex<CELL>   & a_vof,
-                  const IvDIM & a_baseDeriv = IvDIM::Zero)
+                  const IvDIM & a_baseDeriv = IvDIM::Zero) const
   {
     Real retval = 0;
     RealVect centloc;
@@ -77,7 +77,7 @@ public:
   }
 
   virtual Real getDerivative(IvDIM    a_power,
-                             RealVect a_loc) = 0;
+                             RealVect a_loc) const = 0;
 };
 
 ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
@@ -91,7 +91,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_power,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     return 0.;
   }
@@ -118,7 +118,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real x = a_loc[0] - m_center;
     Real y = a_loc[1] - m_center;
@@ -445,7 +445,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real  C     = m_entry.second;  //coefficient
     Point expon = m_entry.first; //exponent
@@ -822,7 +822,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real retval = 0;
     for(int ient = 0; ient < m_entries.size(); ient++)
@@ -869,7 +869,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
@@ -947,7 +947,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
@@ -1025,7 +1025,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = 0.0;
     Real dist2 = 0.;

@@ -332,6 +332,10 @@ namespace Proto
       {
         pp.get("exact_solution",exactSolution);
       }
+    else
+      {
+        pout() << "WLSPoissionStencil using externally specified BC" << std::endl;
+      }
 
     if (verbose)
     {
@@ -954,6 +958,11 @@ namespace Proto
       {
         pp.get("exact_solution",exactSolution);
       }
+    else
+      {
+        pout() << "WLSDivergenceCompStencil using externally specified BC" << std::endl;
+      }
+
 
     if (verbose)
       {
@@ -1074,21 +1083,21 @@ namespace Proto
 
             //Computing the flux divergence stencil
             Real inhoTerm = 0.0;
-            WLSStencil<order> advSten;
-            advSten.getWLSDivFCompStencil(a_stencil[0][ivof],
-                                          a_stencil[1][ivof],
-                                          a_stencil[1][ivof], // dummy for the z
-                                          vofInd,
-                                          a_graph,
-                                          a_voludata,
-                                          a_ebfadata,
-                                          a_xfacdata, a_yfacdata, a_zfacdata,
-                                          a_ebnormxdata, a_ebnormydata,
-                                          a_ebnormzdata,
-                                          xflux, yflux, zflux, ebflux, ebbc, dombc,
-                                          inhoTerm,
-                                          neighListType,
-                                          a_dx);
+            WLSStencil<order> sten;
+            sten.getWLSDivFCompStencil(a_stencil[0][ivof],
+                                       a_stencil[1][ivof],
+                                       a_stencil[1][ivof], // dummy for the z
+                                       vofInd,
+                                       a_graph,
+                                       a_voludata,
+                                       a_ebfadata,
+                                       a_xfacdata, a_yfacdata, a_zfacdata,
+                                       a_ebnormxdata, a_ebnormydata,
+                                       a_ebnormzdata,
+                                       xflux, yflux, zflux, ebflux, ebbc, dombc,
+                                       inhoTerm,
+                                       neighListType,
+                                       a_dx);
 
             RealVect centroid;
             double kappa;
@@ -1262,6 +1271,11 @@ namespace Proto
       {
         pp.get("exact_solution",exactSolution);
       }
+    else
+      {
+        pout() << "WLSGradientStencil using externally specified BC" << std::endl;
+      }
+
 
     if (verbose)
       {
