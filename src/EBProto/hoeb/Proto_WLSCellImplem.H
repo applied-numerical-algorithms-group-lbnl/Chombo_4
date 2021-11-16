@@ -1011,11 +1011,21 @@ namespace Proto
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
-    Real centroid_pos = a_faceMom[1]/a_faceMom[0];
+    RealVect centroid_pos;
+    centroid_pos[0] = a_faceMom[1]/a_faceMom[0];
+#if DIM==3
+    centroid_pos[1] = a_faceMom[1+order]/a_faceMom[0];
+#endif
+    int centr_iter = 0;
     for (int idir = 0; idir < DIM; idir++)
     {
-      if (a_dir != idir) faceLoc[idir] += centroid_pos*a_dx;
+      if (a_dir != idir) 
+      {
+        faceLoc[idir] += centroid_pos[centr_iter]*a_dx;
+        centr_iter++;
+      }
     }
+    if (m_verbose) pout()<<" centroid comp "<<faceLoc<<endl;
     getWeightsMatrixFace(weights, neighs, faceLoc);
 
     // Compute phiCoef
@@ -1748,6 +1758,18 @@ namespace Proto
     Real expD = 1.0;
     Real distM = 1.0;
     Real distP = 1.0;
+#if DIM==3
+    if (a_dir == 0 ){
+      distM = pow(pow(pow(abs(centroidM[0]-0.5),2)+pow(abs(centroidM[1]-a_centroid[1]),2)+pow(abs(centroidM[2]-a_centroid[2]),2),0.5),expD);
+      distP = pow(pow(pow(abs(centroidP[0]+0.5),2)+pow(abs(centroidP[1]-a_centroid[1]),2)+pow(abs(centroidP[2]-a_centroid[2]),2),0.5),expD);
+    }else if (a_dir == 1){
+      distM = pow(pow(pow(abs(centroidM[1]-0.5),2)+pow(abs(centroidM[0]-a_centroid[0]),2)+pow(abs(centroidM[2]-a_centroid[2]),2),0.5),expD);
+      distP = pow(pow(pow(abs(centroidP[1]+0.5),2)+pow(abs(centroidP[0]-a_centroid[0]),2)+pow(abs(centroidP[2]-a_centroid[2]),2),0.5),expD);
+    }else if (a_dir == 2){
+      distM = pow(pow(pow(abs(centroidM[2]-0.5),2)+pow(abs(centroidM[0]-a_centroid[0]),2)+pow(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
+      distP = pow(pow(pow(abs(centroidP[2]+0.5),2)+pow(abs(centroidP[0]-a_centroid[0]),2)+pow(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
+    }
+#elif DIM==2
     if (a_dir == 0 ){
       distM = pow(pow(pow(abs(centroidM[0]-0.5),2)+pow(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
       distP = pow(pow(pow(abs(centroidP[0]+0.5),2)+pow(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
@@ -1755,7 +1777,7 @@ namespace Proto
       distM = pow(pow(pow(abs(centroidM[1]-0.5),2)+pow(abs(centroidM[0]-a_centroid[0]),2),0.5),expD);
       distP = pow(pow(pow(abs(centroidP[1]+0.5),2)+pow(abs(centroidP[0]-a_centroid[0]),2),0.5),expD);
     }
-
+#endif
     bool upwind_stencil = false;
     //This will take the upwind stencil between stencilM and stencilP
     if (upwind_stencil)
@@ -1869,7 +1891,7 @@ namespace Proto
             }
           }
   
-          if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+          if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
   
           if (!xfaces[iface].m_isBoundary){
 
@@ -2003,7 +2025,7 @@ namespace Proto
             }
           }
   
-          if (a_yfaceflux.m_verbose) pout()<<" stencil Yface "<<yfaces[iface].m_pt<<endl;
+          if (a_yfaceflux.m_verbose) pout()<<" stencil Yface "<<yfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
   
           if (!yfaces[iface].m_isBoundary){
             a_yfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, yfaces[iface],
@@ -2133,6 +2155,8 @@ namespace Proto
             }
           }
   
+          if (a_zfaceflux.m_verbose) pout()<<" stencil Zface "<<zfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
+
           if (!zfaces[iface].m_isBoundary){
             a_zfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, zfaces[iface],
                                            a_graph,
@@ -2193,7 +2217,7 @@ namespace Proto
           //zfacesFluxStencil[zfaces[iface]] = fluxStencil;
           //zfacesInhTerm[zfaces[iface]] = inhomogTerm;
           //fluxStencil *= factor;
-          a_inhoTerm += inhomogTerm*factor;
+          a_inhoTerm += inhomogTerm;
           a_vofStencil += fluxStencil;
         }
       }
@@ -2628,11 +2652,21 @@ namespace Proto
       {
         Real centroid_x = volMom[ineigh][1]/(volMom[ineigh][IndexTM<int,DIM>::Zero]);
         Real centroid_y = volMom[ineigh][1+order]/(volMom[ineigh][IndexTM<int,DIM>::Zero]);
+#if DIM==3
+        Real centroid_z = volMom[ineigh][2*(1+order)]/(volMom[ineigh][IndexTM<int,DIM>::Zero]);
+#endif
         RealVect volLoc = volneighLoc[ineigh];
         volLoc[0] += centroid_x*dx;
         volLoc[1] += centroid_y*dx;
-        RealVect weight = ((volLoc/dx) - x_upw);
+#if DIM==3
+        volLoc[2] += centroid_z*dx;
+#endif
+        RealVect weight = (volLoc/dx) - x_upw;
+#if DIM==2
         Real weight_mag = pow(pow(weight[0],2)+pow(weight[1],2),0.5);
+#elif DIM==3
+        Real weight_mag = pow(pow(weight[0],2)+pow(weight[1],2)+pow(weight[2],2),0.5);
+#endif
         Real max_weight = std::max(2*weight_mag,1.0);
         blerg = pow(max_weight,-order-1);
       }

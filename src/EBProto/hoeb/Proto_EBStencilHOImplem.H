@@ -32,12 +32,18 @@ namespace Proto
   EBStencilHO<CELL, CELL,  order, double>::
   isRegularStencil(const EBIndex<CELL> & a_vof,
                    const int             a_radius,
-                   const EBGraph       & a_graph)
+                   const EBGraph       & a_graph,
+                   const VoluData      & a_voludata,
+                   const double          a_dx)
   {
     PR_TIME("isRegularStencil");
     bool retval;
     Vector<EBIndex<CELL> > vof_cont;
     vof_cont.push_back(a_vof);
+    RealVect centroid;
+    double kappa;
+    Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_vof, a_graph, a_dx);
+    if (kappa < 1.0) retval=false;  
     int startV = 0;
     for (int irad = 1; irad<=a_radius; irad++)
     {
@@ -58,13 +64,13 @@ namespace Proto
           if (incl) 
           {
             vof_cont.push_back(volsinclusive[ivof]);
+            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volsinclusive[ivof], a_graph, a_dx);
+            if (kappa < 1.0) retval=false;  
           }
         }
       }
       startV = neighSize;
     }
-    if (a_radius==3 && vof_cont.size()==41) retval = true;
-    else retval = false;
     return retval;
   }
 
@@ -357,7 +363,9 @@ namespace Proto
     int ncells = 32;
     int nrepRows = -1;
     //pp.get("nx"   , ncells);
-    ncells = 1.0/a_dx;
+    Point lodom = a_domain.low();
+    Point hidom = a_domain.high();
+    ncells = hidom[1] - lodom[1] + 1;
     pp.query("nrepRows"   , nrepRows);
     vector<map<int,int > > map1;
     map<pair<int,int>,EBIndex<CELL> > map2;
@@ -644,10 +652,13 @@ namespace Proto
     int ncells = 32;
     int nrepRows = -1;
     //pp.get("nx"   , ncells);
-    ncells = 1.0/a_dx;
+    Point lodom = a_domain.low();
+    Point hidom = a_domain.high();
+    ncells = hidom[1] - lodom[1] + 1;
     pp.query("nrepRows"   , nrepRows);
-    vector<map<int,int > > map1;
-    map<pair<int,int>,EBIndex<CELL> > map2;
+    //vector<map<int,int > > map1;
+    vector<map<pair<int,int>,int > > map1;
+    map<tuple<int,int,int>,EBIndex<CELL> > map2;
     map1.resize(ncells);
 
     for(int k=0; k<ncells; k++)
@@ -656,17 +667,26 @@ namespace Proto
       for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
         Point pt = a_dstVoFs[ivof].m_pt;
-        pair<int,int> ptPair (pt[0],pt[1]);
+#if DIM==3
+        tuple<int,int,int> ptPair (pt[0],pt[1],pt[2]);
+#elif DIM==2
+        tuple<int,int,int> ptPair (pt[0],pt[1],0);
+#endif
         map2[ptPair] = a_dstVoFs[ivof];
         if (pt[1]==k)
         {
-          map1[k][pt[0]] = ivof;
+#if DIM==3
+          pair<int,int> ptPair2 (pt[0],pt[2]);
+#elif DIM==2
+          pair<int,int> ptPair2 (pt[0],0);
+#endif
+          map1[k][ptPair2] = ivof;
         }
       }
     }
 
-    map<int,int >::iterator it;
-    map<pair<int,int>,EBIndex<CELL> >::iterator it2;
+    map<pair<int,int>,int >::iterator it;
+    map<tuple<int,int,int>,EBIndex<CELL> >::iterator it2;
     vector<LocalStencil<CELL, double> > row_stencil;
     vector<double> row_inhoContr;
     vector<EBIndex<CELL> > row_index;
@@ -696,7 +716,7 @@ namespace Proto
         //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
         int ivof = it->second;
         EBIndex<CELL> vofInd = a_dstVoFs[ivof];
-        bool isReg = isRegularStencil(vofInd, radius, a_graph);
+        bool isReg = isRegularStencil(vofInd, radius, a_graph, a_voludata, a_dx);
         Point pt = vofInd.m_pt;
         bool pt_verbose = false;
         if (verbose)
@@ -760,6 +780,19 @@ namespace Proto
         {
           a_stencil[ivof] = regSten;
           a_inhoContr[ivof] = regInhContr;
+          int difi = vofInd.m_pt[0] - a_stencil[ivof].m_entries[0].m_vof.m_pt[0];
+          int difj = vofInd.m_pt[1] - a_stencil[ivof].m_entries[0].m_vof.m_pt[1];
+#if DIM==3
+          int difk = vofInd.m_pt[2] - a_stencil[ivof].m_entries[0].m_vof.m_pt[2];
+#endif
+   	  for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+          {
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[0] += difi;
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[1] += difj;
+#if DIM==3
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[2] += difk;
+#endif
+          }
         }
         row_stencil.push_back(a_stencil[ivof]);
         row_inhoContr.push_back(a_inhoContr[ivof]);
@@ -767,8 +800,11 @@ namespace Proto
         if (pt_verbose) 
         {
           pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
-          //a_stencil[ivof].print();
+#if DIM==3
+          a_stencil[ivof].print();
+#elif DIM==2
           printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+#endif
           Real accDivF = 0.0;
   	  for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
           {
@@ -794,11 +830,17 @@ namespace Proto
           EBIndex<CELL> vofInd = a_dstVoFs[ivof];
           int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
           int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
+#if DIM==3
+          int difk = vofInd.m_pt[2] - row_index[kk].m_pt[2];
+#endif
           LocalStencil<CELL, double> new_stencil;
           for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
           {
               int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
               int pt_y = row_stencil[kk].m_entries[ivec].m_vof.m_pt[1] + difj;
+#if DIM==3
+              int pt_z = row_stencil[kk].m_entries[ivec].m_vof.m_pt[2] + difk;
+#endif
               if (pt_y < 0) {
                 pt_y += ncells;
                 pt_x += ncells/nrepRows;
@@ -809,7 +851,11 @@ namespace Proto
                 pt_x -= ncells/nrepRows;
                 if (difi==0) pt_x += ncells/nrepRows;
               }
-              pair<int,int> pairPt (pt_x,pt_y);
+#if DIM==3
+              tuple<int,int,int> pairPt (pt_x,pt_y,pt_z);
+#elif DIM==2
+              tuple<int,int,int> pairPt (pt_x,pt_y,0);
+#endif
               it2 = map2.find(pairPt);
               if (it2 != map2.end())
               {
@@ -842,8 +888,11 @@ namespace Proto
           if (pt_verbose) 
           {
             pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
-            //a_stencil[ivof].print();
+#if DIM==3
+            a_stencil[ivof].print();
+#elif DIM==2
             printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+#endif
             Real accDivF = 0.0;
             for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
             {
