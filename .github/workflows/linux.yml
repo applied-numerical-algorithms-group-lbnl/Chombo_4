@@ -1,0 +1,39 @@
+name: linux
+
+on: [push, pull_request]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  chombo_gnu:
+    name: Chombo GNU
+    runs-on: ubuntu-latest
+    steps:
+        #  - uses: actions/checkout@master
+        #with:
+        #  repository: applied-numerical-algorithms-group-lbnl/Proto
+        #  submodules: false # will be true for real proto
+        #  path: ${{github.workspace}}/proto
+      - name: Checkout Proto
+        run: git clone -b configure git@bitbucket.org:berkeleylab/proto.git proto
+      - name: Dependencies
+        run: .github/workflows/dependencies/dependencies.sh
+      - name: Build & Install Proto
+        working-directory: proto
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build --parallel
+      - uses: actions/checkout@master  # Checkout Chombo
+        with:
+          submodules: true
+          path: ${{github.workspace}}/chombo
+      - name: Build & Install Chombo
+        working-directory: chombo
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build --parallel
+      - name: Run Google Test
+        working-directory: ${{github.workspace}}/chombo/build
+        run: make test
