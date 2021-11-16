@@ -14,6 +14,7 @@
 #ifdef CH_USE_PETSC
 #include "petsc.h"
 #include "petscmat.h"
+#include "petscvec.h"
 #include "petscksp.h"
 #include "petscviewer.h"
 #include "Chombo_EBChombo.H"
@@ -47,6 +48,7 @@ public:
                 string a_ebbcName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost)
   {
+    CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
     m_graphs       =    a_graphs;
@@ -69,14 +71,15 @@ public:
 
     m_kappa.define(m_grids, m_ivghost, m_graphs);
     m_inhoContr.define(m_grids, m_ivghost, m_graphs);
+    m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
+
     Chombo4::DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
         auto& inhofab = m_inhoContr[dit[ibox]];
         inhofab.setVal(0.0);
       }
-
-    m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
+    m_inhoContr.exchange(m_exchangeCopier);
 
     fillKappa(a_geoserv);
 
@@ -167,6 +170,7 @@ public:
     BoxData<        Real, 1>& reghost = hostdat.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = hostdat.getIrrData();
 
+    hostdat.setVal(0.0);
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
       auto vof    =   a_dstVoFs[ivof];
@@ -185,10 +189,7 @@ public:
         irrhost(vof , 0) = m_beta*a_inhoContr[ivof];
       }
     }
-    // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(inhodat, hostdat);
-  
-    m_inhoContr.exchange(m_exchangeCopier);
   }
 
   Real getAlpha() const
@@ -224,7 +225,7 @@ public:
   
       ideb++;
     }
-    //m_kappa.exchange(m_exchangeCopier);
+    m_kappa.exchange(m_exchangeCopier);
   }
 
   /****/
@@ -312,6 +313,7 @@ private:
   int chomboToPetsc(Vec                           & a_dst,
                     const EBLevelBoxData<CELL, 1> & a_deviceSrc)
   {
+    CH_TIME("EBPetscSolver::chomboToPetsc");
     PetscErrorCode ierr;
 
     //copy data to host.  The pEtsC team has promised to make this
@@ -489,11 +491,16 @@ private:
                     const Vec               & a_src)
                     
   {
+    CH_TIME("EBPetscSolver::petscToChombo");
     using Chombo4::DataIterator;
     PetscErrorCode ierr;
     const PetscScalar *arr;
     ierr = VecGetArrayRead(a_src,&arr);  CHKERRQ(ierr);
 
+
+    PetscInt localStart,  localEnd, localSize;
+    VecGetOwnershipRange( a_src ,&localStart,&localEnd);
+    VecGetLocalSize(a_src ,&localSize);
     //copy data to host.  The PeTsC team has promised to make this
     //step unnecessary by providing the pointer to the vector that lives
     //on the device
@@ -501,7 +508,6 @@ private:
     LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
     
     DataIterator dit = m_grids.dataIterator();
-    int vec_pos = 0;
     for (int ibox=0;ibox< dit.size(); ibox++)
     {
       auto& hostfab =   hostDst[dit[ibox]];
@@ -516,13 +522,13 @@ private:
         {
           auto vof = vofs[ivof];
           PetscInt ki = m_gids[dit[ibox]](vof, 0);
-          hostfab(vof, 0) = arr[vec_pos];
-	  vec_pos++;
+          PetscInt localIndex = ki - localStart;
+          hostfab(vof, 0) = arr[localIndex];
         }
       }
     }
 
-    ///copy data back to device.   Soon, the pEtSc team will render this unnecessary.
+    ///copy data back to device. 
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
     return 0;
   }
@@ -610,6 +616,7 @@ private:
       ierr = MatAssemblyBegin(m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+      m_inhoContr.exchange(m_exchangeCopier);
     }
     return 0;
   }
@@ -650,8 +657,46 @@ private:
 #else
     ierr = KSPSetOperators(m_ksp,m_mat,m_mat,SAME_NONZERO_PATTERN);CHKERRQ(ierr);
 #endif
-    ierr = KSPSetInitialGuessNonzero(m_ksp, m_nz_init_guess ? PETSC_TRUE : PETSC_FALSE );CHKERRQ(ierr);
+    //ierr = KSPSetInitialGuessNonzero(m_ksp, m_nz_init_guess ? PETSC_TRUE : PETSC_FALSE );CHKERRQ(ierr);
 
+    { // coordinates
+      PC pc; 
+      PetscInt sz,ind,bs,n,m;
+#if PETSC_VERSION_LT(3,4,0) & PETSC_VERSION_RELEASE
+      const PCType type;
+#else
+      PCType type;
+#endif  
+      ierr = KSPGetPC( m_ksp, &pc );     CHKERRQ(ierr);
+      ierr = PCGetType( pc, &type );    CHKERRQ(ierr);
+      ierr = MatGetBlockSize( m_mat, &bs );               CHKERRQ( ierr );
+      if ( strcmp(type,PCGAMG) == 0 && bs > 1 )
+      {
+        PetscReal    *coords;
+        ierr = MatGetLocalSize( m_mat, &m, &n );  CHKERRQ(ierr);
+        sz = CH_SPACEDIM*(m/bs);
+        ierr = PetscMalloc( (sz+1)*sizeof(PetscReal), &coords ); CHKERRQ(ierr);
+        ind  = 0;//just for parity check with sz
+        for (Chombo4::DataIterator  dit = m_grids.dataIterator(); dit.ok() ; ++dit )
+        {
+          Chombo4::Box grid = m_grids[dit()];
+          for (Chombo4::BoxIterator bit(grid); bit.ok(); bit.next())
+          {
+            IntVect iv = bit(); // coordinate in any scaled, shifted, rotated frame.
+            for (PetscInt k=0; k< DIM; k++)
+            {
+              ind = ind + 1;
+              coords[ind] = (PetscReal)iv[k];
+            }
+          }
+        }
+        CH_assert(ind==sz);
+        ierr = PCSetCoordinates( pc, CH_SPACEDIM, sz/CH_SPACEDIM, coords ); CHKERRQ(ierr);
+        ierr = PetscFree( coords );  CHKERRQ(ierr);
+      }
+    }
+
+    // print_memory_line("After AMG set up");
     //there is some stuff here about blocksize but it appears to be optional.
     return 0;
   }
@@ -663,9 +708,10 @@ private:
   
   PetscInt createMatrixAndVectors()
   {
+    CH_TIME("EBPetscSolver::createMatrixAndVectors");
     // create matrix
-    PetscInt nnzrow = getNNZPerRow();
-    PetscInt *d_nnz=PETSC_NULL, *o_nnz=PETSC_NULL;
+    //apparently we are in supportnnzexact land
+    PetscInt nnzrow = 0;
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
 #else
@@ -675,12 +721,39 @@ private:
     PetscInt ierr;
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
     ierr = MatSetOptionsPrefix(m_mat,"");CHKERRQ(ierr);
-    
+
+    //Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
     ierr = MatSetSizes(m_mat,m_NN,m_NN,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
     ierr = MatSetType(m_mat,MATAIJ);CHKERRQ(ierr);
 
     ierr = MatSetFromOptions( m_mat ); CHKERRQ(ierr);
+    PetscInt *d_nnz=PETSC_NULL, *o_nnz=PETSC_NULL;
+
+    PetscInt nglobal;
+    PetscInt NN = m_NN;
+#ifdef CH_MPI
+    PetscInt nn = NN;
+    MPI_Datatype mtype;
+    PetscDataTypeToMPIDataType(PETSC_INT,&mtype);
+    MPI_Allreduce(&nn,&nglobal,1,mtype,MPI_SUM,wcomm);
+#else
+    nglobal = NN;
+#endif    
+
+    ierr = PetscMalloc( (m_NN+1)*sizeof(PetscInt), &d_nnz ); CHKERRQ(ierr);
+    ierr = PetscMalloc( (m_NN+1)*sizeof(PetscInt), &o_nnz ); CHKERRQ(ierr);
+    for (PetscInt kk=0;kk<NN;kk++) d_nnz[kk] = o_nnz[kk] = 0;
+
+    // fix bounds
+    for (PetscInt kk=0;kk<NN;kk++) 
+    {
+      if (d_nnz[kk] > NN) d_nnz[kk] = NN;
+      if (o_nnz[kk] > nglobal-NN) o_nnz[kk] = nglobal-NN;
+    }
+    nnzrow = 0;
+
+    //pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
     ierr = MatSeqAIJSetPreallocation(m_mat,nnzrow, d_nnz);CHKERRQ(ierr);
     ierr = MatMPIAIJSetPreallocation(m_mat,nnzrow, d_nnz, nnzrow/2, o_nnz);CHKERRQ(ierr);
     ierr = MatSetOption(m_mat,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE) ;CHKERRQ(ierr);
@@ -705,6 +778,7 @@ private:
   
   void defineGIDS()
   {
+    CH_TIME("EBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
     IntVect gidghost = 4*IntVect::Unit;
     m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
@@ -724,14 +798,31 @@ private:
     }
 
     //decide which location maps to the first one of this proc
-#ifdef CH_MPI    
-    CH4_SPMD::gather<int>(m_numPtsAllProc, numPtsThisProc, 0);
-    CH4_SPMD::broadcast<Vector<int> >(  m_numPtsAllProc, 0);
-    int startgid = 0;
+#ifdef CH_MPI
+//    MPI_Comm wcomm = Chombo_MPI::comm;
+//    PetscInt data = numPtsThisProc;
+//    PetscInt result;
+//    MPI_Datatype mtype;
+//    PetscDataTypeToMPIDataType(PETSC_INT,&mtype);
+//    MPI_Scan( &data, &result, 1, mtype, MPI_SUM, wcomm );
+//    PetscInt numPtsAllProc = result;
+//    int startgid =  result - data;
+    Vector<int> numPtsAllProcs;
+    CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
+    CH4_SPMD::broadcast<Vector<int> >(    numPtsAllProcs, 0);
+    PetscInt startgid = 0;
+    PetscInt totalNumPts = 0; 
     for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
     {
-      startgid += m_numPtsAllProc[iproc];
+      startgid +=   numPtsAllProcs[iproc];
     }
+    for(int iproc = 0; iproc < Chombo4::numProc(); iproc++)
+    {
+      totalNumPts += numPtsAllProcs[iproc];
+    }
+    //using Chombo4::pout;
+    using Chombo4::procID;
+    pout()  << "procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
     int startgid = 0;
 #endif
