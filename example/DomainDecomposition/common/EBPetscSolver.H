@@ -138,7 +138,25 @@ public:
     //host and device will unnecessary soon so I left the barrier in the code.
     MPI_Barrier(wcomm);
 #endif
-    ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
+    //begin debug
+    //std::cout << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
+
+    //std::cout << "b vector" << std::endl;
+    //VecView(m_bb , PETSC_VIEWER_STDOUT_WORLD);
+    //std::cout << "x vector" << std::endl;
+    //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
+    //end debug
+    {
+      CH_TIME("actual ksp solve");
+      ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
+    }
+    //begin debug
+    //std::cout << "debug::just after  KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //std::cout << "x vector" << std::endl;
+    //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
+    //end debug
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
@@ -315,10 +333,7 @@ private:
   {
     CH_TIME("EBPetscSolver::chomboToPetsc");
     PetscErrorCode ierr;
-
-    //copy data to host.  The pEtsC team has promised to make this
-    //step unnecessary by providing the pointer to the vector that lives
-    //on the device
+    //copy data to host.
     hostfactreal_t factory(m_graphs);
     LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghostVect(), factory);
     EBLevelBoxData<CELL, 1>::copyToHost(hostSrc, a_deviceSrc);
@@ -338,6 +353,7 @@ private:
         {
           auto vof = vofs[ivof];
           PetscInt ki = m_gids[dit[ibox]](vof, 0);
+
           Real v = hostfab(vof, 0);
           ierr = VecSetValues(a_dst,1,&ki,&v,INSERT_VALUES);CHKERRQ(ierr);
         }
@@ -403,6 +419,7 @@ private:
                            const Chombo4::DataIndex                     & a_dit,
                            int                                            a_ibox)
   {
+    CH_TIME("EBPetscSolver::getStencilComponents");
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef Proto::EBStencilHO<CELL, CELL, order, Real> ho_t;
     using Chombo4::Box;
@@ -489,7 +506,6 @@ private:
 
   int petscToChombo(EBLevelBoxData<CELL, 1> & a_deviceDst,
                     const Vec               & a_src)
-                    
   {
     CH_TIME("EBPetscSolver::petscToChombo");
     using Chombo4::DataIterator;
@@ -501,12 +517,28 @@ private:
     PetscInt localStart,  localEnd, localSize;
     VecGetOwnershipRange( a_src ,&localStart,&localEnd);
     VecGetLocalSize(a_src ,&localSize);
-    //copy data to host.  The PeTsC team has promised to make this
-    //step unnecessary by providing the pointer to the vector that lives
-    //on the device
+
+    //begin debug
+//    pout() << "  localStart = " << localStart << ", localEnd = " << localEnd << ", localSize = " << localSize << endl;
+//    //copy data to host.
+//
+//    for(PetscInt ii = 0; ii < localSize; ii++)
+//    {
+//      const double&  petscval = arr[ii];
+//      pout() << "ii = " << ii << ",  xx[ii] = " <<  petscval << endl;
+//    }
+//
+//    std::cout << "vgar vector" << std::endl;
+//    VecView(a_src  , PETSC_VIEWER_STDOUT_WORLD);
+//    
+//    pout() << "vgar vector" << std::endl;
+//    pout() <<    "filling up stuff before solve " << endl;
+//    std::cout << "filling up stuff before solve " << endl;
+    //end debug
+    
     hostfactreal_t factory(m_graphs);
     LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
-    
+
     DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
     {
@@ -524,12 +556,46 @@ private:
           PetscInt ki = m_gids[dit[ibox]](vof, 0);
           PetscInt localIndex = ki - localStart;
           hostfab(vof, 0) = arr[localIndex];
+	  
+	  //begin debug	      
+//	  PetscInt petsciv = ki;
+//	  Real chombval = hostfab(vof, 0);
+//	  PetscScalar petscval = arr[ki];
+//	  pout() << "host: petsciv = " << petsciv << ", iv = " << pt << ", chombval = "
+//		 <<  chombval << ", petscval = " << petscval << endl;
+	  //end debug
+	
         }
       }
     }
 
     ///copy data back to device. 
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
+
+    //begin debug
+//    pout() << "data on device:" << endl;
+//    for (int ibox=0;ibox< dit.size(); ibox++)
+//    {
+//      auto& devfab =   a_deviceDst[dit[ibox]];
+//      auto& graph = (*m_graphs)[dit[ibox]];
+//      auto  grid  =     m_grids[dit[ibox]];
+//      Bx grbx = ProtoCh::getProtoBox(grid);
+//      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+//      {
+//        auto pt = *bit;
+//        auto vofs = graph.getVoFs(pt);
+//        for(int ivof = 0; ivof < vofs.size(); ivof++)
+//        {
+//          EBIndex<CELL> vof(pt, 0);
+//	  Real chombval = devfab(vof, 0);
+//	  pout() << "device: iv = " << pt << ", chombval = "
+//		 <<  chombval << endl;
+//	
+//        }
+//      }
+//    }
+
+    //end debug
     return 0;
   }
 
@@ -622,6 +688,7 @@ private:
   }
   static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
   {
+    using Chombo4::pout;
     pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
     return 0;
   }
@@ -820,7 +887,7 @@ private:
     {
       totalNumPts += numPtsAllProcs[iproc];
     }
-    //using Chombo4::pout;
+    using Chombo4::pout;
     using Chombo4::procID;
     pout()  << "procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else

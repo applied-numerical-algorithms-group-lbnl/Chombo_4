@@ -1,0 +1,94 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+
+parser = ArgumentParser()
+
+parser.add_argument('--procs', type=int, help='minimum number of mpi processes [1]',default = '1')
+parser.add_argument('--input', type=str, help='name of input template  ["inputs.template"]',default="inputs.template")
+parser.add_argument('--batch', type=str, help='name of batch template ["batch.template"]' ,default="batch.template")
+parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [4096]',default='4096')
+parser.add_argument('--nx', type=int, help='nx for one processor [32]',default='32')
+parser.add_argument('--prefix', type=str, help='name of test[scaling_test]',default="scaling_test")
+parser.add_argument('--executable_name', type=str, help='name of executable file ["../../../main.exe"]',default="../../../main.exe")
+
+args = parser.parse_args()
+
+print(args)
+
+
+
+nproc = args.procs
+nnode = 1
+nx    = args.nx
+homestr = os.getcwd();
+print ("homedir = " + homestr)
+topstr = homestr + "/_" +args.prefix
+print ("topstr = " + topstr)
+if not os.path.exists(topstr):
+    printstr = "making directory " + topstr
+    print (printstr)
+    os.mkdir(topstr)
+
+print ("changing directory to " + topstr)
+os.chdir(topstr);
+
+submitstr = "submit."  + args.prefix + ".jobs"
+r = open(submitstr,'w')
+r.write('#/usr/bin/csh\n')
+
+while nproc <= args.max_proc:
+    print ("changing directory to " + homestr)
+    os.chdir(homestr);
+
+    f_inputtemplate = open(args.input,'r')
+    f_batchtemplate = open(args.batch,'r')
+    print ("changing directory to " + topstr)
+    os.chdir(topstr);
+
+    printstr  = "nproc = " + str(nproc)
+    print (printstr)
+    dirstr =  "_" + str(nproc) + "_proc"
+    if not os.path.exists(dirstr):
+        printstr = "making directory " + dirstr
+        print (printstr)
+        os.mkdir(dirstr)
+    print ("changing directory to " + dirstr)
+    os.chdir(dirstr)
+    print ("copying .petscrc to  " + dirstr)
+    os.system("cp ../../.petscrc .");
+
+    inputname = args.input + "_" + str(nproc) + "proc"
+    batchname = args.batch + "_" + str(nproc) + "proc"
+    f_inp = open(inputname,'w')
+    f_bat = open(batchname,'w')
+
+    commstr = "cd " + dirstr  + "; bsub " + batchname + "; cd .. \n"
+    r.write(commstr)
+    print ("input file")
+    for inputstr in f_inputtemplate:
+        nxstr = inputstr.replace("NX", str(nx))
+        f_inp.write(nxstr)
+    print ("batch file")
+    inputfilestr =  inputname
+    for batchstr in f_batchtemplate:
+        t1str = batchstr;
+        t2str = t1str.replace("NUM_PROCS", str(nproc))
+        t3str = t2str.replace("EXECUTABLE_FILE", args.executable_name)
+        t4str = t3str.replace("INPUT_FILE", inputfilestr)
+        t5str = t4str.replace("NUM_NODE", str(nnode))
+        f_bat.write(t5str)
+
+    f_inp.close();
+    f_bat.close()
+    f_inputtemplate.close()
+    f_batchtemplate.close()
+    nproc *= 8
+    nnode *= 8
+    nx    *= 2
+
+print( "changing directory to " + homestr)
+r.close()
+os.chdir(homestr)

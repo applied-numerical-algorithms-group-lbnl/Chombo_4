@@ -43,7 +43,7 @@ void CopierBuffer::clear()
 #ifdef PROTO_HIP
     if(att.memoryType == hipMemoryTypeDevice) { protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #else
-    if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
+    if(att.type == 2) {protoFree(Proto::MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #endif
     else {protoFreeHost(m_sendbuffer);} 
   }
@@ -55,7 +55,7 @@ void CopierBuffer::clear()
 #ifdef PROTO_HIP
     if(att.memoryType == hipMemoryTypeDevice) {protoFree(MEMTYPE_DEFAULT,m_recbuffer);}
 #else
-    if(att.type == 2) {protoFree(MEMTYPE_DEFAULT,m_recbuffer);}
+    if(att.type == 2) {protoFree(Proto::MEMTYPE_DEFAULT,m_recbuffer);}
 #endif
     else { protoFreeHost(m_recbuffer);}	  
   }

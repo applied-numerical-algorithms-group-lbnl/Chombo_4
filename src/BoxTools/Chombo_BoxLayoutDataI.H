@@ -618,7 +618,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree(MEMTYPE_DEFAULT,(m_buff->m_sendbuffer));
+      protoFree(Proto::MEMTYPE_DEFAULT,(m_buff->m_sendbuffer));
     }
     else
     {
@@ -633,7 +633,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA 
     if(T::memTypeAllocation())  
     {
-      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_sendbuffer,sendBufferSize);
+      protoMalloc(Proto::MEMTYPE_DEFAULT,m_buff->m_sendbuffer,sendBufferSize);
     }
     else
     { 
@@ -654,7 +654,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoFree(MEMTYPE_DEFAULT,m_buff->m_recbuffer);
+      protoFree(Proto::MEMTYPE_DEFAULT,m_buff->m_recbuffer);
     }
     else
     {
@@ -669,7 +669,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 #ifdef PROTO_CUDA
     if(T::memTypeAllocation()) 
     {
-      protoMalloc(MEMTYPE_DEFAULT,m_buff->m_recbuffer,recBufferSize);
+      protoMalloc(Proto::MEMTYPE_DEFAULT,m_buff->m_recbuffer,recBufferSize);
     }
     else
     {

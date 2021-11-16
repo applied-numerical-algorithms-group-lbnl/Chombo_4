@@ -1,16 +1,14 @@
-
-PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=mpiCC
-CXX=mpiCC
-
+PETSC_DIR=/gpfs/alpine/world-shared/geo127/petsc/arch-opt-gcc9.1.0-cuda11.0.3
+PETSC_ARCH=""
+PROTO_HOME =$(SCRATCH)/_proto/proto
+DEPXX=g++
 export OMPI_CXX=nvcc
 
-CXXALLFLAGS := -std=c++11 -x cu --expt-extended-lambda
-CXXDBGFLAGS:= -g -G -DTHRUST_DEBUG $(CXXALLFLAGS)
-CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
+MPILIBS=-L$(MPI_ROOT) -lmpi_ibm -lmpiprofilesupport
 
 HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include
 HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+include $(PETSC_DIR)/lib/petsc/conf/variables
 #end mach dependent
 
 

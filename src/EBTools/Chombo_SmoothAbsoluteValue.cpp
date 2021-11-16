@@ -21,7 +21,7 @@ isBogus(const Real& a_number) const
 }
 Real 
 SmoothAbsoluteValue::
-valueAem(const IndexTM<double, DIM>& a_point) const
+valueAem(const Proto::IndexTM<double, DIM>& a_point) const
 {
 
   Real wval; 
@@ -75,8 +75,8 @@ valueAem(const IndexTM<double, DIM>& a_point) const
 ///
 Real 
 SmoothAbsoluteValue::
-firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-              const IndexTM<double, DIM>& a_point) const
+firstDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+              const Proto::IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 1);
   Real wval; 
@@ -84,8 +84,8 @@ firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
   getWCase(icase, wval, a_point);
   CH_assert(icase == 0);
   //values of the two functions
-  Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-  Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+  Real fval = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+  Real gval = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
   //derivatives of the two functions
   Real dfx = (*m_f).value(a_deriv, a_point);
@@ -111,8 +111,8 @@ firstDerivAem(const  IndexTM<int,   DIM>& a_deriv,
 ///
 Real 
 SmoothAbsoluteValue::
-secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-               const IndexTM<double, DIM>& a_point) const
+secondDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+               const Proto::IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 2);
   Real wval; 
@@ -143,8 +143,8 @@ secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
           MayDay::Error("logic error aem2.0");
         }
 
-      IndexTM<int,   DIM> dx  = IndexTM<int,DIM>::BASISV(ix);
-      IndexTM<int,   DIM> dxx = 2*dx;
+      Proto::IndexTM<int,   DIM> dx  = Proto::IndexTM<int,DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM> dxx = 2*dx;
       //derivatives
       Real  dfx  = (*m_f).value( dx    , a_point);
       Real  dfxx = (*m_f).value( dxx   , a_point);
@@ -153,8 +153,8 @@ secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       Real  dgxx = (*m_g).value( dxx   , a_point);
 
 
-      Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       ///(%i14) Aem_xx: diff(Aem_x,x);                                                  
       ///                                                                               
@@ -203,9 +203,9 @@ secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
         {
           MayDay::Error("logic error aem2.1");
         }
-      IndexTM<int,   DIM> dx  = IndexTM<int,DIM>::BASISV(ix);
-      IndexTM<int,   DIM> dy  = IndexTM<int,DIM>::BASISV(iy);
-      IndexTM<int,   DIM> dxy = dx + dy;
+      Proto::IndexTM<int,   DIM> dx  = Proto::IndexTM<int,DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM> dy  = Proto::IndexTM<int,DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM> dxy = dx + dy;
 
       Real dfx  = (*m_f).value( dx  , a_point);
       Real dfy  = (*m_f).value( dy  , a_point);
@@ -215,8 +215,8 @@ secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       Real dgy  = (*m_g).value( dy  , a_point);
       Real dgxy = (*m_g).value( dxy , a_point);
 
-      Real fval = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       //(%i21) Aem_xy: diff(Aem_x,y);
       //
@@ -247,8 +247,8 @@ secondDerivAem(const  IndexTM<int,   DIM>& a_deriv,
 ///
 Real
 SmoothAbsoluteValue::
-thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-              const IndexTM<double, DIM>& a_point) const
+thirdDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+              const Proto::IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 3);
   Real wval; 
@@ -278,9 +278,9 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
         {
           MayDay::Error("logic error aem3.0");
         }
-      IndexTM<int,   DIM>  dx   = IndexTM<int,DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxx  = 2*dx;
-      IndexTM<int,   DIM>  dxxx = 3*dx;        
+      Proto::IndexTM<int,   DIM>  dx   = Proto::IndexTM<int,DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxx  = 2*dx;
+      Proto::IndexTM<int,   DIM>  dxxx = 3*dx;        
 
       Real  dfx   = (*m_f).value( dx   , a_point);
       Real  dfxx  = (*m_f).value( dxx  , a_point);
@@ -290,8 +290,8 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       Real  dgxx  = (*m_g).value( dxx  , a_point);
       Real  dgxxx = (*m_g).value( dxxx , a_point);
 
-      Real fval  = (*m_f).value(IndexTM<int,DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int,DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int,DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int,DIM>::Zero, a_point);
 
       //(%i28) Aem_xxx: diff(Aem_xx,x);
       //
@@ -342,11 +342,11 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
           MayDay::Error("logic error aem3.1");
         }
 
-      IndexTM<int,   DIM>  dx   = IndexTM<int,DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dy   = IndexTM<int,DIM>::BASISV(iy);
-      IndexTM<int,   DIM>  dxx  = 2*dx;
-      IndexTM<int,   DIM>  dxy  = dx  + dy;
-      IndexTM<int,   DIM>  dxxy = dxx + dy;
+      Proto::IndexTM<int,   DIM>  dx   = Proto::IndexTM<int,DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dy   = Proto::IndexTM<int,DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM>  dxx  = 2*dx;
+      Proto::IndexTM<int,   DIM>  dxy  = dx  + dy;
+      Proto::IndexTM<int,   DIM>  dxxy = dxx + dy;
 
 
       Real  dfx   = (*m_f).value( dx   , a_point);
@@ -361,8 +361,8 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       Real  dgxy  = (*m_g).value( dxy  , a_point);
       Real  dgxxy = (*m_g).value( dxxy , a_point);
 
-      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       //(%i38) Aem_xxy: diff(Aem_xx,y);
       //
@@ -401,16 +401,16 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
   else if(xyz)
     {
 
-      IndexTM<int,   DIM>  dx   = IndexTM<int, DIM>::BASISV(0);
-      IndexTM<int,   DIM>  dy   = IndexTM<int, DIM>::BASISV(1);
-      IndexTM<int,   DIM>  dz   = IndexTM<int, DIM>::BASISV(2);
-      IndexTM<int,   DIM>  dxy  = dx  + dy;
-      IndexTM<int,   DIM>  dxz  = dx  + dz;
-      IndexTM<int,   DIM>  dyz  = dy  + dz;
-      IndexTM<int,   DIM>  dxyz = dx  + dy + dz;
+      Proto::IndexTM<int,   DIM>  dx   = Proto::IndexTM<int, DIM>::BASISV(0);
+      Proto::IndexTM<int,   DIM>  dy   = Proto::IndexTM<int, DIM>::BASISV(1);
+      Proto::IndexTM<int,   DIM>  dz   = Proto::IndexTM<int, DIM>::BASISV(2);
+      Proto::IndexTM<int,   DIM>  dxy  = dx  + dy;
+      Proto::IndexTM<int,   DIM>  dxz  = dx  + dz;
+      Proto::IndexTM<int,   DIM>  dyz  = dy  + dz;
+      Proto::IndexTM<int,   DIM>  dxyz = dx  + dy + dz;
 
-      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx   = (*m_f).value( dx   , a_point);
       Real  dfy   = (*m_f).value( dy   , a_point);
@@ -478,8 +478,8 @@ thirdDerivAem(const  IndexTM<int,   DIM>& a_deriv,
 ///
 Real
 SmoothAbsoluteValue::
-fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
-               const IndexTM<double, DIM>& a_point) const
+fourthDerivAem(const  Proto::IndexTM<int,   DIM>& a_deriv,
+               const Proto::IndexTM<double, DIM>& a_point) const
 {
   CH_assert(a_deriv.sum() == 4);
 
@@ -510,14 +510,14 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
         }
       if(!found) MayDay::Error("logic error gs4.0");
 
-      IndexTM<int,   DIM>  dx    =    IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxx   =  2*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxxx  =  3*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxxxx =  4*IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dx    =    Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxx   =  2*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxxx  =  3*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxxxx =  4*Proto::IndexTM<int, DIM>::BASISV(ix);
 
 
-      Real fval  = (*m_f).value(IndexTM<int,DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int,DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int,DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int,DIM>::Zero, a_point);
 
       Real  dfx    =  (*m_f).value( dx    , a_point);
       Real  dfxx   =  (*m_f).value( dxx   , a_point);
@@ -588,16 +588,16 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
       if((!foundx)||(!foundy)) MayDay::Error("logic error sab4.05");
 
 
-      IndexTM<int,   DIM>  dx    =   IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dy    =   IndexTM<int, DIM>::BASISV(iy);
-      IndexTM<int,   DIM>  dxx   = 2*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxxx  = 3*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxy   = dx   + dy;
-      IndexTM<int,   DIM>  dxxy  = dxx  + dy;
-      IndexTM<int,   DIM>  dxxxy = dxxx + dy;
+      Proto::IndexTM<int,   DIM>  dx    =   Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dy    =   Proto::IndexTM<int, DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM>  dxx   = 2*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxxx  = 3*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxy   = dx   + dy;
+      Proto::IndexTM<int,   DIM>  dxxy  = dxx  + dy;
+      Proto::IndexTM<int,   DIM>  dxxxy = dxxx + dy;
 
-      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx    = (*m_f).value(  dx    , a_point);
       Real  dfy    = (*m_f).value(  dy    , a_point);
@@ -687,17 +687,17 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
         }
       if(!foundx || !foundy) MayDay::Error("logic error aemxxyy");
 
-      IndexTM<int,   DIM>  dx    =   IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dy    =   IndexTM<int, DIM>::BASISV(iy);
-      IndexTM<int,   DIM>  dxx   = 2*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dyy   = 2*IndexTM<int, DIM>::BASISV(iy);
-      IndexTM<int,   DIM>  dxy   = dx   + dy ;
-      IndexTM<int,   DIM>  dxxy  = dxx  + dy ;
-      IndexTM<int,   DIM>  dxxyy = dxx  + dyy;
-      IndexTM<int,   DIM>  dxyy  = dx   + dyy;
+      Proto::IndexTM<int,   DIM>  dx    =   Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dy    =   Proto::IndexTM<int, DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM>  dxx   = 2*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dyy   = 2*Proto::IndexTM<int, DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM>  dxy   = dx   + dy ;
+      Proto::IndexTM<int,   DIM>  dxxy  = dxx  + dy ;
+      Proto::IndexTM<int,   DIM>  dxxyy = dxx  + dyy;
+      Proto::IndexTM<int,   DIM>  dxyy  = dx   + dyy;
 
-      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       Real  dfx    =(*m_f).value( dx     , a_point);
       Real  dfy    =(*m_f).value( dy     , a_point);
@@ -806,20 +806,20 @@ fourthDerivAem(const  IndexTM<int,   DIM>& a_deriv,
             }
         }
       if(!foundx || !foundy || !foundz) MayDay::Error("logic error xxyz");
-      IndexTM<int,   DIM>  dx     =   IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dy     =   IndexTM<int, DIM>::BASISV(iy);
-      IndexTM<int,   DIM>  dz     =   IndexTM<int, DIM>::BASISV(iz);
-      IndexTM<int,   DIM>  dxx    = 2*IndexTM<int, DIM>::BASISV(ix);
-      IndexTM<int,   DIM>  dxy    = dx   + dy ;
-      IndexTM<int,   DIM>  dxz    = dx   + dz ;
-      IndexTM<int,   DIM>  dyz    = dy   + dz ;
-      IndexTM<int,   DIM>  dxxy   = dxx  + dy ;
-      IndexTM<int,   DIM>  dxxz   = dxx  + dz ;
-      IndexTM<int,   DIM>  dxyz   = dx   + dy + dz;
-      IndexTM<int,   DIM>  dxxyz  = dxz  + dy + dz;
+      Proto::IndexTM<int,   DIM>  dx     =   Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dy     =   Proto::IndexTM<int, DIM>::BASISV(iy);
+      Proto::IndexTM<int,   DIM>  dz     =   Proto::IndexTM<int, DIM>::BASISV(iz);
+      Proto::IndexTM<int,   DIM>  dxx    = 2*Proto::IndexTM<int, DIM>::BASISV(ix);
+      Proto::IndexTM<int,   DIM>  dxy    = dx   + dy ;
+      Proto::IndexTM<int,   DIM>  dxz    = dx   + dz ;
+      Proto::IndexTM<int,   DIM>  dyz    = dy   + dz ;
+      Proto::IndexTM<int,   DIM>  dxxy   = dxx  + dy ;
+      Proto::IndexTM<int,   DIM>  dxxz   = dxx  + dz ;
+      Proto::IndexTM<int,   DIM>  dxyz   = dx   + dy + dz;
+      Proto::IndexTM<int,   DIM>  dxxyz  = dxz  + dy + dz;
 
-      Real fval  = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-      Real gval  = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+      Real fval  = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+      Real gval  = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
 
       Real   dfx     =(*m_f).value( dx     , a_point);
       Real   dfy     =(*m_f).value( dy     , a_point);
@@ -942,10 +942,10 @@ void
 SmoothAbsoluteValue::
 getWCase(int            & a_case,
          Real           & a_wval,
-         const IndexTM<double, DIM> & a_point)const
+         const Proto::IndexTM<double, DIM> & a_point)const
 {
-  Real fofx = (*m_f).value(IndexTM<int, DIM>::Zero, a_point);
-  Real gofx = (*m_g).value(IndexTM<int, DIM>::Zero, a_point);
+  Real fofx = (*m_f).value(Proto::IndexTM<int, DIM>::Zero, a_point);
+  Real gofx = (*m_g).value(Proto::IndexTM<int, DIM>::Zero, a_point);
   a_wval  = fofx-gofx;
   if(a_wval >= m_d)
     {
@@ -963,8 +963,8 @@ getWCase(int            & a_case,
 ///
 Real 
 SmoothAbsoluteValue::
-smoothAbsFMinusG(const  IndexTM<int,   DIM>& a_deriv,
-                 const IndexTM<double, DIM>& a_point) const
+smoothAbsFMinusG(const  Proto::IndexTM<int,   DIM>& a_deriv,
+                 const Proto::IndexTM<double, DIM>& a_point) const
 {
   Real retval = 0;
   int order = a_deriv.sum();

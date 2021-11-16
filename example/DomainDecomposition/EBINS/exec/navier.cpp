@@ -59,7 +59,7 @@ runNavierStokes()
   int   plotfileInterval = -1;
   bool useWCycle = false;
   ParmParse pp;
-
+  using Chombo4::pout;
 
   pp.get("viscosity" , nu);
   pp.get("max_step"  , max_step);
@@ -248,7 +248,7 @@ int main(int a_argc, char* a_argv[])
 #else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
 #endif
 
@@ -264,7 +264,7 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     runNavierStokes();
   }
-
+  using Chombo4::pout;
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
