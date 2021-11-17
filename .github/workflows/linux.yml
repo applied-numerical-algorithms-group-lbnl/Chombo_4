@@ -17,15 +17,18 @@ jobs:
         #  submodules: false # will be true for real proto
         #  path: ${{github.workspace}}/proto
       - name: Checkout Proto
-        run: git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
+        run: |
+          pwd
+          git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
       - uses: actions/checkout@master  # Checkout Chombo
         with:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/dependencies.sh
-      - name: Build & Install Proto
-        working-directory: proto
+      - name: Build  Proto
+        working-directory: ${{github.workspace}}/proto
         run: |
+          pwd
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build build --parallel
       - name: Build & Install Chombo
