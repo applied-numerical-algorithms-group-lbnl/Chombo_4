@@ -16,28 +16,27 @@ jobs:
         #  repository: applied-numerical-algorithms-group-lbnl/Proto
         #  submodules: false # will be true for real proto
         #  path: ${{github.workspace}}/proto
-      - name: Checkout Proto
-        run: |
-          git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
-          pwd
-          ls
       - uses: actions/checkout@master  # Checkout Chombo
         with:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/dependencies.sh
+      - name: Checkout Proto
+        run: |
+          git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
+          pwd
+          ls
       - name: PWD
         run: pwd && ls && ls ..
       - name: Build  Proto
-        working-directory: ${{github.workspace}}/../proto
+        working-directory: proto
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build build --parallel
       - name: Build & Install Chombo
-        working-directory: chombo
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build build --parallel
       - name: Run Google Test
-        working-directory: ${{github.workspace}}/chombo/build
+        working-directory: build
         run: make test
