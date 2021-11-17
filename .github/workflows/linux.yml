@@ -25,10 +25,11 @@ jobs:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/dependencies.sh
+      - name: PWD
+        run: pwd
       - name: Build  Proto
         working-directory: ${{github.workspace}}/proto
         run: |
-          echo $PWD
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build build --parallel
       - name: Build & Install Chombo
