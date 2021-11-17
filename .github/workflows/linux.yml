@@ -19,7 +19,7 @@ jobs:
       - name: Checkout Proto
         run: git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
       - name: Dependencies
-        run: .github/workflows/dependencies/dependencies.sh
+        run: ${{github.workspace}}/.github/workflows/dependencies/dependencies.sh
       - name: Build & Install Proto
         working-directory: proto
         run: |
