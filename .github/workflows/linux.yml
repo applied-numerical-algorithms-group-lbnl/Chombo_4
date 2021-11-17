@@ -24,10 +24,10 @@ jobs:
       - name: Checkout Proto
         run: |
           git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
-          pwd
-          ls
-      - name: PWD
-        run: pwd && ls && ls ..
+          cd proto
+          git submodule init
+          git submodule update
+          cd ..
       - name: Build  Proto
         working-directory: proto
         run: |
