@@ -30,8 +30,8 @@ jobs:
       - name: Build  Proto
         working-directory: ${{github.workspace}}/proto
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          cmake --build build --parallel
+          cmake -S proto -B proto/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build proto/build --parallel
       - name: Build & Install Chombo
         working-directory: chombo
         run: |
