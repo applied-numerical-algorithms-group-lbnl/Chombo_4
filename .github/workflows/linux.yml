@@ -28,7 +28,7 @@ jobs:
       - name: Build  Proto
         working-directory: ${{github.workspace}}/proto
         run: |
-          pwd
+          echo $PWD
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build build --parallel
       - name: Build & Install Chombo
