@@ -696,7 +696,7 @@ protected:
 };
 #include "NamespaceFooter.H"
 
-namespace std { template <> constexpr inline bool less<CH_XD::IntVect>::operator()(const CH_XD::IntVect& a, const CH_XD::IntVect& b) const { return a.lexLT(b);}
+namespace std { template <> inline bool less<CH_XD::IntVect>::operator()(const CH_XD::IntVect& a, const CH_XD::IntVect& b) const { return a.lexLT(b);}
 }
 #include "BaseNamespaceHeader.H"
 
