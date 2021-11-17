@@ -81,6 +81,7 @@ namespace Proto
                   const LocalStencil< CELL,  double> & a_stencil,
                   const Point                        & a_vofPt) 
   {
+    using Chombo4::pout;
     pout()<<setprecision(16)<<scientific;
     for (int j = radius+1; j>=-(radius+1); j--)
     {
@@ -297,6 +298,8 @@ namespace Proto
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann)               
   {
+    using Chombo4::pout;
+    pout()<<setprecision(15)<<scientific;
 //    using std::pout();
 //    using std::endl;
 //    a_regStencil = Stencil<double>::Laplacian();
@@ -596,6 +599,7 @@ namespace Proto
                          bool  a_forceNeumann)               
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
+    using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
