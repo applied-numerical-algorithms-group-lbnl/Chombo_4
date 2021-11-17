@@ -18,8 +18,9 @@ jobs:
         #  path: ${{github.workspace}}/proto
       - name: Checkout Proto
         run: |
-          pwd
           git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
+          pwd
+          ls
       - uses: actions/checkout@master  # Checkout Chombo
         with:
           submodules: true
