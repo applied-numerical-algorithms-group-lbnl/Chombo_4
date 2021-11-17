@@ -26,12 +26,12 @@ jobs:
       - name: Dependencies
         run: .github/workflows/dependencies/dependencies.sh
       - name: PWD
-        run: pwd && ls
+        run: pwd && ls && ls ..
       - name: Build  Proto
-        working-directory: ${{github.workspace}}/proto
+        working-directory: ${{github.workspace}}/../proto
         run: |
-          cmake -S proto -B proto/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          cmake --build proto/build --parallel
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build --parallel
       - name: Build & Install Chombo
         working-directory: chombo
         run: |
