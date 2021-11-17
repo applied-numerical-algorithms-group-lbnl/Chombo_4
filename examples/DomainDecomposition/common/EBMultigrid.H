@@ -402,7 +402,7 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              string a_prefix)
+              string a_prefix = "")
   {
     string dombc[2*DIM];
     for(int ivec = 0; ivec < 2*DIM; ivec++)
@@ -443,7 +443,7 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              string a_prefix)
+              string a_prefix = "")
   {
     m_finest = std::shared_ptr<EBPoissonOp>(
       new EBPoissonOp(a_dictionary, 
