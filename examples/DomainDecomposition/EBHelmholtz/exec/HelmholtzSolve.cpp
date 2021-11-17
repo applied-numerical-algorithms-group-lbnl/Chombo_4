@@ -169,7 +169,7 @@ runTest(int a_argc, char* a_argv[])
   pp.query("direct_to_bottom", directToBottom);
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
                      stenname, dombcname, ebbcname, dombox,
-                     dataGhostIV, directToBottom);
+                     dataGhostIV, "direct_to_bottom"); //directToBottom);
   
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
