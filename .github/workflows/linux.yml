@@ -8,7 +8,7 @@ env:
 
 jobs:
   chombo_gnu:
-    name: Chombo GNU
+    name: GNU@9.3
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master  # Checkout Chombo
@@ -34,4 +34,34 @@ jobs:
           cmake --build host --parallel
       - name: Run Google Test
         working-directory: host
+        run: make test
+
+    
+  chombo_nvcc:
+    name: NVCC@9.3
+    runs-on: ubuntu-latest
+    steps:
+        #- uses: actions/checkout@master  # Checkout Chombo
+        #with:
+        #  submodules: true
+      - name: Dependencies
+        run: .github/workflows/dependencies/cuda.sh
+        #- name: Checkout Proto
+        #run: |
+        #  git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
+        #  cd proto
+        #  git submodule init
+        #  git submodule update
+        #  cd ..
+      - name: Build Proto
+        working-directory: proto
+        run: |
+          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build cuda_build --parallel
+      - name: Build & Install Chombo
+        run: |
+          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build cuda_build --parallel
+      - name: Run Google Test
+        working-directory: cuda_build
         run: make test
