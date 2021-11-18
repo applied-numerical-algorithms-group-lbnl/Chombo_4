@@ -11,16 +11,11 @@ jobs:
     name: Chombo GNU
     runs-on: ubuntu-latest
     steps:
-        #  - uses: actions/checkout@master
-        #with:
-        #  repository: applied-numerical-algorithms-group-lbnl/Proto
-        #  submodules: false # will be true for real proto
-        #  path: ${{github.workspace}}/proto
       - uses: actions/checkout@master  # Checkout Chombo
         with:
           submodules: true
       - name: Dependencies
-        run: .github/workflows/dependencies/dependencies.sh
+        run: .github/workflows/dependencies/host.sh
       - name: Checkout Proto
         run: |
           git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
@@ -28,15 +23,15 @@ jobs:
           git submodule init
           git submodule update
           cd ..
-      - name: Build  Proto
+      - name: Build Proto
         working-directory: proto
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          cmake --build build --parallel
+          cmake -S . -B host -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build host --parallel
       - name: Build & Install Chombo
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          cmake --build build --parallel
+          cmake -S . -B host -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build host --parallel
       - name: Run Google Test
-        working-directory: build
+        working-directory: host
         run: make test
