@@ -28,7 +28,7 @@ jobs:
           git submodule init
           git submodule update
           cd ..
-      - name: Build  Proto
+      - name: Build Proto
           working-directory: proto
           run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
