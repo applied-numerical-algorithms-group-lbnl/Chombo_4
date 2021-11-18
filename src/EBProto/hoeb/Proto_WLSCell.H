@@ -47,7 +47,7 @@ namespace Proto
       RealVect retval;
       return retval;
     }
-v
+
     virtual void setDx(const Real a_dx)
     {
       m_dx = a_dx;
