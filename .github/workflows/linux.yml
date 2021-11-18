@@ -31,11 +31,11 @@ jobs:
       - name: Build Proto
           working-directory: proto
           run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -S . -B build
           cmake --build build --parallel
       - name: Build & Install Chombo
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -S . -B build
           cmake --build build --parallel
       - name: Run Google Test
         working-directory: build
