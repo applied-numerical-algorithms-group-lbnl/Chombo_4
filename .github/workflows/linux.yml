@@ -28,11 +28,11 @@ jobs:
           git submodule init
           git submodule update
           cd ..
-      #- name: Build  Proto
-          #working-directory: proto
-          #run: |
-          #cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          #cmake --build build --parallel
+      - name: Build  Proto
+          working-directory: proto
+          run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake --build build --parallel
       - name: Build & Install Chombo
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}

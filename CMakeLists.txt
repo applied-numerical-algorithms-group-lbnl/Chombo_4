@@ -17,10 +17,6 @@ else()
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-if(EXISTS proto)  # on CI builds Proto is a subdirectory of Chombo workspace
-    add_subdirectory(proto)
-endif()
-
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 set(CMAKE_POSITION_INDEPENEDENT_CODE TRUE)
 option(ENABLE_MPI "Build using MPI" OFF)
