@@ -23,7 +23,7 @@ jobs:
         run: .github/workflows/dependencies/dependencies.sh
       - name: Checkout Proto
         run: |
-          git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto.git
+          git clone -b configure https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
           cd proto
           git submodule init
           git submodule update
