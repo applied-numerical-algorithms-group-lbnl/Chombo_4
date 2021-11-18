@@ -6,6 +6,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "Chombo_ParmParse.H"
 #include "EBPetscSolver.H"
 #include "Chombo_NamespaceHeader.H"
 #if DIM==2
@@ -37,6 +38,7 @@ public:
   EBLevelBoxData<CELL, 1>           m_kappa;
   EBLevelBoxData<CELL, 1>           m_inhoContr;
   bool                              m_hasCoarser;
+  string                            m_prefix;
   bool                              m_directToBottom;
   EBLevelBoxData<CELL, 1>           m_resid;
   EBLevelBoxData<CELL, 1>           m_deltaC;
@@ -48,7 +50,9 @@ public:
   unsigned int                      m_depth;
   Real                              m_dx;      
   
-  /// Multigrid v-cycle.
+  shared_ptr<GeometryService<2> >   m_geoserv;
+
+/// Multigrid v-cycle.
   inline void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
                      const EBLevelBoxData<CELL, 1>& a_rhs)
   {
@@ -86,8 +90,15 @@ public:
   }
   ///
   EBMultigridLevel()
-  { }
+  {
+  }
 
+  void getDToB()
+  {
+    ParmParse pp(m_prefix);
+    m_directToBottom = false;
+    pp.query("direct_to_bottom_solve", m_directToBottom);
+  }
   ///make coarse from fine
   virtual void 
   define(const EBMultigridLevel            & a_finerLevel,
@@ -97,7 +108,10 @@ public:
   virtual void
   preCond(EBLevelBoxData<CELL, 1>       & a_phi,
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
-
+  
+  virtual void
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv) = 0;
+  
   
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -109,9 +123,15 @@ public:
   {
     m_alpha = a_alpha;
     m_beta  = a_beta;
+    getDToB();
+      
     if(m_hasCoarser)
     {
       m_coarser->resetAlphaAndBeta(a_alpha, a_beta);
+    }
+    if(!m_hasCoarser || m_directToBottom)
+    {
+      this->defineBottomSolvers(m_geoserv);
     }
   }
   
@@ -247,17 +267,17 @@ public:
   
   ///
   EBPoissonOp(dictionary_t                      & a_dictionary,
-                   shared_ptr<GeometryService<2> >   & a_geoserv,
-                   const Real                        & a_alpha,
-                   const Real                        & a_beta,
-                   const Real                        & a_dx,
-                   const DisjointBoxLayout           & a_grids,
-                   const string                      & a_stenname,
-                   string                              a_dombcname[2*DIM],
-                   const string                      & a_ebbcname,
-                   const Box                         & a_domain,
-                   const IntVect                     & a_nghost,
-                   bool a_directToBottomSolve = false);
+              shared_ptr<GeometryService<2> >   & a_geoserv,
+              const Real                        & a_alpha,
+              const Real                        & a_beta,
+              const Real                        & a_dx,
+              const DisjointBoxLayout           & a_grids,
+              const string                      & a_stenname,
+              string                              a_dombcname[2*DIM],
+              const string                      & a_ebbcname,
+              const Box                         & a_domain,
+              const IntVect                     & a_nghost,
+              string a_prefix);
 
   ///make coarse from fine 
   void
@@ -397,13 +417,14 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              bool a_directToBottom = false)
+              string a_prefix)
   {
     string dombc[2*DIM];
     for(int ivec = 0; ivec < 2*DIM; ivec++)
     {
       dombc[ivec] = a_dombcname;
     }
+
     EBPoissonOp* finestfish = new EBPoissonOp(a_dictionary, 
                                               a_geoserv,
                                               a_alpha,      
@@ -415,7 +436,7 @@ public:
                                               a_ebbcname,   
                                               a_domain, 
                                               a_nghost,
-                                              a_directToBottom);
+                                              a_prefix);
     EBMultigridLevel* baseBelongToUs = static_cast<EBMultigridLevel*>(finestfish);
     m_finest = std::shared_ptr<EBMultigridLevel>(baseBelongToUs);
 
@@ -437,21 +458,21 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              bool a_directToBottomSolve = false)
+              string a_prefix)
   {
     m_finest = std::shared_ptr<EBPoissonOp>(
       new EBPoissonOp(a_dictionary, 
-                           a_geoserv,
-                           a_alpha,      
-                           a_beta,       
-                           a_dx,         
-                           a_grids,      
-                           a_stenname,   
-                           a_dombcname,  
-                           a_ebbcname,   
-                           a_domain, 
-                           a_nghost,
-                           a_directToBottomSolve));
+                      a_geoserv,
+                      a_alpha,      
+                      a_beta,       
+                      a_dx,         
+                      a_grids,      
+                      a_stenname,   
+                      a_dombcname,  
+                      a_ebbcname,   
+                      a_domain, 
+                      a_nghost,
+                      a_prefix));
 
     const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost  , graphs);

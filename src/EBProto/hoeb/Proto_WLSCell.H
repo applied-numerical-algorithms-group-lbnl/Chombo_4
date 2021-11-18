@@ -47,7 +47,7 @@ namespace Proto
       RealVect retval;
       return retval;
     }
-
+v
     virtual void setDx(const Real a_dx)
     {
       m_dx = a_dx;
@@ -905,14 +905,17 @@ namespace Proto
             RealVect centerVel;
             Vector<Real> velVec;
 
-            pp.getarr("vel_vec",velVec,0,DIM);
-            for(int idir = 0; idir < DIM; idir++)
-              {
-                centerVel[idir] = velVec[idir];
-              }
-
-            Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2),0.5);
-            centerVel = centerVel/mag;
+        pp.getarr("vel_vec",velVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          centerVel[idir] = velVec[idir];
+        }
+#if DIM==2
+        Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2),0.5);
+#elif DIM==3
+        Real mag = pow(pow(centerVel[0],2)+pow(centerVel[1],2)+pow(centerVel[2],2),0.5);
+#endif
+        centerVel = centerVel/mag;
 
         m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
       }    

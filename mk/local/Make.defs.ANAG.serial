@@ -17,7 +17,6 @@ EFENCEFLAGS = -L/usr/lib -lefence
 PETSC_DIR   = $(ANAG_PETSC_DIR)
 SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
 include $(PETSC_DIR)/lib/petsc/conf/variables
-
 #end mach dependent
 
 

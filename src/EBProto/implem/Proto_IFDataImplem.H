@@ -347,6 +347,7 @@ namespace Proto
        but makes for better answers
        dtg-- this is broken and needs to go away --dtg
     */
+#if DIM==2
     if(1)
     {
       if (m_intersections.size() == 0)
@@ -392,6 +393,7 @@ namespace Proto
         m_localCoord.m_origin /= m_intersections.size();
       }
     }
+#endif
     /**/
     m_localCoord.m_dx =  m_globalCoord.m_dx;
   }

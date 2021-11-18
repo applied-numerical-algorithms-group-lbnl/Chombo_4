@@ -8,8 +8,8 @@
  */
 #endif
 
-#ifndef _PARSTREAM_H_
-#define _PARSTREAM_H_
+#ifndef _Chombo_PARSTREAM_H_
+#define _Chombo_PARSTREAM_H_
 
 #include <iostream>
 #include <iomanip>
@@ -54,4 +54,7 @@ void setPoutBaseName(const std::string & a_Name);
 const std::string & poutFileName();
 
 #include "Chombo_BaseNamespaceFooter.H"
+using Chombo4::pout;
+using Chombo4::setPoutBaseName;
+using Chombo4::poutFileName;
 #endif // _PARSTREAM_H_

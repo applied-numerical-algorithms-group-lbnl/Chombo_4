@@ -3,6 +3,32 @@
 #include "Chombo_ProtoInterface.H"
 
 using std::cerr;
+using Proto::IndexedMoments;
+using Proto::MomentIterator;
+using Proto::IrregNode;
+using Proto::CENTERING;
+using Proto::CELL;
+using Proto::BOUNDARY; 
+using Proto::XFACE;
+using Proto::YFACE;
+using Proto::ZFACE;
+using Proto::EBGraph;
+using Proto::IndexTM;
+using Proto::HostIrregData;
+using Proto::PointSet;
+using Proto::PointSetIterator;
+using Proto::CutCellMoments;
+using Proto::IrregGraph;
+using Proto::EBIndex;
+using Proto::IFData;
+using Proto::NormalDerivativeNew;
+using Proto::IFSlicer;
+using Proto::Var;
+using Proto::AggStencil;
+using Proto::LocalStencil;
+using Proto::RealVect;
+using Proto::Stencil;
+using Proto::EBStencilArchive;
 
 #ifndef __EBEExactSolutions__
 #define __EBEExactSolutions__
@@ -11,9 +37,9 @@ template <unsigned int order>
 class BaseExactSolution
 {
 public:
-  typedef IndexedMoments<DIM  , order> IndMomDIM;
-  typedef       IndexTM<int, DIM>            IvDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  typedef Proto::IndexedMoments<DIM  , order> IndMomDIM;
+  typedef       Proto::IndexTM<int, DIM>            IvDIM;
+  typedef Proto::HostIrregData<CELL,IndMomDIM , 1>  VoluData;
 
   
   virtual ~BaseExactSolution()

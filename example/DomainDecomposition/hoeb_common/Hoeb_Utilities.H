@@ -28,6 +28,9 @@ namespace hoeb
                   const RealVect                                      & a_xbar,
                   unsigned int                                          a_ibox,
                   Real                                                  a_dx);
+
+  /// outputs warning message if a_errcode != 0
+  void checkError(int a_errcode, string a_prefix);
   
   ///
   /**
@@ -107,6 +110,23 @@ namespace hoeb
                     const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
 
+  ///
+  /**
+   **/
+  void
+  restrictPhi(EBLevelBoxData<CELL, 1>                                           &  a_phiFToC,
+              const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
+              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
+              const Chombo4::Box                                                &  a_domFine,
+              const Real                                                        &  a_dxFine,
+              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
+              const Chombo4::Box                                                &  a_domCoar,
+              const Real                                                        &  a_dxCoar,
+              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
+              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
+  
   ///
   template <unsigned int D>
   inline 

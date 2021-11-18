@@ -57,7 +57,9 @@ namespace Proto
     inline static bool 
     isRegularStencil(const EBIndex<CELL> & a_vof,
                      const int             a_radius,
-                     const EBGraph       & a_graph);
+                     const EBGraph       & a_graph,
+                     const VoluData      & a_voludata,
+                     const double          a_dx);
 
     inline static void 
     printWLSStencil(int                                  radius,
