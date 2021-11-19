@@ -46,7 +46,7 @@ jobs:
           submodules: true
       - name: Install Dependencies
         run: .github/workflows/dependencies/cuda.sh
-        - name: Checkout Proto
+      - name: Checkout Proto
         run: |
           git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
           cd proto
