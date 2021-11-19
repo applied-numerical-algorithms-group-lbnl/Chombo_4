@@ -56,11 +56,11 @@ jobs:
       - name: Build Proto
         working-directory: ../proto
         run: |
-          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_CUDA=ON
           cmake --build cuda_build --parallel
       - name: Build & Install Chombo
         run: |
-          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_CUDA=ON
           cmake --build cuda_build --parallel
       - name: Run Google Test
         working-directory: cuda_build
