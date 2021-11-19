@@ -41,18 +41,18 @@ jobs:
     name: NVCC@9.3
     runs-on: ubuntu-latest
     steps:
-        #- uses: actions/checkout@master  # Checkout Chombo
-        #with:
-        #  submodules: true
-      - name: Dependencies
+        - uses: actions/checkout@master  # Checkout Chombo
+        with:
+          submodules: true
+      - name: Install Dependencies
         run: .github/workflows/dependencies/cuda.sh
-        #- name: Checkout Proto
-        #run: |
-        #  git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
-        #  cd proto
-        #  git submodule init
-        #  git submodule update
-        #  cd ..
+        - name: Checkout Proto
+        run: |
+          git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git proto
+          cd proto
+          git submodule init
+          git submodule update
+          cd ..
       - name: Build Proto
         working-directory: proto
         run: |
