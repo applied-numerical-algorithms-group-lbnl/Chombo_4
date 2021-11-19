@@ -13,4 +13,4 @@ echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x8
 sudo apt-get -qq update
 sudo apt-get install -y cuda-compiler-11-0 cuda-nvtx-11-0 cuda-runtime-11-0
 
-sudo ln -s cuda-11.2 /usr/local/cuda
+sudo ln -s cuda-11.0 /usr/local/cuda
