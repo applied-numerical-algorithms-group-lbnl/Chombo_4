@@ -41,7 +41,7 @@ jobs:
     name: NVCC@9.3
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@master  # Checkout Chombo
+      - uses: actions/checkout@master  # Checkout Chombo
         with:
           submodules: true
       - name: Install Dependencies
