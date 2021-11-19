@@ -24,7 +24,7 @@ option(ENABLE_OPENMP "Build using OpenMP" OFF)
 option(ENABLE_CUDA "Build using CUDA" OFF)
 option(ENABLE_HIP "Build using HIP" OFF)
 option(ENABLE_HDF5 "Build using HDF5" OFF)
-option(ENABLE_TESTS "Build tests" ON)
+option(ENABLE_TESTS "Build tests" OFF)
 option(ENABLE_EXAMPLES "Build examples" ON)
 
 set(DIM 2 CACHE STRING "Dimensionality of examples")
