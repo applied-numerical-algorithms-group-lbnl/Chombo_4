@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 sudo apt-get -qq update
-sudo apt-get install -y cmake g++ wget libblas-dev liblapack-dev
+sudo apt-get install -y cmake g++ wget libblas-dev liblapacke-dev
 
 which liblapack-dev
 
