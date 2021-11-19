@@ -189,5 +189,5 @@ if(ENABLE_EXAMPLES)
 endif()
 
 if(ENABLE_TESTS)
-    add_subdirectory(tests)
+    # add_subdirectory(tests)
 endif()
