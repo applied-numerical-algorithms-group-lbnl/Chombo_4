@@ -31,7 +31,7 @@ jobs:
       - name: Build & Install Chombo
         run: |
           cmake -S . -B host_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-          cmake --build host_build--parallel
+          cmake --build host_build --parallel
       - name: Run Google Test
         working-directory: host_build
         run: make test
