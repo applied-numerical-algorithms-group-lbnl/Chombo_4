@@ -799,7 +799,7 @@ namespace Proto
                    string                       a_ebbcName,
                    string                       a_dombcName[2*DIM],
                    const int                    a_dir,
-                   IndMomSDMinOne             & a_faceMom,
+                   IndMomDIM                  & a_cellMom,
                    double                       a_dx) const;
 
     virtual ~BaseWLSCell()
@@ -1026,10 +1026,7 @@ namespace Proto
                       const EBNormalData                  & a_ebnormxdata,
                       const EBNormalData                  & a_ebnormydata,
                       const EBNormalData                  & a_ebnormzdata,
-                      const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                      const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                      const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                      const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                      const BaseWLSCell<order>  & a_cellConstruct,
                       string                                a_ebbcName,
                       string                                a_dombcName[2*DIM],
                       vector<Real>                                & a_inhoTerm,

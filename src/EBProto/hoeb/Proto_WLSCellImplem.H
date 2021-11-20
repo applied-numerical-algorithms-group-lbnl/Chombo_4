@@ -1171,7 +1171,7 @@ namespace Proto
                  string                       a_ebbcName,
                  string                       a_dombcName[2*DIM],
                  const int                    a_dir,
-                 IndMomSDMinOne             & a_faceMom,
+                 IndMomDIM                 & a_cellMom,
                  double                       a_dx) const
   {
     PR_TIME("getCellStencil");
@@ -1206,7 +1206,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getFaceFluxMatrix(Qshift, face, faceLoc, a_faceMom, a_dx);
+    getEvalMatrix(Qshift, face, faceLoc, a_cellMom, a_dx);
 
     // Weights matrix
     Chombo4::LAPACKMatrix weights;
@@ -2824,10 +2824,7 @@ namespace Proto
                     const EBNormalData                    & a_ebnormxdata,
                     const EBNormalData                    & a_ebnormydata,
                     const EBNormalData                    & a_ebnormzdata,
-                    const BaseWLSFlux<XFACE, order>  & a_xfaceflux,
-                    const BaseWLSFlux<YFACE, order>  & a_yfaceflux,
-                    const BaseWLSFlux<ZFACE, order>  & a_zfaceflux,
-                    const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                    const BaseWLSCell<order>              & a_cellConstruct,
                     string                             a_ebbcName,
                     string                             a_dombcName[2*DIM],
                     vector<Real>                               & a_inhoTerm,
@@ -2841,392 +2838,73 @@ namespace Proto
 #if DIM==3
     a_vofStencilz.clear();
 #endif
+    CH_assert(a_inhoTerm.size() >= DIM);
     for (int dir=0; dir!=DIM; dir++)
       {
         a_inhoTerm[dir] = 0;
       }
+
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
-//     for (SideIterator sit; sit.ok(); ++sit)
-//     {
-//       vector< EBIndex<XFACE> > xfaces = a_graph.getXFaces(a_vof, sit());
-//       int isign = sign(sit());
-//       for (int iface = 0; iface < xfaces.size(); iface++)
-//       {
-//         LocalStencil<CELL, double> fluxStencil;
-//         Real inhomogTerm=0.0; //for inhomogeneous bcs
-//         std::map<EBIndex<XFACE>,LocalStencil<CELL, double> >::iterator it;
-//         it = xfacesFluxStencil.find(xfaces[iface]);
-//         if (it != xfacesFluxStencil.end())
-//         {
-//           fluxStencil = it->second;
-//           inhomogTerm = xfacesInhTerm[xfaces[iface]];
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencilx += fluxStencil;
-//         }
-//         else
-//         {
-//           EBIndex<CELL> voflo = xfaces[iface].getVoF(Side::Lo);
-//           EBIndex<CELL> vofhi = xfaces[iface].getVoF(Side::Hi);
-//           double   areaFrac;
-//           RealVect centroid;
-//           Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
+    double   voluFrac;
+    RealVect centroid;
+    Normalizor<order>::normalizedVoluMoments(voluFrac, centroid, a_voludata, a_vof, a_graph, a_dx);
 
-//           RealVect faceLoc;
-//           for (int idir = 0; idir < DIM; idir++)
-//           {
-//             faceLoc[idir] = a_dx * (0.5 + xfaces[iface].m_pt[idir]);
-//             if (idir == 0) faceLoc[idir] = a_dx * (xfaces[iface].m_pt[idir]);
-//           }
-//           //RealVect v_faceLoc = a_xfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
+    // x direction
+    {
+      IndMomDIM voluMom;
+      if (voluFrac < 1.0)
+        {
+          voluMom = a_voludata(a_vof, 0);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
+      else
+        {
+          voluMom.setToRegular(a_dx);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
 
-//           IndMomSDMinOne faceMom;
-//           if (areaFrac < 1.0)
-//           {
-//             faceMom = a_xfacdata(xfaces[iface], 0);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
-//           else
-//           {
-//             faceMom.setToRegular(a_dx);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
+      LocalStencil<CELL, double> cellStencil;
+      Real inhomogTerm=0.0; //for inhomogeneous bcs
 
-//           if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+      if (a_cellConstruct.m_verbose) pout() << " stencil xdir "<< a_vof.m_pt << endl;
 
-//           if (!xfaces[iface].m_isBoundary){
-//             double inhomogTermM = 0;
-//             double inhomogTermP = 0;
-//             // a_xfaceflux.getCellStencil(fluxStencil, inhomogTermM, voflo, xfaces[iface],
-//             //                                    a_graph,
-//             //                                    a_voludata,
-//             //                                    a_ebfadata,
-//             //                                    a_xfacdata,
-//             //                                    a_yfacdata,
-//             //                                    a_zfacdata,
-//             //                                    a_ebnormxdata,
-//             //                                    a_ebnormydata,
-//             //                                    a_ebnormzdata,
-//             //                                    a_ebbcName,
-//             //                                    a_dombcName,
-//             //                                    0,
-//             //                                    faceMom,
-//             //                                    a_neighType,
-//             //                                    a_dx);
-//             //}
-
-//           }else{
-//             a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
-//                                                a_graph,
-//                                                a_voludata,
-//                                                a_ebfadata,
-//                                                a_xfacdata,
-//                                                a_yfacdata,
-//                                                a_zfacdata,
-//                                                a_ebnormxdata,
-//                                                a_ebnormydata,
-//                                                a_ebnormzdata,
-//                                                a_ebbcName,
-//                                                a_dombcName,
-//                                                0,
-//                                                faceMom,
-//                                                a_neighType,
-//                                                a_dx);
-//           }
-//           if (a_xfaceflux.m_verbose)
-//           {
-//             pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-//             pout()<<" fluxStencil "<<endl;
-//             fluxStencil.print();
-//           }
-//           xfacesFluxStencil[xfaces[iface]] = fluxStencil;
-//           xfacesInhTerm[xfaces[iface]] = inhomogTerm;
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencilx += fluxStencil;
-
-//         }
-//       }
-//     }
-
-//     for (SideIterator sit; sit.ok(); ++sit)
-//     {
-//       vector< EBIndex<YFACE> > yfaces = a_graph.getYFaces(a_vof, sit());
-//       int isign = sign(sit());
-//       for (int iface = 0; iface < yfaces.size(); iface++)
-//       {
-//         LocalStencil<CELL, double> fluxMStencil;
-//         LocalStencil<CELL, double> fluxPStencil;
-//         LocalStencil<CELL, double> fluxStencil;
-//         Real inhomogTerm=0.0; //for inhomogeneous bcs
-//         std::map<EBIndex<YFACE>,LocalStencil<CELL, double> >::iterator it;
-//         it = yfacesFluxStencil.find(yfaces[iface]);
-//         if (it != yfacesFluxStencil.end())
-//         {
-//           fluxStencil = it->second;
-//           inhomogTerm = yfacesInhTerm[yfaces[iface]];
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencily += fluxStencil;
-//         }
-//         else
-//         {
-//           EBIndex<CELL> voflo = yfaces[iface].getVoF(Side::Lo);
-//           EBIndex<CELL> vofhi = yfaces[iface].getVoF(Side::Hi);
-//           double   areaFrac;
-//           RealVect centroid;
-//           Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_yfacdata, yfaces[iface], a_graph, a_dx);
-
-//           RealVect faceLoc;
-//           for (int idir = 0; idir < DIM; idir++)
-//           {
-//             faceLoc[idir] = a_dx * (0.5 + yfaces[iface].m_pt[idir]);
-//             if (idir == 1) faceLoc[idir] = a_dx * (yfaces[iface].m_pt[idir]);
-//           }
-//           //RealVect v_faceLoc = a_yfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
-
-//           IndMomSDMinOne faceMom;
-//           if (areaFrac < 1.0)
-//           {
-//             faceMom = a_yfacdata(yfaces[iface], 0);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
-//           else
-//           {
-//             faceMom.setToRegular(a_dx);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
-
-//           if (a_yfaceflux.m_verbose) pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;
-
-//           if (!yfaces[iface].m_isBoundary){
-//             double inhomogTermM = 0;
-//             double inhomogTermP = 0;
-//             a_yfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTermM, voflo, yfaces[iface],
-//                                            a_graph,
-//                                            a_voludata,
-//                                            a_ebfadata,
-//                                            a_xfacdata,
-//                                            a_yfacdata,
-//                                            a_zfacdata,
-//                                            a_ebnormxdata,
-//                                            a_ebnormydata,
-//                                            a_ebnormzdata,
-//                                            a_ebbcName,
-//                                            a_dombcName,
-//                                            1,
-//                                            faceMom,
-//                                            a_neighType,
-//                                            a_dx);
-
-//             a_yfaceflux.getFaceCenteredStencil(fluxPStencil, inhomogTermP, vofhi, yfaces[iface],
-//                                            a_graph,
-//                                            a_voludata,
-//                                            a_ebfadata,
-//                                            a_xfacdata,
-//                                            a_yfacdata,
-//                                            a_zfacdata,
-//                                            a_ebnormxdata,
-//                                            a_ebnormydata,
-//                                            a_ebnormzdata,
-//                                            a_ebbcName,
-//                                            a_dombcName,
-//                                            1,
-//                                            faceMom,
-//                                            a_neighType,
-//                                            a_dx);
-//             // fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 1, a_voludata, a_graph, a_dx);
-//                         // Really just the face average
-//             fluxStencil = getLapFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
-//             inhomogTerm = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
-//             //if (a_yfaceflux.m_verbose)
-//             //{
-//             //  pout()<<" yflux"<<endl;
-//             //  pout()<<" weight for M "<<distP/(distM+distP)<<endl;
-//             //  pout()<<" weight for P "<<distM/(distM+distP)<<endl;
-//             //}
-//           }
-//           else
-//           {
-//             a_yfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, yfaces[iface],
-//                                                a_graph,
-//                                                a_voludata,
-//                                                a_ebfadata,
-//                                                a_xfacdata,
-//                                                a_yfacdata,
-//                                                a_zfacdata,
-//                                                a_ebnormxdata,
-//                                                a_ebnormydata,
-//                                                a_ebnormzdata,
-//                                                a_ebbcName,
-//                                                a_dombcName,
-//                                                1,
-//                                                faceMom,
-//                                                a_neighType,
-//                                                a_dx);
-//           }
-//           if (a_yfaceflux.m_verbose)
-//           {
-//             pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
-//             pout()<<" fluxStencil "<<endl;
-//             fluxStencil.print();
-//           }
-//           yfacesFluxStencil[yfaces[iface]] = fluxStencil;
-//           yfacesInhTerm[yfaces[iface]] = inhomogTerm;
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencily += fluxStencil;
-//         }
-//       }
-//     }
-// #if DIM==3
-//     for (SideIterator sit; sit.ok(); ++sit)
-//     {
-//       vector< EBIndex<ZFACE> > zfaces = a_graph.getZFaces(a_vof, sit());
-//       int isign = sign(sit());
-//       for (int iface = 0; iface < zfaces.size(); iface++)
-//       {
-//         LocalStencil<CELL, double> fluxMStencil;
-//         LocalStencil<CELL, double> fluxPStencil;
-//         LocalStencil<CELL, double> fluxStencil;
-//         Real inhomogTerm=0.0; //for inhomogeneous bcs
-//         std::map<EBIndex<ZFACE>,LocalStencil<CELL, double> >::iterator it;
-//         it = zfacesFluxStencil.find(zfaces[iface]);
-//         if (it != zfacesFluxStencil.end())
-//         {
-//           fluxStencil = it->second;
-//           inhomogTerm = zfacesInhTerm[zfaces[iface]];
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencilz += fluxStencil;
-//         }
-//         else
-//         {
-//           EBIndex<CELL> voflo = zfaces[iface].getVoF(Side::Lo);
-//           EBIndex<CELL> vofhi = zfaces[iface].getVoF(Side::Hi);
-//           double   areaFrac;
-//           RealVect centroid;
-//           Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_zfacdata, zfaces[iface], a_graph, a_dx);
-//           RealVect faceLoc;
-//           for (int idir = 0; idir < DIM; idir++)
-//           {
-//             faceLoc[idir] = a_dx * (0.5 + zfaces[iface].m_pt[idir]);
-//             if (idir == 2) faceLoc[idir] = a_dx * (zfaces[iface].m_pt[idir]);
-//           }
-//           //RealVect v_faceLoc = a_zfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
-
-//           IndMomSDMinOne faceMom;
-//           if (areaFrac < 1.0)
-//           {
-//             faceMom = a_zfacdata(zfaces[iface], 0);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
-//           else
-//           {
-//             faceMom.setToRegular(a_dx);
-//             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-//             {
-//               const IndexTM<int, DIM-1>& p = iter();
-//               faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
-//             }
-//           }
-
-//           if (!zfaces[iface].m_isBoundary){
-//             double inhomogTermM = 0;
-//             double inhomogTermP = 0;
-//             a_zfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTermM, voflo, zfaces[iface],
-//                                            a_graph,
-//                                            a_voludata,
-//                                            a_ebfadata,
-//                                            a_xfacdata,
-//                                            a_yfacdata,
-//                                            a_zfacdata,
-//                                            a_ebnormxdata,
-//                                            a_ebnormydata,
-//                                            a_ebnormzdata,
-//                                            a_ebbcName,
-//                                            a_dombcName,
-//                                            2,
-//                                            faceMom,
-//                                            a_neighType,
-//                                            a_dx);
-
-//             a_zfaceflux.getFaceCenteredStencil(fluxPStencil, inhomogTermP, vofhi, zfaces[iface],
-//                                            a_graph,
-//                                            a_voludata,
-//                                            a_ebfadata,
-//                                            a_xfacdata,
-//                                            a_yfacdata,
-//                                            a_zfacdata,
-//                                            a_ebnormxdata,
-//                                            a_ebnormydata,
-//                                            a_ebnormzdata,
-//                                            a_ebbcName,
-//                                            a_dombcName,
-//                                            2,
-//                                            faceMom,
-//                                            a_neighType,
-//                                            a_dx);
-//             // fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 2, a_voludata, a_graph, a_dx);
-//                         // Really just the face average
-//             fluxStencil = getLapFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 2, a_voludata, a_graph, a_dx);
-//             inhomogTerm = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 2, a_voludata, a_graph, a_dx);
-//           }else{
-//             a_zfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, zfaces[iface],
-//                                                a_graph,
-//                                                a_voludata,
-//                                                a_ebfadata,
-//                                                a_xfacdata,
-//                                                a_yfacdata,
-//                                                a_zfacdata,
-//                                                a_ebnormxdata,
-//                                                a_ebnormydata,
-//                                                a_ebnormzdata,
-//                                                a_ebbcName,
-//                                                a_dombcName,
-//                                                2,
-//                                                faceMom,
-//                                                a_neighType,
-//                                                a_dx);
-
-//           }
-//           zfacesFluxStencil[zfaces[iface]] = fluxStencil;
-//           zfacesInhTerm[zfaces[iface]] = inhomogTerm;
-//           double factor = double(isign);
-//           fluxStencil *= factor;
-//           a_inhoTerm += inhomogTerm*factor;
-//           a_vofStencilz += fluxStencil;
-//         }
-//       }
-//     }
-// #endif
+      a_cellConstruct.getCellStencil(cellStencil,
+                                     inhomogTerm,
+                                     a_vof,
+                                     a_graph,
+                                     a_voludata,
+                                     a_ebfadata,
+                                     a_xfacdata,
+                                     a_yfacdata,
+                                     a_zfacdata,
+                                     a_ebnormxdata,
+                                     a_ebnormydata,
+                                     a_ebnormzdata,
+                                     a_ebbcName,
+                                     a_dombcName,
+                                     0,
+                                     voluMom,
+                                     a_neighType,
+                                     a_dx);
+      if (a_cellConstruct.m_verbose)
+        {
+          pout() << " inhomogTerm xdir " << inhomogTerm << endl;
+          pout() << " stencil " << endl;
+          cellStencil.print();
+        }
+      a_inhoTerm[0] += inhomogTerm;
+      a_vofStencilx += cellStencil;
+    }
 
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
       {
