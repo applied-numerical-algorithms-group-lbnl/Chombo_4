@@ -674,7 +674,7 @@ namespace Proto
             pp.getarr("phi_power_y",phiPowerY,0,num_mono);
             pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
             pp.getarr("phi_coef",phiCoef,0,num_mono);
-    
+
             vector<pair<Point, Real> > entries;
             for (int i=0; i<num_mono; i++)
               {
@@ -695,7 +695,7 @@ namespace Proto
           {
             Real amplitude;
             pp.get("phi_amp",amplitude);
-  
+
             IntVect frequency;
             RealVect center;
             Vector<int> freqVec;
@@ -862,7 +862,7 @@ namespace Proto
     //Compute weight matrix 
     virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                         Neighbors<order>       & a_neigh,
+                         const Neighbors<order> & a_neigh,
                          RealVect               & a_faceLoc) const;
 
     virtual ~ExactVelAdvectionWLSFlux()
@@ -883,27 +883,27 @@ namespace Proto
         int exactVel = 1;
         //Exact solution
         pp.get("exactVel",exactVel);
+
+      if (exactVel == 1)
+      {
+        RealVect centerVel;
+        Real omega;
+        pp.get("vel_omega",omega);
   
-        if (exactVel == 1)
-          {
-            RealVect centerVel;
-            Real omega;
-            pp.get("vel_omega",omega);
+        Vector<Real> centerVec;
   
-            Vector<Real> centerVec;
+        pp.getarr("vel_center",centerVec,0,DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          centerVel[idir] = centerVec[idir];
+        }
   
-            pp.getarr("vel_center",centerVec,0,DIM);
-            for(int idir = 0; idir < DIM; idir++)
-              {
-                centerVel[idir] = centerVec[idir];
-              }
-  
-            m_exactVel = shared_ptr<BaseExactVelocity<order> >(new SolidBodyRotVel<order>(omega, centerVel));
-          }
-        else if (exactVel == 2)
-          {
-            RealVect centerVel;
-            Vector<Real> velVec;
+	m_exactVel = shared_ptr<BaseExactVelocity<order> >(new SolidBodyRotVel<order>(omega, centerVel));
+      }
+      else if (exactVel == 2)
+      {
+        RealVect centerVel;
+        Vector<Real> velVec;
 
         pp.getarr("vel_vec",velVec,0,DIM);
         for(int idir = 0; idir < DIM; idir++)

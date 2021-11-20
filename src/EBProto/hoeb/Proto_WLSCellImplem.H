@@ -3304,7 +3304,7 @@ namespace Proto
   void
   ExactVelAdvectionWLSFlux<cent, order>::
   getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                       Neighbors<order>       & a_neigh,
+                       const Neighbors<order> & a_neigh,
                        RealVect               & a_faceLoc) const
   { 
     PR_TIME("getWeightsMatrixFace");
