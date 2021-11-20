@@ -1425,25 +1425,16 @@ namespace Proto
               }
 
             //Creating the WLS fluxes needed for flux divergence - U on a face
-            BaseWLSFlux<XFACE, order> xflux;
-            BaseWLSFlux<YFACE, order> yflux;
-            BaseWLSFlux<ZFACE, order> zflux;
-            BaseWLSFlux<BOUNDARY, order> ebflux;
+            BaseWLSCell<order> cellConstr;
             if (a_boundarySolutions == nullptr)
               {
                 pout() << "Using uniform div boundary values" << std::endl;
-                xflux = BaseWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                yflux = BaseWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, exactSolution, pt_verbose);
+                cellConstr = BaseWLSCell<order>(radius, powerE, exactSolution, pt_verbose);
               }
             else
               {
                 pout() << "Using specified div boundary values" << std::endl;
-                xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-                yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-                zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-                ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+                cellConstr = BaseWLSCell<order>(radius, powerE, a_boundarySolutions, pt_verbose);
               }
 
             //Computing the flux divergence stencil
@@ -1459,7 +1450,8 @@ namespace Proto
                                    a_xfacdata, a_yfacdata, a_zfacdata,
                                    a_ebnormxdata, a_ebnormydata,
                                    a_ebnormzdata,
-                                   xflux, yflux, zflux, ebflux, ebbc, dombc,
+                                   cellConstr,
+                                   ebbc, dombc,
                                    inhoTerm,
                                    neighListType,
                                    a_dx);

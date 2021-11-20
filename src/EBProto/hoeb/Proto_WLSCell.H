@@ -742,6 +742,7 @@ namespace Proto
       }
     }
 
+    public:
     //Radius needed for neighbors list around a face (Manhattan style)
     int m_radius = 1;
     //Exponent for the distance between the VoFs and the face in the weights matrix
@@ -755,9 +756,9 @@ namespace Proto
     
   };
 
-    //Main function calls for all WLS flux calculations
+  //Main function calls for all WLS cell calculations, which follow the same process as the flux calculations
   template<int order>
-  class BaseWLSCell : private BaseWLSFlux<CELL, order>
+  class BaseWLSCell : public BaseWLSFlux<CELL, order>
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -771,16 +772,13 @@ namespace Proto
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
-
-    //Get neighbors VoFs of a given face within a specific radius.
-    //Radius starts at one for the cells sharing the face, and
-    //increases by one for the neighbor cells sharing a face with the original
-    //cells of radius one.
-    Vector<EBIndex<CELL> >
-    getVoFsNeighbors(const EBIndex<CELL> & a_vof,
-                     const int             a_radius,
-                     Neighbors<order>    & a_neigh,
-                     const EBGraph       & a_graph) const;
+    //Compute rhs matrix for a face
+    void
+    getEvalCellMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<CELL>      & a_cell,
+                      RealVect                 & a_cellLoc,
+                      IndMomDIM                & a_cellMom,
+                      double                     a_dx) const;
 
     //Compute cell stencil
     void

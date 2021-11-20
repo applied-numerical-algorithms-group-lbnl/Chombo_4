@@ -800,6 +800,9 @@ namespace Proto
         blerg = POW(dist,powerE);
       }
       a_weights(ineigh, ineigh) = blerg;
+      // sane bounds for weights
+      CH_assert(a_weights(ineigh, ineigh) > 0.);
+      CH_assert(a_weights(ineigh, ineigh) <= 1.);
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
         ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
@@ -1152,6 +1155,53 @@ namespace Proto
   }
 
 
+  //Compute rhs matrix for a face
+  template<int order>
+  void
+  BaseWLSCell<order>::
+  getEvalCellMatrix(Chombo4::LAPACKMatrix    & a_cellMatrix,
+                    const EBIndex<CELL>      & a_cell,
+                    RealVect                 & a_cellLoc,
+                    IndMomDIM                & a_cellMom,
+                    double                     a_dx) const
+  {
+    PR_TIME("getEvalCellMatrix");
+    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
+    Real voluScaleFactor = (D_TERM(a_dx, *a_dx, *a_dx));
+
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+      {
+        startLoc[idir] = a_dx * (0.5 + a_cell.m_pt[idir]);
+      }
+    // shift center of moments to a_cellLoc
+    // the moments are centered at the cell center initially.
+    // Move them to the centroid
+    RealVect diff = startLoc - a_cellLoc;
+    IndexTM<Real, DIM> diffrv;
+    for(int idir = 0; idir < DIM; idir++)
+      {
+        diffrv[idir] = diff[idir]/a_dx;
+      }
+    a_cellMom.shift(diffrv);
+
+    MomentIterator<DIM, order> momit;
+    a_cellMatrix.define(1, momit.size());
+    a_cellMatrix.setVal(0.);
+    if (this->m_verbose) pout() << " RHS - Cell Eval Matrix " << endl;
+    for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        a_cellMatrix(0, jmom) = a_cellMom[p];
+
+        if(Chombo4::LAPACKMatrix::s_verbose)
+          {
+            ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_cellMatrix(0, jmom) << endl;
+          }
+      }
+  }
+
   //Compute face centered flux stencil
   template<int order>
   void
@@ -1178,18 +1228,18 @@ namespace Proto
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
 
     Neighbors<order> neighs;
-    EBIndex<CELL> face = a_vof; // a dummy, since we want cell bases neighbors
-    RealVect faceLoc;
-    int neighType=0;
+    EBIndex<CELL> cell = a_vof; // a dummy, since we want cell bases neighbors
+    RealVect cellLoc;
+    int neighType=1; // about the cell
     for (int idir = 0; idir < DIM; idir++)
       {
-        faceLoc[idir] = a_dx * (0.5 + face.m_pt[idir]);
-        if (a_dir == idir) faceLoc[idir] = a_dx * (face.m_pt[idir]);
+        cellLoc[idir] = a_dx * (0.5 + cell.m_pt[idir]);
       }
 
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(face, a_vof, this->m_radius, neighs, a_graph, 1);
+    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(cell, a_vof, this->m_radius, neighs, a_graph, neighType);
     MomentIterator<DIM,order> momit;
     if (vols.size()<=momit.size()) pout()<<"DANGER: NUMBER OF NEIGHS "<<vols.size()<<" and NUMBER OF coef "<<momit.size()<<endl;
+
     getMomentsInfoFromNeighbors(vols,
                                 a_graph, a_voludata, a_ebfadata,
                                 a_xfacdata, a_yfacdata, a_zfacdata,
@@ -1198,19 +1248,19 @@ namespace Proto
                                 neighs, neighType,
                                 a_ebbcName, a_dombcName, a_dx);
 
-    //first fill M with moments  shifted to the center of the face
+    //first fill M with moments,  shifted to the cell center
     Chombo4::LAPACKMatrix  Mvol;
-    getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
+    getShiftedMomentMatrix(Mvol, cellLoc, a_dx,
                            neighs,
                            a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEvalMatrix(Qshift, face, faceLoc, a_cellMom, a_dx);
+    getEvalCellMatrix(Qshift, cell, cellLoc, a_cellMom, a_dx);
 
-    // Weights matrix
+    // Weights matrix, actually weighted about the cell center
     Chombo4::LAPACKMatrix weights;
-    getWeightsMatrixFace(weights, neighs, faceLoc);
+    getWeightsMatrixFace(weights, neighs, cellLoc);
 
     // Compute phiCoef
     Chombo4::LAPACKMatrix phiCoef;
@@ -2807,7 +2857,7 @@ namespace Proto
       }
   }
 
-//Gets WLS flux for the divergence stencil
+  //Gets WLS the cell gradient stencil
   template <int order>
   void
   WLSStencil<order>::
@@ -2894,7 +2944,6 @@ namespace Proto
                                      a_dombcName,
                                      0,
                                      voluMom,
-                                     a_neighType,
                                      a_dx);
       if (a_cellConstruct.m_verbose)
         {
@@ -2904,6 +2953,59 @@ namespace Proto
         }
       a_inhoTerm[0] += inhomogTerm;
       a_vofStencilx += cellStencil;
+    }
+
+    {
+      IndMomDIM voluMom;
+      if (voluFrac < 1.0)
+        {
+          voluMom = a_voludata(a_vof, 0);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
+      else
+        {
+          voluMom.setToRegular(a_dx);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
+
+      LocalStencil<CELL, double> cellStencil;
+      Real inhomogTerm=0.0; //for inhomogeneous bcs
+
+      if (a_cellConstruct.m_verbose) pout() << " stencil ydir "<< a_vof.m_pt << endl;
+
+      a_cellConstruct.getCellStencil(cellStencil,
+                                     inhomogTerm,
+                                     a_vof,
+                                     a_graph,
+                                     a_voludata,
+                                     a_ebfadata,
+                                     a_xfacdata,
+                                     a_yfacdata,
+                                     a_zfacdata,
+                                     a_ebnormxdata,
+                                     a_ebnormydata,
+                                     a_ebnormzdata,
+                                     a_ebbcName,
+                                     a_dombcName,
+                                     1,
+                                     voluMom,
+                                     a_dx);
+      if (a_cellConstruct.m_verbose)
+        {
+          pout() << " inhomogTerm xdir " << inhomogTerm << endl;
+          pout() << " stencil " << endl;
+          cellStencil.print();
+        }
+      a_inhoTerm[1] += inhomogTerm;
+      a_vofStencily += cellStencil;
     }
 
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
