@@ -40,9 +40,10 @@ jobs:
       - name: Install Dependencies
         run: .github/workflows/dependencies/cuda.sh
       - name: Build Proto
-        working-directory: ../proto
+        working-directory: proto
         run: |
-          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_CUDA=ON
+          cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+          -DBLT_SOURCE_DIR=${{github.workspace}}/blt -DENABLE_CUDA=ON
           cmake --build cuda_build --parallel
       - name: Build & Install Chombo
         run: |
