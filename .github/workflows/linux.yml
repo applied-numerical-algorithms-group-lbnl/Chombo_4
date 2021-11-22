@@ -50,10 +50,8 @@ jobs:
           cmake --build cuda_build --parallel
       - name: Build & Install Chombo
         run: |
-          ls /usr/local/lapacke/lib
-          ls /usr/local/lapacke/lib64
           export PATH=/usr/local/cuda/bin:${PATH}
-          export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib:${LD_LIBRARY_PATH}
+          export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/lib:${LD_LIBRARY_PATH}
           which nvcc || echo "NVCC NOT IN PATH"
           cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_CUDA=ON
           cmake --build cuda_build --parallel
