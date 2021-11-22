@@ -16,6 +16,10 @@ jobs:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/host.sh
+      - name: List Contents
+        run: |
+          ls
+          ls proto
       - name: Build Proto
         working-directory: proto
         run: |
