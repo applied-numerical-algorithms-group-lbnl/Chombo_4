@@ -42,6 +42,9 @@ jobs:
       - name: Build Proto
         working-directory: proto
         run: |
+            #  export PATH=/usr/local/cuda/bin:${PATH}
+            #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib:${LD_LIBRARY_PATH}
+            #which nvcc || echo "NVCC NOT IN PATH"
           cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
           -DBLT_SOURCE_DIR=${{github.workspace}}/blt -DENABLE_CUDA=ON
           cmake --build cuda_build --parallel
