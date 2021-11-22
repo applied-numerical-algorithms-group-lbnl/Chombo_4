@@ -16,14 +16,10 @@ jobs:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/host.sh
-      - name: List Contents
-        run: |
-          ls
-          ls proto
       - name: Build Proto
         working-directory: proto
         run: |
-          cmake -S . -B host -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+          cmake -S . -B host -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBLT_SOURCE_DIR=${{github.workspace}}/blt
           cmake --build host --parallel
       - name: Build & Install Chombo
         run: |
