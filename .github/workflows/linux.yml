@@ -16,15 +16,8 @@ jobs:
           submodules: true
       - name: Dependencies
         run: .github/workflows/dependencies/host.sh
-      - name: Checkout Proto
-        run: |
-          git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git ../proto
-          cd ../proto
-          git submodule init
-          git submodule update
-          cd -
       - name: Build Proto
-        working-directory: ../proto
+        working-directory: proto
         run: |
           cmake -S . -B host -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
           cmake --build host --parallel
@@ -46,13 +39,6 @@ jobs:
           submodules: true
       - name: Install Dependencies
         run: .github/workflows/dependencies/cuda.sh
-      - name: Checkout Proto
-        run: |
-          git clone -b cmake https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git ../proto
-          cd ../proto
-          git submodule init
-          git submodule update
-          cd -
       - name: Build Proto
         working-directory: ../proto
         run: |

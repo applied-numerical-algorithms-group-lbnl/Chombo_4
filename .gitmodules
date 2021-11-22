@@ -1,0 +1,6 @@
+[submodule "blt"]
+	path = blt
+	url = https://github.com/LLNL/blt.git
+[submodule "proto"]
+    path = proto
+    url = https://github.com/applied-numerical-algorithms-group-lbnl/proto_import.git
