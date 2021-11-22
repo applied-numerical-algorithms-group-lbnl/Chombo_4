@@ -15,3 +15,4 @@ sudo apt-get install -y cuda-compiler-11-0 cuda-nvtx-11-0 cuda-runtime-11-0 \
     libcusolver-dev-11-0 libcublas-dev-11-0
 
 sudo ln -s cuda-11.0 /usr/local/cuda
+sudo ln -s liblapacke-dev /usr/local/lapacke
