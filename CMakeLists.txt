@@ -163,7 +163,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older 
 set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
 add_compile_definitions(CXXSTD=${CMAKE_CXX_STANDARD})
 
-add_subdirectory(proto)
+#add_subdirectory(proto)
 if(NOT DEFINED PROTO_HOME AND NOT DEFINED ENV{PROTO_HOME})
     set(PROTO_HOME ${CMAKE_CURRENT_SOURCE_DIR}/proto CACHE STRING "Proto home directory")
 elseif(NOT DEFINED PROTO_HOME)
