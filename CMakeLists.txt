@@ -37,13 +37,6 @@ message(STATUS "Dimensionality: ${DIM}\tPrecision: ${PREC}\tStack: ${STACK}")
 
 add_library(chombo_compiler_flags INTERFACE)
 add_compile_definitions(DIM=${DIM} CH_SPACEDIM=${DIM} PR_STACK_ALLOC=${STACK})
-if(NOT DEFINED PROTO_HOME AND NOT DEFINED ENV{PROTO_HOME})
-    set(PROTO_HOME ${CMAKE_CURRENT_SOURCE_DIR}/../proto CACHE STRING "Proto home directory")
-elseif(NOT DEFINED PROTO_HOME)
-    set(PROTO_HOME $ENV{PROTO_HOME} CACHE STRING "Proto home directory")
-endif()
-message(STATUS "Proto home: ${PROTO_HOME}")
-set(CHOMBO_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Chombo home directory")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "-w" CACHE STRING "compiler flags")
@@ -169,6 +162,15 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)  # if OFF, compilation will revert to older standard if C++11 unavailable
 set(CMAKE_CXX_EXTENSIONS OFF)  # if OFF, compilation flag uses c++11, not gnu++11
 add_compile_definitions(CXXSTD=${CMAKE_CXX_STANDARD})
+
+add_subdirectory(proto)
+if(NOT DEFINED PROTO_HOME AND NOT DEFINED ENV{PROTO_HOME})
+    set(PROTO_HOME ${CMAKE_CURRENT_SOURCE_DIR}/proto CACHE STRING "Proto home directory")
+elseif(NOT DEFINED PROTO_HOME)
+    set(PROTO_HOME $ENV{PROTO_HOME} CACHE STRING "Proto home directory")
+endif()
+message(STATUS "Proto home: ${PROTO_HOME}")
+set(CHOMBO_HOME ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Chombo home directory")
 
 blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags ${LIB_DEP}
     INCLUDES ${PROTO_HOME}/include ${PROTO_HOME}/include/implem
