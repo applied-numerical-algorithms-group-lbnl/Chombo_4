@@ -46,7 +46,8 @@ jobs:
           export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib:${LD_LIBRARY_PATH}
           which nvcc || echo "NVCC NOT IN PATH"
           cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DBLT_SOURCE_DIR=${{github.workspace}}/blt -DENABLE_CUDA=ON
+          -DBLT_SOURCE_DIR=${{github.workspace}}/blt -DENABLE_CUDA=ON \
+          -DENABLE_EXAMPLES=OFF -DENABLE_TESTS=OFF
           cmake --build cuda_build --parallel
       - name: Build & Install Chombo
         run: |

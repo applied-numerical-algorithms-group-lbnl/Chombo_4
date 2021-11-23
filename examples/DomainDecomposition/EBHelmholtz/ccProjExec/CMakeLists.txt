@@ -1,4 +1,3 @@
-message(STATUS "LIB_DEP = ${LIB_DEP}")
 blt_add_executable(NAME ccProjExec
     HEADERS SetupFunctions.H
     SOURCES ccProject.cpp
