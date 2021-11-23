@@ -27,7 +27,7 @@ jobs:
           cmake --build host_build --parallel
       - name: Run Google Test
         working-directory: host_build
-        run: make test --rerun-failed --output-on-failure
+        run: make test
 
     
   chombo_nvcc:
@@ -58,4 +58,6 @@ jobs:
           cmake --build cuda_build --parallel
       - name: Run Google Test
         working-directory: cuda_build
-        run: make test --rerun-failed --output-on-failure
+        run: make test
+      - name: Run Failed Tests
+        run: ${{github.workspace}}/cuda_build/bin/blt_cuda_version_smoke
