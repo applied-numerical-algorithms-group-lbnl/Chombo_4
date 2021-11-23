@@ -27,9 +27,9 @@ jobs:
           cmake --build host_build --parallel
       - name: Run Google Test
         working-directory: host_build
-        run: make test
-      - name: Failed Tests
-        run: cat ${{github.workspace}}/host_build/Testing/Temporary/LastTest.log
+        run: |
+          make test
+          cat Testing/Temporary/LastTest.log
 
     
   chombo_nvcc:
@@ -60,6 +60,6 @@ jobs:
           cmake --build cuda_build --parallel
       - name: Run Google Test
         working-directory: cuda_build
-        run: make test
-      - name: Failed Tests
-        run: cat ${{github.workspace}}/cuda_build/Testing/Temporary/LastTest.log
+        run: |
+          make test
+          cat Testing/Temporary/LastTest.log
