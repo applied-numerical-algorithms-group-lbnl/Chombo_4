@@ -27,7 +27,7 @@ jobs:
           cmake --build host_build --parallel
       - name: Run Google Test
         working-directory: host_build
-        run: make test
+        run: make test --rerun-failed --output-on-failure
 
     
   chombo_nvcc:
