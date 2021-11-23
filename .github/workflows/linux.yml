@@ -59,6 +59,8 @@ jobs:
             free -m
             sleep 10
           done
+      - name: Setup Debug Session
+        uses: csextion/debugger-action@master
       - name: Run Google Test
         working-directory: cuda_build
         run: make test
