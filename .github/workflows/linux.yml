@@ -28,6 +28,8 @@ jobs:
       - name: Run Google Test
         working-directory: host_build
         run: make test
+      - name: Failed Tests
+        run: cat ${{github.workspace}}/host_build/Testing/Temporary/LastTest.log
 
     
   chombo_nvcc:
@@ -59,5 +61,5 @@ jobs:
       - name: Run Google Test
         working-directory: cuda_build
         run: make test
-      - name: Run Failed Tests
-        run: ${{github.workspace}}/cuda_build/bin/blt_cuda_version_smoke
+      - name: Failed Tests
+        run: cat ${{github.workspace}}/cuda_build/Testing/Temporary/LastTest.log
