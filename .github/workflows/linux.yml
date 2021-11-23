@@ -58,4 +58,4 @@ jobs:
           cmake --build cuda_build --parallel
       - name: Run Google Test
         working-directory: cuda_build
-        run: make test
+        run: make test --rerun-failed --output-on-failure
