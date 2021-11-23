@@ -1428,12 +1428,12 @@ namespace Proto
             BaseWLSCell<order> cellConstr;
             if (a_boundarySolutions == nullptr)
               {
-                pout() << "Using uniform div boundary values" << std::endl;
+                // pout() << "Using uniform div boundary values" << std::endl;
                 cellConstr = BaseWLSCell<order>(radius, powerE, exactSolution, pt_verbose);
               }
             else
               {
-                pout() << "Using specified div boundary values" << std::endl;
+                // pout() << "Using specified div boundary values" << std::endl;
                 cellConstr = BaseWLSCell<order>(radius, powerE, a_boundarySolutions, pt_verbose);
               }
 
@@ -1460,11 +1460,11 @@ namespace Proto
             double kappa;
             Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
             // a_stencil[ivof] *= 1.0/(a_dx);
-            for (int dir=0; dir!=SpaceDim; dir++)
-              {
-                a_stencil[dir][ivof] *= 1.0/(a_dx);
-                a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
-              }
+            // for (int dir=0; dir!=SpaceDim; dir++)
+            //   {
+            //     a_stencil[dir][ivof] *= 1.0/(a_dx);
+            //     a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
+            //   }
             row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
             row_inhoContr.push_back(a_inhoContr[0][ivof]);
             row_index.push_back(vofInd);

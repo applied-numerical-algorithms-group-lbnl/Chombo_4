@@ -778,7 +778,8 @@ namespace Proto
                       const EBIndex<CELL>      & a_cell,
                       RealVect                 & a_cellLoc,
                       IndMomDIM                & a_cellMom,
-                      double                     a_dx) const;
+                      double                     a_dx,
+                      const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
 
     //Compute cell stencil
     void
@@ -796,9 +797,9 @@ namespace Proto
                    const EBNormalData         & a_ebnormzdata,
                    string                       a_ebbcName,
                    string                       a_dombcName[2*DIM],
-                   const int                    a_dir,
                    IndMomDIM                  & a_cellMom,
-                   double                       a_dx) const;
+                   double                       a_dx,
+                   const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
 
     virtual ~BaseWLSCell()
     {

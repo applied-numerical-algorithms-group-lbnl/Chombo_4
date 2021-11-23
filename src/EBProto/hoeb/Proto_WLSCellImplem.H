@@ -780,7 +780,10 @@ namespace Proto
     //if (max_rad-1 == m_radius) powerE = m_powerE;
     //else powerE = m_powerE - (2.0*(max_rad-m_radius-1));
     int powerE = m_powerE;
-    if (m_verbose)  pout() << " Weights Matrix " << endl;
+    if (m_verbose)
+      {
+        pout() << " Weights Matrix " << endl;
+      }
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;
@@ -800,12 +803,12 @@ namespace Proto
         blerg = POW(dist,powerE);
       }
       a_weights(ineigh, ineigh) = blerg;
-      // sane bounds for weights
+      // sane bounds for weights - not a hard rule, just the convention we use
       CH_assert(a_weights(ineigh, ineigh) > 0.);
       CH_assert(a_weights(ineigh, ineigh) <= 1.);
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+        pout() << ",icol,irow = " << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
       }
     }
   }
@@ -1163,11 +1166,10 @@ namespace Proto
                     const EBIndex<CELL>      & a_cell,
                     RealVect                 & a_cellLoc,
                     IndMomDIM                & a_cellMom,
-                    double                     a_dx) const
+                    double                     a_dx,
+                    const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const
   {
     PR_TIME("getEvalCellMatrix");
-    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
-    Real voluScaleFactor = (D_TERM(a_dx, *a_dx, *a_dx));
 
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
@@ -1193,11 +1195,20 @@ namespace Proto
       {
         IndexTM<int, DIM> p = momit();
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
-        a_cellMatrix(0, jmom) = a_cellMom[p];
-
+        IndexTM<int, DIM> pmq = p - a_deriv; // p minus q
+        if (pmq.min() < 0) // dropping bellow a zero moment has value of zero
+          {
+            a_cellMatrix(0, jmom) = 0.;
+          }
+        else
+          {
+            Real kappa = a_cellMom[0];
+            Real derivCoef = p.factorial()/pmq.factorial();
+            a_cellMatrix(0, jmom) = derivCoef*a_cellMom[p-a_deriv]/kappa;
+          }
         if(Chombo4::LAPACKMatrix::s_verbose)
           {
-            ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_cellMatrix(0, jmom) << endl;
+            pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_cellMatrix(0, jmom) << endl;
           }
       }
   }
@@ -1220,9 +1231,9 @@ namespace Proto
                  const EBNormalData         & a_ebnormzdata,
                  string                       a_ebbcName,
                  string                       a_dombcName[2*DIM],
-                 const int                    a_dir,
                  IndMomDIM                 & a_cellMom,
-                 double                       a_dx) const
+                 double                       a_dx,
+                 const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const
   {
     PR_TIME("getCellStencil");
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
@@ -1256,7 +1267,7 @@ namespace Proto
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEvalCellMatrix(Qshift, cell, cellLoc, a_cellMom, a_dx);
+    getEvalCellMatrix(Qshift, cell, cellLoc, a_cellMom, a_dx, a_deriv);
 
     // Weights matrix, actually weighted about the cell center
     Chombo4::LAPACKMatrix weights;
@@ -1269,16 +1280,16 @@ namespace Proto
     //Filling stencil
     a_sten.clear();
     Real coef_acc = 0.0;
-    if (this->m_verbose)  pout() << " Coefs Matrix " << endl;
+    if (this->m_verbose)  pout() << " Cell Coefs Matrix " << endl;
     for(int ivof = 0; ivof < vols.size(); ivof++)
-    {
-      Real thisCo = phiCoef(0, ivof);
-      a_sten.add(vols[ivof], thisCo);
-      if (this->m_verbose){
-        pout()<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+      {
+        Real thisCo = phiCoef(0, ivof);
+        a_sten.add(vols[ivof], thisCo);
+        if (this->m_verbose){
+          pout()<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+        }
+        coef_acc += thisCo;
       }
-      coef_acc += thisCo;
-    }
 
     int nvolneigh = vols.size();
     a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
@@ -2928,6 +2939,8 @@ namespace Proto
 
       if (a_cellConstruct.m_verbose) pout() << " stencil xdir "<< a_vof.m_pt << endl;
 
+      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+      deriv[0] = 1; // x-derivative stencil
       a_cellConstruct.getCellStencil(cellStencil,
                                      inhomogTerm,
                                      a_vof,
@@ -2942,9 +2955,9 @@ namespace Proto
                                      a_ebnormzdata,
                                      a_ebbcName,
                                      a_dombcName,
-                                     0,
                                      voluMom,
-                                     a_dx);
+                                     a_dx,
+                                     deriv);
       if (a_cellConstruct.m_verbose)
         {
           pout() << " inhomogTerm xdir " << inhomogTerm << endl;
@@ -2981,6 +2994,8 @@ namespace Proto
 
       if (a_cellConstruct.m_verbose) pout() << " stencil ydir "<< a_vof.m_pt << endl;
 
+      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+      deriv[1] = 1; // x-derivative stencil
       a_cellConstruct.getCellStencil(cellStencil,
                                      inhomogTerm,
                                      a_vof,
@@ -2995,9 +3010,9 @@ namespace Proto
                                      a_ebnormzdata,
                                      a_ebbcName,
                                      a_dombcName,
-                                     1,
                                      voluMom,
-                                     a_dx);
+                                     a_dx,
+                                     deriv);
       if (a_cellConstruct.m_verbose)
         {
           pout() << " inhomogTerm xdir " << inhomogTerm << endl;
@@ -3381,7 +3396,7 @@ namespace Proto
       }
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << ",icol = "  << icol <<  ", Q(0,icol) = " << a_fluxMatrix(0, icol) << " a_signNormal "<<a_signNormal<<endl;
+        pout() << ",icol = "  << icol <<  ", Q(0,icol) = " << a_fluxMatrix(0, icol) << " a_signNormal "<<a_signNormal<<endl;
       }
     }
   }
@@ -3479,7 +3494,7 @@ namespace Proto
       a_weights(ineigh, ineigh) = blerg;
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+        pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
       }
     }
   }
