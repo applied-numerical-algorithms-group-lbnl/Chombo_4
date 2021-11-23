@@ -128,7 +128,7 @@ namespace Proto
                               const EBNormalData      & a_ebnormxdata,
                               const EBNormalData      & a_ebnormydata,
                               const EBNormalData      & a_ebnormzdata,
-                              const Neighbors<order>  & a_neigh,
+                              Neighbors<order>  & a_neigh,
                               int                       a_neighType,
                               string                    a_ebbcName,
                               string                    a_dombcName[2*DIM],
@@ -610,7 +610,6 @@ namespace Proto
                     double                     a_dx) const
   {
     PR_TIME("getFaceFluxMatrix");
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
 
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
@@ -687,7 +686,6 @@ namespace Proto
                   double                     a_dx) const
   {
     PR_TIME("getEBFluxMatrix");
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
@@ -737,7 +735,7 @@ namespace Proto
       for(momit.reset(); momit.ok(); ++momit)
       {
         IndexTM<int, DIM> p = momit();
-        Real pd = p[idir];
+        //Real pd = p[idir];
         //get column number associated with this particular moment
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
         if(Chombo4::LAPACKMatrix::s_verbose)
@@ -1167,7 +1165,7 @@ namespace Proto
                     RealVect                 & a_cellLoc,
                     IndMomDIM                & a_cellMom,
                     double                     a_dx,
-                    const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const
+                    const IndexTM<int, DIM>    a_deriv) const
   {
     PR_TIME("getEvalCellMatrix");
 
@@ -1233,7 +1231,7 @@ namespace Proto
                  string                       a_dombcName[2*DIM],
                  IndMomDIM                 & a_cellMom,
                  double                       a_dx,
-                 const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const
+                 const IndexTM<int, DIM> a_deriv) const
   {
     PR_TIME("getCellStencil");
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
@@ -1247,35 +1245,35 @@ namespace Proto
         cellLoc[idir] = a_dx * (0.5 + cell.m_pt[idir]);
       }
 
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(cell, a_vof, this->m_radius, neighs, a_graph, neighType);
+    Vector<EBIndex<CELL> >  vols = this->getVoFsNeighbors(cell, a_vof, this->m_radius, neighs, a_graph, neighType);
     MomentIterator<DIM,order> momit;
     if (vols.size()<=momit.size()) pout()<<"DANGER: NUMBER OF NEIGHS "<<vols.size()<<" and NUMBER OF coef "<<momit.size()<<endl;
 
-    getMomentsInfoFromNeighbors(vols,
-                                a_graph, a_voludata, a_ebfadata,
-                                a_xfacdata, a_yfacdata, a_zfacdata,
-                                a_ebnormxdata, a_ebnormydata,
-                                a_ebnormzdata,
-                                neighs, neighType,
-                                a_ebbcName, a_dombcName, a_dx);
+    this->getMomentsInfoFromNeighbors(vols,
+                                      a_graph, a_voludata, a_ebfadata,
+                                      a_xfacdata, a_yfacdata, a_zfacdata,
+                                      a_ebnormxdata, a_ebnormydata,
+                                      a_ebnormzdata,
+                                      neighs, neighType,
+                                      a_ebbcName, a_dombcName, a_dx);
 
     //first fill M with moments,  shifted to the cell center
     Chombo4::LAPACKMatrix  Mvol;
-    getShiftedMomentMatrix(Mvol, cellLoc, a_dx,
-                           neighs,
-                           a_ebbcName, a_dombcName);
+    this->getShiftedMomentMatrix(Mvol, cellLoc, a_dx,
+                                 neighs,
+                                 a_ebbcName, a_dombcName);
 
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
-    getEvalCellMatrix(Qshift, cell, cellLoc, a_cellMom, a_dx, a_deriv);
+    this->getEvalCellMatrix(Qshift, cell, cellLoc, a_cellMom, a_dx, a_deriv);
 
     // Weights matrix, actually weighted about the cell center
     Chombo4::LAPACKMatrix weights;
-    getWeightsMatrixFace(weights, neighs, cellLoc);
+    this->getWeightsMatrixFace(weights, neighs, cellLoc);
 
     // Compute phiCoef
     Chombo4::LAPACKMatrix phiCoef;
-    getStencilWeights(phiCoef, Qshift, Mvol, weights, a_dx);
+    this->getStencilWeights(phiCoef, Qshift, Mvol, weights, a_dx);
 
     //Filling stencil
     a_sten.clear();
@@ -1292,10 +1290,10 @@ namespace Proto
       }
 
     int nvolneigh = vols.size();
-    a_inhomogTerm = computeInhomogTerm(phiCoef, neighs,
-                                       nvolneigh,
-                                       a_ebbcName, a_dombcName,
-                                       a_dx);
+    a_inhomogTerm = this->computeInhomogTerm(phiCoef, neighs,
+                                             nvolneigh,
+                                             a_ebbcName, a_dombcName,
+                                             a_dx);
     if (this->m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
@@ -1374,8 +1372,7 @@ namespace Proto
     //Real distP = pow(abs(centroidP[a_dir]+0.5),expD);
     a_inhomogTermM *= distP/(distM+distP);
     a_inhomogTermP *= distM/(distM+distP);
-    inhomogTerm += a_inhomogTermM;
-    inhomogTerm += a_inhomogTermP;
+    inhomogTerm = a_inhomogTermM + a_inhomogTermP;
     return inhomogTerm;
   }
 

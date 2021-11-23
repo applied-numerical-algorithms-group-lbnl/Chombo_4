@@ -166,7 +166,7 @@ namespace Proto
              double                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
   {
     a_bcOnly = false;
     if(a_stencilName == string("Weighted_Least_Squares_Poisson"))
@@ -300,7 +300,7 @@ namespace Proto
                        double                                      a_dx,                         
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann,
-                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
   {
     using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
@@ -981,7 +981,7 @@ namespace Proto
                               double                                      a_dx,
                               bool                                        a_periodiconly,
                               bool  a_forceNeumann,
-                              const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >())
+                              const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     pout()<<setprecision(15)<<scientific;
@@ -1294,7 +1294,7 @@ namespace Proto
                               double                                      a_dx,
                               bool                                        a_periodiconly,
                               bool  a_forceNeumann,
-                              const shared_ptr<BaseExactSolution<order> >& a_boundarySolutions = nullptr)
+                              const shared_ptr<BaseExactSolution<order> >& a_boundarySolutions)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     pout()<<setprecision(15)<<scientific;

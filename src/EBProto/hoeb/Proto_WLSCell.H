@@ -53,7 +53,7 @@ namespace Proto
       m_dx = a_dx;
     }
 
-    virtual Real getDx()
+    virtual Real getDx() const
     {
       return m_dx;
     }
@@ -219,7 +219,7 @@ namespace Proto
     ///
     static inline Real getTaylorCoefficient(const RealVect   & a_x0,
                                             const IndMomDIM  & a_p
-                                           ) 
+                                           )
     {
       IntVect m_power;
       RealVect m_point;
@@ -407,7 +407,7 @@ namespace Proto
       }
     };
 
-    inline Vector<Vector<IndMomDIM> > getEBNormMoments ()
+    inline Vector<Vector<IndMomDIM> > getEBNormMoments () const
     { 
       Vector<Vector<IndMomDIM> > ebfneighNorm;
       ebfneighNorm.resize(m_ebfneighNorm.size());
@@ -428,15 +428,15 @@ namespace Proto
     };
 
     inline void setWeightDisFacAndEB (Vector<int> & a_weightDisFac,
-		                      Vector<int> & a_weightDisEB)
+                                      Vector<int> & a_weightDisEB)
     {
       m_weightDisFac = a_weightDisFac;
       m_weightDisEB = a_weightDisEB;
     };
 
     inline void setFracInfo (Vector<double> & a_volneighFrac,
-		             Vector<double> & a_ebfneighFrac,
-			     Vector<double> & a_facneighFrac)
+                             Vector<double> & a_ebfneighFrac,
+                             Vector<double> & a_facneighFrac)
     {
       m_volneighFrac = a_volneighFrac;
       m_ebfneighFrac = a_ebfneighFrac;
@@ -532,7 +532,7 @@ namespace Proto
                                 const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata,
-                                const Neighbors<order> & a_neigh,
+                                Neighbors<order> & a_neigh,
                                 int                      a_neighType,
                                 string                   a_ebbcName,
                                 string                   a_dombcName[2*DIM],
