@@ -57,7 +57,7 @@ jobs:
           cmake --build cuda_build --parallel &
           while kill -0 $! > /dev/null 2>&1; do
             free -m
-            sleep 5
+            sleep 10
           done
       - name: Run Google Test
         working-directory: cuda_build
