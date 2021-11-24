@@ -3,7 +3,8 @@
 set -eu -o pipefail
 
 sudo apt-get -qq update
-sudo apt-get install -y cmake g++ wget libblas-dev liblapacke-dev
+sudo apt-get install -y build-essential cmake g++ wget \
+    libblas-dev liblapacke-dev && sudo apt-get clean
 
 sudo wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
 sudo apt-key add 7fa2af80.pub
