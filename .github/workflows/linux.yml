@@ -54,12 +54,13 @@ jobs:
           export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/lib:${LD_LIBRARY_PATH}
           which nvcc || echo "NVCC NOT IN PATH"
           cmake -S . -B cuda_build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_CUDA=ON
-          cmake --build cuda_build --parallel &
+          cmake --build cuda_build --parallel 2 &
           while kill -0 $! > /dev/null 2>&1; do
             free -m
             sleep 10
           done
       - name: Setup Debug Session
+        if: ${{failure()}}
         uses: csexton/debugger-action@master
       - name: Run Google Test
         working-directory: cuda_build
