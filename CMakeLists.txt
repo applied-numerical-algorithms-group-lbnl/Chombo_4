@@ -17,7 +17,7 @@ else()
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 set(CMAKE_POSITION_INDEPENEDENT_CODE TRUE)
 option(ENABLE_MPI "Build using MPI" OFF)
 option(ENABLE_OPENMP "Build using OpenMP" OFF)
