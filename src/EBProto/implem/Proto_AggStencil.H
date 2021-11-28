@@ -1,6 +1,7 @@
 #ifndef _AGGSTENCIL_H_
 #define _AGGSTENCIL_H_
 
+#include "Chombo_ProtoInterface.H"
 #include "EBProto.H"
 
 namespace Proto
@@ -136,6 +137,7 @@ namespace Proto
       using std::endl;
       using std::setprecision;
       using std::ios;
+      using Chombo4::pout;
       pout() << "local stencil contains" << endl;
       pout()    << std::setprecision(16)
               << std::setiosflags(ios::showpoint)

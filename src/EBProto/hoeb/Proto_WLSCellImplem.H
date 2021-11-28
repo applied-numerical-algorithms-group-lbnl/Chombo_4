@@ -3,7 +3,7 @@
 
 namespace Proto
 {
-
+  
   //Get neighbors VoFs through the faces of a specific cell.
   template<CENTERING cent, int order>
   vector<EBIndex<CELL> >
@@ -135,6 +135,7 @@ namespace Proto
                               double                    a_dx) const
   {
     PR_TIME("getMomentsInfoFromNeighbors");
+    using Chombo4::pout;
     Vector<IndMomDIM> volmom, ebfmom;
     Vector<IndMomSDMinOne> facmom;
     Vector<RealVect> volneighLoc;
@@ -392,6 +393,7 @@ namespace Proto
                            string                   a_dombcName[2*DIM]) const
   {
     PR_TIME("getShiftedMomentMatrix");
+    using Chombo4::pout;
     Vector<IndMomDIM> volmom = a_neigh.m_volMom;
     Vector<IndMomDIM> ebfmom = a_neigh.m_ebfMom;
     Vector<IndMomSDMinOne> facmom = a_neigh.m_facMom;
@@ -442,7 +444,7 @@ namespace Proto
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << "irow = " << irow << endl;
+        pout() << "irow = " << irow << endl;
       }
       for(momit.reset(); momit.ok(); ++momit)
       {
@@ -466,7 +468,7 @@ namespace Proto
         }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
-          ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
+          pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
         }
       }
     }
@@ -509,7 +511,7 @@ namespace Proto
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << "irow = " << irow << endl;
+        pout() << "irow = " << irow << endl;
       }
       for(momit.reset(); momit.ok(); ++momit)
       {
@@ -533,7 +535,7 @@ namespace Proto
         }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
-          ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
+          pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
         }
       }
     }
@@ -568,7 +570,7 @@ namespace Proto
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << "irow = " << irow << endl;
+        pout() << "irow = " << irow << endl;
       }
       for(momit.reset(); momit.ok(); ++momit)
       {
@@ -592,7 +594,7 @@ namespace Proto
         }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
-          ::pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
+          pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
         }
       }
     }
@@ -610,6 +612,8 @@ namespace Proto
                     double                     a_dx) const
   {
     PR_TIME("getFaceFluxMatrix");
+    using Chombo4::pout;
+    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
 
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
@@ -670,7 +674,7 @@ namespace Proto
       }
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+        pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
       }
     }
   }
@@ -740,7 +744,7 @@ namespace Proto
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
-          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+          pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
         }
       }
     }
@@ -756,6 +760,7 @@ namespace Proto
                        RealVect               & a_faceLoc) const
   { 
     PR_TIME("getWeightsMatrixFace");
+    using Chombo4::pout;
     Vector<int> weightDisVol = a_neigh.m_weightDisVol;
     Vector<int> weightDisFac = a_neigh.m_weightDisFac;
     Vector<int> weightDisEB = a_neigh.m_weightDisEB;
@@ -806,7 +811,11 @@ namespace Proto
       CH_assert(a_weights(ineigh, ineigh) <= 1.);
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
+<<<<<<< HEAD
         pout() << ",icol,irow = " << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+=======
+        pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
+>>>>>>> ed3c6d2515b64d4f1f0faed557a3d200e55289aa
       }
     }
   }
@@ -861,6 +870,7 @@ namespace Proto
                      double                           a_dx) const
   {
     PR_TIME("computeInhomogTerm");
+    using Chombo4::pout;
     Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
     Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
     Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
@@ -993,6 +1003,7 @@ namespace Proto
                          double                       a_dx) const
   { 
     PR_TIME("getFaceCenteredStencil");
+    using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = m_verbose; 
 
     Neighbors<order> neighs;
@@ -1095,6 +1106,7 @@ namespace Proto
                    const double                    a_dx) const
   {
     PR_TIME("getEBFluxStencil");
+    using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = m_verbose;
 
     Neighbors<order> neighs;
@@ -1551,6 +1563,7 @@ namespace Proto
                          double                                  a_dx)
   {
     PR_TIME("getLaplaWLSDivFStencil");
+    using Chombo4::pout;
     a_vofStencil.clear();
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -2138,6 +2151,7 @@ namespace Proto
                          double                                  a_dx)
   {
     PR_TIME("getAdvWLSDivFStencil");
+    using Chombo4::pout;
     a_vofStencil.clear();
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
@@ -3454,6 +3468,7 @@ namespace Proto
                     double                     a_dx) const
   {
     PR_TIME("getFaceFluxMatrix");
+    using Chombo4::pout;
     Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     int a_faceDir = a_face.direction();
 
@@ -3560,6 +3575,7 @@ namespace Proto
                        RealVect               & a_faceLoc) const
   { 
     PR_TIME("getWeightsMatrixFace");
+    using Chombo4::pout;
     Vector<int> weightDisVol = a_neigh.m_weightDisVol;
     Vector<int> weightDisFac = a_neigh.m_weightDisFac;
     Vector<int> weightDisEB = a_neigh.m_weightDisEB;
