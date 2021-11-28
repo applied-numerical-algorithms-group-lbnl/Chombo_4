@@ -81,7 +81,7 @@ namespace Proto
                   const LocalStencil< CELL,  double> & a_stencil,
                   const Point                        & a_vofPt) 
   {
-    //using Chombo4::pout;
+    using Chombo4::pout;
     pout()<<setprecision(16)<<scientific;
     for (int j = radius+1; j>=-(radius+1); j--)
     {
@@ -302,7 +302,7 @@ namespace Proto
                        bool  a_forceNeumann,
                        const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
   {
-    //using Chombo4::pout;
+    using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
 //    using std::pout();
 //    using std::endl;
@@ -632,7 +632,7 @@ namespace Proto
                          bool  a_forceNeumann)               
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
-    //using Chombo4::pout;
+    using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
@@ -984,6 +984,7 @@ namespace Proto
                               const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
+    using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
@@ -1296,6 +1297,7 @@ namespace Proto
                               const shared_ptr<BaseExactSolution<order> >& a_boundarySolutions)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
+    using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);

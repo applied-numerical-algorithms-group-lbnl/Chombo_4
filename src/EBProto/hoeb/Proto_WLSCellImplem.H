@@ -811,11 +811,7 @@ namespace Proto
       CH_assert(a_weights(ineigh, ineigh) <= 1.);
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-<<<<<<< HEAD
         pout() << ",icol,irow = " << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
-=======
-        pout() << ",icol,irow = "  << ineigh <<  ", W(irow,icol) = " << a_weights(ineigh, ineigh) << endl;
->>>>>>> ed3c6d2515b64d4f1f0faed557a3d200e55289aa
       }
     }
   }
@@ -1179,7 +1175,7 @@ namespace Proto
                     double                     a_dx) const
   {
     PR_TIME("getFaceFluxMatrix");
-
+    using Chombo4::pout;
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
     {
@@ -1229,7 +1225,7 @@ namespace Proto
              index++;
            }
         }
-        ::pout() << pfaceshift;
+        pout() << pfaceshift;
         // for readability, multiply by pd even though pd = 1
         //also pfaceshift is really p-e^d because we have set p
         a_fluxMatrix(0, jmom) = a_faceMom[pfaceshift];
@@ -1240,7 +1236,7 @@ namespace Proto
       }
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
-        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+        pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
       }
     }
   }
@@ -1256,6 +1252,7 @@ namespace Proto
                   double                     a_dx) const
   {
     PR_TIME("getEBFluxMatrix");
+    using Chombo4::pout;
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
@@ -1310,7 +1307,7 @@ namespace Proto
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
-          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+          pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
         }
       }
     }
@@ -1329,7 +1326,7 @@ namespace Proto
                     const IndexTM<int, DIM>    a_deriv) const
   {
     PR_TIME("getEvalCellMatrix");
-
+    using Chombo4::pout;
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
       {
@@ -1395,6 +1392,7 @@ namespace Proto
                  const IndexTM<int, DIM> a_deriv) const
   {
     PR_TIME("getCellStencil");
+    using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
 
     Neighbors<order> neighs;
