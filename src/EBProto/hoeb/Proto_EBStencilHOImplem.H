@@ -81,7 +81,7 @@ namespace Proto
                   const LocalStencil< CELL,  double> & a_stencil,
                   const Point                        & a_vofPt) 
   {
-    using Chombo4::pout;
+    //using Chombo4::pout;
     pout()<<setprecision(16)<<scientific;
     for (int j = radius+1; j>=-(radius+1); j--)
     {
@@ -302,7 +302,7 @@ namespace Proto
                        bool  a_forceNeumann,
                        const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
   {
-    using Chombo4::pout;
+    //using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
 //    using std::pout();
 //    using std::endl;
@@ -632,7 +632,7 @@ namespace Proto
                          bool  a_forceNeumann)               
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
-    using Chombo4::pout;
+    //using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
@@ -1112,26 +1112,26 @@ namespace Proto
               }
 
             //Creating the WLS fluxes needed for flux divergence - U on a face
-            BaseWLSFlux<XFACE, order> xflux;
-            BaseWLSFlux<YFACE, order> yflux;
-            BaseWLSFlux<ZFACE, order> zflux;
-            BaseWLSFlux<BOUNDARY, order> ebflux;
+            DivWLSFlux<XFACE, order> xflux;
+            DivWLSFlux<YFACE, order> yflux;
+            DivWLSFlux<ZFACE, order> zflux;
+            DivWLSFlux<BOUNDARY, order> ebflux;
             if (a_boundarySolutions.size() == 0)
               {
                 //pout() << "Using uniform div boundary values" << std::endl;
-                xflux = BaseWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                yflux = BaseWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, exactSolution, pt_verbose);
+                xflux = DivWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
+                yflux = DivWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
+                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
+                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, exactSolution, pt_verbose);
               }
             else
               {
                 //pout() << "Using specified div boundary values" << std::endl;
                 CH_assert(a_boundarySolutions.size() == 4);
-                xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[0], 0, pt_verbose);
-                yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[1], 0, pt_verbose);
-                zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[2], 0, pt_verbose);
-                ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions[3], 0, pt_verbose);
+                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[0], 0, pt_verbose);
+                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[1], 0, pt_verbose);
+                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[2], 0, pt_verbose);
+                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions[3], 0, pt_verbose);
               }
 
             //Computing the flux divergence stencil
@@ -1155,7 +1155,6 @@ namespace Proto
             RealVect centroid;
             double kappa;
             Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
-            // a_stencil[ivof] *= 1.0/(a_dx);
             for (int dir=0; dir!=SpaceDim; dir++)
               {
                 a_stencil[dir][ivof] *= 1.0/(a_dx);
@@ -1437,12 +1436,13 @@ namespace Proto
                 cellConstr = BaseWLSCell<order>(radius, powerE, a_boundarySolutions, pt_verbose);
               }
 
-            //Computing the flux divergence stencil
+            //Computing the cell gradient stencil
+            LocalStencil<CELL, double> cellStenZ;
             vector<Real> inhoTerm(DIM, 0.);
             WLSStencil<order> sten;
             sten.getWLSGradStencil(a_stencil[0][ivof],
                                    a_stencil[1][ivof],
-                                   a_stencil[1][ivof], // dummy for the z
+                                   cellStenZ, // dummy for the z
                                    vofInd,
                                    a_graph,
                                    a_voludata,
@@ -1459,29 +1459,30 @@ namespace Proto
             RealVect centroid;
             double kappa;
             Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
-            // a_stencil[ivof] *= 1.0/(a_dx);
-            // for (int dir=0; dir!=SpaceDim; dir++)
-            //   {
-            //     a_stencil[dir][ivof] *= 1.0/(a_dx);
-            //     a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
-            //   }
+            // scale by cell size
+            for (int dir=0; dir!=SpaceDim; dir++)
+              {
+                a_stencil[dir][ivof] *= 1./(a_dx);
+                a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
+              }
             row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
             row_inhoContr.push_back(a_inhoContr[0][ivof]);
             row_index.push_back(vofInd);
 
             if (pt_verbose)
               {
-                pout() << "grad stencil for " << vofInd.m_pt << ":" << endl;
-                pout() << " inhomg term " << a_inhoContr[0][ivof] << endl;
-                printWLSStencil(radius, a_stencil[0][ivof], vofInd.m_pt);
-                Real accDivF = 0.0;
-                for(int ivec =  0; ivec < a_stencil[0][ivof].size(); ivec++)
+                for (int comp = 0; comp!=SpaceDim; comp++)
                   {
-                    accDivF += a_stencil[0][ivof].m_entries[ivec].m_weight;
+                    pout() << "Grad stencil for " << vofInd.m_pt << " comp" << comp << ":" << endl;
+                    pout() << " inhomg term " << a_inhoContr[comp][ivof] << endl;
+                    printWLSStencil(radius, a_stencil[comp][ivof], vofInd.m_pt);
+                    Real accum = 0.0;
+                    for(int ivec = 0; ivec < a_stencil[comp][ivof].size(); ivec++)
+                      {
+                        accum += a_stencil[comp][ivof].m_entries[ivec].m_weight;
+                      }
+                    pout() << "Sum of all stencil weights " << accum << " stencil size " << a_stencil[comp][ivof].size() << endl;
                   }
-
-                //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
-                pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[0][ivof].size()<< endl;
               }
           }
       }

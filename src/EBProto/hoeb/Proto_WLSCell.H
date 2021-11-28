@@ -802,8 +802,7 @@ namespace Proto
                    const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
 
     virtual ~BaseWLSCell()
-    {
-    }
+      {}
 
     BaseWLSCell()
       {}
@@ -946,6 +945,62 @@ namespace Proto
 
   };
 
+  //Main function calls for DivWLS flux calculations
+  template<CENTERING cent, int order>
+  class DivWLSFlux: public BaseWLSFlux<cent,order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    using BaseWLSFlux<cent,order>::BaseWLSFlux;
+
+    //Compute rhs matrix for a face
+    virtual void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<cent>      & a_face,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      double                     a_signNormal,
+                      double                     a_dx) const;
+
+    //Compute rhs matrix for a EB face
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    double                     a_dx) const;
+
+    virtual ~DivWLSFlux()
+      {}
+
+    DivWLSFlux()
+      {}
+
+    DivWLSFlux(int           a_radius,
+                      int           a_powerE,
+                      shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                      bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSol, 0, a_verbose)
+      {}
+
+    DivWLSFlux(int           a_radius,
+                      int           a_powerE,
+                      int           a_exactSolFun,
+                      bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
+      {}
+  };
+
   ///some basic infrastructure to support the WLS stencils
   template<int order>  //this is so we can send in the geometry information
   class WLSStencil
@@ -1048,10 +1103,10 @@ namespace Proto
                           const EBNormalData                  & a_ebnormxdata,
                           const EBNormalData                  & a_ebnormydata,
                           const EBNormalData                  & a_ebnormzdata,
-                          const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                          const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                          const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                          const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                          const DivWLSFlux<XFACE   , order>  & a_xfaceflux,
+                          const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
+                          const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                          const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
                           string                                a_ebbcName,
                           string                                a_dombcName[2*DIM],
                           Real                                & a_inhoTerm,

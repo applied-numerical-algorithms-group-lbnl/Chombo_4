@@ -1155,6 +1155,155 @@ namespace Proto
     if (m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
   }
 
+//Compute rhs matrix for a face
+  template<CENTERING cent, int order>
+  void
+  DivWLSFlux<cent, order>::
+  getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    IndMomSDMinOne           & a_faceMom,
+                    double                     a_signNormal,
+                    double                     a_dx) const
+  {
+    PR_TIME("getFaceFluxMatrix");
+
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+      if (a_face.direction() == idir) startLoc[idir] = a_dx * (a_face.m_pt[idir]);
+    }
+    // shift center of moments to a_faceLoc.
+    // the moments are centered at the face center initially
+    RealVect diff = startLoc;
+    diff -= a_faceLoc;
+    IndexTM<Real, DIM-1> diffrv;
+    int index = 0;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      if(idir != a_face.direction())
+      {
+        diffrv[index] = diff[idir]/a_dx;
+        index++;
+      }
+    }
+    a_faceMom.shift(diffrv);
+
+    MomentIterator<DIM, order> momit;
+    a_fluxMatrix.define(1, momit.size());
+    a_fluxMatrix.setVal(0.);
+    const int& faceDir = a_face.direction();
+    if (this->m_verbose) pout() << " RHS - Face Flux Matrix " << endl;
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int, DIM> p = momit();
+      int pd = p[faceDir];
+
+      int jmom = IndexedMoments<DIM, order>::indexOf(p);
+
+      //all other integrals are zero since along face
+      //(y-ybar) =0  so (y-ybar)^py = 0 unless py == 0.
+      if(pd == 0)
+      {
+        // pfaceshift are all components of p that are not in the faceDir direction
+        IndexTM<int, DIM-1> pfaceshift;
+        int index = 0;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+           if(idir != faceDir)
+           {
+             pfaceshift[index] = p[idir];
+             index++;
+           }
+        }
+        ::pout() << pfaceshift;
+        // for readability, multiply by pd even though pd = 1
+        //also pfaceshift is really p-e^d because we have set p
+        a_fluxMatrix(0, jmom) = a_faceMom[pfaceshift];
+      }
+      else
+      {
+        a_fluxMatrix(0, jmom) = 0;
+      }
+      if(Chombo4::LAPACKMatrix::s_verbose)
+      {
+        ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+      }
+    }
+  }
+
+  //Compute rhs matrix for a EB face
+  template<CENTERING cent, int order>
+  void
+  DivWLSFlux<cent, order>::
+  getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
+                  const EBIndex<cent>      & a_face,
+                  RealVect                 & a_faceLoc,
+                  Vector<IndMomDIM>        & a_ebnorm,
+                  double                     a_dx) const
+  {
+    PR_TIME("getEBFluxMatrix");
+    MomentIterator<DIM, order> momit;
+    a_fluxMatrix.define(1, momit.size());
+    a_fluxMatrix.setVal(0.);
+
+    RealVect startLoc;
+    for (int idir = 0; idir < DIM; idir++)
+    {
+      startLoc[idir] = a_dx * (0.5 + a_face.m_pt[idir]);
+    }
+
+    for(int idir = 0; idir < DIM; idir++)
+    {
+
+      RealVect diff = startLoc;
+      diff -= a_faceLoc;
+      IndexTM<Real, DIM> diffrv;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        diffrv[idir] = diff[idir]/a_dx;
+      }
+      a_ebnorm[idir].shift(diffrv);
+
+      // the contribution to the flux matrix from the normal in this particular direction
+      Chombo4::LAPACKMatrix fluxIncr(1, momit.size());
+      fluxIncr.setVal(0.);
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        Real pd = p[idir];
+        //get column number associated with this particular moment
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        if(pd >= 0)
+        {
+          IndexTM<int, DIM> pshift = p - BASISV_TM<int, DIM>(idir);
+          fluxIncr(0, jmom) = a_ebnorm[idir][pshift];
+        }
+        else
+        {
+          fluxIncr(0, jmom) = 0;
+        }
+      }
+      a_fluxMatrix += fluxIncr;
+    }
+    if (this->m_verbose)  pout() << " RHS - EB Flux Matrix " << endl;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      for(momit.reset(); momit.ok(); ++momit)
+      {
+        IndexTM<int, DIM> p = momit();
+        //Real pd = p[idir];
+        //get column number associated with this particular moment
+        int jmom = IndexedMoments<DIM, order>::indexOf(p);
+        if(Chombo4::LAPACKMatrix::s_verbose)
+        {
+          ::pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_fluxMatrix(0, jmom) << endl;
+        }
+      }
+    }
+
+  }
 
   //Compute rhs matrix for a face
   template<int order>
@@ -2407,10 +2556,10 @@ namespace Proto
                          const EBNormalData                    & a_ebnormxdata,
                          const EBNormalData                    & a_ebnormydata,
                          const EBNormalData                    & a_ebnormzdata,
-                         const BaseWLSFlux<XFACE, order>  & a_xfaceflux,
-                         const BaseWLSFlux<YFACE, order>  & a_yfaceflux,
-                         const BaseWLSFlux<ZFACE, order>  & a_zfaceflux,
-                         const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
+                         const DivWLSFlux<XFACE, order>  & a_xfaceflux,
+                         const DivWLSFlux<YFACE, order>  & a_yfaceflux,
+                         const DivWLSFlux<ZFACE, order>  & a_zfaceflux,
+                         const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
                          string                             a_ebbcName,
                          string                             a_dombcName[2*DIM],
                          Real                               & a_inhoTerm,
@@ -2463,7 +2612,6 @@ namespace Proto
             faceLoc[idir] = a_dx * (0.5 + xfaces[iface].m_pt[idir]);
             if (idir == 0) faceLoc[idir] = a_dx * (xfaces[iface].m_pt[idir]);
           }
-          //RealVect v_faceLoc = a_xfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
 
           IndMomSDMinOne faceMom;
           if (areaFrac < 1.0)
@@ -2559,7 +2707,7 @@ namespace Proto
           if (a_xfaceflux.m_verbose)
           {
             pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-            pout()<<" fluxStencil "<<endl;
+            pout()<<" divFluxStencil "<<endl;
             fluxStencil.print();
           }
           xfacesFluxStencil[xfaces[iface]] = fluxStencil;
@@ -2704,7 +2852,7 @@ namespace Proto
           if (a_yfaceflux.m_verbose)
           {
             pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
-            pout()<<" fluxStencil "<<endl;
+            pout()<<" divFluxStencil "<<endl;
             fluxStencil.print();
           }
           yfacesFluxStencil[yfaces[iface]] = fluxStencil;
@@ -2931,15 +3079,12 @@ namespace Proto
             }
         }
 
-      LocalStencil<CELL, double> cellStencil;
-      Real inhomogTerm=0.0; //for inhomogeneous bcs
-
       if (a_cellConstruct.m_verbose) pout() << " stencil xdir "<< a_vof.m_pt << endl;
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
       deriv[0] = 1; // x-derivative stencil
-      a_cellConstruct.getCellStencil(cellStencil,
-                                     inhomogTerm,
+      a_cellConstruct.getCellStencil(a_vofStencilx,
+                                     a_inhoTerm[0],
                                      a_vof,
                                      a_graph,
                                      a_voludata,
@@ -2957,12 +3102,10 @@ namespace Proto
                                      deriv);
       if (a_cellConstruct.m_verbose)
         {
-          pout() << " inhomogTerm xdir " << inhomogTerm << endl;
+          pout() << " inhomogTerm xdir " << a_inhoTerm[0] << endl;
           pout() << " stencil " << endl;
-          cellStencil.print();
+          a_vofStencilx.print();
         }
-      a_inhoTerm[0] += inhomogTerm;
-      a_vofStencilx += cellStencil;
     }
 
     {
@@ -2986,15 +3129,12 @@ namespace Proto
             }
         }
 
-      LocalStencil<CELL, double> cellStencil;
-      Real inhomogTerm=0.0; //for inhomogeneous bcs
-
       if (a_cellConstruct.m_verbose) pout() << " stencil ydir "<< a_vof.m_pt << endl;
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
       deriv[1] = 1; // x-derivative stencil
-      a_cellConstruct.getCellStencil(cellStencil,
-                                     inhomogTerm,
+      a_cellConstruct.getCellStencil(a_vofStencily,
+                                     a_inhoTerm[1],
                                      a_vof,
                                      a_graph,
                                      a_voludata,
@@ -3012,12 +3152,10 @@ namespace Proto
                                      deriv);
       if (a_cellConstruct.m_verbose)
         {
-          pout() << " inhomogTerm xdir " << inhomogTerm << endl;
+          pout() << " inhomogTerm ydir " << a_inhoTerm[1] << endl;
           pout() << " stencil " << endl;
-          cellStencil.print();
+          a_vofStencily.print();
         }
-      a_inhoTerm[1] += inhomogTerm;
-      a_vofStencily += cellStencil;
     }
 
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
