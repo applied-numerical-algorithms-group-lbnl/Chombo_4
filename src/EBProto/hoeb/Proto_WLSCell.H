@@ -450,6 +450,11 @@ namespace Proto
       m_facneighSid = a_facneighSid;
     };
 
+    inline int size()
+      {
+        return m_volMom.size() + m_facMom.size() + m_ebfMom.size();
+      }
+
     //Volume moments
     Vector<IndMomDIM>       m_volMom;
     //Face moments

@@ -264,8 +264,10 @@ namespace Proto
                 {
                   found = true;
                 }
-              } 
-              if(!found && y_face.m_isBoundary)
+              }
+              int index = ebp_index(1, sit());
+              if(!found && y_face.m_isBoundary
+                 && (a_dombcName[index] != string("Extrapolated")))
               {
                 RealVect YfaceLoc;
                 for (int idir = 0; idir < DIM; idir++)
@@ -307,7 +309,9 @@ namespace Proto
                   found = true;
                 }
               }
-              if(!found && z_face.m_isBoundary)
+              int index = ebp_index(2, sit());
+              if(!found && z_face.m_isBoundary
+                 && (a_dombcName[index] != string("Extrapolated")))
               {
                 RealVect ZfaceLoc;
                 for (int idir = 0; idir < DIM; idir++)
@@ -1012,16 +1016,27 @@ namespace Proto
     }
 
     int radius = m_radius;
-    Vector<EBIndex<CELL> >  vols = getVoFsNeighbors(a_face, a_vof, radius, neighs, a_graph, a_neighType);
+    Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
-    if (vols.size()<=momit.size()) pout()<<"DANGER: NUMBER OF NEIGHS "<<vols.size()<<" and NUMBER OF coef "<<momit.size()<<endl;
-    getMomentsInfoFromNeighbors(vols,
-                                a_graph, a_voludata, a_ebfadata,
-                                a_xfacdata, a_yfacdata, a_zfacdata,
-                                a_ebnormxdata, a_ebnormydata,
-                                a_ebnormzdata,
-                                neighs, a_neighType,
-                                a_ebbcName, a_dombcName, a_dx);
+    int grows = 0;
+    while (neighs.size() <= momit.size()+DIM)
+      {
+        vols = getVoFsNeighbors(a_face, a_vof, radius, neighs, a_graph, a_neighType);
+
+        getMomentsInfoFromNeighbors(vols,
+                                    a_graph, a_voludata, a_ebfadata,
+                                    a_xfacdata, a_yfacdata, a_zfacdata,
+                                    a_ebnormxdata, a_ebnormydata,
+                                    a_ebnormzdata,
+                                    neighs, a_neighType,
+                                    a_ebbcName, a_dombcName, a_dx);
+
+        if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
+        radius += 1;
+        grows += 1;
+      }
+    CH_assert(vols.size() > momit.size());
+    CH_assert(neighs.size() > momit.size());
 
     //first fill M with moments shifted to the center of the face
     Chombo4::LAPACKMatrix Mvol;
@@ -1225,9 +1240,6 @@ namespace Proto
              index++;
            }
         }
-        pout() << pfaceshift;
-        // for readability, multiply by pd even though pd = 1
-        //also pfaceshift is really p-e^d because we have set p
         a_fluxMatrix(0, jmom) = a_faceMom[pfaceshift];
       }
       else
@@ -1689,8 +1701,9 @@ namespace Proto
           if (a_xfaceflux.m_verbose)
           {       
             pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-            pout()<<" fluxStencil "<<endl;
+            pout()<<" lapfluxStencil "<<endl;
             fluxStencil.print();
+            fluxStencil.printSum();
           }
           xfacesFluxStencil[xfaces[iface]] = fluxStencil;
           xfacesInhTerm[xfaces[iface]] = inhomogTerm; 
@@ -1821,8 +1834,9 @@ namespace Proto
           if (a_yfaceflux.m_verbose)
           {
             pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
-            pout()<<" fluxStencil "<<endl;
+            pout()<<" lapfluxStencil "<<endl;
             fluxStencil.print();
+            fluxStencil.printSum();
           }          
           yfacesFluxStencil[yfaces[iface]] = fluxStencil;
           yfacesInhTerm[yfaces[iface]] = inhomogTerm;
@@ -2579,13 +2593,14 @@ namespace Proto
                         double                                  a_dx)
   {
     PR_TIME("getWLSDivFCompStencil");
+    using Chombo4::pout;
     // a_vofStencil.clear();
     a_vofStencilx.clear();
     a_vofStencily.clear();
 #if DIM==3
     a_vofStencilz.clear();
 #endif
-    a_inhoTerm = 0;
+    a_inhoTerm = 0.;
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
@@ -2598,7 +2613,7 @@ namespace Proto
         LocalStencil<CELL, double> fluxMStencil;
         LocalStencil<CELL, double> fluxPStencil;
         LocalStencil<CELL, double> fluxStencil;
-        Real inhomogTerm=0.0; //for inhomogeneous bcs
+        Real inhomogTerm = 0.; //for inhomogeneous bcs
         double factor = double(isign);
         std::map<EBIndex<XFACE>,LocalStencil<CELL, double> >::iterator it;
         it = xfacesFluxStencil.find(xfaces[iface]);
@@ -2645,7 +2660,10 @@ namespace Proto
             }
           }
 
-          if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+          if (a_xfaceflux.m_verbose)
+            {
+              pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+            }
 
           if (!xfaces[iface].m_isBoundary){
             double inhomogTermM = 0;
@@ -2686,16 +2704,9 @@ namespace Proto
                                                factor,
                                                a_dx);
 
-            // fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 0, a_voludata, a_graph, a_dx);
             // Really just the face average
             fluxStencil = getLapFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
             inhomogTerm = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
-            //if (a_xfaceflux.m_verbose)
-            //{
-            //  pout()<<" xflux"<<endl;
-            //  pout()<<" weight for M "<<distP/(distM+distP)<<endl;
-            //  pout()<<" weight for P "<<distM/(distM+distP)<<endl;
-            //}
 
           }else{
             a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
@@ -2721,6 +2732,7 @@ namespace Proto
             pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
             pout()<<" divFluxStencil "<<endl;
             fluxStencil.print();
+            fluxStencil.printSum();
           }
           xfacesFluxStencil[xfaces[iface]] = fluxStencil;
           xfacesInhTerm[xfaces[iface]] = inhomogTerm;
@@ -2866,6 +2878,7 @@ namespace Proto
             pout()<<" inhomogTerm Yface "<<inhomogTerm<<endl;
             pout()<<" divFluxStencil "<<endl;
             fluxStencil.print();
+            fluxStencil.printSum();
           }
           yfacesFluxStencil[yfaces[iface]] = fluxStencil;
           yfacesInhTerm[yfaces[iface]] = inhomogTerm;
@@ -3050,6 +3063,7 @@ namespace Proto
                     double                                  a_dx)
   {
     PR_TIME("getWLSGradStencil");
+    using Chombo4::pout;
     // a_vofStencil.clear();
     a_vofStencilx.clear();
     a_vofStencily.clear();
@@ -3115,7 +3129,7 @@ namespace Proto
       if (a_cellConstruct.m_verbose)
         {
           pout() << " inhomogTerm xdir " << a_inhoTerm[0] << endl;
-          pout() << " stencil " << endl;
+          pout() << " grad stencil " << endl;
           a_vofStencilx.print();
         }
     }

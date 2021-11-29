@@ -1167,17 +1167,22 @@ namespace Proto
 
             if (pt_verbose)
               {
-                pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
+                pout() << "divVel stencil for " << vofInd.m_pt << ":" << endl;
                 pout() << " inhomg term " << a_inhoContr[ivof] << endl;
-                printWLSStencil(radius, a_stencil[0][ivof], vofInd.m_pt);
-                Real accDivF = 0.0;
-                for(int ivec =  0; ivec < a_stencil[0][ivof].size(); ivec++)
+                Real totalW = 0.;
+                for (int comp=0; comp!=DIM; comp++)
                   {
-                    accDivF += a_stencil[0][ivof].m_entries[ivec].m_weight;
+                    Real accDivF = 0.;
+                    pout() << " stencil " << comp << " comp" << std::endl;
+                    printWLSStencil(radius, a_stencil[comp][ivof], vofInd.m_pt);
+                    for(int ivec = 0; ivec < a_stencil[comp][ivof].size(); ivec++)
+                      {
+                        accDivF += a_stencil[comp][ivof].m_entries[ivec].m_weight;
+                      }
+                    pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[comp][ivof].size()<< endl;
+                    totalW += accDivF;
                   }
-
-                //pout() << "For phi=1 acc " << accDivF <<" inhoTerm "<<inhoTerm<< endl;
-                pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[0][ivof].size()<< endl;
+                pout() << "Sum of all stencil direction weights " << totalW << endl;
               }
           }
       }

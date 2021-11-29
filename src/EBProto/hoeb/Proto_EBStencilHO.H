@@ -187,7 +187,7 @@ namespace Proto
                                 double                                      a_dx,
                                 bool                                        a_periodiconly,
                                 bool  a_forceAllNeumann,
-                                const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution);
+                                const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution = nullptr);
 
     ///Gets WLS Divergence stencil
     inline static bool
@@ -217,7 +217,7 @@ namespace Proto
                           double                                      a_dx,
                           bool                                        a_periodiconly,
                           bool  a_forceAllNeumann,
-                          const shared_ptr<BaseExactSolution<order> >& a_boundarySolution);
+                          const shared_ptr<BaseExactSolution<order> >& a_boundarySolution = nullptr);
 
   };
 
