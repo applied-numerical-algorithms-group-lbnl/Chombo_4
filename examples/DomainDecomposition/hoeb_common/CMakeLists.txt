@@ -10,5 +10,5 @@ blt_add_library(NAME hoeb
     SOURCES
     Hoeb_LAPACKMatrix.cpp
     Hoeb_Utilities.cpp
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/CBLAS/include
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/include
     DEPENDS_ON BaseTools EBTools LAPACK::LAPACK ${LIB_DEP})

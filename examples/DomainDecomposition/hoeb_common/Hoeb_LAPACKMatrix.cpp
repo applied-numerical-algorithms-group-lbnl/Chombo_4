@@ -12,11 +12,15 @@
 #include <iomanip>
 #include "Chombo_parstream.H"
 #include "Hoeb_Lapack.H"
-
 #include <cstddef> 
 #include "Chombo_CH_Timer.H"
 #include <cmath>
+#ifdef MKL
+#include <mkl_cblas.h>
+#else
 #include <cblas.h>
+#endif
+
 namespace hoeb
 {
 
