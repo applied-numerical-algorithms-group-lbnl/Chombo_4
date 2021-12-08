@@ -1,0 +1,39 @@
+stages:
+    - build
+    - test
+
+configure:
+    stage: build
+    tags: [cori]
+    variables:
+      SCHEDULER_PARAMETERS: "-M escori -N 1 -q regular -C gpu -G 1 -c 1 -t 00:10:00"
+    before_script:
+      - module load cgpu
+      - module load cuda
+      - module load cmake
+    script:
+      - export SLURM_CPU_BIND="cores"
+      - git submodule init
+      - git submodule update
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=ON
+      - make -j
+    artifacts:
+      paths:
+        - build/*
+
+execute:
+    stage: test
+    tags: [cori]
+    variables:
+        SCHEDULER_PARAMETERS: "-M escori -N 1 -q regular -C gpu -G 1 -c 1 -t 00:10:00"
+    before_script:
+      - module load cgpu
+      - module load cuda
+      - module load cmake
+    script: 
+      - export SLURM_CPU_BIND="cores"
+      - pwd
+      - cd build
+      - make test
+
