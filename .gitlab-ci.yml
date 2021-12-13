@@ -20,7 +20,7 @@ configure_mpi:
       - .ci-runner
     before_script:
       - *label
-      - module load mpich
+      - module load openmpi
     script:
       - git submodule init
       - git submodule update
