@@ -1,0 +1,77 @@
+.ci-runner:
+  tags:
+    - cori
+
+.common_script: &label
+  - module load cmake
+  - module load gcc
+  - export SLURM_CPU_BIND="cores"
+  
+variables:
+  SCHEDULER_PARAMETERS:  "-C haswell -q regular -n 1 -t 00:05:00"
+
+stages:
+  - build
+  - test
+
+configure_mpi:
+    stage: build
+    extends:
+      - .ci-runner
+    before_script:
+      - *label
+      - module load mpich
+    script:
+      - git submodule init
+      - git submodule update
+      - cmake -S . -B mpi_build -DENABLE_MPI=ON
+      - cmake --build mpi_build --parallel
+    artifacts:
+      paths:
+        - mpi_build/*
+
+configure_cuda:
+    stage: build
+    extends:
+      - .ci-runner
+    before_script:
+      - *label
+      - module load cgpu
+      - module load cuda
+    script:
+      - git submodule init
+      - git submodule update
+      - cmake -S . -B cuda_build -DENABLE_CUDA=ON
+      - cmake --build cuda_build --parallel
+    artifacts:
+      paths:
+        - cuda_build/*
+
+mpi_execute:
+    stage: test
+    extends:
+      - .ci-runner
+    needs: [configure_mpi]
+    variables:
+      SCHEDULER_PARAMETERS: "-N 1 -q regular -C haswell -n 4 -c 2 -t 00:10:00"
+    before_script:
+      - *label
+    script:
+      - cd mpi_build
+      - make test
+
+cuda_execute:
+    stage: test
+    extends:
+      - .ci-runner
+    needs: [configure_cuda]
+    variables:
+        SCHEDULER_PARAMETERS: "-M escori -N 1 -q regular -C gpu -G 1 -c 1 -t 00:10:00"
+    before_script:
+      - *label
+      - module load cgpu
+      - module load cuda
+    script:
+      - cd cuda_build
+      - make test
+
