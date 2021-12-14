@@ -50,10 +50,12 @@ if(NOT DEFINED LAPACK_DIR)
     if (DEFINED ENV{OLCF_NETLIB_LAPACK_ROOT})
         set(LAPACK_DIR $ENV{OLCF_NETLIB_LAPACK_ROOT} CACHE PATH "LAPACK root")
     elseif(DEFINED ENV{MKLROOT})
-        set(LAPACK_DIR $ENV{MLKROOT})
+        set(LAPACK_DIR $ENV{MLKROOT} CACHE PATH "LAPACK root")
         add_compile_definitions(MKL)
     elseif(DEFINED ENV{LAPACK_DIR})
         set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")
+    else()
+        message(WARNING "No environment variable points to LAPACK root directory")
     endif()
 endif()
 find_package(LAPACK REQUIRED)
@@ -63,8 +65,8 @@ if(NOT DEFINED BLAS_DIR)
         set(BLAS_DIR $ENV{OLCF_OPENBLAS_ROOT} CACHE PATH "BLAS root")
     elseif(DEFINED ENV{BLAS_DIR})
         set(BLAS_DIR $ENV{BLAS_DIR} CACHE PATH "BLAS root")
-        #else()
-        #message(FATAL_ERROR "BLAS directory could not be determined")
+    else()
+        message(WARNING "No environment variable points to BLAS root directory")
     endif()
 endif()
 
@@ -151,7 +153,7 @@ if (NOT BLT_LOADED)
 
       if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
           message(FATAL_ERROR "\
-          The BLT submodule is not present. \
+          The BLT submodule is not present. \n
           If in git repository run the following two commands:\n \
           git submodule init\n \
           git submodule update")
