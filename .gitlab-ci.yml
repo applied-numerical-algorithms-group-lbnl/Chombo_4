@@ -22,8 +22,6 @@ configure_mpi:
       - *label
       - module load openmpi
     script:
-      - git submodule init
-      - git submodule update
       - cmake -S . -B mpi_build -DENABLE_MPI=ON
       - cmake --build mpi_build --parallel
     artifacts:
@@ -39,8 +37,6 @@ configure_cuda:
       - module load cgpu
       - module load cuda
     script:
-      - git submodule init
-      - git submodule update
       - cmake -S . -B cuda_build -DENABLE_CUDA=ON
       - cmake --build cuda_build --parallel
     artifacts:
