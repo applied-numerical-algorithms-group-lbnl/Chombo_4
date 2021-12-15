@@ -33,8 +33,8 @@ handles all MPI and HDF5 interactions.
    - Floating point precision: PREC=\[SINGLE, *DOUBLE*\]
    - Dimensionality of examples: DIM=\[*2*, 3\]
    - Optimization level: CMAKE_BUILD_TYPE=\[*Debug*, Release, MinSizeRel, RelWithDebInfo\]
-   - Size of allocations from the stack: STACK=<int> (default is 4294967296 bytes)
-   - Root of Proto repository: PROTO_HOME=<path> (default is submodule within this Chombo repository)
+   - Size of allocations from the stack: STACK=\<int\> (default is 4294967296 bytes)
+   - Root of Proto repository: PROTO_HOME=\<path\> (default is submodule within this Chombo repository)
    
 ### Building
 * To build all of the CMake targets in this project in parallel, run `cmake --build <build-dir> --parallel`. An integer can be provided at the end of this command to set the level of parallelization.
