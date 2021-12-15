@@ -27,6 +27,7 @@ handles all MPI and HDF5 interactions.
    - ENABLE_CUDA=\[ON, *OFF*\]
    - ENABLE_MPI=\[ON, *OFF*\]
    - ENABLE_HDF5=\[ON, *OFF*\]
+   - ENABLE_OPENMP=\[ON, *OFF*\]
    - Build executables from the `examples` subdirectory: ENABLE_EXAMPLES=\[*ON*, OFF\]
    - Build executables from the `tests` subdirectory: ENABLE_TESTS=\[*ON*, OFF\]
    - Floating point precision: PREC=\[SINGLE, *DOUBLE*\]
