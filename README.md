@@ -19,19 +19,20 @@ handles all MPI and HDF5 interactions.
 * If you *have* already cloned this repository, run these two commands to checkout the commits in each submodule that this project links to:
    - `git submodule init`
    - `git submodule update`
+   
    After doing this, the `.gitmodules` file will show the path and url of each submodule.
 
 ### Configuring
 * The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in bold. They are:
-   - ENABLE_CUDA=\[ON, **OFF**\]
-   - ENABLE_MPI=\[ON, **OFF**\]
-   - ENABLE_HDF5=\[ON, **OFF**\]
-   - Build executables from the `examples` subdirectory: ENABLE_EXAMPLES=\[**ON**, OFF\]
-   - Build executables from the `tests` subdirectory: ENABLE_TESTS=\[**ON**, OFF\]
-   - Floating point precision: PREC=\[SINGLE, **DOUBLE**\]
-   - Dimensionality of examples: DIM=\[**2**, 3\]
-   - Optimization level: CMAKE_BUILD_TYPE=\[**Debug**, Release, MinSizeRel, RelWithDebInfo\]
-   - Size of allocations from the stack: STACK=<int> (default 4294967296 bytes)
+   - ENABLE_CUDA=\[ON, *OFF*\]
+   - ENABLE_MPI=\[ON, *OFF*\]
+   - ENABLE_HDF5=\[ON, *OFF*\]
+   - Build executables from the `examples` subdirectory: ENABLE_EXAMPLES=\[*ON*, OFF\]
+   - Build executables from the `tests` subdirectory: ENABLE_TESTS=\[*ON*, OFF\]
+   - Floating point precision: PREC=\[SINGLE, *DOUBLE*\]
+   - Dimensionality of examples: DIM=\[*2*, 3\]
+   - Optimization level: CMAKE_BUILD_TYPE=\[*Debug*, Release, MinSizeRel, RelWithDebInfo\]
+   - Size of allocations from the stack: STACK=<int> (default is 4294967296 bytes)
    - Root of Proto repository: PROTO_HOME=<path> (default is submodule within this Chombo repository)
    
 ### Building
