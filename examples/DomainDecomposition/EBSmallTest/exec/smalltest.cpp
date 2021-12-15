@@ -31,7 +31,7 @@ using Proto::SimpleEllipsoidIF;
 
 typedef Var<Real,DIM> Vec;
 typedef Var<Real,  1> Sca;
-#if DIM==2
+#if DIM==2 // is this needed?
 void 
 testDebugFunctions(const EBGraph& a_graph)
 {
@@ -323,9 +323,9 @@ runTests(int a_argc, char* a_argv[])
   Chombo4::Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
-
+#if DIM==2
   testSimpleStencils(brit, geoserv, grids, domain, dx, dataGhostPt);
-
+#endif
   return 0;
 }
 

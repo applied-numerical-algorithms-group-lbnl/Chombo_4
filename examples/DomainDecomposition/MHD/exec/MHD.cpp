@@ -225,7 +225,7 @@ unsigned int InitializeStateF(State& a_U,
 	a_U(4) = e;        //Energy
 	a_U(5) = Bx;	   //Bx
 	a_U(6) = By;       //By
-	a_U(7) = Bw;       //Bz
+	a_U(7) = Bz;       //Bz
 #endif
 	
     return 0;
