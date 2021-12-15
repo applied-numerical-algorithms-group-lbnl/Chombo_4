@@ -20,7 +20,7 @@ handles all MPI and HDF5 interactions.
    - `git submodule init`
    - `git submodule update`
    
-   After doing this, the `.gitmodules` file will show the path and url of each submodule.
+   After doing this, the `.gitmodules` file will show the path and URL of each submodule.
 
 ### Configuring
 * The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in bold. They are:
