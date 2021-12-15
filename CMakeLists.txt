@@ -52,7 +52,7 @@ if(NOT DEFINED LAPACK_DIR)
     elseif(DEFINED ENV{MKLROOT})
         set(LAPACK_DIR $ENV{MLKROOT} CACHE PATH "LAPACK root")
         add_compile_definitions(MKL)
-    elseif(DEFINED ENV{LAPACK_DIR})
+    elseif(DEFINED ENV{LAPACK_DIR})  # must do on MacOS after `brew install lapack` to get lapacke.h
         set(LAPACK_DIR $ENV{LAPACK_DIR} CACHE PATH "LAPACK root")
     else()
         message(WARNING "No environment variable points to LAPACK root directory")
