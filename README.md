@@ -9,7 +9,7 @@ handles all MPI and HDF5 interactions.
 
 ## Build instructions on Cori:
 ### Modules
-* The default CMake version is insufficient. The minumum required version is 3.17, and the minimum acceptable version available as a module on Cori is 3.18. Configuration has been tested through version 3.21.
+* The default CMake version is insufficient. The minumum required version is 3.20. Configuration has been tested through version 3.21.
 * If doing a CUDA build, load the `cudatoolkit` module.
 * If using HDF5, load the `cray-hdf5` module
 
