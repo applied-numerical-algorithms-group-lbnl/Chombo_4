@@ -33,7 +33,7 @@ handles all MPI and HDF5 interactions.
    - Floating point precision: PREC=\[SINGLE, *DOUBLE*\]
    - Dimensionality of examples: DIM=\[*2*, 3\]
    - Optimization level: CMAKE_BUILD_TYPE=\[*Debug*, Release, MinSizeRel, RelWithDebInfo\]
-   - Size of allocations from the stack: STACK=\<int\> (default is 4294967296 bytes)
+   - Size of allocations from the stack: STACK=\<int\> (default is 4GB)
    - Root of Proto repository: PROTO_HOME=\<path\> (default is submodule within this Chombo repository)
    
 ### Building
