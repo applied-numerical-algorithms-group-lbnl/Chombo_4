@@ -14,7 +14,7 @@ handles all MPI and HDF5 interactions.
 * If using HDF5, load the `cray-hdf5` module
 
 ### Submodules
-* There are two submodules within this repository. One is the (Proto)[https://github.com/applied-numerical-algorithms-group-lbnl/proto_import] library that has headers and data types used by Chombo. The other is the (BLT)[https://github.com/LLNL/blt] library of CMake macros used during configuration.
+* There are two submodules within this repository. One is the [Proto](https://github.com/applied-numerical-algorithms-group-lbnl/proto_import) library that has headers and data types used by Chombo. The other is the [BLT](https://github.com/LLNL/blt) library of CMake macros used during configuration.
 * If you *haven't* yet cloned this repository, include the `--recurse-submodules` flag in your `git clone` command so that the two submodules will be initialized and updated.
 * If you *have* already cloned this repository, run these two commands to checkout the commits in each submodule that this project links to:
    - `git submodule init`
@@ -23,7 +23,7 @@ handles all MPI and HDF5 interactions.
    After doing this, the `.gitmodules` file will show the path and URL of each submodule.
 
 ### Configuring
-* The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in bold. They are:
+* The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in italics. They are:
    - ENABLE_CUDA=\[ON, *OFF*\]
    - ENABLE_MPI=\[ON, *OFF*\]
    - ENABLE_HDF5=\[ON, *OFF*\]
