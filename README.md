@@ -23,7 +23,7 @@ handles all MPI and HDF5 interactions.
    After doing this, the `.gitmodules` file will show the path and URL of each submodule.
 
 ### Configuring
-* The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in italics. They are:
+* The simplest command assumes you are at the top directory of the repo and is `cmake -S . -B build`. Generically, the command is `cmake -S <source-dir> -B build-dir>`. The argument to `-S` is the source directory containing the top-level `CMakeLists.txt` file. The argument to `-B` is where the binaries should be built. The specified directory does not need to exist when the `cmake` command is invoked. Additionally, there are various options which can be set during this step, each preceded by the `-D` flag. Valid choices are listed in brackets, with defaults in italics. They are:
    - ENABLE_CUDA=\[ON, *OFF*\]
    - ENABLE_MPI=\[ON, *OFF*\]
    - ENABLE_HDF5=\[ON, *OFF*\]
@@ -37,7 +37,7 @@ handles all MPI and HDF5 interactions.
    - Root of Proto repository: PROTO_HOME=\<path\> (default is submodule within this Chombo repository)
    
 ### Building
-* To build all of the CMake targets in this project in parallel, run `cmake --build <build-dir> --parallel`. An integer can be provided at the end of this command to set the level of parallelization.
+* To build all of the CMake targets in this project in parallel, run `cmake --build <build-dir> --parallel`. An integer can be provided at the end of this command to set the level of parallelization. The `<build-dir>` is NOT the name of the source directory containing the targets you want built (such as `examples`), but rather the name of the directory provided to the `-B` flag in the configuration command.
    
 ### Testing
 * After moving to the build directory, run all compiled tests by giving the command `make test` to a SLURM script or `salloc` line. This command must be invoked on the proper node (eg. one with GPUs if doing a CUDA run) for the tests to run successfully. The BLT submodule used by this project has various "smoke" tests that can be used to determine if the tests are being run on the proper architecture for the desired configuration. They are automatically included in the `test` target.
