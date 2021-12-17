@@ -174,6 +174,9 @@ blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags ${LIB_DEP}
 if(ENABLE_CUDA)
     target_link_libraries(Proto INTERFACE CUDA::nvToolsExt)
 endif()
+if(ENABLE_HDF5 AND DEFINED ENV{HDF5_ROOT})
+    target_include_directories(Proto INTERFACE $ENV{HDF5_ROOT}/include/)
+endif()
 
 add_subdirectory(src)
 
