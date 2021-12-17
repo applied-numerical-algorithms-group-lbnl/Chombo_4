@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)  # oldest tested version is 3.18
+cmake_minimum_required(VERSION 3.20)  # needed for HDF5::HDF5 target
 
 if(DEFINED CHOMBO_LOADED)
     return() # Chombo has already been loaded by encompassing CMake project
