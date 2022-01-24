@@ -8,7 +8,7 @@
 #include <iomanip>
 #include "Proto.H"
 #include "EBProto.H"
-#include "implem/Proto_IrregData.H"
+#include "Proto_IrregData.H"
 using std::vector;
 using std::shared_ptr;
 namespace Proto
@@ -440,7 +440,7 @@ namespace Proto
 
 
 
-#include "implem/Proto_EBForAllImplem.H"
-//#include "implem/Proto_fusedLinear.H"
+#include "Proto_EBForAllImplem.H"
+//#include "Proto_fusedLinear.H"
 #endif
 

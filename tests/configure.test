@@ -1,0 +1,147 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+
+parser = ArgumentParser()
+
+parser.add_argument('--dim', type=int, help='dimensionality to build executables [2]',default='2')
+parser.add_argument('--stack', type=int, help='Proto\'s stack space',default='4294967296')
+parser.add_argument('--opt',  choices=['DEBUG', 'TRUE', 'HIGH'],help='compiler optimization [DEBUG]',default='DEBUG')
+parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
+parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [TRUE]',default='TRUE')
+parser.add_argument('--efence',  choices=['TRUE', 'FALSE'],help='electric fence on or off[FALSE]',default='FALSE')
+parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOUBLE]',default='DOUBLE')
+parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
+parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+
+args = parser.parse_args()
+
+print(args)
+
+f_pref = open('Makefile.test.prefix','r')
+f_post = open('Makefile.test.postfix','r')
+
+makefile_pref = f_pref.read()
+makefile_post = f_post.read()
+f_pref.close()
+f_post.close()
+
+top = os.getcwd()
+chombo_home = top + '/..'
+os.chdir(chombo_home+'/mk')
+f_mach_dep = open('Make.defs.local','r')
+mach_dep = f_mach_dep.read()
+f_mach_dep.close()
+
+os.chdir(top)
+import glob, os
+for file in glob.glob("*.cpp"):
+    print(file)
+    
+f = open('GNUmakefile','w')
+r = open('run.test','w')
+r.write('#/usr/bin/csh\n')
+
+f.write('\nCHOMBO_HOME := ' + chombo_home)
+f.write('\nDIM := ' + str(args.dim)+"\n")
+f.write('\nPR_STACK_ALLOC := ' + str(args.stack)+"\n")
+f.write(makefile_pref);
+f.write('\nCPPFLAGS = -std=c++11 -DPR_STACK_ALLOC=' + str(args.stack) + '\n')
+f.write(mach_dep);
+
+if args.mpi == 'TRUE':
+    f.write('\nCPPFLAGS += -DCH_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+    f.write('\nLIBS     += $(MPILIBS)')
+
+if(args.hdf5 == 'TRUE'):
+    f.write('\nCPPFLAGS += -DCH_USE_HDF5 \n')
+    f.write('\nCPPFLAGS += $(HDFINCFLAGS)\n')
+    f.write('\nLIBS     += $(HDFLIBFLAGS)\n ')
+
+if(args.petsc == 'TRUE'):
+    f.write('\n\ninclude $(PETSC_DIR)/lib/petsc/conf/variables\n')
+    f.write('\nCPPFLAGS += -DCH_USE_PETSC')
+    f.write('\nCPPFLAGS += $(PETSC_CC_INCLUDES)')
+    f.write('\nLIBS     += $(PETSC_KSP_LIB)\n')
+
+if(args.efence == 'TRUE'):
+    f.write('\nLIBS     += $(EFENCEFLAGS) \n')
+
+
+if(args.prec == 'DOUBLE'):
+    f.write('\nCXXFLAGS += -DCH_USE_DOUBLE\n')
+
+if args.opt == 'DEBUG':
+    if args.hip == 'FALSE':
+      f.write('\nCXXDBGFLAGS:= -g $(CXXALLFLAGS)\n')
+    if args.cuda == 'TRUE':
+        f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+        f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+    else:
+        if args.hip == 'TRUE':
+          f.write("\nCXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CXXDBGFLAGS)'\n")
+          f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+        else:
+          f.write('\nCXXFLAGS+=$(CXXDBGFLAGS) \n')
+else:
+    if args.opt == 'HIGH':
+        if args.hip == 'FALSE':
+           f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS) -DNDEBUG\n')
+    else:
+        f.write('\nCXXOPTFLAGS:= -O3 $(CXXALLFLAGS)\n')
+    if args.cuda == 'TRUE':
+        f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+        f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+    else:
+        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+    if args.hip == 'TRUE':
+        f.write("\nCXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
+        f.write('\nCXXFLAGS+=$(CXXGPUFLAGS) \n')
+    else:
+        f.write('\nCXXFLAGS+=$(CXXOPTFLAGS) \n')
+
+if args.cuda == 'TRUE':
+    f.write('\nCXX = nvcc \n DEP=nvcc\n')
+    f.write('\nLIBS+= -lnvToolsExt -lgomp\n')
+    f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+
+if args.hip == 'TRUE':
+    f.write('\nCXX = hipcc \n DEP=hipcc\n')
+    f.write('\nCXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
+
+os.chdir(top)
+import glob, os
+f.write("\nTARGET = ");
+
+for file in glob.glob("*.cpp"):
+    print(file)
+    basename = file.strip(".cpp")
+    print(basename)
+    targetname = basename + ".exe"
+    print(targetname)
+    f.write(targetname);
+    f.write(" ");
+    runstr = "\n./" + targetname + " | tee "  + basename + ".out \n"
+    r.write(runstr)
+
+if args.cuda is 'TRUE':
+    for file in glob.glob("*.cu"):
+        print(file)
+        basename = file.strip(".cu")
+        print(basename)
+        targetname = basename + ".exe"
+        print(targetname)
+        f.write(targetname);
+        f.write(" ");
+        runstr = "\n./" + targetname + " | tee "  + basename + ".out \n"
+        r.write(runstr)
+
+f.write("\n");
+f.write(makefile_post);
+
+f.close()
+r.close()
+os.system("chmod +x run.test")

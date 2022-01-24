@@ -38,7 +38,7 @@ void fx_local(const int ncomp,
   ShapeArray<double, 1> fxx(fxx_1d, neqn);
   ShapeArray<double, 1> fxmax(fxmax_1d, neqn); 
     
-  double r, retardation, satl, satgasnew, satlOld, satGasOld, source,
+  double r, retardation, satl, satlOld, source, 
     gas_accum, ex_accum, aq_accum;
 
   int ind;
@@ -50,9 +50,7 @@ void fx_local(const int ncomp,
     fxmax[i] = 0.0;
 
   satl = satliq[jz-1][jy-1][jx-1];
-  satgasnew = 1.0 - satl;
   satlOld = satl;
-  satGasOld = 1.0 - satlOld;
 
   for (int i = 1; i <= ncomp; ++i) {
     ind = i;

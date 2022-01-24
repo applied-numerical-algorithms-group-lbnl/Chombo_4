@@ -58,9 +58,8 @@ static void write_to_stderr_without_buffering (const char * const a_str)
     //
     const char * const end = " !!!\n";
 
-    size_t ret;
-    ret = fwrite(a_str, strlen(a_str), 1, stderr);
-    ret = fwrite(end  , strlen(end  ), 1, stderr);
+    fwrite(a_str, strlen(a_str), 1, stderr);
+    fwrite(end  , strlen(end  ), 1, stderr);
   }
 }
 

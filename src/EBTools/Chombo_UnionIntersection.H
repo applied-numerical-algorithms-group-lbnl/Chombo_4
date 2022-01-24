@@ -3,7 +3,7 @@
 
 #include "Proto_RealVect.H"
 #include "Proto_BaseIF.H"
-#include "implem/Proto_IndexTM.H"
+#include "Proto_IndexTM.H"
 
 #include "Chombo_NamespaceHeader.H"
 

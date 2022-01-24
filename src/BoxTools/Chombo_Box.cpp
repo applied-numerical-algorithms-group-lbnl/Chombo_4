@@ -249,7 +249,6 @@ void Box::define (const IntVect& small,
 {
   smallend = small;
   bigend=big;
-
   CH_assert (small <= big);
   computeBoxLen();
 }

@@ -1,0 +1,6 @@
+add_subdirectory(applyOnly)
+add_subdirectory(ccProjExec)
+add_subdirectory(exec)
+add_subdirectory(hoeb_truncation)
+add_subdirectory(macProjExec)
+add_subdirectory(truncation)

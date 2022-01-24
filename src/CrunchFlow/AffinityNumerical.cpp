@@ -28,7 +28,7 @@ double affinitynumerical(const int ncomp,
   ShapeArray<double, 5> keqmin(keqmin_5d, nz, ny, nx, nkin, MAX_PATH );
   ShapeArray<double, 2> AffinityDepend1(AffinityDepend1_2d, nkin, MAX_PATH);
 
-  double sumiap, silogTMP, silnTMP, snormTMP, siTMP, power, term1, sign;
+  double sumiap, silogTMP, snormTMP, siTMP, term1, sign;
   int i = 1;
 
   sumiap = 0;
@@ -41,7 +41,6 @@ double affinitynumerical(const int ncomp,
 
   silogTMP = (sumiap - keqmin[jz-1][jy-1][jx-1][k-1][loopNP-1])/M_LN10;
   siTMP = pow(10.0,silogTMP);
-  silnTMP = silogTMP * M_LN10;
 
   if (siTMP > 1) {
     sign = 1.0;

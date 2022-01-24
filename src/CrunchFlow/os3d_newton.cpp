@@ -17,7 +17,6 @@
 #endif
 
 #include <stdlib.h>
-#include <bits/stdc++.h>
 #include <chrono> 
 #include "ShapeArray.H"
 #include "crunchflow.h"
@@ -332,19 +331,19 @@ int os3d_newton(enum Target target,
   double bb[ncomp]; // RHS, allocate(bb(ncomp),stat=ierr)
   double fjac_loc[neqn][neqn]; // allocate(fjac_loc(neqn,neqn),stat=ierr);, zeroed in jac_local()
   int ikh2o = 0; // species number for H2O
-  double (* raq_tot)[ny][nx][IKIN] = (double (*)[ny][nx][IKIN])calloc(nz * ny * nx * IKIN, sizeof(double)); // non-contributory, consider removal
+  double *raq_tot = (double *)calloc(nz * ny * nx * IKIN, sizeof(double)); // non-contributory, consider removal
   double (* mukin)[IKIN] = (double (*)[IKIN])calloc(ncomp * IKIN, sizeof(double)); // non-contributory, consider removal
   double (* rdkin)[IKIN] = (double (*)[IKIN])calloc(ncomp * IKIN, sizeof(double)); // non-contributory, consider removal
-  double (* decay_correct)[ncomp] = (double (*)[ncomp])calloc(nkin * ncomp, sizeof(double)); // non-contributory, consider removal
+  double *decay_correct = (double*)calloc(nkin * ncomp, sizeof(double)); // non-contributory, consider removal
   double total_time_taken = 0;
   
   // nkin x ncomp
   //
   for(size_t i = 0; i < nkin; ++i)
     for(size_t j = 0; j < ncomp; ++j)
-      decay_correct[i][j] = 1.0;
+      decay_correct[i*ncomp+j] = 1.0;
 
-  if(raq_tot == NULL)
+  if(raq_tot == nullptr)
     {
       fprintf(stderr,"os3d_newton: unable to allocate dynamic memory for raq_tot, exiting.\n");
       exit(1);
@@ -539,7 +538,7 @@ int os3d_newton(enum Target target,
 		     por_3d,
 		     ro_3d, 
 		     rmin_2d, 
-		     &decay_correct[0][0], 
+		     decay_correct, 
 		     &aaa[0][0],
 		     nradmax, 
 		     nreactmin_1d, 
@@ -547,7 +546,7 @@ int os3d_newton(enum Target target,
 		     fxx_1d, 
 		     mumin_3d, 
 		     &mukin[0][0], 
-		     &raq_tot[0][0][0][0],
+		     raq_tot,
 		     jac_rmin_3d, 
 		     &rdkin[0][0], 
 		     ikh2o, 
