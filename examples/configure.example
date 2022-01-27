@@ -1,4 +1,4 @@
-#!/sw/summit/python/3.8/anaconda3/2020.07-rhel8/bin/python
+#!/usr/bin/python
 from argparse import *
 import os
 import glob
