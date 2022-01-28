@@ -93,7 +93,7 @@ int GetRank(int pid)
 // or not an MPI command should be used to deduce rank.
 // needed for applications which switch communicators.
 // set g_resetProcID=true to force next procID() call to 
-// querry MPI_Comm_rank
+// query MPI_Comm_rank
 bool g_resetProcID;
 
 int procID()
