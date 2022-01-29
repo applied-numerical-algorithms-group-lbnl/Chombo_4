@@ -27,3 +27,6 @@ blt_add_library(NAME BoxTools SOURCES Chombo_AMRIO.cpp Chombo_BRMeshRefine.cpp
     Chombo_TreeIntVectSet.H
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS_ON BaseTools EBProto Proto chombo_compiler_flags ${LIB_DEP})
+if(ENABLE_HDF5)
+    target_link_libraries(BoxTools INTERFACE HDF5::HDF5)
+endif()
