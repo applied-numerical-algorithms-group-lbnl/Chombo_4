@@ -439,7 +439,8 @@ namespace Proto
           else if(a_voludata.contains(fineVoFs[ifine]))
           {
             RealVect centroid;
-            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx);
+            // Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx);
+            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx/2.);
           }
           sumvol += kappa;
           a_stencil[ivof].add(fineVoFs[ifine], kappa);
