@@ -42,7 +42,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "-w" CACHE STRING "compiler flags")
 endif()
 
-project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples" LANGUAGES CXX C)
+project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples")
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
 #add_compile_definitions(CH_USE_PETSC)
 
