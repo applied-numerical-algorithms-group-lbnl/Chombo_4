@@ -8,7 +8,7 @@ blt_add_library(NAME BoxTools SOURCES Chombo_AMRIO.cpp Chombo_BRMeshRefine.cpp
     Chombo_MeshRefine.cpp Chombo_NeighborIterator.cpp Chombo_Pool.cpp
     Chombo_ProblemDomain.cpp Chombo_ProtoInterface.cpp
     Chombo_ReductionCopier.cpp Chombo_SpreadingCopier.cpp Chombo_Stencil.cpp
-    Chombo_TimedDataIterator.cpp Chombo_TreeIntVectSet.cpp
+    Chombo_TimedDataIterator.cpp Chombo_TreeIntVectSet.cpp Chombo_CH_HDF5.cpp
     HEADERS
     Chombo_AMRIO.H Chombo_BFM.H Chombo_BRMeshRefine.H Chombo_BaseFab.H
     Chombo_BaseFabImplem.H Chombo_BitSet.H Chombo_BoundaryIterator.H
