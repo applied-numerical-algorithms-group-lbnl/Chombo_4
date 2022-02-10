@@ -298,7 +298,7 @@ public:
   getGidsMapping(LevelData<EBHostData<CELL, int, 1> >       & a_gids)
   {
     using Chombo4::DataIterator;
-    IntVect gidghost = 4*IntVect::Unit;
+    IntVect gidghost = 6*IntVect::Unit;
     a_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -847,7 +847,7 @@ private:
   {
     CH_TIME("EBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
-    IntVect gidghost = 4*IntVect::Unit;
+    IntVect gidghost = 6*IntVect::Unit;
     m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
