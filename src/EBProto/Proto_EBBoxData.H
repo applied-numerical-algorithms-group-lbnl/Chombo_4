@@ -8,7 +8,7 @@
 #include <iomanip>
 #include "Proto.H"
 #include "EBProto.H"
-#include "Proto_IrregData.H"
+#include "implem/Proto_IrregData.H"
 using std::vector;
 using std::shared_ptr;
 namespace Proto
@@ -138,7 +138,7 @@ namespace Proto
       const data_t*  retval = nullptr;
       if(a_dataType == 0)
       {
-        retval = m_regData.dataPtr(a_ivar);
+        retval = m_regData.data(a_ivar);
       }
       else
       {
@@ -154,7 +154,7 @@ namespace Proto
       data_t*  retval = nullptr;
       if(a_dataType == 0)
       {
-        retval = m_regData.dataPtr(a_ivar);
+        retval = m_regData.data(a_ivar);
       }
       else
       {
@@ -256,7 +256,7 @@ namespace Proto
       this->m_graph = a_graph;
 
       this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
+      this->m_regData.define(a_box);  
     }
 
     /// for AggStencil -- not really part of the public interface.
@@ -440,7 +440,7 @@ namespace Proto
 
 
 
-#include "Proto_EBForAllImplem.H"
+#include "implem/Proto_EBForAllImplem.H"
 //#include "Proto_fusedLinear.H"
 #endif
 

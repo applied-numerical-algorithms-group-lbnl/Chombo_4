@@ -24,6 +24,7 @@
 int
 runTest(int a_argc, char* a_argv[])
 {
+  using Chombo4::pout;
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
@@ -230,7 +231,7 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     runTest(a_argc, a_argv);
   }
-
+  using Chombo4::pout;
   pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI

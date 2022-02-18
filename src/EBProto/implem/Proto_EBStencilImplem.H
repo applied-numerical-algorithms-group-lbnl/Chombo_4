@@ -114,7 +114,7 @@ namespace Proto
       //have to compute stuff on the host first
       EBHostData<dstCenter, data_t, 1> hostDiagonal(grownBox, a_graph);
       //first set the regular data to the value of the regular stencil's diagonal.
-      data_t regDiagonal = m_regStencilInterior.diagonalValue();
+      data_t regDiagonal = m_regStencilInterior.diagonal();
       hostDiagonal.setVal(regDiagonal);
     
       //now fix up values on irregular cells

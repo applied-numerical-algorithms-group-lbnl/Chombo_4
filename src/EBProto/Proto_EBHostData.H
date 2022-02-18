@@ -154,7 +154,7 @@ namespace Proto
       this->m_graph = a_graph;
 
       this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
+      this->m_regData.define(a_box);  //stack allocation turned off for now
     }
 
     BoxData<data_t, ncomp, HOST>& getRegData()

@@ -1,7 +1,7 @@
 #ifndef __PROTO_EBGraph__
 #define __PROTO_EBGraph__
 
-#include "Proto_IrregGraph.H"
+#include "implem/Proto_IrregGraph.H"
 #include "EBProto.H"
 #include "Proto_RealVect.H"
 using std::vector;
@@ -1432,5 +1432,5 @@ namespace Proto
 
 }
 
-#include "Proto_EBGraphImplem.H"
+#include "implem/Proto_EBGraphImplem.H"
 #endif
