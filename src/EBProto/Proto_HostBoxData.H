@@ -1,7 +1,7 @@
 #ifndef _PROTO_HostBoxData_H_
 #define _PROTO_HostBoxData_H_
 
-#include "Proto_Box.H"
+#include "base/Proto_Box.H"
 #include "implem/Proto_Serialization.H"
 
 namespace Proto

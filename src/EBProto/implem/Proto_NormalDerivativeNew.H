@@ -4,7 +4,7 @@
 
 
 
-#include "Proto_Box.H"
+#include "base/Proto_Box.H"
 #include "Proto_IFSlicer.H"
 
 namespace Proto

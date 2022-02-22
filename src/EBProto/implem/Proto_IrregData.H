@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <memory>
-#include "Proto_Box.H"
+#include "base/Proto_Box.H"
 #include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
 

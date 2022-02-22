@@ -11,7 +11,7 @@
 #ifndef _Chombo_LOHISIDE_H_
 #define _Chombo_LOHISIDE_H_
 //#include "Chombo_BaseNamespaceHeader.H"
-#include "Proto_LoHiSide.H"
+#include "base/Proto_LoHiSide.H"
 
 using ::Proto::Side;
 using ::Proto::SideIterator;

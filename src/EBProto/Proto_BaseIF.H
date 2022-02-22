@@ -3,8 +3,8 @@
 
 #include "Proto_RealVect.H"
 #include "implem/Proto_IndexTM.H"
-#include "Proto_Point.H"
-#include "Proto_Box.H"
+#include "base/Proto_Point.H"
+#include "base/Proto_Box.H"
 
 
 namespace Proto

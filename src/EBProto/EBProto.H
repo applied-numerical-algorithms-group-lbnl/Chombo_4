@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Proto.H"
-#include "Proto_LoHiSide.H"
+#include "base/Proto_LoHiSide.H"
 
 namespace Proto
 {
@@ -28,8 +28,8 @@ namespace Proto
 #include "implem/Proto_EBStencilArchive.H"
 #include "Proto_SimpleImplicitFunctions.H"
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
 #include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
 #include "implem/Proto_IrregNode.H"

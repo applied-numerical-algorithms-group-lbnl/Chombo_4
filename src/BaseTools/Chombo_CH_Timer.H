@@ -11,7 +11,7 @@
 #ifndef _Chombo_CH_TIMER_H_
 #define _Chombo_CH_TIMER_H_
 
-#include "Proto_Timer.H"
+#include "base/Proto_Timer.H"
 #include "Chombo_SPMD.H"
 
 

@@ -19,7 +19,7 @@
 #include "Chombo_CH_Timer.H"
 #include "Chombo_parstream.H"
 #include <chrono>
-#include "Proto_MemType.H"
+#include "base/Proto_MemType.H"
 #include <vector>
 #include "Chombo_NamespaceHeader.H"
 

@@ -16,7 +16,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
-#include "Proto_DebugHooks.H"
+
 #include "DebugFunctions.H"
 #include <iomanip>
 

@@ -4,8 +4,8 @@
 
 
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
 #include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
 #include "implem/Proto_IrregNode.H"
@@ -16,7 +16,7 @@
 //#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
-#include "Proto_Stencil.H"
+#include "base/Proto_Stencil.H"
 
 using std::shared_ptr;
 using std::vector;
