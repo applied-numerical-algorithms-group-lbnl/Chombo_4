@@ -1,4 +1,4 @@
-PETSC_DIR =/home/graves/_petsc/_mpi
+PETSC_DIR =$(ANAG_PETSC_DIR)
 
 PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=mpicxx
