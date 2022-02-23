@@ -7,18 +7,11 @@
 #include "Chombo_EBDictionary.H"
 #include "Hoeb_LAPACKMatrix.H"
 #include "Hoeb_Neighborhood.H"
+#include "Hoeb_CompositeStencil.H"
 #define HOEB_MAX_ORDER 4
 
 namespace hoeb
 {
-  /// extract data if it is there, use regular if not
-  template <unsigned int D, CENTERING cent>
-  inline IndexedMoments<D, HOEB_MAX_ORDER>   
-  getIndexedMoment(const EBIndex<cent>                                              &   a_index,
-                   const HostIrregData<cent, IndexedMoments<D, HOEB_MAX_ORDER>, 1 > &   a_irregfab,
-                   const EBGraph                                                    &   a_graph,
-                   const Real                                                       &   a_dx);
-  
   /// get the dreaded M from the neighborhood
   template <CENTERING cent>
   LAPACKMatrix
@@ -26,19 +19,65 @@ namespace hoeb
                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                   const Chombo4::Box                                  & a_srcDomain,
                   const RealVect                                      & a_xbar,
-                  unsigned int                                          a_ibox,
+                  const Chombo4::DataIndex                            & a_dit,
                   Real                                                  a_dx);
 
+  template <CENTERING cent>
+  Real
+  getDevendranFluxFace(const EBHostData<CELL, Real, 1>                     & a_phi,
+                       const EBGraph                                       & a_graph,
+                       const EBIndex<cent>                                 & a_face,
+                       const EBIndex<CELL>                                 & a_startingVoF,
+                       const std::string                                     a_dombcname[2*DIM],
+                       const std::string                                   & a_ebbcname,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_domain,
+                       Real a_dx, int a_facedir,
+                       Side::LoHiSide a_vofside,
+                       const Chombo4::DataIndex& a_dit,
+                       bool a_divideByArea, bool a_printStuff);  //true if you want the average flux.  false if you want int f dA
+  
   /// outputs warning message if a_errcode != 0
   void checkError(int a_errcode, string a_prefix);
-  
+
+  Real
+  getKappaLphiVoF(const EBIndex<CELL>                                                &  a_vof,
+                  const Chombo4::DataIndex                                           &  a_datInd,
+                  const EBLevelBoxData<CELL, 1>                                      &  a_phi,
+                  const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                  const Chombo4::DisjointBoxLayout                                   &  a_grids,
+                  const Chombo4::Box                                                 &  a_domain,
+                  const Real                                                         &  a_dx,
+                  const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  &  a_dictionary,
+                  const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv,
+                  string                                                                a_stencilname);
   ///
   /**
      Return integral F dA  (do NOT divide out the area).
      For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
   */
   
-  template <CENTERING cent, unsigned int D>
+  template <CENTERING cent>
+  inline CompositeStencil
+  getDevendranIntFluxDACompositeStencil(const EBIndex<cent>                                 & a_face,
+                                        const EBIndex<CELL>                                 & a_startingVoF,
+                                        const std::string                                     a_dombcname[2*DIM],
+                                        const std::string                                   & a_ebbcname,
+                                        const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                                        const Chombo4::Box                                  & a_srcDomain,
+                                        const Chombo4::DataIndex                            & a_dit,
+                                        Real a_dx, int a_facedir,
+                                        Side::LoHiSide a_vofside, bool a_printStuff);
+
+  ///
+  /**
+     Return integral F dA  (do NOT divide out the area).
+     For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
+     this only returns the bit that acts on cell data.   The other stuff is assumed to be zero
+     (homogeneous operator--for use with EBStencil).
+  */
+  
+  template <CENTERING cent>
   inline LocalStencil<CELL, Real> 
   getDharshiIntFluxDAStencil(const EBIndex<cent>                                 & a_face,
                              const EBIndex<CELL>                                 & a_startingVoF,
@@ -46,38 +85,63 @@ namespace hoeb
                              const std::string                                   & a_ebbcname,
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                              const Chombo4::Box                                  & a_srcDomain,
-                             unsigned int a_ibox,                              
-                             Real a_alpha, Real a_beta, Real a_dx, int a_facedir,
-                             Side::LoHiSide a_vofside);
+                             const Chombo4::DataIndex                            & a_dit,
+                             Real a_dx, int a_facedir,
+                             Side::LoHiSide a_vofside, bool a_printStuff)
+  {
+    CompositeStencil composite
+      = getDevendranIntFluxDACompositeStencil(a_face,     
+                                              a_startingVoF, 
+                                              a_dombcname,
+                                              a_ebbcname, 
+                                              a_geoserv,  
+                                              a_srcDomain,
+                                              a_dit, a_dx, a_facedir, a_vofside, a_printStuff);
+    return composite.m_cellSten;
+  }
 
-  ///get location of face center
-  template <CENTERING cent>
-  inline RealVect
-  getFaceLocation(const EBIndex<cent>& a_face,
-                  Real                 a_dx,
-                  int                  a_facedir);
-  
 
 
   ///get the stencil for the laplacian described in Devendran, et al.
   void
-  dharshiLaplStencil(string                                              & a_stencilName,
-                     string                                              & a_ebbcName,
-                     vector<EBIndex<CELL> >                              & a_dstVoFs,
-                     vector<LocalStencil<CELL, Real> >                   & a_stencil,
-                     Proto::Box                                          & a_srcValid,
-                     Proto::Box                                          & a_dstValid,
-                     Proto::Box                                          & a_srcDomain,
-                     Proto::Box                                          & a_dstDomain,
-                     Proto::Point                                        & a_srcGhost,
-                     Proto::Point                                        & a_dstGhost,
-                     bool                                                & a_needDiagonalWeights,
-                     const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                     const Chombo4::DisjointBoxLayout                    & a_grids,
-                     const Chombo4::Box                                  & a_domain,
-                     const Real                                          & a_dx,
-                     unsigned int                                          a_ibox);
+  getHomogeneousDharshiStencil(string                                              & a_stencilName,
+                               string                                              & a_ebbcName,
+                               vector<EBIndex<CELL> >                              & a_dstVoFs,
+                               vector<LocalStencil<CELL, Real> >                   & a_stencil,
+                               Proto::Box                                          & a_srcValid,
+                               Proto::Box                                          & a_dstValid,
+                               Proto::Box                                          & a_srcDomain,
+                               Proto::Box                                          & a_dstDomain,
+                               Proto::Point                                        & a_srcGhost,
+                               Proto::Point                                        & a_dstGhost,
+                               bool                                                & a_needDiagonalWeights,
+                               const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                               const Chombo4::DisjointBoxLayout                    & a_grids,
+                               const Chombo4::Box                                  & a_domain,
+                               const Real                                          & a_dx,
+                               unsigned int                                          a_ibox);
 
+  ///get the stencil for the laplacian described in Devendran, et al.
+  void
+  schwartzLaplStencil(string                                              & a_stencilName,
+                      string                                              & a_ebbcName,
+                      vector<EBIndex<CELL> >                              & a_dstVoFs,
+                      vector<LocalStencil<CELL, Real> >                   & a_stencil,
+                      Proto::Box                                          & a_srcValid,
+                      Proto::Box                                          & a_dstValid,
+                      Proto::Box                                          & a_srcDomain,
+                      Proto::Box                                          & a_dstDomain,
+                      Proto::Point                                        & a_srcGhost,
+                      Proto::Point                                        & a_dstGhost,
+                      bool                                                & a_needDiagonalWeights,
+                      const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                      const Chombo4::DisjointBoxLayout                    & a_grids,
+                      const Chombo4::Box                                  & a_domain,
+                      const Real                                          & a_dx,
+                      unsigned int                                          a_ibox);
+  
+  shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> >   getBaseExactSoltuion();
+  
   ///return an implicit function based on stuff in the input file
   shared_ptr<BaseIF> getImplicitFunction();
 
@@ -126,19 +190,26 @@ namespace hoeb
               const Real                                                        &  a_dxCoar,
               const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
               const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
-  
-  ///
-  template <unsigned int D>
-  inline 
-  IndexTM<int, D-1>
-  getFaceIndexFromVol(const  IndexTM<int, D>& a_volind, int a_facedir);
 
   ///
-  template <unsigned int D>
-  inline 
-  IndexedMoments<D, HOEB_MAX_ORDER>
-  getVolMomFromFacMom(const IndexedMoments<D-1, HOEB_MAX_ORDER>& a_facmom,
-                      int a_facedir);
+  /**
+   **/
+  template<CENTERING cent>
+  void
+  restrictFlux(EBLevelBoxData<cent, 1>                                          &  a_phiFToC,
+              const EBLevelBoxData<cent, 1>                                     &  a_phiFine,
+              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
+              const Chombo4::Box                                                &  a_domFine,
+              const Real                                                        &  a_dxFine,
+              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
+              const Chombo4::Box                                                &  a_domCoar,
+              const Real                                                        &  a_dxCoar,
+              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, cent, cent> > &  a_dictionary,
+               const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv);
+  
+  
 }
 #include "Hoeb_UtilitiesImplem.H"
 #endif

@@ -12,15 +12,12 @@
 #include <iomanip>
 #include "Chombo_parstream.H"
 #include "Hoeb_Lapack.H"
+
 #include <cstddef> 
 #include "Chombo_CH_Timer.H"
 #include <cmath>
-#ifdef MKL
-#include <mkl_cblas.h>
-#else
+#include <istream>
 #include <cblas.h>
-#endif
-
 namespace hoeb
 {
 
@@ -28,13 +25,52 @@ namespace hoeb
   bool LAPACKMatrix::s_verbose = false;
   bool LAPACKMatrix::s_outputStenData = false;
 
-#ifdef CH_USE_DOUBLE
-#define PRECCHAR 'd'
-#else
-#define PRECCHAR 's'
-#endif
 
-///
+  ostream&
+  operator<< (ostream&            a_os,
+              const LAPACKMatrix& a_mat)
+  {
+    a_os << a_mat.m_nrow << " ";
+    a_os << a_mat.m_ncol << endl;
+    for(int irow =0; irow < a_mat.m_nrow; irow++)
+    {
+      for(int icol = 0; icol < a_mat.m_ncol; icol++)
+      {
+
+        Real val = a_mat(irow, icol);
+        a_os      << setprecision(10)
+                  << setiosflags(ios::showpoint)
+                  << setiosflags(ios::scientific);
+        if(val >= 0.) a_os << " ";
+        a_os << val;
+        a_os << " ";
+      }
+      a_os << endl;
+    }
+    if (a_os.fail())
+      MayDay::Error("operator<<(ostream&,LAPACKMatrix&) failed");
+    return a_os;
+  }
+
+
+  std::istream&
+  operator>> (std::istream      & a_is,
+              LAPACKMatrix      & a_mat)
+  {
+    int nrow, ncol;
+    a_is >> nrow >> ncol;
+    a_mat.define(nrow, ncol);
+    for(int irow =0; irow < a_mat.m_nrow; irow++)
+    {
+      for(int icol = 0; icol < a_mat.m_ncol; icol++)
+      {
+        Real val;
+        a_is >> val;
+        a_mat(irow, icol)= val;
+      }
+    }
+    return a_is;
+  }
   LAPACKMatrix::
   LAPACKMatrix(const LAPACKMatrix& a_input):
     m_nrow(a_input.m_nrow),
@@ -43,23 +79,7 @@ namespace hoeb
   {
     *this=a_input;
   }
-///
-// LAPACKMatrix::
-// LAPACKMatrix(int a_nrow, int a_ncol)
-// {
-//   define(a_nrow, a_ncol); 
-// }
-///
-// void
-// LAPACKMatrix::
-// define(int a_nrow, int a_ncol)
-// {
-//   CH_TIME("LAPACKMatrix::define");
-//   clear(); // delete existing m_data if defined, and set m_nrow, m_ncol to -1
-//   m_nrow = a_nrow;
-//   m_ncol = a_ncol;
-//   m_data = new Real[m_nrow*m_ncol];
-// }
+
 ///
   Real 
   LAPACKMatrix::
@@ -93,27 +113,6 @@ namespace hoeb
       }
     }
   }
-// ///
-// LAPACKMatrix::
-// LAPACKMatrix()
-// {
-//   setDefaultValues();
-// }
-///
-
-// void 
-// LAPACKMatrix::
-// clear()
-// {
-//   if(m_data)
-//     {
-//       delete[] m_data;
-//       m_data=nullptr;
-//       m_nrow=0;
-//       m_ncol=0;
-//     }
-
-// }
 
 ///
   LAPACKMatrix::
@@ -184,7 +183,9 @@ namespace hoeb
   {
     for(int irow =0; irow < m_nrow; irow++)
     {
-      pout() << "(" << irow  <<  "): ";
+      pout() << "(";
+      if(irow < 10) pout() << " ";
+      pout() << irow  <<  "): ";
       for(int icol = 0; icol < m_ncol; icol++)
       {
         //          pout() << "(" << irow  << "," << icol << ")";
@@ -192,11 +193,54 @@ namespace hoeb
         pout()    << setprecision(4)
                   << setiosflags(ios::showpoint)
                   << setiosflags(ios::scientific);
+        if(val >= 0.) pout() << " ";
         pout() << val;
         pout() << " ";
       }
       pout() << endl;
     }
+  }
+  void 
+  LAPACKMatrix::
+  poutMaxMins() const
+  {
+    Real maxDiag = -1.0e10;
+    Real minDiag =  1.0e10;
+    Real maxOffd = -1.0e10;
+    Real minOffd =  1.0e10;
+    for(int irow =0; irow < m_nrow; irow++)
+    {
+      for(int icol = 0; icol < m_ncol; icol++)
+      {
+        Real val = (*this)(irow, icol);
+        if(irow == icol)
+        {
+          if(val > maxDiag)
+          {
+            maxDiag = val;
+          }
+          if(val < maxDiag)
+          {
+            minDiag = val;
+          }
+        }
+        else
+        {
+          if(val > maxOffd)
+          {
+            maxOffd = val;
+          }
+          if(val < minOffd)
+          {
+            minOffd = val;
+          }
+        }
+      }
+    }
+    pout() << "max value ON  diagonal = " << maxDiag;
+    pout() << "min value ON  diagonal = " << minDiag;
+    pout() << "max value OFF diagonal = " << maxOffd;
+    pout() << "min value OFF diagonal = " << minOffd;
   }
 ///
   void
@@ -376,18 +420,30 @@ namespace hoeb
     // clear existing m_data and allocate new (or use a_productData if non-NULL)
     a_product = LAPACKMatrix(nr1, nc2);
 
-    for(int irow = 0; irow < nr1; irow++)
-    {
-      for(int icol = 0; icol < nc2; icol++)
-      {
-        Real value = 0;
-        for(int jvec = 0; jvec < nc1; jvec++)
-        {
-          value += a_left(irow, jvec)*a_right(jvec, icol);
-        }
-        a_product(irow, icol) = value;
-      }
-    }
+    // lapack_gemm sets C = alpha*A*B + beta*C
+    char TRANS = 'N'; // no transposes
+    Real ALPHA = 1.;
+    Real BETA = 0.;
+    // lapack_gemm(&TRANS, &TRANS, &nr1, &nc2, &nc1, &ALPHA,
+    //             a_left.dataPtr(), &nr1,
+    //             a_right.dataPtr(), &nc1, &BETA,
+    //             a_product.dataPtr(), &nr1);
+    HOEB_LAPACK(GEMM,gemm)(&TRANS, &TRANS, &nr1, &nc2, &nc1, &ALPHA,
+                           a_left.dataPtr(), &nr1,
+                           a_right.dataPtr(), &nc1, &BETA,
+                           a_product.dataPtr(), &nr1);
+    // for(int irow = 0; irow < nr1; irow++)
+    //   {
+    //     for(int icol = 0; icol < nc2; icol++)
+    //       {
+    //         Real value = 0;
+    //         for(int jvec = 0; jvec < nc1; jvec++)
+    //           {
+    //             value += a_left(irow, jvec)*a_right(jvec, icol);
+    //           }
+    //         a_product(irow, icol) = value;
+    //       }
+    //   }
   }
 /// returns the info value 
   int
@@ -415,7 +471,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "getri matrix may be singular---info = " << INFO << endl;
+      pout() << "getri matrix may be singular---info = " << INFO << endl;
     }
     else if(s_checkConditionNumber)
     {
@@ -426,6 +482,7 @@ namespace hoeb
     delete[] WORK;
 
     return INFO;
+
   }
 ///
 // LAPACKMatrix::
@@ -509,8 +566,8 @@ namespace hoeb
     LAPACKMatrix Acopy = *this;
 
     //  Acopy.transpose();
-    //  int retval = solveLSTSVD(Acopy, rhs, a_maxiter, a_tol);
-    int retval = solveLSTSVDOnce(Acopy, rhs);
+    int retval = solveLSTSVD(Acopy, rhs, a_maxiter, a_tol);
+    //int retval = solveLSTSVDOnce(Acopy, rhs);
     *this = rhs;
     return retval;
   }
@@ -519,18 +576,8 @@ namespace hoeb
   LAPACKMatrix::
   pseudoInvertUsingSVD(int a_maxiter, Real a_tol)
   {
-    CH_TIME("LAPACKMatrix::pseudoInvertUsingSVD");
-    //solve (AT A)(Ainv) = (AT)I
-    LAPACKMatrix A  = *this;
-    LAPACKMatrix AT = *this;
-    AT.transpose();
-    LAPACKMatrix ATAinv;
-    multiply(ATAinv, AT, A);
-    int retval = ATAinv.invertUsingSVD(a_maxiter, a_tol);
+    int retval = invertUsingSVD(a_maxiter, a_tol);
   
-    //pseudoinverse = (ATA)^(-1) AT
-    multiply(*this, ATAinv, AT);
-    
     return retval; 
   }
 /***/
@@ -580,12 +627,13 @@ namespace hoeb
     if (INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "geqrf call has bad value at argument " << (-INFO) << endl;
+      pout() << "geqrf call has bad value at argument " << (-INFO) << endl;
     }
 
-#ifndef NDEBUG
-    checkUpperTriangularConditionNumber();
-#endif
+    if(LAPACKMatrix::s_verbose)
+    {
+      checkUpperTriangularConditionNumber();
+    }
 
     LAPACKMatrix Xt(*this);
 
@@ -595,7 +643,7 @@ namespace hoeb
     if (INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "orgqr call has bad value at argument " << (-INFO) << endl;
+      pout() << "orgqr call has bad value at argument " << (-INFO) << endl;
     }
 
     // Solve for X^T in X^T * R^T = Q.
@@ -611,6 +659,7 @@ namespace hoeb
     transpose();
 
     return INFO;
+
   }
   void
   LAPACKMatrix::truncate(int a_nrow,int a_ncol)
@@ -658,11 +707,6 @@ namespace hoeb
 
     int *IPIV = new int[N+1];
     HOEB_LAPACK(GETRF,getrf)(&N,&N,tempA.m_data,&N,IPIV,&INFO);
-//  if(INFO != 0)
-//    {
-//      MayDay::Warning(" info flag from lapack");
-//      pout() << PRECCHAR << "getrf matrix may be singular---info = " << INFO << endl;
-//    }
   
     Real ANORM = 0;
     for(int icol = 0; icol < N; icol++)
@@ -705,13 +749,12 @@ namespace hoeb
     if (INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "trcon call has bad value at argument " << (-INFO) << endl;
+      pout() <<  "trcon call has bad value at argument " << (-INFO) << endl;
     }
 
     delete[] IPIV;
 
     return rcond;
-
   }
 
 ///
@@ -746,7 +789,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "gels matrix may be singular---info = " << INFO << endl;
+      pout() << "gels matrix may be singular---info = " << INFO << endl;
     } 
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -754,6 +797,7 @@ namespace hoeb
     }
 
     return INFO;
+
   }
 
 
@@ -785,7 +829,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "gels matrix may be singular---info = " << INFO << endl;
+      pout() << "gels matrix may be singular---info = " << INFO << endl;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -793,6 +837,7 @@ namespace hoeb
     }
   
     return INFO;
+
   }
 
 
@@ -821,11 +866,13 @@ namespace hoeb
       //this puts the answer into resid
       INFO = solveLSTSVDOnce(A, resid);
       incr = resid;
+      incr.transpose();
       X -= incr;
  
       //recalculate residual = ax - B
       resid.setVal(0.);
       multiply(resid, A, X);
+      resid.truncate(B.dims().first, B.dims().second);
       resid -= B;
       residnorm = resid.maxNorm();
       
@@ -884,7 +931,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "gelsd matrix may be singular---info = " << INFO << endl;
+      pout() << "gelsd matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -1051,7 +1098,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "gelsd matrix may be singular---info = " << INFO << endl;
+      pout() <<  "gelsd matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -1096,7 +1143,6 @@ namespace hoeb
     delete[] S;
     delete[] IWORK;
     return INFO;
-
   }
 
 /**
@@ -1135,7 +1181,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "gglse matrix may be singular---info = " << INFO << endl;
+      pout() << "gglse matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -1158,7 +1204,6 @@ namespace hoeb
       pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
     }
     return INFO;
-
   }
 ///
 /**
@@ -1194,7 +1239,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "geqrf matrix may be singular---info = " << INFO << endl;
+      pout() << "geqrf matrix may be singular---info = " << INFO << endl;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -1212,7 +1257,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "ormqr matrix may be singular---info = " << INFO << endl;
+      pout() << "ormqr matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
 
@@ -1226,7 +1271,7 @@ namespace hoeb
     if(INFO != 0)
     {
       MayDay::Warning(" info flag from lapack");
-      pout() << PRECCHAR << "trtrs matrix may be singular---info = " << INFO << endl;
+      pout() << "trtrs matrix may be singular---info = " << INFO << endl;
     }
     
     return INFO;

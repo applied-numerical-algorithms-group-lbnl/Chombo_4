@@ -8,7 +8,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_ParmParse.H"
 #include "Hoeb_LAPACKMatrix.H"
-#include "Proto_Factorial.H"
+#include "implem/Proto_Factorial.H"
 #define HOEB_MAX_ORDER 4
 
 namespace hoeb
@@ -56,8 +56,36 @@ namespace hoeb
       retval += m_cutfacesNeum.size();
       return retval;
     }
-  };
 
+    template<CENTERING cent>
+    inline void printVec(string prefix, const vector<Real>& a_wgt, const vector<EBIndex<cent> >& a_index)  const
+    {
+      PR_assert(a_wgt.size() == a_index.size());
+      using Chombo4::pout;
+      pout()    << setprecision(8)
+                << setiosflags(ios::showpoint)
+                << setiosflags(ios::scientific);
+
+      pout() << prefix << ":" << endl;
+      for(int ivec = 0; ivec < a_wgt.size(); ivec++)
+      {
+        pout() << "(" << a_index[ivec].m_pt << "," << a_wgt[ivec] << ")" << endl;
+      }
+    }
+  
+    void poutAll()  const
+    {
+      printVec(string("     m_volumes"),      m_volumesWgt,      m_volumes);
+      printVec(string("  m_xfacesDiri"),   m_xfacesDiriWgt,   m_xfacesDiri);
+      printVec(string("  m_yfacesDiri"),   m_yfacesDiriWgt,   m_yfacesDiri);
+      printVec(string("  m_zfacesDiri"),   m_zfacesDiriWgt,   m_zfacesDiri);
+      printVec(string("  m_xfacesNeum"),   m_xfacesNeumWgt,   m_xfacesNeum);
+      printVec(string("  m_yfacesNeum"),   m_yfacesNeumWgt,   m_yfacesNeum);
+      printVec(string("  m_zfacesNeum"),   m_zfacesNeumWgt,   m_zfacesNeum);
+      printVec(string("m_cutfacesDiri"), m_cutfacesDiriWgt, m_cutfacesDiri);
+      printVec(string("m_cutfacesNeum"), m_cutfacesNeumWgt, m_cutfacesNeum);
+    }
+  };
   ///will add boundary elements if their corresponding bc is Dirichlet or Neumann"
   //doing this with sets to avoid double-counting faces
   template <CENTERING cent>
@@ -98,6 +126,74 @@ namespace hoeb
                const string          & a_ebbcname,
                const int             & a_facedir);
 
+  template<CENTERING cent>
+  inline RealVect
+  getNeighborLocation(EBIndex<cent> a_index)
+  {
+    Chombo4::MayDay::Error("not implemented");
+    return RealVect::Zero();
+  }
+
+  template< >
+  inline RealVect
+  getNeighborLocation(EBIndex<CELL> a_index)
+  {
+    RealVect retval;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = Real(a_index.m_pt[idir]) + 0.5;
+    }
+    return retval;
+  }
+  template< >
+  inline RealVect
+  getNeighborLocation(EBIndex<BOUNDARY> a_index)
+  {
+    RealVect retval;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = Real(a_index.m_pt[idir]) + 0.5;
+    }
+    return retval;
+  }
+  template< >
+  inline RealVect
+  getNeighborLocation(EBIndex<XFACE> a_index)
+  {
+    RealVect retval;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = Real(a_index.m_pt[idir]) + 0.5;
+    }
+    retval[0] -= 0.5;
+    return retval;
+  }
+  template< >
+  inline RealVect
+  getNeighborLocation(EBIndex<YFACE> a_index)
+  {
+    RealVect retval;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = Real(a_index.m_pt[idir]) + 0.5;
+    }
+    retval[1] -= 0.5;
+    return retval;
+  }
+#if DIM==3 
+  template< >
+  inline RealVect
+  getNeighborLocation(EBIndex<ZFACE> a_index)
+  {
+    RealVect retval;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      retval[idir] = Real(a_index.m_pt[idir]) + 0.5;
+    }
+    retval[2] -= 0.5;
+    return retval;
+  }
+#endif  
   ///Cartesian distance with unit dx, bounded by 0.5
   template <CENTERING startcent, CENTERING veccent>
   inline Real 
@@ -106,14 +202,16 @@ namespace hoeb
   {
     //doing Cartesian distance
     Real sqval = 0;
-    //ignoring dx, half values since we are flooring
+    RealVect startloc = getNeighborLocation<startcent>(a_start);
+    RealVect   endloc = getNeighborLocation<veccent>(a_end);
+
     for(int idir =0; idir < DIM; idir++)
     {
-      Real dist = Real(a_end.m_pt[idir] - a_start.m_pt[idir]); 
+      Real dist = endloc[idir] -startloc[idir];
       sqval += dist*dist;
     }
     Real retval = sqrt(sqval);
-    retval = std::min(retval, 0.5);
+    retval = std::max(retval, 0.5);
     return retval;
   }
   //done as dx=1
@@ -171,12 +269,13 @@ namespace hoeb
     while(!hadEnough)
     {
       Point lo = a_start.m_pt;
-      Point hi = lo + Point::Basis(a_facedir, 1);
+      int facedir = max(a_facedir, 0);
+      Point hi = lo + Point::Basis(facedir, 1);
       Bx ptbx(lo, hi);
       Bx neibx = ptbx.grow(radius);
 
       neibx &= a_graph.getDomain();
-      auto neighvofs = retval.m_volumes;
+      auto  & neighvofs = retval.m_volumes;
       std::set<EBIndex<XFACE> > xfacesetDiri;
       std::set<EBIndex<XFACE> > xfacesetNeum;
       std::set<EBIndex<YFACE> > yfacesetDiri;
@@ -244,8 +343,8 @@ namespace hoeb
       //insert the sets into the vectors
       retval.m_xfacesDiri.assign(xfacesetDiri.begin(), xfacesetDiri.end());
       retval.m_xfacesNeum.assign(xfacesetNeum.begin(), xfacesetNeum.end());
-      retval.m_yfacesDiri.assign(yfacesetNeum.begin(), yfacesetNeum.end());
-      retval.m_yfacesNeum.assign(yfacesetDiri.begin(), yfacesetDiri.end());
+      retval.m_yfacesDiri.assign(yfacesetDiri.begin(), yfacesetDiri.end());
+      retval.m_yfacesNeum.assign(yfacesetNeum.begin(), yfacesetNeum.end());
 #if DIM==3
       retval.m_zfacesDiri.assign(zfacesetDiri.begin(), zfacesetDiri.end());
       retval.m_zfacesNeum.assign(zfacesetneum.begin(), zfacesetneum.end());
@@ -262,6 +361,12 @@ namespace hoeb
     return retval;
   }
 
+  inline int dummyFunc()
+  {
+    Neighborhood<CELL> bla;
+    bla.poutAll();
+    return 0;
+  }
 }
-#include "Hoeb_UtilitiesImplem.H"
+
 #endif
