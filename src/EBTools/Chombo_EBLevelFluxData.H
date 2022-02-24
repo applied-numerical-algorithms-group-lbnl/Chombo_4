@@ -187,14 +187,30 @@ public:
 
 
   /// 
-  virtual void exchange(const Copier& copier)
+  virtual void exchange(const Copier& copier, bool a_printStuff = false)
   {
+    if(a_printStuff)
+    {
+      pout() << "eblevelfluxdata::exchange creating host data" << endl;
+    }
     LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
 
+    if(a_printStuff)
+    {
+      pout() << "eblevelfluxdata::exchange copying data to host" << endl;
+    }
     copyToHost(hostdata, *this);
 
+    if(a_printStuff)
+    {
+      pout() << "eblevelfluxdata::exchange calling leveldata::exchange" << endl;
+    }
     hostdata.exchange(copier);
 
+    if(a_printStuff)
+    {
+      pout() << "eblevelfluxdata::exchange calling copyToDevice" << endl;
+    }
     copyToDevice(*this, hostdata);
   }
   ////mpi stuff

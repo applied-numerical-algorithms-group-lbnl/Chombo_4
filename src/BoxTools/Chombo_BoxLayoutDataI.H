@@ -231,25 +231,40 @@ T* AliasDataFactory<T>::create(const Box& a_box, int ncomps, const DataIndex& a_
 }
 
 template<class T>
-void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
-                                const BoxLayoutData<T>& a_src,
-                                BoxLayoutData<T>& a_dest,
-                                const Interval&   a_destComps,
-                                const Copier&     a_copier,
-                                const LDOperator<T>& a_op) const
+void
+BoxLayoutData<T>::
+makeItSo(const Interval&   a_srcComps,
+         const BoxLayoutData<T>& a_src,
+         BoxLayoutData<T>& a_dest,
+         const Interval&   a_destComps,
+         const Copier&     a_copier,
+         const LDOperator<T>& a_op,
+         bool a_printStuff) const
 {
-  if(s_verbosity > 0) 
+  if(a_printStuff)
   {
-    pout() << "makeit so copier = " << endl;
+    pout() << "boxlayoutdata::makeitso copier = " << endl;
     a_copier.print();
+  }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsobegin " << endl;
   }
   {
     CH_TIME("makeItSoBegin");
     makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
   }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsolocalcopy " << endl;
+  }
   {
     CH_TIME("makeItSoLocalCopy");
     makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+  }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsoend " << endl;
   }
   {
     CH_TIME("makeItSoEnd");

@@ -12,7 +12,7 @@ domain_bc_hi_1 = "no_slip_wall"
 domain_bc_hi_2 = "no_slip_wall"
 pressure_iterations = 0
 #domain size
-nx=       256
+nx=       64
 use_stokes_dt = true
 #max number of time steps
 max_step =    2
@@ -21,7 +21,7 @@ max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  64
+maxGrid=  16
 maxIter = 27
 tolerance = 1.0e-12
 cfl = 0.5

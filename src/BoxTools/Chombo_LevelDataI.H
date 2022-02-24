@@ -400,7 +400,7 @@ void LevelData<T>::copyTo(LevelData<T>& dest,
 
 //-----------------------------------------------------------------------
 template<class T>
-void LevelData<T>::exchange(const Interval& comps)
+void LevelData<T>::exchange(const Interval& comps, bool a_printStuff)
 {
   CH_TIME("exchange+copier");
   // later on we can code this part as a direct algorithm
@@ -415,7 +415,7 @@ void LevelData<T>::exchange(const Interval& comps)
     }
     {
       CH_TIME("actual_exchange");
-      exchange(comps, m_exchangeCopier);
+      exchange(comps, m_exchangeCopier, a_printStuff);
     }
   }
 
@@ -429,9 +429,9 @@ void LevelData<T>::exchange(const Interval& comps)
 
 //-----------------------------------------------------------------------
 template<class T>
-void LevelData<T>::exchange(void)
+void LevelData<T>::exchange(bool a_printStuff)
 {
-  exchange(this->interval());
+  exchange(this->interval(), a_printStuff);
 }
 //-----------------------------------------------------------------------
 
@@ -439,7 +439,8 @@ void LevelData<T>::exchange(void)
 template<class T>
 void LevelData<T>::exchange(const Interval& comps,
                             const Copier& copier,
-                            const LDOperator<T>& a_op)
+                            const LDOperator<T>& a_op,
+                            bool a_printStuff)
 {
   CH_TIME("exchange");
 #ifdef CH_MPI
@@ -448,15 +449,19 @@ void LevelData<T>::exchange(const Interval& comps,
 //      MPI_Barrier(Chombo_MPI::comm);
   }
 #endif
-  this->makeItSo(comps, *this, *this, comps, copier, a_op);
+  if(a_printStuff)
+  {
+    pout() << "leveldata::exchange: going into makeitso" << endl;
+  }
+  this->makeItSo(comps, *this, *this, comps, copier, a_op, a_printStuff);
 }
 //-----------------------------------------------------------------------
 
 //-----------------------------------------------------------------------
 template<class T>
-void LevelData<T>::exchange(const Copier& copier)
+void LevelData<T>::exchange(const Copier& copier, bool a_printStuff)
 {
-  exchange(this->interval(), copier);
+  exchange(this->interval(), copier, LDOperator<T>(),  a_printStuff);
 }
 //-----------------------------------------------------------------------
 

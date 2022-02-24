@@ -55,7 +55,8 @@ public:
   void 
   project(EBLevelFluxData<1>   & a_velo,
           EBLevelFluxData<1>   & a_gphi,
-          Real a_tolerance, unsigned int a_maxiterations);
+          Real a_tolerance, unsigned int a_maxiterations,
+          bool a_printStuff);
 
 
   ///
@@ -65,7 +66,8 @@ public:
    */
   void 
   kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
-            EBLevelFluxData<1>      & a_velo);
+            EBLevelFluxData<1>      & a_velo,
+            bool a_printStuff);
 
   
   ///

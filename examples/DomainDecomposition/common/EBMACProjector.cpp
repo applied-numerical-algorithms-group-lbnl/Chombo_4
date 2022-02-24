@@ -75,27 +75,30 @@ void
 EBMACProjector::
 project(EBLevelFluxData<1>   & a_velo,
         EBLevelFluxData<1>   & a_gphi,
-        Real a_tol, unsigned int a_maxiter)
+        Real a_tol, unsigned int a_maxiter, bool a_printStuff)
 {
   CH_TIME("EBMACProjector::project");
   // set rhs = kappa*div (vel)
-  kappaDivU(m_rhs, a_velo);
+  if(a_printStuff)
+  {
+    pout() << "ebmacproj::project: going into kappaDivU" << endl;
+  }
 
-//begin debug
-//  pout() << "Writing to macprojRHS" << endl;
-//  m_rhs.writeToFileHDF5("macprojRHS.hdf5", 0.);
-//  Real rhsmax = m_rhs.maxNorm(0);
-//  pout() << "rhs of mac projection = " << rhsmax << endl;
-//  exit(0);
-//end debug
+  kappaDivU(m_rhs, a_velo, a_printStuff);
+
+  if(a_printStuff)
+  {
+    pout() <<"ebmacproj::project going into solve"<< endl;
+  }
 
   //solve kappa*lapl(phi) = kappa*divu
   m_solver->solve(m_phi, m_rhs, a_tol, a_maxiter);
-//begin debug
-  //  pout() << "Writing to projPhi" << endl;
-  //m_phi.writeToFileHDF5("projPhi.hdf5", 0.);
-//end  debug
+  
 
+  if(a_printStuff)
+  {
+    pout() <<"ebmacproj::project computing and subtracting off gradient"<< endl;
+  }
   //gphi = grad(phi)
   //v := v - gphi
   DataIterator dit = m_grids.dataIterator();
@@ -269,11 +272,21 @@ applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
 void 
 EBMACProjector::
 kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
-          EBLevelFluxData<1>      & a_velo)
+          EBLevelFluxData<1>      & a_velo,
+          bool a_printStuff)
 {
 
   CH_TIME("EBMACProjector::kappaDivU");
-  a_velo.exchange(m_exchangeCopier);
+  if(a_printStuff)
+  {
+    pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
+  }
+  a_velo.exchange(m_exchangeCopier, a_printStuff);
+
+  if(a_printStuff)
+  {
+    pout() << "applying velocity boundary conditions and applying divergence stencils" << endl;
+  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
