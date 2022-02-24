@@ -205,7 +205,7 @@ public:
     {
       pout() << "eblevelfluxdata::exchange calling leveldata::exchange" << endl;
     }
-    hostdata.exchange(copier);
+    hostdata.exchange(copier, a_printStuff);
 
     if(a_printStuff)
     {

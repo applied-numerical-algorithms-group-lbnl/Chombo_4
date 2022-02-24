@@ -45,11 +45,6 @@ public:
     return true;
   }
 
-  //return true if copy and construction are thread safe
-  virtual bool threadSafe() const
-  {
-    return true;
-  }
 };
 
 /// Factory object to data members of a BoxLayoutData container
@@ -109,11 +104,7 @@ public:
       for calling operator 'delete' on this pointer is passed to the user. */
   virtual T* create(const Box& box, int ncomps, const DataIndex& a_datInd) const;
 
-  //return true if copy and construction are thread safe
-  virtual bool threadSafe() const
-  {
-    return m_origPointer->threadSafe();
-  }
+
 protected:
   BoxLayoutData<T>* m_origPointer;
   Interval          m_interval;
@@ -205,15 +196,6 @@ public:
     arg.linearIn(buf, bx, start, ncomp);
   }
 
-  ///this boolean only has to do with whether the op(...) function is thread safe
-  /**
-     If you want to declare a class more generally thread-unsafe, use the data factory 
-     threadSafe interface.
-  */
-  virtual bool threadSafe() const
-  {
-    return true;
-  }
   virtual void op(T& dest,
                   const Box& RegionFrom,
                   const Interval& Cdest,
@@ -319,10 +301,7 @@ public:
   /// overridden and throws an error.
   virtual void define(const BoxLayout& boxes);
 
-  virtual bool threadSafe() const
-  {
-    return m_threadSafe;
-  }
+
   ///
   int nComp() const
   {
@@ -418,21 +397,12 @@ public:
 
   virtual void clear() ;
 
-  int s_verbosity = 0;
 
 protected:
   int             m_comps;
-  bool            m_threadSafe;
+
   bool            m_isdefined;
 
-#ifdef cudaGraph
-#ifdef PROTO_CUDA
-  CUDAGRAPH graphLinearIn;
-  CUDAGRAPH graphLinearOut;
-  CUDAGRAPH& getCudaGraphLinearIn() {return graphLinearIn;}
-  CUDAGRAPH& getCudaGraphLinearOut() {return graphLinearOut;}
-#endif
-#endif
 
   friend class LevelData<T>;
 
@@ -456,17 +426,22 @@ protected:
     BoxLayoutData<T>&   a_dest,
     const Interval&     a_destComps,
     const Copier&       a_copier,
-    const LDOperator<T>& a_op = LDOperator<T>()) const;
+    const LDOperator<T>& a_op = LDOperator<T>(),
+    bool a_printStuff= false) const;
+  
   void makeItSoLocalCopy(
     const Interval&     a_srcComps,
     const BoxLayoutData<T>& a_src,
     BoxLayoutData<T>&   a_dest,
     const Interval&     a_destComps,
     const Copier&       a_copier,
-    const LDOperator<T>& a_op = LDOperator<T>()) const;
+    const LDOperator<T>& a_op = LDOperator<T>(),
+    bool a_printStuff= false) const;
+
   void makeItSoEnd(
     const Interval&     a_destComps,
-    const LDOperator<T>& a_op = LDOperator<T>());
+    const LDOperator<T>& a_op = LDOperator<T>(),
+    bool a_printStuff= false) ;
 
   //========================================================================
   //
@@ -481,7 +456,8 @@ protected:
                        const BoxLayoutData<T>& a_dest,
                        const Interval& a_destComps,
                        const Copier&   a_copier,
-                       const LDOperator<T>& a_op) const;
+                       const LDOperator<T>& a_op,
+                       bool a_printStuff= false) const;
 
   void writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_src,
                                       const Interval& a_srcComps,
@@ -491,15 +467,14 @@ protected:
 
   void postReceivesToMe() const ;
 
-  void unpackReceivesToMe(
-    const Interval&   a_destComps,
-    const LDOperator<T>& a_op) ;
+  void unpackReceivesToMe(const Interval&   a_destComps,
+                          const LDOperator<T>& a_op) ;
 
   void unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
                                  const Interval&   a_destComps,
                                  int ncomp,
                                  const DataFactory<T>& factory,
-                                 const LDOperator<T>& a_op) const;
+                                 const LDOperator<T>& a_op) ;
 
   /** \name Parallel messaging members */
   /*@{*/

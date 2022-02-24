@@ -1,9 +1,11 @@
 #-ksp_converged_reason
+#-ksp_converged_reason
 #-ksp_max_it 10000
 #-ksp-view
 #-ksp_rtol 1.0e-16
 #-pc_type gamg
 #start treb
+-on_error_attach_debugger
 -skip_petscrc
 -pc_type gamg
 -pc_gamg_sym_graph true
