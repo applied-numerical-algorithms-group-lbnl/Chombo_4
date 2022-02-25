@@ -18,6 +18,7 @@
 #include "Chombo_EBChombo.H"
 #include "EBAdvection.H"
 #include "SetupFunctions.H"
+#include "Chombo_MinimalCopier.H"
 
 #include <iomanip>
 
@@ -29,154 +30,17 @@ using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
 
-typedef Var<Real,DIM> Vec;
-typedef Var<Real,  1> Sca;
-#if DIM==2 // is this needed?
-void 
-testDebugFunctions(const EBGraph& a_graph)
-{
-  Point lo(3, 5);
-  Point hi(7, 9);
-  Bx bx(lo, hi);
-  EBBoxData<CELL, Real, 1> cellfab(bx, a_graph);
-  unsigned int numflops = 0;
-
-  Chombo4::pout() << "testing dumpEB1" << endl;
-  ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
-  dumpEB1(&cellfab);
-
-  EBFluxData<Real, 1> fluxdat(bx, a_graph);
-  ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
-  
-  Chombo4::pout() << "testing dumpXFace" << endl;
-  int idir = 0;
-  ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_xflux->box(),
-                    *fluxdat.m_xflux, idir);
-  dumpXFace(&fluxdat.m_xflux);
-
-
-  Chombo4::pout() << "testing dumpYFace" << endl;
-  idir = 1;
-  ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_yflux->box(),
-                    *fluxdat.m_yflux, idir);
-  dumpYFace(&fluxdat.m_yflux);
-
-}
-
 /***/
 void 
-testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
-              shared_ptr<GeometryService<2>    >   a_geoserv,
-              Chombo4::DisjointBoxLayout                     a_grids,
-              Chombo4::Box                                   a_domain,
-              Real a_dx, Point  a_ghost)
+testMinimalSPMD(shared_ptr<GeometryService<2>    >     a_geoserv,
+                Chombo4::DisjointBoxLayout                      a_grids,
+                Chombo4::Box                                    a_domain,
+                Real a_dx, Point  a_ghost)
 {
-  using Chombo4::ProblemDomain;
-  using Chombo4::DisjointBoxLayout;
-  using Chombo4::LevelBoxData;
-  using Chombo4::Copier;
-  using Chombo4::DataIterator;
-  using Chombo4::MayDay;
-  using Proto::BaseIF;
-  
-  Chombo4::pout() << "testing hi cell to face stencil" << endl;
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-
-  a_brit->registerCellToFace(StencilNames::CellToFaceHi, 
-                             StencilNames::NoBC,
-                             StencilNames::NoBC,
-                             a_domain, a_domain, false, Point::Ones());
-
-  DataIterator dit = a_grids.dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    Chombo4::Box grid = a_grids[dit[ibox]];
-    Bx  bx = ProtoCh::getProtoBox(grid);
-    Bx grown = bx.grow(a_ghost);
-    EBGraph graph = (*graphs)[dit[ibox]];
-
-    EBBoxData<CELL, Real, 1> cellfab(grown, graph);
-    unsigned int numflops = 0;
-    Chombo4::pout() << "cell data looks like:" << endl;
-    ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
-
-    dumpEB1(&cellfab);
-
-    EBFluxData<Real, 1> fluxdat(grown, graph);
-    int idir = 0;
-    Chombo4::pout() << "XFace data for Side::Lo looks like:" << endl;
-    a_brit->applyCellToFace(StencilNames::CellToFaceHi, 
-                            StencilNames::NoBC,
-                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
-
-    dumpXFace(&fluxdat.m_xflux);
-  }
+  IntVect numghost = 4*IntVect::Unit;
+  Chombo4::MinimalCopier moocher(a_grids, numGhost);
 }
 /***/
-void 
-testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
-                   shared_ptr<GeometryService<2>    >    a_geoserv,
-                   Chombo4::DisjointBoxLayout                     a_grids,
-              Chombo4::Box                                   a_domain,
-                   Real a_dx, Point  a_ghost)
-{
-  using Chombo4::ProblemDomain;
-  using Chombo4::DisjointBoxLayout;
-  using Chombo4::LevelBoxData;
-  using Chombo4::Copier;
-  using Chombo4::DataIterator;
-  using Chombo4::MayDay;
-  using Proto::BaseIF;
-  
-  Chombo4::pout() << "testing low cell to face stencil" << endl;
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-
-  a_brit->registerCellToFace(StencilNames::CellToFaceLo, 
-                             StencilNames::NoBC,
-                             StencilNames::NoBC,
-                             a_domain, a_domain, false, Point::Ones());
-
-  DataIterator dit = a_grids.dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    auto grid = a_grids[dit[ibox]];
-    Bx  bx = ProtoCh::getProtoBox(grid);
-    Bx grown = bx.grow(a_ghost);
-    EBGraph graph = (*graphs)[dit[ibox]];
-
-    EBBoxData<CELL, Real, 1> cellfab(grown, graph);
-    unsigned int numflops = 0;
-    Chombo4::pout() << "cell data looks like:" << endl;
-    ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
-    dumpEB1(&cellfab);
-
-    EBFluxData<Real, 1> fluxdat(grown, graph);
-    int idir = 0;
-    a_brit->applyCellToFace(StencilNames::CellToFaceLo, 
-                            StencilNames::NoBC,
-                            a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
-
-    Chombo4::pout() << "XFace data for Side::Hi data looks like:" << endl;
-    dumpXFace(&fluxdat.m_xflux);
-  }
-}
-/***/
-void 
-testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
-                   shared_ptr<GeometryService<2>    >     a_geoserv,
-                   Chombo4::DisjointBoxLayout                      a_grids,
-                   Chombo4::Box                                    a_domain,
-                   Real a_dx, Point  a_ghost)
-{
-  Chombo4::pout() << "testing cell to face stencil" << endl;
-  testHiStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
-  testLoStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
-}
-/***/
-#endif
-
-//=================================================
-
 void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                Real             & a_dx,
                const int        & a_nx,
