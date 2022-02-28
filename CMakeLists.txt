@@ -175,7 +175,7 @@ if(NOT DEFINED PROTO_HOME)
 endif()
 
 blt_import_library(NAME Proto DEPENDS_ON chombo_compiler_flags ${LIB_DEP}
-    INCLUDES ${PROTO_HOME}/include ${PROTO_HOME}/include/implem
+    INCLUDES ${PROTO_HOME}/include
     TREAT_INCLUDES_AS_SYSTEM OFF GLOBAL ON)
 if(ENABLE_CUDA)
     target_link_libraries(Proto INTERFACE CUDA::nvToolsExt)
