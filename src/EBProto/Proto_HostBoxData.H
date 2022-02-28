@@ -1,8 +1,8 @@
 #ifndef _PROTO_HostBoxData_H_
 #define _PROTO_HostBoxData_H_
 
-#include "Proto_Box.H"
-#include "Proto_Serialization.H"
+#include "base/Proto_Box.H"
+#include "implem/Proto_Serialization.H"
 
 namespace Proto
 {
@@ -168,5 +168,5 @@ namespace Proto
 
 } //end Proto namespace
 
-#include "Proto_HostBoxDataImplem.H"
+#include "implem/Proto_HostBoxDataImplem.H"
 #endif //end include guard

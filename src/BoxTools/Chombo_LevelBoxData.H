@@ -13,7 +13,7 @@
 
 #include "Chombo_LevelData.H"
 #include "Proto.H"
-#include "Proto_MemType.H"
+#include "base/Proto_MemType.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"

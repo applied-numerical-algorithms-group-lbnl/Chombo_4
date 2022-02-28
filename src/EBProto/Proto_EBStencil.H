@@ -4,19 +4,19 @@
 
 
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
-#include "Proto_LSquares.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
+#include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
-#include "Proto_IrregNode.H"
-#include "Proto_CutCellMoments.H"
+#include "implem/Proto_IrregNode.H"
+#include "implem/Proto_CutCellMoments.H"
 #include "Proto_HostBoxData.H"
-#include "Proto_HostIrregData.H"
-#include "Proto_PointSet.H"
+#include "implem/Proto_HostIrregData.H"
+#include "implem/Proto_PointSet.H"
 //#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
-#include "Proto_EBStencilArchive.H"
-#include "Proto_Stencil.H"
+#include "implem/Proto_EBStencilArchive.H"
+#include "base/Proto_Stencil.H"
 
 using std::shared_ptr;
 using std::vector;
@@ -174,5 +174,5 @@ namespace Proto
 
   };
 }
-#include "Proto_EBStencilImplem.H"
+#include "implem/Proto_EBStencilImplem.H"
 #endif

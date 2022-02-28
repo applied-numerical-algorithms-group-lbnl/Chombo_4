@@ -1,6 +1,6 @@
 #include "EBMultigrid.H"
 #include "Proto.H"
-#include "Proto_Timer.H"
+#include "base/Proto_Timer.H"
 #include "EBRelaxSolver.H"
 #include "EBMultigridFunctions.H"
 #include <sstream>

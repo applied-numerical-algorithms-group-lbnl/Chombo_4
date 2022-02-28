@@ -7,8 +7,8 @@
 #include <cstring>
 #include <vector>
 
-#include "Proto_Point.H"
-#include "Proto_IndexTM.H"
+#include "base/Proto_Point.H"
+#include "implem/Proto_IndexTM.H"
 using std::vector;
 namespace Proto
 {
