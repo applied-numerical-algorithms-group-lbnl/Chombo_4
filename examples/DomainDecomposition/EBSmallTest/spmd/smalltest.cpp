@@ -18,11 +18,10 @@
 #include "Chombo_EBChombo.H"
 #include "EBAdvection.H"
 #include "SetupFunctions.H"
-#include "Chombo_MinimalCopier.H"
+#include "Chombo_DataChoreography.H"
 
 #include <iomanip>
 
-#define MAX_ORDER 2
 
 using std::cout;
 using std::endl;
