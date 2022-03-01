@@ -95,8 +95,8 @@ namespace CH4_Data_Choreography
              const Box      & a_dstRegion)
     {
       m_src.define(a_srcRegion, a_srcInd, a_srcProcID);
-      m_dst.define(a_dstRegion, a_dstInd, a_dstProcID)
-        }
+      m_dst.define(a_dstRegion, a_dstInd, a_dstProcID);
+    }
              
   };
 
@@ -230,9 +230,79 @@ namespace CH4_Data_Choreography
   };
 
 
-  template<class T>
+
+  ///
+  template<class fabtype_t>
   class DistributedHostData
   {
+
+    ///datafactory has an ncomps argument that shall be ignored here
+    DisributedHostData(const DisjointBoxLayout & a_grids, const IntVect& a_ghost, const DataFactory<fabtype_t>& a_factory)
+    {
+      m_grids = a_grids;
+      DataIterator dit = a_grids.dataIterator();
+      m_data.resize(dit.size(), NULL);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        Box ghosted = a_grids.grow(a_ghost);
+        //the zero is for the fake ncomp.   components live in the type system now
+        m_data[ibox] = a_factory.create(ghost, 0, dit());
+      }
+    }
+
+    ~DistributedHostData()
+    {
+      for(int ibox = 0; ibox < m_data.size(); ibox++)
+      {
+        delete m_data[ibox];
+        m_data[ibox] = NULL;
+      }
+    }
+
+    fabtype_t& operator[](const DataIndex& a_dit)
+    {
+      return m_data(a_dit.datInd());
+    }
+
+    const fabtype_t& operator[](const DataIndex& a_dit) const
+    {
+      return m_data(a_dit.datInd());
+    }
+
+    ///
+    void exchange()
+    {
+      MinimalCopier copier(m_grids);
+      communicate(*this, *this, copier);
+    }
+    
+    ///
+    void copyTo(DistributedHostData & a_dst)
+    {
+      MinimalCopier copier(m_grids, a_dst.m_grids);
+      communicate(*this, a_dst, copier);
+    }
+
+  protected:
+    static void communicate(DistributedHostData       & a_dst,
+                            const DistributedHostData & a_src,
+                            const MinimalCopier       & a_pattern)
+    {
+      MayDay::Error("not implemented");
+    }
+    //all copiers and buffers are transient
+    vector<fabtype_t*> m_data;
+
+    DisjointBoxLayout m_grids;
+  private:
+    //strong construction brings simplicity.   I like simplicity.
+    DistributedHostData();
+    //Copy constuction and assignment are disallowed
+    //because it simplifies memory management and and because, again, I like simplicity.
+    DistributedHostData(const DistributedHostData& a_input);
+    void operator=(const DistributedHostData& a_input);
+      
+    
   };
   
 }

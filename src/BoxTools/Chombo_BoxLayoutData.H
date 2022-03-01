@@ -70,6 +70,7 @@ public:
       for calling operator 'delete' on this pointer is passed to the user. */
   virtual T* create(const Box& box, int ncomps, const DataIndex& a_datInd) const;
 
+
 };
 
 class FABAliasDataFactory : public DataFactory<FArrayBox>
