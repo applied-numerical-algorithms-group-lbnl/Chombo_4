@@ -322,7 +322,7 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
 
   assembleFlux(a_fcflux, upwindScal, a_fcvel);
 }
-///void
+void
 EBAdvection::
 getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
                            EBFluxData<Real, 1>      &  a_centroidFlux,

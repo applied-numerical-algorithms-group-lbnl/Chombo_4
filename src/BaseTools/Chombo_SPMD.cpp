@@ -31,7 +31,7 @@ unsigned long long CH_MaxMPIRecvSize  = 0;
 
 int reportMPIStats()
 {
-  pout()<<"Chombo message size limit:"<< CH_MAX_MPI_MESSAGE_SIZE<<"\n"
+  Proto::pout()<<"Chombo message size limit:"<< CH_MAX_MPI_MESSAGE_SIZE<<"\n"
         <<"Max send message size:"<<CH_MaxMPISendSize<<"\n"
         <<"Max recv message size:"<<CH_MaxMPIRecvSize<<std::endl;
   return 0;
