@@ -23,8 +23,8 @@ using namespace Chombo4;
 ///
 /**
    The Ch4_Data_Choreography space
-   (HostLevelData/SPMDBuffer/MinimalCopier) is meant to provide a
-   reduced complexity, highly maintainable alternative to Copier and
+   (DistributedData/MinimalCopier and subclasses) is meant to provide a
+   reduced complexity, highly maintainable alternative to the Copier and
    LevelData infrastructure.  If you need high performance or need
    some of the fancier aspects of Copier, you should use the
    standard LevelData/BoxLayoutData/LayoutData/Copier
@@ -33,8 +33,9 @@ using namespace Chombo4;
    Periodic boundary conditions are not supported.     
 
    All communication is two phase.
+   All communication is done on the host.
 
-   HostLevelData holds data over a union of rectangles.
+   DistributedData holds data over a union of rectangles.
    Each rectangle is a Box in a DisjointBoxLayout.
    There are two communication patterns associated with this data.
    1. copyTo: where one HostLevelData writes its data to another 
@@ -43,9 +44,9 @@ using namespace Chombo4;
    2.  exchange: ghost cell information where (within a HostData) ghost data from one grid 
    is filled with valid data from a neighboring grid.
      
-   HostLevelData --- holds data and manages communcation.
-   SPMDBuffer    --- manages buffers associated with two phase communation
-   MinimalCopier --- manages the meta data associated with communcation.
+   DistributedData        --- holds data and manages communcation.
+   CommunicationBuffer    --- manages transient buffers associated with two phase communation
+   MinimalCopier          --- manages the meta data associated with communcation.
 */
 namespace CH4_Data_Choreography
 {
@@ -109,6 +110,7 @@ namespace CH4_Data_Choreography
   */
   class MinimalCopier
   {
+  public:
     ///
     /**
        Define for exchange--fills ghost cells around boxes if neighboring boxes are adjacent
@@ -145,7 +147,6 @@ namespace CH4_Data_Choreography
             else
             {
               m_toMotionPlan.push_back(item);
-
             }
           }
           Bx neighborGhostInter(grid & neighborGhost);
@@ -210,9 +211,9 @@ namespace CH4_Data_Choreography
         } //loop over destination boxes
       } //loop over source boxes
     }
-  protected:
 
-    //plan where both  processors are on my proc
+
+    //plan where source == my proc,  dest == my proc
     vector<motion_t> m_localMotionPlan;
     //plan where source != my proc, dest == my proc
     vector<motion_t> m_toMotionPlan;
@@ -230,14 +231,20 @@ namespace CH4_Data_Choreography
   };
 
 
-
+  struct bufentry_t
+  {
+    char*    m_buff;
+    size_t   m_size;
+    motion_t m_plan;
+  };
+  
   ///
   template<class fabtype_t>
-  class DistributedHostData
+  class DistributedData
   {
 
     ///datafactory has an ncomps argument that shall be ignored here
-    DisributedHostData(const DisjointBoxLayout & a_grids, const IntVect& a_ghost, const DataFactory<fabtype_t>& a_factory)
+    DisributedData(const DisjointBoxLayout & a_grids, const IntVect& a_ghost, const DataFactory<fabtype_t>& a_factory)
     {
       m_grids = a_grids;
       DataIterator dit = a_grids.dataIterator();
@@ -250,7 +257,7 @@ namespace CH4_Data_Choreography
       }
     }
 
-    ~DistributedHostData()
+    ~DistributedData()
     {
       for(int ibox = 0; ibox < m_data.size(); ibox++)
       {
@@ -270,37 +277,88 @@ namespace CH4_Data_Choreography
     }
 
     ///
-    void exchange()
+    void exchange(bool a_printStuff = false);
     {
       MinimalCopier copier(m_grids);
-      communicate(*this, *this, copier);
+      communicate(*this, *this, copier, a_printStuff);
     }
     
     ///
-    void copyTo(DistributedHostData & a_dst)
+    void copyTo(DistributedData & a_dst,
+                bool a_printStuff = false)
     {
       MinimalCopier copier(m_grids, a_dst.m_grids);
-      communicate(*this, a_dst, copier);
+      communicate(*this, a_dst, copier, a_printStuff);
     }
 
   protected:
-    static void communicate(DistributedHostData       & a_dst,
-                            const DistributedHostData & a_src,
-                            const MinimalCopier       & a_pattern)
+    //get sizes and stuff
+    void  fillBufferEntries(const MinimalCopier& a_pattern,
+                            vector<bufentry_t> & a_fromMe,
+                            vector<bufentry_t> & a_toMe,
+                            bool a_printStuff = false)
     {
-      MayDay::Error("not implemented");
+      vector<bufentry_t> fromMe(m_copier->m_fromMotionPlan.size());
+      vector<bufentry_t> toMe  (m_copier->m_toMotionPlan.size());
+      //post sizes
+      for(ibuf = 0; ibuf < fromMe.size(); ibuf++)
+      {
+        const auto& motion = a_pattern.m_fromMotionPlan[ibuf];
+        CH_assert(motion.m_src.m_procID == procID());
+        //components are dummy arguments
+        unsigned long bufsize = (m_data[motion.m_src.m_datInd]).charsize(motion.m_region, 0, 1);
+        fromMe[ibuf].m_size = bufsize;
+        MPI_SEND(&bufsize, 1, MPI_UNSIGNED_LONG, motion.m_dst.m_procID, motion.m_src.m_procID, comm);
+      }
+
+      //get the sizes back
+      for(ibuf = 0; ibuf < toMe.size(); ibuf++)
+      {
+        const auto& motion = a_pattern.m_toMotionPlan[ibuf];
+        CH_assert(motion.m_dst.m_procID == procID());
+        //components are dummy arguments
+        unsigned long bufsize = 0;
+        MPI_Recv(&bufsize, 1, MPI_UNSIGNED_LONG, motion.m_dst.m_procID, motion.m_src.m_procID, comm);
+        if(a_printStuff)
+        {
+          pout() << "proc=" << procID() << "will receive " << bufsize << "size buffer from " << motion.m_src.m_procID << endl;
+        }
+        toMe[ibuf].m_size = bufsize;
+      }
+      
+      if(a_printStuff)
+      {
+        pout() << "DistributedData::fillBufferEntries(): just before barrier" << endl;
+      }
+      //do not proceed until everyone has their receives
+      MPI_barrier(comm);
+      if(a_printStuff)
+      {
+        pout() << "DistributedData::fillBufferEntries(): just after  barrier" << endl;
+      }
     }
-    //all copiers and buffers are transient
+    static void communicate(DistributedData       & a_dst,
+                            const DistributedData & a_src,
+                            const MinimalCopier   & a_pattern,
+                            bool a_printStuff = false)
+    {
+      vector<bufentry_t> fromMe, toMe;
+      //includes communication of size information
+      fillBufferEntries(a_pattern, fromMe, toMe, a_printStuff);
+    }
+    //all buffer data is transient.
+    
     vector<fabtype_t*> m_data;
+
 
     DisjointBoxLayout m_grids;
   private:
     //strong construction brings simplicity.   I like simplicity.
-    DistributedHostData();
+    DistributedData();
     //Copy constuction and assignment are disallowed
-    //because it simplifies memory management and and because, again, I like simplicity.
-    DistributedHostData(const DistributedHostData& a_input);
-    void operator=(const DistributedHostData& a_input);
+    //because this simplifies memory management. I like simplicity.
+    DistributedData(const DistributedData& a_input);
+    void operator=(const DistributedData& a_input);
       
     
   };
