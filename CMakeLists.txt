@@ -46,17 +46,8 @@ project(Chombo VERSION 4.0 DESCRIPTION "Chombo examples")
 add_compile_definitions(CH_LANG_CC)  # only building for C++, not Fortran
 #add_compile_definitions(CH_USE_PETSC)
 
-if (DEFINED ENV{OLCF_NETLIB_LAPACK_ROOT})
-    set(LAPACK_DIR $ENV{OLCF_NETLIB_LAPACK_ROOT})
-elseif(DEFINED ENV{MKLROOT})
-    set(LAPACK_DIR $ENV{MKLROOT})
-    add_compile_definitions(MKL)
-elseif(DEFINED ENV{LAPACK_DIR})  # must do on MacOS after `brew install lapack` to get lapacke.h
-    set(LAPACK_DIR $ENV{LAPACK_DIR})
-else()
-    message(WARNING "No environment variable points to LAPACK root directory")
-endif()
 find_package(LAPACK REQUIRED)
+find_package(BLAS REQUIRED)
 
 if(NOT DEFINED PETSC_DIR)
     set(PETSC_DIR $ENV{PETSC_DIR} CACHE PATH "PETSc root")
