@@ -15,10 +15,14 @@
 #include "Chombo_Pool.H"
 #include "Chombo_Vector.H"
 #include "Chombo_ProblemDomain.H"
+#include "Chombo_NeighborIterator.H"
 #include <unordered_map>
 #include <cstdint>
 
 #include "Chombo_SPMD.H"
+#ifdef CH_MPI  
+#include "mpi.h"
+#endif
 using namespace Chombo4;
 ///
 /**
@@ -32,8 +36,16 @@ using namespace Chombo4;
 
    Periodic boundary conditions are not supported.     
 
+   The applications for which this is intended do not need the optimizations 
+   around which LevelData is built and do not need periodic boundary conditions.
+
    All communication is two phase.
    All communication is done on the host.
+
+   Messsages are sent one box at at time.    We do not aggregate the communication for a whole processor
+   the way LevelData does.   We have two phase communication where we typically only have a few (at most) boxes 
+   per box.   This application does not merit the huge increase in complexity that the bit packing
+   algorithm in LevelData entails.
 
    DistributedData holds data over a union of rectangles.
    Each rectangle is a Box in a DisjointBoxLayout.
@@ -64,15 +76,15 @@ namespace CH4_Data_Choreography
   */
   struct boxinfo_t
   {
-    Box       m_region;
-    int       m_procid;
-    DataIndex m_datind;
+    Chombo4::Box       m_region;
+    int                m_procID;
+    Chombo4::DataIndex m_datInd;
     void 
-    define(const Box      & a_region,
-           const int      & a_procID,
-           const DataIndex& a_datind)
+    define(const Chombo4::Box      & a_region,
+           const int               & a_procID,
+           const Chombo4::DataIndex& a_datind)
     {
-      m_datind = a_datind;
+      m_datInd = a_datind;
       m_region = a_region;
       m_procID = a_procID;
     }
@@ -83,20 +95,20 @@ namespace CH4_Data_Choreography
      motion_t
      This holds the meta data for both sides of a communication substep
   */
-  struct motion_t;
+  struct motion_t
   {
-    //region, procid
+    //region, procID
     boxinfo_t m_src;
     boxinfo_t m_dst;
-    motion_t(const DataIndex& a_srcInd,
-             const DataIndex& a_dstInd,
-             const int      & a_srcProcID,
-             const int      & a_dstProcID,
-             const Box      & a_srcRegion,
-             const Box      & a_dstRegion)
+    motion_t(const Chombo4::DataIndex& a_srcInd,
+             const Chombo4::DataIndex& a_dstInd,
+             const Chombo4::Box      & a_srcRegion,
+             const Chombo4::Box      & a_dstRegion,
+             const int               & a_srcProcID,
+             const int               & a_dstProcID)
     {
-      m_src.define(a_srcRegion, a_srcInd, a_srcProcID);
-      m_dst.define(a_dstRegion, a_dstInd, a_dstProcID);
+      m_src.define(a_srcRegion, a_srcProcID, a_srcInd);
+      m_dst.define(a_dstRegion, a_dstProcID, a_dstInd);
     }
              
   };
@@ -115,32 +127,32 @@ namespace CH4_Data_Choreography
     /**
        Define for exchange--fills ghost cells around boxes if neighboring boxes are adjacent
     */
-    MinimalCopier(const DisjointBoxLayout & a_grids, const IntVect& a_ghost)
+    MinimalCopier(const Chombo4::DisjointBoxLayout & a_grids, const IntVect& a_ghost)
     {
       CH_TIME("MinimalCopier::exchange constructor");
 
-      DataIterator dit = a_grids.dataIterator();
-      NeighborIterator nit(a_grids);
+      Chombo4::DataIterator dit = a_grids.dataIterator();
+      Chombo4::NeighborIterator nit(a_grids);
       for (dit.begin(); dit.ok(); ++dit)
       {
-        const Box& grid = a_grids[dit];
-        int gridProcID = procID();
-        Box gridGhost(grid);
+        const Chombo4::Box& grid = a_grids[dit];
+        int myProcID = CH4_SPMD::procID();
+        Chombo4::Box gridGhost(grid);
         gridGhost.grow(a_ghost);
 
         for (nit.begin(dit()); nit.ok(); ++nit)
         {
-          Box neighbor = nit.box();
+          Chombo4::Box neighbor = nit.box();
           int neiProcID = a_grids.procID(nit());
-          Box neighborGhost= neighbor;
+          Chombo4::Box neighborGhost= neighbor;
           neighborGhost.grow(a_ghost);
 
-          Box gridGhostInter(neighbor & gridGhost);
+          Chombo4::Box gridGhostInter(neighbor & gridGhost);
           if (!gridGhostInter.isEmpty())
           {
             //his data copies to my ghost
-            motion_t item(DataIndex(nit()), dit(), gridGhostInter, gridGhostInter, neiProcID, myProcID);
-            if (srcProcID == dstProcID)
+            motion_t item(Chombo4::DataIndex(nit()), dit(), gridGhostInter, gridGhostInter, neiProcID, myProcID);
+            if (myProcID == neiProcID)
             { // local move
               m_localMotionPlan.push_back(item);
             }
@@ -149,14 +161,14 @@ namespace CH4_Data_Choreography
               m_toMotionPlan.push_back(item);
             }
           }
-          Bx neighborGhostInter(grid & neighborGhost);
+          Chombo4::Box neighborGhostInter(grid & neighborGhost);
           if (!neighborGhostInter.isEmpty())
           {
             //my data copies to his ghost
             //local case will be taken care of when the data iterator gets to the neighbor box
-            If(srcProcID != dstProcID)
+            if(myProcID != neiProcID)
             {
-              motion_t item(DataIndex(dit(), nit()), neighborGhostInter, neighborGhostInter, myProcID, neiProcID);
+              motion_t item(dit(), Chombo4::DataIndex(nit()), neighborGhostInter, neighborGhostInter, myProcID, neiProcID);
               m_fromMotionPlan.push_back(item);
             }
           }
@@ -165,29 +177,29 @@ namespace CH4_Data_Choreography
     }
 
     ///Define for copyTo --- does NOT include ghost cells.
-    MinimalCopier(const DisjointBoxLayout & a_src,
-                  const DisjointBoxLayout & a_dst)
+    MinimalCopier(const Chombo4::DisjointBoxLayout & a_src,
+                  const Chombo4::DisjointBoxLayout & a_dst)
     {
       CH_TIME("MinimalCopier::exchange constructor");
 
       LayoutIterator litSrc = a_src.layoutIterator();
       LayoutIterator litDst = a_dst.layoutIterator();
-      int myProcID = procID();
+      int myProcID = CH4_SPMD::procID();
 
       ///first local
       for(litSrc.begin(); litSrc.ok(); ++litSrc)
       {
-        int srcProcID = a_src.procID(litSrc());
-        Box gridSrc   = a_src[litSrc()];
+        int srcProcID   = a_src.procID(litSrc());
+        Chombo4::Box gridSrc   = a_src[litSrc()];
         for(litDst.begin(); litDst.ok(); ++litDst)
         {
           int dstProcID = a_dst.procID(litDst());
-          Box gridDst = a_src[dit()];
-          Box intersect(gridSrc & gridDst);
+          Chombo4::Box gridDst = a_src[litDst()];
+          Chombo4::Box intersect(gridSrc & gridDst);
           if(!intersect.isEmpty())
           {
-            motion_t item(DataIndex(litSrc()), DataIndex(litDst()), intersect, intersect, srcProcID, dstProcID);
-            //if neither processor is == myprocid, nothing to do
+            motion_t item(Chombo4::DataIndex(litSrc()), Chombo4::DataIndex(litDst()), intersect, intersect, srcProcID, dstProcID);
+            //if neither processor is == myprocID, nothing to do
             if((srcProcID == myProcID) || (dstProcID == myProcID))
             {
               if((srcProcID == myProcID) && (dstProcID == myProcID))
@@ -204,7 +216,7 @@ namespace CH4_Data_Choreography
               }
               else
               {
-                MayDay::Error("apparently I missed a case");
+                Chombo4::MayDay::Error("apparently I missed a case");
               }
             } //if(something is on proc)
           } //if there is an intersection
@@ -237,23 +249,32 @@ namespace CH4_Data_Choreography
     size_t   m_size;
     motion_t m_plan;
   };
-  
+
+#ifdef CH_MPI  
+  inline void mpiSendWrap(unsigned long* bufsize, int dstprocID, int srcprocID)
+  {
+      auto comm = CH4_SPMD::Chombo_MPI::comm;
+      ::MPI_SEND(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm);
+  }
+#endif
   ///
   template<class fabtype_t>
   class DistributedData
   {
 
     ///datafactory has an ncomps argument that shall be ignored here
-    DisributedData(const DisjointBoxLayout & a_grids, const IntVect& a_ghost, const DataFactory<fabtype_t>& a_factory)
+    DistributedData(const Chombo4::DisjointBoxLayout &   a_grids,
+                    const Chombo4::IntVect               & a_ghost,
+                    const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
       m_grids = a_grids;
-      DataIterator dit = a_grids.dataIterator();
+      Chombo4::DataIterator dit = a_grids.dataIterator();
       m_data.resize(dit.size(), NULL);
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        Box ghosted = a_grids.grow(a_ghost);
+        Chombo4::Box ghosted = Chombo4::grow(a_grids[dit[ibox]], a_ghost);
         //the zero is for the fake ncomp.   components live in the type system now
-        m_data[ibox] = a_factory.create(ghost, 0, dit());
+        m_data[ibox] = a_factory.create(ghosted, 0, dit());
       }
     }
 
@@ -266,18 +287,18 @@ namespace CH4_Data_Choreography
       }
     }
 
-    fabtype_t& operator[](const DataIndex& a_dit)
+    fabtype_t& operator[](const Chombo4::DataIndex& a_dit)
     {
       return m_data(a_dit.datInd());
     }
 
-    const fabtype_t& operator[](const DataIndex& a_dit) const
+    const fabtype_t& operator[](const Chombo4::DataIndex& a_dit) const
     {
       return m_data(a_dit.datInd());
     }
 
     ///
-    void exchange(bool a_printStuff = false);
+    void exchange(bool a_printStuff = false)
     {
       MinimalCopier copier(m_grids);
       communicate(*this, *this, copier, a_printStuff);
@@ -298,21 +319,24 @@ namespace CH4_Data_Choreography
                             vector<bufentry_t> & a_toMe,
                             bool a_printStuff = false)
     {
-      vector<bufentry_t> fromMe(m_copier->m_fromMotionPlan.size());
-      vector<bufentry_t> toMe  (m_copier->m_toMotionPlan.size());
+#ifdef CH_MPI  
+      
+      vector<bufentry_t> fromMe(a_pattern.m_fromMotionPlan.size());
+      vector<bufentry_t> toMe  (a_pattern.m_toMotionPlan.size());
+
       //post sizes
-      for(ibuf = 0; ibuf < fromMe.size(); ibuf++)
+      for(int ibuf = 0; ibuf < fromMe.size(); ibuf++)
       {
         const auto& motion = a_pattern.m_fromMotionPlan[ibuf];
-        CH_assert(motion.m_src.m_procID == procID());
+        CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
-        unsigned long bufsize = (m_data[motion.m_src.m_datInd]).charsize(motion.m_region, 0, 1);
+        unsigned long bufsize = (m_data[motion.m_src.m_datInd]).charsize(motion.m_src.m_region, 0, 1);
         fromMe[ibuf].m_size = bufsize;
-        MPI_SEND(&bufsize, 1, MPI_UNSIGNED_LONG, motion.m_dst.m_procID, motion.m_src.m_procID, comm);
+        mpiSendWrap(bufsize,  motion.m_dst.m_procID, motion.m_src.m_procID);
       }
 
       //get the sizes back
-      for(ibuf = 0; ibuf < toMe.size(); ibuf++)
+      for(int ibuf = 0; ibuf < toMe.size(); ibuf++)
       {
         const auto& motion = a_pattern.m_toMotionPlan[ibuf];
         CH_assert(motion.m_dst.m_procID == procID());
@@ -321,7 +345,7 @@ namespace CH4_Data_Choreography
         MPI_Recv(&bufsize, 1, MPI_UNSIGNED_LONG, motion.m_dst.m_procID, motion.m_src.m_procID, comm);
         if(a_printStuff)
         {
-          pout() << "proc=" << procID() << "will receive " << bufsize << "size buffer from " << motion.m_src.m_procID << endl;
+          pout() << "proc=" << procID() << "will receive " << bufsize << "size buffer from " << motion.m_src.m_procID  << endl;
         }
         toMe[ibuf].m_size = bufsize;
       }
@@ -330,11 +354,33 @@ namespace CH4_Data_Choreography
       {
         pout() << "DistributedData::fillBufferEntries(): just before barrier" << endl;
       }
-      //do not proceed until everyone has their receives
+      //Do not proceed until everyone has their receives.
+      //This simplifies matters but should not technically be necessary.
       MPI_barrier(comm);
       if(a_printStuff)
       {
         pout() << "DistributedData::fillBufferEntries(): just after  barrier" << endl;
+      }
+#endif      
+    }
+    static void doLocalCopies(DistributedData       & a_dst,
+                              const DistributedData & a_src,
+                              const MinimalCopier   & a_pattern,
+                              bool a_printStuff = false)
+    {
+      for(int ibuf = 0; ibuf < a_pattern.m_localMotionPlan.size(); ibuf++)
+      {
+        //component arguments are artifacts of a more civilized age
+        //components are all in the type system now
+        unsigned int icomp = 0;
+        const auto& motion = a_pattern.m_localMotionPlan[ibuf];
+        const auto& srcdatind = motion.m_src.m_datInd;
+        const auto& srcregion = motion.m_src.m_region;
+        const auto& dstdatind = motion.m_dst.m_datInd;
+        const auto& dstregion = motion.m_dst.m_region;
+        CH_assert(srcregion == dstregion);
+        Bx regx = ProtoCh::getProtoBox(dstregion);
+        a_dst[dstdatind].copy(a_src[srcdatind], regx, icomp, regx, icomp, icomp);
       }
     }
     static void communicate(DistributedData       & a_dst,
@@ -342,16 +388,19 @@ namespace CH4_Data_Choreography
                             const MinimalCopier   & a_pattern,
                             bool a_printStuff = false)
     {
+      doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
+#ifdef CH_MPI  
       vector<bufentry_t> fromMe, toMe;
       //includes communication of size information
       fillBufferEntries(a_pattern, fromMe, toMe, a_printStuff);
+#endif      
     }
     //all buffer data is transient.
     
     vector<fabtype_t*> m_data;
 
 
-    DisjointBoxLayout m_grids;
+    Chombo4::DisjointBoxLayout m_grids;
   private:
     //strong construction brings simplicity.   I like simplicity.
     DistributedData();

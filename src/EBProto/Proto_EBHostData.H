@@ -312,5 +312,4 @@ namespace Proto
 
 
 }
-
 #endif

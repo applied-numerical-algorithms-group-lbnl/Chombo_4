@@ -17,8 +17,8 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBAdvection.H"
-#include "SetupFunctions.H"
-#include "Chombo_DataChoreography.H"
+
+#include "Chombo_EBDataChoreography.H"
 
 #include <iomanip>
 
@@ -30,15 +30,88 @@ using Proto::Var;
 using Proto::SimpleEllipsoidIF;
 
 /***/
-void 
+int getCorrectMooch(const Proto::Point& a_iv)
+{
+  int val = a_iv[0] + 10*a_iv[1];
+  return val;
+}
+/***/
+void
+fillTheMooch(DistributedData<EBHostData<CELL, int, 1> >& a_mooch,
+             shared_ptr<GeometryService<2>    >     a_geoserv,
+             Chombo4::DisjointBoxLayout             a_grids,
+             Chombo4::Box                           a_domain,
+             Real a_dx)
+{
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
+  for(DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
+  {
+    auto& moochfab = a_mooch[dit()];
+    Box grid       = a_grids[dit()];
+    Bx  grbx = ProtoCh::getProtoBox(grid);
+    const auto& graph = (*graphs)[dit()];
+    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit);
+    {
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
+      int val = getCorrectMooch(*bit);
+      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        a_mooch[dit()](vofs[ivof], 0) = val;
+      }
+    }
+  }
+}
+/***/
+int
+checkTheMooch(DistributedData<EBHostData<CELL, Real, 1> >& a_mooch,
+              shared_ptr<GeometryService<2>    >     a_geoserv,
+              Chombo4::DisjointBoxLayout             a_grids,
+              Chombo4::Box                           a_domain,
+              IntVect                                a_ghost,
+              Real a_dx)
+{
+  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
+  for(DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
+  {
+    auto& moochfab = a_mooch[dit()];
+    Box grid       = a_grids[dit()];
+    grid.grow(a_ghost);
+    grid &= a_domain;
+    Bx  grbx = ProtoCh::getProtoBox(grid);
+    const auto& graph = (*graphs)[dit()];
+    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit);
+    {
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
+      int correctVal= getCorrectMooch(*bit);
+      for(int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        int exchangedVal =  a_mooch[dit()](vofs[ivof], 0);
+        if(exchangedVal != correctVal)
+        {
+          Chombo4::pout() << "checkTheMooch: mismatch at " << *bit << ", correct = " << correctVal << ", actual = " << exchangdVal << endl;
+          return -1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+/***/
+int
 testMinimalSPMD(shared_ptr<GeometryService<2>    >     a_geoserv,
-                Chombo4::DisjointBoxLayout                      a_grids,
-                Chombo4::Box                                    a_domain,
+                Chombo4::DisjointBoxLayout             a_grids,
+                Chombo4::Box                           a_domain,
                 Real a_dx, Point  a_ghost)
 {
-  IntVect numghost = 4*IntVect::Unit;
-  Chombo4::MinimalCopier moocher(a_grids, numGhost);
+  IntVect numghost(a_ghost);
+  
+  DistributedData<EBHostData<CELL, Real, 1> > mooch(a_grids, numGhost, factory);
+  fillTheMooch(mooch, a_geoserv, a_domain, a_dx);
+  mooch.exchange();
+  int retval = checkTheMooch(mooch, a_geoserv, a_domain, a_dx);
+  return retv al;
 }
+
 /***/
 void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                Real             & a_dx,
@@ -185,12 +258,13 @@ runTests(int a_argc, char* a_argv[])
 
   Chombo4::pout() << "making dictionary" << endl;
   Chombo4::Box domain = grids.physDomain().domainBox();
-  shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
-#if DIM==2
-  testSimpleStencils(brit, geoserv, grids, domain, dx, dataGhostPt);
-#endif
-  return 0;
+  int retval = testMinimalSPMD(geoserv, grids, domain, dx, dataGhostPt);
+  if(retval != 0)
+  {
+    pout() << "problem in testMinimalSPMD" << endl;
+  }
+
+  return retval;
 }
 
 
@@ -202,6 +276,7 @@ int main(int a_argc, char* a_argv[])
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
+  int retval = 0;
   {
     if (a_argc < 2)
     {
@@ -210,7 +285,8 @@ int main(int a_argc, char* a_argv[])
     }
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
-    runTests(a_argc, a_argv);
+    retval = runTests(a_argc, a_argv);
+    
   }
 
   Chombo4::pout() << "printing time table " << endl;
@@ -219,7 +295,7 @@ int main(int a_argc, char* a_argv[])
   Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
-  return 0;
+  return retval;
 }
 
 
