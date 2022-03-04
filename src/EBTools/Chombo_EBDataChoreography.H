@@ -95,8 +95,11 @@ namespace CH4_Data_Choreography
      motion_t
      This holds the meta data for both sides of a communication substep
   */
-  struct motion_t
+  class motion_t
   {
+  public:
+    motion_t() {;}
+      
     //region, procID
     boxinfo_t m_src;
     boxinfo_t m_dst;
@@ -243,31 +246,32 @@ namespace CH4_Data_Choreography
   };
 
 
-  struct bufentry_t
+  class bufentry_t
   {
+  public:
+    
+    bufentry_t()
+    {
+      m_buff = NULL;
+      m_size = 0;
+    }
     char*    m_buff;
     size_t   m_size;
     motion_t m_plan;
   };
 
-#ifdef CH_MPI  
-  inline void mpiSendWrap(unsigned long* bufsize, int dstprocID, int srcprocID)
-  {
-      auto comm = CH4_SPMD::Chombo_MPI::comm;
-      ::MPI_SEND(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm);
-  }
-#endif
   ///
   template<class fabtype_t>
   class DistributedData
   {
-
+  public:
     ///datafactory has an ncomps argument that shall be ignored here
     DistributedData(const Chombo4::DisjointBoxLayout &   a_grids,
                     const Chombo4::IntVect               & a_ghost,
                     const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
       m_grids = a_grids;
+      m_ghost = a_ghost;
       Chombo4::DataIterator dit = a_grids.dataIterator();
       m_data.resize(dit.size(), NULL);
       for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -289,18 +293,18 @@ namespace CH4_Data_Choreography
 
     fabtype_t& operator[](const Chombo4::DataIndex& a_dit)
     {
-      return m_data(a_dit.datInd());
+      return *(m_data[a_dit.datInd()]);
     }
 
     const fabtype_t& operator[](const Chombo4::DataIndex& a_dit) const
     {
-      return m_data(a_dit.datInd());
+      return *(m_data[a_dit.datInd()]);
     }
 
     ///
     void exchange(bool a_printStuff = false)
     {
-      MinimalCopier copier(m_grids);
+      MinimalCopier copier(m_grids, m_ghost);
       communicate(*this, *this, copier, a_printStuff);
     }
     
@@ -312,17 +316,19 @@ namespace CH4_Data_Choreography
       communicate(*this, a_dst, copier, a_printStuff);
     }
 
-  protected:
+  private:
     //get sizes and stuff
-    void  fillBufferEntries(const MinimalCopier& a_pattern,
-                            vector<bufentry_t> & a_fromMe,
-                            vector<bufentry_t> & a_toMe,
-                            bool a_printStuff = false)
+    static void  fillBufferEntries(const MinimalCopier& a_pattern,
+                                   vector<bufentry_t> & a_fromMe,
+                                   vector<bufentry_t> & a_toMe,
+                                   vector<fabtype_t*> & a_dstData,
+                                   bool a_printStuff = false)
     {
 #ifdef CH_MPI  
       
       vector<bufentry_t> fromMe(a_pattern.m_fromMotionPlan.size());
       vector<bufentry_t> toMe  (a_pattern.m_toMotionPlan.size());
+      auto comm = CH4_SPMD::Chombo_MPI::comm;
 
       //post sizes
       for(int ibuf = 0; ibuf < fromMe.size(); ibuf++)
@@ -330,36 +336,46 @@ namespace CH4_Data_Choreography
         const auto& motion = a_pattern.m_fromMotionPlan[ibuf];
         CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
-        unsigned long bufsize = (m_data[motion.m_src.m_datInd]).charsize(motion.m_src.m_region, 0, 1);
+        const fabtype_t& dstfab = *(a_dstData[motion.m_src.m_datInd.datInd()]);
+        unsigned long bufsize = dstfab.charsize(motion.m_src.m_region, 0, 1);
         fromMe[ibuf].m_size = bufsize;
-        mpiSendWrap(bufsize,  motion.m_dst.m_procID, motion.m_src.m_procID);
+        auto dstprocID = motion.m_dst.m_procID;
+        auto srcprocID = motion.m_src.m_procID;        
+        if(a_printStuff)
+        {
+          Chombo4::pout() << "proc=" << srcprocID << "will need " << bufsize << "size buffer from " << dstprocID << endl;
+        }
+        MPI_Send(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm);
+
       }
 
       //get the sizes back
       for(int ibuf = 0; ibuf < toMe.size(); ibuf++)
       {
         const auto& motion = a_pattern.m_toMotionPlan[ibuf];
-        CH_assert(motion.m_dst.m_procID == procID());
+        CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
         unsigned long bufsize = 0;
-        MPI_Recv(&bufsize, 1, MPI_UNSIGNED_LONG, motion.m_dst.m_procID, motion.m_src.m_procID, comm);
+        auto dstprocID = motion.m_dst.m_procID;
+        auto srcprocID = motion.m_src.m_procID;        
+        MPI_Recv(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm, MPI_STATUS_IGNORE);
         if(a_printStuff)
         {
-          pout() << "proc=" << procID() << "will receive " << bufsize << "size buffer from " << motion.m_src.m_procID  << endl;
+          Chombo4::pout() << "proc=" << dstprocID << "will receive " << bufsize << "size buffer from " << srcprocID << endl;
         }
         toMe[ibuf].m_size = bufsize;
       }
       
       if(a_printStuff)
       {
-        pout() << "DistributedData::fillBufferEntries(): just before barrier" << endl;
+        Chombo4::pout() << "DistributedData::fillBufferEntries(): just before barrier" << endl;
       }
       //Do not proceed until everyone has their receives.
       //This simplifies matters but should not technically be necessary.
-      MPI_barrier(comm);
+      MPI_Barrier(comm);
       if(a_printStuff)
       {
-        pout() << "DistributedData::fillBufferEntries(): just after  barrier" << endl;
+        Chombo4::pout() << "DistributedData::fillBufferEntries(): just after  barrier" << endl;
       }
 #endif      
     }
@@ -383,6 +399,8 @@ namespace CH4_Data_Choreography
         a_dst[dstdatind].copy(a_src[srcdatind], regx, icomp, regx, icomp, icomp);
       }
     }
+
+    
     static void communicate(DistributedData       & a_dst,
                             const DistributedData & a_src,
                             const MinimalCopier   & a_pattern,
@@ -392,13 +410,13 @@ namespace CH4_Data_Choreography
 #ifdef CH_MPI  
       vector<bufentry_t> fromMe, toMe;
       //includes communication of size information
-      fillBufferEntries(a_pattern, fromMe, toMe, a_printStuff);
+      fillBufferEntries(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
 #endif      
     }
     //all buffer data is transient.
     
     vector<fabtype_t*> m_data;
-
+    IntVect m_ghost;
 
     Chombo4::DisjointBoxLayout m_grids;
   private:

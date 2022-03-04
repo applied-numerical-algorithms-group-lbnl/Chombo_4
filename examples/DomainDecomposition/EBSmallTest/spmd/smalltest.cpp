@@ -19,16 +19,17 @@
 #include "EBAdvection.H"
 
 #include "Chombo_EBDataChoreography.H"
+#include "Chombo_ProtoFactories.H"
 
 #include <iomanip>
-
+#define GEOM_MAX_ORDER 4
 
 using std::cout;
 using std::endl;
 using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
-
+using CH4_Data_Choreography::DistributedData;
 /***/
 int getCorrectMooch(const Proto::Point& a_iv)
 {
@@ -38,19 +39,18 @@ int getCorrectMooch(const Proto::Point& a_iv)
 /***/
 void
 fillTheMooch(DistributedData<EBHostData<CELL, int, 1> >& a_mooch,
-             shared_ptr<GeometryService<2>    >     a_geoserv,
+             shared_ptr<GeometryService<GEOM_MAX_ORDER>    >     a_geoserv,
              Chombo4::DisjointBoxLayout             a_grids,
              Chombo4::Box                           a_domain,
              Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
-  for(DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  for(Chombo4::DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
   {
-    auto& moochfab = a_mooch[dit()];
-    Box grid       = a_grids[dit()];
+    ChBx grid       = a_grids[dit()];
     Bx  grbx = ProtoCh::getProtoBox(grid);
     const auto& graph = (*graphs)[dit()];
-    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit);
+    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
     {
       vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
       int val = getCorrectMooch(*bit);
@@ -63,23 +63,22 @@ fillTheMooch(DistributedData<EBHostData<CELL, int, 1> >& a_mooch,
 }
 /***/
 int
-checkTheMooch(DistributedData<EBHostData<CELL, Real, 1> >& a_mooch,
-              shared_ptr<GeometryService<2>    >     a_geoserv,
-              Chombo4::DisjointBoxLayout             a_grids,
-              Chombo4::Box                           a_domain,
-              IntVect                                a_ghost,
+checkTheMooch(DistributedData<EBHostData<CELL, int, 1> > & a_mooch,
+              shared_ptr<GeometryService<GEOM_MAX_ORDER>    >           a_geoserv,
+              Chombo4::DisjointBoxLayout                   a_grids,
+              Chombo4::Box                                 a_domain,
+              IntVect                                      a_ghost,
               Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
-  for(DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  for(ChDit dit = a_grids.dataIterator(); dit.ok(); ++dit)
   {
-    auto& moochfab = a_mooch[dit()];
-    Box grid       = a_grids[dit()];
+    ChBx grid       = a_grids[dit()];
     grid.grow(a_ghost);
     grid &= a_domain;
     Bx  grbx = ProtoCh::getProtoBox(grid);
     const auto& graph = (*graphs)[dit()];
-    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit);
+    for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
     {
       vector<EBIndex<CELL> > vofs = graph.getVoFs(*bit);
       int correctVal= getCorrectMooch(*bit);
@@ -88,7 +87,7 @@ checkTheMooch(DistributedData<EBHostData<CELL, Real, 1> >& a_mooch,
         int exchangedVal =  a_mooch[dit()](vofs[ivof], 0);
         if(exchangedVal != correctVal)
         {
-          Chombo4::pout() << "checkTheMooch: mismatch at " << *bit << ", correct = " << correctVal << ", actual = " << exchangdVal << endl;
+          Chombo4::pout() << "checkTheMooch: mismatch at " << *bit << ", correct = " << correctVal << ", actual = " << exchangedVal << endl;
           return -1;
         }
       }
@@ -98,18 +97,20 @@ checkTheMooch(DistributedData<EBHostData<CELL, Real, 1> >& a_mooch,
 }
 /***/
 int
-testMinimalSPMD(shared_ptr<GeometryService<2>    >     a_geoserv,
+testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >     a_geoserv,
                 Chombo4::DisjointBoxLayout             a_grids,
                 Chombo4::Box                           a_domain,
                 Real a_dx, Point  a_ghost)
 {
   IntVect numghost(a_ghost);
-  
-  DistributedData<EBHostData<CELL, Real, 1> > mooch(a_grids, numGhost, factory);
-  fillTheMooch(mooch, a_geoserv, a_domain, a_dx);
+   GraphConstructorFactory<EBHostData<CELL, int, 1> > 
+     factory(a_geoserv->getGraphs(a_domain));
+   
+  DistributedData<EBHostData<CELL, int, 1> > mooch(a_grids, a_ghost, factory);
+  fillTheMooch(mooch, a_geoserv, a_grids, a_domain, a_dx);
   mooch.exchange();
-  int retval = checkTheMooch(mooch, a_geoserv, a_domain, a_dx);
-  return retv al;
+  int retval = checkTheMooch(mooch, a_geoserv, a_grids, a_domain, a_ghost, a_dx);
+  return retval;
 }
 
 /***/
@@ -204,7 +205,7 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
                     Real             & a_geomRad,
                     int              & a_whichGeom,
                     int              & a_nx,
-                    shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
+                    shared_ptr<GeometryService<GEOM_MAX_ORDER> >&  a_geoserv)
 {
   Chombo4::pout() << "defining geometry" << endl;
 
@@ -226,7 +227,7 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
   Chombo4::pout() << "creating geometry service" << endl;
-  a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  a_geoserv  = shared_ptr<GeometryService<GEOM_MAX_ORDER> >(new GeometryService<GEOM_MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
 int
@@ -245,7 +246,7 @@ runTests(int a_argc, char* a_argv[])
   Chombo4::DisjointBoxLayout grids;
 
   Chombo4::pout() << "defining geometry" << endl;
-  shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
+  shared_ptr<GeometryService<GEOM_MAX_ORDER> >  geoserv;
 
   Real geomCen;
   Real geomRad;
@@ -261,7 +262,7 @@ runTests(int a_argc, char* a_argv[])
   int retval = testMinimalSPMD(geoserv, grids, domain, dx, dataGhostPt);
   if(retval != 0)
   {
-    pout() << "problem in testMinimalSPMD" << endl;
+    Chombo4::pout() << "problem in testMinimalSPMD" << endl;
   }
 
   return retval;
