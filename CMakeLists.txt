@@ -115,17 +115,16 @@ if(ENABLE_HDF5)
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       get_filename_component(HDF5_LINK /usr/local/include/hdf5.h REALPATH)
       string(REGEX MATCH [0-9]+\\.[0-9]+\\.[0-9]+ HDF5_VERSION ${HDF5_LINK})
-      set(HDF5_DIR /usr/local/Cellar/hdf5-mpi/${HDF5_VERSION}/)
-    else()  # workaround for Chris
+      set(HDF5_DIR /usr/local/Cellar/hdf5-mpi/${HDF5_VERSION}/)  # standard install location
+    else()  # workaround for Linux
       set(HDF5_INC /usr/include/hdf5/ FILEPATH)
       set(HDF5_LIB /usr/lib/x86_64-linux-gnu/hdf5/ FILEPATH)
+      include_directories(${HDF5_INC}/openmpi)
+      link_directories(${HDF5_LIB}/openmpi)
     endif()
     if(DEFINED HDF5_DIR)
       include_directories(${HDF5_DIR}/include)
       link_directories(${HDF5_DIR}/lib)
-    else()
-      include_directories(${HDF5_INC}/openmpi)
-      link_directories(${HDF5_LIB}/openmpi)
     endif()
     link_libraries(hdf5)
     set(ENABLE_HDF5 OFF)  # no target since find_package isn't called
