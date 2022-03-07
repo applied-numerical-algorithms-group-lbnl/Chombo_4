@@ -270,7 +270,7 @@ namespace CH4_Data_Choreography
   {
   public:
     ///datafactory has an ncomps argument that shall be ignored here
-    DistributedData(const Chombo4::DisjointBoxLayout &   a_grids,
+    DistributedData(const Chombo4::DisjointBoxLayout     & a_grids,
                     const Chombo4::IntVect               & a_ghost,
                     const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
@@ -322,20 +322,18 @@ namespace CH4_Data_Choreography
 
   private:
     //get sizes and stuff
-    static void  fillBufferEntries(MinimalCopier      & a_pattern,
-                                   vector<bufentry_t> & a_fromMe,
-                                   vector<bufentry_t> & a_toMe,
-                                   vector<fabtype_t*> & a_dstData,
-                                   bool a_printStuff = false)
+    static void  communicateMetaData(MinimalCopier      & a_pattern,
+                                     vector<bufentry_t> & a_fromMe,
+                                     vector<bufentry_t> & a_toMe,
+                                     vector<fabtype_t*> & a_dstData,
+                                     bool a_printStuff = false)
     {
 #ifdef CH_MPI  
       
-      vector<bufentry_t> fromMe(a_pattern.m_fromMotionPlan.size());
-      vector<bufentry_t> toMe  (a_pattern.m_toMotionPlan.size());
       auto comm = CH4_SPMD::Chombo_MPI::comm;
 
       //post sizes
-      for(int ibuf = 0; ibuf < fromMe.size(); ibuf++)
+      for(int ibuf = 0; ibuf < a_fromMe.size(); ibuf++)
       {
         //not constant because I am using the request
         auto& motion  = a_pattern.m_fromMotionPlan[ibuf];
@@ -343,7 +341,7 @@ namespace CH4_Data_Choreography
         //components are dummy arguments
         const fabtype_t& dstfab = *(a_dstData[motion.m_src.m_datInd.datInd()]);
         unsigned long bufsize = dstfab.charsize(motion.m_src.m_region, 0, 1);
-        fromMe[ibuf].m_size = bufsize;
+        a_fromMe[ibuf].m_size = bufsize;
         auto dstprocID = motion.m_dst.m_procID;
         auto srcprocID = motion.m_src.m_procID;
         auto& request  = motion.m_request;
@@ -351,23 +349,17 @@ namespace CH4_Data_Choreography
         if(a_printStuff)
         {
           Chombo4::pout() << "proc = "     << srcprocID
-                          << "\t will send a  " << bufsize
-                          << "\t size buffer to proc " << dstprocID
+                          << "\t will send   a " << bufsize
+                          << "\t sized buffer to   proc " << dstprocID
                           << "\t for region = " << motion.m_src.m_region << endl;
         }
         MPI_Isend(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, 0, comm, &request);
 
       }
 
-      Chombo4::pout() << "before barrier" << endl;
-      
-      MPI_Barrier(comm);
-      if(a_printStuff)
-      {
-        Chombo4::pout() << "after barrier" << endl;
-      }
+
       //get the sizes back
-      for(int ibuf = 0; ibuf < toMe.size(); ibuf++)
+      for(int ibuf = 0; ibuf < a_toMe.size(); ibuf++)
       {
         auto& motion = a_pattern.m_toMotionPlan[ibuf];
         CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
@@ -383,23 +375,42 @@ namespace CH4_Data_Choreography
         if(a_printStuff)
         {
           Chombo4::pout() << "proc = "     << dstprocID
-                          << "\t will receive " << bufsize
-                          << "\t size buffer from proc " << srcprocID
+                          << "\t will receive a " << bufsize
+                          << "\t sized buffer from proc " << srcprocID
                           << "\t for region = " << motion.m_src.m_region << endl;
         }
-        toMe[ibuf].m_size = bufsize;
+        a_toMe[ibuf].m_size = bufsize;
       }
       
       if(a_printStuff)
       {
-        Chombo4::pout() << "DistributedData::fillBufferEntries(): just before barrier" << endl;
+        Chombo4::pout() << "DistributedData::communicateMetaData(): just before barrier" << endl;
       }
       //Do not proceed until everyone has their receives.
       //This simplifies matters but should not technically be necessary.
       MPI_Barrier(comm);
       if(a_printStuff)
       {
-        Chombo4::pout() << "DistributedData::fillBufferEntries(): just after  barrier" << endl;
+        Chombo4::pout() << "DistributedData::communicateMetaData(): just after  barrier" << endl;
+      }
+#endif      
+    }
+
+    //actually serialize, send, and receive data
+    static void  doRemoteCopies(MinimalCopier      & a_pattern,
+                                vector<bufentry_t> & a_fromMe,
+                                vector<bufentry_t> & a_toMe,
+                                vector<fabtype_t*> & a_dstData,
+                                bool a_printStuff = false)
+    {
+#ifdef CH_MPI
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "entering DistributedData::doRemoteCopies"  << std::endl;
+      }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving  DistributedData::doRemoteCopies" << std::endl;
       }
 #endif      
     }
@@ -435,9 +446,12 @@ namespace CH4_Data_Choreography
     {
       doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
 #ifdef CH_MPI  
-      vector<bufentry_t> fromMe, toMe;
-      //includes communication of size information
-      fillBufferEntries(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
+      vector<bufentry_t> fromMe(a_pattern.m_fromMotionPlan.size());
+      vector<bufentry_t> toMe  (a_pattern.m_toMotionPlan.size());
+      //communication of size information
+      communicateMetaData(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
+      //communication of actual data
+      doRemoteCopies(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
 #endif      
     }
     //all buffer data is transient.
