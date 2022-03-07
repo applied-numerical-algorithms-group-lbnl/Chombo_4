@@ -103,6 +103,10 @@ namespace CH4_Data_Choreography
     //region, procID
     boxinfo_t m_src;
     boxinfo_t m_dst;
+#ifdef CH_MPI    
+    MPI_Request m_request;
+#endif
+    
     motion_t(const Chombo4::DataIndex& a_srcInd,
              const Chombo4::DataIndex& a_dstInd,
              const Chombo4::Box      & a_srcRegion,
@@ -305,7 +309,7 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       MinimalCopier copier(m_grids, m_ghost);
-      communicate(*this, *this, copier, a_printStuff);
+      communicate(*this, copier, *this,  a_printStuff);
     }
     
     ///
@@ -313,12 +317,12 @@ namespace CH4_Data_Choreography
                 bool a_printStuff = false)
     {
       MinimalCopier copier(m_grids, a_dst.m_grids);
-      communicate(*this, a_dst, copier, a_printStuff);
+      communicate(*this, copier, a_dst,  a_printStuff);
     }
 
   private:
     //get sizes and stuff
-    static void  fillBufferEntries(const MinimalCopier& a_pattern,
+    static void  fillBufferEntries(MinimalCopier      & a_pattern,
                                    vector<bufentry_t> & a_fromMe,
                                    vector<bufentry_t> & a_toMe,
                                    vector<fabtype_t*> & a_dstData,
@@ -333,35 +337,55 @@ namespace CH4_Data_Choreography
       //post sizes
       for(int ibuf = 0; ibuf < fromMe.size(); ibuf++)
       {
-        const auto& motion = a_pattern.m_fromMotionPlan[ibuf];
+        //not constant because I am using the request
+        auto& motion  = a_pattern.m_fromMotionPlan[ibuf];
         CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
         const fabtype_t& dstfab = *(a_dstData[motion.m_src.m_datInd.datInd()]);
         unsigned long bufsize = dstfab.charsize(motion.m_src.m_region, 0, 1);
         fromMe[ibuf].m_size = bufsize;
         auto dstprocID = motion.m_dst.m_procID;
-        auto srcprocID = motion.m_src.m_procID;        
+        auto srcprocID = motion.m_src.m_procID;
+        auto& request  = motion.m_request;
+
         if(a_printStuff)
         {
-          Chombo4::pout() << "proc=" << srcprocID << "will need " << bufsize << "size buffer from " << dstprocID << endl;
+          Chombo4::pout() << "proc = "     << srcprocID
+                          << "\t will send a  " << bufsize
+                          << "\t size buffer to proc " << dstprocID
+                          << "\t for region = " << motion.m_src.m_region << endl;
         }
-        MPI_Send(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm);
+        MPI_Isend(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, 0, comm, &request);
 
       }
 
+      Chombo4::pout() << "before barrier" << endl;
+      
+      MPI_Barrier(comm);
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "after barrier" << endl;
+      }
       //get the sizes back
       for(int ibuf = 0; ibuf < toMe.size(); ibuf++)
       {
-        const auto& motion = a_pattern.m_toMotionPlan[ibuf];
+        auto& motion = a_pattern.m_toMotionPlan[ibuf];
         CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
         unsigned long bufsize = 0;
         auto dstprocID = motion.m_dst.m_procID;
-        auto srcprocID = motion.m_src.m_procID;        
-        MPI_Recv(&bufsize, 1, MPI_UNSIGNED_LONG, dstprocID, srcprocID, comm, MPI_STATUS_IGNORE);
+        auto srcprocID = motion.m_src.m_procID;
+        auto& request  = motion.m_request;
+
+        MPI_Irecv(&bufsize, 1, MPI_UNSIGNED_LONG, srcprocID, MPI_ANY_TAG, comm, &request);
+        MPI_Status   status;
+        MPI_Wait(&request, &status);
         if(a_printStuff)
         {
-          Chombo4::pout() << "proc=" << dstprocID << "will receive " << bufsize << "size buffer from " << srcprocID << endl;
+          Chombo4::pout() << "proc = "     << dstprocID
+                          << "\t will receive " << bufsize
+                          << "\t size buffer from proc " << srcprocID
+                          << "\t for region = " << motion.m_src.m_region << endl;
         }
         toMe[ibuf].m_size = bufsize;
       }
@@ -388,7 +412,6 @@ namespace CH4_Data_Choreography
       {
         //component arguments are artifacts of a more civilized age
         //components are all in the type system now
-        unsigned int icomp = 0;
         const auto& motion = a_pattern.m_localMotionPlan[ibuf];
         const auto& srcdatind = motion.m_src.m_datInd;
         const auto& srcregion = motion.m_src.m_region;
@@ -396,14 +419,18 @@ namespace CH4_Data_Choreography
         const auto& dstregion = motion.m_dst.m_region;
         CH_assert(srcregion == dstregion);
         Bx regx = ProtoCh::getProtoBox(dstregion);
-        a_dst[dstdatind].copy(a_src[srcdatind], regx, icomp, regx, icomp, icomp);
+        unsigned int ico = 0;
+        unsigned int ncodst = a_dst[dstdatind].nComp();
+        unsigned int ncosrc = a_src[srcdatind].nComp();
+        CH_assert(ncodst == ncosrc);
+        a_dst[dstdatind].copy(a_src[srcdatind], regx, ico, regx, ico, ncodst);
       }
     }
 
     
     static void communicate(DistributedData       & a_dst,
+                            MinimalCopier         & a_pattern,
                             const DistributedData & a_src,
-                            const MinimalCopier   & a_pattern,
                             bool a_printStuff = false)
     {
       doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);

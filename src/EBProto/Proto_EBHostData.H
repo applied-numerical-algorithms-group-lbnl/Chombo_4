@@ -31,6 +31,10 @@ namespace Proto
     {
     }
 
+    int nComp() const
+    {
+      return ncomp;
+    }
     virtual ~EBHostData()
     {
     }
