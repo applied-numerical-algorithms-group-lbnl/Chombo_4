@@ -274,6 +274,7 @@ namespace CH4_Data_Choreography
                     const Chombo4::IntVect               & a_ghost,
                     const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
+      CH_TIME("DistributedData constructor");
       m_grids = a_grids;
       m_ghost = a_ghost;
       Chombo4::DataIterator dit = a_grids.dataIterator();
@@ -308,6 +309,7 @@ namespace CH4_Data_Choreography
     ///
     void exchange(bool a_printStuff = false)
     {
+      CH_TIME("DistributedData::exchange");
       MinimalCopier copier(m_grids, m_ghost);
       communicate(*this, copier, *this,  a_printStuff);
     }
@@ -316,18 +318,20 @@ namespace CH4_Data_Choreography
     void copyTo(DistributedData & a_dst,
                 bool a_printStuff = false)
     {
+      CH_TIME("DistributedData::copyTo");
       MinimalCopier copier(m_grids, a_dst.m_grids);
       communicate(*this, copier, a_dst,  a_printStuff);
     }
 
   private:
-    //get sizes and stuff
+    //get sizes and stuff and allocate buffers
     static void  communicateMetaData(MinimalCopier      & a_pattern,
                                      vector<bufentry_t> & a_fromMe,
                                      vector<bufentry_t> & a_toMe,
                                      vector<fabtype_t*> & a_dstData,
                                      bool a_printStuff = false)
     {
+      CH_TIME("DistributedData::communicateMetaData");
 #ifdef CH_MPI  
       
       auto comm = CH4_SPMD::Chombo_MPI::comm;
@@ -342,6 +346,7 @@ namespace CH4_Data_Choreography
         const fabtype_t& dstfab = *(a_dstData[motion.m_src.m_datInd.datInd()]);
         unsigned long bufsize = dstfab.charsize(motion.m_src.m_region, 0, 1);
         a_fromMe[ibuf].m_size = bufsize;
+        a_fromMe[ibuf].m_buff = (char*)(malloc(bufsize));
         auto dstprocID = motion.m_dst.m_procID;
         auto srcprocID = motion.m_src.m_procID;
         auto& request  = motion.m_request;
@@ -380,6 +385,7 @@ namespace CH4_Data_Choreography
                           << "\t for region = " << motion.m_src.m_region << endl;
         }
         a_toMe[ibuf].m_size = bufsize;
+        a_toMe[ibuf].m_buff = (char*)(malloc(bufsize));
       }
       
       if(a_printStuff)
@@ -403,6 +409,7 @@ namespace CH4_Data_Choreography
                                 vector<fabtype_t*> & a_dstData,
                                 bool a_printStuff = false)
     {
+      CH_TIME("DistributedData::doRemoteCopies");
 #ifdef CH_MPI
       if(a_printStuff)
       {
@@ -414,11 +421,33 @@ namespace CH4_Data_Choreography
       }
 #endif      
     }
+
+    static void freeBuffers(vector<bufentry_t> & a_fromMe,
+                            vector<bufentry_t> & a_toMe,
+                            bool a_printStuff = false)
+    {
+      CH_TIME("DistributedData::freeBuffers");
+      for(int ibuf = 0; ibuf < a_fromMe.size(); ibuf++)
+      {
+        free(a_fromMe[ibuf].m_buff);
+        a_fromMe[ibuf].m_buff= NULL;
+      }
+      for(int ibuf = 0; ibuf < a_toMe.size(); ibuf++)
+      {
+        free(a_toMe[ibuf].m_buff);
+        a_toMe[ibuf].m_buff= NULL;
+      }
+
+
+
+    }
+    
     static void doLocalCopies(DistributedData       & a_dst,
                               const DistributedData & a_src,
                               const MinimalCopier   & a_pattern,
                               bool a_printStuff = false)
     {
+      CH_TIME("DistributedData::doLocalCopies");
       for(int ibuf = 0; ibuf < a_pattern.m_localMotionPlan.size(); ibuf++)
       {
         //component arguments are artifacts of a more civilized age
@@ -448,10 +477,12 @@ namespace CH4_Data_Choreography
 #ifdef CH_MPI  
       vector<bufentry_t> fromMe(a_pattern.m_fromMotionPlan.size());
       vector<bufentry_t> toMe  (a_pattern.m_toMotionPlan.size());
-      //communication of size information
+      //communication of size information and allocate buffers
       communicateMetaData(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
       //communication of actual data
       doRemoteCopies(a_pattern, fromMe, toMe, a_dst.m_data, a_printStuff);
+      //frees up the buffers allocated in communicateMetaData
+      freeBuffers(fromMe, toMe, a_printStuff);
 #endif      
     }
     //all buffer data is transient.
