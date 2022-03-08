@@ -328,7 +328,7 @@ namespace CH4_Data_Choreography
     static void  communicateMetaData(MinimalCopier      & a_pattern,
                                      vector<bufentry_t> & a_fromMe,
                                      vector<bufentry_t> & a_toMe,
-                                     vector<fabtype_t*> & a_dstData,
+                                     vector<fabtype_t*> & a_data,
                                      bool a_printStuff = false)
     {
       CH_TIME("DistributedData::communicateMetaData");
@@ -343,8 +343,8 @@ namespace CH4_Data_Choreography
         auto& motion  = a_pattern.m_fromMotionPlan[ibuf];
         CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
         //components are dummy arguments
-        const fabtype_t& dstfab = *(a_dstData[motion.m_src.m_datInd.datInd()]);
-        unsigned long bufsize = dstfab.charsize(motion.m_src.m_region, 0, 1);
+        const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
+        unsigned long bufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
         a_fromMe[ibuf].m_size = bufsize;
         a_fromMe[ibuf].m_buff = (char*)(malloc(bufsize));
         auto dstprocID = motion.m_dst.m_procID;
@@ -406,7 +406,7 @@ namespace CH4_Data_Choreography
     static void  doRemoteCopies(MinimalCopier      & a_pattern,
                                 vector<bufentry_t> & a_fromMe,
                                 vector<bufentry_t> & a_toMe,
-                                vector<fabtype_t*> & a_dstData,
+                                vector<fabtype_t*> & a_data,
                                 bool a_printStuff = false)
     {
       CH_TIME("DistributedData::doRemoteCopies");
@@ -415,6 +415,60 @@ namespace CH4_Data_Choreography
       {
         Chombo4::pout() << "entering DistributedData::doRemoteCopies"  << std::endl;
       }
+      auto comm = CH4_SPMD::Chombo_MPI::comm;
+
+      //fill buffers and send them
+      for(int ibuf = 0; ibuf < a_fromMe.size(); ibuf++)
+      {
+        //not constant because I am using the request
+        auto& motion  = a_pattern.m_fromMotionPlan[ibuf];
+        CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
+        //components are dummy arguments
+        const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
+        auto dstprocID = motion.m_dst.m_procID;
+        //auto srcprocID = motion.m_src.m_procID;
+        auto& request  = motion.m_request;
+        auto  bufsize  = a_fromMe[ibuf].m_size;
+        auto* charbuf  = a_fromMe[ibuf].m_buff;
+        //encode data into string buffer
+        localfab.linearOut(charbuf, motion.m_src.m_region, 0, 1);
+        //send string buffer to other proc
+        MPI_Isend(charbuf,  bufsize, MPI_BYTE, dstprocID, 0, comm, &request);
+
+      }
+
+
+      //receive buffers
+      for(int ibuf = 0; ibuf < a_toMe.size(); ibuf++)
+      {
+        auto& motion = a_pattern.m_toMotionPlan[ibuf];
+        CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
+        //components are dummy arguments
+        //auto dstprocID = motion.m_dst.m_procID;
+        auto srcprocID = motion.m_src.m_procID;
+        auto& request  = motion.m_request;
+        auto* charbuf = a_toMe[ibuf].m_buff;
+        auto  bufsize = a_toMe[ibuf].m_size;
+
+        //ask MPI fill to the buffer 
+        MPI_Irecv(charbuf, bufsize, MPI_BYTE, srcprocID, MPI_ANY_TAG, comm, &request);
+
+        //wait until it actually arrives
+        MPI_Status   status;
+        MPI_Wait(&request, &status);
+
+        //now unwind the buffer into the data
+        fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
+        localfab.linearIn(charbuf, motion.m_dst.m_region, 0, 1);
+      }
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::communicateMetaData(): just before barrier" << endl;
+      }
+      //Do not proceed until everyone has their receives.
+      //This simplifies matters but should not technically be necessary.
+      MPI_Barrier(comm);
       if(a_printStuff)
       {
         Chombo4::pout() << "leaving  DistributedData::doRemoteCopies" << std::endl;
