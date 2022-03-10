@@ -412,6 +412,16 @@ namespace CH4_Data_Choreography
   };
 
   ///
+  /**
+     Data over a union of rectangles.   
+     CopyTo only copies to valid data (no ghost).
+     Exchange does the usual thing (copy from valid data in neighboring cells 
+     to overlapping ghost cells).
+     Periodic boundary conditions are not supported.
+     All communication is two phase so exchange and copyTo can involve as many as 4*N^2 messages
+     where N is the number of processors.    
+     At each stage, communication between two processors is agreggated into one message.
+   */
   template<class fabtype_t>
   class DistributedData
   {
@@ -496,7 +506,7 @@ namespace CH4_Data_Choreography
           const auto&  srcProc     =  vecinter[iinter]->m_srcProcID;
           const auto&  totbufsize  =  vecinter[iinter]->m_messageLen;
           const auto&  vecbuf      =  vecinter[iinter]->m_boxbufsize;
-          auto      &   request    =  vecinter[iinter]->m_dataRequest;
+          auto      &  request     =  vecinter[iinter]->m_dataRequest;
           CH_assert(srcProc == CH4_SPMD::procID());
         
           const auto& vecPat = pattern[dstProc];
@@ -523,46 +533,49 @@ namespace CH4_Data_Choreography
         } //loop through interactions
       } //scoping
 
-#if 0      
+      //now deal with incoming
       {
-        const auto& pattern =  a_pattern.m_toPattern;
+        const auto& pattern  =  a_pattern.m_toPattern;
         auto      & vecinter =  a_metacomm.m_toMe;
-      //receive buffers
-      for(int ibuf = 0; ibuf < a_toMe.size(); ibuf++)
-      {
-        auto& motion = a_pattern.m_toPattern[ibuf];
-        CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
-        //components are dummy arguments
-        //auto dstprocID = motion.m_dst.m_procID;
-        auto srcprocID = motion.m_src.m_procID;
-        auto& request  = motion.m_request;
-        auto* charbuf = a_toMe[ibuf].m_buff;
-        auto  bufsize = a_toMe[ibuf].m_size;
+        for(int  iinter = 0; iinter < vecinter.size(); iinter++)
+        {
+          char* charbuf            =  vecinter[iinter]->m_buffer;
+          const auto&  dstProc     =  vecinter[iinter]->m_dstProcID;
+          const auto&  srcProc     =  vecinter[iinter]->m_srcProcID;
+          const auto&  totbufsize  =  vecinter[iinter]->m_messageLen;
+          const auto&  vecbuf      =  vecinter[iinter]->m_boxbufsize;
+          auto      &  request     =  vecinter[iinter]->m_dataRequest;
+          CH_assert(dstProc == CH4_SPMD::procID());
+          
+          //ask MPI fill to the buffer 
+          MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm, &request);
+          
+          //wait until it actually arrives
+          MPI_Status   status;
+          MPI_Wait(&request, &status);
+            
+          //now dole them out to each data member
+          const auto& vecPat = pattern[dstProc];
+          //write data going from one proc to another into one big buffer
+          //with some checking along the way
+          char* bufloc = charbuf;
+          for(int ivec = 0; ivec < vecPat.size(); ivec++)
+          {
+            const auto& motion  = pattern[srcProc][ivec];
+            CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
+            fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
+            localfab.linearIn(bufloc, motion.m_dst.m_region, 0, 1);
+            bufloc += vecbuf[ivec];
+          } //end loop over sub buffers
+              
+        } //end loop over to_me processors
+      } //scoping
 
-        //ask MPI fill to the buffer 
-        MPI_Irecv(charbuf, bufsize, MPI_BYTE, srcprocID, MPI_ANY_TAG, comm, &request);
-
-        //wait until it actually arrives
-        MPI_Status   status;
-        MPI_Wait(&request, &status);
-
-        //now unwind the buffer into the data
-        fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
-        localfab.linearIn(charbuf, motion.m_dst.m_region, 0, 1);
-      }
-      
-      if(a_printStuff)
-      {
-        Chombo4::pout() << "DistributedData::communicateMetaData(): just before barrier" << endl;
-      }
-      //Do not proceed until everyone has their receives.
-      //This simplifies matters but should not technically be necessary.
-      MPI_Barrier(comm);
       if(a_printStuff)
       {
         Chombo4::pout() << "leaving  DistributedData::doRemoteCopies" << std::endl;
       }
-#endif
+
     }
 
     static void doLocalCopies(DistributedData       & a_dst,
