@@ -577,13 +577,61 @@ namespace CH4_Data_Choreography
       }
 
     }
+    ///
+    static void doLocalCopiesWithSerialization(DistributedData       & a_dst,
+                                               const DistributedData & a_src,
+                                               const BoxPattern   & a_pattern,
+                                               bool a_printStuff = false)
+    {
+      CH_TIME("DistributedData::doLocalCopiesWithSerialization");
+      for(int ibuf = 0; ibuf < a_pattern.m_localPattern.size(); ibuf++)
+      {
+        //component arguments are artifacts of a more civilized age
+        //components are all in the type system now
+        const auto& motion = a_pattern.m_localPattern[ibuf];
+        const auto& region = motion.m_dst.m_region;
+        CH_assert(motion.m_dst.m_region == motion.m_src.m_region);
+        
+        const auto & srcfab    = a_src[motion.m_src.m_datInd];
+        auto       & dstfab    = a_dst[motion.m_dst.m_datInd];
+        
+        unsigned long thisbufsize = srcfab.charsize(motion.m_src.m_region, 0, 1);
+        char* buffer = (char*)(malloc(thisbufsize));
 
+        srcfab.linearOut(buffer, region,  0, 1);
+        dstfab.linearIn( buffer, region,  0, 1);
+
+        free(buffer);
+      }
+    }
+    ///
     static void doLocalCopies(DistributedData       & a_dst,
                               const DistributedData & a_src,
                               const BoxPattern   & a_pattern,
                               bool a_printStuff = false)
     {
       CH_TIME("DistributedData::doLocalCopies");
+      bool goFaster = !a_printStuff;
+      if(goFaster)
+      {
+        //this is probably faster
+        doLocalCopiesWithCopy(a_dst, a_src, a_pattern, a_printStuff);
+      }
+      else
+      {
+        //this is primarily about debugging serialization routines 
+        doLocalCopiesWithSerialization(a_dst, a_src, a_pattern, a_printStuff);
+      }
+    }
+
+    ///
+    static void doLocalCopiesWithCopy(DistributedData       & a_dst,
+                                      const DistributedData & a_src,
+                                      const BoxPattern   & a_pattern,
+                                      bool a_printStuff = false)
+    {
+          
+      CH_TIME("DistributedData::doLocalCopiesWithCopy");
       for(int ibuf = 0; ibuf < a_pattern.m_localPattern.size(); ibuf++)
       {
         //component arguments are artifacts of a more civilized age
@@ -602,7 +650,7 @@ namespace CH4_Data_Choreography
         a_dst[dstdatind].copy(a_src[srcdatind], regx, ico, regx, ico, ncodst);
       }
     }
-
+    ///
     
     static void communicate(DistributedData       & a_dst,
                             BoxPattern            & a_pattern,
