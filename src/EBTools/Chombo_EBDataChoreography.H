@@ -123,8 +123,8 @@ namespace CH4_Data_Choreography
                       const Chombo4::DataIndex& a_dstInd,
                       const int               & a_dstProcID)
     {
-      m_src.define(a_srcRegion, a_srcGrid, a_srcProcID, a_srcInd);
-      m_dst.define(a_dstRegion, a_dstGrid, a_dstProcID, a_dstInd);
+      m_src.define(a_srcRegion, a_srcGrid, a_srcInd, a_srcProcID);
+      m_dst.define(a_dstRegion, a_dstGrid, a_dstInd, a_dstProcID);
     }
              
   };
@@ -147,72 +147,47 @@ namespace CH4_Data_Choreography
 
       m_toPattern.resize(  CH4_SPMD::numProc());
       m_fromPattern.resize(CH4_SPMD::numProc());
-      Chombo4::DataIterator dit = a_grids.dataIterator();
-      Chombo4::NeighborIterator nit(a_grids);
-      for (dit.begin(); dit.ok(); ++dit)
+      
+      for (Chombo4::DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
       {
         const Chombo4::Box& grid = a_grids[dit()];
         Chombo4::Box gridGhost(grid);
         gridGhost.grow(a_ghost);
 
-        for (nit.begin(dit()); nit.ok(); ++nit)
+        for (Chombo4::LayoutIterator lit = a_grids.layoutIterator(); lit.ok(); ++lit)
         {
-          Chombo4::Box neighbor = nit.box();
-          auto srcBox = neighbor;
-          Chombo4::Box neighborGhost= neighbor;
-          neighborGhost.grow(a_ghost);
-
-          Chombo4::Box gridGhostInter(neighbor & gridGhost);
-          if (!gridGhostInter.isEmpty())
+          
+          Chombo4::Box neighbor = a_grids[lit()];
+          if(neighbor != grid)
           {
-            auto srcRegion = gridGhostInter;
-            auto srcGrid   = a_grids[nit()];
-            auto srcInd    = DataIndex(nit());
-            int  srcProcID = a_grids.procID(nit());
-            
-            auto dstRegion = gridGhostInter;
-            auto dstGrid   = a_grids[dit()];
-            auto dstInd    = dit();
-            int  dstProcID = CH4_SPMD::procID();
-            
-            //his data copies to my ghost
-            box_interaction_t item(srcRegion,   
-                                   srcGrid,     
-                                   srcInd,      
-                                   srcProcID,   
-                                   dstRegion,   
-                                   dstGrid,     
-                                   dstInd,      
-                                   dstProcID);   
+            Chombo4::Box neighborGhost= neighbor;
+            neighborGhost.grow(a_ghost);
 
-        
-            if (myProcID == neiProcID)
-            { // local move
-              m_localPattern.push_back(item);
-            }
-            else
+            Chombo4::Box gridGhostInter(neighbor & gridGhost);
+            //first we see if the neighbor can fill my ghost cells
+            if (!gridGhostInter.isEmpty())
             {
-              m_toPattern[neiProcID].push_back(item);
-            }
-          }
-          Chombo4::Box neighborGhostInter(grid & neighborGhost);
-          if (!neighborGhostInter.isEmpty())
-          {
-            //my data copies to his ghost
-            //local case will be taken care of when the data iterator gets to the neighbor box
-            if(myProcID != neiProcID)
-            {
+              auto srcRegion = gridGhostInter;
+              auto dstRegion = gridGhostInter;
               
-              auto dstRegion = neighborGhostInter;
-              auto dstGrid   = a_grids[nit()];
-              auto dstInd    = DataIndex(nit());
-              int  dstProcID = a_grids.procID(nit());
+              auto srcGrid   = a_grids[lit()];
+              auto dstGrid   = a_grids[dit()];
+              
+
+              int  srcProcID = a_grids.procID(lit());
+              int  dstProcID = CH4_SPMD::procID();
+              
+              Chombo4::DataIndex dstInd  = dit();
+              Chombo4::DataIndex srcInd;              
+              //this only matters if it is a local copy
+              //for off-proc stuff, I have no idea what the data index is
+              //(but the source processor should get it right)              
+              if(srcProcID == dstProcID)
+              {
+                srcInd    = Chombo4::DataIndex(lit());
+              }
             
-              auto srcRegion = neighborGhostInter;
-              auto srcGrid   = a_grids[dit()];
-              auto srcInd    = dit();
-              int  srcProcID = CH4_SPMD::procID();
-              
+              //his data copies to my ghost
               box_interaction_t item(srcRegion,   
                                      srcGrid,     
                                      srcInd,      
@@ -221,14 +196,54 @@ namespace CH4_Data_Choreography
                                      dstGrid,     
                                      dstInd,      
                                      dstProcID);   
-
-              m_fromPattern[neiProcID].push_back(item);
+        
+              if (srcProcID == dstProcID)
+              { // local move
+                m_localPattern.push_back(item);
+              }
+              else
+              {
+                m_toPattern[dstProcID].push_back(item);
+              }
             }
-          }
-        }
-      }
-    }
+            
+            //now we see if I can fill the neighbor ghost cells
+            Chombo4::Box neighborGhostInter(grid & neighborGhost);
+            if (!neighborGhostInter.isEmpty())
+            {
+              int  dstProcID = a_grids.procID(lit());
+              int  srcProcID = CH4_SPMD::procID();
+              
+              //my data copies to his ghost
+              //local case will be taken care of when the data iterator gets to the neighbor box
+              if(srcProcID != dstProcID)
+              {
+                auto srcRegion = neighborGhostInter;
+                auto dstRegion = neighborGhostInter;
+                auto dstGrid   = a_grids[lit()];
+                auto srcGrid   = a_grids[dit()];
 
+                //no idea what data index is on the other side but the destination proc should get it right
+                auto dstInd    = Chombo4::DataIndex();
+                auto srcInd    = dit();
+              
+                box_interaction_t item(srcRegion,   
+                                       srcGrid,     
+                                       srcInd,      
+                                       srcProcID,   
+                                       dstRegion,   
+                                       dstGrid,     
+                                       dstInd,      
+                                       dstProcID);   
+
+                m_fromPattern[dstProcID].push_back(item);
+              } //if (not on proc)
+            }   //if (my grid and ghost grid of neighbor intersect)
+          }     //if (neighbor != me)
+        }       //layout iterator over all grids 
+      }         //data iterator over grids on my proc
+    }
+    
     ///Define for copyTo --- does NOT include ghost cells.
     BoxPattern(const Chombo4::DisjointBoxLayout & a_src,
                const Chombo4::DisjointBoxLayout & a_dst)
@@ -250,7 +265,7 @@ namespace CH4_Data_Choreography
         {
           int dstProcID = a_dst.procID(litDst());
           Chombo4::Box dstGrid = a_src[litDst()];
-          Chombo4::Box intersect(gridSrc & gridDst);
+          Chombo4::Box intersect(srcGrid & dstGrid);
           if(!intersect.isEmpty())
           {
             auto srcInd = Chombo4::DataIndex(litSrc());
