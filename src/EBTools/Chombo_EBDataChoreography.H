@@ -66,23 +66,30 @@ namespace CH4_Data_Choreography
      boxinfo_t
      This is the meta data for one side of a message where the data for one grid 
      is copying over a subset of the data in another grid.
-     dblbox --- box of valid data.
+     grid   --- box of valid data.
      region --- box for copying is a subset of grow(dblbox, nghost).   Can be entirely outside dblbox.
      procid --- process id associated with this side of the message
      datind --- data index associated with this side of the message
   */
   struct boxinfo_t
   {
+    //intersection box
     Chombo4::Box       m_region;
+    
+    //valid data box (dbl box)
+    Chombo4::Box       m_grid;
+    
     int                m_procID;
     Chombo4::DataIndex m_datInd;
     void 
     define(const Chombo4::Box      & a_region,
-           const int               & a_procID,
-           const Chombo4::DataIndex& a_datind)
+           const Chombo4::Box      & a_grid,
+           const Chombo4::DataIndex& a_datind,
+           const int               & a_procID)
     {
-      m_datInd = a_datind;
       m_region = a_region;
+      m_grid   = a_grid;
+      m_datInd = a_datind;
       m_procID = a_procID;
     }
   };
@@ -104,18 +111,20 @@ namespace CH4_Data_Choreography
     //for sorting
     bool operator < (const box_interaction_t& a_input) const
     {
-      return m_src.m_region < a_input.m_src.m_region;
+      return m_src.m_grid < a_input.m_src.m_grid;
     }
     
-    box_interaction_t(const Chombo4::DataIndex& a_srcInd,
-                      const Chombo4::DataIndex& a_dstInd,
-                      const Chombo4::Box      & a_srcRegion,
-                      const Chombo4::Box      & a_dstRegion,
+    box_interaction_t(const Chombo4::Box      & a_srcRegion,
+                      const Chombo4::Box      & a_srcGrid,
+                      const Chombo4::DataIndex& a_srcInd,
                       const int               & a_srcProcID,
+                      const Chombo4::Box      & a_dstRegion,
+                      const Chombo4::Box      & a_dstGrid,
+                      const Chombo4::DataIndex& a_dstInd,
                       const int               & a_dstProcID)
     {
-      m_src.define(a_srcRegion, a_srcProcID, a_srcInd);
-      m_dst.define(a_dstRegion, a_dstProcID, a_dstInd);
+      m_src.define(a_srcRegion, a_srcGrid, a_srcProcID, a_srcInd);
+      m_dst.define(a_dstRegion, a_dstGrid, a_dstProcID, a_dstInd);
     }
              
   };
@@ -142,23 +151,41 @@ namespace CH4_Data_Choreography
       Chombo4::NeighborIterator nit(a_grids);
       for (dit.begin(); dit.ok(); ++dit)
       {
-        const Chombo4::Box& grid = a_grids[dit];
-        int myProcID = CH4_SPMD::procID();
+        const Chombo4::Box& grid = a_grids[dit()];
         Chombo4::Box gridGhost(grid);
         gridGhost.grow(a_ghost);
 
         for (nit.begin(dit()); nit.ok(); ++nit)
         {
           Chombo4::Box neighbor = nit.box();
-          int neiProcID = a_grids.procID(nit());
+          auto srcBox = neighbor;
           Chombo4::Box neighborGhost= neighbor;
           neighborGhost.grow(a_ghost);
 
           Chombo4::Box gridGhostInter(neighbor & gridGhost);
           if (!gridGhostInter.isEmpty())
           {
+            auto srcRegion = gridGhostInter;
+            auto srcGrid   = a_grids[nit()];
+            auto srcInd    = DataIndex(nit());
+            int  srcProcID = a_grids.procID(nit());
+            
+            auto dstRegion = gridGhostInter;
+            auto dstGrid   = a_grids[dit()];
+            auto dstInd    = dit();
+            int  dstProcID = CH4_SPMD::procID();
+            
             //his data copies to my ghost
-            box_interaction_t item(Chombo4::DataIndex(nit()), dit(), gridGhostInter, gridGhostInter, neiProcID, myProcID);
+            box_interaction_t item(srcRegion,   
+                                   srcGrid,     
+                                   srcInd,      
+                                   srcProcID,   
+                                   dstRegion,   
+                                   dstGrid,     
+                                   dstInd,      
+                                   dstProcID);   
+
+        
             if (myProcID == neiProcID)
             { // local move
               m_localPattern.push_back(item);
@@ -175,7 +202,26 @@ namespace CH4_Data_Choreography
             //local case will be taken care of when the data iterator gets to the neighbor box
             if(myProcID != neiProcID)
             {
-              box_interaction_t item(dit(), Chombo4::DataIndex(nit()), neighborGhostInter, neighborGhostInter, myProcID, neiProcID);
+              
+              auto dstRegion = neighborGhostInter;
+              auto dstGrid   = a_grids[nit()];
+              auto dstInd    = DataIndex(nit());
+              int  dstProcID = a_grids.procID(nit());
+            
+              auto srcRegion = neighborGhostInter;
+              auto srcGrid   = a_grids[dit()];
+              auto srcInd    = dit();
+              int  srcProcID = CH4_SPMD::procID();
+              
+              box_interaction_t item(srcRegion,   
+                                     srcGrid,     
+                                     srcInd,      
+                                     srcProcID,   
+                                     dstRegion,   
+                                     dstGrid,     
+                                     dstInd,      
+                                     dstProcID);   
+
               m_fromPattern[neiProcID].push_back(item);
             }
           }
@@ -199,15 +245,28 @@ namespace CH4_Data_Choreography
       for(litSrc.begin(); litSrc.ok(); ++litSrc)
       {
         int srcProcID   = a_src.procID(litSrc());
-        Chombo4::Box gridSrc   = a_src[litSrc()];
+        Chombo4::Box srcGrid   = a_src[litSrc()];
         for(litDst.begin(); litDst.ok(); ++litDst)
         {
           int dstProcID = a_dst.procID(litDst());
-          Chombo4::Box gridDst = a_src[litDst()];
+          Chombo4::Box dstGrid = a_src[litDst()];
           Chombo4::Box intersect(gridSrc & gridDst);
           if(!intersect.isEmpty())
           {
-            box_interaction_t item(Chombo4::DataIndex(litSrc()), Chombo4::DataIndex(litDst()), intersect, intersect, srcProcID, dstProcID);
+            auto srcInd = Chombo4::DataIndex(litSrc());
+            auto dstInd = Chombo4::DataIndex(litDst());
+            auto srcRegion  = intersect;
+            auto dstRegion = intersect;
+              
+            box_interaction_t item(srcRegion,   
+                                   srcGrid,     
+                                   srcInd,      
+                                   srcProcID,   
+                                   dstRegion,   
+                                   dstGrid,     
+                                   dstInd,      
+                                   dstProcID);   
+
             //if neither processor is == myprocID, nothing to do
             if((srcProcID == myProcID) || (dstProcID == myProcID))
             {
