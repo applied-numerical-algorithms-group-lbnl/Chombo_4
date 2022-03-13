@@ -137,7 +137,9 @@ namespace CH4_Data_Choreography
     /**
        Define for exchange--fills ghost cells around boxes if neighboring boxes are adjacent
     */
-    BoxPattern(const Chombo4::DisjointBoxLayout & a_grids, const IntVect& a_ghost)
+    BoxPattern(const Chombo4::DisjointBoxLayout & a_grids,
+               const IntVect                    & a_ghost,
+               bool a_printStuff = false)
     {
       CH_TIME("BoxPattern::exchange constructor");
 
@@ -190,11 +192,13 @@ namespace CH4_Data_Choreography
           }
         }
       }
+      sortAllPatterns();
     }
 
     ///Define for copyTo --- does NOT include ghost cells.
     BoxPattern(const Chombo4::DisjointBoxLayout & a_src,
-               const Chombo4::DisjointBoxLayout & a_dst)
+               const Chombo4::DisjointBoxLayout & a_dst,
+               bool a_printStuff = false)
     {
       CH_TIME("BoxPattern::exchange constructor");
 
@@ -243,6 +247,11 @@ namespace CH4_Data_Choreography
         } //loop over destination boxes
       } //loop over source boxes
 
+      sortAllPatterns();
+    }
+
+    void sortAllPatterns()
+    {
       //sort everything in sight so that patterns on different procs show up in the same order
       std::sort(m_localPattern.begin(), m_localPattern.end());
       for(int ipat = 0; ipat < m_toPattern.size(); ipat++)
@@ -255,14 +264,14 @@ namespace CH4_Data_Choreography
       }
     }
 
-    //plan where source == my proc,  dest == my proc
+    //pattern where source == my proc, dest == my proc
     vector<box_interaction_t> m_localPattern;
 
-    //plan where source != my proc, dest == my proc
+    //pattern where source != my proc, dest == my proc
     /// outer loop is per proc 
     vector< vector<box_interaction_t> >m_toPattern;
 
-    //plan where source == my proc, dest != my proc
+    //pattern where source == my proc, dest != my proc
     /// outer loop is per proc 
     vector< vector<box_interaction_t> >m_fromPattern;
 
@@ -334,6 +343,17 @@ namespace CH4_Data_Choreography
               unsigned long thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
               boxbufsize[ibuf] = thisbufsize;
               totbufsize += thisbufsize;
+              if(a_printStuff)
+              {
+                Chombo4::pout() << "FromMe: ibuf = "       << ibuf
+                                << "  bufSize = "   << thisbufsize
+                                << "  srcProcID = " << fromMePattern[iproc][ibuf].m_src.m_procID
+                                << "  dstProcID = " << fromMePattern[iproc][ibuf].m_dst.m_procID 
+                                << ", srcRegion = " << fromMePattern[iproc][ibuf].m_src.m_region
+                                << ", dstRegion = " << fromMePattern[iproc][ibuf].m_dst.m_region 
+                                << ", srcValid  = " << fromMePattern[iproc][ibuf].m_src.m_valid
+                                << ", dstValid  = " << fromMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
+              }
             }
           
             shared_ptr<proc_interaction_t> from_pi(new proc_interaction_t());
@@ -378,6 +398,17 @@ namespace CH4_Data_Choreography
             for(int ibuf = 0; ibuf < toMePattern[iproc].size(); ibuf++)
             {
               totbufsize += boxbufsize[ibuf];
+              if(a_printStuff)
+              {
+                Chombo4::pout() << "ToMe  : ibuf = "       << ibuf
+                                << "  bufSize = "   << boxbufsize[ibuf]
+                                << "  srcProcID = " << toMePattern[iproc][ibuf].m_src.m_procID
+                                << "  dstProcID = " << toMePattern[iproc][ibuf].m_dst.m_procID 
+                                << ", srcRegion = " << toMePattern[iproc][ibuf].m_src.m_region
+                                << ", dstRegion = " << toMePattern[iproc][ibuf].m_dst.m_region 
+                                << ", srcValid  = " << toMePattern[iproc][ibuf].m_src.m_valid
+                                << ", dstValid  = " << toMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
+              }
             }
             to_pi->m_messageLen = totbufsize;
             to_pi->m_buffer     = (char*)(malloc(totbufsize));
@@ -478,8 +509,8 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       CH_TIME("DistributedData::exchange");
-      BoxPattern copier(m_grids, m_ghost);
-      communicate(*this, copier, *this,  a_printStuff);
+      BoxPattern copier(m_grids, m_ghost, a_printStuff);
+      communicate(*this, copier, *this  , a_printStuff);
     }
     
     ///
@@ -487,8 +518,8 @@ namespace CH4_Data_Choreography
                 bool a_printStuff = false)
     {
       CH_TIME("DistributedData::copyTo");
-      BoxPattern copier(m_grids, a_dst.m_grids);
-      communicate(*this, copier, a_dst,  a_printStuff);
+      BoxPattern copier(m_grids, a_dst.m_grids, a_printStuff);
+      communicate(*this, copier, a_dst, a_printStuff);
     }
 
   private:
