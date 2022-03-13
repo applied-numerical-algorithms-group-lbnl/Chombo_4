@@ -402,7 +402,7 @@ namespace CH4_Data_Choreography
             shared_ptr<proc_interaction_t> from_pi(new proc_interaction_t());
             from_pi->m_srcProcID  = CH4_SPMD::procID();
             from_pi->m_dstProcID  = iproc;
-            from_pi->m_messageLen = totbufsize;
+            from_pi->m_messageLen = totbufsize*sizeof(unsigned long);
             from_pi->m_buffer     = (char*)(malloc(totbufsize));
             from_pi->m_metaDataLen= (boxbufsize.size())*sizeof(unsigned long);
             from_pi->m_boxbufsize  = boxbufsize;
