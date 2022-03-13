@@ -66,30 +66,23 @@ namespace CH4_Data_Choreography
      boxinfo_t
      This is the meta data for one side of a message where the data for one grid 
      is copying over a subset of the data in another grid.
-     grid   --- box of valid data.
+     dblbox --- box of valid data.
      region --- box for copying is a subset of grow(dblbox, nghost).   Can be entirely outside dblbox.
      procid --- process id associated with this side of the message
      datind --- data index associated with this side of the message
   */
   struct boxinfo_t
   {
-    //intersection box
     Chombo4::Box       m_region;
-    
-    //valid data box (dbl box)
-    Chombo4::Box       m_grid;
-    
     int                m_procID;
     Chombo4::DataIndex m_datInd;
     void 
     define(const Chombo4::Box      & a_region,
-           const Chombo4::Box      & a_grid,
-           const Chombo4::DataIndex& a_datind,
-           const int               & a_procID)
+           const int               & a_procID,
+           const Chombo4::DataIndex& a_datind)
     {
-      m_region = a_region;
-      m_grid   = a_grid;
       m_datInd = a_datind;
+      m_region = a_region;
       m_procID = a_procID;
     }
   };
@@ -111,20 +104,18 @@ namespace CH4_Data_Choreography
     //for sorting
     bool operator < (const box_interaction_t& a_input) const
     {
-      return m_src.m_grid < a_input.m_src.m_grid;
+      return m_src.m_region < a_input.m_src.m_region;
     }
     
-    box_interaction_t(const Chombo4::Box      & a_srcRegion,
-                      const Chombo4::Box      & a_srcGrid,
-                      const Chombo4::DataIndex& a_srcInd,
-                      const int               & a_srcProcID,
-                      const Chombo4::Box      & a_dstRegion,
-                      const Chombo4::Box      & a_dstGrid,
+    box_interaction_t(const Chombo4::DataIndex& a_srcInd,
                       const Chombo4::DataIndex& a_dstInd,
+                      const Chombo4::Box      & a_srcRegion,
+                      const Chombo4::Box      & a_dstRegion,
+                      const int               & a_srcProcID,
                       const int               & a_dstProcID)
     {
-      m_src.define(a_srcRegion, a_srcGrid, a_srcInd, a_srcProcID);
-      m_dst.define(a_dstRegion, a_dstGrid, a_dstInd, a_dstProcID);
+      m_src.define(a_srcRegion, a_srcProcID, a_srcInd);
+      m_dst.define(a_dstRegion, a_dstProcID, a_dstInd);
     }
              
   };
@@ -147,103 +138,51 @@ namespace CH4_Data_Choreography
 
       m_toPattern.resize(  CH4_SPMD::numProc());
       m_fromPattern.resize(CH4_SPMD::numProc());
-      
-      for (Chombo4::DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
+      Chombo4::DataIterator dit = a_grids.dataIterator();
+      Chombo4::NeighborIterator nit(a_grids);
+      for (dit.begin(); dit.ok(); ++dit)
       {
-        const Chombo4::Box& grid = a_grids[dit()];
+        const Chombo4::Box& grid = a_grids[dit];
+        int myProcID = CH4_SPMD::procID();
         Chombo4::Box gridGhost(grid);
         gridGhost.grow(a_ghost);
 
-        for (Chombo4::LayoutIterator lit = a_grids.layoutIterator(); lit.ok(); ++lit)
+        for (nit.begin(dit()); nit.ok(); ++nit)
         {
-          
-          Chombo4::Box neighbor = a_grids[lit()];
-          if(neighbor != grid)
+          Chombo4::Box neighbor = nit.box();
+          int neiProcID = a_grids.procID(nit());
+          Chombo4::Box neighborGhost= neighbor;
+          neighborGhost.grow(a_ghost);
+
+          Chombo4::Box gridGhostInter(neighbor & gridGhost);
+          if (!gridGhostInter.isEmpty())
           {
-            Chombo4::Box neighborGhost= neighbor;
-            neighborGhost.grow(a_ghost);
-
-            Chombo4::Box gridGhostInter(neighbor & gridGhost);
-            //first we see if the neighbor can fill my ghost cells
-            if (!gridGhostInter.isEmpty())
-            {
-              auto srcRegion = gridGhostInter;
-              auto dstRegion = gridGhostInter;
-              
-              auto srcGrid   = a_grids[lit()];
-              auto dstGrid   = a_grids[dit()];
-              
-
-              int  srcProcID = a_grids.procID(lit());
-              int  dstProcID = CH4_SPMD::procID();
-              
-              Chombo4::DataIndex dstInd  = dit();
-              Chombo4::DataIndex srcInd;              
-              //this only matters if it is a local copy
-              //for off-proc stuff, I have no idea what the data index is
-              //(but the source processor should get it right)              
-              if(srcProcID == dstProcID)
-              {
-                srcInd    = Chombo4::DataIndex(lit());
-              }
-            
-              //his data copies to my ghost
-              box_interaction_t item(srcRegion,   
-                                     srcGrid,     
-                                     srcInd,      
-                                     srcProcID,   
-                                     dstRegion,   
-                                     dstGrid,     
-                                     dstInd,      
-                                     dstProcID);   
-        
-              if (srcProcID == dstProcID)
-              { // local move
-                m_localPattern.push_back(item);
-              }
-              else
-              {
-                m_toPattern[dstProcID].push_back(item);
-              }
+            //his data copies to my ghost
+            box_interaction_t item(Chombo4::DataIndex(nit()), dit(), gridGhostInter, gridGhostInter, neiProcID, myProcID);
+            if (myProcID == neiProcID)
+            { // local move
+              m_localPattern.push_back(item);
             }
-            
-            //now we see if I can fill the neighbor ghost cells
-            Chombo4::Box neighborGhostInter(grid & neighborGhost);
-            if (!neighborGhostInter.isEmpty())
+            else
             {
-              int  dstProcID = a_grids.procID(lit());
-              int  srcProcID = CH4_SPMD::procID();
-              
-              //my data copies to his ghost
-              //local case will be taken care of when the data iterator gets to the neighbor box
-              if(srcProcID != dstProcID)
-              {
-                auto srcRegion = neighborGhostInter;
-                auto dstRegion = neighborGhostInter;
-                auto dstGrid   = a_grids[lit()];
-                auto srcGrid   = a_grids[dit()];
-
-                //no idea what data index is on the other side but the destination proc should get it right
-                auto dstInd    = Chombo4::DataIndex();
-                auto srcInd    = dit();
-              
-                box_interaction_t item(srcRegion,   
-                                       srcGrid,     
-                                       srcInd,      
-                                       srcProcID,   
-                                       dstRegion,   
-                                       dstGrid,     
-                                       dstInd,      
-                                       dstProcID);   
-
-                m_fromPattern[dstProcID].push_back(item);
-              } //if (not on proc)
-            }   //if (my grid and ghost grid of neighbor intersect)
-          }     //if (neighbor != me)
-        }       //layout iterator over all grids 
-      }         //data iterator over grids on my proc
+              m_toPattern[neiProcID].push_back(item);
+            }
+          }
+          Chombo4::Box neighborGhostInter(grid & neighborGhost);
+          if (!neighborGhostInter.isEmpty())
+          {
+            //my data copies to his ghost
+            //local case will be taken care of when the data iterator gets to the neighbor box
+            if(myProcID != neiProcID)
+            {
+              box_interaction_t item(dit(), Chombo4::DataIndex(nit()), neighborGhostInter, neighborGhostInter, myProcID, neiProcID);
+              m_fromPattern[neiProcID].push_back(item);
+            }
+          }
+        }
+      }
     }
-    
+
     ///Define for copyTo --- does NOT include ghost cells.
     BoxPattern(const Chombo4::DisjointBoxLayout & a_src,
                const Chombo4::DisjointBoxLayout & a_dst)
@@ -260,28 +199,15 @@ namespace CH4_Data_Choreography
       for(litSrc.begin(); litSrc.ok(); ++litSrc)
       {
         int srcProcID   = a_src.procID(litSrc());
-        Chombo4::Box srcGrid   = a_src[litSrc()];
+        Chombo4::Box gridSrc   = a_src[litSrc()];
         for(litDst.begin(); litDst.ok(); ++litDst)
         {
           int dstProcID = a_dst.procID(litDst());
-          Chombo4::Box dstGrid = a_src[litDst()];
-          Chombo4::Box intersect(srcGrid & dstGrid);
+          Chombo4::Box gridDst = a_src[litDst()];
+          Chombo4::Box intersect(gridSrc & gridDst);
           if(!intersect.isEmpty())
           {
-            auto srcInd = Chombo4::DataIndex(litSrc());
-            auto dstInd = Chombo4::DataIndex(litDst());
-            auto srcRegion  = intersect;
-            auto dstRegion = intersect;
-              
-            box_interaction_t item(srcRegion,   
-                                   srcGrid,     
-                                   srcInd,      
-                                   srcProcID,   
-                                   dstRegion,   
-                                   dstGrid,     
-                                   dstInd,      
-                                   dstProcID);   
-
+            box_interaction_t item(Chombo4::DataIndex(litSrc()), Chombo4::DataIndex(litDst()), intersect, intersect, srcProcID, dstProcID);
             //if neither processor is == myprocID, nothing to do
             if((srcProcID == myProcID) || (dstProcID == myProcID))
             {
@@ -402,7 +328,7 @@ namespace CH4_Data_Choreography
             shared_ptr<proc_interaction_t> from_pi(new proc_interaction_t());
             from_pi->m_srcProcID  = CH4_SPMD::procID();
             from_pi->m_dstProcID  = iproc;
-            from_pi->m_messageLen = totbufsize*sizeof(unsigned long);
+            from_pi->m_messageLen = totbufsize;
             from_pi->m_buffer     = (char*)(malloc(totbufsize));
             from_pi->m_metaDataLen= (boxbufsize.size())*sizeof(unsigned long);
             from_pi->m_boxbufsize  = boxbufsize;
