@@ -161,7 +161,7 @@ namespace Proto
       this->m_regData.define(a_box);  //stack allocation turned off for now
     }
 
-    BoxData<data_t, ncomp, HOST>& getRegData()
+    HostBoxData<data_t, ncomp>& getRegData()
     {
       return m_regData;
     }
@@ -251,8 +251,7 @@ namespace Proto
     EBHostData& operator=(const EBHostData<cent, data_t, ncomp>& a_src);
 
     Box m_inputBox;
-    //HostBoxData<        data_t, ncomp>     m_regData;
-    BoxData<data_t, ncomp, HOST> m_regData;
+    HostBoxData<        data_t, ncomp>     m_regData;
     HostIrregData<cent, data_t, ncomp>     m_irrData;
     EBGraph                                m_graph;
   };
