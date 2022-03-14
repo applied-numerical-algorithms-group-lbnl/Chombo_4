@@ -599,9 +599,13 @@ namespace CH4_Data_Choreography
             if(a_printStuff)
             {
               Chombo4::pout() << "doremotecopies send ivec= "    <<  ivec
-                     << ", fabBox = "   << localfab.box() << endl;
+                              << ", fabBox = "   << localfab.box()
+                              << ", region = "   << motion.m_src.m_region << endl;
+                           
             }
-            localfab.linearOut(bufloc, motion.m_src.m_region, 0, 1);
+            bool fabprint = (a_printStuff && (ivec == 0));
+            fabprint = false;
+            localfab.linearOut(bufloc, motion.m_src.m_region, 0, 1, fabprint);
             bufloc += charsize;  
           }
           CH_assert(checkbufsize == totbufsize);
@@ -656,9 +660,12 @@ namespace CH4_Data_Choreography
             if(a_printStuff)
             {
               Chombo4::pout() << "doremotecopies recv ivec= "    <<  ivec
-                     << ", fabBox = "   << localfab.box() << endl;
+                              << ", fabBox = "   << localfab.box() 
+                              << ", region = "   << motion.m_dst.m_region << endl;
             }
-            localfab.linearIn(bufloc, motion.m_dst.m_region, 0, 1);
+            bool fabprint = (a_printStuff && (ivec == 0));
+            fabprint = false;
+            localfab.linearIn(bufloc, motion.m_dst.m_region, 0, 1, fabprint);
             bufloc += vecbuf[ivec];
           } //end loop over sub buffers
               

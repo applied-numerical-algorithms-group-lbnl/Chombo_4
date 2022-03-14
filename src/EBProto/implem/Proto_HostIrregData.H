@@ -299,7 +299,8 @@ namespace Proto
     ///this DOES include sizeof(T)  
     std::size_t charsize(const Box&   a_bx,
                          unsigned int a_startcomp,
-                         unsigned int a_numcomps) const
+                         unsigned int a_numcomps,
+                         bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::charsize");
       using ProtoSer::linearCharBufSize;
@@ -320,12 +321,17 @@ namespace Proto
           retval += linearCharBufSize(data(pt, icomp));
         }
       }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "hostirregdata::charsize for box " << a_bx << " returning " << retval << endl;
+      }
       return retval;
     }
 
     /// recreates this object into a stream of bytes
     inline
-    void energize(void*  a_buf) const
+    void energize(void*  a_buf,
+                  bool   a_printStuff = false) const
     {
       PR_TIME("HostIrregData::energize");
       using ProtoSer::linearCharBufSize;
@@ -369,9 +375,14 @@ namespace Proto
     }
 
    ///creates this object from the aforementioned stream of bytes
-    HostIrregData(void *a_buf)
+    HostIrregData(void *a_buf,
+                  bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::char_constructor");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "entering hostirregdata buffer constructor"   << endl;
+      }
       using ProtoSer::linearInFromCharBuf;
       using ProtoSer::linearCharBufSize;
       size_t charsiz = 0;
@@ -415,6 +426,11 @@ namespace Proto
           charbuf += linearCharBufSize(data(pt, icomp));
         }
       }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving hostirregdata buffer constructor charsiz=" << charsiz   << endl;
+      }
+
     }
     
     ///
@@ -422,17 +438,20 @@ namespace Proto
     void linearOut(void*               a_buf,
                    const Box       &   a_bx,
                    unsigned int        a_startcomp,
-                   unsigned int        a_numcomps) const
+                   unsigned int        a_numcomps,
+                   bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::linearOut");
-      energize(a_buf);
+      energize(a_buf, a_printStuff);
     }
-
+    
+    ///
     inline
     void  linearIn(void*                  a_buf,
                    const Box       &      a_bx,
                    unsigned int           a_startcomp,
-                   unsigned int           a_numcomps)
+                   unsigned int           a_numcomps,
+                   bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::linearIn");
       HostIrregData<cent, data_t, ncomp> src(a_buf);

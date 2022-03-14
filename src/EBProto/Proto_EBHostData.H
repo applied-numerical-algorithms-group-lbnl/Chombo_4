@@ -198,12 +198,13 @@ namespace Proto
     ///this DOES include sizeof(T)  
     virtual std::size_t charsize(const Box&   a_bx,
                                  unsigned int a_startcomp,
-                                 unsigned int a_numcomps) const
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const
     {
       PR_TIME("EBHostData::charsize");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t sumsize = regsize + irrsize;
 
       return sumsize;
@@ -212,28 +213,30 @@ namespace Proto
     virtual void  linearIn(void*                  a_buf,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
-                           unsigned int           a_numcomps)
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false)
     {
       PR_TIME("EBHostData::linearIn");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
-      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
     }
     virtual void linearOut(void*               a_buf,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
-                           unsigned int        a_numcomps) const
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const
     {
       PR_TIME("EBHostData::linearOut");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
-      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
     }
     ///
     static int preAllocatable()
