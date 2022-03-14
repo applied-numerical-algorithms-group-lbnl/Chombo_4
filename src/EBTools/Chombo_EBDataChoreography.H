@@ -346,7 +346,7 @@ namespace CH4_Data_Choreography
               if(a_printStuff)
               {
                 Chombo4::pout() << "FromMe: ibuf = "       << ibuf
-                                << "  bufSize = "   << thisbufsize
+                                << "  bufSize   = "   << thisbufsize
                                 << "  srcProcID = " << fromMePattern[iproc][ibuf].m_src.m_procID
                                 << "  dstProcID = " << fromMePattern[iproc][ibuf].m_dst.m_procID 
                                 << ", srcRegion = " << fromMePattern[iproc][ibuf].m_src.m_region
@@ -564,6 +564,11 @@ namespace CH4_Data_Choreography
             CH_assert(charsize == vecbuf[ivec]);
             checkbufsize += charsize;
           
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "doremotecopies send ivec= "    <<  ivec
+                     << ", fabBox = "   << localfab.box() << endl;
+            }
             localfab.linearOut(bufloc, motion.m_src.m_region, 0, 1);
             bufloc += charsize;  
           }
@@ -597,15 +602,22 @@ namespace CH4_Data_Choreography
           MPI_Wait(&request, &status);
             
           //now dole them out to each data member
-          const auto& vecPat = pattern[dstProc];
+          const auto& vecPat = pattern[srcProc];
           //write data going from one proc to another into one big buffer
           //with some checking along the way
           char* bufloc = charbuf;
+          
+
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
             const auto& motion  = pattern[srcProc][ivec];
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "doremotecopies recv ivec= "    <<  ivec
+                     << ", fabBox = "   << localfab.box() << endl;
+            }
             localfab.linearIn(bufloc, motion.m_dst.m_region, 0, 1);
             bufloc += vecbuf[ivec];
           } //end loop over sub buffers
