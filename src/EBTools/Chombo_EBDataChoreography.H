@@ -193,8 +193,26 @@ namespace CH4_Data_Choreography
         }
       }
       sortAllPatterns();
+
+      
+      if(a_printStuff)
+      {
+        printStuff(string("exchange")); 
+      }
     }
 
+    void printStuff(string a_prefix) const
+    {
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+      {
+        Chombo4::pout() << a_prefix << " BoxPattern constructor:"
+                        << " proc = " << iproc 
+                        << " m_toPattern[iproc].size() = " << m_toPattern[iproc].size()
+                        << " m_fromPattern[iproc].size() = " << m_fromPattern[iproc].size() << endl;
+                
+      }
+    }
+      
     ///Define for copyTo --- does NOT include ghost cells.
     BoxPattern(const Chombo4::DisjointBoxLayout & a_src,
                const Chombo4::DisjointBoxLayout & a_dst,
@@ -248,6 +266,10 @@ namespace CH4_Data_Choreography
       } //loop over source boxes
 
       sortAllPatterns();
+      if(a_printStuff)
+      {
+        printStuff(string("exchange")); 
+      }
     }
 
     void sortAllPatterns()
@@ -389,6 +411,7 @@ namespace CH4_Data_Choreography
             to_pi->m_srcProcID   = iproc;
             to_pi->m_dstProcID   = CH4_SPMD::procID();
             to_pi->m_metaDataLen = (boxbufsize.size())*sizeof(unsigned long);
+
             char* sendbuf = (char*)(boxbufsize.data());
             MPI_Irecv(sendbuf, to_pi->m_metaDataLen, MPI_BYTE, to_pi->m_srcProcID, MPI_ANY_TAG, comm, &to_pi->m_metaRequest);
             MPI_Status   status;
@@ -412,7 +435,8 @@ namespace CH4_Data_Choreography
             }
             to_pi->m_messageLen = totbufsize;
             to_pi->m_buffer     = (char*)(malloc(totbufsize));
-
+            m_toMe.push_back(to_pi);
+            
             if(a_printStuff)
             {
               Chombo4::pout() << "proc = "     << to_pi->m_dstProcID
@@ -541,6 +565,10 @@ namespace CH4_Data_Choreography
       {
         const auto& pattern  =  a_pattern.m_fromPattern;
         auto      & vecinter =  a_metacomm.m_fromMe;
+        if(a_printStuff)
+        {
+          Chombo4::pout() << "doremote copies send: vecinter.size() = " << vecinter.size() << endl;
+        }
         for(int  iinter = 0; iinter < vecinter.size(); iinter++)
         {
           char* charbuf            =  vecinter[iinter]->m_buffer;
@@ -556,6 +584,10 @@ namespace CH4_Data_Choreography
           //write data going from one proc to another into one big buffer
           //with some checking along the way
           char* bufloc = charbuf;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "doremote copies send: vecPat.size() = " << vecPat.size() << endl;
+          }
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
             const auto& motion  = pattern[dstProc][ivec];
@@ -584,6 +616,10 @@ namespace CH4_Data_Choreography
       {
         const auto& pattern  =  a_pattern.m_toPattern;
         auto      & vecinter =  a_metacomm.m_toMe;
+        if(a_printStuff)
+        {
+          Chombo4::pout() << "doremote copies recv: vecinter.size() = " << vecinter.size() << endl;
+        }
         for(int  iinter = 0; iinter < vecinter.size(); iinter++)
         {
           char* charbuf            =  vecinter[iinter]->m_buffer;
@@ -608,6 +644,10 @@ namespace CH4_Data_Choreography
           char* bufloc = charbuf;
           
 
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "doremote copies recv: vecPat.size() = " << vecPat.size() << endl;
+          }
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
             const auto& motion  = pattern[srcProc][ivec];
