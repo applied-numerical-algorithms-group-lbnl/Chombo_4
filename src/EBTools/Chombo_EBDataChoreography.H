@@ -46,16 +46,19 @@ using namespace Chombo4;
    DistributedData holds data over a union of rectangles.
    Each rectangle is a Box in a DisjointBoxLayout.
    There are two communication patterns associated with this data.
-   1. copyTo: where one HostLevelData writes its data to another 
+   1. copyTo: where one DistributedData writes its data to another 
    over the intersection of their DisjointBoxLayouts.   Ghost data is *not* overwritten.  
    This is  slightly different behavior than standard Chombo3 LevelData.
-   2.  exchange: ghost cell information where (within a HostData) ghost data from one grid 
+   2.  exchange: ghost cell information where ghost data from one grid 
    is filled with valid data from a neighboring grid.
      
    DistributedData        --- holds data and manages communcation.
    CommunicationMeta      --- deals with the communication of meta data information
    (also holds the string buffers used to call MPI)
-   BoxPattern             --- Manages all the on-processor meta data (who is talking to whom via what boxes)
+   BoxPattern             --- Manages all the on-processor meta data 
+                              (who is talking to whom via what boxes)
+   box_interaction_t  the meta data associated with two boxes communciating
+   proc_interaction_t the meta data associated with two procs communicating
 */
 namespace CH4_Data_Choreography
 {
@@ -435,6 +438,7 @@ namespace CH4_Data_Choreography
             }
             to_pi->m_messageLen = totbufsize;
             to_pi->m_buffer     = (char*)(malloc(totbufsize));
+            to_pi->m_boxbufsize = boxbufsize;
             m_toMe.push_back(to_pi);
             
             if(a_printStuff)
@@ -502,6 +506,7 @@ namespace CH4_Data_Choreography
       m_ghost = a_ghost;
       Chombo4::DataIterator dit = a_grids.dataIterator();
       m_data.resize(dit.size(), NULL);
+      
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         Chombo4::Box ghosted = Chombo4::grow(a_grids[dit[ibox]], a_ghost);
@@ -592,7 +597,9 @@ namespace CH4_Data_Choreography
           {
             const auto& motion  = pattern[dstProc][ivec];
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
-            unsigned long charsize = localfab.charsize(motion.m_src.m_region, 0, 1);
+            int icomp = 0;
+            int ncomp = localfab.nComp();
+            unsigned long charsize = localfab.charsize(motion.m_src.m_region, icomp, ncomp);
             CH_assert(charsize == vecbuf[ivec]);
             checkbufsize += charsize;
           
@@ -604,8 +611,8 @@ namespace CH4_Data_Choreography
                            
             }
             bool fabprint = (a_printStuff && (ivec == 0));
-            fabprint = false;
-            localfab.linearOut(bufloc, motion.m_src.m_region, 0, 1, fabprint);
+
+            localfab.linearOut(bufloc, motion.m_src.m_region, icomp, ncomp, fabprint);
             bufloc += charsize;  
           }
           CH_assert(checkbufsize == totbufsize);
@@ -654,18 +661,30 @@ namespace CH4_Data_Choreography
           }
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
+
+           if(a_printStuff)
+            {
+              Chombo4::pout() << "ivec (for vecpat) = " << ivec << endl;
+            }
             const auto& motion  = pattern[srcProc][ivec];
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
-            if(a_printStuff)
+           if(a_printStuff)
             {
               Chombo4::pout() << "doremotecopies recv ivec= "    <<  ivec
                               << ", fabBox = "   << localfab.box() 
                               << ", region = "   << motion.m_dst.m_region << endl;
             }
-            bool fabprint = (a_printStuff && (ivec == 0));
-            fabprint = false;
-            localfab.linearIn(bufloc, motion.m_dst.m_region, 0, 1, fabprint);
+
+            int icomp = 0;
+            int ncomp = localfab.nComp();
+            localfab.linearIn(bufloc, motion.m_dst.m_region, icomp, ncomp, a_printStuff);
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "made it out of linearin for ivec = " << ivec << endl;
+              Chombo4::pout() << "vecbuf.size()=" << vecbuf.size() << endl;
+            }
+            
             bufloc += vecbuf[ivec];
           } //end loop over sub buffers
               
@@ -687,8 +706,7 @@ namespace CH4_Data_Choreography
       CH_TIME("DistributedData::doLocalCopiesWithSerialization");
       for(int ibuf = 0; ibuf < a_pattern.m_localPattern.size(); ibuf++)
       {
-        //component arguments are artifacts of a more civilized age
-        //components are all in the type system now
+        
         const auto& motion = a_pattern.m_localPattern[ibuf];
         const auto& region = motion.m_dst.m_region;
         CH_assert(motion.m_dst.m_region == motion.m_src.m_region);
@@ -696,11 +714,13 @@ namespace CH4_Data_Choreography
         const auto & srcfab    = a_src[motion.m_src.m_datInd];
         auto       & dstfab    = a_dst[motion.m_dst.m_datInd];
         
-        unsigned long thisbufsize = srcfab.charsize(motion.m_src.m_region, 0, 1);
+        int icomp = 0;
+        int ncomp = srcfab.nComp();
+        unsigned long thisbufsize = srcfab.charsize(motion.m_src.m_region, icomp, ncomp);
         char* buffer = (char*)(malloc(thisbufsize));
 
-        srcfab.linearOut(buffer, region,  0, 1);
-        dstfab.linearIn( buffer, region,  0, 1);
+        srcfab.linearOut(buffer, region,  icomp, ncomp);
+        dstfab.linearIn( buffer, region,  icomp, ncomp);
 
         free(buffer);
       }

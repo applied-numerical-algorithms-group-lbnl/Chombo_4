@@ -248,36 +248,48 @@ namespace Proto
     {
       CENTERING thiscent = cent;
 
-      bool retval = false;
+      bool in_box = false;
       if((thiscent == CELL) || (thiscent == BOUNDARY))
       {        
-        retval = a_srcbox.contains(a_ind.m_pt);
+        in_box = a_srcbox.contains(a_ind.m_pt);
       }
       else if(thiscent == XFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(0, 1);
-        retval = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
+        in_box = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
       }
       else if(thiscent ==  YFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(1, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+        in_box = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
       }
 #if DIM==3      
       else if(thiscent ==  ZFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(2, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+        in_box = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
       }
 #endif
       else
       {
         PROTO_ASSERT(false, "unaccounted-for centering");
       }
-      return retval;
+      //now check it is in the actual list
+      bool found = false;
+      for (unsigned int i=0; i<m_indicies->size(); ++i)
+      {
+        const index_t & ind = (*m_indicies)[i];
+        if(ind ==  a_ind)
+        {
+          found = true;
+          break;
+        }
+      }
+
+      return (in_box && found);
     }
     ///
     vector<index_t> getIndiciesInBox(const Box & a_bx) const
@@ -454,8 +466,18 @@ namespace Proto
                    bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::linearIn");
-      HostIrregData<cent, data_t, ncomp> src(a_buf);
-      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps);
+      
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "entering hird linearin" << endl;
+          }
+      HostIrregData<cent, data_t, ncomp> src(a_buf, a_printStuff);
+      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps, a_printStuff);
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "leaving hird linearin" << endl;
+          }
+      
     }
     ///
     static int preAllocatable()
@@ -472,16 +494,24 @@ namespace Proto
     void copy(const HostIrregData<cent, data_t, ncomp>& a_src,
               const Box& a_bxFrom, unsigned int a_isrc,
               const Box& a_bxTo  , unsigned int a_idst,
-              unsigned int a_inco)
+              unsigned int a_inco, bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::copy");
       Box interBox = a_bxFrom & a_bxTo;
 
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "entering hird copy" << endl;
+          }
       for(int iind = 0; iind < m_indicies->size(); iind++)
       {
         auto& vof = (*m_indicies)[iind];
         if((interBox.contains(vof.m_pt)) && (a_src.copyContains(vof, interBox)))
         {
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "somehow we hird got here" << endl;
+          }
           for(unsigned int ico = 0; ico < a_inco; ico++)
           {
             unsigned int isrc = a_isrc + ico;
@@ -490,6 +520,10 @@ namespace Proto
           }
         }
       }
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "leaving hird  copy" << endl;
+          }
     }
 
 

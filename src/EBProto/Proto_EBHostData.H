@@ -203,11 +203,12 @@ namespace Proto
     {
       PR_TIME("EBHostData::charsize");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
+      size_t retval = 2*sizeof(unsigned long); //regsize and irregsize
       size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t sumsize = regsize + irrsize;
-
-      return sumsize;
+      retval += sumsize;
+      return retval;
       
     }
     virtual void  linearIn(void*                  a_buf,
@@ -218,11 +219,37 @@ namespace Proto
     {
       PR_TIME("EBHostData::linearIn");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "in ebhostdata::linearin" << endl;
+      }
       char* charbuf = (char*)a_buf;
+      unsigned long* longbuf = (unsigned long*)(charbuf);
+      unsigned long regSize = *longbuf;
+      longbuf++;
+      unsigned long irrSize = *longbuf;
+      longbuf++;
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "ebhostdata::linearin: regSize = " << regSize << endl;
+        Chombo4::pout() << "ebhostdata::linearin: irrSize = " << irrSize << endl;
+      }
+      
+      charbuf = (char*) longbuf;
       m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += regSize;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "going into irregdata linearin" << endl;
+      }
       m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += irrSize;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving ebhostdata linearin" << endl;
+      }
+
     }
     virtual void linearOut(void*               a_buf,
                            const Box       &   a_bx,
@@ -233,10 +260,25 @@ namespace Proto
       PR_TIME("EBHostData::linearOut");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
+      unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      unsigned long irrSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      unsigned long* longbuf = (unsigned long*)(charbuf);
+      *longbuf = regSize;
+      longbuf++;
+      *longbuf = irrSize;
+      longbuf++;
+      charbuf = (char*) longbuf;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "ebhostdata::linearOut: regSize = " << regSize << endl;
+        Chombo4::pout() << "ebhostdata::linearOut: irrSize = " << irrSize << endl;
+      }
+      
       m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += regSize;
+      
       m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += irrSize;
     }
     ///
     static int preAllocatable()

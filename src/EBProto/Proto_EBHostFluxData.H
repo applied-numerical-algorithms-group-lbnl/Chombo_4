@@ -130,7 +130,7 @@ namespace Proto
                                  unsigned int a_startcomp,
                                  unsigned int a_numcomps) const
     {
-      size_t sumsize = 0;
+      size_t sumsize = 3*sizeof(unsigned long long);
       sumsize += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       sumsize += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 #if DIM==3      
@@ -162,15 +162,30 @@ namespace Proto
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
+      unsigned long xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      unsigned long ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      unsigned long zSize = 0;
+#if DIM==3      
+      zSize = m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
+#endif      
+      
+      unsigned long* longbuf = (unsigned long*)(charbuf);
+      *longbuf = xSize;
+      longbuf++;
+      *longbuf = ySize;
+      longbuf++;
+      *longbuf = zSize;
+      longbuf++;
+      charbuf = (char*)(longbuf);
+        
       m_xflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += xSize;
       m_yflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += ySize;
 #if DIM==3      
       m_zflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
 #endif      
-
     }
     ///
     static int preAllocatable()
