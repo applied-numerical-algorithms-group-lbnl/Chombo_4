@@ -22,6 +22,7 @@
 #include "Chombo_SPMD.H"
 #include "Proto_EBBoxData.H"
 #include "Proto_EBHostData.H"
+#include "Chombo_EBDataChoreography.H"
 #include "Chombo_NamespaceHeader.H"
 
 #ifdef CH_MPI
@@ -181,42 +182,53 @@ public:
               const Copier                        &            a_copier) const
   {
     CH_TIME("EBLevelBoxData::copyTo");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
+    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
+    
+    HostMPI_t hostdataSrc(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
+    HostMPI_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
     
-    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
+    hostdataSrc.copyTo(hostdataDst);
     
     copyToDevice(a_dst, hostdataDst);
   }
 
 
-  /// 
+  /// deprecated interface since we don't need copier any more
   virtual void exchange(const Copier& copier)
   {
-    CH_TIME("EBLevelBoxData::exchange");
-#if 0
-    this->LevelData<EBBoxData<cent, Real, NUMCOMPS>>::exchange(copier);
-#else
-    
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    CH_TIME("EBLevelBoxData::exchange(copier)");
+
+    exchange();
+  }
+
+ ///the new, sleeker exchange interface that all the kids are talking about
+  virtual void exchange()
+  {
+    CH_TIME("EBLevelBoxData::exchange(copier)");
+
+    CH4_Data_Choreography::DistributedData< EBHostData<cent, Real, NUMCOMPS> >
+      hostdata(this->disjointBoxLayout(),   this->m_ghost   , hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
 
-    hostdata.exchange(copier);
+    hostdata.exchange();
 
     copyToDevice(*this, hostdata);
-#endif
+
   }
 
   ///
   Real maxNorm(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
+    HostMPI_t   hostdata(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
+    
     copyToHost(     hostdata, *this);
+    
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
     Real maxval = 0; 
@@ -247,7 +259,9 @@ public:
   Real sum(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
+    HostMPI_t hostdata(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
+
     copyToHost(     hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
@@ -367,6 +381,44 @@ public:
 
   /// this is for mpi stuff
   static 
+  void copyToHost(CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
+                  const LevelData< EBBoxData<cent, Real, NUMCOMPS> >                        & a_deviDat)
+  {
+    CH_TIME("EBLevelBoxData::copyToHost");
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = (LevelData< EBBoxData<cent, Real, NUMCOMPS> >&) (a_deviDat);
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
+      {
+        size_t fabsizeHost, fabsizeDevi; 
+        Real*  dataptrHost;
+        Real*  dataptrDevi;
+        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
+        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
+
+        size_t datSize = sizeof(Real)*fabsizeDevi;
+
+#ifdef PROTO_CUDA
+        protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
+        protoError err = protoGetLastError();
+        if (err != protoSuccess)
+        {
+          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
+                  __FILE__, __LINE__, protoGetErrorString(err));
+        }
+#else
+        memcpy(dataptrHost, dataptrDevi, datSize);
+#endif  
+      }
+    }
+  }
+  
+
+  ///deprecated as I slowly unwind the tentacles of LevelData
+  static 
   void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
                   const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
   {
@@ -438,6 +490,23 @@ public:
   
   ///
   static 
+  void copyToDevice(LevelData< EBBoxData<cent, Real, NUMCOMPS> >                                    & a_deviDat,
+                    const CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
+  {
+    CH_TIME("EBLevelBoxData::copyToDevice");
+    LevelData< EBBoxData<cent, Real, NUMCOMPS> >                               & deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> >                              &> (a_deviDat);
+    CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS > > & hostDat = const_cast<CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > &> (a_hostDat);
+    DataIterator dit = a_hostDat.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
+      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      copyToDevice(devifab, hostfab);
+    }
+  }
+
+  ///
+  static 
   void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
                     const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
   {
@@ -452,7 +521,6 @@ public:
       copyToDevice(devifab, hostfab);
     }
   }
-
   ///
   static 
   void copyToDevice( EBBoxData< cent, Real, NUMCOMPS> & devifab,

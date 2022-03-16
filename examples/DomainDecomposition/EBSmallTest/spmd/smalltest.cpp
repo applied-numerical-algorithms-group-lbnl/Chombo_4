@@ -97,9 +97,9 @@ checkTheMooch(DistributedData<EBHostData<CELL, int, 1> > & a_mooch,
 }
 /***/
 int
-testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >     a_geoserv,
-                Chombo4::DisjointBoxLayout             a_grids,
-                Chombo4::Box                           a_domain,
+testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >  a_geoserv,
+                Chombo4::DisjointBoxLayout                       a_grids,
+                Chombo4::Box                                     a_domain,
                 Real a_dx, Point  a_ghost)
 {
   int retval = 0;
@@ -113,6 +113,92 @@ testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >     a_geoserv,
   retval = checkTheMooch(mooch, a_geoserv, a_grids, a_domain, a_ghost, a_dx);
   return retval;
 }
+/***/
+PROTO_KERNEL_START
+unsigned int  exactSnoochF(int           a_pt[DIM],
+                           Var<Real, 1>  a_phi)
+{
+  Real snoochval = a_pt[0] + 100*a_pt[1];
+  a_phi(0) = snoochval;
+  return 0;
+}
+PROTO_KERNEL_END(exactSnoochF, exactSnooch)
+/***/
+PROTO_KERNEL_START
+unsigned int  checkSnoochF(int           a_pt[DIM],
+                           Var<Real, 1>  a_phi)
+{
+  Real snoochval = a_pt[0] + 100*a_pt[1];
+  Real phival  = a_phi(0);
+  Real tol = 0.0001;
+  Real err = snoochval - phival;
+  if((err > tol) || (err < -tol))
+  {
+    printf("error in checksnooch at point (%d, %d) \n", a_pt[0], a_pt[1]);
+  }
+  return 0;
+}
+PROTO_KERNEL_END(checkSnoochF, checkSnooch)
+/***/
+void
+fillTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
+              shared_ptr<GeometryService<GEOM_MAX_ORDER> >     a_geoserv,
+              Chombo4::DisjointBoxLayout                       a_grids,
+              Chombo4::Box                                     a_domain,
+              Real a_dx)
+{
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  Chombo4::DataIterator dit;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    ChBx grid       = a_grids[dit()];
+    Bx   grbx = ProtoCh::getProtoBox(grid);
+    auto& snoochfab = a_snooch[dit[ibox]];
+    Bx  inputBx = snoochfab.inputBox();
+    ebforall_i(inputBx, exactSnooch, grbx, snoochfab);
+  }
+}
+
+
+/***/
+void
+checkTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
+               shared_ptr<GeometryService<GEOM_MAX_ORDER> >     a_geoserv,
+               Chombo4::DisjointBoxLayout                       a_grids,
+               Chombo4::Box                                     a_domain,
+               Real a_dx, IntVect a_ghost)
+{
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  Chombo4::DataIterator dit;
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    ChBx grid       = a_grids[dit()];
+    ChBx grown = grow(grid, a_ghost);
+    grown &= a_domain;
+    Bx   grbx = ProtoCh::getProtoBox(grown);
+    
+    auto& snoochfab = a_snooch[dit[ibox]];
+    Bx  inputBx = snoochfab.inputBox();
+    ebforall_i(inputBx, checkSnooch, grbx, snoochfab);
+  }
+}
+
+/***/
+int
+testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
+                   Chombo4::DisjointBoxLayout                    a_grids,
+                   Chombo4::Box                                  a_domain,
+                   Real a_dx, Point  a_ghost)
+{
+//  auto graphs = a_geoserv->getGraphs(a_domain);
+//  IntVect numghost(a_ghost);
+//  
+//  EBLevelBoxData<CELL, 1>  snooch(a_grids, numghost, graphs);
+//  fillTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
+//  snooch.exchange();
+//  checkTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
+  return 0;
+}
 
 /***/
 void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
@@ -123,7 +209,7 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
   Chombo4::pout() << "making grids" << endl;
 
   IntVect domLo = IntVect::Zero;
-  IntVect domHi  = (a_nx - 1)*IntVect::Unit;
+   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
 
   // EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
@@ -264,6 +350,9 @@ runTests(int a_argc, char* a_argv[])
   {
     Chombo4::pout() << "problem in testMinimalSPMD" << endl;
   }
+  //because this gets tested on the device , no return values are possible.
+  //why yes, it is a lovely way to run a computer.
+  testEBLevelBoxData(geoserv, grids, domain, dx, dataGhostPt);
 
   return retval;
 }

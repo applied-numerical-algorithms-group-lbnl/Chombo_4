@@ -271,7 +271,7 @@ namespace CH4_Data_Choreography
       sortAllPatterns();
       if(a_printStuff)
       {
-        printStuff(string("exchange")); 
+        printStuff(string("copyTo")); 
       }
     }
 
@@ -514,7 +514,13 @@ namespace CH4_Data_Choreography
         m_data[ibox] = a_factory.create(ghosted, 0, dit());
       }
     }
-
+    
+    ///old leveldata functionality that got used a LOT
+    Chombo4::DataIterator dataIterator() const
+    {
+      return m_grids.dataIterator();
+    }
+    
     ~DistributedData()
     {
       for(int ibox = 0; ibox < m_data.size(); ibox++)
@@ -662,10 +668,6 @@ namespace CH4_Data_Choreography
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
 
-           if(a_printStuff)
-            {
-              Chombo4::pout() << "ivec (for vecpat) = " << ivec << endl;
-            }
             const auto& motion  = pattern[srcProc][ivec];
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
