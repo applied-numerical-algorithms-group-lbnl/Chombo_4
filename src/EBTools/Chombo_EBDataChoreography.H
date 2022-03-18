@@ -511,7 +511,7 @@ namespace CH4_Data_Choreography
       {
         Chombo4::Box ghosted = Chombo4::grow(a_grids[dit[ibox]], a_ghost);
         //the zero is for the fake ncomp.   components live in the type system now
-        m_data[ibox] = a_factory.create(ghosted, 0, dit());
+        m_data[ibox] = a_factory.create(ghosted, 0, dit[ibox]);
       }
     }
     
