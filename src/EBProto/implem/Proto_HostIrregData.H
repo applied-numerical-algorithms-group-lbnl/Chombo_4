@@ -117,7 +117,7 @@ namespace Proto
     }
     
 
-
+    ///sometimes useful for debugging
     unsigned int vecsize() const
     {
       return m_indexVec->size();
@@ -139,6 +139,7 @@ namespace Proto
     {
       return m_inputBox;
     }
+    
     //do not use this
     shared_ptr<vector<  EBIndex<cent> > >  getIndicies() const
     {
@@ -161,20 +162,6 @@ namespace Proto
       define(indicies);
     }
 
-    inline bool hasIndex(const EBIndex<cent>& a_ind) const
-    {
-      bool found = false;
-      //this should probably be a smarter search.   maybe sort them?
-      for(int ivec = 0;(ivec < m_indexVec->size() && !found); ivec++)
-      {
-        if((*m_indexVec)[ivec] == a_ind)
-        {
-          found = true;
-        }
-      }
-
-      return found;
-    }
     
     bool contains(const EBIndex<cent>& a_index) const
     {

@@ -256,7 +256,12 @@ namespace Proto
       this->m_graph = a_graph;
 
       this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box);  
+      this->m_regData.define(a_box);
+      
+//begin debug
+      Chombo4::pout() << "in box define for EBBoxData: " ;
+      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
+//end debug      
     }
 
     /// for AggStencil -- not really part of the public interface.

@@ -44,7 +44,7 @@ namespace Proto
       //this ought to work even if the index is outside the domain
       //should just send it to reg fab
       EBDataLoc retval;
-      if(m_irrData.hasIndex(a_index))
+      if(m_irrData.contains(a_index))
       {
         retval.m_dataID   = 1;
         retval.m_offset   = this->m_irrData.index(a_index, a_ivar);
@@ -157,8 +157,12 @@ namespace Proto
       this->m_inputBox = a_box;
       this->m_graph = a_graph;
 
-      this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box);  //stack allocation turned off for now
+      this->m_irrData.define(a_box, this->m_graph);
+//begin debug
+      Chombo4::pout() << "in box define for EBHostData: " ;
+      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
+//end debug      
+      this->m_regData.define(a_box);  
     }
 
     HostBoxData<data_t, ncomp>& getRegData()
@@ -184,13 +188,10 @@ namespace Proto
               const Box& a_bxTo  , unsigned int idst,
               unsigned int inco)
     {
-      PR_TIME("EBHostData::copy");
       {
-        PR_TIME("copy_reg_data");
         m_regData.copy(a_src.m_regData, a_bxFrom, isrc, a_bxTo, idst, inco);
       }
       {
-        PR_TIME("copy_irr_data");
         m_irrData.copy(a_src.m_irrData, a_bxFrom, isrc, a_bxTo, idst, inco);
       }
     }
@@ -201,7 +202,6 @@ namespace Proto
                                  unsigned int a_numcomps,
                                  bool a_printStuff = false) const
     {
-      PR_TIME("EBHostData::charsize");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       size_t retval = 2*sizeof(unsigned long); //regsize and irregsize
       size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
@@ -217,7 +217,6 @@ namespace Proto
                            unsigned int           a_numcomps,
                            bool a_printStuff = false)
     {
-      PR_TIME("EBHostData::linearIn");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       if(a_printStuff)
       {
@@ -257,7 +256,6 @@ namespace Proto
                            unsigned int        a_numcomps,
                            bool a_printStuff = false) const
     {
-      PR_TIME("EBHostData::linearOut");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
       unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);

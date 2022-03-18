@@ -148,10 +148,10 @@ fillTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
               Real a_dx)
 {
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-  Chombo4::DataIterator dit;
+  Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    ChBx grid       = a_grids[dit()];
+    ChBx grid       = a_grids[dit[ibox]];
     Bx   grbx = ProtoCh::getProtoBox(grid);
     auto& snoochfab = a_snooch[dit[ibox]];
     Bx  inputBx = snoochfab.inputBox();
@@ -169,10 +169,10 @@ checkTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
                Real a_dx, IntVect a_ghost)
 {
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-  Chombo4::DataIterator dit;
+  Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
-    ChBx grid       = a_grids[dit()];
+    ChBx grid       = a_grids[dit[ibox]];
     ChBx grown = grow(grid, a_ghost);
     grown &= a_domain;
     Bx   grbx = ProtoCh::getProtoBox(grown);
@@ -190,13 +190,13 @@ testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
                    Chombo4::Box                                  a_domain,
                    Real a_dx, Point  a_ghost)
 {
-//  auto graphs = a_geoserv->getGraphs(a_domain);
-//  IntVect numghost(a_ghost);
-//  
-//  EBLevelBoxData<CELL, 1>  snooch(a_grids, numghost, graphs);
-//  fillTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
-//  snooch.exchange();
-//  checkTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
+  auto graphs = a_geoserv->getGraphs(a_domain);
+  IntVect numghost(a_ghost);
+  
+  EBLevelBoxData<CELL, 1>  snooch(a_grids, numghost, graphs);
+  fillTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
+  snooch.exchange();
+  checkTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
   return 0;
 }
 
