@@ -496,12 +496,37 @@ namespace CH4_Data_Choreography
   class DistributedData
   {
   public:
-    ///datafactory has an ncomps argument that shall be ignored here
+    ///
+    /**
+       Strong construction brings simplicity.   I like simplicity.  Sometimes
+       I have to use weak construction, anyway to conform to old APIs.
+       Let this be a lesson to you.
+     */
+    DistributedData()
+    {
+      m_isDefined = false;
+    }
+    
+    ///
+    /**
+       DataFactory has an ncomps argument that shall be ignored here.  
+       It is a historical artifact that future generations will find fascinating.
+    */
     DistributedData(const Chombo4::DisjointBoxLayout     & a_grids,
                     const Chombo4::IntVect               & a_ghost,
                     const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
+      define(a_grids, a_ghost, a_factory);
+    }
+
+    
+    ///datafactory has an ncomps argument that shall be ignored here
+    void define(const Chombo4::DisjointBoxLayout     & a_grids,
+                    const Chombo4::IntVect               & a_ghost,
+                    const Chombo4::DataFactory<fabtype_t>& a_factory)
+    {
       CH_TIME("DistributedData constructor");
+      m_isDefined = true;
       m_grids = a_grids;
       m_ghost = a_ghost;
       Chombo4::DataIterator dit = a_grids.dataIterator();
@@ -510,8 +535,8 @@ namespace CH4_Data_Choreography
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         Chombo4::Box ghosted = Chombo4::grow(a_grids[dit[ibox]], a_ghost);
-        //the zero is for the fake ncomp.   components live in the type system now
-        m_data[ibox] = a_factory.create(ghosted, 0, dit[ibox]);
+        //The fake ncomp (1) is not so fake if you use this on old data holders.
+        m_data[ibox] = a_factory.create(ghosted, 1, dit[ibox]);
       }
     }
     
@@ -521,7 +546,7 @@ namespace CH4_Data_Choreography
       return m_grids.dataIterator();
     }
     
-    ~DistributedData()
+    virtual ~DistributedData()
     {
       for(int ibox = 0; ibox < m_data.size(); ibox++)
       {
@@ -557,6 +582,18 @@ namespace CH4_Data_Choreography
       communicate(*this, copier, a_dst, a_printStuff);
     }
 
+    ///
+    IntVect ghostVect() const
+    {
+      return m_ghost;
+    }
+
+    ///
+    Chombo4::DisjointBoxLayout disjointBoxLayout() const
+    {
+      return m_grids;
+    }
+    
   private:
 
     //actually serialize, send, and receive data
@@ -795,10 +832,9 @@ namespace CH4_Data_Choreography
     vector<fabtype_t*> m_data;
     IntVect m_ghost;
     Chombo4::DisjointBoxLayout m_grids;
+    bool m_isDefined;
     
   private:
-    //strong construction brings simplicity.   I like simplicity.
-    DistributedData();
     //Copy constuction and assignment are disallowed
     //because this simplifies memory management. I like simplicity.
     DistributedData(const DistributedData& a_input);

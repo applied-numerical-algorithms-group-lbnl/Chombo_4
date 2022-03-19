@@ -36,8 +36,13 @@ class ScalarAliasFactory: public DataFactory< EBBoxData<CELL, Real, dstComp> >
 {
 public:
 
-  ScalarAliasFactory(LevelData<EBBoxData<CELL, Real, DIM> >* a_source, 
-                     unsigned int                            a_whichcomp)
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, srcComp> > devi_src_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, srcComp> > host_src_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, dstComp> > devi_dst_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, dstComp> > host_dst_comp_t;
+  
+  ScalarAliasFactory(devi_src_comp_t * a_source, 
+                     unsigned int      a_whichcomp)
   {
     m_source    = a_source;
     m_whichcomp = a_whichcomp;
@@ -58,21 +63,10 @@ public:
     return retval;
   }
 
-  virtual bool callDelete() const
-  {
-    return false;
-  }
-
-  //return true if copy and construction are thread safe
-  virtual bool threadSafe() const
-  {
-    return false;
-  }
-
 private:
   ScalarAliasFactory();
-  LevelData<EBBoxData<CELL, Real, srcComp> >* m_source;
-  unsigned int                                m_whichcomp;
+  devi_src_comp_t* m_source;
+  unsigned int     m_whichcomp;
 
 };
 
@@ -80,22 +74,18 @@ private:
 /**
 */
 template<CENTERING cent, int  NUMCOMPS>
-class EBLevelBoxData: public LevelData<EBBoxData<cent, Real, NUMCOMPS> >
+class EBLevelBoxData: public CH4_Data_Choreography::DistributedData<EBBoxData<cent, Real, NUMCOMPS> >
 {
 public:
 
-  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
-  
-#ifdef PROTO_CUDA
-  //just shutting up the compiler
-//  using LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define;
-#endif
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, NUMCOMPS> > devidistrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > hostdistrib_t;
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
 
 
   ///
-  EBLevelBoxData(): LevelData<EBBoxData<cent, Real, NUMCOMPS> >()
+  EBLevelBoxData(): devidistrib_t()
   {
   }
 
@@ -104,9 +94,8 @@ public:
   EBLevelBoxData(const DisjointBoxLayout        & a_dp, 
                  const IntVect                  & a_ghost,
                  shared_ptr<LevelData<EBGraph>  > a_graphs)
-    : LevelData<EBBoxData<cent, Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
+    : devidistrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
-    checkIfPeriodic(a_dp);
   }
 
   ///
@@ -115,36 +104,13 @@ public:
   }
 
   ///
-  EBLevelBoxData&
-  operator+=(const EBLevelBoxData& a_input)
-  {
-    DisjointBoxLayout dbl = this->disjointBoxLayout();
-    DataIterator dit = dbl.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
-    {
-      (*this)[dit[ibox]] += a_input[dit[ibox]];
-    }
-    return *this;
-  }
-  
-  ///
-  void checkIfPeriodic(const DisjointBoxLayout & a_dp) const
-  {
-    if(a_dp.physDomain().isPeriodic())
-    {
-      MayDay::Error("EB applications do not support periodic boundary conditions yet.");
-    }
-  }
-
-  ///
   virtual
-  void define(const DisjointBoxLayout& a_dp, 
-              const IntVect          & a_ghost,
+  void define(const DisjointBoxLayout        & a_dp, 
+              const IntVect                  & a_ghost,
               shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
-    checkIfPeriodic(a_dp);
     m_graphs = a_graphs;
-    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
+    devidistrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
   }
 
 
@@ -158,13 +124,12 @@ public:
     auto dp    = a_input.disjointBoxLayout();
     auto ghost = a_input.ghostVect();
     m_graphs = a_graphs;
-    LevelData<EBBoxData<cent, Real, srcComp> >* inputPtr = static_cast<LevelData<EBBoxData<cent, Real, srcComp> > * >(&a_input);
+    typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, srcComp> > srccomp_devi_t;
+    srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
     ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
 
-    LevelData<EBBoxData<cent, Real, NUMCOMPS> >::
-      define(dp, NUMCOMPS, ghost, fact);
+    devidistrib_t::define(dp, ghost, fact);
   }
-
 
   void setVal(Real a_value)
   {
@@ -182,10 +147,10 @@ public:
               const Copier                        &            a_copier) const
   {
     CH_TIME("EBLevelBoxData::copyTo");
-    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
+//    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
     
-    HostMPI_t hostdataSrc(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
-    HostMPI_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
+    hostdistrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    hostdistrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
@@ -209,8 +174,7 @@ public:
   {
     CH_TIME("EBLevelBoxData::exchange(copier)");
 
-    CH4_Data_Choreography::DistributedData< EBHostData<cent, Real, NUMCOMPS> >
-      hostdata(this->disjointBoxLayout(),   this->m_ghost   , hostfactory_t(m_graphs));
+    hostdistrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
 
@@ -224,8 +188,8 @@ public:
   Real maxNorm(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
-    HostMPI_t   hostdata(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
+
+    hostdistrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     
     copyToHost(     hostdata, *this);
     
@@ -259,8 +223,7 @@ public:
   Real sum(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
-    HostMPI_t hostdata(this->disjointBoxLayout(),  this->m_ghost   , hostfactory_t(m_graphs));
+    hostdistrib_t hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     copyToHost(     hostdata, *this);
     DataIterator dit = this->dataIterator();
@@ -381,16 +344,15 @@ public:
 
   /// this is for mpi stuff
   static 
-  void copyToHost(CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
-                  const LevelData< EBBoxData<cent, Real, NUMCOMPS> >                        & a_deviDat)
+  void copyToHost(      hostdistrib_t    & a_hostDat,
+                  const devidistrib_t    & a_deviDat)
   {
     CH_TIME("EBLevelBoxData::copyToHost");
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = (LevelData< EBBoxData<cent, Real, NUMCOMPS> >&) (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
-      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      EBHostData<      cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      const EBBoxData< cent, Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
       for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
       {
         size_t fabsizeHost, fabsizeDevi; 
@@ -487,25 +449,36 @@ public:
   }
   
 
+  ///
+  EBLevelBoxData&
+  operator+=(const EBLevelBoxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]] += a_input[dit[ibox]];
+    }
+    return *this;
+  }
   
   ///
   static 
-  void copyToDevice(LevelData< EBBoxData<cent, Real, NUMCOMPS> >                                    & a_deviDat,
-                    const CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
+  void copyToDevice(      devidistrib_t & a_deviDat,
+                    const hostdistrib_t & a_hostDat)
   {
     CH_TIME("EBLevelBoxData::copyToDevice");
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> >                               & deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> >                              &> (a_deviDat);
-    CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS > > & hostDat = const_cast<CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > &> (a_hostDat);
+
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
-      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
+      const EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
+      EBBoxData<       cent, Real, NUMCOMPS> & devifab = a_deviDat[dit[ibox]];
       copyToDevice(devifab, hostfab);
     }
   }
 
-  ///
+  /// deprecated  because leveldata is deprecated
   static 
   void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
                     const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
@@ -523,8 +496,8 @@ public:
   }
   ///
   static 
-  void copyToDevice( EBBoxData< cent, Real, NUMCOMPS> & devifab,
-                     EBHostData<cent, Real, NUMCOMPS> & hostfab)
+  void copyToDevice(      EBBoxData< cent, Real, NUMCOMPS> & devifab,
+                    const EBHostData<cent, Real, NUMCOMPS> & hostfab)
                      
   {
     for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
@@ -607,8 +580,11 @@ writeEBLevelHDF5(const string& a_filename,
   DisjointBoxLayout grids = a_data.disjointBoxLayout();
   IntVect dataGh = a_data.ghostVect();
   IntVect kappGh = a_kapp.ghostVect();
-  LevelData<EBHostData<CELL, Real, NUMCOMPS> > hostdata(grids, NUMCOMPS, dataGh,  hostfactDat_t(a_graphs));
-  LevelData<EBHostData<CELL, Real, 1       > > hostkapp(grids,        1, kappGh,  hostfactKap_t(a_graphs));
+  
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> >        hostscalar_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, NUMCOMPS> > hostncomps_t;
+  hostncomps_t  hostdata(grids,  dataGh,  hostfactDat_t(a_graphs));
+  hostscalar_t  hostkapp(grids,  kappGh,  hostfactKap_t(a_graphs));
 
   EBLevelBoxData<CELL, NUMCOMPS>::copyToHost(hostdata, a_data);
   EBLevelBoxData<CELL, 1       >::copyToHost(hostkapp, a_kapp);

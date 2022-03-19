@@ -208,17 +208,17 @@ namespace Proto
 
     
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
-    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab)
+    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab) const
     {
       PR_assert((a_whichfab == 0) || (a_whichfab == 1));
       if(a_whichfab == 0)
       {
-        a_dataPtr  =  m_regData.data();
+        a_dataPtr  =  (data_t*)( m_regData.data());
         a_datasize =  m_regData.size();
       }
       else 
       {
-        a_dataPtr  =  m_irrData.data();
+        a_dataPtr  =  (data_t*)( m_irrData.data());
         a_datasize =  m_irrData.size();
       }
     }
@@ -259,8 +259,8 @@ namespace Proto
       this->m_regData.define(a_box);
       
 //begin debug
-      Chombo4::pout() << "in box define for EBBoxData: " ;
-      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
+//      Chombo4::pout() << "in box define for EBBoxData: " ;
+//      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
 //end debug      
     }
 

@@ -164,7 +164,10 @@ inline void BoxLayoutData<T>::clear()
 template<class T>
 inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory, const IntVect& ghost)
 {
-  Chombo4::pout() << "going into BoxLayoutData::allocateGhostVector" << endl;
+  //begin debug
+  //Chombo4::pout() << "going into BoxLayoutData::allocateGhostVector" << endl;
+  //end debug
+  
   if (this->m_callDelete == true)
   {
     for (unsigned int i=0; i<this->m_vector.size(); ++i)
@@ -190,7 +193,9 @@ inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory,
       MayDay::Error("OutOfMemory in BoxLayoutData::allocateGhostVector");
     }
   }
-  Chombo4::pout() << "leaving BoxLayoutData::allocateGhostVector" << endl;
+  //begin debug
+  //Chombo4::pout() << "leaving BoxLayoutData::allocateGhostVector" << endl;
+  //end debug
 }
 
 template<class T>

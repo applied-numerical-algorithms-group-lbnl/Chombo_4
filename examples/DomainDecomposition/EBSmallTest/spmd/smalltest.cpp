@@ -103,6 +103,7 @@ testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >  a_geoserv,
                 Real a_dx, Point  a_ghost)
 {
   int retval = 0;
+  Chombo4::pout() << "entering testMinimalSPMD" << std::endl;
   IntVect numghost(a_ghost);
    GraphConstructorFactory<EBHostData<CELL, int, 1> > 
      factory(a_geoserv->getGraphs(a_domain));
@@ -111,6 +112,7 @@ testMinimalSPMD(shared_ptr<GeometryService<GEOM_MAX_ORDER>    >  a_geoserv,
   fillTheMooch(mooch, a_geoserv, a_grids, a_domain, a_dx);
   mooch.exchange(true);
   retval = checkTheMooch(mooch, a_geoserv, a_grids, a_domain, a_ghost, a_dx);
+  Chombo4::pout() << "leaving testMinimalSPMD" << std::endl;
   return retval;
 }
 /***/
@@ -191,12 +193,14 @@ testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
                    Real a_dx, Point  a_ghost)
 {
   auto graphs = a_geoserv->getGraphs(a_domain);
+  Chombo4::pout() << "starting testEBLevelBoxData" << std::endl;
   IntVect numghost(a_ghost);
   
   EBLevelBoxData<CELL, 1>  snooch(a_grids, numghost, graphs);
   fillTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
   snooch.exchange();
   checkTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
+  Chombo4::pout() << "leaving testEBLevelBoxData" << std::endl;
   return 0;
 }
 
