@@ -26,9 +26,13 @@ template<unsigned int srcComp, unsigned int dstComp>
 class ScalarFluxAliasFactory: public DataFactory< EBFluxData<Real, dstComp> >
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, srcComp> > devi_src_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, srcComp> > host_src_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, dstComp> > devi_dst_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, dstComp> > host_dst_comp_t;
 
-  ScalarFluxAliasFactory(LevelData<EBFluxData<Real, srcComp> >* a_source, 
-                         unsigned int                           a_whichcomp)
+  ScalarFluxAliasFactory(devi_src_comp_t * a_source, 
+                         unsigned int      a_whichcomp)
   {
     m_source    = a_source;
     m_whichcomp = a_whichcomp;
@@ -49,39 +53,26 @@ public:
     return retval;
   }
 
-  virtual bool callDelete() const
-  {
-    return false;
-  }
-
-  //return true if copy and construction are thread safe
-  virtual bool threadSafe() const
-  {
-    return false;
-  }
-
 private:
   ScalarFluxAliasFactory();
-  LevelData<EBFluxData<Real, DIM> >* m_source;
-  unsigned int                       m_whichcomp;
+  devi_src_comp_t* m_source;
+  unsigned int     m_whichcomp;
 
 };
 ///
 /**
 */
 template<int  NUMCOMPS>
-class EBLevelFluxData: public LevelData<EBFluxData<Real, NUMCOMPS> >
+class EBLevelFluxData: public CH4_Data_Choreography::DistributedData<EBFluxData<Real, NUMCOMPS> >
 {
 public:
-  //shutting up the compilers
-  using LevelData<EBFluxData<Real, NUMCOMPS> >::define;
-
-
+  typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, NUMCOMPS> > devidistrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, NUMCOMPS> > hostdistrib_t;
+  typedef GraphConstructorFactory< EBFluxData<   Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
-  typedef GraphConstructorFactory<    EBFluxData<Real, NUMCOMPS> > devifactory_t;
 
   ///
-  EBLevelFluxData(): LevelData<EBFluxData<Real, NUMCOMPS> >()
+  EBLevelFluxData(): devidistrib_t()
   {
   }
 
@@ -90,7 +81,7 @@ public:
   EBLevelFluxData(const DisjointBoxLayout        & a_dp, 
                   const IntVect                  & a_ghost,
                   shared_ptr<LevelData<EBGraph>  > a_graphs)
-    : LevelData<EBFluxData<Real, NUMCOMPS> >(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
+    : devidistrib_t(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
 
@@ -107,7 +98,7 @@ public:
               shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
     m_graphs = a_graphs;
-    LevelData<EBFluxData<Real, NUMCOMPS> >::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
+    devidistrib_t::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
   }
 
   ///aliasing define
@@ -120,9 +111,11 @@ public:
     auto dp    = a_input.disjointBoxLayout();
     auto ghost = a_input.ghostVect();
     m_graphs = a_graphs;
-    LevelData<EBFluxData<Real, srcComp> >* inputPtr = static_cast<LevelData<EBFluxData<Real, DIM> > * >(&a_input);
+    typedef CH4_Data_Choreography::DistributedData<EBFluxData< Real, srcComp> > srccomp_devi_t;
+    srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
+
     ScalarFluxAliasFactory<srcComp, NUMCOMPS> fact(inputPtr, a_comp);
-    LevelData<EBFluxData<Real, NUMCOMPS> >::define(dp, NUMCOMPS, ghost, fact);
+    devidistrib_t::define(dp, NUMCOMPS, ghost, fact);
   }
 
   void setVal(Real a_value)
@@ -168,32 +161,53 @@ public:
     return maxval;
   }
   
+  ///deprecated interface since we need neither interval nor copier (comps go in the type system now)
+  /**
+     copy to a_dst over box intersections.
+   */
   ///
   void copyTo(const Interval                      &            a_srcComps,
-              LevelData<BoxData<Real, NUMCOMPS> > &            a_dst,
+              EBLevelFluxData<Real, NUMCOMPS>     &            a_dst,
               const Interval                      &            a_dstComps,
-              const Copier                        &            a_copier) const
+              const Copier                        &            a_copier,
+              bool a_printStuff = false) const
   {
-    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdataSrc(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdataDst(a_dst.disjointBoxLayout(), NUMCOMPS, a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
+    copyTo(a_dst, a_printStuff);
+  }
+  
+  ///all the cool kids use this copyTo interface
+  /**
+     copy over box intersections
+   */
+  void copyTo(EBLevelFluxData<Real, NUMCOMPS> > & a_dst, bool a_printStuff = false) const
+  {
+    hostdistrib_t hostdataSrc(this->disjointBoxLayout(),   this->m_ghost   , hostfactory_t(m_graphs));
+    hostdistrib_t hostdataDst(a_dst.disjointBoxLayout(),  a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
     
-    hostdataSrc.copyTo(a_srcComps, hostdataDst, a_dstComps,a_copier);
+    hostdataSrc.copyTo(hostdataDst, a_printStuff);
     
     copyToDevice(a_dst, hostdataDst);
   }
 
 
-  /// 
+  /// deprecated interface.  we no longer use copier (or expose its equivalent)
   virtual void exchange(const Copier& copier, bool a_printStuff = false)
+  {
+    exchange(a_printStuff);
+  }
+
+  
+  /// The hip new slick exchange interface.  Use this one.
+  virtual void exchange(bool a_printStuff = false)
   {
     if(a_printStuff)
     {
       pout() << "eblevelfluxdata::exchange creating host data" << endl;
     }
-    LevelData<EBHostFluxData<Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    hostdistrib_t hostdata(this->disjointBoxLayout(), this->m_ghost, hostfactory_t(m_graphs));
 
     if(a_printStuff)
     {
@@ -203,20 +217,25 @@ public:
 
     if(a_printStuff)
     {
-      pout() << "eblevelfluxdata::exchange calling leveldata::exchange" << endl;
+      pout() << "eblevelfluxdata::exchange calling DistributedData::exchange" << endl;
     }
-    hostdata.exchange(copier, a_printStuff);
+    hostdata.exchange(a_printStuff);
 
     if(a_printStuff)
     {
       pout() << "eblevelfluxdata::exchange calling copyToDevice" << endl;
     }
     copyToDevice(*this, hostdata);
+    if(a_printStuff)
+    {
+      pout() << "leaving eblevelfluxdata exchange" << endl;
+      
+    }
   }
   ////mpi stuff
   static 
-  void copyToHost(LevelData<      EBHostFluxData<Real, NUMCOMPS> > & a_hostDat,
-                  const LevelData<    EBFluxData<Real, NUMCOMPS> > & a_deviDat)
+  void copyToHost(      hostdistrib_t & a_hostDat,
+                  const devidistrib_t & a_deviDat)
   {
     LevelData< EBFluxData<Real, NUMCOMPS> >& deviDat = (LevelData< EBFluxData<Real, NUMCOMPS> >&) (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
@@ -231,8 +250,8 @@ public:
 
   /// 
   static 
-  void copyToHost(EBHostFluxData<Real, NUMCOMPS> & hostfab,
-                      EBFluxData<Real, NUMCOMPS> & devifab)
+  void copyToHost(EBHostFluxData<Real, NUMCOMPS> & a_hostfab,
+                      EBFluxData<Real, NUMCOMPS> & a_devifab)
   {
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -241,8 +260,8 @@ public:
         size_t fabsizeHost, fabsizeDevi; 
         Real*  dataptrHost;
         Real*  dataptrDevi;
-        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
-        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
+        a_hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
+        a_devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
 
         size_t datSize = sizeof(Real)*fabsizeDevi;
 
@@ -264,24 +283,22 @@ public:
   
   ///
   static 
-  void copyToDevice(LevelData<          EBFluxData<Real, NUMCOMPS> > & a_deviDat,
-                    const LevelData<EBHostFluxData<Real, NUMCOMPS> > & a_hostDat)
+  void copyToDevice(      devidistrib_t & a_deviDat,
+                    const hostdistrib_t & a_hostDat)
   {
-    auto & deviDat = const_cast<LevelData<     EBFluxData<Real, NUMCOMPS> > &> (a_deviDat);
-    auto & hostDat = const_cast<LevelData< EBHostFluxData<Real, NUMCOMPS> > &> (a_hostDat);
     DataIterator dit = hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      auto & hostfab =   hostDat[dit[ibox]];
-      auto & devifab =   deviDat[dit[ibox]];
+      const auto & hostfab =   hostDat[dit[ibox]];
+      auto       & devifab =   deviDat[dit[ibox]];
       copyToDevice(hostfab, devifab);
     }
   }
 
   ///
   static 
-  void copyToDevice( EBHostFluxData<Real, NUMCOMPS> & hostfab,
-                     EBFluxData<    Real, NUMCOMPS> & devifab)
+  void copyToDevice(const EBHostFluxData<Real, NUMCOMPS> & hostfab,
+                          EBFluxData<    Real, NUMCOMPS> & devifab)
   {
     for(unsigned int idir = 0; idir < DIM; idir++)
     {

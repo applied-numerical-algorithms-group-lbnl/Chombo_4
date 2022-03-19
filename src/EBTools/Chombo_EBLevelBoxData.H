@@ -141,13 +141,33 @@ public:
   }
   
   ///
+  /**
+     deprecated interface since we need neither interval  (comps go in the type system now)
+     nor copier (not used in this context and its equivalent is no longer exposed)
+     copy to a_dst over box intersections.
+   */
   void copyTo(const Interval                      &            a_srcComps,
               EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
               const Interval                      &            a_dstComps,
-              const Copier                        &            a_copier) const
+              const Copier                        &            a_copier,
+              bool a_printStuff = false) const
+  {
+    copyTo(a_dst, a_printStuff);
+  }
+  
+  /// the real copyTo interface.   accept no imitations
+  /**
+     copy to a_dst over box intersections.
+   */
+  void
+  copyTo(EBLevelBoxData<cent, NUMCOMPS>& a_dst,
+         bool a_printStuff = false) const
   {
     CH_TIME("EBLevelBoxData::copyTo");
-//    typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > HostMPI_t;
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "entering EBLevelBoxData copyTo" << endl;
+    }
     
     hostdistrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     hostdistrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
@@ -155,33 +175,46 @@ public:
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
     
-    hostdataSrc.copyTo(hostdataDst);
+    hostdataSrc.copyTo(hostdataDst, a_printStuff);
     
     copyToDevice(a_dst, hostdataDst);
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "exiting  EBLevelBoxData copyTo" << endl;
+    }
   }
 
 
   /// deprecated interface since we don't need copier any more
-  virtual void exchange(const Copier& copier)
+  virtual void exchange(const Copier& copier, bool a_printStuff = false)
   {
     CH_TIME("EBLevelBoxData::exchange(copier)");
 
-    exchange();
+    exchange(a_printStuff);
   }
 
  ///the new, sleeker exchange interface that all the kids are talking about
-  virtual void exchange()
+  virtual void exchange(bool a_printStuff = false)
   {
     CH_TIME("EBLevelBoxData::exchange(copier)");
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "entering EBLevelBoxData::exchange" << endl;
+    }
 
     hostdistrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
 
-    hostdata.exchange();
+    hostdata.exchange(a_printStuff);
 
     copyToDevice(*this, hostdata);
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "exiting  EBLevelBoxData::exchange" << endl;
+    }
   }
 
   ///
