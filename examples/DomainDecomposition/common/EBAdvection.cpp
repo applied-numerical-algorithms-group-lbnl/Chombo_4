@@ -309,6 +309,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
 
   EBFluxData<Real, 1>  scalHi(grown, graph, useStack);
   EBFluxData<Real, 1>  scalLo(grown, graph, useStack);
+  scalHi.setVal(0.0);
+  scalLo.setVal(0.0);
   auto & sourfab = m_source[a_dit];
   bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
                        grown, graph, a_dit, a_ibox, a_dt);
@@ -320,7 +322,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
 
   assembleFlux(a_fcflux, upwindScal, a_fcvel);
 }
-///
 void
 EBAdvection::
 getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,

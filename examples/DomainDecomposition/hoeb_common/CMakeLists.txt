@@ -10,5 +10,8 @@ blt_add_library(NAME hoeb
     SOURCES
     Hoeb_LAPACKMatrix.cpp
     Hoeb_Utilities.cpp
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/include
-    DEPENDS_ON BaseTools EBTools LAPACK::LAPACK ${LIB_DEP})
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS_ON BaseTools EBTools BLAS::BLAS ${LIB_DEP})
+if(APPLE AND EXISTS /usr/local/opt/openblas/include/) # default install directory from Homebrew
+  target_include_directories(hoeb PUBLIC /usr/local/opt/openblas/include/)
+endif()

@@ -11,7 +11,7 @@
 #ifndef _Chombo_CH_ASSERT_H__
 #define _Chombo_CH_ASSERT_H__
 
-#include "base/Proto_PAssert.H"
+#include "Proto.H"
 
 #include "Chombo_BaseNamespaceHeader.H"
 
