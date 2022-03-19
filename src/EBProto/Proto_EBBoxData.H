@@ -446,6 +446,6 @@ namespace Proto
 
 
 #include "implem/Proto_EBForAllImplem.H"
-//#include "Proto_fusedLinear.H"
+
 #endif
 
