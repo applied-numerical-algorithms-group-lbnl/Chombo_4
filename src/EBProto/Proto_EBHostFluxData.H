@@ -153,13 +153,21 @@ namespace Proto
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
+      unsigned long* longbuf = (unsigned long *)(charbuf);
+      unsigned long xSize = *longbuf;    longbuf++;
+      unsigned long ySize = *longbuf;    longbuf++;
+#if DIM==3      
+      unsigned long zSize = *longbuf;    longbuf++;
+#endif      
+      charbuf = (char*)(longbuf);
+      
       m_xflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += xSize;
       m_yflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += ySize;
 #if DIM==3      
       m_zflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
 #endif      
     }
     virtual void linearOut(void*               a_buf,
@@ -172,18 +180,18 @@ namespace Proto
       char* charbuf = (char*)a_buf;
       unsigned long xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       unsigned long ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
-      unsigned long zSize = 0;
+
 #if DIM==3      
+      unsigned long zSize = 0;
       zSize = m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
 #endif      
       
       unsigned long* longbuf = (unsigned long*)(charbuf);
-      *longbuf = xSize;
-      longbuf++;
-      *longbuf = ySize;
-      longbuf++;
-      *longbuf = zSize;
-      longbuf++;
+      *longbuf = xSize;      longbuf++;
+      *longbuf = ySize;      longbuf++;
+#if DIM==3      
+      *longbuf = zSize;      longbuf++;
+#endif      
       charbuf = (char*)(longbuf);
         
       m_xflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
