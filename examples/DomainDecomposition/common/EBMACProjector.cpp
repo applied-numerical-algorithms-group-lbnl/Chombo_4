@@ -35,7 +35,7 @@ EBMACProjector::
 defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
 {
   CH_TIME("EBMACProjector::defineInternals");
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
+
   m_rhs.define(m_grids, m_nghost, m_graphs);
   m_phi.define(m_grids, m_nghost, m_graphs);
   auto ditch = m_brit->m_cellToCell;
@@ -281,7 +281,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
   {
     pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
   }
-  a_velo.exchange(m_exchangeCopier, a_printStuff);
+  a_velo.exchange(a_printStuff);
 
   if(a_printStuff)
   {

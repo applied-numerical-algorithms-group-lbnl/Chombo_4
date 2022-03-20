@@ -77,7 +77,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
   shared_ptr<LevelData<EBGraph>  >       m_graphs;
-  Copier                                 m_exchangeCopier;
+
   EBIBC                                  m_ebibc;
   static const string s_ncdivLabel;      //for non-conservative divergence
   static const string s_nobcsLabel;      //none of the operators here have eb boundary conditions

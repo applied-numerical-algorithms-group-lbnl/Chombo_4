@@ -362,7 +362,6 @@ private:
   string                            m_nobcname;
   EBLevelBoxData<CELL, 1>           m_diagW;
 
-  Copier                            m_exchangeCopier;
   shared_ptr<EBRelaxSolver>         m_relaxSolver;
 #ifdef CH_USE_PETSC  
   shared_ptr<EBPetscSolver<2> >     m_petscSolver;
