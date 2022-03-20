@@ -146,14 +146,14 @@ public:
      nor copier (not used in this context and its equivalent is no longer exposed)
      copy to a_dst over box intersections.
    */
-  void copyTo(const Interval                      &            a_srcComps,
-              EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
-              const Interval                      &            a_dstComps,
-              const Copier                        &            a_copier,
-              bool a_printStuff = false) const
-  {
-    copyTo(a_dst, a_printStuff);
-  }
+//  void copyTo(const Interval                      &            a_srcComps,
+//              EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
+//              const Interval                      &            a_dstComps,
+//              const Copier                        &            a_copier,
+//              bool a_printStuff = false) const
+//  {
+//    copyTo(a_dst, a_printStuff);
+//  }
   
   /// the real copyTo interface.   accept no imitations
   /**
@@ -187,12 +187,12 @@ public:
 
 
   /// deprecated interface since we don't need copier any more
-  virtual void exchange(const Copier& copier, bool a_printStuff = false)
-  {
-    CH_TIME("EBLevelBoxData::exchange(copier)");
-
-    exchange(a_printStuff);
-  }
+//  virtual void exchange(const Copier& copier, bool a_printStuff = false)
+//  {
+//    CH_TIME("EBLevelBoxData::exchange(copier)");
+//
+//    exchange(a_printStuff);
+//  }
 
  ///the new, sleeker exchange interface that all the kids are talking about
   virtual void exchange(bool a_printStuff = false)

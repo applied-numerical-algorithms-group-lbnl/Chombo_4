@@ -167,14 +167,14 @@ public:
      copy to a_dst over box intersections.
    */
   ///
-  void copyTo(const Interval                      &            a_srcComps,
-              EBLevelFluxData<NUMCOMPS>           &            a_dst,
-              const Interval                      &            a_dstComps,
-              const Copier                        &            a_copier,
-              bool a_printStuff = false) const
-  {
-    copyTo(a_dst, a_printStuff);
-  }
+//  void copyTo(const Interval                      &            a_srcComps,
+//              EBLevelFluxData<NUMCOMPS>           &            a_dst,
+//              const Interval                      &            a_dstComps,
+//              const Copier                        &            a_copier,
+//              bool a_printStuff = false) const
+//  {
+//    copyTo(a_dst, a_printStuff);
+//  }
   
   ///all the cool kids use this copyTo interface
   /**
@@ -195,10 +195,10 @@ public:
 
 
   /// deprecated interface.  we no longer use copier (or expose its equivalent)
-  virtual void exchange(const Copier& copier, bool a_printStuff = false)
-  {
-    exchange(a_printStuff);
-  }
+//  virtual void exchange(const Copier& copier, bool a_printStuff = false)
+//  {
+//    exchange(a_printStuff);
+//  }
 
   
   /// The hip new slick exchange interface.  Use this one.
