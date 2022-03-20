@@ -522,8 +522,8 @@ namespace CH4_Data_Choreography
     
     ///datafactory has an ncomps argument that shall be ignored here
     void define(const Chombo4::DisjointBoxLayout     & a_grids,
-                    const Chombo4::IntVect               & a_ghost,
-                    const Chombo4::DataFactory<fabtype_t>& a_factory)
+                const Chombo4::IntVect               & a_ghost,
+                const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
       CH_TIME("DistributedData constructor");
       m_isDefined = true;

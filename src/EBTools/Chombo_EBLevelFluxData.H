@@ -68,7 +68,7 @@ class EBLevelFluxData: public CH4_Data_Choreography::DistributedData<EBFluxData<
 public:
   typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, NUMCOMPS> > devidistrib_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, NUMCOMPS> > hostdistrib_t;
-  typedef GraphConstructorFactory< EBFluxData<   Real, NUMCOMPS> > devifactory_t;
+  typedef GraphConstructorFactory<    EBFluxData<Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
 
   ///
@@ -81,7 +81,7 @@ public:
   EBLevelFluxData(const DisjointBoxLayout        & a_dp, 
                   const IntVect                  & a_ghost,
                   shared_ptr<LevelData<EBGraph>  > a_graphs)
-    : devidistrib_t(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
+    : devidistrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
 
@@ -98,7 +98,7 @@ public:
               shared_ptr<LevelData<EBGraph>  > a_graphs)
   {
     m_graphs = a_graphs;
-    devidistrib_t::define(a_dp, NUMCOMPS, a_ghost, devifactory_t(a_graphs));
+    devidistrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
   }
 
   ///aliasing define
@@ -167,7 +167,7 @@ public:
    */
   ///
   void copyTo(const Interval                      &            a_srcComps,
-              EBLevelFluxData<Real, NUMCOMPS>     &            a_dst,
+              EBLevelFluxData<NUMCOMPS>           &            a_dst,
               const Interval                      &            a_dstComps,
               const Copier                        &            a_copier,
               bool a_printStuff = false) const
@@ -179,9 +179,9 @@ public:
   /**
      copy over box intersections
    */
-  void copyTo(EBLevelFluxData<Real, NUMCOMPS> > & a_dst, bool a_printStuff = false) const
+  void copyTo(EBLevelFluxData<NUMCOMPS> & a_dst, bool a_printStuff = false) const
   {
-    hostdistrib_t hostdataSrc(this->disjointBoxLayout(),   this->m_ghost   , hostfactory_t(m_graphs));
+    hostdistrib_t hostdataSrc(this->disjointBoxLayout(),  this->ghostVect(), hostfactory_t(      m_graphs));
     hostdistrib_t hostdataDst(a_dst.disjointBoxLayout(),  a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
@@ -207,7 +207,7 @@ public:
     {
       pout() << "eblevelfluxdata::exchange creating host data" << endl;
     }
-    hostdistrib_t hostdata(this->disjointBoxLayout(), this->m_ghost, hostfactory_t(m_graphs));
+    hostdistrib_t hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     if(a_printStuff)
     {
@@ -286,19 +286,19 @@ public:
   void copyToDevice(      devidistrib_t & a_deviDat,
                     const hostdistrib_t & a_hostDat)
   {
-    DataIterator dit = hostDat.dataIterator();
+    DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      const auto & hostfab =   hostDat[dit[ibox]];
-      auto       & devifab =   deviDat[dit[ibox]];
+      const auto & hostfab = a_hostDat[dit[ibox]];
+      auto       & devifab = a_deviDat[dit[ibox]];
       copyToDevice(hostfab, devifab);
     }
   }
 
   ///
   static 
-  void copyToDevice(const EBHostFluxData<Real, NUMCOMPS> & hostfab,
-                          EBFluxData<    Real, NUMCOMPS> & devifab)
+  void copyToDevice(const EBHostFluxData<Real, NUMCOMPS> & a_hostfab,
+                          EBFluxData<    Real, NUMCOMPS> & a_devifab)
   {
     for(unsigned int idir = 0; idir < DIM; idir++)
     {
@@ -306,8 +306,8 @@ public:
       {
         size_t fabsizeHost, fabsizeDevi; 
         Real*  dataptrHost, *dataptrDevi;
-        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
-        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
+        a_hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab, idir);
+        a_devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab, idir);
 
         size_t datSize = sizeof(Real)*fabsizeDevi;
 

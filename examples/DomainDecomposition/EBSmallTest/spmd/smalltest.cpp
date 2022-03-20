@@ -203,50 +203,52 @@ testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
   Chombo4::pout() << "leaving testEBLevelBoxData" << std::endl;
   return 0;
 }
-/***/
-PROTO_KERNEL_START
-unsigned int  exactFloochF(int           a_pt[DIM],
-                           Var<Real, 1>  a_phi,
-                           int facedir)
-{
-  Real snoochval = a_pt[0] + 100*a_pt[1] + 1000*facedir;
-  a_phi(0) = snoochval;
-  return 0;
-}
-PROTO_KERNEL_END(exactFloochF, exactFlooch)
-/***/
+
+///***/
+//PROTO_KERNEL_START
+//unsigned int  exactFloochF(int           a_pt[DIM],
+//                           Var<Real, 1>  a_phi,
+//                           int facedir)
+//{
+//  Real snoochval = a_pt[0] + 100*a_pt[1] + 1000*facedir;
+//  a_phi(0) = snoochval;
+//  return 0;
+//}
+//PROTO_KERNEL_END(exactFloochF, exactFlooch)
+
+///***/
 void
-fillTheFlooch(EBLevelFluxxData<1>                            & a_flooch,
+fillTheFlooch(Chombo4::EBLevelFluxData<1>                   & a_flooch,
               shared_ptr<GeometryService<GEOM_MAX_ORDER> >     a_geoserv,
               Chombo4::DisjointBoxLayout                       a_grids,
               Chombo4::Box                                     a_domain,
               Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-  Chombo4::DataIterator dit = a_grids.dataIterator();
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    ChBx grid       = a_grids[dit[ibox]];
-    Bx   grbx = ProtoCh::getProtoBox(grid);
-    auto& floochfab = a_flooch[dit[ibox]];
-    {
-      auto& xflooch = *floochfab.m_xflux;
-      Bx  xinputBx  = xflooch.inputBox();
-      ebforall_i(xinputBx, exactFlooch, grbx, xflooch, 0);
-    }
-    {
-      auto& yflooch = *floochfab.m_yflux;
-      Bx  yinputBx = yflooch.inputBox();
-      ebforall_i(yinputBx, exactFlooch, grbx, yflooch, 1);
-    }
-#if DIM==3
-    {
-      auto& zflooch = *floochfab.m_zflux;
-      Bx  zinputBx = zflooch.inputBox();
-      ebforall_i(zinputBx, exactFlooch, grbx, zflooch, 2);
-    }
-#endif    
-  }
+//  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+//  Chombo4::DataIterator dit = a_grids.dataIterator();
+//  for(int ibox = 0; ibox < dit.size(); ibox++)
+//  {
+//    ChBx grid       = a_grids[dit[ibox]];
+//    Bx   grbx = ProtoCh::getProtoBox(grid);
+//    auto& floochfab = a_flooch[dit[ibox]];
+//    {
+//      auto& xflooch = *floochfab.m_xflux;
+//      Bx  xinputBx  = xflooch.inputBox();
+//      ebforall_i(xinputBx, exactFlooch, grbx, xflooch, 0);
+//    }
+//    {
+//      auto& yflooch = *floochfab.m_yflux;
+//      Bx  yinputBx = yflooch.inputBox();
+//      ebforall_i(yinputBx, exactFlooch, grbx, yflooch, 1);
+//    }
+//#if DIM==3
+//    {
+//      auto& zflooch = *floochfab.m_zflux;
+//      Bx  zinputBx = zflooch.inputBox();
+//      ebforall_i(zinputBx, exactFlooch, grbx, zflooch, 2);
+//    }
+//#endif    
+//  }
 }
 /***/
 PROTO_KERNEL_START
@@ -264,7 +266,7 @@ unsigned int  checkFloochF(int           a_pt[DIM],
   }
   return 0;
 }
-PROTO_KERNEL_END(checkSnoochF, checkSnooch)
+PROTO_KERNEL_END(checkFloochF, checkFlooch)
 /***/
 void
 checkTheFlooch(EBLevelFluxData<1>                             & a_flooch,
@@ -282,22 +284,25 @@ checkTheFlooch(EBLevelFluxData<1>                             & a_flooch,
     grown &= a_domain;
     Bx   grbx = ProtoCh::getProtoBox(grown);
     
-    auto& floochfab = a_snooch[dit[ibox]];
+    auto& floochfab = a_flooch[dit[ibox]];
     {
       auto& xfloochfab = *floochfab.m_xflux;
       Bx  xinputBx = xfloochfab.inputBox();
-      ebforall_i(xinputBx, checkFlooch, grbx, xfloochfab, 0);
+      int facedir = 0;
+      ebforall_i(xinputBx, checkFlooch, grbx, xfloochfab, facedir);
     }
     {
       auto& yfloochfab = *floochfab.m_yflux;
       Bx  yinputBx = yfloochfab.inputBox();
-      ebforall_i(yinputBx, checkFlooch, grbx, yfloochfab, 1);
+      int facedir = 1;
+      ebforall_i(yinputBx, checkFlooch, grbx, yfloochfab, facedir);
     }
 #if DIM==3
     {
       auto& zfloochfab = *floochfab.m_zflux;
       Bx  zinputBx = zfloochfab.inputBox();
-      ebforall_i(zinputBx, checkFlooch, grbx, zfloochfab, 2);
+      int facedir = 2;
+      ebforall_i(zinputBx, checkFlooch, grbx, zfloochfab, facedir);
     }
 #endif    
   }
@@ -313,9 +318,9 @@ testEBLevelFluxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
   IntVect numghost(a_ghost);
   
   EBLevelFluxData<1>  flooch(a_grids, numghost, graphs);
-  fillTheFlooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
+  fillTheFlooch(flooch, a_geoserv, a_grids, a_domain, a_dx);
   flooch.exchange(true);
-  checkTheFlooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
+  checkTheFlooch(flooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
   Chombo4::pout() << "leaving testEBLevelFluxData" << std::endl;
   return 0;
 }
