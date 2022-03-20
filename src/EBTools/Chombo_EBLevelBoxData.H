@@ -78,23 +78,24 @@ class EBLevelBoxData: public CH4_Data_Choreography::DistributedData<EBBoxData<ce
 {
 public:
 
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, NUMCOMPS> > devidistrib_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > hostdistrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, NUMCOMPS> > devi_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, NUMCOMPS> > host_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>                          graph_distrib_t;
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
 
 
   ///
-  EBLevelBoxData(): devidistrib_t()
+  EBLevelBoxData(): devi_distrib_t()
   {
   }
 
 
   ///
-  EBLevelBoxData(const DisjointBoxLayout        & a_dp, 
-                 const IntVect                  & a_ghost,
-                 shared_ptr<LevelData<EBGraph>  > a_graphs)
-    : devidistrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
+  EBLevelBoxData(const DisjointBoxLayout                & a_dp, 
+                 const IntVect                          & a_ghost,
+                 shared_ptr< graph_distrib_t<EBGraph>  >   a_graphs)
+    : devi_distrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
 
@@ -107,17 +108,17 @@ public:
   virtual
   void define(const DisjointBoxLayout        & a_dp, 
               const IntVect                  & a_ghost,
-              shared_ptr<LevelData<EBGraph>  > a_graphs)
+              shared_ptr<graph_distrib_t>      a_graphs)
   {
     m_graphs = a_graphs;
-    devidistrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
+    devi_distrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
   }
 
 
   template <unsigned int srcComp>
-  void define(EBLevelBoxData<cent, srcComp>           & a_input,
-              unsigned int                            a_comp,
-              shared_ptr<LevelData<EBGraph>  >        a_graphs)
+  void define(EBLevelBoxData<cent, srcComp>       & a_input,
+              unsigned int                          a_comp,
+              shared_ptr<graph_distrib_t >          a_graphs)
   {
     //for making scalar holders out of vector ones.
 
@@ -128,7 +129,7 @@ public:
     srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
     ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
 
-    devidistrib_t::define(dp, ghost, fact);
+    devi_distrib_t::define(dp, ghost, fact);
   }
 
   void setVal(Real a_value)
@@ -139,21 +140,6 @@ public:
       (*this)[dit[ibox]].setVal(a_value);
     }
   }
-  
-  ///
-  /**
-     deprecated interface since we need neither interval  (comps go in the type system now)
-     nor copier (not used in this context and its equivalent is no longer exposed)
-     copy to a_dst over box intersections.
-   */
-//  void copyTo(const Interval                      &            a_srcComps,
-//              EBLevelBoxData<cent, NUMCOMPS>      &            a_dst,
-//              const Interval                      &            a_dstComps,
-//              const Copier                        &            a_copier,
-//              bool a_printStuff = false) const
-//  {
-//    copyTo(a_dst, a_printStuff);
-//  }
   
   /// the real copyTo interface.   accept no imitations
   /**
@@ -169,8 +155,8 @@ public:
       Chombo4::pout() << "entering EBLevelBoxData copyTo" << endl;
     }
     
-    hostdistrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
-    hostdistrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
+    host_distrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    host_distrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), hostfactory_t(a_dst.m_graphs));
 
     copyToHost(hostdataSrc, *this);
     copyToHost(hostdataDst,  a_dst);
@@ -186,14 +172,6 @@ public:
   }
 
 
-  /// deprecated interface since we don't need copier any more
-//  virtual void exchange(const Copier& copier, bool a_printStuff = false)
-//  {
-//    CH_TIME("EBLevelBoxData::exchange(copier)");
-//
-//    exchange(a_printStuff);
-//  }
-
  ///the new, sleeker exchange interface that all the kids are talking about
   virtual void exchange(bool a_printStuff = false)
   {
@@ -203,7 +181,7 @@ public:
       Chombo4::pout() << "entering EBLevelBoxData::exchange" << endl;
     }
 
-    hostdistrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     copyToHost(hostdata, *this);
 
@@ -222,7 +200,7 @@ public:
   {
     CH_TIME("EBLevelBoxData::maxNorm");
 
-    hostdistrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     
     copyToHost(     hostdata, *this);
     
@@ -256,7 +234,7 @@ public:
   Real sum(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    hostdistrib_t hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    host_distrib_t hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
     copyToHost(     hostdata, *this);
     DataIterator dit = this->dataIterator();
@@ -377,8 +355,8 @@ public:
 
   /// this is for mpi stuff
   static 
-  void copyToHost(      hostdistrib_t    & a_hostDat,
-                  const devidistrib_t    & a_deviDat)
+  void copyToHost(      host_distrib_t    & a_hostDat,
+                  const devi_distrib_t    & a_deviDat)
   {
     CH_TIME("EBLevelBoxData::copyToHost");
     DataIterator dit = a_hostDat.dataIterator();
@@ -452,8 +430,8 @@ public:
 
   /// 
   static 
-  void copyToHost(EBHostData<cent, Real, NUMCOMPS> & hostfab,
-                  EBBoxData< cent, Real, NUMCOMPS> & devifab)
+  void copyToHost(      EBHostData<cent, Real, NUMCOMPS> & hostfab,
+                  const EBBoxData< cent, Real, NUMCOMPS> & devifab)
   {
 
     for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
@@ -497,8 +475,8 @@ public:
   
   ///
   static 
-  void copyToDevice(      devidistrib_t & a_deviDat,
-                    const hostdistrib_t & a_hostDat)
+  void copyToDevice(      devi_distrib_t & a_deviDat,
+                    const host_distrib_t & a_hostDat)
   {
     CH_TIME("EBLevelBoxData::copyToDevice");
 
