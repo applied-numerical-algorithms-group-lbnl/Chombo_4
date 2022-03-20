@@ -66,8 +66,9 @@ template<int  NUMCOMPS>
 class EBLevelFluxData: public CH4_Data_Choreography::DistributedData<EBFluxData<Real, NUMCOMPS> >
 {
 public:
-  typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, NUMCOMPS> > devidistrib_t;
+  typedef CH4_Data_Choreography::DistributedData<    EBFluxData<Real, NUMCOMPS> > devidistrib_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, NUMCOMPS> > hostdistrib_t;
+  
   typedef GraphConstructorFactory<    EBFluxData<Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
 
@@ -237,12 +238,11 @@ public:
   void copyToHost(      hostdistrib_t & a_hostDat,
                   const devidistrib_t & a_deviDat)
   {
-    LevelData< EBFluxData<Real, NUMCOMPS> >& deviDat = (LevelData< EBFluxData<Real, NUMCOMPS> >&) (a_deviDat);
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
       auto & hostfab = a_hostDat[dit[ibox]];
-      auto & devifab =   deviDat[dit[ibox]];
+      auto & devifab = a_deviDat[dit[ibox]];
       copyToHost(hostfab, devifab);
     }
   }
@@ -250,8 +250,8 @@ public:
 
   /// 
   static 
-  void copyToHost(EBHostFluxData<Real, NUMCOMPS> & a_hostfab,
-                      EBFluxData<Real, NUMCOMPS> & a_devifab)
+  void copyToHost(  EBHostFluxData<Real, NUMCOMPS> & a_hostfab,
+                  const EBFluxData<Real, NUMCOMPS> & a_devifab)
   {
     for(unsigned int idir = 0; idir < DIM; idir++)
     {

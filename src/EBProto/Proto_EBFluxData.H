@@ -153,7 +153,7 @@ namespace Proto
     shared_ptr< EBBoxData<ZFACE, data_t, ncomp> >    m_zflux;
 
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
-    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab, unsigned int a_idir)
+    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab, unsigned int a_idir) const
     {
       if(a_idir == 0)
       {

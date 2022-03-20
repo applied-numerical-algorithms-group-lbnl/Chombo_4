@@ -204,17 +204,17 @@ testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
   return 0;
 }
 
-///***/
-//PROTO_KERNEL_START
-//unsigned int  exactFloochF(int           a_pt[DIM],
-//                           Var<Real, 1>  a_phi,
-//                           int facedir)
-//{
-//  Real snoochval = a_pt[0] + 100*a_pt[1] + 1000*facedir;
-//  a_phi(0) = snoochval;
-//  return 0;
-//}
-//PROTO_KERNEL_END(exactFloochF, exactFlooch)
+/***/
+PROTO_KERNEL_START
+unsigned int  exactFloochF(int           a_pt[DIM],
+                           Var<Real, 1>  a_phi,
+                           int facedir)
+{
+  Real snoochval = a_pt[0] + 100*a_pt[1] + 1000*facedir;
+  a_phi(0) = snoochval;
+  return 0;
+}
+PROTO_KERNEL_END(exactFloochF, exactFlooch)
 
 ///***/
 void
@@ -224,31 +224,34 @@ fillTheFlooch(Chombo4::EBLevelFluxData<1>                   & a_flooch,
               Chombo4::Box                                     a_domain,
               Real a_dx)
 {
-//  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
-//  Chombo4::DataIterator dit = a_grids.dataIterator();
-//  for(int ibox = 0; ibox < dit.size(); ibox++)
-//  {
-//    ChBx grid       = a_grids[dit[ibox]];
-//    Bx   grbx = ProtoCh::getProtoBox(grid);
-//    auto& floochfab = a_flooch[dit[ibox]];
-//    {
-//      auto& xflooch = *floochfab.m_xflux;
-//      Bx  xinputBx  = xflooch.inputBox();
-//      ebforall_i(xinputBx, exactFlooch, grbx, xflooch, 0);
-//    }
-//    {
-//      auto& yflooch = *floochfab.m_yflux;
-//      Bx  yinputBx = yflooch.inputBox();
-//      ebforall_i(yinputBx, exactFlooch, grbx, yflooch, 1);
-//    }
-//#if DIM==3
-//    {
-//      auto& zflooch = *floochfab.m_zflux;
-//      Bx  zinputBx = zflooch.inputBox();
-//      ebforall_i(zinputBx, exactFlooch, grbx, zflooch, 2);
-//    }
-//#endif    
-//  }
+  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  Chombo4::DataIterator dit = a_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    ChBx grid       = a_grids[dit[ibox]];
+    Bx   grbx = ProtoCh::getProtoBox(grid);
+    auto& floochfab = a_flooch[dit[ibox]];
+    {
+      auto& xflooch = *floochfab.m_xflux;
+      Bx  xinputBx  = xflooch.inputBox();
+      int facedir = 0;
+      ebforall_i(xinputBx, exactFlooch, grbx, xflooch, facedir);
+    }
+    {
+      auto& yflooch = *floochfab.m_yflux;
+      Bx  yinputBx = yflooch.inputBox();
+      int facedir = 1;
+      ebforall_i(yinputBx, exactFlooch, grbx, yflooch, facedir);
+    }
+#if DIM==3
+    {
+      auto& zflooch = *floochfab.m_zflux;
+      Bx  zinputBx = zflooch.inputBox();
+      int facedir = 2;
+      ebforall_i(zinputBx, exactFlooch, grbx, zflooch, facedir);
+    }
+#endif    
+  }
 }
 /***/
 PROTO_KERNEL_START
@@ -479,6 +482,9 @@ runTests(int a_argc, char* a_argv[])
   //why yes, it is a lovely way to run a computer.
   testEBLevelBoxData(geoserv, grids, domain, dx, dataGhostPt);
 
+  //same goes for this one
+  testEBLevelFluxData(geoserv, grids, domain, dx, dataGhostPt);
+  
   return retval;
 }
 
