@@ -688,7 +688,7 @@ public:
 #endif      
       else
       {
-        Chombo4::MayDay::Error("monomial ran out of cases 3");
+        Chombo4::MayDay::Warning("monomial ran out of cases 3");
         retval = 0;
       }
     }
@@ -800,19 +800,19 @@ public:
 #endif      
       else
       {
-        Chombo4::MayDay::Error("monomial ran out of cases 4");
+        Chombo4::MayDay::Warning("monomial ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      Chombo4::MayDay::Error("monomial ran out of deriv cases");
+      Chombo4::MayDay::Warning("monomial ran out of deriv cases");
       retval = 0;
     }
 
     Real tol = 1.0e-13;
     Real diff = std::abs(retval - retval_simp);
-    if(diff > tol)
+    if ((diff > tol))
       {
         pout() << diff << std::endl;
         Chombo4::MayDay::Error("broken elegance");
@@ -926,7 +926,7 @@ public:
       Real xdiff = a_x[idir] - m_center[idir];
 
       Real arg = xdiff*m_PI*m_freq[idir];
-      Real factor= cos(arg);
+      Real factor = cos(arg);
       retval *= factor;
     }
     return retval;
@@ -937,7 +937,7 @@ public:
   }
 
   OneDimCosProduct(Real     a_amp,
-                   IntVect  a_freq,
+                   RealVect a_freq,
                    RealVect a_center)
   {   
     m_amp = a_amp;
@@ -947,7 +947,7 @@ public:
 
 private:
   Real      m_amp;
-  IntVect   m_freq;
+  RealVect  m_freq;
   RealVect  m_center;
   Real      m_PI=3.141592653589793238462643383279502884197;
 
@@ -998,7 +998,7 @@ public:
 
   virtual Real getPhiPoint(const RealVect   & a_x) const
   {
-    Real retval = 1.;
+    Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
     {
       Real xdiff = a_x[idir] - m_center[idir];
@@ -1015,7 +1015,7 @@ public:
   }
 
   OneDimSinProduct(Real     a_amp,
-                   IntVect  a_freq,
+                   RealVect a_freq,
                    RealVect a_center)
   {   
     m_amp = a_amp;
@@ -1025,7 +1025,7 @@ public:
 
 private:
   Real      m_amp;
-  IntVect   m_freq;
+  RealVect  m_freq;
   RealVect  m_center;
   Real      m_PI=3.141592653589793238462643383279502884197;
 
@@ -1232,5 +1232,67 @@ private:
   }
 };
 
+///class where phi is a product of one dimensional sines
+template <unsigned int order>
+class ExponentialProduct: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*exp(a*(x-x0))*exp(b*(y-y0))*exp(c*(z-z0))
+      a_amp = A
+      a_rate = (a,b,c)
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x0) const
+  {
+    Real retval = getPhiPoint(a_x0);
+    if (a_p.sum() > 0)
+      {
+        for(int idir = 0; idir < DIM; idir++)
+          {
+            retval *= std::pow(m_rate[idir], a_p[idir]);
+          }
+      }
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      Real retval = m_amp;
+      for(int idir = 0; idir < DIM; idir++)
+        {
+          retval *= std::exp(m_rate[idir]*(a_x[idir]-m_center[idir]));
+        }
+      return retval;
+    }
+
+  virtual ~ExponentialProduct()
+  {
+  }
+
+  ExponentialProduct(Real     a_amp,
+                     RealVect a_rate,
+                     RealVect a_center)
+    {
+    m_amp = a_amp;
+    m_rate = a_rate;
+    m_center = a_center;
+  }
+
+private:
+  Real      m_amp;
+  RealVect  m_rate;
+  RealVect  m_center;
+
+  ExponentialProduct()
+  {
+  }
+};
 
 #endif

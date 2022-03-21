@@ -620,6 +620,191 @@ namespace Proto
     RealVect m_normal;
 
   };
-  
+
+
+///  Sin bubbles
+/**
+   A*sin(pi*a*(x-x0))*sin(pi*b*(y-y0))*sin(pi*c*(z-z0)) - R = f(x,y,z)
+*/
+  class SimpleSinProductIF: public SimpleGeometry
+  {
+  public:
+    ///
+    SimpleSinProductIF(const RealVect a_center,
+                       const Real     a_R,
+                       const RealVect a_freq,
+                       const bool     a_inside)
+    {
+      m_R=        a_R;
+      m_freq = a_freq;
+      m_center = a_center;
+      m_inside = a_inside;
+    }
+
+    /// Destructor
+    virtual ~SimpleSinProductIF()
+    {
+    }
+
+    double
+    value(const IndexTM<double,DIM>& a_point) const
+      {
+        Real retval = 1.;
+        for(int idir = 0; idir < DIM; idir++)
+          {
+            Real xdiff = a_point[idir] - m_center[idir];
+            Real factor= sin(xdiff*m_PI*m_freq[idir]);
+            retval *= factor;
+          }
+        retval -= m_R;
+        return retval;
+      }
+
+    virtual double value(const IndexTM<int,DIM> & a_partialDerivative,
+                         const IndexTM<double,DIM>& a_point) const
+      {
+        Real retval = 1.;
+        for(int idir = 0; idir < DIM; idir++)
+          {
+            Real prefix = 1.0;
+            for(int ipre = 0; ipre < a_partialDerivative[idir]; ipre++)
+              {
+                prefix *= m_PI*m_freq[idir];
+              }
+            Real arg = m_PI*m_freq[idir]*(a_point[idir]-m_center[idir]);
+            if(a_partialDerivative[idir]%2 == 0)
+              {
+                retval *= pow(-1.,a_partialDerivative[idir]/2)*prefix*sin(arg);
+              }
+            else
+              {
+                retval *= pow(-1.,(a_partialDerivative[idir]-1)/2)*prefix*cos(arg);
+              }
+          }
+        if (a_partialDerivative.sum() == 0)
+          retval -= m_R;
+        if (!m_inside)
+          retval *= -1;
+        return retval;
+      }
+
+
+    virtual BaseIF* newImplicitFunction() const
+    {
+      SimpleSinProductIF* SimpleSinProductPtr = new SimpleSinProductIF(m_center, m_R, m_freq, m_inside);
+      return static_cast<BaseIF*>(SimpleSinProductPtr);
+    }
+
+  protected:
+    Real      m_R;
+    RealVect  m_freq;
+    RealVect  m_center;
+    Real      m_PI=3.141592653589793238462643383279502884197;
+    bool      m_inside;
+
+  private:
+    SimpleSinProductIF();
+
+  };
+
+  ///  Cos surfaces
+/**
+   SUM_i( PROD_j(A_i*sin(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
+*/
+  class SimpleCosSurfIF: public SimpleGeometry
+  {
+  public:
+    ///
+    SimpleCosSurfIF(const std::vector<RealVect> a_center,
+                    const std::vector<Real>     a_amp,
+                    const std::vector<RealVect> a_freq,
+                    const Real                  a_R,
+                    const bool                  a_inside)
+      {
+        m_center = a_center;
+        m_amp = a_amp;
+        m_freq = a_freq;
+        m_R = a_R;
+        m_inside = a_inside;
+        CH_assert(a_center.size() == a_amp.size());
+        CH_assert(a_center.size() == a_freq.size());
+      }
+
+    /// Destructor
+    virtual ~SimpleCosSurfIF()
+      {
+      }
+
+    double
+    value(const IndexTM<double,DIM>& a_point) const
+      {
+        Real retval = 0.;
+        for(int i=0; i!=m_center.size(); i++)
+          {
+            Real factor = m_amp[i];
+            for(int j=0; j!=SpaceDim; j++)
+              {
+                Real xdiff = a_point[j] - m_center[i][j];
+                factor *= cos(xdiff*m_PI*m_freq[i][j]);
+              }
+            retval += factor;
+          }
+        retval -= m_R;
+        return retval;
+      }
+
+    virtual double value(const IndexTM<int,DIM> & a_partialDerivative,
+                         const IndexTM<double,DIM>& a_point) const
+      {
+        Real retval = 0.;
+        for(int i=0; i!=m_center.size(); i++)
+          {
+            Real factor = m_amp[i];
+            for(int j=0; j!=SpaceDim; j++)
+              {
+                Real prefix = 1.;
+                for(int ipre = 0; ipre < a_partialDerivative[j]; ipre++)
+                  {
+                    prefix *= m_PI*m_freq[i][j];
+                  }
+                Real xdiff = a_point[j] - m_center[i][j];
+                Real arg = m_PI*m_freq[i][j]*xdiff;
+                if(a_partialDerivative[j]%2 == 0)
+                  {
+                    factor *= pow(-1.,a_partialDerivative[j]/2)*prefix*cos(arg);
+                  }
+                else
+                  {
+                    factor *= pow(-1.,(a_partialDerivative[j]-1)/2)*prefix*sin(arg);
+                  }
+              }
+            retval += factor;
+          }
+        if (a_partialDerivative.sum() == 0)
+          retval -= m_R;
+        if (!m_inside)
+          retval *= -1;
+        return retval;
+      }
+
+
+    virtual BaseIF* newImplicitFunction() const
+      {
+        SimpleCosSurfIF* SimpleCosSurfPtr = new SimpleCosSurfIF(m_center, m_amp, m_freq, m_R, m_inside);
+        return static_cast<BaseIF*>(SimpleCosSurfPtr);
+      }
+
+  protected:
+    Real              m_R;
+    vector<Real>      m_amp;
+    vector<RealVect>  m_freq;
+    vector<RealVect>  m_center;
+    Real      m_PI=3.141592653589793238462643383279502884197;
+    bool      m_inside;
+
+  private:
+    SimpleCosSurfIF();
+
+  };
 }
 #endif
