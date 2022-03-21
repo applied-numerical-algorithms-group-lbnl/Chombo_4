@@ -47,7 +47,7 @@ public:
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
+                const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(4, nullptr))
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -421,7 +421,7 @@ private:
                            PointSet                            & a_allIrregPoints,
                            const Chombo4::DataIndex                     & a_dit,
                            int                                            a_ibox,
-                           const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions = nullptr)
+                           const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >())
   {
     CH_TIME("EBPetscSolver::getStencilComponents");
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
@@ -476,7 +476,10 @@ private:
                        ebnorxdata, ebnorydata,
                        ebnorzdata,
                        m_dx, false, Point::Zeros(),
-                       a_boundarySolutions);
+                       a_boundarySolutions[0],
+                       a_boundarySolutions[1],
+                       a_boundarySolutions[2],
+                       a_boundarySolutions[3]);
  
     }
     else
@@ -956,7 +959,7 @@ private:
   Chombo4::Copier m_exchangeCopier;
   vector<shared_ptr<ebstencil_t> > m_stencil;
 
-  shared_ptr<BaseExactSolution<order> > m_boundarySolutions = nullptr;
+  vector<shared_ptr<BaseExactSolution<order> > > m_boundarySolutions;
 };
 
 #endif

@@ -166,7 +166,10 @@ namespace Proto
              double                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX,
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY,
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ,
+             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
     a_bcOnly = false;
     if(a_stencilName == string("Weighted_Least_Squares_Poisson"))
@@ -199,7 +202,10 @@ namespace Proto
                              a_dx,
                              a_periodiconly,
                              forceNeumann,
-                             a_boundarySolutions);
+                             a_boundarySolutionsX,
+                             a_boundarySolutionsY,
+                             a_boundarySolutionsZ,
+                             a_boundarySolutionsEB);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
     {
@@ -231,7 +237,10 @@ namespace Proto
                              a_dx,
                              a_periodiconly,
                              forceNeumann,
-                             a_boundarySolutions);
+                             a_boundarySolutionsX,
+                             a_boundarySolutionsY,
+                             a_boundarySolutionsZ,
+                             a_boundarySolutionsEB);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Advection"))
     {
@@ -300,7 +309,10 @@ namespace Proto
                        double                                      a_dx,                         
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann,
-                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutions)
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX,
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY,
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ,
+                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
     using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
@@ -337,7 +349,7 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    if (a_boundarySolutions == nullptr)
+    if (a_boundarySolutionsX == nullptr)
       {
         pp.get("exact_solution",exactSolution);
       }
@@ -457,7 +469,7 @@ namespace Proto
         BaseWLSFlux<YFACE, order> yflux;
         BaseWLSFlux<ZFACE, order> zflux;
         BaseWLSFlux<BOUNDARY, order> ebflux;
-        if (a_boundarySolutions == nullptr)
+        if (a_boundarySolutionsX == nullptr)
           {
             //pout() << "Using uniform div boundary values" << std::endl;
             xflux = BaseWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
@@ -468,10 +480,10 @@ namespace Proto
         else
           {
             //pout() << "Using specified div boundary values" << std::endl;
-            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
-            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions, 0, pt_verbose);
+            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutionsX, a_boundarySolutionsEB, 0, pt_verbose);
+            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutionsY, a_boundarySolutionsEB, 0, pt_verbose);
+            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutionsZ, a_boundarySolutionsEB, 0, pt_verbose);
+            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
           }
 
         Real inhoTerm = 0.0;

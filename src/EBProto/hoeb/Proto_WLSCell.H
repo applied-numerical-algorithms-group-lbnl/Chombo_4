@@ -646,6 +646,7 @@ namespace Proto
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
                 shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolEB = nullptr,
                 int           a_fluxType=0,
                 bool          a_verbose=false)
       {
@@ -653,6 +654,10 @@ namespace Proto
         m_powerE = a_powerE;
         m_verbose = a_verbose;
         m_exactSol = a_exactSol;
+        if (a_exactSolEB == nullptr)
+          m_exactSolEB = a_exactSol;
+        else
+          m_exactSolEB = a_exactSolEB;
         m_fluxType = a_fluxType;
       }
 
@@ -701,9 +706,9 @@ namespace Proto
             Real amplitude;
             pp.get("phi_amp",amplitude);
 
-            IntVect frequency;
+            RealVect frequency;
             RealVect center;
-            Vector<int> freqVec;
+            Vector<Real> freqVec;
             Vector<Real> centerVec;
   
         pp.getarr("phi_freq",freqVec,0,DIM);
@@ -745,6 +750,7 @@ namespace Proto
 
         m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
       }
+        m_exactSolEB = m_exactSol;
     }
 
     public:
@@ -758,6 +764,7 @@ namespace Proto
     int m_fluxType = 0;
     //Exact solution class holding different function types
     shared_ptr<BaseExactSolution<order> >  m_exactSol;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolEB;
     
   };
 

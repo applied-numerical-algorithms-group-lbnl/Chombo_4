@@ -934,7 +934,7 @@ namespace Proto
         ebBCValues[ivof] = NeumannExactSoln<order>::
                                getEBIntegral(a_ebfneighNorm[ivof],
                                              a_ebfLocDiff,
-                                             m_exactSol,
+                                             m_exactSolEB,
                                              a_dx);
       }
       else if(a_ebbcName == string("Dirichlet"))
@@ -942,7 +942,7 @@ namespace Proto
         ebBCValues[ivof] = DirichletExactSoln<order>::
                                getEBIntegral(a_ebfmom[ivof],
                                              a_ebfLocDiff,
-                                             m_exactSol,
+                                             m_exactSolEB,
                                              a_dx);
       }
       else
@@ -1031,7 +1031,7 @@ namespace Proto
                                     neighs, a_neighType,
                                     a_ebbcName, a_dombcName, a_dx);
 
-        if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
+        // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
         radius += 1;
         grows += 1;
       }
@@ -3324,7 +3324,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                   const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-                  const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                  const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
                   const Real              a_dx)  
   {
     PR_TIME("getFaceIntegralNeumannExactSoln");
@@ -3354,7 +3354,7 @@ namespace Proto
       Real moment = a_faceMom[pSDMinOne];
  
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*m_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
     }
   
     return retval;
@@ -3368,7 +3368,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                   const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-                  const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                  const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
                   const Real              a_dx) 
   {
     PR_TIME("getFaceIntegralDirichletExactSoln");
@@ -3397,7 +3397,7 @@ namespace Proto
 
       Real moment = a_faceMom[pSDMinOne];
 
-      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*m_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
 
     }
 
@@ -3411,7 +3411,7 @@ namespace Proto
   DirichletExactSoln<order>::
   getEBIntegral(const IndMomDIM  & a_ebfMom,
                 const RealVect   & a_ebfLoc,
-                const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
                 const Real         a_dx) 
   {
     PR_TIME("getEBIntegralDirichletExactSoln");
@@ -3425,7 +3425,7 @@ namespace Proto
       IndexTM<int,DIM> p = momit();
       Real moment = a_ebfMom[p];
 
-      retval += moment*(areaScaleFactor*POW(a_dx,p))*m_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,p))*a_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
 
     }
 
@@ -3439,7 +3439,7 @@ namespace Proto
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
                 const RealVect           & a_ebfLoc,
-                const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
                 const Real                 a_dx) 
   {
     PR_TIME("getEBIntegralNeumannExactSoln");
@@ -3459,7 +3459,7 @@ namespace Proto
           IndexTM<int,DIM> pShift = p - BASISV_TM<int, DIM>(ndir);
           Real moment = a_ebfNormalMom[ndir][pShift];
   
-          retval += pd*moment*(areaScaleFactor*POW(a_dx,p))*m_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
+          retval += pd*moment*(areaScaleFactor*POW(a_dx,p))*a_exactSol->getDerivative(p,a_ebfLoc)/(p.factorial());
         }
       }
     }
