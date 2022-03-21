@@ -32,7 +32,12 @@ namespace Proto
     {
     }
 
-
+    ///to conform with mpi stuff
+    int nComp() const
+    {
+      return ncomp;
+    }
+    
     ///needed for leveldata
     HostIrregData(const Box& a_box, bool a_stackAllocation=true)
     {  }

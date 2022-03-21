@@ -32,8 +32,6 @@ namespace Proto
       m_isBoundary = false;
     }
 
-
-
     size_t linearSize( ) const
     {
       size_t retval = 0;
@@ -764,6 +762,12 @@ namespace Proto
       m_isDefined = false;
     }
 
+    ///not meaningful in this context.    used by the mpi code
+    int nComp() const
+    {
+      return 1;
+    }
+
     ///
     template<CENTERING cent>
     inline 
@@ -1191,7 +1195,7 @@ namespace Proto
     }
 
     //for serialization --defines this object from a byte stream
-    inline EBGraph(void * a_buf);
+    inline EBGraph(void * a_buf, bool a_printStuff = false);
 
     //for serialization --puts this object into a byte stream
     inline void energize(void *a_buf) const;
@@ -1201,21 +1205,24 @@ namespace Proto
     inline
     virtual std::size_t charsize(const Box&   a_bx,
                                  unsigned int a_startcomp,
-                                 unsigned int a_numcomps) const;
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const;
 
     ///
     inline
     virtual void  linearIn(void*                  a_buf,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
-                           unsigned int           a_numcomps);
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false);
     
     ///
     inline
     virtual void linearOut(void*               a_buf,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
-                           unsigned int        a_numcomps) const;
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const;
 
 
 

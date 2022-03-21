@@ -17,8 +17,8 @@
 #include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "Chombo_EBChombo.H"
-#include "Chombo_EBDataChoreography.H"
 #include "Chombo_ProtoInterface.H"
+#include "Chombo_EBDataChoreography.H"
 #include "Chombo_NamespaceHeader.H"
 
 /// factory where constructor called is the null constructor

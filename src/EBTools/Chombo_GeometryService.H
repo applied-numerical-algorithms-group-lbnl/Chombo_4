@@ -21,8 +21,8 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
+#include <memory>
 #include "Chombo_NamespaceHeader.H"
-
 ///
 /**
    makes geometric description from an implicit function.
@@ -46,7 +46,7 @@ public:
   //this ought to have a boundary type but 
   //in this case boundary and cell have the same semantic
   typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
-
+  
   ///
   /**
      basif      :  implicit function
@@ -103,7 +103,7 @@ public:
   }
 
   ///
-  inline const shared_ptr<<volu_distrib_t> >
+  inline const shared_ptr<volu_distrib_t>
   getVoluData() const
   {
     return m_voludata;
@@ -369,9 +369,6 @@ private:
   void exchange();
 
   ///
-  Copier m_exchangeCopier;
-  
-  ///
   Box                            m_domain;
     
   ///
@@ -446,12 +443,20 @@ public:
   typedef MomentIterator<DIM  , order> MomItDIM;
   typedef MomentIterator<DIM-1, order> MomItSDMinOne;
   typedef IrregNode<order> inode;
-  typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
-  typedef HostIrregData<BOUNDARY,  IndMomDIM, 1>  EBFaData;
-  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBNormalData;
+  typedef HostIrregData<CELL,      IndMomDIM, 1>      VoluData;
+  typedef HostIrregData<BOUNDARY,  IndMomDIM, 1>      EBFaData;
+  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>     XFacData;
+  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>     YFacData;
+  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>     ZFacData;
+  typedef HostIrregData<CELL,       IndMomDIM, 1> EBNormalData;
+  
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>       graph_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<VoluData>       volu_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBFaData>       ebfa_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<XFacData>       xfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<YFacData>       yfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<ZFacData>       zfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
 
 
   ///

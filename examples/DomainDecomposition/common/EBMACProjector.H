@@ -20,6 +20,7 @@ class EBMACProjector
 public:
   /// the cc proj class uses a bunch of mac projector internals
   friend class EBCCProjector;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                  shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -98,7 +99,7 @@ private:
   Real m_dx;
   EBIBC                                  m_ebibc;
   //internals
-  shared_ptr<LevelData<EBGraph>  >       m_graphs;
+  shared_ptr<graph_distrib_t>            m_graphs;
   EBLevelBoxData<CELL, 1>                m_rhs;
   EBLevelBoxData<CELL, 1>                m_phi;
 

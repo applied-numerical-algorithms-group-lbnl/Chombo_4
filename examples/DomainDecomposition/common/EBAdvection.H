@@ -14,6 +14,7 @@
 class EBAdvection
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   /// 
   EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
               shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -76,7 +77,7 @@ protected:
   EBLevelBoxData<CELL, 1>                m_deltaM;
   EBLevelBoxData<CELL, 1>                m_nonConsDiv;
   EBLevelBoxData<CELL, 1>                m_kappaDiv;
-  shared_ptr<LevelData<EBGraph>  >       m_graphs;
+  shared_ptr<graph_distrib_t>            m_graphs;
 
   EBIBC                                  m_ebibc;
   static const string s_ncdivLabel;      //for non-conservative divergence

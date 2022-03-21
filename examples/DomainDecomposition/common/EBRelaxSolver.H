@@ -21,13 +21,14 @@ class EBRelaxSolver
 {
 
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   ///
   /**
      Define the solver.   a_op is the linear operator.
   */
   EBRelaxSolver(EBMultigridLevel*                     a_op, 
                 const DisjointBoxLayout             & a_grids,
-                const shared_ptr<LevelData<EBGraph> > a_graphs,
+                const shared_ptr<graph_distrib_t>     a_graphs,
                 const IntVect                       & a_ghost)
   {
     m_op = a_op;

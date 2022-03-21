@@ -46,7 +46,7 @@ fillTheMooch(DistributedData<EBHostData<CELL, int, 1> >& a_mooch,
              Chombo4::Box                           a_domain,
              Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   for(Chombo4::DataIterator dit = a_grids.dataIterator(); dit.ok(); ++dit)
   {
     ChBx grid       = a_grids[dit()];
@@ -72,7 +72,7 @@ checkTheMooch(DistributedData<EBHostData<CELL, int, 1> > & a_mooch,
               IntVect                                      a_ghost,
               Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   for(ChDit dit = a_grids.dataIterator(); dit.ok(); ++dit)
   {
     ChBx grid       = a_grids[dit()];
@@ -135,7 +135,7 @@ fillTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
               Chombo4::Box                                     a_domain,
               Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -170,7 +170,7 @@ checkTheSnooch(EBLevelBoxData<CELL,  1>                       & a_snooch,
                Chombo4::Box                                     a_domain,
                Real a_dx, IntVect a_ghost)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -224,7 +224,7 @@ fillTheFlooch(Chombo4::EBLevelFluxData<1>                   & a_flooch,
               Chombo4::Box                                     a_domain,
               Real a_dx)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -278,7 +278,7 @@ checkTheFlooch(EBLevelFluxData<1>                             & a_flooch,
                Chombo4::Box                                     a_domain,
                Real a_dx, IntVect a_ghost)
 {
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
   Chombo4::DataIterator dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {

@@ -30,6 +30,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, srcComp> > host_src_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBFluxData<    Real, dstComp> > devi_dst_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, dstComp> > host_dst_comp_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
 
   ScalarFluxAliasFactory(devi_src_comp_t * a_source, 
                          unsigned int      a_whichcomp)
@@ -71,6 +72,7 @@ public:
   
   typedef GraphConstructorFactory<    EBFluxData<Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostFluxData<Real, NUMCOMPS> > hostfactory_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
 
   ///
   EBLevelFluxData(): devidistrib_t()
@@ -81,7 +83,7 @@ public:
   ///
   EBLevelFluxData(const DisjointBoxLayout        & a_dp, 
                   const IntVect                  & a_ghost,
-                  shared_ptr<LevelData<EBGraph>  > a_graphs)
+                  shared_ptr<graph_distrib_t>      a_graphs)
     : devidistrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
@@ -94,9 +96,9 @@ public:
 
   ///
   virtual
-  void define(const DisjointBoxLayout& a_dp, 
-              const IntVect          & a_ghost,
-              shared_ptr<LevelData<EBGraph>  > a_graphs)
+  void define(const DisjointBoxLayout    & a_dp, 
+              const IntVect              & a_ghost,
+              shared_ptr<graph_distrib_t>  a_graphs)
   {
     m_graphs = a_graphs;
     devidistrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
@@ -162,19 +164,6 @@ public:
     return maxval;
   }
   
-  ///deprecated interface since we need neither interval nor copier (comps go in the type system now)
-  /**
-     copy to a_dst over box intersections.
-   */
-  ///
-//  void copyTo(const Interval                      &            a_srcComps,
-//              EBLevelFluxData<NUMCOMPS>           &            a_dst,
-//              const Interval                      &            a_dstComps,
-//              const Copier                        &            a_copier,
-//              bool a_printStuff = false) const
-//  {
-//    copyTo(a_dst, a_printStuff);
-//  }
   
   ///all the cool kids use this copyTo interface
   /**
@@ -194,13 +183,6 @@ public:
   }
 
 
-  /// deprecated interface.  we no longer use copier (or expose its equivalent)
-//  virtual void exchange(const Copier& copier, bool a_printStuff = false)
-//  {
-//    exchange(a_printStuff);
-//  }
-
-  
   /// The hip new slick exchange interface.  Use this one.
   virtual void exchange(bool a_printStuff = false)
   {
@@ -330,7 +312,7 @@ public:
 
   
 private:
-    shared_ptr<LevelData<EBGraph>  > m_graphs;
+    shared_ptr<graph_distrib_t> m_graphs;
 };
 
 

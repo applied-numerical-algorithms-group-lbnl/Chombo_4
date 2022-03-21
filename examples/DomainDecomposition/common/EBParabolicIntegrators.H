@@ -14,6 +14,8 @@
 class BaseEBParabolic
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+ 
   ///the boundary conditions for the EBMultigrid have to be correct.  Alpha and Beta do not as they are constantly reset
   BaseEBParabolic(shared_ptr<EBMultigrid>            a_diffusionSolver,
                   shared_ptr<GeometryService<2> >    a_geoserv,
@@ -64,8 +66,8 @@ protected:
   DisjointBoxLayout       m_grids;
   Box                     m_domain;
   IntVect                 m_nghost;
-  shared_ptr<GeometryService<2> >    m_geoserv;
-  shared_ptr<LevelData<EBGraph>  >   m_graphs; 
+  shared_ptr<GeometryService<2> > m_geoserv;
+  shared_ptr<graph_distrib_t  >   m_graphs; 
 
 private:
   

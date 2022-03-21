@@ -76,7 +76,6 @@ using Proto::EBStencilArchive;
 using Chombo4::DisjointBoxLayout;
 using Chombo4::DataIterator;
 using Chombo4::DataIndex;
-using Chombo4::Copier;
 
 using ProtoCh::getProtoBox;
 typedef Proto::Box Bx;

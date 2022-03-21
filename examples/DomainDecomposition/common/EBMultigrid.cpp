@@ -234,7 +234,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
     m_coarser->define(*this, a_geoserv);
 
-    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
+    auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
     m_deltaC.define(m_coarser->m_grids, m_nghost , graphs);
   }

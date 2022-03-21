@@ -23,6 +23,7 @@
 #include "Proto_EBBoxData.H"
 #include "Proto_EBHostData.H"
 #include "Chombo_EBDataChoreography.H"
+#include <memory>
 #include "Chombo_NamespaceHeader.H"
 
 #ifdef CH_MPI
@@ -83,8 +84,6 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBGraph>                          graph_distrib_t;
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
-
-
   ///
   EBLevelBoxData(): devi_distrib_t()
   {
@@ -94,7 +93,7 @@ public:
   ///
   EBLevelBoxData(const DisjointBoxLayout                & a_dp, 
                  const IntVect                          & a_ghost,
-                 shared_ptr< graph_distrib_t<EBGraph>  >   a_graphs)
+                 shared_ptr< graph_distrib_t  >           a_graphs)
     : devi_distrib_t(a_dp, a_ghost, devifactory_t(a_graphs)), m_graphs(a_graphs)
   {
   }
@@ -274,8 +273,9 @@ public:
   writeToFileHDF5(const string& a_filename, Real a_coveredval) const
   {
 #ifdef CH_USE_HDF5
-    LevelData<FArrayBox>                         hostfabs(this->disjointBoxLayout(), NUMCOMPS, this->m_ghost);
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    LevelData<FArrayBox> hostfabs(this->disjointBoxLayout(), NUMCOMPS, this->ghostVect());
+    host_distrib_t       hostdata(this->disjointBoxLayout(),           this->ghostVect(),
+                                  hostfactory_t(m_graphs));
     copyToHost(     hostdata, *this);
     copyHostToFAB(  hostfabs, hostdata, a_coveredval);
     writeLevelname(&hostfabs, a_filename.c_str());
@@ -314,17 +314,16 @@ public:
 
   /// This is for plotfiles only  as multivalued stuff will be lost.
   static 
-  void copyHostToFAB(LevelData<FArrayBox>                               & a_fabxDat,
-                     const LevelData<EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
+  void copyHostToFAB(LevelData<FArrayBox>  & a_fabxDat,
+                     const host_distrib_t  & a_hostDat,
                      const Real& a_coveredval)
   {
-    LevelData< EBHostData<cent, Real, NUMCOMPS> >& hostDat = (LevelData< EBHostData<cent, Real, NUMCOMPS> >&) (a_hostDat);
     DisjointBoxLayout dbl = a_fabxDat.disjointBoxLayout();
     DataIterator dit = a_hostDat.dataIterator();
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      EBHostData<cent, Real, NUMCOMPS> & hostdat =    hostDat[dit[ibox]];
-      FArrayBox                        & fabxdat =  a_fabxDat[dit[ibox]];
+      const auto & hostdat =  a_hostDat[dit[ibox]];
+      auto       & fabxdat =  a_fabxDat[dit[ibox]];
       fabxdat.setVal(a_coveredval);
       Box chbox = dbl[dit[ibox]];
       Proto::Box prbox = ProtoCh::getProtoBox(chbox);
@@ -390,44 +389,6 @@ public:
   }
   
 
-  ///deprecated as I slowly unwind the tentacles of LevelData
-  static 
-  void copyToHost(LevelData<      EBHostData<cent, Real, NUMCOMPS> > & a_hostDat,
-                  const LevelData< EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat)
-  {
-    CH_TIME("EBLevelBoxData::copyToHost");
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = (LevelData< EBBoxData<cent, Real, NUMCOMPS> >&) (a_deviDat);
-    DataIterator dit = a_hostDat.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
-    {
-      EBHostData<cent, Real, NUMCOMPS> & hostfab = a_hostDat[dit[ibox]];
-      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
-      for(unsigned int iwhichfab = 0; iwhichfab < 2; iwhichfab++)
-      {
-        size_t fabsizeHost, fabsizeDevi; 
-        Real*  dataptrHost;
-        Real*  dataptrDevi;
-        hostfab.dataInfo(dataptrHost, fabsizeHost, iwhichfab);
-        devifab.dataInfo(dataptrDevi, fabsizeDevi, iwhichfab);
-
-        size_t datSize = sizeof(Real)*fabsizeDevi;
-
-#ifdef PROTO_CUDA
-        protoMemcpy(DEVICE,dataptrHost, dataptrDevi, datSize, protoMemcpyDeviceToHost);
-        protoError err = protoGetLastError();
-        if (err != protoSuccess)
-        {
-          fprintf(stderr, "protoGetLastError() failed at %s:%i : %s\n",
-                  __FILE__, __LINE__, protoGetErrorString(err));
-        }
-#else
-        memcpy(dataptrHost, dataptrDevi, datSize);
-#endif  
-      }
-    }
-  }
-
-
   /// 
   static 
   void copyToHost(      EBHostData<cent, Real, NUMCOMPS> & hostfab,
@@ -489,22 +450,6 @@ public:
     }
   }
 
-  /// deprecated  because leveldata is deprecated
-  static 
-  void copyToDevice(LevelData<        EBBoxData<cent, Real, NUMCOMPS> > & a_deviDat,
-                    const LevelData< EBHostData<cent, Real, NUMCOMPS> > & a_hostDat)
-  {
-    CH_TIME("EBLevelBoxData::copyToDevice");
-    LevelData< EBBoxData<cent, Real, NUMCOMPS> >& deviDat = const_cast<LevelData< EBBoxData<cent, Real, NUMCOMPS> >  &> (a_deviDat);
-    LevelData<EBHostData<cent, Real, NUMCOMPS> >& hostDat = const_cast<LevelData< EBHostData<cent, Real, NUMCOMPS> > &> (a_hostDat);
-    DataIterator dit = a_hostDat.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
-    {
-      EBHostData<cent, Real, NUMCOMPS> & hostfab =   hostDat[dit[ibox]];
-      EBBoxData< cent, Real, NUMCOMPS> & devifab =   deviDat[dit[ibox]];
-      copyToDevice(devifab, hostfab);
-    }
-  }
   ///
   static 
   void copyToDevice(      EBBoxData< cent, Real, NUMCOMPS> & devifab,
@@ -569,19 +514,18 @@ public:
 
 
 private:
-    shared_ptr<LevelData<EBGraph>  > m_graphs;
+    shared_ptr<graph_distrib_t> m_graphs;
 };
 
 ///write EB file so visit can recognize it as EB
 template <int NUMCOMPS>
 inline void
 writeEBLevelHDF5(const string& a_filename,
-                 const EBLevelBoxData<CELL, NUMCOMPS>  & a_data,
-                 const EBLevelBoxData<CELL, 1       >  & a_kapp,
-                 const Box                             & a_domain,
-                 shared_ptr<LevelData<EBGraph>  > a_graphs,
-                 Real                             a_coveredval = 0.0,
-                 Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0)
+                 const EBLevelBoxData<CELL, NUMCOMPS>                         & a_data,
+                 const EBLevelBoxData<CELL, 1       >                         & a_kapp,
+                 const Box                                                    & a_domain,
+                 shared_ptr<CH4_Data_Choreography::DistributedData<EBGraph> >  a_graphs,
+                 Real a_coveredval = 0.0, Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0)
 {
 
 #ifdef CH_USE_HDF5

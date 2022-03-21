@@ -31,6 +31,7 @@ public:
   static int  s_numSmoothDown ;
   static int  s_numSmoothUp   ;
   static bool s_useWCycle     ;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   Real                              m_alpha;   
   Real                              m_beta;    
@@ -43,7 +44,7 @@ public:
   EBLevelBoxData<CELL, 1>           m_deltaC;
   EBLevelBoxData<CELL, 1>           m_residC;
   DisjointBoxLayout                 m_grids;   
-  shared_ptr<LevelData<EBGraph> >   m_graphs;
+  shared_ptr<graph_distrib_t>       m_graphs;
   IntVect                           m_nghost;
   Box                               m_domain;
   unsigned int                      m_depth;
@@ -424,7 +425,7 @@ public:
     EBMultigridLevel* baseBelongToUs = static_cast<EBMultigridLevel*>(finestfish);
     m_finest = std::shared_ptr<EBMultigridLevel>(baseBelongToUs);
 
-    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
+    auto graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost, graphs);
     m_cor.define(a_grids, a_nghost, graphs);
   }
@@ -458,7 +459,7 @@ public:
                       a_nghost,
                       a_prefix));
 
-    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(a_domain);
+    auto graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost  , graphs);
     m_cor.define(a_grids, a_nghost  , graphs);
   }

@@ -8,14 +8,18 @@
  */
 #endif
 
-#ifndef _EB_DATA_CHOREOGRAPHY___
-#define _EB_DATA_CHOREOGRAPHY___
+#ifndef _EB_DATA_CHOREOGRAPHY_blerg__
+#define _EB_DATA_CHOREOGRAPHY_blerg__
 
 #include "Chombo_DisjointBoxLayout.H"
 #include "Chombo_Pool.H"
 #include "Chombo_Vector.H"
 #include "Chombo_ProblemDomain.H"
+#include "Chombo_CH_Timer.H"
 #include "Chombo_NeighborIterator.H"
+#include "Chombo_DataIterator.H"
+//for datafactory
+#include "Chombo_BoxLayoutData.H"
 #include <unordered_map>
 #include <cstdint>
 
@@ -649,7 +653,6 @@ namespace CH4_Data_Choreography
             if(a_printStuff)
             {
               Chombo4::pout() << "doremotecopies send ivec= "    <<  ivec
-                              << ", fabBox = "   << localfab.box()
                               << ", region = "   << motion.m_src.m_region << endl;
                            
             }
@@ -711,7 +714,6 @@ namespace CH4_Data_Choreography
            if(a_printStuff)
             {
               Chombo4::pout() << "doremotecopies recv ivec= "    <<  ivec
-                              << ", fabBox = "   << localfab.box() 
                               << ", region = "   << motion.m_dst.m_region << endl;
             }
 
@@ -790,7 +792,6 @@ namespace CH4_Data_Choreography
                                       const BoxPattern   & a_pattern,
                                       bool a_printStuff = false)
     {
-          
       CH_TIME("DistributedData::doLocalCopiesWithCopy");
       for(int ibuf = 0; ibuf < a_pattern.m_localPattern.size(); ibuf++)
       {
@@ -802,7 +803,7 @@ namespace CH4_Data_Choreography
         const auto& dstdatind = motion.m_dst.m_datInd;
         const auto& dstregion = motion.m_dst.m_region;
         CH_assert(srcregion == dstregion);
-        Bx regx = ProtoCh::getProtoBox(dstregion);
+        Proto::Box regx = ProtoCh::getProtoBox(dstregion);
         unsigned int ico = 0;
         unsigned int ncodst = a_dst[dstdatind].nComp();
         unsigned int ncosrc = a_src[srcdatind].nComp();
