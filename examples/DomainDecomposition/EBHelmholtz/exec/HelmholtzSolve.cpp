@@ -158,7 +158,7 @@ runTest(int a_argc, char* a_argv[])
     pout() << "using Dirichlet BCs at EB" << endl;
   }
   Chombo4::Box dombox = domain.domainBox();
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
+  auto graphs = geoserv->getGraphs(dombox);
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);

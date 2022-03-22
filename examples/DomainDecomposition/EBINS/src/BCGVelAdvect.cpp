@@ -182,7 +182,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
       m_helmholtz->applyOp(m_source, velcomp);
     }
 
-    m_source.exchange(m_exchangeCopier);
+    m_source.exchange();
     DataIterator dit = m_grids.dataIterator();
     //int ideb = 0;
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -228,7 +228,7 @@ getMACVectorVelocity(EBLevelBoxData<CELL, DIM>   & a_inputVel,
   bool printStuff = true;
   m_macproj->project(m_advectionVel, m_macGradient, a_tol, a_maxIter, printStuff);
   
-  m_advectionVel.exchange(m_exchangeCopier);
+  m_advectionVel.exchange();
 
   //subtract off pure gradient part of the velocity field in vector holder.
   correctVectorVelocity();
@@ -245,7 +245,7 @@ BCGVelAdvect::
 correctVectorVelocity()
 {
   CH_TIME("BCGAdvect::correctVectorVelocity");
-  m_macGradient.exchange(m_exchangeCopier);
+  m_macGradient.exchange();
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(unsigned int vecDir = 0; vecDir < DIM; vecDir++)
@@ -288,7 +288,7 @@ correctVectorVelocity()
     }
     ideb++;
   }
-  m_macVelocity.exchange(m_exchangeCopier);
+  m_macVelocity.exchange();
 }
 
 /**********/
@@ -329,7 +329,7 @@ assembleDivergence(EBLevelBoxData<CELL, DIM>& a_divuu,
       auto& kapdiv =  m_kappaDiv[dit[ibox]];
       getKapDivFFromCentroidFlux(kapdiv, centroidFlux, ibox);
     }
-    m_kappaDiv.exchange(m_exchangeCopier);
+    m_kappaDiv.exchange();
     
     // begin debug
     //string sourcefile = string("kappaDiv.") + std::to_string(ivar) + string(".hdf5");

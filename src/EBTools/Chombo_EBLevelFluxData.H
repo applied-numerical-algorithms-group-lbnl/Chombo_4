@@ -108,7 +108,7 @@ public:
   template <unsigned int srcComp>
   void define(EBLevelFluxData<srcComp>   &     a_input, 
               unsigned int                     a_comp,
-              shared_ptr<LevelData<EBGraph>  > a_graphs)
+              shared_ptr<graph_distrib_t>      a_graphs)
   {
     m_graphs = a_graphs;
     auto dp    = a_input.disjointBoxLayout();
@@ -118,7 +118,7 @@ public:
     srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
 
     ScalarFluxAliasFactory<srcComp, NUMCOMPS> fact(inputPtr, a_comp);
-    devidistrib_t::define(dp, NUMCOMPS, ghost, fact);
+    devidistrib_t::define(dp, ghost, fact);
   }
 
   void setVal(Real a_value)
