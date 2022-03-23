@@ -37,7 +37,8 @@ namespace Proto
                    const double          a_dx)
   {
     PR_TIME("isRegularStencil");
-    bool retval;
+    using Chombo4::pout;
+    bool retval = true;
     Vector<EBIndex<CELL> > vof_cont;
     vof_cont.push_back(a_vof);
     RealVect centroid;
@@ -45,12 +46,13 @@ namespace Proto
     Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_vof, a_graph, a_dx);
     if (kappa < 1.0) retval=false;  
     int startV = 0;
-    for (int irad = 1; irad<=a_radius; irad++)
+    bool gotoMainLoop = false;
+    for (int irad = 1; irad<=a_radius && !gotoMainLoop; irad++)
     {
       int neighSize = vof_cont.size();
-      for (int ineigh = startV; ineigh<neighSize; ineigh++){
+      for (int ineigh = startV; ineigh<neighSize && !gotoMainLoop; ineigh++){
         vector< EBIndex<CELL> > volsinclusive=  getFlapVoFs(a_graph, vof_cont[ineigh]);
-        for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
+        for(int ivof = 0; ivof < volsinclusive.size() && !gotoMainLoop; ivof++)
         {
           bool incl = true;
           for(int ivof2 = 0; ivof2 < vof_cont.size(); ivof2++)
@@ -64,13 +66,36 @@ namespace Proto
           if (incl) 
           {
             vof_cont.push_back(volsinclusive[ivof]);
-            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volsinclusive[ivof], a_graph, a_dx);
-            if (kappa < 1.0) retval=false;  
+            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, volsinclusive[ivof], a_graph, a_dx); 
+            if (kappa < 1.0) {retval=false;gotoMainLoop = true;break;}                  
           }
         }
       }
       startV = neighSize;
     }
+    int total_cells_reg_stencil=0;
+#if DIM==2
+    for (int irad = a_radius; irad>=0; irad--)
+    {
+      if (irad == a_radius) total_cells_reg_stencil += (2*irad)+1;
+      else total_cells_reg_stencil += 2*((2*irad)+1);
+    } 
+#elif DIM==3
+    for (int iradz = a_radius; iradz>=0; iradz--)
+    {
+      for (int irad = iradz; irad>=0; irad--)
+      {
+        if (iradz == a_radius){
+          if (irad == iradz) total_cells_reg_stencil += (2*irad)+1;
+          else total_cells_reg_stencil += 2*((2*irad)+1);
+        }else{
+          if (irad == iradz) total_cells_reg_stencil += 2*((2*irad)+1);
+          else total_cells_reg_stencil += 4*((2*irad)+1);
+        }
+      } 
+    }
+#endif
+    if (vof_cont.size() < total_cells_reg_stencil) retval=false;  
     return retval;
   }
 
@@ -167,6 +192,7 @@ namespace Proto
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown)               
   {
+    PR_TIME("getStencil");
     a_bcOnly = false;
     if(a_stencilName == string("Weighted_Least_Squares_Poisson"))
     {
@@ -298,6 +324,7 @@ namespace Proto
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann)               
   {
+    PR_TIME("getWLSPoissonStencil");
     using Chombo4::pout;
     pout()<<setprecision(15)<<scientific;
 //    using std::pout();
@@ -362,7 +389,7 @@ namespace Proto
         }
       }
     }
-
+/*
     int ncells = 32;
     int nrepRows = -1;
     //pp.get("nx"   , ncells);
@@ -416,21 +443,37 @@ namespace Proto
       initRep = 0;
       nrepRows = ncells;
     }
-
+*/
     bool storeRegSten = false;
     LocalStencil<CELL, double> regSten;
+    regSten.clear();
     Real regInhContr;
+    WLSStencil<order> lapSten;
+    Point lodom = a_domain.low();
+    Point hidom = a_domain.high();
     //Looping over all the valid VoFs
-    for(int k = initRep; k<initRep + nrepRows; k++)
-    {
-      for (it = map1[k].begin(); it != map1[k].end(); it++)
-      {
-      //for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    //for(int k = initRep; k<initRep + nrepRows; k++)
+    //{
+      //for (it = map1[k].begin(); it != map1[k].end(); it++)
       //{
-        //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
-        int ivof = it->second;
+      for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+      {
         EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        //int ivof = it->second;
+        //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
+        bool isReg = false;
         Point pt = vofInd.m_pt;
+#if DIM==3
+        if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
+            pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2 &&
+            pt[2]>=a_validBox.low()[2]+radius+2 && pt[2]<=a_validBox.high()[2]-radius-2)
+#else
+        if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
+            pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2)
+#endif
+        {
+          isReg = isRegularStencil(vofInd, radius+2, a_graph, a_voludata, a_dx);
+        }
         bool pt_verbose = false;
         if (verbose)
         {
@@ -448,7 +491,10 @@ namespace Proto
             pt_verbose = false;
           }
         }
-  
+
+        if (!isReg || (isReg && !storeRegSten))
+        //if (1)
+        { 
         //Creating the WLS fluxes needed for flux diveregence
         BaseWLSFlux<XFACE, order> xflux(radius, powerE, exactSolution, pt_verbose);
         BaseWLSFlux<YFACE, order> yflux(radius, powerE, exactSolution, pt_verbose);
@@ -457,7 +503,6 @@ namespace Proto
         Real inhoTerm = 0.0;
   
         //Computing the flux divergence stencil
-        WLSStencil<order> lapSten;
         lapSten.
           getLaplaWLSDivFStencil(a_stencil[ivof],
                             vofInd,
@@ -478,13 +523,45 @@ namespace Proto
         a_stencil[ivof]*= 1.0/(a_dx*a_dx);
         inhoTerm*= 1.0/(a_dx*a_dx);
         a_inhoContr[ivof] = inhoTerm;
-        row_stencil.push_back(a_stencil[ivof]);
-        row_inhoContr.push_back(a_inhoContr[ivof]);
-        row_index.push_back(vofInd);
+
+        if (isReg)
+        {
+          regSten += a_stencil[ivof];
+          regInhContr = a_inhoContr[ivof];
+          storeRegSten = true;  
+        }
+        }
+        else
+        {
+          a_stencil[ivof].clear();
+          a_stencil[ivof] = regSten;
+          a_inhoContr[ivof] = regInhContr;
+          int difi = vofInd.m_pt[0] - a_stencil[ivof].m_entries[0].m_vof.m_pt[0] - 1;
+          int difj = vofInd.m_pt[1] - a_stencil[ivof].m_entries[0].m_vof.m_pt[1];
+#if DIM==3
+          int difk = vofInd.m_pt[2] - a_stencil[ivof].m_entries[0].m_vof.m_pt[2];
+#endif
+   	  for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
+          {
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[0] += difi;
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[1] += difj;
+#if DIM==3
+            a_stencil[ivof].m_entries[ivec].m_vof.m_pt[2] += difk;
+#endif
+          }
+        }
+
+        //row_stencil.push_back(a_stencil[ivof]);
+        //row_inhoContr.push_back(a_inhoContr[ivof]);
+        //row_index.push_back(vofInd);
         if (pt_verbose) 
         {
           pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
-          //a_stencil[ivof].print();
+#if DIM==3
+          a_stencil[ivof].print();
+#elif DIM==2
+          printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
+#endif
           printWLSStencil(radius, a_stencil[ivof], vofInd.m_pt);
           Real accDivF = 0.0;
           for(int ivec =  0; ivec < a_stencil[ivof].size(); ivec++)
@@ -496,8 +573,8 @@ namespace Proto
           pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof].size()<< endl;
         }
       }
-    }
-
+    //}
+/*
     if (nrepRows != ncells)
     {
       int kk =0;
@@ -588,7 +665,7 @@ namespace Proto
         }
       }
     }
-
+*/
     return true;
   }
   /***/
