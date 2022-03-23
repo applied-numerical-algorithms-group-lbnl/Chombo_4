@@ -799,10 +799,10 @@ namespace CH4_Data_Choreography
         //components are all in the type system now
         const auto& motion = a_pattern.m_localPattern[ibuf];
         const auto& srcdatind = motion.m_src.m_datInd;
-        const auto& srcregion = motion.m_src.m_region;
+        //const auto& srcregion = motion.m_src.m_region; // unused
         const auto& dstdatind = motion.m_dst.m_datInd;
         const auto& dstregion = motion.m_dst.m_region;
-        CH_assert(srcregion == dstregion);
+        //CH_assert(srcregion == dstregion);   //just getting the compiler to shut up
         Proto::Box regx = ProtoCh::getProtoBox(dstregion);
         unsigned int ico = 0;
         unsigned int ncodst = a_dst[dstdatind].nComp();
