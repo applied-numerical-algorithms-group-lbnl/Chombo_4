@@ -15,14 +15,14 @@
 
 #include "Proto.H"
 #include "EBProto.H"
-#include "Chombo_LevelData.H"
+#include "Chombo_EBDataChoreography.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
+#include <memory>
 #include "Chombo_NamespaceHeader.H"
-
 ///
 /**
    makes geometric description from an implicit function.
@@ -46,7 +46,7 @@ public:
   //this ought to have a boundary type but 
   //in this case boundary and cell have the same semantic
   typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
-
+  
   ///
   /**
      basif      :  implicit function
@@ -80,22 +80,14 @@ public:
                         const Box                 &   a_smghRegion,
                         const Box                 &   a_domain) const;
 
-
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<VoluData> volu_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBFaData> ebfa_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<XFacData> xfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<YFacData> yfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<ZFacData> zfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
     
-  ///
-  inline const shared_ptr<LevelData<EBGraph>  >
-  getGraphs() const
-  {
-    return   m_graphs;
-  }
-
-  ///
-  inline const shared_ptr<LevelData<VoluData> >
-  getVoluData() const
-  {
-    return m_voludata;
-  }
-
   ///
   inline DisjointBoxLayout const
   getDBL()
@@ -104,49 +96,64 @@ public:
   }
   
   ///
-  inline const shared_ptr<LevelData<EBFaData> >
+  inline const shared_ptr<graph_distrib_t>
+  getGraphs() const
+  {
+    return   m_graphs;
+  }
+
+  ///
+  inline const shared_ptr<volu_distrib_t>
+  getVoluData() const
+  {
+    return m_voludata;
+  }
+
+  
+  ///
+  inline const shared_ptr<ebfa_distrib_t >
   getEBFaceData() const
   {
     return m_ebfadata;
   }
 
   ///
-  inline const shared_ptr<LevelData<XFacData> >
+  inline const shared_ptr<xfac_distrib_t >
   getXFaceData() const
   {
     return m_xfacdata;
   }
 
   ///
-  inline const shared_ptr<LevelData<YFacData> >
+  inline const shared_ptr<yfac_distrib_t >
   getYFaceData() const
   {
     return m_yfacdata;
   }
 
   ///
-  inline const shared_ptr<LevelData<ZFacData> > 
+  inline const shared_ptr<zfac_distrib_t > 
   getZFaceData() const
   {
     return m_zfacdata;
   }
 
   ///Get eb moment in the x direction 
-  inline const shared_ptr<LevelData<EBNormalData> >
+  inline const shared_ptr<ebnorm_distrib_t >
   getEBNormalData_x() const
   {
     return m_ebnormaldata[0];
   }
 
   ///Get eb moment in the y direction
-  inline const shared_ptr<LevelData<EBNormalData> >
+  inline const shared_ptr<ebnorm_distrib_t>
   getEBNormalData_y() const
   {
     return m_ebnormaldata[1];
   }
 
   ///Get eb moment in the z direction
-  inline const shared_ptr<LevelData<EBNormalData> >
+  inline const shared_ptr<ebnorm_distrib_t >
   getEBNormalData_z() const
   {
     return m_ebnormaldata[2];
@@ -195,7 +202,7 @@ public:
   { 
     const EBFaData & ebfmo = (*m_ebfadata)[a_dit];
     const EBGraph  & graph = (*m_graphs)[a_dit];
-    BoxData<        Real, 1, Proto::HOST>& reghost = a_ebfacedata.getRegData();
+    HostBoxData<        Real, 1>& reghost = a_ebfacedata.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
     { 
@@ -362,34 +369,31 @@ private:
   void exchange();
 
   ///
-  Copier m_exchangeCopier;
-  
-  ///
-  Box                                 m_domain;
+  Box                            m_domain;
     
   ///
-  DisjointBoxLayout                   m_grids;
+  DisjointBoxLayout              m_grids;
                                                 
   ///                                         
-  shared_ptr<LevelData<EBGraph> >     m_graphs;
+  shared_ptr<graph_distrib_t >   m_graphs;
 
   ///
-  shared_ptr<LevelData<VoluData> >    m_voludata;
+  shared_ptr<volu_distrib_t >    m_voludata;
 
   ///
-  shared_ptr<LevelData<EBFaData> >    m_ebfadata;
+  shared_ptr<ebfa_distrib_t >    m_ebfadata;
 
   ///
-  shared_ptr<LevelData<XFacData> >    m_xfacdata;
+  shared_ptr<xfac_distrib_t >    m_xfacdata;
 
   ///
-  shared_ptr<LevelData<YFacData> >    m_yfacdata;
+  shared_ptr<yfac_distrib_t >    m_yfacdata;
 
   ///
-  shared_ptr<LevelData<ZFacData> >    m_zfacdata;
+  shared_ptr<zfac_distrib_t >    m_zfacdata;
 
   ///
-  shared_ptr<LevelData<EBNormalData> >      m_ebnormaldata[3];
+  shared_ptr<ebnorm_distrib_t >  m_ebnormaldata[3];
     
   //origin                            
   RealVect                            m_origin;
@@ -439,12 +443,20 @@ public:
   typedef MomentIterator<DIM  , order> MomItDIM;
   typedef MomentIterator<DIM-1, order> MomItSDMinOne;
   typedef IrregNode<order> inode;
-  typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;
-  typedef HostIrregData<BOUNDARY,  IndMomDIM, 1>  EBFaData;
-  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-  typedef HostIrregData<CELL,      IndMomDIM, 1>  EBNormalData;
+  typedef HostIrregData<CELL,      IndMomDIM, 1>      VoluData;
+  typedef HostIrregData<BOUNDARY,  IndMomDIM, 1>      EBFaData;
+  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>     XFacData;
+  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>     YFacData;
+  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>     ZFacData;
+  typedef HostIrregData<CELL,       IndMomDIM, 1> EBNormalData;
+  
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>       graph_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<VoluData>       volu_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBFaData>       ebfa_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<XFacData>       xfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<YFacData>       yfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<ZFacData>       zfac_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
 
 
   ///
@@ -537,14 +549,14 @@ public:
 
 
   ///
-  inline shared_ptr<LevelData<EBGraph>  >
+  inline shared_ptr<graph_distrib_t>
   getGraphs(const Box& a_domain)
   {
     return   (*this)[a_domain]->getGraphs();
   }
 
   ///
-  inline shared_ptr<LevelData<VoluData> >
+  inline shared_ptr<volu_distrib_t >
   getVoluData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getVoluData();
@@ -573,42 +585,42 @@ public:
   }
       
   ///
-  inline shared_ptr<LevelData<EBFaData> >
+  inline shared_ptr<ebfa_distrib_t >
   getEBFaceData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getEBFaceData();
   }
 
   ///
-  inline shared_ptr<LevelData<XFacData> >
+  inline shared_ptr<xfac_distrib_t >
   getXFaceData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getXFaceData();
   }
 
   ///
-  inline shared_ptr<LevelData<YFacData> >
+  inline shared_ptr<yfac_distrib_t >
   getYFaceData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getYFaceData();
   }
 
   ///
-  inline shared_ptr<LevelData<ZFacData> >
+  inline shared_ptr<zfac_distrib_t>
   getZFaceData(const Box& a_domain)
   {
     return   (*this)[a_domain]->getZFaceData();
   }
 
   ///Get eb moment in the x direction
-  inline shared_ptr<LevelData<EBNormalData> >
+  inline shared_ptr<ebnorm_distrib_t >
   getEBNormalData_x(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_x();
   }
 
   ///Get eb moment in the y direction
-  inline shared_ptr<LevelData<EBNormalData> >
+  inline shared_ptr<ebnorm_distrib_t >
   getEBNormalData_y(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_y();
@@ -620,7 +632,7 @@ public:
   }
   
   ///Get eb moment in the z direction
-  inline shared_ptr<LevelData<EBNormalData> >
+  inline shared_ptr<ebnorm_distrib_t >
   getEBNormalData_z(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_z();

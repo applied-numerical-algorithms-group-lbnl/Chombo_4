@@ -2,8 +2,9 @@
 #ifndef _HostIrregData_H_
 #define _HostIrregData_H_
 
-using std::vector;
-using std::shared_ptr;
+
+#include <vector>
+#include <set>
 #include "Proto_EBGraph.H"
 #include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
@@ -20,7 +21,7 @@ namespace Proto
   class HostIrregData
   {
   public:
-    typedef EBIndex<cent> index_t;
+
     ///
     HostIrregData()
     {
@@ -31,13 +32,18 @@ namespace Proto
     {
     }
 
-
+    ///to conform with mpi stuff
+    int nComp() const
+    {
+      return ncomp;
+    }
+    
     ///needed for leveldata
     HostIrregData(const Box& a_box, bool a_stackAllocation=true)
     {  }
 
     ///
-    inline std::size_t size() const {return m_indicies->size()*ncomp;};
+    inline std::size_t size() const {return m_indexVec->size()*ncomp;};
 
     ///
     inline bool defined() const {return bool(m_data);};
@@ -47,7 +53,7 @@ namespace Proto
     data_t* dataPtr(unsigned int a_ivar = 0)
     {
       PR_assert(a_ivar < ncomp);
-      size_t ioff = a_ivar*m_indicies->size();
+      size_t ioff = a_ivar*m_indexVec->size();
       return &(m_rawPtr[ioff]);
     }
 
@@ -55,7 +61,7 @@ namespace Proto
     const data_t* dataPtr(unsigned int a_ivar = 0) const
     {
       PR_assert(a_ivar < ncomp);
-      size_t ioff = a_ivar*m_indicies->size();
+      size_t ioff = a_ivar*m_indexVec->size();
       return &(m_rawPtr[ioff]);
     }
 
@@ -75,9 +81,9 @@ namespace Proto
     {
       size_t ivec = 0;
       bool found = false;
-      for(unsigned int i = 0; i < m_indicies->size(); i++)
+      for(unsigned int i = 0; i < m_indexVec->size(); i++)
       {        
-        if(a_vof == (*m_indicies)[i])
+        if(a_vof == (*m_indexVec)[i])
         {
           ivec = i;
           found = true;
@@ -91,7 +97,7 @@ namespace Proto
       }
       PROTO_ASSERT(found, "vof not found");
 
-      ivec += a_ivar*m_indicies->size();
+      ivec += a_ivar*m_indexVec->size();
 
       if(ivec >= size())
       {
@@ -102,24 +108,24 @@ namespace Proto
       return ivec;
     }
 
-    data_t& operator() (const index_t& a_vof, int a_comp)
+    data_t& operator() (const EBIndex<cent>& a_vof, int a_comp)
     {
       size_t ind = index(a_vof, a_comp);
       return m_rawPtr[ind];
     }
     
     /// 
-    const data_t& operator() (const index_t& a_vof, int a_comp) const
+    const data_t& operator() (const EBIndex<cent>& a_vof, int a_comp) const
     {
       size_t ind = index(a_vof, a_comp);
       return m_rawPtr[ind];
     }
     
 
-
+    ///sometimes useful for debugging
     unsigned int vecsize() const
     {
-      return m_indicies->size();
+      return m_indexVec->size();
     }
 
     //aliasing define
@@ -127,7 +133,8 @@ namespace Proto
     void define(HostIrregData<cent, data_t, srccomp>& a_input,
                 unsigned int                        & a_comp)
     {
-      m_indicies = a_input.getIndicies();
+      m_indexVec = a_input.getIndicies();
+      m_indexSet = a_input.getIndexSet();
       m_inputBox = a_input.inputBox();
       m_data     = a_input.getData();
       m_rawPtr   = a_input.dataPtr(a_comp);
@@ -137,70 +144,17 @@ namespace Proto
     {
       return m_inputBox;
     }
+    
     //do not use this
-    shared_ptr<vector<  index_t > >  getIndicies() const
+    shared_ptr<vector<  EBIndex<cent> > >  getIndicies() const
     {
-      return m_indicies;
+      return m_indexVec;
     }
 
     //do not use this
     shared_ptr<data_t> getData() const
     {
       return  m_data;
-    }
-
-    inline void printDebugStuff(const EBIndex<cent>& a_index, const EBGraph& a_graph) const
-    {
-#if DIM==3
-      
-      using std::cout;
-      using std::endl;
-      if(this->hasIndex(a_index))
-      {
-        cout << "this fab DOES have the index" << endl;
-      }
-      else 
-      {
-        cout << "this fab DOES NOT have the index" << endl;
-      }
-      EBIndex<CELL>  voflo = a_index.getVoF(Side::Lo);
-      EBIndex<CELL>  vofhi = a_index.getVoF(Side::Hi);
-
-      if(a_graph.isIrregular(voflo.m_pt))
-      {
-        cout << "graph thinks " << voflo.m_pt << " is IRREGULAR" << endl;
-      }                                            
-      else if(a_graph.isCovered(voflo.m_pt))       
-      {                                            
-        cout << "graph thinks " << voflo.m_pt << " is COVERED  " << endl;
-      }                                            
-      else if(a_graph.isRegular(voflo.m_pt))       
-      {                                            
-        cout << "graph thinks " << voflo.m_pt << " is REGULAR  " << endl;
-      }                                            
-                                                   
-      if(a_graph.isIrregular(vofhi.m_pt))          
-      {                                            
-        cout << "graph thinks " << vofhi.m_pt << " is IRREGULAR" << endl;
-      }                                            
-      else if(a_graph.isCovered(vofhi.m_pt))       
-      {                                            
-        cout << "graph thinks " << vofhi.m_pt << " is COVERED  " << endl;
-      }                                            
-      else if(a_graph.isRegular(vofhi.m_pt))       
-      {                                            
-        cout << "graph thinks " << vofhi.m_pt << " is REGULAR  " << endl;
-      }
-      vector<EBIndex<YFACE> > faces = a_graph.getYFaces(vofhi, Side::Lo);
-      if(faces.size() > 0)
-      {
-        cout << "graph thinks there IS     a face between the two vofs" << endl;
-      }
-      else
-      {
-        cout << "graph thinks there IS NOT a face between the two vofs" << endl;
-      }
-#endif 
     }
 
     inline void define(const Box& a_box,  const EBGraph& a_graph)
@@ -213,81 +167,72 @@ namespace Proto
       define(indicies);
     }
 
-    inline bool hasIndex(const EBIndex<cent>& a_ind) const
-    {
-      bool found = false;
-      //this should probably be a smarter search.   maybe sort them?
-      for(int ivec = 0;(ivec < m_indicies->size() && !found); ivec++)
-      {
-        if((*m_indicies)[ivec] == a_ind)
-        {
-          found = true;
-        }
-      }
-
-      return found;
-    }
     
     bool contains(const EBIndex<cent>& a_index) const
     {
-      return hasIndex(a_index);
+      typename std::set<EBIndex<cent> >::iterator it = m_indexSet->find(a_index);
+      return (it != m_indexSet->end());
     }
 
     void setVal(data_t val)
     {
-      for(int ivec = 0;ivec < m_indicies->size() ; ivec++)
+      for(int ivec = 0;ivec < m_indexVec->size() ; ivec++)
       {
         for(int icomp = 0; icomp < ncomp; icomp++)
         {
-          (*this)((*m_indicies)[ivec], icomp) = val;
+          (*this)((*m_indexVec)[ivec], icomp) = val;
         }
       }
     }
 
-    bool copyContains(const index_t& a_ind, const Box & a_srcbox) const
+    bool copyContains(const EBIndex<cent>& a_ind, const Box & a_srcbox) const
     {
       CENTERING thiscent = cent;
 
-      bool retval = false;
+      bool in_box = false;
       if((thiscent == CELL) || (thiscent == BOUNDARY))
       {        
-        retval = a_srcbox.contains(a_ind.m_pt);
+        in_box = a_srcbox.contains(a_ind.m_pt);
       }
       else if(thiscent == XFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(0, 1);
-        retval = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
+        in_box = (a_srcbox.contains(hipt) || a_srcbox.contains(lopt));
       }
       else if(thiscent ==  YFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(1, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+        in_box = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
       }
 #if DIM==3      
       else if(thiscent ==  ZFACE)
       {
         Point hipt = a_ind.m_pt;
         Point lopt = a_ind.m_pt - Point::Basis(2, 1);
-        retval = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
+        in_box = (a_srcbox.contains(lopt) || a_srcbox.contains(hipt));
       }
 #endif
       else
       {
         PROTO_ASSERT(false, "unaccounted-for centering");
       }
-      return retval;
+      //now check it is in the actual list
+      bool found = this->contains(a_ind);
+
+
+      return (in_box && found);
     }
     ///
-    vector<index_t> getIndiciesInBox(const Box & a_bx) const
+    vector<EBIndex<cent>> getIndiciesInBox(const Box & a_bx) const
     {
-      vector<index_t> indicies;
+      vector<EBIndex<cent>> indicies;
 
  
-      for (unsigned int i=0; i<m_indicies->size(); ++i)
+      for (unsigned int i=0; i<m_indexVec->size(); ++i)
       {
-        const index_t & ind = (*m_indicies)[i];
+        const EBIndex<cent> & ind = (*m_indexVec)[i];
         if(this->copyContains(ind, a_bx))
           {
             indicies.push_back(ind);
@@ -299,14 +244,15 @@ namespace Proto
     ///this DOES include sizeof(T)  
     std::size_t charsize(const Box&   a_bx,
                          unsigned int a_startcomp,
-                         unsigned int a_numcomps) const
+                         unsigned int a_numcomps,
+                         bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::charsize");
       using ProtoSer::linearCharBufSize;
       size_t retval = linearCharBufSize(m_inputBox);
       retval += sizeof(int); //size of the vector;
       const auto& data     = *this;
-      const auto& indicies = *m_indicies;
+      const auto& indicies = *m_indexVec;
       for(int ipt = 0; ipt < indicies.size(); ipt++)
       {
         retval += linearCharBufSize(indicies[ipt]);
@@ -320,12 +266,17 @@ namespace Proto
           retval += linearCharBufSize(data(pt, icomp));
         }
       }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "hostirregdata::charsize for box " << a_bx << " returning " << retval << endl;
+      }
       return retval;
     }
 
     /// recreates this object into a stream of bytes
     inline
-    void energize(void*  a_buf) const
+    void energize(void*  a_buf,
+                  bool   a_printStuff = false) const
     {
       PR_TIME("HostIrregData::energize");
       using ProtoSer::linearCharBufSize;
@@ -339,11 +290,11 @@ namespace Proto
 
       //size of the vector;
       int* intbuf  = (int*) charbuf;
-      int vecsize = m_indicies->size();
+      int vecsize = m_indexVec->size();
       *intbuf = vecsize;
       charsiz += sizeof(int); 
       charbuf += sizeof(int);
-      auto& indicies = *m_indicies;
+      auto& indicies = *m_indexVec;
 
       //output the indicies
       for(int ipt = 0; ipt < indicies.size(); ipt++)
@@ -369,9 +320,14 @@ namespace Proto
     }
 
    ///creates this object from the aforementioned stream of bytes
-    HostIrregData(void *a_buf)
+    HostIrregData(void *a_buf,
+                  bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::char_constructor");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "entering hostirregdata buffer constructor"   << endl;
+      }
       using ProtoSer::linearInFromCharBuf;
       using ProtoSer::linearCharBufSize;
       size_t charsiz = 0;
@@ -398,6 +354,7 @@ namespace Proto
       }
 
       //define the data pointer and all that.
+      //set is filled below
       define(indicies_sp);
       
       const auto& data     = *this;
@@ -415,6 +372,11 @@ namespace Proto
           charbuf += linearCharBufSize(data(pt, icomp));
         }
       }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving hostirregdata buffer constructor charsiz=" << charsiz   << endl;
+      }
+
     }
     
     ///
@@ -422,21 +384,26 @@ namespace Proto
     void linearOut(void*               a_buf,
                    const Box       &   a_bx,
                    unsigned int        a_startcomp,
-                   unsigned int        a_numcomps) const
+                   unsigned int        a_numcomps,
+                   bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::linearOut");
-      energize(a_buf);
+      energize(a_buf, a_printStuff);
     }
-
+    
+    ///
     inline
     void  linearIn(void*                  a_buf,
                    const Box       &      a_bx,
                    unsigned int           a_startcomp,
-                   unsigned int           a_numcomps)
+                   unsigned int           a_numcomps,
+                   bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::linearIn");
-      HostIrregData<cent, data_t, ncomp> src(a_buf);
-      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps);
+      
+      HostIrregData<cent, data_t, ncomp> src(a_buf, a_printStuff);
+      copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps, a_printStuff);
+      
     }
     ///
     static int preAllocatable()
@@ -453,14 +420,14 @@ namespace Proto
     void copy(const HostIrregData<cent, data_t, ncomp>& a_src,
               const Box& a_bxFrom, unsigned int a_isrc,
               const Box& a_bxTo  , unsigned int a_idst,
-              unsigned int a_inco)
+              unsigned int a_inco, bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::copy");
       Box interBox = a_bxFrom & a_bxTo;
 
-      for(int iind = 0; iind < m_indicies->size(); iind++)
+      for(int iind = 0; iind < m_indexVec->size(); iind++)
       {
-        auto& vof = (*m_indicies)[iind];
+        auto& vof = (*m_indexVec)[iind];
         if((interBox.contains(vof.m_pt)) && (a_src.copyContains(vof, interBox)))
         {
           for(unsigned int ico = 0; ico < a_inco; ico++)
@@ -476,27 +443,40 @@ namespace Proto
 
     //just used for debugging
     inline void define(const Box& a_box,
-                       const shared_ptr< vector< index_t > >& a_indicies)
+                       const shared_ptr< vector< EBIndex<cent> > >& a_indicies)
     {
       this->m_inputBox   = a_box;
       define(a_indicies);
     }
   protected:
     ///
-    inline void define( const shared_ptr< vector< index_t > >& a_indicies)
+    inline void define( const shared_ptr< vector< EBIndex<cent> > >& a_indexVec)
     {
-      m_indicies = a_indicies;
+      m_indexVec = a_indexVec;
       std::size_t count = this->size();
       m_data=::std::shared_ptr<data_t>(new data_t[count], [](data_t* p) { delete[] p;});
       m_rawPtr = m_data.get();
+      fillSetFromVector();
+    }
+
+    inline void fillSetFromVector() 
+    {
+      std::shared_ptr<std::set< EBIndex<cent> > > blerg( new std::set< EBIndex<cent> >());
+      m_indexSet =  blerg;
+      for(int ivec = 0; ivec < m_indexVec->size(); ivec++)
+      {
+        m_indexSet->insert((*m_indexVec)[ivec]);
+      }
     }
 
 
-
     Box m_inputBox; //exists if defined as part of a boxdata
-    shared_ptr<vector<  index_t > >        m_indicies;
-    shared_ptr<data_t>         m_data;
-    data_t*                    m_rawPtr;
+    std::shared_ptr<std::vector<  EBIndex<cent> > >       m_indexVec;
+    std::shared_ptr<std::set<     EBIndex<cent> > >       m_indexSet;
+    std::shared_ptr<data_t>                               m_data;
+    data_t*                                               m_rawPtr;
+
+    ///insert usual reasons here
     HostIrregData(const HostIrregData<cent, data_t,ncomp>& a_src);
     HostIrregData& operator=(const HostIrregData  <cent, data_t,ncomp>& a_src);
 

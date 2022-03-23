@@ -31,3 +31,7 @@ blt_add_library(NAME BaseTools
     Chombo_parstream.cpp
     INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS_ON Proto chombo_compiler_flags ${LIB_DEP})
+if(ENABLE_HDF5)
+    target_link_libraries(BaseTools PUBLIC HDF5::HDF5)
+endif()
+

@@ -44,16 +44,15 @@ defineData()
     m_cellVol *= m_dx;
   }
   //the 2* is because of coarsening means ghost cells need to be more numerous on finer levels than coarser levels
-  m_exchangeCopier.exchangeDefine(m_grids, m_geomgrow);
-  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBGraph >()));
-  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<VoluData>()));
-  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBFaData>()));
-  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
-  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
-  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
-  for(int idir = 0; idir < 3; idir++)
+  m_graphs   = shared_ptr<graph_distrib_t > ( new graph_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBGraph >()));
+  m_voludata = shared_ptr< volu_distrib_t > ( new  volu_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<VoluData>()));
+  m_ebfadata = shared_ptr< ebfa_distrib_t > ( new  ebfa_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBFaData>()));
+  m_xfacdata = shared_ptr< xfac_distrib_t > ( new  xfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<XFacData>()));
+  m_yfacdata = shared_ptr< yfac_distrib_t > ( new  yfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<YFacData>()));
+  m_zfacdata = shared_ptr< zfac_distrib_t > ( new  zfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<ZFacData>()));
+  for(int idir = 0; idir < 3; idir++)  //one of the rare times it has to be 3, not DIM
   {
-    m_ebnormaldata[idir] = shared_ptr<LevelData<EBNormalData> > ( new LevelData<EBNormalData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
+    m_ebnormaldata[idir] = shared_ptr<ebnorm_distrib_t> ( new ebnorm_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
   }
 }
 /*********************************************/
@@ -100,7 +99,7 @@ defineFinestLevel(const RealVect               & a_origin,
     }
   }
 //  pout() << "exchanging graph data" << endl;
-  m_graphs  ->exchange(m_exchangeCopier);
+  m_graphs  ->exchange();
 //  pout() << "done with graph exchange" << endl;
   
   //now fill in the moment information
@@ -157,7 +156,7 @@ defineFinestLevel(const RealVect               & a_origin,
       }
     }
   }
-  m_graphs  ->exchange(m_exchangeCopier);       
+  m_graphs  ->exchange();       
   exchange();
 }
 /*********************************************/
@@ -168,17 +167,16 @@ exchange()
 {
   PR_TIME("LevelGeometryService::exchange");
 //  pout() << "exchanging moment data" << endl;
-  Interval interv(0,0);
-  m_voludata->exchange(m_exchangeCopier);       
-  m_ebfadata->exchange(m_exchangeCopier);       
-  m_xfacdata->exchange(m_exchangeCopier);       
-  m_yfacdata->exchange(m_exchangeCopier);       
+  m_voludata->exchange();       
+  m_ebfadata->exchange();       
+  m_xfacdata->exchange();       
+  m_yfacdata->exchange();       
 #if DIM==3
-  m_zfacdata->exchange(m_exchangeCopier);
+  m_zfacdata->exchange();
 #endif
   for(int idir = 0; idir < DIM; idir++)
   {
-    m_ebnormaldata[idir]->exchange(m_exchangeCopier);
+    m_ebnormaldata[idir]->exchange();
   }
 }
   
@@ -205,9 +203,8 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   
   coarsenGraph(a_finerLevel);
   
-//  pout() << "exchanging graph info" << endl;
-  m_graphs  ->exchange(m_exchangeCopier);       
-//  pout() << "done with graph exchange" << endl;
+  m_graphs  ->exchange();       
+
   coarsenData(a_finerLevel);
 
   exchange();

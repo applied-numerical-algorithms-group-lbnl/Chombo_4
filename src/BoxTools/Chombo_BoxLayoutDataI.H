@@ -77,8 +77,7 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da, const Interval&
   this->m_boxLayout = da.boxLayout();
 
   this->m_comps = comps.size();
-  this->m_threadSafe = factory.threadSafe();
-  //this->m_threadSafe = false;
+
   
   Interval dest(0, m_comps-1);
   allocateGhostVector(factory);
@@ -92,8 +91,7 @@ inline void BoxLayoutData<T>::define(const BoxLayout& boxes, int comps,
   CH_assert(boxes.isClosed());
   this->m_boxLayout = boxes;
   m_comps = comps;
-  this->m_threadSafe = factory.threadSafe();
-  //  this->m_threadSafe = false;
+
   m_isdefined = true;
   allocateGhostVector(factory);
 
@@ -143,8 +141,6 @@ inline void BoxLayoutData<T>::define(const BoxLayoutData<T>& da,
     m_isdefined = da.m_isdefined;
     this->m_boxLayout = da.boxLayout();
     m_comps    = da.nComp();
-    this->m_threadSafe = factory.threadSafe();
-    //this->m_threadSafe = false;
     Interval srcAnddest(0, m_comps-1);
     allocateGhostVector(factory);
     setVector(da, srcAnddest, srcAnddest);
@@ -168,6 +164,10 @@ inline void BoxLayoutData<T>::clear()
 template<class T>
 inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory, const IntVect& ghost)
 {
+  //begin debug
+  //Chombo4::pout() << "going into BoxLayoutData::allocateGhostVector" << endl;
+  //end debug
+  
   if (this->m_callDelete == true)
   {
     for (unsigned int i=0; i<this->m_vector.size(); ++i)
@@ -181,7 +181,7 @@ inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory,
 
   DataIterator it(this->dataIterator()); int nbox=it.size();
   this->m_vector.resize(it.size(), NULL);
-//#pragma omp parallel for if(this->m_threadSafe)
+
   for(int i=0; i<nbox; i++)
   {
     unsigned int index = it[i].datInd();
@@ -193,15 +193,17 @@ inline void BoxLayoutData<T>::allocateGhostVector(const DataFactory<T>& factory,
       MayDay::Error("OutOfMemory in BoxLayoutData::allocateGhostVector");
     }
   }
+  //begin debug
+  //Chombo4::pout() << "leaving BoxLayoutData::allocateGhostVector" << endl;
+  //end debug
 }
 
 template<class T>
 inline void BoxLayoutData<T>::apply(void (*a_func)(const Box& box, int comps, T& t))
 {
   DataIterator it(this->dataIterator()); int nbox=it.size();
-//#pragma omp parallel for
-  for(int i=0; i<nbox; i++)
 
+  for(int i=0; i<nbox; i++)
   {
     a_func(this->box(it[i]), m_comps, *(this->m_vector[ it[i].datInd() ]));
   }
@@ -231,48 +233,68 @@ T* AliasDataFactory<T>::create(const Box& a_box, int ncomps, const DataIndex& a_
 }
 
 template<class T>
-void BoxLayoutData<T>::makeItSo(const Interval&   a_srcComps,
-                                const BoxLayoutData<T>& a_src,
-                                BoxLayoutData<T>& a_dest,
-                                const Interval&   a_destComps,
-                                const Copier&     a_copier,
-                                const LDOperator<T>& a_op) const
+void
+BoxLayoutData<T>::
+makeItSo(const Interval&   a_srcComps,
+         const BoxLayoutData<T>& a_src,
+         BoxLayoutData<T>& a_dest,
+         const Interval&   a_destComps,
+         const Copier&     a_copier,
+         const LDOperator<T>& a_op,
+         bool a_printStuff) const
 {
-  if(s_verbosity > 0) 
+  if(a_printStuff)
   {
-    pout() << "makeit so copier = " << endl;
+    pout() << "boxlayoutdata::makeitso copier = " << endl;
     a_copier.print();
+  }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsobegin " << endl;
   }
   {
     CH_TIME("makeItSoBegin");
-    makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+    makeItSoBegin(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op, a_printStuff);
+  }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsolocalcopy " << endl;
   }
   {
     CH_TIME("makeItSoLocalCopy");
-    makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op);
+    makeItSoLocalCopy(a_srcComps, a_src, a_dest, a_destComps, a_copier, a_op, a_printStuff);
+  }
+  if(a_printStuff)
+  {
+    pout() << "boxlayoutdata::makeitso going into makeitsoend " << endl;
   }
   {
     CH_TIME("makeItSoEnd");
-    a_dest.makeItSoEnd(a_destComps, a_op);
+    a_dest.makeItSoEnd(a_destComps, a_op, a_printStuff);
   }
 }
-
+///
 template<class T>
-void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
-                                     const BoxLayoutData<T>& a_src,
-                                     BoxLayoutData<T>& a_dest,
-                                     const Interval&   a_destComps,
-                                     const Copier&     a_copier,
-                                     const LDOperator<T>& a_op) const
+void
+BoxLayoutData<T>::
+makeItSoBegin(const Interval&   a_srcComps,
+              const BoxLayoutData<T>& a_src,
+              BoxLayoutData<T>& a_dest,
+              const Interval&   a_destComps,
+              const Copier&     a_copier,
+              const LDOperator<T>& a_op,
+              bool a_printStuff) const
 {
   // The following five functions are nullOps in uniprocessor mode
 
 #ifdef CH_MPI
 
+
   allocateBuffers(a_src,  a_srcComps,
                   a_dest, a_destComps,
                   a_copier,
-                  a_op);  //monkey with buffers, set up 'fromMe' and 'toMe' queues
+                  a_op, a_printStuff);  //monkey with buffers, set up 'fromMe' and 'toMe' queues
+
 
   writeSendDataFromMeIntoBuffers(a_src, a_srcComps, a_op);
 
@@ -297,51 +319,22 @@ void BoxLayoutData<T>::makeItSoBegin(const Interval&   a_srcComps,
   }    
 #endif 
 }
-
+///
 template<class T>
-void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
-                                         const BoxLayoutData<T>& a_src,
-                                         BoxLayoutData<T>& a_dest,
-                                         const Interval&   a_destComps,
-                                         const Copier&     a_copier,
-                                         const LDOperator<T>& a_op) const
+void
+BoxLayoutData<T>::
+makeItSoLocalCopy(const Interval&   a_srcComps,
+                  const BoxLayoutData<T>& a_src,
+                  BoxLayoutData<T>& a_dest,
+                  const Interval&   a_destComps,
+                  const Copier&     a_copier,
+                  const LDOperator<T>& a_op,
+                  bool a_printStuff) const
 {
 
   CH_TIME("local copying");
-#ifdef cudaGraph
-#ifdef PROTO_CUDA
-  Copier* copier = const_cast<Copier*> (&a_copier) ; 
-  CUDAGRAPH& test = copier->getCudaGraph();
-
-  auto testFunc = [&] () {
   CopyIterator it(a_copier, CopyIterator::LOCAL);  
   int items=it.size();
-#ifdef _OPENMP
-  bool threadSafe = m_threadSafe && (a_op.threadSafe());
-#endif
-
-  for (int n=0; n<items; n++)
-  {
-    const MotionItem& item = it[n];
-
-    a_op.op(a_dest[item.toIndex], item.fromRegion,
-            a_destComps,
-            item.toRegion,
-            a_src[item.fromIndex],
-            a_srcComps);
-
-  }
-  };
-
-  test.capture(testFunc);
-  test.launch();
-#endif
-#else
-  CopyIterator it(a_copier, CopyIterator::LOCAL);  
-  int items=it.size();
-#ifdef _OPENMP
-  bool threadSafe = m_threadSafe && (a_op.threadSafe());
-#endif
 
   for (int n=0; n<items; n++)
   {
@@ -353,16 +346,19 @@ void BoxLayoutData<T>::makeItSoLocalCopy(const Interval&   a_srcComps,
             a_src[item.fromIndex],
             a_srcComps);
   }
-#endif
+
 }
 
-
+///
 
 
 template<class T>
-void BoxLayoutData<T>::makeItSoEnd(
-  const Interval&   a_destComps,
-  const LDOperator<T>& a_op)
+void
+BoxLayoutData<T>::
+makeItSoEnd(const Interval&   a_destComps,
+            const LDOperator<T>& a_op,
+            bool a_printStuff) 
+
 {
   // Uncomment and Move this out of unpackReceivesToMe()  (ndk)
   completePendingSends(); // wait for sends from possible previous operation
@@ -370,58 +366,7 @@ void BoxLayoutData<T>::makeItSoEnd(
   unpackReceivesToMe(a_destComps, a_op); // nullOp in uniprocessor mode
 }
 
-#ifndef CH_MPI
-// uniprocessor version of all these nullop functions.
-template<class T>
-void BoxLayoutData<T>::completePendingSends() const
-{
-}
 
-template<class T>
-void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
-                                       const Interval& a_srcComps,
-                                       const BoxLayoutData<T>& a_dest,
-                                       const Interval& a_destComps,
-                                       const Copier&   a_copier,
-                                       const LDOperator<T>& a_op
-  ) const
-{
-}
-
-template<class T>
-void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_src,
-                                                      const Interval&     a_srcComps,
-                                                      const LDOperator<T>& a_op) const
-{
-}
-
-template<class T>
-void BoxLayoutData<T>::postSendsFromMe() const
-{
-}
-
-template<class T>
-void BoxLayoutData<T>::postReceivesToMe() const
-{
-}
-
-template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe(
-  const Interval&   a_destComps,
-  const LDOperator<T>& a_op)
-{
-}
-
-template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
-                                                 const Interval&   a_destComps,
-                                                 int ncomp,
-                                                 const DataFactory<T>& factory,
-                                                 const LDOperator<T>& a_op) const
-{
-}
-
-#else
 
 // MPI versions of the above codes.
 
@@ -429,6 +374,7 @@ template<class T>
 void BoxLayoutData<T>::completePendingSends() const
 {
   CH_TIME("completePendingSends");
+#ifdef CH_MPI  
   if (this->m_buff->numSends > 0)
   {
     CH_TIME("MPI_Waitall");
@@ -440,6 +386,7 @@ void BoxLayoutData<T>::completePendingSends() const
     }
   }
   this->m_buff->numSends = 0;
+#endif  
 }
 
 template<class T>
@@ -448,16 +395,19 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
                                        const BoxLayoutData<T>& a_dest,
                                        const Interval& a_destComps,
                                        const Copier&   a_copier,
-                                       const LDOperator<T>& a_op) const
+                                       const LDOperator<T>& a_op,
+                                       bool a_printStuff) const
 {
+  
   CH_TIME("MPI_allocateBuffers");
+#ifdef CH_MPI  
   m_buff = &(((Copier&)a_copier).m_buffers);
   a_dest.m_buff = m_buff;
 
   CH_assert(a_srcComps.size() == a_destComps.size());
   if (m_buff->isDefined(a_srcComps.size()) && T::preAllocatable()<2) return;
 
-  if(s_verbosity > 0)
+  if(a_printStuff)
   {
     pout() << " allocate buffers srcComps = " << a_srcComps << ", dest comps = " << a_destComps << endl;
   }
@@ -504,7 +454,10 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   if (T::preAllocatable() == 2) // dynamic allocatable, need two pass
   {
     CH_TIME("MPI_ Phase 1 of 2 Phase: preAllocatable==2");
-    if (s_verbosity > 0) pout()<<"preAllocatable==2\n";
+    if (a_printStuff)
+    {
+      pout()<<"preAllocatable==2\n";
+    }
 
     // in the non-preallocatable case, I need to message the
     // values for the m_buff->m_toMe[*].size
@@ -615,33 +568,16 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (sendBufferSize > m_buff->m_sendcapacity)
   {
-#ifdef PROTO_CUDA
-    if(T::memTypeAllocation()) 
-    {
-      protoFree(Proto::MEMTYPE_DEFAULT,(m_buff->m_sendbuffer));
-    }
-    else
-    {
-      protoFreeHost(m_buff->m_sendbuffer);
-    }
-#else
     free((m_buff->m_sendbuffer));
-#endif
+
     m_buff->m_sendbuffer = NULL;
-    if (s_verbosity > 0) pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
-      
-#ifdef PROTO_CUDA 
-    if(T::memTypeAllocation())  
+    if (a_printStuff)
     {
-      protoMalloc(Proto::MEMTYPE_DEFAULT,m_buff->m_sendbuffer,sendBufferSize);
+      pout()<<"malloc send buffer "<<sendBufferSize<<std::endl;
     }
-    else
-    { 
-      protoHostAlloc(m_buff->m_sendbuffer,sendBufferSize);
-    }
-#else
+      
     (m_buff->m_sendbuffer) = malloc(sendBufferSize);
-#endif
+
     if ((m_buff->m_sendbuffer) == NULL)
     {
       MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
@@ -651,33 +587,16 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
   if (recBufferSize > m_buff->m_reccapacity)
   {
-#ifdef PROTO_CUDA
-    if(T::memTypeAllocation()) 
-    {
-      protoFree(Proto::MEMTYPE_DEFAULT,m_buff->m_recbuffer);
-    }
-    else
-    {
-      protoFreeHost(m_buff->m_recbuffer);
-    }
-#else
     free(m_buff->m_recbuffer);
-#endif
-    m_buff->m_recbuffer = NULL;
-    if (s_verbosity > 0) pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
 
-#ifdef PROTO_CUDA
-    if(T::memTypeAllocation()) 
+    m_buff->m_recbuffer = NULL;
+    if (a_printStuff)
     {
-      protoMalloc(Proto::MEMTYPE_DEFAULT,m_buff->m_recbuffer,recBufferSize);
+      pout()<<"malloc receive buffer "<<recBufferSize<<std::endl;
     }
-    else
-    {
-      protoHostAlloc(m_buff->m_recbuffer,recBufferSize);
-    }
-#else
+
     m_buff->m_recbuffer = malloc(recBufferSize);
-#endif
+
     if (m_buff->m_recbuffer == NULL)
     {
       MayDay::Error("Out of memory in BoxLayoutData::allocatebuffers");
@@ -685,15 +604,16 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
     m_buff->m_reccapacity = recBufferSize;
   }
-  /*
-    pout()<<"\n";
+  if(a_printStuff)
+  {
+    pout()<< "bld::allocateBuffers:" << endl;
     for (int i=0; i<m_buff->m_fromMe.size(); i++)
-    pout()<<m_buff->m_fromMe[i].item->region<<"{"<<m_buff->m_fromMe[i].procID<<"}"<<" ";
+    pout()<<m_buff->m_fromMe[i].item->toRegion<<"{"<<m_buff->m_fromMe[i].procID<<"}"<<" ";
     pout() <<"::::";
     for (int i=0; i<m_buff->m_toMe.size(); i++)
-    pout()<<m_buff->m_toMe[i].item->region<<"{"<<m_buff->m_toMe[i].procID<<"}"<<" ";
+    pout()<<m_buff->m_toMe[i].item->toRegion<<"{"<<m_buff->m_toMe[i].procID<<"}"<<" ";
     pout() << endl;
-  */
+  }
 
   char* nextFree = (char*)(m_buff->m_sendbuffer);
   if (m_buff->m_fromMe.size() > 0)
@@ -718,6 +638,7 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
   // since fromMe and toMe are sorted based on procID, messages can now be grouped
   // together on a per-processor basis.
 
+#endif //mpi
 }
 
 template<class T>
@@ -725,28 +646,9 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
                                                       const Interval&     a_srcComps,
                                                       const LDOperator<T>& a_op) const
 {
+#ifdef CH_MPI
   CH_TIME("write Data to buffers");
 
-#ifdef cudaGraph
-#ifdef PROTO_CUDA
-  BoxLayoutData<T>* buff = const_cast<BoxLayoutData<T>*> (&a_copier) ; 
-  CUDAGRAPH& test = buff->getCudaGraphLinearIn();
-
-  auto testFunc = [&] () {
-    int isize = m_buff->m_fromMe.size();
-
-    for (unsigned int i=0; i< isize; ++i)
-    {
-      const CopierBuffer::bufEntry& entry = m_buff->m_fromMe[i];
-      a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
-                   entry.item->fromRegion, a_srcComps);
-    }
-  };
-
-  test.capture(testFunc);
-  test.launch();
-#endif
-#else
 
   int isize = m_buff->m_fromMe.size();
 
@@ -756,12 +658,13 @@ void BoxLayoutData<T>::writeSendDataFromMeIntoBuffers(const BoxLayoutData<T>& a_
     a_op.linearOut(a_src[entry.item->fromIndex], entry.bufPtr,
                    entry.item->fromRegion, a_srcComps);
   }
-#endif
+#endif  
 }
 
 template<class T>
 void BoxLayoutData<T>::postSendsFromMe() const
 {
+#ifdef CH_MPI  
   CH_TIME("post_Sends");
   // now we get the magic of message coalescence
   // fromMe has already been sorted in the allocateBuffers() step.
@@ -823,13 +726,14 @@ void BoxLayoutData<T>::postSendsFromMe() const
   this->m_buff->numSends = m_buff->m_sendRequests.size();
 
   CH4_SPMD::CH_MaxMPISendSize = std::max<long long>(CH4_SPMD::CH_MaxMPISendSize, maxSize);
+#endif  
 }
 
 template<class T>
 void BoxLayoutData<T>::postReceivesToMe() const
 {
   CH_TIME("post_Receives");
-
+#ifndef MPI
   this->m_buff->numReceives = m_buff->m_toMe.size();
 
   if (this->m_buff->numReceives > 1)
@@ -885,13 +789,16 @@ void BoxLayoutData<T>::postReceivesToMe() const
   this->m_buff->numReceives = m_buff->m_receiveRequests.size();
 
   CH4_SPMD::CH_MaxMPIRecvSize = std::max<long long>(CH4_SPMD::CH_MaxMPIRecvSize, maxSize);
+#endif  
 }
-
+///
 template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe(
-  const Interval&   a_destComps,
-  const LDOperator<T>& a_op)
+void
+BoxLayoutData<T>::
+unpackReceivesToMe(const Interval&      a_destComps,
+                   const LDOperator<T>& a_op)
 {
+#ifdef CH_MPI  
   CH_TIME("unpack_messages");
 
   if (this->m_buff->numReceives > 0)
@@ -909,47 +816,19 @@ void BoxLayoutData<T>::unpackReceivesToMe(
       //maybe a mayday::warning?
     }
 
-
-#ifdef cudaGraph
-#ifdef PROTO_CUDA
-//  auto* buff = const_cast<Copier*> (&a_copier) ; 
-  CUDAGRAPH& test = m_buff->getCudaGraphLinearIn();
-
-  auto testFunc = [&] () {
-
     int isize = m_buff->m_toMe.size();
-#ifdef _OPENMP
-    bool threadSafe = m_threadSafe && (a_op.threadSafe());
-#endif
-//#pragma omp parallel for if(threadSafe)
-    for (unsigned int i=0; i< isize; ++i)
-    {
-      const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
-      a_op.linearIn(this->operator[](entry.item->toIndex), entry.bufPtr,
-                    entry.item->toRegion, a_destComps);
-   }
-  };
 
-  test.capture(testFunc);
-  test.launch();
-#endif
-#else
-
-    int isize = m_buff->m_toMe.size();
-#ifdef _OPENMP
-    bool threadSafe = m_threadSafe && (a_op.threadSafe());
-#endif
-//#pragma omp parallel for if(threadSafe)
     for (unsigned int i=0; i< isize; ++i)
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
       a_op.linearIn(this->operator[](entry.item->toIndex), entry.bufPtr,
                     entry.item->toRegion, a_destComps);
     }
-#endif
+
   this->m_buff->numReceives = 0;
   }
 
+#endif  
 }
 
 template<class T>
@@ -958,8 +837,9 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
                                                  int ncomp,
                                                  const DataFactory<T>& factory,
 
-                                                 const LDOperator<T>& a_op) const
+                                                 const LDOperator<T>& a_op) 
 {
+#ifdef CH_MPI  
   if (this->m_buff->numReceives > 0)
   {
     m_buff->m_receiveStatus.resize(this->m_buff->numReceives);
@@ -974,8 +854,7 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
       //hell if I know what to do about failed messaging here
     }
     int isize = m_buff->m_toMe.size();
-    // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
-    // #pragma omp parallel for if(this->m_threadSafe)
+
     for (int i=0; i< isize; ++i)
     {
       const CopierBuffer::bufEntry& entry = m_buff->m_toMe[i];
@@ -988,8 +867,9 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
   }
 
   this->m_buff->numReceives = 0;
+#endif  
 }
-#endif
+
 
 template <class T>
 void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
@@ -1036,7 +916,6 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 
 //brian says this does not need conditionals because everyone is getting different buffers
   // NOT thread-safe, because of a_dest[item.toIndex].push_back(newT);
-  // #pragma omp parallel for
 
   for(int i=0; i<items; ++i)
   {
@@ -1108,10 +987,7 @@ public:
 
   }
 
-  virtual bool threadSafe() const
-  {
-    return false;
-  }
+
 };
 
 template <class T>

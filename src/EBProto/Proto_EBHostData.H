@@ -31,6 +31,10 @@ namespace Proto
     {
     }
 
+    int nComp() const
+    {
+      return ncomp;
+    }
     virtual ~EBHostData()
     {
     }
@@ -40,7 +44,7 @@ namespace Proto
       //this ought to work even if the index is outside the domain
       //should just send it to reg fab
       EBDataLoc retval;
-      if(m_irrData.hasIndex(a_index))
+      if(m_irrData.contains(a_index))
       {
         retval.m_dataID   = 1;
         retval.m_offset   = this->m_irrData.index(a_index, a_ivar);
@@ -104,18 +108,18 @@ namespace Proto
       m_regData.define(a_input.getRegData()  , a_comp);
     }           
 
-    ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
-    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab)
+    ///for aggstencil mostly.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
+    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab) const
     {
       PR_assert((a_whichfab == 0) || (a_whichfab == 1));
       if(a_whichfab == 0)
       {
-        a_dataPtr  =  m_regData.data();
+        a_dataPtr  =  (data_t*)(m_regData.data());
         a_datasize =  m_regData.size();
       }
       else 
       {
-        a_dataPtr  =  m_irrData.data();
+        a_dataPtr  =  (data_t*)(m_irrData.data());
         a_datasize =  m_irrData.size();
       }
     }
@@ -153,11 +157,15 @@ namespace Proto
       this->m_inputBox = a_box;
       this->m_graph = a_graph;
 
-      this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box);  //stack allocation turned off for now
+      this->m_irrData.define(a_box, this->m_graph);
+//begin debug
+//      Chombo4::pout() << "in box define for EBHostData: " ;
+//      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
+//end debug      
+      this->m_regData.define(a_box);  
     }
 
-    BoxData<data_t, ncomp, HOST>& getRegData()
+    HostBoxData<data_t, ncomp>& getRegData()
     {
       return m_regData;
     }
@@ -180,13 +188,10 @@ namespace Proto
               const Box& a_bxTo  , unsigned int idst,
               unsigned int inco)
     {
-      PR_TIME("EBHostData::copy");
       {
-        PR_TIME("copy_reg_data");
         m_regData.copy(a_src.m_regData, a_bxFrom, isrc, a_bxTo, idst, inco);
       }
       {
-        PR_TIME("copy_irr_data");
         m_irrData.copy(a_src.m_irrData, a_bxFrom, isrc, a_bxTo, idst, inco);
       }
     }
@@ -194,42 +199,84 @@ namespace Proto
     ///this DOES include sizeof(T)  
     virtual std::size_t charsize(const Box&   a_bx,
                                  unsigned int a_startcomp,
-                                 unsigned int a_numcomps) const
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const
     {
-      PR_TIME("EBHostData::charsize");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      size_t retval = 2*sizeof(unsigned long); //regsize and irregsize
+      size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t sumsize = regsize + irrsize;
-
-      return sumsize;
+      retval += sumsize;
+      return retval;
       
     }
     virtual void  linearIn(void*                  a_buf,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
-                           unsigned int           a_numcomps)
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false)
     {
-      PR_TIME("EBHostData::linearIn");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "in ebhostdata::linearin" << endl;
+      }
       char* charbuf = (char*)a_buf;
-      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      unsigned long* longbuf = (unsigned long*)(charbuf);
+      unsigned long regSize = *longbuf;
+      longbuf++;
+      unsigned long irrSize = *longbuf;
+      longbuf++;
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "ebhostdata::linearin: regSize = " << regSize << endl;
+        Chombo4::pout() << "ebhostdata::linearin: irrSize = " << irrSize << endl;
+      }
+      
+      charbuf = (char*) longbuf;
+      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += regSize;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "going into irregdata linearin" << endl;
+      }
+      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += irrSize;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving ebhostdata linearin" << endl;
+      }
+
     }
     virtual void linearOut(void*               a_buf,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
-                           unsigned int        a_numcomps) const
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const
     {
-      PR_TIME("EBHostData::linearOut");
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
-      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_regData.charsize(a_bx, a_startcomp, a_numcomps);
-      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_irrData.charsize(a_bx, a_startcomp, a_numcomps);
+      unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      unsigned long irrSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      unsigned long* longbuf = (unsigned long*)(charbuf);
+      *longbuf = regSize;
+      longbuf++;
+      *longbuf = irrSize;
+      longbuf++;
+      charbuf = (char*) longbuf;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "ebhostdata::linearOut: regSize = " << regSize << endl;
+        Chombo4::pout() << "ebhostdata::linearOut: irrSize = " << irrSize << endl;
+      }
+      
+      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += regSize;
+      
+      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      charbuf += irrSize;
     }
     ///
     static int preAllocatable()
@@ -247,8 +294,7 @@ namespace Proto
     EBHostData& operator=(const EBHostData<cent, data_t, ncomp>& a_src);
 
     Box m_inputBox;
-    //HostBoxData<        data_t, ncomp>     m_regData;
-    BoxData<data_t, ncomp, HOST> m_regData;
+    HostBoxData<        data_t, ncomp>     m_regData;
     HostIrregData<cent, data_t, ncomp>     m_irrData;
     EBGraph                                m_graph;
   };
@@ -312,5 +358,4 @@ namespace Proto
 
 
 }
-
 #endif

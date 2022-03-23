@@ -46,7 +46,7 @@ blt_add_library(NAME CrunchFlow
     reaction.cpp
     satcalc.cpp
     totconc.cpp
-    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR} ${LAPACK_DIR}/include/
+    INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}
     DEPENDS_ON LAPACK::LAPACK chombo_compiler_flags ${LIB_DEP})
 if(ENABLE_CUDA)
     target_link_libraries(CrunchFlow PUBLIC CUDA::cusolver)

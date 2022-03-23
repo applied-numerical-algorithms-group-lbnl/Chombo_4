@@ -1,5 +1,6 @@
 initial_velo = "zero"
 initial_scal = "blob_scal_0"
+velocity_inflow_value = 1.
 #also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "inflow"
 domain_bc_hi_0 = "outflow"
@@ -12,7 +13,7 @@ nx=       64
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  64
+maxGrid=  32
 numSmooth  = 8
 # center of the sphere
 geom_cen = 0.5

@@ -35,16 +35,14 @@ registerStencils()
   CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
-  auto & grids   = m_macprojector->m_grids;
 
   //dirichlet at domain to get zero normal velocity at domain boundaries
   //grown by one to allow interpolation to face centroids
   brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
- brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
+  brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
 
   //below here is stuff used in the conservative gradient
   Point ghost = Point::Zeroes();
-  m_copyToCopier.define(grids, grids);
   bool needDiag = false;
   m_nobcsLabel = StencilNames::NoBC;
   m_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the normalizor 
@@ -77,7 +75,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   
-  a_velo.exchange(m_macprojector->m_exchangeCopier);
+  a_velo.exchange();
   
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo);
@@ -138,17 +136,16 @@ normalizeGradient(EBLevelBoxData<CELL, DIM>& a_gphi)
   auto & grids          = m_macprojector->m_grids;
   auto & graphs         = m_macprojector->m_graphs;
   auto & nghost         = m_macprojector->m_nghost;
-  auto & exchangeCopier = m_macprojector->m_exchangeCopier;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
   
   EBLevelBoxData<CELL, DIM>  kappaGrad(grids, nghost, graphs);
   //right now gphi holds kappa * grad
-  Interval interv(0, DIM-1);
-  a_gphi.copyTo(interv, kappaGrad, interv, m_copyToCopier);
+  a_gphi.copyTo(kappaGrad);
+  
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
-  kappaGrad.exchange(exchangeCopier);
+  kappaGrad.exchange();
   
   DataIterator dit = grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)

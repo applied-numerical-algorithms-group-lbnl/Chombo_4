@@ -40,21 +40,22 @@ testDebugFunctions(const EBGraph& a_graph)
   Bx bx(lo, hi);
   EBBoxData<CELL, Real, 1> cellfab(bx, a_graph);
   unsigned int numflops = 0;
-  pout() << "testing dumpEB1" << endl;
+
+  Chombo4::pout() << "testing dumpEB1" << endl;
   ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
   dumpEB1(&cellfab);
 
   EBFluxData<Real, 1> fluxdat(bx, a_graph);
   ebforallInPlace_i(numflops, "InitCell", InitCell,  bx, cellfab);
   
-  pout() << "testing dumpXFace" << endl;
+  Chombo4::pout() << "testing dumpXFace" << endl;
   int idir = 0;
   ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_xflux->box(),
                     *fluxdat.m_xflux, idir);
   dumpXFace(&fluxdat.m_xflux);
 
 
-  pout() << "testing dumpYFace" << endl;
+  Chombo4::pout() << "testing dumpYFace" << endl;
   idir = 1;
   ebforallInPlace_i(numflops, "InitFace", InitFace, fluxdat.m_yflux->box(),
                     *fluxdat.m_yflux, idir);
@@ -78,7 +79,7 @@ testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
   using Chombo4::MayDay;
   using Proto::BaseIF;
   
-  pout() << "testing hi cell to face stencil" << endl;
+  Chombo4::pout() << "testing hi cell to face stencil" << endl;
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
 
   a_brit->registerCellToFace(StencilNames::CellToFaceHi, 
@@ -96,14 +97,14 @@ testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
 
     EBBoxData<CELL, Real, 1> cellfab(grown, graph);
     unsigned int numflops = 0;
-    pout() << "cell data looks like:" << endl;
+    Chombo4::pout() << "cell data looks like:" << endl;
     ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
 
     dumpEB1(&cellfab);
 
     EBFluxData<Real, 1> fluxdat(grown, graph);
     int idir = 0;
-    pout() << "XFace data for Side::Lo looks like:" << endl;
+    Chombo4::pout() << "XFace data for Side::Lo looks like:" << endl;
     a_brit->applyCellToFace(StencilNames::CellToFaceHi, 
                             StencilNames::NoBC,
                             a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
@@ -127,7 +128,7 @@ testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
   using Chombo4::MayDay;
   using Proto::BaseIF;
   
-  pout() << "testing low cell to face stencil" << endl;
+  Chombo4::pout() << "testing low cell to face stencil" << endl;
   shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
 
   a_brit->registerCellToFace(StencilNames::CellToFaceLo, 
@@ -145,7 +146,7 @@ testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
 
     EBBoxData<CELL, Real, 1> cellfab(grown, graph);
     unsigned int numflops = 0;
-    pout() << "cell data looks like:" << endl;
+    Chombo4::pout() << "cell data looks like:" << endl;
     ebforallInPlace_i(numflops, "InitCell", InitCell,  grown, cellfab);
     dumpEB1(&cellfab);
 
@@ -155,7 +156,7 @@ testLoStencil(shared_ptr<EBEncyclopedia<2, Real> >       a_brit,
                             StencilNames::NoBC,
                             a_domain, fluxdat, cellfab, idir, ibox, true, 1.0);
 
-    pout() << "XFace data for Side::Hi data looks like:" << endl;
+    Chombo4::pout() << "XFace data for Side::Hi data looks like:" << endl;
     dumpXFace(&fluxdat.m_xflux);
   }
 }
@@ -167,7 +168,7 @@ testSimpleStencils(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
                    Chombo4::Box                                    a_domain,
                    Real a_dx, Point  a_ghost)
 {
-  pout() << "testing cell to face stencil" << endl;
+  Chombo4::pout() << "testing cell to face stencil" << endl;
   testHiStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
   testLoStencil(a_brit, a_geoserv, a_grids, a_domain, a_dx, a_ghost);
 }
@@ -181,7 +182,7 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                const int        & a_nx,
                const int        & a_maxGrid)
 {
-  pout() << "making grids" << endl;
+  Chombo4::pout() << "making grids" << endl;
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
@@ -218,18 +219,18 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   if(a_whichGeom == -1)
   {
     using Proto::AllRegularIF;
-    pout() << "all regular geometry" << endl;
+    Chombo4::pout() << "all regular geometry" << endl;
     retval = shared_ptr<BaseIF>(new AllRegularIF());
   }
   else if(a_whichGeom == 0)
   {
     using Proto::SimpleEllipsoidIF;
-    pout() << "sphere" << endl;
+    Chombo4::pout() << "sphere" << endl;
 
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
-    pout() << "geom_cen = " << a_geomCen       << endl;
-    pout() << "geom_rad = " << a_geomRad       << endl;
+    Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
+    Chombo4::pout() << "geom_rad = " << a_geomRad       << endl;
 
     RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
     RealVect  X0 = RealVect::Unit();
@@ -240,7 +241,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   else if(a_whichGeom ==  1)
   {
     using Proto::PlaneIF;
-    pout() << "plane" << endl;
+    Chombo4::pout() << "plane" << endl;
     RealVect normal, startPt;
     vector<double> v_norm, v_start;
     pp.getarr("geom_normal", v_norm, 0, DIM);
@@ -249,8 +250,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     {
       normal[ idir] = v_norm[ idir];
       startPt[idir] = v_start[idir];
-      pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-      pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+      Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+      Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
     }
     retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
   }
@@ -269,7 +270,7 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
                     int              & a_nx,
                     shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
 {
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
 
   ParmParse pp;
   int maxGrid = 32;
@@ -277,18 +278,18 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
   pp.get("nx"        , a_nx);
   pp.get("maxGrid", maxGrid);
 
-  pout() << "nx       = " << a_nx     << endl;
-  pout() << "maxGrid  = " << maxGrid  << endl;
+  Chombo4::pout() << "nx       = " << a_nx     << endl;
+  Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
 
   makeGrids(a_grids, a_dx, a_nx, maxGrid);
   Chombo4::Box domain = a_grids.physDomain().domainBox();
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
-  pout() << "creating implicit function" << endl;
+  Chombo4::pout() << "creating implicit function" << endl;
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
-  pout() << "creating geometry service" << endl;
+  Chombo4::pout() << "creating geometry service" << endl;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
@@ -307,7 +308,7 @@ runTests(int a_argc, char* a_argv[])
   Real dx;
   Chombo4::DisjointBoxLayout grids;
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   Real geomCen;
@@ -319,7 +320,7 @@ runTests(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
   Chombo4::Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
@@ -334,7 +335,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
@@ -349,10 +350,10 @@ int main(int a_argc, char* a_argv[])
     runTests(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

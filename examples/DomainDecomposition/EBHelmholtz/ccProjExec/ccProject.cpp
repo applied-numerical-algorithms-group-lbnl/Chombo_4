@@ -93,18 +93,18 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   if(a_whichGeom == -1)
   {
     using Proto::AllRegularIF;
-    pout() << "all regular geometry" << endl;
+    Chombo4::pout() << "all regular geometry" << endl;
     retval = shared_ptr<BaseIF>(new AllRegularIF());
   }
   else if(a_whichGeom == 0)
   {
     using Proto::SimpleEllipsoidIF;
-    pout() << "sphere" << endl;
+    Chombo4::pout() << "sphere" << endl;
 
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
-    pout() << "geom_cen = " << a_geomCen       << endl;
-    pout() << "geom_rad = " << a_geomRad       << endl;
+    Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
+    Chombo4::pout() << "geom_rad = " << a_geomRad       << endl;
 
     RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
     RealVect  X0 = RealVect::Unit();
@@ -115,7 +115,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   else if(a_whichGeom ==  1)
   {
     using Proto::PlaneIF;
-    pout() << "plane" << endl;
+    Chombo4::pout() << "plane" << endl;
     RealVect normal, startPt;
     vector<double> v_norm, v_start;
     pp.getarr("geom_normal", v_norm, 0, DIM);
@@ -124,8 +124,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     {
       normal[ idir] = v_norm[ idir];
       startPt[idir] = v_start[idir];
-      pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-      pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+      Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+      Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
     }
     retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
   }
@@ -145,17 +145,17 @@ void defineGeometry(Vector<Chombo4::DisjointBoxLayout>& a_grids,
                     int              & a_nx,
                     shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
 {
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
 
   ParmParse pp;
     
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
-  pout() << "creating implicit function" << endl;
+  Chombo4::pout() << "creating implicit function" << endl;
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
-  pout() << "creating geometry service" << endl;
+  Chombo4::pout() << "creating geometry service" << endl;
   Chombo4::Box domain = a_finestDomain;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
@@ -189,11 +189,11 @@ runProjection(int a_argc, char* a_argv[])
   pp.get("max_vel_rad"  , max_vel_rad);
   pp.get("nx"           , nx);
 
-  pout() << "nx       = " << nx     << endl;
-  pout() << "maxGrid  = " << maxGrid  << endl;
-  pout() << "max_vel_mag     = " << max_vel_mag     << endl;
-  pout() << "max_vel_rad     = " << max_vel_rad     << endl;
-  pout() << "num_streams     = " << nStream         << endl;
+  Chombo4::pout() << "nx       = " << nx     << endl;
+  Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
+  Chombo4::pout() << "max_vel_mag     = " << max_vel_mag     << endl;
+  Chombo4::pout() << "max_vel_rad     = " << max_vel_rad     << endl;
+  Chombo4::pout() << "num_streams     = " << nStream         << endl;
 
 //  EBMultigrid::s_numSmoothUp   = numSmooth;
 //  EBMultigrid::s_numSmoothDown = numSmooth;
@@ -201,7 +201,7 @@ runProjection(int a_argc, char* a_argv[])
   Real dx = 1.0/nx;
   Vector<Chombo4::DisjointBoxLayout> vecgrids;
 
-  pout() << "making grids" << endl;
+  Chombo4::pout() << "making grids" << endl;
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
@@ -209,7 +209,7 @@ runProjection(int a_argc, char* a_argv[])
   Chombo4::ProblemDomain domain(domLo, domHi);
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   Real geomCen;
@@ -223,7 +223,7 @@ runProjection(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
   vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
   for(int ilev = 1; ilev < vecgrids.size(); ilev++)
@@ -236,9 +236,9 @@ runProjection(int a_argc, char* a_argv[])
     brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
 
-  pout() << "inititializing data"   << endl;
+  Chombo4::pout() << "inititializing data"   << endl;
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
   Chombo4::DisjointBoxLayout& grids = vecgrids[0];
   EBLevelBoxData<CELL, DIM>  velo(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL, DIM>  gphi(grids, dataGhostIV, graphs);
@@ -257,7 +257,7 @@ runProjection(int a_argc, char* a_argv[])
   
   Real divnorm = divu.maxNorm(0);
   
-  pout() << "max norm of post projection divergence(vel) = " << divnorm << endl;
+  Chombo4::pout() << "max norm of post projection divergence(vel) = " << divnorm << endl;
 
   divu.writeToFileHDF5(string("divufinalc4.hdf5"), 0.0);
   velo.writeToFileHDF5(string("velofinalc4.hdf5"), 0.0);
@@ -271,7 +271,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
@@ -286,10 +286,10 @@ int main(int a_argc, char* a_argv[])
     runProjection(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

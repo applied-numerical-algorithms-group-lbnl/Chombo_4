@@ -111,8 +111,6 @@ defineInternals(EBIBC                a_ibc,
                 ParabolicSolverType  a_solver)
 {
   m_graphs = m_geoserv->getGraphs(m_domain);
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
-  m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);
   
   m_velo     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
@@ -253,7 +251,7 @@ run(unsigned int a_max_step,
     pout() << "We are starting from a checkpoint so we just use the starting velocity. " << endl;
   }
     
-  velo.exchange(m_exchangeCopier);
+  velo.exchange();
 
   //get the time step
   if(usingFixedDt)
@@ -365,15 +363,15 @@ initializePressure(Real         a_dt,
   {
     pout() << "Getting initial pressure using fixed point iteration " << endl;
     gphi.setVal(0.);
-    Interval interv(0, DIM-1);
-    velo.copyTo(interv, velosave, interv, m_copyCopier);
+
+    velo.copyTo(velosave);
     gphi.setVal(0.);
     for(int iter = 0; iter < a_numPressureIterations; iter++)
     {
       advanceVelocityAndPressure(a_dt, a_tol, a_maxIter);
-      velosave.copyTo(interv, velo, interv, m_copyCopier);
+      velosave.copyTo(velo);
     }
-    gphi.exchange(m_exchangeCopier);
+    gphi.exchange();
   }
   else
   {
@@ -426,7 +424,7 @@ getAdvectiveDerivative(Real a_dt, Real a_tol, unsigned int a_maxIter)
   auto& divuu = *m_divuu;
   auto& velo  = *m_velo;
   m_bcgAdvect->hybridVecDivergence(divuu, velo, a_dt, a_tol, a_maxIter);
-  divuu.exchange(m_exchangeCopier);
+  divuu.exchange();
 }
 /*******/ 
 void
@@ -556,12 +554,12 @@ advanceScalar(Real a_dt)
   CH_TIME("EBINS::advanceScalar");
   
   auto& scal = *m_scal;
-  scal.exchange(m_exchangeCopier);
+  scal.exchange();
   Real fluxval;
   ParmParse pp;
   pp.get("scalar_inflow_value",   fluxval);
   m_advectOp->advance(scal, a_dt, fluxval);
-  scal.exchange(m_exchangeCopier);
+  scal.exchange();
 }
 /*******/ 
 void
@@ -578,7 +576,7 @@ advanceSpecies(Real a_dt,
     pout() << "advancing species number "<< ispec << endl;
     auto& spec = *m_species[ispec];
 
-    spec.exchange(m_exchangeCopier);
+    spec.exchange();
     //A strange user interface, I grant you.  I did not think I would need this back door
     pout() << "get advection term divuphi" << endl;
     Real fluxval;

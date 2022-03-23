@@ -114,7 +114,8 @@ namespace Proto
   EBGraph::
   charsize(const Box&   a_bx,
            unsigned int a_startcomp,
-           unsigned int a_numcomps) const
+           unsigned int a_numcomps,
+           bool a_printStuff) const
   {
     using ProtoSer::linearCharBufSize;
     size_t retval = 0;
@@ -209,7 +210,7 @@ namespace Proto
   }
   /***/
   EBGraph::
-  EBGraph(void*  a_buf)
+  EBGraph(void*  a_buf, bool a_printStuff)
   {
     m_isDefined = true;
     using ProtoSer::linearInFromCharBuf;
@@ -261,11 +262,11 @@ namespace Proto
         charbuf += linearCharBufSize(node);
       }
     }
-//    //begin debug
-//    using std::cout;
-//    using std::endl;
-//    cout << "ebgraph::ebgraph(buf) valid box = " << m_validBox  << ", charsiz = " << charsiz << endl;
-//    //end   debug
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "ebgraph::ebgraph(buf) valid box = " << m_validBox  << ", charsiz = " << charsiz << endl;
+    }
+    
   }
   /***
      The darkness drops again; but now I know   
@@ -280,9 +281,10 @@ namespace Proto
   linearIn(void*                  a_buf,
            const Box       &      a_bx,
            unsigned int           a_startcomp,
-           unsigned int           a_numcomps)
+           unsigned int           a_numcomps,
+           bool a_printStuff)
   {
-    EBGraph srcGraph(a_buf);
+    EBGraph srcGraph(a_buf, a_printStuff);
     copy(srcGraph, a_bx, 0, a_bx, 0, 1);
   }
 
@@ -293,7 +295,8 @@ namespace Proto
   linearOut(void*               a_buf,
             const Box       &   a_bx,
             unsigned int        a_startcomp,
-            unsigned int        a_numcomps) const
+            unsigned int        a_numcomps,
+            bool a_printStuff) const
   {
     energize(a_buf);
   }

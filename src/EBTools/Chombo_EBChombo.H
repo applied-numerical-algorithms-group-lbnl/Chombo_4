@@ -76,10 +76,12 @@ using Proto::EBStencilArchive;
 using Chombo4::DisjointBoxLayout;
 using Chombo4::DataIterator;
 using Chombo4::DataIndex;
-using Chombo4::Copier;
 
-typedef Proto::Box Bx;
 using ProtoCh::getProtoBox;
+typedef Proto::Box Bx;
+typedef Chombo4::Box          ChBx;
+typedef Chombo4::DataIterator ChDit;
+
 typedef Proto::IndexTM<int,2>      Iv2;
 typedef Proto::IndexTM<int,DIM>    IvgDim;
 typedef Proto::IndexTM<int,DIM-1 > IvgLess1;

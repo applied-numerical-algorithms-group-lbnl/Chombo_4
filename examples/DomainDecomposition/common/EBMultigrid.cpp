@@ -77,7 +77,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   if(a_doExchange)
   {
-    phi.exchange(m_exchangeCopier);
+    phi.exchange();
   }
   
   DataIterator dit = m_grids.dataIterator();
@@ -125,7 +125,7 @@ applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
   CH_assert(m_kappa.ghostVect() == a_phi.ghostVect());
   CH_TIME("EBMultigrid::applyOpNeumann");
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
-  phi.exchange(m_exchangeCopier);
+  phi.exchange();
   DataIterator dit = m_grids.dataIterator();
   int ideb  = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -189,7 +189,6 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_kappa.define(m_grids, m_nghost, m_graphs);
   m_diagW.define(m_grids, m_nghost, m_graphs);
   
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
@@ -235,7 +234,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
     m_coarser->define(*this, a_geoserv);
 
-    const shared_ptr<LevelData<EBGraph>  > graphs = a_geoserv->getGraphs(m_coarser->m_domain);
+    auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
     m_deltaC.define(m_coarser->m_grids, m_nghost , graphs);
   }
@@ -274,7 +273,6 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_kappa.define(m_grids, m_nghost, m_graphs);
   m_diagW.define(m_grids, m_nghost, m_graphs);
 
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   //register stencil for apply op
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
@@ -343,7 +341,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
     ideb++;
   }
-  m_kappa.exchange(m_exchangeCopier);
+  m_kappa.exchange();
 }
 /****/
 void
@@ -373,7 +371,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
 
-  a_res.exchange(m_exchangeCopier);
+  a_res.exchange();
 }
 /****/
 void
@@ -432,10 +430,6 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       
         ideb++;
       } //end loop over boxes
-      //begin debug
-      //      a_phi.exchange(m_exchangeCopier);
-      //      ideb++;
-      //end debug
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons

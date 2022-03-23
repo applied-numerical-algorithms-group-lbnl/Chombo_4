@@ -32,15 +32,20 @@ class EBPetscSolver
 {
 public:
   typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  hostfactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> > hostfactreal_t;
+  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
+  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> >  host_fact_real_t;
   typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
 
   EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
                 const shared_ptr<dictionary_t           >  & a_ebdictionary,
-                const shared_ptr<LevelData<EBGraph> >      & a_graphs,
-                const Chombo4::DisjointBoxLayout                    & a_grids,
-                const Chombo4::Box                                  & a_domain,
+                const shared_ptr<graph_distrib_t>          & a_graphs,
+                const Chombo4::DisjointBoxLayout           & a_grids,
+                const Chombo4::Box                         & a_domain,
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
@@ -126,9 +131,7 @@ public:
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
-    Chombo4::Copier styx;
-    styx.exchangeDefine(m_grids, m_ivghost);
-    a_phi.exchange(styx);
+    a_phi.exchange();
     return 0;
   }
 
@@ -145,8 +148,8 @@ private:
     CH_TIME("EBPetscSolver::chomboToPetsc");
     PetscErrorCode ierr;
     //copy data to host.
-    hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, Real, 1> > hostSrc(m_grids, 1, a_deviceSrc.ghostVect(), factory);
+    host_fact_real_t factory(m_graphs);
+    host_distrib_real_t  hostSrc(m_grids,  a_deviceSrc.ghostVect(), factory);
     EBLevelBoxData<CELL, 1>::copyToHost(hostSrc, a_deviceSrc);
     
     Chombo4::DataIterator dit = m_grids.dataIterator();
@@ -239,11 +242,11 @@ private:
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-    shared_ptr< LevelData< VoluData >  > voldatpld = m_geoserv->getVoluData(  m_domain);
-    shared_ptr< LevelData< EBFaData >  > ebfdatpld = m_geoserv->getEBFaceData(m_domain);
-    shared_ptr< LevelData< XFacData >  > xfadatpld = m_geoserv->getXFaceData( m_domain);
-    shared_ptr< LevelData< YFacData >  > yfadatpld = m_geoserv->getYFaceData( m_domain);
-    shared_ptr< LevelData< ZFacData >  > zfadatpld = m_geoserv->getZFaceData( m_domain);
+    auto voldatpld = m_geoserv->getVoluData(  m_domain);
+    auto ebfdatpld = m_geoserv->getEBFaceData(m_domain);
+    auto xfadatpld = m_geoserv->getXFaceData( m_domain);
+    auto yfadatpld = m_geoserv->getYFaceData( m_domain);
+    auto zfadatpld = m_geoserv->getZFaceData( m_domain);
 
     auto& voludata =(*voldatpld)[a_dit];
     auto& ebfadata =(*ebfdatpld)[a_dit];
@@ -310,8 +313,8 @@ private:
 //    std::cout << "filling up stuff before solve " << endl;
     //end debug
     
-    hostfactreal_t factory(m_graphs);
-    LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
+    host_fact_real_t factory(m_graphs);
+    host_distrib_real_t hostDst(m_grids, a_deviceDst.ghostVect(), factory);
 
     DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
@@ -617,7 +620,7 @@ private:
     CH_TIME("EBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
     IntVect gidghost = 4*IntVect::Unit;
-    m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
+    m_gids.define(m_grids,  gidghost, host_fact_int_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
     int numPtsThisProc = 0;
@@ -634,15 +637,9 @@ private:
     }
 
     //decide which location maps to the first one of this proc
+
 #ifdef CH_MPI
-//    MPI_Comm wcomm = Chombo_MPI::comm;
-//    PetscInt data = numPtsThisProc;
-//    PetscInt result;
-//    MPI_Datatype mtype;
-//    PetscDataTypeToMPIDataType(PETSC_INT,&mtype);
-//    MPI_Scan( &data, &result, 1, mtype, MPI_SUM, wcomm );
-//    PetscInt numPtsAllProc = result;
-//    int startgid =  result - data;
+
     Vector<int> numPtsAllProcs;
     CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
     CH4_SPMD::broadcast<Vector<int> >(    numPtsAllProcs, 0);
@@ -681,12 +678,10 @@ private:
         }
       }
     }
-    Chombo4::Copier exchangeCopier;
-    exchangeCopier.exchangeDefine(m_grids, gidghost);
-    m_gids.exchange(exchangeCopier);
+    m_gids.exchange();
   }
   //index space--allows us to to matrix to solution space
-  LevelData<EBHostData<CELL, int, 1> > m_gids;
+  host_distrib_int_t  m_gids;
   PetscInt m_gid0;
   PetscInt m_NN;
   bool m_nz_init_guess;
@@ -694,9 +689,9 @@ private:
 
   shared_ptr<GeometryService<order> >  m_geoserv;
   shared_ptr< dictionary_t>            m_ebdictionary;
-  shared_ptr<LevelData<EBGraph> >      m_graphs;
-  Chombo4::DisjointBoxLayout                    m_grids;
-  Chombo4::Box                                  m_domain;
+  shared_ptr<graph_distrib_t>          m_graphs;
+  Chombo4::DisjointBoxLayout           m_grids;
+  Chombo4::Box                         m_domain;
   Real                                 m_dx;
   
   string m_stencilName;

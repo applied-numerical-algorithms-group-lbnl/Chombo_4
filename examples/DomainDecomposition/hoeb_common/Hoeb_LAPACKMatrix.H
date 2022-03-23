@@ -14,6 +14,7 @@
 #include "Chombo_REAL.H"
 #include "Proto_LoHiSide.H"
 #include "Chombo_CH_assert.H"
+#include "Proto.H"
 #include <utility>
 #include <stack>
 #include <cstdlib>

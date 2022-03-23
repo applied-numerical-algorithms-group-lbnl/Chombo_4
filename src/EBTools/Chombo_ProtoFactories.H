@@ -17,8 +17,8 @@
 #include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "Chombo_EBChombo.H"
-#include "Chombo_LevelData.H"
 #include "Chombo_ProtoInterface.H"
+#include "Chombo_EBDataChoreography.H"
 #include "Chombo_NamespaceHeader.H"
 
 /// factory where constructor called is the null constructor
@@ -63,12 +63,13 @@ template <typename DataHolder>
 class GraphConstructorFactory: public DataFactory< DataHolder >
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>  graph_distrib_t;
 
   virtual ~GraphConstructorFactory()
   {
   }
 
-  GraphConstructorFactory(shared_ptr<LevelData<EBGraph> > a_graphs)
+  GraphConstructorFactory(shared_ptr<graph_distrib_t> a_graphs)
   {
     m_graphs = a_graphs;
   }
@@ -96,7 +97,7 @@ public:
 
 private:
   GraphConstructorFactory();
-  shared_ptr<LevelData<EBGraph> > m_graphs;
+  shared_ptr<graph_distrib_t > m_graphs;
 };
 
 
