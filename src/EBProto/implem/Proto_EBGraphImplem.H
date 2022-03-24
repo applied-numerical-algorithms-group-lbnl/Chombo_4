@@ -120,7 +120,7 @@ namespace Proto
     using ProtoSer::linearCharBufSize;
     size_t retval = 0;
     //m_tag
-    retval += sizeof(TAG);
+    retval += sizeof(int);
     // m_region
     retval += linearCharBufSize(m_region);
     // m_validBox
@@ -154,7 +154,7 @@ namespace Proto
   */
   void
   EBGraph::
-  energize(void*  a_buf) const
+  energize(void*  a_buf, bool a_printStuff) const
   {
     using ProtoSer::linearOutToCharBuf;
     using ProtoSer::linearCharBufSize;
@@ -162,10 +162,29 @@ namespace Proto
     size_t charsiz = 0;
     char* charbuf = (char *) a_buf;
     //m_tag
-    TAG* tagbuf = (TAG *) charbuf;
-    *tagbuf = m_tag;
-    charbuf += sizeof(TAG);
-    charsiz += sizeof(TAG);
+    int inttag = 99;
+
+    if(m_tag == HasIrregular)
+    {
+      inttag = 0;
+    }
+    else if(m_tag == HasIrregular)
+    {
+      inttag = 1;
+    }
+    else if(m_tag == AllCovered)
+    {
+      inttag = 2;
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bogus m_tag in EBGraph::energize");
+    }
+    int* intbuf = (int *)(charbuf);
+    *intbuf = inttag;
+    charbuf += sizeof(int);
+    charsiz += sizeof(int);
+
     // m_region
     linearOutToCharBuf(charbuf, m_region);
     charbuf += linearCharBufSize(m_region);
@@ -219,10 +238,28 @@ namespace Proto
     size_t charsiz = 0;
     char* charbuf = (char *) a_buf;
     //m_tag
-    TAG* tagbuf = (TAG *) charbuf;
-    m_tag   = *tagbuf;
-    charbuf += sizeof(TAG);
-    charsiz += sizeof(TAG);
+    int* intbuf = (int *)(charbuf);
+    int inttag = *intbuf;
+    charbuf += sizeof(int);
+    charsiz += sizeof(int);
+
+    if(inttag == 0)
+    {
+      m_tag = HasIrregular;
+    }
+    else if(inttag == 1)
+    {
+      m_tag = AllRegular;
+    }
+    else if(inttag == 2)
+    {
+      m_tag = AllCovered;
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bogus inttag in EBGraph constructor");
+    }
+    
     // m_region
     linearInFromCharBuf(m_region, charbuf);
     charbuf += linearCharBufSize(m_region);
@@ -298,7 +335,7 @@ namespace Proto
             unsigned int        a_numcomps,
             bool a_printStuff) const
   {
-    energize(a_buf);
+    energize(a_buf, a_printStuff);
   }
 
 
