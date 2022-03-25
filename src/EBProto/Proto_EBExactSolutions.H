@@ -132,6 +132,36 @@ public:
 
 };
 
+///class for always returning a constant (for bcs as opposed to being for testing convergence rates)
+template <unsigned int order>
+class UniformSolution: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
+  virtual Real getDerivative(IvDIM    a_power,
+                             RealVect a_loc) const
+    {
+      if (a_power.sum() == 0)
+        return m_val;
+      else
+        return 0.;
+    }
+
+  virtual ~UniformSolution()
+  {
+  }
+
+  UniformSolution(const Real a_val = 0)
+    {
+      m_val = a_val;
+    }
+
+  Real m_val;
+};
 
 ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
 template <unsigned int order>
@@ -1295,4 +1325,89 @@ private:
   }
 };
 
+///  Cos surfaces
+/**
+   SUM_i( PROD_j(A_i*sin(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
+*/
+template <unsigned int order>
+class CosSurf: public BaseExactSolution<order>
+{
+public:
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
+  ///
+  CosSurf(const std::vector<RealVect> a_center,
+                  const std::vector<Real>     a_amp,
+                  const std::vector<RealVect> a_freq,
+                  const Real                  a_R,
+                  const bool                  a_inside)
+    {
+      m_center = a_center;
+      m_amp = a_amp;
+      m_freq = a_freq;
+      CH_assert(a_center.size() == a_amp.size());
+      CH_assert(a_center.size() == a_freq.size());
+    }
+
+  /// Destructor
+  virtual ~CosSurf()
+    {
+    }
+
+  virtual Real
+  getPhiPoint(IvDIM a_point) const
+    {
+      Real retval = 0.;
+      for(int i=0; i!=m_center.size(); i++)
+        {
+          Real factor = m_amp[i];
+          for(int j=0; j!=SpaceDim; j++)
+            {
+              const Real xdiff = a_point[j] - m_center[i][j];
+              factor *= cos(xdiff*m_PI*m_freq[i][j]);
+            }
+          retval += factor;
+        }
+      return retval;
+    }
+
+  virtual Real
+  getDerivative(IvDIM a_partialDerivative,
+                RealVect a_point) const
+    {
+      Real retval = 0.;
+      for(int i=0; i!=m_center.size(); i++)
+        {
+          Real factor = m_amp[i];
+          for(int j=0; j!=SpaceDim; j++)
+            {
+              const Real prefix = pow(m_PI*m_freq[i][j], a_partialDerivative[j]);
+              const Real xdiff = a_point[j] - m_center[i][j];
+              const Real arg = m_PI*m_freq[i][j]*xdiff;
+              if(a_partialDerivative[j]%2 == 0)
+                {
+                  factor *= pow(-1.,a_partialDerivative[j]/2)*prefix*cos(arg);
+                }
+              else
+                {
+                  factor *= pow(-1.,(a_partialDerivative[j]+1)/2)*prefix*sin(arg);
+                }
+            }
+          retval += factor;
+        }
+      return retval;
+    }
+
+private:
+  vector<Real>      m_amp;
+  vector<RealVect>  m_freq;
+  vector<RealVect>  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  CosSurf()
+    {}
+
+};
 #endif

@@ -750,6 +750,8 @@ namespace Proto
             retval += factor;
           }
         retval -= m_R;
+        if (!m_inside)
+          retval *= -1;
         return retval;
       }
 
@@ -762,20 +764,21 @@ namespace Proto
             Real factor = m_amp[i];
             for(int j=0; j!=SpaceDim; j++)
               {
-                Real prefix = 1.;
-                for(int ipre = 0; ipre < a_partialDerivative[j]; ipre++)
-                  {
-                    prefix *= m_PI*m_freq[i][j];
-                  }
-                Real xdiff = a_point[j] - m_center[i][j];
-                Real arg = m_PI*m_freq[i][j]*xdiff;
+                const Real prefix = pow(m_PI*m_freq[i][j], a_partialDerivative[j]);
+                // Real prefix = 1.;
+                // for(int ipre = 0; ipre < a_partialDerivative[j]; ipre++)
+                //   {
+                //     prefix *= m_PI*m_freq[i][j];
+                //   }
+                const Real xdiff = a_point[j] - m_center[i][j];
+                const Real arg = m_PI*m_freq[i][j]*xdiff;
                 if(a_partialDerivative[j]%2 == 0)
                   {
                     factor *= pow(-1.,a_partialDerivative[j]/2)*prefix*cos(arg);
                   }
                 else
                   {
-                    factor *= pow(-1.,(a_partialDerivative[j]-1)/2)*prefix*sin(arg);
+                    factor *= pow(-1.,(a_partialDerivative[j]+1)/2)*prefix*sin(arg);
                   }
               }
             retval += factor;
