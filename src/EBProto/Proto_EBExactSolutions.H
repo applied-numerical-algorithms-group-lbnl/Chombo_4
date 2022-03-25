@@ -1113,7 +1113,7 @@ public:
 #endif      
       else
       {
-        Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
+        //Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
       }
     }
     else if(sum == 2)
@@ -1133,7 +1133,7 @@ public:
       }
       else
       {
-        Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
+        //Chombo4::MayDay::Error("gaussianBlob ran out of cases 2");
       }
     }
     else if(sum == 3)
@@ -1165,7 +1165,7 @@ public:
       }
       else
       {
-        Chombo4::MayDay::Error("gaussianBlob ran out of cases 3");
+        //Chombo4::MayDay::Error("gaussianBlob ran out of cases 3");
         retval = 0;
       }
     }
@@ -1213,13 +1213,13 @@ public:
       }
       else
       {
-        Chombo4::MayDay::Error("gaussianBlob ran out of cases 4");
+        //Chombo4::MayDay::Error("gaussianBlob ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      Chombo4::MayDay::Error("gaussianBlob ran out of deriv cases");
+      //Chombo4::MayDay::Error("gaussianBlob ran out of deriv cases");
       retval = 0;
     }
   

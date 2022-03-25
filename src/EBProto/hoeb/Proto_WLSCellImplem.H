@@ -3596,6 +3596,16 @@ namespace Proto
     Vector<IndMomDIM> volMom = a_neigh.m_volMom; 
     Vector<IndMomDIM> ebfMom = a_neigh.m_ebfMom; 
     RealVect v_faceLoc = m_exactVel->getVelocityAtPoint(a_faceLoc);
+#if DIM==2
+    Real v_faceLoc_mag = pow(pow(v_faceLoc[0],2)+pow(v_faceLoc[1],2),0.5);
+#elif DIM==3
+    Real v_faceLoc_mag = pow(pow(v_faceLoc[0],2)+pow(v_faceLoc[1],2)+pow(v_faceLoc[2],2),0.5);
+#endif
+    v_faceLoc[0] = v_faceLoc[0]/v_faceLoc_mag;
+    v_faceLoc[1] = v_faceLoc[1]/v_faceLoc_mag;
+#if DIM==3
+    v_faceLoc[2] = v_faceLoc[2]/v_faceLoc_mag;
+#endif
     Real dx = m_exactVel->getDx();
 
     int nrows = weightDisVol.size()+weightDisFac.size()+weightDisEB.size();
