@@ -220,7 +220,7 @@ namespace Proto
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       if(a_printStuff)
       {
-        Chombo4::pout() << "in ebhostdata::linearin" << endl;
+        Chombo4::pout() << "entering ebhostdata::linearin" << endl;
       }
       char* charbuf = (char*)a_buf;
       unsigned long* longbuf = (unsigned long*)(charbuf);
@@ -257,9 +257,13 @@ namespace Proto
                            bool a_printStuff = false) const
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "entering ebhostdata::linearOut" << endl;
+      }
       char* charbuf = (char*)a_buf;
       unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
-      unsigned long irrSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      unsigned long irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       unsigned long* longbuf = (unsigned long*)(charbuf);
       *longbuf = regSize;
       longbuf++;
@@ -277,6 +281,10 @@ namespace Proto
       
       m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += irrSize;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "leaving ebhostdata::linearOut" << endl;
+      }
     }
     ///
     static int preAllocatable()
