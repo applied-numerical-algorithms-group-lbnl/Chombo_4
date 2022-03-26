@@ -77,6 +77,10 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   if(a_doExchange)
   {
+    bool printStuff = false;
+    //begin debug
+    printStuff = true;
+    //end debug
     phi.exchange();
   }
   

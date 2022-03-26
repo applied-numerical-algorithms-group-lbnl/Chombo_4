@@ -94,8 +94,11 @@ runNavierStokes()
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
-  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-  
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
+//begin debug  
+//  pout() << "leaving after geometry" << endl;
+//  return 0;
+//end debug    
   
   pout() << "making dictionary" << endl;
   shared_ptr<EBEncyclopedia<2, Real> > 
@@ -181,6 +184,10 @@ runNavierStokes()
                paraSolver, ibc, num_species, diffusion_coeffs);
 
 
+//begin debug  
+  pout() << "leaving after EBINS constructor" << endl;
+  return 0;
+//end debug    
   unsigned int starting_step = 0;
   Real         starting_time = 0;
   string checkpointFile;

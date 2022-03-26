@@ -211,6 +211,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
 
 
   pout() << "creating grid hierarchy" << endl;
+
   GeometryService<2>::generateGrids(a_grids, domain, maxGrid);
   a_vecdom.resize(a_grids.size());
   a_vecdx.resize( a_grids.size());
