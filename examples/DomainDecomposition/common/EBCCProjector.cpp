@@ -12,7 +12,8 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const Box                              & a_domain,   
        const Real                             & a_dx,       
        const IntVect                          & a_nghost,
-       const EBIBC                            & a_ebibc)
+       const EBIBC                            & a_ebibc,
+       bool a_printStuff)
 
 {
   CH_TIME("EBCCProjector::define");
@@ -66,7 +67,8 @@ void
 EBCCProjector::
 project(EBLevelBoxData<CELL, DIM>   & a_velo,
         EBLevelBoxData<CELL, DIM>   & a_gphi,
-        Real a_tol, unsigned int a_maxiter)
+        Real a_tol, unsigned int a_maxiter,
+        bool a_printStuff)
 {
   CH_TIME("EBCCProjector::project");
   auto & rhs     = m_macprojector->m_rhs;
@@ -78,7 +80,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   a_velo.exchange();
   
   // set rhs = kappa*div (vel)
-  kappaDivU(rhs, a_velo);
+  kappaDivU(rhs, a_velo, a_printStuff);
 
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
@@ -276,7 +278,8 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
 void 
 EBCCProjector::
 kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
-          EBLevelBoxData<CELL, DIM> & a_velo)
+          EBLevelBoxData<CELL, DIM> & a_velo,
+          bool a_printStuff)
 {
   bool useStack = true;
   CH_TIME("EBCCProjector::kappaDivU");

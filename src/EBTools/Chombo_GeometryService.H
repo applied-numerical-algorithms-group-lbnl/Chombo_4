@@ -66,6 +66,7 @@ public:
 
 
 
+
   LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
                        const DisjointBoxLayout      &      a_grids);
 
@@ -510,13 +511,16 @@ public:
     LoadBalance(procs, boxes);
     DisjointBoxLayout currDBL(boxes, procs, a_domain);
     a_grids.push_back(currDBL);
+
     //a_grids[0].print();
-    while(currDBL.coarsenable(4))
+    bool coarsenable = (a_maxCoarsen > 0) && currDBL.coarsenable(4);
+    while(coarsenable)
     {
       DisjointBoxLayout coarDBL;
       coarsen(coarDBL, currDBL, 2);
       a_grids.push_back(coarDBL);
       currDBL = coarDBL;
+      coarsenable = (a_maxCoarsen > 0) && currDBL.coarsenable(4);
     }
   }
                 

@@ -23,7 +23,8 @@ public:
               const Box                              & a_domain,
               const Real                             & a_dx,
               const EBIBC                            & a_ebibc,
-              const IntVect                          & a_nghost);
+              const IntVect                          & a_nghost,
+              bool a_printStuff = false);
 
   virtual ~EBAdvection()
   {

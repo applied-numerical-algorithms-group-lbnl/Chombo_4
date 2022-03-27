@@ -179,9 +179,10 @@ runNavierStokes()
     pp.get(diffname.c_str(), thisco);
     diffusion_coeffs[ispec] = thisco;
   }
-  
+
+  bool printStuff = true;
   EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
-               paraSolver, ibc, num_species, diffusion_coeffs);
+               paraSolver, ibc, num_species, diffusion_coeffs, printStuff);
 
 
 //begin debug  

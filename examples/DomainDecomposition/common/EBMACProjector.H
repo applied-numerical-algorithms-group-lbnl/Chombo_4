@@ -28,7 +28,8 @@ public:
                  const Box                              & a_domain,
                  const Real                             & a_dx,
                  const IntVect                          & a_nghost,
-                 const EBIBC                            & a_ebibc)
+                 const EBIBC                            & a_ebibc,
+                 bool a_printStuff = false)
   {
     define(a_brit,          
            a_geoserv,       
@@ -36,7 +37,8 @@ public:
            a_domain,        
            a_dx,            
            a_nghost,
-           a_ebibc);
+           a_ebibc,
+           a_printStuff);
   }
 
   void define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -45,7 +47,8 @@ public:
               const Box                              & a_domain,
               const Real                             & a_dx,
               const IntVect                          & a_nghost,
-              const EBIBC                            & a_ebibc);
+              const EBIBC                            & a_ebibc,
+              bool a_printStuff = false);
   
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**

@@ -26,7 +26,8 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const Box                              & a_domain,
             const Real                             & a_dx,
             const EBIBC                            & a_ebibc,
-            const IntVect                          & a_nghost):
+            const IntVect                          & a_nghost,
+            bool a_printStuff):
 m_ebibc(a_ebibc)
 {
   CH_TIME("EBAdvection::define");

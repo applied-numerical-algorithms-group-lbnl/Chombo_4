@@ -98,9 +98,10 @@ defineFinestLevel(const RealVect               & a_origin,
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
     }
   }
-//  pout() << "exchanging graph data" << endl;
-  m_graphs  ->exchange();
-//  pout() << "done with graph exchange" << endl;
+  pout() << "exchanging graph data" << endl;
+  bool printStuff = true;
+  m_graphs  ->exchange(printStuff);
+  pout() << "done with graph exchange" << endl;
   
   //now fill in the moment information
   for(int ibox = 0; ibox < dit.size(); ibox++)

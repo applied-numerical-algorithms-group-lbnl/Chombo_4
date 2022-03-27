@@ -86,6 +86,7 @@ namespace Proto
         Chombo4::pout() << "entering HostBoxData::linearIn for box "<< a_bx << endl;
       }
       char* charbuf = (char*)a_buf;
+      std::size_t  charsiz = 0;
       Box binter = a_bx & m_box;
       for(auto bit = binter.begin(); bit != binter.end(); ++bit)
       {
@@ -94,12 +95,14 @@ namespace Proto
         {
           data_t& dataval = (*this)(pt, icomp + a_startcomp);
           linearInFromCharBuf<data_t>(dataval , charbuf);
-          charbuf +=  linearCharBufSize<data_t>(dataval);
+          std::size_t datasiz =  linearCharBufSize<data_t>(dataval);
+          charbuf  += datasiz;
+          charsiz  += datasiz;
         }
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving HostBoxData::linearIn for box " << a_bx << endl;
+        Chombo4::pout() << "leaving HostBoxData::linearIn for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
       }
     }
     virtual void linearOut(void*               a_buf,
@@ -109,7 +112,7 @@ namespace Proto
                            bool a_printStuff = false) const
     {
       PR_TIME("hostboxdata::linearout");
-      PR_assert((a_startcomp + a_numcomps-1) < ncomp)
+      PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       using ProtoSer::linearCharBufSize;
       using ProtoSer::linearOutToCharBuf;
       if(a_printStuff)
@@ -117,6 +120,7 @@ namespace Proto
         Chombo4::pout() << "entering HostBoxData::linearOut for box "<< a_bx << endl;
       }
       char* charbuf = (char*)a_buf;
+      std::size_t  charsiz = 0;
       Box binter = a_bx & m_box;
       for(auto bit = binter.begin(); bit != binter.end(); ++bit)
       {
@@ -125,12 +129,14 @@ namespace Proto
         {
           const data_t& dataval = (*this)(pt, icomp);  // 
           linearOutToCharBuf<data_t>(charbuf, dataval);
-          charbuf +=  linearCharBufSize<data_t>(dataval);
+          std::size_t datasiz = linearCharBufSize<data_t>(dataval);
+          charbuf +=  datasiz;
+          charsiz +=  datasiz;
         }
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving HostBoxData::linearOut for box " << a_bx << endl;
+        Chombo4::pout() << "leaving HostBoxData::linearOut for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
       }
     }
     static int preAllocatable()

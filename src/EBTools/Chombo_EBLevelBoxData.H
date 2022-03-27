@@ -172,7 +172,7 @@ public:
 
 
  ///the new, sleeker exchange interface that all the kids are talking about
-  virtual void exchange(bool a_printStuff = false)
+  virtual void exchange(bool a_printStuff = true)
   {
     CH_TIME("EBLevelBoxData::exchange(copier)");
     if(a_printStuff)

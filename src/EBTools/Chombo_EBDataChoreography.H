@@ -530,6 +530,7 @@ namespace CH4_Data_Choreography
                 const Chombo4::DataFactory<fabtype_t>& a_factory)
     {
       CH_TIME("DistributedData constructor");
+      m_procID = CH4_SPMD::procID();
       m_isDefined = true;
       m_grids = a_grids;
       m_ghost = a_ghost;
@@ -828,7 +829,7 @@ namespace CH4_Data_Choreography
 #endif      
     }
 
-
+    int m_procID;
     ///actual data 
     vector<fabtype_t*> m_data;
     IntVect m_ghost;

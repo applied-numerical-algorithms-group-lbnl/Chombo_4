@@ -14,7 +14,8 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const Box                              & a_domain,
        const Real                             & a_dx,
        const IntVect                          & a_nghost,
-       const EBIBC                            & a_ebibc)
+       const EBIBC                            & a_ebibc,
+       bool a_printStuff)
 {
   CH_TIME("EBMACProjector::define");
   m_dx      = a_dx;
