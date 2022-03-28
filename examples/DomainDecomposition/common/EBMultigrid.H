@@ -275,7 +275,8 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              string a_prefix);
+              string a_prefix,
+              bool a_printStuff = false);
 
   ///make coarse from fine 
   void
@@ -342,7 +343,8 @@ private:
 
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
-  void  fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv);
+  void  fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
+                  bool a_printStuff = false);
 
 
   
@@ -447,6 +449,10 @@ public:
               string a_prefix = "",
               bool a_printStuff = false)
   {
+    if(a_printStuff)
+    {
+      pout() << a_prefix << " EBMultigrid constructor: making finest operator" << endl; 
+    }
     m_finest = std::shared_ptr<EBPoissonOp>(
       new EBPoissonOp(a_dictionary, 
                       a_geoserv,
@@ -459,8 +465,14 @@ public:
                       a_ebbcname,   
                       a_domain, 
                       a_nghost,
-                      a_prefix));
+                      a_prefix,
+                      a_printStuff));
 
+    if(a_printStuff)
+    {
+      pout() << a_prefix << " EBMultigrid constructor: making data holders" << endl; 
+    }
+    
     auto graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost  , graphs);
     m_cor.define(a_grids, a_nghost  , graphs);

@@ -181,9 +181,18 @@ defineInternals(EBIBC                a_ibc,
   
   if(!m_eulerCalc)
   {
-    m_helmholtzVelo = shared_ptr<EBMultigrid> 
+    if(a_printStuff)
+    {
+      pout() << "EBINS::defineInternals defining Helmoltz solver for velocity" << std::endl;
+    }
+    
+     m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
                        stenname, helmnamesVelo, bcname, m_domain, m_nghost, string("heat"), a_printStuff));
+  }
+  if(a_printStuff)
+  {
+    pout() << "EBINS::defineInternals defining Helmoltz solver for species" << std::endl;
   }
   m_helmholtzSpec = shared_ptr<EBMultigrid> 
     (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  

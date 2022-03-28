@@ -165,7 +165,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             const string                            & a_ebbcname,
             const Box                               & a_domain,
             const IntVect                           & a_nghost,
-            string a_prefix):  EBMultigridLevel()
+            string a_prefix, bool a_printStuff):  EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
   m_prefix = a_prefix;
@@ -188,11 +188,19 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_nghost     = a_nghost;
   m_dictionary = a_dictionary;
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: defining internal data" << endl;
+  }
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghost, m_graphs);
   m_kappa.define(m_grids, m_nghost, m_graphs);
   m_diagW.define(m_grids, m_nghost, m_graphs);
   
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: registering stencil" << endl;
+  }
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
@@ -200,16 +208,37 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
 
   m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: filling volume fraction holder" << endl;
+  }
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
-  fillKappa(a_geoserv);
+  fillKappa(a_geoserv, a_printStuff);
 
   if(!m_directToBottom)
   {
+    if(a_printStuff)
+    {
+      pout() << "EBPoissonOp constructor: making coarser objects" << endl;
+    }
     defineCoarserObjects(a_geoserv);
   }
   if(!m_hasCoarser || m_directToBottom)
   {
+    if(a_printStuff)
+    {
+      pout() << "EBPoissonOp constructor: defining bottom solvers" << endl;
+    }
     defineBottomSolvers(a_geoserv);
+  }
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: waiting for other procs to catch up" << endl;
+  }
+  CH4_SPMD::barrier();
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: leaving" << endl;
   }
 }
 /***/
@@ -282,7 +311,7 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
-  fillKappa(a_geoserv);
+  fillKappa(a_geoserv, false);
 
   if(!m_directToBottom)
   {
@@ -319,9 +348,14 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
 EBPoissonOp::
-fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
+fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
+          bool a_printStuff)
 {
   CH_TIME("EBPoissonOp::fillkappa");
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa looping through boxes to fill valid data" << endl;
+  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -345,7 +379,16 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
     ideb++;
   }
-  m_kappa.exchange();
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa: calling exchange to fill ghost data" << endl;
+  }
+  m_kappa.exchange(a_printStuff);
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa: waiting for other procs to catch up" << endl;
+  }
+  CH4_SPMD::barrier();
 }
 /****/
 void

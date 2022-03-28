@@ -62,13 +62,15 @@ public:
                        const double                 &      a_dx,
                        const Box                    &      a_domain,
                        const DisjointBoxLayout      &      a_grids,
-                       const int                    &      a_ghost);
+                       const int                    &      a_ghost,
+                       bool a_printStuff = false);
 
 
 
 
   LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
-                       const DisjointBoxLayout      &      a_grids);
+                       const DisjointBoxLayout      &      a_grids,
+                       bool a_printStuff = false);
 
   ///
   /**
@@ -314,7 +316,8 @@ protected:
 
   void
   defineFinestLevel(const RealVect               & a_origin,
-                    const double                 & a_dx );
+                    const double                 & a_dx ,
+                    bool a_printStuff = false);
 
   void
   defineData();
@@ -367,7 +370,7 @@ private:
 
 
   ///calls exchange on everything
-  void exchange();
+  void exchange(bool a_printStuff = false);
 
   ///
   Box                            m_domain;
@@ -474,20 +477,33 @@ public:
                   const double                      &      a_finestDx,
                   const Box                         &      a_finestDomain,
                   const Vector<DisjointBoxLayout>   &      a_grids,
-                  const int                         &      a_ghost)
+                  const int                         &      a_ghost,
+                  bool a_printStuff = false)
   {
     int numLevels = a_grids.size();
     m_levels.resize( numLevels);
     m_domains.resize(numLevels);
-    m_levels[0]  = shared_ptr<LevelGeometryService<order> >(
-      new LevelGeometryService<order>(a_baseIF, a_origin, a_finestDx, a_finestDomain, a_grids[0], a_ghost)
-      );
+    if(a_printStuff)
+    {
+      pout() << "GeometryService constuctor: making finest level " << endl;
+    }
+    m_levels[0]  =
+      shared_ptr<LevelGeometryService<order> >(
+        new LevelGeometryService<order>(a_baseIF, a_origin, a_finestDx,
+                                        a_finestDomain, a_grids[0],
+                                        a_ghost, a_printStuff));
     m_domains[0] = a_finestDomain;
     for(int ilev = 1; ilev < numLevels; ilev++)
     {
+      if(a_printStuff)
+      {
+        pout() << "GeometryService constuctor: making level << ilev " << endl;
+      }
       m_levels[ilev]  = shared_ptr<LevelGeometryService<order> >(
-        new LevelGeometryService<order>(*m_levels[ilev-1], a_grids[ilev])
-        );
+        new LevelGeometryService<order>(*m_levels[ilev-1],
+                                        a_grids[ilev],
+                                        a_printStuff));
+      
       m_domains[ilev] = coarsen(m_domains[ilev-1], 2);
     }
   }

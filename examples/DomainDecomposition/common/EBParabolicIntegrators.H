@@ -83,7 +83,7 @@ class EBBackwardEuler: public BaseEBParabolic
 {
 public:
   ///
-  EBBackwardEuler(shared_ptr<EBMultigrid>              a_diffusionSolver,
+  EBBackwardEuler(shared_ptr<EBMultigrid>            a_diffusionSolver,
                   shared_ptr<GeometryService<2> >    a_geoserv,
                   const DisjointBoxLayout          & a_grids,
                   const Box                        & a_domain,
@@ -96,6 +96,10 @@ public:
                      a_nghost,
                      a_printStuff)
   {
+    if(a_printStuff)
+    {
+      pout() << "EBBackwardEuler constructor: building rhs" << endl;
+    }
     m_rhs.define(m_grids, m_nghost, m_graphs);
   }         
 

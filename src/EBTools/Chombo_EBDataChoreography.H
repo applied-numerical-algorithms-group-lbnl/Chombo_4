@@ -639,11 +639,12 @@ namespace CH4_Data_Choreography
           char* bufloc = charbuf;
           if(a_printStuff)
           {
-            Chombo4::pout() << "doremote copies send: vecPat.size() = " << vecPat.size() << endl;
+            Chombo4::pout() << "DistributedData::doRemoteCopies: vecPat.size() = " << vecPat.size() << endl;
           }
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
             const auto& motion  = pattern[dstProc][ivec];
+            bool printdeb = a_printStuff;
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
             int icomp = 0;
             int ncomp = localfab.nComp();
@@ -651,16 +652,19 @@ namespace CH4_Data_Choreography
             CH_assert(charsize == vecbuf[ivec]);
             checkbufsize += charsize;
           
-            if(a_printStuff)
+            if(printdeb)
             {
-              Chombo4::pout() << "doremotecopies send ivec= "    <<  ivec
-                              << ", region = "   << motion.m_src.m_region << endl;
-                           
+              Chombo4::pout() << "DistributedData::doRemoteCopies: send ivec= "    <<  ivec
+                              << ", region = "   << motion.m_src.m_region 
+                              << ", charsize = "   << charsize << endl;
             }
-            bool fabprint = (a_printStuff && (ivec == 0));
 
-            localfab.linearOut(bufloc, motion.m_src.m_region, icomp, ncomp, fabprint);
+            localfab.linearOut(bufloc, motion.m_src.m_region, icomp, ncomp, printdeb);
             bufloc += charsize;  
+            if(printdeb)
+            {
+              Chombo4::pout() << "DistributedData::doRemoteCopies:made it out of linearOut for ivec = " << ivec << endl;
+            }
           }
           CH_assert(checkbufsize == totbufsize);
 
@@ -676,7 +680,7 @@ namespace CH4_Data_Choreography
         auto      & vecinter =  a_metacomm.m_toMe;
         if(a_printStuff)
         {
-          Chombo4::pout() << "doremote copies recv: vecinter.size() = " << vecinter.size() << endl;
+          Chombo4::pout() << "DistributedData::doRemoteCopies: recv: vecinter.size() = " << vecinter.size() << endl;
         }
         for(int  iinter = 0; iinter < vecinter.size(); iinter++)
         {
@@ -704,27 +708,29 @@ namespace CH4_Data_Choreography
 
           if(a_printStuff)
           {
-            Chombo4::pout() << "doremote copies recv: vecPat.size() = " << vecPat.size() << endl;
+            Chombo4::pout() << "DistributedData::doRemoteCopies: recv: vecPat.size() = " << vecPat.size() << endl;
           }
           for(int ivec = 0; ivec < vecPat.size(); ivec++)
           {
 
             const auto& motion  = pattern[srcProc][ivec];
+            bool printdeb = a_printStuff;
+
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
-           if(a_printStuff)
+            if(printdeb)
             {
-              Chombo4::pout() << "doremotecopies recv ivec= "    <<  ivec
+              Chombo4::pout() << "DistributedData::doRemoteCopies: recv ivec= "    <<  ivec
                               << ", region = "   << motion.m_dst.m_region << endl;
             }
 
             int icomp = 0;
             int ncomp = localfab.nComp();
-            localfab.linearIn(bufloc, motion.m_dst.m_region, icomp, ncomp, a_printStuff);
-            if(a_printStuff)
+            localfab.linearIn(bufloc, motion.m_dst.m_region, icomp, ncomp, printdeb);
+            if(printdeb)
             {
-              Chombo4::pout() << "made it out of linearin for ivec = " << ivec << endl;
-              Chombo4::pout() << "vecbuf.size()=" << vecbuf.size() << endl;
+              Chombo4::pout() << "DistributedData::doRemoteCopies:made it out of linearin for ivec = " << ivec << endl;
+              Chombo4::pout() << "DistributedData::doRemoteCopies:vecbuf.size()=" << vecbuf.size() << endl;
             }
             
             bufloc += vecbuf[ivec];
@@ -735,7 +741,7 @@ namespace CH4_Data_Choreography
 
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving  DistributedData::doRemoteCopies" << std::endl;
+        Chombo4::pout() << "DistributedData::doRemoteCopies leaving  " << std::endl;
       }
 
     }
