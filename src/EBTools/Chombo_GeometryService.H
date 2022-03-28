@@ -529,14 +529,12 @@ public:
     a_grids.push_back(currDBL);
 
     //a_grids[0].print();
-    bool coarsenable = (a_maxCoarsen > 0) && currDBL.coarsenable(4);
-    while(coarsenable)
+    while(currDBL.coarsenable(4))
     {
       DisjointBoxLayout coarDBL;
       coarsen(coarDBL, currDBL, 2);
       a_grids.push_back(coarDBL);
       currDBL = coarDBL;
-      coarsenable = (a_maxCoarsen > 0) && currDBL.coarsenable(4);
     }
   }
                 

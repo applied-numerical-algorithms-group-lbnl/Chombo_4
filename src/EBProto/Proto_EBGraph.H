@@ -1211,6 +1211,7 @@ namespace Proto
     ///
     inline
     virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
                            unsigned int           a_numcomps,
@@ -1219,6 +1220,7 @@ namespace Proto
     ///
     inline
     virtual void linearOut(void*               a_buf,
+                           size_t                 a_expectedSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,

@@ -316,6 +316,7 @@ namespace Proto
   void  
   EBGraph::
   linearIn(void*                  a_buf,
+           size_t                 a_expectedSize,
            const Box       &      a_bx,
            unsigned int           a_startcomp,
            unsigned int           a_numcomps,
@@ -330,6 +331,7 @@ namespace Proto
   void 
   EBGraph::
   linearOut(void*               a_buf,
+            size_t              a_expectedSize,
             const Box       &   a_bx,
             unsigned int        a_startcomp,
             unsigned int        a_numcomps,

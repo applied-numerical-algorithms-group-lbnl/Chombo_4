@@ -321,6 +321,7 @@ namespace Proto
 
    ///creates this object from the aforementioned stream of bytes
     HostIrregData(void *a_buf,
+                  size_t a_expectedCharSize,
                   bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::char_constructor");
@@ -382,6 +383,7 @@ namespace Proto
     ///
     inline
     void linearOut(void*               a_buf,
+                   size_t a_expectedCharSize,
                    const Box       &   a_bx,
                    unsigned int        a_startcomp,
                    unsigned int        a_numcomps,
@@ -394,6 +396,7 @@ namespace Proto
     ///
     inline
     void  linearIn(void*                  a_buf,
+                   size_t a_expectedCharSize, 
                    const Box       &      a_bx,
                    unsigned int           a_startcomp,
                    unsigned int           a_numcomps,

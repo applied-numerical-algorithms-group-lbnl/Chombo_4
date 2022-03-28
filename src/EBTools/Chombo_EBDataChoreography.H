@@ -659,7 +659,8 @@ namespace CH4_Data_Choreography
                               << ", charsize = "   << charsize << endl;
             }
 
-            localfab.linearOut(bufloc, motion.m_src.m_region, icomp, ncomp, printdeb);
+            size_t expectedSize = charsize;
+            localfab.linearOut(bufloc, expectedSize, motion.m_src.m_region, icomp, ncomp, printdeb);
             bufloc += charsize;  
             if(printdeb)
             {
@@ -726,7 +727,9 @@ namespace CH4_Data_Choreography
 
             int icomp = 0;
             int ncomp = localfab.nComp();
-            localfab.linearIn(bufloc, motion.m_dst.m_region, icomp, ncomp, printdeb);
+
+            size_t expectedCharSize = vecbuf[ivec];
+            localfab.linearIn(bufloc, expectedCharSize, motion.m_dst.m_region, icomp, ncomp, printdeb);
             if(printdeb)
             {
               Chombo4::pout() << "DistributedData::doRemoteCopies:made it out of linearin for ivec = " << ivec << endl;
@@ -767,8 +770,8 @@ namespace CH4_Data_Choreography
         unsigned long thisbufsize = srcfab.charsize(motion.m_src.m_region, icomp, ncomp);
         char* buffer = (char*)(malloc(thisbufsize));
 
-        srcfab.linearOut(buffer, region,  icomp, ncomp);
-        dstfab.linearIn( buffer, region,  icomp, ncomp);
+        srcfab.linearOut(buffer, thisbufsize, region,  icomp, ncomp);
+        dstfab.linearIn( buffer, thisbufsize, region,  icomp, ncomp);
 
         free(buffer);
       }

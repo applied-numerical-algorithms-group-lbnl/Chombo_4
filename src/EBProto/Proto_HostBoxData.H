@@ -71,6 +71,7 @@ namespace Proto
     }
 
     virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedCharSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
                            unsigned int           a_numcomps,
@@ -102,10 +103,16 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving HostBoxData::linearIn for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
+        Chombo4::pout() << "HostBoxData::linearIn leaving for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostBoxData::linearIn: WARNING expected charsiz = "
+                          << a_expectedCharSize << endl;
+        }
       }
     }
     virtual void linearOut(void*               a_buf,
+                           size_t              a_expectedCharSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,
@@ -117,7 +124,7 @@ namespace Proto
       using ProtoSer::linearOutToCharBuf;
       if(a_printStuff)
       {
-        Chombo4::pout() << "entering HostBoxData::linearOut for box "<< a_bx << endl;
+        Chombo4::pout() << "HostBoxData::linearOut for box "<< a_bx << endl;
       }
       char* charbuf = (char*)a_buf;
       std::size_t  charsiz = 0;
@@ -136,7 +143,12 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving HostBoxData::linearOut for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
+        Chombo4::pout() << "HostBoxData::linearOut for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostBoxData::linearOut: WARNING expected charsiz ="
+                          << a_expectedCharSize << endl;
+        }
       }
     }
     static int preAllocatable()

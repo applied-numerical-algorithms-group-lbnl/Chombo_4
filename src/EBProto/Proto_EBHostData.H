@@ -212,6 +212,7 @@ namespace Proto
       
     }
     virtual void  linearIn(void*                  a_buf,
+                           const size_t a_expectedCharSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
                            unsigned int           a_numcomps,
@@ -233,16 +234,25 @@ namespace Proto
       {
         Chombo4::pout() << "ebhostdata::linearin: regSize = " << regSize << endl;
         Chombo4::pout() << "ebhostdata::linearin: irrSize = " << irrSize << endl;
+        size_t totSize = regSize + irrSize;
+        Chombo4::pout() << "ebhostdata::linearin: totSize = " << totSize << endl;
+        if(totSize != a_expectedCharSize)
+        {
+          Chombo4::pout() << "ebhostdata::linearin: WARNING: expectedCharSize = " << a_expectedCharSize << endl;
+        }
       }
       
+      size_t expectedCharSize = regSize; 
       charbuf = (char*) longbuf;
-      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      m_regData.linearIn(charbuf,   regSize, a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += regSize;
       if(a_printStuff)
       {
         Chombo4::pout() << "going into irregdata linearin" << endl;
       }
-      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+
+      expectedCharSize = irrSize; 
+      m_irrData.linearIn(charbuf, expectedCharSize,  a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += irrSize;
       if(a_printStuff)
       {
@@ -251,6 +261,7 @@ namespace Proto
 
     }
     virtual void linearOut(void*               a_buf,
+                           const size_t a_expectedCharSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,
@@ -264,6 +275,19 @@ namespace Proto
       char* charbuf = (char*)a_buf;
       unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       unsigned long irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "ebhostdata::linearOut: regSize = " << regSize << endl;
+        Chombo4::pout() << "ebhostdata::linearOut: irrSize = " << irrSize << endl;
+        size_t totSize = regSize + irrSize;
+        Chombo4::pout() << "ebhostdata::linearOut: totSize = " << totSize << endl;
+        if(totSize != a_expectedCharSize)
+        {
+          Chombo4::pout() << "ebhostdata::linearOut: WARNING: expectedCharSize = " << a_expectedCharSize << endl;
+        }
+      }
+     
       unsigned long* longbuf = (unsigned long*)(charbuf);
       *longbuf = regSize;
       longbuf++;
@@ -276,10 +300,12 @@ namespace Proto
         Chombo4::pout() << "ebhostdata::linearOut: irrSize = " << irrSize << endl;
       }
       
-      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t expectedCharSize = regSize; 
+      m_regData.linearOut(charbuf,  expectedCharSize, a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += regSize;
       
-      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      expectedCharSize = irrSize; 
+      m_irrData.linearOut(charbuf, expectedCharSize,  a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += irrSize;
       if(a_printStuff)
       {
