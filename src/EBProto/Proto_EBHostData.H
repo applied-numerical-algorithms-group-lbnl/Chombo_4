@@ -221,7 +221,7 @@ namespace Proto
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       if(a_printStuff)
       {
-        Chombo4::pout() << "EBHostData::linearIn: entering" << endl;
+        Chombo4::pout() << "EBHostData::linearIn: entering for box "<< a_bx << endl;
       }
       size_t charsiz = 0;
       char*  charbuf = (char*)a_buf;
@@ -283,7 +283,7 @@ namespace Proto
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       if(a_printStuff)
       {
-        Chombo4::pout() << "EBHostData::linearOut:entering " << endl;
+        Chombo4::pout() << "EBHostData::linearOut:entering for box " << a_bx << endl;
       }
       char*  charbuf = (char*)a_buf;
       size_t charsiz = 0;
@@ -295,6 +295,7 @@ namespace Proto
         size_t totSize = regSize + irrSize + 2*sizeof(unsigned long);
         Chombo4::pout() << "EBHostData::linearOut: regSize = " << regSize << endl;
         Chombo4::pout() << "EBHostData::linearOut: irrSize = " << irrSize << endl;
+        Chombo4::pout() << "EBHostData::linearOut: totSize = " << totSize << endl;
         if(totSize != a_expectedCharSize)
         {
           Chombo4::pout() << "EBHostData::linearOut: WARNING: "
@@ -303,13 +304,15 @@ namespace Proto
         }
       }
      
-      unsigned long* longbuf = (unsigned long*)(charbuf);
+      unsigned long* longbuf = (unsigned long*)(a_buf);
       *longbuf = regSize;
       longbuf++;
       *longbuf = irrSize;
       longbuf++;
-      charbuf = (char*) longbuf;
-      charsiz += 2*sizeof(unsigned long long);
+      
+      char* charbuf = a_buf;
+      charbuf += 2*sizeof(unsigned long);
+      charsiz += 2*sizeof(unsigned long);
 
       
       size_t expectedCharSize = regSize; 
