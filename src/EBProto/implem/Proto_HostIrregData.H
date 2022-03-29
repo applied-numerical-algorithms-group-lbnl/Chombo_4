@@ -268,7 +268,7 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "hostirregdata::charsize for box " << a_bx << " returning " << retval << endl;
+        Chombo4::pout() << "HostIrregData::charsize for box " << a_bx << " returning " << retval << endl;
       }
       return retval;
     }
@@ -276,11 +276,16 @@ namespace Proto
     /// recreates this object into a stream of bytes
     inline
     void energize(void*  a_buf,
+                  size_t a_expectedCharSize,
                   bool   a_printStuff = false) const
     {
       PR_TIME("HostIrregData::energize");
       using ProtoSer::linearCharBufSize;
       using ProtoSer::linearOutToCharBuf;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: entering" << endl;
+      }
       size_t charsiz = 0;
       char*  charbuf = (char *) a_buf;
       //input box
@@ -317,6 +322,16 @@ namespace Proto
           charbuf += linearCharBufSize(data(pt, icomp));
         }
       }
+      if(a_printStuff)
+      {
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostIrregData::energize: WARNING: "
+                          << "expected char size = " << a_expectedCharSize
+                          << ", actual char size = " << charsiz << endl;
+        }
+        Chombo4::pout() << "HostIrregData::energize: leaving" << endl;
+      }
     }
 
    ///creates this object from the aforementioned stream of bytes
@@ -327,7 +342,7 @@ namespace Proto
       PR_TIME("HostIrregData::char_constructor");
       if(a_printStuff)
       {
-        Chombo4::pout() << "entering hostirregdata buffer constructor"   << endl;
+        Chombo4::pout() << "HostIrregData buffer constructor: entering"   << endl;
       }
       using ProtoSer::linearInFromCharBuf;
       using ProtoSer::linearCharBufSize;
@@ -375,7 +390,13 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving hostirregdata buffer constructor charsiz=" << charsiz   << endl;
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostIrregData buffer constructor: WARNING:"
+                          << "actual char size = " << charsiz
+                          << ", expected  size = " << a_expectedCharSize << endl;
+        }
+        Chombo4::pout() << " HostIrregData buffer constructor leaving " << endl;
       }
 
     }
@@ -390,7 +411,7 @@ namespace Proto
                    bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::linearOut");
-      energize(a_buf, a_printStuff);
+      energize(a_buf, a_expectedCharSize, a_printStuff);
     }
     
     ///
@@ -404,7 +425,7 @@ namespace Proto
     {
       PR_TIME("HostIrregData::linearIn");
       
-      HostIrregData<cent, data_t, ncomp> src(a_buf, a_printStuff);
+      HostIrregData<cent, data_t, ncomp> src(a_buf, a_expectedCharSize, a_printStuff);
       copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps, a_printStuff);
       
     }
