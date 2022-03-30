@@ -615,12 +615,12 @@ namespace CH4_Data_Choreography
       }
       auto comm = CH4_SPMD::Chombo_MPI::comm;
 
-      {
+      {//begin outgoing scope
         const auto& pattern  =  a_pattern.m_fromPattern;
         auto      & vecinter =  a_metacomm.m_fromMe;
         if(a_printStuff)
         {
-          Chombo4::pout() << "doremote copies send: vecinter.size() = " << vecinter.size() << endl;
+          Chombo4::pout() << "doremote copies send: number of proc interactions (vecinter.size()) = " << vecinter.size() << endl;
         }
         for(int  iinter = 0; iinter < vecinter.size(); iinter++)
         {
@@ -632,17 +632,22 @@ namespace CH4_Data_Choreography
           auto      &  request     =  vecinter[iinter]->m_dataRequest;
           CH_assert(srcProc == CH4_SPMD::procID());
         
-          const auto& vecPat = pattern[dstProc];
+          const auto& vecBoxInteraction = pattern[dstProc];
           unsigned long checkbufsize = 0;
           //write data going from one proc to another into one big buffer
           //with some checking along the way
           char* bufloc = charbuf;
           if(a_printStuff)
           {
-            Chombo4::pout() << "DistributedData::doRemoteCopies: vecPat.size() = " << vecPat.size() << endl;
+            Chombo4::pout() << "DistributedData::doRemoteCopies: send: vecBoxInteraction.size() = " << vecBoxInteraction.size() << endl;
+            if(vecbuf.size() != vecBoxInteraction.size())
+            {
+              Chombo4::pout() << "DistributedData::doRemoteCopies: send: WARNING why is the buffer a different size than the box interaction vector??? vecbuf.size = " << vecbuf.size() << endl;
+            }
           }
-          for(int ivec = 0; ivec < vecPat.size(); ivec++)
+          for(int ivec = 0; ivec < vecBoxInteraction.size(); ivec++)
           {
+            //this is a box_interaction_t
             const auto& motion  = pattern[dstProc][ivec];
             bool printdeb = a_printStuff;
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
@@ -654,8 +659,9 @@ namespace CH4_Data_Choreography
           
             if(printdeb)
             {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: send ivec= "    <<  ivec
+              Chombo4::pout() << "DistributedData::doRemoteCopies: send:    ivec= "    <<  ivec
                               << ", region = "   << motion.m_src.m_region 
+                              << ", dstProc = "   << motion.m_dst.m_procID
                               << ", charsize = "   << charsize << endl;
             }
 
@@ -664,7 +670,7 @@ namespace CH4_Data_Choreography
             bufloc += charsize;  
             if(printdeb)
             {
-              Chombo4::pout() << "DistributedData::doRemoteCopies:made it out of linearOut for ivec = " << ivec << endl;
+              Chombo4::pout() << "DistributedData::doRemoteCopies: send: made it out of linearOut for ivec = " << ivec << endl;
             }
           }
           CH_assert(checkbufsize == totbufsize);
@@ -673,15 +679,14 @@ namespace CH4_Data_Choreography
           MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &request);
 
         } //loop through interactions
-      } //scoping
+      } //end outgoing scope
 
-      //now deal with incoming
-      {
+      {//begin incoming scope
         const auto& pattern  =  a_pattern.m_toPattern;
         auto      & vecinter =  a_metacomm.m_toMe;
         if(a_printStuff)
         {
-          Chombo4::pout() << "DistributedData::doRemoteCopies: recv: vecinter.size() = " << vecinter.size() << endl;
+          Chombo4::pout() << "DistributedData::doRemoteCopies: receive: number of proc interactions (vecinter.size()) = " << vecinter.size() << endl;
         }
         for(int  iinter = 0; iinter < vecinter.size(); iinter++)
         {
@@ -701,46 +706,53 @@ namespace CH4_Data_Choreography
           MPI_Wait(&request, &status);
             
           //now dole them out to each data member
-          const auto& vecPat = pattern[srcProc];
+          //this is the vector of box_interaction_t associated with the 
+          const auto& vecBoxInteraction = pattern[srcProc];
           //write data going from one proc to another into one big buffer
           //with some checking along the way
           char* bufloc = charbuf;
           
-
           if(a_printStuff)
           {
-            Chombo4::pout() << "DistributedData::doRemoteCopies: recv: vecPat.size() = " << vecPat.size() << endl;
+            Chombo4::pout() << "DistributedData::doRemoteCopies: receive: vecBoxInteraction.size() = " << vecBoxInteraction.size() << endl;
+            if(vecbuf.size() != vecBoxInteraction.size())
+            {
+              Chombo4::pout() << "DistributedData::doRemoteCopies: receive: WARNING why is the buffer a different size than the box interaction vector??? vecbuf.size = " << vecbuf.size() << endl;
+            }
           }
-          for(int ivec = 0; ivec < vecPat.size(); ivec++)
+          for(int ivec = 0; ivec < vecBoxInteraction.size(); ivec++)
           {
 
+            //this is a box_interaction_t
             const auto& motion  = pattern[srcProc][ivec];
+            
             bool printdeb = a_printStuff;
 
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
-            if(printdeb)
-            {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: recv ivec= "    <<  ivec
-                              << ", region = "   << motion.m_dst.m_region << endl;
-            }
 
             int icomp = 0;
             int ncomp = localfab.nComp();
 
             size_t expectedCharSize = vecbuf[ivec];
+            if(printdeb)
+            {
+              Chombo4::pout() << "DistributedData::doRemoteCopies::receive ivec= "    <<  ivec
+                              << ", region = "   << motion.m_dst.m_region
+                              << ", srcProc = "   << motion.m_src.m_procID
+                              << ", char_size = " << expectedCharSize << endl;
+            }
             localfab.linearIn(bufloc, expectedCharSize, motion.m_dst.m_region, icomp, ncomp, printdeb);
             if(printdeb)
             {
-              Chombo4::pout() << "DistributedData::doRemoteCopies:made it out of linearin for ivec = " << ivec << endl;
-              Chombo4::pout() << "DistributedData::doRemoteCopies:vecbuf.size()=" << vecbuf.size() << endl;
+              Chombo4::pout() << "DistributedData::doRemoteCopies: receive made it out of linearin for ivec = " << ivec << endl;
             }
             
             bufloc += vecbuf[ivec];
           } //end loop over sub buffers
               
         } //end loop over to_me processors
-      } //scoping
+      } //end incoming scope
 
       if(a_printStuff)
       {

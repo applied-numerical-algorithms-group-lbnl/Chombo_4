@@ -237,7 +237,9 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
                                                     a_whichGeom);
 
   pout() << "creating geometry service" << endl;
-  bool printStuff = false; //true to get a bunch of logging information
+  //true to get a bunch of logging information.
+  //false to get it to shut up.
+  bool printStuff = true; 
   a_geoserv  = shared_ptr<GeometryService<2> >
     (new GeometryService<2>(impfunc, origin,
                             a_dx, domain, a_grids,

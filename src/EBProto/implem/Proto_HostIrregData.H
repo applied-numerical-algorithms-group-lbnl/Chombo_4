@@ -396,7 +396,7 @@ namespace Proto
                           << "actual char size = " << charsiz
                           << ", expected  size = " << a_expectedCharSize << endl;
         }
-        Chombo4::pout() << " HostIrregData buffer constructor leaving " << endl;
+        Chombo4::pout() << "HostIrregData buffer constructor leaving " << endl;
       }
 
     }

@@ -1195,10 +1195,14 @@ namespace Proto
     }
 
     //for serialization --defines this object from a byte stream
-    inline EBGraph(void * a_buf, bool a_printStuff = false);
+    inline EBGraph(void * a_buf,
+                   size_t a_expectedSize,
+                   bool a_printStuff = false);
 
     //for serialization --puts this object into a byte stream
-    inline void energize(void *a_buf, bool a_printStuff = false) const;
+    inline void energize(void *a_buf,
+                         size_t a_expected_size,
+                         bool a_printStuff = false) const;
     
     ///Chombo leveldata serialization routines
     //this one defines the size of the aformentioned byte stream

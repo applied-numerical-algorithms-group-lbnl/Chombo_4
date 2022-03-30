@@ -285,8 +285,6 @@ namespace Proto
       {
         Chombo4::pout() << "EBHostData::linearOut:entering for box " << a_bx << endl;
       }
-      char*  charbuf = (char*)a_buf;
-      size_t charsiz = 0;
       unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       unsigned long irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
 
@@ -310,7 +308,8 @@ namespace Proto
       *longbuf = irrSize;
       longbuf++;
       
-      char* charbuf = a_buf;
+      char*  charbuf = (char*)(a_buf);
+      size_t charsiz = 0;
       charbuf += 2*sizeof(unsigned long);
       charsiz += 2*sizeof(unsigned long);
 
