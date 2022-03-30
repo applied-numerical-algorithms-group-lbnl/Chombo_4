@@ -158,14 +158,18 @@ namespace Proto
       unsigned long* longbuf = (unsigned long *)(charbuf);
 
       unsigned long xSize = *longbuf;    longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
+      
       unsigned long ySize = *longbuf;    longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
 #if DIM==3      
       unsigned long zSize = *longbuf;    longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
 #endif      
-      charbuf = (char*)(longbuf);
+
       
       m_xflux->linearIn(charbuf,   xSize, a_bx, a_startcomp, a_numcomps);
       charbuf += xSize;
@@ -176,6 +180,7 @@ namespace Proto
       charsiz += ySize;
 #if DIM==3      
       m_zflux->linearIn(charbuf,   zSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
       charsiz += zSize;
 #endif
       if(charsiz != a_expectedCharSize)
@@ -205,13 +210,16 @@ namespace Proto
       
       unsigned long* longbuf = (unsigned long*)(charbuf);
       *longbuf = xSize;      longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
       
       *longbuf = ySize;      longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
       
 #if DIM==3      
       *longbuf = zSize;      longbuf++;
+      charbuf += sizeof(unsigned long);
       charsiz += sizeof(unsigned long);
 #endif
         
