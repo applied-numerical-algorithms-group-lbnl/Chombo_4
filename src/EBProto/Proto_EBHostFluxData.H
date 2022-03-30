@@ -136,7 +136,7 @@ namespace Proto
                                  unsigned int a_numcomps,
                                  bool a_printStuff = false) const
     {
-      size_t sumsize = 3*sizeof(unsigned long long);
+      size_t sumsize = 3*sizeof(unsigned long);
       sumsize += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       sumsize += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 #if DIM==3      
