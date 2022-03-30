@@ -151,6 +151,11 @@ public:
         return 0.;
     }
 
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      return m_val;
+    }
+
   virtual ~UniformSolution()
   {
   }
@@ -1327,7 +1332,7 @@ private:
 
 ///  Cos surfaces
 /**
-   SUM_i( PROD_j(A_i*sin(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
+   SUM_i( PROD_j(A_i*cos(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
 */
 template <unsigned int order>
 class CosSurf: public BaseExactSolution<order>
@@ -1340,9 +1345,7 @@ public:
   ///
   CosSurf(const std::vector<RealVect> a_center,
                   const std::vector<Real>     a_amp,
-                  const std::vector<RealVect> a_freq,
-                  const Real                  a_R,
-                  const bool                  a_inside)
+                  const std::vector<RealVect> a_freq)
     {
       m_center = a_center;
       m_amp = a_amp;
