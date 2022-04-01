@@ -180,16 +180,12 @@ defineFinestLevel(const RealVect               & a_origin,
       }
     }
   }
-  if(a_printStuff)
-  {
-    pout() << "LevelGeometryService::defineFinestLevel: exchanging graphs" << endl;
-  }
-  m_graphs  ->exchange(a_printStuff);       
+
   if(a_printStuff)
   {
     pout() << "LevelGeometryService::defineFinestLevel: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
   }
-  CH4_SPMD::barrier();
   
   if(a_printStuff)
   {
@@ -211,18 +207,51 @@ exchange(bool a_printStuff)
   PR_TIME("LevelGeometryService::exchange");
   if(a_printStuff)
   {
-    pout() << "LevelGeometryService::exchange: exchanging moment data" << endl;
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging volume moment data" << endl;
   }
+
   m_voludata->exchange();       
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging cut face moment data" << endl;
+  }
+
   m_ebfadata->exchange();       
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging x   face moment data" << endl;
+  }
   m_xfacdata->exchange();       
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging y   face moment data" << endl;
+  }
   m_yfacdata->exchange();       
 #if DIM==3
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging z   face moment data" << endl;
+  }
   m_zfacdata->exchange();
 #endif
   if(a_printStuff)
   {
-    pout() << "LevelGeometryService::exchange: exchanging normal data" << endl;
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange exchanging normal data" << endl;
   }
   for(int idir = 0; idir < DIM; idir++)
   {

@@ -681,6 +681,12 @@ namespace CH4_Data_Choreography
         } //loop through interactions
       } //end outgoing scope
 
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::doRemoteCopies: waiting for all procs to finish linear out" << endl;
+        CH4_SPMD::barrier();
+      }
+      
       {//begin incoming scope
         const auto& pattern  =  a_pattern.m_toPattern;
         auto      & vecinter =  a_metacomm.m_toMe;
@@ -740,7 +746,7 @@ namespace CH4_Data_Choreography
               Chombo4::pout() << "DistributedData::doRemoteCopies::receive ivec= "    <<  ivec
                               << ", region = "   << motion.m_dst.m_region
                               << ", srcProc = "   << motion.m_src.m_procID
-                              << ", char_size = " << expectedCharSize << endl;
+                              << ", char_size   = " << expectedCharSize << endl;
             }
             localfab.linearIn(bufloc, expectedCharSize, motion.m_dst.m_region, icomp, ncomp, printdeb);
             if(printdeb)

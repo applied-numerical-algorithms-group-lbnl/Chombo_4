@@ -301,6 +301,10 @@ namespace Proto
       charbuf += sizeof(int);
       auto& indicies = *m_indexVec;
 
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: vecsize = "<< vecsize << endl;
+      }
       //output the indicies
       for(int ipt = 0; ipt < indicies.size(); ipt++)
       {
@@ -309,6 +313,10 @@ namespace Proto
         charbuf += linearCharBufSize(indicies[ipt]);
       }
       
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: done with index output "<< vecsize << endl;
+      }
       const auto& data     = *this;
       //now output the actual data
       for(int icomp = 0; icomp < ncomp; icomp++)
@@ -317,9 +325,10 @@ namespace Proto
         {
           auto pt = indicies[ipt];
           const auto & dataval = data(pt, icomp);
+          size_t ptsize = linearCharBufSize(data(pt, icomp));
           linearOutToCharBuf(charbuf, dataval);
-          charsiz += linearCharBufSize(data(pt, icomp));
-          charbuf += linearCharBufSize(data(pt, icomp));
+          charsiz += ptsize;
+          charbuf += ptsize;
         }
       }
       if(a_printStuff)

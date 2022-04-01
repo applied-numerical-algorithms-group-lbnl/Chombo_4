@@ -177,15 +177,35 @@ public:
     CH_TIME("EBLevelBoxData::exchange(copier)");
     if(a_printStuff)
     {
-      Chombo4::pout() << "entering EBLevelBoxData::exchange" << endl;
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: defining host data" << endl;
     }
 
     host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: copying to host" << endl;
+    }
     copyToHost(hostdata, *this);
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: doing host data exchange" << endl;
+    }
     hostdata.exchange(a_printStuff);
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: copying to device" << endl;
+    }
     copyToDevice(*this, hostdata);
 
     if(a_printStuff)
