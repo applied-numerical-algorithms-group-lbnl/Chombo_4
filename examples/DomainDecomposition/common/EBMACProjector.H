@@ -92,7 +92,8 @@ private:
   applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                               const DataIndex     & a_dit);
   
-  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);
+  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
+                       bool a_printStuff = false);
   void registerStencils();
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;

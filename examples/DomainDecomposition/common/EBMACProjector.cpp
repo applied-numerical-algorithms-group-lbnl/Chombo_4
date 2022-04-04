@@ -18,6 +18,10 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        bool a_printStuff)
 {
   CH_TIME("EBMACProjector::define");
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::define begin" << endl;
+  }
   m_dx      = a_dx;
   m_ebibc   = a_ebibc;
   m_grids   = a_grids;
@@ -28,15 +32,30 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_brit    = a_brit;
   m_graphs  = a_geoserv->getGraphs(m_domain);
 
-  defineInternals(a_geoserv);
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::define going into defineInternals" << endl;
+  }
+
+  defineInternals(a_geoserv, a_printStuff);
+
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::define end" << endl;
+  }
 }
 ///
 void 
 EBMACProjector::
-defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
+defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv, bool a_printStuff)
 {
   CH_TIME("EBMACProjector::defineInternals");
 
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::defineInternals: making data holders" << endl;
+  }
+  
   m_rhs.define(m_grids, m_nghost, m_graphs);
   m_phi.define(m_grids, m_nghost, m_graphs);
   auto ditch = m_brit->m_cellToCell;
@@ -45,12 +64,27 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
   string bcnames[2*DIM];
   m_ebibc.projectionStencilStrings(bcnames);
 
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::defineInternals: defining multigrid solver" << endl;
+  }
+  
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
                      StencilNames::Poisson2, bcnames, StencilNames::Neumann,
-                     m_domain, m_nghost, string("mac_proj")));
+                     m_domain, m_nghost, string("mac_proj"), a_printStuff));
 
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::defineInternals: calling registerStencils" << endl;
+  }
+  
   registerStencils();
+  
+  if(a_printStuff)
+  {
+    pout() << "EBMACCProjector::defineInternals: leaving" << endl;
+  }
 }
 ////
 void  

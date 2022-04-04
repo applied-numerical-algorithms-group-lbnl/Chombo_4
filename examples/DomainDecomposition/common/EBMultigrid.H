@@ -102,7 +102,8 @@ public:
   ///make coarse from fine
   virtual void 
   define(const EBMultigridLevel            & a_finerLevel,
-         shared_ptr<GeometryService<2> >   & a_geoserv) =0;
+         shared_ptr<GeometryService<2> >   & a_geoserv,
+         bool a_printStuff) =0;
 
   ///
   virtual void
@@ -110,7 +111,7 @@ public:
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
   
   virtual void
-  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv) = 0;
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv, bool a_printStuff) = 0;
   
   
   EBLevelBoxData<CELL, 1> & getKappa()
@@ -119,7 +120,8 @@ public:
   }
   
   inline void resetAlphaAndBeta(const Real& a_alpha,
-                                const Real& a_beta)
+                                const Real& a_beta,
+                                bool a_printStuff = false)
   {
     m_alpha = a_alpha;
     m_beta  = a_beta;
@@ -131,7 +133,7 @@ public:
     }
     if(!m_hasCoarser || m_directToBottom)
     {
-      this->defineBottomSolvers(m_geoserv);
+      this->defineBottomSolvers(m_geoserv, a_printStuff);
     }
   }
   
@@ -281,7 +283,8 @@ public:
   ///make coarse from fine 
   void
   define(const EBMultigridLevel            & a_finerLevel,
-         shared_ptr<GeometryService<2> >   & a_geoserv);
+         shared_ptr<GeometryService<2> >   & a_geoserv,
+         bool a_printStuff);
   
   ///
   void
@@ -339,7 +342,8 @@ public:
   }
 private:
 
-  void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv);
+  void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
+                            bool a_printStuff);
 
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -378,7 +382,8 @@ private:
   void solve_bicgstab(EBLevelBoxData<CELL, 1>       & a_phi,
                       const EBLevelBoxData<CELL, 1> & a_rhs);
 
-  void defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv);
+  void defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv,
+                           bool a_printStuff);
 };
 
 
@@ -413,6 +418,10 @@ public:
       dombc[ivec] = a_dombcname;
     }
 
+    if(a_printStuff)
+    {
+      pout() << "EBMultigrid::EBMultigrid: making finest Poisson  operator" << endl;
+    }
     EBPoissonOp* finestfish = new EBPoissonOp(a_dictionary, 
                                               a_geoserv,
                                               a_alpha,      
@@ -428,9 +437,17 @@ public:
     EBMultigridLevel* baseBelongToUs = static_cast<EBMultigridLevel*>(finestfish);
     m_finest = std::shared_ptr<EBMultigridLevel>(baseBelongToUs);
 
+    if(a_printStuff)
+    {
+      pout() << "EBMultigrid::EBMultigrid: making data holders" << endl;
+    }
     auto graphs = a_geoserv->getGraphs(a_domain);
     m_res.define(a_grids, a_nghost, graphs);
     m_cor.define(a_grids, a_nghost, graphs);
+    if(a_printStuff)
+    {
+      pout() << "EBMultigrid::EBMultigrid: leaving" << endl;
+    }
   }
 
 

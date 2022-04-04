@@ -30,7 +30,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   residual(m_res, a_phi, a_rhs, true);
   Real initres = m_res.maxNorm(0);
   int iter = 0;
-  pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
+  pout() << "EBMultigrid::solve tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
   Real resnormold = resnorm;
   while((iter < a_maxIter) && (resnorm > a_tol*initres))
@@ -41,7 +41,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
            << setiosflags(ios::scientific);
 
     
-    pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm;
+    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm;
     Real rate = 1;
     if((resnormold > 1.0e-12) && (iter > 0))
     {
@@ -60,7 +60,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
     iter++;
   }
-  pout() << "EBMultigrid: final     |resid| = " << resnorm << endl;
+  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << endl;
 }
 
 /****/
@@ -221,7 +221,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
     {
       pout() << "EBPoissonOp constructor: making coarser objects" << endl;
     }
-    defineCoarserObjects(a_geoserv);
+    defineCoarserObjects(a_geoserv, a_printStuff);
   }
   if(!m_hasCoarser || m_directToBottom)
   {
@@ -229,7 +229,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
     {
       pout() << "EBPoissonOp constructor: defining bottom solvers" << endl;
     }
-    defineBottomSolvers(a_geoserv);
+    defineBottomSolvers(a_geoserv, a_printStuff);
   }
   if(a_printStuff)
   {
@@ -244,7 +244,8 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
 /***/
 void
 EBPoissonOp::
-defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
+defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
+                     bool a_printStuff)
 {
   PR_TIME("sgmglevel::defineCoarser");
 
@@ -265,7 +266,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
     }
     
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
-    m_coarser->define(*this, a_geoserv);
+    m_coarser->define(*this, a_geoserv, a_printStuff);
 
     auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
@@ -276,7 +277,8 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
 void
 EBPoissonOp::
 define(const EBMultigridLevel            & a_finerLevel,
-       shared_ptr<GeometryService<2> >   & a_geoserv)
+       shared_ptr<GeometryService<2> >   & a_geoserv,
+       bool a_printStuff)
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
@@ -315,18 +317,23 @@ define(const EBMultigridLevel            & a_finerLevel,
 
   if(!m_directToBottom)
   {
-    defineCoarserObjects(a_geoserv);
+    defineCoarserObjects(a_geoserv, a_printStuff);
   }
   if(!m_hasCoarser || m_directToBottom)
   {
-    defineBottomSolvers(a_geoserv);
+    defineBottomSolvers(a_geoserv, a_printStuff);
   }
 }
 
 void  
 EBPoissonOp::
-defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
+defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv,
+                    bool a_printStuff)
 {
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::defineBottomSolver: defining relax solver" << endl;
+  }
   m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
 #ifdef CH_USE_PETSC
 
@@ -334,13 +341,17 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
   string which_solver("relax");
   pp.query("bottom_solver", which_solver);
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::defineBottomSolver: defining petsc solver" << endl;
+  }
   if(which_solver == string("petsc"))
   {
     Point pghost= ProtoCh::getPoint(m_nghost);
     EBPetscSolver<2>* ptrd = 
       (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
                             m_stenname, m_dombcname, m_ebbcname,
-                            m_dx, m_alpha, m_beta, pghost));
+                            m_dx, m_alpha, m_beta, pghost, a_printStuff));
     m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
   }
 #endif    

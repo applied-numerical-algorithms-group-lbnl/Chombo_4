@@ -17,6 +17,10 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
 
 {
   CH_TIME("EBCCProjector::define");
+  if(a_printStuff)
+  {
+    pout() << "EBCCProjector::define calling EBMACProjector constructor" << endl;
+  }
   m_macprojector = shared_ptr<EBMACProjector>
     (new EBMACProjector(a_brit,     
                         a_geoserv,  
@@ -24,7 +28,12 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_domain,   
                         a_dx,       
                         a_nghost,
-                        a_ebibc));
+                        a_ebibc,
+                        a_printStuff));
+  if(a_printStuff)
+  {
+    pout() << "EBCCProjector::define calling register stencils" << endl;
+  }
   registerStencils();
 }
 
