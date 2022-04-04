@@ -33,6 +33,9 @@ namespace ProtoCh
 ///get chombo box from proto box
   extern Box getBox(const ::Proto::Box & a_bx);
 
+///get chombo box from proto box
+  Box getChomboBox(const ::Proto::Box & a_bx);
+  
 } 
 
 #include "Chombo_NamespaceFooter.H"

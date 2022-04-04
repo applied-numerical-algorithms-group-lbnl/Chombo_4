@@ -33,10 +33,10 @@ struct SliceSpec;
 /// Cell-Based or Node-Based Indices
 /**
 
-  The class IndexType defines an index as being cell based or node (face)
-  based in each of the CH_SPACEDIM directions.  This class defines an
-  enumerated type CellIndex to be either CELL or NODE; i.e. each of the
-  CH_SPACEDIM dimensions must be either CELL or NODE.
+   The class IndexType defines an index as being cell based or node (face)
+   based in each of the CH_SPACEDIM directions.  This class defines an
+   enumerated type CellIndex to be either CELL or NODE; i.e. each of the
+   CH_SPACEDIM dimensions must be either CELL or NODE.
 */
 
 class IndexType
@@ -62,7 +62,7 @@ public:
 
   ///
   /**
-      The copy constructor. Let compiler build default copy constructor (bvs)
+     The copy constructor. Let compiler build default copy constructor (bvs)
 
   */
   // IndexType (const IndexType& rhs);
@@ -90,9 +90,9 @@ public:
 
   ///
   /**
-      Constructs an IndexType given an explicit CellIndex for each
-      direction.  D_DECL6 is a macro that sets the constructor to take
-      BL_SPACEDIM arguments.
+     Constructs an IndexType given an explicit CellIndex for each
+     direction.  D_DECL6 is a macro that sets the constructor to take
+     BL_SPACEDIM arguments.
 
   */
   IndexType (D_DECL6(CellIndex i, CellIndex j, CellIndex k,
@@ -164,7 +164,7 @@ public:
 
   ///
   /**
-    IndexTypes comparison.
+     IndexTypes comparison.
   */
   bool operator<(const IndexType& t) const;
 
@@ -221,10 +221,10 @@ public:
 
   ///
   /**
-      This static member function returns an IndexType object all of
-      whose components are of value IndexType::CELL.  It is provided as
-      a convenience to our users when defining a Box all of whose faces
-      should be of type IndexType::CELL.
+     This static member function returns an IndexType object all of
+     whose components are of value IndexType::CELL.  It is provided as
+     a convenience to our users when defining a Box all of whose faces
+     should be of type IndexType::CELL.
 
   */
   static IndexType TheCellType ();
@@ -239,21 +239,6 @@ public:
   */
   static IndexType TheNodeType ();
 
-  ///
-  /**
-     Write an IndexType to an ostream in ASCII.
-
-  */
-  friend std::ostream& operator<< (std::ostream&         os,
-                                   const IndexType& itype);
-
-  ///
-  /**
-     Read an IndexType from an istream.
-
-  */
-  friend std::istream& operator>> (std::istream&   is,
-                                   IndexType& itype);
 private:
   //
   // Returns 1<<k.
@@ -320,7 +305,7 @@ IndexType::IndexType (D_DECL6(CellIndex i, CellIndex j, CellIndex k,
                               CellIndex l, CellIndex m, CellIndex n))
 {
   itype = D_TERM6(i, | (j<<1), | (k<<2),
-           | (l<<3), | (m<<4), | (n<<5));
+                  | (l<<3), | (m<<4), | (n<<5));
 }
 
 inline
@@ -450,17 +435,17 @@ IndexType::ixType () const
 /// A Rectangular Domain on an Integer Lattice
 /**
 
-  A Box is an abstraction for defining discrete rectangular regions of
-  SpaceDim-dimensioned indexing space.  Boxes have an IndexType, which
-  defines IndexType::CELL or IndexType::NODE based points for each
-  direction and a low and high IntVect which defines the lower and
-  upper corners of the Box.  Boxes can exist in positive and negative
-  indexing space.
+   A Box is an abstraction for defining discrete rectangular regions of
+   SpaceDim-dimensioned indexing space.  Boxes have an IndexType, which
+   defines IndexType::CELL or IndexType::NODE based points for each
+   direction and a low and high IntVect which defines the lower and
+   upper corners of the Box.  Boxes can exist in positive and negative
+   indexing space.
 
-  Box is a dimension dependent class, so SpaceDim must be
-  defined as either 1, 2, or 3 when compiling.
+   Box is a dimension dependent class, so SpaceDim must be
+   defined as either 1, 2, or 3 when compiling.
 
-  @ingroup chombo
+   @ingroup chombo
 */
 
 class Box
@@ -512,10 +497,10 @@ public:
 
   ///
   /**
-      Construct Box with given type.  small and big are expected to be
-      consistent with given type.  It is an error if small is greater
-      than big.  It is an error if typ is not convertible to an
-      IndexType.
+     Construct Box with given type.  small and big are expected to be
+     consistent with given type.  It is an error if small is greater
+     than big.  It is an error if typ is not convertible to an
+     IndexType.
 
   */
   Box (const IntVect& small,
@@ -524,10 +509,10 @@ public:
 
   ///
   /**
-      Modify Box with given type.  small and big are expected to be
-      consistent with given type.  It is an error if small is greater
-      than big.  It is an error if typ is not convertible to an
-      IndexType.
+     Modify Box with given type.  small and big are expected to be
+     consistent with given type.  It is an error if small is greater
+     than big.  It is an error if typ is not convertible to an
+     IndexType.
 
   */
   void define(const IntVect& small,
@@ -536,9 +521,9 @@ public:
 
   ///
   /**
-      Construct Box with given type.  small and big are expected to be
-      consistent with given type.  It is an error if small is greater
-      than big.
+     Construct Box with given type.  small and big are expected to be
+     consistent with given type.  It is an error if small is greater
+     than big.
 
   */
   Box (const IntVect&   small,
@@ -547,9 +532,9 @@ public:
 
   ///
   /**
-      Modify Box with given type.  small and big are expected to be
-      consistent with given type.  It is an error if small is greater
-      than big.
+     Modify Box with given type.  small and big are expected to be
+     consistent with given type.  It is an error if small is greater
+     than big.
 
   */
   void define(const IntVect&   small,
@@ -574,7 +559,7 @@ public:
 
   ///
   /**
-      Returns the lower corner of this Box.
+     Returns the lower corner of this Box.
 
   */
   const IntVect& smallEnd () const;
@@ -1350,7 +1335,7 @@ public:
   /**
      growLo if a_sd == Side::Lo \\
      growHi if a_sd= = Side::Hi
-   */
+  */
   Box& growDir (int a_idir,
                 const Side::LoHiSide& a_sd,
                 int a_cell);
@@ -1433,15 +1418,15 @@ public:
   /// coarsening
 
   /*
-      True if the if (refine(coarsen(int))) gets the same box back
-   */
-   bool coarsenable(int refrat) const
-   {
-     Box test = *this;
-     test.coarsen(refrat);
-     test.refine(refrat);
-     return (test==*this);
-   }
+    True if the if (refine(coarsen(int))) gets the same box back
+  */
+  bool coarsenable(int refrat) const
+  {
+    Box test = *this;
+    test.coarsen(refrat);
+    test.refine(refrat);
+    return (test==*this);
+  }
 
   ///
   /**
@@ -1551,17 +1536,17 @@ public:
             int chop_pnt);
 
   /**
-    Makes a_to a box that's the same as *this except that it's just one cell
-    thick in the a_sliceSpec.direction-th direction, and its (one) coordinate
-    in that direction is a_sliceSpec.position.
+     Makes a_to a box that's the same as *this except that it's just one cell
+     thick in the a_sliceSpec.direction-th direction, and its (one) coordinate
+     in that direction is a_sliceSpec.position.
 
-    If a_sliceSpec.position is outside the range of *this, and a_outofbounds
-    isn't null, then we set *a_outofbounds to true, otherwise to false.
+     If a_sliceSpec.position is outside the range of *this, and a_outofbounds
+     isn't null, then we set *a_outofbounds to true, otherwise to false.
 
-    It would be more natural to return a Box, than to set the value of a Box
-    reference, but we do it this way to be consistent with BaseFab::degenerate()
-    where we can't return an object because of the policy of disallowing copy
-    constructors for heavyweight classes.
+     It would be more natural to return a Box, than to set the value of a Box
+     reference, but we do it this way to be consistent with BaseFab::degenerate()
+     where we can't return an object because of the policy of disallowing copy
+     constructors for heavyweight classes.
   */
   void degenerate( Box& a_to, const SliceSpec& a_sliceSpec,
                    bool* a_outofbounds=0 ) const;
@@ -1590,14 +1575,6 @@ public:
   */
   void p() const;
 
-  ///
-  /**
-     Gives more detail than printOn.  Useful for exiting due to an
-     error.
-
-  */
-  void dumpOn (std::ostream& strm) const;
-
   /// {\bf Box Constants}
 
   ///
@@ -1606,15 +1583,6 @@ public:
 
   */
   //static const Box Empty;
-
-  // TheUnitBox is out of favor.
-  /*
-    This static member function returns a constant reference to
-    an object of type Box representing the unit box in
-    BL_SPACEDIM-dimensional space.
-  */
-
-  //static const Box& TheUnitBox ();
 
   //
   // Sets the 'len' element of the Box.  Aborts on integer overflow.
@@ -1626,14 +1594,14 @@ public:
   static void setTempestOutputFormat( bool );
 
   Box(::Proto::Box a_box)
-    {
-        define(a_box.low(), a_box.high());
-    }
+  {
+    define(a_box.low(), a_box.high());
+  }
     
   operator ::Proto::Box() const
-    {
-      return ::Proto::Box(smallend, bigend); //calls IntVect -> Proto::Point converter
-    }
+  {
+    return ::Proto::Box(smallend, bigend); //calls IntVect -> Proto::Point converter
+  }
 
 protected:
   friend class HDF5Handle;
@@ -1653,33 +1621,33 @@ namespace CH4_SPMD
 //#include "Chombo_NamespaceVar.H"
 
 //Box specialization of linearSize
-template < >
-int linearSize(const Chombo4::Box& a_input);
+  template < >
+  int linearSize(const Chombo4::Box& a_input);
 
 //Chombo4::Box specialization of linearIn
-template < >
-void linearIn(Chombo4::Box& a_outputT, const void* const a_inBuf);
+  template < >
+  void linearIn(Chombo4::Box& a_outputT, const void* const a_inBuf);
 
 //Chombo4::Box specialization of linearOut
-template < >
-void linearOut(void* const a_outBuf, const Chombo4::Box& a_inputT);
+  template < >
+  void linearOut(void* const a_outBuf, const Chombo4::Box& a_inputT);
 
 
 //vector<Chombo4::Box>  specialization
-template < >
-int linearSize(const Vector<Chombo4::Box>& a_input);
-template < >
-void linearIn(Vector<Chombo4::Box>& a_outputT, const void* const inBuf);
-template < >
-void linearOut(void* const a_outBuf, const Vector<Chombo4::Box>& a_inputT);
+  template < >
+  int linearSize(const Vector<Chombo4::Box>& a_input);
+  template < >
+  void linearIn(Vector<Chombo4::Box>& a_outputT, const void* const inBuf);
+  template < >
+  void linearOut(void* const a_outBuf, const Vector<Chombo4::Box>& a_inputT);
 
 //vector<vector<Chombo4::Box> > specialization
-template < >
-int linearSize(const Vector<Vector<Chombo4::Box> >& a_input);
-template < >
-void linearIn(Vector<Vector<Chombo4::Box> >& a_outputT, const void* const inBuf);
-template < >
-void linearOut(void* const a_outBuf, const Vector<Vector<Chombo4::Box> >& a_inputT);
+  template < >
+  int linearSize(const Vector<Vector<Chombo4::Box> >& a_input);
+  template < >
+  void linearIn(Vector<Vector<Chombo4::Box> >& a_outputT, const void* const inBuf);
+  template < >
+  void linearOut(void* const a_outBuf, const Vector<Vector<Chombo4::Box> >& a_inputT);
 
 }
 #include "Chombo_NamespaceHeader.H"
@@ -1953,7 +1921,7 @@ Box::index (const IntVect& v) const
   long int dif1= v.vect[1]-smallend.vect[1];
   long int dif2= v.vect[2]-smallend.vect[2];
   result += len0*(dif1
-                + dif2*len1);
+                  + dif2*len1);
 #elif CH_SPACEDIM==4
   int len0=(bigend[0]-smallend[0]+1);
   int len1=(bigend[1]-smallend[1]+1);
@@ -1985,7 +1953,7 @@ Box::index (const IntVect& v) const
 #else
   DIM > 6 undefined!
 #endif
-  return result;
+    return result;
 }
 
 inline
@@ -2079,10 +2047,10 @@ Box::shift (int dir,
             int nzones)
 {
   if (!isEmpty())
-    {
-      smallend.shift(dir,nzones);
-      bigend.shift(dir,nzones);
-    }
+  {
+    smallend.shift(dir,nzones);
+    bigend.shift(dir,nzones);
+  }
   return *this;
 }
 
@@ -2091,10 +2059,10 @@ Box&
 Box::shift (const IntVect& iv)
 {
   if (!isEmpty())
-    {
-      smallend.shift(iv);
-      bigend.shift(iv);
-    }
+  {
+    smallend.shift(iv);
+    bigend.shift(iv);
+  }
   return *this;
 }
 
@@ -2104,10 +2072,10 @@ Box::convert (const IntVect& typ)
 {
   CH_assert(typ >= IntVect::Zero && typ <= IntVect::Unit);
   if (!isEmpty())
-    {
-      IntVect shft(typ - btype.ixType());
-      bigend += shft;
-    }
+  {
+    IntVect shft(typ - btype.ixType());
+    bigend += shft;
+  }
   btype = IndexType(typ);
   computeBoxLen();
   return *this;
@@ -2118,17 +2086,17 @@ Box&
 Box::surroundingNodes (int dir)
 {
   if (!(btype[dir]))
+  {
+    if (!isEmpty())
     {
-      if (!isEmpty())
-        {
-          bigend.shift(dir,1);
-        }
-      //
-      // Set dir'th bit to 1 = IndexType::NODE.
-      //
-      btype.set(dir);
-      computeBoxLen();
+      bigend.shift(dir,1);
     }
+    //
+    // Set dir'th bit to 1 = IndexType::NODE.
+    //
+    btype.set(dir);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2137,17 +2105,17 @@ Box&
 Box::enclosedCells (int dir)
 {
   if (btype[dir])
+  {
+    if (!isEmpty())
     {
-      if (!isEmpty())
-        {
-          bigend.shift(dir,-1);
-        }
-      //
-      // Set dir'th bit to 0 = IndexType::CELL.
-      //
-      btype.unset(dir);
-      computeBoxLen();
+      bigend.shift(dir,-1);
     }
+    //
+    // Set dir'th bit to 0 = IndexType::CELL.
+    //
+    btype.unset(dir);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2190,10 +2158,10 @@ Box&
 Box::operator+= (const IntVect& v)
 {
   if (!isEmpty())
-    {
-      smallend += v;
-      bigend += v;
-    }
+  {
+    smallend += v;
+    bigend += v;
+  }
   return *this;
 }
 
@@ -2202,17 +2170,17 @@ Box
 Box::operator+  (const IntVect& v) const
 {
   if (isEmpty())
-    {
-      return(Box().convert(btype));
-    }
+  {
+    return(Box().convert(btype));
+  }
   else
-    {
-      IntVect small(smallend);
-      small += v;
-      IntVect big(bigend);
-      big += v;
-      return Box(small,big,btype);
-    }
+  {
+    IntVect small(smallend);
+    small += v;
+    IntVect big(bigend);
+    big += v;
+    return Box(small,big,btype);
+  }
 }
 
 inline
@@ -2220,10 +2188,10 @@ Box&
 Box::operator-= (const IntVect& v)
 {
   if (!isEmpty())
-    {
-      smallend -= v;
-      bigend -= v;
-    }
+  {
+    smallend -= v;
+    bigend -= v;
+  }
   return *this;
 }
 
@@ -2240,17 +2208,17 @@ Box
 Box::operator-  (const IntVect& v) const
 {
   if (isEmpty())
-    {
-      return(Box().convert(btype));
-    }
+  {
+    return(Box().convert(btype));
+  }
   else
-    {
-      IntVect small = smallend;
-      small -= v;
-      IntVect big = bigend;
-      big -= v;
-      return Box(small,big,btype);
-    }
+  {
+    IntVect small = smallend;
+    small -= v;
+    IntVect big = bigend;
+    big -= v;
+    return Box(small,big,btype);
+  }
 }
 
 inline
@@ -2258,12 +2226,12 @@ Box&
 Box::grow (int i)
 {
   if (!isEmpty())
-    {
-      smallend.diagShift(-i);
-      bigend.diagShift(i);
-      if (!(bigend >= smallend)) *this = Box().convert(btype);
-      computeBoxLen();
-    }
+  {
+    smallend.diagShift(-i);
+    bigend.diagShift(i);
+    if (!(bigend >= smallend)) *this = Box().convert(btype);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2273,16 +2241,16 @@ grow (const Box& b,
       int        i)
 {
   if (b.isEmpty())
-    {
-      return Box().convert(b.btype);
-    }
+  {
+    return Box().convert(b.btype);
+  }
 
   IntVect small = diagShift(b.smallend,-i);
   IntVect big   = diagShift(b.bigend,i);
   if (!(big >= small))
-    {
-      return Box().convert(b.btype);
-    }
+  {
+    return Box().convert(b.btype);
+  }
   return Box(small,big,b.btype);
 }
 
@@ -2291,12 +2259,12 @@ Box&
 Box::grow (const IntVect& v)
 {
   if (!isEmpty())
-    {
-      smallend -= v;
-      bigend   += v;
-      if (!(bigend >= smallend)) *this = Box().convert(btype);
-      computeBoxLen();
-    }
+  {
+    smallend -= v;
+    bigend   += v;
+    if (!(bigend >= smallend)) *this = Box().convert(btype);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2306,22 +2274,22 @@ grow (const Box&     b,
       const IntVect& v)
 {
   if (b.isEmpty())
+  {
+    return Box().convert(b.btype);
+  }
+  else
+  {
+    IntVect small = b.smallend - v;
+    IntVect big   = b.bigend   + v;
+    if (!(big >= small))
     {
       return Box().convert(b.btype);
     }
-  else
+    else
     {
-      IntVect small = b.smallend - v;
-      IntVect big   = b.bigend   + v;
-      if (!(big >= small))
-        {
-          return Box().convert(b.btype);
-        }
-      else
-        {
-          return Box(small,big,b.btype);
-        }
+      return Box(small,big,b.btype);
     }
+  }
 }
 
 inline
@@ -2330,12 +2298,12 @@ Box::grow (int idir,
            int n_cell)
 {
   if (!isEmpty())
-    {
-      smallend.shift(idir, -n_cell);
-      bigend.shift(idir, n_cell);
-      if (!(bigend >= smallend)) *this = Box().convert(btype);
-      computeBoxLen();
-    }
+  {
+    smallend.shift(idir, -n_cell);
+    bigend.shift(idir, n_cell);
+    if (!(bigend >= smallend)) *this = Box().convert(btype);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2345,11 +2313,11 @@ Box::growLo (int idir,
              int n_cell)
 {
   if (!isEmpty())
-    {
-      smallend.shift(idir, -n_cell);
-      if (!(bigend >= smallend)) *this = Box().convert(btype);
-      computeBoxLen();
-    }
+  {
+    smallend.shift(idir, -n_cell);
+    if (!(bigend >= smallend)) *this = Box().convert(btype);
+    computeBoxLen();
+  }
   return *this;
 }
 
@@ -2360,13 +2328,13 @@ Box::growDir (int idir,
               int n_cell)
 {
   if (a_sd == Side::Lo)
-    {
-      growLo(idir, n_cell);
-    }
+  {
+    growLo(idir, n_cell);
+  }
   else
-    {
-      growHi(idir, n_cell);
-    }
+  {
+    growHi(idir, n_cell);
+  }
   return *this;
 }
 
@@ -2376,11 +2344,11 @@ Box::growHi (int idir,
              int n_cell)
 {
   if (!isEmpty())
-    {
-      bigend.shift(idir,n_cell);
-      if (!(bigend >= smallend)) *this = Box().convert(btype);
-      computeBoxLen();
-    }
+  {
+    bigend.shift(idir,n_cell);
+    if (!(bigend >= smallend)) *this = Box().convert(btype);
+    computeBoxLen();
+  }
   return *this;
 }
 

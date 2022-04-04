@@ -14,6 +14,7 @@
 #include "Chombo_Box.H"
 #include "Chombo_parstream.H"
 #include "Chombo_SliceSpec.H"
+#include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
 
 
@@ -128,19 +129,11 @@ IndexType::TheNodeType ()
 
 ostream&
 operator<< (ostream&         os,
-            const IndexType& it)
+            const Box& it)
 {
-    os << '('
-       << D_TERM6( (it.test(0)?'N':'C'),
-                   << ',' << (it.test(1)?'N':'C'),
-                   << ',' << (it.test(2)?'N':'C'),
-                   << ',' << (it.test(3)?'N':'C'),
-                   << ',' << (it.test(4)?'N':'C'),
-                   << ',' << (it.test(5)?'N':'C')) << ')' ;
-    if (os.fail())
-        MayDay::Error("operator<<(ostream&,IndexType&) failed");
-
-    return os;
+  Proto::Box bx = ProtoCh::getProtoBox(it);
+  os << bx;
+  return os;
 }
 
 //
@@ -150,30 +143,12 @@ operator<< (ostream&         os,
 
 istream&
 operator>> (istream&   is,
-            IndexType& it)
+            Box& it)
 {
-  char D_DECL6(t0,t1,t2,
-               t3,t4,t5);
-
-  D_EXPR6( is.ignore(CH_IGNORE_MAX, '(') >> t0,
-           is.ignore(CH_IGNORE_MAX, ',') >> t1,
-           is.ignore(CH_IGNORE_MAX, ',') >> t2,
-           is.ignore(CH_IGNORE_MAX, ',') >> t3,
-           is.ignore(CH_IGNORE_MAX, ',') >> t4,
-           is.ignore(CH_IGNORE_MAX, ',') >> t5);
-  is.ignore(CH_IGNORE_MAX, ')');
-  D_TERM6(
-          CH_assert(t0 == 'C' || t0 == 'N'); t0=='N'?it.set(0):it.unset(0); ,
-          CH_assert(t1 == 'C' || t1 == 'N'); t1=='N'?it.set(1):it.unset(1); ,
-          CH_assert(t2 == 'C' || t2 == 'N'); t2=='N'?it.set(2):it.unset(2); ,
-          CH_assert(t3 == 'C' || t3 == 'N'); t3=='N'?it.set(3):it.unset(3); ,
-          CH_assert(t4 == 'C' || t4 == 'N'); t4=='N'?it.set(4):it.unset(4); ,
-          CH_assert(t5 == 'C' || t5 == 'N'); t5=='N'?it.set(5):it.unset(5));
-
-  if (is.fail())
-        MayDay::Error("operator>>(ostream&,IndexType&) failed");
-
-    return is;
+  Proto::Box bx;
+  is >> bx;
+  it = ProtoCh::getBox(bx);
+  return is;
 }
 
 // const Box&
@@ -1156,33 +1131,6 @@ coarsen (const Box&     b,
     return Box(small,big,b.btype);
 }
 
-//
-// I/O functions.
-//
-
-ostream&
-operator<< (ostream&   os,
-            const Box& b)
-{
-  if ( Box::s_tempestOutputFormat )
-  {
-    os << '['
-       << b.smallend << ','
-       << b.bigend
-       << ']';
-  } else
-  {
-    os << '('
-       << b.smallend << ' '
-       << b.bigend   << ' '
-       << b.btype.ixType()
-       << ')';
-  }
-  if (os.fail())
-      MayDay::Error("operator<<(ostream&,Box&) failed");
-  return os;
-}
-
 void Box::p() const
 {
   pout() << *this << "\n";
@@ -1193,60 +1141,6 @@ void Box::p() const
 //
 #define CH_IGNORE_MAX 100000
 
-istream&
-operator>> (istream& is,
-            Box&     b)
-{
-    is >> ws;
-    char c;
-    is >> c;
-    is.putback(c);
-    if (c == '(')
-    {
-        is.ignore(CH_IGNORE_MAX, '(');
-        is >> b.smallend ;
-        is >> b.bigend ;
-        IntVect v;
-        is >> v;
-        b.btype = IndexType(v);
-        CH_assert(b.btype.ok());
-        is.ignore(CH_IGNORE_MAX,')');
-        b.computeBoxLen();
-    }
-    else if (c == '<')
-    {
-        is >> b.smallend;
-        is >> b.bigend;
-        IntVect v;
-        is >> v;
-        b.btype = IndexType(v);
-        CH_assert(b.btype.ok());
-        b.computeBoxLen();
-    }
-    else
-        MayDay::Error("operator>>(istream&,Box&): expected \'<\'");
-
-    if (is.fail())
-        MayDay::Error("operator>>(istream&,Box&) failed");
-
-    return is;
-}
-
-void
-Box::dumpOn (ostream& strm) const
-{
-    strm << "Box "
-         << smallend
-         << " to "
-         << bigend
-         << " type ["
-         << btype.ixType()
-         << "]"
-         << '\n';
-
-    if (strm.fail())
-        MayDay::Error("Box::dumpOn(ostream&) failed");
-}
 
 //
 // Give smallest Box containing both Boxes.
