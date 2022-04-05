@@ -136,7 +136,7 @@ namespace Proto
                                  unsigned int a_numcomps,
                                  bool a_printStuff = false) const
     {
-      size_t sumsize = 3*sizeof(unsigned long);
+      size_t sumsize = 3*sizeof(size_t);
       sumsize += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       sumsize += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 #if DIM==3      
@@ -155,19 +155,19 @@ namespace Proto
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char*  charbuf = (char*)a_buf;
       size_t charsiz = 0;
-      unsigned long* longbuf = (unsigned long *)(charbuf);
+      size_t* longbuf = (size_t *)(charbuf);
 
-      unsigned long xSize = *longbuf;    longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      size_t xSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
-      unsigned long ySize = *longbuf;    longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      size_t ySize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #if DIM==3      
-      unsigned long zSize = *longbuf;    longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      size_t zSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #endif      
 
       
@@ -200,27 +200,27 @@ namespace Proto
       char* charbuf = (char*)a_buf;
       size_t charsiz = 0;
       
-      unsigned long xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
-      unsigned long ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 
 #if DIM==3      
-      unsigned long zSize = 0;
+      size_t zSize = 0;
       zSize = m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
 #endif      
       
-      unsigned long* longbuf = (unsigned long*)(charbuf);
+      size_t* longbuf = (size_t*)(charbuf);
       *longbuf = xSize;      longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
       *longbuf = ySize;      longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
 #if DIM==3      
       *longbuf = zSize;      longbuf++;
-      charbuf += sizeof(unsigned long);
-      charsiz += sizeof(unsigned long);
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #endif
         
       m_xflux->linearOut(charbuf,  xSize, a_bx, a_startcomp, a_numcomps);

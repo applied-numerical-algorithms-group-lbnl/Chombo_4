@@ -31,7 +31,7 @@ extern void AttachDebugger(int);
 /*****************************/
 template <class T>
 inline void
-gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(std::vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   CH_assert (a_dest >= 0);
   CH_assert(a_dest <  numProc());
@@ -182,7 +182,7 @@ barrier(void)
 /*****************************/
 template <class T>
 inline void
-gather(Vector<T>& a_outVec, const T& a_input, int a_dest)
+gather(std::vector<T>& a_outVec, const T& a_input, int a_dest)
 {
   a_outVec.resize(1);
   a_outVec[0] = a_input;
@@ -211,19 +211,25 @@ barrier(void)
 //These should work independent of MPI
 //*************************************
 
-//Vector<T> specialization of linearIn
+//std::vector<T> specialization of linearIn
 template <class T>
 void
-linearListIn(Vector<T>& a_outputT, const void* const a_inBuf)
+linearListIn(std::vector<T>& a_outputT,
+             size_t a_expectedSize,
+             const void* const a_inBuf,
+             bool a_printStuff)
 {
+  size_t charsize = 0;
   //first entry is the size of the vector
   const int* const intBuf = (int*)a_inBuf;
+  charsize += sizeof(int);
   int vecsize = intBuf[0];
-  Vector<int> vecOffset(vecsize);
+  std::vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   for (int ivec = 0; ivec < vecsize; ivec++)
     {
       vecOffset[ivec] = intBuf[ivec+1];
+      charsize += sizeof(int);
     }
   //next vecsize entries are the actual data
   //yes I could do this in one loop but that would
@@ -240,16 +246,19 @@ linearListIn(Vector<T>& a_outputT, const void* const a_inBuf)
     }
 }
 
-//Vector<T> specialization of linearOut
+//std::vector<T> specialization of linearOut
 template <class T>
 void
-linearListOut(void* const a_outBuf, const Vector<T>& a_input)
+linearListOut(void* const a_outBuf,
+              size_t a_expectedSize,
+              const std::vector<T>& a_input,
+              bool a_printStuff)
 {
   //first entry is the size of the vector
   int* const intBuf = (int*)a_outBuf;
   intBuf[0] = a_input.size();
   int vecsize = intBuf[0];
-  Vector<int> vecOffset(vecsize);
+  std::vector<int> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   //next vecsize entries are the actual data
   int ioffset = (vecsize+1)*sizeof(int);
@@ -272,15 +281,16 @@ linearListOut(void* const a_outBuf, const Vector<T>& a_input)
     }
 }
 
-//Vector<T> specialization of linearSize
+//std::vector<T> specialization of linearSize
 template <class T>
-int
-linearListSize(const Vector<T>& a_input)
+size_t
+linearListSize(const std::vector<T>& a_input,
+               bool a_printStuff)
 {
   //first entry is the size of the vector (int)
   //next vecsize entries are offsets of data into buffer (int)
   //next vecsize entries are the actual data
-  int itotsize = (a_input.size() + 1)*sizeof(int);
+  size_t itotsize = (a_input.size() + 1)*sizeof(int);
   for (unsigned int ivec = 0; ivec < a_input.size(); ivec++)
     {
       itotsize += linearSize(a_input[ivec]);

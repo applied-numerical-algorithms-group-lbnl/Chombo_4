@@ -18,7 +18,7 @@ NeighborIterator::NeighborIterator(const DisjointBoxLayout& dbl)
 
 void NeighborIterator::begin(const DataIndex& a_dataIndex)
 {
-  const Vector<Vector<std::pair<int, LayoutIndex> > >&  vv = *(m_dblPtr->m_neighbors);
+  const std::vector<std::vector<std::pair<int, LayoutIndex> > >&  vv = *(m_dblPtr->m_neighbors);
   const std::vector<std::pair<int,   LayoutIndex> >& v = vv[a_dataIndex.intCode()].constStdVector();
   m_current = v.begin();
   m_end = v.end();

@@ -11,7 +11,7 @@
 #ifndef _Chombo_DISJOINTBOXLAYOUT_H_
 #define _Chombo_DISJOINTBOXLAYOUT_H_
 
-#include "Chombo_Vector.H"
+
 #include "Chombo_BoxLayout.H"
 #include "Chombo_ProblemDomain.H"
 #include "Chombo_NamespaceHeader.H"
@@ -48,22 +48,22 @@ public:
   DisjointBoxLayout();
 
   ///
-  /** Construct from a Vector of Boxes and optionally a Vector of
-      processor assignments.  If the processor assignment Vector
+  /** Construct from a std::vector of Boxes and optionally a std::vector of
+      processor assignments.  If the processor assignment std::vector
       is present, it must be either zero-length or the same length
-      as the Box Vector.  On exit, the DisjointBoxLayout will be closed.
+      as the Box std::vector.  On exit, the DisjointBoxLayout will be closed.
   */
-  DisjointBoxLayout(const Vector<Box>& a_boxes,
-                    const Vector<int>& a_procIDs);
+  DisjointBoxLayout(const std::vector<Box>& a_boxes,
+                    const std::vector<int>& a_procIDs);
 
   ///
-  /** Construct from a Vector of Boxes and optionally a Vector of
-      processor assignments.  If the processor assignment Vector
+  /** Construct from a std::vector of Boxes and optionally a std::vector of
+      processor assignments.  If the processor assignment std::vector
       is present, it must be either zero-length or the same length
-      as the Box Vector.  On exit, the DisjointBoxLayout will be closed.
+      as the Box std::vector.  On exit, the DisjointBoxLayout will be closed.
   */
-  DisjointBoxLayout(const Vector<Box>& a_boxes,
-                    const Vector<int>& a_procIDs,
+  DisjointBoxLayout(const std::vector<Box>& a_boxes,
+                    const std::vector<int>& a_procIDs,
                     const ProblemDomain& a_physDomain);
 
   ///
@@ -86,34 +86,34 @@ public:
   unsigned long long int numPointsThisProc() const;
 
   ///
-  /** Define this DisjointBoxLayout from a Vector of Boxes.  This is a
+  /** Define this DisjointBoxLayout from a std::vector of Boxes.  This is a
       wrapper for a call to BoxLayout::define, required because
       DisjointBoxLayout::define is overloaded and the compiler will not
       look into the base class for name resolution.
   */
   virtual void
-  define(const Vector<Box>& a_boxes,
-         const Vector<int>& a_procIDs);
+  define(const std::vector<Box>& a_boxes,
+         const std::vector<int>& a_procIDs);
 
   ///
   /**
     Like the define() that takes the same two arguments, except this one
     also initializes a_procIDs if it's not NULL.  In that case, the passed-in
-    a_procIDs should point to a Vector of size 0.
+    a_procIDs should point to a std::vector of size 0.
   */
   void
-  defineAndLoadBalance(const Vector<Box>& a_boxes,
-                       Vector<int>* a_procIDs);
+  defineAndLoadBalance(const std::vector<Box>& a_boxes,
+                       std::vector<int>* a_procIDs);
 
   ///
   /**
     Like the define() that takes the same two arguments, except this one
     also initializes a_procIDs if it's not NULL.  In that case, the passed-in
-    a_procIDs should point to a Vector of size 0.
+    a_procIDs should point to a std::vector of size 0.
   */
   void
-  defineAndLoadBalance(const Vector<Box>& a_boxes,
-                       Vector<int>* a_procIDs,
+  defineAndLoadBalance(const std::vector<Box>& a_boxes,
+                       std::vector<int>* a_procIDs,
                        const ProblemDomain& a_physDomain);
 
   ///
@@ -137,23 +137,23 @@ public:
   define(const BoxLayout& a_layout, const ProblemDomain& a_physDomain);
 
   ///
-  /** Define this DisjointBoxLayout from a Vector of Boxes.  This is a
+  /** Define this DisjointBoxLayout from a std::vector of Boxes.  This is a
       wrapper for a call to BoxLayout::define, required because
       DisjointBoxLayout::define is overloaded and the compiler will not
       look into the base class for name resolution.
   */
   virtual void
-  define(const Vector<Box>& a_boxes,
-         const Vector<int>& a_procIDs,
+  define(const std::vector<Box>& a_boxes,
+         const std::vector<int>& a_procIDs,
          const ProblemDomain& a_physDomain);
 
   ///
-  /** Define this DisjointBoxLayout from a Vector of Boxes.
+  /** Define this DisjointBoxLayout from a std::vector of Boxes.
       Same as define.
   */
   virtual void
-  define_pd(const Vector<Box>& a_boxes,
-            const Vector<int>& a_procIDs,
+  define_pd(const std::vector<Box>& a_boxes,
+            const std::vector<int>& a_procIDs,
             const ProblemDomain& a_physDomain)
   {define(a_boxes, a_procIDs,  a_physDomain);}
 
@@ -345,10 +345,10 @@ protected:
 
   // The "pair" here : the first int is the index of the periodic shift iterator, the second unsigned int is
   // the box index.  an unshifted box is stored with a -1 shift index.
-  RefCountedPtr<Vector<Vector<std::pair<int, LayoutIndex> > > > m_neighbors; //what a mouthful
+  RefCountedPtr<std::vector<std::vector<std::pair<int, LayoutIndex> > > > m_neighbors; //what a mouthful
 
   void computeNeighbors();
-  virtual void closeN( RefCountedPtr<Vector<Vector<std::pair<int, LayoutIndex> > > > neighbors);
+  virtual void closeN( RefCountedPtr<std::vector<std::vector<std::pair<int, LayoutIndex> > > > neighbors);
   virtual void closeNO(); // close, but don't bother building neighbors
 
 };

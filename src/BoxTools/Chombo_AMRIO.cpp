@@ -52,14 +52,14 @@ using std::system;
 */
 void
 WriteAMRHierarchyHDF5(const string& filename,
-                      const Vector<DisjointBoxLayout>& a_vectGrids,
-                      const Vector<LevelData<FArrayBox>* > & a_vectData,
-                      const Vector<string>& a_vectNames,
+                      const std::vector<DisjointBoxLayout>& a_vectGrids,
+                      const std::vector<LevelData<FArrayBox>* > & a_vectData,
+                      const std::vector<string>& a_vectNames,
                       const Box& a_domain,
                       const Real& a_dx,
                       const Real& a_dt,
                       const Real& a_time,
-                      const Vector<int>& a_refRatio,
+                      const std::vector<int>& a_refRatio,
                       const int& a_numLevels)
 {
   CH_TIMERS("WriteAMRHierarchyHDF5");
@@ -109,14 +109,14 @@ WriteAMRHierarchyHDF5(const string& filename,
 void
 WriteAnisotropicAMRHierarchyHDF5(
     const string& filename,
-    const Vector<DisjointBoxLayout>& a_vectGrids,
-    const Vector<LevelData<FArrayBox>* > & a_vectData,
-    const Vector<string>& a_vectNames,
+    const std::vector<DisjointBoxLayout>& a_vectGrids,
+    const std::vector<LevelData<FArrayBox>* > & a_vectData,
+    const std::vector<string>& a_vectNames,
     const Box& a_domain,
     const RealVect& a_dx,
     const Real& a_dt,
     const Real& a_time,
-    const Vector<IntVect>& a_refRatios,
+    const std::vector<IntVect>& a_refRatios,
     const int& a_numLevels)
 {
   CH_TIMERS("WriteAnisotropicAMRHierarchyHDF5");
@@ -145,14 +145,14 @@ WriteAnisotropicAMRHierarchyHDF5(
 
 void
 WriteAMRHierarchyHDF5(HDF5Handle& handle,
-                      const Vector<DisjointBoxLayout>& a_vectGrids,
-                      const Vector<LevelData<FArrayBox>* > & a_vectData,
-                      const Vector<string>& a_vectNames,
+                      const std::vector<DisjointBoxLayout>& a_vectGrids,
+                      const std::vector<LevelData<FArrayBox>* > & a_vectData,
+                      const std::vector<string>& a_vectNames,
                       const Box& a_domain,
                       const Real& a_dx,
                       const Real& a_dt,
                       const Real& a_time,
-                      const Vector<int>& a_refRatio,
+                      const std::vector<int>& a_refRatio,
                       const int& a_numLevels)
 {
   CH_assert(a_numLevels > 0);
@@ -210,14 +210,14 @@ WriteAMRHierarchyHDF5(HDF5Handle& handle,
 void
 WriteAnisotropicAMRHierarchyHDF5(
     HDF5Handle& handle,
-    const Vector<DisjointBoxLayout>& a_vectGrids,
-    const Vector<LevelData<FArrayBox>* > & a_vectData,
-    const Vector<string>& a_vectNames,
+    const std::vector<DisjointBoxLayout>& a_vectGrids,
+    const std::vector<LevelData<FArrayBox>* > & a_vectData,
+    const std::vector<string>& a_vectNames,
     const Box& a_domain,
     const RealVect& a_dx, // Grid spacing in each direction
     const Real& a_dt,
     const Real& a_time,
-    const Vector<IntVect>& a_refRatios, // for each level, in each direction
+    const std::vector<IntVect>& a_refRatios, // for each level, in each direction
     const int& a_numLevels)
 {
   CH_assert(a_numLevels > 0);
@@ -274,10 +274,10 @@ WriteAnisotropicAMRHierarchyHDF5(
 
 void
 WriteAMRHierarchyHDF5(const string& filename,
-                      const Vector<DisjointBoxLayout>& a_vectGrids,
-                      const Vector<LevelData<FArrayBox>* > & a_vectData,
+                      const std::vector<DisjointBoxLayout>& a_vectGrids,
+                      const std::vector<LevelData<FArrayBox>* > & a_vectData,
                       const Box& a_domain,
-                      const Vector<int>& a_refRatio,
+                      const std::vector<int>& a_refRatio,
                       const int& a_numLevels)
 {
 
@@ -296,10 +296,10 @@ WriteAMRHierarchyHDF5(const string& filename,
 
 void
 WriteAMRHierarchyHDF5(HDF5Handle& handle,
-                      const Vector<DisjointBoxLayout>& a_vectGrids,
-                      const Vector<LevelData<FArrayBox>* > & a_vectData,
+                      const std::vector<DisjointBoxLayout>& a_vectGrids,
+                      const std::vector<LevelData<FArrayBox>* > & a_vectData,
                       const Box& a_domain,
-                      const Vector<int>& a_refRatio,
+                      const std::vector<int>& a_refRatio,
                       const int& a_numLevels)
 {
   CH_assert(a_numLevels > 0);
@@ -380,14 +380,14 @@ return values:
 */
 int
 ReadAMRHierarchyHDF5(const string& filename,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
-                     Vector<string>& a_vectNames,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<string>& a_vectNames,
                      Box& a_domain,
                      Real& a_dx,
                      Real& a_dt,
                      Real& a_time,
-                     Vector<int>& a_refRatio,
+                     std::vector<int>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5Handle handle;
@@ -410,14 +410,14 @@ ReadAMRHierarchyHDF5(const string& filename,
 
 int
 ReadAMRHierarchyHDF5(HDF5Handle& handle,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
-                     Vector<string>& a_vectNames,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<string>& a_vectNames,
                      Box& a_domain,
                      Real& a_dx,
                      Real& a_dt,
                      Real& a_time,
-                     Vector<int>& a_refRatio,
+                     std::vector<int>& a_refRatio,
                      int& a_numLevels)
 {
 
@@ -481,10 +481,10 @@ ReadAMRHierarchyHDF5(HDF5Handle& handle,
 
 int
 ReadAMRHierarchyHDF5(const string& filename,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
                      Box& a_domain,
-                     Vector<int>& a_refRatio,
+                     std::vector<int>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5Handle handle;
@@ -506,10 +506,10 @@ ReadAMRHierarchyHDF5(const string& filename,
 
 int
 ReadAMRHierarchyHDF5(HDF5Handle& handle,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
                      Box& a_domain,
-                     Vector<int>& a_refRatio,
+                     std::vector<int>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5HeaderData header;
@@ -579,14 +579,14 @@ return values:
 */
 int
 ReadAnisotropicAMRHierarchyHDF5(const string& filename,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
-                     Vector<string>& a_vectNames,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<string>& a_vectNames,
                      Box& a_domain,
                      RealVect& a_dx,
                      Real& a_dt,
                      Real& a_time,
-                     Vector<IntVect>& a_refRatio,
+                     std::vector<IntVect>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5Handle handle;
@@ -609,14 +609,14 @@ ReadAnisotropicAMRHierarchyHDF5(const string& filename,
 
 int
 ReadAnisotropicAMRHierarchyHDF5(HDF5Handle& handle,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
-                     Vector<string>& a_vectNames,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<string>& a_vectNames,
                      Box& a_domain,
                      RealVect& a_dx,
                      Real& a_dt,
                      Real& a_time,
-                     Vector<IntVect>& a_refRatio,
+                     std::vector<IntVect>& a_refRatio,
                      int& a_numLevels)
 {
 
@@ -680,10 +680,10 @@ ReadAnisotropicAMRHierarchyHDF5(HDF5Handle& handle,
 
 int
 ReadAnisotropicAMRHierarchyHDF5(const string& filename,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
                      Box& a_domain,
-                     Vector<IntVect>& a_refRatio,
+                     std::vector<IntVect>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5Handle handle;
@@ -705,10 +705,10 @@ ReadAnisotropicAMRHierarchyHDF5(const string& filename,
 
 int
 ReadAnisotropicAMRHierarchyHDF5(HDF5Handle& handle,
-                     Vector<DisjointBoxLayout>& a_vectGrids,
-                     Vector<LevelData<FArrayBox>* > & a_vectData,
+                     std::vector<DisjointBoxLayout>& a_vectGrids,
+                     std::vector<LevelData<FArrayBox>* > & a_vectData,
                      Box& a_domain,
-                     Vector<IntVect>& a_refRatio,
+                     std::vector<IntVect>& a_refRatio,
                      int& a_numLevels)
 {
   HDF5HeaderData header;
@@ -795,7 +795,7 @@ writeBFR(const BaseFab<Real>* a_dataPtr)
 void
 writeFABname(const FArrayBox      * a_dataPtr,
              const char           * a_filename,
-             const Vector<string> & a_compNames,
+             const std::vector<string> & a_compNames,
              const Real           & a_dx)
 {
   if (a_dataPtr == NULL)
@@ -841,9 +841,9 @@ writeFABname(const FArrayBox      * a_dataPtr,
   int refLevel = 1;
 
   // build bogus DisjointBoxLayout here
-  Vector<Box> boxes(1,domainLevel);
+  std::vector<Box> boxes(1,domainLevel);
   unsigned int myprocID= procID();
-  Vector<int> procAssign(1,myprocID);
+  std::vector<int> procAssign(1,myprocID);
   DisjointBoxLayout grids(boxes, procAssign);
   LevelData<FArrayBox> ldf(grids, nComp);
   // now copy fab into ldf
@@ -879,15 +879,15 @@ void
 writeLevelname(const LevelData<FArrayBox>* a_dataPtr,
                const char*                 a_filename)
 {
-  Vector<LevelData<FArrayBox>*> data(1);
+  std::vector<LevelData<FArrayBox>*> data(1);
   data[0]=(LevelData<FArrayBox>*)a_dataPtr;
-  Vector<int> refRatios(1,1);
-  writeVectorLevelName(&data, &refRatios, a_filename);
+  std::vector<int> refRatios(1,1);
+  writestd::vectorLevelName(&data, &refRatios, a_filename);
 }
 
 void
-writeVectorLevelName(const Vector<LevelData<FArrayBox>*>* a_dataPtr,
-                     const Vector<int>*          a_refRatios,
+writestd::vectorLevelName(const std::vector<LevelData<FArrayBox>*>* a_dataPtr,
+                     const std::vector<int>*          a_refRatios,
                      const char*                 a_filename)
 {
   if (a_dataPtr == NULL)
@@ -989,7 +989,7 @@ writeVectorLevelName(const Vector<LevelData<FArrayBox>*>* a_dataPtr,
 
       if (eek != 0)
       {
-        MayDay::Error("writeVectorLevelName: error in writeLevel");
+        MayDay::Error("writestd::vectorLevelName: error in writeLevel");
       }
     }
   handle.close();
@@ -1011,11 +1011,11 @@ writeDBL(const DisjointBoxLayout* a_dataPtr)
 
 void writeCopier(const Copier* a_copier)
 {
-  Vector<Vector<Box> > boxes;
-  Vector<Vector<int> > procs;
-  Vector<Box> level;
-  Vector<int> p;
-  Vector<int> refRatio;
+  std::vector<std::vector<Box> > boxes;
+  std::vector<std::vector<int> > procs;
+  std::vector<Box> level;
+  std::vector<int> p;
+  std::vector<int> refRatio;
   Box domain;
   int last = -1;
   for (CopyIterator it(*a_copier, CopyIterator::LOCAL); it.ok(); ++it)
@@ -1045,8 +1045,8 @@ void writeCopier(const Copier* a_copier)
     }
 
   int numLevels = boxes.size();
-  Vector<DisjointBoxLayout> layouts(numLevels);
-  Vector<LevelData<FArrayBox>*> ldf(numLevels);
+  std::vector<DisjointBoxLayout> layouts(numLevels);
+  std::vector<LevelData<FArrayBox>*> ldf(numLevels);
   IntVect ghostVect(IntVect::Zero);
   for (int i=0; i<numLevels; ++i)
     {
@@ -1089,14 +1089,14 @@ writeDBLname(const DisjointBoxLayout* a_dataPtr,
 
 void
 WritePartialAMRHierarchyHDF5(const string& filename,
-                             const Vector<DisjointBoxLayout>& a_vectGrids,
-                             const Vector<LevelData<FArrayBox>* > & a_vectData,
-                             const Vector<string>& a_vectNames,
+                             const std::vector<DisjointBoxLayout>& a_vectGrids,
+                             const std::vector<LevelData<FArrayBox>* > & a_vectData,
+                             const std::vector<string>& a_vectNames,
                              const Box& a_baseDomain,
                              const Real& a_baseDx,
                              const Real& a_dt,
                              const Real& a_time,
-                             const Vector<int>& a_vectRatio,
+                             const std::vector<int>& a_vectRatio,
                              const Interval& a_levels)
 {
   int numLevels = a_levels.size();
@@ -1104,9 +1104,9 @@ WritePartialAMRHierarchyHDF5(const string& filename,
   // now make new dataholders which only have numLevels entries,
   // and which will move the baseLevel to level 0
 
-  Vector<DisjointBoxLayout> newVectGrids(numLevels);
-  Vector<LevelData<FArrayBox> * > newVectData(numLevels);
-  Vector<int> newVectRatio(numLevels);
+  std::vector<DisjointBoxLayout> newVectGrids(numLevels);
+  std::vector<LevelData<FArrayBox> * > newVectData(numLevels);
+  std::vector<int> newVectRatio(numLevels);
 
   int leveloffset = a_levels.begin();
   for (int srcLevel = a_levels.begin(); srcLevel <= a_levels.end(); srcLevel++)

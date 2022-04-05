@@ -34,7 +34,7 @@
 
 #include "Chombo_CH_assert.H"
 #include "Chombo_MayDay.H"
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_BaseNamespaceHeader.H"
 using std::cout;
 using std::cerr;
@@ -3143,23 +3143,6 @@ public:
              bool&       ref,
              int         ival=0) const;
 
-  /// access an array of objects
-  /** Gets a std::vector<int> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to an int and stored in the
-    std::vector<int> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<int>[0], std::vector<int>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to an int, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char* name,
-               Vector<int>& ref,
-               int         start_ix,
-               int         num_val) const;
 
   /// access an array of objects
   /** Gets a std::vector<int> of num_val values from last
@@ -3179,24 +3162,6 @@ public:
                int         start_ix,
                int         num_val) const;
 
-  /// access an array of objects
-  /** Gets a std::vector<int> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to an int and stored in the
-    std::vector<int> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<int>[0], std::vector<int>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to an int, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char* name,
-                Vector<int>& ref,
-                int         start_ix,
-                int         num_val) const;
 
   /// access an array of objects
   /** Gets a std::vector<int> of num_val values from last
@@ -3217,23 +3182,6 @@ public:
                 int         start_ix,
                 int         num_val) const;
 
-  /// access an array of objects
-  /** Gets a std::vector<unsigned long> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to an int and stored in the
-    std::vector<unsigned long> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<unsigned long>[0], std::vector<unsigned long>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to an unsigned long, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char* name,
-               Vector<unsigned long>& ref,
-               int         start_ix,
-               int         num_val) const;
 
   /// access an array of objects
   /** Gets a std::vector<unsigned long> of num_val values from last
@@ -3253,24 +3201,6 @@ public:
                int         start_ix,
                int         num_val) const;
 
-  /// access an array of objects
-  /** Gets a std::vector<unsigned long> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to an unsigned long and stored in the
-    std::vector<unsigned long> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<unsigned long>[0], std::vector<unsigned long>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to an unsigned long, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char* name,
-                Vector<unsigned long>& ref,
-                int         start_ix,
-                int         num_val) const;
 
   /// access an array of objects
   /** Gets a std::vector<unsigned long> of num_val values from last
@@ -3291,23 +3221,6 @@ public:
                 int         start_ix,
                 int         num_val) const;
 
-  /// access an array
-  /** Gets a std::vector<float> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a float and stored in the
-    std::vector<float> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<float>[0], std::vector<float>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to a float, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char*   name,
-               Vector<float>& ref,
-               int           start_ix,
-               int           num_val) const;
 
   /// access an array
   /** Gets a std::vector<float> of num_val values from last
@@ -3327,24 +3240,6 @@ public:
                int           start_ix,
                int           num_val) const;
 
-  ///
-  /** Gets a std::vector<float> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a float and stored in the
-    std::vector<float> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<float>[0], std::vector<float>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to a float, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char*   name,
-                Vector<float>& ref,
-                int           start_ix,
-                int           num_val) const;
 
   ///
   /** Gets a std::vector<float> of num_val values from last
@@ -3365,23 +3260,6 @@ public:
                 int           start_ix,
                 int           num_val) const;
 
-  ///
-  /** Gets a std::vector<double> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a double and stored in the
-    std::vector<double> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<double>[0], std::vector<double>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to a double, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char*    name,
-               Vector<double>& ref,
-               int            start_ix,
-               int            num_val) const;
 
   ///
   /** Gets a std::vector<double> of num_val values from last
@@ -3401,24 +3279,6 @@ public:
                int            start_ix,
                int            num_val) const;
 
-  ///
-  /** Gets a std::vector<double> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a double and stored in the
-    std::vector<double> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<double>[0], std::vector<double>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to a double, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char*    name,
-                Vector<double>& ref,
-                int            start_ix,
-                int            num_val) const;
 
   ///
   /** Gets a std::vector<double> of num_val values from last
@@ -3439,23 +3299,6 @@ public:
                 int            start_ix,
                 int            num_val) const;
 
-  ///
-  /** Gets a std::vector<string> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a string and stored in the
-    std::vector<string> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<string>[0], std::vector<string>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to a string, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char*     name,
-               Vector<std::string>& ref,
-               int             start_ix,
-               int             num_val) const;
 
   ///
   /** Gets a std::vector<string> of num_val values from last
@@ -3475,24 +3318,6 @@ public:
                int             start_ix,
                int             num_val) const;
 
-  ///
-  /** Gets a std::vector<string> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a string and stored in the
-    std::vector<string> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<string>[0], std::vector<string>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to a string, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char*               name,
-                Vector<std::string>& ref,
-                int                       start_ix,
-                int                       num_val) const;
 
   ///
   /** Gets a std::vector<string> of num_val values from last
@@ -3513,23 +3338,6 @@ public:
                 int                       start_ix,
                 int                       num_val) const;
 
-///
-  /** Gets a std::vector<bool> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a bool and stored in the
-    std::vector<bool> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<bool>[0], std::vector<bool>[1] holds
-    start_ix+1, etc.  If there are fewer than start_ix +
-    num_val values associated with the last occurrence, or
-    if some of the values cannot be converted to a bool, an
-    error message is reported and the program halts.
-  */
-  void getarr (const char*   name,
-               Vector<bool>& ref,
-               int           start_ix,
-               int           num_val) const;
 
   ///
   /** Gets a std::vector<bool> of num_val values from last
@@ -3549,24 +3357,6 @@ public:
                int                start_ix,
                int                num_val) const;
 
-  ///
-  /** Gets a std::vector<bool> of num_val values from last
-    occurrence of given name.  If successful, the values
-    are converted to a bool and stored in the
-    std::vector<bool> object ref.  ref is resized (if
-    necessary) to hold num_val values.  The value in the
-    list indexed by start_ix is copied into
-    std::vector<bool>[0], std::vector<bool>[1] holds
-    start_ix+1, etc.  Returns 0 if the name does not
-    exist.  If there are fewer than start_ix + num_val
-    values associated with the last occurrence, or if some
-    of the values cannot be converted to a bool, an error
-    message is reported and the program halts.
-  */
-  int queryarr (const char*   name,
-                Vector<bool>& ref,
-                int           start_ix,
-                int           num_val) const;
 
   ///
   /** Gets a std::vector<bool> of num_val values from last
@@ -3883,23 +3673,6 @@ ParmParse::getarr (const char* name,
   delete[] c_array;
 }
 
-inline
-void
-ParmParse::getarr (const char* name,
-                   Vector<int>& ptr,
-                   int         start_ix,
-                   int         num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  int* c_array = new int[num_val];
-  getarr(name,ppInt,c_array,start_ix,num_val,-1);
-  for (int i = 0; i < num_val; ++i)
-    {
-      ptr[i] = c_array[i];
-    }
-  delete[] c_array;
-}
 
 inline
 int
@@ -3923,26 +3696,6 @@ ParmParse::queryarr (const char* name,
   return status;
 }
 
-inline
-int
-ParmParse::queryarr (const char* name,
-                     Vector<int>& ptr,
-                     int         start_ix,
-                     int         num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  int* c_array = new int[num_val];
-  int status = queryarr(name,ppInt,c_array,start_ix,num_val,-1);
-  if (status != 0 )
-    {
-      for (int i = 0; i < num_val; ++i)
-        {
-          ptr[i] = c_array[i];
-        }
-    }
-  return status;
-}
 
 inline
 void
@@ -3962,23 +3715,6 @@ ParmParse::getarr (const char*   name,
   delete[] c_array;
 }
 
-inline
-void
-ParmParse::getarr (const char*   name,
-                   Vector<float>& ptr,
-                   int           start_ix,
-                   int           num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  float* c_array = new float[num_val];
-  getarr(name,ppFloat,c_array,start_ix,num_val,-1);
-  for (int i = 0; i < num_val; ++i)
-    {
-      ptr[i] = c_array[i];
-    }
-  delete[] c_array;
-}
 
 inline
 int
@@ -4002,27 +3738,6 @@ ParmParse::queryarr (const char*   name,
   return status;
 }
 
-inline
-int
-ParmParse::queryarr (const char*   name,
-                     Vector<float>& ptr,
-                     int           start_ix,
-                     int           num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  float* c_array = new float[num_val];
-  int status = queryarr(name,ppFloat,c_array,start_ix,num_val,-1);
-  if (status != 0)
-    {
-      for (int i = 0; i < num_val; ++i)
-        {
-          ptr[i] = c_array[i];
-        }
-    }
-  delete[] c_array;
-  return status;
-}
 
 inline
 void
@@ -4050,31 +3765,6 @@ ParmParse::getarr (const char*    name,
   delete[] c_array;
 }
 
-inline
-void
-ParmParse::getarr (const char*    name,
-                   Vector<double>& ptr,
-                   int            start_ix,
-                   int            num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  double* c_array = new double[num_val];
-  int status = queryarr(name,ppDouble,c_array,start_ix,num_val,-1);
-  if (status == 0)
-    {
-      cerr << "ParmParse::getarr(): "
-           << name
-           << " not found in table" << endl;
-      dumpTable(cerr);
-      MayDay::Abort();
-    }
-  for (int i = 0; i < num_val; ++i)
-    {
-      ptr[i] = c_array[i];
-    }
-  delete[] c_array;
-}
 
 inline
 int
@@ -4098,27 +3788,6 @@ ParmParse::queryarr (const char*    name,
   return status;
 }
 
-inline
-int
-ParmParse::queryarr (const char*    name,
-                     Vector<double>& ptr,
-                     int            start_ix,
-                     int            num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  double* c_array = new double[num_val];
-  int status = queryarr(name,ppDouble,c_array,start_ix,num_val,-1);
-  if (status != 0)
-    {
-      for (int i = 0; i < num_val; ++i)
-        {
-          ptr[i] = c_array[i];
-        }
-    }
-  delete[] c_array;
-  return status;
-}
 
 inline
 void
@@ -4138,23 +3807,6 @@ ParmParse::getarr (const char*     name,
   delete[] c_array;
 }
 
-inline
-void
-ParmParse::getarr (const char*     name,
-                   Vector<std::string>& ptr,
-                   int             start_ix,
-                   int             num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  PP_String* c_array = new PP_String[num_val];
-  getarr(name,ppString,c_array,start_ix,num_val,-1);
-  for (int i = 0; i < num_val; ++i)
-    {
-      ptr[i] = c_array[i].c_str();
-    }
-  delete[] c_array;
-}
 
 inline
 int
@@ -4178,27 +3830,6 @@ ParmParse::queryarr (const char*     name,
   return status;
 }
 
-inline
-int
-ParmParse::queryarr (const char*     name,
-                     Vector<std::string>& ptr,
-                     int             start_ix,
-                     int             num_val) const
-{
-  if (ptr.size() < num_val)
-    ptr.resize(num_val);
-  PP_String* c_array = new PP_String[num_val];
-  int status = queryarr(name,ppString,c_array,start_ix,num_val,-1);
-  if (status != 0)
-    {
-      for (int i = 0; i < num_val; ++i)
-        {
-          ptr[i] = c_array[i].c_str();
-        }
-    }
-  delete[] c_array;
-  return status;
-}
 
 // ----------------------------------------
 inline

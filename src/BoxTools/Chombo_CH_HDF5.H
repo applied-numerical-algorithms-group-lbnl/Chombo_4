@@ -34,7 +34,7 @@ using std::endl;
 #include "Chombo_CH_Timer.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_LayoutIterator.H"
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_SPMD.H"
 
 #ifdef CH_MULTIDIM
@@ -46,10 +46,10 @@ using std::endl;
 #endif
 
 template <class T>
-void read(T& item, Vector<Vector<char> >& a_allocatedBuffers, const Box& box,
+void read(T& item, std::vector<std::vector<char> >& a_allocatedBuffers, const Box& box,
           const Interval& comps)
 {
-  Vector<void*> b(a_allocatedBuffers.size());
+  std::vector<void*> b(a_allocatedBuffers.size());
   for (int i=0; i<b.size(); ++i) b[i]= &(a_allocatedBuffers[i][0]);
   read(item, b, box, comps);
 }
@@ -165,7 +165,7 @@ int write(HDF5Handle& a_handle,
           const IntVect& outputGhost = IntVect::Zero,
           const Interval& comps = Interval());
 
-/// reads Vector<Box> from location specified by a_handle.
+/// reads std::vector<Box> from location specified by a_handle.
 /**
      Reads BoxLayout from the group specified by a_handle.
      Only one BoxLayout per group is permitted, this operation overwrites.
@@ -203,7 +203,7 @@ int write(HDF5Handle& a_handle,
 
 */
 int read(HDF5Handle& a_handle,
-         Vector<Box>& boxes,
+         std::vector<Box>& boxes,
          const std::string& name = "boxes");
 
 /// reads the set of Boxes out from the level_* groups of a Chombo HDF5 AMR file
@@ -212,10 +212,10 @@ int read(HDF5Handle& a_handle,
    vector of boxes.  CH_HDF5.Handle must be set to the root group (the default location when the
    file is just opened.
 
-   A handy *get everything* version of int read(HDF5Handle& a_handle, Vector<Box>& boxes)
+   A handy *get everything* version of int read(HDF5Handle& a_handle, std::vector<Box>& boxes)
 */
 int readBoxes(HDF5Handle& a_handle,
-              Vector<Vector<Box> >& boxes);
+              std::vector<std::vector<Box> >& boxes);
 
 /// FArrayBox-at-a-time read function.  FArrayBox gets redefined in the function.  Reads data field named by a_dataName.
 /**  FArrayBox gets redefined in the function.
@@ -672,10 +672,10 @@ protected:
 
   // Both of these vectors are size 1 in the outermost dimension since
   // only 1 type is allowed.
-  Vector<Vector<long long> > m_offsets;
+  std::vector<std::vector<long long> > m_offsets;
                                       ///< Offset in file for each process to
                                       ///< write to
-  Vector<hid_t> m_types;              ///< Type of data written
+  std::vector<hid_t> m_types;              ///< Type of data written
 };
 
 //=============================================================================
@@ -761,8 +761,8 @@ void readDataset(hid_t a_dataset,
 
 struct OffsetBuffer
 {
-  Vector<int> index;
-  Vector<Vector<int> > offsets;
+  std::vector<int> index;
+  std::vector<std::vector<int> > offsets;
   void operator=(const OffsetBuffer& rhs);
 };
 
@@ -775,7 +775,7 @@ namespace CH4_SPMD
 
 //OffsetBuffer specialization of linearSize
 template < >
-int linearSize(const OffsetBuffer& a_input);
+size_t linearSize(const OffsetBuffer& a_input);
 
 //OffsetBuffer specialization of linearIn
 template < >
@@ -785,23 +785,23 @@ void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf);
 template < >
 void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT);
 
-template < > int  linearSize(const Vector<OffsetBuffer>& a_input);
-template < > void linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf);
-template < > void linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT);
+template < > int  linearSize(const std::vector<OffsetBuffer>& a_input);
+template < > void linearIn(std::vector<OffsetBuffer>& a_outputT, const void* const inBuf);
+template < > void linearOut(void* const a_outBuf, const std::vector<OffsetBuffer>& a_inputT);
 }
 #include "Chombo_NamespaceHeader.H"
 
 // First, template specializations for read/write for FArrayBox.
 
 template <>
-inline void dataTypes(Vector<hid_t>& a_types, const BaseFab<int>& dummy)
+inline void dataTypes(std::vector<hid_t>& a_types, const BaseFab<int>& dummy)
 {
   a_types.resize(1);
   a_types[0] = H5T_NATIVE_INT;
 }
 
 template <>
-inline void dataTypes(Vector<hid_t>& a_types, const BaseFab<char>& dummy)
+inline void dataTypes(std::vector<hid_t>& a_types, const BaseFab<char>& dummy)
 {
   a_types.resize(1);
   a_types[0] = H5T_NATIVE_CHAR;
@@ -811,7 +811,7 @@ inline void dataTypes(Vector<hid_t>& a_types, const BaseFab<char>& dummy)
    I am forced to pass in a dummy specialization argument
 */
 template <>
-inline void dataTypes(Vector<hid_t>& a_types, const FArrayBox& dummy)
+inline void dataTypes(std::vector<hid_t>& a_types, const FArrayBox& dummy)
 {
   a_types.resize(1);
   a_types[0] = H5T_NATIVE_REAL;
@@ -819,21 +819,21 @@ inline void dataTypes(Vector<hid_t>& a_types, const FArrayBox& dummy)
 
 
 template <>
-inline void dataSize(const BaseFab<int>& item, Vector<int>& a_sizes,
+inline void dataSize(const BaseFab<int>& item, std::vector<int>& a_sizes,
                      const Box& box, const Interval& comps)
 {
   a_sizes[0] = box.numPts() * comps.size();
 }
 
 template <>
-inline void dataSize(const BaseFab<char>& item, Vector<int>& a_sizes,
+inline void dataSize(const BaseFab<char>& item, std::vector<int>& a_sizes,
                      const Box& box, const Interval& comps)
 {
   a_sizes[0] = box.numPts() * comps.size();
 }
 
 template <>
-inline void dataSize(const FArrayBox& item, Vector<int>& a_sizes,
+inline void dataSize(const FArrayBox& item, std::vector<int>& a_sizes,
                      const Box& box, const Interval& comps)
 {
   a_sizes[0] = box.numPts() * comps.size();
@@ -871,14 +871,14 @@ inline const char* name(const BaseFab<char>& a_dummySpecializationArg)
 // for people who just want ot rely on linearIn/linearOut
 
 template <class T>
-inline void dataTypes(Vector<hid_t>& a_types, const T& dummy)
+inline void dataTypes(std::vector<hid_t>& a_types, const T& dummy)
 {
   a_types.resize(1);
   a_types[0] = H5T_NATIVE_CHAR;
 }
 
 template <class T>
-inline void dataSize(const T& item, Vector<int>& a_sizes,
+inline void dataSize(const T& item, std::vector<int>& a_sizes,
                      const Box& box, const Interval& comps)
 {
   Proto::Box bx = ProtoCh::getProtoBox(box);
@@ -888,7 +888,7 @@ inline void dataSize(const T& item, Vector<int>& a_sizes,
 }
 
 template <class T>
-inline void write(const T& item, Vector<void*>& a_allocatedBuffers,
+inline void write(const T& item, std::vector<void*>& a_allocatedBuffers,
                   const Box& box, const Interval& comps)
 {
   Proto::Box bx = ProtoCh::getProtoBox(box);
@@ -898,7 +898,7 @@ inline void write(const T& item, Vector<void*>& a_allocatedBuffers,
 }
 
 template <class T>
-inline void read(T& item, Vector<void*>& a_allocatedBuffers,
+inline void read(T& item, std::vector<void*>& a_allocatedBuffers,
                  const Box& box, const Interval& comps)
 {
   Proto::Box bx = ProtoCh::getProtoBox(box);
@@ -915,18 +915,18 @@ inline const char* name(const T& a_dummySpecializationArg)
 }
 
 template <class T>
-void getOffsets(Vector<Vector<long long> >& offsets, const BoxLayoutData<T>& a_data,
+void getOffsets(std::vector<std::vector<long long> >& offsets, const BoxLayoutData<T>& a_data,
                 int types, const Interval& comps, const IntVect& outputGhost)
 {
   CH_TIME("getOffsets");
   const BoxLayout& layout = a_data.boxLayout();
   {
     CH_TIMELEAF("offsets.resize");
-    offsets.resize(types, Vector<long long>(layout.size()+1));
-  //  offsets.resize(layout.size() + 1, Vector<long long>(types));
+    offsets.resize(types, std::vector<long long>(layout.size()+1));
+  //  offsets.resize(layout.size() + 1, std::vector<long long>(types));
   }
   for (int t=0; t<types; t++) offsets[t][0] = 0;
-  Vector<int> thisSize(types);
+  std::vector<int> thisSize(types);
   if (T::preAllocatable()==0)
     { // static preAllocatable
       T dummy;
@@ -965,7 +965,7 @@ void getOffsets(Vector<Vector<long long> >& offsets, const BoxLayoutData<T>& a_d
           }
           buff.offsets.push_back(thisSize);
         }
-      Vector<OffsetBuffer> gathering(numProc());
+      std::vector<OffsetBuffer> gathering(numProc());
       {
         CH_TIMELEAF("gather");
         ::CH4_SPMD::gather(gathering, buff, uniqueProc(::CH4_SPMD::SerialTask::compute));
@@ -1009,7 +1009,7 @@ void getOffsets(Vector<Vector<long long> >& offsets, const BoxLayoutData<T>& a_d
 //  the data
 //
 template <class T>
-void getOffsets(Vector<Vector<long long> >& a_offsets,
+void getOffsets(std::vector<std::vector<long long> >& a_offsets,
                 const BoxLayout             a_layout,
                 int                         a_numTypes, 
                 const Interval&             a_comps,
@@ -1018,12 +1018,12 @@ void getOffsets(Vector<Vector<long long> >& a_offsets,
   CH_TIME("getOffsets (prealloc)");
   CH_assert(T::preAllocatable() == 0);
 
-  a_offsets.resize(a_numTypes, Vector<long long>(a_layout.size()+1));
+  a_offsets.resize(a_numTypes, std::vector<long long>(a_layout.size()+1));
   for (int t = 0; t != a_numTypes; ++t)
     {
       a_offsets[t][0] = 0;
     }
-  Vector<int> thisSize(a_numTypes);
+  std::vector<int> thisSize(a_numTypes);
   T dummy;
   unsigned int index = 1;
   for (LayoutIterator it(a_layout.layoutIterator()); it.ok(); ++it)
@@ -1055,20 +1055,20 @@ int write(HDF5Handle& a_handle, const BoxLayoutData<T>& a_data,
   Interval comps(in_comps);
   if ( comps.size() == 0) comps = a_data.interval();
   T dummy; // used for preallocatable methods for dumb compilers.
-  Vector<hid_t> types;
+  std::vector<hid_t> types;
   dataTypes(types, dummy);
 
-  Vector<Vector<long long> > offsets;
-  Vector<long long> bufferCapacity(types.size(), 1);  // noel (was 0)
-  Vector<void*> buffers(types.size(), NULL);
+  std::vector<std::vector<long long> > offsets;
+  std::vector<long long> bufferCapacity(types.size(), 1);  // noel (was 0)
+  std::vector<void*> buffers(types.size(), NULL);
 
   getOffsets(offsets, a_data, types.size(), comps, outputGhost);
 
   // create datasets collectively.
   hsize_t flatdims[1];
   char dataname[100];
-  Vector<hid_t> dataspace(types.size());
-  Vector<hid_t> dataset(types.size());
+  std::vector<hid_t> dataspace(types.size());
+  std::vector<hid_t> dataset(types.size());
 
   herr_t err;
   hsize_t count[1];
@@ -1184,13 +1184,13 @@ int write(HDF5Handle& a_handle, const BoxLayoutData<T>& a_data,
   // collective operations finished, now perform parallel writes
   // to specified hyperslabs.
 
-  Vector<size_t> type_size(types.size());
+  std::vector<size_t> type_size(types.size());
   for (unsigned int i=0; i<types.size(); ++i)
     {
       type_size[i] = H5Tget_size(types[i]);
     }
 
-  Vector<int> thisSize(types.size());
+  std::vector<int> thisSize(types.size());
 
   // Hooks for aggregated collective buffering (ACB).
   // Devendran, et al. Collective I/O Optimizations for Adaptive Mesh 
@@ -1208,11 +1208,11 @@ int write(HDF5Handle& a_handle, const BoxLayoutData<T>& a_data,
   // pout() << "Turning on aggregated collective buffering (ACB)." << endl;
   // For each type types[i], aggCount[i] is the total number of data points for all 
   // the boxes on this processor.
-  Vector<hsize_t> aggCount(types.size(), 0);
+  std::vector<hsize_t> aggCount(types.size(), 0);
   // size of aggregated buffers; initialize to 0 so we can add up
   // the box sizes to compute the size of the buffers
-  Vector<long long> aggBufferSize(types.size(), 0); 
-  Vector<void*> aggBuffers(types.size(), NULL);
+  std::vector<long long> aggBufferSize(types.size(), 0); 
+  std::vector<void*> aggBuffers(types.size(), NULL);
 #endif
 
  // step 1, create buffer big enough to hold the biggest linearized T
@@ -1304,7 +1304,7 @@ int write(HDF5Handle& a_handle, const BoxLayoutData<T>& a_data,
 
     // bufferLoc keeps track of last location written to in the aggregrated 
     // buffer
-    Vector<void*> bufferLoc(types.size(), NULL);
+    std::vector<void*> bufferLoc(types.size(), NULL);
     // Set the bufferLoc to the beginning of the aggregated buffer
     for(unsigned int i=0; i<types.size(); ++i)
       {
@@ -1613,18 +1613,18 @@ int read(HDF5Handle& a_handle, BoxLayoutData<T>& a_data, const std::string& a_na
   char dataname[100];
   hsize_t count[1];
   ch_offset_t offset[1];
-  Vector<Vector<long long> > offsets;
+  std::vector<std::vector<long long> > offsets;
 
   T dummy;
-  Vector<hid_t> types;
+  std::vector<hid_t> types;
   dataTypes(types, dummy);
-  Vector<hid_t> dataspace(types.size());
-  Vector<hid_t> dataset(types.size());
-  offsets.resize(types.size(), Vector<long long>(a_layout.size() +1));
+  std::vector<hid_t> dataspace(types.size());
+  std::vector<hid_t> dataset(types.size());
+  offsets.resize(types.size(), std::vector<long long>(a_layout.size() +1));
 
-  //Vector<int> bufferCapacity(types.size(), 500);
-  //Vector<void*> buffers(types.size(), NULL);
-  Vector<Vector<char> > buffers(types.size(), 500);
+  //std::vector<int> bufferCapacity(types.size(), 500);
+  //std::vector<void*> buffers(types.size(), NULL);
+  std::vector<std::vector<char> > buffers(types.size(), 500);
 
   for (unsigned int i=0; i<types.size(); ++i)
     {
@@ -1710,14 +1710,14 @@ int read(HDF5Handle& a_handle, BoxLayoutData<T>& a_data, const std::string& a_na
 
   //  getOffsets(offsets, a_data, types.size(), comps);
 
-  Vector<size_t> type_size(types.size());
+  std::vector<size_t> type_size(types.size());
   for (unsigned int i=0; i<types.size(); ++i)
     {
       type_size[i] = H5Tget_size(types[i]);
 
     }
 
-  Vector<int> thisSize(types.size());
+  std::vector<int> thisSize(types.size());
   DataIterator it = a_data.dataIterator();
   for ( ; it.ok(); ++it)
     {
@@ -1896,9 +1896,9 @@ int readLevel(HDF5Handle&   a_handle,
   a_time     = meta.m_real["time"];
   a_domain   = meta.m_box["prob_domain"];
   a_refRatio = meta.m_int["ref_ratio"];
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   error = read(a_handle, boxes);
-  Vector<int> procIDs;
+  std::vector<int> procIDs;
   LoadBalance(procIDs, boxes);
 
   DisjointBoxLayout layout(boxes, procIDs, a_domain);
@@ -1968,9 +1968,9 @@ int readLevel(HDF5Handle&   a_handle,
       int refRatioScalar = meta.m_int["ref_ratio"];
       a_refRatio = refRatioScalar * IntVect::Unit;
     }
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   error = read(a_handle, boxes);
-  Vector<int> procIDs;
+  std::vector<int> procIDs;
   LoadBalance(procIDs, boxes);
 
   DisjointBoxLayout layout(boxes, procIDs, a_domain);

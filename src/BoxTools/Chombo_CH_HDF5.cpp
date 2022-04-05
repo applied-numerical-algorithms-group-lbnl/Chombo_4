@@ -22,7 +22,7 @@ using std::cerr;
 
 //----------------------------------------------------------
 // template <class T>
-// ostream& operator<<(ostream& os, const Vector<T>& vec)
+// ostream& operator<<(ostream& os, const std::vector<T>& vec)
 // {
 //   for (int i=0; i<vec.size(); i++) os<<vec[i]<<" ";
 //   return os;
@@ -38,7 +38,7 @@ void OffsetBuffer::operator=(const OffsetBuffer& rhs)
     }
   index.resize(rhs.index.size());
   int types = rhs.offsets[0].size();
-  offsets.resize(rhs.offsets.size(), Vector<int>(types, 0));
+  offsets.resize(rhs.offsets.size(), std::vector<int>(types, 0));
   for (int i=0; i<rhs.index.size(); i++)
     {
       index[i] = rhs.index[i];
@@ -81,12 +81,12 @@ void CH4_SPMD::linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf)
   const int* data = (const int*) a_inBuf;
   int num = data[0],  numTypes = data[1];
   a_outputT.index.resize(data[0]);
-  a_outputT.offsets.resize(data[0], Vector<int>(data[1]));
+  a_outputT.offsets.resize(data[0], std::vector<int>(data[1]));
   const int* off = data+2+num;
   for (int i=0; i<num; i++)
     {
       a_outputT.index[i] = data[i+2];
-      Vector<int>& offsets = a_outputT.offsets[i];
+      std::vector<int>& offsets = a_outputT.offsets[i];
       for (int j=0; j<numTypes; j++)
         {
           offsets[j] = off[j];
@@ -119,7 +119,7 @@ void CH4_SPMD::linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
 
   for (int i=0; i<a_inputT.offsets.size(); ++i)
     {
-      const Vector<int>& offset = a_inputT.offsets[i];
+      const std::vector<int>& offset = a_inputT.offsets[i];
       for (int t=0; t < offset.size(); ++t, ++data)
         {
           *data = offset[t];
@@ -129,16 +129,16 @@ void CH4_SPMD::linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
 
   // pout() << endl;
 }
-//Vector<OffsetBuffer>  specialization
-template < > int CH4_SPMD::linearSize(const Vector<OffsetBuffer>& a_input)
+//std::vector<OffsetBuffer>  specialization
+template < > int CH4_SPMD::linearSize(const std::vector<OffsetBuffer>& a_input)
 {
   return linearListSize(a_input);
 }
-template < > void CH4_SPMD::linearIn(Vector<OffsetBuffer>& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(std::vector<OffsetBuffer>& a_outputT, const void* const inBuf)
 {
   linearListIn(a_outputT, inBuf);
 }
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<OffsetBuffer>& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<OffsetBuffer>& a_inputT)
 {
   linearListOut(a_outBuf, a_inputT);
 }
@@ -215,8 +215,8 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   //instead, write boxes serially from proc 0
   if (proc == 0)
   {
-    Vector<Box> vbox(a_layout.size());
-    Vector<int> pid(a_layout.size());
+    std::vector<Box> vbox(a_layout.size());
+    std::vector<int> pid(a_layout.size());
     count[0]=a_layout.size();
     int b=0;
     hid_t memdataspace = H5Screate_simple(1, count, NULL);
@@ -252,7 +252,7 @@ int write(HDF5Handle& a_handle, const BoxLayout& a_layout, const std::string& na
   return 0;
 }
 
-int read(HDF5Handle& a_handle, Vector<Box>& boxes, const std::string& name)
+int read(HDF5Handle& a_handle, std::vector<Box>& boxes, const std::string& name)
 {
 #ifdef H516
   hid_t  boxdataset = H5Dopen(a_handle.groupID(), name.c_str());
@@ -270,7 +270,7 @@ int read(HDF5Handle& a_handle, Vector<Box>& boxes, const std::string& name)
 
   Box* rawboxes = new Box[dims[0]];
   if (rawboxes == NULL)
-    MayDay::Error("out of memory in read(HDF5Handle&, Vector<Box>&, string)");
+    MayDay::Error("out of memory in read(HDF5Handle&, std::vector<Box>&, string)");
 
   herr_t error = H5Dread(boxdataset, a_handle.box_id, memdataspace, boxdataspace,
                          H5P_DEFAULT, rawboxes);
@@ -290,7 +290,7 @@ int read(HDF5Handle& a_handle, Vector<Box>& boxes, const std::string& name)
   return 0;
 }
 
-int readBoxes(HDF5Handle& a_handle, Vector<Vector<Box> >& boxes)
+int readBoxes(HDF5Handle& a_handle, std::vector<std::vector<Box> >& boxes)
 {
   int error;
   char levelName[100];

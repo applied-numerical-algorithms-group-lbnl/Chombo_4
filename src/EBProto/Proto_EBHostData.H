@@ -203,7 +203,7 @@ namespace Proto
                                  bool a_printStuff = false) const
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      size_t retval = 2*sizeof(unsigned long); //regsize and irregsize
+      size_t retval = 2*sizeof(size_t); //regsize and irregsize
       size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t sumsize = regsize + irrsize;
@@ -225,19 +225,19 @@ namespace Proto
       }
       size_t charsiz = 0;
       char*  charbuf = (char*)a_buf;
-      unsigned long* longbuf = (unsigned long*)(charbuf);
-      unsigned long regSize = *longbuf;
+      size_t* longbuf = (size_t*)(charbuf);
+      size_t regSize = *longbuf;
       longbuf++;
-      unsigned long irrSize = *longbuf;
+      size_t irrSize = *longbuf;
       longbuf++;
       charbuf = (char*) longbuf;
-      charsiz += 2*sizeof(unsigned long);
+      charsiz += 2*sizeof(size_t);
       
       if(a_printStuff)
       {
         Chombo4::pout() << "EBHostData::linearIn: regSize = " << regSize << endl;
         Chombo4::pout() << "EBHostData::linearIn: irrSize = " << irrSize << endl;
-        size_t totSize = regSize + irrSize + 2*sizeof(unsigned long);
+        size_t totSize = regSize + irrSize + 2*sizeof(size_t);
         Chombo4::pout() << "EBHostData::linearIn: totSize = " << totSize << endl;
         if(totSize != a_expectedCharSize)
         {
@@ -285,12 +285,12 @@ namespace Proto
       {
         Chombo4::pout() << "EBHostData::linearOut:entering for box " << a_bx << endl;
       }
-      unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
-      unsigned long irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
 
       if(a_printStuff)
       {
-        size_t totSize = regSize + irrSize + 2*sizeof(unsigned long);
+        size_t totSize = regSize + irrSize + 2*sizeof(size_t);
         Chombo4::pout() << "EBHostData::linearOut: regSize = " << regSize << endl;
         Chombo4::pout() << "EBHostData::linearOut: irrSize = " << irrSize << endl;
         Chombo4::pout() << "EBHostData::linearOut: totSize = " << totSize << endl;
@@ -302,7 +302,7 @@ namespace Proto
         }
       }
      
-      unsigned long* longbuf = (unsigned long*)(a_buf);
+      size_t* longbuf = (size_t*)(a_buf);
       *longbuf = regSize;
       longbuf++;
       *longbuf = irrSize;
@@ -310,8 +310,8 @@ namespace Proto
       
       char*  charbuf = (char*)(a_buf);
       size_t charsiz = 0;
-      charbuf += 2*sizeof(unsigned long);
-      charsiz += 2*sizeof(unsigned long);
+      charbuf += 2*sizeof(size_t);
+      charsiz += 2*sizeof(size_t);
 
       
       size_t expectedCharSize = regSize; 

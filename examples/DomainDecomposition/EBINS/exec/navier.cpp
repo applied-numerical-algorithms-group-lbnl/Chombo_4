@@ -185,10 +185,10 @@ runNavierStokes()
                paraSolver, ibc, num_species, diffusion_coeffs, printStuff);
 
 
-//begin debug  
-  pout() << "leaving after EBINS constructor" << endl;
-  return 0;
-//end debug    
+////begin debug  
+//  pout() << "leaving after EBINS constructor" << endl;
+//  return 0;
+////end debug    
   unsigned int starting_step = 0;
   Real         starting_time = 0;
   string checkpointFile;

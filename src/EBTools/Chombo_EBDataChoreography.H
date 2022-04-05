@@ -13,7 +13,7 @@
 
 #include "Chombo_DisjointBoxLayout.H"
 #include "Chombo_Pool.H"
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_ProblemDomain.H"
 #include "Chombo_CH_Timer.H"
 #include "Chombo_NeighborIterator.H"
@@ -327,10 +327,10 @@ namespace CH4_Data_Choreography
 
     int                       m_srcProcID;
     int                       m_dstProcID;
-    unsigned long             m_messageLen;
-    unsigned long             m_metaDataLen;
+    size_t             m_messageLen;
+    size_t             m_metaDataLen;
     char*                     m_buffer;
-    vector<unsigned long>     m_boxbufsize;
+    vector<size_t>     m_boxbufsize;
 
 #ifdef CH_MPI    
     MPI_Request m_dataRequest;
@@ -360,16 +360,16 @@ namespace CH4_Data_Choreography
         {
           if(fromMePattern[iproc].size() > 0)
           {
-            vector<unsigned long> boxbufsize(fromMePattern[iproc].size());
+            vector<size_t> boxbufsize(fromMePattern[iproc].size());
 
-            unsigned long totbufsize = 0;
+            size_t totbufsize = 0;
             for(int ibuf = 0; ibuf < fromMePattern[iproc].size(); ibuf++)
             {
               //not constant because I am using the request
               const auto& motion  = fromMePattern[iproc][ibuf];
               CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
               const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
-              unsigned long thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
+              size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
               boxbufsize[ibuf] = thisbufsize;
               totbufsize += thisbufsize;
               if(a_printStuff)
@@ -390,7 +390,7 @@ namespace CH4_Data_Choreography
             from_pi->m_dstProcID  = iproc;
             from_pi->m_messageLen = totbufsize;
             from_pi->m_buffer     = (char*)(malloc(totbufsize));
-            from_pi->m_metaDataLen= (boxbufsize.size())*sizeof(unsigned long);
+            from_pi->m_metaDataLen= (boxbufsize.size())*sizeof(size_t);
             from_pi->m_boxbufsize  = boxbufsize;
           
             m_fromMe.push_back(from_pi);
@@ -413,18 +413,18 @@ namespace CH4_Data_Choreography
         {
           if(toMePattern[iproc].size() > 0)
           {
-            vector<unsigned long> boxbufsize(toMePattern[iproc].size());
+            vector<size_t> boxbufsize(toMePattern[iproc].size());
             shared_ptr<proc_interaction_t> to_pi(new proc_interaction_t());
             to_pi->m_srcProcID   = iproc;
             to_pi->m_dstProcID   = CH4_SPMD::procID();
-            to_pi->m_metaDataLen = (boxbufsize.size())*sizeof(unsigned long);
+            to_pi->m_metaDataLen = (boxbufsize.size())*sizeof(size_t);
 
             char* sendbuf = (char*)(boxbufsize.data());
             MPI_Irecv(sendbuf, to_pi->m_metaDataLen, MPI_BYTE, to_pi->m_srcProcID, MPI_ANY_TAG, comm, &to_pi->m_metaRequest);
             MPI_Status   status;
             MPI_Wait(&to_pi->m_metaRequest, &status);
           
-            unsigned long totbufsize = 0;
+            size_t totbufsize = 0;
             for(int ibuf = 0; ibuf < toMePattern[iproc].size(); ibuf++)
             {
               totbufsize += boxbufsize[ibuf];
@@ -633,7 +633,7 @@ namespace CH4_Data_Choreography
           CH_assert(srcProc == CH4_SPMD::procID());
         
           const auto& vecBoxInteraction = pattern[dstProc];
-          unsigned long checkbufsize = 0;
+          size_t checkbufsize = 0;
           //write data going from one proc to another into one big buffer
           //with some checking along the way
           char* bufloc = charbuf;
@@ -653,7 +653,7 @@ namespace CH4_Data_Choreography
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
             int icomp = 0;
             int ncomp = localfab.nComp();
-            unsigned long charsize = localfab.charsize(motion.m_src.m_region, icomp, ncomp);
+            size_t charsize = localfab.charsize(motion.m_src.m_region, icomp, ncomp);
             CH_assert(charsize == vecbuf[ivec]);
             checkbufsize += charsize;
           
@@ -785,7 +785,7 @@ namespace CH4_Data_Choreography
         
         int icomp = 0;
         int ncomp = srcfab.nComp();
-        unsigned long thisbufsize = srcfab.charsize(motion.m_src.m_region, icomp, ncomp);
+        size_t thisbufsize = srcfab.charsize(motion.m_src.m_region, icomp, ncomp);
         char* buffer = (char*)(malloc(thisbufsize));
 
         srcfab.linearOut(buffer, thisbufsize, region,  icomp, ncomp);
