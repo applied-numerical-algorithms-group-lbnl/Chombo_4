@@ -31,7 +31,7 @@
    MeshRefine.H, except that it needs to use a BRMeshRefine object.
    Here a_refineDirs[d] is 1 if refining in dimension d, and 0 if not.
 */
-extern void domainSplit(const ProblemDomain& a_domain, Vector<Box>& a_vbox,
+extern void domainSplit(const ProblemDomain& a_domain, std::vector<Box>& a_vbox,
                         int a_maxSize, int a_blockfactor=1,
                         IntVect a_refineDirs=IntVect::Unit);
 
@@ -47,7 +47,7 @@ extern void domainSplit(const ProblemDomain& a_domain, Vector<Box>& a_vbox,
    MeshRefine.H, except that it needs to use a BRMeshRefine object.
    Here a_refineDirs[d] is 1 if refining in dimension d, and 0 if not.
 */
-extern void domainSplit(const Box& a_domain, Vector<Box>& a_vbox,
+extern void domainSplit(const Box& a_domain, std::vector<Box>& a_vbox,
                         int a_maxSize, int a_blockfactor=1,
                         IntVect a_refineDirs=IntVect::Unit);
 
@@ -57,7 +57,7 @@ extern void domainSplit(const Box& a_domain, Vector<Box>& a_vbox,
    Does not call Meshrefine.
  */
 extern void
-breakBoxes(Vector<Box>& a_vboxin,  const int& a_maxSize, const int& a_idir);
+breakBoxes(std::vector<Box>& a_vboxin,  const int& a_maxSize, const int& a_idir);
 
 #include "Chombo_NamespaceFooter.H"
 #endif

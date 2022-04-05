@@ -1381,38 +1381,38 @@ void ::CH4_SPMD::linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Bo
 }
 
 template < >
-int ::CH4_SPMD::linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
+size_t ::CH4_SPMD::linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
 {
   //box is stored as 2*spaceDim integers
   return(2*SpaceDim*sizeof(int));
 }
 
 //vector<Chombo4::Box>  specialization
-template < > int CH4_SPMD::linearSize(const Vector<Chombo4::Box>& a_input)
+template < > size_t CH4_SPMD::linearSize(const std::vector<Chombo4::Box>& a_input)
 {
-  return linearListSize(a_input);
+  return linearListSize(a_input, false);
 }
-template < > void CH4_SPMD::linearIn(Vector<Chombo4::Box>& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const inBuf)
 {
-  linearListIn(a_outputT, inBuf);
+  linearListIn(a_outputT, 0, inBuf, false);
 }
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Chombo4::Box>& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
 {
-  linearListOut(a_outBuf, a_inputT);
+  linearListOut(a_outBuf, 0, a_inputT, false);
 }
 
 //vector<vector<Chombo4::Box> >  specialization
-template < > int CH4_SPMD::linearSize(const Vector<Vector<Chombo4::Box> >& a_input)
+template < > size_t CH4_SPMD::linearSize(const std::vector<std::vector<Chombo4::Box> >& a_input)
 {
-  return linearListSize(a_input);
+  return linearListSize(a_input,  false);
 }
-template < > void CH4_SPMD::linearIn(Vector<Vector<Chombo4::Box> >& a_outputT, const void* const inBuf)
+template < > void CH4_SPMD::linearIn(std::vector<std::vector<Chombo4::Box> >& a_outputT, const void* const inBuf)
 {
-  linearListIn(a_outputT, inBuf);
+  linearListIn(a_outputT, 0, inBuf, false);
 }
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Vector<Chombo4::Box> >& a_inputT)
+template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<std::vector<Chombo4::Box> >& a_inputT)
 {
-  linearListOut(a_outBuf, a_inputT);
+  linearListOut(a_outBuf, 0, a_inputT, false);
 }
 
 

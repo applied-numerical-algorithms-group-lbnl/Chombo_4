@@ -90,7 +90,7 @@ void BoxLayout::sort()
 {
   if (!*m_closed)
     {
-      m_boxes->sort();
+      std::sort(m_boxes->begin(), m_boxes->end());
       *m_sorted = true;
     }
 }
@@ -680,7 +680,7 @@ int BoxLayout::numBoxes(const int procID) const
 long long  BoxLayout::numCells() const
 {
   long long rtn = 0;
-  const std::vector<Entry>& v = m_boxes->constStdstd::vector();
+  const std::vector<Entry>& v = m_boxes;
   for (std::vector<Entry>::const_iterator i=v.begin(); i!=v.end(); ++i)
     {
       rtn += (*i).box.numPts();

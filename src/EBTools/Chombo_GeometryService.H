@@ -476,7 +476,7 @@ public:
                   const RealVect                    &      a_origin,
                   const double                      &      a_finestDx,
                   const Box                         &      a_finestDomain,
-                  const Vector<DisjointBoxLayout>   &      a_grids,
+                  const std::vector<DisjointBoxLayout>   &      a_grids,
                   const int                         &      a_ghost,
                   bool a_printStuff = false)
   {

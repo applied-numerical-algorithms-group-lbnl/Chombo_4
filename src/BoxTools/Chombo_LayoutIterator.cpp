@@ -26,10 +26,10 @@ LayoutIterator::LayoutIterator(const BoxLayout& a_boxlayout,
                                const int*       a_layoutID)
   :
   m_layout(a_boxlayout),
-  m_indicies(new Vector<LayoutIndex>()),
+  m_indicies(new std::vector<LayoutIndex>()),
   m_current(0)
 {
-  Vector<LayoutIndex>& indicies = *m_indicies;
+  std::vector<LayoutIndex>& indicies = *m_indicies;
   indicies.resize(a_boxlayout.size());
   int datInd = 0;
   for (int ibox = 0; ibox < a_boxlayout.size(); ibox++)

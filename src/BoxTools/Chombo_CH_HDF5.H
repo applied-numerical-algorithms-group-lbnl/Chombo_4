@@ -785,7 +785,7 @@ void linearIn(OffsetBuffer& a_outputT, const void* const a_inBuf);
 template < >
 void linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT);
 
-template < > int  linearSize(const std::vector<OffsetBuffer>& a_input);
+template < > size_t  linearSize(const std::vector<OffsetBuffer>& a_input);
 template < > void linearIn(std::vector<OffsetBuffer>& a_outputT, const void* const inBuf);
 template < > void linearOut(void* const a_outBuf, const std::vector<OffsetBuffer>& a_inputT);
 }

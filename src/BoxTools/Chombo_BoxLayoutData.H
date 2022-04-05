@@ -226,7 +226,7 @@ public:
           MayDay::Abort("LinearizationTest failure: dest and source have different sizes");
         }
       }
-      Vector<char> buffer(sizeSource);
+      std::vector<char> buffer(sizeSource);
 //      char* buffer  = new char[sizeSource];
       void* b = (void*)&(buffer[0]);
       linearOut(src, b, RegionFrom, Csrc);
@@ -319,21 +319,21 @@ public:
   /// General data copying operation.
   /**
      @param a_destGrids BoxLayout for the destination data holder
-     @param a_dest return argument.  upon completion contains a Vector of T objects
+     @param a_dest return argument.  upon completion contains a std::vector of T objects
      for each Box in a_destGrids that overlaps this->boxLayout()
      @param a_interval range of components to source
      @param a_domain ProblemDomain that this grid and a_destGrids reside on.
      @param factory optional data factory for template classes that have non-trivial construction
   */
   void generalCopyTo(const BoxLayout& a_destGrids,
-                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+                     LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                      const Interval& a_interval,
                      const ProblemDomain& a_domain,
                      const DataFactory<T>& factory = DefaultDataFactory<T>()) const ;
 
   ///
   void generalCopyTo(const BoxLayout& a_destGrids,
-                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+                     LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                      const Interval& a_interval,
                      const ProblemDomain& a_domain,
                      const Copier& a_copier,
@@ -471,7 +471,7 @@ protected:
   void unpackReceivesToMe(const Interval&   a_destComps,
                           const LDOperator<T>& a_op) ;
 
-  void unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+  void unpackReceivesToMe_append(LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                                  const Interval&   a_destComps,
                                  int ncomp,
                                  const DataFactory<T>& factory,
@@ -495,8 +495,8 @@ protected:
 //   mutable std::vector<bufEntry> m_fromMe;
 //   mutable std::vector<bufEntry> m_toMe;
 
-  // mutable Vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
-  // mutable Vector<MPI_Status>   m_receiveStatus, m_sendStatus;
+  // mutable std::vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
+  // mutable std::vector<MPI_Status>   m_receiveStatus, m_sendStatus;
   // mutable int numSends, numReceives;
 #endif
 

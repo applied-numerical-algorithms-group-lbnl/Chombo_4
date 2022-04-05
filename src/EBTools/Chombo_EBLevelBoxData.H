@@ -604,7 +604,7 @@ writeEBLevelHDF5(const string& a_filename,
       }
     }
   }
-  Vector<string> names(NUMCOMPS+1);
+  std::vector<string> names(NUMCOMPS+1);
   for(unsigned int icomp = 0; icomp < NUMCOMPS; icomp++)
   {
     names[icomp] = string("var_") + std::to_string(icomp);

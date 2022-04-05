@@ -882,11 +882,11 @@ writeLevelname(const LevelData<FArrayBox>* a_dataPtr,
   std::vector<LevelData<FArrayBox>*> data(1);
   data[0]=(LevelData<FArrayBox>*)a_dataPtr;
   std::vector<int> refRatios(1,1);
-  writestd::vectorLevelName(&data, &refRatios, a_filename);
+  writeVectorLevelName(&data, &refRatios, a_filename);
 }
 
 void
-writestd::vectorLevelName(const std::vector<LevelData<FArrayBox>*>* a_dataPtr,
+writeVectorLevelName(const std::vector<LevelData<FArrayBox>*>* a_dataPtr,
                      const std::vector<int>*          a_refRatios,
                      const char*                 a_filename)
 {

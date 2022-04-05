@@ -113,6 +113,45 @@ namespace CH4_SPMD
     int* intbuf = (int*)a_outBuf;
     *intbuf = a_input;
   }
+  
+//std::vector<T> specialization of linearSize
+  template <class T>
+  size_t linearListSize(const std::vector<T>& a_input, bool a_printStuff);
+
+//std::vector<T> specialization of linearIn
+  template <class T>
+  void linearListIn(std::vector<T>& a_outputT,
+                    size_t a_expectedSize,
+                    const void* const a_inBuf,
+                    bool a_printStuff);
+
+//std::vector<T> specialization of linearOut
+  template <class T>
+  void linearListOut(void* const a_outBuf,
+                     size_t a_expectedSize,
+                     const std::vector<T>& a_inputT,
+                     bool a_printStuff);
+  
+  /// vector<int> specialization
+  template < >
+  size_t linearSize(const std::vector<int>& inputT)
+  {
+    return linearListSize(inputT, false);
+  }
+
+  template < >
+  void linearIn(std::vector<int>& a_outputT, const void* const a_inBuf)
+  {
+    size_t expected = (a_outputT.size() + 1)*sizeof(int);
+    return linearListIn(a_outputT, expected, a_inBuf, true);
+  }
+
+  template < >
+  void linearOut(void* const a_outBuf, const std::vector<int>& a_input)
+  {
+    size_t expected = (a_input.size() + 1)*sizeof(int);
+    return linearListOut(a_outBuf, expected, a_input, true);
+  }
 #ifdef CH_MPI
 ///gather from multiple processes
 /**
@@ -149,23 +188,6 @@ namespace CH4_SPMD
 
 
 
-//std::vector<T> specialization of linearSize
-  template <class T>
-  size_t linearListSize(const std::vector<T>& a_input, bool a_printStuff);
-
-//std::vector<T> specialization of linearIn
-  template <class T>
-  void linearListIn(std::vector<T>& a_outputT,
-                    size_t a_expectedSize,
-                    const void* const a_inBuf,
-                    bool a_printStuff);
-
-//std::vector<T> specialization of linearOut
-  template <class T>
-  void linearListOut(void* const a_outBuf,
-                     size_t a_expectedSize,
-                     const std::vector<T>& a_inputT,
-                     bool a_printStuff);
 
   class SerialTask
   {

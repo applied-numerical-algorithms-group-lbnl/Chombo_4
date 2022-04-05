@@ -51,7 +51,8 @@ void OffsetBuffer::operator=(const OffsetBuffer& rhs)
 
 ostream&  operator<<(ostream& os, const OffsetBuffer& ob)
 {
-  os << ob.index <<"|"<<ob.offsets<<"\n";
+  MayDay::Error("not sure what this is about");
+//  os << ob.index <<"|"<<ob.offsets<<"\n";
   return os;
 }
 
@@ -59,7 +60,7 @@ ostream&  operator<<(ostream& os, const OffsetBuffer& ob)
 
 //OffsetBuffer specialization of linearSize
 template < >
-int CH4_SPMD::linearSize(const OffsetBuffer& a_input)
+size_t CH4_SPMD::linearSize(const OffsetBuffer& a_input)
 {
   int r = 0;
   r += 2;   // number of entries from this processor, number of types.
@@ -130,17 +131,17 @@ void CH4_SPMD::linearOut(void* const a_outBuf, const OffsetBuffer& a_inputT)
   // pout() << endl;
 }
 //std::vector<OffsetBuffer>  specialization
-template < > int CH4_SPMD::linearSize(const std::vector<OffsetBuffer>& a_input)
+template < > size_t CH4_SPMD::linearSize(const std::vector<OffsetBuffer>& a_input)
 {
-  return linearListSize(a_input);
+  return linearListSize(a_input, false);
 }
 template < > void CH4_SPMD::linearIn(std::vector<OffsetBuffer>& a_outputT, const void* const inBuf)
 {
-  linearListIn(a_outputT, inBuf);
+  linearListIn(a_outputT, 0, inBuf, false);
 }
 template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<OffsetBuffer>& a_inputT)
 {
-  linearListOut(a_outBuf, a_inputT);
+  linearListOut(a_outBuf, 0, a_inputT, false);
 }
 
 

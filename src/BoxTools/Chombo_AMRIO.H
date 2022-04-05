@@ -544,7 +544,7 @@ writeLevelname(const LevelData<FArrayBox>* a_dataPtr,
     written to the file given by a_filename.
 */
 void
-writestd::vectorLevelName(const std::vector<LevelData<FArrayBox>*>* a_dataPtr,
+writeVectorLevelName(const std::vector<LevelData<FArrayBox>*>* a_dataPtr,
                      const std::vector<int>*                   a_refRatios,
                      const char*                          a_filename);
 
