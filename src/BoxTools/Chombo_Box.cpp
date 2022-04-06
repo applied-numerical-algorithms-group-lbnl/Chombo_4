@@ -1350,7 +1350,9 @@ bool Box::s_tempestOutputFormat = false;
 
 
 template < >
-void ::CH4_SPMD::linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
+void
+::CH4_SPMD::
+linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
 {
   int* intBuf = (int*)a_inBuf;
   IntVect lo, hi;
@@ -1367,7 +1369,9 @@ void ::CH4_SPMD::linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* con
 }
 
 template < >
-void ::CH4_SPMD::linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
+void
+::CH4_SPMD::
+linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
 {
   int* intBuf = (int*)a_outBuf;
   const IntVect& lo = a_inputT.smallEnd();
@@ -1381,39 +1385,50 @@ void ::CH4_SPMD::linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Bo
 }
 
 template < >
-size_t ::CH4_SPMD::linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
+size_t
+::CH4_SPMD::
+linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
 {
   //box is stored as 2*spaceDim integers
   return(2*SpaceDim*sizeof(int));
 }
 
-//vector<Chombo4::Box>  specialization
-template < > size_t CH4_SPMD::linearSize(const std::vector<Chombo4::Box>& a_input)
+
+
+//vector<Box> specialization of linearSize
+template < >
+size_t
+::CH4_SPMD::
+linearSize(const std::vector<Chombo4::Box>& a_input)
 {
   return linearListSize(a_input, false);
 }
-template < > void CH4_SPMD::linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const inBuf)
+
+//vector<Box> specialization of linearIn
+template < >
+void
+::CH4_SPMD::
+linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const a_inBuf)
 {
-  linearListIn(a_outputT, 0, inBuf, false);
-}
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
-{
-  linearListOut(a_outBuf, 0, a_inputT, false);
+  size_t boxsize = 2*SpaceDim*sizeof(int);
+  size_t* vecsizeptr = (size_t *) (a_inBuf);
+  size_t vecsize = *vecsizeptr;
+  size_t expected = (vecsize+1)*sizeof(size_t) + boxsize*(vecsize);
+  return linearListIn(a_outputT, expected, a_inBuf, true);
 }
 
-//vector<vector<Chombo4::Box> >  specialization
-template < > size_t CH4_SPMD::linearSize(const std::vector<std::vector<Chombo4::Box> >& a_input)
+//vector<Chombo4::Box> specialization of linearOut
+template < >
+void
+::CH4_SPMD::
+linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
 {
-  return linearListSize(a_input,  false);
+  size_t boxsize = 2*SpaceDim*sizeof(int);
+  size_t vecsize = a_inputT.size();
+  size_t expectedSize = boxsize*vecsize + (vecsize+1)*sizeof(size_t);
+  return linearListOut(a_outBuf, expectedSize, a_inputT, true);
 }
-template < > void CH4_SPMD::linearIn(std::vector<std::vector<Chombo4::Box> >& a_outputT, const void* const inBuf)
-{
-  linearListIn(a_outputT, 0, inBuf, false);
-}
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const std::vector<std::vector<Chombo4::Box> >& a_inputT)
-{
-  linearListOut(a_outBuf, 0, a_inputT, false);
-}
+
 
 
 

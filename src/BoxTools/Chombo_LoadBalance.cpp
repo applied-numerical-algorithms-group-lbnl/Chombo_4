@@ -460,8 +460,7 @@ LoadBalance(std::vector<std::vector<int> >& procAssignments  //output: processor
               loads[i].load = ComputeLoads[lvl][i];
               loads[i].grid_index = i;
             }
-          //          std::sort( loads.begin() ,loads.end() );
-          loads.sort();
+          std::sort( loads.begin() ,loads.end() );
           // do the initial assignments by sequentially
           // `handing out' the loads from largest to smallest
           std::vector<long> total_loads( nProc,0 ); //total load per processor

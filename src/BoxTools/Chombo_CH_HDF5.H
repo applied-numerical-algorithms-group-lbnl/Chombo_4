@@ -1624,7 +1624,7 @@ int read(HDF5Handle& a_handle, BoxLayoutData<T>& a_data, const std::string& a_na
 
   //std::vector<int> bufferCapacity(types.size(), 500);
   //std::vector<void*> buffers(types.size(), NULL);
-  std::vector<std::vector<char> > buffers(types.size(), 500);
+  std::vector<std::vector<char> > buffers(types.size());
 
   for (unsigned int i=0; i<types.size(); ++i)
     {

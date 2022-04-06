@@ -667,9 +667,9 @@ private:
 
 #ifdef CH_MPI
 
-    Vector<int> numPtsAllProcs;
+    std::vector<int> numPtsAllProcs;
     CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
-    CH4_SPMD::broadcast<Vector<int> >(    numPtsAllProcs, 0);
+    CH4_SPMD::broadcast<vector<int> >(    numPtsAllProcs, 0);
     PetscInt startgid = 0;
     PetscInt totalNumPts = 0; 
     for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
@@ -734,7 +734,7 @@ private:
   string m_domainBCName[2*DIM];
   string m_ebbcName;
 
-  Vector<int> m_numPtsAllProc;
+  std::vector<int> m_numPtsAllProc;
   Point   m_ptghost;
   IntVect m_ivghost;
   Mat m_mat;

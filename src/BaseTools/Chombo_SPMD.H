@@ -94,20 +94,20 @@ namespace CH4_SPMD
   }
 
   /// int specialization
-  template < >
+  template < > inline
   size_t linearSize(const int& inputT)
   {
     return sizeof(int);
   }
 
-  template < >
+  template < > inline
   void linearIn(int& a_outputT, const void* const a_inBuf)
   {
     const int* intbuf = (const int *) a_inBuf;
     a_outputT = *intbuf;
   }
 
-  template < >
+  template < > inline
   void linearOut(void* const a_outBuf, const int& a_input)
   {
     int* intbuf = (int*)a_outBuf;
@@ -133,23 +133,29 @@ namespace CH4_SPMD
                      bool a_printStuff);
   
   /// vector<int> specialization
-  template < >
+  template < > inline 
   size_t linearSize(const std::vector<int>& inputT)
   {
     return linearListSize(inputT, false);
   }
 
-  template < >
+  template < > inline
   void linearIn(std::vector<int>& a_outputT, const void* const a_inBuf)
   {
-    size_t expected = (a_outputT.size() + 1)*sizeof(int);
+    size_t* vecsizeptr = (size_t *) (a_inBuf);
+    size_t vecsize = *vecsizeptr;
+    size_t expected = (vecsize+1)*sizeof(size_t) + vecsize*sizeof(int);
+
+
     return linearListIn(a_outputT, expected, a_inBuf, true);
   }
 
-  template < >
+  template < > inline
   void linearOut(void* const a_outBuf, const std::vector<int>& a_input)
   {
-    size_t expected = (a_input.size() + 1)*sizeof(int);
+    size_t vecsize  = a_input.size();
+    size_t expected = vecsize*sizeof(int) + (vecsize+1)*sizeof(size_t);
+
     return linearListOut(a_outBuf, expected, a_input, true);
   }
 #ifdef CH_MPI

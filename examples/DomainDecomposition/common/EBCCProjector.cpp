@@ -32,7 +32,7 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_printStuff));
   if(a_printStuff)
   {
-o    pout() << "EBCCProjector::define calling register stencils" << endl;
+    pout() << "EBCCProjector::define calling register stencils" << endl;
   }
   registerStencils();
 }

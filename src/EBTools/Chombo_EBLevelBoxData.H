@@ -611,12 +611,12 @@ writeEBLevelHDF5(const string& a_filename,
   }
   names[NUMCOMPS] = string("fraction-0");
 
-  Vector<DisjointBoxLayout>     vecgrids(1, grids);
-  Vector<LevelData<FArrayBox> *> vecdata(1, &hostfabs);
+  std::vector<DisjointBoxLayout>     vecgrids(1, grids);
+  std::vector<LevelData<FArrayBox> *> vecdata(1, &hostfabs);
   int numlev = 1;
   
   WriteAMRHierarchyHDF5(a_filename, vecgrids, vecdata, names, a_domain,
-                        a_dx, a_dt, a_time, Vector<int>(1,2), numlev);
+                        a_dx, a_dt, a_time, std::vector<int>(1,2), numlev);
 #else
     printf("hdf5 not enabled\n");
 #endif

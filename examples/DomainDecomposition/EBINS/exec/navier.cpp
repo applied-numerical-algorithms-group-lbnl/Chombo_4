@@ -85,9 +85,9 @@ runNavierStokes()
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  Vector<Chombo4::Box>               vecdomains;
-  Vector<Real> vecdx;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  std::vector<Chombo4::Box>               vecdomains;
+  std::vector<Real> vecdx;
   int whichGeom;
 
   Real geomCen, geomRad;

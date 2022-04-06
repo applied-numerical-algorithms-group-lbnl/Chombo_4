@@ -516,13 +516,13 @@ public:
      maxCoarsen : maximum times the service coarsens (-1 means coarsen down to 2x2)
   */
   static void
-  generateGrids(Vector<DisjointBoxLayout> & a_grids,
+  generateGrids(std::vector<DisjointBoxLayout> & a_grids,
                 const Box                 & a_domain,
                 int a_maxGridSize =  32,
                 int a_maxCoarsen  = -1)
   {
-    Vector<Box> boxes;
-    Vector<int> procs;
+    std::vector<Box> boxes;
+    std::vector<int> procs;
     domainSplit(a_domain, boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
     DisjointBoxLayout currDBL(boxes, procs, a_domain);

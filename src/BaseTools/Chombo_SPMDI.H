@@ -219,31 +219,38 @@ linearListIn(std::vector<T>& a_outputT,
              const void* const a_inBuf,
              bool a_printStuff)
 {
-  size_t charsize = 0;
   //first entry is the size of the vector
-  const int* const intBuf = (int*)a_inBuf;
-  charsize += sizeof(int);
-  int vecsize = intBuf[0];
-  std::vector<int> vecOffset(vecsize);
+  const size_t*  vecsizeptr = (size_t*)(a_inBuf);
+  size_t vecsize = *vecsizeptr;
+  size_t charsiz = 0;
+  char*  charbuf = (char*)(a_inBuf);
+  
+  charsiz += sizeof(size_t);
+  charbuf += sizeof(size_t);
+  std::vector<size_t> vecOffset(vecsize);
   //next vecsize entries are offsets of data into buffer
   for (int ivec = 0; ivec < vecsize; ivec++)
-    {
-      vecOffset[ivec] = intBuf[ivec+1];
-      charsize += sizeof(int);
-    }
-  //next vecsize entries are the actual data
-  //yes I could do this in one loop but that would
-  // either
-  // a) make it less symmetric with linearOut
-  // and/or
-  // b) make both of them far less readable
+  {
+    size_t* sizebuf = (size_t*)(charbuf);
+    vecOffset[ivec] = *sizebuf;
+    charsiz += sizeof(size_t);
+    charbuf += sizeof(size_t );
+  }
+
   a_outputT.resize(vecsize);
-  const char* const charbuf = (char*)a_inBuf;
   for (int ivec = 0; ivec < vecsize; ivec++)
-    {
-      const char* const dataLoc = charbuf + vecOffset[ivec];
-      linearIn(a_outputT[ivec], dataLoc);
-    }
+  {
+    const char* const dataLoc = charbuf;
+    linearIn(a_outputT[ivec], dataLoc);
+    charbuf += vecOffset[ivec];
+    charsiz += vecOffset[ivec];
+  }
+
+  if(a_printStuff && (charsiz != a_expectedSize))
+  {
+    Chombo4::pout() << "CH4_SPMD::linearListIn: WARNING size mismatch" << endl;
+  }
+     
 }
 
 //std::vector<T> specialization of linearOut
@@ -255,30 +262,37 @@ linearListOut(void* const a_outBuf,
               bool a_printStuff)
 {
   //first entry is the size of the vector
-  int* const intBuf = (int*)a_outBuf;
-  intBuf[0] = a_input.size();
-  int vecsize = intBuf[0];
-  std::vector<int> vecOffset(vecsize);
-  //next vecsize entries are offsets of data into buffer
-  //next vecsize entries are the actual data
-  int ioffset = (vecsize+1)*sizeof(int);
+  size_t* vecsizeptr = (size_t*)(a_outBuf);
+  *vecsizeptr = a_input.size();
+  size_t vecsize  = *vecsizeptr;
+  
+  size_t charsiz = 0;
+  char*  charbuf = (char*)(a_outBuf);
+  charsiz += sizeof(size_t);
+  charbuf += sizeof(size_t);
+
+  std::vector<size_t> vecOffset(vecsize);
   for (int ivec = 0; ivec < vecsize; ivec++)
-    {
-      intBuf[ivec+1] = ioffset;
-      vecOffset[ivec] = ioffset;
-      ioffset += linearSize(a_input[ivec]);
-    }
-  //yes I could do this in one loop but that would
-  // either
-  // a) make it less symmetric with linearIn
-  // and/or
-  // b) make both of them far less readable
-  char* const charBuf = (char*)a_outBuf;
+  {
+    size_t * sizebuf = (size_t*) charbuf;
+    size_t itemsize = linearSize(a_input[ivec]);
+    *sizebuf = itemsize;
+      
+    charbuf += itemsize;
+    charsiz += itemsize;
+  }
+
   for (int ivec = 0; ivec < vecsize; ivec++)
-    {
-      char* const dataLoc = charBuf + vecOffset[ivec];
-      linearOut(dataLoc, a_input[ivec]);
-    }
+  {
+    linearOut(charbuf, a_input[ivec]);
+    charbuf += vecOffset[ivec];
+    charsiz += vecOffset[ivec];
+  }
+
+  if(a_printStuff && (charsiz != a_expectedSize))
+  {
+    Chombo4::pout() << "CH4_SPMD::linearListOut: WARNING size mismatch" << endl;
+  }
 }
 
 //std::vector<T> specialization of linearSize
@@ -287,10 +301,10 @@ size_t
 linearListSize(const std::vector<T>& a_input,
                bool a_printStuff)
 {
-  //first entry is the size of the vector (int)
-  //next vecsize entries are offsets of data into buffer (int)
+  //first entry is the size of the vector 
+  //next vecsize entries are offsets of data into buffer 
   //next vecsize entries are the actual data
-  size_t itotsize = (a_input.size() + 1)*sizeof(int);
+  size_t itotsize = (a_input.size() + 1)*sizeof(size_t);
   for (unsigned int ivec = 0; ivec < a_input.size(); ivec++)
     {
       itotsize += linearSize(a_input[ivec]);

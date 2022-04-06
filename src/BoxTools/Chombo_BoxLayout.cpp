@@ -680,7 +680,7 @@ int BoxLayout::numBoxes(const int procID) const
 long long  BoxLayout::numCells() const
 {
   long long rtn = 0;
-  const std::vector<Entry>& v = m_boxes;
+  const std::vector<Entry>& v = *m_boxes;
   for (std::vector<Entry>::const_iterator i=v.begin(); i!=v.end(); ++i)
     {
       rtn += (*i).box.numPts();
@@ -895,33 +895,11 @@ void parallelMortonOrdering(std::vector<Box>::iterator a_first, std::vector<Box>
 }
 #endif
 
-// testing version that runs both the serial and parallel versions and compares.
-// void mortonOrdering(std::vector<Box>& a_boxes)
-// {
-//   int bits;
-// #ifdef CH_MPI
-//   std::vector<Box> tmp(a_boxes);
-//   std::vector<Box>& a = tmp.stdstd::vector();
-//   parallelMortonOrdering(a.begin(), a.end(), bits, Chombo_MPI::comm);
-// #endif
-//   std::vector<Box>& b = a_boxes.stdstd::vector();
-
-//   bits = maxBits(b.begin(), b.end());
-//   std::sort(b.begin(), b.end(), MortonOrdering(bits));
-
-// #ifdef CH_MPI
-//   std::vector<Box>::iterator ita=a.begin(), itb=b.begin();
-//   for (;itb<b.end(); ++ita, ++itb)
-//     {
-//       if (*ita != *itb) MayDay::Error("parallel Morton ordering failed");
-//     }
-// #endif
-// }
 
 void mortonOrdering(std::vector<Box>& a_boxes)
 {
   CH_TIME("mortonOrdering");
-  std::vector<Box>& b = a_boxes.stdstd::vector();
+  std::vector<Box>& b = a_boxes;
   int bits;
 #ifdef CH_MPI
   parallelMortonOrdering(b.begin(), b.end(), bits, CH4_SPMD::Chombo_MPI::comm);
@@ -934,7 +912,7 @@ void mortonOrdering(std::vector<Box>& a_boxes)
 void serialMortonOrdering(std::vector<Box>& a_boxes)
 {
   int bits;
-  std::vector<Box>& b = a_boxes.stdstd::vector();
+  std::vector<Box>& b = a_boxes;
   bits = maxBits(b.begin(), b.end());
   std::sort(b.begin(), b.end(), MortonOrdering(bits));
 }

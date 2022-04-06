@@ -35,7 +35,7 @@
 #include "Chombo_NamespaceHeader.H"
 //recursive function to enforce max size of boxes in a given direction
 void
-breakBoxes(Vector<Box>& a_vboxin,  const int& a_maxBoxSize, const int& a_idir)
+breakBoxes(std::vector<Box>& a_vboxin,  const int& a_maxBoxSize, const int& a_idir)
 {
   int nboxes = a_vboxin.size();
   //need to use STL vector for bools.
@@ -62,7 +62,7 @@ breakBoxes(Vector<Box>& a_vboxin,  const int& a_maxBoxSize, const int& a_idir)
   // the recursion
   if (anyBoxesToSplit)
     {
-      Vector<Box> vboxtemp;
+      std::vector<Box> vboxtemp;
       for (int ibox = 0; ibox < nboxes; ibox++)
         {
           Box boxone = a_vboxin[ibox];
@@ -86,7 +86,7 @@ breakBoxes(Vector<Box>& a_vboxin,  const int& a_maxBoxSize, const int& a_idir)
 }
 
 void
-domainSplit(const Box& a_domain, Vector<Box>& a_vbox, int a_maxBoxSize, int a_blockFactor, IntVect a_refineDirs)
+domainSplit(const Box& a_domain, std::vector<Box>& a_vbox, int a_maxBoxSize, int a_blockFactor, IntVect a_refineDirs)
 {
   CH_TIME("BRMeshRefine::domainSplit");
   a_vbox.resize(0);
