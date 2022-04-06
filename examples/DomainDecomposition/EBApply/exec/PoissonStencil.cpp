@@ -93,11 +93,11 @@ runTest(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
+  std::vector<int> procs;
   pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
@@ -123,7 +123,7 @@ runTest(int a_argc, char* a_argv[])
   pout() << "registering stencil" << endl;
   dictionary.registerStencil(stenname, dombcname, ebbcname, domain.domainBox(), domain.domainBox());
 
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
   pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  srcData(grids, dataGhostIV, graphs);
@@ -166,7 +166,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
@@ -181,10 +181,10 @@ int main(int a_argc, char* a_argv[])
     Chombo4::runTest(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

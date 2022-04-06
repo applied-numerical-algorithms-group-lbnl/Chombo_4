@@ -22,18 +22,6 @@
 #include "Chombo_Interval.H"
 #include "Chombo_NamespaceHeader.H"
 
-/**
-   Blocking factor is default to one.
-   If you make minimum size > 1, then domain must
-   be coarsenable and refineable by blockfactor
-   (refine(coarsen(domain,blockfactor), minsize) == domain)
-   or an error is thrown.  This would be defined in
-   MeshRefine.H, except that it needs to use a BRMeshRefine object.
-   Here a_refineDirs[d] is 1 if refining in dimension d, and 0 if not.
-*/
-extern void domainSplit(const ProblemDomain& a_domain, std::vector<Box>& a_vbox,
-                        int a_maxSize, int a_blockfactor=1,
-                        IntVect a_refineDirs=IntVect::Unit);
 
 ///
 /**
@@ -54,7 +42,6 @@ extern void domainSplit(const Box& a_domain, std::vector<Box>& a_vbox,
 ///
 /**
    Recursive function to enforce max size of boxes in a given direction.
-   Does not call Meshrefine.
  */
 extern void
 breakBoxes(std::vector<Box>& a_vboxin,  const int& a_maxSize, const int& a_idir);
