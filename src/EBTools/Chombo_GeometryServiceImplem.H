@@ -294,7 +294,11 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   }
   coarsenGraph(a_finerLevel);
   
-  m_graphs  ->exchange();       
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: exchanging the coarsened graph" << endl;
+  }
+  m_graphs  ->exchange(a_printStuff);       
 
   if(a_printStuff)
   {
