@@ -75,6 +75,19 @@ public:
     m_inhoContr.define(m_grids, m_ivghost, m_graphs);
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
 
+    {
+      pout() << "EBPetscSolver boundary conditions:" << std::endl;
+      pout() << "\t" << "eb " << m_ebbcName << std::endl;
+      for(int ivec = 0; ivec < 2*DIM; ivec++)
+        {
+          int dir;
+          Side::LoHiSide side;
+          ebp_face(ivec, dir, side);
+          pout() << "\t" << "dir " << dir << ", side " << side
+                 << " " << m_domainBCName[ivec] << std::endl;
+        }
+    }
+
     Chombo4::DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
       {

@@ -175,7 +175,7 @@ namespace Proto
                                 vector<Box>                                 a_BCApplyBoxes[2*DIM],
                                 Box                                       & a_regApplyBox,
                                 string                                      a_stencilName,
-                                string                                      a_domainBCName[2*DIM],
+                                vector<string>                                      a_domainBCName[2*DIM],
                                 string                                      a_ebbcName,
                                 const Box                                 & a_validBox,
                                 const Box                                 & a_domain,

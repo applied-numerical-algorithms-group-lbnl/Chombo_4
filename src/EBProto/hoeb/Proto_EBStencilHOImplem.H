@@ -1078,7 +1078,7 @@ namespace Proto
                               vector<Box>                                 a_BCApplyBoxes[2*DIM],
                               Box                                       & a_regApplyBox,
                               string                                      a_stencilName,
-                              string                                      a_domainBCName[2*DIM],
+                              vector<string>                                      a_domainBCName[2*DIM],
                               string                                      a_ebbcName,
                               const Box                                 & a_validBox,
                               const Box                                 & a_domain,
@@ -1139,7 +1139,7 @@ namespace Proto
       }
 
     string ebbc = a_ebbcName;
-    string dombc[2*DIM];
+    vector<string> dombc[2*DIM];
 
     //Assigning domain and EB boundary conditions
     if(a_forceNeumann)
@@ -1150,17 +1150,36 @@ namespace Proto
       {
         for(int ivec = 0; ivec < 2*DIM; ivec++)
           {
-            if(a_forceNeumann)
+            dombc[ivec].resize(DIM);
+            for(int comp=0; comp !=DIM; comp++)
               {
-                dombc[ivec] = string("Neumann");
-              }
-            else
-              {
-                dombc[ivec] = a_domainBCName[ivec];
+                if(a_forceNeumann)
+                  {
+                    dombc[ivec][comp] = string("Neumann");
+                  }
+                else
+                  {
+                    dombc[ivec][comp] = a_domainBCName[ivec][comp];
+                  }
               }
           }
       }
 
+    // print out the boundary conditions
+    pout() << "WLSDivergenceCompStencil boundary conditions:" << std::endl;
+    pout() << "\t" << "eb " << ebbc << std::endl;
+    for(int comp=0; comp !=DIM; comp++)
+      {
+        pout() << "   " << "comp " << comp << std::endl;
+        for(int ivec = 0; ivec < 2*DIM; ivec++)
+          {
+            int dir;
+            Side::LoHiSide side;
+            ebp_face(ivec, dir, side);
+            pout() << "\t" << "dir " << dir << ", side " << side
+                   << " " << dombc[ivec][comp] << std::endl;
+          }
+      }
     // Setup periodic boundaries
     int ncells = 32;
     int nrepRows = -1;

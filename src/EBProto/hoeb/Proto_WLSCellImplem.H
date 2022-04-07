@@ -224,7 +224,7 @@ namespace Proto
               }
               int index = ebp_index(0, sit());
               if(!found && x_face.m_isBoundary
-                 && (a_dombcName[index] != string("Extrapolated")))
+                 && (a_dombcName[index] != string("no_bcs")))
               {
                 RealVect XfaceLoc;
                 for (int idir = 0; idir < DIM; idir++)
@@ -267,7 +267,7 @@ namespace Proto
               }
               int index = ebp_index(1, sit());
               if(!found && y_face.m_isBoundary
-                 && (a_dombcName[index] != string("Extrapolated")))
+                 && (a_dombcName[index] != string("no_bcs")))
               {
                 RealVect YfaceLoc;
                 for (int idir = 0; idir < DIM; idir++)
@@ -311,7 +311,7 @@ namespace Proto
               }
               int index = ebp_index(2, sit());
               if(!found && z_face.m_isBoundary
-                 && (a_dombcName[index] != string("Extrapolated")))
+                 && (a_dombcName[index] != string("no_bcs")))
               {
                 RealVect ZfaceLoc;
                 for (int idir = 0; idir < DIM; idir++)
@@ -567,7 +567,7 @@ namespace Proto
       }
       else
       {
-        PROTO_ASSERT(false, "could not find ebBC string");
+        PROTO_ASSERT(false, ("could not find ebBC string "+a_ebbcName).c_str());
       }
 
       ebfmom[iebf].shift(diffrv);
@@ -645,7 +645,7 @@ namespace Proto
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
     const int& faceDir = a_face.direction();
-    if (m_verbose) pout() << " RHS - Face Flux Matrix " << endl;
+    if (m_verbose) {pout() << " RHS - Face Flux Matrix " << endl;}
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int, DIM> p = momit();
@@ -737,7 +737,7 @@ namespace Proto
       }
       a_fluxMatrix += fluxIncr;
     }
-    if (m_verbose)  pout() << " RHS - EB Flux Matrix " << endl;
+    if (m_verbose) { pout() << " RHS - EB Flux Matrix " << endl;}
     for(int idir = 0; idir < DIM; idir++)
     {
       for(momit.reset(); momit.ok(); ++momit)
@@ -971,7 +971,11 @@ namespace Proto
     for(int iface = 0; iface < nebf; iface++)
     {
       inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
-      if (m_verbose) pout()<<" ebbc val "<<ebBCValues[iface]<<"  coef "<<a_stencil(0, a_nvolneigh + nfac + iface)<<endl;
+      if (m_verbose)
+        {
+          pout() << " ebbc val " << ebBCValues[iface] << "  coef "
+                 << a_stencil(0, a_nvolneigh + nfac + iface) << endl;
+        }
     }
 
     return inhomogTerm;
@@ -1064,7 +1068,7 @@ namespace Proto
         centr_iter++;
       }
     }
-    if (m_verbose) pout()<<" centroid comp "<<faceLoc<<endl;
+    if (m_verbose) {pout()<<" centroid comp "<<faceLoc<<endl;}
     getWeightsMatrixFace(weights, neighs, faceLoc);
 
     // Compute phiCoef
@@ -1074,7 +1078,7 @@ namespace Proto
     //Filling stencil
     a_sten.clear();
     Real coef_acc = 0.0;
-    if (m_verbose)  pout() << " Coefs Matrix " << endl;
+    if (m_verbose) { pout() << " Coefs Matrix " << endl;}
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
@@ -1090,7 +1094,11 @@ namespace Proto
                                        nvolneigh, 
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
+    if (m_verbose)
+      {
+        pout() << "For phi=1 " << coef_acc << " " << a_inhomogTerm << " "
+               << coef_acc+a_inhomogTerm<<endl;
+      }
   }
 
   //Compute EB face stencil
@@ -1159,7 +1167,7 @@ namespace Proto
     //Filling stencil
     a_stencil.clear();
     Real coef_acc = 0.0;
-    if (m_verbose)  pout() << " Coefs Matrix " << endl;
+    if (m_verbose) { pout() << " Coefs Matrix " << endl;}
     for(int ivof = 0; ivof < vols.size(); ivof++)
     {
       Real thisCo = phiCoef(0, ivof);
@@ -1175,7 +1183,11 @@ namespace Proto
                                        nvolneigh,
                                        a_ebbcName, a_dombcName,
                                        a_dx);
-    if (m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
+    if (m_verbose)
+      {
+        pout() << "For phi=1 " << coef_acc << " " << a_inhomogTerm << " "
+               << coef_acc+a_inhomogTerm<<endl;
+      }
   }
 
 //Compute rhs matrix for a face
@@ -1217,7 +1229,7 @@ namespace Proto
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
     const int& faceDir = a_face.direction();
-    if (this->m_verbose) pout() << " RHS - Face Flux Matrix " << endl;
+    if (this->m_verbose){ pout() << " RHS - Face Flux Matrix " << endl;}
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int, DIM> p = momit();
@@ -1308,7 +1320,7 @@ namespace Proto
       }
       a_fluxMatrix += fluxIncr;
     }
-    if (this->m_verbose)  pout() << " RHS - EB Flux Matrix " << endl;
+    if (this->m_verbose) { pout() << " RHS - EB Flux Matrix " << endl;}
     for(int idir = 0; idir < DIM; idir++)
     {
       for(momit.reset(); momit.ok(); ++momit)
@@ -1358,7 +1370,7 @@ namespace Proto
     MomentIterator<DIM, order> momit;
     a_cellMatrix.define(1, momit.size());
     a_cellMatrix.setVal(0.);
-    if (this->m_verbose) pout() << " RHS - Cell Eval Matrix " << endl;
+    if (this->m_verbose) {pout() << " RHS - Cell Eval Matrix " << endl;}
     for(momit.reset(); momit.ok(); ++momit)
       {
         IndexTM<int, DIM> p = momit();
@@ -1449,7 +1461,7 @@ namespace Proto
     //Filling stencil
     a_sten.clear();
     Real coef_acc = 0.0;
-    if (this->m_verbose)  pout() << " Cell Coefs Matrix " << endl;
+    if (this->m_verbose) { pout() << " Cell Coefs Matrix " << endl;}
     for(int ivof = 0; ivof < vols.size(); ivof++)
       {
         Real thisCo = phiCoef(0, ivof);
@@ -1465,7 +1477,7 @@ namespace Proto
                                              nvolneigh,
                                              a_ebbcName, a_dombcName,
                                              a_dx);
-    if (this->m_verbose) pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;
+    if (this->m_verbose) {pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;}
   }
 
   //Getting flux stencil for laplacian operator at a face by a weighted average between 
@@ -1623,7 +1635,7 @@ namespace Proto
             }
           }
   
-          if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+          if (a_xfaceflux.m_verbose) {pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;}
   
           if (!xfaces[iface].m_isBoundary && a_neighType){
             LocalStencil<CELL, double> fluxMStencil;
@@ -1758,7 +1770,7 @@ namespace Proto
             }
           }
   
-          if (a_yfaceflux.m_verbose) pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+          if (a_yfaceflux.m_verbose) {pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;}
   
           if (!yfaces[iface].m_isBoundary && a_neighType){
             LocalStencil<CELL, double> fluxMStencil;
@@ -2003,7 +2015,7 @@ namespace Proto
                                                   a_zfacdata,
                                                   a_vof, a_graph, a_dx);
 
-      if (a_ebflux.m_verbose) pout()<<" stencil ebface "<<a_vof.m_pt<<endl;
+      if (a_ebflux.m_verbose) {pout()<<" stencil ebface "<<a_vof.m_pt<<endl;}
 
       if(a_ebbcName == string("Neumann"))
       {
@@ -2225,7 +2237,7 @@ namespace Proto
             }
           }
   
-          if (a_xfaceflux.m_verbose) pout()<<" stencil Xface "<<xfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
+          if (a_xfaceflux.m_verbose) {pout()<<" stencil Xface "<<xfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;}
   
           if (!xfaces[iface].m_isBoundary){
 
@@ -2359,7 +2371,7 @@ namespace Proto
             }
           }
   
-          if (a_yfaceflux.m_verbose) pout()<<" stencil Yface "<<yfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
+          if (a_yfaceflux.m_verbose) {pout()<<" stencil Yface "<<yfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;}
   
           if (!yfaces[iface].m_isBoundary){
             a_yfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, yfaces[iface],
@@ -2489,7 +2501,7 @@ namespace Proto
             }
           }
   
-          if (a_zfaceflux.m_verbose) pout()<<" stencil Zface "<<zfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;
+          if (a_zfaceflux.m_verbose) {pout()<<" stencil Zface "<<zfaces[iface].m_pt<<" centroid "<<(a_dx*centroid)+faceLoc<<endl;}
 
           if (!zfaces[iface].m_isBoundary){
             a_zfaceflux.getFaceCenteredStencil(fluxMStencil, inhomogTerm, voflo, zfaces[iface],
@@ -2587,7 +2599,7 @@ namespace Proto
                          const DivWLSFlux<ZFACE, order>  & a_zfaceflux,
                          const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
                          string                             a_ebbcName,
-                         string                             a_dombcName[2*DIM],
+                         vector<string>                     a_dombcName[2*DIM],
                          Real                               & a_inhoTerm,
                          int                                & a_neighType,
                         double                                  a_dx)
@@ -2665,6 +2677,11 @@ namespace Proto
               pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
             }
 
+          string xdombcName[2*DIM];
+          for(int ivec = 0; ivec < 2*DIM; ivec++)
+            {
+              xdombcName[ivec] = a_dombcName[ivec][0];
+            }
           if (!xfaces[iface].m_isBoundary){
             double inhomogTermM = 0;
             double inhomogTermP = 0;
@@ -2679,7 +2696,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               xdombcName,
                                                0,
                                                faceMom,
                                                a_neighType,
@@ -2697,7 +2714,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               xdombcName,
                                                0,
                                                faceMom,
                                                a_neighType,
@@ -2720,7 +2737,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               xdombcName,
                                                0,
                                                faceMom,
                                                a_neighType,
@@ -2740,7 +2757,6 @@ namespace Proto
           fluxStencil *= factor;
           a_inhoTerm += inhomogTerm*factor;
           a_vofStencilx += fluxStencil;
-
         }
       }
     }
@@ -2802,7 +2818,13 @@ namespace Proto
             }
           }
 
-          if (a_yfaceflux.m_verbose) pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;
+          string ydombcName[2*DIM];
+          for(int ivec = 0; ivec < 2*DIM; ivec++)
+            {
+              ydombcName[ivec] = a_dombcName[ivec][1];
+            }
+
+          if (a_yfaceflux.m_verbose) {pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;}
 
           if (!yfaces[iface].m_isBoundary){
             double inhomogTermM = 0;
@@ -2818,7 +2840,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               ydombcName,
                                                1,
                                                faceMom,
                                                a_neighType,
@@ -2836,7 +2858,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               ydombcName,
                                                1,
                                                faceMom,
                                                a_neighType,
@@ -2866,7 +2888,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               ydombcName,
                                                1,
                                                faceMom,
                                                a_neighType,
@@ -2946,6 +2968,12 @@ namespace Proto
             }
           }
 
+          string zdombcName[2*DIM];
+          for(int ivec = 0; ivec < 2*DIM; ivec++)
+            {
+              zdombcName[ivec] = a_dombcName[ivec][2];
+            }
+
           if (!zfaces[iface].m_isBoundary){
             double inhomogTermM = 0;
             double inhomogTermP = 0;
@@ -2960,7 +2988,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               zdombcName,
                                                2,
                                                faceMom,
                                                a_neighType,
@@ -2978,7 +3006,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               zdombcName,
                                                2,
                                                faceMom,
                                                a_neighType,
@@ -3000,7 +3028,7 @@ namespace Proto
                                                a_ebnormydata,
                                                a_ebnormzdata,
                                                a_ebbcName,
-                                               a_dombcName,
+                                               zdombcName,
                                                2,
                                                faceMom,
                                                a_neighType,
@@ -3105,7 +3133,7 @@ namespace Proto
             }
         }
 
-      if (a_cellConstruct.m_verbose) pout() << " stencil xdir "<< a_vof.m_pt << endl;
+      if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
       deriv[0] = 1; // x-derivative stencil
@@ -3155,7 +3183,7 @@ namespace Proto
             }
         }
 
-      if (a_cellConstruct.m_verbose) pout() << " stencil ydir "<< a_vof.m_pt << endl;
+      if (a_cellConstruct.m_verbose) {pout() << " stencil ydir "<< a_vof.m_pt << endl;}
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
       deriv[1] = 1; // x-derivative stencil
@@ -3537,7 +3565,7 @@ namespace Proto
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
     const int& faceDir = a_face.direction();
-    if (this->m_verbose) pout() << " RHS - Adv Face Flux Matrix " << endl;
+    if (this->m_verbose) {pout() << " RHS - Adv Face Flux Matrix " << endl;}
 
     for(momit.reset(); momit.ok(); ++momit)
     {   
@@ -3628,7 +3656,7 @@ namespace Proto
     int powerE = this->m_powerE;;
     //if (max_rad-1 == this->m_radius) powerE = this->m_powerE;
     //else powerE = this->m_powerE - (2.0*(max_rad-this->m_radius-1));
-    if (this->m_verbose)  pout() << " Weights Matrix Adv " << endl;
+    if (this->m_verbose) { pout() << " Weights Matrix Adv " << endl;}
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
       Real blerg;

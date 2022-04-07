@@ -42,11 +42,12 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv)
   Real alpha = 0; Real beta = 1; //Poisson's eqn
 
   string bcnames[2*DIM];
-  m_ebibc.projectionStencilStrings(bcnames);
+  string ebbcname;
+  m_ebibc.projectionStencilStrings(bcnames, ebbcname);
 
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
-                     StencilNames::Poisson2, bcnames, StencilNames::Neumann,
+                     StencilNames::Poisson2, bcnames, ebbcname,
                      m_domain, m_nghost, string("mac_proj")));
 
   registerStencils();

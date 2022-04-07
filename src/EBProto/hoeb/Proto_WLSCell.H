@@ -1120,7 +1120,7 @@ namespace Proto
                           const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
                           const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
                           string                                a_ebbcName,
-                          string                                a_dombcName[2*DIM],
+                          vector<string>                                a_dombcName[2*DIM],
                           Real                                & a_inhoTerm,
                           int                                 & a_neighType,
                           double                                a_dx);
