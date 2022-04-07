@@ -186,8 +186,8 @@ runNavierStokes()
 
 
 ////begin debug  
-//  pout() << "leaving after EBINS constructor" << endl;
-//  return 0;
+  pout() << "leaving after EBINS constructor" << endl;
+  return 0;
 ////end debug    
   unsigned int starting_step = 0;
   Real         starting_time = 0;

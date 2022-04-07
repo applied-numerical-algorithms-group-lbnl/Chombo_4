@@ -225,24 +225,28 @@ namespace Proto
       }
       size_t charsiz = 0;
       char*  charbuf = (char*)a_buf;
-      size_t* longbuf = (size_t*)(charbuf);
-      size_t regSize = *longbuf;
-      longbuf++;
-      size_t irrSize = *longbuf;
-      longbuf++;
-      charbuf = (char*) longbuf;
-      charsiz += 2*sizeof(size_t);
+      size_t* regSizePtr = (size_t*)(charbuf);
+      size_t  regSize = *regSizePtr;
+
+      charbuf  += sizeof(size_t);
+      charsiz  += sizeof(size_t);
+
+      size_t* irrSizePtr = (size_t*)charbuf;
+      size_t  irrSize = *irrSizePtr;
+
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
       if(a_printStuff)
       {
-        Chombo4::pout() << "EBHostData::linearIn: regSize = " << regSize << endl;
-        Chombo4::pout() << "EBHostData::linearIn: irrSize = " << irrSize << endl;
         size_t totSize = regSize + irrSize + 2*sizeof(size_t);
         Chombo4::pout() << "EBHostData::linearIn: totSize = " << totSize << endl;
         if(totSize != a_expectedCharSize)
         {
           Chombo4::pout() << "EBHostData::linearIn: WARNING: "
                           << "expectedCharSize = " << a_expectedCharSize
+                          << ", regSize = " << regSize 
+                          << ", irrSize = " << irrSize 
                           << ", totSize = " << totSize << endl;
         }
       }
@@ -301,18 +305,18 @@ namespace Proto
             << ", actual tot size  = " << totSize << endl;
         }
       }
-     
-      size_t* longbuf = (size_t*)(a_buf);
-      *longbuf = regSize;
-      longbuf++;
-      *longbuf = irrSize;
-      longbuf++;
-      
       char*  charbuf = (char*)(a_buf);
       size_t charsiz = 0;
-      charbuf += 2*sizeof(size_t);
-      charsiz += 2*sizeof(size_t);
-
+      
+      size_t* regSizePtr = (size_t*)(charbuf);
+      *regSizePtr = regSize;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+      size_t* irrSizePtr = (size_t*)(charbuf);
+      *irrSizePtr = irrSize;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
       size_t expectedCharSize = regSize; 
       m_regData.linearOut(charbuf,  expectedCharSize, a_bx, a_startcomp, a_numcomps, a_printStuff);

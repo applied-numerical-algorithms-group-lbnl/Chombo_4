@@ -106,8 +106,9 @@ namespace Proto
         Chombo4::pout() << "HostBoxData::linearIn leaving for box "<< a_bx << ", with charsiz = " << charsiz  << endl;
         if(charsiz != a_expectedCharSize)
         {
-          Chombo4::pout() << "HostBoxData::linearIn: WARNING expected charsiz = "
-                          << a_expectedCharSize << endl;
+          Chombo4::pout() << "HostBoxData::linearIn: WARNING: "
+                          << "expected charsiz = " << a_expectedCharSize
+                          << ", actual size = "<< charsiz << endl;
         }
       }
     }
