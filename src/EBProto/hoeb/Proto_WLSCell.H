@@ -711,47 +711,47 @@ namespace Proto
             Vector<Real> freqVec;
             Vector<Real> centerVec;
   
-        pp.getarr("phi_freq",freqVec,0,DIM);
-        pp.getarr("phi_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          frequency[idir] = freqVec[idir];
-          center[idir] = centerVec[idir];
-        }
+            pp.getarr("phi_freq",freqVec,0,DIM);
+            pp.getarr("phi_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                frequency[idir] = freqVec[idir];
+                center[idir] = centerVec[idir];
+              }
 
-        if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-        if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
-      }
-      else if (a_exactSolFun == 4)
-      {
-        Real rad;
-        pp.get("phi_rad", rad);
-        Real cen;
-        pp.get("phi_cen", cen);
+            if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+          }
+        else if (a_exactSolFun == 4)
+          {
+            Real rad;
+            pp.get("phi_rad", rad);
+            Real cen;
+            pp.get("phi_cen", cen);
 
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-      }
-      else if (a_exactSolFun == 5)
-      {
-        Real coeff;
-        pp.get("phi_coeff",coeff);
+            m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+          }
+        else if (a_exactSolFun == 5)
+          {
+            Real coeff;
+            pp.get("phi_coeff",coeff);
 
-        Real dfac;
-        pp.get("phi_dfac",dfac);
+            Real dfac;
+            pp.get("phi_dfac",dfac);
 
-        RealVect center;
-        Vector<Real> centerVec;
+            RealVect center;
+            Vector<Real> centerVec;
 
-        pp.getarr("phi_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          center[idir] = centerVec[idir];
-        }
+            pp.getarr("phi_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                center[idir] = centerVec[idir];
+              }
 
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
-      }
+            m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
+          }
         m_exactSolEB = m_exactSol;
-    }
+      }
 
     public:
     //Radius needed for neighbors list around a face (Manhattan style)
@@ -999,16 +999,17 @@ namespace Proto
       {}
 
     DivWLSFlux(int           a_radius,
-                      int           a_powerE,
-                      shared_ptr<BaseExactSolution<order> >  a_exactSol,
-                      bool          a_verbose=false)
-      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSol, 0, a_verbose)
+               int           a_powerE,
+               shared_ptr<BaseExactSolution<order> >  a_exactSol,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
+               bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSol, a_exactSolEB, 0, a_verbose)
       {}
 
     DivWLSFlux(int           a_radius,
-                      int           a_powerE,
-                      int           a_exactSolFun,
-                      bool          a_verbose=false)
+               int           a_powerE,
+               int           a_exactSolFun,
+               bool          a_verbose=false)
       :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
       {}
   };

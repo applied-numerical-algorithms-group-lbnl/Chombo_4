@@ -1105,7 +1105,6 @@ namespace Proto
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, double> >(a_dstVoFs.size()));
     a_inhoContr.resize(a_dstVoFs.size());
-
     int radius = 2;
     int powerE = -3;
     bool verbose = 0;
@@ -1180,52 +1179,53 @@ namespace Proto
                    << " " << dombc[ivec][comp] << std::endl;
           }
       }
-    // Setup periodic boundaries
-    int ncells = 32;
-    int nrepRows = -1;
-    //pp.get("nx"   , ncells);
-    ncells = 1.0/a_dx;
-    pp.query("nrepRows", nrepRows);
-    vector<map<int, int> > map1;
-    map<pair<int,int>, EBIndex<CELL> > map2;
-    map1.resize(ncells);
-    for(int k=0; k<ncells; k++)
-      {
-        //Looping over all the valid VoFs
-        for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
-          {
-            Point pt = a_dstVoFs[ivof].m_pt;
-            pair<int,int> ptPair (pt[0],pt[1]);
-            map2[ptPair] = a_dstVoFs[ivof];
-            if (pt[1]==k)
-              {
-                map1[k][pt[0]] = ivof;
-              }
-          }
-      }
-    map<int,int >::iterator it;
-    map<pair<int,int>,EBIndex<CELL> >::iterator it2;
-    vector<LocalStencil<CELL, double> > row_stencil;
-    vector<double> row_inhoContr;
-    vector<EBIndex<CELL> > row_index;
-    int initRep = nrepRows;
-    while(initRep<2*radius)
-      {
-        initRep += nrepRows;
-      }
+    // // Setup periodic boundaries
+    // int ncells = a_domain.size();
+    // int nrepRows = -1;
+    // //pp.get("nx"   , ncells);
+    // pp.query("nrepRows", nrepRows);
+    // vector<map<int, int> > map1;
+    // map<pair<int,int>, EBIndex<CELL> > map2;
+    // map1.resize(ncells);
+    // for(int k=0; k<ncells; k++)
+    //   {
+    //     //Looping over all the valid VoFs
+    //     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    //       {
+    //         Point pt = a_dstVoFs[ivof].m_pt;
+    //         pair<int,int> ptPair (pt[0],pt[1]);
+    //         map2[ptPair] = a_dstVoFs[ivof];
+    //         if (pt[1]==k)
+    //           {
+    //             map1[k][pt[0]] = ivof;
+    //           }
+    //       }
+    //   }
+    // map<int,int >::iterator it;
+    // map<pair<int,int>,EBIndex<CELL> >::iterator it2;
+    // vector<LocalStencil<CELL, double> > row_stencil;
+    // vector<double> row_inhoContr;
+    // vector<EBIndex<CELL> > row_index;
+    // int initRep = nrepRows;
+    // while(initRep<2*radius)
+    //   {
+    //     initRep += nrepRows;
+    //   }
 
-    if (nrepRows == -1)
-      {
-        initRep = 0;
-        nrepRows = ncells;
-      }
+    // if (nrepRows == -1)
+    //   {
+    //     initRep = 0;
+    //     nrepRows = ncells;
+    //   }
 
     //Looping over all the valid VoFs and setting up their stencils
-    for(int k = initRep; k<initRep + nrepRows; k++)
+    // for(int k = initRep; k<initRep + nrepRows; k++)
+    //   {
+    //     for (it = map1[k].begin(); it != map1[k].end(); it++)
+    //       {
+    //         int ivof = it->second;
+    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
-        for (it = map1[k].begin(); it != map1[k].end(); it++)
-          {
-            int ivof = it->second;
             EBIndex<CELL> vofInd = a_dstVoFs[ivof];
             Point pt = vofInd.m_pt;
             bool pt_verbose = false;
@@ -1253,7 +1253,7 @@ namespace Proto
             DivWLSFlux<BOUNDARY, order> ebflux;
             if (a_boundarySolutions.size() == 0)
               {
-                //pout() << "Using uniform div boundary values" << std::endl;
+                pout() << "Using uniform div boundary values" << std::endl;
                 xflux = DivWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
                 yflux = DivWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
                 zflux = DivWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
@@ -1261,12 +1261,12 @@ namespace Proto
               }
             else
               {
-                //pout() << "Using specified div boundary values" << std::endl;
+                pout() << "Using specified div boundary values" << std::endl;
                 CH_assert(a_boundarySolutions.size() == 4);
-                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[0], 0, pt_verbose);
-                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[1], 0, pt_verbose);
-                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[2], 0, pt_verbose);
-                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions[3], 0, pt_verbose);
+                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[0], a_boundarySolutions[3], 0, pt_verbose);
+                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[1], a_boundarySolutions[3], 0, pt_verbose);
+                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[2], a_boundarySolutions[3], 0, pt_verbose);
+                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions[3], a_boundarySolutions[3], 0, pt_verbose);
               }
 
             //Computing the flux divergence stencil
@@ -1274,7 +1274,7 @@ namespace Proto
             WLSStencil<order> sten;
             sten.getWLSDivFCompStencil(a_stencil[0][ivof],
                                        a_stencil[1][ivof],
-                                       a_stencil[1][ivof], // dummy for the z
+                                       a_stencil[2][ivof], // dummy for the z
                                        vofInd,
                                        a_graph,
                                        a_voludata,
@@ -1295,9 +1295,9 @@ namespace Proto
                 a_stencil[dir][ivof] *= 1.0/(a_dx);
               }
             a_inhoContr[ivof] = inhoTerm/(a_dx);
-            row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
-            row_inhoContr.push_back(a_inhoContr[ivof]);
-            row_index.push_back(vofInd);
+            // row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
+            // row_inhoContr.push_back(a_inhoContr[ivof]);
+            // row_index.push_back(vofInd);
 
             if (pt_verbose)
               {
@@ -1319,7 +1319,7 @@ namespace Proto
                 pout() << "Sum of all stencil direction weights " << totalW << endl;
               }
           }
-      }
+      //}
 
 //     // update stencils for periodic boundaries
 //     if (nrepRows != ncells)

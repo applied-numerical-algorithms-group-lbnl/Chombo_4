@@ -200,7 +200,6 @@ namespace Proto
         volneighFrac.push_back(1.0);
       }
       if (this->m_fluxType==0){
-        int side = 0;
         for(SideIterator sit; sit.ok(); ++sit)
         {
           vector<EBIndex<XFACE> > xfaces = a_graph.getXFaces(volInd, sit());
@@ -429,8 +428,8 @@ namespace Proto
       pout()<< "Moments matrix" <<endl;
     }
   
-    Real  volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    // Real  volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    // Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     double eps = 1e-9;
 
     //Adding volume moments
@@ -567,7 +566,8 @@ namespace Proto
       }
       else
       {
-        PROTO_ASSERT(false, ("could not find ebBC string "+a_ebbcName).c_str());
+        pout() << "EB boundary (" << a_ebbcName << ") unrecognized" << std::endl;
+        PROTO_ASSERT(false, "could not find ebBC string ");
       }
 
       ebfmom[iebf].shift(diffrv);
@@ -617,7 +617,7 @@ namespace Proto
   {
     PR_TIME("getFaceFluxMatrix");
     using Chombo4::pout;
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    //Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
 
     RealVect startLoc;
     for (int idir = 0; idir < DIM; idir++)
@@ -793,7 +793,7 @@ namespace Proto
       }
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
-      Real blerg;
+      Real blerg = 0.;
       if (ineigh<weightDisVol.size())
       {
         int dist = weightDisVol[ineigh];
@@ -809,6 +809,10 @@ namespace Proto
         int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
         blerg = POW(dist,powerE);
       }
+      if (blerg == 0.)
+        {
+          Chombo4::MayDay::Error("how do I have zero weight? getWeightsMatrixFace");
+        }
       a_weights(ineigh, ineigh) = blerg;
       // sane bounds for weights - not a hard rule, just the convention we use
       CH_assert(a_weights(ineigh, ineigh) > 0.);
@@ -1008,7 +1012,8 @@ namespace Proto
   { 
     PR_TIME("getFaceCenteredStencil");
     using Chombo4::pout;
-    Chombo4::LAPACKMatrix::s_verbose = m_verbose; 
+    Chombo4::LAPACKMatrix::s_verbose = m_verbose;
+    //Chombo4::LAPACKMatrix::s_verbose = true;
 
     Neighbors<order> neighs;
 
@@ -1127,6 +1132,7 @@ namespace Proto
     PR_TIME("getEBFluxStencil");
     using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = m_verbose;
+    // Chombo4::LAPACKMatrix::s_verbose = true;
 
     Neighbors<order> neighs;
 
@@ -1229,7 +1235,7 @@ namespace Proto
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
     const int& faceDir = a_face.direction();
-    if (this->m_verbose){ pout() << " RHS - Face Flux Matrix " << endl;}
+    if (this->m_verbose){ pout() << " RHS - Face Flux Matrix Div" << endl;}
     for(momit.reset(); momit.ok(); ++momit)
     {
       IndexTM<int, DIM> p = momit();
@@ -1418,6 +1424,7 @@ namespace Proto
     PR_TIME("getCellStencil");
     using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
+    // Chombo4::LAPACKMatrix::s_verbose = true;
 
     Neighbors<order> neighs;
     EBIndex<CELL> cell = a_vof; // a dummy, since we want cell bases neighbors
@@ -1587,7 +1594,7 @@ namespace Proto
     PR_TIME("getLaplaWLSDivFStencil");
     using Chombo4::pout;
     a_vofStencil.clear();
-    Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    //Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     for (SideIterator sit; sit.ok(); ++sit)
@@ -2177,7 +2184,7 @@ namespace Proto
     PR_TIME("getAdvWLSDivFStencil");
     using Chombo4::pout;
     a_vofStencil.clear();
-    Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    //Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     for (SideIterator sit; sit.ok(); ++sit)
@@ -2613,7 +2620,7 @@ namespace Proto
     a_vofStencilz.clear();
 #endif
     a_inhoTerm = 0.;
-    Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
+    //Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
     Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     for (SideIterator sit; sit.ok(); ++sit)
@@ -2654,27 +2661,27 @@ namespace Proto
 
           IndMomSDMinOne faceMom;
           if (areaFrac < 1.0)
-          {
-            faceMom = a_xfacdata(xfaces[iface], 0);
-            for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
             {
-              const IndexTM<int, DIM-1>& p = iter();
-              faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+              faceMom = a_xfacdata(xfaces[iface], 0);
+              for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+                {
+                  const IndexTM<int, DIM-1>& p = iter();
+                  faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+                }
             }
-          }
           else
-          {
-            faceMom.setToRegular(a_dx);
-            for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
             {
-              const IndexTM<int, DIM-1>& p = iter();
-              faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+              faceMom.setToRegular(a_dx);
+              for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+                {
+                  const IndexTM<int, DIM-1>& p = iter();
+                  faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+                }
             }
-          }
 
           if (a_xfaceflux.m_verbose)
             {
-              pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;
+              pout() << std::endl <<" stencil Xface "<<xfaces[iface].m_pt<<endl;
             }
 
           string xdombcName[2*DIM];
@@ -2800,7 +2807,7 @@ namespace Proto
 
           IndMomSDMinOne faceMom;
           if (areaFrac < 1.0)
-          {
+            {
             faceMom = a_yfacdata(yfaces[iface], 0);
             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
             {
@@ -2809,7 +2816,7 @@ namespace Proto
             }
           }
           else
-          {
+            {
             faceMom.setToRegular(a_dx);
             for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
             {
@@ -3105,7 +3112,7 @@ namespace Proto
       }
 
     Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
-    Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
+    //Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
 
     double   voluFrac;
     RealVect centroid;
@@ -3509,7 +3516,7 @@ namespace Proto
   {
     PR_TIME("getFaceFluxMatrix");
     using Chombo4::pout;
-    Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
+    //Real areaScaleFactor  = (D_TERM(1.0,  *a_dx, *a_dx));
     int a_faceDir = a_face.direction();
 
     MomentIterator<DIM, order> momit;
@@ -3564,7 +3571,7 @@ namespace Proto
     IndMomDIM velCoeff = m_exactVel->getVelCompTaylorCoeffs(a_faceLoc, a_face.direction());
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
-    const int& faceDir = a_face.direction();
+    //const int& faceDir = a_face.direction();
     if (this->m_verbose) {pout() << " RHS - Adv Face Flux Matrix " << endl;}
 
     for(momit.reset(); momit.ok(); ++momit)
@@ -3653,13 +3660,13 @@ namespace Proto
     Real coeff = 0.5;
     RealVect x_upw = (a_faceLoc/dx) - coeff*(v_faceLoc);
 
-    int powerE = this->m_powerE;;
+    //int powerE = this->m_powerE;
     //if (max_rad-1 == this->m_radius) powerE = this->m_powerE;
     //else powerE = this->m_powerE - (2.0*(max_rad-this->m_radius-1));
     if (this->m_verbose) { pout() << " Weights Matrix Adv " << endl;}
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {
-      Real blerg;
+      Real blerg = 0.;
       if (ineigh<weightDisVol.size())
       {
         Real centroid_x = volMom[ineigh][1]/(volMom[ineigh][IndexTM<int,DIM>::Zero]);
@@ -3684,14 +3691,20 @@ namespace Proto
       }
       else if (ineigh>=weightDisVol.size() && ineigh<weightDisVol.size()+weightDisFac.size())
       {
-        int dist = weightDisFac[ineigh-weightDisVol.size()];
+        //int dist = weightDisFac[ineigh-weightDisVol.size()];
         //blerg = POW(dist,powerE);
+        Chombo4::MayDay::Error("how did I get here? getWeightsMatrixFace");
       }
       if (ineigh>=weightDisVol.size()+weightDisFac.size())
       {
-        int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
+        //int dist = weightDisEB[ineigh-weightDisVol.size()-weightDisFac.size()];
         //blerg = POW(dist,powerE);
+        Chombo4::MayDay::Error("how did I get here? getWeightsMatrixFace");
       }
+      if (blerg == 0.)
+        {
+          Chombo4::MayDay::Error("how do I have zero weight? getWeightsMatrixFace");
+        }
       a_weights(ineigh, ineigh) = blerg;
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
