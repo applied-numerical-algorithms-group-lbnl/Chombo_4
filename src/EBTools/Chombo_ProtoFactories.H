@@ -65,6 +65,12 @@ class GraphConstructorFactory: public DataFactory< DataHolder >
 public:
   typedef CH4_Data_Choreography::DistributedData<EBGraph>  graph_distrib_t;
 
+  
+  virtual bool graphConstructor() const
+  {
+    return true;
+  }
+  
   virtual ~GraphConstructorFactory()
   {
   }

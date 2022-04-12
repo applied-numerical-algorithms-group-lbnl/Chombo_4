@@ -45,6 +45,11 @@ public:
     return true;
   }
 
+  virtual bool graphConstructor() const
+  {
+    return false;
+  }
+
 };
 
 /// Factory object to data members of a BoxLayoutData container

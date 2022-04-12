@@ -325,17 +325,13 @@ namespace CH4_Data_Choreography
       m_buffer       = NULL;
     }
 
-    int                       m_srcProcID;
-    int                       m_dstProcID;
+    int                m_srcProcID;
+    int                 m_dstProcID;
     size_t             m_messageLen;
     size_t             m_metaDataLen;
-    char*                     m_buffer;
+    char*              m_buffer;
     vector<size_t>     m_boxbufsize;
 
-#ifdef CH_MPI    
-    MPI_Request m_dataRequest;
-    MPI_Request m_metaRequest;
-#endif
              
   };
 
@@ -352,112 +348,238 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("CommunicationMetaData constructor");
 #ifdef CH_MPI  
-      auto comm = CH4_SPMD::Chombo_MPI::comm;
-
+      buildMetaData(  a_pattern, a_data, a_printStuff);
+      postReceives(   a_pattern, a_data, a_printStuff);
+      postSends   (   a_pattern, a_data, a_printStuff);
+      completePending(a_pattern, a_data, a_printStuff);
+      unpackReceives( a_pattern, a_data, a_printStuff);
+#endif
+      }
+      
+#ifdef CH_MPI
+    ///build the data you can from the send side
+    void
+    buildMetaData(const BoxPattern   & a_pattern,
+                  vector<fabtype_t*> & a_data,
+                  bool a_printStuff = false)
+    {
+      m_toMe  .resize(           CH4_SPMD::numProc());
+      m_fromMe.resize(           CH4_SPMD::numProc());
+      m_toMeDataRequest.resize(  CH4_SPMD::numProc());
+      m_toMeMetaRequest.resize(  CH4_SPMD::numProc());
+      m_toMeDataStatus.resize(   CH4_SPMD::numProc());
+      m_toMeMetaStatus.resize(   CH4_SPMD::numProc());
+      m_fromMeDataRequest.resize(CH4_SPMD::numProc());
+      m_fromMeMetaRequest.resize(CH4_SPMD::numProc());
+      m_fromMeDataStatus.resize( CH4_SPMD::numProc());
+      m_fromMeMetaStatus.resize( CH4_SPMD::numProc());
+      m_numSends = 0;
+      m_numRecvs = 0;
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        const auto& fromMePattern =  a_pattern.m_fromPattern;
-        for(int iproc = 0; iproc < fromMePattern.size(); iproc++)
+        if(a_pattern.m_toPattern[iproc].size() > 0)
         {
-          if(fromMePattern[iproc].size() > 0)
+          m_numSends++;
+          auto& to_pi = m_toMe[iproc];
+          to_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
+          to_pi->m_srcProcID   = iproc;
+          to_pi->m_dstProcID   = CH4_SPMD::procID();
+          to_pi->m_metaDataLen = (a_pattern.m_toPattern[iproc].size())*sizeof(size_t);
+        } // if there is anything coming from this proc
+
+        if(a_pattern.m_fromPattern[iproc].size() > 0)
+        {
+          m_numRecvs++;
+          vector<size_t> boxbufsize(a_pattern.m_fromPattern[iproc].size());
+
+          size_t totbufsize = 0;
+          for(int ibuf = 0; ibuf < a_pattern.m_fromPattern[iproc].size(); ibuf++)
           {
-            vector<size_t> boxbufsize(fromMePattern[iproc].size());
-
-            size_t totbufsize = 0;
-            for(int ibuf = 0; ibuf < fromMePattern[iproc].size(); ibuf++)
-            {
-              //not constant because I am using the request
-              const auto& motion  = fromMePattern[iproc][ibuf];
-              CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
-              const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
-              size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
-              boxbufsize[ibuf] = thisbufsize;
-              totbufsize += thisbufsize;
-              if(a_printStuff)
-              {
-                Chombo4::pout() << "FromMe: ibuf = "       << ibuf
-                                << "  bufSize   = "   << thisbufsize
-                                << "  srcProcID = " << fromMePattern[iproc][ibuf].m_src.m_procID
-                                << "  dstProcID = " << fromMePattern[iproc][ibuf].m_dst.m_procID 
-                                << ", srcRegion = " << fromMePattern[iproc][ibuf].m_src.m_region
-                                << ", dstRegion = " << fromMePattern[iproc][ibuf].m_dst.m_region 
-                                << ", srcValid  = " << fromMePattern[iproc][ibuf].m_src.m_valid
-                                << ", dstValid  = " << fromMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
-              }
-            }
+            const auto& motion  = a_pattern.m_fromPattern[iproc][ibuf];
+            CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
+            const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
+            size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
+            boxbufsize[ibuf] = thisbufsize;
+            totbufsize += thisbufsize;
+          }
           
-            shared_ptr<proc_interaction_t> from_pi(new proc_interaction_t());
-            from_pi->m_srcProcID  = CH4_SPMD::procID();
-            from_pi->m_dstProcID  = iproc;
-            from_pi->m_messageLen = totbufsize;
-            from_pi->m_buffer     = (char*)(malloc(totbufsize));
-            from_pi->m_metaDataLen= (boxbufsize.size())*sizeof(size_t);
-            from_pi->m_boxbufsize  = boxbufsize;
-          
-            m_fromMe.push_back(from_pi);
-            if(a_printStuff)
-            {
-              Chombo4::pout() << "proc = "                   << from_pi->m_srcProcID
-                              << "\t will send    " <<  fromMePattern[iproc].size()
-                              << "\t boxes worth of data for a total of a " <<  totbufsize 
-                              << "-sized  buffer to  proc " << from_pi->m_dstProcID << endl;
-            }
-            char* sendbuf = (char*)(boxbufsize.data());
-            MPI_Isend(sendbuf, from_pi->m_metaDataLen, MPI_BYTE, from_pi->m_dstProcID, 0, comm, &from_pi->m_metaRequest);
-          } //if there is anything to send to this proc
-        }   //loop over procs
-      } //scoping
+          auto& from_pi = m_fromMe[iproc];
+          from_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
+          from_pi->m_srcProcID  = CH4_SPMD::procID();
+          from_pi->m_dstProcID  = iproc;
+          from_pi->m_messageLen = totbufsize;
+          from_pi->m_buffer     = (char*)(malloc(totbufsize));
+          from_pi->m_metaDataLen= (a_pattern.m_fromPattern[iproc].size())*sizeof(size_t);
+          from_pi->m_boxbufsize  = boxbufsize;
+        } //if there is anything to send to this proc
+      }   //loop over procs
+        
+    }
 
+    ///let MPI know what messages this processor is expecting
+    void
+    postReceives(const BoxPattern   & a_pattern,
+                 vector<fabtype_t*> & a_data,
+                 bool a_printStuff = false)
+    {
+      CH_TIME("CommunicationMetaData::postReceives");
+
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        const auto& toMePattern = a_pattern.m_toPattern;
-        for(int iproc = 0; iproc < toMePattern.size(); iproc++)
+        auto toMePattern = a_pattern.m_toPattern[iproc];
+        if(toMePattern.size() > 0)
         {
-          if(toMePattern[iproc].size() > 0)
-          {
-            vector<size_t> boxbufsize(toMePattern[iproc].size());
-            shared_ptr<proc_interaction_t> to_pi(new proc_interaction_t());
-            to_pi->m_srcProcID   = iproc;
-            to_pi->m_dstProcID   = CH4_SPMD::procID();
-            to_pi->m_metaDataLen = (boxbufsize.size())*sizeof(size_t);
+          auto& to_pi = m_toMe[iproc];
+          to_pi->m_srcProcID   = iproc;
+          to_pi->m_dstProcID   = CH4_SPMD::procID();
+          to_pi->m_boxbufsize.resize(toMePattern.size());
+          to_pi->m_metaDataLen =    (toMePattern.size())*sizeof(size_t);
 
-            char* sendbuf = (char*)(boxbufsize.data());
-            MPI_Irecv(sendbuf, to_pi->m_metaDataLen, MPI_BYTE, to_pi->m_srcProcID, MPI_ANY_TAG, comm, &to_pi->m_metaRequest);
-            MPI_Status   status;
-            MPI_Wait(&to_pi->m_metaRequest, &status);
+          char* recvbuf = (char*)(to_pi->m_boxbufsize.data());
+          auto comm = CH4_SPMD::Chombo_MPI::comm;
+          MPI_Irecv(recvbuf, to_pi->m_metaDataLen, MPI_BYTE, to_pi->m_srcProcID, MPI_ANY_TAG, comm, &m_toMeMetaRequest[iproc]);
           
-            size_t totbufsize = 0;
-            for(int ibuf = 0; ibuf < toMePattern[iproc].size(); ibuf++)
-            {
-              totbufsize += boxbufsize[ibuf];
-              if(a_printStuff)
-              {
-                Chombo4::pout() << "ToMe  : ibuf = "       << ibuf
-                                << "  bufSize = "   << boxbufsize[ibuf]
-                                << "  srcProcID = " << toMePattern[iproc][ibuf].m_src.m_procID
-                                << "  dstProcID = " << toMePattern[iproc][ibuf].m_dst.m_procID 
-                                << ", srcRegion = " << toMePattern[iproc][ibuf].m_src.m_region
-                                << ", dstRegion = " << toMePattern[iproc][ibuf].m_dst.m_region 
-                                << ", srcValid  = " << toMePattern[iproc][ibuf].m_src.m_valid
-                                << ", dstValid  = " << toMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
-              }
-            }
-            to_pi->m_messageLen = totbufsize;
-            to_pi->m_buffer     = (char*)(malloc(totbufsize));
-            to_pi->m_boxbufsize = boxbufsize;
-            m_toMe.push_back(to_pi);
-            
-            if(a_printStuff)
-            {
-              Chombo4::pout() << "proc = "     << to_pi->m_dstProcID
-                              << "\t will receive " << toMePattern[iproc].size()
-                              << "\t boxes worth of data for a total of a " << totbufsize
-                              << "-sized buffer from proc " << to_pi->m_srcProcID << endl;
-            }
-          } // if there is anything coming from this proc
         } //loop over processors
-#endif      
-      } //scoping
+      }
+    }
 
-    } // end constructor
+    ///get the numbers out of the string that MPI sent us
+    void
+    unpackReceives(const BoxPattern   & a_pattern,
+                   vector<fabtype_t*> & a_data,
+                   bool a_printStuff = false)
+    {
+      CH_TIME("CommunicationMetaData::unpackReceives");
+
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+      {
+        auto toMePattern = a_pattern.m_toPattern[iproc];
+        if(toMePattern.size() > 0)
+        {
+          auto& to_pi = m_toMe[iproc];
+          size_t totbufsize = 0;
+          for(int ibuf = 0; ibuf < toMePattern.size(); ibuf++)
+          {
+            totbufsize += to_pi->m_boxbufsize[ibuf];
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "CommunicationMetaData::unpackReceives: "
+                              << "ToMe  : ibuf = "       << ibuf
+                              << "  bufSize = "   << to_pi->m_boxbufsize[ibuf]
+                              << "  srcProcID = " << toMePattern[ibuf].m_src.m_procID
+                              << "  dstProcID = " << toMePattern[ibuf].m_dst.m_procID 
+                              << ", srcRegion = " << toMePattern[ibuf].m_src.m_region
+                              << ", dstRegion = " << toMePattern[ibuf].m_dst.m_region 
+                              << ", srcValid  = " << toMePattern[ibuf].m_src.m_valid
+                              << ", dstValid  = " << toMePattern[ibuf].m_dst.m_valid << std::endl;
+            }
+          }
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData::unpackReceives: "
+                            << "proc = "     << to_pi->m_dstProcID
+                            << "\t will receive " << toMePattern.size()
+                            << "\t boxes worth of data for a total of a " << totbufsize
+                            << "-sized buffer from proc " << to_pi->m_srcProcID << endl;
+          }
+        } //
+      }
+    }
+
+    /// send messages through MPI
+    void
+    postSends(const BoxPattern   & a_pattern,
+              vector<fabtype_t*> & a_data,
+              bool a_printStuff = false)
+    {
+      CH_TIME("CommunicationMetaData::postSends");
+      const auto& fromMePattern =  a_pattern.m_fromPattern;
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+      {
+
+        if(fromMePattern[iproc].size() > 0)
+        {
+          auto& from_pi = m_fromMe[iproc];
+          size_t totbufsize = 0;
+          from_pi->m_boxbufsize.resize(fromMePattern[iproc].size());
+          for(int ibuf = 0; ibuf < fromMePattern[iproc].size(); ibuf++)
+          {
+            //not constant because I am using the request
+            const auto& motion  = fromMePattern[iproc][ibuf];
+            CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
+            const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
+            size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
+
+            from_pi->m_boxbufsize[ibuf] = thisbufsize;
+            totbufsize += thisbufsize;
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "FromMe: ibuf = "       << ibuf
+                              << "  bufSize   = "   << thisbufsize
+                              << "  srcProcID = " << fromMePattern[iproc][ibuf].m_src.m_procID
+                              << "  dstProcID = " << fromMePattern[iproc][ibuf].m_dst.m_procID 
+                              << ", srcRegion = " << fromMePattern[iproc][ibuf].m_src.m_region
+                              << ", dstRegion = " << fromMePattern[iproc][ibuf].m_dst.m_region 
+                              << ", srcValid  = " << fromMePattern[iproc][ibuf].m_src.m_valid
+                              << ", dstValid  = " << fromMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
+            }
+          }
+
+          from_pi->m_srcProcID  = CH4_SPMD::procID();
+          from_pi->m_dstProcID  = iproc;
+          from_pi->m_messageLen = totbufsize;
+          from_pi->m_buffer     = (char*)(malloc(totbufsize));
+          from_pi->m_metaDataLen= (fromMePattern[iproc].size())*sizeof(size_t);
+
+          
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "proc = "                   << from_pi->m_srcProcID
+                            << "\t will send    " <<  fromMePattern[iproc].size()
+                            << "\t boxes worth of data for a total of a " <<  totbufsize 
+                            << "-sized  buffer to  proc " << from_pi->m_dstProcID << endl;
+          }
+          char* sendbuf = (char*)(from_pi->m_boxbufsize.data());
+          auto comm = CH4_SPMD::Chombo_MPI::comm;
+          MPI_Isend(sendbuf, from_pi->m_metaDataLen, MPI_BYTE, from_pi->m_dstProcID, 0, comm, &(m_fromMeMetaRequest[iproc]));
+        } //if there is anything to send to this proc
+      }   //loop over procs
+    }
+
+
+    //call MPI_Waitall for both sends and receives
+    void
+    completePending(const BoxPattern   & a_pattern,
+                    vector<fabtype_t*> & a_data,
+                    bool a_printStuff = false)
+    {
+      CH_TIME("CommunicationMetaData::completePending");
+      {
+        int numSends = m_numSends;
+        int resultSend = MPI_Waitall(numSends,
+                                     &(m_fromMeMetaRequest[0]),
+                                     &(m_fromMeMetaStatus[0]));
+        if (resultSend != MPI_SUCCESS)
+        {
+            
+          Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                          << "WARNING: send MPI returned " << resultSend << endl;
+        }
+      }
+
+      {
+        int numRecvs = m_numRecvs;
+        int resultRecv = MPI_Waitall(numRecvs,
+                                     &(m_toMeMetaRequest[0]),
+                                     &(m_toMeMetaStatus[0]));
+        if (resultRecv != MPI_SUCCESS)
+        {
+          Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                          << "WARNING: receive MPI returned " << resultRecv << endl;
+        }
+      }
+    }
+#endif      
 
     ///Because we have malloced, so we must free
     ~CommunicationMetaData()
@@ -479,10 +601,24 @@ namespace CH4_Data_Choreography
       m_fromMe.resize(0);
     }
     
-    //these can be any length up to numProc()
+
+    //everything length numProc
+
     vector<shared_ptr<proc_interaction_t> > m_toMe;
     vector<shared_ptr<proc_interaction_t> > m_fromMe;
+#ifdef CH_MPI
+    vector<MPI_Request>                     m_toMeDataRequest;
+    vector<MPI_Request>                     m_toMeMetaRequest;
+    vector<MPI_Status>                      m_toMeDataStatus;
+    vector<MPI_Status>                      m_toMeMetaStatus;
 
+    vector<MPI_Request>                     m_fromMeDataRequest;
+    vector<MPI_Request>                     m_fromMeMetaRequest;
+    vector<MPI_Status>                      m_fromMeDataStatus;
+    vector<MPI_Status>                      m_fromMeMetaStatus;
+#endif
+    int m_numSends;
+    int m_numRecvs;
   };
 
   ///
@@ -534,6 +670,8 @@ namespace CH4_Data_Choreography
       m_isDefined = true;
       m_grids = a_grids;
       m_ghost = a_ghost;
+      m_graphConstructed= a_factory.graphConstructor();
+      
       Chombo4::DataIterator dit = a_grids.dataIterator();
       m_data.resize(dit.size(), NULL);
       
@@ -574,8 +712,8 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       CH_TIME("DistributedData::exchange");
-      BoxPattern copier(m_grids, m_ghost, a_printStuff);
-      communicate(*this, copier, *this  , a_printStuff);
+      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
+      communicate(*this, pattern, *this  , a_printStuff, m_graphConstructed);
     }
     
     ///
@@ -583,8 +721,8 @@ namespace CH4_Data_Choreography
                 bool a_printStuff = false)
     {
       CH_TIME("DistributedData::copyTo");
-      BoxPattern copier(m_grids, a_dst.m_grids, a_printStuff);
-      communicate(*this, copier, a_dst, a_printStuff);
+      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
+      communicate(*this, pattern, a_dst, a_printStuff, m_graphConstructed);
     }
 
     ///
@@ -601,63 +739,163 @@ namespace CH4_Data_Choreography
     
   private:
 
-    //actually serialize, send, and receive data
-    static void  doRemoteCopies(vector<fabtype_t*>               & a_data,
+    static void communicate(DistributedData       & a_dst,
+                            BoxPattern            & a_pattern,
+                            const DistributedData & a_src,
+                            bool a_printStuff,
+                            bool a_graphConstructed)
+    {
+      CH_TIME("DistributedData::communicate");
+#ifdef CH_MPI  
+      //communication of size information and allocate buffers
+      CommunicationMetaData<fabtype_t> metadataco(a_pattern, a_dst.m_data, a_printStuff);
+      postReceives(   a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      postSends(      a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+#endif      
+      doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
+#ifdef CH_MPI  
+      completePending(a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      unpackReceives (a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+#endif      
+    }
+
+#ifdef CH_MPI    
+    ///mpi_irecv 
+    static void  postReceives(vector<fabtype_t*>               & a_data,
+                                CommunicationMetaData<fabtype_t> & a_metacomm,
+                              const BoxPattern                 & a_pattern,
+                              bool a_printStuff,
+                              bool a_graphConstructed)
+    {
+
+      CH_TIME("DistributedData::postReceives");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::postReceives begin" << std::endl;
+      }
+      for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
+      {
+        auto toMePattern = a_pattern.m_toPattern[iproc];
+        if(toMePattern.size() > 0)
+        {
+          auto & to_pi   =  a_metacomm.m_toMe[iproc];
+          const auto&  dstProc     =  to_pi->m_dstProcID;
+          char* charbuf            =  to_pi->m_buffer;
+          const auto&  srcProc     =  to_pi->m_srcProcID;
+          const auto&  totbufsize  =  to_pi->m_messageLen;
+
+          CH_assert(dstProc == CH4_SPMD::procID());
+          
+          //ask MPI fill to the buffer 
+          auto comm = CH4_SPMD::Chombo_MPI::comm;
+          MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm,
+                    &(a_metacomm.m_toMeDataRequest[iproc]));
+        } 
+      }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::postReceives end" << std::endl;
+      }
+    }
+    
+    //linearin called here
+    static void  unpackReceives(vector<fabtype_t*>               & a_data,
                                 CommunicationMetaData<fabtype_t> & a_metacomm,
                                 const BoxPattern                 & a_pattern,
-                                bool a_printStuff = false)
+                                bool a_printStuff,
+                                bool a_graphConstructed)
     {
-      CH_TIME("DistributedData::doRemoteCopies");
+      CH_TIME("DistributedData::unpackReceives");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::unpackReceives begin" << std::endl;
+      }
+      for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
+      {
+        auto toMePattern = a_pattern.m_toPattern[iproc];
+        if(toMePattern.size() > 0)
+        {
+          auto & to_pi   =  a_metacomm.m_toMe[iproc];
+          char* charbuf            =  to_pi->m_buffer;
+          const auto&  vecbuf      =  to_pi->m_boxbufsize;
+          char* bufloc = charbuf;
+          
+          for(int ivec = 0; ivec < vecbuf.size(); ivec++)
+          {
+            //this is a box_interaction_t
+            const auto& motion  = toMePattern[ivec];
+            
+            CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
+            fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
+
+            int icomp = 0; int ncomp = localfab.nComp(); //to make it fit with old interface
+
+            size_t expectedCharSize = vecbuf[ivec];
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "DistributedData::unpackReceives: ivec= "    <<  ivec
+                              << ", region = "   << motion.m_dst.m_region
+                              << ", srcProc = "   << motion.m_src.m_procID
+                              << ", char_size   = " << expectedCharSize << endl;
+            }
+            localfab.linearIn(bufloc, expectedCharSize, motion.m_dst.m_region, icomp, ncomp, a_printStuff);
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "DistributedData::unpackReceives: made it out of linearin for ivec = " << ivec << endl;
+            }
+            
+            bufloc += vecbuf[ivec];
+          } //end loop over sub buffers
+          
+        }
+      }
 
       if(a_printStuff)
       {
-        Chombo4::pout() << "entering DistributedData::doRemoteCopies"  << std::endl;
+        Chombo4::pout() << "DistributedData::unpackReceives end" << std::endl;
+      }
+    }
+
+    //mpi_isend called
+    static void  postSends(vector<fabtype_t*>               & a_data,
+                                CommunicationMetaData<fabtype_t> & a_metacomm,
+                                const BoxPattern                 & a_pattern,
+                                bool a_printStuff,
+                                bool a_graphConstructed)
+    {
+      CH_TIME("DistributedData::postSends");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::postSends begin" << std::endl;
       }
       auto comm = CH4_SPMD::Chombo_MPI::comm;
-
-      {//begin outgoing scope
-        const auto& pattern  =  a_pattern.m_fromPattern;
-        auto      & vecinter =  a_metacomm.m_fromMe;
-        if(a_printStuff)
+      for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
+      {
+        auto pattern = a_pattern.m_fromPattern[iproc];
+        if(pattern.size() > 0)
         {
-          Chombo4::pout() << "doremote copies send: number of proc interactions (vecinter.size()) = " << vecinter.size() << endl;
-        }
-        for(int  iinter = 0; iinter < vecinter.size(); iinter++)
-        {
-          char* charbuf            =  vecinter[iinter]->m_buffer;
-          const auto&  dstProc     =  vecinter[iinter]->m_dstProcID;
-          const auto&  srcProc     =  vecinter[iinter]->m_srcProcID;
-          const auto&  totbufsize  =  vecinter[iinter]->m_messageLen;
-          const auto&  vecbuf      =  vecinter[iinter]->m_boxbufsize;
-          auto      &  request     =  vecinter[iinter]->m_dataRequest;
+          auto & from_pi   =  a_metacomm.m_fromMe[iproc];
+          const auto&  dstProc     =  from_pi->m_dstProcID;
+          char* charbuf            =  from_pi->m_buffer;
+          const auto&  srcProc     =  from_pi->m_srcProcID;
+          const auto&  totbufsize  =  from_pi->m_messageLen;
+          const auto&  vecbuf      =  from_pi->m_boxbufsize;
           CH_assert(srcProc == CH4_SPMD::procID());
-        
-          const auto& vecBoxInteraction = pattern[dstProc];
           size_t checkbufsize = 0;
-          //write data going from one proc to another into one big buffer
-          //with some checking along the way
           char* bufloc = charbuf;
-          if(a_printStuff)
-          {
-            Chombo4::pout() << "DistributedData::doRemoteCopies: send: vecBoxInteraction.size() = " << vecBoxInteraction.size() << endl;
-            if(vecbuf.size() != vecBoxInteraction.size())
-            {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: send: WARNING why is the buffer a different size than the box interaction vector??? vecbuf.size = " << vecbuf.size() << endl;
-            }
-          }
-          for(int ivec = 0; ivec < vecBoxInteraction.size(); ivec++)
+          for(int ivec = 0; ivec < vecbuf.size(); ivec++)
           {
             //this is a box_interaction_t
-            const auto& motion  = pattern[dstProc][ivec];
-            bool printdeb = a_printStuff;
+            const auto& motion  = pattern[ivec];
+
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
-            int icomp = 0;
-            int ncomp = localfab.nComp();
+            int icomp = 0;  int ncomp = localfab.nComp(); //
+            
             size_t charsize = localfab.charsize(motion.m_src.m_region, icomp, ncomp);
             CH_assert(charsize == vecbuf[ivec]);
             checkbufsize += charsize;
           
-            if(printdeb)
+            if(a_printStuff)
             {
               Chombo4::pout() << "DistributedData::doRemoteCopies: send:    ivec= "    <<  ivec
                               << ", region = "   << motion.m_src.m_region 
@@ -666,9 +904,9 @@ namespace CH4_Data_Choreography
             }
 
             size_t expectedSize = charsize;
-            localfab.linearOut(bufloc, expectedSize, motion.m_src.m_region, icomp, ncomp, printdeb);
+            localfab.linearOut(bufloc, expectedSize, motion.m_src.m_region, icomp, ncomp, a_printStuff);
             bufloc += charsize;  
-            if(printdeb)
+            if(a_printStuff)
             {
               Chombo4::pout() << "DistributedData::doRemoteCopies: send: made it out of linearOut for ivec = " << ivec << endl;
             }
@@ -676,96 +914,60 @@ namespace CH4_Data_Choreography
           CH_assert(checkbufsize == totbufsize);
 
           //now we have the buffer filled so we can send it to the other proc
-          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &request);
-
-        } //loop through interactions
-      } //end outgoing scope
-
+          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(a_metacomm.m_fromMeDataRequest[iproc]));
+        } //if pattern.size() > 0
+      } //loop over procs
+      
       if(a_printStuff)
       {
-        Chombo4::pout() << "DistributedData::doRemoteCopies: waiting for all procs to finish linear out" << endl;
-        CH4_SPMD::barrier();
+        Chombo4::pout() << "DistributedData::postSends end  " << std::endl;
+      }
+    }
+    
+    //
+    static void  completePending(vector<fabtype_t*>               & a_data,
+                                CommunicationMetaData<fabtype_t> & a_metacomm,
+                                const BoxPattern                 & a_pattern,
+                                bool a_printStuff,
+                                bool a_graphConstructed)
+    {
+      CH_TIME("DistributedData::completePending");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::completePending begin" << std::endl;
       }
       
-      {//begin incoming scope
-        const auto& pattern  =  a_pattern.m_toPattern;
-        auto      & vecinter =  a_metacomm.m_toMe;
-        if(a_printStuff)
-        {
-          Chombo4::pout() << "DistributedData::doRemoteCopies: receive: number of proc interactions (vecinter.size()) = " << vecinter.size() << endl;
-        }
-        for(int  iinter = 0; iinter < vecinter.size(); iinter++)
-        {
-          char* charbuf            =  vecinter[iinter]->m_buffer;
-          const auto&  dstProc     =  vecinter[iinter]->m_dstProcID;
-          const auto&  srcProc     =  vecinter[iinter]->m_srcProcID;
-          const auto&  totbufsize  =  vecinter[iinter]->m_messageLen;
-          const auto&  vecbuf      =  vecinter[iinter]->m_boxbufsize;
-          auto      &  request     =  vecinter[iinter]->m_dataRequest;
-          CH_assert(dstProc == CH4_SPMD::procID());
-          
-          //ask MPI fill to the buffer 
-          MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm, &request);
-          
-          //wait until it actually arrives
-          MPI_Status   status;
-          MPI_Wait(&request, &status);
-            
-          //now dole them out to each data member
-          //this is the vector of box_interaction_t associated with the 
-          const auto& vecBoxInteraction = pattern[srcProc];
-          //write data going from one proc to another into one big buffer
-          //with some checking along the way
-          char* bufloc = charbuf;
-          
-          if(a_printStuff)
-          {
-            Chombo4::pout() << "DistributedData::doRemoteCopies: receive: vecBoxInteraction.size() = " << vecBoxInteraction.size() << endl;
-            if(vecbuf.size() != vecBoxInteraction.size())
-            {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: receive: WARNING why is the buffer a different size than the box interaction vector??? vecbuf.size = " << vecbuf.size() << endl;
-            }
-          }
-          for(int ivec = 0; ivec < vecBoxInteraction.size(); ivec++)
-          {
-
-            //this is a box_interaction_t
-            const auto& motion  = pattern[srcProc][ivec];
-            
-            bool printdeb = a_printStuff;
-
-            CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
-            fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
-
-            int icomp = 0;
-            int ncomp = localfab.nComp();
-
-            size_t expectedCharSize = vecbuf[ivec];
-            if(printdeb)
-            {
-              Chombo4::pout() << "DistributedData::doRemoteCopies::receive ivec= "    <<  ivec
-                              << ", region = "   << motion.m_dst.m_region
-                              << ", srcProc = "   << motion.m_src.m_procID
-                              << ", char_size   = " << expectedCharSize << endl;
-            }
-            localfab.linearIn(bufloc, expectedCharSize, motion.m_dst.m_region, icomp, ncomp, printdeb);
-            if(printdeb)
-            {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: receive made it out of linearin for ivec = " << ivec << endl;
-            }
-            
-            bufloc += vecbuf[ivec];
-          } //end loop over sub buffers
-              
-        } //end loop over to_me processors
-      } //end incoming scope
-
-      if(a_printStuff)
       {
-        Chombo4::pout() << "DistributedData::doRemoteCopies leaving  " << std::endl;
+        int numSends = a_metacomm.m_numSends;
+        int resultSend = MPI_Waitall(numSends,
+                                     &(a_metacomm.m_fromMeDataRequest[0]),
+                                     &(a_metacomm.m_fromMeDataStatus[0]));
+        if (resultSend != MPI_SUCCESS)
+        {
+            
+          Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                          << "WARNING: send MPI returned " << resultSend << endl;
+        }
       }
 
+      {
+        int numRecvs = a_metacomm.m_numRecvs;
+        int resultRecv = MPI_Waitall(numRecvs,
+                                     &(a_metacomm.m_toMeDataRequest[0]),
+                                     &(a_metacomm.m_toMeDataStatus[0]));
+        if (resultRecv != MPI_SUCCESS)
+        {
+          Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                          << "WARNING: receive MPI returned " << resultRecv << endl;
+        }
+      }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "DistributedData::completePending end  " << std::endl;
+      }
     }
+
+#endif    //MPI
     ///
     static void doLocalCopiesWithSerialization(DistributedData       & a_dst,
                                                const DistributedData & a_src,
@@ -841,20 +1043,6 @@ namespace CH4_Data_Choreography
     }
     ///
     
-    static void communicate(DistributedData       & a_dst,
-                            BoxPattern            & a_pattern,
-                            const DistributedData & a_src,
-                            bool a_printStuff = false)
-    {
-      doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
-#ifdef CH_MPI  
-      //communication of size information and allocate buffers
-      CommunicationMetaData<fabtype_t> metadataco(a_pattern, a_dst.m_data, a_printStuff);
-
-      //communication of actual data
-      doRemoteCopies(a_dst.m_data, metadataco, a_pattern, a_printStuff);
-#endif      
-    }
 
     int m_procID;
     ///actual data 
@@ -862,12 +1050,12 @@ namespace CH4_Data_Choreography
     IntVect m_ghost;
     Chombo4::DisjointBoxLayout m_grids;
     bool m_isDefined;
-    
+    bool m_graphConstructed;    
   private:
     //Copy constuction and assignment are disallowed
     //because this simplifies memory management. I like simplicity.
     DistributedData(const DistributedData& a_input);
-    void operator=(const DistributedData& a_input);
+    void operator=( const DistributedData& a_input);
       
     
   };
