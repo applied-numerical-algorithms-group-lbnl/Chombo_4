@@ -169,7 +169,7 @@ namespace Proto
     {
       inttag = 0;
     }
-    else if(m_tag == HasIrregular)
+    else if(m_tag == AllRegular)
     {
       inttag = 1;
     }
