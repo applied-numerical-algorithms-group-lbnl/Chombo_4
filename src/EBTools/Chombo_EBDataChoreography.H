@@ -150,8 +150,8 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("BoxPattern::exchange constructor");
 
-      m_toPattern.resize(  CH4_SPMD::numProc());
-      m_fromPattern.resize(CH4_SPMD::numProc());
+      m_recvPattern.resize(CH4_SPMD::numProc());
+      m_sendPattern.resize(CH4_SPMD::numProc());
       Chombo4::DataIterator dit = a_grids.dataIterator();
       Chombo4::NeighborIterator nit(a_grids);
       for (dit.begin(); dit.ok(); ++dit)
@@ -181,7 +181,7 @@ namespace CH4_Data_Choreography
             }
             else
             {
-              m_toPattern[neiProcID].push_back(item);
+              m_recvPattern[neiProcID].push_back(item);
             }
           }
           Chombo4::Box neighborGhostInter(grid & neighborGhost);
@@ -194,7 +194,7 @@ namespace CH4_Data_Choreography
               Chombo4::Box dstValid = neighbor;
               Chombo4::Box srcValid = grid;
               box_interaction_t item(dit(), Chombo4::DataIndex(nit()), neighborGhostInter, neighborGhostInter, myProcID, neiProcID, srcValid, dstValid);
-              m_fromPattern[neiProcID].push_back(item);
+              m_sendPattern[neiProcID].push_back(item);
             }
           }
         }
@@ -214,8 +214,8 @@ namespace CH4_Data_Choreography
       {
         Chombo4::pout() << a_prefix << " BoxPattern constructor:"
                         << " proc = " << iproc 
-                        << " m_toPattern[iproc].size() = " << m_toPattern[iproc].size()
-                        << " m_fromPattern[iproc].size() = " << m_fromPattern[iproc].size() << endl;
+                        << " m_recvPattern[iproc].size() = " << m_recvPattern[iproc].size()
+                        << " m_sendPattern[iproc].size() = " << m_sendPattern[iproc].size() << endl;
                 
       }
     }
@@ -227,8 +227,8 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("BoxPattern::exchange constructor");
 
-      m_toPattern.resize(  CH4_SPMD::numProc());
-      m_fromPattern.resize(CH4_SPMD::numProc());
+      m_recvPattern.resize(CH4_SPMD::numProc());
+      m_sendPattern.resize(CH4_SPMD::numProc());
       LayoutIterator litSrc = a_src.layoutIterator();
       LayoutIterator litDst = a_dst.layoutIterator();
       int myProcID = CH4_SPMD::procID();
@@ -257,11 +257,11 @@ namespace CH4_Data_Choreography
               }
               else if((srcProcID == myProcID) && (dstProcID != myProcID))
               {
-                m_fromPattern[dstProcID].push_back(item);
+                m_sendPattern[dstProcID].push_back(item);
               }
               else if((srcProcID != myProcID) && (dstProcID == myProcID))
               {
-                m_toPattern[srcProcID].push_back(item);
+                m_recvPattern[srcProcID].push_back(item);
               }
               else
               {
@@ -283,13 +283,13 @@ namespace CH4_Data_Choreography
     {
       //sort everything in sight so that patterns on different procs show up in the same order
       std::sort(m_localPattern.begin(), m_localPattern.end());
-      for(int ipat = 0; ipat < m_toPattern.size(); ipat++)
+      for(int ipat = 0; ipat < m_recvPattern.size(); ipat++)
       {
-        std::sort(m_toPattern[ipat].begin(), m_toPattern[ipat].end() );
+        std::sort(m_recvPattern[ipat].begin(), m_recvPattern[ipat].end() );
       }
-      for(int ipat = 0; ipat < m_fromPattern.size(); ipat++)
+      for(int ipat = 0; ipat < m_sendPattern.size(); ipat++)
       {
-        std::sort(m_fromPattern[ipat].begin(), m_fromPattern[ipat].end() );
+        std::sort(m_sendPattern[ipat].begin(), m_sendPattern[ipat].end() );
       }
     }
 
@@ -298,11 +298,11 @@ namespace CH4_Data_Choreography
 
     //pattern where source != my proc, dest == my proc
     /// outer loop is per proc 
-    vector< vector<box_interaction_t> >m_toPattern;
+    vector< vector<box_interaction_t> >m_recvPattern;
 
     //pattern where source == my proc, dest != my proc
     /// outer loop is per proc 
-    vector< vector<box_interaction_t> >m_fromPattern;
+    vector< vector<box_interaction_t> >m_sendPattern;
 
     
   private:
@@ -318,15 +318,16 @@ namespace CH4_Data_Choreography
   public:
     proc_interaction_t()
     {
-      m_srcProcID = -1;
-      m_dstProcID = -1;
+      m_srcProcID    = -1;
+      m_dstProcID    = -1;
       m_messageLen   = 0;
       m_metaDataLen  = 0;
+      //this bit is important
       m_buffer       = NULL;
     }
 
     int                m_srcProcID;
-    int                 m_dstProcID;
+    int                m_dstProcID;
     size_t             m_messageLen;
     size_t             m_metaDataLen;
     char*              m_buffer;
@@ -363,58 +364,59 @@ namespace CH4_Data_Choreography
                   vector<fabtype_t*> & a_data,
                   bool a_printStuff = false)
     {
-      m_toMe  .resize(           CH4_SPMD::numProc());
-      m_fromMe.resize(           CH4_SPMD::numProc());
-      m_toMeDataRequest.resize(  CH4_SPMD::numProc());
-      m_toMeMetaRequest.resize(  CH4_SPMD::numProc());
-      m_toMeDataStatus.resize(   CH4_SPMD::numProc());
-      m_toMeMetaStatus.resize(   CH4_SPMD::numProc());
-      m_fromMeDataRequest.resize(CH4_SPMD::numProc());
-      m_fromMeMetaRequest.resize(CH4_SPMD::numProc());
-      m_fromMeDataStatus.resize( CH4_SPMD::numProc());
-      m_fromMeMetaStatus.resize( CH4_SPMD::numProc());
+      m_recvPI.resize(CH4_SPMD::numProc());
+      m_sendPI.resize(CH4_SPMD::numProc());
       m_numSends = 0;
       m_numRecvs = 0;
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        if(a_pattern.m_toPattern[iproc].size() > 0)
-        {
-          m_numSends++;
-          auto& to_pi = m_toMe[iproc];
-          to_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
-          to_pi->m_srcProcID   = iproc;
-          to_pi->m_dstProcID   = CH4_SPMD::procID();
-          to_pi->m_metaDataLen = (a_pattern.m_toPattern[iproc].size())*sizeof(size_t);
-        } // if there is anything coming from this proc
-
-        if(a_pattern.m_fromPattern[iproc].size() > 0)
+        auto& recv_pi = m_recvPI[iproc];
+        recv_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
+        recv_pi->m_boxbufsize = vector<size_t>(a_pattern.m_recvPattern[iproc].size());
+        if(a_pattern.m_recvPattern[iproc].size() > 0)
         {
           m_numRecvs++;
-          vector<size_t> boxbufsize(a_pattern.m_fromPattern[iproc].size());
+          recv_pi->m_srcProcID   = iproc;
+          recv_pi->m_dstProcID   = CH4_SPMD::procID();
+          recv_pi->m_metaDataLen = (a_pattern.m_recvPattern[iproc].size())*sizeof(size_t);
+        } // if there is anything coming from this proc
+
+        auto& send_pi = m_sendPI[iproc];
+        send_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
+        send_pi->m_boxbufsize = vector<size_t>(a_pattern.m_sendPattern[iproc].size());
+        if(a_pattern.m_sendPattern[iproc].size() > 0)
+        {
+          m_numSends++;
 
           size_t totbufsize = 0;
-          for(int ibuf = 0; ibuf < a_pattern.m_fromPattern[iproc].size(); ibuf++)
+          for(int ibuf = 0; ibuf < a_pattern.m_sendPattern[iproc].size(); ibuf++)
           {
-            const auto& motion  = a_pattern.m_fromPattern[iproc][ibuf];
+            const auto& motion  = a_pattern.m_sendPattern[iproc][ibuf];
             CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
             size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
-            boxbufsize[ibuf] = thisbufsize;
+            send_pi->m_boxbufsize[ibuf] = thisbufsize;
             totbufsize += thisbufsize;
           }
           
-          auto& from_pi = m_fromMe[iproc];
-          from_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
-          from_pi->m_srcProcID  = CH4_SPMD::procID();
-          from_pi->m_dstProcID  = iproc;
-          from_pi->m_messageLen = totbufsize;
-          from_pi->m_buffer     = (char*)(malloc(totbufsize));
-          from_pi->m_metaDataLen= (a_pattern.m_fromPattern[iproc].size())*sizeof(size_t);
-          from_pi->m_boxbufsize  = boxbufsize;
+          send_pi->m_srcProcID  = CH4_SPMD::procID();
+          send_pi->m_dstProcID  = iproc;
+          send_pi->m_messageLen = totbufsize;
+          send_pi->m_buffer     = (char*)(malloc(totbufsize));
+          send_pi->m_metaDataLen= (a_pattern.m_sendPattern[iproc].size())*sizeof(size_t);
+
         } //if there is anything to send to this proc
       }   //loop over procs
         
-    }
+      m_recvDataRequest.resize(m_numRecvs);
+      m_recvMetaRequest.resize(m_numRecvs);
+      m_recvDataStatus.resize( m_numRecvs);
+      m_recvMetaStatus.resize( m_numRecvs);
+      m_sendDataRequest.resize(m_numSends);
+      m_sendMetaRequest.resize(m_numSends);
+      m_sendDataStatus.resize( m_numSends);
+      m_sendMetaStatus.resize( m_numSends);
+   }
 
     ///let MPI know what messages this processor is expecting
     void
@@ -426,18 +428,18 @@ namespace CH4_Data_Choreography
 
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        auto toMePattern = a_pattern.m_toPattern[iproc];
-        if(toMePattern.size() > 0)
+        auto recvPattern = a_pattern.m_recvPattern[iproc];
+        if(recvPattern.size() > 0)
         {
-          auto& to_pi = m_toMe[iproc];
-          to_pi->m_srcProcID   = iproc;
-          to_pi->m_dstProcID   = CH4_SPMD::procID();
-          to_pi->m_boxbufsize.resize(toMePattern.size());
-          to_pi->m_metaDataLen =    (toMePattern.size())*sizeof(size_t);
+          auto& recv_pi = m_recvPI[iproc];
+          recv_pi->m_srcProcID   = iproc;
+          recv_pi->m_dstProcID   = CH4_SPMD::procID();
+          recv_pi->m_boxbufsize.resize(recvPattern.size());
+          recv_pi->m_metaDataLen =    (recvPattern.size())*sizeof(size_t);
 
-          char* recvbuf = (char*)(to_pi->m_boxbufsize.data());
+          char* recvbuf = (char*)(recv_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          MPI_Irecv(recvbuf, to_pi->m_metaDataLen, MPI_BYTE, to_pi->m_srcProcID, MPI_ANY_TAG, comm, &m_toMeMetaRequest[iproc]);
+          MPI_Irecv(recvbuf, recv_pi->m_metaDataLen, MPI_BYTE, recv_pi->m_srcProcID, MPI_ANY_TAG, comm, &m_recvMetaRequest[iproc]);
           
         } //loop over processors
       }
@@ -453,34 +455,34 @@ namespace CH4_Data_Choreography
 
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        auto toMePattern = a_pattern.m_toPattern[iproc];
-        if(toMePattern.size() > 0)
+        auto recvPattern = a_pattern.m_recvPattern[iproc];
+        if(recvPattern.size() > 0)
         {
-          auto& to_pi = m_toMe[iproc];
+          auto& recv_pi = m_recvPI[iproc];
           size_t totbufsize = 0;
-          for(int ibuf = 0; ibuf < toMePattern.size(); ibuf++)
+          for(int ibuf = 0; ibuf < recvPattern.size(); ibuf++)
           {
-            totbufsize += to_pi->m_boxbufsize[ibuf];
+            totbufsize += recv_pi->m_boxbufsize[ibuf];
             if(a_printStuff)
             {
               Chombo4::pout() << "CommunicationMetaData::unpackReceives: "
                               << "ToMe  : ibuf = "       << ibuf
-                              << "  bufSize = "   << to_pi->m_boxbufsize[ibuf]
-                              << "  srcProcID = " << toMePattern[ibuf].m_src.m_procID
-                              << "  dstProcID = " << toMePattern[ibuf].m_dst.m_procID 
-                              << ", srcRegion = " << toMePattern[ibuf].m_src.m_region
-                              << ", dstRegion = " << toMePattern[ibuf].m_dst.m_region 
-                              << ", srcValid  = " << toMePattern[ibuf].m_src.m_valid
-                              << ", dstValid  = " << toMePattern[ibuf].m_dst.m_valid << std::endl;
+                              << "  bufSize = "   << recv_pi->m_boxbufsize[ibuf]
+                              << "  srcProcID = " << recvPattern[ibuf].m_src.m_procID
+                              << "  dstProcID = " << recvPattern[ibuf].m_dst.m_procID 
+                              << ", srcRegion = " << recvPattern[ibuf].m_src.m_region
+                              << ", dstRegion = " << recvPattern[ibuf].m_dst.m_region 
+                              << ", srcValid  = " << recvPattern[ibuf].m_src.m_valid
+                              << ", dstValid  = " << recvPattern[ibuf].m_dst.m_valid << std::endl;
             }
           }
           if(a_printStuff)
           {
             Chombo4::pout() << "CommunicationMetaData::unpackReceives: "
-                            << "proc = "     << to_pi->m_dstProcID
-                            << "\t will receive " << toMePattern.size()
+                            << "proc = "     << recv_pi->m_dstProcID
+                            << "\t will receive " << recvPattern.size()
                             << "\t boxes worth of data for a total of a " << totbufsize
-                            << "-sized buffer from proc " << to_pi->m_srcProcID << endl;
+                            << "-sized buffer from proc " << recv_pi->m_srcProcID << endl;
           }
         } //
       }
@@ -493,55 +495,55 @@ namespace CH4_Data_Choreography
               bool a_printStuff = false)
     {
       CH_TIME("CommunicationMetaData::postSends");
-      const auto& fromMePattern =  a_pattern.m_fromPattern;
+      const auto& sendPattern =  a_pattern.m_sendPattern;
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
 
-        if(fromMePattern[iproc].size() > 0)
+        if(sendPattern[iproc].size() > 0)
         {
-          auto& from_pi = m_fromMe[iproc];
+          auto& send_pi = m_sendPI[iproc];
           size_t totbufsize = 0;
-          from_pi->m_boxbufsize.resize(fromMePattern[iproc].size());
-          for(int ibuf = 0; ibuf < fromMePattern[iproc].size(); ibuf++)
+          send_pi->m_boxbufsize.resize(sendPattern[iproc].size());
+          for(int ibuf = 0; ibuf < sendPattern[iproc].size(); ibuf++)
           {
             //not constant because I am using the request
-            const auto& motion  = fromMePattern[iproc][ibuf];
+            const auto& motion  = sendPattern[iproc][ibuf];
             CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
             size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
 
-            from_pi->m_boxbufsize[ibuf] = thisbufsize;
+            send_pi->m_boxbufsize[ibuf] = thisbufsize;
             totbufsize += thisbufsize;
             if(a_printStuff)
             {
               Chombo4::pout() << "FromMe: ibuf = "       << ibuf
                               << "  bufSize   = "   << thisbufsize
-                              << "  srcProcID = " << fromMePattern[iproc][ibuf].m_src.m_procID
-                              << "  dstProcID = " << fromMePattern[iproc][ibuf].m_dst.m_procID 
-                              << ", srcRegion = " << fromMePattern[iproc][ibuf].m_src.m_region
-                              << ", dstRegion = " << fromMePattern[iproc][ibuf].m_dst.m_region 
-                              << ", srcValid  = " << fromMePattern[iproc][ibuf].m_src.m_valid
-                              << ", dstValid  = " << fromMePattern[iproc][ibuf].m_dst.m_valid << std::endl;
+                              << "  srcProcID = " << sendPattern[iproc][ibuf].m_src.m_procID
+                              << "  dstProcID = " << sendPattern[iproc][ibuf].m_dst.m_procID 
+                              << ", srcRegion = " << sendPattern[iproc][ibuf].m_src.m_region
+                              << ", dstRegion = " << sendPattern[iproc][ibuf].m_dst.m_region 
+                              << ", srcValid  = " << sendPattern[iproc][ibuf].m_src.m_valid
+                              << ", dstValid  = " << sendPattern[iproc][ibuf].m_dst.m_valid << std::endl;
             }
           }
 
-          from_pi->m_srcProcID  = CH4_SPMD::procID();
-          from_pi->m_dstProcID  = iproc;
-          from_pi->m_messageLen = totbufsize;
-          from_pi->m_buffer     = (char*)(malloc(totbufsize));
-          from_pi->m_metaDataLen= (fromMePattern[iproc].size())*sizeof(size_t);
+          send_pi->m_srcProcID  = CH4_SPMD::procID();
+          send_pi->m_dstProcID  = iproc;
+          send_pi->m_messageLen = totbufsize;
+          send_pi->m_buffer     = (char*)(malloc(totbufsize));
+          send_pi->m_metaDataLen= (sendPattern[iproc].size())*sizeof(size_t);
 
           
           if(a_printStuff)
           {
-            Chombo4::pout() << "proc = "                   << from_pi->m_srcProcID
-                            << "\t will send    " <<  fromMePattern[iproc].size()
+            Chombo4::pout() << "proc = "                   << send_pi->m_srcProcID
+                            << "\t will send    " <<  sendPattern[iproc].size()
                             << "\t boxes worth of data for a total of a " <<  totbufsize 
-                            << "-sized  buffer to  proc " << from_pi->m_dstProcID << endl;
+                            << "-sized  buffer to  proc " << send_pi->m_dstProcID << endl;
           }
-          char* sendbuf = (char*)(from_pi->m_boxbufsize.data());
+          char* sendbuf = (char*)(send_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          MPI_Isend(sendbuf, from_pi->m_metaDataLen, MPI_BYTE, from_pi->m_dstProcID, 0, comm, &(m_fromMeMetaRequest[iproc]));
+          MPI_Isend(sendbuf, send_pi->m_metaDataLen, MPI_BYTE, send_pi->m_dstProcID, 0, comm, &(m_sendMetaRequest[iproc]));
         } //if there is anything to send to this proc
       }   //loop over procs
     }
@@ -557,8 +559,8 @@ namespace CH4_Data_Choreography
       {
         int numSends = m_numSends;
         int resultSend = MPI_Waitall(numSends,
-                                     &(m_fromMeMetaRequest[0]),
-                                     &(m_fromMeMetaStatus[0]));
+                                     &(m_sendMetaRequest[0]),
+                                     &(m_sendMetaStatus[0]));
         if (resultSend != MPI_SUCCESS)
         {
             
@@ -570,8 +572,8 @@ namespace CH4_Data_Choreography
       {
         int numRecvs = m_numRecvs;
         int resultRecv = MPI_Waitall(numRecvs,
-                                     &(m_toMeMetaRequest[0]),
-                                     &(m_toMeMetaStatus[0]));
+                                     &(m_recvMetaRequest[0]),
+                                     &(m_recvMetaStatus[0]));
         if (resultRecv != MPI_SUCCESS)
         {
           Chombo4::pout() << "CommunicationMetaData::completePending: " 
@@ -584,38 +586,45 @@ namespace CH4_Data_Choreography
     ///Because we have malloced, so we must free
     ~CommunicationMetaData()
     {
-      for(int iinter = 0; iinter < m_toMe.size(); iinter++)
+      for(int iinter = 0; iinter < m_recvPI.size(); iinter++)
       {
-        auto&  interaction = m_toMe[iinter];
-        free(interaction->m_buffer);
-        interaction->m_buffer = NULL;
+        auto&  interaction = m_recvPI[iinter];
+        if(interaction->m_buffer != NULL)
+        {
+          free(interaction->m_buffer);
+          interaction->m_buffer = NULL;
+        }
       }
-      m_toMe.resize(0);
+      m_recvPI.resize(0);
 
-      for(int iinter = 0; iinter < m_fromMe.size(); iinter++)
+      for(int iinter = 0; iinter < m_sendPI.size(); iinter++)
       {
-        auto&  interaction = m_fromMe[iinter];
-        free(interaction->m_buffer);
-        interaction->m_buffer = NULL;
+        auto&  interaction = m_sendPI[iinter];
+        if(interaction->m_buffer != NULL)
+        {
+          free(interaction->m_buffer);
+          interaction->m_buffer = NULL;
+        }
       }
-      m_fromMe.resize(0);
+      m_sendPI.resize(0);
+      
     }
     
 
     //everything length numProc
 
-    vector<shared_ptr<proc_interaction_t> > m_toMe;
-    vector<shared_ptr<proc_interaction_t> > m_fromMe;
+    vector<shared_ptr<proc_interaction_t> > m_recvPI;
+    vector<shared_ptr<proc_interaction_t> > m_sendPI;
 #ifdef CH_MPI
-    vector<MPI_Request>                     m_toMeDataRequest;
-    vector<MPI_Request>                     m_toMeMetaRequest;
-    vector<MPI_Status>                      m_toMeDataStatus;
-    vector<MPI_Status>                      m_toMeMetaStatus;
+    vector<MPI_Request>                     m_recvDataRequest;
+    vector<MPI_Request>                     m_recvMetaRequest;
+    vector<MPI_Status>                      m_recvDataStatus;
+    vector<MPI_Status>                      m_recvMetaStatus;
 
-    vector<MPI_Request>                     m_fromMeDataRequest;
-    vector<MPI_Request>                     m_fromMeMetaRequest;
-    vector<MPI_Status>                      m_fromMeDataStatus;
-    vector<MPI_Status>                      m_fromMeMetaStatus;
+    vector<MPI_Request>                     m_sendDataRequest;
+    vector<MPI_Request>                     m_sendMetaRequest;
+    vector<MPI_Status>                      m_sendDataStatus;
+    vector<MPI_Status>                      m_sendMetaStatus;
 #endif
     int m_numSends;
     int m_numRecvs;
@@ -762,7 +771,7 @@ namespace CH4_Data_Choreography
 #ifdef CH_MPI    
     ///mpi_irecv 
     static void  postReceives(vector<fabtype_t*>               & a_data,
-                                CommunicationMetaData<fabtype_t> & a_metacomm,
+                              CommunicationMetaData<fabtype_t> & a_metacomm,
                               const BoxPattern                 & a_pattern,
                               bool a_printStuff,
                               bool a_graphConstructed)
@@ -775,21 +784,21 @@ namespace CH4_Data_Choreography
       }
       for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
       {
-        auto toMePattern = a_pattern.m_toPattern[iproc];
-        if(toMePattern.size() > 0)
+        auto recvPattern = a_pattern.m_recvPattern[iproc];
+        if(recvPattern.size() > 0)
         {
-          auto & to_pi   =  a_metacomm.m_toMe[iproc];
-          const auto&  dstProc     =  to_pi->m_dstProcID;
-          char* charbuf            =  to_pi->m_buffer;
-          const auto&  srcProc     =  to_pi->m_srcProcID;
-          const auto&  totbufsize  =  to_pi->m_messageLen;
+          auto & recv_pi   =  a_metacomm.m_recvPI[iproc];
+          const auto&  dstProc     =  recv_pi->m_dstProcID;
+          char* charbuf            =  recv_pi->m_buffer;
+          const auto&  srcProc     =  recv_pi->m_srcProcID;
+          const auto&  totbufsize  =  recv_pi->m_messageLen;
 
           CH_assert(dstProc == CH4_SPMD::procID());
           
           //ask MPI fill to the buffer 
           auto comm = CH4_SPMD::Chombo_MPI::comm;
           MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm,
-                    &(a_metacomm.m_toMeDataRequest[iproc]));
+                    &(a_metacomm.m_recvDataRequest[iproc]));
         } 
       }
       if(a_printStuff)
@@ -812,18 +821,18 @@ namespace CH4_Data_Choreography
       }
       for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
       {
-        auto toMePattern = a_pattern.m_toPattern[iproc];
-        if(toMePattern.size() > 0)
+        auto recvPattern = a_pattern.m_recvPattern[iproc];
+        if(recvPattern.size() > 0)
         {
-          auto & to_pi   =  a_metacomm.m_toMe[iproc];
-          char* charbuf            =  to_pi->m_buffer;
-          const auto&  vecbuf      =  to_pi->m_boxbufsize;
+          auto & recv_pi   =  a_metacomm.m_recvPI[iproc];
+          char* charbuf            =  recv_pi->m_buffer;
+          const auto&  vecbuf      =  recv_pi->m_boxbufsize;
           char* bufloc = charbuf;
           
           for(int ivec = 0; ivec < vecbuf.size(); ivec++)
           {
             //this is a box_interaction_t
-            const auto& motion  = toMePattern[ivec];
+            const auto& motion  = recvPattern[ivec];
             
             CH_assert(motion.m_dst.m_procID == CH4_SPMD::procID());
             fabtype_t& localfab = *(a_data[motion.m_dst.m_datInd.datInd()]);
@@ -871,15 +880,15 @@ namespace CH4_Data_Choreography
       auto comm = CH4_SPMD::Chombo_MPI::comm;
       for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
       {
-        auto pattern = a_pattern.m_fromPattern[iproc];
+        auto pattern = a_pattern.m_sendPattern[iproc];
         if(pattern.size() > 0)
         {
-          auto & from_pi   =  a_metacomm.m_fromMe[iproc];
-          const auto&  dstProc     =  from_pi->m_dstProcID;
-          char* charbuf            =  from_pi->m_buffer;
-          const auto&  srcProc     =  from_pi->m_srcProcID;
-          const auto&  totbufsize  =  from_pi->m_messageLen;
-          const auto&  vecbuf      =  from_pi->m_boxbufsize;
+          auto & send_pi   =  a_metacomm.m_sendPI[iproc];
+          const auto&  dstProc     =  send_pi->m_dstProcID;
+          char* charbuf            =  send_pi->m_buffer;
+          const auto&  srcProc     =  send_pi->m_srcProcID;
+          const auto&  totbufsize  =  send_pi->m_messageLen;
+          const auto&  vecbuf      =  send_pi->m_boxbufsize;
           CH_assert(srcProc == CH4_SPMD::procID());
           size_t checkbufsize = 0;
           char* bufloc = charbuf;
@@ -914,7 +923,7 @@ namespace CH4_Data_Choreography
           CH_assert(checkbufsize == totbufsize);
 
           //now we have the buffer filled so we can send it to the other proc
-          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(a_metacomm.m_fromMeDataRequest[iproc]));
+          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(a_metacomm.m_sendDataRequest[iproc]));
         } //if pattern.size() > 0
       } //loop over procs
       
@@ -940,8 +949,8 @@ namespace CH4_Data_Choreography
       {
         int numSends = a_metacomm.m_numSends;
         int resultSend = MPI_Waitall(numSends,
-                                     &(a_metacomm.m_fromMeDataRequest[0]),
-                                     &(a_metacomm.m_fromMeDataStatus[0]));
+                                     &(a_metacomm.m_sendDataRequest[0]),
+                                     &(a_metacomm.m_sendDataStatus[0]));
         if (resultSend != MPI_SUCCESS)
         {
             
@@ -953,8 +962,8 @@ namespace CH4_Data_Choreography
       {
         int numRecvs = a_metacomm.m_numRecvs;
         int resultRecv = MPI_Waitall(numRecvs,
-                                     &(a_metacomm.m_toMeDataRequest[0]),
-                                     &(a_metacomm.m_toMeDataStatus[0]));
+                                     &(a_metacomm.m_recvDataRequest[0]),
+                                     &(a_metacomm.m_recvDataStatus[0]));
         if (resultRecv != MPI_SUCCESS)
         {
           Chombo4::pout() << "CommunicationMetaData::completePending: " 
