@@ -328,32 +328,6 @@ testEBLevelFluxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
   return 0;
 }
 
-/***/
-void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
-               Real             & a_dx,
-               const int        & a_nx,
-               const int        & a_maxGrid)
-{
-  Chombo4::pout() << "making grids" << endl;
-
-  IntVect domLo = IntVect::Zero;
-   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
-
-  // EB and periodic do not mix
-  Chombo4::ProblemDomain domain(domLo, domHi);
-
-  std::vector<Chombo4::Box> boxes;
-  unsigned int blockfactor = 8;
-  domainSplit(domain.domainBox(), boxes, a_maxGrid, blockfactor);
-  
-  std::vector<int> procs;
-
-  a_dx = 1.0/a_nx;
-  LoadBalance(procs, boxes);
-  a_grids = Chombo4::DisjointBoxLayout(boxes, procs, domain);
-  a_grids.printBalance();
-
-}
 
 ///
 shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
@@ -433,8 +407,13 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
   Chombo4::pout() << "nx       = " << a_nx     << endl;
   Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
 
-  makeGrids(a_grids, a_dx, a_nx, maxGrid);
-  Chombo4::Box domain = a_grids.physDomain().domainBox();
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Chombo4::IntVect ivlo= Chombo4::IntVect::Zero;
+  Chombo4::IntVect ivhi= (a_nx-1)*Chombo4::IntVect::Unit;
+  Chombo4::Box domain(ivlo, ivhi);
+  GeometryService<GEOM_MAX_ORDER>::generateGrids(vecgrids, domain, maxGrid);
+  a_grids = vecgrids[0];
+
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
@@ -442,7 +421,9 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
   Chombo4::pout() << "creating geometry service" << endl;
-  a_geoserv  = shared_ptr<GeometryService<GEOM_MAX_ORDER> >(new GeometryService<GEOM_MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  bool printStuff = true;
+
+  a_geoserv  = shared_ptr<GeometryService<GEOM_MAX_ORDER> >(new GeometryService<GEOM_MAX_ORDER>(impfunc, origin, a_dx, domain, vecgrids, geomGhost, printStuff));
 }
 
 int

@@ -332,6 +332,13 @@ namespace CH4_Data_Choreography
     size_t             m_metaDataLen;
     char*              m_buffer;
     vector<size_t>     m_boxbufsize;
+#ifdef CH_MPI    
+    MPI_Request m_dataRequest;
+    MPI_Request m_metaRequest;
+
+    MPI_Status  m_dataStatus ;
+    MPI_Status  m_metaStatus ;
+#endif
 
              
   };
@@ -407,15 +414,6 @@ namespace CH4_Data_Choreography
 
         } //if there is anything to send to this proc
       }   //loop over procs
-        
-      m_recvDataRequest.resize(m_numRecvs);
-      m_recvMetaRequest.resize(m_numRecvs);
-      m_recvDataStatus.resize( m_numRecvs);
-      m_recvMetaStatus.resize( m_numRecvs);
-      m_sendDataRequest.resize(m_numSends);
-      m_sendMetaRequest.resize(m_numSends);
-      m_sendDataStatus.resize( m_numSends);
-      m_sendMetaStatus.resize( m_numSends);
    }
 
     ///let MPI know what messages this processor is expecting
@@ -439,7 +437,8 @@ namespace CH4_Data_Choreography
 
           char* recvbuf = (char*)(recv_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          MPI_Irecv(recvbuf, recv_pi->m_metaDataLen, MPI_BYTE, recv_pi->m_srcProcID, MPI_ANY_TAG, comm, &m_recvMetaRequest[iproc]);
+          Chombo4::pout() << "CommunicationMetaData: about to recv " << recv_pi->m_metaDataLen <<" from proc " << recv_pi->m_srcProcID << endl;
+          MPI_Irecv(recvbuf, recv_pi->m_metaDataLen, MPI_BYTE, recv_pi->m_srcProcID, MPI_ANY_TAG, comm, &recv_pi->m_metaRequest);
           
         } //loop over processors
       }
@@ -543,7 +542,8 @@ namespace CH4_Data_Choreography
           }
           char* sendbuf = (char*)(send_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          MPI_Isend(sendbuf, send_pi->m_metaDataLen, MPI_BYTE, send_pi->m_dstProcID, 0, comm, &(m_sendMetaRequest[iproc]));
+          Chombo4::pout() << "CommunicationMetaData: about to send " << send_pi->m_metaDataLen <<" to   proc " << send_pi->m_srcProcID << endl;
+          MPI_Isend(sendbuf, send_pi->m_metaDataLen, MPI_BYTE, send_pi->m_dstProcID, 0, comm, &(send_pi->m_metaRequest));
         } //if there is anything to send to this proc
       }   //loop over procs
     }
@@ -556,28 +556,46 @@ namespace CH4_Data_Choreography
                     bool a_printStuff = false)
     {
       CH_TIME("CommunicationMetaData::completePending");
+      const auto& sendPattern =  a_pattern.m_sendPattern;
+ 
+      if(a_printStuff)
       {
-        int numSends = m_numSends;
-        int resultSend = MPI_Waitall(numSends,
-                                     &(m_sendMetaRequest[0]),
-                                     &(m_sendMetaStatus[0]));
-        if (resultSend != MPI_SUCCESS)
+        Chombo4::pout() << "CommunicationMetaData::completePending: begin "<< endl;
+      }
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+      {
+        auto& send_pi = m_sendPI[iproc];
+        if(sendPattern[iproc].size() > 0)
         {
-            
-          Chombo4::pout() << "CommunicationMetaData::completePending: " 
-                          << "WARNING: send MPI returned " << resultSend << endl;
+          Chombo4::pout() << "CommunicationMetaData::completePending:send iproc = "<< iproc  << endl;
+          int resultSend = MPI_Wait(&(send_pi->m_metaRequest),
+                                    &(send_pi->m_metaStatus ));
+          if (resultSend != MPI_SUCCESS)
+          {
+            Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                            << "WARNING: send MPI returned " << resultSend << endl;
+          }
         }
       }
 
+      const auto& recvPattern =  a_pattern.m_recvPattern;
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        int numRecvs = m_numRecvs;
-        int resultRecv = MPI_Waitall(numRecvs,
-                                     &(m_recvMetaRequest[0]),
-                                     &(m_recvMetaStatus[0]));
-        if (resultRecv != MPI_SUCCESS)
+        auto& recv_pi = m_recvPI[iproc];
+        if(recvPattern[iproc].size() > 0)
         {
-          Chombo4::pout() << "CommunicationMetaData::completePending: " 
-                          << "WARNING: receive MPI returned " << resultRecv << endl;
+          Chombo4::pout() << "CommunicationMetaData::completePending:recv iproc = "<< iproc  << endl;
+          int resultRecv = MPI_Wait(&(recv_pi->m_metaRequest),
+                                    &(recv_pi->m_metaStatus ));
+          if (resultRecv != MPI_SUCCESS)
+          {
+            Chombo4::pout() << "CommunicationMetaData::completePending: " 
+                            << "WARNING: receive MPI returned " << resultRecv << endl;
+          }
+        }
+        if(a_printStuff)
+        {
+          Chombo4::pout() << "CommunicationMetaData::completePending: end"  << endl;
         }
       }
     }
@@ -607,27 +625,13 @@ namespace CH4_Data_Choreography
         }
       }
       m_sendPI.resize(0);
-      
     }
     
-
+    int m_numSends, m_numRecvs;
     //everything length numProc
-
     vector<shared_ptr<proc_interaction_t> > m_recvPI;
     vector<shared_ptr<proc_interaction_t> > m_sendPI;
-#ifdef CH_MPI
-    vector<MPI_Request>                     m_recvDataRequest;
-    vector<MPI_Request>                     m_recvMetaRequest;
-    vector<MPI_Status>                      m_recvDataStatus;
-    vector<MPI_Status>                      m_recvMetaStatus;
 
-    vector<MPI_Request>                     m_sendDataRequest;
-    vector<MPI_Request>                     m_sendMetaRequest;
-    vector<MPI_Status>                      m_sendDataStatus;
-    vector<MPI_Status>                      m_sendMetaStatus;
-#endif
-    int m_numSends;
-    int m_numRecvs;
   };
 
   ///
@@ -797,8 +801,9 @@ namespace CH4_Data_Choreography
           
           //ask MPI fill to the buffer 
           auto comm = CH4_SPMD::Chombo_MPI::comm;
+          Chombo4::pout() << "CommunicationMetaData: about to receive " << totbufsize << " to   proc " << srcProc << endl;
           MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm,
-                    &(a_metacomm.m_recvDataRequest[iproc]));
+                    &(recv_pi->m_dataRequest));
         } 
       }
       if(a_printStuff)
@@ -821,6 +826,7 @@ namespace CH4_Data_Choreography
       }
       for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
       {
+        Chombo4::pout() << "DistributedData::unpackReceives iproc = "<< iproc << std::endl;
         auto recvPattern = a_pattern.m_recvPattern[iproc];
         if(recvPattern.size() > 0)
         {
@@ -840,6 +846,7 @@ namespace CH4_Data_Choreography
             int icomp = 0; int ncomp = localfab.nComp(); //to make it fit with old interface
 
             size_t expectedCharSize = vecbuf[ivec];
+            
             if(a_printStuff)
             {
               Chombo4::pout() << "DistributedData::unpackReceives: ivec= "    <<  ivec
@@ -906,7 +913,7 @@ namespace CH4_Data_Choreography
           
             if(a_printStuff)
             {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: send:    ivec= "    <<  ivec
+              Chombo4::pout() << "DistributedData::postSends: send:    ivec= "    <<  ivec
                               << ", region = "   << motion.m_src.m_region 
                               << ", dstProc = "   << motion.m_dst.m_procID
                               << ", charsize = "   << charsize << endl;
@@ -917,13 +924,14 @@ namespace CH4_Data_Choreography
             bufloc += charsize;  
             if(a_printStuff)
             {
-              Chombo4::pout() << "DistributedData::doRemoteCopies: send: made it out of linearOut for ivec = " << ivec << endl;
+              Chombo4::pout() << "DistributedData::postSends: send: made it out of linearOut for ivec = " << ivec << endl;
             }
           }
           CH_assert(checkbufsize == totbufsize);
 
           //now we have the buffer filled so we can send it to the other proc
-          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(a_metacomm.m_sendDataRequest[iproc]));
+          Chombo4::pout() << "DistributeData: about to send " << totbufsize <<" to proc " << dstProc<< endl;
+          MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(send_pi->m_dataRequest));
         } //if pattern.size() > 0
       } //loop over procs
       
@@ -934,7 +942,7 @@ namespace CH4_Data_Choreography
     }
     
     //
-    static void  completePending(vector<fabtype_t*>               & a_data,
+    static void  completePending(vector<fabtype_t*>              & a_data,
                                 CommunicationMetaData<fabtype_t> & a_metacomm,
                                 const BoxPattern                 & a_pattern,
                                 bool a_printStuff,
@@ -946,36 +954,43 @@ namespace CH4_Data_Choreography
         Chombo4::pout() << "DistributedData::completePending begin" << std::endl;
       }
       
+      const auto& sendPattern =  a_pattern.m_sendPattern;
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        int numSends = a_metacomm.m_numSends;
-        int resultSend = MPI_Waitall(numSends,
-                                     &(a_metacomm.m_sendDataRequest[0]),
-                                     &(a_metacomm.m_sendDataStatus[0]));
-        if (resultSend != MPI_SUCCESS)
+        auto& send_pi = a_metacomm.m_sendPI[iproc];
+        if(sendPattern[iproc].size() > 0)
         {
-            
-          Chombo4::pout() << "CommunicationMetaData::completePending: " 
-                          << "WARNING: send MPI returned " << resultSend << endl;
+          Chombo4::pout() << "Distributed::completePending:begin wait for send iproc = "<< iproc  << endl;
+          int resultSend = MPI_Wait(&(send_pi->m_dataRequest),
+                                    &(send_pi->m_dataStatus ));
+          Chombo4::pout() << "Distributed::completePending:end   wait for send iproc = "<< iproc  << endl;
+          if (resultSend != MPI_SUCCESS)
+          {
+            Chombo4::pout() << "DistributedData::completePending: " 
+                            << "WARNING: send MPI returned " << resultSend << endl;
+          }
         }
       }
 
+      const auto& recvPattern =  a_pattern.m_recvPattern;
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
-        int numRecvs = a_metacomm.m_numRecvs;
-        int resultRecv = MPI_Waitall(numRecvs,
-                                     &(a_metacomm.m_recvDataRequest[0]),
-                                     &(a_metacomm.m_recvDataStatus[0]));
-        if (resultRecv != MPI_SUCCESS)
+        auto& recv_pi = a_metacomm.m_recvPI[iproc];
+        if(recvPattern[iproc].size() > 0)
         {
-          Chombo4::pout() << "CommunicationMetaData::completePending: " 
-                          << "WARNING: receive MPI returned " << resultRecv << endl;
+
+          Chombo4::pout() << "Distributed::completePending:begin wait for recv iproc = "<< iproc  << endl;
+          int resultRecv = MPI_Wait(&(recv_pi->m_dataRequest),
+                                    &(recv_pi->m_dataStatus ));
+          Chombo4::pout() << "Distributed::completePending:end   wait for recv iproc = "<< iproc  << endl;
+          if (resultRecv != MPI_SUCCESS)
+          {
+            Chombo4::pout() << "DistributeData::completePending: " 
+                            << "WARNING: receive MPI returned " << resultRecv << endl;
+          }
         }
-      }
-      if(a_printStuff)
-      {
-        Chombo4::pout() << "DistributedData::completePending end  " << std::endl;
       }
     }
-
 #endif    //MPI
     ///
     static void doLocalCopiesWithSerialization(DistributedData       & a_dst,
