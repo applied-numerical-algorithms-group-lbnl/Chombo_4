@@ -343,7 +343,7 @@ namespace CH4_Data_Choreography
              
   };
 
-  ///class to manage meta data for communication between two processors
+  ///class to manage meta data for communication between processors (reduces to a bunch of proc_interactions)
   template<class fabtype_t>
   class CommunicationMetaData
   {
