@@ -449,6 +449,9 @@ runTests(int a_argc, char* a_argv[])
   int nx;
   defineGeometry(grids, dx, geomCen, geomRad, whichGeom, nx,  geoserv);
 
+  //Chombo4::pout() << "returning after defineGeometry" << endl;
+  //return 0;
+  
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 

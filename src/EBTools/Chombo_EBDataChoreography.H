@@ -483,6 +483,8 @@ namespace CH4_Data_Choreography
                             << "\t boxes worth of data for a total of a " << totbufsize
                             << "-sized buffer from proc " << recv_pi->m_srcProcID << endl;
           }
+          recv_pi->m_messageLen = totbufsize;
+          recv_pi->m_buffer     = (char*)(malloc(totbufsize));
         } //
       }
     }
@@ -515,7 +517,7 @@ namespace CH4_Data_Choreography
             totbufsize += thisbufsize;
             if(a_printStuff)
             {
-              Chombo4::pout() << "FromMe: ibuf = "       << ibuf
+              Chombo4::pout() << "CommunicationMetaData::postSends:FromMe: ibuf = "       << ibuf
                               << "  bufSize   = "   << thisbufsize
                               << "  srcProcID = " << sendPattern[iproc][ibuf].m_src.m_procID
                               << "  dstProcID = " << sendPattern[iproc][ibuf].m_dst.m_procID 
@@ -535,14 +537,17 @@ namespace CH4_Data_Choreography
           
           if(a_printStuff)
           {
-            Chombo4::pout() << "proc = "                   << send_pi->m_srcProcID
+            Chombo4::pout() << "CommunicationMetaData::postSends:proc = "                   << send_pi->m_srcProcID
                             << "\t will send    " <<  sendPattern[iproc].size()
                             << "\t boxes worth of data for a total of a " <<  totbufsize 
                             << "-sized  buffer to  proc " << send_pi->m_dstProcID << endl;
           }
           char* sendbuf = (char*)(send_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          Chombo4::pout() << "CommunicationMetaData: about to send " << send_pi->m_metaDataLen <<" to   proc " << send_pi->m_srcProcID << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData:postSends: about to send " << send_pi->m_metaDataLen <<" to   proc " << send_pi->m_srcProcID << endl;
+          }
           MPI_Isend(sendbuf, send_pi->m_metaDataLen, MPI_BYTE, send_pi->m_dstProcID, 0, comm, &(send_pi->m_metaRequest));
         } //if there is anything to send to this proc
       }   //loop over procs
@@ -567,7 +572,10 @@ namespace CH4_Data_Choreography
         auto& send_pi = m_sendPI[iproc];
         if(sendPattern[iproc].size() > 0)
         {
-          Chombo4::pout() << "CommunicationMetaData::completePending:send iproc = "<< iproc  << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData::completePending:send iproc = "<< iproc  << endl;
+          }
           int resultSend = MPI_Wait(&(send_pi->m_metaRequest),
                                     &(send_pi->m_metaStatus ));
           if (resultSend != MPI_SUCCESS)
@@ -584,7 +592,10 @@ namespace CH4_Data_Choreography
         auto& recv_pi = m_recvPI[iproc];
         if(recvPattern[iproc].size() > 0)
         {
-          Chombo4::pout() << "CommunicationMetaData::completePending:recv iproc = "<< iproc  << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData::completePending:recv iproc = "<< iproc  << endl;
+          }
           int resultRecv = MPI_Wait(&(recv_pi->m_metaRequest),
                                     &(recv_pi->m_metaStatus ));
           if (resultRecv != MPI_SUCCESS)
@@ -801,7 +812,7 @@ namespace CH4_Data_Choreography
           
           //ask MPI fill to the buffer 
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          Chombo4::pout() << "CommunicationMetaData: about to receive " << totbufsize << " to   proc " << srcProc << endl;
+          Chombo4::pout() << "DistributedData: about to receive " << totbufsize << " from proc " << srcProc << endl;
           MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm,
                     &(recv_pi->m_dataRequest));
         } 
@@ -828,6 +839,7 @@ namespace CH4_Data_Choreography
       {
         Chombo4::pout() << "DistributedData::unpackReceives iproc = "<< iproc << std::endl;
         auto recvPattern = a_pattern.m_recvPattern[iproc];
+        
         if(recvPattern.size() > 0)
         {
           auto & recv_pi   =  a_metacomm.m_recvPI[iproc];
