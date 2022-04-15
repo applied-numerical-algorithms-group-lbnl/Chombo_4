@@ -180,14 +180,15 @@ runNavierStokes()
     diffusion_coeffs[ispec] = thisco;
   }
 
-  bool printStuff = true;
+  bool printStuff = false;
   EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
                paraSolver, ibc, num_species, diffusion_coeffs, printStuff);
 
 
+  pout() << "after EBINS constructor" << endl;
 ////begin debug  
-  pout() << "leaving after EBINS constructor" << endl;
-  return 0;
+//  pout() << "leaving after EBINS constructor" << endl;
+//  return 0;
 ////end debug    
   unsigned int starting_step = 0;
   Real         starting_time = 0;
@@ -205,6 +206,10 @@ runNavierStokes()
     pout() << "going into initialize data " << endl;
     initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
   }
+////begin debug  
+  pout() << "leaving after EBINS initialization" << endl;
+  return 0;
+////end debug    
   if(starting_step == 0)
   {
     if(stokesFlowInitialization)

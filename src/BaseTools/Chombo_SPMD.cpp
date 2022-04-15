@@ -67,18 +67,18 @@ unsigned int numProc()
 
 #else // CH_MPI version
 
-int GetPID(int rank)
-{
-  if (pids.size() == 0)
-    {
-      int proc = getpid();
-      gather(pids, proc, uniqueProc(SerialTask::compute));
-      broadcast(pids, uniqueProc(SerialTask::compute));
-    }
-  if (rank<0) return -1;
-  if (rank>=pids.size()) return -2;
-  return pids[rank];
-}
+//int GetPID(int rank)
+//{
+//  if (pids.size() == 0)
+//    {
+//      int proc = getpid();
+//      gather(pids, proc, uniqueProc(SerialTask::compute));
+//      broadcast(pids, uniqueProc(SerialTask::compute));
+//    }
+//  if (rank<0) return -1;
+//  if (rank>=pids.size()) return -2;
+//  return pids[rank];
+//}
 
 int GetRank(int pid)
 {

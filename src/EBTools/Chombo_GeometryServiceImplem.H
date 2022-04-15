@@ -255,7 +255,7 @@ exchange(bool a_printStuff)
   }
   for(int idir = 0; idir < DIM; idir++)
   {
-    m_ebnormaldata[idir]->exchange();
+     m_ebnormaldata[idir]->exchange();
   }
 }
   

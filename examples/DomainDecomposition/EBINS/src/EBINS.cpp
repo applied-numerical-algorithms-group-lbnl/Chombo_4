@@ -174,26 +174,21 @@ defineInternals(EBIBC                a_ibc,
   string helmnamesSpec[2*DIM];
   a_ibc.helmholtzStencilStrings(      helmnamesVelo);
   a_ibc.scalarDiffusionStencilStrings(helmnamesSpec);
-  if(a_printStuff)
-  {
-    pout() << "EBINS::defineInternals defining parabolic solvers" << std::endl;
-  }
+
+  pout() << "EBINS::defineInternals defining parabolic solvers" << std::endl;
+
   
   if(!m_eulerCalc)
   {
-    if(a_printStuff)
-    {
-      pout() << "EBINS::defineInternals defining Helmoltz solver for velocity" << std::endl;
-    }
+    pout() << "EBINS::defineInternals defining Helmoltz solver for velocity" << std::endl;
     
-     m_helmholtzVelo = shared_ptr<EBMultigrid> 
+    m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
                        stenname, helmnamesVelo, bcname, m_domain, m_nghost, string("heat"), a_printStuff));
   }
-  if(a_printStuff)
-  {
-    pout() << "EBINS::defineInternals defining Helmoltz solver for species" << std::endl;
-  }
+
+  pout() << "EBINS::defineInternals defining Helmoltz solver for species" << std::endl;
+
   m_helmholtzSpec = shared_ptr<EBMultigrid> 
     (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
                      stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost, string("species"), a_printStuff));
@@ -202,9 +197,11 @@ defineInternals(EBIBC                a_ibc,
   {
     if(!m_eulerCalc)
     {
+      pout() << "EBINS::defineInternals defining EBBackwrdEuler solver for velo" << std::endl;
       m_heatSolverVelo = shared_ptr<BaseEBParabolic>
         (new EBBackwardEuler(m_helmholtzVelo, m_geoserv, m_grids, m_domain, m_nghost, a_printStuff));
     }
+    pout() << "EBINS::defineInternals defining EBBackwrdEuler solver for spec" << std::endl;
     m_heatSolverSpec = shared_ptr<BaseEBParabolic>
       (new EBBackwardEuler(m_helmholtzSpec, m_geoserv, m_grids, m_domain, m_nghost, a_printStuff));
   }
@@ -233,25 +230,21 @@ defineInternals(EBIBC                a_ibc,
     MayDay::Error("unaccounted-for solver type");
   }
 
-  if(a_printStuff)
-  {
-    pout() << "EBINS::defineInternals defining advection operator" << std::endl;
-  }
+
+  pout() << "EBINS::defineInternals defining advection operator" << std::endl;
+
   m_advectOp = shared_ptr<EBAdvection>
     (new EBAdvection(m_brit, m_geoserv, m_velo, m_grids, m_domain, m_dx, a_ibc, m_nghost, a_printStuff));
   
-  if(a_printStuff)
-  {
-    pout() << "EBINS::defineInternals defining projection operators" << std::endl;
-  }
+
+  pout() << "EBINS::defineInternals defining projection operators" << std::endl;
+
   m_ccProj  = shared_ptr<EBCCProjector>
     (new EBCCProjector(m_brit, m_geoserv, m_grids, m_domain, m_dx, m_nghost, a_ibc, a_printStuff));
   m_macProj = m_ccProj->m_macprojector;
 
-  if(a_printStuff)
-  {
-    pout() << "EBINS::defineInternals defining advection operator" << std::endl;
-  }
+
+  pout() << "EBINS::defineInternals defining advection operator" << std::endl;
 
   m_bcgAdvect = shared_ptr<BCGVelAdvect>
     (new BCGVelAdvect(m_macProj, m_helmholtzVelo, m_brit, m_geoserv, m_velo,

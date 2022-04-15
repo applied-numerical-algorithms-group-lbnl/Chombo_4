@@ -239,11 +239,13 @@ void defineGeometry(std::vector<DisjointBoxLayout >      & a_grids,
   pout() << "creating geometry service" << endl;
   //true to get a bunch of logging information.
   //false to get it to shut up.
-  bool printStuff = true; 
+  //bool printStuff = true;
+  bool printStuff = false;
   a_geoserv  = shared_ptr<GeometryService<2> >
     (new GeometryService<2>(impfunc, origin,
                             a_dx, domain, a_grids,
                             geomGhost, printStuff));
+  pout() << "done with creating geometry service" << endl;
 }
 
 //=================================================

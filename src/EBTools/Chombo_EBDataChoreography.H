@@ -437,7 +437,10 @@ namespace CH4_Data_Choreography
 
           char* recvbuf = (char*)(recv_pi->m_boxbufsize.data());
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          Chombo4::pout() << "CommunicationMetaData: about to recv " << recv_pi->m_metaDataLen <<" from proc " << recv_pi->m_srcProcID << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData: about to recv " << recv_pi->m_metaDataLen <<" from proc " << recv_pi->m_srcProcID << endl;
+          }
           MPI_Irecv(recvbuf, recv_pi->m_metaDataLen, MPI_BYTE, recv_pi->m_srcProcID, MPI_ANY_TAG, comm, &recv_pi->m_metaRequest);
           
         } //loop over processors
@@ -812,7 +815,10 @@ namespace CH4_Data_Choreography
           
           //ask MPI fill to the buffer 
           auto comm = CH4_SPMD::Chombo_MPI::comm;
-          Chombo4::pout() << "DistributedData: about to receive " << totbufsize << " from proc " << srcProc << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "DistributedData: about to receive " << totbufsize << " from proc " << srcProc << endl;
+          }
           MPI_Irecv(charbuf, totbufsize, MPI_BYTE, srcProc, MPI_ANY_TAG, comm,
                     &(recv_pi->m_dataRequest));
         } 
@@ -837,7 +843,10 @@ namespace CH4_Data_Choreography
       }
       for(int iproc = 0; iproc < CH4_SPMD::numProc() ; iproc++)
       {
-        Chombo4::pout() << "DistributedData::unpackReceives iproc = "<< iproc << std::endl;
+        if(a_printStuff)
+        {
+          Chombo4::pout() << "DistributedData::unpackReceives iproc = "<< iproc << std::endl;
+        }
         auto recvPattern = a_pattern.m_recvPattern[iproc];
         
         if(recvPattern.size() > 0)
@@ -942,7 +951,10 @@ namespace CH4_Data_Choreography
           CH_assert(checkbufsize == totbufsize);
 
           //now we have the buffer filled so we can send it to the other proc
-          Chombo4::pout() << "DistributeData: about to send " << totbufsize <<" to proc " << dstProc<< endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "DistributeData: about to send " << totbufsize <<" to proc " << dstProc<< endl;
+          }
           MPI_Isend(charbuf,  totbufsize, MPI_BYTE, dstProc, 0, comm, &(send_pi->m_dataRequest));
         } //if pattern.size() > 0
       } //loop over procs
@@ -972,10 +984,18 @@ namespace CH4_Data_Choreography
         auto& send_pi = a_metacomm.m_sendPI[iproc];
         if(sendPattern[iproc].size() > 0)
         {
-          Chombo4::pout() << "Distributed::completePending:begin wait for send iproc = "<< iproc  << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Distributed::completePending:begin wait for send iproc = "<< iproc  << endl;
+          }
           int resultSend = MPI_Wait(&(send_pi->m_dataRequest),
                                     &(send_pi->m_dataStatus ));
-          Chombo4::pout() << "Distributed::completePending:end   wait for send iproc = "<< iproc  << endl;
+          
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Distributed::completePending:end   wait for send iproc = "<< iproc  << endl;
+          }
+          
           if (resultSend != MPI_SUCCESS)
           {
             Chombo4::pout() << "DistributedData::completePending: " 
@@ -991,10 +1011,17 @@ namespace CH4_Data_Choreography
         if(recvPattern[iproc].size() > 0)
         {
 
-          Chombo4::pout() << "Distributed::completePending:begin wait for recv iproc = "<< iproc  << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Distributed::completePending:begin wait for recv iproc = "<< iproc  << endl;
+          }
+
           int resultRecv = MPI_Wait(&(recv_pi->m_dataRequest),
                                     &(recv_pi->m_dataStatus ));
-          Chombo4::pout() << "Distributed::completePending:end   wait for recv iproc = "<< iproc  << endl;
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Distributed::completePending:end   wait for recv iproc = "<< iproc  << endl;
+          }
           if (resultRecv != MPI_SUCCESS)
           {
             Chombo4::pout() << "DistributeData::completePending: " 
