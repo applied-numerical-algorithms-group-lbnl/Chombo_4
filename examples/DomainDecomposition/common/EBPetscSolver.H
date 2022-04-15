@@ -666,10 +666,41 @@ private:
     //decide which location maps to the first one of this proc
 
 #ifdef CH_MPI
-    Chombo4::pout() << "EBPetscSolver::defineGids: doing gather broadcast" << endl;
-    std::vector<int> numPtsAllProcs;
-    CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
-    CH4_SPMD::broadcast<vector<int> >(    numPtsAllProcs, 0);
+    std::vector<int> numPtsAllProcs(CH4_SPMD::numProc());
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: doing gather numptsThisProc = " << numPtsThisProc << endl;
+    }
+    MPI_Gather(&numPtsThisProc, 1, MPI_INT, &numPtsAllProcs[0], 1, MPI_INT, 0, Chombo_MPI::comm);
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: after gather " << endl;
+      if(CH4_SPMD::procID() == 0)
+      {
+        Chombo4::pout() << "EBPetscSolver::defineGids: numPtsAllProcs = " << endl;
+        for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
+        {
+          Chombo4::pout() << "EBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
+        }
+      }
+    }
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids:before broadcast " << endl;
+    }
+    MPI_Bcast(numPtsAllProcs.data(), numPtsAllProcs.size(), MPI_INT, 0, Chombo_MPI::comm);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids:after broadcast " << endl;
+      for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
+      {
+        Chombo4::pout() << "EBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
+      }
+    }
     PetscInt startgid = 0;
     PetscInt totalNumPts = 0; 
     for(int iproc = 0; iproc < Chombo4::procID(); iproc++)

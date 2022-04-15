@@ -179,7 +179,7 @@ namespace CH4_SPMD
 
 */
   template <class T>
-  void gather(std::vector<T>& a_outVec, const T& a_input, int a_dest);
+  void gather(std::vector<T>& a_outVec, const T& a_input, int a_dest, bool a_printStuff = false);
 
 #endif
 
@@ -194,7 +194,7 @@ namespace CH4_SPMD
    void linearIn<T>(T& a_outputT, const void* const inBuf); \\
    void linearOut<T>(void* a_outBuf, const T& inputT); \\ */
   template <class T>
-  void broadcast(T& a_inAndOut,  int a_src);
+  void broadcast(T& a_inAndOut,  int a_src, bool a_printStuff = false);
 
 
 
