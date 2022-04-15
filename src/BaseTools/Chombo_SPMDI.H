@@ -220,28 +220,31 @@ linearListIn(std::vector<T>& a_outputT,
              bool a_printStuff)
 {
   //first entry is the size of the vector
-  const size_t*  vecsizeptr = (size_t*)(a_inBuf);
-  size_t vecsize = *vecsizeptr;
+  char*  charbuf = (char *) a_inBuf;
   size_t charsiz = 0;
-  char*  charbuf = (char*)(a_inBuf);
+
+  size_t* vecsizeptr = (size_t*)(charbuf);
+  size_t vecsize  = *vecsizeptr;
+  a_outputT.resize(vecsize);
   
-  charsiz += sizeof(size_t);
   charbuf += sizeof(size_t);
+  charsiz += sizeof(size_t);
+
   std::vector<size_t> vecOffset(vecsize);
-  //next vecsize entries are offsets of data into buffer
   for (int ivec = 0; ivec < vecsize; ivec++)
   {
-    size_t* sizebuf = (size_t*)(charbuf);
-    vecOffset[ivec] = *sizebuf;
+    size_t * sizebuf = (size_t*) charbuf;
+    size_t itemsize = *sizebuf;
+    vecOffset[ivec] = itemsize;
+      
+    charbuf += sizeof(size_t);
     charsiz += sizeof(size_t);
-    charbuf += sizeof(size_t );
   }
 
-  a_outputT.resize(vecsize);
   for (int ivec = 0; ivec < vecsize; ivec++)
   {
     const char* const dataLoc = charbuf;
-    linearIn(a_outputT[ivec], dataLoc);
+    linearIn(a_outputT, dataLoc);
     charbuf += vecOffset[ivec];
     charsiz += vecOffset[ivec];
   }
@@ -262,26 +265,29 @@ linearListOut(void* const a_outBuf,
               bool a_printStuff)
 {
   //first entry is the size of the vector
-  size_t* vecsizeptr = (size_t*)(a_outBuf);
-  *vecsizeptr = a_input.size();
-  size_t vecsize  = *vecsizeptr;
+  char*  charbuf = (char *) a_outBuf;
+  size_t charsiz = 0;  
+  size_t* vecsizeptr = (size_t*)(charbuf);
+  size_t vecsize  = a_input.size();
+  *vecsizeptr = vecsize;
   
-  size_t charsiz = 0;
-  char*  charbuf = (char*)(a_outBuf);
-  charsiz += sizeof(size_t);
   charbuf += sizeof(size_t);
+  charsiz += sizeof(size_t);
+  Chombo4::pout() << "(8) charsiz 0= " << charsiz << endl;
 
   std::vector<size_t> vecOffset(vecsize);
   for (int ivec = 0; ivec < vecsize; ivec++)
   {
     size_t * sizebuf = (size_t*) charbuf;
     size_t itemsize = linearSize(a_input[ivec]);
-    *sizebuf = itemsize;
-      
-    charbuf += itemsize;
-    charsiz += itemsize;
+    *sizebuf        = itemsize;
+    vecOffset[ivec] = itemsize;
+    
+    charbuf += sizeof(size_t);
+    charsiz += sizeof(size_t);
   }
 
+//  Chombo4::pout() << "(16) charsiz 1= " << charsiz << endl;
   for (int ivec = 0; ivec < vecsize; ivec++)
   {
     linearOut(charbuf, a_input[ivec]);
@@ -289,6 +295,7 @@ linearListOut(void* const a_outBuf,
     charsiz += vecOffset[ivec];
   }
 
+//  Chombo4::pout() << "20 charsiz 1= " << charsiz << endl;
   if(a_printStuff && (charsiz != a_expectedSize))
   {
     Chombo4::pout() << "CH4_SPMD::linearListOut: WARNING size mismatch" << endl;
@@ -304,11 +311,16 @@ linearListSize(const std::vector<T>& a_input,
   //first entry is the size of the vector 
   //next vecsize entries are offsets of data into buffer 
   //next vecsize entries are the actual data
-  size_t itotsize = (a_input.size() + 1)*sizeof(size_t);
+  //written pedantically but I find it comforting.
+  size_t itotsize = sizeof(size_t);
   for (unsigned int ivec = 0; ivec < a_input.size(); ivec++)
-    {
-      itotsize += linearSize(a_input[ivec]);
-    }
+  {
+    itotsize += sizeof(size_t);
+  }
+  for (unsigned int ivec = 0; ivec < a_input.size(); ivec++)
+  {
+    itotsize += linearSize(a_input[ivec]);
+  }
   return itotsize;
 }
 }

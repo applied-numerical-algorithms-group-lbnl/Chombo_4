@@ -147,16 +147,20 @@ namespace CH4_SPMD
     size_t expected = (vecsize+1)*sizeof(size_t) + vecsize*sizeof(int);
 
 
-    return linearListIn(a_outputT, expected, a_inBuf, true);
+    //gotta turn that one off
+    bool printStuff = true;
+    return linearListIn(a_outputT, expected, a_inBuf, printStuff);
   }
 
   template < > inline
   void linearOut(void* const a_outBuf, const std::vector<int>& a_input)
   {
-    size_t vecsize  = a_input.size();
-    size_t expected = vecsize*sizeof(int) + (vecsize+1)*sizeof(size_t);
+    //gotta turn that one off
+    bool printStuff = true;
+    
+    size_t expected = linearListSize(a_input, printStuff);
 
-    return linearListOut(a_outBuf, expected, a_input, true);
+    return linearListOut(a_outBuf, expected, a_input, printStuff);
   }
 #ifdef CH_MPI
 ///gather from multiple processes

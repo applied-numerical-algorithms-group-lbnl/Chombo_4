@@ -312,7 +312,7 @@ namespace CH4_Data_Choreography
     void operator=(const BoxPattern& a_input);
   };
 
-  /// 
+  /// Information needed for one interaction between two processors.
   class proc_interaction_t
   {
   public:

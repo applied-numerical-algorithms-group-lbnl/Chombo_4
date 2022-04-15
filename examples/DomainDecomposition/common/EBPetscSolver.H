@@ -666,7 +666,7 @@ private:
     //decide which location maps to the first one of this proc
 
 #ifdef CH_MPI
-
+    Chombo4::pout() << "EBPetscSolver::defineGids: doing gather broadcast" << endl;
     std::vector<int> numPtsAllProcs;
     CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
     CH4_SPMD::broadcast<vector<int> >(    numPtsAllProcs, 0);
