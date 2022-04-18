@@ -3169,7 +3169,7 @@ namespace Proto
           a_vofStencilx.print();
         }
     }
-
+    // y-direction
     {
       IndMomDIM voluMom;
       if (voluFrac < 1.0)
@@ -3219,7 +3219,58 @@ namespace Proto
           a_vofStencily.print();
         }
     }
+#if DIM==3
+    // z direction
+    {
+      IndMomDIM voluMom;
+      if (voluFrac < 1.0)
+        {
+          voluMom = a_voludata(a_vof, 0);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
+      else
+        {
+          voluMom.setToRegular(a_dx);
+          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+            {
+              const auto& p = iter();
+              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+            }
+        }
 
+      if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
+
+      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+      deriv[2] = 1; // x-derivative stencil
+      a_cellConstruct.getCellStencil(a_vofStencilz,
+                                     a_inhoTerm[2],
+                                     a_vof,
+                                     a_graph,
+                                     a_voludata,
+                                     a_ebfadata,
+                                     a_xfacdata,
+                                     a_yfacdata,
+                                     a_zfacdata,
+                                     a_ebnormxdata,
+                                     a_ebnormydata,
+                                     a_ebnormzdata,
+                                     a_ebbcName,
+                                     a_dombcName,
+                                     voluMom,
+                                     a_dx,
+                                     deriv);
+      if (a_cellConstruct.m_verbose)
+        {
+          pout() << " inhomogTerm zdir " << a_inhoTerm[2] << endl;
+          pout() << " grad stencil " << endl;
+          a_vofStencilz.print();
+        }
+    }
+#endif
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
       {
         double diagweight;

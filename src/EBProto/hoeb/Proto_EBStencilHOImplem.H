@@ -1090,7 +1090,7 @@ namespace Proto
                               bool                                        a_periodiconly,
                               bool  a_forceNeumann,
                               const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions,
-                              const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
+                              const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     using Chombo4::pout;
@@ -1572,12 +1572,13 @@ namespace Proto
               }
 
             //Computing the cell gradient stencil
-            LocalStencil<CELL, double> cellStenZ;
+            //LocalStencil<CELL, double> cellStenZ;
             vector<Real> inhoTerm(DIM, 0.);
             WLSStencil<order> sten;
             sten.getWLSGradStencil(a_stencil[0][ivof],
                                    a_stencil[1][ivof],
-                                   cellStenZ, // dummy for the z
+                                   a_stencil[2][ivof],
+                                   //cellStenZ, // dummy for the z
                                    vofInd,
                                    a_graph,
                                    a_voludata,

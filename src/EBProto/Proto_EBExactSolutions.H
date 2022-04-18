@@ -1316,9 +1316,9 @@ public:
         }
       else if (a_p[2] == 4)
         {
-          zrad = -3*std::pow((std::pow(nearRad, 2) + 4.*std::pow(xc[2], 2)), 3)./(std::pow((std::pow(nearRad, 2) - std::pow(xc[2], 2)), 3)*zrad);;
+          zrad = -3*std::pow((std::pow(nearRad, 2) + 4.*std::pow(xc[2], 2)), 3)/(std::pow((std::pow(nearRad, 2) - std::pow(xc[2], 2)), 3)*zrad);;
         }
-      else
+      else if (a_p[2] > 4)
         {
           Chombo4::MayDay::Warning("ran out of deriv cases");
           retval = 0;
