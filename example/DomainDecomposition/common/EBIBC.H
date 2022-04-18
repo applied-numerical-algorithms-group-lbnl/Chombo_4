@@ -168,7 +168,14 @@ public:
                 }
               else if(faceBC == "outflow")
                 {
-                  a_bcnames[ivec][comp] = StencilNames::NoBC; //string("Extrapolated"); //StencilNames::Neumann;
+                  if (a_allwallslip)
+                    {
+                      a_bcnames[ivec][comp] = StencilNames::NoBC;
+                    }
+                  else
+                    {
+                      a_bcnames[ivec][comp] = StencilNames::Neumann;
+                    }
                 }
               else
                 {

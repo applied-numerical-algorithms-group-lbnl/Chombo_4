@@ -653,11 +653,29 @@ namespace Proto
         m_radius = a_radius;
         m_powerE = a_powerE;
         m_verbose = a_verbose;
-        m_exactSol = a_exactSol;
+        m_exactSolLo = a_exactSol;
+        m_exactSolHi = a_exactSol;
         if (a_exactSolEB == nullptr)
           m_exactSolEB = a_exactSol;
         else
           m_exactSolEB = a_exactSolEB;
+        m_fluxType = a_fluxType;
+      }
+
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
+                int           a_fluxType=0,
+                bool          a_verbose=false)
+      {
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        m_exactSolLo = a_exactSolLo;
+        m_exactSolHi = a_exactSolHi;
+        m_exactSolEB = a_exactSolEB;
         m_fluxType = a_fluxType;
       }
 
@@ -670,7 +688,7 @@ namespace Proto
         m_powerE = a_powerE;
         m_verbose = a_verbose;
         ParmParse pp;
-
+        shared_ptr<BaseExactSolution<order> > exactSol;
         if (a_exactSolFun == 1)
           {
             Vector<int> phiPowerX;
@@ -699,7 +717,7 @@ namespace Proto
                 entries.push_back(mono);
               }
 
-            m_exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
+            exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
           }
         else if (a_exactSolFun == 2 || a_exactSolFun == 3)
           {
@@ -719,8 +737,8 @@ namespace Proto
                 center[idir] = centerVec[idir];
               }
 
-            if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-            if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 2) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 3) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
           }
         else if (a_exactSolFun == 4)
           {
@@ -729,7 +747,7 @@ namespace Proto
             Real cen;
             pp.get("phi_cen", cen);
 
-            m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+            exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
           }
         else if (a_exactSolFun == 5)
           {
@@ -748,9 +766,11 @@ namespace Proto
                 center[idir] = centerVec[idir];
               }
 
-            m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
+            exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
           }
-        m_exactSolEB = m_exactSol;
+        m_exactSolLo = exactSol;
+        m_exactSolHi = exactSol;
+        m_exactSolEB = exactSol;
       }
 
     public:
@@ -763,7 +783,8 @@ namespace Proto
     //Flux type. 0-Laplacian, 1-Advection
     int m_fluxType = 0;
     //Exact solution class holding different function types
-    shared_ptr<BaseExactSolution<order> >  m_exactSol;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolLo;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolHi;
     shared_ptr<BaseExactSolution<order> >  m_exactSolEB;
     
   };
@@ -1000,10 +1021,11 @@ namespace Proto
 
     DivWLSFlux(int           a_radius,
                int           a_powerE,
-               shared_ptr<BaseExactSolution<order> >  a_exactSol,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
                shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
                bool          a_verbose=false)
-      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSol, a_exactSolEB, 0, a_verbose)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolLo, a_exactSolHi, a_exactSolEB, 0, a_verbose)
       {}
 
     DivWLSFlux(int           a_radius,

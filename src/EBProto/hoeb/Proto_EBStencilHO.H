@@ -98,9 +98,7 @@ namespace Proto
                double                                      a_dx,
                bool                                        a_periodiconly,
                Point                                       a_dstGrown,
-               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX = nullptr,
-               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY = nullptr,
-               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ = nullptr,
+               const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
 
     ///Gets WLS Poisson stencil
@@ -131,9 +129,7 @@ namespace Proto
                          double                                      a_dx,
                          bool                                        a_periodiconly,
                          bool  a_forceAllNeumann,
-                         const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX = nullptr,
-                         const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY = nullptr,
-                         const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ = nullptr,
+                         const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
                          const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
 
     ///Gets WLS Advection stencil
@@ -193,7 +189,8 @@ namespace Proto
                                 double                                      a_dx,
                                 bool                                        a_periodiconly,
                                 bool  a_forceAllNeumann,
-                                const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution = nullptr);
+                                const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution = vector<shared_ptr<BaseExactSolution<order> > >(),
+                                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
 
     ///Gets WLS Divergence stencil
     inline static bool

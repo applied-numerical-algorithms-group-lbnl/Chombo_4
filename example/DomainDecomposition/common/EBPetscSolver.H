@@ -47,7 +47,8 @@ public:
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(4, nullptr))
+                const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
+                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -71,6 +72,7 @@ public:
     m_ptghost      =    a_ghost;
 
     m_boundarySolutions = a_boundarySolutions;
+    m_boundarySolutionsEB = a_boundarySolutionsEB;
     m_kappa.define(m_grids, m_ivghost, m_graphs);
     m_inhoContr.define(m_grids, m_ivghost, m_graphs);
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
@@ -434,7 +436,8 @@ private:
                            PointSet                            & a_allIrregPoints,
                            const Chombo4::DataIndex                     & a_dit,
                            int                                            a_ibox,
-                           const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >())
+                           const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
+                           const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
   {
     CH_TIME("EBPetscSolver::getStencilComponents");
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
@@ -489,10 +492,8 @@ private:
                        ebnorxdata, ebnorydata,
                        ebnorzdata,
                        m_dx, false, Point::Zeros(),
-                       a_boundarySolutions[0],
-                       a_boundarySolutions[1],
-                       a_boundarySolutions[2],
-                       a_boundarySolutions[3]);
+                       a_boundarySolutions,
+                       a_boundarySolutionsEB);
  
     }
     else
@@ -649,7 +650,7 @@ private:
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
         //use strings to get stencil for this particular operator.
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox, m_boundarySolutions);
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox, m_boundarySolutions, m_boundarySolutionsEB);
         
         auto& graph = (*m_graphs)[dit[ibox]];
         auto  grid  =     m_grids[dit[ibox]];
@@ -973,6 +974,7 @@ private:
   vector<shared_ptr<ebstencil_t> > m_stencil;
 
   vector<shared_ptr<BaseExactSolution<order> > > m_boundarySolutions;
+  shared_ptr<BaseExactSolution<order> > m_boundarySolutionsEB;
 };
 
 #endif

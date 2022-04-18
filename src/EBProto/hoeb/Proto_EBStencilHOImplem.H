@@ -191,9 +191,7 @@ namespace Proto
              double                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ,
+             const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions,
              const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
     PR_TIME("getStencil");
@@ -228,9 +226,7 @@ namespace Proto
                              a_dx,
                              a_periodiconly,
                              forceNeumann,
-                             a_boundarySolutionsX,
-                             a_boundarySolutionsY,
-                             a_boundarySolutionsZ,
+                             a_boundarySolutions,
                              a_boundarySolutionsEB);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
@@ -263,9 +259,7 @@ namespace Proto
                              a_dx,
                              a_periodiconly,
                              forceNeumann,
-                             a_boundarySolutionsX,
-                             a_boundarySolutionsY,
-                             a_boundarySolutionsZ,
+                             a_boundarySolutions,
                              a_boundarySolutionsEB);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Advection"))
@@ -335,9 +329,7 @@ namespace Proto
                        double                                      a_dx,                         
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann,
-                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsX,
-                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsY,
-                       const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsZ,
+                       const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions,
                        const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
     PR_TIME("getWLSPoissonStencil");
@@ -376,13 +368,14 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    if (a_boundarySolutionsX == nullptr)
+    if (a_boundarySolutions.size() < 6)
       {
         pp.get("exact_solution",exactSolution);
+        pout() << "WLSPoissionStencil reading BCs" << std::endl;
       }
     else
       {
-        pout() << "WLSPoissionStencil using externally specified BC" << std::endl;
+        pout() << "WLSPoissionStencil using externally specified BCs" << std::endl;
       }
 
     if (verbose)
@@ -528,7 +521,7 @@ namespace Proto
         BaseWLSFlux<YFACE, order> yflux;
         BaseWLSFlux<ZFACE, order> zflux;
         BaseWLSFlux<BOUNDARY, order> ebflux;
-        if (a_boundarySolutionsX == nullptr)
+        if (a_boundarySolutions.size() < 6)
           {
             //pout() << "Using uniform div boundary values" << std::endl;
             xflux = BaseWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
@@ -539,10 +532,10 @@ namespace Proto
         else
           {
             //pout() << "Using specified div boundary values" << std::endl;
-            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutionsX, a_boundarySolutionsEB, 0, pt_verbose);
-            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutionsY, a_boundarySolutionsEB, 0, pt_verbose);
-            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutionsZ, a_boundarySolutionsEB, 0, pt_verbose);
-            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
+            xflux = BaseWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            yflux = BaseWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            zflux = BaseWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            ebflux = BaseWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
           }
 
         Real inhoTerm = 0.0;
@@ -1096,7 +1089,8 @@ namespace Proto
                               double                                      a_dx,
                               bool                                        a_periodiconly,
                               bool  a_forceNeumann,
-                              const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions)
+                              const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions,
+                              const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     using Chombo4::pout;
@@ -1122,8 +1116,9 @@ namespace Proto
     pp.query("neighListType"   , neighListType);
 
     //Exact solution
-    if (a_boundarySolutions.size() == 0)
+    if (a_boundarySolutions.size() != 6)
       {
+        pout() << "WLSDivergenceCompStencil reading BC" << std::endl;
         pp.get("exact_solution",exactSolution);
       }
     else
@@ -1251,9 +1246,9 @@ namespace Proto
             DivWLSFlux<YFACE, order> yflux;
             DivWLSFlux<ZFACE, order> zflux;
             DivWLSFlux<BOUNDARY, order> ebflux;
-            if (a_boundarySolutions.size() == 0)
+            if (a_boundarySolutions.size() < 6)
               {
-                pout() << "Using uniform div boundary values" << std::endl;
+                //pout() << "Using uniform div boundary values" << std::endl;
                 xflux = DivWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
                 yflux = DivWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
                 zflux = DivWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
@@ -1261,12 +1256,11 @@ namespace Proto
               }
             else
               {
-                pout() << "Using specified div boundary values" << std::endl;
-                CH_assert(a_boundarySolutions.size() == 4);
-                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[0], a_boundarySolutions[3], 0, pt_verbose);
-                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[1], a_boundarySolutions[3], 0, pt_verbose);
-                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[2], a_boundarySolutions[3], 0, pt_verbose);
-                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutions[3], a_boundarySolutions[3], 0, pt_verbose);
+                //pout() << "Using specified div boundary values" << std::endl;
+                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
               }
 
             //Computing the flux divergence stencil

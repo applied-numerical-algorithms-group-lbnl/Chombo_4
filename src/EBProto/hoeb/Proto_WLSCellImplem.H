@@ -894,6 +894,7 @@ namespace Proto
       RealVect a_faceLocDiff = a_facneighLoc[iface];
       int a_faceDir = a_facneighDir[iface];
       Side::LoHiSide a_faceSid = a_facneighSid[iface];
+      auto exactSolSide = a_faceSid == Side::Lo ? m_exactSolLo : m_exactSolHi;
       int index = ebp_index(a_faceDir, a_faceSid);
       if(a_dombcName[index] == string("Neumann"))
       {
@@ -901,7 +902,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
                                                a_faceLocDiff,
                                                a_faceDir,
-                                               m_exactSol,
+                                               exactSolSide,
                                                a_dx);
       }
       else if(a_dombcName[index] == string("Dirichlet"))
@@ -910,7 +911,7 @@ namespace Proto
                                getFaceIntegral(a_facmom[iface],
                                                a_faceLocDiff,
                                                a_faceDir,
-                                               m_exactSol,
+                                               exactSolSide,
                                                a_dx);
       }
       else
@@ -2035,7 +2036,7 @@ namespace Proto
         inhomogTerm = NeumannExactSoln<order>::
                                getEBIntegral(ebnorm,
                                              faceLoc,
-                                             a_ebflux.m_exactSol,
+                                             a_ebflux.m_exactSolEB,
                                              a_dx);
         inhomogTerm = inhomogTerm/(areaScaleFactor);
 

@@ -1267,6 +1267,179 @@ private:
   }
 };
 
+///
+template <unsigned int order>
+class RotatingSphere: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*exp(-m*(x-x0)^2+(y-y0)^2+(z-z0)^2)
+      m_coeff = A
+      m_dfac = m
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x) const
+    {
+      Real retval = 0.;
+      RealVect xc = a_x-m_center;
+      Real rad = xc.vectorLength();
+      Real nearRad, nearOmega;
+      if (abs(rad - m_rad1) < abs(rad - m_rad2))
+        {
+          nearRad = m_rad1;
+          nearOmega = m_omega1;
+        }
+      else
+        {
+          nearRad = m_rad2;
+          nearOmega = m_omega2;
+        }
+#if DIM==3
+      Real zrad = nearRad*std::sqrt(1.-std::pow(xc[2]/nearRad, 2));
+      if (a_p[2] == 1)
+        {
+          retval = -xc[2]/(std::pow(nearRad, 2)*zrad);
+        }
+      else if (a_p[2] == 2)
+        {
+          zrad = -1./((std::pow(nearRad, 2) - std::pow(xc[2], 2))*zrad);;
+        }
+      else if (a_p[2] == 3)
+        {
+          zrad = -1./((std::pow(nearRad, 2) - std::pow(xc[2], 2))*zrad);;
+        }
+      else if (a_p[2] == 4)
+        {
+          zrad = -3*std::pow((std::pow(nearRad, 2) + 4.*std::pow(xc[2], 2)), 3)./(std::pow((std::pow(nearRad, 2) - std::pow(xc[2], 2)), 3)*zrad);;
+        }
+      else
+        {
+          Chombo4::MayDay::Warning("ran out of deriv cases");
+          retval = 0;
+        }
+#else
+      Real zrad = 1.;
+#endif
+      if (m_comp == 0)
+        {
+          if (a_p[0] > 0)
+            {
+              retval = 0.;
+            }
+          else if (a_p[1] == 0)
+            {
+              retval = nearOmega*zrad*xc[1];
+            }
+          else if (a_p[1] == 1)
+            {
+              retval = nearOmega*zrad;
+            }
+          else
+            {
+              retval = 0;
+            }
+        }
+      else if (m_comp == 1)
+        {
+          if (a_p[1] > 0)
+            {
+              retval = 0.;
+            }
+          else if (a_p[0] == 0)
+            {
+              retval = nearOmega*zrad*(-xc[0]);
+            }
+          else if (a_p[0] == 1)
+            {
+              retval = -nearOmega*zrad;
+            }
+          else
+            {
+              retval = 0;
+            }
+        }
+      else if(m_comp == 2)
+        {
+          retval = 0;
+        }
+      return retval;
+    }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      Real retval = 0.;
+      RealVect xc = a_x-m_center;
+      Real rad = xc.vectorLength();
+      Real nearRad, nearOmega;
+      if (abs(rad - m_rad1) < abs(rad - m_rad2))
+        {
+          nearRad = m_rad1;
+          nearOmega = m_omega1;
+        }
+      else
+        {
+          nearRad = m_rad2;
+          nearOmega = m_omega2;
+        }
+#if DIM==3
+      Real zrad = nearRad*std::sqrt(1.-std::pow(xc[2]/nearRad, 2));
+#else
+      Real zrad = 1.;
+#endif
+      if (m_comp == 0)
+        {
+          retval = nearOmega*zrad*xc[1];
+        }
+      else if (m_comp == 1)
+        {
+          retval = nearOmega*zrad*(-xc[0]);
+        }
+      else if(m_comp == 2)
+        {
+          retval = 0;
+        }
+      return retval;
+    }
+
+  virtual ~RotatingSphere()
+    {
+    }
+
+  RotatingSphere(Real     a_rad1,
+                 Real     a_omega1,
+                 Real     a_rad2,
+                 Real     a_omega2,
+                 RealVect a_center,
+                 int a_comp)
+    {
+      m_rad1 = a_rad1;
+      m_omega1 = a_omega1;
+      m_rad2 = a_rad2;
+      m_omega2 = a_omega2;
+      m_center = a_center;
+      m_comp = a_comp;
+    }
+
+private:
+  Real     m_rad1;
+  Real     m_omega1;
+  Real     m_rad2;
+  Real     m_omega2;
+  RealVect m_center;
+  int      m_comp;
+  Real     m_PI=3.141592653589793238462643383279502884197;
+
+  RotatingSphere()
+    {
+    }
+};
+
 ///class where phi is a product of one dimensional sines
 template <unsigned int order>
 class ExponentialProduct: public BaseExactSolution<order>
