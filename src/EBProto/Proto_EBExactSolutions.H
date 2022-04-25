@@ -1301,27 +1301,29 @@ public:
           nearOmega = m_omega2;
         }
 #if DIM==3
-      Real zrad = nearRad*std::sqrt(1.-std::pow(xc[2]/nearRad, 2));
+      RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
+      Real sq = std::sqrt(1.-std::pow(xc_nr[2]/nearRad, 2));
+      Real zrad = nearRad*sq;
       if (a_p[2] == 1)
         {
-          retval = -xc[2]/(std::pow(nearRad, 2)*zrad);
+          zrad = -xc_nr[2]/(nearRad*sq);
         }
       else if (a_p[2] == 2)
         {
-          zrad = -1./((std::pow(nearRad, 2) - std::pow(xc[2], 2))*zrad);;
+          zrad = -nearRad/((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2))*sq);
         }
       else if (a_p[2] == 3)
         {
-          zrad = -1./((std::pow(nearRad, 2) - std::pow(xc[2], 2))*zrad);;
+          zrad = -(3.*nearRad*xc_nr[2])/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 2)*sq);
         }
       else if (a_p[2] == 4)
         {
-          zrad = -3*std::pow((std::pow(nearRad, 2) + 4.*std::pow(xc[2], 2)), 3)/(std::pow((std::pow(nearRad, 2) - std::pow(xc[2], 2)), 3)*zrad);;
+          zrad = -(3.*nearRad(std::pow(nearRad, 2)+4.*std::pow(xc_nr[2],2)))/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 3)*sq);
         }
       else if (a_p[2] > 4)
         {
           Chombo4::MayDay::Warning("ran out of deriv cases");
-          retval = 0;
+          zrad = 0.;
         }
 #else
       Real zrad = 1.;
@@ -1364,7 +1366,7 @@ public:
               retval = 0;
             }
         }
-      else if(m_comp == 2)
+      else
         {
           retval = 0;
         }
