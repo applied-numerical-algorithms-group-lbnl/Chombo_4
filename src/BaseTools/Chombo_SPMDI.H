@@ -25,69 +25,6 @@ namespace CH4_SPMD
 
 #ifdef CH_MPI
 
-  extern void AttachDebugger(int);
-  template <class T>
-  inline void  gatherSizes(vector<size_t>& a_allSizes, size_t& a_totalSize,
-                           const T& a_input, int a_dest, bool a_printStuff)
-  {//gather the sizes to be received from each proc
-    //now THIS size lives on THIS processor
-    //using unsigned long because mpi understands it
-    size_t thisProcSize_t = linearSize(a_input);
-    unsigned long int  thisProcSize = thisProcSize_t;
-    int nProcess = CH4_SPMD::numProc();
-
-    unsigned long int*  recvbuf = NULL;
-    //allocate received buffer
-    if (procID() == a_dest)
-    {
-      recvbuf = new unsigned long int[nProcess];
-    }
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gatherSizes: before mpi_gather" << endl;
-    }
-
-    MPI_Gather(&thisProcSize, 1, MPI_UNSIGNED_LONG, recvbuf, 1, MPI_UNSIGNED_LONG, a_dest, Chombo_MPI::comm);
-      
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gatherSizes: after mpi_gather" << endl;
-    }
-    if(procID() == a_dest)
-    {
-      a_allSizes.resize(nProcess);
-      char* bufloc = (char*) recvbuf;
-      for(int iproc = 0; iproc < nProcess; iproc++)
-      {
-        size_t* sizeptr = (size_t*) bufloc;
-        a_allSizes[iproc] = *sizeptr;
-        a_totalSize += a_allSizes[iproc];
-          
-        bufloc += sizeof(unsigned long int); //remember mpi does not know from size_t
-      }
-      if(a_printStuff)
-      {
-        for(int iproc = 0; iproc < nProcess; iproc++)
-        {
-          Chombo4::pout() << "CH4_SPMD::gatherSizes: gathered sizes : " ;
-          Chombo4::pout() << "iproc = " << iproc << ", size = " << a_allSizes[iproc] << endl;
-        }
-      }
-    }
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gatherSizes: cleaning up" << endl;
-    }
-    if (procID() == a_dest)
-    {
-      delete[] recvbuf;
-    }
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gatherSizes: leaving" << endl;
-    }
-  }
 /*****************************/
 //gather a_input into a a_outVec
 /*****************************/
@@ -96,77 +33,87 @@ namespace CH4_SPMD
   gather(std::vector<T>& a_outVec, const T& a_input, int a_dest, bool a_printStuff)
   {
     CH_assert (a_dest >= 0);
+    CH_assert (a_dest >= 0);
     CH_assert(a_dest <  numProc());
-    int nProcess = CH4_SPMD::numProc();
-    vector<size_t> allSizes(nProcess);
-    size_t totalSize = 0;
-    //gather the sizes to be received from each proc
-    gatherSizes(allSizes, totalSize, a_input, a_dest, a_printStuff);
+    //now THIS size lives on THIS processor
+    int isize = linearSize(a_input);
 
-    char* recvbuf = NULL;
+    //make stuff for linearout
+    void* loclBuf = malloc(isize);
+    if (loclBuf == NULL)
+      Chombo4::MayDay::Error("out of memory in gather 1");
 
-    //mpi wants ints. mpi gets ints
+    //put linearized T into its proper buffer
+    linearOut(loclBuf, a_input);
+
+    int nProcess = numProc();
+    int sendCount = 1;
+    int recdCount = 1;
+
+    //need to gather isizes onto processor a_dest
     int* vectSize = NULL;
     int* vectDisp = NULL;
-    //allocate received buffer and other sundries
+    void* sendBuf = static_cast<void*>(&isize);
+    //allocate received buffer
     if (procID() == a_dest)
     {
       vectSize = new int[nProcess];
       vectDisp = new int[nProcess];
-      recvbuf = (char*) malloc(totalSize);
-      
+    }
+
+    int result1 = MPI_Gather(sendBuf, sendCount, MPI_INT,
+                             vectSize,recdCount, MPI_INT,
+                             a_dest,  Chombo_MPI::comm);
+
+    if (result1 != MPI_SUCCESS)
+      Chombo4::MayDay::Error("Gather<T> failed in MPI_Gather 1");
+
+    //make memory for gather, linearin
+    void* recdBuf = NULL;
+    if (procID() == a_dest)
+    {
       size_t itotsize=0;
       for (int iproc = 0; iproc < nProcess; iproc++)
       {
-        vectSize[iproc] = allSizes[iproc];
         vectDisp[iproc] = itotsize;
-        itotsize       += allSizes[iproc];
+        itotsize += vectSize[iproc];
       }
-      if(itotsize != totalSize)
+      recdBuf = malloc(itotsize);
+      if (recdBuf == NULL)
       {
-        Chombo4::pout() << "CH4_SPMD::gather:: WARNING itotsize = "<< itotsize << ", totalSize = " << totalSize << "(they should be equal)" << endl;
+        Chombo4::MayDay::Error("out of memory in gather 2");
       }
     }
 
-    size_t size_t_size = linearSize(a_input);
-    //mpi wants ints. mpi gets ints
-    int isize = size_t_size;
-    //make stuff for linearout
-    char* localBuf = (char*)malloc(isize);
-    linearOut(localBuf, a_input);
-    
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gather:: going into gatherv" << endl;
-    }
+    //gather data
+    int result2 = MPI_Gatherv(loclBuf, isize, MPI_BYTE,
+                              recdBuf, vectSize, vectDisp, MPI_BYTE,
+                              a_dest, Chombo_MPI::comm);
+    if (result2 != MPI_SUCCESS)
+      Chombo4::MayDay::Error("Gather<T> failed in MPI_Gather 2");
 
-    MPI_Gatherv(localBuf, isize, MPI_BYTE,
-                recvbuf, vectSize, vectDisp, MPI_BYTE,
-                a_dest, Chombo_MPI::comm);
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::gather:: out of gatherv " << endl;
-    }
-    
     if (procID() == a_dest)
     {
+      //calculate offset into array for current processor
+      int ioffset = 0;
       a_outVec.resize(nProcess);
-      char* bufloc = recvbuf;
+      //need to cast to char* to do pointer arithmetic
+      char* arithPtr = (char*)recdBuf;
       for (int iproc = 0; iproc < nProcess; iproc++)
       {
-        linearIn(a_outVec[iproc], bufloc);
-        bufloc += vectDisp[iproc];
+        ioffset = vectDisp[iproc];
+        char* thisProcBuf = arithPtr + ioffset;
+        linearIn(a_outVec[iproc], thisProcBuf);
       }
 
       //delete memory for dest-specific arrays
       delete[] vectSize;
       delete[] vectDisp;
-      free(recvbuf);
+      free(recdBuf);
     }
 
     //delete memory for local buffer
-    free(localBuf);
+    free(loclBuf);
   }
 
 /*****************************/
@@ -178,68 +125,44 @@ namespace CH4_SPMD
   {
     CH_assert (a_src >= 0);
     CH_assert(a_src <  numProc());
-    size_t size_t_size;
+    int isize;
     if (procID() == a_src)
     {
-      size_t_size = linearSize(a_inAndOut);
+      isize = linearSize(a_inAndOut);
     }
 
-    //mpi wants ints.  mpi gets ints.
-    int isize = size_t_size;
-    
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::broadcast: before MPI_Bcast" << endl;
-    }
     MPI_Bcast(&isize, 1, MPI_INT, a_src, Chombo_MPI::comm);
-    
-    if(a_printStuff)
+
+    void* broadBuf = malloc(isize);
+
+    if (broadBuf == NULL)
     {
-      Chombo4::pout() << "CH4_SPMD::broadcast: after MPI_Bcast "
-                      << ", isize = " << isize << endl;      
+      Chombo4::MayDay::Error("out of memory in broadcast");
     }
-    
-    char* broadBuf = (char *) malloc(isize);
 
     //take inAndOut from src and put it into broadBuf
     if (procID() == a_src)
     {
-      if(a_printStuff)
-      {
-        Chombo4::pout() << "CH4_SPMD::broadcast: before linearOut " << endl;
-      }
       linearOut(broadBuf, a_inAndOut);
-      if(a_printStuff)
-      {
-        Chombo4::pout() << "CH4_SPMD::broadcast: after linearOut " << endl;
-      }
     }
 
     //broadcast broadBuf to all procs
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::broadcast: before second mpi_bcast " << endl;
-    }
-
     MPI_Bcast(broadBuf, isize, MPI_BYTE, a_src, Chombo_MPI::comm);
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::broadcast: after second mpi_bcast " << endl;
-    }
 
+    if (procID()==a_src)
+    {
+      CH_MaxMPISendSize = std::max<long long>(CH_MaxMPISendSize, isize);
+    }
+    else
+    {
+      CH_MaxMPIRecvSize = std::max<long long>(CH_MaxMPIRecvSize, isize);
+    }
     //take broadBuf and put back into inAndOut if not src
     if (procID() != a_src)
     {
-
-      Chombo4::pout() << "CH4_SPMD::broadcast: going into linearin " << endl;
       linearIn(a_inAndOut, broadBuf);
-      Chombo4::pout() << "CH4_SPMD::broadcast: coming out of linearin " << endl;
     }
 
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "CH4_SPMD::broadcast: just before freeing memory " << endl;
-    }
     //delete memory for buffer
     free(broadBuf);
   }

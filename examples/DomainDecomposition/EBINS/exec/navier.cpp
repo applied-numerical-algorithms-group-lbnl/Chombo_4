@@ -207,8 +207,8 @@ runNavierStokes()
     initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
   }
 ////begin debug  
-  pout() << "leaving after EBINS initialization" << endl;
-  return 0;
+//  pout() << "leaving after EBINS initialization" << endl;
+//  return 0;
 ////end debug    
   if(starting_step == 0)
   {
