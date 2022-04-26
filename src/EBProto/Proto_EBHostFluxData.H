@@ -136,7 +136,7 @@ namespace Proto
                                  unsigned int a_numcomps,
                                  bool a_printStuff = false) const
     {
-      size_t sumsize = 3*sizeof(unsigned long long);
+      size_t sumsize = 3*sizeof(size_t);
       sumsize += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       sumsize += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 #if DIM==3      
@@ -146,31 +146,51 @@ namespace Proto
       
     }
     virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedCharSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
                            unsigned int           a_numcomps,
                            bool a_printStuff = false)
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      char* charbuf = (char*)a_buf;
-      unsigned long* longbuf = (unsigned long *)(charbuf);
-      unsigned long xSize = *longbuf;    longbuf++;
-      unsigned long ySize = *longbuf;    longbuf++;
-#if DIM==3      
-      unsigned long zSize = *longbuf;    longbuf++;
-#endif      
-      charbuf = (char*)(longbuf);
+      char*  charbuf = (char*)a_buf;
+      size_t charsiz = 0;
+      size_t* longbuf = (size_t *)(charbuf);
+
+      size_t xSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
-      m_xflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += xSize;
-      m_yflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += ySize;
+      size_t ySize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #if DIM==3      
-      m_zflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += zSize;
+      size_t zSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #endif      
+
+      
+      m_xflux->linearIn(charbuf,   xSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += xSize;
+      charsiz += xSize;
+      
+      m_yflux->linearIn(charbuf,   ySize, a_bx, a_startcomp, a_numcomps);
+      charbuf += ySize;
+      charsiz += ySize;
+#if DIM==3      
+      m_zflux->linearIn(charbuf,   zSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
+      charsiz += zSize;
+#endif
+      if(charsiz != a_expectedCharSize)
+      {
+        Chombo4::pout() << "EBHostFluxData::linearIn: WARNING charsiz = " << charsiz
+                        << ", expected = " << a_expectedCharSize;
+      }
     }
     virtual void linearOut(void*               a_buf,
+                           size_t              a_expectedCharSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,
@@ -178,30 +198,48 @@ namespace Proto
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       char* charbuf = (char*)a_buf;
-      unsigned long xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
-      unsigned long ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t charsiz = 0;
+      
+      size_t xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 
 #if DIM==3      
-      unsigned long zSize = 0;
+      size_t zSize = 0;
       zSize = m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
 #endif      
       
-      unsigned long* longbuf = (unsigned long*)(charbuf);
+      size_t* longbuf = (size_t*)(charbuf);
       *longbuf = xSize;      longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
       *longbuf = ySize;      longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
 #if DIM==3      
       *longbuf = zSize;      longbuf++;
-#endif      
-      charbuf = (char*)(longbuf);
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+#endif
         
-      m_xflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
+      m_xflux->linearOut(charbuf,  xSize, a_bx, a_startcomp, a_numcomps);
       charbuf += xSize;
-      m_yflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
+      charsiz += xSize;
+      
+      m_yflux->linearOut(charbuf,  ySize, a_bx, a_startcomp, a_numcomps);
       charbuf += ySize;
+      charsiz += ySize;
 #if DIM==3      
-      m_zflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
+      m_zflux->linearOut(charbuf,  zSize, a_bx, a_startcomp, a_numcomps);
       charbuf += zSize;
+      charsiz += zSize;
 #endif      
+      if(charsiz != a_expectedCharSize)
+      {
+        Chombo4::pout() << "EBHostFluxData::linearout: WARNING charsiz = " << charsiz
+                        << ", expected = " << a_expectedCharSize;
+      }
     }
     ///
     static int preAllocatable()

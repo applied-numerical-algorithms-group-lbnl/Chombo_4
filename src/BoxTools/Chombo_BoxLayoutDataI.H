@@ -461,8 +461,8 @@ void BoxLayoutData<T>::allocateBuffers(const BoxLayoutData<T>& a_src,
 
     // in the non-preallocatable case, I need to message the
     // values for the m_buff->m_toMe[*].size
-    Vector<unsigned long> fdata;
-    Vector<unsigned long> tdata;
+    std::vector<unsigned long> fdata;
+    std::vector<unsigned long> tdata;
     int count = 1;
     int scount = 1;
     if (m_buff->m_toMe.size() > 0)
@@ -832,7 +832,7 @@ unpackReceivesToMe(const Interval&      a_destComps,
 }
 
 template<class T>
-void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                                                  const Interval&   a_destComps,
                                                  int ncomp,
                                                  const DataFactory<T>& factory,
@@ -873,7 +873,7 @@ void BoxLayoutData<T>::unpackReceivesToMe_append(LayoutData<Vector<RefCountedPtr
 
 template <class T>
 void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
-                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+                                     LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                                      const Interval& a_srcComps,
                                      const ProblemDomain& a_domain,
                                      const Copier& a_copier,
@@ -938,7 +938,7 @@ void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
 
 template <class T>
 void BoxLayoutData<T>::generalCopyTo(const BoxLayout& a_destGrids,
-                                     LayoutData<Vector<RefCountedPtr<T> > >& a_dest,
+                                     LayoutData<std::vector<RefCountedPtr<T> > >& a_dest,
                                      const Interval& a_srcComps,
                                      const ProblemDomain& a_domain,
                                      const DataFactory<T>& factory) const

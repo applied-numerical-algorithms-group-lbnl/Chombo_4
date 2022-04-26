@@ -65,7 +65,7 @@ public:
   IntVect()
   {}
 
-  explicit IntVect( const Vector<int>& vi)
+  explicit IntVect( const std::vector<int>& vi)
   {
     D_EXPR6(vect[0]=vi[0], vect[1]=vi[1], vect[2] = vi[2],
             vect[3]=vi[3], vect[4]=vi[4], vect[5] = vi[5]);
@@ -718,32 +718,32 @@ namespace std { template <> inline bool less<IntVect>::operator()(const IntVect&
 namespace CH4_SPMD
 {
 
-template < >
-int linearSize(const IntVect& a_iv);
-
-///functions for linearization
-template < >
-void linearIn(IntVect& a_iv, const void* a_inBuf);
-
-///functions for linearization
-template < >
-void linearOut(void* a_outBuf, const IntVect& a_iv);
-
-//vector<IntVect>  specialization
-template < >
-int linearSize(const Vector<IntVect>& a_input);
-template < >
-void linearIn(Vector<IntVect>& a_outputT, const void* const inBuf);
-template < >
-void linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT);
-
-//vector<vector<IntVect> > specialization
-template < >
-int linearSize(const Vector<Vector<IntVect> >& a_input);
-template < >
-void linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf);
-template < >
-void linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT);
+//template < >
+//int linearSize(const IntVect& a_iv);
+//
+/////functions for linearization
+//template < >
+//void linearIn(IntVect& a_iv, const void* a_inBuf);
+//
+/////functions for linearization
+//template < >
+//void linearOut(void* a_outBuf, const IntVect& a_iv);
+//
+////vector<IntVect>  specialization
+//template < >
+//int linearSize(const std::vector<IntVect>& a_input);
+//template < >
+//void linearIn(std::vector<IntVect>& a_outputT, const void* const inBuf);
+//template < >
+//void linearOut(void* const a_outBuf, const std::vector<IntVect>& a_inputT);
+//
+////vector<vector<IntVect> > specialization
+//template < >
+//int linearSize(const std::vector<std::vector<IntVect> >& a_input);
+//template < >
+//void linearIn(std::vector<std::vector<IntVect> >& a_outputT, const void* const inBuf);
+//template < >
+//void linearOut(void* const a_outBuf, const std::vector<std::vector<IntVect> >& a_inputT);
 }
 
 #include "Chombo_NamespaceHeader.H"

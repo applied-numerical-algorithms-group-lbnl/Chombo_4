@@ -121,7 +121,7 @@ protected:
   // destruction for me, but vector.resize() absolutely demands that
   // I provide a copy constructor for T.  People get uncomfortable when
   // I make them provide me with copy constructors.
-  Vector<T*> m_vector;
+  std::vector<T*> m_vector;
 
   // thinking about making this class self-documenting to a greater degree
   // and having the component names also be kept in the class and carried

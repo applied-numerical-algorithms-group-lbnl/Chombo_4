@@ -147,60 +147,8 @@ const IntVect IntVect::Unit = IntVect(D_DECL6(1,1,1,1,1,1));
 #include "Chombo_NamespaceFooter.H"
 
 using Chombo4::IntVect;
-using Chombo4::Vector;
 
-///functions for linearization shamelessly grabbed from RealVect
-template < >
-int CH4_SPMD::linearSize(const IntVect& a_iv)
-{
-  return sizeof(IntVect);
-}
 
-///functions for linearization
-template < >
-void CH4_SPMD::linearIn(IntVect& a_iv, const void* a_inBuf)
-{
-  unsigned char* bob = (unsigned char*)a_inBuf;
-  unsigned char* to = (unsigned char*)&a_iv;
-  memcpy(to + IntVect::io_offset, bob, SpaceDim*sizeof(int));
-}
-
-///functions for linearization
-template < >
-void CH4_SPMD::linearOut(void* a_outBuf, const IntVect& a_iv)
-{
-  unsigned char* bob = (unsigned char*)a_outBuf;
-  const unsigned char* from = (const unsigned char*)&a_iv;
-  memcpy(bob, from + IntVect::io_offset, SpaceDim*sizeof(int));
-}
-
-//vector<IntVect>  specialization
-template < > int CH4_SPMD::linearSize(const Vector<IntVect>& a_input)
-{
-  return CH4_SPMD::linearListSize(a_input);
-}
-template < > void ::CH4_SPMD::linearIn(Vector<IntVect>& a_outputT, const void* const inBuf)
-{
-  CH4_SPMD::linearListIn(a_outputT, inBuf);
-}
-template < > void ::CH4_SPMD::linearOut(void* const a_outBuf, const Vector<IntVect>& a_inputT)
-{
-  CH4_SPMD::linearListOut(a_outBuf, a_inputT);
-}
-
-//Vector<Vector<IntVect> >  specialization
-template < > int ::CH4_SPMD::linearSize(const Vector<Vector<IntVect> >& a_input)
-{
-  return CH4_SPMD::linearListSize(a_input);
-}
-template < > void CH4_SPMD::linearIn(Vector<Vector<IntVect> >& a_outputT, const void* const inBuf)
-{
-  CH4_SPMD::linearListIn(a_outputT, inBuf);
-}
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Vector<IntVect> >& a_inputT)
-{
-  CH4_SPMD::linearListOut(a_outBuf, a_inputT);
-}
 #include "Chombo_BaseNamespaceHeader.H"
 
 const uint32_t IntVect::morton256_x[256] =

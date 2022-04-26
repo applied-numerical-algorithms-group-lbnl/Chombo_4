@@ -46,8 +46,8 @@ runTest(int a_argc, char* a_argv[])
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
   Box domain(domLo, domHi);
-  Vector<Box> boxes(1, domain);
-  Vector<int> procs(1, 0);
+  std::vector<Box> boxes(1, domain);
+  std::vector<int> procs(1, 0);
   DisjointBoxLayout grids(boxes, procs);
   IntVect ivghost =   2*IntVect::Unit;
   // Point   ptghost = ProtoCh::getPoint(ivghost);
@@ -62,7 +62,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
@@ -77,10 +77,10 @@ int main(int a_argc, char* a_argv[])
     Chombo4::runTest(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

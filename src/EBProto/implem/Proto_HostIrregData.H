@@ -268,7 +268,7 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "hostirregdata::charsize for box " << a_bx << " returning " << retval << endl;
+        Chombo4::pout() << "HostIrregData::charsize for box " << a_bx << " returning " << retval << endl;
       }
       return retval;
     }
@@ -276,11 +276,16 @@ namespace Proto
     /// recreates this object into a stream of bytes
     inline
     void energize(void*  a_buf,
+                  size_t a_expectedCharSize,
                   bool   a_printStuff = false) const
     {
       PR_TIME("HostIrregData::energize");
       using ProtoSer::linearCharBufSize;
       using ProtoSer::linearOutToCharBuf;
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: entering" << endl;
+      }
       size_t charsiz = 0;
       char*  charbuf = (char *) a_buf;
       //input box
@@ -296,6 +301,10 @@ namespace Proto
       charbuf += sizeof(int);
       auto& indicies = *m_indexVec;
 
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: vecsize = "<< vecsize << endl;
+      }
       //output the indicies
       for(int ipt = 0; ipt < indicies.size(); ipt++)
       {
@@ -304,6 +313,10 @@ namespace Proto
         charbuf += linearCharBufSize(indicies[ipt]);
       }
       
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "HostIrregData::energize: done with index output "<< vecsize << endl;
+      }
       const auto& data     = *this;
       //now output the actual data
       for(int icomp = 0; icomp < ncomp; icomp++)
@@ -312,21 +325,33 @@ namespace Proto
         {
           auto pt = indicies[ipt];
           const auto & dataval = data(pt, icomp);
+          size_t ptsize = linearCharBufSize(data(pt, icomp));
           linearOutToCharBuf(charbuf, dataval);
-          charsiz += linearCharBufSize(data(pt, icomp));
-          charbuf += linearCharBufSize(data(pt, icomp));
+          charsiz += ptsize;
+          charbuf += ptsize;
         }
+      }
+      if(a_printStuff)
+      {
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostIrregData::energize: WARNING: "
+                          << "expected char size = " << a_expectedCharSize
+                          << ", actual char size = " << charsiz << endl;
+        }
+        Chombo4::pout() << "HostIrregData::energize: leaving" << endl;
       }
     }
 
    ///creates this object from the aforementioned stream of bytes
     HostIrregData(void *a_buf,
+                  size_t a_expectedCharSize,
                   bool a_printStuff = false)
     {
       PR_TIME("HostIrregData::char_constructor");
       if(a_printStuff)
       {
-        Chombo4::pout() << "entering hostirregdata buffer constructor"   << endl;
+        Chombo4::pout() << "HostIrregData buffer constructor: entering"   << endl;
       }
       using ProtoSer::linearInFromCharBuf;
       using ProtoSer::linearCharBufSize;
@@ -374,7 +399,13 @@ namespace Proto
       }
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving hostirregdata buffer constructor charsiz=" << charsiz   << endl;
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "HostIrregData buffer constructor: WARNING:"
+                          << "actual char size = " << charsiz
+                          << ", expected  size = " << a_expectedCharSize << endl;
+        }
+        Chombo4::pout() << "HostIrregData buffer constructor leaving " << endl;
       }
 
     }
@@ -382,18 +413,20 @@ namespace Proto
     ///
     inline
     void linearOut(void*               a_buf,
+                   size_t a_expectedCharSize,
                    const Box       &   a_bx,
                    unsigned int        a_startcomp,
                    unsigned int        a_numcomps,
                    bool a_printStuff = false) const
     {
       PR_TIME("HostIrregData::linearOut");
-      energize(a_buf, a_printStuff);
+      energize(a_buf, a_expectedCharSize, a_printStuff);
     }
     
     ///
     inline
     void  linearIn(void*                  a_buf,
+                   size_t a_expectedCharSize, 
                    const Box       &      a_bx,
                    unsigned int           a_startcomp,
                    unsigned int           a_numcomps,
@@ -401,7 +434,7 @@ namespace Proto
     {
       PR_TIME("HostIrregData::linearIn");
       
-      HostIrregData<cent, data_t, ncomp> src(a_buf, a_printStuff);
+      HostIrregData<cent, data_t, ncomp> src(a_buf, a_expectedCharSize, a_printStuff);
       copy(src, a_bx, a_startcomp, a_bx, a_startcomp, a_numcomps, a_printStuff);
       
     }

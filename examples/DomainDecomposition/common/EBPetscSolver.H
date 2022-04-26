@@ -49,7 +49,8 @@ public:
                 string a_stencilName,
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
-                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost)
+                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
+                bool a_printStuff = false)
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -70,19 +71,45 @@ public:
     
     m_ivghost      =    ProtoCh::getIntVect(a_ghost);
     m_ptghost      =    a_ghost;
-    //create map of locations in space to matrix row.
-    defineGIDS();
-    //create space for a matrix and the necessary vectors.
-    createMatrixAndVectors();
-    //put actual values into the matrix
-    formMatrix();
-    setupSolver();
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::EBPetscSolver: create map of locations in space to matrix row." << endl;
+    }
+    
+    defineGIDS(a_printStuff);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::EBPetscSolver: create space for a matrix and the necessary vectors.." << endl;
+    }
+
+    createMatrixAndVectors(a_printStuff);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::EBPetscSolver:put actual values into the matrix" << endl;
+    }
+    //
+    formMatrix(a_printStuff);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::EBPetscSolver:calling setupSolver" << endl;
+    }
+    setupSolver(a_printStuff);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::EBPetscSolver:leaving" << endl;
+    }
   }
 
   virtual
   PetscErrorCode
   solve(EBLevelBoxData<CELL, 1>       & a_phi,
-        const EBLevelBoxData<CELL, 1> & a_rhs )
+        const EBLevelBoxData<CELL, 1> & a_rhs,
+        bool a_printStuff = false)
   {
 
     
@@ -111,7 +138,7 @@ public:
 #endif
     //begin debug
     //std::cout << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
-    //pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //Chombo4::pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
     //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
 
     //std::cout << "b vector" << std::endl;
@@ -296,20 +323,20 @@ private:
     VecGetLocalSize(a_src ,&localSize);
 
     //begin debug
-//    pout() << "  localStart = " << localStart << ", localEnd = " << localEnd << ", localSize = " << localSize << endl;
+//    Chombo4::pout() << "  localStart = " << localStart << ", localEnd = " << localEnd << ", localSize = " << localSize << endl;
 //    //copy data to host.
 //
 //    for(PetscInt ii = 0; ii < localSize; ii++)
 //    {
 //      const double&  petscval = arr[ii];
-//      pout() << "ii = " << ii << ",  xx[ii] = " <<  petscval << endl;
+//      Chombo4::pout() << "ii = " << ii << ",  xx[ii] = " <<  petscval << endl;
 //    }
 //
 //    std::cout << "vgar vector" << std::endl;
 //    VecView(a_src  , PETSC_VIEWER_STDOUT_WORLD);
 //    
-//    pout() << "vgar vector" << std::endl;
-//    pout() <<    "filling up stuff before solve " << endl;
+//    Chombo4::pout() << "vgar vector" << std::endl;
+//    Chombo4::pout() <<    "filling up stuff before solve " << endl;
 //    std::cout << "filling up stuff before solve " << endl;
     //end debug
     
@@ -338,7 +365,7 @@ private:
 //	  PetscInt petsciv = ki;
 //	  Real chombval = hostfab(vof, 0);
 //	  PetscScalar petscval = arr[ki];
-//	  pout() << "host: petsciv = " << petsciv << ", iv = " << pt << ", chombval = "
+//	  Chombo4::pout() << "host: petsciv = " << petsciv << ", iv = " << pt << ", chombval = "
 //		 <<  chombval << ", petscval = " << petscval << endl;
 	  //end debug
 	
@@ -350,7 +377,7 @@ private:
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
 
     //begin debug
-//    pout() << "data on device:" << endl;
+//    Chombo4::pout() << "data on device:" << endl;
 //    for (int ibox=0;ibox< dit.size(); ibox++)
 //    {
 //      auto& devfab =   a_deviceDst[dit[ibox]];
@@ -365,7 +392,7 @@ private:
 //        {
 //          EBIndex<CELL> vof(pt, 0);
 //	  Real chombval = devfab(vof, 0);
-//	  pout() << "device: iv = " << pt << ", chombval = "
+//	  Chombo4::pout() << "device: iv = " << pt << ", chombval = "
 //		 <<  chombval << endl;
 //	
 //        }
@@ -377,7 +404,7 @@ private:
   }
 
   
-  virtual PetscInt formMatrix()
+  virtual PetscInt formMatrix(bool a_printStuff = false)
   {
     
     CH_TIME("EBPetscSolver::formMatrix");
@@ -461,10 +488,10 @@ private:
   static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
   {
     using Chombo4::pout;
-    pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
+    Chombo4::pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
     return 0;
   }
-  virtual PetscInt setupSolver()
+  virtual PetscInt setupSolver(bool a_printStuff = false)
   {
     CH_TIME("EBPetscSolver::setupSolver");
     // create solvers
@@ -545,7 +572,7 @@ private:
     return 1000;
   }
   
-  PetscInt createMatrixAndVectors()
+  PetscInt createMatrixAndVectors(bool a_printStuff = false)
   {
     CH_TIME("EBPetscSolver::createMatrixAndVectors");
     // create matrix
@@ -561,7 +588,7 @@ private:
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
     ierr = MatSetOptionsPrefix(m_mat,"");CHKERRQ(ierr);
 
-    //Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
+    //Chombo4::Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
     ierr = MatSetSizes(m_mat,m_NN,m_NN,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
     ierr = MatSetType(m_mat,MATAIJ);CHKERRQ(ierr);
@@ -592,7 +619,7 @@ private:
     }
     nnzrow = 0;
 
-    //pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
+    //Chombo4::pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
     ierr = MatSeqAIJSetPreallocation(m_mat,nnzrow, d_nnz);CHKERRQ(ierr);
     ierr = MatMPIAIJSetPreallocation(m_mat,nnzrow, d_nnz, nnzrow/2, o_nnz);CHKERRQ(ierr);
     ierr = MatSetOption(m_mat,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE) ;CHKERRQ(ierr);
@@ -615,7 +642,7 @@ private:
     return 0;
   }
   
-  void defineGIDS()
+  void defineGIDS(bool a_printStuff = false)
   {
     CH_TIME("EBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
@@ -639,10 +666,41 @@ private:
     //decide which location maps to the first one of this proc
 
 #ifdef CH_MPI
+    std::vector<int> numPtsAllProcs(CH4_SPMD::numProc());
 
-    Vector<int> numPtsAllProcs;
-    CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
-    CH4_SPMD::broadcast<Vector<int> >(    numPtsAllProcs, 0);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: doing gather numptsThisProc = " << numPtsThisProc << endl;
+    }
+    MPI_Gather(&numPtsThisProc, 1, MPI_INT, &numPtsAllProcs[0], 1, MPI_INT, 0, Chombo_MPI::comm);
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: after gather " << endl;
+      if(CH4_SPMD::procID() == 0)
+      {
+        Chombo4::pout() << "EBPetscSolver::defineGids: numPtsAllProcs = " << endl;
+        for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
+        {
+          Chombo4::pout() << "EBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
+        }
+      }
+    }
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids:before broadcast " << endl;
+    }
+    MPI_Bcast(numPtsAllProcs.data(), numPtsAllProcs.size(), MPI_INT, 0, Chombo_MPI::comm);
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids:after broadcast " << endl;
+      for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
+      {
+        Chombo4::pout() << "EBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
+      }
+    }
     PetscInt startgid = 0;
     PetscInt totalNumPts = 0; 
     for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
@@ -655,7 +713,7 @@ private:
     }
     using Chombo4::pout;
     using Chombo4::procID;
-    pout()  << "procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
+    Chombo4::pout()  << "procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
     int startgid = 0;
 #endif
@@ -678,7 +736,16 @@ private:
         }
       }
     }
-    m_gids.exchange();
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: calling exchange on gids" << endl;
+    }
+    m_gids.exchange(a_printStuff);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBPetscSolver::defineGids: leaving" << endl;
+    }
   }
   //index space--allows us to to matrix to solution space
   host_distrib_int_t  m_gids;
@@ -698,7 +765,7 @@ private:
   string m_domainBCName[2*DIM];
   string m_ebbcName;
 
-  Vector<int> m_numPtsAllProc;
+  std::vector<int> m_numPtsAllProc;
   Point   m_ptghost;
   IntVect m_ivghost;
   Mat m_mat;

@@ -97,7 +97,7 @@ protected:
                  const int*       a_layoutID);
 
   BoxLayout    m_layout;
-  RefCountedPtr<Vector<LayoutIndex> > m_indicies;
+  RefCountedPtr<std::vector<LayoutIndex> > m_indicies;
 
   unsigned int m_current;
 };

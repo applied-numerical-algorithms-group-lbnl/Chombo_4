@@ -120,7 +120,7 @@ namespace Proto
     using ProtoSer::linearCharBufSize;
     size_t retval = 0;
     //m_tag
-    retval += sizeof(TAG);
+    retval += sizeof(int);
     // m_region
     retval += linearCharBufSize(m_region);
     // m_validBox
@@ -142,11 +142,10 @@ namespace Proto
         retval += linearCharBufSize(graph(pt, 0));
       }
     }
-//    //begin debug
-//    using std::cout;
-//    using std::endl;
-//    cout << "ebgraph::charsize valid box = " << m_validBox  << ", charsiz = " << retval << endl;
-//    //begin debug
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::charsize valid box = " << m_validBox  << ", charsiz = " << retval << endl;
+    }
     return retval;
   }
   /*
@@ -154,7 +153,9 @@ namespace Proto
   */
   void
   EBGraph::
-  energize(void*  a_buf) const
+  energize(void*  a_buf,
+           size_t a_expectedSize,
+           bool a_printStuff) const
   {
     using ProtoSer::linearOutToCharBuf;
     using ProtoSer::linearCharBufSize;
@@ -162,10 +163,39 @@ namespace Proto
     size_t charsiz = 0;
     char* charbuf = (char *) a_buf;
     //m_tag
-    TAG* tagbuf = (TAG *) charbuf;
-    *tagbuf = m_tag;
-    charbuf += sizeof(TAG);
-    charsiz += sizeof(TAG);
+    int inttag = 99;
+
+    if(m_tag == HasIrregular)
+    {
+      inttag = 0;
+    }
+    else if(m_tag == AllRegular)
+    {
+      inttag = 1;
+    }
+    else if(m_tag == AllCovered)
+    {
+      inttag = 2;
+    }
+    else
+    {
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "EBGraph::energize WARNING: bogus tag = " <<  inttag << endl;
+      }
+      PROTO_ASSERT(false, "bogus m_tag in EBGraph::energize");
+    }
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::energize entering with valid box = " << m_validBox  << ", inttag = " << inttag << endl;
+    }
+    
+    int* intbuf = (int *)(charbuf);
+    *intbuf = inttag;
+    charbuf += sizeof(int);
+    charsiz += sizeof(int);
+
     // m_region
     linearOutToCharBuf(charbuf, m_region);
     charbuf += linearCharBufSize(m_region);
@@ -202,15 +232,22 @@ namespace Proto
         charbuf += linearCharBufSize(node);
       }
     }
-    //begin debug
-//    using std::cout;
-//    using std::endl;
-//    cout << "ebgraph::energize: valid box = " << m_validBox  << ", charsiz = " << charsiz << endl;
-    //end   debug
+    if(a_printStuff)
+    {
+      if(charsiz != a_expectedSize)
+      {
+        Chombo4::pout() << "EBGraph::energize: WARNING:  " 
+                        << " charsiz = "      << charsiz 
+                        << "expected size = " << a_expectedSize
+                        << endl;
+      }
+      Chombo4::pout() << "EBGraph::energize: leaving" << endl;
+    }
   }
+  
   /***/
   EBGraph::
-  EBGraph(void*  a_buf, bool a_printStuff)
+  EBGraph(void*  a_buf, size_t a_expectedSize, bool a_printStuff)
   {
     m_isDefined = true;
     using ProtoSer::linearInFromCharBuf;
@@ -219,10 +256,28 @@ namespace Proto
     size_t charsiz = 0;
     char* charbuf = (char *) a_buf;
     //m_tag
-    TAG* tagbuf = (TAG *) charbuf;
-    m_tag   = *tagbuf;
-    charbuf += sizeof(TAG);
-    charsiz += sizeof(TAG);
+    int* intbuf = (int *)(charbuf);
+    int inttag = *intbuf;
+    charbuf += sizeof(int);
+    charsiz += sizeof(int);
+
+    if(inttag == 0)
+    {
+      m_tag = HasIrregular;
+    }
+    else if(inttag == 1)
+    {
+      m_tag = AllRegular;
+    }
+    else if(inttag == 2)
+    {
+      m_tag = AllCovered;
+    }
+    else
+    {
+      PROTO_ASSERT(false, "bogus inttag in EBGraph constructor");
+    }
+    
     // m_region
     linearInFromCharBuf(m_region, charbuf);
     charbuf += linearCharBufSize(m_region);
@@ -264,10 +319,18 @@ namespace Proto
     }
     if(a_printStuff)
     {
-      Chombo4::pout() << "ebgraph::ebgraph(buf) valid box = " << m_validBox  << ", charsiz = " << charsiz << endl;
+      Chombo4::pout() << "EBGraph::EBGraph(buf) valid box = " << m_validBox  << ", charsiz = " << charsiz << endl;
+      if(charsiz != a_expectedSize)
+      {
+        Chombo4::pout() << "EBGraph::EBGraph(buf) WARNING:  " 
+                        << " charsiz = "      << charsiz 
+                        << "expected size = " << a_expectedSize
+                        << endl;
+      }
+      Chombo4::pout() << "EBGraph::EBGraph(buf): leaving" << endl;
     }
-    
   }
+
   /***
      The darkness drops again; but now I know   
      That twenty centuries of stony sleep
@@ -279,13 +342,22 @@ namespace Proto
   void  
   EBGraph::
   linearIn(void*                  a_buf,
+           size_t                 a_expectedSize,
            const Box       &      a_bx,
            unsigned int           a_startcomp,
            unsigned int           a_numcomps,
            bool a_printStuff)
   {
-    EBGraph srcGraph(a_buf, a_printStuff);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::linearIn: entering " << endl;
+    }
+    EBGraph srcGraph(a_buf, a_expectedSize, a_printStuff);
     copy(srcGraph, a_bx, 0, a_bx, 0, 1);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::linearIn: leaving " << endl;
+    }
   }
 
   /**
@@ -293,12 +365,21 @@ namespace Proto
   void 
   EBGraph::
   linearOut(void*               a_buf,
+            size_t              a_expectedSize,
             const Box       &   a_bx,
             unsigned int        a_startcomp,
             unsigned int        a_numcomps,
             bool a_printStuff) const
   {
-    energize(a_buf);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::linearOut: entering " << endl;
+    }
+    energize(a_buf, a_expectedSize, a_printStuff);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBGraph::linearOut: leaving " << endl;
+    }
   }
 
 

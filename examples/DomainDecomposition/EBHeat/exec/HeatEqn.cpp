@@ -53,10 +53,10 @@ using Chombo4::LevelBoxData;
   ParmParse pp;
   pp.get("blob_cen", blobCen);
   pp.get("blob_rad", blobRad);
-  pout() << "blob_cen = " << blobCen       << endl;
-  pout() << "blob_rad = " << blobRad       << endl;
+  Chombo4::pout() << "blob_cen = " << blobCen       << endl;
+  Chombo4::pout() << "blob_rad = " << blobRad       << endl;
 
-  pout() << "calling initializespot for scalar rhs " << endl;
+  Chombo4::pout() << "calling initializespot for scalar rhs " << endl;
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -90,7 +90,7 @@ using Chombo4::LevelBoxData;
   string dombcname, ebbcname;
   Box domain = a_grids.physDomain().domainBox();
   pp.get("numSmooth" , numSmooth);         
-  pout() << "num smooths = " << numSmooth;
+  Chombo4::pout() << "num smooths = " << numSmooth;
 
   int dombc, ebbc;
   pp.get("domainBC"  , dombc);
@@ -98,23 +98,23 @@ using Chombo4::LevelBoxData;
   if(dombc == 0)
   {
     dombcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at domain" << endl;
+    Chombo4::pout() << "using Neumann BCs at domain" << endl;
   }
   else
   {
     dombcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at domain" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at domain" << endl;
   }
 
   if(ebbc == 0)
   {
     ebbcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at EB" << endl;
+    Chombo4::pout() << "using Neumann BCs at EB" << endl;
   }
   else
   {
     ebbcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at EB" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at EB" << endl;
   }
   auto dictionary = a_brit->m_cellToCell;
   shared_ptr<EBMultigrid> 
@@ -151,10 +151,10 @@ using Chombo4::LevelBoxData;
   pp.get("output_interval", outputInterval);
   pp.get("covered_value", coveredval);
 
-  pout() << "nStream         = " << nStream         << endl;
-  pout() << "max_step        = " << max_step        << endl;
-  pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
+  Chombo4::pout() << "nStream         = " << nStream         << endl;
+  Chombo4::pout() << "max_step        = " << max_step        << endl;
+  Chombo4::pout() << "max_time        = " << max_time        << endl;
+  Chombo4::pout() << "output interval = " << outputInterval  << endl;
 
 #ifdef PROTO_CUDA
   //Proto::DisjointBoxLayout::setNumStreams(nStream);
@@ -162,18 +162,18 @@ using Chombo4::LevelBoxData;
 
 
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   Real diffCoef;
   pp.get("nx"        , nx);
 
-  pout() << "nx       = " << nx     << endl;
+  Chombo4::pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  Vector<Chombo4::Box>               vecdomains;
-  Vector<Real> vecdx;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  std::vector<Chombo4::Box>               vecdomains;
+  std::vector<Real> vecdx;
 
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, dx, nx);
 
@@ -181,16 +181,16 @@ using Chombo4::LevelBoxData;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   
   
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomains, vecdx, dataGhostPt));
 
 
-  pout() << "inititializing data"   << endl;
+  Chombo4::pout() << "inititializing data"   << endl;
   
   Chombo4::Box domain              = vecdomains[0];
   DisjointBoxLayout grids =   vecgrids[0];
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
+  auto graphs = geoserv->getGraphs(domain);
   EBLevelBoxData<CELL,   1>  sourceTerm(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  scalarCell(grids, dataGhostIV, graphs);
   initializeData(scalarCell, sourceTerm,  grids, dx);
@@ -198,10 +198,10 @@ using Chombo4::LevelBoxData;
 
   int step = 0; Real time = 0;
   Real dt = dx;
-  pout() << "setting the dt = dx" << endl;
+  Chombo4::pout() << "setting the dt = dx" << endl;
 
 
-  pout() << "defining Helmholtz solver " << endl;
+  Chombo4::pout() << "defining Helmholtz solver " << endl;
   shared_ptr<EBMultigrid> ebmg =getEBMultigrid(brit, geoserv, grids, dx, dataGhostIV);
   const EBLevelBoxData<CELL, 1> & kappa = ebmg->getKappa();
 
@@ -215,32 +215,32 @@ using Chombo4::LevelBoxData;
   }
 
   pp.get("diffusion_coefficient", diffCoef);
-  pout() << "Diffusion coeficient = " << diffCoef << endl;
+  Chombo4::pout() << "Diffusion coeficient = " << diffCoef << endl;
 
   Real tol = 0.00001;
   int  maxIter = 10;
 
   pp.get("maxIter"   , maxIter);
   pp.get("tolerance" , tol);
-  pout() << "tolerance = " << tol    << endl;
-  pout() << "maxIter   = " << maxIter    << endl;
+  Chombo4::pout() << "tolerance = " << tol    << endl;
+  Chombo4::pout() << "maxIter   = " << maxIter    << endl;
 
   int whichSolver = 0;
   pp.get("which_solver", whichSolver);
   shared_ptr<BaseEBParabolic> heatIntegrator;
   if(whichSolver == 0)
   {
-    pout() << "using backward Euler for time integration" << endl;
+    Chombo4::pout() << "using backward Euler for time integration" << endl;
     heatIntegrator = shared_ptr<BaseEBParabolic>(new EBBackwardEuler(ebmg, geoserv, grids, domain, dataGhostIV));
   }
   else if(whichSolver == 1)
   {
-    pout() << "using Crank Nicolson for time integration" << endl;
+    Chombo4::pout() << "using Crank Nicolson for time integration" << endl;
     heatIntegrator = shared_ptr<BaseEBParabolic>(new EBCrankNicolson(ebmg, geoserv, grids, domain, dataGhostIV));
   }
   else if(whichSolver == 2)
   {
-    pout() << "using TGA for time integration" << endl;
+    Chombo4::pout() << "using TGA for time integration" << endl;
     heatIntegrator = shared_ptr<BaseEBParabolic>(new EBTGA(ebmg, geoserv, grids, domain, dataGhostIV));
   }
   else
@@ -248,12 +248,12 @@ using Chombo4::LevelBoxData;
     Chombo4::MayDay::Error("bogus whichSolver");
   }
 
-  pout() << "running heat equation operator" << endl;
+  Chombo4::pout() << "running heat equation operator" << endl;
   while((step < max_step) && (time < max_time))
   {
     heatIntegrator->advanceOneStep(scalarCell, sourceTerm, diffCoef, dt, tol, maxIter);
 
-    pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
+    Chombo4::pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;
     time += dt;
 
@@ -263,7 +263,7 @@ using Chombo4::LevelBoxData;
       writeEBLevelHDF5<1>(  filep,  scalarCell, kappa, domain, graphs, coveredval, dx, dt, time);
     }
   }
-  pout() << "exiting runAdvection" << endl;
+  Chombo4::pout() << "exiting runAdvection" << endl;
   return 0;
 }
 
@@ -272,7 +272,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("heateqn.time.table");
@@ -287,10 +287,10 @@ int main(int a_argc, char* a_argv[])
     runHeatEqn(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

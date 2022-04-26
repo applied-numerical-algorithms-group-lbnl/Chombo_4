@@ -14,6 +14,7 @@
 #include "Chombo_Box.H"
 #include "Chombo_parstream.H"
 #include "Chombo_SliceSpec.H"
+#include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
 
 
@@ -128,19 +129,11 @@ IndexType::TheNodeType ()
 
 ostream&
 operator<< (ostream&         os,
-            const IndexType& it)
+            const Box& it)
 {
-    os << '('
-       << D_TERM6( (it.test(0)?'N':'C'),
-                   << ',' << (it.test(1)?'N':'C'),
-                   << ',' << (it.test(2)?'N':'C'),
-                   << ',' << (it.test(3)?'N':'C'),
-                   << ',' << (it.test(4)?'N':'C'),
-                   << ',' << (it.test(5)?'N':'C')) << ')' ;
-    if (os.fail())
-        MayDay::Error("operator<<(ostream&,IndexType&) failed");
-
-    return os;
+  Proto::Box bx = ProtoCh::getProtoBox(it);
+  os << bx;
+  return os;
 }
 
 //
@@ -150,30 +143,12 @@ operator<< (ostream&         os,
 
 istream&
 operator>> (istream&   is,
-            IndexType& it)
+            Box& it)
 {
-  char D_DECL6(t0,t1,t2,
-               t3,t4,t5);
-
-  D_EXPR6( is.ignore(CH_IGNORE_MAX, '(') >> t0,
-           is.ignore(CH_IGNORE_MAX, ',') >> t1,
-           is.ignore(CH_IGNORE_MAX, ',') >> t2,
-           is.ignore(CH_IGNORE_MAX, ',') >> t3,
-           is.ignore(CH_IGNORE_MAX, ',') >> t4,
-           is.ignore(CH_IGNORE_MAX, ',') >> t5);
-  is.ignore(CH_IGNORE_MAX, ')');
-  D_TERM6(
-          CH_assert(t0 == 'C' || t0 == 'N'); t0=='N'?it.set(0):it.unset(0); ,
-          CH_assert(t1 == 'C' || t1 == 'N'); t1=='N'?it.set(1):it.unset(1); ,
-          CH_assert(t2 == 'C' || t2 == 'N'); t2=='N'?it.set(2):it.unset(2); ,
-          CH_assert(t3 == 'C' || t3 == 'N'); t3=='N'?it.set(3):it.unset(3); ,
-          CH_assert(t4 == 'C' || t4 == 'N'); t4=='N'?it.set(4):it.unset(4); ,
-          CH_assert(t5 == 'C' || t5 == 'N'); t5=='N'?it.set(5):it.unset(5));
-
-  if (is.fail())
-        MayDay::Error("operator>>(ostream&,IndexType&) failed");
-
-    return is;
+  Proto::Box bx;
+  is >> bx;
+  it = ProtoCh::getBox(bx);
+  return is;
 }
 
 // const Box&
@@ -1156,33 +1131,6 @@ coarsen (const Box&     b,
     return Box(small,big,b.btype);
 }
 
-//
-// I/O functions.
-//
-
-ostream&
-operator<< (ostream&   os,
-            const Box& b)
-{
-  if ( Box::s_tempestOutputFormat )
-  {
-    os << '['
-       << b.smallend << ','
-       << b.bigend
-       << ']';
-  } else
-  {
-    os << '('
-       << b.smallend << ' '
-       << b.bigend   << ' '
-       << b.btype.ixType()
-       << ')';
-  }
-  if (os.fail())
-      MayDay::Error("operator<<(ostream&,Box&) failed");
-  return os;
-}
-
 void Box::p() const
 {
   pout() << *this << "\n";
@@ -1193,60 +1141,6 @@ void Box::p() const
 //
 #define CH_IGNORE_MAX 100000
 
-istream&
-operator>> (istream& is,
-            Box&     b)
-{
-    is >> ws;
-    char c;
-    is >> c;
-    is.putback(c);
-    if (c == '(')
-    {
-        is.ignore(CH_IGNORE_MAX, '(');
-        is >> b.smallend ;
-        is >> b.bigend ;
-        IntVect v;
-        is >> v;
-        b.btype = IndexType(v);
-        CH_assert(b.btype.ok());
-        is.ignore(CH_IGNORE_MAX,')');
-        b.computeBoxLen();
-    }
-    else if (c == '<')
-    {
-        is >> b.smallend;
-        is >> b.bigend;
-        IntVect v;
-        is >> v;
-        b.btype = IndexType(v);
-        CH_assert(b.btype.ok());
-        b.computeBoxLen();
-    }
-    else
-        MayDay::Error("operator>>(istream&,Box&): expected \'<\'");
-
-    if (is.fail())
-        MayDay::Error("operator>>(istream&,Box&) failed");
-
-    return is;
-}
-
-void
-Box::dumpOn (ostream& strm) const
-{
-    strm << "Box "
-         << smallend
-         << " to "
-         << bigend
-         << " type ["
-         << btype.ixType()
-         << "]"
-         << '\n';
-
-    if (strm.fail())
-        MayDay::Error("Box::dumpOn(ostream&) failed");
-}
 
 //
 // Give smallest Box containing both Boxes.
@@ -1456,7 +1350,9 @@ bool Box::s_tempestOutputFormat = false;
 
 
 template < >
-void ::CH4_SPMD::linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
+void
+::CH4_SPMD::
+linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
 {
   int* intBuf = (int*)a_inBuf;
   IntVect lo, hi;
@@ -1473,7 +1369,9 @@ void ::CH4_SPMD::linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* con
 }
 
 template < >
-void ::CH4_SPMD::linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
+void
+::CH4_SPMD::
+linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
 {
   int* intBuf = (int*)a_outBuf;
   const IntVect& lo = a_inputT.smallEnd();
@@ -1487,39 +1385,50 @@ void ::CH4_SPMD::linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Bo
 }
 
 template < >
-int ::CH4_SPMD::linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
+size_t
+::CH4_SPMD::
+linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
 {
   //box is stored as 2*spaceDim integers
   return(2*SpaceDim*sizeof(int));
 }
 
-//vector<Chombo4::Box>  specialization
-template < > int CH4_SPMD::linearSize(const Vector<Chombo4::Box>& a_input)
+
+
+//vector<Box> specialization of linearSize
+template < >
+size_t
+::CH4_SPMD::
+linearSize(const std::vector<Chombo4::Box>& a_input)
 {
-  return linearListSize(a_input);
-}
-template < > void CH4_SPMD::linearIn(Vector<Chombo4::Box>& a_outputT, const void* const inBuf)
-{
-  linearListIn(a_outputT, inBuf);
-}
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Chombo4::Box>& a_inputT)
-{
-  linearListOut(a_outBuf, a_inputT);
+  return linearListSize(a_input, false);
 }
 
-//vector<vector<Chombo4::Box> >  specialization
-template < > int CH4_SPMD::linearSize(const Vector<Vector<Chombo4::Box> >& a_input)
+//vector<Box> specialization of linearIn
+template < >
+void
+::CH4_SPMD::
+linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const a_inBuf)
 {
-  return linearListSize(a_input);
+  size_t boxsize = 2*SpaceDim*sizeof(int);
+  size_t* vecsizeptr = (size_t *) (a_inBuf);
+  size_t vecsize = *vecsizeptr;
+  size_t expected = (vecsize+1)*sizeof(size_t) + boxsize*(vecsize);
+  return linearListIn(a_outputT, expected, a_inBuf, true);
 }
-template < > void CH4_SPMD::linearIn(Vector<Vector<Chombo4::Box> >& a_outputT, const void* const inBuf)
+
+//vector<Chombo4::Box> specialization of linearOut
+template < >
+void
+::CH4_SPMD::
+linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
 {
-  linearListIn(a_outputT, inBuf);
+  size_t boxsize = 2*SpaceDim*sizeof(int);
+  size_t vecsize = a_inputT.size();
+  size_t expectedSize = boxsize*vecsize + (vecsize+1)*sizeof(size_t);
+  return linearListOut(a_outBuf, expectedSize, a_inputT, true);
 }
-template < > void CH4_SPMD::linearOut(void* const a_outBuf, const Vector<Vector<Chombo4::Box> >& a_inputT)
-{
-  linearListOut(a_outBuf, a_inputT);
-}
+
 
 
 

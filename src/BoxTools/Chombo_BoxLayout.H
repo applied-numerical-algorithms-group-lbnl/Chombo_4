@@ -12,7 +12,7 @@
 #define _Chombo_BOXLAYOUT_H_
 
 #include "Chombo_Box.H"
-#include "Chombo_Vector.H"
+
 #include "Chombo_RefCountedPtr.H"
 #include "Chombo_DataIndex.H"
 #include "Chombo_SPMD.H"
@@ -161,11 +161,11 @@ public:
   BoxLayout();
 
   ///
-  /** Construct from a Vector of Boxes and a Vector of
+  /** Construct from a std::vector of Boxes and a std::vector of
       processor assignments.  On exit, the BoxLayout will be closed.
   */
-  BoxLayout(const Vector<Box>& a_boxes,
-            const Vector<int>& a_procIDs);
+  BoxLayout(const std::vector<Box>& a_boxes,
+            const std::vector<int>& a_procIDs);
 
   ///
   /** Construct from a LayoutData<Box>.
@@ -192,15 +192,15 @@ public:
   BoxLayout& operator=(const BoxLayout& a_rhs);
 
   ///
-  /** Define this BoxLayout from a Vector of Boxes and a
-      Vector of processor assignments.  Any pre-existing layout will
-      be lost (ref-count dropped by one).  The processor assignment Vector
+  /** Define this BoxLayout from a std::vector of Boxes and a
+      std::vector of processor assignments.  Any pre-existing layout will
+      be lost (ref-count dropped by one).  The processor assignment std::vector
       must be the same length
-      as the Box Vector.  On exit, the BoxLayout will be closed.
+      as the Box std::vector.  On exit, the BoxLayout will be closed.
   */
   virtual void
-  define(const Vector<Box>& a_boxes,
-         const Vector<int>& a_procIDs);
+  define(const std::vector<Box>& a_boxes,
+         const std::vector<int>& a_procIDs);
 
   ///
   /** Define this BoxLayout from a LayoutData<Box>.
@@ -637,16 +637,16 @@ public:
   /*@}*/
 
   /* Return all the constituent boxes. */
-  Vector<Box> boxArray() const;
+  std::vector<Box> boxArray() const;
 
   /** Return the processor id numbers corresponding to the boxes as returned by
    *  this->boxArray().
   */
-  Vector<int> procIDs() const;
+  std::vector<int> procIDs() const;
 
   inline unsigned int indexI(const LayoutIndex&) const;
 
-  const Vector<Entry>* rawPtr() const
+  const std::vector<Entry>* rawPtr() const
   {
     return &(*m_boxes);
   }
@@ -656,18 +656,18 @@ protected:
   friend class LayoutIterator;
   friend class DataIterator;
 
-  RefCountedPtr<Vector<Entry> >        m_boxes;
+  RefCountedPtr<std::vector<Entry> >        m_boxes;
   RefCountedPtr<int>                   m_layout;
   RefCountedPtr<bool>                  m_closed;
   RefCountedPtr<bool>                  m_sorted;
   RefCountedPtr<DataIterator>          m_dataIterator;
-  RefCountedPtr<Vector<LayoutIndex> >  m_indicies;
+  RefCountedPtr<std::vector<LayoutIndex> >  m_indicies;
 
 #ifdef CH_MPI
-  RefCountedPtr<Vector<DataIndex> >    m_dataIndex;
+  RefCountedPtr<std::vector<DataIndex> >    m_dataIndex;
 #endif
 
-  void checkDefine(const Vector<Box>& a_boxes, const Vector<int>& procIDs);
+  void checkDefine(const std::vector<Box>& a_boxes, const std::vector<int>& procIDs);
 private:
 
 };
@@ -688,8 +688,8 @@ void refine_bl(BoxLayout& output, const BoxLayout& input, int refinement)
   refine(output, input, refinement);
 }
 
-void mortonOrdering(Vector<Box>& a_boxes);
-void serialMortonOrdering(Vector<Box>& a_boxes);
+void mortonOrdering(std::vector<Box>& a_boxes);
+void serialMortonOrdering(std::vector<Box>& a_boxes);
 
 //========================================================
 

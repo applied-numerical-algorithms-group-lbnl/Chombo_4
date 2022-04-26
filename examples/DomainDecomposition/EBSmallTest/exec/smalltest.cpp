@@ -5,7 +5,7 @@
 
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_LevelData.H"
+
 #include "Chombo_BaseFab.H"
 
 #include "Chombo_ParmParse.H"
@@ -80,7 +80,7 @@ testHiStencil(shared_ptr<EBEncyclopedia<2, Real> >   a_brit,
   using Proto::BaseIF;
   
   Chombo4::pout() << "testing hi cell to face stencil" << endl;
-  shared_ptr<LevelData<EBGraph> > graphs = a_geoserv->getGraphs(a_domain);
+  auto graphs = a_geoserv->getGraphs(a_domain);
 
   a_brit->registerCellToFace(StencilNames::CellToFaceHi, 
                              StencilNames::NoBC,
@@ -190,11 +190,11 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
   // EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::Box> boxes;
+  std::vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, a_maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, a_maxGrid, blockfactor);
   
-  Vector<int> procs;
+  std::vector<int> procs;
 
   a_dx = 1.0/a_nx;
   LoadBalance(procs, boxes);
