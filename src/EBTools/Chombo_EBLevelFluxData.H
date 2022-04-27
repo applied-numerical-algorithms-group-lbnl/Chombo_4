@@ -184,7 +184,7 @@ public:
 
 
   /// The hip new slick exchange interface.  Use this one.
-  virtual void exchange(bool a_printStuff = true)
+  virtual void exchange(bool a_printStuff = false)
   {
     if(a_printStuff)
     {
