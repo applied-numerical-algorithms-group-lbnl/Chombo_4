@@ -1318,7 +1318,7 @@ public:
         }
       else if (a_p[2] == 4)
         {
-          zrad = -(3.*nearRad(std::pow(nearRad, 2)+4.*std::pow(xc_nr[2],2)))/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 3)*sq);
+          zrad = -(3.*nearRad*(std::pow(nearRad, 2)+4.*std::pow(xc_nr[2],2)))/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 3)*sq);
         }
       else if (a_p[2] > 4)
         {
@@ -1390,7 +1390,8 @@ public:
           nearOmega = m_omega2;
         }
 #if DIM==3
-      Real zrad = nearRad*std::sqrt(1.-std::pow(xc[2]/nearRad, 2));
+      RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
+      Real zrad = nearRad*std::sqrt(1.-std::pow(xc_nr[2]/nearRad, 2));
 #else
       Real zrad = 1.;
 #endif

@@ -499,7 +499,7 @@ public:
     DisjointBoxLayout currDBL(boxes, procs, a_domain);
     a_grids.push_back(currDBL);
     //a_grids[0].print();
-    while(currDBL.coarsenable(4) && a_grids.size()-1!=a_maxCoarsen)
+    while((currDBL.coarsenable(4)) && ((a_grids.size()-1)!=a_maxCoarsen))
     {
       DisjointBoxLayout coarDBL;
       coarsen(coarDBL, currDBL, 2);
