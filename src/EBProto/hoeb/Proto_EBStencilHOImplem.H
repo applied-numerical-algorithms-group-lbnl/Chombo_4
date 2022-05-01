@@ -1268,7 +1268,7 @@ namespace Proto
             WLSStencil<order> sten;
             sten.getWLSDivFCompStencil(a_stencil[0][ivof],
                                        a_stencil[1][ivof],
-                                       a_stencil[2][ivof], // dummy for the z
+                                       a_stencil[2][ivof],
                                        vofInd,
                                        a_graph,
                                        a_voludata,

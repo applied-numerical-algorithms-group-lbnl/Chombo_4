@@ -2652,7 +2652,6 @@ namespace Proto
           double   areaFrac;
           RealVect centroid;
           Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
-
           RealVect faceLoc;
           for (int idir = 0; idir < DIM; idir++)
           {
@@ -2732,7 +2731,6 @@ namespace Proto
             // Really just the face average
             fluxStencil = getLapFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
             inhomogTerm = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
-
           }else{
             a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
                                                a_graph,
@@ -2753,12 +2751,12 @@ namespace Proto
                                                a_dx);
           }
           if (a_xfaceflux.m_verbose)
-          {
-            pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
-            pout()<<" divFluxStencil "<<endl;
-            fluxStencil.print();
-            fluxStencil.printSum();
-          }
+            {
+              pout()<<" inhomogTerm Xface "<<inhomogTerm<<endl;
+              pout()<<" divFluxStencil "<<endl;
+              fluxStencil.print();
+              fluxStencil.printSum();
+            }
           xfacesFluxStencil[xfaces[iface]] = fluxStencil;
           xfacesInhTerm[xfaces[iface]] = inhomogTerm;
           double factor = double(isign);
@@ -2954,7 +2952,6 @@ namespace Proto
             faceLoc[idir] = a_dx * (0.5 + zfaces[iface].m_pt[idir]);
             if (idir == 2) faceLoc[idir] = a_dx * (zfaces[iface].m_pt[idir]);
           }
-          //RealVect v_faceLoc = a_zfaceflux.m_exactVel->getVelocityAtPoint(faceLoc);
 
           IndMomSDMinOne faceMom;
           if (areaFrac < 1.0)
@@ -2976,12 +2973,16 @@ namespace Proto
             }
           }
 
+          if (a_zfaceflux.m_verbose)
+            {
+              pout() << std::endl <<" stencil Zface "<< zfaces[iface].m_pt << endl;
+            }
+
           string zdombcName[2*DIM];
           for(int ivec = 0; ivec < 2*DIM; ivec++)
             {
               zdombcName[ivec] = a_dombcName[ivec][2];
             }
-
           if (!zfaces[iface].m_isBoundary){
             double inhomogTermM = 0;
             double inhomogTermP = 0;
@@ -3020,7 +3021,7 @@ namespace Proto
                                                a_neighType,
                                                factor,
                                                a_dx);
-            // fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 2, a_voludata, a_graph, a_dx);
+
             // Really just the face average
             fluxStencil = getLapFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 2, a_voludata, a_graph, a_dx);
             inhomogTerm = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 2, a_voludata, a_graph, a_dx);
@@ -3044,6 +3045,13 @@ namespace Proto
                                                a_dx);
 
           }
+          if (a_zfaceflux.m_verbose)
+            {
+              pout()<<" inhomogTerm Zface "<<inhomogTerm<<endl;
+              pout()<<" divFluxStencil "<<endl;
+              fluxStencil.print();
+              fluxStencil.printSum();
+            }
           zfacesFluxStencil[zfaces[iface]] = fluxStencil;
           zfacesInhTerm[zfaces[iface]] = inhomogTerm;
           double factor = double(isign);
