@@ -289,12 +289,15 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       CH_TIME("DistributedData::exchange");
+#if 1      
       auto& cache = getMetaDataCache();
       auto metapair_ptr = cache.getExchangePair(m_grids, m_ghost, m_data, a_printStuff);
       BoxPattern& pattern                          = *(metapair_ptr->m_pattern );
       CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
-//      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
-//      CommunicationMetaData<fabtype_t> metadataco(pattern, a_dst.m_data, a_printStuff);
+#else      
+      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
+      CommunicationMetaData<fabtype_t> metadataco(pattern, m_data, a_printStuff);
+#endif      
       communicate(*this, pattern, metadataco, *this  , a_printStuff, m_graphConstructed);
     }
     
@@ -304,14 +307,17 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::copyTo");
 
+#if 1      
       auto& cache = getMetaDataCache();
       auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, a_dst.m_data, a_printStuff);
       
       BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
       CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
-//      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
-//      CommunicationMetaData<fabtype_t> metadataco(pattern,
-//      a_dst.m_data, a_printStuff);
+#else      
+      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
+      CommunicationMetaData<fabtype_t> metadataco(pattern,
+                                                  a_dst.m_data, a_printStuff);
+#endif      
       communicate(*this, pattern, metadataco, a_dst, a_printStuff, m_graphConstructed);
     }
 
