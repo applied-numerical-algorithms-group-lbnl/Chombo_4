@@ -32,8 +32,172 @@
 using namespace Chombo4;
 namespace CH4_Data_Choreography
 {
+  template<class fabtype_t>
+  class MetaDataPair
+  {
+    public:
 
+    MetaDataPair(const Chombo4::DisjointBoxLayout& a_srcGrids,
+                 const Chombo4::DisjointBoxLayout& a_dstGrids,
+                 std::vector<fabtype_t *>        & a_data,
+                 bool a_printStuff = false)
+    {
+      m_pattern  = std::shared_ptr<BoxPattern>(
+        new BoxPattern(a_srcGrids, a_dstGrids, a_printStuff)
+        );
 
+      m_commMeta = std::shared_ptr<CommunicationMetaData<fabtype_t> >(
+        new CommunicationMetaData<fabtype_t>(*m_pattern, a_data, a_printStuff)
+        );
+    }
+
+    MetaDataPair(const Chombo4::DisjointBoxLayout& a_grids,
+                 const Chombo4::IntVect          & a_ghost,
+                 std::vector<fabtype_t *>        & a_data,
+                 bool a_printStuff = false)
+    {
+      m_pattern  = std::shared_ptr<BoxPattern>(
+        new BoxPattern(a_grids, a_ghost, a_printStuff)
+        );
+
+      m_commMeta = std::shared_ptr<CommunicationMetaData<fabtype_t> >(
+        new CommunicationMetaData<fabtype_t>(*m_pattern, a_data, a_printStuff)
+        );
+    }
+    
+    std::shared_ptr<BoxPattern                       >  m_pattern;
+    std::shared_ptr<CommunicationMetaData<fabtype_t> >  m_commMeta;
+  private:
+
+    MetaDataPair();
+
+      
+  };
+
+  
+  class exchange_key_t
+  {
+  public:
+
+    exchange_key_t(Chombo4::DisjointBoxLayout a_grids,
+                   Chombo4::IntVect           a_ghost):
+      m_grids(a_grids), m_ghost(a_ghost){}
+      
+
+    bool operator==(const exchange_key_t& a_input) const
+    {
+      return ((m_grids == a_input.m_grids)&&
+              (m_ghost == a_input.m_ghost));
+    }
+      
+    Chombo4::DisjointBoxLayout m_grids;
+    Chombo4::IntVect           m_ghost;
+
+  private:
+    exchange_key_t();
+      
+  };
+  
+
+  class copy_to__key_t
+  {
+  public:
+
+    copy_to__key_t(Chombo4::DisjointBoxLayout a_srcGrids,
+                  Chombo4::DisjointBoxLayout a_dstGrids):
+      m_srcGrids(a_srcGrids), m_dstGrids(a_dstGrids){}
+      
+
+    bool operator==(const copy_to__key_t& a_input) const
+    {
+      return ((m_srcGrids == a_input.m_srcGrids)&&
+              (m_dstGrids == a_input.m_dstGrids));
+    }
+      
+    Chombo4::DisjointBoxLayout m_srcGrids;
+    Chombo4::DisjointBoxLayout m_dstGrids;
+
+  private:
+    copy_to__key_t();
+      
+  };
+
+  ///Optimization wherein we archive the meta data for given inputs.   
+  template<class fabtype_t>
+  class MetaDataCache
+  {
+  public:
+    typedef std::pair<copy_to__key_t  ,std::shared_ptr<MetaDataPair<fabtype_t> > >  copy_to__pair_t;
+    typedef std::pair<exchange_key_t ,std::shared_ptr<MetaDataPair<fabtype_t> > > exchange_pair_t;
+    
+    std::shared_ptr< MetaDataPair<fabtype_t> > getCopyToPair(const Chombo4::DisjointBoxLayout& a_srcGrids,
+                                                             const Chombo4::DisjointBoxLayout& a_dstGrids,
+                                                             std::vector<fabtype_t *> a_data,
+                                                             bool a_printStuff = false)
+    {
+      typedef std::shared_ptr< MetaDataPair<fabtype_t> > return_type_t;
+
+      return_type_t  retval;
+      copy_to__key_t key(a_srcGrids, a_dstGrids);
+      //see if already there
+      bool found = false;
+      for(int ivec = 0; ivec < m_copy_to__cache.size(); ivec++)
+      {
+        if(m_copy_to__cache[ivec].first == key)
+        {
+          found = true;
+          //already there so we can just return it.
+          retval = m_copy_to__cache[ivec].second;
+        }
+      }
+      if(!found)
+      {        
+        // not already there so make one and save it.
+        retval = return_type_t(new MetaDataPair<fabtype_t>(a_srcGrids, a_dstGrids, a_data, a_printStuff) );
+        
+        copy_to__pair_t  new_entry(key, retval);
+
+        m_copy_to__cache.push_back(new_entry);
+      }
+
+      return retval;
+    }
+
+    std::shared_ptr< MetaDataPair<fabtype_t> > getExchangePair(const Chombo4::DisjointBoxLayout& a_grids,
+                                                               const Chombo4::IntVect&           a_ghost,
+                                                               std::vector<fabtype_t *>    a_data,
+                                                               bool a_printStuff = false)
+    {
+      typedef std::shared_ptr< MetaDataPair<fabtype_t> > return_type_t;
+
+      return_type_t  retval;
+      exchange_key_t key(a_grids, a_ghost);
+      //see if already there
+      bool found = false;
+      for(int ivec = 0; ivec < m_exchange_cache.size(); ivec++)
+      {
+        if(m_exchange_cache[ivec].first == key)
+        {
+          found = true;
+          retval = m_exchange_cache[ivec].second;
+        }
+      }
+      if(!found)
+      {        
+        // not already there
+        retval = return_type_t(new MetaDataPair<fabtype_t>(a_grids, a_ghost, a_data, a_printStuff) );
+        
+        exchange_pair_t  new_entry(key, retval);
+
+        m_exchange_cache.push_back(new_entry);
+      }
+      return retval;
+    }
+    
+    std::vector<copy_to__pair_t>  m_copy_to__cache;
+    std::vector<exchange_pair_t>  m_exchange_cache;
+  };
+  
   ///
   /**
      Data over a union of rectangles.   
@@ -125,8 +289,13 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       CH_TIME("DistributedData::exchange");
-      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
-      communicate(*this, pattern, *this  , a_printStuff, m_graphConstructed);
+      auto& cache = getMetaDataCache();
+      auto metapair_ptr = cache.getExchangePair(m_grids, m_ghost, m_data, a_printStuff);
+      BoxPattern& pattern                          = *(metapair_ptr->m_pattern );
+      CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
+//      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
+//      CommunicationMetaData<fabtype_t> metadataco(pattern, a_dst.m_data, a_printStuff);
+      communicate(*this, pattern, metadataco, *this  , a_printStuff, m_graphConstructed);
     }
     
     ///
@@ -134,8 +303,16 @@ namespace CH4_Data_Choreography
                 bool a_printStuff = false)
     {
       CH_TIME("DistributedData::copyTo");
-      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
-      communicate(*this, pattern, a_dst, a_printStuff, m_graphConstructed);
+
+      auto& cache = getMetaDataCache();
+      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, a_dst.m_data, a_printStuff);
+      
+      BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
+      CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
+//      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
+//      CommunicationMetaData<fabtype_t> metadataco(pattern,
+//      a_dst.m_data, a_printStuff);
+      communicate(*this, pattern, metadataco, a_dst, a_printStuff, m_graphConstructed);
     }
 
     ///
@@ -152,23 +329,22 @@ namespace CH4_Data_Choreography
     
   private:
 
-    static void communicate(DistributedData       & a_dst,
-                            BoxPattern            & a_pattern,
+    static void communicate(DistributedData                  & a_dst,
+                            BoxPattern                       & a_pattern,
+                            CommunicationMetaData<fabtype_t> & a_metadataco,
                             const DistributedData & a_src,
                             bool a_printStuff,
                             bool a_graphConstructed)
     {
       CH_TIME("DistributedData::communicate");
 #ifdef CH_MPI  
-      //communication of size information and allocate buffers
-      CommunicationMetaData<fabtype_t> metadataco(a_pattern, a_dst.m_data, a_printStuff);
-      postReceives(   a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
-      postSends(      a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      postReceives(   a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      postSends(      a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
 #endif      
       doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
 #ifdef CH_MPI  
-      completePending(a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
-      unpackReceives (a_dst.m_data, metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      completePending(a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      unpackReceives (a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
 #endif      
     }
 
@@ -491,6 +667,18 @@ namespace CH4_Data_Choreography
       }
     }
     ///
+
+    static MetaDataCache<fabtype_t>& getMetaDataCache()
+    {
+      static MetaDataCache<fabtype_t>* s_meta_data_ptr = NULL;
+      static bool allocated = false;
+      if(!allocated)
+      {
+        s_meta_data_ptr = new MetaDataCache<fabtype_t>();
+        allocated = true;
+      }
+      return *s_meta_data_ptr;
+    }
     
 
     int m_procID;
@@ -499,7 +687,8 @@ namespace CH4_Data_Choreography
     IntVect m_ghost;
     Chombo4::DisjointBoxLayout m_grids;
     bool m_isDefined;
-    bool m_graphConstructed;    
+    bool m_graphConstructed;
+
   private:
     //Copy constuction and assignment are disallowed
     //because this simplifies memory management. I like simplicity.
