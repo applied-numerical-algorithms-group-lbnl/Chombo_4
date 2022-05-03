@@ -459,6 +459,7 @@ coarsenYFaceData(const vector< EBIndex<YFACE> >  & a_coarFaces,
   {
     const EBIndex<YFACE> & coarFace = a_coarFaces[iface];
     IndMomSDMinOne & coarMom  = (*m_yfacdata)[a_dit](coarFace, 0);
+    // FIXME - this is where the problem is?
     vector< EBIndex<YFACE> > fineFaces = coarEBGraph.refine<YFACE>(coarFace, fineEBGraph);
     coarMom.setToZero();
     for(int ifine = 0; ifine < fineFaces.size(); ifine++)
