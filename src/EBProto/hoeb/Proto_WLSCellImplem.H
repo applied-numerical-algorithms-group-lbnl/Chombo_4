@@ -3073,7 +3073,7 @@ namespace Proto
 
         foundVoF = a_vofStencily.getValueAtVoF(diagweight, a_vof);
         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilx.setBetaWeight(diagweight);
+        a_vofStencily.setBetaWeight(diagweight);
 #if DIM==3
         foundVoF = a_vofStencilz.getValueAtVoF(diagweight, a_vof);
         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
@@ -3202,7 +3202,7 @@ namespace Proto
       if (a_cellConstruct.m_verbose) {pout() << " stencil ydir "<< a_vof.m_pt << endl;}
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
-      deriv[1] = 1; // x-derivative stencil
+      deriv[1] = 1; // y-derivative stencil
       a_cellConstruct.getCellStencil(a_vofStencily,
                                      a_inhoTerm[1],
                                      a_vof,
@@ -3253,7 +3253,7 @@ namespace Proto
       if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
-      deriv[2] = 1; // x-derivative stencil
+      deriv[2] = 1; // z-derivative stencil
       a_cellConstruct.getCellStencil(a_vofStencilz,
                                      a_inhoTerm[2],
                                      a_vof,
@@ -3289,7 +3289,7 @@ namespace Proto
 
         foundVoF = a_vofStencily.getValueAtVoF(diagweight, a_vof);
         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilx.setBetaWeight(diagweight);
+        a_vofStencily.setBetaWeight(diagweight);
 #if DIM==3
         foundVoF = a_vofStencilz.getValueAtVoF(diagweight, a_vof);
         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
