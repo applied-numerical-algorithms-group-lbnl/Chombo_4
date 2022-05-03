@@ -12,7 +12,7 @@
 #define _hoeb_LAPACKMATRIX_H_
 
 #include "Chombo_REAL.H"
-#include "Proto_LoHiSide.H"
+#include "base/Proto_LoHiSide.H"
 #include "Chombo_CH_assert.H"
 #include "Proto.H"
 #include <utility>

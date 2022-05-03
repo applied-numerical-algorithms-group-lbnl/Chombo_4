@@ -11,8 +11,6 @@
 #ifndef _hoeb_LAPACK_H_
 #define _hoeb_LAPACK_H_
 #include "Hoeb_FortranNameMacro.H"
-namespace hoeb
-{
 
   /// Forward declaration of lapack routines
   extern "C" 

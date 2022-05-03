@@ -135,17 +135,21 @@ namespace hoeb
       return retval;   
     }
 
+    typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
+    typedef CH4_Data_Choreography::DistributedData<EBFaData    > ebfa_distrib_t;
 
     ///get integral (grad phi dot n dA)
     inline 
-    Real evaluateGradDIM(const EBGraph                                                           & a_graph,
-                         const Real                                                              & a_dx,
-                         const shared_ptr< LevelData< HostIrregData<CELL    , IndMomDIM , 1> > > & a_ebnormmom_x, 
-                         const shared_ptr< LevelData< HostIrregData<CELL    , IndMomDIM , 1> > > & a_ebnormmom_y, 
-                         const shared_ptr< LevelData< HostIrregData<CELL    , IndMomDIM , 1> > > & a_ebnormmom_z,
-                         const shared_ptr< LevelData< HostIrregData<BOUNDARY, IndMomDIM , 1> > > & a_ebmom,
-                         const Chombo4::DataIndex                                                & a_dit,
-                         const EBIndex<CELL>                                                     & a_vof,
+    Real evaluateGradDIM(const EBGraph                          & a_graph,
+                         const Real                             & a_dx,
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_x, 
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_y, 
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_z,
+                         const shared_ptr<   ebfa_distrib_t   > & a_ebmom,
+                         const Chombo4::DataIndex               & a_dit,
+                         const EBIndex<CELL>                    & a_vof,
                          bool a_divideByArea) const
     {
       Real retval = 0;

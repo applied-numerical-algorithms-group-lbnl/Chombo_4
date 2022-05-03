@@ -48,7 +48,7 @@ namespace hoeb
       a_os << endl;
     }
     if (a_os.fail())
-      MayDay::Error("operator<<(ostream&,LAPACKMatrix&) failed");
+      Chombo4::MayDay::Error("operator<<(ostream&,LAPACKMatrix&) failed");
     return a_os;
   }
 
@@ -183,21 +183,21 @@ namespace hoeb
   {
     for(int irow =0; irow < m_nrow; irow++)
     {
-      pout() << "(";
-      if(irow < 10) pout() << " ";
-      pout() << irow  <<  "): ";
+      Chombo4::pout() << "(";
+      if(irow < 10) Chombo4::pout() << " ";
+      Chombo4::pout() << irow  <<  "): ";
       for(int icol = 0; icol < m_ncol; icol++)
       {
-        //          pout() << "(" << irow  << "," << icol << ")";
+        //          Chombo4::pout() << "(" << irow  << "," << icol << ")";
         Real val = (*this)(irow, icol);
-        pout()    << setprecision(4)
+        Chombo4::pout()    << setprecision(4)
                   << setiosflags(ios::showpoint)
                   << setiosflags(ios::scientific);
-        if(val >= 0.) pout() << " ";
-        pout() << val;
-        pout() << " ";
+        if(val >= 0.) Chombo4::pout() << " ";
+        Chombo4::pout() << val;
+        Chombo4::pout() << " ";
       }
-      pout() << endl;
+      Chombo4::pout() << endl;
     }
   }
   void 
@@ -237,10 +237,10 @@ namespace hoeb
         }
       }
     }
-    pout() << "max value ON  diagonal = " << maxDiag;
-    pout() << "min value ON  diagonal = " << minDiag;
-    pout() << "max value OFF diagonal = " << maxOffd;
-    pout() << "min value OFF diagonal = " << minOffd;
+    Chombo4::pout() << "max value ON  diagonal = " << maxDiag;
+    Chombo4::pout() << "min value ON  diagonal = " << minDiag;
+    Chombo4::pout() << "max value OFF diagonal = " << maxOffd;
+    Chombo4::pout() << "min value OFF diagonal = " << minOffd;
   }
 ///
   void
@@ -252,13 +252,13 @@ namespace hoeb
       for(int icol = 0; icol < m_ncol; icol++)
       {
         Real val = (*this)(irow, icol);
-        pout()    << setprecision(16)
+        Chombo4::pout()    << setprecision(16)
                   << setiosflags(ios::showpoint)
                   << setiosflags(ios::scientific);
-        pout() << val;
-        pout() << " ";
+        Chombo4::pout() << val;
+        Chombo4::pout() << " ";
       }
-      pout() << endl;
+      Chombo4::pout() << endl;
     }
   }
 ///
@@ -270,13 +270,13 @@ namespace hoeb
     {
       if(irow < m_ncol)
       {
-        pout() << "(" << irow  <<  "): ";
+        Chombo4::pout() << "(" << irow  <<  "): ";
         Real val = (*this)(irow, irow);
-        pout()    << setprecision(4)
+        Chombo4::pout()    << setprecision(4)
                   << setiosflags(ios::showpoint)
                   << setiosflags(ios::scientific);
-        pout() << val;
-        pout() << endl;
+        Chombo4::pout() << val;
+        Chombo4::pout() << endl;
       }
     }
   }
@@ -290,11 +290,11 @@ namespace hoeb
       if(irow < m_ncol)
       {
         Real val = (*this)(irow, irow);
-        pout()    << setprecision(16)
+        Chombo4::pout()    << setprecision(16)
                   << setiosflags(ios::showpoint)
                   << setiosflags(ios::scientific);
-        pout() << val;
-        pout() << endl;
+        Chombo4::pout() << val;
+        Chombo4::pout() << endl;
       }
     }
   }
@@ -411,7 +411,7 @@ namespace hoeb
     CH_TIME("LAPACKMatrix::multiply");
     if(a_left.m_ncol != a_right.m_nrow)
     {
-      MayDay::Error("LAPACKMatrix multiply needs colums of left to match the rows on right");
+      Chombo4::MayDay::Error("LAPACKMatrix multiply needs colums of left to match the rows on right");
     }
 
     int nr1 =  a_left.m_nrow;
@@ -429,8 +429,8 @@ namespace hoeb
     //             a_right.dataPtr(), &nc1, &BETA,
     //             a_product.dataPtr(), &nr1);
     HOEB_LAPACK(GEMM,gemm)(&TRANS, &TRANS, &nr1, &nc2, &nc1, &ALPHA,
-                           a_left.dataPtr(), &nr1,
-                           a_right.dataPtr(), &nc1, &BETA,
+                           (Real*)a_left.dataPtr(), &nr1,
+                           (Real*)a_right.dataPtr(), &nc1, &BETA,
                            a_product.dataPtr(), &nr1);
     // for(int irow = 0; irow < nr1; irow++)
     //   {
@@ -455,7 +455,7 @@ namespace hoeb
     //only makes sense if square
     if(m_nrow != m_ncol)
     {
-      MayDay::Error("trying to invert a non-square matrix");
+      Chombo4::MayDay::Error("trying to invert a non-square matrix");
     }
 
     Real* A = m_data;
@@ -470,8 +470,8 @@ namespace hoeb
     HOEB_LAPACK(GETRI,getri)(&N,A,&N,IPIV,WORK,&LWORK,&INFO);
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "getri matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "getri matrix may be singular---info = " << INFO << endl;
     }
     else if(s_checkConditionNumber)
     {
@@ -511,7 +511,7 @@ namespace hoeb
     Real reallysmall = 1.0e-15;
     if(inverse < reallysmall)
     {
-      pout() << "matrix is poorly conditioned: 1/condition_number = " << inverse << endl;
+      Chombo4::pout() << "matrix is poorly conditioned: 1/condition_number = " << inverse << endl;
       if(s_verbose)
       {
         this->poutAll();
@@ -519,11 +519,11 @@ namespace hoeb
     }
     else if(inverse < small)
     {
-      pout() << "matrix is marginally conditioned: 1/condition_number = " << inverse << endl;
+      Chombo4::pout() << "matrix is marginally conditioned: 1/condition_number = " << inverse << endl;
     }
     else
     {
-      pout() << "matrix might be OK: 1/condition_number = " << inverse << endl;
+      Chombo4::pout() << "matrix might be OK: 1/condition_number = " << inverse << endl;
     }
   }
 ///
@@ -536,7 +536,7 @@ namespace hoeb
     Real reallysmall = 1.0e-15;
     if(inverse < reallysmall)
     {
-      pout() << "matrix is poorly conditioned: 1/condition_number = " << inverse << endl;
+      Chombo4::pout() << "matrix is poorly conditioned: 1/condition_number = " << inverse << endl;
       if(s_verbose)
       {
         this->poutAll();
@@ -544,11 +544,11 @@ namespace hoeb
     }
     else if(inverse < small)
     {
-      pout() << "matrix is marginally conditioned: 1/condition_number = " << inverse << endl;
+      Chombo4::pout() << "matrix is marginally conditioned: 1/condition_number = " << inverse << endl;
     }
     else
     {
-      // pout() << "matrix might be OK: 1/condition_number = " << inverse << endl;
+      // Chombo4::pout() << "matrix might be OK: 1/condition_number = " << inverse << endl;
     }
   }
 /**
@@ -626,8 +626,8 @@ namespace hoeb
                              TAU.dataPtr(), WORK.dataPtr(), &LWORK, &INFO);
     if (INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "geqrf call has bad value at argument " << (-INFO) << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "geqrf call has bad value at argument " << (-INFO) << endl;
     }
 
     if(LAPACKMatrix::s_verbose)
@@ -642,8 +642,8 @@ namespace hoeb
                              &M, TAU.dataPtr(), WORK.dataPtr(), &LWORK, &INFO);
     if (INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "orgqr call has bad value at argument " << (-INFO) << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "orgqr call has bad value at argument " << (-INFO) << endl;
     }
 
     // Solve for X^T in X^T * R^T = Q.
@@ -748,8 +748,8 @@ namespace hoeb
                              &rcond, WORK.dataPtr(), IPIV, &INFO);
     if (INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() <<  "trcon call has bad value at argument " << (-INFO) << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() <<  "trcon call has bad value at argument " << (-INFO) << endl;
     }
 
     delete[] IPIV;
@@ -788,8 +788,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "gels matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "gels matrix may be singular---info = " << INFO << endl;
     } 
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -828,8 +828,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "gels matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "gels matrix may be singular---info = " << INFO << endl;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -881,9 +881,9 @@ namespace hoeb
     }
     if((iter >= a_maxiter) && LAPACKMatrix::s_verbose)
     {
-      pout() << "matrix::solve warning" << endl;
-      pout() << "matrix: maximum number of iterations reached " << endl;
-      pout() << "residnorm = " << residnorm << ", iter = " << iter << ", maxresid = " << tol <<  ", residinit = " << residinit <<  endl;
+      Chombo4::pout() << "matrix::solve warning" << endl;
+      Chombo4::pout() << "matrix: maximum number of iterations reached " << endl;
+      Chombo4::pout() << "residnorm = " << residnorm << ", iter = " << iter << ", maxresid = " << tol <<  ", residinit = " << residinit <<  endl;
     }
     //because this is where the answer goes
     B = X;
@@ -930,8 +930,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "gelsd matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "gelsd matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -962,11 +962,11 @@ namespace hoeb
     Real tol = 1e-3;
     if (resid > tol)
     {
-      pout() << "solveLSTSVD residual = " << resid << endl;
-      pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
+      Chombo4::pout() << "solveLSTSVD residual = " << resid << endl;
+      Chombo4::pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
       for (int i=0; i < N; ++i)
       {
-        pout() << "r(" << i << ") = " << Bcopy(i,0) << endl;
+        Chombo4::pout() << "r(" << i << ") = " << Bcopy(i,0) << endl;
       }
     }
 
@@ -1020,9 +1020,9 @@ namespace hoeb
     }
     if((iter >= a_maxiter) && LAPACKMatrix::s_verbose)
     {
-      pout() << "matrix::solve warning" << endl;
-      pout() << "matrix: maximum number of iterations (" << a_maxiter << ") reached " << endl;
-      pout() << "residnorm = " << residnorm << ", iter = " << iter << ", maxresid = " << tol <<  ", residinit = " << residinit <<  endl;
+      Chombo4::pout() << "matrix::solve warning" << endl;
+      Chombo4::pout() << "matrix: maximum number of iterations (" << a_maxiter << ") reached " << endl;
+      Chombo4::pout() << "residnorm = " << residnorm << ", iter = " << iter << ", maxresid = " << tol <<  ", residinit = " << residinit <<  endl;
     }
 
     return INFO;
@@ -1097,8 +1097,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() <<  "gelsd matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() <<  "gelsd matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -1132,11 +1132,11 @@ namespace hoeb
        Real tol = 1e-3;
        if (resid > tol)
        {
-       pout() << "solveLSTSVD residual = " << resid << endl;
-       pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
+       Chombo4::pout() << "solveLSTSVD residual = " << resid << endl;
+       Chombo4::pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
        for (int i=0; i < N; ++i)
        {
-       pout() << "r(" << i << ") = " << Bcopy(i,0) << endl;
+       Chombo4::pout() << "r(" << i << ") = " << Bcopy(i,0) << endl;
        }
        }**/
 
@@ -1180,8 +1180,8 @@ namespace hoeb
     int INFO = info;
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "gglse matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "gglse matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
@@ -1200,8 +1200,8 @@ namespace hoeb
     Real tol = 1e-3;
     if (resid > tol)
     {
-      pout() << "solveequalityconstrainedLS residual = " << resid << endl;
-      pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
+      Chombo4::pout() << "solveequalityconstrainedLS residual = " << resid << endl;
+      Chombo4::pout() << "WARNING: solveLSTSVD residual above tolerance " << tol << endl;
     }
     return INFO;
   }
@@ -1217,7 +1217,7 @@ namespace hoeb
     CH_assert(b.m_nrow == M);
     //  CH_assert(b.m_ncol == 1);
     CH_assert(M >= N); // A is over-determined
-    // pout() << "A is " << M << " x " << N << endl;
+    // Chombo4::pout() << "A is " << M << " x " << N << endl;
 
     // - create a transpose
     LAPACKMatrix At = A;
@@ -1238,8 +1238,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "geqrf matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "geqrf matrix may be singular---info = " << INFO << endl;
     }
     else if(LAPACKMatrix::s_checkConditionNumber)
     {
@@ -1256,8 +1256,8 @@ namespace hoeb
 
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "ormqr matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "ormqr matrix may be singular---info = " << INFO << endl;
       return INFO;
     }
 
@@ -1270,8 +1270,8 @@ namespace hoeb
                              At.dataPtr(), &N, b.dataPtr(), &N, &INFO);
     if(INFO != 0)
     {
-      MayDay::Warning(" info flag from lapack");
-      pout() << "trtrs matrix may be singular---info = " << INFO << endl;
+      Chombo4::MayDay::Warning(" info flag from lapack");
+      Chombo4::pout() << "trtrs matrix may be singular---info = " << INFO << endl;
     }
     
     return INFO;

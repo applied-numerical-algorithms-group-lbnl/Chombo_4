@@ -130,7 +130,7 @@ namespace hoeb
 #if DIM==3      
       {
         const auto& zfacld = a_geoserv->getZFaceData(a_domain);
-        const auto& zdat   = (*yfacld)[a_dit];
+        const auto& zdat   = (*zfacld)[a_dit];
         for(int isten = 0; isten < m_zfaceDiriSten.size(); isten++)
         {
           const auto& entry  = m_zfaceDiriSten.m_entries[isten];
@@ -182,7 +182,7 @@ namespace hoeb
 #if DIM==3      
       {
         const auto& zfacld = a_geoserv->getZFaceData(a_domain);
-        const auto& zdat   = (*yfacld)[a_dit];
+        const auto& zdat   = (*zfacld)[a_dit];
         for(int isten = 0; isten < m_zfaceNeumSten.size(); isten++)
         {
           const auto& entry  = m_zfaceNeumSten.m_entries[isten];

@@ -282,7 +282,7 @@ namespace hoeb
       std::set<EBIndex<YFACE> > yfacesetNeum;
 #if DIM==3
       std::set<EBIndex<ZFACE> > zfacesetDiri;
-      std::set<EBIndex<ZFACE> > zfacesetneum;
+      std::set<EBIndex<ZFACE> > zfacesetNeum;
 #endif        
         
       neighvofs.clear();
@@ -347,7 +347,7 @@ namespace hoeb
       retval.m_yfacesNeum.assign(yfacesetNeum.begin(), yfacesetNeum.end());
 #if DIM==3
       retval.m_zfacesDiri.assign(zfacesetDiri.begin(), zfacesetDiri.end());
-      retval.m_zfacesNeum.assign(zfacesetneum.begin(), zfacesetneum.end());
+      retval.m_zfacesNeum.assign(zfacesetNeum.begin(), zfacesetNeum.end());
 #endif        
       
       //if we have too few neighbors, expand the radius

@@ -15,7 +15,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
-#include "Proto_DebugHooks.H"
+
 #include "DebugFunctions.H"
 #include "Hoeb_ExactSolutions.H"
 //this one defines HOEB_MAX_ORDER
@@ -574,7 +574,7 @@ unsigned int lapackTest()
 void
 getKappaLphiHomogeneous(EBLevelBoxData<CELL, 1>                                            &  a_klp,
                         const EBLevelBoxData<CELL, 1>                                      &  a_phi,
-                        const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                        const shared_ptr<hoeb::graph_distrib_t>                              &  a_graphs,
                         const Chombo4::DisjointBoxLayout                                   &  a_grids,
                         const Chombo4::Box                                                 &  a_domain,
                         const Real                                                         &  a_dx,
@@ -664,11 +664,12 @@ getKappaLphiHomogeneous(EBLevelBoxData<CELL, 1>                                 
     }
   }
 }
+typedef CH4_Data_Choreography::DistributedData<EBGraph>   graph_distrib_t;
 /*******/ 
 void
 getKappaLphi(EBLevelBoxData<CELL, 1>                                            &  a_klp,
              const EBLevelBoxData<CELL, 1>                                      &  a_phi,
-             const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+             const shared_ptr<graph_distrib_t>                                  &  a_graphs,
              const Chombo4::DisjointBoxLayout                                   &  a_grids,
              const Chombo4::Box                                                 &  a_domain,
              const Real                                                         &  a_dx,
@@ -678,9 +679,10 @@ getKappaLphi(EBLevelBoxData<CELL, 1>                                            
 {
 
   typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > cell_distrib_t;
   
   IntVect dataGhostIV = a_klp.ghostVect();
-  LevelData<EBHostData<CELL, Real, 1> >    hostklp(a_grids, 1, dataGhostIV, hostfactorycell_t(a_graphs));
+  cell_distrib_t  hostklp(a_grids, dataGhostIV, hostfactorycell_t(a_graphs));
 
 
   Chombo4::DataIterator dit = a_grids.dataIterator();
@@ -729,11 +731,11 @@ PROTO_KERNEL_END(subtractionTractionF, subtractionTraction)
 /****/
 void
 getKLPhiError(EBLevelBoxData<CELL,   1>                                           &  a_errCoar, 
-              const shared_ptr<LevelData<EBGraph> >                               &  a_graphsFine,
+              const shared_ptr<graph_distrib_t    >                               &  a_graphsFine,
               const Chombo4::DisjointBoxLayout                                    &  a_gridsFine,
               const Chombo4::Box                                                  &  a_domFine,
               const Real                                                          &  a_dxFine,
-              const shared_ptr<LevelData<EBGraph> >                               &  a_graphsCoar,
+              const shared_ptr<graph_distrib_t    >                               &  a_graphsCoar,
               const Chombo4::DisjointBoxLayout                                    &  a_gridsCoar,
               const Chombo4::Box                                                  &  a_domCoar,
               const Real                                                          &  a_dxCoar,
@@ -776,11 +778,11 @@ getKLPhiError(EBLevelBoxData<CELL,   1>                                         
 /****/
 void
 getICError(EBLevelBoxData<CELL,   1>                                           &  a_errCoar, 
-           const shared_ptr<LevelData<EBGraph> >                               &  a_graphsFine,
+           const shared_ptr<graph_distrib_t>                                   &  a_graphsFine,
            const Chombo4::DisjointBoxLayout                                    &  a_gridsFine,
            const Chombo4::Box                                                  &  a_domFine,
            const Real                                                          &  a_dxFine,
-           const shared_ptr<LevelData<EBGraph> >                               &  a_graphsCoar,
+           const shared_ptr<graph_distrib_t>                                   &  a_graphsCoar,
            const Chombo4::DisjointBoxLayout                                    &  a_gridsCoar,
            const Chombo4::Box                                                  &  a_domCoar,
            const Real                                                          &  a_dxCoar,
@@ -842,7 +844,7 @@ runTruncationErrorTest(string a_stencilname)
 
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
@@ -882,11 +884,10 @@ runTruncationErrorTest(string a_stencilname)
   Chombo4::Box domMedi = vecdomain[1];
   Chombo4::Box domCoar = vecdomain[2];
 
-  shared_ptr<LevelData<EBGraph> > graphsFine = geoserv->getGraphs(domFine);
-  shared_ptr<LevelData<EBGraph> > graphsMedi = geoserv->getGraphs(domMedi);
-  shared_ptr<LevelData<EBGraph> > graphsCoar = geoserv->getGraphs(domCoar);
+  shared_ptr<graph_distrib_t> graphsFine = geoserv->getGraphs(domFine);
+  shared_ptr<graph_distrib_t> graphsMedi = geoserv->getGraphs(domMedi);
+  shared_ptr<graph_distrib_t> graphsCoar = geoserv->getGraphs(domCoar);
 
-  
   shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  dictionary
     (new     EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL>
      (geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
@@ -954,7 +955,7 @@ runInitialConditionTest()
 
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
@@ -992,9 +993,9 @@ runInitialConditionTest()
   Chombo4::Box domMedi = vecdomain[1];
   Chombo4::Box domCoar = vecdomain[2];
 
-  shared_ptr<LevelData<EBGraph> > graphsFine = geoserv->getGraphs(domFine);
-  shared_ptr<LevelData<EBGraph> > graphsMedi = geoserv->getGraphs(domMedi);
-  shared_ptr<LevelData<EBGraph> > graphsCoar = geoserv->getGraphs(domCoar);
+  shared_ptr<graph_distrib_t> graphsFine = geoserv->getGraphs(domFine);
+  shared_ptr<graph_distrib_t> graphsMedi = geoserv->getGraphs(domMedi);
+  shared_ptr<graph_distrib_t> graphsCoar = geoserv->getGraphs(domCoar);
 
   
   shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  dictionary
@@ -1043,7 +1044,7 @@ runInitialConditionTest()
 template <CENTERING cent>
 void
 getDevendranFlux(EBLevelBoxData<cent,   1>                                           &  a_deviflux, 
-                 const shared_ptr<LevelData<EBGraph> >                               &  a_graphs,
+                 const shared_ptr<graph_distrib_t    >                               &  a_graphs,
                  const Chombo4::DisjointBoxLayout                                    &  a_grids,
                  const Chombo4::Box                                                  &  a_dom,
                  const Real                                                          &  a_dx,
@@ -1055,14 +1056,15 @@ getDevendranFlux(EBLevelBoxData<cent,   1>                                      
   IntVect ghost = a_deviflux.ghostVect();
   typedef GraphConstructorFactory<EBHostData<cent, Real, 1> > hostfactoryface_t;
   typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
-  
-  LevelData<EBHostData<cent, Real, 1> >    hostflux(a_grids, 1, ghost, hostfactoryface_t(a_graphs));
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > cell_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<cent, Real, 1> > cent_distrib_t;
+  cent_distrib_t  hostflux(a_grids, 1, ghost, hostfactoryface_t(a_graphs));
   int nghost = 6;
   IntVect dataGhostIV = nghost*IntVect::Unit;
   EBLevelBoxData<CELL,   1>  deviphi(a_grids, nghost*IntVect::Unit, a_graphs);
   hoeb::fillPhi(deviphi, a_graphs, a_grids, a_dom, a_dx, a_geoserv);
   
-  LevelData<EBHostData<CELL, Real, 1> >    hostphi(a_grids, 1, ghost, hostfactorycell_t(a_graphs));
+  cell_distrib_t   hostphi(a_grids, 1, ghost, hostfactorycell_t(a_graphs));
   EBLevelBoxData<CELL,   1>::copyToHost(hostphi, deviphi);
   
 
@@ -1128,11 +1130,11 @@ getDevendranFlux(EBLevelBoxData<cent,   1>                                      
 template <CENTERING cent>
 void
 getDevendranFluxError(EBLevelBoxData<cent,   1>                                           &  a_errCoar, 
-                      const shared_ptr<LevelData<EBGraph> >                               &  a_graphsFine,
+                      const shared_ptr<graph_distrib_t>                                   &  a_graphsFine,
                       const Chombo4::DisjointBoxLayout                                    &  a_gridsFine,
                       const Chombo4::Box                                                  &  a_domFine,
                       const Real                                                          &  a_dxFine,
-                      const shared_ptr<LevelData<EBGraph> >                               &  a_graphsCoar,
+                      const shared_ptr<graph_distrib_t>                               &  a_graphsCoar,
                       const Chombo4::DisjointBoxLayout                                    &  a_gridsCoar,
                       const Chombo4::Box                                                  &  a_domCoar,
                       const Real                                                          &  a_dxCoar,
@@ -1189,6 +1191,7 @@ template<CENTERING cent>
 unsigned int
 devendranFluxTruncation(string a_prefix)
 {
+#if 0 
   using Chombo4::pout;
   Real coveredval = -1;
   int nx      = 32;
@@ -1211,7 +1214,7 @@ devendranFluxTruncation(string a_prefix)
 
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  vector<Chombo4::DisjointBoxLayout> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
@@ -1249,9 +1252,9 @@ devendranFluxTruncation(string a_prefix)
   Chombo4::Box domMedi = vecdomain[1];
   Chombo4::Box domCoar = vecdomain[2];
 
-  shared_ptr<LevelData<EBGraph> > graphsFine = geoserv->getGraphs(domFine);
-  shared_ptr<LevelData<EBGraph> > graphsMedi = geoserv->getGraphs(domMedi);
-  shared_ptr<LevelData<EBGraph> > graphsCoar = geoserv->getGraphs(domCoar);
+  shared_ptr<graph_distrib_t> graphsFine = geoserv->getGraphs(domFine);
+  shared_ptr<graph_distrib_t> graphsMedi = geoserv->getGraphs(domMedi);
+  shared_ptr<graph_distrib_t> graphsCoar = geoserv->getGraphs(domCoar);
 
   
   shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, cent, cent>  >  dictionary
@@ -1293,6 +1296,8 @@ devendranFluxTruncation(string a_prefix)
   pout() << "|| " << a_prefix<< "  errCoar ||_max = " << normCoar << std::endl;
   pout() << "Richardson truncation error order for Devendran flux = " << order << std::endl;
 
+#endif
+  
   return 0;
 }
 /****/

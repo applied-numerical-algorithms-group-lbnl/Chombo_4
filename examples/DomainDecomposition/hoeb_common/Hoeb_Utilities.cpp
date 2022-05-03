@@ -11,7 +11,7 @@ namespace hoeb
   devendranLphiInhomogeneous(const EBIndex<CELL>                                                &  a_vof,
                              const Chombo4::DataIndex                                           &  a_datInd,
                              const LevelData<EBHostData<CELL, Real, 1> >                        &  a_hostphi,
-                             const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                             const shared_ptr<graph_distrib_t >                              &  a_graphs,
                              const Chombo4::DisjointBoxLayout                                   &  a_grids,
                              const Chombo4::Box                                                 &  a_domain,
                              const Real                                                         &  a_dx,
@@ -124,8 +124,8 @@ namespace hoeb
   Real
   schwartzLphiInhomogeneous(const EBIndex<CELL>                                                &  a_vof,
                             const Chombo4::DataIndex                                           &  a_datInd,
-                            const LevelData<EBHostData<CELL, Real, 1> >                        &  a_hostphi,
-                            const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                            const cell_distrib_t                                               &  a_hostphi,
+                            const graph_distrib_t                                              &  a_graphs,
                             const Chombo4::DisjointBoxLayout                                   &  a_grids,
                             const Chombo4::Box                                                 &  a_domain,
                             const Real                                                         &  a_dx,
@@ -216,7 +216,7 @@ namespace hoeb
   getKappaLphiVoF(const EBIndex<CELL>                                                &  a_vof,
                   const Chombo4::DataIndex                                           &  a_datInd,
                   const EBLevelBoxData<CELL, 1>                                      &  a_phi,
-                  const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                  const graph_distrib_t                                              &  a_graphs,
                   const Chombo4::DisjointBoxLayout                                   &  a_grids,
                   const Chombo4::Box                                                 &  a_domain,
                   const Real                                                         &  a_dx,
@@ -226,7 +226,7 @@ namespace hoeb
   {
     IntVect ghost = a_phi.ghostVect();
     typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
-    LevelData<EBHostData<CELL, Real, 1> >    hostphi(a_grids, 1, ghost, hostfactorycell_t(a_graphs));
+    cell_distrib_t    hostphi(a_grids, 1, ghost, hostfactorycell_t(a_graphs));
     EBLevelBoxData<CELL,   1>::copyToHost(hostphi, a_phi);
 
     Real retval = 0;
@@ -664,7 +664,7 @@ namespace hoeb
   /****/
   void
   fillPhi(EBLevelBoxData<CELL, 1>                                &  a_phi,
-          const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
+          const graph_distrib_t                                  &  a_graphs,
           const Chombo4::DisjointBoxLayout                       &  a_grids,
           const Chombo4::Box                                     &  a_domain,
           const Real                                             &  a_dx,
@@ -677,8 +677,8 @@ namespace hoeb
     shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> > phigen =
       getBaseExactSoltuion();
     
-    LevelData<EBHostData<CELL, Real, 1> > hostdata
-      (a_grids, 1,  a_phi.ghostVect(), hostfactory_t(a_graphs));
+    cell_distrib_t hostdata
+      (a_grids,   a_phi.ghostVect(), hostfactory_t(a_graphs));
     
     auto voldatldptr = a_geoserv->getVoluData(a_domain);
     const auto& voldatld = *voldatldptr;
@@ -707,11 +707,11 @@ namespace hoeb
   void
   restrictKappaLphi(EBLevelBoxData<CELL, 1>                                           &  a_klpFToC,
                     const EBLevelBoxData<CELL, 1>                                     &  a_klpFine,
-                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+                    const graph_distrib_t                                             &  a_graphsFine,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
                     const Chombo4::Box                                                &  a_domFine,
                     const Real                                                        &  a_dxFine,
-                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+                    const graph_distrib_t                                             &  a_graphsCoar,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
                     const Chombo4::Box                                                &  a_domCoar,
                     const Real                                                        &  a_dxCoar,
@@ -741,11 +741,11 @@ namespace hoeb
   void
   restrictPhi(EBLevelBoxData<CELL, 1>                                           &  a_phiFToC,
                    const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
-                   const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+                   const graph_distrib_t                                             &  a_graphsFine,
                    const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
                    const Chombo4::Box                                                &  a_domFine,
                    const Real                                                        &  a_dxFine,
-                   const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+                   const graph_distrib_t                                             &  a_graphsCoar,
                    const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
                    const Chombo4::Box                                                &  a_domCoar,
                    const Real                                                        &  a_dxCoar,

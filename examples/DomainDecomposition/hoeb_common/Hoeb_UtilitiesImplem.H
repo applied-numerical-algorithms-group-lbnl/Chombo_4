@@ -415,7 +415,7 @@ namespace hoeb
     {
       //now for the  domain z faces
       const auto & zfacldptr  =  a_geoserv->getYFaceData(a_srcDomain);
-      const auto & zfacdatfab = (*yfacldptr)[a_dit];
+      const auto & zfacdatfab = (*zfacldptr)[a_dit];
       for(unsigned int ivol = 0; ivol < a_block.m_zfacesDiri.size(); ivol++)
       {
         const auto & face = a_block.m_zFacesDiri[ivol];

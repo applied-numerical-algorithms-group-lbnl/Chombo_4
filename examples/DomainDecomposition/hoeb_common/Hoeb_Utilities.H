@@ -12,6 +12,10 @@
 
 namespace hoeb
 {
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>   graph_distrib_t;
+  typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > cell_distrib_t;
+  
   /// get the dreaded M from the neighborhood
   template <CENTERING cent>
   LAPACKMatrix
@@ -44,7 +48,7 @@ namespace hoeb
   getKappaLphiVoF(const EBIndex<CELL>                                                &  a_vof,
                   const Chombo4::DataIndex                                           &  a_datInd,
                   const EBLevelBoxData<CELL, 1>                                      &  a_phi,
-                  const shared_ptr<LevelData<EBGraph> >                              &  a_graphs,
+                  const shared_ptr<graph_distrib_t>                                  &  a_graphs,
                   const Chombo4::DisjointBoxLayout                                   &  a_grids,
                   const Chombo4::Box                                                 &  a_domain,
                   const Real                                                         &  a_dx,
@@ -151,7 +155,7 @@ namespace hoeb
   */
   void
   fillPhi(EBLevelBoxData<CELL, 1>                                &  a_phi,
-          const shared_ptr<LevelData<EBGraph> >                  &  a_graphs,
+          const shared_ptr<graph_distrib_t    >                  &  a_graphs,
           const Chombo4::DisjointBoxLayout                       &  a_grids,
           const Chombo4::Box                                     &  a_domFine,
           const Real                                             &  a_dx,
@@ -163,11 +167,11 @@ namespace hoeb
   void
   restrictKappaLphi(EBLevelBoxData<CELL, 1>                                           &  a_klpFToC,
                     const EBLevelBoxData<CELL, 1>                                     &  a_klpFine,
-                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+                    const shared_ptr<graph_distrib_t>                                 &  a_graphsFine,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
                     const Chombo4::Box                                                &  a_domFine,
                     const Real                                                        &  a_dxFine,
-                    const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+                    const shared_ptr<graph_distrib_t>                                 &  a_graphsCoar,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
                     const Chombo4::Box                                                &  a_domCoar,
                     const Real                                                        &  a_dxCoar,
@@ -180,11 +184,11 @@ namespace hoeb
   void
   restrictPhi(EBLevelBoxData<CELL, 1>                                           &  a_phiFToC,
               const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
-              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsFine,
               const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
               const Chombo4::Box                                                &  a_domFine,
               const Real                                                        &  a_dxFine,
-              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsCoar,
               const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
               const Chombo4::Box                                                &  a_domCoar,
               const Real                                                        &  a_dxCoar,
@@ -198,11 +202,11 @@ namespace hoeb
   void
   restrictFlux(EBLevelBoxData<cent, 1>                                          &  a_phiFToC,
               const EBLevelBoxData<cent, 1>                                     &  a_phiFine,
-              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsFine,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsFine,
               const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
               const Chombo4::Box                                                &  a_domFine,
               const Real                                                        &  a_dxFine,
-              const shared_ptr<LevelData<EBGraph> >                             &  a_graphsCoar,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsCoar,
               const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
               const Chombo4::Box                                                &  a_domCoar,
               const Real                                                        &  a_dxCoar,
