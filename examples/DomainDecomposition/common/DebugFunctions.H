@@ -30,7 +30,7 @@ void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)
 }
 #endif
 void 
-dumpVecRV(Vector<RealVect>* a_dataPtr)
+dumpVecRV(std::vector<RealVect>* a_dataPtr)
 {
   if(a_dataPtr != NULL)
   {

@@ -185,9 +185,9 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
-                    Vector<Box>                     & a_vecdom,
-                    Vector<Real>                    & a_vecdx,
+void defineGeometry(std::vector<DisjointBoxLayout >      & a_grids,
+                    std::vector<Box>                     & a_vecdom,
+                    std::vector<Real>                    & a_vecdx,
                     shared_ptr<GeometryService<2> > & a_geoserv,
                     Real  & a_geomCen,
                     Real  & a_geomRad,
@@ -211,6 +211,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
 
 
   pout() << "creating grid hierarchy" << endl;
+
   GeometryService<2>::generateGrids(a_grids, domain, maxGrid);
   a_vecdom.resize(a_grids.size());
   a_vecdx.resize( a_grids.size());
@@ -236,7 +237,15 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
                                                     a_whichGeom);
 
   pout() << "creating geometry service" << endl;
-  a_geoserv  = shared_ptr<GeometryService<2> >(new GeometryService<2>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  //true to get a bunch of logging information.
+  //false to get it to shut up.
+  //bool printStuff = true;
+  bool printStuff = false;
+  a_geoserv  = shared_ptr<GeometryService<2> >
+    (new GeometryService<2>(impfunc, origin,
+                            a_dx, domain, a_grids,
+                            geomGhost, printStuff));
+  pout() << "done with creating geometry service" << endl;
 }
 
 //=================================================

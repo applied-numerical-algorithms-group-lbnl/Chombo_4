@@ -177,15 +177,35 @@ public:
     CH_TIME("EBLevelBoxData::exchange(copier)");
     if(a_printStuff)
     {
-      Chombo4::pout() << "entering EBLevelBoxData::exchange" << endl;
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: defining host data" << endl;
     }
 
     host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: copying to host" << endl;
+    }
     copyToHost(hostdata, *this);
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: doing host data exchange" << endl;
+    }
     hostdata.exchange(a_printStuff);
 
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
+      CH4_SPMD::barrier();
+      Chombo4::pout() << "EBLevelBoxData::exchange: copying to device" << endl;
+    }
     copyToDevice(*this, hostdata);
 
     if(a_printStuff)
@@ -584,19 +604,19 @@ writeEBLevelHDF5(const string& a_filename,
       }
     }
   }
-  Vector<string> names(NUMCOMPS+1);
+  std::vector<string> names(NUMCOMPS+1);
   for(unsigned int icomp = 0; icomp < NUMCOMPS; icomp++)
   {
     names[icomp] = string("var_") + std::to_string(icomp);
   }
   names[NUMCOMPS] = string("fraction-0");
 
-  Vector<DisjointBoxLayout>     vecgrids(1, grids);
-  Vector<LevelData<FArrayBox> *> vecdata(1, &hostfabs);
+  std::vector<DisjointBoxLayout>     vecgrids(1, grids);
+  std::vector<LevelData<FArrayBox> *> vecdata(1, &hostfabs);
   int numlev = 1;
   
   WriteAMRHierarchyHDF5(a_filename, vecgrids, vecdata, names, a_domain,
-                        a_dx, a_dt, a_time, Vector<int>(1,2), numlev);
+                        a_dx, a_dt, a_time, std::vector<int>(1,2), numlev);
 #else
     printf("hdf5 not enabled\n");
 #endif

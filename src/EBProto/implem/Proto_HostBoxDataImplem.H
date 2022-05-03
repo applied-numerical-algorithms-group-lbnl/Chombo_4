@@ -83,8 +83,8 @@ namespace Proto
   template <class T, unsigned int C>
   T& HostBoxData<T,C>::operator()(const Point& a_pt, unsigned int a_c)
   {
-    unsigned long long int index = m_box.index(a_pt);
-    unsigned long long int vsize = m_box.size();
+    int index = m_box.index(a_pt);
+    int vsize = m_box.size();
     return m_rawPtr[a_c*vsize + index];
   }
 
@@ -92,8 +92,8 @@ namespace Proto
   template <class T, unsigned int C>
   const T& HostBoxData<T,C>::operator()(const Point& a_pt, unsigned int a_c) const
   {
-    unsigned long long int index = m_box.index(a_pt);
-    unsigned long long int vsize = m_box.size();
+    int index = m_box.index(a_pt);
+    int vsize = m_box.size();
     return m_rawPtr[a_c*vsize + index];
   }
 }

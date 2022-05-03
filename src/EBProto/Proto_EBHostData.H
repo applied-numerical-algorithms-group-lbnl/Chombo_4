@@ -203,7 +203,7 @@ namespace Proto
                                  bool a_printStuff = false) const
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      size_t retval = 2*sizeof(unsigned long); //regsize and irregsize
+      size_t retval = 2*sizeof(size_t); //regsize and irregsize
       size_t regsize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t irrsize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
       size_t sumsize = regsize + irrsize;
@@ -212,6 +212,7 @@ namespace Proto
       
     }
     virtual void  linearIn(void*                  a_buf,
+                           const size_t a_expectedCharSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
                            unsigned int           a_numcomps,
@@ -220,63 +221,122 @@ namespace Proto
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
       if(a_printStuff)
       {
-        Chombo4::pout() << "in ebhostdata::linearin" << endl;
+        Chombo4::pout() << "EBHostData::linearIn: entering for box "<< a_bx << endl;
       }
-      char* charbuf = (char*)a_buf;
-      unsigned long* longbuf = (unsigned long*)(charbuf);
-      unsigned long regSize = *longbuf;
-      longbuf++;
-      unsigned long irrSize = *longbuf;
-      longbuf++;
+      size_t charsiz = 0;
+      char*  charbuf = (char*)a_buf;
+      size_t* regSizePtr = (size_t*)(charbuf);
+      size_t  regSize = *regSizePtr;
+
+      charbuf  += sizeof(size_t);
+      charsiz  += sizeof(size_t);
+
+      size_t* irrSizePtr = (size_t*)charbuf;
+      size_t  irrSize = *irrSizePtr;
+
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
       
       if(a_printStuff)
       {
-        Chombo4::pout() << "ebhostdata::linearin: regSize = " << regSize << endl;
-        Chombo4::pout() << "ebhostdata::linearin: irrSize = " << irrSize << endl;
+        size_t totSize = regSize + irrSize + 2*sizeof(size_t);
+        Chombo4::pout() << "EBHostData::linearIn: totSize = " << totSize << endl;
+        if(totSize != a_expectedCharSize)
+        {
+          Chombo4::pout() << "EBHostData::linearIn: WARNING: "
+                          << "expectedCharSize = " << a_expectedCharSize
+                          << ", regSize = " << regSize 
+                          << ", irrSize = " << irrSize 
+                          << ", totSize = " << totSize << endl;
+        }
       }
       
-      charbuf = (char*) longbuf;
-      m_regData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t expectedCharSize = regSize; 
+      m_regData.linearIn(charbuf,   regSize, a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += regSize;
+      charsiz += regSize;
       if(a_printStuff)
       {
-        Chombo4::pout() << "going into irregdata linearin" << endl;
+        Chombo4::pout() << "EBHostData::linearIn:going into IrregData::linearIn" << endl;
       }
-      m_irrData.linearIn(charbuf,   a_bx, a_startcomp, a_numcomps, a_printStuff);
+
+      expectedCharSize = irrSize; 
+      m_irrData.linearIn(charbuf, expectedCharSize,  a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += irrSize;
+      charsiz += irrSize;
+
       if(a_printStuff)
       {
-        Chombo4::pout() << "leaving ebhostdata linearin" << endl;
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "EBHostData::linearIn:WARNING:"
+            << "  charsiz  = " << charsiz 
+            << ", expected = " << a_expectedCharSize << endl;
+        }     
+        Chombo4::pout() << "EBHostData::linearIn:leaving" << endl;
       }
 
     }
     virtual void linearOut(void*               a_buf,
+                           const size_t a_expectedCharSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,
                            bool a_printStuff = false) const
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      char* charbuf = (char*)a_buf;
-      unsigned long regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
-      unsigned long irrSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
-      unsigned long* longbuf = (unsigned long*)(charbuf);
-      *longbuf = regSize;
-      longbuf++;
-      *longbuf = irrSize;
-      longbuf++;
-      charbuf = (char*) longbuf;
       if(a_printStuff)
       {
-        Chombo4::pout() << "ebhostdata::linearOut: regSize = " << regSize << endl;
-        Chombo4::pout() << "ebhostdata::linearOut: irrSize = " << irrSize << endl;
+        Chombo4::pout() << "EBHostData::linearOut:entering for box " << a_bx << endl;
       }
+      size_t regSize = m_regData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t irrSize = m_irrData.charsize(a_bx, a_startcomp, a_numcomps, a_printStuff);
+
+      if(a_printStuff)
+      {
+        size_t totSize = regSize + irrSize + 2*sizeof(size_t);
+        Chombo4::pout() << "EBHostData::linearOut: regSize = " << regSize << endl;
+        Chombo4::pout() << "EBHostData::linearOut: irrSize = " << irrSize << endl;
+        Chombo4::pout() << "EBHostData::linearOut: totSize = " << totSize << endl;
+        if(totSize != a_expectedCharSize)
+        {
+          Chombo4::pout() << "EBHostData::linearOut: WARNING: "
+            << "expectedCharSize = "  << a_expectedCharSize 
+            << ", actual tot size  = " << totSize << endl;
+        }
+      }
+      char*  charbuf = (char*)(a_buf);
+      size_t charsiz = 0;
       
-      m_regData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      size_t* regSizePtr = (size_t*)(charbuf);
+      *regSizePtr = regSize;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+      size_t* irrSizePtr = (size_t*)(charbuf);
+      *irrSizePtr = irrSize;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+      size_t expectedCharSize = regSize; 
+      m_regData.linearOut(charbuf,  expectedCharSize, a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += regSize;
+      charsiz += regSize;
       
-      m_irrData.linearOut(charbuf,  a_bx, a_startcomp, a_numcomps, a_printStuff);
+      expectedCharSize = irrSize; 
+      m_irrData.linearOut(charbuf, expectedCharSize,  a_bx, a_startcomp, a_numcomps, a_printStuff);
       charbuf += irrSize;
+      charsiz += irrSize;
+      if(a_printStuff)
+      {
+        if(charsiz != a_expectedCharSize)
+        {
+          Chombo4::pout() << "EBHostData::linearOut: WARNING: "
+            << "expectedCharSize = "  << a_expectedCharSize 
+            << ", actual char size = "  << charsiz << endl;
+        }
+        Chombo4::pout() << "EBHostData::linearOut: leaving" << endl;
+      }
     }
     ///
     static int preAllocatable()

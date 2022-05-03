@@ -56,6 +56,12 @@ ProtoCh::getBox(const ::Proto::Box & a_bx)
   return Box(ivlo, ivhi);
 }
 
+Box
+ProtoCh::getChomboBox(const ::Proto::Box & a_bx)
+{
+  return ProtoCh::getBox(a_bx);
+}
+
 
 #include "Chombo_NamespaceFooter.H"
 

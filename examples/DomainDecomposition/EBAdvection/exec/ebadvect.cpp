@@ -5,7 +5,6 @@
 
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_LevelData.H"
 #include "Chombo_BaseFab.H"
 
 #include "Chombo_ParmParse.H"
@@ -186,11 +185,11 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
   // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::Box> boxes;
+  std::vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, a_maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, a_maxGrid, blockfactor);
   
-  Vector<int> procs;
+  std::vector<int> procs;
 
   a_dx = 1.0/a_nx;
   LoadBalance(procs, boxes);

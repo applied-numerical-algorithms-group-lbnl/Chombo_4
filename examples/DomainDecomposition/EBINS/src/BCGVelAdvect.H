@@ -28,7 +28,7 @@ public:
                const Real                             & a_viscosity,
                const EBIBC                            & a_ebibc,
                const IntVect                          & a_nghost,
-               bool a_eulerCalc)
+               bool a_eulerCalc, bool a_printStuff = false)
   :EBAdvection(a_brit,
                a_geoserv,   
                a_veloCell,  
@@ -36,7 +36,8 @@ public:
                a_domain,    
                a_dx,        
                a_ebibc,    
-               a_nghost)
+               a_nghost,
+               a_printStuff)
   {
     m_macproj    = a_macproj;
     m_helmholtz  = a_helmholtz;

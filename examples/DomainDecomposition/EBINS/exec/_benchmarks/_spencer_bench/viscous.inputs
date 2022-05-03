@@ -1,5 +1,5 @@
 #eb benchmark
-mac_proj.direct_to_bottom_solve = false
+mac_proj.direct_to_bottom_solve = true
 
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
@@ -26,7 +26,7 @@ species_inflow_value_2 = 0
 nx=       64
 use_stokes_dt = true
 #max number of time steps
-max_step =    5
+max_step =    25
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
@@ -55,13 +55,13 @@ covered_value = 0.0
 
 # 0 euler, 1 CN, 2 TGA	
 parabolic_solver = 0
-viscosity = 0.1
+viscosity = 0.001
 ## -1 all reg, 1 regular, 2 sphere
 #all regular geometry
 #which_geom = -1
 
-num_smooth = 8
-use_w_cycle = true
+num_smooth = 4
+use_w_cycle = false
 #
 ##sphere
 which_geom = 0 
@@ -78,7 +78,7 @@ geom_cen = 0.5
 #geom_cen = 0.0 0.1 0.0
 
 
-do_lazy_relax =  false
+do_lazy_relax =  true
 
 one_exchange_per_relax = false
 inside_regular = false

@@ -23,7 +23,7 @@
 
 #include <string>
 #include "Chombo_REAL.H"
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_MayDay.H"
 
 
@@ -76,7 +76,7 @@ namespace CH4_SPMD
   void barrier(void);
 
   template <class T>
-  int linearSize(const T& inputT)
+  size_t linearSize(const T& inputT)
   {
     return inputT.linearSize();
   }
@@ -93,10 +93,79 @@ namespace CH4_SPMD
     inputT.linearOut(a_outBuf);
   }
 
+  /// int specialization
+  template < > inline
+  size_t linearSize(const int& inputT)
+  {
+    return sizeof(int);
+  }
+
+  template < > inline
+  void linearIn(int& a_outputT, const void* const a_inBuf)
+  {
+    const int* intbuf = (const int *) a_inBuf;
+    a_outputT = *intbuf;
+  }
+
+  template < > inline
+  void linearOut(void* const a_outBuf, const int& a_input)
+  {
+    int* intbuf = (int*)a_outBuf;
+    *intbuf = a_input;
+  }
+  
+//std::vector<T> specialization of linearSize
+  template <class T>
+  size_t linearListSize(const std::vector<T>& a_input, bool a_printStuff);
+
+//std::vector<T> specialization of linearIn
+  template <class T>
+  void linearListIn(std::vector<T>& a_outputT,
+                    size_t a_expectedSize,
+                    const void* const a_inBuf,
+                    bool a_printStuff);
+
+//std::vector<T> specialization of linearOut
+  template <class T>
+  void linearListOut(void* const a_outBuf,
+                     size_t a_expectedSize,
+                     const std::vector<T>& a_inputT,
+                     bool a_printStuff);
+  
+  /// vector<int> specialization
+  template < > inline 
+  size_t linearSize(const std::vector<int>& inputT)
+  {
+    return linearListSize(inputT, false);
+  }
+
+  template < > inline
+  void linearIn(std::vector<int>& a_outputT, const void* const a_inBuf)
+  {
+    size_t* vecsizeptr = (size_t *) (a_inBuf);
+    size_t vecsize = *vecsizeptr;
+    size_t expected = (vecsize+1)*sizeof(size_t) + vecsize*sizeof(int);
+
+
+    //gotta turn that one off
+    bool printStuff = true;
+    return linearListIn(a_outputT, expected, a_inBuf, printStuff);
+  }
+
+  template < > inline
+  void linearOut(void* const a_outBuf, const std::vector<int>& a_input)
+  {
+    //gotta turn that one off
+    bool printStuff = true;
+    
+    size_t expected = linearListSize(a_input, printStuff);
+
+    return linearListOut(a_outBuf, expected, a_input, printStuff);
+  }
 #ifdef CH_MPI
 ///gather from multiple processes
 /**
-   Gathers a_input of every process onto Vector<T> a_outVec on process
+   Gathers a_input of every process onto std::vector<T> a_outVec on process
    number a_dest.  It is an error if a_dest < 0 or a_dest >= numProc().
    a_outVec is numProc() long with the value of a_input on every
    process in its elements.\\
@@ -110,7 +179,7 @@ namespace CH4_SPMD
 
 */
   template <class T>
-  void gather(Vector<T>& a_outVec, const T& a_input, int a_dest);
+  void gather(std::vector<T>& a_outVec, const T& a_input, int a_dest, bool a_printStuff = false);
 
 #endif
 
@@ -125,163 +194,10 @@ namespace CH4_SPMD
    void linearIn<T>(T& a_outputT, const void* const inBuf); \\
    void linearOut<T>(void* a_outBuf, const T& inputT); \\ */
   template <class T>
-  void broadcast(T& a_inAndOut,  int a_src);
+  void broadcast(T& a_inAndOut,  int a_src, bool a_printStuff = false);
 
-//u l l specialization of linearSize
-  template < >
-  int linearSize(const long long& a_input);
 
-//u l l specialization of linearIn
-  template < >
-  void linearIn(long long& a_outputT, const void* const inBuf);
 
-//unsigned long long specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const long long& a_inputT);
-
-//integer specialization of linearSize
-  template < >
-  int linearSize(const int& a_input);
-
-//u l l specialization of linearSize
-  template < >
-  int linearSize(const unsigned long long& a_input);
-
-//integer specialization of linearIn
-  template < >
-  void linearIn(int& a_outputT, const void* const inBuf);
-
-//u l l specialization of linearIn
-  template < >
-  void linearIn(unsigned long long& a_outputT, const void* const inBuf);
-
-//integer specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const int& a_inputT);
-
-//unsigned long long specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const unsigned long long& a_inputT);
-
-//long integer specialization of linearSize
-  template < >
-  int linearSize(const long& a_input);
-
-//long integer specialization of linearIn
-  template < >
-  void linearIn(long& a_outputT, const void* const inBuf);
-
-//long integer specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const long& a_inputT);
-
-//unsigned long integer specialization of linearSize
-  template < >
-  int linearSize(const unsigned long& a_input);
-
-//unsigned long integer specialization of linearIn
-  template < >
-  void linearIn(unsigned long& a_outputT, const void* const inBuf);
-
-//unsigned long integer specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const unsigned long& a_inputT);
-
-//Real specialization of linearSize
-  template < >
-  int linearSize(const float& a_input);
-
-  template < >
-  int linearSize(const double& a_input);
-
-//Real specialization of linearIn
-  template < >
-  void linearIn(float& a_outputT, const void* const a_inBuf);
-
-  template < >
-  void linearIn(double& a_outputT, const void* const a_inBuf);
-
-//Real specialization of linearOut
-  template < >
-  void linearOut(void* const a_outBuf, const float& a_inputT);
-
-  template < >
-  void linearOut(void* const a_outBuf, const double& a_inputT);
-
-// std::string specialization.
-  template <>
-  int linearSize(const std::string& a_input);
-  template <>
-  void linearIn(std::string& a_outputT, const void* const a_inBuf);
-  template <>
-  void linearOut(void* const a_outBuf, const std::string& a_inputT);
-
-//Vector<int>  specialization
-  template < >
-  int linearSize(const Vector<int>& a_input);
-  template < >
-  void linearIn(Vector<int>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<int>& a_inputT);
-
-//Vector<unsigned long long>  specialization
-  template < >
-  int linearSize(const Vector<unsigned long long>& a_input);
-  template < >
-  void linearIn(Vector<unsigned long long>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<unsigned long long>& a_inputT);
-
-//Vector<long>  specialization
-  template < >
-  int linearSize(const Vector<long>& a_input);
-  template < >
-  void linearIn(Vector<long>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<long>& a_inputT);
-
-//Vector<Real>  specialization
-  template < >
-  int linearSize(const Vector<float>& a_input);
-  template < >
-  void linearIn(Vector<float>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<float>& a_inputT);
-
-  template < >
-  int linearSize(const Vector<double>& a_input);
-  template < >
-  void linearIn(Vector<double>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<double>& a_inputT);
-
-//Vector<std::string>  specialization
-  template < >
-  int linearSize(const Vector<std::string>& a_input);
-  template < >
-  void linearIn(Vector<std::string>& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<std::string>& a_inputT);
-
-//Vector<Vector<int> > specialization
-  template < >
-  int linearSize(const Vector<Vector<int> >& a_input);
-  template < >
-  void linearIn(Vector<Vector<int> >& a_outputT, const void* const inBuf);
-  template < >
-  void linearOut(void* const a_outBuf, const Vector<Vector<int> >& a_inputT);
-
-//Vector<T> specialization of linearSize
-  template <class T>
-  int linearListSize(const Vector<T>& a_input);
-
-//Vector<T> specialization of linearIn
-  template <class T>
-  void linearListIn(Vector<T>& a_outputT, const void* const a_inBuf);
-
-//Vector<T> specialization of linearOut
-  template <class T>
-  void linearListOut(void* const a_outBuf, const Vector<T>& a_inputT);
 
   class SerialTask
   {

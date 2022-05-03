@@ -11,7 +11,7 @@
 #ifndef _Chombo_DATAITERATOR_H_
 #define _Chombo_DATAITERATOR_H_
 
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_DataIndex.H"
 #include "Chombo_BoxLayout.H"
 #include "Chombo_SPMD.H"
@@ -101,18 +101,18 @@ public:
   void clearPeak();
 
   ///gets current time data
-  Vector<unsigned long long> getTime() const
+  std::vector<unsigned long long> getTime() const
   {
     return m_time;
   }
 
   ///gets current memory data
-  Vector<unsigned long long> getPeak() const
+  std::vector<unsigned long long> getPeak() const
   {
     return m_peak;
   }
 
-  Vector<Box> getBoxes()
+  std::vector<Box> getBoxes()
   {
     return m_layout.boxArray();
   }
@@ -160,17 +160,17 @@ private:
   DataIterator(const BoxLayout& boxlayout, const int* layoutID);
 
   BoxLayout  m_layout;
-  //  RefCountedPtr<Vector<DataIndex> > m_indices;
+  //  RefCountedPtr<std::vector<DataIndex> > m_indices;
 protected:
-  const Vector<DataIndex>* m_indices;
+  const std::vector<DataIndex>* m_indices;
 
   int m_current;
 
   void defineTime();
   void definePeak();
 
-  Vector<unsigned long long> m_time;
-  Vector<unsigned long long> m_peak;
+  std::vector<unsigned long long> m_time;
+  std::vector<unsigned long long> m_peak;
 
   bool m_timeEnabled;
   bool m_timeDefined;
@@ -233,21 +233,21 @@ public:
   }
 
   ///load balancing function.  no-op in serial
-  Vector<unsigned long long> getTime() const
+  std::vector<unsigned long long> getTime() const
   {
     unsigned long long val = 1;
-    Vector<unsigned long long> retval(m_layout.size(), val);
+    std::vector<unsigned long long> retval(m_layout.size(), val);
     return retval;
   }
 
-  Vector<unsigned long long> getPeak() const
+  std::vector<unsigned long long> getPeak() const
   {
     unsigned long long val = 1;
-    Vector<unsigned long long> retval(m_layout.size(), val);
+    std::vector<unsigned long long> retval(m_layout.size(), val);
     return retval;
   }
 
-  Vector<Box> getBoxes() const
+  std::vector<Box> getBoxes() const
   {
     return m_layout.boxArray();
   }

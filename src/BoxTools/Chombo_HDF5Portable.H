@@ -11,7 +11,7 @@
 #ifndef _Chombo_HDF5PORTABLE_H_
 #define _Chombo_HDF5PORTABLE_H_
 
-#include "Chombo_Vector.H"
+#include <vector>
 extern "C"
 {
 #ifdef CH_USE_HDF5
@@ -25,21 +25,21 @@ extern "C"
 #include "Chombo_Interval.H"
 #include "Chombo_NamespaceHeader.H"
 
-template <class T> void dataTypes(Vector<hid_t>& a_types,
+template <class T> void dataTypes(std::vector<hid_t>& a_types,
                                   const T&       a_dummySpecializationArg);
 
 template <class T> void dataSize(const T&        a_item,
-                                 Vector<int>&    a_sizes,
+                                 std::vector<int>&    a_sizes,
                                  const Box&      a_box,
                                  const Interval& a_comps);
 
 template <class T> void write(const T&        a_item,
-                              Vector<void*>&  a_allocatedBuffers,
+                              std::vector<void*>&  a_allocatedBuffers,
                               const Box&      a_box,
                               const Interval& a_comps);
 
 template <class T> void read(T&              a_item,
-                             Vector<void*>&  a_allocatedBuffers,
+                             std::vector<void*>&  a_allocatedBuffers,
                              const Box&      a_box,
                              const Interval& a_comps);
 

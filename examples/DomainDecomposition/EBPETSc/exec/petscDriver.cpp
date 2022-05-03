@@ -16,7 +16,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
-#include "Proto_DebugHooks.H"
+
 #include "DebugFunctions.H"
 #include "EBPetscSolver.H"
 #include <iomanip>
@@ -53,15 +53,15 @@ runTest(int a_argc, char* a_argv[])
   pp.get("R"         , R);         
   pp.get("coveredval", coveredval);         
 
-  pout() << "nx        = " << nx       << endl;
-  pout() << "maxGrid   = " << maxGrid  << endl;
-  pout() << "x0        = " << x0       << endl;
-  pout() << "y0        = " << y0       << endl;
-  pout() << "z0        = " << z0       << endl;
-  pout() << "A         = " << A        << endl;
-  pout() << "B         = " << B        << endl;
-  pout() << "C         = " << C        << endl;
-  pout() << "R         = " << R        << endl;
+  Chombo4::pout() << "nx        = " << nx       << endl;
+  Chombo4::pout() << "maxGrid   = " << maxGrid  << endl;
+  Chombo4::pout() << "x0        = " << x0       << endl;
+  Chombo4::pout() << "y0        = " << y0       << endl;
+  Chombo4::pout() << "z0        = " << z0       << endl;
+  Chombo4::pout() << "A         = " << A        << endl;
+  Chombo4::pout() << "B         = " << B        << endl;
+  Chombo4::pout() << "C         = " << C        << endl;
+  Chombo4::pout() << "R         = " << R        << endl;
 
 
 
@@ -80,8 +80,8 @@ runTest(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  pout() << "making grids" << endl;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Chombo4::pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   Chombo4::DisjointBoxLayout grids = vecgrids[0];
@@ -99,12 +99,12 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
 //  Bx domainpr = getProtoBox(domain.domainBox());
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
 //  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids[0], geomGhost);
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
 
   vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
@@ -122,23 +122,23 @@ runTest(int a_argc, char* a_argv[])
   if(dombc == 0)
   {
     dombcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at domain" << endl;
+    Chombo4::pout() << "using Neumann BCs at domain" << endl;
   }
   else
   {
     dombcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at domain" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at domain" << endl;
   }
 
   if(ebbc == 0)
   {
     ebbcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at EB" << endl;
+    Chombo4::pout() << "using Neumann BCs at EB" << endl;
   }
   else
   {
     ebbcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at EB" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at EB" << endl;
   }
   string alldombc[2*DIM];
   for(int iface = 0; iface < 2*DIM; iface++)
@@ -146,7 +146,7 @@ runTest(int a_argc, char* a_argv[])
     alldombc[iface] = dombcname;
   }
   Chombo4::Box dombox = domain.domainBox();
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
+  auto graphs = geoserv->getGraphs(dombox);
 
   Real alpha, beta;
   pp.get("alpha", alpha);
@@ -154,12 +154,12 @@ runTest(int a_argc, char* a_argv[])
   EBPetscSolver<2> solver(geoserv, dictionary, graphs, grids, domain.domainBox(),
                           stenname, alldombc, ebbcname,
                           dx, alpha, beta, dataGhostPt);
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
 
-  pout() << "setting values" << endl;
+  Chombo4::pout() << "setting values" << endl;
   Chombo4::DataIterator dit = grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
@@ -173,18 +173,18 @@ runTest(int a_argc, char* a_argv[])
 
   EBMultigrid ebmg(dictionary, geoserv, alpha, beta, dx, grids,
                    stenname, dombcname, ebbcname, domain.domainBox(),
-                   dataGhostIV, false);
+                   dataGhostIV, string("testmg"), false);
 
   ebmg.residual(res, phi, rhs);
   Real errnorm = res.maxNorm(0);
   
-  pout() << "norm of computed residual =  " << errnorm << endl;
-  pout() << "writing to file " << endl;
+  Chombo4::pout() << "norm of computed residual =  " << errnorm << endl;
+  Chombo4::pout() << "writing to file " << endl;
 
   phi.writeToFileHDF5("phi.hdf5", 0.0);
   rhs.writeToFileHDF5("rhs.hdf5", 0.0);
   res.writeToFileHDF5("res.hdf5", 0.0);
-  pout() << "exiting " << endl;
+  Chombo4::pout() << "exiting " << endl;
   return 0;
 }
 
@@ -208,7 +208,7 @@ int main(int a_argc, char* a_argv[])
 
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   ierr = PetscFinalize(); CHKERRQ(ierr); 
   CH_TIMER_REPORT();
   return 0;

@@ -31,8 +31,7 @@ EBDarcy(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
   m_permeability  = a_permeability;
   m_diffusivity   = a_diffusivity ;
   m_graphs = m_geoserv->getGraphs(m_domain);
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost*IntVect::Unit);
-  m_copyCopier.define(m_grids, m_grids, m_nghost*IntVect::Unit);
+
   
   m_velo     = shared_ptr<EBLevelBoxData<CELL, DIM> >
     (new EBLevelBoxData<CELL, DIM>(m_grids, m_nghost, m_graphs));
@@ -195,7 +194,7 @@ advanceScalar(Real a_dt,
 {
   auto& scal = *m_scal;
   CH_TIME("EBDarcy::advanceScalar");
-  scal.exchange(m_exchangeCopier);
+  scal.exchange();
   //A strange user interface, I grant you.  I did not think I would need this back door
   pout() << "get advection term divuphi" << endl;
   m_advectOp->hybridDivergence(scal, a_dt);

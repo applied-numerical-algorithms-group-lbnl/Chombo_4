@@ -26,7 +26,8 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const Box                              & a_domain,
             const Real                             & a_dx,
             const EBIBC                            & a_ebibc,
-            const IntVect                          & a_nghost):
+            const IntVect                          & a_nghost,
+            bool a_printStuff):
 m_ebibc(a_ebibc)
 {
   CH_TIME("EBAdvection::define");
@@ -41,6 +42,7 @@ m_ebibc(a_ebibc)
   defineData(a_geoserv);
   fillKappa( a_geoserv);
   registerStencils();
+  Chombo4::pout() << "EBAdvection::constructor leaving" << endl;
 }
 ////
 void  
@@ -76,7 +78,9 @@ fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(m_kappa[dit[ibox]], hostdat);
   }
+  Chombo4::pout() << "EBAdvection::fillkappa : about to exchange" << endl;
   m_kappa.exchange();
+  Chombo4::pout() << "EBAdvection::fillkappa : done with" << endl;
 }
 ////
 void  

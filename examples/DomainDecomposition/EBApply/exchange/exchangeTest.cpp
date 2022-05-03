@@ -88,8 +88,8 @@ runTest(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<DisjointBoxLayout> vecgrids;
-  pout() << "making grids" << endl;
+  std::vector<DisjointBoxLayout> vecgrids;
+  Chombo4::pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   DisjointBoxLayout grids = vecgrids[0];
@@ -107,7 +107,7 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
 //  Bx domainpr = getProtoBox(domain.domainBox());
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
@@ -119,12 +119,12 @@ runTest(int a_argc, char* a_argv[])
   Copier exchangeCopier;
   exchangeCopier.exchangeDefine(grids, dataGhostIV);
   {
-    pout() << "Single-variable  data" << endl;
+    Chombo4::pout() << "Single-variable  data" << endl;
     EBLevelBoxData<CELL, 1>  cellDat(grids, dataGhostIV, graphs);
     EBLevelFluxData<1>       fluxDat(grids, dataGhostIV, graphs);
     
     unsigned int numflops = 0;
-    pout() << "initializing valid data" << endl;
+    Chombo4::pout() << "initializing valid data" << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       auto& cellfab = cellDat[dit[ibox]];
@@ -145,9 +145,9 @@ runTest(int a_argc, char* a_argv[])
       }
     }
 
-    pout() << "calling exchange to fill ghost cells" << endl;
-    cellDat.exchange(exchangeCopier);
-    fluxDat.exchange(exchangeCopier);
+    Chombo4::pout() << "calling exchange to fill ghost cells" << endl;
+    cellDat.exchange();
+    fluxDat.exchange();
     Bx domainbx = ProtoCh::getProtoBox(domain.domainBox());
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
@@ -155,7 +155,7 @@ runTest(int a_argc, char* a_argv[])
       auto& fluxfab = fluxDat[dit[ibox]];
       Bx grid = cellfab.box();
       grid &= domainbx;
-      pout() << "checking cell   data" << endl;
+      Chombo4::pout() << "checking cell   data" << endl;
       ebforallInPlace_i(numflops, "checkSpot", checkSpot,  grid,
                         cellfab, blobCen, blobRad, dx);
       for(int idir = 0; idir < DIM; idir++)
@@ -168,22 +168,22 @@ runTest(int a_argc, char* a_argv[])
         xgrid &= domainbx;
         ygrid &= domainbx;
       
-        pout() << "checking x face data" << endl;
+        Chombo4::pout() << "checking x face data" << endl;
         ebforallInPlace_i(numflops, "checkSpot", checkSpot,  xgrid,
                           xfab, blobCen, blobRad, dx);
-        pout() << "checking y face data" << endl;
+        Chombo4::pout() << "checking y face data" << endl;
         ebforallInPlace_i(numflops, "checkSpot", checkSpot,  ygrid,
                           yfab, blobCen, blobRad, dx);
       }
     }
   }
   {
-    pout() << "DIM variables  data" << endl;
+    Chombo4::pout() << "DIM variables  data" << endl;
     EBLevelBoxData<CELL, DIM>  cellDat(grids, dataGhostIV, graphs);
     EBLevelFluxData<DIM>       fluxDat(grids, dataGhostIV, graphs);
     
     unsigned int numflops = 0;
-    pout() << "initializing valid data" << endl;
+    Chombo4::pout() << "initializing valid data" << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       auto& cellfab = cellDat[dit[ibox]];
@@ -204,9 +204,9 @@ runTest(int a_argc, char* a_argv[])
       }
     }
 
-    pout() << "calling exchange to fill ghost cells" << endl;
-    cellDat.exchange(exchangeCopier);
-    fluxDat.exchange(exchangeCopier);
+    Chombo4::pout() << "calling exchange to fill ghost cells" << endl;
+    cellDat.exchange();
+    fluxDat.exchange();
     Bx domainbx = ProtoCh::getProtoBox(domain.domainBox());
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
@@ -214,7 +214,7 @@ runTest(int a_argc, char* a_argv[])
       auto& fluxfab = fluxDat[dit[ibox]];
       Bx grid = cellfab.box();
       grid &= domainbx;
-      pout() << "checking cell   data" << endl;
+      Chombo4::pout() << "checking cell   data" << endl;
       ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  grid,
                         cellfab, blobCen, blobRad, dx);
       for(int idir = 0; idir < DIM; idir++)
@@ -227,10 +227,10 @@ runTest(int a_argc, char* a_argv[])
         xgrid &= domainbx;
         ygrid &= domainbx;
       
-        pout() << "checking x face data" << endl;
+        Chombo4::pout() << "checking x face data" << endl;
         ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  xgrid,
                           xfab, blobCen, blobRad, dx);
-        pout() << "checking y face data" << endl;
+        Chombo4::pout() << "checking y face data" << endl;
         ebforallInPlace_i(numflops, "checkSpotDIM", checkSpotDIM,  ygrid,
                           yfab, blobCen, blobRad, dx);
       }
@@ -245,7 +245,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
@@ -260,10 +260,10 @@ int main(int a_argc, char* a_argv[])
     Chombo4::runTest(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

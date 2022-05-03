@@ -30,7 +30,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   residual(m_res, a_phi, a_rhs, true);
   Real initres = m_res.maxNorm(0);
   int iter = 0;
-  pout() << "EBMultigrid: tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
+  pout() << "EBMultigrid::solve tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
   Real resnormold = resnorm;
   while((iter < a_maxIter) && (resnorm > a_tol*initres))
@@ -41,7 +41,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
            << setiosflags(ios::scientific);
 
     
-    pout() << "EBMultigrid: iter = " << iter << ", |resid| = " << resnorm;
+    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm;
     Real rate = 1;
     if((resnormold > 1.0e-12) && (iter > 0))
     {
@@ -60,7 +60,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
 
     iter++;
   }
-  pout() << "EBMultigrid: final     |resid| = " << resnorm << endl;
+  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << endl;
 }
 
 /****/
@@ -77,6 +77,10 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   if(a_doExchange)
   {
+    bool printStuff = false;
+    //begin debug
+    printStuff = true;
+    //end debug
     phi.exchange();
   }
   
@@ -161,7 +165,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             const string                            & a_ebbcname,
             const Box                               & a_domain,
             const IntVect                           & a_nghost,
-            string a_prefix):  EBMultigridLevel()
+            string a_prefix, bool a_printStuff):  EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
   m_prefix = a_prefix;
@@ -184,11 +188,19 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_nghost     = a_nghost;
   m_dictionary = a_dictionary;
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: defining internal data" << endl;
+  }
   m_graphs = a_geoserv->getGraphs(m_domain);
   m_resid.define(m_grids, m_nghost, m_graphs);
   m_kappa.define(m_grids, m_nghost, m_graphs);
   m_diagW.define(m_grids, m_nghost, m_graphs);
   
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: registering stencil" << endl;
+  }
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
@@ -196,22 +208,44 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
 
   m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: filling volume fraction holder" << endl;
+  }
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
-  fillKappa(a_geoserv);
+  fillKappa(a_geoserv, a_printStuff);
 
   if(!m_directToBottom)
   {
-    defineCoarserObjects(a_geoserv);
+    if(a_printStuff)
+    {
+      pout() << "EBPoissonOp constructor: making coarser objects" << endl;
+    }
+    defineCoarserObjects(a_geoserv, a_printStuff);
   }
   if(!m_hasCoarser || m_directToBottom)
   {
-    defineBottomSolvers(a_geoserv);
+    if(a_printStuff)
+    {
+      pout() << "EBPoissonOp constructor: defining bottom solvers" << endl;
+    }
+    defineBottomSolvers(a_geoserv, a_printStuff);
+  }
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: waiting for other procs to catch up" << endl;
+  }
+  CH4_SPMD::barrier();
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp constructor: leaving" << endl;
   }
 }
 /***/
 void
 EBPoissonOp::
-defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
+defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
+                     bool a_printStuff)
 {
   PR_TIME("sgmglevel::defineCoarser");
 
@@ -232,7 +266,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
     }
     
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
-    m_coarser->define(*this, a_geoserv);
+    m_coarser->define(*this, a_geoserv, a_printStuff);
 
     auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
@@ -243,7 +277,8 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv)
 void
 EBPoissonOp::
 define(const EBMultigridLevel            & a_finerLevel,
-       shared_ptr<GeometryService<2> >   & a_geoserv)
+       shared_ptr<GeometryService<2> >   & a_geoserv,
+       bool a_printStuff)
 {
   PR_TIME("sgmglevel::constructor");
   m_depth = a_finerLevel.m_depth + 1;
@@ -278,22 +313,27 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
-  fillKappa(a_geoserv);
+  fillKappa(a_geoserv, false);
 
   if(!m_directToBottom)
   {
-    defineCoarserObjects(a_geoserv);
+    defineCoarserObjects(a_geoserv, a_printStuff);
   }
   if(!m_hasCoarser || m_directToBottom)
   {
-    defineBottomSolvers(a_geoserv);
+    defineBottomSolvers(a_geoserv, a_printStuff);
   }
 }
 
 void  
 EBPoissonOp::
-defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
+defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv,
+                    bool a_printStuff)
 {
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::defineBottomSolver: defining relax solver" << endl;
+  }
   m_relaxSolver = shared_ptr<EBRelaxSolver>(new EBRelaxSolver(this, m_grids, m_graphs, m_nghost));
 #ifdef CH_USE_PETSC
 
@@ -301,13 +341,17 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
   string which_solver("relax");
   pp.query("bottom_solver", which_solver);
 
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::defineBottomSolver: defining petsc solver" << endl;
+  }
   if(which_solver == string("petsc"))
   {
     Point pghost= ProtoCh::getPoint(m_nghost);
     EBPetscSolver<2>* ptrd = 
       (new EBPetscSolver<2>(a_geoserv, m_dictionary, m_graphs, m_grids, m_domain,
                             m_stenname, m_dombcname, m_ebbcname,
-                            m_dx, m_alpha, m_beta, pghost));
+                            m_dx, m_alpha, m_beta, pghost, a_printStuff));
     m_petscSolver = shared_ptr<EBPetscSolver<2> >(ptrd);
   }
 #endif    
@@ -315,9 +359,14 @@ defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv)
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
 void  
 EBPoissonOp::
-fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
+fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
+          bool a_printStuff)
 {
   CH_TIME("EBPoissonOp::fillkappa");
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa looping through boxes to fill valid data" << endl;
+  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -341,7 +390,16 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv)
     ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
     ideb++;
   }
-  m_kappa.exchange();
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa: calling exchange to fill ghost data" << endl;
+  }
+  m_kappa.exchange(a_printStuff);
+  if(a_printStuff)
+  {
+    pout() << "EBPoissonOp::fillKappa: waiting for other procs to catch up" << endl;
+  }
+  CH4_SPMD::barrier();
 }
 /****/
 void

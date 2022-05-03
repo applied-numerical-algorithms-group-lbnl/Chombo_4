@@ -136,7 +136,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(Vector<Chombo4::DisjointBoxLayout>& a_grids,
+void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
                     const Chombo4::Box        & a_finestDomain,
                     Real             & a_dx,
                     Real             & a_geomCen,
@@ -199,7 +199,7 @@ runProjection(int a_argc, char* a_argv[])
 //  EBMultigrid::s_numSmoothDown = numSmooth;
 
   Real dx = 1.0/nx;
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
 
   Chombo4::pout() << "making grids" << endl;
   IntVect domLo = IntVect::Zero;

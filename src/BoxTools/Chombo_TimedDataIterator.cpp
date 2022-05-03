@@ -82,7 +82,7 @@ void TimedDataIterator::mergeTime()
 {
 #ifdef CH_MPI
   int count = m_time.size();
-  Vector<unsigned long long> tmp(count);
+  std::vector<unsigned long long> tmp(count);
   MPI_Allreduce(&(m_time[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, CH4_SPMD::Chombo_MPI::comm);
   m_time = tmp;
 #endif

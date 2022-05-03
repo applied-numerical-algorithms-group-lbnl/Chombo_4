@@ -3,12 +3,13 @@
     - cori
 
 .common_script: &label
+  - module swap PrgEnv-intel PrgEnv-gnu
   - module load cmake
-  - module load gcc
+  - module swap gcc gcc/8.3.0
   - export SLURM_CPU_BIND="cores"
   
 variables:
-  SCHEDULER_PARAMETERS:  "-C haswell -q regular -n 1 -t 00:05:00"
+  SCHEDULER_PARAMETERS:  "-C knl -q regular -n 1 -t 00:05:00"
 
 stages:
   - build
@@ -20,7 +21,8 @@ configure_mpi:
       - .ci-runner
     before_script:
       - *label
-      - module load openmpi
+      - module load impi
+      - module load cray-hdf5-parallel
     script:
       - cmake -S . -B mpi_build -DENABLE_MPI=ON
       - cmake --build mpi_build --parallel
@@ -34,6 +36,7 @@ configure_cuda:
       - .ci-runner
     before_script:
       - *label
+      - module load cray-hdf5
       - module load cgpu
       - module load cuda
     script:
@@ -70,4 +73,3 @@ cuda_execute:
     script:
       - cd cuda_build
       - make test
-

@@ -38,8 +38,9 @@ public:
         ParabolicSolverType                      a_solver,
         EBIBC                                    a_ibc,
         unsigned int                             a_num_species = 0,
-        vector<Real> a_diffusionCoeffs = vector<Real>());
-
+        vector<Real> a_diffusionCoeffs = vector<Real>(),
+        bool a_printStuff= false);
+    
   void readDataFromCheckpoint(Real         & a_curTime,
                               unsigned int & a_curStep,
                               const string & a_checkpointName);
@@ -122,7 +123,8 @@ private:
   void  defineInternals(EBIBC                a_ibc,
                         unsigned int         a_num_species,
                         Real                 a_viscosity,
-                        ParabolicSolverType  a_solver);
+                        ParabolicSolverType  a_solver,
+                        bool a_printStuff);
   
   void projectVelocityAndCorrectPressure(Real a_dt,
                                          Real a_tol,                         

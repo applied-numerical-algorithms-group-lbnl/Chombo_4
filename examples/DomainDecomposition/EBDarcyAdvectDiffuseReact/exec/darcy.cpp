@@ -5,7 +5,7 @@
 
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_LevelData.H"
+
 #include "Chombo_BaseFab.H"
 
 #include "Chombo_ParmParse.H"
@@ -49,21 +49,21 @@ runNavierStokes()
   EBMultigridLevel::s_numSmoothUp   = numSmooth;
   EBMultigridLevel::s_numSmoothDown = numSmooth;
   EBMultigridLevel::s_useWCycle     = useWCycle;
-  pout() << "max_step        = " << max_step        << endl;
-  pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
+  Chombo4::pout() << "max_step        = " << max_step        << endl;
+  Chombo4::pout() << "max_time        = " << max_time        << endl;
+  Chombo4::pout() << "output interval = " << outputInterval  << endl;
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   pp.get("nx"        , nx);
 
-  pout() << "nx       = " << nx     << endl;
+  Chombo4::pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  Vector<Chombo4::Box>               vecdomains;
-  Vector<Real> vecdx;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  std::vector<Chombo4::Box>               vecdomains;
+  std::vector<Real> vecdx;
   int whichGeom;
 
   Real geomCen, geomRad;
@@ -73,12 +73,12 @@ runNavierStokes()
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
   
   
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomains, vecdx, dataGhostPt));
 
 
-  pout() << "inititializing data"   << endl;
+  Chombo4::pout() << "inititializing data"   << endl;
   
   Chombo4::Box domain              = vecdomains[0];
   Chombo4::DisjointBoxLayout grids =   vecgrids[0];
@@ -104,39 +104,39 @@ runNavierStokes()
   if(whichSolver == 0)
   {
     paraSolver = EBDarcy::BackwardEuler;
-    pout() << "using backward Euler for parabolic solver"  << endl;
+    Chombo4::pout() << "using backward Euler for parabolic solver"  << endl;
   }
   else if(whichSolver == 1)
   {
     paraSolver = EBDarcy::CrankNicolson;
-    pout() << "using Crank Nicolson for parabolic solver"  << endl;
+    Chombo4::pout() << "using Crank Nicolson for parabolic solver"  << endl;
   }
   else if(whichSolver == 2)
   {
     paraSolver = EBDarcy::TGA;
-    pout() << "using TGA for parabolic solver"  << endl;
+    Chombo4::pout() << "using TGA for parabolic solver"  << endl;
   }
   else
   {
     Chombo4::MayDay::Error("unrecognized solver type input");
   }
 
-  pout() << "=============================================="  << endl;
+  Chombo4::pout() << "=============================================="  << endl;
 
-  pout() << "tolerance       = " << tol          << endl;
-  pout() << "maxIter         = " << maxIter      << endl;
-  pout() << "blob cen        = " << blobCen      << endl;
-  pout() << "geom cen        = " << geomCen      << endl;
-  pout() << "max_step        = " << max_step     << endl;
-  pout() << "max_time        = " << max_time     << endl;
-  pout() << "viscosity       = " << viscosity    << endl;
-  pout() << "diffusivity     = " << diffusivity  << endl;
-  pout() << "pereability     = " << permeability << endl;
-  pout() << "=============================================="  << endl;
+  Chombo4::pout() << "tolerance       = " << tol          << endl;
+  Chombo4::pout() << "maxIter         = " << maxIter      << endl;
+  Chombo4::pout() << "blob cen        = " << blobCen      << endl;
+  Chombo4::pout() << "geom cen        = " << geomCen      << endl;
+  Chombo4::pout() << "max_step        = " << max_step     << endl;
+  Chombo4::pout() << "max_time        = " << max_time     << endl;
+  Chombo4::pout() << "viscosity       = " << viscosity    << endl;
+  Chombo4::pout() << "diffusivity     = " << diffusivity  << endl;
+  Chombo4::pout() << "pereability     = " << permeability << endl;
+  Chombo4::pout() << "=============================================="  << endl;
 
   
-  pout() << "initializing solver " << endl;
-  pout() << "inflow outflow xdirection, noflow all other directions" << endl;
+  Chombo4::pout() << "initializing solver " << endl;
+  Chombo4::pout() << "inflow outflow xdirection, noflow all other directions" << endl;
   //Here I am creating an EBIBC to show the solvers what the boundary conditions are.
   //This application forces this particular bit of the problem so this should not be
   //part of the public interface.   It does allow for a lot of code reuse, however,
@@ -161,18 +161,18 @@ runNavierStokes()
                  dataGhostIV, paraSolver, ibcs);
 
 
- auto &  velo = *(solver.m_velo);
+// auto &  velo = *(solver.m_velo);
  auto &  scal = *(solver.m_scal);
 
  
-  pout() << "initializing data " << endl;
+  Chombo4::pout() << "initializing data " << endl;
   initializeData(scal, grids, dx, geomCen, geomRad, blobCen, blobRad);
 
   Real fixedDt = -1.0;//signals varaible dt
 
-  pout() << "starting      EBDarcy::run" << endl; 
+  Chombo4::pout() << "starting      EBDarcy::run" << endl; 
   solver.run(max_step, max_time, cfl, fixedDt, tol,   maxIter, outputInterval, coveredval);
-  pout() << "finished with EBDarcy::run" << endl; 
+  Chombo4::pout() << "finished with EBDarcy::run" << endl; 
   return 0;
 }
 
@@ -182,7 +182,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("navier.time.table");
@@ -197,10 +197,10 @@ int main(int a_argc, char* a_argv[])
     runNavierStokes();
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

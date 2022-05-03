@@ -5,7 +5,7 @@
 
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_LevelData.H"
+
 #include "Chombo_BaseFab.H"
 
 #include "Chombo_ParmParse.H"
@@ -24,6 +24,7 @@
 
 using Proto::BASISREALV; using Proto::SimpleSphereIF; 
 using Proto::PlaneIF; using Proto::SimpleCylinderIF;
+typedef CH4_Data_Choreography::DistributedData<EBGraph>  graph_distrib_t;
 #include "Chombo_NamespaceHeader.H"
 
 #define MAX_ORDER 2
@@ -31,7 +32,7 @@ using Proto::PlaneIF; using Proto::SimpleCylinderIF;
 void  
 fillKappa(EBLevelBoxData<CELL, 1>&  a_kappa,
           const shared_ptr<GeometryService<2> >   & a_geoserv,
-          const shared_ptr<LevelData<EBGraph> >   & a_graphs,
+          const shared_ptr<graph_distrib_t>   & a_graphs,
           const DisjointBoxLayout a_grids,
           const Box& a_domain)
 {
@@ -55,7 +56,7 @@ fillKappa(EBLevelBoxData<CELL, 1>&  a_kappa,
 int
 makeTwoSpheres(int a_argc, char* a_argv[])
 {
-  Real coveredval = -1;
+
   int nx      = 32;
   int maxGrid = 32;
   ParmParse pp("two_spheres");
@@ -68,22 +69,22 @@ makeTwoSpheres(int a_argc, char* a_argv[])
   vector<Real> cen_one(DIM, 0.0);
   vector<Real> cen_two(DIM, 1.0);
 
-  pout() << "two sphere case: "      << endl;
+  Chombo4::pout() << "two sphere case: "      << endl;
   pp.get(   "rad_one"     , rad_one);
   pp.get(   "rad_two"     , rad_two);
   pp.getarr("cen_one"     , cen_one, 0, DIM);
   pp.getarr("cen_two"     , cen_two, 0, DIM);
 
-  pout() << "nx      = " << nx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
-  pout() << "rad_one = " << rad_one  << endl;
-  pout() << "rad_two = " << rad_two  << endl;
+  Chombo4::pout() << "nx      = " << nx       << endl;
+  Chombo4::pout() << "maxGrid = " << maxGrid  << endl;
+  Chombo4::pout() << "rad_one = " << rad_one  << endl;
+  Chombo4::pout() << "rad_two = " << rad_two  << endl;
   RealVect ABC_one, X0_one;
   RealVect ABC_two, X0_two;
   for(int idir = 0; idir < DIM; idir++)
   {
-    pout() << "cen_one[ " << idir << "] = " << cen_one[idir]  << endl;
-    pout() << "cen_two[ " << idir << "] = " << cen_two[idir]  << endl;
+    Chombo4::pout() << "cen_one[ " << idir << "] = " << cen_one[idir]  << endl;
+    Chombo4::pout() << "cen_two[ " << idir << "] = " << cen_two[idir]  << endl;
 
     ABC_one[idir] = 1.0; //makes it a sphere
     ABC_two[idir] = 1.0; //makes it a sphere
@@ -99,12 +100,12 @@ makeTwoSpheres(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
-  pout() << "making grids" << endl;
+  std::vector<int> procs;
+  Chombo4::pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
@@ -120,11 +121,11 @@ makeTwoSpheres(int a_argc, char* a_argv[])
   both_spheres[1] = static_cast<BaseIF*>(sphere_two);
   shared_ptr<BaseIF>     intersect(new IntersectionIF(both_spheres));
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.domainBox(), grids, geomGhost));
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
@@ -132,7 +133,7 @@ makeTwoSpheres(int a_argc, char* a_argv[])
 
   delete sphere_one;
   delete sphere_two;
-  pout() << "exiting twoSpheres" << endl;
+  Chombo4::pout() << "exiting twoSpheres" << endl;
   return 0;
 }
 
@@ -140,7 +141,7 @@ makeTwoSpheres(int a_argc, char* a_argv[])
 int
 makeIntersectingSpheres(int a_argc, char* a_argv[])
 {
-  Real coveredval = -1;
+
   int nx      = 32;
   int maxGrid = 32;
   ParmParse pp("intersecting_spheres");
@@ -158,13 +159,13 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   Real offsetmag = 1.1*rad; 
   pp.get("radius", rad);
   pp.get("offsetmag", offsetmag);
-  pout() << "nx      = " << nx       << endl;
+  Chombo4::pout() << "nx      = " << nx       << endl;
   Real dx = 1.0/nx;
   
-  pout() << "dx      = " << dx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
-  pout() << "radius = " << rad << endl;
-  pout() << "offset = " << offsetmag << endl;
+  Chombo4::pout() << "dx      = " << dx       << endl;
+  Chombo4::pout() << "maxGrid = " << maxGrid  << endl;
+  Chombo4::pout() << "radius = " << rad << endl;
+  Chombo4::pout() << "offset = " << offsetmag << endl;
   vector<RealVect> centers(num_spheres);
   RealVect centercenter = RealVect::Unit();
   centercenter *= 0.5;
@@ -189,10 +190,10 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   centers[8] = centercenter;
 #endif  
 
-  pout() << "intersecting sphere case with rad = : " << rad   << endl;
+  Chombo4::pout() << "intersecting sphere case with rad = : " << rad   << endl;
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
-    pout() << "center[" << icen << "] = " << centers[icen] << endl;
+    Chombo4::pout() << "center[" << icen << "] = " << centers[icen] << endl;
   }
 
   IntVect domLo = IntVect::Zero;
@@ -201,12 +202,12 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
   // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
-  pout() << "making grids" << endl;
+  std::vector<int> procs;
+  Chombo4::pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
@@ -223,14 +224,14 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
     spheres[icen] = static_cast<BaseIF*>(sphereptr);
   }
   shared_ptr<BaseIF>     intersect(new IntersectionIF(spheres));
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
     geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.
                                            domainBox(), grids, geomGhost));
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
@@ -241,14 +242,13 @@ makeIntersectingSpheres(int a_argc, char* a_argv[])
     delete spheres[icen];
     spheres[icen] = NULL;
   }
-  pout() << "exiting intersectingSpheres" << endl;
+  Chombo4::pout() << "exiting intersectingSpheres" << endl;
   return 0;
 }
 /**************/
 int
 makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
 {
-  Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
   ParmParse pp("smoothed_intersecting_spheres");
@@ -270,12 +270,12 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   pp.get("radius", rad);
   pp.get("offsetmag", offsetmag);
   pp.get("deltamag" , deltamag);
-  pout() << "nx      = " << nx       << endl;
-  pout() << "dx      = " << dx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
-  pout() << "radius  = " << rad << endl;
-  pout() << "offset  = " << offsetmag << endl;
-  pout() << "delta   = " << deltamag << "*dx = " << delta << endl;
+  Chombo4::pout() << "nx      = " << nx       << endl;
+  Chombo4::pout() << "dx      = " << dx       << endl;
+  Chombo4::pout() << "maxGrid = " << maxGrid  << endl;
+  Chombo4::pout() << "radius  = " << rad << endl;
+  Chombo4::pout() << "offset  = " << offsetmag << endl;
+  Chombo4::pout() << "delta   = " << deltamag << "*dx = " << delta << endl;
   
   vector<RealVect> centers(num_spheres);
   RealVect centercenter = RealVect::Unit();
@@ -302,10 +302,10 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   centers[8] = centercenter ;
 #endif  
 
-  pout() << "smoothed intersecting sphere case with rad = : " << rad     << endl;
+  Chombo4::pout() << "smoothed intersecting sphere case with rad = : " << rad     << endl;
   for(unsigned int icen = 0; icen < num_spheres; icen++)
   {
-    pout() << "center[" << icen << "] = " << centers[icen] << endl;
+    Chombo4::pout() << "center[" << icen << "] = " << centers[icen] << endl;
   }
 
   IntVect domLo = IntVect::Zero;
@@ -314,12 +314,12 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
   // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
-  pout() << "making grids" << endl;
+  std::vector<int> procs;
+  Chombo4::pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
@@ -336,14 +336,14 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
     spheres[icen] = static_cast<BaseIF*>(sphereptr);
   }
   shared_ptr<BaseIF>     intersect(new SmoothIntersection(spheres, dx));
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
     geoserv(new GeometryService<MAX_ORDER>(intersect, origin, dx, domain.
                                            domainBox(), grids, geomGhost));
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
@@ -355,14 +355,13 @@ makeSmoothedIntersectingSpheres(int a_argc, char* a_argv[])
     spheres[icen] = NULL;
   }
 
-  pout() << "exiting smoothed intersectingSpheres" << endl;
+  Chombo4::pout() << "exiting smoothed intersectingSpheres" << endl;
   return 0;
 }
 /**************/
 int
 makeMollifiedBox(int a_argc, char* a_argv[])
 {
-  Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
   ParmParse pp("mollified_box");
@@ -373,14 +372,14 @@ makeMollifiedBox(int a_argc, char* a_argv[])
   Real width = 0.1;
   vector<Real> center(DIM, 0.0);
 
-  pout() << "mollified_box:"      << endl;
+  Chombo4::pout() << "mollified_box:"      << endl;
   pp.getarr("center", center, 0, DIM);
-  pout() << "nx      = " << nx       << endl;
-  pout() << "maxGrid = " << maxGrid  << endl;
-  pout() << "width   = " << nx       << endl;
+  Chombo4::pout() << "nx      = " << nx       << endl;
+  Chombo4::pout() << "maxGrid = " << maxGrid  << endl;
+  Chombo4::pout() << "width   = " << nx       << endl;
   for(int idir = 0; idir < DIM; idir++)
   {
-    pout() << "center[ " << idir << "] = " << center[idir]  << endl;
+    Chombo4::pout() << "center[ " << idir << "] = " << center[idir]  << endl;
   }
 
 
@@ -390,12 +389,12 @@ makeMollifiedBox(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
-  pout() << "making grids" << endl;
+  std::vector<int> procs;
+  Chombo4::pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
@@ -424,13 +423,13 @@ makeMollifiedBox(int a_argc, char* a_argv[])
   }
 
   std::shared_ptr<BaseIF> box_planes(new UnionIF(planes));
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
     geoserv(new GeometryService<MAX_ORDER>(box_planes, origin, dx, domain.domainBox(), grids, geomGhost));
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
@@ -441,7 +440,7 @@ makeMollifiedBox(int a_argc, char* a_argv[])
   {
     delete planes[iplane];
   }
-  pout() << "exiting mollified box" << endl;
+  Chombo4::pout() << "exiting mollified box" << endl;
   return 0;
 }
 
@@ -449,7 +448,6 @@ makeMollifiedBox(int a_argc, char* a_argv[])
 int
 makeCylinderedSphere(int a_argc, char* a_argv[])
 {
-  Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
   ParmParse pp("cylindered_sphere");
@@ -460,13 +458,13 @@ makeCylinderedSphere(int a_argc, char* a_argv[])
   Real sphereRadius = 0.1;
   Real cylinderRadius = 0.4;
 
-  pout() << "cylindered sphere (sphere/cyl center is domain center):"      << endl;
+  Chombo4::pout() << "cylindered sphere (sphere/cyl center is domain center):"      << endl;
   pp.get("sphere_radius"  , sphereRadius);
   pp.get("cylinder_radius", cylinderRadius);
-  pout() << "nx              = " << nx       << endl;
-  pout() << "maxGrid         = " << maxGrid  << endl;
-  pout() << "sphere radius   = " << sphereRadius       << endl;
-  pout() << "cylinder radius = " << sphereRadius       << endl;
+  Chombo4::pout() << "nx              = " << nx       << endl;
+  Chombo4::pout() << "maxGrid         = " << maxGrid  << endl;
+  Chombo4::pout() << "sphere radius   = " << sphereRadius       << endl;
+  Chombo4::pout() << "cylinder radius = " << sphereRadius       << endl;
   
 
 
@@ -476,12 +474,12 @@ makeCylinderedSphere(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Box> boxes;
+  std::vector<Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, maxGrid, blockfactor);
   
-  Vector<int> procs;
-  pout() << "making grids" << endl;
+  std::vector<int> procs;
+  Chombo4::pout() << "making grids" << endl;
   LoadBalance(procs, boxes);
   DisjointBoxLayout grids(boxes, procs, domain);
   grids.printBalance();
@@ -501,13 +499,13 @@ makeCylinderedSphere(int a_argc, char* a_argv[])
   bothIF[1] = static_cast<BaseIF*>(&sphere);
 
   std::shared_ptr<BaseIF> magilla(new IntersectionIF(bothIF));
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >
     geoserv(new GeometryService<MAX_ORDER>(magilla, origin, dx, domain.domainBox(), grids, geomGhost));
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain.domainBox());
+  auto graphs = geoserv->getGraphs(domain.domainBox());
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  kappa(grids, dataGhostIV, graphs);
   fillKappa(kappa, geoserv, graphs, grids, domain.domainBox());
   Real coveredVal = -1;
@@ -518,7 +516,7 @@ makeCylinderedSphere(int a_argc, char* a_argv[])
   {
     delete planes[iplane];
   }
-  pout() << "exiting mollified box" << endl;
+  Chombo4::pout() << "exiting mollified box" << endl;
   return 0;
 }
 
@@ -528,7 +526,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
 
 //   Dr. Moreau : What is the law?
@@ -555,28 +553,28 @@ int main(int a_argc, char* a_argv[])
     char* in_file = a_argv[1];
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
 
-    pout() << "making two spheres" << endl;
+    Chombo4::pout() << "making two spheres" << endl;
     makeTwoSpheres(a_argc, a_argv);
     
-    pout() << "making the dreaded mollified box" << endl;
+    Chombo4::pout() << "making the dreaded mollified box" << endl;
     Chombo4::makeMollifiedBox(a_argc, a_argv);
 
-    pout() << "making intersecting spheres (unsmoothed)" << endl;
+    Chombo4::pout() << "making intersecting spheres (unsmoothed)" << endl;
     Chombo4::makeIntersectingSpheres(a_argc, a_argv);
 
-    pout() << "making intersecting spheres (smoothed)" << endl;
+    Chombo4::pout() << "making intersecting spheres (smoothed)" << endl;
     Chombo4::makeSmoothedIntersectingSpheres(a_argc, a_argv);
     
 #if DIM==3    
-    pout() << "making cylindered sphere" << endl;
+    Chombo4::pout() << "making cylindered sphere" << endl;
     Chombo4::makeCylinderedSphere(a_argc, a_argv);
 #endif    
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

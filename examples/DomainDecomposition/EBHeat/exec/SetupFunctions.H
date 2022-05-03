@@ -93,9 +93,9 @@ shared_ptr<BaseIF>  getImplicitFunction()
   return retval;
 }
 //=================================================
-void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
-                    Vector<Box>                     & a_vecdom,
-                    Vector<Real>                    & a_vecdx,
+void defineGeometry(std::vector<DisjointBoxLayout >      & a_grids,
+                    std::vector<Box>                     & a_vecdom,
+                    std::vector<Real>                    & a_vecdx,
                     shared_ptr<GeometryService<2> > & a_geoserv,
                     const Real                      & a_dx,
                     const int                       & a_nx)
