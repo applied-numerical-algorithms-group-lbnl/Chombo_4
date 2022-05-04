@@ -89,7 +89,6 @@
                                 const int* M, const int* N, const Real* ALPHA,
                                 const Real* A, const int* LDA,
                                 Real* B, const int* LDB);
-  }
 
 }
 #endif

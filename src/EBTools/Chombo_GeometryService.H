@@ -162,6 +162,7 @@ public:
     return m_ebnormaldata[2];
   }
 
+  
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
                         const Box                & a_grbx ,
@@ -670,6 +671,7 @@ public:
     return m_levels[ilev];
   }
 
+  
 protected:
 
   vector<Box>                               m_domains;
@@ -710,6 +712,45 @@ private:
 
 
 };
+
+template <CENTERING cent, int order>
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> > & a_geoserv,
+            const Box& a_domain, const EBIndex<cent>& a_dummy)
+{
+  shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, order> , 1> > >   retval;
+  Chombo4::MayDay::Error("did not find template specialization");
+  return retval;
+}
+
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<XFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<XFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getXFaceData(a_domain);;
+  return retval;
+}
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<YFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<YFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getYFaceData(a_domain);;
+  return retval;
+}
+
+#if DIM==3
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<ZFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<ZFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getZFaceData(a_domain);;
+  return retval;
+}
+
+#endif
 #include "Chombo_GeometryServiceImplem.H"
 #include "Chombo_NamespaceFooter.H"
 #endif

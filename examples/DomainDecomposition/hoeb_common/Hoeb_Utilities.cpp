@@ -10,8 +10,8 @@ namespace hoeb
   Real
   devendranLphiInhomogeneous(const EBIndex<CELL>                                                &  a_vof,
                              const Chombo4::DataIndex                                           &  a_datInd,
-                             const LevelData<EBHostData<CELL, Real, 1> >                        &  a_hostphi,
-                             const shared_ptr<graph_distrib_t >                              &  a_graphs,
+                             const cell_distrib_t                                               &  a_hostphi,
+                             const shared_ptr<graph_distrib_t >                                 &  a_graphs,
                              const Chombo4::DisjointBoxLayout                                   &  a_grids,
                              const Chombo4::Box                                                 &  a_domain,
                              const Real                                                         &  a_dx,
@@ -82,7 +82,7 @@ namespace hoeb
 #if DIM==3      
       {
         vector< EBIndex<ZFACE> > zfaces = graph.getZFaces(a_vof, sit());
-        for (int iface = 0; iface < yfaces.size(); iface++)
+        for (int iface = 0; iface < zfaces.size(); iface++)
         {
           const auto& face = zfaces[iface];
           int facedir = 2;
@@ -125,7 +125,7 @@ namespace hoeb
   schwartzLphiInhomogeneous(const EBIndex<CELL>                                                &  a_vof,
                             const Chombo4::DataIndex                                           &  a_datInd,
                             const cell_distrib_t                                               &  a_hostphi,
-                            const graph_distrib_t                                              &  a_graphs,
+                            const shared_ptr<graph_distrib_t>                                  &  a_graphs,
                             const Chombo4::DisjointBoxLayout                                   &  a_grids,
                             const Chombo4::Box                                                 &  a_domain,
                             const Real                                                         &  a_dx,
@@ -216,7 +216,7 @@ namespace hoeb
   getKappaLphiVoF(const EBIndex<CELL>                                                &  a_vof,
                   const Chombo4::DataIndex                                           &  a_datInd,
                   const EBLevelBoxData<CELL, 1>                                      &  a_phi,
-                  const graph_distrib_t                                              &  a_graphs,
+                  const shared_ptr<graph_distrib_t>                                  &  a_graphs,
                   const Chombo4::DisjointBoxLayout                                   &  a_grids,
                   const Chombo4::Box                                                 &  a_domain,
                   const Real                                                         &  a_dx,
@@ -226,7 +226,7 @@ namespace hoeb
   {
     IntVect ghost = a_phi.ghostVect();
     typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
-    cell_distrib_t    hostphi(a_grids, 1, ghost, hostfactorycell_t(a_graphs));
+    cell_distrib_t    hostphi(a_grids,  ghost, hostfactorycell_t(a_graphs));
     EBLevelBoxData<CELL,   1>::copyToHost(hostphi, a_phi);
 
     Real retval = 0;
@@ -664,7 +664,7 @@ namespace hoeb
   /****/
   void
   fillPhi(EBLevelBoxData<CELL, 1>                                &  a_phi,
-          const graph_distrib_t                                  &  a_graphs,
+          const shared_ptr<graph_distrib_t>                      &  a_graphs,
           const Chombo4::DisjointBoxLayout                       &  a_grids,
           const Chombo4::Box                                     &  a_domain,
           const Real                                             &  a_dx,
@@ -707,11 +707,11 @@ namespace hoeb
   void
   restrictKappaLphi(EBLevelBoxData<CELL, 1>                                           &  a_klpFToC,
                     const EBLevelBoxData<CELL, 1>                                     &  a_klpFine,
-                    const graph_distrib_t                                             &  a_graphsFine,
+                    const shared_ptr<graph_distrib_t>                                 &  a_graphsFine,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
                     const Chombo4::Box                                                &  a_domFine,
                     const Real                                                        &  a_dxFine,
-                    const graph_distrib_t                                             &  a_graphsCoar,
+                    const shared_ptr<graph_distrib_t>                                 &  a_graphsCoar,
                     const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
                     const Chombo4::Box                                                &  a_domCoar,
                     const Real                                                        &  a_dxCoar,
@@ -740,17 +740,17 @@ namespace hoeb
   /****/
   void
   restrictPhi(EBLevelBoxData<CELL, 1>                                           &  a_phiFToC,
-                   const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
-                   const graph_distrib_t                                             &  a_graphsFine,
-                   const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
-                   const Chombo4::Box                                                &  a_domFine,
-                   const Real                                                        &  a_dxFine,
-                   const graph_distrib_t                                             &  a_graphsCoar,
-                   const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
-                   const Chombo4::Box                                                &  a_domCoar,
-                   const Real                                                        &  a_dxCoar,
-                   const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
-                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv)
+              const EBLevelBoxData<CELL, 1>                                     &  a_phiFine,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsFine,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsFine,
+              const Chombo4::Box                                                &  a_domFine,
+              const Real                                                        &  a_dxFine,
+              const shared_ptr<graph_distrib_t    >                             &  a_graphsCoar,
+              const Chombo4::DisjointBoxLayout                                  &  a_gridsCoar,
+              const Chombo4::Box                                                &  a_domCoar,
+              const Real                                                        &  a_dxCoar,
+              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> > &  a_dictionary,
+              const shared_ptr< GeometryService<HOEB_MAX_ORDER> >               &  a_geoserv)
   {
     std::string  nobcname        = string("no_bcs");
     std::string  restrictionName = string("Rho_Restriction");

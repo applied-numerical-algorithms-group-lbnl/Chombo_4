@@ -177,8 +177,10 @@ namespace hoeb
         }
         else
         {
+          
           EBIndex<cent> dummy;
-          shared_ptr< LevelData< HostIrregData<cent,  IndexedMoments<DIM-1, HOEB_MAX_ORDER>, 1> > > geodataptr = getFaceData(a_geoserv, a_domain, dummy);
+          typedef CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, HOEB_MAX_ORDER>, 1 > > face_distrib_t;
+          shared_ptr< face_distrib_t > geodataptr = getFaceData<cent>(a_geoserv, a_domain, dummy);
           facemom = (*geodataptr)[a_dit](a_face, 0);
         }
         Real area = facemom[IndexTM<int, DIM-1>::Zero];
@@ -414,11 +416,11 @@ namespace hoeb
 #if DIM==3
     {
       //now for the  domain z faces
-      const auto & zfacldptr  =  a_geoserv->getYFaceData(a_srcDomain);
+      const auto & zfacldptr  =  a_geoserv->getZFaceData(a_srcDomain);
       const auto & zfacdatfab = (*zfacldptr)[a_dit];
       for(unsigned int ivol = 0; ivol < a_block.m_zfacesDiri.size(); ivol++)
       {
-        const auto & face = a_block.m_zFacesDiri[ivol];
+        const auto & face = a_block.m_zfacesDiri[ivol];
         RealVect vofloc             = hoeb_basics::getFaceLocation<ZFACE>(face, a_dx, 2);
         IndexTM<Real, DIM> distance = hoeb_basics::getIndexDistance(vofloc, a_xbar);
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
@@ -429,7 +431,7 @@ namespace hoeb
       }
       for(unsigned int ivol = 0; ivol < a_block.m_zfacesNeum.size(); ivol++)
       {
-        const auto & face = a_block.m_zFacesNeum[ivol];
+        const auto & face = a_block.m_zfacesNeum[ivol];
         RealVect vofloc             = hoeb_basics::getFaceLocation<ZFACE>(face, a_dx, 2);
         IndexTM<Real, DIM> distance = hoeb_basics::getIndexDistance(vofloc, a_xbar);
         fillMatrixRowForDomBC<ZFACE>(retval, zfacdatfab, face, graph, distance,
@@ -553,7 +555,7 @@ namespace hoeb
                     const Chombo4::DataIndex                            & a_datind)
   {
     IndexedMoments<DIM-1, HOEB_MAX_ORDER> 
-      facmom = hoeb_basics::getIndexedMoment(a_face, a_geoserv, a_srcDomain, a_datind, a_dx);
+      facmom = hoeb_basics::getIndexedMomentFace<cent>(a_face, a_geoserv, a_srcDomain, a_datind, a_dx);
     IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = hoeb_basics::getVolMomFromFacMom<DIM>(facmom, a_facedir);
 
     RealVect facloc             = hoeb_basics::getFaceLocation<cent>(a_face, a_dx, a_facedir);

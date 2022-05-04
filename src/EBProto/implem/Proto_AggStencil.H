@@ -38,6 +38,7 @@ namespace Proto
     vector<entry_t>  m_entries;
     //diagonal weight
     data_t           m_betaWeight;    
+    data_t           m_ebbcWeight;    
     //whether diagonal weight has been set
     //most stencils do not need it
     bool             m_betaWeightSet; 

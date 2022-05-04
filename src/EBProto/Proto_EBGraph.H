@@ -223,6 +223,20 @@ namespace Proto
 
   };
 
+  template<CENTERING cent>
+  inline
+  std::ostream& operator<<(std::ostream        & a_os,
+                           const EBIndex<cent> & a_rv)
+  {
+    a_os << "(";
+    a_os << a_rv.m_pt << ", ";
+    a_os << a_rv.m_vofIDMe << ", ";
+    a_os << a_rv.m_vofIDLo << ", ";
+    a_os << a_rv.m_isBoundary;
+    a_os << ")";
+    return a_os;
+  }
+  
   template <CENTERING dstCent, CENTERING srcCent>
   EBIndex<dstCent> getEBIndex(const EBIndex<srcCent>& a_src)
     {

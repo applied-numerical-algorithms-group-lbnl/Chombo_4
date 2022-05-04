@@ -172,13 +172,26 @@ namespace hoeb_basics
     }
     return retval;
   }
-  ///template specialization for x
+  template <CENTERING cent>
   inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
-  getIndexedMoment(const EBIndex<XFACE>                                & a_index,
-                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                   const Chombo4::Box                                  & a_srcDomain,
-                   const Chombo4::DataIndex                            & a_datInd,
-                   Real                                                  a_dx)
+  getIndexedMomentFace(const EBIndex<cent>                                 & a_index,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_srcDomain,
+                       const Chombo4::DataIndex                            & a_datInd,
+                       Real                                                  a_dx)
+  {
+    IndexedMoments<DIM-1, HOEB_MAX_ORDER>   retval;
+    Chombo4::MayDay::Error("did not find template specialization");
+    return retval;
+  }
+  ///template specialization for x
+  template < >
+  inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
+  getIndexedMomentFace(const EBIndex<XFACE>                                & a_index,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_srcDomain,
+                       const Chombo4::DataIndex                            & a_datInd,
+                       Real                                                  a_dx)
   {
     const auto & xfacldptr  =  a_geoserv->getXFaceData(a_srcDomain);
     const auto & xfacdatfab = (*xfacldptr)[a_datInd];
@@ -186,13 +199,15 @@ namespace hoeb_basics
     const auto & graph     = (*graphsldptr)[a_datInd];
     return getIndexedMoment<DIM-1,XFACE>(a_index, xfacdatfab, graph, a_dx);
   }
+
   ///template specialization for y
+  template < >
   inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
-  getIndexedMoment(const EBIndex<YFACE>                                &   a_index,
-                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                   const Chombo4::Box                                  & a_srcDomain,
-                   const Chombo4::DataIndex                            & a_datInd,
-                   Real                                                  a_dx)
+  getIndexedMomentFace(const EBIndex<YFACE>                                &   a_index,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_srcDomain,
+                       const Chombo4::DataIndex                            & a_datInd,
+                       Real                                                  a_dx)
   {
     const auto & yfacldptr  =  a_geoserv->getYFaceData(a_srcDomain);
     const auto & yfacdatfab = (*yfacldptr)[a_datInd];
@@ -200,14 +215,15 @@ namespace hoeb_basics
     const auto & graph     = (*graphsldptr)[a_datInd];
     return getIndexedMoment<DIM-1, YFACE>(a_index, yfacdatfab, graph, a_dx);
   }
+#if DIM==3  
   ///template specialization for z
+  template < >
   inline IndexedMoments<DIM-1, HOEB_MAX_ORDER>   
-  getIndexedMoment(const EBIndex<ZFACE>                                & a_index,
-                   const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                   const Chombo4::Box                                  & a_srcDomain,
-                   unsigned int                                          a_ibox,
-                   const Chombo4::DataIndex                            & a_datInd,
-                   Real                                                  a_dx)
+  getIndexedMomentFace(const EBIndex<ZFACE>                                & a_index,
+                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                       const Chombo4::Box                                  & a_srcDomain,
+                       const Chombo4::DataIndex                            & a_datInd,
+                       Real                                                  a_dx)
 
   {
     const auto & zfacldptr  =  a_geoserv->getZFaceData(a_srcDomain);
@@ -216,7 +232,7 @@ namespace hoeb_basics
     const auto & graph     = (*graphsldptr)[a_datInd];
     return getIndexedMoment<DIM-1, ZFACE>(a_index, zfacdatfab, graph, a_dx);
   }
-  
+#endif
   /*************/
   inline IndexedMoments<DIM, HOEB_MAX_ORDER>
   getEBIndexedMoment(const EBIndex<BOUNDARY>                             & a_face,
