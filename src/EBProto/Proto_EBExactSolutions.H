@@ -1300,34 +1300,7 @@ public:
           nearRad = m_rad2;
           nearOmega = m_omega2;
         }
-#if DIM==3
-      RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
-      Real sq = std::sqrt(1.-std::pow(xc_nr[2]/nearRad, 2));
-      Real zrad = nearRad*sq;
-      if (a_p[2] == 1)
-        {
-          zrad = -xc_nr[2]/(nearRad*sq);
-        }
-      else if (a_p[2] == 2)
-        {
-          zrad = -nearRad/((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2))*sq);
-        }
-      else if (a_p[2] == 3)
-        {
-          zrad = -(3.*nearRad*xc_nr[2])/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 2)*sq);
-        }
-      else if (a_p[2] == 4)
-        {
-          zrad = -(3.*nearRad*(std::pow(nearRad, 2)+4.*std::pow(xc_nr[2],2)))/(std::pow((std::pow(nearRad, 2) - std::pow(xc_nr[2], 2)), 3)*sq);
-        }
-      else if (a_p[2] > 4)
-        {
-          Chombo4::MayDay::Warning("ran out of deriv cases");
-          zrad = 0.;
-        }
-#else
-      Real zrad = 1.;
-#endif
+      // RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
       if (m_comp == 0)
         {
           if (a_p[0] > 0)
@@ -1336,11 +1309,11 @@ public:
             }
           else if (a_p[1] == 0)
             {
-              retval = nearOmega*zrad*xc[1];
+              retval = nearOmega*xc[1];
             }
           else if (a_p[1] == 1)
             {
-              retval = nearOmega*zrad;
+              retval = nearOmega;
             }
           else
             {
@@ -1355,11 +1328,11 @@ public:
             }
           else if (a_p[0] == 0)
             {
-              retval = nearOmega*zrad*(-xc[0]);
+              retval = nearOmega*(-xc[0]);
             }
           else if (a_p[0] == 1)
             {
-              retval = -nearOmega*zrad;
+              retval = -nearOmega;
             }
           else
             {
@@ -1375,39 +1348,8 @@ public:
 
   virtual Real getPhiPoint(const RealVect   & a_x) const
     {
-      Real retval = 0.;
-      RealVect xc = a_x-m_center;
-      Real rad = xc.vectorLength();
-      Real nearRad, nearOmega;
-      if (abs(rad - m_rad1) < abs(rad - m_rad2))
-        {
-          nearRad = m_rad1;
-          nearOmega = m_omega1;
-        }
-      else
-        {
-          nearRad = m_rad2;
-          nearOmega = m_omega2;
-        }
-#if DIM==3
-      RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
-      Real zrad = nearRad*std::sqrt(1.-std::pow(xc_nr[2]/nearRad, 2));
-#else
-      Real zrad = 1.;
-#endif
-      if (m_comp == 0)
-        {
-          retval = nearOmega*zrad*xc[1];
-        }
-      else if (m_comp == 1)
-        {
-          retval = nearOmega*zrad*(-xc[0]);
-        }
-      else if(m_comp == 2)
-        {
-          retval = 0;
-        }
-      return retval;
+      IvDIM d = IvDIM::Zero;
+      return getDerivative(d, a_x);
     }
 
   virtual ~RotatingSphere()
