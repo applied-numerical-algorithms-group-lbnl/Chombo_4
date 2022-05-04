@@ -1029,6 +1029,12 @@ namespace Proto
     Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
+    // HACK - this grows outlet stencils to make sure they are well posed, but there should be a better way to check this. Hard coded for high side boundaries
+    if ((a_vof.m_pt[a_dir] >= a_graph.getDomain().high()[a_dir]) && (a_dombcName[ebp_index(a_dir, Side::Hi)] == string("no_bcs")))
+      {
+        radius += 2;
+        pout() << "growing no_bc boundary at " << a_vof.m_pt << std::endl;
+      }
     while (neighs.size() <= momit.size()+DIM)
       {
         vols = getVoFsNeighbors(a_face, a_vof, radius, neighs, a_graph, a_neighType);
@@ -1053,7 +1059,9 @@ namespace Proto
     getShiftedMomentMatrix(Mvol, faceLoc, a_dx,
                            neighs, 
                            a_ebbcName, a_dombcName);
-
+    // Real cn = getInverseOfConditionNumber(Mvol);
+    // if (cn < 1e-5)
+    //   pout() << "condition number small in " << a_vof.m_pt << a_dir << std::endl;
     // RHS of stencil equation
     Chombo4::LAPACKMatrix Qshift;
     getFaceFluxMatrix(Qshift, a_face, faceLoc, a_faceMom, a_signNormal, a_dx);
