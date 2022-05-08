@@ -479,6 +479,7 @@ namespace Proto
         //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
         bool isReg = false;
         Point pt = vofInd.m_pt;
+        // Why 2?
 #if DIM==3
         if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
             pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2 &&
@@ -1492,52 +1493,54 @@ namespace Proto
           }
       }
 
-    // Setup periodic boundaries
-    int ncells = 32;
-    int nrepRows = -1;
-    //pp.get("nx"   , ncells);
-    ncells = 1.0/a_dx;
-    pp.query("nrepRows", nrepRows);
-    vector<map<int, int> > map1;
-    map<pair<int,int>, EBIndex<CELL> > map2;
-    map1.resize(ncells);
-    for(int k=0; k<ncells; k++)
-      {
-        //Looping over all the valid VoFs
-        for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
-          {
-            Point pt = a_dstVoFs[ivof].m_pt;
-            pair<int,int> ptPair (pt[0],pt[1]);
-            map2[ptPair] = a_dstVoFs[ivof];
-            if (pt[1]==k)
-              {
-                map1[k][pt[0]] = ivof;
-              }
-          }
-      }
-    map<int,int >::iterator it;
-    map<pair<int,int>,EBIndex<CELL> >::iterator it2;
-    vector<LocalStencil<CELL, double> > row_stencil;
-    vector<double> row_inhoContr;
-    vector<EBIndex<CELL> > row_index;
-    int initRep = nrepRows;
-    while(initRep<2*radius)
-      {
-        initRep += nrepRows;
-      }
+    // // Setup periodic boundaries
+    // int ncells = 32;
+    // int nrepRows = -1;
+    // //pp.get("nx"   , ncells);
+    // ncells = 1.0/a_dx;
+    // pp.query("nrepRows", nrepRows);
+    // vector<map<int, int> > map1;
+    // map<pair<int,int>, EBIndex<CELL> > map2;
+    // map1.resize(ncells);
+    // for(int k=0; k<ncells; k++)
+    //   {
+    //     //Looping over all the valid VoFs
+    //     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    //       {
+    //         Point pt = a_dstVoFs[ivof].m_pt;
+    //         pair<int,int> ptPair (pt[0],pt[1]);
+    //         map2[ptPair] = a_dstVoFs[ivof];
+    //         if (pt[1]==k)
+    //           {
+    //             map1[k][pt[0]] = ivof;
+    //           }
+    //       }
+    //   }
+    // map<int,int >::iterator it;
+    // map<pair<int,int>,EBIndex<CELL> >::iterator it2;
+    // vector<LocalStencil<CELL, double> > row_stencil;
+    // vector<double> row_inhoContr;
+    // vector<EBIndex<CELL> > row_index;
+    // int initRep = nrepRows;
+    // while(initRep<2*radius)
+    //   {
+    //     initRep += nrepRows;
+    //   }
 
-    if (nrepRows == -1)
-      {
-        initRep = 0;
-        nrepRows = ncells;
-      }
+    // if (nrepRows == -1)
+    //   {
+    //     initRep = 0;
+    //     nrepRows = ncells;
+    //   }
 
     //Looping over all the valid VoFs and setting up their stencils
-    for(int k = initRep; k<initRep + nrepRows; k++)
+    // for(int k = initRep; k<initRep + nrepRows; k++)
+    //   {
+    //     for (it = map1[k].begin(); it != map1[k].end(); it++)
+    //       {
+    for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
-        for (it = map1[k].begin(); it != map1[k].end(); it++)
-          {
-            int ivof = it->second;
+            // int ivof = it->second;
             EBIndex<CELL> vofInd = a_dstVoFs[ivof];
             Point pt = vofInd.m_pt;
             bool pt_verbose = false;
@@ -1601,9 +1604,9 @@ namespace Proto
                 a_stencil[dir][ivof] *= 1./(a_dx);
                 a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
               }
-            row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
-            row_inhoContr.push_back(a_inhoContr[0][ivof]);
-            row_index.push_back(vofInd);
+            // row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
+            // row_inhoContr.push_back(a_inhoContr[0][ivof]);
+            // row_index.push_back(vofInd);
 
             if (pt_verbose)
               {
@@ -1621,7 +1624,7 @@ namespace Proto
                   }
               }
           }
-      }
+      //}
 
 //     // update stencils for periodic boundaries
 //     if (nrepRows != ncells)
