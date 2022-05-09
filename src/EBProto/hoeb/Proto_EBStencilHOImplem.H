@@ -1115,7 +1115,7 @@ namespace Proto
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
     pp.query("neighListType"   , neighListType);
-
+    radius += 1;
     //Exact solution
     if (a_boundarySolutions.size() != 6)
       {

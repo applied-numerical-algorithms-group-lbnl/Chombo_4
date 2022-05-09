@@ -3258,7 +3258,7 @@ namespace Proto
             }
         }
 
-      if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
+      if (a_cellConstruct.m_verbose) {pout() << " stencil zdir "<< a_vof.m_pt << endl;}
 
       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
       deriv[2] = 1; // z-derivative stencil
