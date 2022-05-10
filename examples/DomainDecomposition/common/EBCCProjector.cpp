@@ -71,6 +71,17 @@ registerStencils()
   brit->registerFaceStencil(StencilNames::ExtrapToDomainFace,
                             m_nobcsLabel, m_nobcsLabel,  doma, doma, needDiag);
 }
+Real
+EBCCProjector::
+computeVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo) const
+{
+  Real maxvel = 0;
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    maxvel = std::max(maxvel, a_velo.maxNorm(idir));
+  }
+  return maxvel;
+}
 /// 
 void 
 EBCCProjector::
@@ -87,13 +98,22 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & graphs  = m_macprojector->m_graphs;
   
   a_velo.exchange();
+  Real initVelMax= computeVectorMax(a_velo);
+  Chombo4::pout() << "EBLevelCCProjector::project:After exchange: |input velo|max = " << initVelMax << endl;
   
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo, a_printStuff);
 
+  Real kapDivUMax = rhs.maxNorm(0);
+  Chombo4::pout() << "EBLevelCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << endl;
+    
+    
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
   
+  Real phiMax = phi.maxNorm(0);
+  Chombo4::pout() << "EBLevelCCProjector::project: |phi|ax  = " << phiMax << endl;
+    
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
   bool useConservativeGradient = false;
@@ -125,6 +145,8 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
     }
 
   }
+  Real initGphMax = computeVectorMax(a_gphi);
+  Chombo4::pout() << "EBLevelCCProjector::project:After exchange: |input gph|max = " << initGphMax << endl;
   //conservative gradient really produces kappa*grad phi so
   //we have to normalize
   if(useConservativeGradient)

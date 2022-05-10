@@ -47,6 +47,9 @@ public:
               const IntVect                          & a_nghost,
               const EBIBC                            & a_ebibc,
               bool a_printStuff=false);
+
+  ///
+  Real computeVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo) const;
   
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**
