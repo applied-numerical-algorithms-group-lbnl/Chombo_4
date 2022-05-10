@@ -99,20 +99,20 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   
   a_velo.exchange();
   Real initVelMax= computeVectorMax(a_velo);
-  Chombo4::pout() << "EBLevelCCProjector::project:After exchange: |input velo|max = " << initVelMax << endl;
+  Chombo4::pout() << "EBCCProjector::project: |input velo|max = " << initVelMax << endl;
   
   // set rhs = kappa*div (vel)
   kappaDivU(rhs, a_velo, a_printStuff);
 
   Real kapDivUMax = rhs.maxNorm(0);
-  Chombo4::pout() << "EBLevelCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << endl;
+  Chombo4::pout() << "EBCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << endl;
     
     
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
-  
+  phi.exchange();
   Real phiMax = phi.maxNorm(0);
-  Chombo4::pout() << "EBLevelCCProjector::project: |phi|ax  = " << phiMax << endl;
+  Chombo4::pout() << "EBCCProjector::project: |phi|max  = " << phiMax << endl;
     
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
