@@ -294,7 +294,8 @@ run(unsigned int a_max_step,
   if(m_step == 0)
   {
     pout() << "We are starting from scratch so we are projecting the initial velocity."<< endl;
-    m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+    bool printStuff = true;
+    m_ccProj->project(velo, gphi, a_tol, a_maxIter, printStuff);
   }
   else
   {
@@ -562,7 +563,8 @@ projectVelocityAndCorrectPressure(Real a_dt,
 
   //project the resulting field
   pout() << "cc projecting vel + gphi*dt" << endl;
-  m_ccProj->project(velo, gphi, a_tol, a_maxIter);
+  bool printStuff = true;
+  m_ccProj->project(velo, gphi, a_tol, a_maxIter, printStuff);
 
   //the resulting pressure  is = dt * gphi so we need to divide out the dt
   for(unsigned int ibox = 0; ibox < dit.size(); ibox++)
