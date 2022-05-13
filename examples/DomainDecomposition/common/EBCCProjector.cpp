@@ -31,7 +31,7 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_ebibc,
                         a_printStuff));
 
-  auto & doma    = m_macprojector->m_domain;
+  //auto & doma    = m_macprojector->m_domain;
   auto & graphs  = m_macprojector->m_graphs;
   auto & grids   = m_macprojector->m_grids;
   m_macGradient.define(grids, a_nghost, graphs);
@@ -51,8 +51,8 @@ registerStencils()
   CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
-  auto & graphs  = m_macprojector->m_graphs;
-  auto & grids   = m_macprojector->m_grids;
+  //auto & graphs  = m_macprojector->m_graphs;
+  //auto & grids   = m_macprojector->m_grids;
   //dirichlet at domain to get zero normal velocity at domain boundaries
   //grown by one to allow interpolation to face centroids
   brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
@@ -103,7 +103,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & phi     = m_macprojector->m_phi;
   auto & solver  = m_macprojector->m_solver;
   auto & grids   = m_macprojector->m_grids;
-  auto & graphs  = m_macprojector->m_graphs;
+  //auto & graphs  = m_macprojector->m_graphs;
   
   a_velo.exchange();
   if(a_printStuff)
@@ -240,7 +240,7 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
                           EBLevelBoxData<CELL,   1>  & a_phi)
 {
   auto & doma    = m_macprojector->m_domain;
-  auto & graphs  = m_macprojector->m_graphs;
+  //auto & graphs  = m_macprojector->m_graphs;
   auto & grids   = m_macprojector->m_grids;
   auto & brit    = m_macprojector->m_brit;
   
@@ -250,7 +250,7 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
   //first get mac gradient
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    const EBGraph  & graph = (*graphs)[dit[ibox]];
+    //const EBGraph  & graph = (*graphs)[dit[ibox]];
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
     auto& phifab = a_phi[dit[ibox]];
     //get the mac gradient at face centers.
@@ -269,7 +269,7 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
   
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    const EBGraph  & graph = (*graphs)[dit[ibox]];
+    //const EBGraph  & graph = (*graphs)[dit[ibox]];
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
 
     auto& gphfab   = a_gph[dit[ibox]];
@@ -328,9 +328,9 @@ EBCCProjector::
 kappaConservativeGradient(EBLevelBoxData<CELL, DIM>  & a_kappaGrad,
                           EBLevelBoxData<CELL,   1>  & a_phi)
 {
-  auto & nghost  = m_macprojector->m_nghost;
-  auto & doma    = m_macprojector->m_domain;
-  auto & brit    = m_macprojector->m_brit;
+  //auto & nghost  = m_macprojector->m_nghost;
+  //auto & doma    = m_macprojector->m_domain;
+  //auto & brit    = m_macprojector->m_brit;
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   
