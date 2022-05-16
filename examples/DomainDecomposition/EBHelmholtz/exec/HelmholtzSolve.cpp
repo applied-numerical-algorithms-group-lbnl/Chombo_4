@@ -215,7 +215,7 @@ int main(int a_argc, char* a_argv[])
 #else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  Chombo4::Chombo4::pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
 #endif
   
