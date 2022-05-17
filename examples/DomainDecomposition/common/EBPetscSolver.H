@@ -361,14 +361,6 @@ private:
           PetscInt localIndex = ki - localStart;
           hostfab(vof, 0) = arr[localIndex];
 	  
-	  //begin debug	      
-//	  PetscInt petsciv = ki;
-//	  Real chombval = hostfab(vof, 0);
-//	  PetscScalar petscval = arr[ki];
-//	  Chombo4::pout() << "host: petsciv = " << petsciv << ", iv = " << pt << ", chombval = "
-//		 <<  chombval << ", petscval = " << petscval << endl;
-	  //end debug
-	
         }
       }
     }
@@ -376,28 +368,6 @@ private:
     ///copy data back to device. 
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
 
-    //begin debug
-//    Chombo4::pout() << "data on device:" << endl;
-//    for (int ibox=0;ibox< dit.size(); ibox++)
-//    {
-//      auto& devfab =   a_deviceDst[dit[ibox]];
-//      auto& graph = (*m_graphs)[dit[ibox]];
-//      auto  grid  =     m_grids[dit[ibox]];
-//      Bx grbx = ProtoCh::getProtoBox(grid);
-//      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
-//      {
-//        auto pt = *bit;
-//        auto vofs = graph.getVoFs(pt);
-//        for(int ivof = 0; ivof < vofs.size(); ivof++)
-//        {
-//          EBIndex<CELL> vof(pt, 0);
-//	  Real chombval = devfab(vof, 0);
-//	  Chombo4::pout() << "device: iv = " << pt << ", chombval = "
-//		 <<  chombval << endl;
-//	
-//        }
-//      }
-//    }
 
     //end debug
     return 0;
