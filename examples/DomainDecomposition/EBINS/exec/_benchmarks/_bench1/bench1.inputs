@@ -1,3 +1,8 @@
+
+mac_proj.direct_to_bottom = true
+mac_proj.numSmooth = 4
+mac_proj.bottom_solver = "petsc"
+mac_proj.useWCycle     = false
 #all regular benchmark
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false

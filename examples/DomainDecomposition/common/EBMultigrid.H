@@ -6,7 +6,6 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_ParmParse.H"
 #include "EBPetscSolver.H"
 #include "Chombo_NamespaceHeader.H"
 #if DIM==2
@@ -28,9 +27,8 @@ class EBMultigridLevel
 public:
   friend class EBMultigrid;
 
-  static int  s_numSmoothDown ;
-  static int  s_numSmoothUp   ;
-  static bool s_useWCycle     ;
+  int  m_numSmooth;
+  bool m_useWCycle     ;
   typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   Real                              m_alpha;   
@@ -39,7 +37,8 @@ public:
   EBLevelBoxData<CELL, 1>           m_kappa;
   bool                              m_hasCoarser;
   string                            m_prefix;
-  bool                              m_directToBottom;
+  string                            m_bottom_solver;
+  bool                              m_direct_to_bottom;
   EBLevelBoxData<CELL, 1>           m_resid;
   EBLevelBoxData<CELL, 1>           m_deltaC;
   EBLevelBoxData<CELL, 1>           m_residC;
@@ -54,18 +53,19 @@ public:
 
 /// Multigrid v-cycle.
   inline void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
-                     const EBLevelBoxData<CELL, 1>& a_rhs)
+                     const EBLevelBoxData<CELL, 1>& a_rhs,
+                     bool a_printStuff = false)
   {
 
     PR_TIME("sgmglevel::vcycle");
-    if(m_directToBottom)
+    if(m_direct_to_bottom)
     {
       pout() << "going directly to bottom solve" << endl;
       bottom_solve(a_phi, a_rhs);
     }
     else
     {
-      relax(a_phi,a_rhs, EBMultigridLevel::s_numSmoothDown); 
+      relax(a_phi,a_rhs, m_numSmooth);
 
       if (m_hasCoarser)
       {
@@ -74,7 +74,7 @@ public:
         restrictResidual(m_residC,m_resid);
         m_deltaC.setVal(0.);
         m_coarser->vCycle(m_deltaC,m_residC);
-        if(EBMultigridLevel::s_useWCycle)
+        if(m_useWCycle)
         {
           m_coarser->vCycle(m_deltaC,m_residC);
         }
@@ -85,7 +85,7 @@ public:
         bottom_solve(a_phi, a_rhs);
       }
 
-      relax(a_phi,a_rhs, EBMultigridLevel::s_numSmoothUp);
+      relax(a_phi,a_rhs, m_numSmooth);
     }
   }
   ///
@@ -93,12 +93,7 @@ public:
   {
   }
 
-  void getDToB()
-  {
-    ParmParse pp(m_prefix);
-    m_directToBottom = false;
-    pp.query("direct_to_bottom_solve", m_directToBottom);
-  }
+
   ///make coarse from fine
   virtual void 
   define(const EBMultigridLevel            & a_finerLevel,
@@ -125,13 +120,12 @@ public:
   {
     m_alpha = a_alpha;
     m_beta  = a_beta;
-    getDToB();
       
     if(m_hasCoarser)
     {
       m_coarser->resetAlphaAndBeta(a_alpha, a_beta);
     }
-    if(!m_hasCoarser || m_directToBottom)
+    if(!m_hasCoarser || m_direct_to_bottom)
     {
       this->defineBottomSolvers(m_geoserv, a_printStuff);
     }
@@ -277,7 +271,11 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
+              string   a_bottom_solver,
+              bool     a_direct_to_bottom,
               string a_prefix,
+              bool a_useWCycle,
+              int  a_numSmooth,
               bool a_printStuff = false);
 
   ///make coarse from fine 
@@ -409,7 +407,11 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              string a_prefix = "",
+              string   a_bottom_solver,
+              bool     a_direct_to_bottom,
+              string   a_prefix,
+              bool     a_useWCycle,
+              int      a_numSmooth,
               bool a_printStuff = false)
   {
     string dombc[2*DIM];
@@ -433,7 +435,12 @@ public:
                                               a_ebbcname,   
                                               a_domain, 
                                               a_nghost,
-                                              a_prefix);
+                                              a_bottom_solver,
+                                              a_direct_to_bottom,
+                                              a_prefix,
+                                              a_useWCycle,
+                                              a_numSmooth,
+                                              a_printStuff);
     EBMultigridLevel* baseBelongToUs = static_cast<EBMultigridLevel*>(finestfish);
     m_finest = std::shared_ptr<EBMultigridLevel>(baseBelongToUs);
 
@@ -463,7 +470,11 @@ public:
               const string                      & a_ebbcname,
               const Box                         & a_domain,
               const IntVect                     & a_nghost,
-              string a_prefix = "",
+              string   a_bottom_solver,
+              bool     a_direct_to_bottom,
+              string   a_prefix,
+              bool     a_useWCycle,
+              int      a_numSmooth,
               bool a_printStuff = false)
   {
     if(a_printStuff)
@@ -482,7 +493,11 @@ public:
                       a_ebbcname,   
                       a_domain, 
                       a_nghost,
+                      a_bottom_solver,
+                      a_direct_to_bottom,
                       a_prefix,
+                      a_useWCycle,
+                      a_numSmooth,
                       a_printStuff));
 
     if(a_printStuff)
@@ -501,7 +516,8 @@ public:
         const EBLevelBoxData<CELL, 1> & a_rhs,
         const Real                    & a_tolerance,
         const unsigned int            & a_maxIterations,
-        bool a_initToZero = true);
+        bool a_initToZero = true,
+        bool a_printStuff = false);
 
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -552,7 +568,8 @@ private:
   /// Multigrid v-cycle.
   inline
   void vCycle(EBLevelBoxData<CELL, 1>      & a_phi,
-              const EBLevelBoxData<CELL, 1>& a_rhs)
+              const EBLevelBoxData<CELL, 1>& a_rhs,
+              bool a_printStuff = false)
   {
     PR_TIME("sgmg::vcycle");
     return m_finest->vCycle(a_phi, a_rhs);

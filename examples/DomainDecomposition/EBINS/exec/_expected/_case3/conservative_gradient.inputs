@@ -1,3 +1,7 @@
+mac_proj.direct_to_bottom = true
+mac_proj.bottom_solver = "petsc"
+mac_proj.useWCycle     = false
+mac_proj.numSmooth = 4
 mac_proj.direct_to_bottom_solve = false
 use_conservative_gradient = true
 #true to set  initial pressure = nu*lapl(u)

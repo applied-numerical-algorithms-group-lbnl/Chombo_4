@@ -166,14 +166,21 @@ runTest(int a_argc, char* a_argv[])
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  bool directToBottom = false;
-  pp.query("direct_to_bottom", directToBottom);
+  bool direct_to_bottom = false;
+  bool useWCycle = false;
+  bool printStuff = true;
+  string prefix;
+  string bottom_solver;
+  pp.get("direct_to_bottom", direct_to_bottom);
+  pp.get("solver_prefix", prefix);
+  pp.get("bottom_solver", bottom_solver);
+  pp.get("useWCycle", useWCycle);
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
-                     stenname, dombcname, ebbcname, dombox,
-                     dataGhostIV, "direct_to_bottom"); //directToBottom);
+                     stenname, dombcname, ebbcname, dombox, dataGhostIV,
+                     bottom_solver, direct_to_bottom, prefix, useWCycle, numSmooth,
+                     printStuff);
   
-  EBMultigridLevel::s_numSmoothUp   = numSmooth;
-  EBMultigridLevel::s_numSmoothDown = numSmooth;
+
   Chombo4::DataIterator dit = grids.dataIterator();
   Chombo4::pout() << "setting values" << endl;
   int numsolves = 1;
@@ -192,14 +199,11 @@ runTest(int a_argc, char* a_argv[])
       corbd.setVal(0.0);
     }
 
-    solver.solve(phi, rhs, tol, maxIter, false);
+    bool initToZero = false;
+    solver.solve(phi, rhs, tol, maxIter, initToZero, printStuff);
   }
   Chombo4::pout() << "done with solves " << endl;
   
-//  auto& kappa = solver.getKappa();
-//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
   CH_TIMER_REPORT();
   Chombo4::pout() << "exiting " << endl;

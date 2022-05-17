@@ -176,6 +176,17 @@ defineInternals(EBIBC                a_ibc,
   a_ibc.scalarDiffusionStencilStrings(helmnamesSpec);
 
   pout() << "EBINS::defineInternals defining parabolic solvers" << std::endl;
+  string prefix("heat");
+  ParmParse pp(prefix.c_str());
+  bool direct_to_bottom = false;
+  string bottom_solver = string("relax");
+  bool useWCycle= false;
+  int numSmooth = 4;
+  pp.query("direct_to_bottom", direct_to_bottom);
+  pp.query("bottom_solver", bottom_solver);
+  pp.query("useWCycle", useWCycle);
+  pp.query("useWCycle", useWCycle);
+  pp.query("numSmooth", numSmooth);
 
   
   if(!m_eulerCalc)
@@ -184,14 +195,18 @@ defineInternals(EBIBC                a_ibc,
     
     m_helmholtzVelo = shared_ptr<EBMultigrid> 
       (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                       stenname, helmnamesVelo, bcname, m_domain, m_nghost, string("heat"), a_printStuff));
+                       stenname, helmnamesVelo, bcname, m_domain, m_nghost,
+                       bottom_solver, direct_to_bottom, prefix, useWCycle, numSmooth,
+                       a_printStuff));
   }
 
   pout() << "EBINS::defineInternals defining Helmoltz solver for species" << std::endl;
 
   m_helmholtzSpec = shared_ptr<EBMultigrid> 
     (new EBMultigrid(cell_dict, m_geoserv, alpha, beta, m_dx, m_grids,  
-                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost, string("species"), a_printStuff));
+                     stenname, helmnamesSpec, StencilNames::Neumann, m_domain, m_nghost,
+                     bottom_solver, direct_to_bottom, prefix, useWCycle, numSmooth,
+                     a_printStuff));
 
   if(a_solver == BackwardEuler)
   {

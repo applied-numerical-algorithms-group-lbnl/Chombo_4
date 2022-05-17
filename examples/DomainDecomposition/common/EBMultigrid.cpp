@@ -8,9 +8,6 @@
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
 
-bool EBMultigridLevel::s_useWCycle     = false;
-int  EBMultigridLevel::s_numSmoothDown = 4;
-int  EBMultigridLevel::s_numSmoothUp   = 4;
 
 /****/
 void 
@@ -19,7 +16,8 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       const Real                    & a_tol,
       const unsigned int            & a_maxIter,
-      bool a_initToZero)
+      bool a_initToZero,
+      bool a_printStuff)
 {
   CH_TIME("EBMultigrid::solve");
   if(a_initToZero)
@@ -50,7 +48,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     }
     pout() << endl;
     
-    vCycle(m_cor, m_res);
+    vCycle(m_cor, m_res, a_printStuff);
 
     a_phi += m_cor;
     residual(m_res, a_phi, a_rhs, true);
@@ -165,11 +163,21 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             const string                            & a_ebbcname,
             const Box                               & a_domain,
             const IntVect                           & a_nghost,
-            string a_prefix, bool a_printStuff):  EBMultigridLevel()
+            string   a_bottom_solver,
+            bool     a_direct_to_bottom,
+            string a_prefix,
+            bool a_useWCycle,
+            int  a_numSmooth,
+            bool a_printStuff):EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
   m_prefix = a_prefix;
-  getDToB();
+  m_bottom_solver    = a_bottom_solver    ;
+  m_direct_to_bottom = a_direct_to_bottom ;
+  m_prefix           = a_prefix           ;
+  m_useWCycle        = a_useWCycle        ;
+  m_numSmooth        = a_numSmooth        ;    
+
   m_depth = 0;
   m_geoserv = a_geoserv;
   m_alpha      = a_alpha;      
@@ -215,7 +223,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, a_printStuff);
 
-  if(!m_directToBottom)
+  if(!m_direct_to_bottom)
   {
     if(a_printStuff)
     {
@@ -223,7 +231,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
     }
     defineCoarserObjects(a_geoserv, a_printStuff);
   }
-  if(!m_hasCoarser || m_directToBottom)
+  if(!m_hasCoarser || m_direct_to_bottom)
   {
     if(a_printStuff)
     {
@@ -281,9 +289,14 @@ define(const EBMultigridLevel            & a_finerLevel,
        bool a_printStuff)
 {
   PR_TIME("sgmglevel::constructor");
-  m_depth = a_finerLevel.m_depth + 1;
-  m_prefix = a_finerLevel.m_prefix;
-  getDToB();
+  m_depth            = a_finerLevel.m_depth + 1;
+
+  m_numSmooth        = a_finerLevel.m_numSmooth;
+  m_useWCycle        = a_finerLevel.m_useWCycle;
+  m_prefix           = a_finerLevel.m_prefix;
+  m_bottom_solver    = a_finerLevel.m_bottom_solver;
+  m_direct_to_bottom = a_finerLevel.m_direct_to_bottom;
+  
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -315,11 +328,11 @@ define(const EBMultigridLevel            & a_finerLevel,
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv, false);
 
-  if(!m_directToBottom)
+  if(!m_direct_to_bottom)
   {
     defineCoarserObjects(a_geoserv, a_printStuff);
   }
-  if(!m_hasCoarser || m_directToBottom)
+  if(!m_hasCoarser || m_direct_to_bottom)
   {
     defineBottomSolvers(a_geoserv, a_printStuff);
   }
@@ -394,7 +407,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
   {
     pout() << "EBPoissonOp::fillKappa: calling exchange to fill ghost data" << endl;
   }
-  m_kappa.exchange(a_printStuff);
+  m_kappa.exchange();
   if(a_printStuff)
   {
     pout() << "EBPoissonOp::fillKappa: waiting for other procs to catch up" << endl;
