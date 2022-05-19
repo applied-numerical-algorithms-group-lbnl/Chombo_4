@@ -1,5 +1,10 @@
-nx=       512
-maxGrid=  32
+nx=       NX
+maxGrid=  16
+mac_proj.direct_to_bottom = true
+mac_proj.bottom_solver = "petsc"
+mac_proj.useWCycle     = false
+mac_proj.numSmooth = 4
+mac_proj.direct_to_bottom_solve = false
 
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
@@ -15,7 +20,7 @@ domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 pressure_iterations = 0
 
-num_species = 0
+num_species = 3
 diffusion_coeff_0 = 0.1
 diffusion_coeff_1 = 0.01
 diffusion_coeff_2 = 0.001
@@ -23,15 +28,14 @@ species_inflow_value_0 = 0
 species_inflow_value_1 = 0
 species_inflow_value_2 = 0
 #domain size
-
-use_stokes_dt = false
+use_stokes_dt = true
 #max number of time steps
-max_step =    10
+max_step =    5
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
-#max grid size in domain decomposition
+
 maxIter = 27
 tolerance = 1.0e-8
 cfl = 0.5
@@ -54,13 +58,13 @@ covered_value = 0.0
 
 # 0 euler, 1 CN, 2 TGA	
 parabolic_solver = 0
-viscosity = 0.001
+viscosity = 0.1
 ## -1 all reg, 1 regular, 2 sphere
 #all regular geometry
 #which_geom = -1
 
-num_smooth = 16
-use_w_cycle = false
+num_smooth = 8
+use_w_cycle = true
 #
 ##sphere
 which_geom = 0 
@@ -77,9 +81,9 @@ geom_cen = 0.5
 #geom_cen = 0.0 0.1 0.0
 
 
-macproj.do_lazy_relax =  false
-macproj.one_exchange_per_relax = false
+do_lazy_relax =  false
 
+one_exchange_per_relax = false
 inside_regular = false
 scalar_inflow_value = 0.
 velocity_inflow_value = 1.
@@ -90,18 +94,3 @@ bicgstab.small    = 1.0e-16
 bicgstab.imax     = 0
 bicgstab.nrestart = 27
 bicgstab.verbosity = 1
-
-heat.direct_to_bottom_solve = false
-species.direct_to_bottom_solve = true
-heat.bottom_solver =  "relax"
-heat.do_lazy_relax =  false
-heat.one_exchange_per_relax = false
-species.bottom_solver = "relax"
-species.do_lazy_relax =  false
-species.one_exchange_per_relax = false
-
-mac_proj.direct_to_bottom_solve = true
-mac_proj.bottom_solver = "petsc"
-mac_proj.do_lazy_relax =  false
-mac_proj.one_exchange_per_relax = false
-
