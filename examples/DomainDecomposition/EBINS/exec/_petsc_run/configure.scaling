@@ -3,15 +3,20 @@ from argparse import *
 import os
 import glob
 import platform
+from datetime import date
+
+today = date.today()
+
+print("Today's date:", today)
 
 parser = ArgumentParser()
 
 parser.add_argument('--procs', type=int, help='minimum number of mpi processes [1]',default = '1')
 parser.add_argument('--input', type=str, help='name of input template  ["inputs.template"]',default="inputs.template")
 parser.add_argument('--batch', type=str, help='name of batch template ["batch.template"]' ,default="batch.template")
-parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [512]',default='512')
-parser.add_argument('--nx', type=int, help='nx for one processor [32]',default='32')
-parser.add_argument('--prefix', type=str, help='name of test[scaling_test]',default="scaling_test")
+parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [32]',default='32')
+parser.add_argument('--nx', type=int, help='nx for one processor [16]',default='16')
+parser.add_argument('--prefix', type=str, help='name of test[today]',default=today)
 parser.add_argument('--executable_name', type=str, help='name of executable file ["../../../main.exe"]',default="../../../main.exe")
 
 args = parser.parse_args()
