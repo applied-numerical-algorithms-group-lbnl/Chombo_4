@@ -35,7 +35,7 @@ inputfilename = os.path.basename(args.input)
 batchfilename = os.path.basename(args.batch)
 
 neartopstr = homestr + "/_" +args.prefix
-strtoday =today.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
 topstr = neartopstr +"_" + strtoday
 
 print ("topstr = " + topstr)
