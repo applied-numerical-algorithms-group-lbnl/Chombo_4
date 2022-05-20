@@ -361,8 +361,10 @@ namespace Proto
 
   ///template specialization for cell
   template <typename  data_t, unsigned int ncomp>
-  data_t maxNormCell(const EBHostData<CELL, data_t, ncomp>& a_src,
-                 const Box& a_grid, unsigned int a_icomp) 
+  data_t maxNormCell(EBIndex<CELL>& a_vofmax,
+                     const EBHostData<CELL, data_t, ncomp>& a_src,
+                     const Box& a_grid, unsigned int a_icomp)
+                     
     {
       data_t maxval = 0; 
       using Proto::BoxIterator;
@@ -378,6 +380,7 @@ namespace Proto
           if(absval > maxval)
           {
             maxval = absval;
+            a_vofmax = vof;
           }
         }
       }
@@ -386,7 +389,8 @@ namespace Proto
 
   ///
   template <CENTERING cent, typename  data_t, unsigned int ncomp>
-  data_t maxNormFace(const EBHostData<cent, data_t, ncomp>& a_src,
+  data_t maxNormFace(EBIndex<cent>& a_facemax,
+                     const EBHostData<cent, data_t, ncomp>& a_src,
                      const Box& a_grid, unsigned int a_icomp)
   {
     data_t maxval = 0; 
@@ -408,6 +412,7 @@ namespace Proto
             if(absval > maxval)
             {
               maxval = absval;
+              a_facemax = faces[iface];
             }
           }
         }

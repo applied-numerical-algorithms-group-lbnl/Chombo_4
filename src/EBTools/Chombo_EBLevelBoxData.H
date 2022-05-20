@@ -214,8 +214,16 @@ public:
     }
   }
 
-  ///
+  ///deprecated interface
   Real maxNorm(int a_icomp) const
+  {
+    EBIndex<CELL> vofmax;
+    Real retval = maxNorm(vofmax, a_icomp);
+    return retval;
+  }
+  
+  ///The new maxnorm interface all the cool kids are using
+  Real maxNorm(EBIndex<CELL>& a_vofMaxThisProc, int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
 
@@ -230,10 +238,12 @@ public:
     {
       const Box & grid     =         dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
-      Real gridval = Proto::maxNormCell(hostdata[dit[ibox]], grbx, a_icomp);
+      EBIndex<CELL> vofmax;
+      Real gridval = Proto::maxNormCell(vofmax, hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > maxval)
       {
         maxval = gridval;
+        a_vofMaxThisProc = vofmax;
       }
     }
 
@@ -523,7 +533,8 @@ public:
 
     EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
     copyToHost(hostdat, difference);
-    Real maxval = Proto::maxNormCell(hostdat, a_grid, a_icomp);
+    EBIndex<CELL> vofmax;
+    Real maxval = Proto::maxNormCell(vofmax, hostdat, a_grid, a_icomp);
     int retval = 0;
     if(maxval > a_tol)
     {
