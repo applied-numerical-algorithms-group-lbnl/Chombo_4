@@ -1,0 +1,15 @@
+USE_HDF=TRUE
+MPI=TRUE
+USE_TIMER=TRUE
+
+DEPXX=CC
+CXX=CC
+MPICXX=CC
+
+HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include -DH5_USE_110_API
+HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+
+PETSC_DIR=/gpfs/alpine/world-shared/geo127/petsc/arch-crusher-opt-cray
+PETSC_ARCH=""
+PROTO_HOME =$(SCRATCH)/_proto/proto
+include $(PETSC_DIR)/lib/petsc/conf/variables
