@@ -1,0 +1,18 @@
+!/bin/bash                                                                              
+#SBATCH -A geo127
+#SBATCH -t 02:00:00                                                                               
+#SBATCH -N 128
+#SBATCH -J packedSpheres32768
+#SBATCH -e %j.err
+#SBATCH -o %j.out
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=treb@lbl.gov
+export CH_TIMER=1
+export CH_OUTPUT_INTERVAL=16
+
+export OMP_NUM_THREADS 1
+
+input=INPUT_FILE
+ProgName=EXECUTABLE_FILE
+
+srun -N NUM_NODE -n NUM_NODE -c 1 --gpus-per-task=1 --gpu-bind=closest $ProgName $input >& log
