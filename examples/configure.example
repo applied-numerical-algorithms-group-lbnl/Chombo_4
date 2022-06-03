@@ -15,9 +15,10 @@ parser.add_argument('--prec',  choices=['SINGLE', 'DOUBLE'],help='precision [DOU
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
 parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
 parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--openmp', choices=['TRUE', 'FALSE'],help='OpenMP on or off [FALSE]',default='FALSE')
 
 args = parser.parse_args()
-configstr = "dim=" + str(args.dim) + ",opt="+args.opt + ",MPI="+ args.mpi + ",HDF5=" + args.hdf5 + ",cuda="+ args.cuda + ",hip=" + args.hip + ",PETSc=" + args.petsc
+configstr = "dim=" + str(args.dim) + ",opt="+args.opt + ",MPI="+ args.mpi + ",HDF5=" + args.hdf5 + ",cuda="+ args.cuda + ",hip=" + args.hip + ",PETSc=" + args.petsc + ",OpenMP=" + args.openmp
 
 f_pref = open('Makefile.prefix','r')
 f_post = open('Makefile.postfix','r')
@@ -84,6 +85,9 @@ for t in targets:
 
     if(args.prec == 'DOUBLE'):
         f.write('\nCHOMBO_CXXFLAGS += -DCH_USE_DOUBLE\n')
+        
+    if(args.openmp == 'TRUE'):
+        f.write('\nCHOMBO_CXXFLAGS += -fopenmp\n')
 
     if(args.opt) == 'DEBUG':
         if(args.cuda == 'TRUE'):

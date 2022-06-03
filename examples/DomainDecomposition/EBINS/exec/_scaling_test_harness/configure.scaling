@@ -81,7 +81,10 @@ while nproc <= args.max_proc:
     f_inp = open(inputname,'w')
     f_bat = open(batchname,'w')
 
-    commstr = "cd " + dirstr  + "; bsub -W 1:59 " + batchname + "; cd .. \n"
+# summit needs this one
+#    commstr = "cd " + dirstr  + "; bsub -W 1:59 " + batchname + "; cd .. \n"
+# crusher needs this one
+    commstr = "cd " + dirstr  + "; sbatch " + batchname + "; cd .. \n"
     r.write(commstr)
     print ("input file")
     for inputstr in f_inputtemplate:
