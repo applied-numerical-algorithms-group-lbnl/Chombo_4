@@ -202,15 +202,6 @@ public:
   define(const std::vector<Box>& a_boxes,
          const std::vector<int>& a_procIDs);
 
-  ///
-  /** Define this BoxLayout from a LayoutData<Box>.
-      We can iterate through the new BoxLayout by the same iterator as
-      through the underlying BoxLayout of the LayoutData<Box>.
-      Each Box in the new BoxLayout is in the same position as
-      each Box in the LayoutData<Box>.
-      On exit, the BoxLayout will be closed, and NOT re-sorted.
-  */
-  virtual void define(const LayoutData<Box>& a_newLayout);
 
   /*@}*/
 

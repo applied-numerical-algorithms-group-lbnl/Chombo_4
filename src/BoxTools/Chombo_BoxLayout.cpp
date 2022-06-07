@@ -197,15 +197,6 @@ BoxLayout::BoxLayout(const std::vector<Box>& a_boxes, const std::vector<int>& as
   define(a_boxes, assignments);
 }
 
-BoxLayout::BoxLayout(const LayoutData<Box>& a_newLayout)
-  :m_boxes( new std::vector<Entry>()),
-   m_layout(new int),
-   m_closed(new bool(false)),
-   m_sorted(new bool(false)),
-   m_indicies(new std::vector<LayoutIndex>())
-{
-  define(a_newLayout);
-}
 
 void BoxLayout::checkDefine(const std::vector<Box>& a_boxes, const std::vector<int>& a_procIDs)
 {
@@ -256,77 +247,6 @@ BoxLayout::define(const std::vector<Box>& a_boxes, const std::vector<int>& a_pro
   close();
 }
 
-void
-BoxLayout::define(const LayoutData<Box>& a_newLayout)
-{
-  const BoxLayout& baseLayout = a_newLayout.boxLayout();
-
-  // First copy from the base layout.
-  m_boxes =  RefCountedPtr<std::vector<Entry> >(
-               new std::vector<Entry>(*(baseLayout.m_boxes)));
-  m_layout = baseLayout.m_layout;
-#ifdef CH_MPI
-  m_dataIndex = baseLayout.m_dataIndex;
-#endif
-  // Now replace each box with the new box.
-
-  // This is std::vector<Box*> because a_newLayout is LayoutData<Box>.
-  // It is LOCAL only.
-  const std::vector<Box*>& ptrNewBoxes = a_newLayout.m_vector;
-
-#ifdef CH_MPI
-  int len = ptrNewBoxes.size();
-  std::vector<Box> localNewBoxes(len);
-  for (int ivec = 0; ivec < len; ivec++)
-    {
-      localNewBoxes[ivec] = Box(*(ptrNewBoxes[ivec]));
-    }
-  std::vector< std::vector<Box> > gatheredNewBoxes;
-  int iprocdest = 0;
-  CH4_SPMD::gather(gatheredNewBoxes, localNewBoxes, iprocdest);
-
-  // Now iprocdest has every Box gatheredNewBoxes[iproc][ivec].
-  // We want to broadcast gatheredNewBoxes to allNewBoxes,
-  // but we have to do it one std::vector<Box> at a time.
-  std::vector< std::vector<Box> > allNewBoxes;
-  allNewBoxes.resize(numProc());
-  if (CH4_SPMD::CHprocID() == iprocdest)
-    {
-      for (int iproc = 0; iproc < numProc(); iproc++)
-        {
-          allNewBoxes[iproc] = std::vector<Box>(gatheredNewBoxes[iproc]);
-        }
-    }
-  // Processor iprocdest knows std::vector< std::vector<Box> > allNewBoxes.
-  // Now broadcast it.
-  for (int iproc = 0; iproc < numProc(); iproc++)
-    {
-      // void broadcast(T& a_inAndOut, int a_src) requires for T:
-      // linearSize<T>, linearIn<T>, linearOut<T>.
-      CH4_SPMD::broadcast(allNewBoxes[iproc], iprocdest);
-    }
-  // Now every processor knows std::vector< std::vector<Box> > allNewBoxes.
-
-  // indexProc[proc] is current index within proc.
-  std::vector<unsigned int> indexProc(numProc(), 0);
-  unsigned int proc;
-  unsigned int indexLocal;
-  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
-    {
-      proc = (*m_boxes)[ivec].m_procID;
-      indexLocal = indexProc[proc];
-      (*m_boxes)[ivec].box = Box(allNewBoxes[proc][indexLocal]);
-      indexProc[proc]++;
-    }
-#else
-  for (int ivec = 0; ivec < m_boxes->size(); ivec++)
-    {
-      (*m_boxes)[ivec].box = Box(*(ptrNewBoxes[ivec]));
-    }
-#endif
-
-  closeNoSort(); // does: *m_sorted = false; *m_closed = true; buildDataIndex();
-}
 
 // Other member functions
 // ======================
