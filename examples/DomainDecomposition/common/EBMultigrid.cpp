@@ -253,7 +253,7 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
 {
   PR_TIME("sgmglevel::defineCoarser");
 
-  m_hasCoarser = (m_grids.coarsenable(4));
+  m_hasCoarser = (m_grids.coarsenable(2));
   if(m_hasCoarser)
   {
     //multilevel operators live with the finer level

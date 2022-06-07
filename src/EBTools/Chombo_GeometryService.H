@@ -529,7 +529,7 @@ public:
     a_grids.push_back(currDBL);
 
     //a_grids[0].print();
-    while(currDBL.coarsenable(4))
+    while(currDBL.coarsenable(2))
     {
       DisjointBoxLayout coarDBL;
       coarsen(coarDBL, currDBL, 2);
