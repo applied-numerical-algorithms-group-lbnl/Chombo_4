@@ -14,6 +14,8 @@ parser = ArgumentParser()
 parser.add_argument('--procs', type=int, help='minimum number of mpi processes [1]',default = '1')
 parser.add_argument('--input', type=str, help='name of input template  ["_input_templates/inputs.template"]', default= "_input_templates/inputs.template")
 parser.add_argument('--batch', type=str, help='name of batch template  ["_batch_templates/batch.template"]' , default= "_batch_templates/batch.template")
+parser.add_argument('--bottom', type=str, help='bottom solver for mac projection ["relax"]' , default= "relax")
+parser.add_argument('--direct', choices=['TRUE', 'FALSE'],help='send mac projection directly to bototm solver[FALSE]',default='FALSE')
 parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [64]',default='64')
 parser.add_argument('--nx', type=int, help='nx for one processor [16]',default='16')
 parser.add_argument('--prefix', type=str, help='name of test["test"]',default="test")
@@ -25,7 +27,13 @@ args = parser.parse_args()
 print(args)
 
 
+bottom_solver    = args.bottom
+direct_to_bottom = args.direct
 
+configstr = bottom_solver + str("_");
+if(direct_to_bottom == 'TRUE'):
+    configstr = configstr + str("_direct_") 
+    
 nproc = args.procs
 petscrcstr = args.petsc_input
 nnode = 1
@@ -38,7 +46,7 @@ batchfilename = os.path.basename(args.batch)
 
 neartopstr = homestr + "/_" +args.prefix
 strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
-topstr = neartopstr +"_" + strtoday
+topstr = neartopstr +"_" + configstr + "_" + strtoday
 
 print ("topstr = " + topstr)
 if not os.path.exists(topstr):
@@ -86,14 +94,19 @@ while nproc <= args.max_proc:
 # crusher needs this one
     commstr = "cd " + dirstr  + "; sbatch " + batchname + "; cd .. \n"
     r.write(commstr)
-    print ("input file")
+    print ("processing input file")
     for inputstr in f_inputtemplate:
-        nxstr = inputstr.replace("NX", str(nx))
-        f_inp.write(nxstr)
-    print ("batch file")
+        impster = inputstr
+        impster = impster.replace("NX", str(nx))
+        impster = impster.replace("DIRECT", direct_to_bottom)
+        botster = str('"') + bottom_solver + str('"')
+        impster = impster.replace("BOTTOM", botster)
+        f_inp.write(impster)
+        
+    print ("processing batch file")
     inputfilestr =  inputname
-    for batchstr in f_batchtemplate:
-        t1str = batchstr;
+    for batchster in f_batchtemplate:
+        t1str = batchster;
         t2str = t1str.replace("NUM_PROCS", str(nproc))
         t3str = t2str.replace("EXECUTABLE_FILE", args.executable_name)
         t4str = t3str.replace("INPUT_FILE", inputfilestr)

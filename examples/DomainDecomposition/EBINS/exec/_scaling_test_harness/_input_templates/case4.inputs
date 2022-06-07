@@ -1,11 +1,11 @@
 nx=       NX
+mac_proj.bottom_solver = BOTTOM
+mac_proj.direct_to_bottom = DIRECT
 maxGrid=  16
 
-mac_proj.direct_to_bottom = true
-mac_proj.bottom_solver = "petsc"
 mac_proj.useWCycle     = false
 mac_proj.numSmooth = 4
-#checkpoint_restart = "check.step_5.hdf5"
+
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
 initial_velo = "zero"

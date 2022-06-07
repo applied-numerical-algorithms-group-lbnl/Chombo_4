@@ -1,8 +1,10 @@
 nx=       NX
+mac_proj.bottom_solver = BOTTOM
+mac_proj.direct_to_bottom = DIRECT
+
 maxGrid=  16
 
-mac_proj.direct_to_bottom = true
-mac_proj.bottom_solver = "petsc"
+
 mac_proj.useWCycle     = false
 mac_proj.numSmooth = 4
 #true to set  initial pressure = nu*lapl(u)
