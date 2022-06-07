@@ -17,7 +17,7 @@
 #include "Chombo_SPMD.H"
 #include "Chombo_parstream.H"
 #include "Chombo_CH_Timer.H"
-#include "Chombo_LayoutData.H"
+
 #include "Chombo_NamespaceHeader.H"
 
 using std::ostream;
