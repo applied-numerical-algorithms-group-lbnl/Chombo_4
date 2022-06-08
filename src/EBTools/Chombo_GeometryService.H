@@ -358,6 +358,11 @@ protected:
   }
 
 private:
+
+  //makes levelgeometry service on refined coarse layout.  Used for agglomeration
+  LevelGeometryService(const LevelGeometryService   & a_fineLevel,
+                       const LevelGeometryService   & a_coarLevel,
+                       bool a_printStuff = false);
   inline void
   fixRegularCellsNextToCovered(vector<inode>       & a_nodes, 
                                HostBoxData<int>    & a_regIrregCovered,
