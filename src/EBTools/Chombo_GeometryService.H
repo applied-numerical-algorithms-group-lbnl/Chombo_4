@@ -530,16 +530,50 @@ public:
     std::vector<int> procs;
     domainSplit(a_domain, boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
-    DisjointBoxLayout currDBL(boxes, procs, a_domain);
-    a_grids.push_back(currDBL);
+    DisjointBoxLayout dblFine(boxes, procs, a_domain);
+    a_grids.push_back(dblFine);
 
-    //a_grids[0].print();
-    while(currDBL.coarsenable(2))
+    //turn this hook on to agglomeration
+    bool doAgglom = false;
+    
+    if(doAgglom)
     {
-      DisjointBoxLayout coarDBL;
-      coarsen(coarDBL, currDBL, 2);
-      a_grids.push_back(coarDBL);
-      currDBL = coarDBL;
+      int ilev = 0;
+      Box domCoar = coarsen(a_domain, 2);
+      bool continueCoarsening = (domCoar.coarsenable(2)) && ((a_maxCoarsen < 0) || (ilev < a_maxCoarsen));
+      //a_grids[0].print();
+      while(continueCoarsening) 
+      {
+        DisjointBoxLayout dblCoar;
+        if(dblFine.coarsenable(4))
+        {
+          coarsen(dblCoar, dblFine, 2);
+        }
+        else
+        {
+          domainSplit(domCoar, boxes, a_maxGridSize);
+          LoadBalance(procs, boxes);
+          dblCoar = DisjointBoxLayout(boxes, procs, domCoar);
+        }
+        
+        a_grids.push_back(dblCoar);
+        
+        dblFine = dblCoar;
+        ilev ++;
+        domCoar = coarsen(domCoar, 2);
+        continueCoarsening = (domCoar.coarsenable(2)) && ((a_maxCoarsen < 0) || (ilev < a_maxCoarsen));
+      }
+    }
+    else
+    {
+      //a_grids[0].print();
+      while(dblFine.coarsenable(4))
+      {
+        DisjointBoxLayout dblCoar;
+        coarsen(dblCoar, dblFine, 2);
+        a_grids.push_back(dblCoar);
+        dblFine = dblCoar;
+      }
     }
   }
                 
