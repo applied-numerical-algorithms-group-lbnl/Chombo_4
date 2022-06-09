@@ -204,7 +204,7 @@ namespace CH4_Data_Choreography
         for(litDst.begin(); litDst.ok(); ++litDst)
         {
           int dstProcID = a_dst.procID(litDst());
-          Chombo4::Box gridDst = a_src[litDst()];
+          Chombo4::Box gridDst = a_dst[litDst()];
           Chombo4::Box intersect(gridSrc & gridDst);
           if(!intersect.isEmpty())
           {
