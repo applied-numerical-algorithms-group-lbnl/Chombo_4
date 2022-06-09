@@ -340,6 +340,22 @@ public:
   }
 private:
 
+  void restrictResidualOnProc(EBLevelBoxData<CELL, 1>      & a_resc,
+                              const EBLevelBoxData<CELL, 1>& a_res);
+  void restrictResidualAgglom(EBLevelBoxData<CELL, 1>      & a_resc,
+                              const EBLevelBoxData<CELL, 1>& a_res);
+  
+  void prolongIncrementOnProc(EBLevelBoxData<CELL, 1>      & a_phiFine,
+                              const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
+  void prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phiFine,
+                              const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
+  
+  void getDataOnRefinedCoarseLayout(shared_ptr<EBLevelBoxData<CELL, 1> >& a_dataReCo,
+                                    const      EBLevelBoxData<CELL, 1>  & a_dataFine,
+                                    const DisjointBoxLayout             & a_dblFine,
+                                    const DisjointBoxLayout             & a_dblCoar,
+                                    const Box                           & a_domFine,
+                                    const Box                           & a_domCoar);
   void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
                             bool a_printStuff);
 
@@ -366,7 +382,10 @@ private:
 
   string                            m_nobcname;
   EBLevelBoxData<CELL, 1>           m_diagW;
-
+  //for aggregation
+  shared_ptr<EBLevelBoxData<CELL, 1> > m_dataReCo;
+  bool                                 m_hasRecoDataAlready;
+  
   shared_ptr<EBRelaxSolver>         m_relaxSolver;
 #ifdef CH_USE_PETSC  
   shared_ptr<EBPetscSolver<2> >     m_petscSolver;

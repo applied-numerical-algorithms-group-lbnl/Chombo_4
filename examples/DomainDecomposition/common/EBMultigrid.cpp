@@ -175,6 +175,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_numSmooth        = a_numSmooth        ;    
 
   m_depth = 0;
+  m_hasRecoDataAlready = false;
   m_geoserv = a_geoserv;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
@@ -251,7 +252,7 @@ EBPoissonOp::
 defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
                      bool a_printStuff)
 {
-  PR_TIME("sgmglevel::defineCoarser");
+  PR_TIME("EBPoissonOp::defineCoarser");
 
   m_hasCoarser = (m_grids.coarsenable(4));
   if(m_hasCoarser)
@@ -284,7 +285,7 @@ define(const EBMultigridLevel            & a_finerLevel,
        shared_ptr<GeometryService<2> >   & a_geoserv,
        bool a_printStuff)
 {
-  PR_TIME("sgmglevel::constructor");
+  PR_TIME("EBPoissonOp::constructor");
   m_depth            = a_finerLevel.m_depth + 1;
 
   m_numSmooth        = a_finerLevel.m_numSmooth;
@@ -293,6 +294,7 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_bottom_solver    = a_finerLevel.m_bottom_solver;
   m_direct_to_bottom = a_finerLevel.m_direct_to_bottom;
   
+  m_hasRecoDataAlready = false;
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
@@ -507,9 +509,76 @@ EBPoissonOp::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
                  const EBLevelBoxData<CELL, 1> & a_resf)
 {
-  PR_TIME("sgmglevel::restrict");
+  PR_TIME("EBPoissonOp::restrict");
+  auto dblFine = a_resf.disjointBoxLayout();
+  auto dblCoar = a_resc.disjointBoxLayout();
+  if(dblFine.compatible(dblCoar))
+  {
+    restrictResidualOnProc(a_resc, a_resf);
+  }
+  else
+  {
+    restrictResidualAgglom(a_resc, a_resf);
+  }
+}
+/****/
+void
+EBPoissonOp::
+restrictResidualAgglom(EBLevelBoxData<CELL, 1>       & a_resc,
+                       const EBLevelBoxData<CELL, 1> & a_resf)
+{
+  PR_TIME("EBPoissonOp::restrictAgglom");
+  shared_ptr<EBLevelBoxData<CELL, 1> > resReCo;
+  auto dblFine = a_resf.disjointBoxLayout();
+  auto dblCoar = a_resc.disjointBoxLayout();
+  auto domFine = m_domain;
+  auto domCoar = coarsen(m_domain, 2);
+  getDataOnRefinedCoarseLayout(resReCo, a_resf, dblFine, dblCoar, domFine, domCoar);
+  restrictResidualOnProc(a_resc, *resReCo);
+}
+/****/
+void
+EBPoissonOp::
+getDataOnRefinedCoarseLayout(shared_ptr<EBLevelBoxData<CELL, 1> >& a_dataReCo,
+                             const      EBLevelBoxData<CELL, 1>  & a_dataFine,
+                             const DisjointBoxLayout             & a_dblFine,
+                             const DisjointBoxLayout             & a_dblCoar,
+                             const Box                           & a_domFine,
+                             const Box                           & a_domCoar)
+{
+  PR_TIME("EBPoissonOp::getDataOnRefinedCoarseLayout");
+  PR_assert(a_domFine == m_domain);
+  //we do not need this at every level so only construct reco data when needed
+  if(!m_hasRecoDataAlready)
+  {
+    PR_TIME("data construction bit");
+    DisjointBoxLayout dblReCo;
+    IntVect ghost = a_dataFine.ghostVect();
+    refine(dblReCo, a_dblCoar, 2);
+    shared_ptr<graph_distrib_t> graphsReCo(new graph_distrib_t(dblReCo, ghost, NullConstructorDataFactory<EBGraph >()));
+    m_graphs->copyTo(*graphsReCo);
+    graphsReCo->exchange();
+    typedef GraphConstructorFactory< EBBoxData<CELL, Real, 1> > devifactory_t;
+    m_dataReCo = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblReCo, ghost, graphsReCo));
+    m_hasRecoDataAlready = true;
+  }
+
+  a_dataReCo = m_dataReCo;
+
+  {
+    PR_TIME("communication bit");
+    a_dataFine.copyTo(*a_dataReCo);
+    a_dataReCo->exchange();
+  }
+}
+/****/
+void
+EBPoissonOp::
+restrictResidualOnProc(EBLevelBoxData<CELL, 1>       & a_resc,
+                       const EBLevelBoxData<CELL, 1> & a_resf)
+{
+  PR_TIME("EBPoissonOp::restrictOnProc");
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& coarfab = a_resc[dit[ibox]];
@@ -520,9 +589,7 @@ restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
       m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
-    ideb++;
   }
-  ideb++;
 }
 /****/
 void
@@ -530,7 +597,26 @@ EBPoissonOp::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
                  const EBLevelBoxData<CELL, 1>& a_cor)
 {
-  PR_TIME("sgmglevel::prolong");
+  PR_TIME("EBPoissonOp::prolong");
+
+  auto dblFine = a_phi.disjointBoxLayout();
+  auto dblCoar = a_cor.disjointBoxLayout();
+  if(dblFine.compatible(dblCoar))
+  {
+    prolongIncrementOnProc(a_phi, a_cor);
+  }
+  else
+  {
+    prolongIncrementAgglom(a_phi, a_cor);
+  }
+}
+/****/
+void
+EBPoissonOp::
+prolongIncrementOnProc(EBLevelBoxData<CELL, 1>      & a_phi,
+                       const EBLevelBoxData<CELL, 1>& a_cor)
+{
+  PR_TIME("EBPoissonOp::prolong");
   //finer level owns the stencil (and the operator)
   Box coardom = coarsen(m_domain, 2);
   DataIterator dit = m_grids.dataIterator();
@@ -545,6 +631,25 @@ prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
       stencil->apply(finefab, coarfab,  false, 1.0);
     }
   }
+}
+/****/
+void
+EBPoissonOp::
+prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phi,
+                       const EBLevelBoxData<CELL, 1>& a_cor)
+{
+  PR_TIME("EBPoissonOp::prolongAgglom");
+  //finer level owns the stencil (and the operator)
+
+  shared_ptr<EBLevelBoxData<CELL, 1> > phiReCo;
+  auto dblFine = a_phi.disjointBoxLayout();
+  auto dblCoar = a_cor.disjointBoxLayout();
+  auto domFine = m_domain;
+  auto domCoar = coarsen(m_domain, 2);
+  
+  getDataOnRefinedCoarseLayout(phiReCo, a_phi, dblFine, dblCoar, domFine, domCoar);
+  prolongIncrementOnProc(*phiReCo, a_cor);
+  phiReCo->copyTo(a_phi);
 }
 /****/
 ///

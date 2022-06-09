@@ -196,7 +196,6 @@ namespace CH4_Data_Choreography
       LayoutIterator litDst = a_dst.layoutIterator();
       int myProcID = CH4_SPMD::procID();
 
-      ///first local
       for(litSrc.begin(); litSrc.ok(); ++litSrc)
       {
         int srcProcID   = a_src.procID(litSrc());
@@ -210,7 +209,11 @@ namespace CH4_Data_Choreography
           {
             Chombo4::Box dstValid = gridDst;
             Chombo4::Box srcValid = gridSrc;
-            box_interaction_t item(Chombo4::DataIndex(litSrc()), Chombo4::DataIndex(litDst()), intersect, intersect, srcProcID, dstProcID, srcValid, dstValid);
+            box_interaction_t item(Chombo4::DataIndex(litSrc()),
+                                   Chombo4::DataIndex(litDst()),
+                                   intersect, intersect,
+                                   srcProcID, dstProcID, srcValid, dstValid);
+            
             //if neither processor is == myprocID, nothing to do
             if((srcProcID == myProcID) || (dstProcID == myProcID))
             {

@@ -307,7 +307,7 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::copyTo");
 
-#if 1      
+#if 0      
       auto& cache = getMetaDataCache();
       auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, a_dst.m_data, a_printStuff);
       
@@ -331,6 +331,13 @@ namespace CH4_Data_Choreography
     Chombo4::DisjointBoxLayout disjointBoxLayout() const
     {
       return m_grids;
+    }
+    
+    void printGrids() const
+    {
+      Chombo4::pout() << "grids = " ;
+      m_grids.print();
+      Chombo4::pout() << std::endl;
     }
     
   private:
@@ -635,6 +642,7 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::doLocalCopies");
       bool goFaster = !a_printStuff;
+      goFaster = true;
       if(goFaster)
       {
         //this is probably faster
@@ -669,7 +677,9 @@ namespace CH4_Data_Choreography
         unsigned int ncodst = a_dst[dstdatind].nComp();
         unsigned int ncosrc = a_src[srcdatind].nComp();
         CH_assert(ncodst == ncosrc);
-        a_dst[dstdatind].copy(a_src[srcdatind], regx, ico, regx, ico, ncodst);
+        auto      & dstfab = a_dst[dstdatind];
+        const auto& srcfab = a_src[srcdatind];
+        dstfab.copy(srcfab, regx, ico, regx, ico, ncodst);
       }
     }
     ///
@@ -686,7 +696,6 @@ namespace CH4_Data_Choreography
       return *s_meta_data_ptr;
     }
     
-
     int m_procID;
     ///actual data 
     vector<fabtype_t*> m_data;

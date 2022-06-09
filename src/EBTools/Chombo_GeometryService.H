@@ -21,6 +21,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
+#include "Chombo_ParmParse.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
 ///
@@ -535,6 +536,8 @@ public:
 
     //turn this hook on to agglomeration
     bool doAgglom = false;
+    ParmParse pp("geometry_service");
+    pp.query("do_agglomeration", doAgglom);
     
     if(doAgglom)
     {

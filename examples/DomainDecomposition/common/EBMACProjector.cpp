@@ -78,7 +78,7 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv, bool a_print
   pp.get("direct_to_bottom", direct_to_bottom);
   pp.get("bottom_solver", bottom_solver);
   pp.get("useWCycle", useWCycle);
-  pp.get("useWCycle", useWCycle);
+
   pp.get("numSmooth", numSmooth);
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
