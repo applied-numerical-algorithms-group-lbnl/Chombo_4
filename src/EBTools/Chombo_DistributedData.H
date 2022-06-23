@@ -317,8 +317,12 @@ namespace CH4_Data_Choreography
       BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
       CommunicationMetaData<fabtype_t> metadataco(pattern,
                                                   a_dst.m_data, a_printStuff);
-#endif      
-      communicate(*this, pattern, metadataco, a_dst, a_printStuff, m_graphConstructed);
+#endif
+      Chombo4::pout() << "m_grids: " << endl;
+      m_grids.print();
+      Chombo4::pout() << "a_dst.m_grids:" << endl;
+      a_dst.m_grids.print();
+      communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
     }
 
     ///

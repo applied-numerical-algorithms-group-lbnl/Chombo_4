@@ -112,7 +112,10 @@ LevelGeometryService(const LevelGeometryService   & a_fineLevel,
   a_fineLevel.m_ebfadata->copyTo(*m_ebfadata);
   a_fineLevel.m_xfacdata->copyTo(*m_xfacdata);
   a_fineLevel.m_yfacdata->copyTo(*m_yfacdata);
+  
+#if DIM==3  
   a_fineLevel.m_zfacdata->copyTo(*m_zfacdata);
+#endif
   
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -123,7 +126,9 @@ LevelGeometryService(const LevelGeometryService   & a_fineLevel,
   m_ebfadata->exchange();
   m_xfacdata->exchange();
   m_yfacdata->exchange();
+#if DIM==3  
   m_zfacdata->exchange();
+#endif  
   for(int idir = 0; idir < DIM; idir++)
   {
     m_ebnormaldata[idir]->exchange();

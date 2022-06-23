@@ -173,6 +173,10 @@ namespace CH4_Data_Choreography
 
     void printStuff(string a_prefix) const
     {
+      Chombo4::pout() << a_prefix << " BoxPattern constructor:"
+                      << " m_localPattern.size() = " << m_localPattern.size()
+                      << endl;
+
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
         Chombo4::pout() << a_prefix << " BoxPattern constructor:"
