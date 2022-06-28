@@ -307,21 +307,22 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::copyTo");
 
-#if 0      
+#if 1      
       auto& cache = getMetaDataCache();
-      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, a_dst.m_data, a_printStuff);
+      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, m_data, a_printStuff);
       
       BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
       CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
 #else      
-      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
+      Chombo4::pout() << "DistributedData::copyTo: eschewing cache!" << endl;
+      BoxPattern pattern(m_grids, a_dst.m_grids, true);
       CommunicationMetaData<fabtype_t> metadataco(pattern,
-                                                  a_dst.m_data, a_printStuff);
-#endif
-      Chombo4::pout() << "m_grids: " << endl;
+                                                  m_data, true);
+      Chombo4::pout() << "DistributedData::copyTo: m_grids: " << endl;
       m_grids.print();
-      Chombo4::pout() << "a_dst.m_grids:" << endl;
+      Chombo4::pout() << "DistributedData::copyTo: a_dst.m_grids:" << endl;
       a_dst.m_grids.print();
+#endif
       communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
     }
 
@@ -349,14 +350,14 @@ namespace CH4_Data_Choreography
     static void communicate(DistributedData                  & a_dst,
                             BoxPattern                       & a_pattern,
                             CommunicationMetaData<fabtype_t> & a_metadataco,
-                            const DistributedData & a_src,
+                            DistributedData                  & a_src,
                             bool a_printStuff,
                             bool a_graphConstructed)
     {
       CH_TIME("DistributedData::communicate");
 #ifdef CH_MPI  
       postReceives(   a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
-      postSends(      a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      postSends(      a_src.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
 #endif      
       doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
 #ifdef CH_MPI  

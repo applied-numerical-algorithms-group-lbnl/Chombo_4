@@ -91,10 +91,16 @@ namespace CH4_Data_Choreography
                   vector<fabtype_t*> & a_data,
                   bool a_printStuff = false)
     {
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::buildMetaData begin" << endl;
+      }
+      
       m_recvPI.resize(CH4_SPMD::numProc());
       m_sendPI.resize(CH4_SPMD::numProc());
       m_numSends = 0;
       m_numRecvs = 0;
+      
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
         auto& recv_pi = m_recvPI[iproc];
@@ -108,6 +114,14 @@ namespace CH4_Data_Choreography
           recv_pi->m_metaDataLen = (a_pattern.m_recvPattern[iproc].size())*sizeof(size_t);
         } // if there is anything coming from this proc
 
+      }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::buildMetaData done with recv" << endl;
+      }
+
+      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+      {
         auto& send_pi = m_sendPI[iproc];
         send_pi = shared_ptr<proc_interaction_t>(new proc_interaction_t());
         send_pi->m_boxbufsize = vector<size_t>(a_pattern.m_sendPattern[iproc].size());
@@ -115,15 +129,43 @@ namespace CH4_Data_Choreography
         {
           m_numSends++;
 
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData::buildMetaData here0" << endl;
+          }
+
           size_t totbufsize = 0;
           for(int ibuf = 0; ibuf < a_pattern.m_sendPattern[iproc].size(); ibuf++)
           {
             const auto& motion  = a_pattern.m_sendPattern[iproc][ibuf];
+
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "CommunicationMetaData::buildMetaData here1" << endl;
+            }
+            if(!(motion.m_src.m_procID == CH4_SPMD::procID()))
+            {
+              Chombo4::pout() << "CommunicationMetaData::buildMetaData assertion about to fail" << endl;
+            }
+            
             CH_assert(motion.m_src.m_procID == CH4_SPMD::procID());
             const fabtype_t& localfab = *(a_data[motion.m_src.m_datInd.datInd()]);
             size_t thisbufsize = localfab.charsize(motion.m_src.m_region, 0, 1);
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "CommunicationMetaData::buildMetaData here1.5" << endl;
+            }
             send_pi->m_boxbufsize[ibuf] = thisbufsize;
+            if(a_printStuff)
+            {
+              Chombo4::pout() << "CommunicationMetaData::buildMetaData here1.75" << endl;
+            }
             totbufsize += thisbufsize;
+          }
+          
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "CommunicationMetaData::buildMetaData here2" << endl;
           }
           
           send_pi->m_srcProcID  = CH4_SPMD::procID();
@@ -134,6 +176,17 @@ namespace CH4_Data_Choreography
 
         } //if there is anything to send to this proc
       }   //loop over procs
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::buildMetaData done with send" << endl;
+      }
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::buildMetaData end" << endl;
+        CH4_SPMD::barrier();
+      }
    }
 
     ///let MPI know what messages this processor is expecting
@@ -144,6 +197,10 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("CommunicationMetaData::postReceives");
 
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::postReceives begin" << endl;
+      }
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
         auto recvPattern = a_pattern.m_recvPattern[iproc];
@@ -165,6 +222,12 @@ namespace CH4_Data_Choreography
           
         } //loop over processors
       }
+      
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::postReceives end" << endl;
+        CH4_SPMD::barrier();
+      }
     }
 
     ///get the numbers out of the string that MPI sent us
@@ -174,6 +237,11 @@ namespace CH4_Data_Choreography
                    bool a_printStuff = false)
     {
       CH_TIME("CommunicationMetaData::unpackReceives");
+
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::unpackReceives begin" << endl;
+      }
 
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
@@ -210,6 +278,11 @@ namespace CH4_Data_Choreography
           recv_pi->m_buffer     = (char*)(malloc(totbufsize));
         } //
       }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::unpackReceives end" << endl;
+        CH4_SPMD::barrier();
+      }
     }
 
     /// send messages through MPI
@@ -219,6 +292,10 @@ namespace CH4_Data_Choreography
               bool a_printStuff = false)
     {
       CH_TIME("CommunicationMetaData::postSends");
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::postSends begin" << endl;
+      }
       const auto& sendPattern =  a_pattern.m_sendPattern;
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
@@ -274,6 +351,11 @@ namespace CH4_Data_Choreography
           MPI_Isend(sendbuf, send_pi->m_metaDataLen, MPI_BYTE, send_pi->m_dstProcID, 0, comm, &(send_pi->m_metaRequest));
         } //if there is anything to send to this proc
       }   //loop over procs
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::postSends end" << endl;
+        CH4_SPMD::barrier();
+      }
     }
 
 
@@ -284,12 +366,13 @@ namespace CH4_Data_Choreography
                     bool a_printStuff = false)
     {
       CH_TIME("CommunicationMetaData::completePending");
-      const auto& sendPattern =  a_pattern.m_sendPattern;
- 
       if(a_printStuff)
       {
-        Chombo4::pout() << "CommunicationMetaData::completePending: begin "<< endl;
+        Chombo4::pout() << "CommunicationMetaData::completePending begin" << endl;
       }
+      
+      const auto& sendPattern =  a_pattern.m_sendPattern;
+ 
       for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
       {
         auto& send_pi = m_sendPI[iproc];
@@ -327,10 +410,11 @@ namespace CH4_Data_Choreography
                             << "WARNING: receive MPI returned " << resultRecv << endl;
           }
         }
-        if(a_printStuff)
-        {
-          Chombo4::pout() << "CommunicationMetaData::completePending: end"  << endl;
-        }
+      }
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "CommunicationMetaData::completePending end" << endl;
+        CH4_SPMD::barrier();
       }
     }
 #endif      

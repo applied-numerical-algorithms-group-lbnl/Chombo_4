@@ -41,51 +41,55 @@ LevelGeometryService(const LevelGeometryService   & a_fineLevel,
     (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domain);
   }
 
-  //begin debug
-  Chombo4::pout() << "fine level = " << endl;
-  a_fineLevel.m_graphs->printGrids();
-  Chombo4::pout() << "coarse level = " << endl;
-  m_graphs->printGrids();
-  //now fill in the moment information
-  for(int ibox = 0; ibox < dit.size(); ibox++)
-  {
-    auto graph = (*m_graphs)[dit[ibox]];
-    if(graph.isAllRegular())
-    {
-      std::cout << "all regular" << endl;
-    }
-    else if(graph.isAllCovered())
-    {
-      std::cout << "all covered" << endl;
-    }
-    else
-    {
-      std::cout << "has irreg" << endl;
-    }
-  }
-  
-  auto ditf = a_fineLevel.m_grids.dataIterator();
-  for(int ibox = 0; ibox < ditf.size(); ibox++)
-  {
-    auto graphs = a_fineLevel.m_graphs;
-    auto graph = (*graphs)[ditf[ibox]];
-    if(graph.isAllRegular())
-    {
-      std::cout << "finer all regular" << endl;
-    }
-    else if(graph.isAllCovered())
-    {
-      std::cout << "finer all covered" << endl;
-    }
-    else
-    {
-      std::cout << "finer has irreg" << endl;
-    }
-  }
-  //end debug
-  
-  a_fineLevel.m_graphs->copyTo(*m_graphs, true);
-  m_graphs->exchange(true);
+//  //begin debug
+//  Chombo4::pout() << "fine level = " << endl;
+//  a_fineLevel.m_graphs->printGrids();
+//  Chombo4::pout() << "coarse level = " << endl;
+//  m_graphs->printGrids();
+//  //now fill in the moment information
+//  for(int ibox = 0; ibox < dit.size(); ibox++)
+//  {
+//    auto graph = (*m_graphs)[dit[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "has irreg" << endl;
+//    }
+//  }
+//  
+//  auto ditf = a_fineLevel.m_grids.dataIterator();
+//  for(int ibox = 0; ibox < ditf.size(); ibox++)
+//  {
+//    auto graphs = a_fineLevel.m_graphs;
+//    auto graph = (*graphs)[ditf[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "finer all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "finer all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "finer has irreg" << endl;
+//    }
+//  }
+//  //end debug
+
+  bool printStuff = false;
+
+  a_fineLevel.m_graphs->copyTo(*m_graphs, printStuff);
+  //pout() << "after copyTo" << endl;
+  m_graphs->exchange(printStuff);
+  //pout() << "after exchange" << endl;
   
   //now fill in the moment information
   for(int ibox = 0; ibox < dit.size(); ibox++)
