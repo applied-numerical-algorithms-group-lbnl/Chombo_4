@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -A geo127
 #SBATCH -t 02:00:00
-#SBATCH -N 128
+#SBATCH -N NUM_NODE
 #SBATCH -J NUM_NODE_node_job
 #SBATCH -e %j.err
 #SBATCH -o %j.out
