@@ -7,6 +7,23 @@
 namespace Proto
 {
 
+  template <class T, unsigned int C> 
+  HostBoxData<T,C>::HostBoxData(const BoxData<T, C>& a_devifab)
+  {
+    define(a_devifab);
+  }
+
+  template <class T, unsigned int C>
+  void
+  HostBoxData<T,C>::define(const BoxData<T, C>& a_devifab)
+  {
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "aliasing device data to host data is only okay when the device is a lie");
+#endif    
+    m_box    = a_devifab.box();
+    m_data   = a_devifab.data();
+    m_rawPtr = a_devifab.rawPtr();
+  }
 // Default Constructor
   template <class T, unsigned int C> 
   HostBoxData<T,C>::HostBoxData()

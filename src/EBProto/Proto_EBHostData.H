@@ -7,7 +7,7 @@
 #include <memory>
 #include "Proto.H"
 #include "EBProto.H"
-
+#include "Proto_EBBoxData.H" //for aliasing
 using std::vector;
 using std::shared_ptr;
 namespace Proto
@@ -106,6 +106,25 @@ namespace Proto
       m_graph = a_input.ebgraph();
       m_irrData.define(a_input.getIrregData(), a_comp);
       m_regData.define(a_input.getRegData()  , a_comp);
+    }           
+
+
+    
+    EBHostData(EBBoxData<cent, data_t, nomp>& a_input)
+    {
+      define(a_input);
+    }
+    
+    //aliasing define from device data for when the device is just the cpu
+    void define(EBBoxData<cent, data_t, nomp>& a_input)
+    {
+#ifdef PROTO_CUDA
+      PROTO_ASSERT(false, "aliasing constructor called between host and device data holders");
+#endif      
+      m_inputBox = a_input.getRegData().box();
+      m_graph    = a_input.ebgraph();
+      m_irrData.define(a_input.getIrregData());
+      m_regData.define(a_input.getRegData()  );
     }           
 
     ///for aggstencil mostly.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)

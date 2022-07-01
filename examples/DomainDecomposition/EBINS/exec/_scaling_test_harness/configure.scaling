@@ -92,7 +92,9 @@ while nproc <= args.max_proc:
 # summit needs this one
 #    commstr = "cd " + dirstr  + "; bsub -W 1:59 " + batchname + "; cd .. \n"
 # crusher needs this one
-    commstr = "cd " + dirstr  + "; sbatch " + batchname + "; cd .. \n"
+#    commstr = "cd " + dirstr  + "; sbatch " + batchname + "; cd .. \n"
+# spencer needs this one
+    commstr = "cd " + dirstr  + "; source " + batchname + "; cd .. \n"
     r.write(commstr)
     print ("processing input file")
     for inputstr in f_inputtemplate:

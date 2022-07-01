@@ -21,6 +21,60 @@
 #include "Chombo_EBDataChoreography.H"
 #include "Chombo_NamespaceHeader.H"
 
+/// Factory object to data members of a BoxLayoutData container where objects need a graph in the constructor
+
+///this one uses aliases instead of memcopy to get data to host data holder when we are running in CPU-only land
+template <CENTERING cent, typename  data_t, unsigned int ncomp>
+class DeviToHostAliasFactory: public DataFactory<EBHostData<cent, data_t, ncomp> >
+{
+public:
+  typedef Proto::EBBoxData<  cent, data_t, ncomp>  devi_fab_t;
+  typedef Proto::EBHostData< cent, data_t, ncomp>  host_fab_t;
+  typedef CH4_Data_Choreography::DistributedData<host_fab_t>  host_distrib_t;  
+  typedef CH4_Data_Choreography::DistributedData<devi_fab_t>  devi_distrib_t;  
+
+  
+  virtual bool graphConstructor() const
+  {
+    return true;
+  }
+  
+  virtual ~GraphHostAliasFactory()
+  {
+  }
+
+  DeviToHostAliasFactory(const devi_distrib_t& a_srcData)
+  {
+    m_devi_data_ptr = (devi_distrib_t*)(&a_srcData);
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual dst_data_t* create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    bool usestack = false;
+    Proto::Box bx = ProtoCh::getProtoBox(a_box);
+    return new host_fab_t((*m_devi_data_ptr)[a_datInd]);
+  }
+
+  virtual bool callDelete() const
+  {
+    return true;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  DeviToHostAliasFactory();
+  devi_distrib_t*              m_devi_data_ptr;
+};
+
+
 /// factory where constructor called is the null constructor
 template <typename DataHolder >
 class NullConstructorDataFactory: public DataFactory<DataHolder>

@@ -26,6 +26,12 @@ namespace Proto
     
     ///
     HostBoxData(const Box& a_box, bool a_useStackAlloc = false);
+
+    /// aliasing for when the device is a lie
+    HostBoxData(const BoxData<data_t, ncomp>& a_input);
+    
+    /// aliasing for when the device is a lie
+    void define(const BoxData<data_t, ncomp>& a_input);
     
     /// 
     void define(const Box& a_box, bool a_useStackAlloc = false);
