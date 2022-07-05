@@ -213,7 +213,7 @@ namespace Proto
       PR_assert((a_whichfab == 0) || (a_whichfab == 1));
       if(a_whichfab == 0)
       {
-        a_dataPtr  =  (data_t*)( m_regData.data());
+        a_dataPtr  =  (data_t*)( m_regData.rawPtr());
         a_datasize =  m_regData.size();
       }
       else 

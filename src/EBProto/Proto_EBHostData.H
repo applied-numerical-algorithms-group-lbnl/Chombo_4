@@ -110,13 +110,13 @@ namespace Proto
 
 
     
-    EBHostData(EBBoxData<cent, data_t, nomp>& a_input)
+    EBHostData(EBBoxData<cent, data_t, ncomp>& a_input)
     {
       define(a_input);
     }
     
     //aliasing define from device data for when the device is just the cpu
-    void define(EBBoxData<cent, data_t, nomp>& a_input)
+    void define(EBBoxData<cent, data_t, ncomp>& a_input)
     {
 #ifdef PROTO_CUDA
       PROTO_ASSERT(false, "aliasing constructor called between host and device data holders");

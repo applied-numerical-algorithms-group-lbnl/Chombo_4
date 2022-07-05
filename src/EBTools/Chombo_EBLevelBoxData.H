@@ -41,6 +41,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, srcComp> > host_src_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, dstComp> > devi_dst_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, dstComp> > host_dst_comp_t;
+
   
   ScalarAliasFactory(devi_src_comp_t * a_source, 
                      unsigned int      a_whichcomp)
@@ -84,6 +85,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBGraph>                          graph_distrib_t;
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
+  typedef DeviToHostAliasFactory<cent, Real, NUMCOMPS> devi_to_host_alias_factory_t;
   ///
   EBLevelBoxData(): devi_distrib_t()
   {
@@ -149,9 +151,47 @@ public:
          bool a_printStuff = false) const
   {
     CH_TIME("EBLevelBoxData::copyTo");
+#ifdef PROTO_CUDA
+    copyToWithGPU(a_dst, a_printStuff);
+#else
+    copyToCPUOnly(a_dst, a_printStuff);
+#endif
+  }
+
+  void
+  copyToCPUOnly(EBLevelBoxData<cent, NUMCOMPS>& a_dst,
+         bool a_printStuff = false) const
+  {
+    CH_TIME("EBLevelBoxData::copyToCPUOnly");
     if(a_printStuff)
     {
-      Chombo4::pout() << "entering EBLevelBoxData copyTo" << endl;
+      Chombo4::pout() << "entering EBLevelBoxData copyToCPUOnly" << endl;
+    }
+
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "should not use cpu only version of copyto when proto_cuda is true");
+#endif    
+
+    host_distrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), devi_to_host_alias_factory_t(*this));
+    host_distrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), devi_to_host_alias_factory_t(a_dst));
+
+    hostdataSrc.copyTo(hostdataDst, a_printStuff);
+    
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "exiting  EBLevelBoxData copyToCPUOnly" << endl;
+    }
+  }
+
+  void
+  copyToWithGPU(EBLevelBoxData<cent, NUMCOMPS>& a_dst,
+                bool a_printStuff = false) const
+  {
+    CH_TIME("EBLevelBoxData::copyToWithGPU");
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "entering EBLevelBoxData copyToWithGPU" << endl;
     }
     
     host_distrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
@@ -166,7 +206,7 @@ public:
     
     if(a_printStuff)
     {
-      Chombo4::pout() << "exiting  EBLevelBoxData copyTo" << endl;
+      Chombo4::pout() << "exiting  EBLevelBoxData copyToWithGPU" << endl;
     }
   }
 
@@ -174,7 +214,31 @@ public:
  ///the new, sleeker exchange interface that all the kids are talking about
   virtual void exchange(bool a_printStuff = false)
   {
-    CH_TIME("EBLevelBoxData::exchange(copier)");
+    CH_TIME("EBLevelBoxData::exchange");
+#ifdef PROTO_CUDA
+    exchangeWithGPU(a_printStuff);
+#else      
+    exchangeCPUOnly(a_printStuff);
+#endif      
+  }
+
+ ///exchange when the GPU is a lie
+  virtual void exchangeCPUOnly(bool a_printStuff = false)
+  {
+    CH_TIME("EBLevelBoxData::exchangeCPUOnly");
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "CPUOnly functions should not be called when the GPU is not a lie");
+#endif    
+
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), devi_to_host_alias_factory_t(*this));
+
+    hostdata.exchange(a_printStuff);
+  }
+
+ ///the new, sleeker exchange interface that all the kids are talking about
+  virtual void exchangeWithGPU(bool a_printStuff = false)
+  {
+    CH_TIME("EBLevelBoxData::exchangeWithGPU");
     if(a_printStuff)
     {
       Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
@@ -213,7 +277,7 @@ public:
       Chombo4::pout() << "exiting  EBLevelBoxData::exchange" << endl;
     }
   }
-
+  
   ///deprecated interface
   Real maxNorm(int a_icomp) const
   {

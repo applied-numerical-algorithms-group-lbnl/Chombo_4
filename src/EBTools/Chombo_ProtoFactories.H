@@ -39,7 +39,7 @@ public:
     return true;
   }
   
-  virtual ~GraphHostAliasFactory()
+  virtual ~DeviToHostAliasFactory()
   {
   }
 
@@ -51,7 +51,7 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual dst_data_t* create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  virtual host_fab_t* create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
     bool usestack = false;
     Proto::Box bx = ProtoCh::getProtoBox(a_box);

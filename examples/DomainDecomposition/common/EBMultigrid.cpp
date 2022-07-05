@@ -440,7 +440,8 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
 
-  a_res.exchange();
+//not necessary  
+//  a_res.exchange();
 }
 /****/
 void

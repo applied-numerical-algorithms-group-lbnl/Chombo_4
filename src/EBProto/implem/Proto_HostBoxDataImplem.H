@@ -21,8 +21,8 @@ namespace Proto
     PROTO_ASSERT(false, "aliasing device data to host data is only okay when the device is a lie");
 #endif    
     m_box    = a_devifab.box();
-    m_data   = a_devifab.data();
-    m_rawPtr = a_devifab.rawPtr();
+    m_data   = a_devifab.getData();
+    m_rawPtr = (T*)(a_devifab.rawPtr());
   }
 // Default Constructor
   template <class T, unsigned int C> 

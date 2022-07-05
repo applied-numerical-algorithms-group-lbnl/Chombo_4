@@ -9,6 +9,7 @@
 #include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
 #include "Proto_Serialization.H"
+#include "Proto_IrregData.H"
 namespace Proto
 {
 ///
