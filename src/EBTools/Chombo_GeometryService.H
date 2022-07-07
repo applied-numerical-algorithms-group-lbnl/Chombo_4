@@ -535,7 +535,7 @@ public:
     a_grids.push_back(dblFine);
 
     //turn this hook on to agglomeration
-    bool doAgglom = false;
+    bool doAgglom = true;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
     
@@ -712,6 +712,21 @@ public:
     return m_levels[ilev];
   }
 
+  bool hasLevel(const Box & a_domain) const
+  {
+    bool found = false;
+    for(int ilev = 0; ilev < m_domains.size(); ilev++)
+    {
+      if(m_domains[ilev] == a_domain)
+      {
+        found = true;
+        break;
+      }
+    }
+
+    return found;
+
+  }
 protected:
 
   vector<Box>                               m_domains;

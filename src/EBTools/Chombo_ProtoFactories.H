@@ -53,7 +53,6 @@ public:
    */
   virtual host_fab_t* create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
-    bool usestack = false;
     Proto::Box bx = ProtoCh::getProtoBox(a_box);
     return new host_fab_t((*m_devi_data_ptr)[a_datInd]);
   }
