@@ -733,7 +733,7 @@ template<class T>
 void BoxLayoutData<T>::postReceivesToMe() const
 {
   CH_TIME("post_Receives");
-#ifndef MPI
+#ifdef CH_MPI
   this->m_buff->numReceives = m_buff->m_toMe.size();
 
   if (this->m_buff->numReceives > 1)
