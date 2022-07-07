@@ -1,7 +1,7 @@
 nx=       NX
 mac_proj.bottom_solver = BOTTOM
 mac_proj.direct_to_bottom = DIRECT
-maxGrid=  16
+maxGrid=  MAXGRID
 
 
 #true to set  initial pressure = nu*lapl(u)
@@ -29,7 +29,7 @@ species_inflow_value_2 = 0
 
 use_stokes_dt = true
 #max number of time steps
-max_step =    25
+max_step =    5
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)

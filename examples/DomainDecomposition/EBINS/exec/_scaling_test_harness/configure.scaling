@@ -12,6 +12,7 @@ print("Today's date:", today)
 parser = ArgumentParser()
 
 parser.add_argument('--procs', type=int, help='minimum number of mpi processes [1]',default = '1')
+parser.add_argument('--maxgrid', type=int, help='max grid size in one direction[16]',default = '16')
 parser.add_argument('--input', type=str, help='name of input template  ["_input_templates/inputs.template"]', default= "_input_templates/inputs.template")
 parser.add_argument('--batch', type=str, help='name of batch template  ["_batch_templates/batch.template"]' , default= "_batch_templates/batch.template")
 parser.add_argument('--bottom', type=str, help='bottom solver for mac projection ["relax"]' , default= "relax")
@@ -38,6 +39,7 @@ nproc = args.procs
 petscrcstr = args.petsc_input
 nnode = 1
 nx    = args.nx
+maxgrid = args.maxgrid
 homestr = os.getcwd();
 print ("homedir = " + homestr)
 
@@ -100,6 +102,7 @@ while nproc <= args.max_proc:
     for inputstr in f_inputtemplate:
         impster = inputstr
         impster = impster.replace("NX", str(nx))
+        impster = impster.replace("MAXGRID", str(maxgrid))
         impster = impster.replace("DIRECT", direct_to_bottom)
         botster = str('"') + bottom_solver + str('"')
         impster = impster.replace("BOTTOM", botster)

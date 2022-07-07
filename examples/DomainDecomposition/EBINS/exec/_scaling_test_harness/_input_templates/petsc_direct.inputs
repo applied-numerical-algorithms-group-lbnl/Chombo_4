@@ -1,3 +1,7 @@
+nx=       NX
+mac_proj.bottom_solver = BOTTOM
+mac_proj.direct_to_bottom = DIRECT
+maxGrid=  MAXGRID
 
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
@@ -21,7 +25,7 @@ species_inflow_value_0 = 0
 species_inflow_value_1 = 0
 species_inflow_value_2 = 0
 #domain size
-nx=       64
+
 use_stokes_dt = true
 #max number of time steps
 max_step =    10
@@ -30,7 +34,7 @@ max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
-maxGrid=  32
+
 maxIter = 27
 tolerance = 1.0e-8
 cfl = 0.5
@@ -99,8 +103,7 @@ species.bottom_solver = "relax"
 species.do_lazy_relax =  false
 species.one_exchange_per_relax = false
 
-mac_proj.direct_to_bottom_solve = true
-mac_proj.bottom_solver = "petsc"
+
 mac_proj.do_lazy_relax =  false
 mac_proj.one_exchange_per_relax = false
 

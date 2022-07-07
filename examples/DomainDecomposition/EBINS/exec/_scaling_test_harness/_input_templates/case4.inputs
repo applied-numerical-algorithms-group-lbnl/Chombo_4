@@ -1,7 +1,7 @@
 nx=       NX
 mac_proj.bottom_solver = BOTTOM
 mac_proj.direct_to_bottom = DIRECT
-maxGrid=  16
+maxGrid=  MAXGRID
 
 mac_proj.useWCycle     = false
 mac_proj.numSmooth = 4
