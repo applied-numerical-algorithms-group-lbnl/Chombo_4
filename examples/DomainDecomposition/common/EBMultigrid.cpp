@@ -7,6 +7,142 @@
 #include "BiCGStabSolver.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+/******/
+void
+EBPoissonOp::
+registerRestrictionStencil()
+{
+  DataIterator dit = m_grids.dataIterator();
+  vector<EBIndex<CELL> >                    dstVoFs;                    
+  vector<LocalStencil<CELL, double> >       stenVec;                    
+  Point ghostPt = ProtoCh::getPoint(m_nghost);
+  m_restrictionName = string("MGRestrictionator");
+  m_nobcname = string("no_bcs");
+  Proto::Box dstDomain = ProtoCh::getProtoBox(m_domain);
+  Proto::Box srcDomain = dstDomain.refine(2);
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+
+    auto grid =m_grids[dit[ibox]];
+    Bx  grbx = ProtoCh::getProtoBox(grid);
+    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+    getRestrictionStencil(dstVoFs, stenVec,  grbx, graph);
+    auto dstValid = grid;
+    auto srcValid = refine(grid, 2);
+    m_dictionary->registerStencil(m_restrictionName, m_nobcname,
+                                  dstVoFs, stenVec, srcValid, dstValid,
+                                  srcDomain, dstDomain, ghostPt, ghostPt, false, ibox);
+  }
+}
+/******/
+void
+EBPoissonOp::
+registerProlongationStencils()
+{
+  DataIterator dit = m_grids.dataIterator();
+  vector<EBIndex<CELL> >                    dstVoFs;                    
+  vector<LocalStencil<CELL, double> >       stenVec;                    
+  Point ghostPt = ProtoCh::getPoint(m_nghost);
+  Proto::Box dstDomain = ProtoCh::getProtoBox(m_domain);
+  Proto::Box srcDomain = dstDomain.refine(2);
+  shared_ptr<graph_distrib_t> graphsReCo =  getGraphOnRefinedCoarseLayout();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    ///prolongation has ncolors stencils
+    for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+    {
+      auto grid =m_grids[dit[ibox]];
+      auto srcValid = grid;
+      auto dstValid = refine(grid, 2);
+      const EBGraph& srcGraph = (*graphsReCo)[dit[ibox]];
+      string colorstring =  string("MGProlonginator_") + to_string(icolor);
+      m_prolongationName[icolor] = colorstring;
+      m_nobcname = string("no_bcs");
+      getProlongationStencil(dstVoFs, stenVec, srcValid, srcGraph, icolor);
+
+      auto srcValidBx= ProtoCh::getProtoBox(srcValid);
+      auto dstValidBx= ProtoCh::getProtoBox(dstValid);
+      auto srcDomainBx= ProtoCh::getProtoBox(srcDomain);
+      auto dstDomainBx= ProtoCh::getProtoBox(dstDomain);
+      m_dictionary->registerStencil(m_prolongationName[icolor], m_nobcname,
+                                    dstVoFs, stenVec, srcValidBx, dstValidBx,
+                                    srcDomainBx, dstDomainBx,
+                                    ghostPt, ghostPt, false, ibox);
+    }
+  }
+}
+/******/
+void
+EBPoissonOp::
+getRestrictionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
+                      vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                      const Box                                 & a_validCoar,
+                      const EBGraph                             & a_graphCoar)
+{
+#if DIM==2
+  unsigned int ncolor = 4;
+#else
+  unsigned int ncolor = 8;
+#endif    
+  //this stencil has no span that I can understand so getIrrregLocations not appropriate
+  a_dstVoFs = a_graphCoar.getAllVoFs(a_validCoar); 
+
+  double dnumpts = double(ncolor);
+  double rweight = 1.0/dnumpts;
+  a_stencil.resize(a_dstVoFs.size());
+  for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+  {
+    const EBIndex<CELL>&   coarVoF  = a_dstVoFs[ivof];
+    vector<EBIndex<CELL> > fineVoFs = a_graphCoar.refine(coarVoF);
+    //in multigrid, the rhs is already volume weighted so it is just
+    //coarse = (1/ncolors)*(sum(fine))
+    for(int ifine = 0; ifine <fineVoFs.size(); ifine++)
+    {
+      a_stencil[ivof].add(fineVoFs[ifine], rweight);
+    }
+  }
+}
+
+/******/
+void
+EBPoissonOp::
+getProlongationStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
+                       vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                       const Box                                 & a_srcValid,                   
+                       const EBGraph                             & a_srcGraph,                      
+                       unsigned long                               a_icolor)               
+{
+  Point colorpt = Proto::EBStencilArchive<CELL, CELL, 2, double>::getColor(a_icolor);
+  vector<EBIndex<CELL> > coarsePts = a_srcGraph.getAllVoFs(a_srcValid);
+  a_dstVoFs.resize(0);
+  for(unsigned int icoarse = 0; icoarse < coarsePts.size(); icoarse++)
+  {
+    auto& vofcoar = coarsePts[icoarse];
+    vector<EBIndex<CELL> > fineVoFs = a_srcGraph.refine(vofcoar);
+    a_dstVoFs.insert(a_dstVoFs.end(), fineVoFs.begin(), fineVoFs.end());
+  }
+    
+  a_stencil.resize(a_dstVoFs.size());
+  for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+  {
+    const EBIndex<CELL>&   fineVoF = a_dstVoFs[ivof];
+    EBIndex<CELL>          coarVoF = a_srcGraph.coarsen(fineVoF);
+    double weight = 1;
+
+    Point vofpt = fineVoF.m_pt;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      int mod = (vofpt[idir])%2;
+      if(mod != colorpt[idir])
+      {
+        weight  = 0;
+      }
+    }
+      
+    a_stencil[ivof].add(coarVoF, weight);
+  }
+
+}
 
 
 /****/
@@ -176,6 +312,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
 
   m_depth = 0;
   m_hasRecoDataAlready = false;
+  m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
@@ -192,7 +329,10 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_domain     = a_domain;     
   m_nghost     = a_nghost;
   m_dictionary = a_dictionary;
-
+  
+  auto geodbl = m_geoserv->getDBL(m_domain);
+  PR_assert(geodbl==m_grids);
+  
   if(a_printStuff)
   {
     pout() << "EBPoissonOp constructor: defining internal data" << endl;
@@ -254,25 +394,14 @@ defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
 {
   PR_TIME("EBPoissonOp::defineCoarser");
 
-  m_hasCoarser = (m_grids.coarsenable(4));
+  Box coardom = coarsen(m_domain, 2);
+  m_hasCoarser = a_geoserv->hasLevel(coardom);
+  
   if(m_hasCoarser)
   {
-    //multilevel operators live with the finer level
-    Box coardom = coarsen(m_domain, 2);
-    m_nobcname = string("no_bcs");
-    m_restrictionName = string("Multigrid_Restriction");
-    m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, m_domain, coardom, false);
-    ///prolongation has ncolors stencils
-    for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
-    {
-      string colorstring = "PWC_Prolongation_" + std::to_string(icolor);
-      m_prolongationName[icolor] = colorstring;
-      m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
-    }
-    
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
     m_coarser->define(*this, a_geoserv, a_printStuff);
-
+    
     auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
     m_deltaC.define(m_coarser->m_grids, m_nghost , graphs);
@@ -295,10 +424,12 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_direct_to_bottom = a_finerLevel.m_direct_to_bottom;
   
   m_hasRecoDataAlready = false;
+  m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
-  coarsen(m_grids, a_finerLevel.m_grids,  2);      
+  m_grids = m_geoserv->getDBL(m_domain);
+
 
   m_alpha      = a_finerLevel.m_alpha;      
   m_beta       = a_finerLevel.m_beta;
@@ -323,6 +454,8 @@ define(const EBMultigridLevel            & a_finerLevel,
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
+  registerRestrictionStencil();
+  registerProlongationStencils();
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv, false);
 
@@ -529,48 +662,9 @@ restrictResidualAgglom(EBLevelBoxData<CELL, 1>       & a_resc,
                        const EBLevelBoxData<CELL, 1> & a_resf)
 {
   PR_TIME("EBPoissonOp::restrictAgglom");
-  shared_ptr<EBLevelBoxData<CELL, 1> > resReCo;
-  auto dblFine = a_resf.disjointBoxLayout();
-  auto dblCoar = a_resc.disjointBoxLayout();
-  auto domFine = m_domain;
-  auto domCoar = coarsen(m_domain, 2);
-  getDataOnRefinedCoarseLayout(resReCo, a_resf, dblFine, dblCoar, domFine, domCoar);
+  shared_ptr<EBLevelBoxData<CELL, 1> > resReCo = getDataOnRefinedCoarseLayout();
+  a_resf.copyTo(*resReCo);
   restrictResidualOnProc(a_resc, *resReCo);
-}
-/****/
-void
-EBPoissonOp::
-getDataOnRefinedCoarseLayout(shared_ptr<EBLevelBoxData<CELL, 1> >& a_dataReCo,
-                             const      EBLevelBoxData<CELL, 1>  & a_dataFine,
-                             const DisjointBoxLayout             & a_dblFine,
-                             const DisjointBoxLayout             & a_dblCoar,
-                             const Box                           & a_domFine,
-                             const Box                           & a_domCoar)
-{
-  PR_TIME("EBPoissonOp::getDataOnRefinedCoarseLayout");
-  PR_assert(a_domFine == m_domain);
-  //we do not need this at every level so only construct reco data when needed
-  if(!m_hasRecoDataAlready)
-  {
-    PR_TIME("data construction bit");
-    DisjointBoxLayout dblReCo;
-    IntVect ghost = a_dataFine.ghostVect();
-    refine(dblReCo, a_dblCoar, 2);
-    shared_ptr<graph_distrib_t> graphsReCo(new graph_distrib_t(dblReCo, ghost, NullConstructorDataFactory<EBGraph >()));
-    m_graphs->copyTo(*graphsReCo);
-    graphsReCo->exchange();
-    typedef GraphConstructorFactory< EBBoxData<CELL, Real, 1> > devifactory_t;
-    m_dataReCo = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblReCo, ghost, graphsReCo));
-    m_hasRecoDataAlready = true;
-  }
-
-  a_dataReCo = m_dataReCo;
-
-  {
-    PR_TIME("communication bit");
-    a_dataFine.copyTo(*a_dataReCo);
-    a_dataReCo->exchange();
-  }
 }
 /****/
 void
@@ -641,14 +735,9 @@ prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phi,
 {
   PR_TIME("EBPoissonOp::prolongAgglom");
   //finer level owns the stencil (and the operator)
-
-  shared_ptr<EBLevelBoxData<CELL, 1> > phiReCo;
-  auto dblFine = a_phi.disjointBoxLayout();
-  auto dblCoar = a_cor.disjointBoxLayout();
-  auto domFine = m_domain;
-  auto domCoar = coarsen(m_domain, 2);
   
-  getDataOnRefinedCoarseLayout(phiReCo, a_phi, dblFine, dblCoar, domFine, domCoar);
+  shared_ptr<EBLevelBoxData<CELL, 1> >phiReCo = getDataOnRefinedCoarseLayout();
+  a_phi.copyTo(*phiReCo);
   prolongIncrementOnProc(*phiReCo, a_cor);
   phiReCo->copyTo(a_phi);
 }

@@ -70,15 +70,15 @@ public:
       if (m_hasCoarser)
       {
         residual(m_resid,a_phi,a_rhs);                      
-        //stencils for multilevel objects live with the finer level
-        restrictResidual(m_residC,m_resid);
+        //stencils for multilevel objects live with the coarser
+        m_coarser->restrictResidual(m_residC,m_resid);
         m_deltaC.setVal(0.);
         m_coarser->vCycle(m_deltaC,m_residC);
         if(m_useWCycle)
         {
           m_coarser->vCycle(m_deltaC,m_residC);
         }
-        prolongIncrement(a_phi,m_deltaC);
+        m_coarser->prolongIncrement(a_phi,m_deltaC);
       }
       else
       {
@@ -245,7 +245,6 @@ public:
     }
   }
 
-
 };
 
 
@@ -258,6 +257,7 @@ public:
 
   typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   ///
   EBPoissonOp(dictionary_t                      & a_dictionary,
@@ -293,6 +293,8 @@ public:
   ///  
   virtual ~EBPoissonOp()
   {
+    m_hasRecoDataAlready  = false;
+    m_hasRecoGraphAlready = false;
   }
 
   /// 
@@ -349,15 +351,62 @@ private:
                               const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
   void prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phiFine,
                               const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
+
+  /**
+     For aggregation we sometimes (but not often)  need refined coarse data.
+     This data is expensive to create in both memory and time so we have 
+     mechanisms in place to only define it when it is needed.   
+     That is what this dance is about.   When called the first time, these
+     define member data on a refined version of the current grids.   
+     It then returns the member data.    
+     All subsequent calls just return the member data.
+  **/
+  shared_ptr<EBLevelBoxData<CELL, 1> >  getDataOnRefinedCoarseLayout()
+  {
+    PR_TIME("EBPoissonOp::getDataOnRefinedCoarseLayout");
+
+    //we do not need this at every level so only construct reco data when needed
+    if(!m_hasRecoDataAlready)
+    {
+      PR_TIME("data construction bit");
+      shared_ptr<graph_distrib_t> graphsReCo = getGraphOnRefinedCoarseLayout();
+      DisjointBoxLayout dblReCo = graphsReCo->disjointBoxLayout();
+
+      typedef GraphConstructorFactory< EBBoxData<CELL, Real, 1> > devifactory_t;
+      m_dataReCo = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblReCo, m_nghost, graphsReCo));
+      m_hasRecoDataAlready = true;
+    }
   
-  void getDataOnRefinedCoarseLayout(shared_ptr<EBLevelBoxData<CELL, 1> >& a_dataReCo,
-                                    const      EBLevelBoxData<CELL, 1>  & a_dataFine,
-                                    const DisjointBoxLayout             & a_dblFine,
-                                    const DisjointBoxLayout             & a_dblCoar,
-                                    const Box                           & a_domFine,
-                                    const Box                           & a_domCoar);
-  void defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
-                            bool a_printStuff);
+    return m_dataReCo;
+  }
+  
+  shared_ptr<graph_distrib_t>& getGraphOnRefinedCoarseLayout()
+  {
+    PR_TIME("EBPoissonOp::getGraphOnRefinedCoarseLayout");
+    if(!m_hasRecoGraphAlready)
+    {
+      DisjointBoxLayout dblReCo;
+      refine(dblReCo, m_grids, 2);
+      m_graphReCo = shared_ptr<graph_distrib_t>(new graph_distrib_t(dblReCo, m_nghost, NullConstructorDataFactory<EBGraph >()));
+      Box domfine = refine(m_domain, 2);
+    
+      PR_assert(m_geoserv->hasLevel(domfine));
+      shared_ptr<graph_distrib_t> graphFine = m_geoserv->getGraphs(domfine);
+      graphFine->copyTo(*m_graphReCo);
+      m_graphReCo->exchange();
+      m_hasRecoGraphAlready = true;
+    }
+    return m_graphReCo;
+  }
+
+  void
+  defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
+                       bool a_printStuff);
+  
+  shared_ptr<EBLevelBoxData<CELL, 1> > m_dataReCo;
+  shared_ptr<graph_distrib_t>          m_graphReCo;
+  bool                                 m_hasRecoDataAlready;
+  bool                                 m_hasRecoGraphAlready;
 
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
@@ -382,9 +431,6 @@ private:
 
   string                            m_nobcname;
   EBLevelBoxData<CELL, 1>           m_diagW;
-  //for aggregation
-  shared_ptr<EBLevelBoxData<CELL, 1> > m_dataReCo;
-  bool                                 m_hasRecoDataAlready;
   
   shared_ptr<EBRelaxSolver>         m_relaxSolver;
 #ifdef CH_USE_PETSC  
@@ -401,6 +447,21 @@ private:
 
   void defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv,
                            bool a_printStuff);
+private:
+  void registerRestrictionStencil();
+  void registerProlongationStencils();
+  void
+  getRestrictionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
+                        vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                        const Box                                 & a_validCoar,
+                        const EBGraph                             & a_graphCoar);
+
+  void
+  getProlongationStencil(vector<EBIndex<CELL> >                   & a_dstVoFs,                    
+                         vector<LocalStencil<CELL, double> >      & a_stencil,                    
+                         const Box                                & a_srcValid,                   
+                         const EBGraph                            & a_srcGraph,                      
+                         unsigned long                              a_icolor);               
 };
 
 
