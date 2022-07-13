@@ -10,64 +10,104 @@
 /******/
 void
 EBPoissonOp::
-registerRestrictionStencil()
+createAndStoreRestrictionStencil()
 {
   DataIterator dit = m_grids.dataIterator();
   vector<EBIndex<CELL> >                    dstVoFs;                    
   vector<LocalStencil<CELL, double> >       stenVec;                    
   Point ghostPt = ProtoCh::getPoint(m_nghost);
-  m_restrictionName = string("MGRestrictionator");
-  m_nobcname = string("no_bcs");
-  Proto::Box dstDomain = ProtoCh::getProtoBox(m_domain);
-  Proto::Box srcDomain = dstDomain.refine(2);
+
+  auto domCoar = m_domain;
+  auto domFine = refine(m_domain,2);
+  
+  auto dblFine = m_geoserv->getDBL(domFine);
+  auto dblCoar = m_geoserv->getDBL(domCoar);
+  
+  shared_ptr<graph_distrib_t> graphCoar = m_graphs;
+  shared_ptr<graph_distrib_t> graphFine;
+  if(dblFine.compatible(dblCoar))
+  {
+    graphFine = m_geoserv->getGraphs(domFine);
+  }
+  else
+  {
+    graphFine = getGraphOnRefinedCoarseLayout();
+  }
+  m_restrictionStencil.resize(dit.size());
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
 
-    auto grid =m_grids[dit[ibox]];
-    Bx  grbx = ProtoCh::getProtoBox(grid);
-    const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-    getRestrictionStencil(dstVoFs, stenVec,  grbx, graph);
-    auto dstValid = grid;
-    auto srcValid = refine(grid, 2);
-    m_dictionary->registerStencil(m_restrictionName, m_nobcname,
-                                  dstVoFs, stenVec, srcValid, dstValid,
-                                  srcDomain, dstDomain, ghostPt, ghostPt, false, ibox);
+    auto gridCoar = m_grids[dit[ibox]];
+    auto gridFine = refine(gridCoar, 2);
+    
+    Bx  dstValid  = ProtoCh::getProtoBox(gridCoar);
+    Bx  srcValid  = ProtoCh::getProtoBox(gridFine);
+    Bx  dstDomain = ProtoCh::getProtoBox(domCoar);
+    Bx  srcDomain = ProtoCh::getProtoBox(domFine);
+    
+    const auto& srcGraph = (*graphFine)[dit[ibox]];
+    const auto& dstGraph = (*graphCoar)[dit[ibox]];
+
+    getRestrictionStencil(dstVoFs, stenVec,  gridCoar, dstGraph);
+    
+    m_restrictionStencil[ibox] = shared_ptr<ebstencil_t>
+      (new ebstencil_t(dstVoFs,   stenVec,
+                       srcGraph,  dstGraph, 
+                       srcValid,  dstValid, 
+                       srcDomain, dstDomain,
+                       ghostPt, ghostPt, false));
   }
 }
 /******/
 void
 EBPoissonOp::
-registerProlongationStencils()
+createAndStoreProlongationStencils()
 {
-  DataIterator dit = m_grids.dataIterator();
-  vector<EBIndex<CELL> >                    dstVoFs;                    
-  vector<LocalStencil<CELL, double> >       stenVec;                    
-  Point ghostPt = ProtoCh::getPoint(m_nghost);
-  Proto::Box dstDomain = ProtoCh::getProtoBox(m_domain);
-  Proto::Box srcDomain = dstDomain.refine(2);
-  shared_ptr<graph_distrib_t> graphsReCo =  getGraphOnRefinedCoarseLayout();
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  auto domCoar = m_domain;
+  auto domFine = refine(m_domain,2);
+  
+  auto dblFine = m_geoserv->getDBL(domFine);
+  auto dblCoar = m_geoserv->getDBL(domCoar);
+  
+  shared_ptr<graph_distrib_t> graphCoar = m_graphs;
+  shared_ptr<graph_distrib_t> graphFine;
+  if(dblFine.compatible(dblCoar))
   {
-    ///prolongation has ncolors stencils
-    for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+    graphFine = m_geoserv->getGraphs(domFine);
+  }
+  else
+  {
+    graphFine = getGraphOnRefinedCoarseLayout();
+  }
+  
+  Point ghostPt = ProtoCh::getPoint(m_nghost);
+  ///prolongation has ncolors stencils
+  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+  {
+    DataIterator dit = m_grids.dataIterator();
+    m_prolongationStencils[icolor].resize(dit.size());
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
     {
-      auto grid =m_grids[dit[ibox]];
-      auto srcValid = grid;
-      auto dstValid = refine(grid, 2);
-      const EBGraph& srcGraph = (*graphsReCo)[dit[ibox]];
-      string colorstring =  string("MGProlonginator_") + to_string(icolor);
-      m_prolongationName[icolor] = colorstring;
-      m_nobcname = string("no_bcs");
-      getProlongationStencil(dstVoFs, stenVec, srcValid, srcGraph, icolor);
+      auto gridCoar = m_grids[dit[ibox]];
+      auto gridFine = refine(gridCoar, 2);
+      const EBGraph& srcGraph = (*graphCoar)[dit[ibox]];
+      const EBGraph& dstGraph = (*graphFine)[dit[ibox]];
+      
+      vector<EBIndex<CELL> >                    dstVoFs;                    
+      vector<LocalStencil<CELL, double> >       stenVec;                    
+      auto srcValid = ProtoCh::getProtoBox(gridCoar);
+      auto dstValid = ProtoCh::getProtoBox(gridFine);
+      auto srcDomain= ProtoCh::getProtoBox(domCoar);
+      auto dstDomain= ProtoCh::getProtoBox(domFine);
+      
+      getProlongationStencil(dstVoFs, stenVec, dstValid, dstGraph, icolor);
 
-      auto srcValidBx= ProtoCh::getProtoBox(srcValid);
-      auto dstValidBx= ProtoCh::getProtoBox(dstValid);
-      auto srcDomainBx= ProtoCh::getProtoBox(srcDomain);
-      auto dstDomainBx= ProtoCh::getProtoBox(dstDomain);
-      m_dictionary->registerStencil(m_prolongationName[icolor], m_nobcname,
-                                    dstVoFs, stenVec, srcValidBx, dstValidBx,
-                                    srcDomainBx, dstDomainBx,
-                                    ghostPt, ghostPt, false, ibox);
+      m_prolongationStencils[icolor][ibox] = shared_ptr<ebstencil_t>
+        (new ebstencil_t(dstVoFs, stenVec,
+                         srcGraph,  dstGraph, 
+                         srcValid,  dstValid, 
+                         srcDomain, dstDomain,
+                         ghostPt, ghostPt, false));
     }
   }
 }
@@ -79,15 +119,12 @@ getRestrictionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
                       const Box                                 & a_validCoar,
                       const EBGraph                             & a_graphCoar)
 {
-#if DIM==2
-  unsigned int ncolor = 4;
-#else
-  unsigned int ncolor = 8;
-#endif    
+  a_dstVoFs.resize(0);
+  a_stencil.resize(0);
   //this stencil has no span that I can understand so getIrrregLocations not appropriate
   a_dstVoFs = a_graphCoar.getAllVoFs(a_validCoar); 
 
-  double dnumpts = double(ncolor);
+  double dnumpts = double(s_ncolors);
   double rweight = 1.0/dnumpts;
   a_stencil.resize(a_dstVoFs.size());
   for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
@@ -108,25 +145,22 @@ void
 EBPoissonOp::
 getProlongationStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
                        vector<LocalStencil<CELL, double> >       & a_stencil,                    
-                       const Box                                 & a_srcValid,                   
-                       const EBGraph                             & a_srcGraph,                      
+                       const Box                                 & a_dstValid,                   
+                       const EBGraph                             & a_dstGraph,                      
                        unsigned long                               a_icolor)               
 {
-  Point colorpt = Proto::EBStencilArchive<CELL, CELL, 2, double>::getColor(a_icolor);
-  vector<EBIndex<CELL> > coarsePts = a_srcGraph.getAllVoFs(a_srcValid);
   a_dstVoFs.resize(0);
-  for(unsigned int icoarse = 0; icoarse < coarsePts.size(); icoarse++)
-  {
-    auto& vofcoar = coarsePts[icoarse];
-    vector<EBIndex<CELL> > fineVoFs = a_srcGraph.refine(vofcoar);
-    a_dstVoFs.insert(a_dstVoFs.end(), fineVoFs.begin(), fineVoFs.end());
-  }
-    
+  a_stencil.resize(0);
+  Point colorpt = Proto::EBStencilArchive<CELL, CELL, 2, double>::getColor(a_icolor);
+
+  a_dstVoFs = a_dstGraph.getAllVoFs(a_dstValid); 
+  vector<EBIndex<CELL> > coarsePts = a_dstGraph.getAllVoFs(a_dstValid);
+
   a_stencil.resize(a_dstVoFs.size());
   for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
   {
     const EBIndex<CELL>&   fineVoF = a_dstVoFs[ivof];
-    EBIndex<CELL>          coarVoF = a_srcGraph.coarsen(fineVoF);
+    EBIndex<CELL>          coarVoF = a_dstGraph.coarsen(fineVoF);
     double weight = 1;
 
     Point vofpt = fineVoF.m_pt;
@@ -454,8 +488,8 @@ define(const EBMultigridLevel            & a_finerLevel,
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
-  registerRestrictionStencil();
-  registerProlongationStencils();
+  createAndStoreRestrictionStencil();
+  createAndStoreProlongationStencils();
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv, false);
 
@@ -680,8 +714,8 @@ restrictResidualOnProc(EBLevelBoxData<CELL, 1>       & a_resc,
     auto& finefab = a_resf[dit[ibox]];
     //finer level owns the stencil (and the operator)
     Box coardom = coarsen(m_domain, 2);
-    shared_ptr<ebstencil_t> stencil =
-      m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
+    shared_ptr<ebstencil_t> stencil = m_restrictionStencil[ibox];
+
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
   }
@@ -721,7 +755,7 @@ prolongIncrementOnProc(EBLevelBoxData<CELL, 1>      & a_phi,
     {
       auto& coarfab = a_cor[dit[ibox]];
       auto& finefab = a_phi[dit[ibox]];
-      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, coardom, m_domain, ibox);
+      shared_ptr<ebstencil_t> stencil = m_prolongationStencils[icolor][ibox];
       //phi  = phi + I(correction) (false means do not init to zero)
       stencil->apply(finefab, coarfab,  false, 1.0);
     }

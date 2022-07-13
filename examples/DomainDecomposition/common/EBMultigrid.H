@@ -389,6 +389,21 @@ private:
       refine(dblReCo, m_grids, 2);
       m_graphReCo = shared_ptr<graph_distrib_t>(new graph_distrib_t(dblReCo, m_nghost, NullConstructorDataFactory<EBGraph >()));
       Box domfine = refine(m_domain, 2);
+
+      DataIterator dit = m_grids.dataIterator();
+      //need to fill graph first and exchange because the exchange can change the graph
+      // and we want the data to be defined consistent with the final graph
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        Box validBox = refine(m_grids[dit[ibox]], 2);
+        Box grownBox = grow(validBox, m_nghost);
+        Box interBoxCh = grownBox & domfine;
+        Bx interBox = getProtoBox(interBoxCh);
+        Bx domain   = getProtoBox(domfine);
+        Bx validBx  = getProtoBox(validBox);
+
+        (*m_graphReCo)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domfine);
+      }
     
       PR_assert(m_geoserv->hasLevel(domfine));
       shared_ptr<graph_distrib_t> graphFine = m_geoserv->getGraphs(domfine);
@@ -425,10 +440,11 @@ private:
 #else
   static const unsigned int s_ncolors = 8;
 #endif
-///prolongation has ncolors stencils
-  string                            m_prolongationName[s_ncolors];
-  string                            m_restrictionName;
-
+  ///prolongation has ncolors stencils
+  //for multilevel stuff I am bypassing the dictionary because the layouts often do not conform
+  vector<shared_ptr<ebstencil_t> >  m_prolongationStencils[s_ncolors];
+  vector<shared_ptr<ebstencil_t> >  m_restrictionStencil;
+  
   string                            m_nobcname;
   EBLevelBoxData<CELL, 1>           m_diagW;
   
@@ -448,8 +464,8 @@ private:
   void defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv,
                            bool a_printStuff);
 private:
-  void registerRestrictionStencil();
-  void registerProlongationStencils();
+  void createAndStoreRestrictionStencil();
+  void createAndStoreProlongationStencils();
   void
   getRestrictionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
                         vector<LocalStencil<CELL, double> >       & a_stencil,                    
@@ -459,8 +475,8 @@ private:
   void
   getProlongationStencil(vector<EBIndex<CELL> >                   & a_dstVoFs,                    
                          vector<LocalStencil<CELL, double> >      & a_stencil,                    
-                         const Box                                & a_srcValid,                   
-                         const EBGraph                            & a_srcGraph,                      
+                         const Box                                & a_dstValid,                   
+                         const EBGraph                            & a_dstGraph,                      
                          unsigned long                              a_icolor);               
 };
 
