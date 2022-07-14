@@ -196,7 +196,8 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
   }
 
   residual(m_res, a_phi, a_rhs, true);
-  Real initres = m_res.maxNorm(0);
+  EBIndex<CELL> vofmax;
+  Real initres = m_res.maxNorm(vofmax, 0);
   int iter = 0;
   pout() << "EBMultigrid::solve tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
@@ -209,7 +210,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
            << setiosflags(ios::scientific);
 
     
-    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm;
+    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm << "@ " << vofmax.m_pt;
     Real rate = 1;
     if((resnormold > 1.0e-12) && (iter > 0))
     {
@@ -224,11 +225,11 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     residual(m_res, a_phi, a_rhs, true);
     
     resnormold = resnorm;
-    resnorm = m_res.maxNorm(0);
+    resnorm = m_res.maxNorm(vofmax, 0);
 
     iter++;
   }
-  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << endl;
+  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << "@ " <<vofmax.m_pt << endl;
 }
 
 /****/

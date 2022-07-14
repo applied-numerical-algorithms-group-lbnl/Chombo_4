@@ -136,7 +136,7 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   if(a_printStuff)
   {
     EBIndex<CELL> vofmax;
-    Real phiMax = phi.maxNorm(0);
+    Real phiMax = phi.maxNorm(vofmax, 0);
     Chombo4::pout() << "EBCCProjector::project: |phi|max  = " << phiMax << "@" << vofmax.m_pt << endl;
   }
     

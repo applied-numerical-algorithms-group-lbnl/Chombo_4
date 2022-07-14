@@ -535,7 +535,7 @@ public:
     a_grids.push_back(dblFine);
 
     //turn this hook on to agglomeration
-    bool doAgglom = true;
+    bool doAgglom = false;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
     

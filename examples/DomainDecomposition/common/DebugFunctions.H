@@ -10,8 +10,8 @@
 //Area functions
 //cell centered and please keep them in the domain
 ////upper left corner of 64^2
-Point areaLo(28, 21);
-Point areaHi(31, 31);
+Point areaLo(0, 0);
+Point areaHi(3, 3);
 //the bit underneath the circle rad=0.1, center = 0.5
 //Point areaLo(28, 24);
 //Point areaHi(30, 26);                                    
@@ -887,8 +887,16 @@ dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      cout << "ibox = " << ibox << ":" << endl;
-      genDumpCell1(&data[dit[ibox]], areaLo, areaHi);
+      Box area(areaLo, areaHi);
+      Box valid = data.disjointBoxLayout()[dit[ibox]];
+      valid &= area;
+      if(!valid.isEmpty())
+      {
+        Point lovalid = ProtoCh::getPoint(valid.smallEnd());
+        Point hivalid = ProtoCh::getPoint(valid.bigEnd());
+        cout << "ibox = " << ibox << ":" << endl;
+        genDumpCell1(&data[dit[ibox]], lovalid, hivalid);
+      }
     }
   }
 }

@@ -72,6 +72,20 @@ public:
         residual(m_resid,a_phi,a_rhs);                      
         //stencils for multilevel objects live with the coarser
         m_coarser->restrictResidual(m_residC,m_resid);
+//begin debug
+        {
+          Chombo4::pout()  << setprecision(8)
+                           << setiosflags(ios::showpoint)
+                           << setiosflags(ios::scientific);
+          
+          EBIndex<CELL> vofmaxP;
+          EBIndex<CELL> vofmaxR;
+          Real maxP = a_phi.maxNorm(vofmaxP, 0);
+          Real maxR = m_residC.maxNorm(vofmaxR, 0);
+          Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
+          Chombo4::pout() << "residC_max  = " << maxR << "@" << vofmaxR.m_pt << endl;
+        }
+//end debug        
         m_deltaC.setVal(0.);
         m_coarser->vCycle(m_deltaC,m_residC);
         if(m_useWCycle)
@@ -79,6 +93,16 @@ public:
           m_coarser->vCycle(m_deltaC,m_residC);
         }
         m_coarser->prolongIncrement(a_phi,m_deltaC);
+//begin debug
+        {
+          EBIndex<CELL> vofmaxP;
+          EBIndex<CELL> vofmaxD;
+          Real maxP = a_phi.maxNorm(vofmaxP, 0);
+          Real maxD = m_deltaC.maxNorm(vofmaxD, 0);
+          Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
+          Chombo4::pout() << "deC_max  = " << maxD << "@" << vofmaxD.m_pt << endl;
+        }
+//end debug        
       }
       else
       {
