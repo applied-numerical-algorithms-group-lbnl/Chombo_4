@@ -7,6 +7,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "EBPetscSolver.H"
+#include "DumpArea.H"
 #include "Chombo_NamespaceHeader.H"
 #if DIM==2
 #define MG_NUM_COLORS 4
@@ -58,6 +59,13 @@ public:
   {
 
     PR_TIME("sgmglevel::vcycle");
+    int nxdom = m_domain.size(0);
+    int ideb = 0;
+    if(nxdom == 32)
+    {
+      ideb = 1;
+    }
+
     if(m_direct_to_bottom)
     {
       pout() << "going directly to bottom solve" << endl;
@@ -69,6 +77,7 @@ public:
 
       if (m_hasCoarser)
       {
+        
         residual(m_resid,a_phi,a_rhs);                      
         //stencils for multilevel objects live with the coarser
         m_coarser->restrictResidual(m_residC,m_resid);
@@ -77,24 +86,47 @@ public:
           Chombo4::pout()  << setprecision(8)
                            << setiosflags(ios::showpoint)
                            << setiosflags(ios::scientific);
-          
           EBIndex<CELL> vofmaxP;
           EBIndex<CELL> vofmaxR;
           Real maxP = a_phi.maxNorm(vofmaxP, 0);
           Real maxR = m_residC.maxNorm(vofmaxR, 0);
+          Chombo4::pout() << "domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
           Chombo4::pout() << "residC_max  = " << maxR << "@" << vofmaxR.m_pt << endl;
         }
 //end debug        
         m_deltaC.setVal(0.);
         m_coarser->vCycle(m_deltaC,m_residC);
-        if(m_useWCycle)
+        
+//        if(m_useWCycle)
+//        {
+//          m_coarser->vCycle(m_deltaC,m_residC);
+//        }
         {
-          m_coarser->vCycle(m_deltaC,m_residC);
+          EBIndex<CELL> vofmaxP;
+          EBIndex<CELL> vofmaxD;
+          Real maxP = a_phi.maxNorm(vofmaxP, 0);
+          Real maxD = m_deltaC.maxNorm(vofmaxD, 0);
+          Chombo4::pout() << "domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
+          Chombo4::pout() << "deC_max  = " << maxD << "@" << vofmaxD.m_pt << endl;
+          DumpArea::dumpLDCell1Area(&m_deltaC);
+
+          Chombo4::pout() << "domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "phi:" << endl;
+          DumpArea::dumpLDCell1Area(&a_phi);
+          Chombo4::pout() << "deC:" << endl;
+          DumpArea::dumpLDCell1Area(&m_deltaC);
         }
+        
         m_coarser->prolongIncrement(a_phi,m_deltaC);
 //begin debug
         {
+          Chombo4::pout() << "domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "phi:" << endl;
+          DumpArea::dumpLDCell1Area(&a_phi);
+          Chombo4::pout() << "deC:" << endl;
+          DumpArea::dumpLDCell1Area(&m_deltaC);
           EBIndex<CELL> vofmaxP;
           EBIndex<CELL> vofmaxD;
           Real maxP = a_phi.maxNorm(vofmaxP, 0);
@@ -109,8 +141,33 @@ public:
         bottom_solve(a_phi, a_rhs);
       }
 
+//begin debug
+        {
+          EBIndex<CELL> vofmaxP;
+          EBIndex<CELL> vofmaxR;
+          Real maxP = a_phi.maxNorm(vofmaxP, 0);
+          Real maxR = a_rhs.maxNorm(vofmaxR, 0);
+          Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
+          Chombo4::pout() << "rhs_max  = " << maxR << "@" << vofmaxR.m_pt << endl;
+        }
+
+//end debug
       relax(a_phi,a_rhs, m_numSmooth);
+//begin debug
+        {
+          EBIndex<CELL> vofmaxP;
+          EBIndex<CELL> vofmaxR;
+          Real maxP = a_phi.maxNorm(vofmaxP, 0);
+          Real maxR = a_rhs.maxNorm(vofmaxR, 0);
+          Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "phi_max  = " << maxP << "@" << vofmaxP.m_pt << endl;
+          Chombo4::pout() << "rhs_max  = " << maxR << "@" << vofmaxR.m_pt << endl;
+        }
+
+//end debug
     }
+
   }
   ///
   EBMultigridLevel()
