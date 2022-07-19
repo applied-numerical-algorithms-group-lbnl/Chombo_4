@@ -61,13 +61,14 @@ public:
       DataIterator dit = data.dataIterator();
       int nx = dataPtr->disjointBoxLayout().physDomain().domainBox().size(0);
       int ny = dataPtr->disjointBoxLayout().physDomain().domainBox().size(1);
-      int nxhalf = nx/2;
-      int nythird = ny/3;
+      int nyhalf = ny/2;
+      int nxthird = nx/3;
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        IntVect ivlo(D_DECL(nxhalf-1, nythird-1, 0));
-        IntVect ivhi(D_DECL(nxhalf+2, nythird+2, 0));
+        IntVect ivlo(D_DECL(nxthird-1, nyhalf-1, 0));
+        IntVect ivhi(D_DECL(nxthird+2, nyhalf+2, 0));
         Box area(ivlo, ivhi);
+        ivlo = IntVect::Zero;
         
         Box valid = data.disjointBoxLayout()[dit[ibox]];
         valid &= area;
