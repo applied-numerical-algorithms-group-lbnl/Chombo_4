@@ -8,6 +8,15 @@
 class DumpArea
 {
 public:
+  template <int order>
+  static void dumpAsOneBox( const EBLevelBoxData<CELL, 1>*    a_input,
+                            shared_ptr<GeometryService<order> >   a_geoserv)
+  {
+    shared_ptr<EBLevelBoxData<CELL, 1> > oneboxCopy=
+      EBLevelBoxData<CELL, 1>::getOneBoxCopyOfData(*a_input, a_geoserv);
+    DumpArea::dumpLDCell1Area(&(*oneboxCopy));
+  }
+  
   static void 
   genDumpCell1(const EBBoxData<CELL, Real, 1>* dataPtr, Point lodeb, Point hideb)
   {
@@ -65,10 +74,12 @@ public:
       int nxthird = nx/3;
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        IntVect ivlo(D_DECL(nxthird-1, nyhalf-1, 0));
-        IntVect ivhi(D_DECL(nxthird+2, nyhalf+2, 0));
-        Box area(ivlo, ivhi);
+        IntVect ivlo(D_DECL(nxthird-5, nyhalf-2, 0));
+        IntVect ivhi(D_DECL(nxthird+1, nyhalf+2, 0));
         ivlo = IntVect::Zero;
+        ivhi = 6*IntVect::Unit;
+        Box area(ivlo, ivhi);
+
         
         Box valid = data.disjointBoxLayout()[dit[ibox]];
         valid &= area;
@@ -82,6 +93,7 @@ public:
       }
     }
   }
+
 };
 
 #include "Chombo_NamespaceFooter.H"

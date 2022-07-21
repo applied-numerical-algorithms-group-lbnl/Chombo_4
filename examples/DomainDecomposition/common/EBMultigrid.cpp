@@ -219,7 +219,22 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     }
     pout() << endl;
     
+    {//begin debug
+      pout() << "before vcycle m_cor:" << endl;
+      DumpArea::dumpLDCell1Area(&m_cor);
+      pout() << "before vcycle m_res:" << endl;
+      DumpArea::dumpLDCell1Area(&m_res);
+    }//end debug
+    
     vCycle(m_cor, m_res, a_printStuff);
+    
+    {//begin debug
+      pout() << "after vcycle m_cor:" << endl;
+      DumpArea::dumpLDCell1Area(&m_cor);
+      pout() << "after vcycle m_res:" << endl;
+      DumpArea::dumpLDCell1Area(&m_res);
+        
+    }//end debug
 
     a_phi += m_cor;
     residual(m_res, a_phi, a_rhs, true);

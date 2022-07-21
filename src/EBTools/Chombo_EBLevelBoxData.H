@@ -23,6 +23,7 @@
 #include "Proto_EBBoxData.H"
 #include "Proto_EBHostData.H"
 #include "Chombo_EBDataChoreography.H"
+#include "Chombo_GeometryService.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
 
@@ -577,6 +578,41 @@ public:
     }
   }
 
+  template<int order>
+  static shared_ptr<graph_distrib_t> getGraphOnOneBox(const Box& a_domain, IntVect a_ghost,
+                                                      shared_ptr<GeometryService<order> >   a_geoserv)
+
+  {
+    vector<Box> vbox(1, a_domain);
+    vector<int> proc(1, 0       );
+    DisjointBoxLayout dblOneBox(vbox, proc, a_domain);
+    shared_ptr<graph_distrib_t> retval(new graph_distrib_t(dblOneBox, a_ghost, NullConstructorDataFactory<EBGraph >()));
+    DataIterator ditone = dblOneBox.dataIterator();
+    
+    Bx bxdom   = getProtoBox(a_domain);
+    (*retval)[ditone[0]].defineAsAllRegular(bxdom, bxdom, bxdom);
+    
+    PR_assert(a_geoserv->hasLevel(a_domain));
+    shared_ptr<graph_distrib_t> graphFine = a_geoserv->getGraphs(a_domain);
+    graphFine->copyTo(*retval);
+    
+    return retval;
+  }
+
+  template<int order>
+  static shared_ptr<EBLevelBoxData<CELL, 1> > getOneBoxCopyOfData( const EBLevelBoxData<CELL, 1> &   a_input,
+                                                                   shared_ptr<GeometryService<order> >   a_geoserv)
+  {
+    shared_ptr<EBLevelBoxData<CELL, 1> > retval;
+    auto ghost = a_input.ghostVect();
+    Box domain = a_input.disjointBoxLayout().physDomain().domainBox();
+    
+    shared_ptr<graph_distrib_t> graphsOneBox = getGraphOnOneBox(domain, ghost, a_geoserv);
+    auto dblOneBox = graphsOneBox->disjointBoxLayout();
+    retval = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblOneBox, ghost, graphsOneBox));
+    a_input.copyTo(*retval);
+    return retval;
+  }
   static int 
   checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
               const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,

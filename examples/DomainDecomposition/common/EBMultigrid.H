@@ -68,10 +68,12 @@ public:
 
     {//begin debug
       Chombo4::pout() << "entering vcycle domain resolution = " << nxdom << endl;
-      Chombo4::pout() << "phi:" << endl;
-      DumpArea::dumpLDCell1Area(&a_phi);
       Chombo4::pout() << "rhs:" << endl;
-      DumpArea::dumpLDCell1Area(&a_rhs);
+      //DumpArea::dumpLDCell1Area(&a_rhs);
+      DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
+      Chombo4::pout() << "phi:" << endl;
+      //DumpArea::dumpLDCell1Area(&a_phi);
+      DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
     }//end debug
     
     if(m_direct_to_bottom)
@@ -91,10 +93,9 @@ public:
         //stencils for multilevel objects live with the coarser
         {//begin debug
           Chombo4::pout() << "going into restriction with nxdom =  " << nxdom << endl;
-          Chombo4::pout() << "m_residC:" << endl;
-          DumpArea::dumpLDCell1Area(&m_residC);
           Chombo4::pout() << "m_resid:" << endl;
-          DumpArea::dumpLDCell1Area(&m_resid);
+          //DumpArea::dumpLDCell1Area(&m_resid);
+          DumpArea::dumpAsOneBox(&m_resid, m_geoserv);
         }//end debug
 
         m_coarser->restrictResidual(m_residC,m_resid);
@@ -102,20 +103,11 @@ public:
         {//begin debug
           Chombo4::pout() << "coming out of  restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_residC:" << endl;
-          DumpArea::dumpLDCell1Area(&m_residC);
-          Chombo4::pout() << "m_resid:" << endl;
-          DumpArea::dumpLDCell1Area(&m_resid);
+          //DumpArea::dumpLDCell1Area(&m_residC);
+          DumpArea::dumpAsOneBox(&m_residC, m_geoserv);
         }//end debug
 
         m_deltaC.setVal(0.);
-        
-        {//begin debug
-          Chombo4::pout() << "going into recursion with resolution = " << nxdom << endl;
-          Chombo4::pout() << "m_deltaC" << endl;
-          DumpArea::dumpLDCell1Area(&m_deltaC);
-          Chombo4::pout() << "m_residC:" << endl;
-          DumpArea::dumpLDCell1Area(&a_rhs);
-        }//end debug
         
         m_coarser->vCycle(m_deltaC,m_residC);
         
@@ -127,11 +119,11 @@ public:
           Chombo4::pout() << "out of recursive call" << endl;
           Chombo4::pout() << "pre-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
-          DumpArea::dumpLDCell1Area(&a_phi);
+          //DumpArea::dumpLDCell1Area(&a_phi);
+          DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
           Chombo4::pout() << "deC:" << endl;
-          DumpArea::dumpLDCell1Area(&m_deltaC);
-          Chombo4::pout() << "m_residC:" << endl;
-          DumpArea::dumpLDCell1Area(&m_residC);
+          //DumpArea::dumpLDCell1Area(&m_deltaC);
+          DumpArea::dumpAsOneBox(&m_deltaC, m_geoserv);
         }//end debug
         
         m_coarser->prolongIncrement(a_phi,m_deltaC);
@@ -139,9 +131,8 @@ public:
         {//begin debug
           Chombo4::pout() << "post-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
-          DumpArea::dumpLDCell1Area(&a_phi);
-          Chombo4::pout() << "deC:" << endl;
-          DumpArea::dumpLDCell1Area(&m_deltaC);
+          //DumpArea::dumpLDCell1Area(&a_phi);
+          DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
         }//end debug        
 
       }
@@ -154,9 +145,8 @@ public:
       {//begin debug
         Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
-        DumpArea::dumpLDCell1Area(&a_phi);
-        Chombo4::pout() << "rhs:" << endl;
-        DumpArea::dumpLDCell1Area(&a_rhs);
+        //DumpArea::dumpLDCell1Area(&a_phi);
+        DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
       }//end debug 
 
 
@@ -165,9 +155,8 @@ public:
       {//begin debug
         Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
-        DumpArea::dumpLDCell1Area(&a_phi);
-        Chombo4::pout() << "rhs:" << endl;
-        DumpArea::dumpLDCell1Area(&a_rhs);
+        //DumpArea::dumpLDCell1Area(&a_phi);
+        DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
       }//end debug
 
 
@@ -331,6 +320,9 @@ public:
     }
   }
 
+  
+
+      
 };
 
 
@@ -465,7 +457,6 @@ private:
   
     return m_dataReCo;
   }
-  
   shared_ptr<graph_distrib_t>& getGraphOnRefinedCoarseLayout()
   {
     PR_TIME("EBPoissonOp::getGraphOnRefinedCoarseLayout");
