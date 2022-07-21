@@ -17,6 +17,7 @@
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
+#include "DumpArea.H"
 #include "EBAdvection.H"
 
 #include "Chombo_EBDataChoreography.H"
@@ -200,6 +201,21 @@ testEBLevelBoxData(shared_ptr<GeometryService<GEOM_MAX_ORDER> >  a_geoserv,
   fillTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx);
   snooch.exchange(true);
   checkTheSnooch(snooch, a_geoserv, a_grids, a_domain, a_dx, numghost);
+
+
+  EBLevelBoxData<CELL,1> copySnooch(a_grids, IntVect::Zero, graphs);
+  snooch.copyTo(copySnooch);
+  checkTheSnooch(copySnooch, a_geoserv, a_grids, a_domain, a_dx, IntVect::Zero);
+  
+  shared_ptr<EBLevelBoxData<CELL, 1> > oneboxCopy=
+    EBLevelBoxData<CELL, 1>::getOneBoxCopyOfData(copySnooch, a_geoserv);
+  checkTheSnooch(*oneboxCopy, a_geoserv, oneboxCopy->disjointBoxLayout(),
+                 a_domain, a_dx, IntVect::Zero);
+
+
+  DumpArea::dumpLDCell1Area(&copySnooch);
+  DumpArea::dumpLDCell1Area(&(*oneboxCopy));
+  DumpArea::dumpAsOneBox(&copySnooch, a_geoserv);
   Chombo4::pout() << "leaving testEBLevelBoxData" << std::endl;
   return 0;
 }
@@ -427,7 +443,7 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
 }
 
 int
-runTests(int a_argc, char* a_argv[])
+runAllTests(int a_argc, char* a_argv[])
 {
 
   using Chombo4::ProblemDomain;
@@ -469,6 +485,50 @@ runTests(int a_argc, char* a_argv[])
   //same goes for this one
   testEBLevelFluxData(geoserv, grids, domain, dx, dataGhostPt);
   
+  return retval;
+}
+
+
+int
+runTests(int a_argc, char* a_argv[])
+{
+
+  using Chombo4::ProblemDomain;
+  using Chombo4::DisjointBoxLayout;
+  using Chombo4::LevelBoxData;
+  using Chombo4::Copier;
+  using Chombo4::DataIterator;
+  using Chombo4::MayDay;
+  using Proto::BaseIF;
+  
+  Real dx;
+  Chombo4::DisjointBoxLayout grids;
+
+  shared_ptr<GeometryService<GEOM_MAX_ORDER> >  geoserv;
+
+  Real geomCen;
+  Real geomRad;
+  int whichGeom;
+  int nx;
+  defineGeometry(grids, dx, geomCen, geomRad, whichGeom, nx,  geoserv);
+
+  //Chombo4::pout() << "returning after defineGeometry" << endl;
+  //return 0;
+  
+  IntVect dataGhostIV =   4*IntVect::Unit;
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
+
+  Chombo4::pout() << "making dictionary" << endl;
+  Chombo4::Box domain = grids.physDomain().domainBox();
+  int retval = testMinimalSPMD(geoserv, grids, domain, dx, dataGhostPt);
+  if(retval != 0)
+  {
+    Chombo4::pout() << "problem in testMinimalSPMD" << endl;
+  }
+  //because this gets tested on the device , no return values are possible.
+  //why yes, it is a lovely way to run a computer.
+  testEBLevelBoxData(geoserv, grids, domain, dx, dataGhostPt);
+
   return retval;
 }
 
