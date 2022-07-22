@@ -578,6 +578,7 @@ public:
     }
   }
 
+  /// Only for debugging.  This will not scale.
   template<int order>
   static shared_ptr<graph_distrib_t> getGraphOnOneBox(const Box& a_domain, IntVect a_ghost,
                                                       shared_ptr<GeometryService<order> >   a_geoserv)
@@ -599,6 +600,7 @@ public:
     return retval;
   }
 
+  /// Only for debugging.  This will not scale.
   template<int order>
   static shared_ptr<EBLevelBoxData<CELL, 1> > getOneBoxCopyOfData( const EBLevelBoxData<CELL, 1> &   a_input,
                                                                    shared_ptr<GeometryService<order> >   a_geoserv)
@@ -613,6 +615,8 @@ public:
     a_input.copyTo(*retval);
     return retval;
   }
+  
+  /// for tests
   static int 
   checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
               const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,
@@ -643,6 +647,73 @@ public:
     return retval;
   }
 
+  ///useful for multigrid, AMR
+  template< int order>
+  static
+  shared_ptr<EBLevelBoxData<CELL, 1> >
+  getDataOnRefinedCoarseLayout(const DisjointBoxLayout& a_dblCoar,
+                               const IntVect          & a_ghost,
+                               shared_ptr<GeometryService<order> >   a_geoserv)
+  {
+    PR_TIME("EBLevelBoxData::getDataOnRefinedCoarseLayout");
+
+
+
+    shared_ptr<graph_distrib_t> graphsReCo = getGraphOnRefinedCoarseLayout(a_dblCoar, a_ghost, a_geoserv);
+    DisjointBoxLayout dblReCo = graphsReCo->disjointBoxLayout();
+
+    shared_ptr<EBLevelBoxData<CELL, 1> >
+      dataReCo(new EBLevelBoxData<CELL, 1>(dblReCo, a_ghost, graphsReCo));
+
+  
+    return dataReCo;
+  }
+
+  ///meta data for the above
+  template<int order>
+  static
+  shared_ptr<graph_distrib_t>
+  getGraphOnRefinedCoarseLayout(const DisjointBoxLayout             & a_dblCoar,             
+                                const IntVect                       & a_ghost,
+                                shared_ptr<GeometryService<order> >   a_geoserv)
+    
+    
+  {
+    PR_TIME("EBLevelBoxData::getGraphOnRefinedCoarseLayout");
+
+    Box domCoar = a_dblCoar.physDomain().domainBox();
+    Box domFine = refine(domCoar, 2);
+    
+    DisjointBoxLayout dblReCo;
+    refine(dblReCo, a_dblCoar, 2);
+    PR_assert(domFine == dblReCo.physDomain().domainBox());
+    
+    shared_ptr<graph_distrib_t>
+      graphReCo = shared_ptr<graph_distrib_t>(new graph_distrib_t(dblReCo, a_ghost, NullConstructorDataFactory<EBGraph >()));
+    
+    DataIterator dit = dblReCo.dataIterator();
+    //need to fill graph first and exchange because the exchange can change the graph
+    // and we want the data to be defined consistent with the final graph
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Box validBox = dblReCo[dit[ibox]];
+      Box grownBox = grow(validBox, a_ghost);
+      Box interBoxCh = grownBox & domFine;
+
+      Bx interBx = getProtoBox(interBoxCh);
+      Bx domaiBx   = getProtoBox(domFine);
+      Bx validBx  = getProtoBox(validBox);
+
+      (*graphReCo)[dit[ibox]].defineAsAllRegular(validBx, interBx,  domaiBx);
+    }
+    
+    PR_assert(a_geoserv->hasLevel(domFine));
+    shared_ptr<graph_distrib_t> graphFine = a_geoserv->getGraphs(domFine);
+    graphFine->copyTo(*graphReCo);
+    graphReCo->exchange();
+
+    return graphReCo;
+  }
 
 private:
     shared_ptr<graph_distrib_t> m_graphs;

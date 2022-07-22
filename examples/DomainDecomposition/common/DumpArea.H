@@ -77,7 +77,8 @@ public:
         IntVect ivlo(D_DECL(nxthird-5, nyhalf-2, 0));
         IntVect ivhi(D_DECL(nxthird+1, nyhalf+2, 0));
         ivlo = IntVect::Zero;
-        ivhi = 6*IntVect::Unit;
+        ivhi = 9*IntVect::Unit;
+        ivhi[0] = 6;
         Box area(ivlo, ivhi);
 
         

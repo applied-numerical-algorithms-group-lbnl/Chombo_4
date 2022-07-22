@@ -229,9 +229,9 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     vCycle(m_cor, m_res, a_printStuff);
     
     {//begin debug
-      pout() << "after vcycle m_cor:" << endl;
+      pout() << "relax m_cor:" << endl;
       DumpArea::dumpLDCell1Area(&m_cor);
-      pout() << "after vcycle m_res:" << endl;
+      pout() << "relax m_res:" << endl;
       DumpArea::dumpLDCell1Area(&m_res);
         
     }//end debug
@@ -361,7 +361,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_numSmooth        = a_numSmooth        ;    
 
   m_depth = 0;
-  m_hasRecoDataAlready = false;
+  m_hasRecoDataAlready  = false;
   m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_alpha      = a_alpha;      
@@ -473,7 +473,7 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_bottom_solver    = a_finerLevel.m_bottom_solver;
   m_direct_to_bottom = a_finerLevel.m_direct_to_bottom;
   
-  m_hasRecoDataAlready = false;
+  m_hasRecoDataAlready  = false;
   m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
@@ -607,8 +607,26 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   CH_TIME("EBPoissonOp::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
+  
+  {//begin debug
+    pout() << "residual a_phi:" << endl;
+    DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
+    pout() << "residual a_res:" << endl;
+    DumpArea::dumpAsOneBox(&a_res, m_geoserv);
+    pout() << "residual a_rhs:" << endl;
+    DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
+        
+  }//end debug
+  
   applyOp(a_res, a_phi, a_doExchange);
-  //subtract off rhs so res = lphi - rhs
+
+  {//begin debug
+    pout() << "residual a_res:" << endl;
+    DumpArea::dumpAsOneBox(&a_res, m_geoserv);
+  }//end debug
+
+
+//subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -623,8 +641,11 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
 
-//not necessary  
-//  a_res.exchange();
+  {//begin debug
+    pout() << "residual a_res:" << endl;
+    DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
+  }//end debug
+
 }
 /****/
 void
@@ -663,6 +684,13 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
 
       residual(resid, a_phi, a_rhs, doExchange);
 
+      {//begin debug
+        pout() << "phi: " << endl;
+        DumpArea::dumpAsOneBox(&a_phi,m_geoserv);
+        pout() << "resid: " << endl;
+        DumpArea::dumpAsOneBox(&resid, m_geoserv);
+      }//end debug
+      
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
 
@@ -683,6 +711,10 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       
         ideb++;
       } //end loop over boxes
+      {//begin debug
+        pout() << "phi: " << endl;
+        DumpArea::dumpAsOneBox(&a_phi,m_geoserv);
+      }//end debug
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons

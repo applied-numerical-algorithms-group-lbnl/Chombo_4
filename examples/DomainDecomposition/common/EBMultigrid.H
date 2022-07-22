@@ -69,10 +69,8 @@ public:
     {//begin debug
       Chombo4::pout() << "entering vcycle domain resolution = " << nxdom << endl;
       Chombo4::pout() << "rhs:" << endl;
-      //DumpArea::dumpLDCell1Area(&a_rhs);
       DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
       Chombo4::pout() << "phi:" << endl;
-      //DumpArea::dumpLDCell1Area(&a_phi);
       DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
     }//end debug
     
@@ -84,6 +82,11 @@ public:
     else
     {
       relax(a_phi,a_rhs, m_numSmooth);
+      {//begin debug
+        Chombo4::pout() << "out of relax with nxdom =  " << nxdom << endl;
+        Chombo4::pout() << "a_phi:" << endl;
+        DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
+      }
 
       if (m_hasCoarser)
       {
@@ -94,7 +97,6 @@ public:
         {//begin debug
           Chombo4::pout() << "going into restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_resid:" << endl;
-          //DumpArea::dumpLDCell1Area(&m_resid);
           DumpArea::dumpAsOneBox(&m_resid, m_geoserv);
         }//end debug
 
@@ -103,7 +105,6 @@ public:
         {//begin debug
           Chombo4::pout() << "coming out of  restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_residC:" << endl;
-          //DumpArea::dumpLDCell1Area(&m_residC);
           DumpArea::dumpAsOneBox(&m_residC, m_geoserv);
         }//end debug
 
@@ -116,13 +117,10 @@ public:
 //          m_coarser->vCycle(m_deltaC,m_residC);
 //        }
         {//begin debug
-          Chombo4::pout() << "out of recursive call" << endl;
-          Chombo4::pout() << "pre-PI domain resolution = " << nxdom << endl;
+          Chombo4::pout() << "out of recursive call with nxdom = " << nxdom <<  endl;
           Chombo4::pout() << "phi:" << endl;
-          //DumpArea::dumpLDCell1Area(&a_phi);
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
           Chombo4::pout() << "deC:" << endl;
-          //DumpArea::dumpLDCell1Area(&m_deltaC);
           DumpArea::dumpAsOneBox(&m_deltaC, m_geoserv);
         }//end debug
         
@@ -131,7 +129,6 @@ public:
         {//begin debug
           Chombo4::pout() << "post-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
-          //DumpArea::dumpLDCell1Area(&a_phi);
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
         }//end debug        
 
@@ -145,7 +142,6 @@ public:
       {//begin debug
         Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
-        //DumpArea::dumpLDCell1Area(&a_phi);
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
       }//end debug 
 
@@ -155,7 +151,6 @@ public:
       {//begin debug
         Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
-        //DumpArea::dumpLDCell1Area(&a_phi);
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
       }//end debug
 
@@ -372,7 +367,6 @@ public:
   virtual ~EBPoissonOp()
   {
     m_hasRecoDataAlready  = false;
-    m_hasRecoGraphAlready = false;
   }
 
   /// 
@@ -446,60 +440,34 @@ private:
     //we do not need this at every level so only construct reco data when needed
     if(!m_hasRecoDataAlready)
     {
-      PR_TIME("data construction bit");
-      shared_ptr<graph_distrib_t> graphsReCo = getGraphOnRefinedCoarseLayout();
-      DisjointBoxLayout dblReCo = graphsReCo->disjointBoxLayout();
-
-      typedef GraphConstructorFactory< EBBoxData<CELL, Real, 1> > devifactory_t;
-      m_dataReCo = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblReCo, m_nghost, graphsReCo));
+      m_dataReCo = EBLevelBoxData<CELL, 1>::getDataOnRefinedCoarseLayout(m_grids, m_nghost, m_geoserv);
       m_hasRecoDataAlready = true;
     }
   
     return m_dataReCo;
   }
-  shared_ptr<graph_distrib_t>& getGraphOnRefinedCoarseLayout()
+
+  shared_ptr<graph_distrib_t>  getGraphOnRefinedCoarseLayout()
   {
-    PR_TIME("EBPoissonOp::getGraphOnRefinedCoarseLayout");
+    PR_TIME("EBPoissonOp::getOnRefinedCoarseLayout");
+
+    //we do not need this at every level so only construct reco data when needed
     if(!m_hasRecoGraphAlready)
     {
-      DisjointBoxLayout dblReCo;
-      refine(dblReCo, m_grids, 2);
-      m_graphReCo = shared_ptr<graph_distrib_t>(new graph_distrib_t(dblReCo, m_nghost, NullConstructorDataFactory<EBGraph >()));
-      Box domfine = refine(m_domain, 2);
-
-      DataIterator dit = m_grids.dataIterator();
-      //need to fill graph first and exchange because the exchange can change the graph
-      // and we want the data to be defined consistent with the final graph
-      for(int ibox = 0; ibox < dit.size(); ibox++)
-      {
-        Box validBox = refine(m_grids[dit[ibox]], 2);
-        Box grownBox = grow(validBox, m_nghost);
-        Box interBoxCh = grownBox & domfine;
-        Bx interBox = getProtoBox(interBoxCh);
-        Bx domain   = getProtoBox(domfine);
-        Bx validBx  = getProtoBox(validBox);
-
-        (*m_graphReCo)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domfine);
-      }
-    
-      PR_assert(m_geoserv->hasLevel(domfine));
-      shared_ptr<graph_distrib_t> graphFine = m_geoserv->getGraphs(domfine);
-      graphFine->copyTo(*m_graphReCo);
-      m_graphReCo->exchange();
+      m_graphReCo = EBLevelBoxData<CELL, 1>::getGraphOnRefinedCoarseLayout(m_grids, m_nghost, m_geoserv);
       m_hasRecoGraphAlready = true;
     }
+  
     return m_graphReCo;
   }
-
   void
   defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
                        bool a_printStuff);
   
   shared_ptr<EBLevelBoxData<CELL, 1> > m_dataReCo;
-  shared_ptr<graph_distrib_t>          m_graphReCo;
   bool                                 m_hasRecoDataAlready;
+  shared_ptr<graph_distrib_t>          m_graphReCo;
   bool                                 m_hasRecoGraphAlready;
-
 
 //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   void  fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
