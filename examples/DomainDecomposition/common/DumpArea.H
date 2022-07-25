@@ -70,15 +70,15 @@ public:
       DataIterator dit = data.dataIterator();
       int nx = dataPtr->disjointBoxLayout().physDomain().domainBox().size(0);
       int ny = dataPtr->disjointBoxLayout().physDomain().domainBox().size(1);
-      int nyhalf = ny/2;
-      int nxthird = nx/3;
+      int nxfrac = (3*nx)/32;
+      int nyfrac = (8*ny)/32;
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        IntVect ivlo(D_DECL(nxthird-5, nyhalf-2, 0));
-        IntVect ivhi(D_DECL(nxthird+1, nyhalf+2, 0));
-        ivlo = IntVect::Zero;
-        ivhi = 9*IntVect::Unit;
-        ivhi[0] = 6;
+        IntVect ivlo(D_DECL(nxfrac-3, nyfrac-5, 0));
+        IntVect ivhi(D_DECL(nxfrac+3, nyfrac+5, 0));
+//        ivlo = IntVect::Zero;
+//        ivhi = 9*IntVect::Unit;
+//        ivhi[0] = 6;
         Box area(ivlo, ivhi);
 
         

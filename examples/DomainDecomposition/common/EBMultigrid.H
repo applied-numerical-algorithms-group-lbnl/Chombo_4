@@ -91,7 +91,7 @@ public:
       if (m_hasCoarser)
       {
         
-        residual(m_resid,a_phi,a_rhs);                      
+        residual(m_resid,a_phi,a_rhs, true, true);                      
         m_residC.setVal(0.);
         //stencils for multilevel objects live with the coarser
         {//begin debug
@@ -211,7 +211,8 @@ public:
   residual(EBLevelBoxData<CELL, 1>       & a_res,
            const EBLevelBoxData<CELL, 1> & a_phi,
            const EBLevelBoxData<CELL, 1> & a_rhs,
-           bool a_doExchange = true) const=0;
+           bool a_doExchange,
+           bool a_printStuff) const=0;
 
 
   /// 
@@ -236,7 +237,8 @@ public:
   virtual void
   applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
           const EBLevelBoxData<CELL, 1> & a_phi,
-          bool a_doExchange = true) const=0;
+          bool a_doExchange = true,
+          bool a_printStuff = false) const=0;
 
   ///for tga
   virtual void
@@ -373,7 +375,8 @@ public:
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
-                bool a_doExchange = true) const;
+                bool a_doExchange,
+                bool a_printStuff) const;
 
 
   /// 
@@ -394,7 +397,8 @@ public:
   /// 
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
-               bool a_doExchange = true) const;
+               bool a_doExchange = true,
+               bool a_printStuff = false) const;
 
   ///for tga
   void applyOpNeumann(EBLevelBoxData<CELL, 1>       & a_lph,
@@ -675,9 +679,10 @@ public:
   inline
   void applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
-               bool a_doExchange = true) const
+               bool a_doExchange = true,
+               bool a_printStuff = false) const
   {
-    return m_finest->applyOp(a_lph, a_phi, a_doExchange);
+    return m_finest->applyOp(a_lph, a_phi, a_doExchange, a_printStuff);
   }
 
 
@@ -693,10 +698,11 @@ public:
   void residual(EBLevelBoxData<CELL, 1>       & a_res,
                 const EBLevelBoxData<CELL, 1> & a_phi,
                 const EBLevelBoxData<CELL, 1> & a_rhs,
-                bool a_doExchange = true) const
+                bool a_doExchange,
+                bool a_printStuff) const
   {
     PR_TIME("sgmg::resid");
-    return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange);
+    return m_finest->residual(a_res, a_phi, a_rhs, a_doExchange, a_printStuff);
   }
   
 private:

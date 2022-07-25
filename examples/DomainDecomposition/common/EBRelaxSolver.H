@@ -48,7 +48,10 @@ public:
   {
     CH_TIME("EBRelaxSolver::solve");
     m_res.setVal(0);
-    m_op->residual(m_res, a_phi, a_rhs);
+
+    bool printStuff = false;
+    bool doExchange = true;
+    m_op->residual(m_res, a_phi, a_rhs, doExchange, printStuff);
 
     Real norm = m_res.maxNorm(0);
 
@@ -68,7 +71,7 @@ public:
         m_op->preCond(m_cor, m_res);
         a_phi += m_cor;
 
-        m_op->residual(m_res, a_phi, a_rhs);
+        m_op->residual(m_res, a_phi, a_rhs, doExchange, printStuff);
 
 //        Real oldNorm = norm;
         norm = m_res.maxNorm(0);
