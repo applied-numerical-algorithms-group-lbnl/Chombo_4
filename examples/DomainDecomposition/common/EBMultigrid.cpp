@@ -292,18 +292,18 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 
     if(printStuff) 
     {//begin debug
-      pout() << "phifab: " << endl;
+      pout() << "phifab pre apply : " << endl;
       DumpArea::genDumpCell1(&phifab, ptlo, pthi);
-      pout() << "lphfab: " << endl;
-      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
+//      pout() << "lphfab pre apply: " << endl;
+//      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
     }//end debug
 
-    stencil->apply(lphfab, phifab,  true, 1.0);
+    stencil->apply(lphfab, phifab,  true, 1.0, a_printStuff);
 
     if(printStuff) 
     {//begin debug
-      pout() << "lphfab: " << endl;
-      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
+      pout() << "lphfab post apply: " << endl;
+      DumpArea::genDumpCell1(&lphfab, ptlo, pthi);
     }//end debug
     
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
@@ -313,13 +313,13 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 
     //pout() << "going into add alphaphi" << endl;
     Bx inputBox = lphfab.inputBox();
-    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebforall_i(inputBox, addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 
     if(printStuff) 
     {//begin debug
-      pout() << "kapfab: " << endl;
+      pout() << "kapfab post ebforall: " << endl;
       DumpArea::genDumpCell1(&kapfab, ptlo, pthi);
-      pout() << "lphfab: " << endl;
+      pout() << "lphfab post ebforall: " << endl;
       DumpArea::genDumpCell1(&lphfab, ptlo, pthi);
     }//end debug
     ideb++;
@@ -647,6 +647,8 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   CH_TIME("EBPoissonOp::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
+  CH_assert(a_res.ghostVect() == a_phi.ghostVect());
+  
   //this appears to be necessary.
   a_res.setVal(0.);
   if(a_printStuff)
@@ -664,7 +666,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
 
   if(a_printStuff)
   {//begin debug
-    pout() << "residual a_res:" << endl;
+    pout() << "residual a_res after applyop:" << endl;
     DumpArea::dumpAsOneBox(&a_res, m_geoserv);
   }//end debug
 
@@ -686,7 +688,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
 
   if(a_printStuff)
   {//begin debug
-    pout() << "residual a_res:" << endl;
+    pout() << "residual a_res after subtract rhs:" << endl;
     DumpArea::dumpAsOneBox(&a_res, m_geoserv);
   }//end debug
 
