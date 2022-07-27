@@ -164,6 +164,11 @@ namespace Proto
     //this fills the ghost cells when the box abuts the domain.
     bool initToZero = true;  //hence the itz
     bool incrementOnly = !initToZero;
+    if(a_printStuff)
+    {//begin debug
+      dumpArea(a_src, string("ebstencil: src before bc apply"));
+    }
+    //end debug
     if(m_hasDomainBCs && (!m_irregOnly))
     {
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
@@ -177,6 +182,10 @@ namespace Proto
         }
       }
     }
+    if(a_printStuff)
+    {//begin debug
+      dumpArea(a_dst, string("ebstencil: dst after bc apply"));
+    }//end debug
     if(!m_bcsOnly)
     {
       if(!m_irregOnly)
@@ -185,7 +194,17 @@ namespace Proto
                                  a_dst.getRegData(),
                                  m_regApplyBox, initToZero, a_scale);
       }
-      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      if(a_printStuff)
+      {//begin debug
+        dumpArea(a_dst, string("ebstencil: dst after regular apply"));
+      }//end debug
+
+      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly, a_printStuff);
+
+      if(a_printStuff)
+      {//begin debug
+        dumpArea(a_dst, string("ebstencil: dst after irreg apply"));
+      }//end debug
     }
     
   }

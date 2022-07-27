@@ -298,7 +298,7 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 //      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
     }//end debug
 
-    stencil->apply(lphfab, phifab,  true, 1.0, a_printStuff);
+    stencil->apply(lphfab, phifab,  true, 1.0, printStuff);
 
     if(printStuff) 
     {//begin debug

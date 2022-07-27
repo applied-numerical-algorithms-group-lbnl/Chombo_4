@@ -186,7 +186,8 @@ namespace Proto
     void apply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
                const EBBoxData<srcCenter, data_t, 1>     & a_phi,
                const data_t                              & a_scale,
-               bool                                        a_incrementOnly) const;
+               bool                                        a_incrementOnly,
+               bool a_printStuff = false) const;
 
     //avoiding std::pair because cuda
 
@@ -199,13 +200,14 @@ namespace Proto
     vector<EBDataLoc>    m_dstAccess;
 
 //    //begin debugging hooks
-    vector< EBIndex<     dstCenter        > > m_dstVoFs;
-    vector< LocalStencil<srcCenter, data_t> > m_stencil;
+//    vector< EBIndex<     dstCenter        > > m_dstVoFs;
+//    vector< LocalStencil<srcCenter, data_t> > m_stencil;
 //    //end debugging hooks
     void hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
                    const EBBoxData<srcCenter, data_t, 1>     & a_phi,
                    const data_t                              & a_scale,
-                   bool                                      a_incrementOnly) const;
+                   bool                                      a_incrementOnly,
+                   bool a_printStuff = false) const;
 
     void hostPrep(const vector<pair_t<data_t> >   &   h_serializedStenInfo,
                   const vector<uint64_t>          &   h_stenSizes,

@@ -170,6 +170,63 @@ namespace Proto
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
   };
+  template <CENTERING cent>
+  inline void 
+  dumpArea(const EBBoxData<cent, double, 1>& a_fab, string a_prefix)
+  {
+    pout() << "tough to do this for general centering" << endl;
+  }
+  
+  template < >
+  inline void 
+  dumpArea(const EBBoxData<CELL, double, 1>& a_fab, string a_prefix)
+  {
+#if DIM==2
+    Point lodeb(3, 12);
+    Point hideb(9, 21);
+    auto graph = a_fab.ebgraph();
+      
+    using std::cout;
+    using std::endl;
+
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    const EBBoxData<CELL, double, 1> & data = a_fab;
+    auto databox = data.box();
+    databox &= graph.getDomain();
+    if((databox.contains(lodeb)) || (databox.contains(hideb)))
+    {
+      cout << a_prefix << ":" << endl;
+      for(int j = hideb[1]; j >= lodeb[1]; j--)
+      {
+        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        {
+          Point pt(i,j);
+          if(databox.contains(pt))
+          {
+            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+            cout << pt << ":";
+            if(vofs.size() >  0)
+            {
+              if(data(vofs[0], 0) >= 0)
+              {
+                cout << " ";
+              }
+              cout  << data(vofs[0], 0) << "  ";
+            }
+            else
+            {
+              cout  << "---------------" << "  ";
+            }
+          }
+        }
+        cout << endl;
+      }
+    }
+#endif    
+  }
 }
 #include "implem/Proto_EBStencilImplem.H"
 #endif

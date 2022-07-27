@@ -24,8 +24,8 @@ namespace Proto
     m_dstAccess.resize(a_dstVoFs.size());
 
 //    //begin debugging hooks
-    m_dstVoFs = a_dstVoFs;
-    m_stencil = a_stencil;
+//    m_dstVoFs = a_dstVoFs;
+//    m_stencil = a_stencil;
     //end   debugging hooks
     if(a_dstVoFs.size() > 0)
     {
@@ -123,7 +123,8 @@ namespace Proto
   apply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
         const EBBoxData<srcCenter, data_t, 1>     & a_phi,
         const data_t                              & a_scale,
-        bool                                        a_incrementOnly) const
+        bool                                        a_incrementOnly,
+        bool a_printStuff) const
   {
     if(m_dstAccess.size() > 0)
     {
@@ -133,7 +134,7 @@ namespace Proto
 #ifdef PROTO_CUDA
       cudaApply(a_lph, a_phi, a_scale, a_incrementOnly);
 #else
-      hostApply(a_lph, a_phi, a_scale, a_incrementOnly);
+      hostApply(a_lph, a_phi, a_scale, a_incrementOnly, a_printStuff);
 #endif
       PR_FLOPS(m_flopsThisApply);
     }
@@ -149,53 +150,12 @@ namespace Proto
                         const uint64_t*         a_stenstart,
                         const EBDataLoc*        a_dstaccess,
                         bool                    a_incrementOnly,
-                        data_t                  a_scale,
-                        bool a_printStuff)
+                        data_t                  a_scale)
   {
     if((idx >= a_begin) && (idx< a_end))
     {
       
 
-      //printf("agi:sumweight = %f\n", sumweight);
-    }
-  }
-  template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
-  void 
-  AggStencil<    srcCenter, dstCenter, data_t>::
-  hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
-            const EBBoxData<srcCenter, data_t, 1>     & a_phi,
-            const data_t                              & a_scale,
-            bool                                        a_incrementOnly,
-            bool a_printStuff) const
-
-  {
-    int begin = 0;
-    int end   = m_dstAccess.size();
-    const data_t* dataPtrsSrc[2];
-    data_t*       dataPtrsDst[2];
-    for(int idat = 0; idat < 2; idat++)
-    {
-      dataPtrsSrc[idat]  = (a_phi.dataPtr(idat, 0));
-      dataPtrsDst[idat]  = (a_lph.dataPtr(idat, 0));
-    }
-
-//    ////begin debugging hooks
-//      const auto& localsten = m_stencil[idx];
-//      const auto& vof       = m_dstVoFs[idx];
-//
-//      int ideb = 6;
-//      int jdeb = 16;
-//      int stop = 0;
-//      if((vof.m_pt[0] == ideb)&&
-//         (vof.m_pt[1] == jdeb))
-//      {
-//        stop = 1;
-//      }
-//
-//      //end debugging hooks
-      hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
-    for(int idx = begin; idx < end; idx++)
-    {
       uint64_t startInd = a_stenstart[idx];
       uint64_t stenSize = a_stensizes[idx];
       const EBDataLoc& dstAcc = a_dstaccess[idx];
@@ -215,6 +175,43 @@ namespace Proto
         const data_t& phi = a_dataPtrsSrc[srcAcc.m_dataID][srcAcc.m_offset];
         lphi += a_scale*weight*phi;
       }
+      //printf("agi:sumweight = %f\n", sumweight);
+    }
+  }
+  template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
+  void 
+  AggStencil<    srcCenter, dstCenter, data_t>::
+  hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
+            const EBBoxData<srcCenter, data_t, 1>     & a_phi,
+            const data_t                              & a_scale,
+            bool                                        a_incrementOnly,
+            bool                                        a_printStuff) const
+
+  {
+    int begin = 0;
+    int end   = m_dstAccess.size();
+    const data_t* dataPtrsSrc[2];
+    data_t*       dataPtrsDst[2];
+    for(int idat = 0; idat < 2; idat++)
+    {
+      dataPtrsSrc[idat]  = (a_phi.dataPtr(idat, 0));
+      dataPtrsDst[idat]  = (a_lph.dataPtr(idat, 0));
+    }
+    for(int idx = 0; idx < end; idx++)
+    {
+    ////begin debugging hooks
+//      const auto& localsten = m_stencil[idx];
+//      const auto& vof       = m_dstVoFs[idx];
+#if DIM==2      
+//      Point debpt(2, 1);
+//      int ideb = 0;
+//      if(vof.m_pt == debpt)
+//      {
+//        ideb = 1;
+//      }
+#endif      
+      //end debugging hooks
+      hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
     }
   }
 
