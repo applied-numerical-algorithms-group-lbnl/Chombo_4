@@ -23,9 +23,9 @@ namespace Proto
     m_ebstencil.resize(a_dstVoFs.size());
     m_dstAccess.resize(a_dstVoFs.size());
 
-//    //begin debugging hooks
-//    m_dstVoFs = a_dstVoFs;
-//    m_stencil = a_stencil;
+    //begin debugging hooks
+    m_dstVoFs = a_dstVoFs;
+    m_stencil = a_stencil;
     //end   debugging hooks
     if(a_dstVoFs.size() > 0)
     {
@@ -140,8 +140,9 @@ namespace Proto
     }
   }
 ///
-  template <typename data_t>
+  template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
   void 
+  AggStencil<    srcCenter, dstCenter, data_t>::
   hostAggStencilIndexer(int a_begin, int a_end, int idx,
                         const data_t*           a_dataPtrsSrc[2],
                         data_t*                 a_dataPtrsDst[2],
@@ -150,7 +151,8 @@ namespace Proto
                         const uint64_t*         a_stenstart,
                         const EBDataLoc*        a_dstaccess,
                         bool                    a_incrementOnly,
-                        data_t                  a_scale)
+                        data_t                  a_scale,
+                        bool a_printStuff) const
   {
     if((idx >= a_begin) && (idx< a_end))
     {
@@ -161,6 +163,13 @@ namespace Proto
       const EBDataLoc& dstAcc = a_dstaccess[idx];
       data_t& lphi = a_dataPtrsDst[dstAcc.m_dataID][dstAcc.m_offset];
 
+      
+      if(a_printStuff)
+      {
+        auto dstVoF = m_dstVoFs[idx];
+        auto pt = dstVoF.m_pt;
+        cout << "Stensize for pt " << pt << " = " << stenSize << endl;;
+      }
       if(!a_incrementOnly)
       {
         lphi = 0;
@@ -199,19 +208,18 @@ namespace Proto
     }
     for(int idx = 0; idx < end; idx++)
     {
-    ////begin debugging hooks
-//      const auto& localsten = m_stencil[idx];
-//      const auto& vof       = m_dstVoFs[idx];
+      bool printStuff = false;
+      //begin debugging hooks
 #if DIM==2      
-//      Point debpt(2, 1);
-//      int ideb = 0;
-//      if(vof.m_pt == debpt)
-//      {
-//        ideb = 1;
-//      }
+      Point debpt(6, 16);
+      auto vof = m_dstVoFs[idx];
+      if(vof.m_pt == debpt)
+      {
+        printStuff = true;
+      }
 #endif      
       //end debugging hooks
-      hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale);
+      hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale, printStuff);
     }
   }
 

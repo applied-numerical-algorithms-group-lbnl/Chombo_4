@@ -195,14 +195,26 @@ namespace Proto
     typedef vector< pair_t<data_t>  > stencil_t;
 
   protected:
+  void 
+  hostAggStencilIndexer(int a_begin, int a_end, int idx,
+                        const data_t*           a_dataPtrsSrc[2],
+                        data_t*                 a_dataPtrsDst[2],
+                        const pair_t<data_t>*   a_ebstencil,
+                        const uint64_t*         a_stensizes,
+                        const uint64_t*         a_stenstart,
+                        const EBDataLoc*        a_dstaccess,
+                        bool                    a_incrementOnly,
+                        data_t                  a_scale,
+                        bool a_printStuff) const;
+    
     ///this stuff lives on the host
     vector<stencil_t>    m_ebstencil;
     vector<EBDataLoc>    m_dstAccess;
 
-//    //begin debugging hooks
-//    vector< EBIndex<     dstCenter        > > m_dstVoFs;
-//    vector< LocalStencil<srcCenter, data_t> > m_stencil;
-//    //end debugging hooks
+    //begin debugging hooks
+    vector< EBIndex<     dstCenter        > > m_dstVoFs;
+    vector< LocalStencil<srcCenter, data_t> > m_stencil;
+    //end debugging hooks
     void hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
                    const EBBoxData<srcCenter, data_t, 1>     & a_phi,
                    const data_t                              & a_scale,
