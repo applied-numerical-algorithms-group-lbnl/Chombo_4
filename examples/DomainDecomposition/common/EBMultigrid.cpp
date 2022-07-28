@@ -221,23 +221,9 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     }
     pout() << endl;
     
-    {//begin debug
-      pout() << "before vcycle m_cor:" << endl;
-      DumpArea::dumpLDCell1Area(&m_cor);
-      pout() << "before vcycle m_res:" << endl;
-      DumpArea::dumpLDCell1Area(&m_res);
-    }//end debug
-    
+
     vCycle(m_cor, m_res, a_printStuff);
     
-    {//begin debug
-      pout() << "relax m_cor:" << endl;
-      DumpArea::dumpLDCell1Area(&m_cor);
-      pout() << "relax m_res:" << endl;
-      DumpArea::dumpLDCell1Area(&m_res);
-        
-    }//end debug
-
     a_phi += m_cor;
     residual(m_res, a_phi, a_rhs, doExchange, printStuff);
     
@@ -651,6 +637,7 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
   
   //this appears to be necessary.
   a_res.setVal(0.);
+
   if(a_printStuff)
   {//begin debug
     pout() << "residual a_phi:" << endl;
@@ -732,13 +719,6 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
 
       residual(resid, a_phi, a_rhs, doExchange, printStuff);
 
-//      {//begin debug
-//        pout() << "phi: " << endl;
-//        DumpArea::dumpAsOneBox(&a_phi,m_geoserv);
-//        pout() << "resid: " << endl;
-//        DumpArea::dumpAsOneBox(&resid, m_geoserv);
-//      }//end debug
-      
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
 
@@ -759,10 +739,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       
         ideb++;
       } //end loop over boxes
-//      {//begin debug
-//        pout() << "phi: " << endl;
-//        DumpArea::dumpAsOneBox(&a_phi,m_geoserv);
-//      }//end debug
+
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons

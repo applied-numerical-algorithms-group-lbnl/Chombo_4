@@ -163,13 +163,6 @@ namespace Proto
       const EBDataLoc& dstAcc = a_dstaccess[idx];
       data_t& lphi = a_dataPtrsDst[dstAcc.m_dataID][dstAcc.m_offset];
 
-      
-      if(a_printStuff)
-      {
-        auto dstVoF = m_dstVoFs[idx];
-        auto pt = dstVoF.m_pt;
-        cout << "Stensize for pt " << pt << " = " << stenSize << endl;;
-      }
       if(!a_incrementOnly)
       {
         lphi = 0;

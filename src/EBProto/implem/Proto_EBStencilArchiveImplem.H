@@ -730,7 +730,10 @@ namespace Proto
     }
 #endif    
     //this stencil has a span so we have to evaluate the stencil on a grown set of the irregular cells so the regular and irregular data actually talk
-    getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph);
+
+    a_dstVoFs = a_graph.getAllVoFs(a_validBox);
+    //right now, this seems to be broken as it misses some irregular locations.   Should get this right at some point as it is a performance improvement
+    //getIrregLocations(a_dstVoFs, a_regStencil, a_validBox, a_graph);
 //    cout << "done with getIrregLocations" << endl;
 
     Poisson2ndOrder<XFACE, order> xflux;

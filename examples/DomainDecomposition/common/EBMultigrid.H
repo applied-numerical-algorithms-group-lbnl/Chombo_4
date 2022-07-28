@@ -66,6 +66,7 @@ public:
       ideb = 1;
     }
 
+    if(a_printStuff)
     {//begin debug
       Chombo4::pout() << "entering vcycle domain resolution = " << nxdom << endl;
       Chombo4::pout() << "rhs:" << endl;
@@ -82,6 +83,8 @@ public:
     else
     {
       relax(a_phi,a_rhs, m_numSmooth);
+      
+      if(a_printStuff)
       {//begin debug
         Chombo4::pout() << "out of relax with nxdom =  " << nxdom << endl;
         Chombo4::pout() << "a_phi:" << endl;
@@ -90,10 +93,14 @@ public:
 
       if (m_hasCoarser)
       {
-        
-        residual(m_resid,a_phi,a_rhs, true, true);                      
+
+        bool doExchange = true;
+        bool printStuff = false;
+        residual(m_resid,a_phi,a_rhs, doExchange, printStuff);
         m_residC.setVal(0.);
         //stencils for multilevel objects live with the coarser
+
+        if(a_printStuff)
         {//begin debug
           Chombo4::pout() << "going into restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_resid:" << endl;
@@ -102,6 +109,7 @@ public:
 
         m_coarser->restrictResidual(m_residC,m_resid);
 
+        if(a_printStuff)
         {//begin debug
           Chombo4::pout() << "coming out of  restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_residC:" << endl;
@@ -112,10 +120,12 @@ public:
         
         m_coarser->vCycle(m_deltaC,m_residC);
         
-//        if(m_useWCycle)
-//        {
-//          m_coarser->vCycle(m_deltaC,m_residC);
-//        }
+        if(m_useWCycle)
+        {
+          m_coarser->vCycle(m_deltaC,m_residC);
+        }
+
+        if(a_printStuff)
         {//begin debug
           Chombo4::pout() << "out of recursive call with nxdom = " << nxdom <<  endl;
           Chombo4::pout() << "phi:" << endl;
@@ -126,6 +136,7 @@ public:
         
         m_coarser->prolongIncrement(a_phi,m_deltaC);
 
+        if(a_printStuff)
         {//begin debug
           Chombo4::pout() << "post-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
@@ -139,6 +150,7 @@ public:
       }
 
 
+      if(a_printStuff)
       {//begin debug
         Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
@@ -148,6 +160,7 @@ public:
 
       relax(a_phi,a_rhs, m_numSmooth);
 
+      if(a_printStuff)
       {//begin debug
         Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
