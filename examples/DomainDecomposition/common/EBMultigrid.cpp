@@ -7,6 +7,7 @@
 #include "BiCGStabSolver.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+bool EBMultigrid::s_forbidLazyRelaxation = false;
 /******/
 void
 EBPoissonOp::
@@ -693,13 +694,18 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
-  ParmParse pp(m_prefix.c_str());
   bool do_lazy_relax = false;
   bool one_exchange_per_relax = false;
-  pp.query("do_lazy_relax", do_lazy_relax);
-  pp.query("one_exchange_per_relax", one_exchange_per_relax);
+  bool noFunnyBusiness = EBMultigrid::lazyRelaxationForbidden();
+  if(!noFunnyBusiness)
+  {
+    ParmParse pp(m_prefix.c_str());
+    pp.query("do_lazy_relax", do_lazy_relax);
+    pp.query("one_exchange_per_relax", one_exchange_per_relax);
+  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
+  
   for(int iter = 0; iter < a_maxiter; iter++)
   {
     for(int iredblack = 0; iredblack < 2; iredblack++)

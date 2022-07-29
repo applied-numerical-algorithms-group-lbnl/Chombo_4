@@ -310,7 +310,10 @@ run(unsigned int a_max_step,
   {
     pout() << "We are starting from scratch so we are projecting the initial velocity."<< endl;
     bool printStuff = true;
+    //for the first projection we have to turn off lazy relaxation and other nifty optimizations
+    EBMultigrid::forbidLazyRelaxation(true);
     m_ccProj->project(velo, gphi, a_tol, a_maxIter, printStuff);
+    EBMultigrid::forbidLazyRelaxation(false);
   }
   else
   {

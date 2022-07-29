@@ -534,8 +534,7 @@ public:
     DisjointBoxLayout dblFine(boxes, procs, a_domain);
     a_grids.push_back(dblFine);
 
-    //turn this hook on to agglomeration
-    bool doAgglom = false;
+    bool doAgglom = true;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
     

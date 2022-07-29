@@ -429,6 +429,7 @@ public:
   EBPoissonOp()
   {
   }
+
 private:
 
   void restrictResidualOnProc(EBLevelBoxData<CELL, 1>      & a_resc,
@@ -491,7 +492,6 @@ private:
                   bool a_printStuff = false);
 
 
-  
   string                            m_stenname;
   string                            m_neumname;
   string                            m_dombcname[2*DIM];
@@ -547,6 +547,22 @@ private:
 class EBMultigrid
 {
 public:
+  
+  ///some optimizations need to get turned off for the first projection
+  /**
+     Set this to true if you want to turn off lazy relaxation and such
+   */
+  static void forbidLazyRelaxation(bool a_trueorfalse)
+  {
+    s_forbidLazyRelaxation = a_trueorfalse;
+  }
+
+  ///
+  static bool lazyRelaxationForbidden()
+  {
+    return s_forbidLazyRelaxation;
+  }
+  
   typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
 
   /// Constant coefficient, named stencil
@@ -758,6 +774,7 @@ private:
   }
 
 
+  static bool s_forbidLazyRelaxation;
   /// weak construction introduces unnecessary complications
   EBMultigrid()
   {
