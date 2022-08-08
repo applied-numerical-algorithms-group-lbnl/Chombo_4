@@ -4,19 +4,19 @@ PROTO_HOME =$(HOME)/_proto/proto
 DEPXX=g++
 CXX=g++
 
-CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
-CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CHOMBO_CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CHOMBO_CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall
+CHOMBO_CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
 
 #LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 #LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
-HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz 
+HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
 EFENCEFLAGS = -L/usr/lib -lefence
 
 PETSC_DIR   = $(ANAG_PETSC_DIR)
 SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
-include $(PETSC_DIR)/lib/petsc/conf/variables
+#include $(PETSC_DIR)/lib/petsc/conf/variables
 #end mach dependent
 
 
