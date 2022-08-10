@@ -1,19 +1,17 @@
-PETSC_DIR =$(ANAG_PETSC_DIR)
-
 PROTO_HOME =$(HOME)/_proto/proto
-DEPXX=mpicxx
-CXX=mpicxx
+
+CHOMBO_PETSC_DIR =$(ANAG_PETSC_DIR)
+CHOMBO_DEPXX=mpicxx
+CHOMBO_CXX=mpicxx
 #hdf5 does not compile on this machine without -fpermissive
 CHOMBO_CXXALLFLAGS := -fpermissive -I$(ANAG_OPENMPI_INC) -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas
-CHOMBO_CXXDBGFLAGS:= -g -pedantic -Wall $(CXXALLFLAGS)
-CHOMBO_CXXOPTFLAGS:= -O3 $(CXXALLFLAGS)
-HDF5_ROOT = $(ANAG_HDF5_DIR)
-LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS=-I$(HDF5_ROOT)/include
-HDFLIBFLAGS=-L$(HDF5_ROOT)/lib -lhdf5 -lz
+CHOMBO_CXXDBGFLAGS:= -g -pedantic -Wall $(CHOMBO_CXXALLFLAGS)
+CHOMBO_CXXOPTFLAGS:= -O3 $(CHOMBO_CXXALLFLAGS)
+CHOMBO_HDF5_ROOT = $(ANAG_HDF5_DIR)
+CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+CHOMBO_HDFINCFLAGS=-I$(CHOMBO_HDF5_ROOT)/include
+CHOMBO_HDFLIBFLAGS=-L$(CHOMBO_HDF5_ROOT)/lib -lhdf5 -lz
 
-#only do this if you are actually going to use petsc
-#include $(PETSC_DIR)/lib/petsc/conf/variables
 #end mach dependent
 
 
