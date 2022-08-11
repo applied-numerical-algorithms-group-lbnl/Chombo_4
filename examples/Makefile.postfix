@@ -26,7 +26,7 @@ CHOMBO_DEPFILES := $(CHOMBO_NODIRSRC:%.cpp=$(CHOMBO_DEPDIR)/%.d)
 
 $(CHOMBO_DEPFILES):
 
-CHOMBO_DEPFLAGS = -MT $@ -MF $(CHOMBO_DEPDIR)/$*.d 
+CHOMBO_DEPFLAGS += -MT $@ -MF $(CHOMBO_DEPDIR)/$*.d 
 
 ifeq ($(CHOMBO_CXX),nvcc)
 #broke the build

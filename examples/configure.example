@@ -79,7 +79,7 @@ for t in targets:
         f.write('\nCHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES)')
         f.write('\nCHOMBO_LIBS     += $(PETSC_KSP_LIB)\n')
 
-    f.write('\nCHOMBO_CXXFLAGS += -DCH_USE_DOUBLE\n')
+    f.write('\nCHOMBO_CXXFLAGS += $(CHOMBO_CXXALLFLAGS) -DCH_USE_DOUBLE\n')
         
     if(args.openmp == 'TRUE'):
         f.write('\nCHOMBO_CXXFLAGS += -fopenmp\n')
@@ -90,8 +90,7 @@ for t in targets:
             f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXGPUFLAGS) \n')
         else:
             if(args.hip) == 'TRUE':
-              f.write("\nCHOMBO_CXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CHOMBO_CXXDBGFLAGS)'\n")
-              f.write('\nCHOMBO_CXXFLAGS+=$(CHOBMO_CXXGPUFLAGS) \n')
+              f.write('# insert secret hip debuggging flags here\n')
             else:
               f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXDBGFLAGS) \n')
 
@@ -103,8 +102,7 @@ for t in targets:
         else:
             f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
         if(args.hip == 'TRUE'):
-            f.write("\nCHOMBO_CXXGPUFLAGS:= -Xcompiler '$(CXXOPTFLAGS)'\n")
-            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXGPUFLAGS) \n')
+            f.write('# insert secret hip optimization flags here\n')
         else:
             f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
 
