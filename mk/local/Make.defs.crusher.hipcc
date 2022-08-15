@@ -16,3 +16,5 @@ CHOMBO_CXXOPTFLAGS+=-DmemoryFootPrint
 #curly braces and parentheses mean the same thing in gmake
 
 CHOMBO_LIBS+=-L${MPICH_DIR}/lib -lmpi
+CHOMBO_LIBS+= -L/$(ROCM_PATH)/lib/
+CHOMBO_LIBS+= -lroctx64

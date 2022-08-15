@@ -9,7 +9,7 @@ CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
 
 
 #need to use depxx because petsc links with g++
-CHOMBO_LINK=$(CHOMBO_DEPXX)
+CHOMBO_LINK=$(CHOMBO_CXX)
 CHOMBO_OBJDIR = o
 CHOMBO_DEPDIR = d
 CHOMBO_TARGET = main.exe
