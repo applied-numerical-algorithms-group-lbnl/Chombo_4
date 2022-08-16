@@ -17,4 +17,4 @@ CHOMBO_CXXOPTFLAGS+=-DmemoryFootPrint
 
 CHOMBO_LIBS+=-L${MPICH_DIR}/lib -lmpi
 CHOMBO_LIBS+= -L/$(ROCM_PATH)/lib/
-CHOMBO_LIBS+= -lroctx64
+CHOMBO_LIBS+= -lroctx64 -lroctracer64
