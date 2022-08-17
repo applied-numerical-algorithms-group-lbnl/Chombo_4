@@ -24,8 +24,8 @@ namespace Proto
     m_dstAccess.resize(a_dstVoFs.size());
 
     //begin debugging hooks
-    m_dstVoFs = a_dstVoFs;
-    m_stencil = a_stencil;
+//    m_dstVoFs = a_dstVoFs;
+//    m_stencil = a_stencil;
     //end   debugging hooks
     if(a_dstVoFs.size() > 0)
     {
@@ -203,15 +203,15 @@ namespace Proto
     {
       bool printStuff = false;
       //begin debugging hooks
-#if DIM==2      
-      Point debpt(6, 16);
-      auto vof = m_dstVoFs[idx];
-      if(vof.m_pt == debpt)
-      {
-        printStuff = true;
-      }
-#endif      
-      //end debugging hooks
+//#if DIM==2      
+//      Point debpt(6, 16);
+//      auto vof = m_dstVoFs[idx];
+//      if(vof.m_pt == debpt)
+//      {
+//        printStuff = true;
+//      }
+//#endif      
+//      //end debugging hooks
       hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale, printStuff);
     }
   }

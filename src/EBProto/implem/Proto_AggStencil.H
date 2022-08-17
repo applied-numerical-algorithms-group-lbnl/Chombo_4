@@ -212,8 +212,8 @@ namespace Proto
     vector<EBDataLoc>    m_dstAccess;
 
     //begin debugging hooks
-    vector< EBIndex<     dstCenter        > > m_dstVoFs;
-    vector< LocalStencil<srcCenter, data_t> > m_stencil;
+//    vector< EBIndex<     dstCenter        > > m_dstVoFs;
+//    vector< LocalStencil<srcCenter, data_t> > m_stencil;
     //end debugging hooks
     void hostApply(EBBoxData<      dstCenter, data_t, 1>     & a_lph,
                    const EBBoxData<srcCenter, data_t, 1>     & a_phi,
