@@ -8,7 +8,7 @@ CHOMBO_CXX=CC
 CHOMBO_MPICXX=CC
 
 CHOMBO_HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include -DH5_USE_110_API
-CHOMBO_HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+CHOMBO_HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz -fopenmp
 
 CHOMBO_PETSC_DIR=/gpfs/alpine/world-shared/geo127/petsc/arch-crusher-opt-cray
 CHOMBO_PETSC_ARCH=""

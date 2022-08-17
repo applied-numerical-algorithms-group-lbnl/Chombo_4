@@ -167,17 +167,16 @@ namespace Proto
       {
         lphi = 0;
       }
-      data_t sumweight = 0;
+
       for(uint64_t isten = 0; isten < stenSize; isten++)
       {
         const pair_t<data_t>& entry = a_ebstencil[startInd + isten];
         const EBDataLoc& srcAcc = entry.first;
         const data_t   & weight = entry.second;
-        sumweight += weight;
+
         const data_t& phi = a_dataPtrsSrc[srcAcc.m_dataID][srcAcc.m_offset];
         lphi += a_scale*weight*phi;
       }
-      //printf("agi:sumweight = %f\n", sumweight);
     }
   }
   template <CENTERING srcCenter, CENTERING dstCenter, typename data_t>
@@ -199,19 +198,12 @@ namespace Proto
       dataPtrsSrc[idat]  = (a_phi.dataPtr(idat, 0));
       dataPtrsDst[idat]  = (a_lph.dataPtr(idat, 0));
     }
+    
+#pragma omp parallel    
     for(int idx = 0; idx < end; idx++)
     {
       bool printStuff = false;
-      //begin debugging hooks
-//#if DIM==2      
-//      Point debpt(6, 16);
-//      auto vof = m_dstVoFs[idx];
-//      if(vof.m_pt == debpt)
-//      {
-//        printStuff = true;
-//      }
-//#endif      
-//      //end debugging hooks
+
       hostAggStencilIndexer(begin, end, idx, dataPtrsSrc, dataPtrsDst, d_ebstencil, d_stensizes, d_stenstart, d_dstaccess, a_incrementOnly, a_scale, printStuff);
     }
   }
