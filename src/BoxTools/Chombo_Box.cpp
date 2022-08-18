@@ -1348,87 +1348,87 @@ bool Box::s_tempestOutputFormat = false;
 #include "Chombo_NamespaceFooter.H"
 //#include "Chombo_UsingNamespace.H"
 
-
-template < >
-void
-::CH4_SPMD::
-linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
-{
-  int* intBuf = (int*)a_inBuf;
-  IntVect lo, hi;
-  //output is lo[0],lo[1],...
-  for (int idir = 0; idir < SpaceDim; idir++)
-    {
-      lo[idir] = intBuf[idir];
-      hi[idir] = intBuf[idir+SpaceDim];
-    }
-  if (lo <= hi)
-    a_outputT = Chombo4::Box(lo,hi);
-  else
-    a_outputT = Chombo4::Box();
-}
-
-template < >
-void
-::CH4_SPMD::
-linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
-{
-  int* intBuf = (int*)a_outBuf;
-  const IntVect& lo = a_inputT.smallEnd();
-  const IntVect& hi = a_inputT.bigEnd();
-  //output is lo[0],lo[1],...
-  for (int idir = 0; idir < SpaceDim; idir++)
-    {
-      intBuf[idir] = lo[idir];
-      intBuf[idir+SpaceDim] = hi[idir];
-    }
-}
-
-template < >
-size_t
-::CH4_SPMD::
-linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
-{
-  //box is stored as 2*spaceDim integers
-  return(2*SpaceDim*sizeof(int));
-}
-
-
-
-//vector<Box> specialization of linearSize
-template < >
-size_t
-::CH4_SPMD::
-linearSize(const std::vector<Chombo4::Box>& a_input)
-{
-  return linearListSize(a_input, false);
-}
-
-//vector<Box> specialization of linearIn
-template < >
-void
-::CH4_SPMD::
-linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const a_inBuf)
-{
-  size_t boxsize = 2*SpaceDim*sizeof(int);
-  size_t* vecsizeptr = (size_t *) (a_inBuf);
-  size_t vecsize = *vecsizeptr;
-  size_t expected = (vecsize+1)*sizeof(size_t) + boxsize*(vecsize);
-  return linearListIn(a_outputT, expected, a_inBuf, true);
-}
-
-//vector<Chombo4::Box> specialization of linearOut
-template < >
-void
-::CH4_SPMD::
-linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
-{
-  size_t boxsize = 2*SpaceDim*sizeof(int);
-  size_t vecsize = a_inputT.size();
-  size_t expectedSize = boxsize*vecsize + (vecsize+1)*sizeof(size_t);
-  return linearListOut(a_outBuf, expectedSize, a_inputT, true);
-}
-
+//
+//template < >
+//void
+//::CH4_SPMD::
+//linearIn<Chombo4::Box>(Chombo4::Box& a_outputT, const void* const a_inBuf)
+//{
+//  int* intBuf = (int*)a_inBuf;
+//  IntVect lo, hi;
+//  //output is lo[0],lo[1],...
+//  for (int idir = 0; idir < SpaceDim; idir++)
+//    {
+//      lo[idir] = intBuf[idir];
+//      hi[idir] = intBuf[idir+SpaceDim];
+//    }
+//  if (lo <= hi)
+//    a_outputT = Chombo4::Box(lo,hi);
+//  else
+//    a_outputT = Chombo4::Box();
+//}
+//
+//template < >
+//void
+//::CH4_SPMD::
+//linearOut<Chombo4::Box>(void* const a_outBuf, const Chombo4::Box& a_inputT)
+//{
+//  int* intBuf = (int*)a_outBuf;
+//  const IntVect& lo = a_inputT.smallEnd();
+//  const IntVect& hi = a_inputT.bigEnd();
+//  //output is lo[0],lo[1],...
+//  for (int idir = 0; idir < SpaceDim; idir++)
+//    {
+//      intBuf[idir] = lo[idir];
+//      intBuf[idir+SpaceDim] = hi[idir];
+//    }
+//}
+//
+//template < >
+//size_t
+//::CH4_SPMD::
+//linearSize<Chombo4::Box>(const Chombo4::Box& a_input)
+//{
+//  //box is stored as 2*spaceDim integers
+//  return(2*SpaceDim*sizeof(int));
+//}
+//
+//
+//
+////vector<Box> specialization of linearSize
+//template < >
+//size_t
+//::CH4_SPMD::
+//linearSize(const std::vector<Chombo4::Box>& a_input)
+//{
+//  return linearListSize(a_input, false);
+//}
+//
+////vector<Box> specialization of linearIn
+//template < >
+//void
+//::CH4_SPMD::
+//linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const a_inBuf)
+//{
+//  size_t boxsize = 2*SpaceDim*sizeof(int);
+//  size_t* vecsizeptr = (size_t *) (a_inBuf);
+//  size_t vecsize = *vecsizeptr;
+//  size_t expected = (vecsize+1)*sizeof(size_t) + boxsize*(vecsize);
+//  return linearListIn(a_outputT, expected, a_inBuf, true);
+//}
+//
+////vector<Chombo4::Box> specialization of linearOut
+//template < >
+//void
+//::CH4_SPMD::
+//linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT)
+//{
+//  size_t boxsize = 2*SpaceDim*sizeof(int);
+//  size_t vecsize = a_inputT.size();
+//  size_t expectedSize = boxsize*vecsize + (vecsize+1)*sizeof(size_t);
+//  return linearListOut(a_outBuf, expectedSize, a_inputT, true);
+//}
+//
 
 
 

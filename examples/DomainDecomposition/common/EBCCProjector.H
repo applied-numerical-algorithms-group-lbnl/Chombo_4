@@ -47,7 +47,9 @@ public:
               bool a_printStuff=false);
 
   ///
-  std::vector<Real> computeVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo) const;
+  void
+  printVectorMax(const EBLevelBoxData<CELL, DIM> & a_velo,
+                 const string                    & a_prefix) const;
   
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**

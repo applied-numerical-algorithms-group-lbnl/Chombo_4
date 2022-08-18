@@ -21,6 +21,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
+#include "Chombo_ParmParse.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
 ///
@@ -359,6 +360,11 @@ protected:
   }
 
 private:
+
+  //makes levelgeometry service on refined coarse layout.  Used for agglomeration
+  LevelGeometryService(const LevelGeometryService   & a_fineLevel,
+                       const LevelGeometryService   & a_coarLevel,
+                       bool a_printStuff = false);
   inline void
   fixRegularCellsNextToCovered(vector<inode>       & a_nodes, 
                                HostBoxData<int>    & a_regIrregCovered,
@@ -526,16 +532,51 @@ public:
     std::vector<int> procs;
     domainSplit(a_domain, boxes, a_maxGridSize);
     LoadBalance(procs, boxes);
-    DisjointBoxLayout currDBL(boxes, procs, a_domain);
-    a_grids.push_back(currDBL);
+    DisjointBoxLayout dblFine(boxes, procs, a_domain);
+    a_grids.push_back(dblFine);
 
-    //a_grids[0].print();
-    while(currDBL.coarsenable(4))
+    bool doAgglom = true;
+    ParmParse pp("geometry_service");
+    pp.query("do_agglomeration", doAgglom);
+    
+    if(doAgglom)
     {
-      DisjointBoxLayout coarDBL;
-      coarsen(coarDBL, currDBL, 2);
-      a_grids.push_back(coarDBL);
-      currDBL = coarDBL;
+      int ilev = 0;
+      Box domCoar = coarsen(a_domain, 2);
+      bool continueCoarsening = (domCoar.coarsenable(2)) && ((a_maxCoarsen < 0) || (ilev < a_maxCoarsen));
+      //a_grids[0].print();
+      while(continueCoarsening) 
+      {
+        DisjointBoxLayout dblCoar;
+        if(dblFine.coarsenable(4))
+        {
+          coarsen(dblCoar, dblFine, 2);
+        }
+        else
+        {
+          domainSplit(domCoar, boxes, a_maxGridSize);
+          LoadBalance(procs, boxes);
+          dblCoar = DisjointBoxLayout(boxes, procs, domCoar);
+        }
+        
+        a_grids.push_back(dblCoar);
+        
+        dblFine = dblCoar;
+        ilev ++;
+        domCoar = coarsen(domCoar, 2);
+        continueCoarsening = (domCoar.coarsenable(2)) && ((a_maxCoarsen < 0) || (ilev < a_maxCoarsen));
+      }
+    }
+    else
+    {
+      //a_grids[0].print();
+      while(dblFine.coarsenable(4))
+      {
+        DisjointBoxLayout dblCoar;
+        coarsen(dblCoar, dblFine, 2);
+        a_grids.push_back(dblCoar);
+        dblFine = dblCoar;
+      }
     }
   }
                 
@@ -671,7 +712,23 @@ public:
     return m_levels[ilev];
   }
 
-  
+
+  bool hasLevel(const Box & a_domain) const
+  {
+    bool found = false;
+    for(int ilev = 0; ilev < m_domains.size(); ilev++)
+    {
+      if(m_domains[ilev] == a_domain)
+      {
+        found = true;
+        break;
+      }
+    }
+
+    return found;
+
+  }
+
 protected:
 
   vector<Box>                               m_domains;

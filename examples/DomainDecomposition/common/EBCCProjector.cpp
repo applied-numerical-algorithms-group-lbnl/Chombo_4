@@ -51,8 +51,6 @@ registerStencils()
   CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
-  //auto & graphs  = m_macprojector->m_graphs;
-  //auto & grids   = m_macprojector->m_grids;
   //dirichlet at domain to get zero normal velocity at domain boundaries
   //grown by one to allow interpolation to face centroids
   brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
@@ -79,16 +77,24 @@ registerStencils()
                             m_nobcsLabel, m_nobcsLabel,  doma, doma, needDiag);
 }
 ///
-std::vector<Real>
+void
 EBCCProjector::
-computeVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo) const
+printVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo,
+               const string                   & a_prefix) const
 {
-  std::vector<Real> maxvel(DIM, 0.);
+  Chombo4::pout() << a_prefix << " = (";
   for(int idir = 0; idir < DIM; idir++)
   {
-    maxvel[idir] = a_velo.maxNorm(idir);
+    Real maxvel;
+    EBIndex<CELL> maxvof;
+    maxvel = a_velo.maxNorm(maxvof, idir);
+    Chombo4::pout() << maxvel << "@" << maxvof.m_pt ;
+    if(idir < (DIM-1))
+    {
+      Chombo4:: pout() << ",";
+    }
   }
-  return maxvel;
+  Chombo4::pout() << a_prefix << ")"  << std::endl;
 }
 /// 
 void 
@@ -103,21 +109,11 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   auto & phi     = m_macprojector->m_phi;
   auto & solver  = m_macprojector->m_solver;
   auto & grids   = m_macprojector->m_grids;
-  //auto & graphs  = m_macprojector->m_graphs;
   
   a_velo.exchange();
   if(a_printStuff)
   {
-    std::vector<Real> initVelMax= computeVectorMax(a_velo);
-    Chombo4::pout() <<
-      "EBCCProjector::project: |input velo|max =("
-                    << initVelMax[0] << ", "
-                    << initVelMax[1] 
-#if DIM==3    
-                    << ", "
-                    << initVelMax[2]
-#endif
-                    << ")"   <<endl;
+    printVectorMax(a_velo, string("EBCCProjector::project: |input velo|max"));;
   }
   
   // set rhs = kappa*div (vel)
@@ -125,8 +121,9 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
 
   if(a_printStuff)
   {
-    Real kapDivUMax = rhs.maxNorm(0);
-    Chombo4::pout() << "EBCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << endl;
+    EBIndex<CELL> vofmax;
+    Real kapDivUMax = rhs.maxNorm(vofmax, 0);
+    Chombo4::pout() << "EBCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << "@" << vofmax.m_pt << endl;
   }
     
     
@@ -135,8 +132,9 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   phi.exchange();
   if(a_printStuff)
   {
-    Real phiMax = phi.maxNorm(0);
-    Chombo4::pout() << "EBCCProjector::project: |phi|max  = " << phiMax << endl;
+    EBIndex<CELL> vofmax;
+    Real phiMax = phi.maxNorm(vofmax, 0);
+    Chombo4::pout() << "EBCCProjector::project: |phi|max  = " << phiMax << "@" << vofmax.m_pt << endl;
   }
     
   //v := v - gphi
@@ -157,34 +155,23 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   
   if(a_printStuff)
   {
-    std::vector<Real> gphMax = computeVectorMax(a_gphi);
-    Chombo4::pout() << "EBLevelCCProjector::project:|gph|max = (" 
-                    << gphMax[0] << ","
-                    << gphMax[1] 
-#if DIM==3    
-                    << ", "
-                    << gphMax[2]
-#endif
-                    << ")"   <<endl;
+    printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max"));
   }
   
   //conservative gradient really produces kappa*grad phi so
   //we have to normalize
   if(useConservativeGradient)
   {
+    if(a_printStuff)
+    {
+      printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max before normalization"));
+    }
+    
     normalizeGradient(a_gphi);
 
     if(a_printStuff)
     {
-      std::vector<Real> gphMax = computeVectorMax(a_gphi);
-      Chombo4::pout() << "EBLevelCCProjector::project:|gph|max after normalization = (" 
-                      << gphMax[0] << ","
-                      << gphMax[1] 
-#if DIM==3    
-                      << ", "
-                      << gphMax[2]
-#endif
-                      << ")"   <<endl;
+      printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max after normalization"));
     }
   }
 
@@ -240,7 +227,6 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
                           EBLevelBoxData<CELL,   1>  & a_phi)
 {
   auto & doma    = m_macprojector->m_domain;
-  //auto & graphs  = m_macprojector->m_graphs;
   auto & grids   = m_macprojector->m_grids;
   auto & brit    = m_macprojector->m_brit;
   
@@ -250,7 +236,6 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
   //first get mac gradient
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    //const EBGraph  & graph = (*graphs)[dit[ibox]];
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
     auto& phifab = a_phi[dit[ibox]];
     //get the mac gradient at face centers.
@@ -269,7 +254,6 @@ averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
   
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
-    //const EBGraph  & graph = (*graphs)[dit[ibox]];
     Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
 
     auto& gphfab   = a_gph[dit[ibox]];
@@ -328,9 +312,6 @@ EBCCProjector::
 kappaConservativeGradient(EBLevelBoxData<CELL, DIM>  & a_kappaGrad,
                           EBLevelBoxData<CELL,   1>  & a_phi)
 {
-  //auto & nghost  = m_macprojector->m_nghost;
-  //auto & doma    = m_macprojector->m_domain;
-  //auto & brit    = m_macprojector->m_brit;
   auto & grids   = m_macprojector->m_grids;
   auto & graphs  = m_macprojector->m_graphs;
   

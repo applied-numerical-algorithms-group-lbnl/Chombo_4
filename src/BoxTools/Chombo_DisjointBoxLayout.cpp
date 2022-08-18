@@ -57,13 +57,6 @@ DisjointBoxLayout::DisjointBoxLayout(const std::vector<Box>& a_boxes,
                       // happen in constructors.
 }
 
-DisjointBoxLayout::DisjointBoxLayout(const LayoutData<Box>& a_newLayout)
-  : BoxLayout(a_newLayout)
-{
-  CH_assert(isDisjoint());
-  computeNeighbors(); // even though BoxLayout::close is virtual, virtual dispatch does not
-                      // happen in constructors.
-}
                                      
 void
 DisjointBoxLayout::define(const std::vector<Box>& a_boxes,

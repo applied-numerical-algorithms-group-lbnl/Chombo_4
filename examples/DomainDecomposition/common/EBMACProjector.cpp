@@ -69,10 +69,23 @@ defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv, bool a_print
     pout() << "EBMACCProjector::defineInternals: defining multigrid solver" << endl;
   }
   
+  string prefix("mac_proj");
+  ParmParse pp(prefix.c_str());
+  bool direct_to_bottom = false;
+  string bottom_solver;
+  bool useWCycle;
+  int numSmooth;
+  pp.get("direct_to_bottom", direct_to_bottom);
+  pp.get("bottom_solver", bottom_solver);
+  pp.get("useWCycle", useWCycle);
+
+  pp.get("numSmooth", numSmooth);
   m_solver = shared_ptr<EBMultigrid>
     (new EBMultigrid(ditch, a_geoserv, alpha, beta, m_dx, m_grids, 
                      StencilNames::Poisson2, bcnames, StencilNames::Neumann,
-                     m_domain, m_nghost, string("mac_proj"), a_printStuff));
+                     m_domain, m_nghost,
+                     bottom_solver, direct_to_bottom, prefix, useWCycle, numSmooth,
+                     a_printStuff));
 
   if(a_printStuff)
   {

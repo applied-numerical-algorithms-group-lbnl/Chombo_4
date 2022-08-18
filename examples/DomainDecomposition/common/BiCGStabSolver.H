@@ -61,7 +61,9 @@ public:
 
     a_op.setToZero(r); // added by petermc, 26 Nov 2013, to zero out ghosts
 
-    a_op.residual(r, a_phi, a_rhs);
+    bool doExchange = true;
+    bool printStuff = false;
+    a_op.residual(r, a_phi, a_rhs, doExchange, printStuff);
 
     a_op.assignLocal(r_tilde, r);
     a_op.setToZero(e);
@@ -278,7 +280,7 @@ public:
           {
             CH_TIME("BiCGStabSolver::solve::Restart");
 
-            a_op.residual(r, a_phi, a_rhs);
+            a_op.residual(r, a_phi, a_rhs, doExchange, printStuff);
             norm[0] = a_op.norm(r);
             rho[1]=0.0; rho[1]=0.0; rho[2]=0.0; rho[3]=0.0;
             alpha[0]=0; beta[0]=0; omega[0]=0;

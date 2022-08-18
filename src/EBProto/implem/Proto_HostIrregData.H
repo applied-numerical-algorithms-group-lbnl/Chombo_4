@@ -9,6 +9,7 @@
 #include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
 #include "Proto_Serialization.H"
+#include "Proto_IrregData.H"
 namespace Proto
 {
 ///
@@ -140,6 +141,17 @@ namespace Proto
       m_rawPtr   = a_input.dataPtr(a_comp);
     }           
 
+    //aliasing define for when the device is a lie
+    template<unsigned int srccomp>
+    void define(IrregData<cent, data_t, srccomp>& a_input)
+    {
+      m_indexVec = a_input.getIndicies();
+      fillSetFromVector();
+      m_inputBox = a_input.inputBox();
+      m_data     = a_input.getData();
+      m_rawPtr   = a_input.dataPtr(0);
+    }           
+    
     Box inputBox() const
     {
       return m_inputBox;

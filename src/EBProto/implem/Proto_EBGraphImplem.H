@@ -15,6 +15,8 @@ namespace Proto
        unsigned int                 a_numcomp)
   {
     PR_assert(a_srcBox == a_destBox);  //periodic and EB don't mix
+    PR_assert(a_src.isDefined());
+    PR_assert(this->isDefined());
     Box region = a_srcBox & m_region & a_src.m_region;
     if(isRegular(region) && a_src.isRegular(region))
     {

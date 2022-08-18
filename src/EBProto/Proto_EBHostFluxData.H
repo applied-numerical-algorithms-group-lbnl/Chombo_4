@@ -183,11 +183,6 @@ namespace Proto
       charbuf += zSize;
       charsiz += zSize;
 #endif
-      if(charsiz != a_expectedCharSize)
-      {
-        Chombo4::pout() << "EBHostFluxData::linearIn: WARNING charsiz = " << charsiz
-                        << ", expected = " << a_expectedCharSize;
-      }
     }
     virtual void linearOut(void*               a_buf,
                            size_t              a_expectedCharSize,
@@ -235,11 +230,6 @@ namespace Proto
       charbuf += zSize;
       charsiz += zSize;
 #endif      
-      if(charsiz != a_expectedCharSize)
-      {
-        Chombo4::pout() << "EBHostFluxData::linearout: WARNING charsiz = " << charsiz
-                        << ", expected = " << a_expectedCharSize;
-      }
     }
     ///
     static int preAllocatable()

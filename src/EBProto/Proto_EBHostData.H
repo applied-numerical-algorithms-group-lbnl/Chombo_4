@@ -7,7 +7,7 @@
 #include <memory>
 #include "Proto.H"
 #include "EBProto.H"
-
+#include "Proto_EBBoxData.H" //for aliasing
 using std::vector;
 using std::shared_ptr;
 namespace Proto
@@ -106,6 +106,25 @@ namespace Proto
       m_graph = a_input.ebgraph();
       m_irrData.define(a_input.getIrregData(), a_comp);
       m_regData.define(a_input.getRegData()  , a_comp);
+    }           
+
+
+    
+    EBHostData(EBBoxData<cent, data_t, ncomp>& a_input)
+    {
+      define(a_input);
+    }
+    
+    //aliasing define from device data for when the device is just the cpu
+    void define(EBBoxData<cent, data_t, ncomp>& a_input)
+    {
+#ifdef PROTO_CUDA
+      PROTO_ASSERT(false, "aliasing constructor called between host and device data holders");
+#endif      
+      m_inputBox = a_input.getRegData().box();
+      m_graph    = a_input.ebgraph();
+      m_irrData.define(a_input.getIrregData());
+      m_regData.define(a_input.getRegData()  );
     }           
 
     ///for aggstencil mostly.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
@@ -361,8 +380,10 @@ namespace Proto
 
   ///template specialization for cell
   template <typename  data_t, unsigned int ncomp>
-  data_t maxNormCell(const EBHostData<CELL, data_t, ncomp>& a_src,
-                 const Box& a_grid, unsigned int a_icomp) 
+  data_t maxNormCell(EBIndex<CELL>& a_vofmax,
+                     const EBHostData<CELL, data_t, ncomp>& a_src,
+                     const Box& a_grid, unsigned int a_icomp)
+                     
     {
       data_t maxval = 0; 
       using Proto::BoxIterator;
@@ -378,6 +399,7 @@ namespace Proto
           if(absval > maxval)
           {
             maxval = absval;
+            a_vofmax = vof;
           }
         }
       }
@@ -386,7 +408,8 @@ namespace Proto
 
   ///
   template <CENTERING cent, typename  data_t, unsigned int ncomp>
-  data_t maxNormFace(const EBHostData<cent, data_t, ncomp>& a_src,
+  data_t maxNormFace(EBIndex<cent>& a_facemax,
+                     const EBHostData<cent, data_t, ncomp>& a_src,
                      const Box& a_grid, unsigned int a_icomp)
   {
     data_t maxval = 0; 
@@ -408,6 +431,7 @@ namespace Proto
             if(absval > maxval)
             {
               maxval = absval;
+              a_facemax = faces[iface];
             }
           }
         }

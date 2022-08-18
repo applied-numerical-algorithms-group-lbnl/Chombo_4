@@ -69,9 +69,7 @@ runNavierStokes()
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigridLevel::s_numSmoothUp   = numSmooth;
-  EBMultigridLevel::s_numSmoothDown = numSmooth;
-  EBMultigridLevel::s_useWCycle     = useWCycle;
+
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "checkpoint interval = " << checkpointInterval  << endl;

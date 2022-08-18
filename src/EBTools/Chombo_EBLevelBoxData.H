@@ -23,6 +23,7 @@
 #include "Proto_EBBoxData.H"
 #include "Proto_EBHostData.H"
 #include "Chombo_EBDataChoreography.H"
+#include "Chombo_GeometryService.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
 
@@ -41,6 +42,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, srcComp> > host_src_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, dstComp> > devi_dst_comp_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, dstComp> > host_dst_comp_t;
+
   
   ScalarAliasFactory(devi_src_comp_t * a_source, 
                      unsigned int      a_whichcomp)
@@ -84,6 +86,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBGraph>                          graph_distrib_t;
   typedef GraphConstructorFactory< EBBoxData<cent, Real, NUMCOMPS> > devifactory_t;
   typedef GraphConstructorFactory<EBHostData<cent, Real, NUMCOMPS> > hostfactory_t;
+  typedef DeviToHostAliasFactory<cent, Real, NUMCOMPS> devi_to_host_alias_factory_t;
   ///
   EBLevelBoxData(): devi_distrib_t()
   {
@@ -149,9 +152,47 @@ public:
          bool a_printStuff = false) const
   {
     CH_TIME("EBLevelBoxData::copyTo");
+#ifdef PROTO_CUDA
+    copyToWithGPU(a_dst, a_printStuff);
+#else
+    copyToCPUOnly(a_dst, a_printStuff);
+#endif
+  }
+
+  void
+  copyToCPUOnly(EBLevelBoxData<cent, NUMCOMPS>& a_dst,
+         bool a_printStuff = false) const
+  {
+    CH_TIME("EBLevelBoxData::copyToCPUOnly");
     if(a_printStuff)
     {
-      Chombo4::pout() << "entering EBLevelBoxData copyTo" << endl;
+      Chombo4::pout() << "entering EBLevelBoxData copyToCPUOnly" << endl;
+    }
+
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "should not use cpu only version of copyto when proto_cuda is true");
+#endif    
+
+    host_distrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), devi_to_host_alias_factory_t(*this));
+    host_distrib_t hostdataDst(a_dst.disjointBoxLayout(), a_dst.ghostVect(), devi_to_host_alias_factory_t(a_dst));
+
+    hostdataSrc.copyTo(hostdataDst, a_printStuff);
+    
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "exiting  EBLevelBoxData copyToCPUOnly" << endl;
+    }
+  }
+
+  void
+  copyToWithGPU(EBLevelBoxData<cent, NUMCOMPS>& a_dst,
+                bool a_printStuff = false) const
+  {
+    CH_TIME("EBLevelBoxData::copyToWithGPU");
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "entering EBLevelBoxData copyToWithGPU" << endl;
     }
     
     host_distrib_t hostdataSrc(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
@@ -166,7 +207,7 @@ public:
     
     if(a_printStuff)
     {
-      Chombo4::pout() << "exiting  EBLevelBoxData copyTo" << endl;
+      Chombo4::pout() << "exiting  EBLevelBoxData copyToWithGPU" << endl;
     }
   }
 
@@ -174,7 +215,31 @@ public:
  ///the new, sleeker exchange interface that all the kids are talking about
   virtual void exchange(bool a_printStuff = false)
   {
-    CH_TIME("EBLevelBoxData::exchange(copier)");
+    CH_TIME("EBLevelBoxData::exchange");
+#ifdef PROTO_CUDA
+    exchangeWithGPU(a_printStuff);
+#else      
+    exchangeCPUOnly(a_printStuff);
+#endif      
+  }
+
+ ///exchange when the GPU is a lie
+  virtual void exchangeCPUOnly(bool a_printStuff = false)
+  {
+    CH_TIME("EBLevelBoxData::exchangeCPUOnly");
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "CPUOnly functions should not be called when the GPU is not a lie");
+#endif    
+
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), devi_to_host_alias_factory_t(*this));
+
+    hostdata.exchange(a_printStuff);
+  }
+
+ ///the new, sleeker exchange interface that all the kids are talking about
+  virtual void exchangeWithGPU(bool a_printStuff = false)
+  {
+    CH_TIME("EBLevelBoxData::exchangeWithGPU");
     if(a_printStuff)
     {
       Chombo4::pout() << "EBLevelBoxData::exchange: waiting for other procs to catch up" << endl;
@@ -213,9 +278,17 @@ public:
       Chombo4::pout() << "exiting  EBLevelBoxData::exchange" << endl;
     }
   }
-
-  ///
+  
+  ///deprecated interface
   Real maxNorm(int a_icomp) const
+  {
+    EBIndex<CELL> vofmax;
+    Real retval = maxNorm(vofmax, a_icomp);
+    return retval;
+  }
+  
+  ///The new maxnorm interface all the cool kids are using
+  Real maxNorm(EBIndex<CELL>& a_vofMaxThisProc, int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
 
@@ -230,10 +303,12 @@ public:
     {
       const Box & grid     =         dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
-      Real gridval = Proto::maxNormCell(hostdata[dit[ibox]], grbx, a_icomp);
+      EBIndex<CELL> vofmax;
+      Real gridval = Proto::maxNormCell(vofmax, hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > maxval)
       {
         maxval = gridval;
+        a_vofMaxThisProc = vofmax;
       }
     }
 
@@ -503,6 +578,45 @@ public:
     }
   }
 
+  /// Only for debugging.  This will not scale.
+  template<int order>
+  static shared_ptr<graph_distrib_t> getGraphOnOneBox(const Box& a_domain, IntVect a_ghost,
+                                                      shared_ptr<GeometryService<order> >   a_geoserv)
+
+  {
+    vector<Box> vbox(1, a_domain);
+    vector<int> proc(1, 0       );
+    DisjointBoxLayout dblOneBox(vbox, proc, a_domain);
+    shared_ptr<graph_distrib_t> retval(new graph_distrib_t(dblOneBox, a_ghost, NullConstructorDataFactory<EBGraph >()));
+    DataIterator ditone = dblOneBox.dataIterator();
+    
+    Bx bxdom   = getProtoBox(a_domain);
+    (*retval)[ditone[0]].defineAsAllRegular(bxdom, bxdom, bxdom);
+    
+    PR_assert(a_geoserv->hasLevel(a_domain));
+    shared_ptr<graph_distrib_t> graphFine = a_geoserv->getGraphs(a_domain);
+    graphFine->copyTo(*retval);
+    
+    return retval;
+  }
+
+  /// Only for debugging.  This will not scale.
+  template<int order>
+  static shared_ptr<EBLevelBoxData<CELL, 1> > getOneBoxCopyOfData( const EBLevelBoxData<CELL, 1> &   a_input,
+                                                                   shared_ptr<GeometryService<order> >   a_geoserv)
+  {
+    shared_ptr<EBLevelBoxData<CELL, 1> > retval;
+    auto ghost = a_input.ghostVect();
+    Box domain = a_input.disjointBoxLayout().physDomain().domainBox();
+    
+    shared_ptr<graph_distrib_t> graphsOneBox = getGraphOnOneBox(domain, ghost, a_geoserv);
+    auto dblOneBox = graphsOneBox->disjointBoxLayout();
+    retval = shared_ptr<EBLevelBoxData<CELL, 1> >(new EBLevelBoxData<CELL, 1>(dblOneBox, ghost, graphsOneBox));
+    a_input.copyTo(*retval);
+    return retval;
+  }
+  
+  /// for tests
   static int 
   checkAnswer(const EBBoxData<cent, Real, NUMCOMPS> & a_calculatedAns,
               const EBBoxData<cent, Real, NUMCOMPS> & a_referenceAns,
@@ -523,7 +637,8 @@ public:
 
     EBHostData<cent, Real, NUMCOMPS> hostdat(inbox, graph);
     copyToHost(hostdat, difference);
-    Real maxval = Proto::maxNormCell(hostdat, a_grid, a_icomp);
+    EBIndex<CELL> vofmax;
+    Real maxval = Proto::maxNormCell(vofmax, hostdat, a_grid, a_icomp);
     int retval = 0;
     if(maxval > a_tol)
     {
@@ -532,6 +647,73 @@ public:
     return retval;
   }
 
+  ///useful for multigrid, AMR
+  template< int order>
+  static
+  shared_ptr<EBLevelBoxData<CELL, 1> >
+  getDataOnRefinedCoarseLayout(const DisjointBoxLayout& a_dblCoar,
+                               const IntVect          & a_ghost,
+                               shared_ptr<GeometryService<order> >   a_geoserv)
+  {
+    PR_TIME("EBLevelBoxData::getDataOnRefinedCoarseLayout");
+
+
+
+    shared_ptr<graph_distrib_t> graphsReCo = getGraphOnRefinedCoarseLayout(a_dblCoar, a_ghost, a_geoserv);
+    DisjointBoxLayout dblReCo = graphsReCo->disjointBoxLayout();
+
+    shared_ptr<EBLevelBoxData<CELL, 1> >
+      dataReCo(new EBLevelBoxData<CELL, 1>(dblReCo, a_ghost, graphsReCo));
+
+  
+    return dataReCo;
+  }
+
+  ///meta data for the above
+  template<int order>
+  static
+  shared_ptr<graph_distrib_t>
+  getGraphOnRefinedCoarseLayout(const DisjointBoxLayout             & a_dblCoar,             
+                                const IntVect                       & a_ghost,
+                                shared_ptr<GeometryService<order> >   a_geoserv)
+    
+    
+  {
+    PR_TIME("EBLevelBoxData::getGraphOnRefinedCoarseLayout");
+
+    Box domCoar = a_dblCoar.physDomain().domainBox();
+    Box domFine = refine(domCoar, 2);
+    
+    DisjointBoxLayout dblReCo;
+    refine(dblReCo, a_dblCoar, 2);
+    PR_assert(domFine == dblReCo.physDomain().domainBox());
+    
+    shared_ptr<graph_distrib_t>
+      graphReCo = shared_ptr<graph_distrib_t>(new graph_distrib_t(dblReCo, a_ghost, NullConstructorDataFactory<EBGraph >()));
+    
+    DataIterator dit = dblReCo.dataIterator();
+    //need to fill graph first and exchange because the exchange can change the graph
+    // and we want the data to be defined consistent with the final graph
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Box validBox = dblReCo[dit[ibox]];
+      Box grownBox = grow(validBox, a_ghost);
+      Box interBoxCh = grownBox & domFine;
+
+      Bx interBx = getProtoBox(interBoxCh);
+      Bx domaiBx   = getProtoBox(domFine);
+      Bx validBx  = getProtoBox(validBox);
+
+      (*graphReCo)[dit[ibox]].defineAsAllRegular(validBx, interBx,  domaiBx);
+    }
+    
+    PR_assert(a_geoserv->hasLevel(domFine));
+    shared_ptr<graph_distrib_t> graphFine = a_geoserv->getGraphs(domFine);
+    graphFine->copyTo(*graphReCo);
+    graphReCo->exchange();
+
+    return graphReCo;
+  }
 
 private:
     shared_ptr<graph_distrib_t> m_graphs;

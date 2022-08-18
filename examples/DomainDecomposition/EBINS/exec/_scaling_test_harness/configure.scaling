@@ -1,0 +1,142 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+from datetime import date
+
+today = date.today()
+
+print("Today's date:", today)
+
+parser = ArgumentParser()
+
+parser.add_argument('--procs', type=int, help='minimum number of mpi processes [1]',default = '1')
+parser.add_argument('--maxgrid', type=int, help='max grid size in one direction[64]',default = '64')
+parser.add_argument('--input', type=str, help='name of input template  ["_input_templates/inputs.template"]', default= "_input_templates/inputs.template")
+parser.add_argument('--batch', type=str, help='name of batch template  ["_batch_templates/batch.template"]' , default= "_batch_templates/batch.template")
+parser.add_argument('--bottom', type=str, help='bottom solver for mac projection ["relax"]' , default= "relax")
+parser.add_argument('--direct', choices=['TRUE', 'FALSE'],help='send mac projection directly to bototm solver[FALSE]',default='FALSE')
+parser.add_argument('--max_proc', type=int, help='maximum of mpi processes [64]',default='64')
+parser.add_argument('--nx', type=int, help='nx for one processor [64]',default='64')
+parser.add_argument('--num_omp_threads', type=int, help='max number of OpenMP threads[1]',default='1')
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default="test")
+parser.add_argument('--petsc_input', type=str, help='name of test["_petsc_inputs/petsc.crusher"]',default="_petsc_inputs/petsc.crusher")
+parser.add_argument('--executable_name', type=str, help='name of executable file ["../../../main.exe"]',default="../../../main.exe")
+
+args = parser.parse_args()
+
+print(args)
+
+
+bottom_solver    = args.bottom
+direct_to_bottom = args.direct
+max_omp_threads = args.num_omp_threads
+
+configstr = bottom_solver + str("_");
+if(direct_to_bottom == 'TRUE'):
+    configstr = configstr + str("_direct_") 
+    
+petscrcstr = args.petsc_input
+nx    = args.nx
+maxgrid = args.maxgrid
+homestr = os.getcwd();
+print ("homedir = " + homestr)
+
+inputfilename = os.path.basename(args.input)
+batchfilename = os.path.basename(args.batch)
+
+neartopstr = homestr + "/_" +args.prefix
+strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
+topstr = neartopstr +"_" + configstr + "_" + strtoday
+
+print ("topstr = " + topstr)
+if not os.path.exists(topstr):
+    printstr = "making directory " + topstr
+    print (printstr)
+    os.mkdir(topstr)
+
+print ("changing directory to " + topstr)
+os.chdir(topstr);
+
+submitstr = "submit."  + args.prefix + ".jobs"
+r = open(submitstr,'w')
+r.write('#/usr/bin/csh\n')
+
+num_omp_threads = 1
+while num_omp_threads <= max_omp_threads:
+    nproc = args.procs
+    nnode = 1
+    while nproc <= args.max_proc:
+        print ("changing directory to " + homestr)
+        os.chdir(homestr);
+
+        f_inputtemplate = open(args.input,'r')
+        f_batchtemplate = open(args.batch,'r')
+        print ("changing directory to " + topstr)
+        os.chdir(topstr);
+
+        printstr  = "nproc = " + str(nproc) 
+        if max_omp_threads > 1:
+            printstr  = printstr + ", num_threads = " + str(num_omp_threads)
+        print (printstr)
+        dirstr =  "_" + str(nproc) + "_proc" 
+        if max_omp_threads > 1:
+            dirstr = dirstr + "_" + str(num_omp_threads) + "_threads"
+        if not os.path.exists(dirstr):
+            printstr = "making directory " + dirstr
+            print (printstr)
+            os.mkdir(dirstr)
+            
+        print ("changing directory to " + dirstr)
+        os.chdir(dirstr)
+        print ("copying petscrcstr to  " + dirstr)
+        commandstr = "cp ../../" + petscrcstr + " ./.petscrc"
+        print(commandstr)
+        os.system(commandstr);
+
+        inputname = inputfilename + "_" + str(nproc) + "proc" 
+        batchname = batchfilename + "_" + str(nproc) + "proc" 
+        f_inp = open(inputname,'w')
+        f_bat = open(batchname,'w')
+
+# summit needs this one
+#    commstr = "cd " + dirstr  + "; bsub -W 1:59 " + batchname + "; cd .. \n"
+# crusher needs this one
+        commstr = "cd " + dirstr  + "; sbatch " + batchname + "; cd .. \n"
+# spencer needs this one
+#       commstr = "cd " + dirstr  + "; source " + batchname + "; cd .. \n"
+        r.write(commstr)
+        print ("processing input file")
+        for inputstr in f_inputtemplate:
+            impster = inputstr
+            impster = impster.replace("NX", str(nx))
+            impster = impster.replace("MAXGRID", str(maxgrid))
+            impster = impster.replace("DIRECT", direct_to_bottom)
+            botster = str('"') + bottom_solver + str('"')
+            impster = impster.replace("BOTTOM", botster)
+            f_inp.write(impster)
+        
+        print ("processing batch file")
+        inputfilestr =  inputname
+        for batchster in f_batchtemplate:
+            t1str = batchster;
+            t2str = t1str.replace("NUM_PROCS", str(nproc))
+            t3str = t2str.replace("EXECUTABLE_FILE", args.executable_name)
+            t4str = t3str.replace("INPUT_FILE", inputfilestr)
+            t5str = t4str.replace("NUM_NODE", str(nnode))
+            t6str = t5str.replace("CHOMBO_OMP_NUM_THREADS", str(num_omp_threads))
+            f_bat.write(t6str)
+
+        f_inp.close();
+        f_bat.close()
+        f_inputtemplate.close()
+        f_batchtemplate.close()
+        nproc *= 8
+        nnode *= 8
+        nx    *= 2
+    num_omp_threads *= 2
+
+print( "changing directory to " + homestr)
+r.close()
+os.chdir(homestr)

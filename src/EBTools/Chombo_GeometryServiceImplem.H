@@ -2,6 +2,143 @@
 #define __GeometryServiceImplem__
 
 /*********************************************/
+//makes levelgeometry service on refined coarse layout.  Used for agglomeration
+template <int order>
+LevelGeometryService<order>::
+LevelGeometryService(const LevelGeometryService   & a_fineLevel,
+                     const LevelGeometryService   & a_coarLevel,
+                     bool a_printStuff)
+{
+
+  DisjointBoxLayout gridsCoar = a_coarLevel.m_grids;
+  m_baseIF  = a_fineLevel.m_baseIF;
+  m_domain  = a_fineLevel.m_domain;
+  m_origin  = a_fineLevel.m_origin;
+  m_dx      = a_fineLevel.m_dx;
+  m_geomgrow =a_fineLevel.m_geomgrow;
+  m_degreeP = a_fineLevel.m_degreeP;
+  
+  DisjointBoxLayout gridsReCo;
+  refine(gridsReCo, gridsCoar, 2);
+  m_grids = gridsReCo;
+
+  defineData();
+  //define as all regular then copy over
+  DataIterator dit = m_grids.dataIterator();
+  //need to fill graph first and exchange because the exchange can change the graph
+  // and we want the data to be defined consistent with the final graph
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box smgrBox = grow(validBox, m_geomgrow-1);
+
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    Bx domain   = getProtoBox(m_domain);
+    Bx validBx  = getProtoBox(validBox);
+
+    (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domain);
+  }
+
+//  //begin debug
+//  Chombo4::pout() << "fine level = " << endl;
+//  a_fineLevel.m_graphs->printGrids();
+//  Chombo4::pout() << "coarse level = " << endl;
+//  m_graphs->printGrids();
+//  //now fill in the moment information
+//  for(int ibox = 0; ibox < dit.size(); ibox++)
+//  {
+//    auto graph = (*m_graphs)[dit[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "has irreg" << endl;
+//    }
+//  }
+//  
+//  auto ditf = a_fineLevel.m_grids.dataIterator();
+//  for(int ibox = 0; ibox < ditf.size(); ibox++)
+//  {
+//    auto graphs = a_fineLevel.m_graphs;
+//    auto graph = (*graphs)[ditf[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "finer all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "finer all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "finer has irreg" << endl;
+//    }
+//  }
+//  //end debug
+
+  bool printStuff = false;
+
+  a_fineLevel.m_graphs->copyTo(*m_graphs, printStuff);
+  //pout() << "after copyTo" << endl;
+  m_graphs->exchange(printStuff);
+  //pout() << "after exchange" << endl;
+  
+  //now fill in the moment information
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    
+    (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+#if DIM==3
+    (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+#endif
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      (*m_ebnormaldata[idir])[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]); 
+    }
+  }
+  
+  a_fineLevel.m_voludata->copyTo(*m_voludata);  
+  a_fineLevel.m_ebfadata->copyTo(*m_ebfadata);
+  a_fineLevel.m_xfacdata->copyTo(*m_xfacdata);
+  a_fineLevel.m_yfacdata->copyTo(*m_yfacdata);
+  
+#if DIM==3  
+  a_fineLevel.m_zfacdata->copyTo(*m_zfacdata);
+#endif
+  
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_fineLevel.m_ebnormaldata[idir]->copyTo(*m_ebnormaldata[idir]);
+  }
+
+  m_voludata->exchange();  
+  m_ebfadata->exchange();
+  m_xfacdata->exchange();
+  m_yfacdata->exchange();
+#if DIM==3  
+  m_zfacdata->exchange();
+#endif  
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    m_ebnormaldata[idir]->exchange();
+  }
+}
+/*********************************************/
 template <int order>
 LevelGeometryService<order>::
 LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
@@ -262,23 +399,38 @@ exchange(bool a_printStuff)
 /*********************************************/
 template <int order>
 LevelGeometryService<order>::
-LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
+LevelGeometryService(const LevelGeometryService   &      a_finer,
                      const DisjointBoxLayout      &      a_grids,
                      bool a_printStuff)
 {
-  PR_TIME("LevelGeometryService::defineFromcoarser");
+  PR_TIME("LevelGeometryService::defineFromFinerLevel");
   if(a_printStuff)
   {
     pout() << "creating coarser GeometryService level" << endl;
   }
+
+  LevelGeometryService<order>* finerLevelOnProcPtr = NULL;
+  bool needDelete = false;
+  m_baseIF   = a_finer.m_baseIF;
+  m_domain   = coarsen(a_finer.m_domain,2);
+  m_origin   =         a_finer.m_origin;
+  m_dx       =      2.*a_finer.m_dx;
+  m_geomgrow =         a_finer.m_geomgrow;
+  m_degreeP  =         a_finer.m_degreeP;
+  m_grids    = a_grids;
   
-  m_baseIF   = a_finerLevel.m_baseIF;
-  m_domain   = coarsen(a_finerLevel.m_domain,2);
-  m_origin   =         a_finerLevel.m_origin;
-  m_dx       =      2.*a_finerLevel.m_dx;
-  m_geomgrow =         a_finerLevel.m_geomgrow;
-  m_degreeP =          a_finerLevel.m_degreeP;
-  m_grids  = a_grids;
+  if(a_finer.m_grids.compatible(m_grids))
+  {
+    finerLevelOnProcPtr = (LevelGeometryService<order>*)(&a_finer);
+    needDelete = false;
+  }
+  else
+  {
+    finerLevelOnProcPtr = new LevelGeometryService<order>(a_finer, *this, a_printStuff);
+  }
+
+  auto& finerLevel = *finerLevelOnProcPtr;
+  
   
   if(a_printStuff)
   {
@@ -286,13 +438,13 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   }
   defineData();
 
-  PROTO_ASSERT(a_grids.compatible(a_finerLevel.m_grids), "GeometryService:problem in grid generation");
+  PROTO_ASSERT(a_grids.compatible(finerLevel.m_grids), "GeometryService:problem in grid generation");
   
   if(a_printStuff)
   {
     pout() << "LevelGeometryService coarsening constructor: coarsening the graph" << endl;
   }
-  coarsenGraph(a_finerLevel);
+  coarsenGraph(finerLevel);
   
   if(a_printStuff)
   {
@@ -304,7 +456,7 @@ LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
   {
     pout() << "LevelGeometryService coarsening constructor: coarsening the data" << endl;
   }
-  coarsenData(a_finerLevel);
+  coarsenData(finerLevel);
 
   if(a_printStuff)
   {

@@ -309,16 +309,21 @@ namespace CH4_Data_Choreography
 
 #if 1      
       auto& cache = getMetaDataCache();
-      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, a_dst.m_data, a_printStuff);
+      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, m_data, a_printStuff);
       
       BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
       CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
 #else      
-      BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
+      Chombo4::pout() << "DistributedData::copyTo: eschewing cache!" << endl;
+      BoxPattern pattern(m_grids, a_dst.m_grids, true);
       CommunicationMetaData<fabtype_t> metadataco(pattern,
-                                                  a_dst.m_data, a_printStuff);
-#endif      
-      communicate(*this, pattern, metadataco, a_dst, a_printStuff, m_graphConstructed);
+                                                  m_data, true);
+      Chombo4::pout() << "DistributedData::copyTo: m_grids: " << endl;
+      m_grids.print();
+      Chombo4::pout() << "DistributedData::copyTo: a_dst.m_grids:" << endl;
+      a_dst.m_grids.print();
+#endif
+      communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
     }
 
     ///
@@ -333,19 +338,26 @@ namespace CH4_Data_Choreography
       return m_grids;
     }
     
+    void printGrids() const
+    {
+      Chombo4::pout() << "grids = " ;
+      m_grids.print();
+      Chombo4::pout() << std::endl;
+    }
+    
   private:
 
     static void communicate(DistributedData                  & a_dst,
                             BoxPattern                       & a_pattern,
                             CommunicationMetaData<fabtype_t> & a_metadataco,
-                            const DistributedData & a_src,
+                            DistributedData                  & a_src,
                             bool a_printStuff,
                             bool a_graphConstructed)
     {
       CH_TIME("DistributedData::communicate");
 #ifdef CH_MPI  
       postReceives(   a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
-      postSends(      a_dst.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
+      postSends(      a_src.m_data, a_metadataco, a_pattern, a_printStuff, a_graphConstructed);
 #endif      
       doLocalCopies(a_dst, a_src, a_pattern, a_printStuff);
 #ifdef CH_MPI  
@@ -635,6 +647,7 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::doLocalCopies");
       bool goFaster = !a_printStuff;
+      goFaster = true;
       if(goFaster)
       {
         //this is probably faster
@@ -669,7 +682,9 @@ namespace CH4_Data_Choreography
         unsigned int ncodst = a_dst[dstdatind].nComp();
         unsigned int ncosrc = a_src[srcdatind].nComp();
         CH_assert(ncodst == ncosrc);
-        a_dst[dstdatind].copy(a_src[srcdatind], regx, ico, regx, ico, ncodst);
+        auto      & dstfab = a_dst[dstdatind];
+        const auto& srcfab = a_src[srcdatind];
+        dstfab.copy(srcfab, regx, ico, regx, ico, ncodst);
       }
     }
     ///
@@ -686,7 +701,6 @@ namespace CH4_Data_Choreography
       return *s_meta_data_ptr;
     }
     
-
     int m_procID;
     ///actual data 
     vector<fabtype_t*> m_data;

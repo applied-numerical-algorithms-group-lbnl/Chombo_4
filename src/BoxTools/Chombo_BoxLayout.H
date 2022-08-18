@@ -23,7 +23,6 @@
 class DataIterator;
 class TimedDataIterator;
 class LayoutIterator;
-template<class T> class LayoutData;
   using CH4_SPMD::numProc;
 
 ///Base class to transform boxes in an existing layout
@@ -168,12 +167,6 @@ public:
             const std::vector<int>& a_procIDs);
 
   ///
-  /** Construct from a LayoutData<Box>.
-      On exit, the BoxLayout will be closed.
-  */
-  BoxLayout(const LayoutData<Box>& a_newLayout);
-
-  ///
   void transform(BaseTransform& a_transform);
 
   ///
@@ -202,15 +195,6 @@ public:
   define(const std::vector<Box>& a_boxes,
          const std::vector<int>& a_procIDs);
 
-  ///
-  /** Define this BoxLayout from a LayoutData<Box>.
-      We can iterate through the new BoxLayout by the same iterator as
-      through the underlying BoxLayout of the LayoutData<Box>.
-      Each Box in the new BoxLayout is in the same position as
-      each Box in the LayoutData<Box>.
-      On exit, the BoxLayout will be closed, and NOT re-sorted.
-  */
-  virtual void define(const LayoutData<Box>& a_newLayout);
 
   /*@}*/
 

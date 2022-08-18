@@ -67,12 +67,6 @@ public:
                     const ProblemDomain& a_physDomain);
 
   ///
-  /** Construct from a LayoutData<Box>.
-      On exit, the BoxLayout will be closed.
-  */
-  DisjointBoxLayout(const LayoutData<Box>& a_newLayout);
-
-  ///
   /**
      Ref-counted destruction.  Once the last reference to the
      implementation of this class is destroyed, the data members

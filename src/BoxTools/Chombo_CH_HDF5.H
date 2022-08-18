@@ -949,55 +949,8 @@ void getOffsets(std::vector<std::vector<long long> >& offsets, const BoxLayoutDa
         }
     }
   else
-    { // symmetric and dynamic preallocatable need two pass I/O
-      OffsetBuffer buff;
-      //int index = 0;
-      for (DataIterator dit(a_data.dataIterator()); dit.ok(); ++dit)
-        {
-          int index = a_data.boxLayout().index(dit());
-          //int index = dit().intCode();
-          buff.index.push_back(index);
-          Box region = layout[dit()];
-          region.grow(outputGhost);
-          { 
-            CH_TIMELEAF("dataSize");
-            dataSize(a_data[dit()], thisSize, region, comps);
-          }
-          buff.offsets.push_back(thisSize);
-        }
-      std::vector<OffsetBuffer> gathering(numProc());
-      {
-        CH_TIMELEAF("gather");
-        ::CH4_SPMD::gather(gathering, buff, uniqueProc(::CH4_SPMD::SerialTask::compute));
-      }
-      {
-        CH_TIMELEAF("broadcast");
-        ::CH4_SPMD::broadcast(gathering,  uniqueProc(::CH4_SPMD::SerialTask::compute));
-      }
-      //  pout() << gathering<<endl;
-      for (int i=0; i<numProc(); ++i)
-        {
-          OffsetBuffer& offbuf = gathering[i];
-          for (int num=0; num<offbuf.index.size(); num++)
-            {
-              int index = offbuf.index[num];
-              for (unsigned int j=0; j<types; ++j)
-                {
-                  CH_TIMELEAF("offsets calc");
-                  //offsets[index+1][j] = offbuf.offsets[num][j];
-                  offsets[j][index+1] = offbuf.offsets[num][j];
-                }
-            }
-        }
-      for (int i=0; i<layout.size(); i++)
-        {
-          for (unsigned int j=0; j<types; ++j)
-            {
-              CH_TIMELEAF("offsets calc");
-              //offsets[i+1][j] += offsets[i][j];
-              offsets[j][i+1] += offsets[j][i];
-            }
-        }
+    {
+      MayDay::Error();
     }
 
   // pout() << offsets<<endl;

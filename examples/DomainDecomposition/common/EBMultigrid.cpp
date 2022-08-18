@@ -7,10 +7,178 @@
 #include "BiCGStabSolver.H"
 #include "Chombo_ParmParse.H"
 #include "Chombo_NamespaceHeader.H"
+bool EBMultigrid::s_forbidLazyRelaxation = false;
+/******/
+void
+EBPoissonOp::
+createAndStoreRestrictionStencil()
+{
+  DataIterator dit = m_grids.dataIterator();
+  vector<EBIndex<CELL> >                    dstVoFs;                    
+  vector<LocalStencil<CELL, double> >       stenVec;                    
+  Point ghostPt = ProtoCh::getPoint(m_nghost);
 
-bool EBMultigridLevel::s_useWCycle     = false;
-int  EBMultigridLevel::s_numSmoothDown = 4;
-int  EBMultigridLevel::s_numSmoothUp   = 4;
+  auto domCoar = m_domain;
+  auto domFine = refine(m_domain,2);
+  
+  auto dblFine = m_geoserv->getDBL(domFine);
+  auto dblCoar = m_geoserv->getDBL(domCoar);
+  
+  shared_ptr<graph_distrib_t> graphCoar = m_graphs;
+  shared_ptr<graph_distrib_t> graphFine;
+  if(dblFine.compatible(dblCoar))
+  {
+    graphFine = m_geoserv->getGraphs(domFine);
+  }
+  else
+  {
+    graphFine = getGraphOnRefinedCoarseLayout();
+  }
+  m_restrictionStencil.resize(dit.size());
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+
+    auto gridCoar = m_grids[dit[ibox]];
+    auto gridFine = refine(gridCoar, 2);
+    
+    Bx  dstValid  = ProtoCh::getProtoBox(gridCoar);
+    Bx  srcValid  = ProtoCh::getProtoBox(gridFine);
+    Bx  dstDomain = ProtoCh::getProtoBox(domCoar);
+    Bx  srcDomain = ProtoCh::getProtoBox(domFine);
+    
+    const auto& srcGraph = (*graphFine)[dit[ibox]];
+    const auto& dstGraph = (*graphCoar)[dit[ibox]];
+
+    getRestrictionStencil(dstVoFs, stenVec,  gridCoar, dstGraph);
+    
+    m_restrictionStencil[ibox] = shared_ptr<ebstencil_t>
+      (new ebstencil_t(dstVoFs,   stenVec,
+                       srcGraph,  dstGraph, 
+                       srcValid,  dstValid, 
+                       srcDomain, dstDomain,
+                       ghostPt, ghostPt, false));
+  }
+}
+/******/
+void
+EBPoissonOp::
+createAndStoreProlongationStencils()
+{
+  auto domCoar = m_domain;
+  auto domFine = refine(m_domain,2);
+  
+  auto dblFine = m_geoserv->getDBL(domFine);
+  auto dblCoar = m_geoserv->getDBL(domCoar);
+  
+  shared_ptr<graph_distrib_t> graphCoar = m_graphs;
+  shared_ptr<graph_distrib_t> graphFine;
+  if(dblFine.compatible(dblCoar))
+  {
+    graphFine = m_geoserv->getGraphs(domFine);
+  }
+  else
+  {
+    graphFine = getGraphOnRefinedCoarseLayout();
+  }
+  
+  Point ghostPt = ProtoCh::getPoint(m_nghost);
+  ///prolongation has ncolors stencils
+  for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
+  {
+    DataIterator dit = m_grids.dataIterator();
+    m_prolongationStencils[icolor].resize(dit.size());
+    for(int ibox = 0; ibox < dit.size(); ++ibox)
+    {
+      auto gridCoar = m_grids[dit[ibox]];
+      auto gridFine = refine(gridCoar, 2);
+      const EBGraph& srcGraph = (*graphCoar)[dit[ibox]];
+      const EBGraph& dstGraph = (*graphFine)[dit[ibox]];
+      
+      vector<EBIndex<CELL> >                    dstVoFs;                    
+      vector<LocalStencil<CELL, double> >       stenVec;                    
+      auto srcValid = ProtoCh::getProtoBox(gridCoar);
+      auto dstValid = ProtoCh::getProtoBox(gridFine);
+      auto srcDomain= ProtoCh::getProtoBox(domCoar);
+      auto dstDomain= ProtoCh::getProtoBox(domFine);
+      
+      getProlongationStencil(dstVoFs, stenVec, dstValid, dstGraph, icolor);
+
+      m_prolongationStencils[icolor][ibox] = shared_ptr<ebstencil_t>
+        (new ebstencil_t(dstVoFs, stenVec,
+                         srcGraph,  dstGraph, 
+                         srcValid,  dstValid, 
+                         srcDomain, dstDomain,
+                         ghostPt, ghostPt, false));
+    }
+  }
+}
+/******/
+void
+EBPoissonOp::
+getRestrictionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
+                      vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                      const Box                                 & a_validCoar,
+                      const EBGraph                             & a_graphCoar)
+{
+  a_dstVoFs.resize(0);
+  a_stencil.resize(0);
+  //this stencil has no span that I can understand so getIrrregLocations not appropriate
+  a_dstVoFs = a_graphCoar.getAllVoFs(a_validCoar); 
+
+  double dnumpts = double(s_ncolors);
+  double rweight = 1.0/dnumpts;
+  a_stencil.resize(a_dstVoFs.size());
+  for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+  {
+    const EBIndex<CELL>&   coarVoF  = a_dstVoFs[ivof];
+    vector<EBIndex<CELL> > fineVoFs = a_graphCoar.refine(coarVoF);
+    //in multigrid, the rhs is already volume weighted so it is just
+    //coarse = (1/ncolors)*(sum(fine))
+    for(int ifine = 0; ifine <fineVoFs.size(); ifine++)
+    {
+      a_stencil[ivof].add(fineVoFs[ifine], rweight);
+    }
+  }
+}
+
+/******/
+void
+EBPoissonOp::
+getProlongationStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
+                       vector<LocalStencil<CELL, double> >       & a_stencil,                    
+                       const Box                                 & a_dstValid,                   
+                       const EBGraph                             & a_dstGraph,                      
+                       unsigned long                               a_icolor)               
+{
+  a_dstVoFs.resize(0);
+  a_stencil.resize(0);
+  Point colorpt = Proto::EBStencilArchive<CELL, CELL, 2, double>::getColor(a_icolor);
+
+  a_dstVoFs = a_dstGraph.getAllVoFs(a_dstValid); 
+  vector<EBIndex<CELL> > coarsePts = a_dstGraph.getAllVoFs(a_dstValid);
+
+  a_stencil.resize(a_dstVoFs.size());
+  for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+  {
+    const EBIndex<CELL>&   fineVoF = a_dstVoFs[ivof];
+    EBIndex<CELL>          coarVoF = a_dstGraph.coarsen(fineVoF);
+    double weight = 1;
+
+    Point vofpt = fineVoF.m_pt;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      int mod = (vofpt[idir])%2;
+      if(mod != colorpt[idir])
+      {
+        weight  = 0;
+      }
+    }
+      
+    a_stencil[ivof].add(coarVoF, weight);
+  }
+
+}
+
 
 /****/
 void 
@@ -19,7 +187,8 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
       const Real                    & a_tol,
       const unsigned int            & a_maxIter,
-      bool a_initToZero)
+      bool a_initToZero,
+      bool a_printStuff)
 {
   CH_TIME("EBMultigrid::solve");
   if(a_initToZero)
@@ -27,8 +196,11 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     a_phi.setVal(0.);
   }
 
-  residual(m_res, a_phi, a_rhs, true);
-  Real initres = m_res.maxNorm(0);
+  bool printStuff = false;
+  bool doExchange = true;
+  residual(m_res, a_phi, a_rhs, doExchange, printStuff);
+  EBIndex<CELL> vofmax;
+  Real initres = m_res.maxNorm(vofmax, 0);
   int iter = 0;
   pout() << "EBMultigrid::solve tol = " << a_tol << ",  max iter = "<< a_maxIter << endl;
   Real resnorm = initres;
@@ -41,7 +213,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
            << setiosflags(ios::scientific);
 
     
-    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm;
+    pout() << "EBMultigrid::solve iter = " << iter << ", |resid| = " << resnorm << "@ " << vofmax.m_pt;
     Real rate = 1;
     if((resnormold > 1.0e-12) && (iter > 0))
     {
@@ -50,17 +222,18 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     }
     pout() << endl;
     
-    vCycle(m_cor, m_res);
 
+    vCycle(m_cor, m_res, a_printStuff);
+    
     a_phi += m_cor;
-    residual(m_res, a_phi, a_rhs, true);
+    residual(m_res, a_phi, a_rhs, doExchange, printStuff);
     
     resnormold = resnorm;
-    resnorm = m_res.maxNorm(0);
+    resnorm = m_res.maxNorm(vofmax, 0);
 
     iter++;
   }
-  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << endl;
+  pout() << "EBMultigrid:solve: final     |resid| = " << resnorm << "@ " <<vofmax.m_pt << endl;
 }
 
 /****/
@@ -68,7 +241,8 @@ void
 EBPoissonOp::
 applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
         const EBLevelBoxData<CELL, 1> & a_phi,
-        bool a_doExchange) const
+        bool a_doExchange,
+        bool a_printStuff) const
                     
 {
   CH_TIME("EBMultigrid::applyOp");
@@ -77,23 +251,48 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
   EBLevelBoxData<CELL, 1>& phi = const_cast<EBLevelBoxData<CELL, 1>&>(a_phi);
   if(a_doExchange)
   {
-    bool printStuff = false;
-    //begin debug
-    printStuff = true;
-    //end debug
     phi.exchange();
   }
-  
+
   DataIterator dit = m_grids.dataIterator();
   int ideb  = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
+    auto valid = m_grids[dit[ibox]];
+    //begin debug
+    IntVect ivdeb(D_DECL(6, 16, 0));
+    IntVect ivlod(D_DECL(3, 11, 0));
+    IntVect ivhid(D_DECL(9, 21, 0));
+    Box debval(ivlod, ivhid);
+    Box grownValid = grow(valid, m_nghost);
+    debval &= grownValid;
+    Point   ptlo = ProtoCh::getPoint(debval.smallEnd());
+    Point   pthi = ProtoCh::getPoint(debval.bigEnd());
+    bool printStuff = (a_printStuff && (valid.contains(ivdeb)));
+    //end debug
+    
     auto& phifab = a_phi[dit[ibox]];
     auto& lphfab = a_lph[dit[ibox]];
     shared_ptr<ebstencil_t> stencil =
       m_dictionary->getEBStencil(m_stenname, m_ebbcname, m_domain, m_domain, ibox);
     //set lphi = kappa* div(F)
-    stencil->apply(lphfab, phifab,  true, 1.0);
+
+    if(printStuff) 
+    {//begin debug
+      pout() << "phifab pre apply : " << endl;
+      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
+//      pout() << "lphfab pre apply: " << endl;
+//      DumpArea::genDumpCell1(&phifab, ptlo, pthi);
+    }//end debug
+
+    stencil->apply(lphfab, phifab,  true, 1.0, printStuff);
+
+    if(printStuff) 
+    {//begin debug
+      pout() << "lphfab post apply: " << endl;
+      DumpArea::genDumpCell1(&lphfab, ptlo, pthi);
+    }//end debug
+    
     //this adds kappa*alpha*phi (making lphi = kappa*alpha*phi + kappa*beta*divF)
     Box grid =m_grids[dit[ibox]];
     Bx  grbx = getProtoBox(grid);
@@ -101,8 +300,15 @@ applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
 
     //pout() << "going into add alphaphi" << endl;
     Bx inputBox = lphfab.inputBox();
-    ebforall(inputBox, addAlphaPhi, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
+    ebforall_i(inputBox, addAlphaPhiPt, grbx, lphfab, phifab, kapfab, m_alpha, m_beta);
 
+    if(printStuff) 
+    {//begin debug
+      pout() << "kapfab post ebforall: " << endl;
+      DumpArea::genDumpCell1(&kapfab, ptlo, pthi);
+      pout() << "lphfab post ebforall: " << endl;
+      DumpArea::genDumpCell1(&lphfab, ptlo, pthi);
+    }//end debug
     ideb++;
   }
 }
@@ -165,12 +371,24 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             const string                            & a_ebbcname,
             const Box                               & a_domain,
             const IntVect                           & a_nghost,
-            string a_prefix, bool a_printStuff):  EBMultigridLevel()
+            string   a_bottom_solver,
+            bool     a_direct_to_bottom,
+            string a_prefix,
+            bool a_useWCycle,
+            int  a_numSmooth,
+            bool a_printStuff):EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
   m_prefix = a_prefix;
-  getDToB();
+  m_bottom_solver    = a_bottom_solver    ;
+  m_direct_to_bottom = a_direct_to_bottom ;
+  m_prefix           = a_prefix           ;
+  m_useWCycle        = a_useWCycle        ;
+  m_numSmooth        = a_numSmooth        ;    
+
   m_depth = 0;
+  m_hasRecoDataAlready  = false;
+  m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_alpha      = a_alpha;      
   m_beta       = a_beta;       
@@ -187,7 +405,10 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   m_domain     = a_domain;     
   m_nghost     = a_nghost;
   m_dictionary = a_dictionary;
-
+  
+  auto geodbl = m_geoserv->getDBL(m_domain);
+  PR_assert(geodbl==m_grids);
+  
   if(a_printStuff)
   {
     pout() << "EBPoissonOp constructor: defining internal data" << endl;
@@ -215,7 +436,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //need the volume fraction in a data holder so we can evaluate kappa*alpha I 
   fillKappa(a_geoserv, a_printStuff);
 
-  if(!m_directToBottom)
+  if(!m_direct_to_bottom)
   {
     if(a_printStuff)
     {
@@ -223,7 +444,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
     }
     defineCoarserObjects(a_geoserv, a_printStuff);
   }
-  if(!m_hasCoarser || m_directToBottom)
+  if(!m_hasCoarser || m_direct_to_bottom)
   {
     if(a_printStuff)
     {
@@ -247,27 +468,16 @@ EBPoissonOp::
 defineCoarserObjects(shared_ptr<GeometryService<2> >   & a_geoserv,
                      bool a_printStuff)
 {
-  PR_TIME("sgmglevel::defineCoarser");
+  PR_TIME("EBPoissonOp::defineCoarser");
 
-  m_hasCoarser = (m_grids.coarsenable(4));
+  Box coardom = coarsen(m_domain, 2);
+  m_hasCoarser = a_geoserv->hasLevel(coardom);
+  
   if(m_hasCoarser)
   {
-    //multilevel operators live with the finer level
-    Box coardom = coarsen(m_domain, 2);
-    m_nobcname = string("no_bcs");
-    m_restrictionName = string("Multigrid_Restriction");
-    m_dictionary->registerStencil(m_restrictionName, m_nobcname, m_nobcname, m_domain, coardom, false);
-    ///prolongation has ncolors stencils
-    for(unsigned int icolor = 0; icolor < s_ncolors; icolor++)
-    {
-      string colorstring = "PWC_Prolongation_" + std::to_string(icolor);
-      m_prolongationName[icolor] = colorstring;
-      m_dictionary->registerStencil(colorstring, m_nobcname, m_nobcname, coardom, m_domain, false);
-    }
-    
     m_coarser = shared_ptr<EBPoissonOp>(new EBPoissonOp());
     m_coarser->define(*this, a_geoserv, a_printStuff);
-
+    
     auto graphs = a_geoserv->getGraphs(m_coarser->m_domain);
     m_residC.define(m_coarser->m_grids, m_nghost , graphs);
     m_deltaC.define(m_coarser->m_grids, m_nghost , graphs);
@@ -280,14 +490,22 @@ define(const EBMultigridLevel            & a_finerLevel,
        shared_ptr<GeometryService<2> >   & a_geoserv,
        bool a_printStuff)
 {
-  PR_TIME("sgmglevel::constructor");
-  m_depth = a_finerLevel.m_depth + 1;
-  m_prefix = a_finerLevel.m_prefix;
-  getDToB();
+  PR_TIME("EBPoissonOp::constructor");
+  m_depth            = a_finerLevel.m_depth + 1;
+
+  m_numSmooth        = a_finerLevel.m_numSmooth;
+  m_useWCycle        = a_finerLevel.m_useWCycle;
+  m_prefix           = a_finerLevel.m_prefix;
+  m_bottom_solver    = a_finerLevel.m_bottom_solver;
+  m_direct_to_bottom = a_finerLevel.m_direct_to_bottom;
+  
+  m_hasRecoDataAlready  = false;
+  m_hasRecoGraphAlready = false;
   m_geoserv = a_geoserv;
   m_dx         = 2*a_finerLevel.m_dx;         
   m_domain     = coarsen(a_finerLevel.m_domain, 2);      
-  coarsen(m_grids, a_finerLevel.m_grids,  2);      
+  m_grids = m_geoserv->getDBL(m_domain);
+
 
   m_alpha      = a_finerLevel.m_alpha;      
   m_beta       = a_finerLevel.m_beta;
@@ -312,14 +530,16 @@ define(const EBMultigridLevel            & a_finerLevel,
   //true is for need the diagonal wweight
   m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
 
+  createAndStoreRestrictionStencil();
+  createAndStoreProlongationStencils();
   //should not need the neumann one for coarser levels as TGA only calls it on finest level
   fillKappa(a_geoserv, false);
 
-  if(!m_directToBottom)
+  if(!m_direct_to_bottom)
   {
     defineCoarserObjects(a_geoserv, a_printStuff);
   }
-  if(!m_hasCoarser || m_directToBottom)
+  if(!m_hasCoarser || m_direct_to_bottom)
   {
     defineBottomSolvers(a_geoserv, a_printStuff);
   }
@@ -394,7 +614,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
   {
     pout() << "EBPoissonOp::fillKappa: calling exchange to fill ghost data" << endl;
   }
-  m_kappa.exchange(a_printStuff);
+  m_kappa.exchange();
   if(a_printStuff)
   {
     pout() << "EBPoissonOp::fillKappa: waiting for other procs to catch up" << endl;
@@ -407,14 +627,39 @@ EBPoissonOp::
 residual(EBLevelBoxData<CELL, 1>       & a_res,
          const EBLevelBoxData<CELL, 1> & a_phi,
          const EBLevelBoxData<CELL, 1> & a_rhs,
-         bool a_doExchange) const
+         bool a_doExchange,
+         bool a_printStuff) const
                     
 {
   CH_TIME("EBPoissonOp::residual");
   //this puts lphi into a_res
   CH_assert(a_res.ghostVect() == a_rhs.ghostVect());
-  applyOp(a_res, a_phi, a_doExchange);
-  //subtract off rhs so res = lphi - rhs
+  CH_assert(a_res.ghostVect() == a_phi.ghostVect());
+  
+  //this appears to be necessary.
+  a_res.setVal(0.);
+
+  if(a_printStuff)
+  {//begin debug
+    pout() << "residual a_phi:" << endl;
+    DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
+    pout() << "residual a_res:" << endl;
+    DumpArea::dumpAsOneBox(&a_res, m_geoserv);
+    pout() << "residual a_rhs:" << endl;
+    DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
+        
+  }//end debug
+  
+  applyOp(a_res, a_phi, a_doExchange, a_printStuff);
+
+  if(a_printStuff)
+  {//begin debug
+    pout() << "residual a_res after applyop:" << endl;
+    DumpArea::dumpAsOneBox(&a_res, m_geoserv);
+  }//end debug
+
+
+//subtract off rhs so res = lphi - rhs
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -429,7 +674,12 @@ residual(EBLevelBoxData<CELL, 1>       & a_res,
     ebforall(inputBox, subtractRHS,  grbx, resfab, rhsfab);
   }
 
-  a_res.exchange();
+  if(a_printStuff)
+  {//begin debug
+    pout() << "residual a_res after subtract rhs:" << endl;
+    DumpArea::dumpAsOneBox(&a_res, m_geoserv);
+  }//end debug
+
 }
 /****/
 void
@@ -444,19 +694,26 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
-  ParmParse pp(m_prefix.c_str());
   bool do_lazy_relax = false;
   bool one_exchange_per_relax = false;
-  pp.query("do_lazy_relax", do_lazy_relax);
-  pp.query("one_exchange_per_relax", one_exchange_per_relax);
+  bool noFunnyBusiness = EBMultigrid::lazyRelaxationForbidden();
+  if(!noFunnyBusiness)
+  {
+    ParmParse pp(m_prefix.c_str());
+    pp.query("do_lazy_relax", do_lazy_relax);
+    pp.query("one_exchange_per_relax", one_exchange_per_relax);
+  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
+  
   for(int iter = 0; iter < a_maxiter; iter++)
   {
     for(int iredblack = 0; iredblack < 2; iredblack++)
     {
       auto & resid = const_cast<EBLevelBoxData<CELL, 1> & >(m_resid);
+      resid.setVal(0.);
       bool doExchange = true;
+      bool printStuff = false;
       if(do_lazy_relax)
       {
         doExchange = (iredblack==0);
@@ -466,7 +723,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
         }
       }
 
-      residual(resid, a_phi, a_rhs, doExchange);
+      residual(resid, a_phi, a_rhs, doExchange, printStuff);
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
@@ -488,6 +745,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
       
         ideb++;
       } //end loop over boxes
+
     } //end loop over red and black
     ideb++;
   }// end loop over iteratioons
@@ -498,22 +756,48 @@ EBPoissonOp::
 restrictResidual(EBLevelBoxData<CELL, 1>       & a_resc,
                  const EBLevelBoxData<CELL, 1> & a_resf)
 {
-  PR_TIME("sgmglevel::restrict");
+  PR_TIME("EBPoissonOp::restrict");
+  auto dblFine = a_resf.disjointBoxLayout();
+  auto dblCoar = a_resc.disjointBoxLayout();
+  if(dblFine.compatible(dblCoar))
+  {
+    restrictResidualOnProc(a_resc, a_resf);
+  }
+  else
+  {
+    restrictResidualAgglom(a_resc, a_resf);
+  }
+}
+/****/
+void
+EBPoissonOp::
+restrictResidualAgglom(EBLevelBoxData<CELL, 1>       & a_resc,
+                       const EBLevelBoxData<CELL, 1> & a_resf)
+{
+  PR_TIME("EBPoissonOp::restrictAgglom");
+  shared_ptr<EBLevelBoxData<CELL, 1> > resReCo = getDataOnRefinedCoarseLayout();
+  a_resf.copyTo(*resReCo);
+  restrictResidualOnProc(a_resc, *resReCo);
+}
+/****/
+void
+EBPoissonOp::
+restrictResidualOnProc(EBLevelBoxData<CELL, 1>       & a_resc,
+                       const EBLevelBoxData<CELL, 1> & a_resf)
+{
+  PR_TIME("EBPoissonOp::restrictOnProc");
   DataIterator dit = m_grids.dataIterator();
-  int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& coarfab = a_resc[dit[ibox]];
     auto& finefab = a_resf[dit[ibox]];
     //finer level owns the stencil (and the operator)
     Box coardom = coarsen(m_domain, 2);
-    shared_ptr<ebstencil_t> stencil =
-      m_dictionary->getEBStencil(m_restrictionName, m_nobcname, m_domain, coardom, ibox);
+    shared_ptr<ebstencil_t> stencil = m_restrictionStencil[ibox];
+
     //set resc = Ave(resf) (true is initToZero)
     stencil->apply(coarfab, finefab,  true, 1.0);
-    ideb++;
   }
-  ideb++;
 }
 /****/
 void
@@ -521,7 +805,26 @@ EBPoissonOp::
 prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
                  const EBLevelBoxData<CELL, 1>& a_cor)
 {
-  PR_TIME("sgmglevel::prolong");
+  PR_TIME("EBPoissonOp::prolong");
+
+  auto dblFine = a_phi.disjointBoxLayout();
+  auto dblCoar = a_cor.disjointBoxLayout();
+  if(dblFine.compatible(dblCoar))
+  {
+    prolongIncrementOnProc(a_phi, a_cor);
+  }
+  else
+  {
+    prolongIncrementAgglom(a_phi, a_cor);
+  }
+}
+/****/
+void
+EBPoissonOp::
+prolongIncrementOnProc(EBLevelBoxData<CELL, 1>      & a_phi,
+                       const EBLevelBoxData<CELL, 1>& a_cor)
+{
+  PR_TIME("EBPoissonOp::prolong");
   //finer level owns the stencil (and the operator)
   Box coardom = coarsen(m_domain, 2);
   DataIterator dit = m_grids.dataIterator();
@@ -531,11 +834,25 @@ prolongIncrement(EBLevelBoxData<CELL, 1>      & a_phi,
     {
       auto& coarfab = a_cor[dit[ibox]];
       auto& finefab = a_phi[dit[ibox]];
-      shared_ptr<ebstencil_t> stencil = m_dictionary->getEBStencil(m_prolongationName[icolor], m_nobcname, coardom, m_domain, ibox);
+      shared_ptr<ebstencil_t> stencil = m_prolongationStencils[icolor][ibox];
       //phi  = phi + I(correction) (false means do not init to zero)
       stencil->apply(finefab, coarfab,  false, 1.0);
     }
   }
+}
+/****/
+void
+EBPoissonOp::
+prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phi,
+                       const EBLevelBoxData<CELL, 1>& a_cor)
+{
+  PR_TIME("EBPoissonOp::prolongAgglom");
+  //finer level owns the stencil (and the operator)
+  
+  shared_ptr<EBLevelBoxData<CELL, 1> >phiReCo = getDataOnRefinedCoarseLayout();
+  a_phi.copyTo(*phiReCo);
+  prolongIncrementOnProc(*phiReCo, a_cor);
+  phiReCo->copyTo(a_phi);
 }
 /****/
 ///
