@@ -78,7 +78,7 @@ namespace Proto
     T min() const
     {
       T retval = (*this)[0];
-      for(int idir = 0; idir < (N-1); idir++)
+      for(int idir = 0; idir < N; idir++)
       {
         if((*this)[idir] < retval)
         {

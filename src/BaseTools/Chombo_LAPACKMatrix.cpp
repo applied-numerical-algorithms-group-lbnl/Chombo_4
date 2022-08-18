@@ -835,7 +835,7 @@ int solveLSTSVD(LAPACKMatrix& A, LAPACKMatrix& B, int a_maxiter, Real a_tol)
       incr.setVal(0.);
       iter++;
     }
-  if((iter >= a_maxiter) && LAPACKMatrix::s_verbose)
+  if((iter >= a_maxiter))// && LAPACKMatrix::s_verbose)
     {
       pout() << "matrix::solve warning" << endl;
       pout() << "matrix: maximum number of iterations reached " << endl;

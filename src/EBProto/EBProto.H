@@ -12,6 +12,20 @@ namespace Proto
   {
     return a_idir + a_side*DIM;
   }
+/// side and direction from the arc vector index
+  inline void ebp_face(int a_index, int& a_idir, Side::LoHiSide& a_side)
+  {
+    a_idir = a_index%DIM;
+    if (a_index/DIM == 0)
+      {
+        a_side = Side::Lo;
+      }
+    else
+      {
+        a_side = Side::Hi;
+      }
+    return;
+  }
 }
 
 #include "implem/Proto_PointSet.H"

@@ -53,7 +53,7 @@ namespace Proto
       m_dx = a_dx;
     }
 
-    virtual Real getDx()
+    virtual Real getDx() const
     {
       return m_dx;
     }
@@ -219,7 +219,7 @@ namespace Proto
     ///
     static inline Real getTaylorCoefficient(const RealVect   & a_x0,
                                             const IndMomDIM  & a_p
-                                           ) 
+                                           )
     {
       IntVect m_power;
       RealVect m_point;
@@ -407,7 +407,7 @@ namespace Proto
       }
     };
 
-    inline Vector<Vector<IndMomDIM> > getEBNormMoments ()
+    inline Vector<Vector<IndMomDIM> > getEBNormMoments () const
     { 
       Vector<Vector<IndMomDIM> > ebfneighNorm;
       ebfneighNorm.resize(m_ebfneighNorm.size());
@@ -428,15 +428,15 @@ namespace Proto
     };
 
     inline void setWeightDisFacAndEB (Vector<int> & a_weightDisFac,
-		                      Vector<int> & a_weightDisEB)
+                                      Vector<int> & a_weightDisEB)
     {
       m_weightDisFac = a_weightDisFac;
       m_weightDisEB = a_weightDisEB;
     };
 
     inline void setFracInfo (Vector<double> & a_volneighFrac,
-		             Vector<double> & a_ebfneighFrac,
-			     Vector<double> & a_facneighFrac)
+                             Vector<double> & a_ebfneighFrac,
+                             Vector<double> & a_facneighFrac)
     {
       m_volneighFrac = a_volneighFrac;
       m_ebfneighFrac = a_ebfneighFrac;
@@ -449,6 +449,11 @@ namespace Proto
       m_facneighDir = a_facneighDir;
       m_facneighSid = a_facneighSid;
     };
+
+    inline int size()
+      {
+        return m_volMom.size() + m_facMom.size() + m_ebfMom.size();
+      }
 
     //Volume moments
     Vector<IndMomDIM>       m_volMom;
@@ -505,7 +510,7 @@ namespace Proto
     //Get neighbors VoFs through the faces of a specific cell.
     vector<EBIndex<CELL> >
     getFlapVoFs(const EBGraph       & a_graph,  
-	              EBIndex<CELL> & a_start) const;
+	              const EBIndex<CELL> & a_start) const;
 
     //Get neighbors VoFs of a given face within a specific radius.
     //Radius starts at one for the cells sharing the face, and 
@@ -514,43 +519,45 @@ namespace Proto
     Vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
                      const EBIndex<CELL> & a_vof,
-		     const int             a_radius,
-		     Neighbors<order>    & a_neigh,
-		     const EBGraph       & a_graph,
+                     const int             a_radius,
+                     Neighbors<order>    & a_neigh,
+                     const EBGraph       & a_graph,
                      int                   a_neighType) const;
 
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
     void
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
-		                const EBGraph          & a_graph,
+                                const EBGraph          & a_graph,
                                 const VoluData         & a_voludata,
                                 const EBFaData         & a_ebfadata,
                                 const XFacData         & a_xfacdata,
                                 const YFacData         & a_yfacdata,
                                 const ZFacData         & a_zfacdata,
-				const EBNormalData     & a_ebnormxdata,
+                                const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata,
-				Neighbors<order>       & a_neigh,
-                                int                    & a_neighType,
-				double                   a_dx) const;
+                                Neighbors<order> & a_neigh,
+                                int                      a_neighType,
+                                string                   a_ebbcName,
+                                string                   a_dombcName[2*DIM],
+                                double                   a_dx) const;
 
     //Compute the Moments Matrix
     void
     getShiftedMomentMatrix(Chombo4::LAPACKMatrix  & a_Mvol,
-		           RealVect               & a_faceLoc,
-			   double                   a_dx,
-		           Neighbors<order>       & a_neigh,
-			   string                   a_ebbcName,
+                           RealVect               & a_faceLoc,
+                           double                   a_dx,
+                           const Neighbors<order> & a_neigh,
+                           string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
 		           
     //Compute rhs matrix for a face
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
-		      RealVect                 & a_faceLoc,
-	              IndMomSDMinOne           & a_faceMom,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
                       double                     a_signNormal,
                       double                     a_dx) const;
 
@@ -558,28 +565,28 @@ namespace Proto
     virtual void
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
-		    RealVect                 & a_faceLoc,
-		    Vector<IndMomDIM>        & a_ebnorm,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
                     double                     a_dx) const;
 
     //Compute weight matrix 
     virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-		         Neighbors<order>       & a_neigh,
-		         RealVect               & a_faceLoc) const;
+                         const Neighbors<order> & a_neigh,
+                         RealVect               & a_faceLoc) const;
 
     //Compute stencil coefficients matrix 
     void
-    getStencilWeights(Chombo4::LAPACKMatrix  & a_phiCoef,
-		      Chombo4::LAPACKMatrix  & a_Qshift, 
-		      Chombo4::LAPACKMatrix  & a_Mvol, 
-		      Chombo4::LAPACKMatrix  & a_weights, 
-                      double                   a_dx) const;
+    getStencilWeights(Chombo4::LAPACKMatrix        & a_phiCoef,
+                      const Chombo4::LAPACKMatrix  & a_Qshift,
+                      const Chombo4::LAPACKMatrix  & a_Mvol,
+                      const Chombo4::LAPACKMatrix  & a_weights,
+                      double                         a_dx) const;
 
     //Compute inhomogeneous term
     Real
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
-                       Neighbors<order>                & a_neigh,
+                       const Neighbors<order>          & a_neigh,
                        const int                         a_nvolneigh,
                        string                            a_ebbcName,
                        string                            a_dombcName[2*DIM],
@@ -602,7 +609,7 @@ namespace Proto
                            const EBNormalData         & a_ebnormzdata,
                            string                       a_ebbcName,
                            string                       a_dombcName[2*DIM],
-                           const int                  & a_dir,
+                           const int                    a_dir,
                            IndMomSDMinOne             & a_faceMom,
                            int                        & a_neighType,
                            double                       a_signNormal, 
@@ -620,110 +627,153 @@ namespace Proto
                      const XFacData                & a_xfacdata,
                      const YFacData                & a_yfacdata,
                      const ZFacData                & a_zfacdata,
-		     const EBNormalData            & a_ebnormxdata,
+                     const EBNormalData            & a_ebnormxdata,
                      const EBNormalData            & a_ebnormydata,
                      const EBNormalData            & a_ebnormzdata,
-		     Vector<IndMomDIM>             & a_ebnorm,
-		     string                          a_ebbcName,
+                     Vector<IndMomDIM>             & a_ebnorm,
+                     string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
-                     int                           & a_neighType,
-                     const double                  & a_dx) const;
+                     int                             a_neighType,
+                     const double                    a_dx) const;
 
     virtual ~BaseWLSFlux()
     {
     }
 
-    BaseWLSFlux(int          & a_radius,
-		int          & a_powerE,
-		int          & a_exactSolFun,
-		bool           a_verbose=false)
-    {
-      m_radius = a_radius;
-      m_powerE = a_powerE;
-      m_verbose = a_verbose;
-      ParmParse pp;
+    BaseWLSFlux()
+      {}
 
-      if (a_exactSolFun == 1)
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolEB = nullptr,
+                int           a_fluxType=0,
+                bool          a_verbose=false)
       {
-        Vector<int> phiPowerX; 
-        Vector<int> phiPowerY;
-        Vector<int> phiPowerZ; 
-        Vector<Real> phiCoef;
-        int num_mono = 0;
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        m_exactSolLo = a_exactSol;
+        m_exactSolHi = a_exactSol;
+        if (a_exactSolEB == nullptr)
+          m_exactSolEB = a_exactSol;
+        else
+          m_exactSolEB = a_exactSolEB;
+        m_fluxType = a_fluxType;
+      }
 
-        pp.get("phi_num_mono"   , num_mono);
-        pp.getarr("phi_power_x",phiPowerX,0,num_mono);
-        pp.getarr("phi_power_y",phiPowerY,0,num_mono);
-        pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
-        pp.getarr("phi_coef",phiCoef,0,num_mono);
-    
-        vector<pair<Point, Real> > entries;
-        for (int i=0; i<num_mono; i++)
-        {
-          std::pair<Point, Real> mono;
-          mono.first = Point::Zeros();
-          mono.first[0] = phiPowerX[i];
-          mono.first[1] = phiPowerY[i];
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
+                shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
+                int           a_fluxType=0,
+                bool          a_verbose=false)
+      {
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        m_exactSolLo = a_exactSolLo;
+        m_exactSolHi = a_exactSolHi;
+        m_exactSolEB = a_exactSolEB;
+        m_fluxType = a_fluxType;
+      }
+
+    BaseWLSFlux(int           a_radius,
+                int           a_powerE,
+                int           a_exactSolFun,
+                bool          a_verbose=false)
+      {
+        m_radius = a_radius;
+        m_powerE = a_powerE;
+        m_verbose = a_verbose;
+        ParmParse pp;
+        shared_ptr<BaseExactSolution<order> > exactSol;
+        if (a_exactSolFun == 1)
+          {
+            Vector<int> phiPowerX;
+            Vector<int> phiPowerY;
+            Vector<int> phiPowerZ;
+            Vector<Real> phiCoef;
+            int num_mono = 0;
+
+            pp.get("phi_num_mono"   , num_mono);
+            pp.getarr("phi_power_x",phiPowerX,0,num_mono);
+            pp.getarr("phi_power_y",phiPowerY,0,num_mono);
+            pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
+            pp.getarr("phi_coef",phiCoef,0,num_mono);
+
+            vector<pair<Point, Real> > entries;
+            for (int i=0; i<num_mono; i++)
+              {
+                std::pair<Point, Real> mono;
+                mono.first = Point::Zeros();
+                mono.first[0] = phiPowerX[i];
+                mono.first[1] = phiPowerY[i];
 #if DIM==3
-          mono.first[2] = phiPowerZ[i];
+                mono.first[2] = phiPowerZ[i];
 #endif
-          mono.second = phiCoef[i];
-          entries.push_back(mono);
-        }
+                mono.second = phiCoef[i];
+                entries.push_back(mono);
+              }
 
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
-      }
-      else if (a_exactSolFun == 2 || a_exactSolFun == 3)
-      {
-        Real amplitude;
-        pp.get("phi_amp",amplitude);
+            exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
+          }
+        else if (a_exactSolFun == 2 || a_exactSolFun == 3)
+          {
+            Real amplitude;
+            pp.get("phi_amp",amplitude);
+
+            RealVect frequency;
+            RealVect center;
+            Vector<Real> freqVec;
+            Vector<Real> centerVec;
   
-        IntVect frequency;
-        RealVect center;
-        Vector<int> freqVec;
-        Vector<Real> centerVec;
-  
-        pp.getarr("phi_freq",freqVec,0,DIM);
-        pp.getarr("phi_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          frequency[idir] = freqVec[idir];
-          center[idir] = centerVec[idir];
-        }
+            pp.getarr("phi_freq",freqVec,0,DIM);
+            pp.getarr("phi_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                frequency[idir] = freqVec[idir];
+                center[idir] = centerVec[idir];
+              }
 
-        if (a_exactSolFun == 2) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-        if (a_exactSolFun == 3) m_exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 2) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+            if (a_exactSolFun == 3) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+          }
+        else if (a_exactSolFun == 4)
+          {
+            Real rad;
+            pp.get("phi_rad", rad);
+            Real cen;
+            pp.get("phi_cen", cen);
+
+            exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+          }
+        else if (a_exactSolFun == 5)
+          {
+            Real coeff;
+            pp.get("phi_coeff",coeff);
+
+            Real dfac;
+            pp.get("phi_dfac",dfac);
+
+            RealVect center;
+            Vector<Real> centerVec;
+
+            pp.getarr("phi_center",centerVec,0,DIM);
+            for(int idir = 0; idir < DIM; idir++)
+              {
+                center[idir] = centerVec[idir];
+              }
+
+            exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
+          }
+        m_exactSolLo = exactSol;
+        m_exactSolHi = exactSol;
+        m_exactSolEB = exactSol;
       }
-      else if (a_exactSolFun == 4)
-      {
-        Real rad;
-        pp.get("phi_rad", rad);
-        Real cen;
-        pp.get("phi_cen", cen);
 
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-      }
-      else if (a_exactSolFun == 5)
-      {
-        Real coeff;
-        pp.get("phi_coeff",coeff);
-
-        Real dfac;
-        pp.get("phi_dfac",dfac);
-
-        RealVect center;
-        Vector<Real> centerVec;
-
-        pp.getarr("phi_center",centerVec,0,DIM);
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          center[idir] = centerVec[idir];
-        }
-
-        m_exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
-      }
-    }
-
+    public:
     //Radius needed for neighbors list around a face (Manhattan style)
     int m_radius = 1;
     //Exponent for the distance between the VoFs and the face in the weights matrix
@@ -733,8 +783,76 @@ namespace Proto
     //Flux type. 0-Laplacian, 1-Advection
     int m_fluxType = 0;
     //Exact solution class holding different function types
-    shared_ptr<BaseExactSolution<order> >  m_exactSol;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolLo;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolHi;
+    shared_ptr<BaseExactSolution<order> >  m_exactSolEB;
     
+  };
+
+  //Main function calls for all WLS cell calculations, which follow the same process as the flux calculations
+  template<int order>
+  class BaseWLSCell : public BaseWLSFlux<CELL, order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    //Compute rhs matrix for a face
+    void
+    getEvalCellMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<CELL>      & a_cell,
+                      RealVect                 & a_cellLoc,
+                      IndMomDIM                & a_cellMom,
+                      double                     a_dx,
+                      const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
+
+    //Compute cell stencil
+    void
+    getCellStencil(LocalStencil<CELL, double> & a_sten,
+                   Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                   const EBIndex<CELL>        & a_vof,
+                   const EBGraph              & a_graph,
+                   const VoluData             & a_voludata,
+                   const EBFaData             & a_ebfadata,
+                   const XFacData             & a_xfacdata,
+                   const YFacData             & a_yfacdata,
+                   const ZFacData             & a_zfacdata,
+                   const EBNormalData         & a_ebnormxdata,
+                   const EBNormalData         & a_ebnormydata,
+                   const EBNormalData         & a_ebnormzdata,
+                   string                       a_ebbcName,
+                   string                       a_dombcName[2*DIM],
+                   IndMomDIM                  & a_cellMom,
+                   double                       a_dx,
+                   const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
+
+    virtual ~BaseWLSCell()
+      {}
+
+    BaseWLSCell()
+      {}
+
+    BaseWLSCell(int           a_radius,
+                int           a_powerE,
+                shared_ptr<BaseExactSolution<order> >  a_exactSol,
+                bool          a_verbose=false)
+      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSol, 0, a_verbose)
+      {}
+
+    BaseWLSCell(int           a_radius,
+                int           a_powerE,
+                int           a_exactSolFun,
+                bool          a_verbose=false)
+      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
+      {}
   };
 
   //Main function calls for ExactVelAdvectionWLS flux calculations
@@ -775,28 +893,28 @@ namespace Proto
     //Compute weight matrix 
     virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                         Neighbors<order>       & a_neigh,
+                         const Neighbors<order> & a_neigh,
                          RealVect               & a_faceLoc) const;
 
     virtual ~ExactVelAdvectionWLSFlux()
     {
     }
 
-    ExactVelAdvectionWLSFlux(int          & a_radius,
-                             int          & a_powerE,
-			     int          & a_exactSolFun,
-                             bool           a_verbose=false) 
-    :BaseWLSFlux<cent, order>(a_radius,
-                              a_powerE,
-                              a_exactSolFun,
-                              a_verbose)
-    {
-      this->m_fluxType = 1;
-      ParmParse pp;
-      int exactVel = 1;
-      //Exact solution     
-      pp.get("exactVel",exactVel);
-  
+    ExactVelAdvectionWLSFlux(int          a_radius,
+                             int          a_powerE,
+                             int          a_exactSolFun,
+                             bool         a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius,
+                                a_powerE,
+                                a_exactSolFun,
+                                a_verbose)
+      {
+        this->m_fluxType = 1;
+        ParmParse pp;
+        int exactVel = 1;
+        //Exact solution
+        pp.get("exactVel",exactVel);
+
       if (exactVel == 1)
       {
         RealVect centerVel;
@@ -858,6 +976,64 @@ namespace Proto
     //Exact velocity class holding different function types
     shared_ptr<BaseExactVelocity<order> >  m_exactVel;
 
+  };
+
+  //Main function calls for DivWLS flux calculations
+  template<CENTERING cent, int order>
+  class DivWLSFlux: public BaseWLSFlux<cent,order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    using BaseWLSFlux<cent,order>::BaseWLSFlux;
+
+    //Compute rhs matrix for a face
+    virtual void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<cent>      & a_face,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      double                     a_signNormal,
+                      double                     a_dx) const;
+
+    //Compute rhs matrix for a EB face
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    double                     a_dx) const;
+
+    virtual ~DivWLSFlux()
+      {}
+
+    DivWLSFlux()
+      {}
+
+    DivWLSFlux(int           a_radius,
+               int           a_powerE,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
+               shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
+               bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolLo, a_exactSolHi, a_exactSolEB, 0, a_verbose)
+      {}
+
+    DivWLSFlux(int           a_radius,
+               int           a_powerE,
+               int           a_exactSolFun,
+               bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
+      {}
   };
 
   ///some basic infrastructure to support the WLS stencils
@@ -922,6 +1098,55 @@ namespace Proto
                          Real                                & a_inhoTerm,
                          int                                 & a_neighType,
                          double                                a_dx);
+
+    //Gets WLS stencil for each component the gradient of a scalar
+    // return a vector of stencils, one per component
+    inline void
+    getWLSGradStencil(LocalStencil<CELL, double>    & a_vofStencilx,
+                      LocalStencil<CELL, double>    & a_vofStencily,
+                      LocalStencil<CELL, double>    & a_vofStencilz,
+                      const EBIndex<CELL>                 & a_vof,
+                      const EBGraph                       & a_graph,
+                      const VoluData                      & a_voludata,
+                      const EBFaData                      & a_ebfadata,
+                      const XFacData                      & a_xfacdata,
+                      const YFacData                      & a_yfacdata,
+                      const ZFacData                      & a_zfacdata,
+                      const EBNormalData                  & a_ebnormxdata,
+                      const EBNormalData                  & a_ebnormydata,
+                      const EBNormalData                  & a_ebnormzdata,
+                      const BaseWLSCell<order>  & a_cellConstruct,
+                      string                                a_ebbcName,
+                      string                                a_dombcName[2*DIM],
+                      vector<Real>                                & a_inhoTerm,
+                      int                                 & a_neighType,
+                      double                                a_dx);
+
+        //Gets WLS flux divergence stencil in a direction
+    // return a vector of stencils, one per component
+    inline void
+    getWLSDivFCompStencil(LocalStencil<CELL, double>    & a_vofStencilx,
+                          LocalStencil<CELL, double>    & a_vofStencily,
+                          LocalStencil<CELL, double>    & a_vofStencilz,
+                          const EBIndex<CELL>                 & a_vof,
+                          const EBGraph                       & a_graph,
+                          const VoluData                      & a_voludata,
+                          const EBFaData                      & a_ebfadata,
+                          const XFacData                      & a_xfacdata,
+                          const YFacData                      & a_yfacdata,
+                          const ZFacData                      & a_zfacdata,
+                          const EBNormalData                  & a_ebnormxdata,
+                          const EBNormalData                  & a_ebnormydata,
+                          const EBNormalData                  & a_ebnormzdata,
+                          const DivWLSFlux<XFACE   , order>  & a_xfaceflux,
+                          const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
+                          const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
+                          const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
+                          string                                a_ebbcName,
+                          vector<string>                                a_dombcName[2*DIM],
+                          Real                                & a_inhoTerm,
+                          int                                 & a_neighType,
+                          double                                a_dx);
 
     inline
     LocalStencil< CELL,  double>

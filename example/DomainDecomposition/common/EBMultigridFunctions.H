@@ -116,7 +116,7 @@ unsigned int  jacobiResidF(int     a_pt[DIM],
 {
     Real phival = a_phi(0);
     Real resval = a_res(0);
-    Real kappval = a_kappa(0);
+    //Real kappval = a_kappa(0);
     double lambda = -(a_dx*a_dx)/(16.0);
     a_phi(0) = phival + lambda*resval;
   return 0;

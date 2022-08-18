@@ -147,8 +147,25 @@ namespace Proto
         pout() << "(" << m_entries[ivec].m_vof.m_pt << "," << m_entries[ivec].m_weight << endl;
       }
     }
-  };
 
+  void printSum() const
+    {
+      using std::cout;
+      using std::endl;
+      using std::setprecision;
+      using std::ios;
+      using Chombo4::pout;
+      pout()    << std::setprecision(16)
+              << std::setiosflags(ios::showpoint)
+                << std::setiosflags(ios::scientific);
+      Real val = 0.;
+      for(int ivec =  0; ivec < m_entries.size(); ivec++)
+      {
+        val += m_entries[ivec].m_weight;
+      }
+      pout() << "local stencil sum " << val << endl;
+    }
+  };
 
   /// 
   /**

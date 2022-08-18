@@ -1,5 +1,7 @@
 
 #include <iostream>
+#include "Chombo_ProtoInterface.H"
+
 using std::cerr;
 using Proto::IndexedMoments;
 using Proto::MomentIterator;
@@ -53,7 +55,7 @@ public:
                   const Real    & a_dx,
                   const VoluData& a_voldat,
                   const EBIndex<CELL>   & a_vof,
-                  const IvDIM & a_baseDeriv = IvDIM::Zero)
+                  const IvDIM & a_baseDeriv = IvDIM::Zero) const
   {
     Real retval = 0;
     RealVect centloc;
@@ -101,7 +103,7 @@ public:
   }
 
   virtual Real getDerivative(IvDIM    a_power,
-                             RealVect a_loc) = 0;
+                             RealVect a_loc) const = 0;
 };
 
 ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
@@ -115,7 +117,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_power,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     return 0.;
   }
@@ -130,6 +132,41 @@ public:
 
 };
 
+///class for always returning a constant (for bcs as opposed to being for testing convergence rates)
+template <unsigned int order>
+class UniformSolution: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
+  virtual Real getDerivative(IvDIM    a_power,
+                             RealVect a_loc) const
+    {
+      if (a_power.sum() == 0)
+        return m_val;
+      else
+        return 0.;
+    }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      return m_val;
+    }
+
+  virtual ~UniformSolution()
+  {
+  }
+
+  UniformSolution(const Real a_val = 0)
+    {
+      m_val = a_val;
+    }
+
+  Real m_val;
+};
 
 ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
 template <unsigned int order>
@@ -142,7 +179,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real x = a_loc[0] - m_center;
     Real y = a_loc[1] - m_center;
@@ -469,7 +506,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real  C     = m_entry.second;  //coefficient
     Point expon = m_entry.first; //exponent
@@ -686,7 +723,7 @@ public:
 #endif      
       else
       {
-        Chombo4::MayDay::Error("monomial ran out of cases 3");
+        Chombo4::MayDay::Warning("monomial ran out of cases 3");
         retval = 0;
       }
     }
@@ -798,19 +835,19 @@ public:
 #endif      
       else
       {
-        Chombo4::MayDay::Error("monomial ran out of cases 4");
+        Chombo4::MayDay::Warning("monomial ran out of cases 4");
         retval = 0;
       }
     }
     else
     {
-      Chombo4::MayDay::Error("monomial ran out of deriv cases");
+      Chombo4::MayDay::Warning("monomial ran out of deriv cases");
       retval = 0;
     }
 
     Real tol = 1.0e-13;
     Real diff = std::abs(retval - retval_simp);
-    if(diff > tol)
+    if ((diff > tol))
       {
         pout() << diff << std::endl;
         Chombo4::MayDay::Error("broken elegance");
@@ -846,7 +883,7 @@ public:
   typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
   virtual Real getDerivative(IvDIM    a_deriv,
-                             RealVect a_loc)
+                             RealVect a_loc) const
   {
     Real retval = 0;
     for(int ient = 0; ient < m_entries.size(); ient++)
@@ -893,7 +930,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
@@ -924,7 +961,7 @@ public:
       Real xdiff = a_x[idir] - m_center[idir];
 
       Real arg = xdiff*m_PI*m_freq[idir];
-      Real factor= cos(arg);
+      Real factor = cos(arg);
       retval *= factor;
     }
     return retval;
@@ -935,7 +972,7 @@ public:
   }
 
   OneDimCosProduct(Real     a_amp,
-                   IntVect  a_freq,
+                   RealVect a_freq,
                    RealVect a_center)
   {   
     m_amp = a_amp;
@@ -945,7 +982,7 @@ public:
 
 private:
   Real      m_amp;
-  IntVect   m_freq;
+  RealVect  m_freq;
   RealVect  m_center;
   Real      m_PI=3.141592653589793238462643383279502884197;
 
@@ -971,7 +1008,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
@@ -996,7 +1033,7 @@ public:
 
   virtual Real getPhiPoint(const RealVect   & a_x) const
   {
-    Real retval = 1.;
+    Real retval = m_amp;
     for(int idir = 0; idir < DIM; idir++)
     {
       Real xdiff = a_x[idir] - m_center[idir];
@@ -1013,7 +1050,7 @@ public:
   }
 
   OneDimSinProduct(Real     a_amp,
-                   IntVect  a_freq,
+                   RealVect a_freq,
                    RealVect a_center)
   {   
     m_amp = a_amp;
@@ -1023,7 +1060,7 @@ public:
 
 private:
   Real      m_amp;
-  IntVect   m_freq;
+  RealVect  m_freq;
   RealVect  m_center;
   Real      m_PI=3.141592653589793238462643383279502884197;
 
@@ -1049,7 +1086,7 @@ public:
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
-                             RealVect   a_x0)
+                             RealVect   a_x0) const
   {
     Real retval = 0.0;
     Real dist2 = 0.;
@@ -1230,5 +1267,268 @@ private:
   }
 };
 
+///
+template <unsigned int order>
+class RotatingSphere: public BaseExactSolution<order>
+{
+public:
 
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*exp(-m*(x-x0)^2+(y-y0)^2+(z-z0)^2)
+      m_coeff = A
+      m_dfac = m
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x) const
+    {
+      Real retval = 0.;
+      RealVect xc = a_x-m_center;
+      Real rad = xc.vectorLength();
+      Real nearRad, nearOmega;
+      if (abs(rad - m_rad1) < abs(rad - m_rad2))
+        {
+          nearRad = m_rad1;
+          nearOmega = m_omega1;
+        }
+      else
+        {
+          nearRad = m_rad2;
+          nearOmega = m_omega2;
+        }
+      // RealVect xc_nr = (nearRad/rad)*xc; // where the xc vector intersects on nearRad
+      if (m_comp == 0)
+        {
+          if (a_p[0] > 0)
+            {
+              retval = 0.;
+            }
+          else if (a_p[1] == 0)
+            {
+              retval = nearOmega*xc[1];
+            }
+          else if (a_p[1] == 1)
+            {
+              retval = nearOmega;
+            }
+          else
+            {
+              retval = 0;
+            }
+        }
+      else if (m_comp == 1)
+        {
+          if (a_p[1] > 0)
+            {
+              retval = 0.;
+            }
+          else if (a_p[0] == 0)
+            {
+              retval = nearOmega*(-xc[0]);
+            }
+          else if (a_p[0] == 1)
+            {
+              retval = -nearOmega;
+            }
+          else
+            {
+              retval = 0;
+            }
+        }
+      else
+        {
+          retval = 0;
+        }
+      return retval;
+    }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      IvDIM d = IvDIM::Zero;
+      return getDerivative(d, a_x);
+    }
+
+  virtual ~RotatingSphere()
+    {
+    }
+
+  RotatingSphere(Real     a_rad1,
+                 Real     a_omega1,
+                 Real     a_rad2,
+                 Real     a_omega2,
+                 RealVect a_center,
+                 int a_comp)
+    {
+      m_rad1 = a_rad1;
+      m_omega1 = a_omega1;
+      m_rad2 = a_rad2;
+      m_omega2 = a_omega2;
+      m_center = a_center;
+      m_comp = a_comp;
+    }
+
+private:
+  Real     m_rad1;
+  Real     m_omega1;
+  Real     m_rad2;
+  Real     m_omega2;
+  RealVect m_center;
+  int      m_comp;
+  Real     m_PI=3.141592653589793238462643383279502884197;
+
+  RotatingSphere()
+    {
+    }
+};
+
+///class where phi is a product of one dimensional sines
+template <unsigned int order>
+class ExponentialProduct: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*exp(a*(x-x0))*exp(b*(y-y0))*exp(c*(z-z0))
+      a_amp = A
+      a_rate = (a,b,c)
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x0) const
+  {
+    Real retval = getPhiPoint(a_x0);
+    if (a_p.sum() > 0)
+      {
+        for(int idir = 0; idir < DIM; idir++)
+          {
+            retval *= std::pow(m_rate[idir], a_p[idir]);
+          }
+      }
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+    {
+      Real retval = m_amp;
+      for(int idir = 0; idir < DIM; idir++)
+        {
+          retval *= std::exp(m_rate[idir]*(a_x[idir]-m_center[idir]));
+        }
+      return retval;
+    }
+
+  virtual ~ExponentialProduct()
+  {
+  }
+
+  ExponentialProduct(Real     a_amp,
+                     RealVect a_rate,
+                     RealVect a_center)
+    {
+    m_amp = a_amp;
+    m_rate = a_rate;
+    m_center = a_center;
+  }
+
+private:
+  Real      m_amp;
+  RealVect  m_rate;
+  RealVect  m_center;
+
+  ExponentialProduct()
+  {
+  }
+};
+
+///  Cos surfaces
+/**
+   SUM_i( PROD_j(A_i*cos(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
+*/
+template <unsigned int order>
+class CosSurf: public BaseExactSolution<order>
+{
+public:
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
+  ///
+  CosSurf(const std::vector<RealVect> a_center,
+                  const std::vector<Real>     a_amp,
+                  const std::vector<RealVect> a_freq)
+    {
+      m_center = a_center;
+      m_amp = a_amp;
+      m_freq = a_freq;
+      CH_assert(a_center.size() == a_amp.size());
+      CH_assert(a_center.size() == a_freq.size());
+    }
+
+  /// Destructor
+  virtual ~CosSurf()
+    {
+    }
+
+  virtual Real
+  getPhiPoint(IvDIM a_point) const
+    {
+      Real retval = 0.;
+      for(int i=0; i!=m_center.size(); i++)
+        {
+          Real factor = m_amp[i];
+          for(int j=0; j!=SpaceDim; j++)
+            {
+              const Real xdiff = a_point[j] - m_center[i][j];
+              factor *= cos(xdiff*m_PI*m_freq[i][j]);
+            }
+          retval += factor;
+        }
+      return retval;
+    }
+
+  virtual Real
+  getDerivative(IvDIM a_partialDerivative,
+                RealVect a_point) const
+    {
+      Real retval = 0.;
+      for(int i=0; i!=m_center.size(); i++)
+        {
+          Real factor = m_amp[i];
+          for(int j=0; j!=SpaceDim; j++)
+            {
+              const Real prefix = pow(m_PI*m_freq[i][j], a_partialDerivative[j]);
+              const Real xdiff = a_point[j] - m_center[i][j];
+              const Real arg = m_PI*m_freq[i][j]*xdiff;
+              if(a_partialDerivative[j]%2 == 0)
+                {
+                  factor *= pow(-1.,a_partialDerivative[j]/2)*prefix*cos(arg);
+                }
+              else
+                {
+                  factor *= pow(-1.,(a_partialDerivative[j]+1)/2)*prefix*sin(arg);
+                }
+            }
+          retval += factor;
+        }
+      return retval;
+    }
+
+private:
+  vector<Real>      m_amp;
+  vector<RealVect>  m_freq;
+  vector<RealVect>  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  CosSurf()
+    {}
+
+};
 #endif

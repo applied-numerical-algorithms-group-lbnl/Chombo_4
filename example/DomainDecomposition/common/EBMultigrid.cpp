@@ -424,7 +424,7 @@ getStencilComponents(const shared_ptr<GeometryService<2> >   & a_geoserv,
   vector<Bx >               BCApplyBoxes[2*DIM];
   bool                      bcsOnly = false;
   Bx                        regApplyBox;
-  bool                      irregOnly = false;
+  //bool                      irregOnly = false;
   Bx domainbx = ProtoCh::getProtoBox(m_domain);
   Point pghost= ProtoCh::getPoint(m_nghost);
 
