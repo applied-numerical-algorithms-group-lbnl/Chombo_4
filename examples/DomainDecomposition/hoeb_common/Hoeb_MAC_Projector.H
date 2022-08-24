@@ -36,12 +36,24 @@ namespace Chombo4
        alters input in place.   
      */
     void 
-    project(shared_ptr< EBLevelFluxData<1 >  & a_advectionVel) const;
+    project(shared_ptr< EBLevelFluxData<1 >  & a_advectionVel,
+            shared_ptr< EBLevelFluxData<1 >  & a_gphi,
+            Real a_tol, unsigned int maxiter, bool a_printStuff = false) const;
 
 
-    ///need outside access to this so I can avoid remaking it.
-    shared_ptr< EBLevelBoxData<CELL, 1> > m_kappa;
-
+    ///
+    /**
+       used internally and for  diagnostics.
+       Take kappa*divergence of mac velocity field
+    */
+    shared_ptr<EBLevelBoxData<CELL, 1> > & a_divu,
+    kappaDivU(shared_ptr<EBLevelFluxData<1>      > & a_velo,
+              bool a_printStuff = false)
+    {
+      computeKappaDiv(a_velo, a_printStuff);
+      return m_kappaDivU;
+    }
+    
   private:  
 
   
@@ -56,7 +68,7 @@ namespace Chombo4
     bool                                   m_printStuff;
 
     ///junk drawer 
-    shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaConsDiv;
+    shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaDivU;
     shared_ptr<graph_distrib_t>            m_graphs;
 
   

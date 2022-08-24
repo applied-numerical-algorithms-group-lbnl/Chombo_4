@@ -125,7 +125,7 @@ namespace hoeb
                                const Real                                          & a_dx,
                                unsigned int                                          a_ibox);
 
-  ///get the stencil for the laplacian described in Devendran, et al.
+  ///get the stencil for the laplacian described in Schwartz, et al.
   void
   schwartzLaplStencil(string                                              & a_stencilName,
                       string                                              & a_ebbcName,
