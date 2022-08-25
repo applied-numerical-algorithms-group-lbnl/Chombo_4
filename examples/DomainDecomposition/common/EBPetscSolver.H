@@ -35,7 +35,7 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
   typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>                    graph_distrib_t;
 
   virtual ~BaseEBPetscSolver()
   {
@@ -46,9 +46,6 @@ public:
                     const shared_ptr<graph_distrib_t>          & a_graphs,
                     const Chombo4::DisjointBoxLayout           & a_grids,
                     const Chombo4::Box                         & a_domain,
-                    string a_stencilName,
-                    string a_domainBCName[2*DIM],
-                    string a_ebbcName,
                     Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
                     bool a_printStuff = false)
   {
@@ -58,16 +55,10 @@ public:
     m_graphs       =    a_graphs;
     m_grids        =    a_grids;
     m_domain       =    a_domain;
-    m_stencilName  =    a_stencilName;
     m_dx           =    a_dx;
     m_alpha        =    a_alpha;
     m_beta         =    a_beta;
     m_prestring[0] = '\0';
-    for(int iface = 0; iface < 2*DIM; iface++)
-    {
-      m_domainBCName[iface] = a_domainBCName[iface];
-    }
-    m_ebbcName = a_ebbcName;
     
     m_ivghost      =    ProtoCh::getIntVect(a_ghost);
     m_ptghost      =    a_ghost;
@@ -583,18 +574,125 @@ public:
                      a_graphs,            
                      a_grids,             
                      a_domain,            
-                     a_stencilName,       
-                     a_domainBCName,
-                     a_ebbcName,          
                      a_dx,                
                      a_alpha,             
                      a_beta,              
                      a_ghost,             
                      a_printStuff)
   {
+    m_stencilName = a_stencilName;
+    for(int iface = 0; iface < 2*DIM; iface++)
+    {
+      m_domainBCName[iface] = a_domainBCName[iface];
+    }
+    m_ebbcName = a_ebbcName;
   }
 
-  
+
+  ///
+  void getLocalRegularStencil(Proto::LocalStencil<CELL, Real> & a_localSten,
+                              const EBIndex<CELL>             & a_vof,
+                              const Proto::Stencil<Real >     & a_regSten)
+  {
+    a_localSten.m_entries.resize(0);
+    auto startpt = a_vof.m_pt;
+    auto coefs   = a_regSten.coefs();
+    auto offsets = a_regSten.offsets();
+    Bx domainbx = ProtoCh::getProtoBox(m_domain);
+    for(int isten =  0; isten < coefs.size(); isten++)
+    {
+      Point stenpt = startpt + offsets[isten];
+      if(domainbx.contains(stenpt))
+      {
+        EBIndex<CELL> stenvof;
+        stenvof.defineAsRegular(stenpt);
+        a_localSten.add(stenvof, coefs[isten]);
+      }
+      else
+      {
+        //compensate for neumann or dirichlet bcs
+        //here is where we diverge from canon.
+        //The original just ignored stuff outside the domain.
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          for(SideIterator sit; sit.ok(); ++sit)
+          {
+            int isign = sign(sit());
+            Point justOutside = startpt + isign*Point::Basis(idir);
+            if(stenpt == justOutside)
+            {
+              int index = ebp_index(idir, sit());
+              string bcstr = m_domainBCName[index];
+              if(bcstr == StencilNames::Dirichlet)
+              {
+                a_localSten.add(a_vof, -coefs[isten]);
+              }
+              else if(bcstr == StencilNames::Neumann)
+              {
+                a_localSten.add(a_vof,  coefs[isten]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
+                           vector< Proto::LocalStencil<CELL, Real> >  & a_wstencil,
+                           Proto::Stencil<Real>                       & a_regStencilInterior,
+                           PointSet                            & a_allIrregPoints,
+                           const Chombo4::DataIndex                     & a_dit)
+  {
+    CH_TIME("EBPetscSolver::getStencilComponents");
+    typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
+    using Chombo4::Box;
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    auto voldatpld = m_geoserv->getVoluData(  m_domain);
+    auto ebfdatpld = m_geoserv->getEBFaceData(m_domain);
+    auto xfadatpld = m_geoserv->getXFaceData( m_domain);
+    auto yfadatpld = m_geoserv->getYFaceData( m_domain);
+    auto zfadatpld = m_geoserv->getZFaceData( m_domain);
+
+    auto& voludata =(*voldatpld)[a_dit];
+    auto& ebfadata =(*ebfdatpld)[a_dit];
+    auto& xfacdata =(*xfadatpld)[a_dit];
+    auto& yfacdata =(*yfadatpld)[a_dit];
+    auto& zfacdata =(*zfadatpld)[a_dit];
+    auto& graph    =(*m_graphs )[a_dit];
+    Box valid = m_grids[a_dit];
+    Bx  valbx = ProtoCh::getProtoBox(valid);
+    vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
+    vector<Bx >               BCApplyBoxes[2*DIM];
+    bool                      bcsOnly = false;
+    Bx                        regApplyBox;
+    bool                      irregOnly = false;
+    Bx domainbx = ProtoCh::getProtoBox(m_domain);
+    archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
+                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
+                          m_stencilName,  m_domainBCName, m_ebbcName,
+                          valbx, valbx,  domainbx, domainbx,
+                          m_ptghost,  m_ptghost,    
+                          graph,  graph,
+                          voludata,  ebfadata,    
+                          xfacdata,  yfacdata, zfacdata,    
+                          m_dx, false, Point::Zeros());
+
+    a_allIrregPoints.makeEmpty();
+    for(int ipt = 0; ipt < a_dstVoFs.size(); ipt++)
+    {
+      a_allIrregPoints |= a_dstVoFs[ipt].m_pt;
+    }
+
+    return 0;
+  }
+
+
   virtual PetscInt formMatrix(bool a_printStuff = false)
   {
     
