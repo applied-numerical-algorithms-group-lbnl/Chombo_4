@@ -8,8 +8,8 @@
  */
 #endif
 
-#ifndef _EBPoissonPetscSolver_H_
-#define _EBPoissonPetscSolver_H_
+#ifndef _Hoeb_PetscSolver__H_
+#define _Hoeb_PetscSolver__H_
 
 #ifdef CH_USE_PETSC
 #include "petsc.h"
@@ -53,26 +53,44 @@ namespace hoeb
                      string a_domainBCName[2*DIM],
                      string a_ebbcName,
                      Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                     bool a_printStuff = false):
-      
-      :BaseEBPetscSolver(a_geoserv,           
-                         a_ebdictionary,      
-                         a_graphs,            
-                         a_grids,             
-                         a_domain,            
-                         a_dx,                
-                         a_alpha,             
-                         a_beta,              
-                         a_ghost,             
-                         a_printStuff)
+                     bool a_printStuff = false)
+      :BaseEBPetscSolver<order>(a_geoserv,           
+                                a_ebdictionary,      
+                                a_graphs,            
+                                a_grids,             
+                                a_domain,            
+                                a_dx,                
+                                a_alpha,             
+                                a_beta,              
+                                a_ghost,             
+                                a_printStuff)
     {
       for(int iface = 0; iface < 2*DIM; iface++)
       {
-        m_domainBCName[iface] = a_domainBCName[iface];
+        this->m_domainBCName[iface] = a_domainBCName[iface];
       }
-      m_ebbcName = a_ebbcName;
+      this->m_ebbcName = a_ebbcName;
+      formMatrix();
     }
 
+    void
+    modifyRHSForInhomogeneity(EBLevelBoxData<CELL, 1>& a_rhs)
+    {
+      EBLevelBoxData<CELL, 1> phi(this->m_grids, this->m_ivghost, this->m_graphs);
+      EBLevelBoxData<CELL, 1> klp(this->m_grids, this->m_ivghost, this->m_graphs);
+      phi.setVal(0.);
+      hoeb::getDevendranKLPInhomogeneous(klp, phi,
+                                         this->m_graphs,       this->m_grids,
+                                         this->m_domain,       this->m_dx,
+                                         this->m_ebdictionary, this->m_geoserv);
+
+      Chombo4::DataIterator dit = phi.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        a_rhs[dit[ibox]] -= klp[dit[ibox]];
+      }
+    }
+    
   private:
   
     virtual PetscInt formMatrix(bool a_printStuff = false)
@@ -83,7 +101,7 @@ namespace hoeb
         using Chombo4::DataIterator;
         char str[256];
         strcpy (str,"-");
-        strcat (str,m_prestring);
+        strcat (str,this->m_prestring);
 #if PETSC_VERSION_GE(3,6,0)
         strcat (str,"pc_gamg_square_graph 20");
 #else
@@ -95,50 +113,54 @@ namespace hoeb
 #else
         ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
 #endif
-        DataIterator dit = m_grids.dataIterator();
+        DataIterator dit = this->m_grids.dataIterator();
         for(int ibox = 0; ibox < dit.size(); ibox++)
         {
-          Bx srcValid = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-          Bx dstValid = ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-          Bx srcDom = ProtoCh::getProtoBox(m_domain);
-          Bx dstDom = ProtoCh::getProtoBox(m_domain);
+          Bx srcValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+          Bx dstValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+          Bx srcDom = ProtoCh::getProtoBox(  this->m_domain);
+          Bx dstDom = ProtoCh::getProtoBox(  this->m_domain);
 
           vector< EBIndex<CELL> >            dstVoFs;
           vector< Proto::LocalStencil<CELL, Real> > wstencil;
           Stencil<Real>    regStencilInterior;
-          bool needDiag = false;
-          hoeb::getHomogeneousDharshiStencil(m_stencilName, m_ebbcName, dstVoFs, wstencil, srcValid, dstValid,
-                                             srcDom, dstDom, m_ptghost, m_ptghost, needDiag, m_geoserv, m_grids, m_domain, m_dx, ibox);
+          bool needDiag = false; //abandon all hope of goemetric multigrid
+          hoeb::getHomogeneousDharshiStencil(this->m_stencilName, this->m_ebbcName,
+                                             dstVoFs, wstencil, srcValid, dstValid,
+                                             srcDom, dstDom, this->m_ptghost, this->m_ptghost,
+                                             needDiag, this->m_geoserv, this->m_grids,
+                                             this->m_domain, this->m_dx, ibox);
                                              
           //now create the matrix
           for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
           {
             auto vof    =   dstVoFs[ivof];
             auto& stenc =  wstencil[ivof];
-            int irow = m_gids[dit[ibox]](vof, 0); 
+            int irow = this->m_gids[dit[ibox]](vof, 0); 
             for(int ivof = 0; ivof < stenc.size(); ivof++)
             {
               auto& stenvof = stenc.m_entries[ivof].m_vof;
               auto& stenwgt = stenc.m_entries[ivof].m_weight;
-              Real weight = m_beta*stenwgt;
+              Real weight = this->m_beta*stenwgt;
               if(stenvof == vof)
               {
-                weight += m_alpha;
+                weight += this->m_alpha;
               }
-              int icol = m_gids[dit[ibox]](stenvof, 0);  
+              int icol = this->m_gids[dit[ibox]](stenvof, 0);  
               PetscInt irowpet = irow;
               PetscInt icolpet = icol;
-              ierr = MatSetValues(m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
+              ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
             } 
           }
         }
 
-        ierr = MatAssemblyBegin(m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-        ierr = MatAssemblyEnd(  m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+        ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       }
       return 0;
     }
-}
+  }; //end of class
+} //namespace hoeb
 #endif
 
 #endif 

@@ -56,7 +56,7 @@ namespace Chombo4
 
     ///junk drawer 
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaConsDiv;
-    shared_ptr<graph_distrib_t>           m_graphs;
+    shared_ptr<graph_distrib_t>            m_graphs;
 
   
   

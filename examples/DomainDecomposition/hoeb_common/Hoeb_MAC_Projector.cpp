@@ -1,5 +1,3 @@
-#ifndef _Hoeb_MAC_PROJECTOR_H_
-#define _Hoeb_MAC_PROJECTOR_H_
 #include <cmath>
 #include <memory>
 #include "Proto.H"
@@ -33,4 +31,3 @@ namespace Chombo4
 
 }
 
-#endif

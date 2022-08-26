@@ -45,7 +45,7 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual EBFluxData<Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  virtual EBFluxData<Real, dstComp> * create(const Chombo4::Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
     EBFluxData<Real, srcComp>& vecholder = (*m_source)[a_datInd];
     EBFluxData<Real, dstComp>* retval = new EBFluxData<Real, dstComp>();
