@@ -7,6 +7,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "Chombo_EBLevelFluxData.H"
 #include "EBIBC.H"
 namespace Chombo4
 {
@@ -24,18 +25,32 @@ namespace Chombo4
                    const Real                             & a_dx,
                    const EBIBC                            & a_ebibc,
                    const IntVect                          & a_nghost,
-                   bool a_printStuff = false);
+                   bool a_printStuff = false)
+    {
+      MayDay::Error("not implemented");
+    }
+    
 
     virtual ~Hoeb_Advection()
     {
     }
 
 
-    /// use 3rd order in time tvd to advance solution
-    void 
-    advance(EBLevelBoxData<CELL, 1>          & a_scal,
-            shared_ptr< EBLevelFluxData<1> > & a_advectionVel,
-            const  Real                      & a_dt) const;
+    ///
+    /**
+       Return kappa*D^C(U phi) + (1-kappa)*D^NC(u phi)  + R(u phi)
+       where R(u phi) is the divergence redistribution operator
+    **/
+    
+    shared_ptr<EBLevelBoxData<CELL, 1> >
+    hybridDivergence(shared_ptr< EBLevelBoxData<CELL, 1> > & a_scal,
+                     shared_ptr< EBLevelFluxData<1    >  > & a_advectionVel)
+    {
+      zeroRedistributionMass();
+      computeHybridDivergence();
+      redistributeDivergence();
+      return m_hybridDiv;
+    }
 
 
     ///need outside access to this so I can avoid remaking
@@ -44,6 +59,9 @@ namespace Chombo4
   private:  
 
   
+    void  zeroRedistributionMass()  {Chombo4::MayDay::Error("not implemented");}
+    void  computeHybridDivergence() {Chombo4::MayDay::Error("not implemented");}
+    void  redistributeDivergence()  {Chombo4::MayDay::Error("not implemented");}
     ///input at construction
     shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
     shared_ptr<GeometryService<2> >        m_geoserv;
@@ -56,6 +74,9 @@ namespace Chombo4
 
     ///junk drawer 
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaConsDiv;
+    shared_ptr< EBLevelBoxData<CELL, 1> >  m_nonConsDiv;
+    shared_ptr< EBLevelBoxData<CELL, 1> >  m_hybridDivergence;
+    
     shared_ptr<graph_distrib_t>            m_graphs;
 
   

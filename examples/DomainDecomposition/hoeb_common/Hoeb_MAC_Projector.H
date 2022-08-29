@@ -7,6 +7,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBEncyclopedia.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "Chombo_EBLevelFluxData.H"
 #include "EBIBC.H"
 namespace Chombo4
 {
@@ -25,7 +26,10 @@ namespace Chombo4
                        const Real                             & a_dx,
                        const EBIBC                            & a_ebibc,
                        const IntVect                          & a_nghost,
-                       bool a_printStuff = false);
+                       bool a_printStuff = false)
+    {
+      Chombo4::MayDay::Error("not implemented");
+    }
 
     virtual ~Hoeb_MAC_Projector()
     {
@@ -33,12 +37,23 @@ namespace Chombo4
 
     /// project advectionvel onto its divergence-free subspace.
     /**
-       alters input in place.   
+       Input: 
+         Vector field on faces U* = U^V + U^P
+         div(U^V) = 0
+         Nabla x U^p = 0;
+         U^p = grad(phi)
+       Output:
+         advectionVel holds rotational component of vector field = U^V
+         gphi holds the pure gradient = grad(phi) = U^p
+         Alters inputs in place.   
      */
     void 
-    project(shared_ptr< EBLevelFluxData<1 >  & a_advectionVel,
-            shared_ptr< EBLevelFluxData<1 >  & a_gphi,
-            Real a_tol, unsigned int maxiter, bool a_printStuff = false) const;
+    project(shared_ptr< EBLevelFluxData<1 > > & a_advectionVel,
+            shared_ptr< EBLevelFluxData<1 > > & a_gphi,
+            bool a_printStuff = false) const
+    {
+      Chombo4::MayDay::Error("not implemented");
+    }
 
 
     ///
@@ -47,7 +62,7 @@ namespace Chombo4
        Take kappa*divergence of mac velocity field
     */
     shared_ptr<EBLevelBoxData<CELL, 1> > & a_divu,
-    kappaDivU(shared_ptr<EBLevelFluxData<1>      > & a_velo,
+    kappaDivU(shared_ptr<EBLevelFluxData<1> > & a_velo,
               bool a_printStuff = false)
     {
       computeKappaDiv(a_velo, a_printStuff);
@@ -55,7 +70,7 @@ namespace Chombo4
     }
     
   private:  
-
+\
   
     ///input at construction
     shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
@@ -71,8 +86,12 @@ namespace Chombo4
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaDivU;
     shared_ptr<graph_distrib_t>            m_graphs;
 
-  
-  
+    void
+    computeKappaDiv(shared_ptr<EBLevelFluxData<1> > & a_velo,
+                    bool a_printStuff = false)
+    {
+      MayDay::Error("not implemented");
+    }
     //disallowed because I like strong construction
     Hoeb_MAC_Projector();
 

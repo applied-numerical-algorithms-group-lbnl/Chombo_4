@@ -44,7 +44,7 @@ namespace hoeb
   /// outputs warning message if a_errcode != 0
   void checkError(int a_errcode, string a_prefix);
 
-  Real
+  inline Real
   devendranLphiInhomogeneous(const EBIndex<CELL>                                                &  a_vof,
                              const Chombo4::DataIndex                                           &  a_datInd,
                              const cell_distrib_t                                               &  a_hostphi,
