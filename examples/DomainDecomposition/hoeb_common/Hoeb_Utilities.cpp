@@ -233,15 +233,6 @@ namespace hoeb
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 0, sit(), false);
-          //begin debug
-          Point debpt = 15*Point::Ones();
-          if(a_vof.m_pt == debpt)
-          {
-            Chombo4::pout() << "face = " << face.m_pt << endl;
-            fluxsten.print();
-          }
-          //end debug
-          
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -301,21 +292,21 @@ namespace hoeb
   /******/
   void
   getHomogeneousDharshiStencil(string                                              & a_stencilName,
-                               string                                              & a_ebbcName,
                                vector<EBIndex<CELL> >                              & a_dstVoFs,
                                vector<LocalStencil<CELL, Real> >                   & a_stencil,
                                Proto::Box                                          & a_srcValid,
                                Proto::Box                                          & a_dstValid,
                                Proto::Box                                          & a_srcDomain,
                                Proto::Box                                          & a_dstDomain,
-                               Proto::Point                                        & a_srcGhost,
-                               Proto::Point                                        & a_dstGhost,
                                bool                                                & a_needDiagonalWeights,
                                const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                                const Chombo4::DisjointBoxLayout                    & a_grids,
                                const Chombo4::Box                                  & a_domain,
                                const Real                                          & a_dx,
-                               unsigned int                                          a_ibox)
+                               unsigned int                                          a_ibox,
+                               const string                                          a_dombcarray[2*DIM],
+                               const string                                        & a_ebbcName,
+                               Real a_alpha, Real a_beta)
 
   {
     /* geometric multigrid is not a great idea here*/
@@ -324,18 +315,9 @@ namespace hoeb
     a_dstDomain = ProtoCh::getProtoBox(a_domain);
     Chombo4::ParmParse pp;
     using Chombo4::pout;
-    Real alpha = 1.0;
-    Real beta = -0.001;
-    string dombcname;
-    int nghost;
-    pp.get("num_ghost_cells", nghost);
-    pp.get("domainBC"  , dombcname);
-    pp.get("EBBC"      , a_ebbcName);
-    pp.get("alpha"     , alpha);
-    pp.get("beta"      , beta);
-    pout() << "domainBC"  << " = " <<  dombcname      << endl;
-    pout() << "EBBC"      << " = " <<  a_ebbcName     << endl;
-    
+    Real alpha = a_alpha;
+    Real beta =  a_beta;
+
     a_stencilName = string("Dharshi_Laplacian");
 
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
@@ -344,20 +326,13 @@ namespace hoeb
     const auto & xfadatldptr = a_geoserv->getXFaceData( a_srcDomain);
     const auto & yfadatldptr = a_geoserv->getYFaceData( a_srcDomain);
     const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
-    const auto & dbl         = a_geoserv->getDBL(a_srcDomain);
+    const auto & dbl         = a_geoserv->getDBL(       a_srcDomain);
     auto dit = dbl.dataIterator();
 
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     a_srcValid  = graph.validBox();
     a_dstValid  = graph.validBox();
-    a_srcGhost  = Point::Ones(nghost);
-    a_dstGhost  = Point::Ones(nghost);
     
-    string dombcarray[2*DIM];
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
-    {
-      dombcarray[ivec] = dombcname;
-    }
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
       auto vofs = graph.getVoFs(*bit);
@@ -365,7 +340,7 @@ namespace hoeb
       {
         LocalStencil<CELL, Real> vofsten =
           getHomogeneousDharshiStencil(vofs[ivof],
-                                       dombcarray, a_ebbcName,
+                                       a_dombcarray, a_ebbcName,
                                        a_geoserv, a_srcDomain, a_ibox,
                                        alpha, beta, a_dx);
         a_dstVoFs.push_back(vofs[ivof]);

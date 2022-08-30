@@ -125,11 +125,13 @@ namespace hoeb
           vector< Proto::LocalStencil<CELL, Real> > wstencil;
           Stencil<Real>    regStencilInterior;
           bool needDiag = false; //abandon all hope of goemetric multigrid
-          hoeb::getHomogeneousDharshiStencil(this->m_stencilName, this->m_ebbcName,
+          hoeb::getHomogeneousDharshiStencil(this->m_stencilName, 
                                              dstVoFs, wstencil, srcValid, dstValid,
-                                             srcDom, dstDom, this->m_ptghost, this->m_ptghost,
-                                             needDiag, this->m_geoserv, this->m_grids,
-                                             this->m_domain, this->m_dx, ibox);
+                                             srcDom, dstDom,  needDiag,
+                                             this->m_geoserv,      this->m_grids,
+                                             this->m_domain,       this->m_dx,   ibox,
+                                             this->m_domainBCName, this->m_ebbcName,
+                                             this->m_alpha, this->m_beta);
                                              
           //now create the matrix
           for(int ivof = 0; ivof < dstVoFs.size(); ivof++)

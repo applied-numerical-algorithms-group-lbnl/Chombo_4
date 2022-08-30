@@ -328,21 +328,21 @@ namespace hoeb
   ///get the stencil for the laplacian described in Devendran, et al.
   void
   getHomogeneousDharshiStencil(string                                              & a_stencilName,
-                               string                                              & a_ebbcName,
                                vector<EBIndex<CELL> >                              & a_dstVoFs,
                                vector<LocalStencil<CELL, Real> >                   & a_stencil,
                                Proto::Box                                          & a_srcValid,
                                Proto::Box                                          & a_dstValid,
                                Proto::Box                                          & a_srcDomain,
                                Proto::Box                                          & a_dstDomain,
-                               Proto::Point                                        & a_srcGhost,
-                               Proto::Point                                        & a_dstGhost,
                                bool                                                & a_needDiagonalWeights,
                                const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                                const Chombo4::DisjointBoxLayout                    & a_grids,
                                const Chombo4::Box                                  & a_domain,
                                const Real                                          & a_dx,
-                               unsigned int                                          a_ibox);
+                               unsigned int                                          a_ibox,
+                               const string                                          a_dombcarray[2*DIM],
+                               const string                                        & a_ebbcName,
+                               Real a_alpha, Real a_beta);
 
   ///get the stencil for the laplacian described in Schwartz, et al.
   void

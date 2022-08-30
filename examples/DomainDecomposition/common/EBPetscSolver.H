@@ -118,29 +118,15 @@ public:
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
     //with all the host to device and device to host stuff going on, this is probably
-    //unnessary.   The peTsC team, however, tells me that the communication between
+    //unnessary.   The PETSc team, however, tells me that the communication between
     //host and device will unnecessary soon so I left the barrier in the code.
     MPI_Barrier(wcomm);
 #endif
-    //begin debug
-    //std::cout << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
-    //Chombo4::pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
-    //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
 
-    //std::cout << "b vector" << std::endl;
-    //VecView(m_bb , PETSC_VIEWER_STDOUT_WORLD);
-    //std::cout << "x vector" << std::endl;
-    //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
-    //end debug
     {
       CH_TIME("actual ksp solve");
       ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
     }
-    //begin debug
-    //std::cout << "debug::just after  KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
-    //std::cout << "x vector" << std::endl;
-    //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
-    //end debug
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
@@ -401,7 +387,7 @@ protected:
   {
     CH_TIME("BaseEBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
-    IntVect gidghost = 4*IntVect::Unit;
+    IntVect gidghost = 6*IntVect::Unit;
     m_gids.define(m_grids,  gidghost, host_fact_int_t(m_graphs));
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
