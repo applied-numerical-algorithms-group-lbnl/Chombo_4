@@ -132,8 +132,40 @@ namespace hoeb_basics
                    const Real                                                       &   a_dx)
   {
     IndexedMoments<D, HOEB_MAX_ORDER> retval;
-    
+
     if(a_graph.isRegular(a_index.m_pt))
+    {
+      retval.setToRegular(a_dx);
+    }
+    else if(a_graph.isIrregular(a_index.m_pt))
+    {
+      retval = a_irregfab(a_index, 0);
+    }
+    else
+    {
+      PROTO_ASSERT(false, "should not get here by construction");
+    }
+    return retval;
+  }
+  /******/
+  template <unsigned int D, CENTERING cent>
+  inline IndexedMoments<D, HOEB_MAX_ORDER>   
+  getFaceIndexedMoment(const EBIndex<cent>                                              &   a_index,
+                       const HostIrregData<cent, IndexedMoments<D, HOEB_MAX_ORDER>, 1>  &   a_irregfab,
+                       const EBGraph                                                    &   a_graph,
+                       const Real                                                       &   a_dx,
+                       int a_facedir)
+  {
+    IndexedMoments<D, HOEB_MAX_ORDER> retval;
+    auto dom = a_graph.getDomain();
+    Point regCheckPt = a_index.m_pt;
+    if(!dom.contains(regCheckPt))
+    {
+      regCheckPt -= Point::Basis(a_facedir);
+      PR_assert(dom.contains(regCheckPt));
+    }
+    
+    if(a_graph.isRegular(regCheckPt))
     {
       retval.setToRegular(a_dx);
     }
@@ -197,7 +229,7 @@ namespace hoeb_basics
     const auto & xfacdatfab = (*xfacldptr)[a_datInd];
     const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
     const auto & graph     = (*graphsldptr)[a_datInd];
-    return getIndexedMoment<DIM-1,XFACE>(a_index, xfacdatfab, graph, a_dx);
+    return getFaceIndexedMoment<DIM-1,XFACE>(a_index, xfacdatfab, graph, a_dx, 0);
   }
 
   ///template specialization for y
@@ -213,7 +245,7 @@ namespace hoeb_basics
     const auto & yfacdatfab = (*yfacldptr)[a_datInd];
     const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
     const auto & graph     = (*graphsldptr)[a_datInd];
-    return getIndexedMoment<DIM-1, YFACE>(a_index, yfacdatfab, graph, a_dx);
+    return getFaceIndexedMoment<DIM-1, YFACE>(a_index, yfacdatfab, graph, a_dx, 1);
   }
 #if DIM==3  
   ///template specialization for z
@@ -230,7 +262,7 @@ namespace hoeb_basics
     const auto & zfacdatfab = (*zfacldptr)[a_datInd];
     const auto & graphsldptr =  a_geoserv->getGraphs(  a_srcDomain);
     const auto & graph     = (*graphsldptr)[a_datInd];
-    return getIndexedMoment<DIM-1, ZFACE>(a_index, zfacdatfab, graph, a_dx);
+    return getFaceIndexedMoment<DIM-1, ZFACE>(a_index, zfacdatfab, graph, a_dx, 2);
   }
 #endif
   /*************/

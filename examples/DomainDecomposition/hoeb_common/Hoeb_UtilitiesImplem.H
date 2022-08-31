@@ -280,7 +280,7 @@ namespace hoeb
   {
                        
     IndexedMoments<DIM-1, HOEB_MAX_ORDER>
-      facmom = hoeb_basics::getIndexedMoment<DIM-1,cent>(a_face, a_facdatfab, a_graph, a_dx);
+      facmom = hoeb_basics::getFaceIndexedMoment<DIM-1,cent>(a_face, a_facdatfab, a_graph, a_dx, a_facedir);
     //need to translate this into higher dim because that is what the matrix sees
     int facedir = 0;
     IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = hoeb_basics::getVolMomFromFacMom<DIM>(facmom, facedir);
