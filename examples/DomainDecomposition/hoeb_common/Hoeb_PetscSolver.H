@@ -74,15 +74,17 @@ namespace hoeb
     }
 
     void
-    modifyRHSForInhomogeneity(EBLevelBoxData<CELL, 1>& a_rhs)
+    modifyRHSForInhomogeneity(EBLevelBoxData<CELL, 1>& a_rhs, bool a_printStuff = false)
     {
       EBLevelBoxData<CELL, 1> phi(this->m_grids, this->m_ivghost, this->m_graphs);
       EBLevelBoxData<CELL, 1> klp(this->m_grids, this->m_ivghost, this->m_graphs);
       phi.setVal(0.);
+
       hoeb::getDevendranKLPInhomogeneous(klp, phi,
                                          this->m_graphs,       this->m_grids,
                                          this->m_domain,       this->m_dx,
-                                         this->m_ebdictionary, this->m_geoserv);
+                                         this->m_ebdictionary, this->m_geoserv,
+                                         a_printStuff);
 
       Chombo4::DataIterator dit = phi.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)

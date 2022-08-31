@@ -1,15 +1,14 @@
 #domain size
 nx=       32
-#number of applies
-maxIter=    27
-#number of cuda streams (if used)
-nStream=  8
-alpha = 1.0
-beta = -0.01
-tolerance = 1.0e-10
 #max grid size in domain decomposition
-maxGrid=  16
-b# center coordinates
+maxGrid=  32
+#identity term coeff
+alpha = 0.0
+#div(grad phi) term coeff
+beta = 1.0
+
+
+# center coordinates
 x0=       0.5
 y0=       0.5
 z0=       0.5
@@ -21,7 +20,7 @@ A=        1.0
 B=        1.0
 C=        1.0
 # radius of ellipsoid
-R=        0.45
+R=        10.
 inside_regular = true
 #R=        0.1
 #inside_regular = false
@@ -36,4 +35,10 @@ do_lazy_relax = true
 direct_to_bottom = true
 default_neighbor_radius = 3
 maximum_neighbor_radius = 4
+#exact solution
+which_phi= "Polynomial"
+polynomial_num_terms = 1
+polynomial_coefficient_0  = 0.
+polynomial_powers_0  = 0 0 0
 
+output_to_disk = true

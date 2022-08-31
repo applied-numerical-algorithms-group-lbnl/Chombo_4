@@ -53,7 +53,8 @@ namespace hoeb
                              const Chombo4::Box                                                 &  a_domain,
                              const Real                                                         &  a_dx,
                              const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  &  a_dictionary,
-                             const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv)
+                             const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv,
+                             bool a_printStuff = false)
   {
     std::string  dombcname[2*DIM];
     std::string  ebbcname, dombcone;
@@ -76,18 +77,7 @@ namespace hoeb
     for (SideIterator sit; sit.ok(); ++sit)
     {
       int isign = sign(sit());
-      //begin debug
-      int stophere = 0;
-//      int hipt = a_domain.bigEnd()[0];
-      int mdpt = a_domain.bigEnd()[1]/2;
-      bool printStuff = false;
-//      if((a_vof.m_pt[0] == hipt) && (a_vof.m_pt[1]== mdpt) && (isign == 1))
-      if((a_vof.m_pt[0] == mdpt) && (a_vof.m_pt[1]== mdpt) && (isign == 1))
-      {
-        stophere = 1;
-        printStuff = true;
-      }
-      //end debug
+
       {
         vector< EBIndex<XFACE> > xfaces = graph.getXFaces(a_vof, sit());
         for (int iface = 0; iface < xfaces.size(); iface++)
@@ -98,7 +88,7 @@ namespace hoeb
             hoeb::getDevendranFluxFace<XFACE>(hostphi, graph,
                                               face, a_vof,  dombcname, ebbcname, a_geoserv,
                                               a_domain, a_dx, facedir, sit(),
-                                              a_datInd, dividebyarea, printStuff);
+                                              a_datInd, dividebyarea, a_printStuff);
           intFdotNDA += isign*fluxpt;
         }
       }
@@ -112,7 +102,7 @@ namespace hoeb
             hoeb::getDevendranFluxFace<YFACE>(hostphi, graph,
                                               face, a_vof,  dombcname, ebbcname, a_geoserv,
                                               a_domain, a_dx, facedir, sit(),
-                                              a_datInd, dividebyarea, false);
+                                              a_datInd, dividebyarea, a_printStuff);
           intFdotNDA += isign*fluxpt;
         }
       }
@@ -127,7 +117,7 @@ namespace hoeb
             hoeb::getDevendranFluxFace<ZFACE>(hostphi, graph,
                                               face, a_vof,  dombcname, ebbcname, a_geoserv,
                                               a_domain,  a_dx, facedir, sit(),
-                                              a_datInd, dividebyarea, false);
+                                              a_datInd, dividebyarea,  a_printStuff);
           intFdotNDA += isign*fluxpt;
         }
       }
@@ -141,7 +131,7 @@ namespace hoeb
         hoeb::getDevendranFluxFace<BOUNDARY>(hostphi, graph,
                                              face, a_vof,  dombcname, ebbcname, a_geoserv,
                                              a_domain,  a_dx, facedir, Side::Lo,
-                                             a_datInd, dividebyarea, false);
+                                             a_datInd, dividebyarea,  a_printStuff);
       intFdotNDA += fluxpt;
     }
       
@@ -180,7 +170,8 @@ namespace hoeb
                                const Chombo4::Box                                                 &  a_domain,
                                const Real                                                         &  a_dx,
                                const shared_ptr<EBDictionary<HOEB_MAX_ORDER, Real, CELL, CELL> >  &  a_dictionary,
-                               const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv)
+                               const shared_ptr< GeometryService<HOEB_MAX_ORDER> >                &  a_geoserv,
+                               bool a_printStuff = false)
   {
     typedef GraphConstructorFactory<EBHostData<CELL, Real, 1> > hostfactorycell_t;
     auto ghost = a_phi.ghostVect();
@@ -194,8 +185,8 @@ namespace hoeb
     {
 
       Bx grbx = ProtoCh::getProtoBox(a_grids[dit[ibox]]);
-      auto graph = (*a_graphs)[dit[ibox]];
-      auto& hostfab = hostklp[dit[ibox]];
+      auto graph               = (*a_graphs)[dit[ibox]];
+      auto& hostfab            =     hostklp[dit[ibox]];
       hostfab.setVal(0.);
       for(Proto::BoxIterator bit = grbx.begin(); bit != grbx.end(); ++bit)
       {
@@ -215,7 +206,8 @@ namespace hoeb
                                          a_domain,
                                          a_dx,
                                          a_dictionary,
-                                         a_geoserv);
+                                         a_geoserv,
+                                         a_printStuff);
              hostfab(vofs[ivof], 0) = klphval;
           }
         }

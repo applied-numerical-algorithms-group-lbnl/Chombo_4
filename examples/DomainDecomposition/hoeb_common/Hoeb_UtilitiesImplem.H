@@ -482,30 +482,23 @@ namespace hoeb
   {
 
 
-//    LAPACKMatrix Ainv = a_M;
-//    Ainv.pseudoInvertUsingQR();
-
-//    LAPACKMatrix Ainv = a_M;
-//    int maxIter = 10;
-//    Real tol = 1.0e-10;
-//    Ainv.invertUsingSVD(maxIter, tol);
-
     LAPACKMatrix AT = a_M;
     AT.transpose();
     LAPACKMatrix ATA;
     multiply(ATA, AT, a_M);
     LAPACKMatrix ATAinv = ATA;
     ATAinv.invert();
+    
     if(a_printStuff)
     {
       using Chombo4::pout;
       LAPACKMatrix Amat = a_M;
-
       LAPACKMatrix checkMat;
       multiply(checkMat, ATAinv, ATA);
       pout() << "A*Ainv = " << endl;
       checkMat.poutAll();
       checkMat.poutMaxMins();
+
       static int filenumber = 0;
       string filemat = string("Amat.") + std::to_string(filenumber) + string(".matrix");
       string fileata = string("ATA.") + std::to_string(filenumber) + string(".matrix");
@@ -517,6 +510,7 @@ namespace hoeb
       ATAinv.writeToFile(  fileinv);
       filenumber++;
     }
+
     return ATAinv;
   }
   ///
