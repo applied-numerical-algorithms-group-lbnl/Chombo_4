@@ -193,7 +193,7 @@ namespace hoeb
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
 
-      Bx grbx = ProtoCh::getProtoBox(a_grids[dit()]);
+      Bx grbx = ProtoCh::getProtoBox(a_grids[dit[ibox]]);
       auto graph = (*a_graphs)[dit[ibox]];
       auto& hostfab = hostklp[dit[ibox]];
       hostfab.setVal(0.);
