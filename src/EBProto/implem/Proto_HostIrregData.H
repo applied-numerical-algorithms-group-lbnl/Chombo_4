@@ -467,7 +467,10 @@ namespace Proto
           {
             unsigned int isrc = a_isrc + ico;
             unsigned int idst = a_idst + ico;
-            (*this)(vof, idst) = a_src(vof, isrc);
+            if (this->contains(vof) && a_src.contains(vof))
+              {
+                (*this)(vof, idst) = a_src(vof, isrc);
+              }
           }
         }
       }
