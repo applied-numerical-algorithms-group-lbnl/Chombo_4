@@ -18,7 +18,8 @@ namespace hoeb
   class Hoeb_MAC_Projector
   {
   public:
-    typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+    typedef CH4_Data_Choreography::DistributedData<EBGraph>                  graph_distrib_t;
+    typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, 1> > alpha_distrib_t;
     
     /// 
     Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -124,6 +125,7 @@ namespace hoeb
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_phi;
     shared_ptr< EBLevelFluxData<     1> >  m_gradient;
     shared_ptr<graph_distrib_t>            m_graphs;
+    shared_ptr<alpha_distrib_t>            m_alpha;
     shared_ptr<Hoeb_PetscSolver<4> >       m_solver;
     string m_domBCName[2*DIM];
     string m_EBBCName;
@@ -133,28 +135,48 @@ namespace hoeb
     void defineInternals()
     {
 
-      auto cellDict= m_brit->m_cellToCell;
       m_kappaDivU       = shared_ptr< EBLevelBoxData<CELL, 1> >  (new EBLevelBoxData<CELL, 1> (m_grids, m_nghost, m_graphs));
       m_phi             = shared_ptr< EBLevelBoxData<CELL, 1> >  (new EBLevelBoxData<CELL, 1> (m_grids, m_nghost, m_graphs));
       m_gradient        = shared_ptr< EBLevelFluxData<     1> >  (new EBLevelFluxData<     1> (m_grids, m_nghost, m_graphs));
+
+      typedef GraphConstructorFactory<EBFluxtData<Real, 1> > hostfluxfactory_t;
+
+      m_alpha = shared_ptr<alpha_distrib_t> (new alpha_distrib_t(m_grids, m_nghost, hostfluxfactory_t(m_graphs)));
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(): ibox++)
+      {
+        auto& fluxfab = (*m_alpha)[dit[ibox]];
+        auto grid = m_grids[dit[ibox]];
+        m_geoserv->fillFaceAlpha<XFACE>((*fluxfab.m_xflux), grid, dit[ibox], m_domain);
+        m_geoserv->fillFaceAlpha<YFACE>((*fluxfab.m_yflux), grid, dit[ibox], m_domain);
+#if DIM==3
+        m_geoserv->fillFaceAlpha<ZFACE>((*fluxfab.m_zflux), grid, dit[ibox], m_domain);
+#endif        
+      }
+  
+      auto cellDict= m_brit->m_cellToCell;
       Real alpha = 0; Real beta = 1; //poisson
       m_solver = shared_ptr< Hoeb_PetscSolver<4> >
         (new Hoeb_PetscSolver<4>(m_geoserv, cellDict,    m_graphs, m_grids, m_domain,
                                  m_domBCName, m_EBBCName, m_dx, alpha, beta,  m_nghost,
                                  a_printStuff));
-      
-      //increment divergence by face difference
-      m_brit->registerFaceToCell( StencilNames::DivergeFtoC         , StencilNames::NoBC,    StencilNames::NoBC, m_domain, m_domain, needDiag);
+
+      registerStencils();
     }
 
+    void registerStencils()
+    {
+    }
+
+    
     void
     computeKappaDiv(shared_ptr<EBLevelFluxData<1> > & a_velo,
                     bool a_printStuff = false)
     {
+      MayDay::Error("not implemented");
       
     }
-
-
+    
     void
     computeGradient(shared_ptr<EBLevelBoxData<CELL, 1> > & a_phi,
                     bool a_printStuff = false)

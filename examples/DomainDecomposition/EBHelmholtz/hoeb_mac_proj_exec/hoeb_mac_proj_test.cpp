@@ -191,19 +191,9 @@ void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
 int
 runProjection(int a_argc, char* a_argv[])
 {
-#if DIM==2
-  //debugging hooks to get these functions into the symbol table
-  dumpBlob(NULL);
-  dumpEB1(NULL);
-  dumpEBDIM(NULL);
-  dumpXFace(NULL);
-  dumpYFace(NULL);
-#endif
-
   int nx      = 32;
   Real max_vel_mag = 1.0;
   Real max_vel_rad = 0.25;
-  int nStream    = 8;
   int numSmooth;
   ParmParse pp;
   int maxGrid = 32;
@@ -221,13 +211,6 @@ runProjection(int a_argc, char* a_argv[])
   Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
   Chombo4::pout() << "max_vel_mag     = " << max_vel_mag     << endl;
   Chombo4::pout() << "max_vel_rad     = " << max_vel_rad     << endl;
-  Chombo4::pout() << "num_streams     = " << nStream         << endl;
-
-//  EBMultigrid::s_numSmoothUp   = numSmooth;
-//  EBMultigrid::s_numSmoothDown = numSmooth;
-
-
-
 
   Real dx = 1.0/nx;
   std::vector<Chombo4::DisjointBoxLayout> vecgrids;
