@@ -19,7 +19,6 @@ namespace hoeb
   {
   public:
     typedef CH4_Data_Choreography::DistributedData<EBGraph>                  graph_distrib_t;
-    typedef CH4_Data_Choreography::DistributedData<EBHostFluxData<Real, 1> > alpha_distrib_t;
     
     /// 
     Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -30,26 +29,20 @@ namespace hoeb
                        const EBIBC                            & a_ebibc,
                        const IntVect                          & a_nghost,
                        bool                                     a_printStuff = false)
-    :BaseMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   &  a_brit,
-                       shared_ptr<GeometryService<2> >        & a_geoserv,
-                       const DisjointBoxLayout                & a_grids,
-                       const Box                              & a_domain,
-                       const Real                             & a_dx,
-                       const EBIBC                            & a_ebibc,
-                       const IntVect                          & a_nghost,
-                       bool                                     a_printStuff)
     {
-      m_brit      = a_brit     ;
-      m_geoserv   = a_geoserv  ;
-      m_grids     = a_grids    ;
-      m_domain    = a_domain   ;
-      m_dx        = a_dx       ;
-      m_ebibc     = a_ebibc    ;
-      m_nghost    = a_nghost   ;      
+      m_brit       = a_brit     ;
+      m_geoserv    = a_geoserv  ;
+      m_grids      = a_grids    ;
+      m_domain     = a_domain   ;
+      m_dx         = a_dx       ;
+      m_ebibc      = a_ebibc    ;
+      m_nghost     = a_nghost   ;      
       m_printStuff = a_printStuff;
-      m_graphs = a_geoserv.getGraphs(a_domain);
-      a_ebibc.projectionStencilStrings(m_domBCName);
-      m_EBBCName = StencilNames::Neumann;
+      m_graphs     = a_geoserv.getGraphs(a_domain);
+      a_ebibc.projectionStencilStrings(m_domBCNamePoisson);
+      m_EBBCNamePoisson = StencilNames::Neumann;
+      m_EBBCNameGrad = string("no_bcs");
+      m_stenNameGrad = string("hoeb_mac_gradient");
       defineInternals();
     }
 
@@ -125,10 +118,11 @@ namespace hoeb
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_phi;
     shared_ptr< EBLevelFluxData<     1> >  m_gradient;
     shared_ptr<graph_distrib_t>            m_graphs;
-    shared_ptr<alpha_distrib_t>            m_alpha;
     shared_ptr<Hoeb_PetscSolver<4> >       m_solver;
-    string m_domBCName[2*DIM];
-    string m_EBBCName;
+    string m_domBCNamePoisson[2*DIM];
+    string m_EBBCNamePoisson;
+    string m_stenNameGrad;
+    string m_EBBCNameGrad;
     private:
     
     ///this stuff is too context-dependent to allow into the wild.
@@ -139,41 +133,170 @@ namespace hoeb
       m_phi             = shared_ptr< EBLevelBoxData<CELL, 1> >  (new EBLevelBoxData<CELL, 1> (m_grids, m_nghost, m_graphs));
       m_gradient        = shared_ptr< EBLevelFluxData<     1> >  (new EBLevelFluxData<     1> (m_grids, m_nghost, m_graphs));
 
-      typedef GraphConstructorFactory<EBFluxtData<Real, 1> > hostfluxfactory_t;
-
-      m_alpha = shared_ptr<alpha_distrib_t> (new alpha_distrib_t(m_grids, m_nghost, hostfluxfactory_t(m_graphs)));
-      DataIterator dit = m_grids.dataIterator();
-      for(int ibox = 0; ibox < dit.size(): ibox++)
-      {
-        auto& fluxfab = (*m_alpha)[dit[ibox]];
-        auto grid = m_grids[dit[ibox]];
-        m_geoserv->fillFaceAlpha<XFACE>((*fluxfab.m_xflux), grid, dit[ibox], m_domain);
-        m_geoserv->fillFaceAlpha<YFACE>((*fluxfab.m_yflux), grid, dit[ibox], m_domain);
-#if DIM==3
-        m_geoserv->fillFaceAlpha<ZFACE>((*fluxfab.m_zflux), grid, dit[ibox], m_domain);
-#endif        
-      }
-  
       auto cellDict= m_brit->m_cellToCell;
       Real alpha = 0; Real beta = 1; //poisson
       m_solver = shared_ptr< Hoeb_PetscSolver<4> >
         (new Hoeb_PetscSolver<4>(m_geoserv, cellDict,    m_graphs, m_grids, m_domain,
-                                 m_domBCName, m_EBBCName, m_dx, alpha, beta,  m_nghost,
-                                 a_printStuff));
+                                 m_domBCNamePoisson, m_EBBCNamePoisson,
+                                 m_dx, alpha, beta,  m_nghost, a_printStuff));
 
       registerStencils();
     }
 
     void registerStencils()
     {
+      //increment divergence by face difference
+      m_brit->registerFaceToCell(StencilNames::DivergeFtoC         ,
+                                 StencilNames::NoBC,
+                                 StencilNames::NoBC,
+                                 m_domain, m_domain, false); // false is for needDiagonal
+
+      //face-centered gradient
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox  < dit.size(); ibox++)
+      {
+        bool needDiag = false;  
+        vector<EBIndex<     XFACE>                destXFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenXFace;
+        vector<EBIndex<     YFACE>                destYFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenYFace;
+        vector<EBIndex<     ZFACE>                destZFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenZFace;
+        Proto::Box                                srcValid;
+        Proto::Box                                dstValid;
+        Proto::Box                                srcDomain;
+        Proto::Box                                dstDomain;
+        Point                                     srcGhost;
+        Point                                     dstGhost;
+        
+        getGradientStencilComponents(destXFace,
+                                     stenXFace,
+                                     destYFace,
+                                     stenYFace,
+                                     destZFace,
+                                     stenZFace,
+                                     srcValid,
+                                     dstValid,
+                                     srcDomain,
+                                     dstDomain,
+                                     srcGhost,
+                                     dstGhost,
+                                     dit[ibox],
+                                     ibox);
+        
+        m_brit->registerCellToFace(m_stenNameGradient, m_ebbcNameGradient,
+                                   destXFace,stenXFace,
+                                   destYFace, stenYFace,
+                                   destZFace, stenZFace,
+                                   srcValid,  dstValid,
+                                   srcDomain, dstDomain,
+                                   srcGhost,  dstGhost,
+                                   needDiag,  ibox);                
+      }
+      
     }
 
+    //build stencils for higher order gradient
+    void
+    getGradientStencilComponents(vector<EBIndex<     XFACE>                & a_destXFace,
+                                 vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
+                                 vector<EBIndex<     YFACE>                & a_destYFace,
+                                 vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
+                                 vector<EBIndex<     ZFACE>                & a_destZFace,
+                                 vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
+                                 Proto::Box                                & a_srcValid,
+                                 Proto::Box                                & a_dstValid,
+                                 Proto::Box                                & a_srcDomain,
+                                 Proto::Box                                & a_dstDomain,
+                                 Point                                     & a_srcGhost,
+                                 Point                                     & a_dstGhost,
+                                 const DataIndex                           & a_dit,
+                                 unsigned int                                a_ibox)
+    {
+      const auto& graph = (*m_graphs)[a_dit];
+      a_dstValid  = ProtoCh::getProtoBox(m_grids[a_dit]);
+      a_srcValid  = a_dstValid;
+      a_srcDomain = ProtoCh::getProtoBox(m_domain);
+      a_dstDomain = ProtoCh::getProtoBox(m_domain);
+      a_srcGhost =  ProtoCh::getPoint(m_nghost);
+      a_dstGhost =  ProtoCh::getPoint(m_nghost);
+      a_destXFace = graph.getAllFaces<XFACE>(a_dstValid);
+      a_destYFace = graph.getAllFaces<YFACE>(a_dstValid);
+#if DIM==3        
+      a_destZFace = graph.getAllFaces<ZFACE>(a_dstValid);
+#else
+      a_dstZFace.resize(0);
+#endif
+
+      getGradientStencil<XFACE>(a_stenXFace, a_destXFace, a_dit);
+      getGradientStencil<YFACE>(a_stenYFace, a_destYFace, a_dit);
+#if DIM==3                                              
+      getGradientStencil<ZFACE>(a_stenZFace, a_destZFace, a_dit);
+#else
+      a_stenZFace.resize(0);
+#endif      
+    }
+
+    template<CENTERING cent>
+    getGradientStencil(vector<LocalStencil<CELL, data_t> > & a_stencils,
+                       const vector<EBIndex<cent> >        & a_faces,
+                       const DataIndex                     & a_dit)
+    {
+
+      const auto& graph = (*m_graphs)[a_dit];
+      a_stencils.resize(a_faces.size());
+      for(int iface = 0; iface < faces.size(); iface++)
+      {
+        const auto& face = a_faces[iface];
+        
+      }
+    }
     
     void
     computeKappaDiv(shared_ptr<EBLevelFluxData<1> > & a_velo,
                     bool a_printStuff = false)
     {
-      MayDay::Error("not implemented");
+
+      CH_TIME("Hoeb_EBMACProjector::kappaDivU");
+      if(a_printStuff)
+      {
+        pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
+      }
+      a_velo.exchange(a_printStuff);
+
+      if(a_printStuff)
+      {
+        pout() << "applying velocity boundary conditions and applying divergence stencils" << endl;
+      }
+      DataIterator dit = m_grids.dataIterator();
+      int ideb = 0;
+      for(int ibox = 0; ibox < dit.size(); ++ibox)
+      {
+
+        Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
+        const EBGraph  & graph = (*m_graphs)[dit[ibox]];
+        Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
+
+        //get face fluxes and interpolate them to centroids
+        bool useStack = true;
+        EBFluxData<Real, 1>  centroidFlux(grown, graph, useStack);
+        EBFluxStencil<2, Real> stencils =
+          m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
+        EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
+        stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+
+        applyVeloBoundaryConditions(centroidFlux, dit[ibox]);
+
+        auto& kapdiv =  m_rhs[dit[ibox]];
+        kapdiv.setVal(0.);
+        for(unsigned int idir = 0; idir < DIM; idir++)
+        {
+          bool initToZero = false;
+          m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
+                                  idir, ibox, initToZero, 1.0);
+        }
+        ideb++;
+      }
       
     }
     

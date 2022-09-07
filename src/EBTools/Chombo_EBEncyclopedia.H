@@ -58,7 +58,7 @@ struct EBCrossFaceStencil
     m_ytozsten->apply(*a_dst.m_zflux, *a_src.m_yflux, a_initToZero, a_scale);
 
     m_ztoxsten->apply(*a_dst.m_xflux, *a_src.m_zflux, a_initToZero, a_scale);
-    m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_flux, a_initToZero, a_scale);
+    m_ztoysten->apply(*a_dst.m_yflux, *a_src.m_zflux, a_initToZero, a_scale);
 #endif    
   }
 
@@ -136,13 +136,13 @@ public:
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,XFACE   > >    m_zFaceToXFace;
   shared_ptr<EBDictionary<order, data_t, ZFACE   ,YFACE   > >    m_zFaceToYFace;
 
-  //register a stencil cells to face things
+  ///register a stencil that goes from cell data  to face data here if it is an archived stencil
   inline void registerCellToFace (string a_stencilName,
                                   string a_domainBCName,
                                   string a_ebbcName,
                                   Box    a_srcDomain,
                                   Box    a_dstDomain,
-                                  bool   needDiagonalWeights = false,
+                                  bool   a_needDiagonalWeights = false,
                                   Point  a_dstGrown = Point::Zeros())
   {
     m_cellToXFace->registerStencil(a_stencilName,              
@@ -170,20 +170,90 @@ public:
 #endif      
   }
 
+  ///
+  /**
+     This one is for algorithm developers
+     If you know what stencil you want and you just want to use EBStencil to execute the stencil, 
+     use this option.    
+     Only the AggStencil bit will be executed so there has to be an entry
+     corresponding to  every cell for which  you want to have an answer.   You have to call this for 
+     every box as well.
+
+     In 2D, z arguments do not matter.   I just hate dimension-dependent APIs.
+  */
+  inline void
+  registerCellToFace (string                                            a_stencilName,
+                      string                                            a_ebbcName,
+                      const vector<EBIndex<     XFACE>                & a_destXFace,
+                      const vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
+                      const vector<EBIndex<     YFACE>                & a_destYFace,
+                      const vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
+                      const vector<EBIndex<     ZFACE>                & a_destZFace,
+                      const vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
+                      const Proto::Box                                & a_srcValid,
+                      const Proto::Box                                & a_dstValid,
+                      const Proto::Box                                & a_srcDomain,
+                      const Proto::Box                                & a_dstDomain,
+                      const Point                                     & a_srcGhost,
+                      const Point                                     & a_dstGhost,
+                      bool                                              a_needDiagonalWeights,
+                      unsigned int                                      a_ibox)                
+  {
+    m_cellToXFace->->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destXFace,
+                                    a_stenXFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+    
+    m_cellToYFace->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destYFace,
+                                    a_stenYFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+#if DIM==3      
+    m_cellToZFace->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destZFace,
+                                    a_stenZFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+#endif      
+  }
+  
 
 
 
   ///  apply all the stencils
-  inline void applyCellToFace(string                         a_stenName,
-                              string                         a_ebbcName,
-                              const Box                  &   a_domain,
-                              EBFluxData<Real, 1>        &   a_fluxData,
-                              EBBoxData<CELL, Real, DIM> &   a_cellData,
-                              int a_ibox, bool a_initToZero, Real a_scale)
+  inline void applyCellToFace(string                                a_stenName,
+                              string                                a_ebbcName,
+                              const Box                    &        a_domain,
+                              EBFluxData<data_t, 1>        &        a_fluxData,
+                              EBBoxData<CELL, data_t, DIM> &        a_cellData,
+                              int a_ibox, bool a_initToZero, data_t a_scale)
   {
 
     {
-      EBBoxData<CELL, Real, 1> cellComp;
+      EBBoxData<CELL, data_t, 1> cellComp;
       unsigned int comp = 0;
       cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToXFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
@@ -191,7 +261,7 @@ public:
     }
 
     {
-      EBBoxData<CELL, Real, 1> cellComp;
+      EBBoxData<CELL, data_t, 1> cellComp;
       unsigned int comp = 1;
       cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToYFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
@@ -200,7 +270,7 @@ public:
     }
 #if DIM==3      
     {
-      EBBoxData<CELL, Real, 1> cellComp;
+      EBBoxData<CELL, data_t, 1> cellComp;
       unsigned int comp = 2;
       cellComp.define(a_cellData, comp);
       const auto& sten = m_cellToZFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
@@ -211,12 +281,12 @@ public:
 
 
   ///  apply the appropriate stencil
-  inline void applyCellToFace(string                        a_stenName,
-                              string                        a_ebbcName,
-                              const Box                 &   a_domain,
-                              EBFluxData<Real, 1>       &   a_fluxData,
-                              EBBoxData<CELL, Real, 1>  &   a_cellData,
-                              unsigned int  a_idir, int a_ibox, bool a_initToZero, Real a_scale)
+  inline void applyCellToFace(string                          a_stenName,
+                              string                          a_ebbcName,
+                              const Box                   &   a_domain,
+                              EBFluxData<data_t, 1>       &   a_fluxData,
+                              EBBoxData<CELL, data_t, 1>  &   a_cellData,
+                              unsigned int  a_idir, int a_ibox, bool a_initToZero, data_t a_scale)
   {
     if(a_idir == 0)
     {
@@ -246,9 +316,9 @@ public:
   inline void applyCellToFace(string                        a_stenName,
                               string                        a_ebbcName,
                               const Box                 &   a_domain,
-                              EBFluxData<Real, 1>       &   a_fluxData,
-                              EBBoxData<CELL, Real, 1>  &   a_cellData,
-                              int a_ibox, bool a_initToZero, Real a_scale)
+                              EBFluxData<data_t, 1>       &   a_fluxData,
+                              EBBoxData<CELL, data_t, 1>  &   a_cellData,
+                              int a_ibox, bool a_initToZero, data_t a_scale)
   {
     {
       const auto& sten = m_cellToXFace->getEBStencil(a_stenName, a_ebbcName, a_domain, a_domain, a_ibox);
@@ -272,9 +342,9 @@ public:
   inline void applyFaceToCell(string                        a_stenName,
                               string                        a_ebbcName,
                               const Box                 &   a_domain,
-                              EBBoxData<CELL, Real, 1>  &   a_cellData,
-                              EBFluxData<Real, 1>       &   a_fluxData,
-                              int a_ibox, bool a_initToZero, Real a_scale)
+                              EBBoxData<CELL, data_t, 1>  &   a_cellData,
+                              EBFluxData<data_t, 1>       &   a_fluxData,
+                              int a_ibox, bool a_initToZero, data_t a_scale)
   {
     bool initToZero = a_initToZero;
     {
@@ -297,13 +367,13 @@ public:
   }
 
 
-  //  apply the right stencil
+  ///  apply a particular stencil
   inline void applyFaceToCell(string                        a_stenName,
                               string                        a_ebbcName,
                               const Box                 &   a_domain,
-                              EBBoxData<CELL, Real, 1>  &   a_cellData,
-                              EBFluxData<Real, 1>       &   a_fluxData,
-                              unsigned int a_idir, int a_ibox, bool a_initToZero, Real a_scale)
+                              EBBoxData<CELL, data_t, 1>  &   a_cellData,
+                              EBFluxData<data_t, 1>       &   a_fluxData,
+                              unsigned int a_idir, int a_ibox, bool a_initToZero, data_t a_scale)
   {
     if(a_idir == 0)
     {
@@ -330,7 +400,7 @@ public:
   }
 
 
-  //
+  ///apply all the facetocell stencils
   inline void registerFaceToCell (string a_stencilName,
                                   string a_domainBCName,
                                   string a_ebbcName,
@@ -392,6 +462,77 @@ public:
   }
 
 
+  /// registerFaceStencil version for algorithm developers
+  /**
+     If you know what stencil you want and you just want to use EBStencil to execute the stencil, 
+     use this registerFaceStencil option.    
+     Only the AggStencil bit will be executed so there has to be an entry
+     corresponding to  every cell for which  you want to have an answer.   You have to call this for 
+     every box as well.
+
+     In 2D, z arguments do not matter.   I just hate dimension-dependent APIs.
+   */
+  inline void
+  registerFaceStencil(string                                            a_stencilName,
+                      string                                            a_ebbcName,
+                      const vector<EBIndex<     XFACE>                & a_destXFace,
+                      const vector<LocalStencil<XFACE,  data_t> >     & a_stenXFace,
+                      const vector<EBIndex<     YFACE>                & a_destYFace,
+                      const vector<LocalStencil<YFACE,  data_t> >     & a_stenYFace,
+                      const vector<EBIndex<     ZFACE>                & a_destZFace,
+                      const vector<LocalStencil<ZFACE,  data_t> >     & a_stenZFace,
+                      const Proto::Box                                & a_srcValid,
+                      const Proto::Box                                & a_dstValid,
+                      const Proto::Box                                & a_srcDomain,
+                      const Proto::Box                                & a_dstDomain,
+                      const Point                                     & a_srcGhost,
+                      const Point                                     & a_dstGhost,
+                      bool                                              a_needDiagonalWeights,
+                      unsigned int                                      a_ibox)                
+  {
+    m_xFaceToXFace->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destXFace,
+                                    a_stenXFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+
+    m_yFaceToYFace->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destYFace,
+                                    a_stenYFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+
+#if DIM==3
+    m_zFaceToZFace->registerStencil(a_stencilName,              
+                                    a_ebbcName,
+                                    a_destZFace,
+                                    a_stenZFace,
+                                    a_srcValid,
+                                    a_dstValid,
+                                    a_srcDomain,
+                                    a_dstDomain,
+                                    a_srcGhost,
+                                    a_dstGhost,
+                                    a_needDiagonalWeights,
+                                    a_ibox);
+#endif    
+
+  }
+  
   //register a stencil for a face-centered thing
   //where faces act on different direction faces
   inline void registerCrossFaceStencil(string a_stencilName,
