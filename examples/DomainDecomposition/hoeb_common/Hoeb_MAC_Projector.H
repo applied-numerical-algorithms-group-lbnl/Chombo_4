@@ -16,16 +16,21 @@
 namespace hoeb
 {
 
-///class to compute kappa*div_c(u s);
+  ///class to project face-centered velocity fields.
+  /**
+     for face-valued fields, subtracts off the pure gradient part of a vector field
+     Homogeneous boundary conditions for phi and vel are required for now.
+     as there is real work to do to make certain those boundary conditions
+     are implmented with appropriate accuracy.
+  **/
+
   class Hoeb_MAC_Projector
   {
   public:
     typedef CH4_Data_Choreography::DistributedData<EBGraph>                  graph_distrib_t;
     
-    /// exact phi is for inhomogeneous pressure boundary conditions
     Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >                      & a_brit,
                        shared_ptr<GeometryService<2> >                           & a_geoserv,
-                       shared_ptr<BaseExactSolution<HOEB_MAX_ORDER> >            & a_exactPhi,
                        const DisjointBoxLayout                                   & a_grids,
                        const Box                                                 & a_domain,
                        const Real                                                & a_dx,
@@ -35,7 +40,6 @@ namespace hoeb
     {
       m_brit       = a_brit     ;
       m_geoserv    = a_geoserv  ;
-      m_exactPhi   = a_exactPhi;
       m_grids      = a_grids    ;
       m_domain     = a_domain   ;
       m_dx         = a_dx       ;
@@ -72,7 +76,6 @@ namespace hoeb
     {
       computeKappaDivU(a_advectionVel, a_printStuff);
 
-      m_poissonSolver->modifyRHSForInhomogeneity(*m_kappaDivU, a_printStuff);
       m_poissonSolver->solve(*m_phi, *m_kappaDivU);
 
       computeGradient(*m_phi);
@@ -204,13 +207,10 @@ namespace hoeb
     void
     getGradientStencilComponents(vector<EBIndex<     XFACE>               & a_destXFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
-                                 vector<Real>                             & a_inhoXFace
                                  vector<EBIndex<     YFACE>               & a_destYFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
-                                 vector<Real>                             & a_inhoYFace
                                  vector<EBIndex<     ZFACE>               & a_destZFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
-                                 vector<Real>                             & a_inhoZFace
                                  Proto::Box                               & a_srcValid,
                                  Proto::Box                               & a_dstValid,
                                  Proto::Box                               & a_srcDomain,
@@ -235,10 +235,10 @@ namespace hoeb
       a_dstZFace.resize(0);
 #endif
 
-      getGradientStencil<XFACE>(a_stenXFace, a_inhoXFace, a_destXFace, a_dit, 0);
-      getGradientStencil<YFACE>(a_stenYFace, a_inhoYFace, a_destYFace, a_dit, 1);
-#if DIM==3                                               
-      getGradientStencil<ZFACE>(a_stenZFace, a_inhoZFace, a_destZFace, a_dit, 2);
+      getGradientStencil<XFACE>(a_stenXFace,  a_destXFace, a_dit, 0);
+      getGradientStencil<YFACE>(a_stenYFace,  a_destYFace, a_dit, 1);
+#if DIM==3                                   
+      getGradientStencil<ZFACE>(a_stenZFace,  a_destZFace, a_dit, 2);
 #else
       a_stenZFace.resize(0);
 #endif      
@@ -246,7 +246,6 @@ namespace hoeb
 
     template<CENTERING cent>
     getGradientStencil(vector<LocalStencil<CELL, data_t> > & a_stencils,
-                       vector<Real>                        & a_inhomoge,
                        const vector<EBIndex<cent> >        & a_faces,
                        const DataIndex                     & a_dit,
                        int a_facedir)
@@ -254,7 +253,6 @@ namespace hoeb
 
       const auto& graph = (*m_graphs)[a_dit];
       a_stencils.resize(a_faces.size());
-      a_inhomoge.resize(a_faces.size());
       string dobcName[2*DIM];
       string ebbcName = StencilNames::Neumann;
       m_ebbc.projectionStencilStrings(dobcName);
@@ -267,11 +265,9 @@ namespace hoeb
         {
           vofsize = Side::Hi;
         }
-        //this is the whole stencil, including inhomogeneous bits.   We need to save the homogeneous bits into an ebstencil and the
+        //this is the whole stencil, including inhomogeneous bits.   
         // rest of it into a data holder.
         CompositeStencil intFluxDA_sten = getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, a_printStuff);
-
-        a_inhomoge[iface] = intFluxDA_sten.evalInhomogeneousContribution(m_exactPhi, graph, m_geoserv, m_domain, m_dx, a_dit);
         a_stencils[iface] = intFluxDA_sten.m_cellSten;
       }
     }
@@ -293,7 +289,7 @@ namespace hoeb
         pout() << "applying velocity boundary conditions and applying divergence stencils" << endl;
       }
       DataIterator dit = m_grids.dataIterator();
-      int ideb = 0;
+
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
 
@@ -301,25 +297,22 @@ namespace hoeb
         const EBGraph  & graph = (*m_graphs)[dit[ibox]];
         Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
 
-        //get face fluxes and interpolate them to centroids
-        bool useStack = true;
-        EBFluxData<Real, 1>  centroidFlux(grown, graph, useStack);
-        EBFluxStencil<2, Real> stencils =
+        const EBFluxData<Real, 1>&  centroidFlux(grown, graph, useStack);
+        EBFluxStencil<2, Real> stencils = 
           m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
-        EBFluxData<Real,1>& faceCentFlux = a_velo[dit[ibox]];
-        stencils.apply(centroidFlux, faceCentFlux, true, 1.0);  //true is to initialize to zero
+        EBFluxData<Real,1>& flux = (*a_velo)[dit[ibox]]; 
 
-        applyVeloBoundaryConditions(centroidFlux, dit[ibox]);
+        //I think this is harder in hoeb land.  for now, let us stay in homogeneous land for this operator
+        //applyVeloBoundaryConditions(flux, dit[ibox]);
 
-        auto& kapdiv =  m_rhs[dit[ibox]];
+        auto& kapdiv =  (*m_kappaDivU)[dit[ibox]];
         kapdiv.setVal(0.);
         for(unsigned int idir = 0; idir < DIM; idir++)
         {
           bool initToZero = false;
-          m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, centroidFlux,
+          m_brit->applyFaceToCell(StencilNames::DivergeFtoC, StencilNames::NoBC, m_domain, kapdiv, flux,
                                   idir, ibox, initToZero, 1.0);
         }
-        ideb++;
       }
       
     }
@@ -328,15 +321,53 @@ namespace hoeb
     computeGradient(shared_ptr<EBLevelBoxData<CELL, 1> > & a_phi,
                     bool a_printStuff = false)
     {
-      MayDay::Error("not implemented");
-    }
 
-    void
-    defineSolver()
-    {
-      MayDay::Error("not implemented");
+
+      //face-centered gradient
+      DataIterator dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox  < dit.size(); ibox++)
+      {
+        bool needDiag = false;  
+        vector<EBIndex<     XFACE>                destXFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenXFace;
+        vector<EBIndex<     YFACE>                destYFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenYFace;
+        vector<EBIndex<     ZFACE>                destZFace;
+        vector<LocalStencil<CELL,  data_t>  >     stenZFace;
+        Proto::Box                                srcValid;
+        Proto::Box                                dstValid;
+        Proto::Box                                srcDomain;
+        Proto::Box                                dstDomain;
+        Point                                     srcGhost;
+        Point                                     dstGhost;
+        
+        getGradientStencilComponents(destXFace,
+                                     stenXFace,
+                                     destYFace,
+                                     stenYFace,
+                                     destZFace,
+                                     stenZFace,
+                                     srcValid,
+                                     dstValid,
+                                     srcDomain,
+                                     dstDomain,
+                                     srcGhost,
+                                     dstGhost,
+                                     dit[ibox],
+                                     ibox);
+        
+        m_brit->registerCellToFace(m_stenNameGradient, m_ebbcNameGradient,
+                                   destXFace,stenXFace,
+                                   destYFace, stenYFace,
+                                   destZFace, stenZFace,
+                                   srcValid,  dstValid,
+                                   srcDomain, dstDomain,
+                                   srcGhost,  dstGhost,
+                                   needDiag,  ibox);                
+      }
     }
     
+
     
     //disallowed because I like strong construction
     Hoeb_MAC_Projector();
