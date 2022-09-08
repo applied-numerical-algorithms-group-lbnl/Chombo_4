@@ -117,14 +117,6 @@ namespace hoeb
       }
     }
   }
-                                    
-  template <CENTERING dstcent, CENTERING srccent>
-  inline Neighborhood<srccent>
-  getNeighbors(const EBIndex<dstcent>& a_start,
-               const EBGraph         & a_graph,
-               const string            a_dombcname[2*DIM],
-               const string          & a_ebbcname,
-               const int             & a_facedir);
 
   template<CENTERING cent>
   inline RealVect
@@ -248,6 +240,7 @@ namespace hoeb
     setWgtSection<BOUNDARY,dstcent>(a_block.m_cutfacesDiriWgt, a_block.m_cutfacesDiri,  a_start);
     setWgtSection<BOUNDARY,dstcent>(a_block.m_cutfacesNeumWgt, a_block.m_cutfacesNeum,  a_start);
   }
+  
   template <CENTERING dstcent>
   inline Neighborhood<CELL>
   getCellNeighbors(const EBIndex<dstcent>& a_start,

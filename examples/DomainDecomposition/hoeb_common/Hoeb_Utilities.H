@@ -268,8 +268,9 @@ namespace hoeb
   }
   ///
   /**
-     Return integral F dA  (do NOT divide out the area).
+     Return stencil for integral F dA  (do NOT divide out the area).
      For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
+     starting vof never used so interface deprecated.
   */
   
   template <CENTERING cent>
@@ -282,8 +283,29 @@ namespace hoeb
                                         const Chombo4::Box                                  & a_srcDomain,
                                         const Chombo4::DataIndex                            & a_dit,
                                         Real a_dx, int a_facedir,
-                                        Side::LoHiSide a_vofside, bool a_printStuff);
+                                        Side::LoHiSide a_vofside, bool a_printStuff)
+  {
+    return
+      getDevendranIntFluxDACompositeStencil(a_face,
+                                            a_dombcname[2*DIM],
+                                            a_ebbcname,
+                                            a_geoserv,
+                                            a_srcDomain,
+                                            a_dit,
+                                            a_dx, a_facedir,a_vofside,a_printStuff);
+  }
 
+  /// get stencil for int flux dA
+  template <CENTERING cent>
+  inline CompositeStencil
+  getDevendranIntFluxDACompositeStencil(const EBIndex<cent>                                 & a_face,
+                                        const std::string                                     a_dombcname[2*DIM],
+                                        const std::string                                   & a_ebbcname,
+                                        const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                                        const Chombo4::Box                                  & a_srcDomain,
+                                        const Chombo4::DataIndex                            & a_dit,
+                                        Real a_dx, int a_facedir,
+                                        Side::LoHiSide a_vofside, bool a_printStuff);
   ///
   /**
      Return integral F dA  (do NOT divide out the area).

@@ -213,6 +213,130 @@ namespace hoeb
 
       return retval;
     }
+
+    //evaluate but with phi always zero
+    Real evalInhomogeneousContribution(const BaseExactSolution<HOEB_MAX_ORDER>             & a_exactSolution,
+                                       const EBGraph                                       & a_graph,
+                                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                                       const Chombo4::Box                                  & a_domain,
+                                       const Real                                          & a_dx,
+                                       const Chombo4::DataIndex& a_dit) const
+    {
+      Real retval = 0;
+      bool dividebyarea = true; //this is about values, not integrals
+
+      //now add in contributions due to nearby boundary conditions
+      //first dirichlet
+      {
+        const auto& xfacld = a_geoserv->getXFaceData(a_domain);
+        const auto& xdat   = (*xfacld)[a_dit];
+        for(int isten = 0; isten < m_xfaceDiriSten.size(); isten++)
+        {
+          const auto& entry  = m_xfaceDiriSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateDMO(a_graph, a_dx, xdat, face, 0, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+      {
+        const auto& yfacld = a_geoserv->getYFaceData(a_domain);
+        const auto& ydat   = (*yfacld)[a_dit];
+        for(int isten = 0; isten < m_yfaceDiriSten.size(); isten++)
+        {
+          const auto& entry  = m_yfaceDiriSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateDMO(a_graph, a_dx, ydat, face, 1, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+#if DIM==3      
+      {
+        const auto& zfacld = a_geoserv->getZFaceData(a_domain);
+        const auto& zdat   = (*zfacld)[a_dit];
+        for(int isten = 0; isten < m_zfaceDiriSten.size(); isten++)
+        {
+          const auto& entry  = m_zfaceDiriSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateDMO(a_graph, a_dx, zdat, face, 2, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+#endif      
+      {
+        const auto& ebfacld = a_geoserv->getEBFaceData(a_domain);
+        const auto& ebdat   = (*ebfacld)[a_dit];
+        for(int isten = 0; isten < m_cutfaceDiriSten.size(); isten++)
+        {
+          const auto& entry = m_cutfaceDiriSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateDIM(a_graph, a_dx, ebdat, face, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+      
+      //neumann
+      {
+        const auto& xfacld = a_geoserv->getXFaceData(a_domain);
+        const auto& xdat   = (*xfacld)[a_dit];
+        for(int isten = 0; isten < m_xfaceNeumSten.size(); isten++)
+        {
+          const auto& entry  = m_xfaceNeumSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateGradDMO(a_graph, a_dx, xdat, face, 0, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+      {
+        const auto& yfacld = a_geoserv->getYFaceData(a_domain);
+        const auto& ydat   = (*yfacld)[a_dit];
+        for(int isten = 0; isten < m_yfaceNeumSten.size(); isten++)
+        {
+          const auto& entry  = m_yfaceNeumSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateGradDMO(a_graph, a_dx, ydat, face, 1, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+#if DIM==3      
+      {
+        const auto& zfacld = a_geoserv->getZFaceData(a_domain);
+        const auto& zdat   = (*zfacld)[a_dit];
+        for(int isten = 0; isten < m_zfaceNeumSten.size(); isten++)
+        {
+          const auto& entry  = m_zfaceNeumSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateGradDMO(a_graph, a_dx, zdat, face, 2, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+#endif      
+      {
+        const auto& ebfacldx = a_geoserv->getEBNormalData_x(a_domain);
+        const auto& ebfacldy = a_geoserv->getEBNormalData_y(a_domain);
+        const auto& ebfacldz = a_geoserv->getEBNormalData_z(a_domain);
+        const auto& ebmom    = a_geoserv->getEBFaceData(a_domain);
+        for(int isten = 0; isten < m_cutfaceNeumSten.size(); isten++)
+        {
+          const auto& entry = m_cutfaceNeumSten.m_entries[isten];
+          const auto& face   = entry.m_vof;
+          EBIndex<CELL> vof  = face.getVoF();
+          const auto& weight = entry.m_weight;
+          Real phival = a_exactSolution.evaluateGradDIM(a_graph, a_dx,
+                                                        ebfacldx, ebfacldy, ebfacldz, ebmom,
+                                                        a_dit, vof, dividebyarea);
+          retval += weight*phival;
+        }
+      }
+
+      return retval;
+    }
   };
 }
 #endif

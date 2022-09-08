@@ -745,6 +745,7 @@ namespace hoeb
   /**
      Return integral F dA  (do NOT divide out the area).
      For EB Fluxes, it is Integral F-n dA with an outward-facing normal.
+     starting vof never used
   */
   template <CENTERING cent>
   CompositeStencil

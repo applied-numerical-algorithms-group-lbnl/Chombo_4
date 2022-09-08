@@ -9,6 +9,8 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBLevelFluxData.H"
 #include "Hoeb_PetscSolver.H"
+#include "Hoeb_Neighborhood.H"
+#include "Hoeb_Utilities.H"
 #include "EBIBC.H"
 
 namespace hoeb
@@ -20,18 +22,20 @@ namespace hoeb
   public:
     typedef CH4_Data_Choreography::DistributedData<EBGraph>                  graph_distrib_t;
     
-    /// 
-    Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
-                       shared_ptr<GeometryService<2> >        & a_geoserv,
-                       const DisjointBoxLayout                & a_grids,
-                       const Box                              & a_domain,
-                       const Real                             & a_dx,
-                       const EBIBC                            & a_ebibc,
-                       const IntVect                          & a_nghost,
-                       bool                                     a_printStuff = false)
+    /// exact phi is for inhomogeneous pressure boundary conditions
+    Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >                      & a_brit,
+                       shared_ptr<GeometryService<2> >                           & a_geoserv,
+                       shared_ptr<BaseExactSolution<HOEB_MAX_ORDER> >            & a_exactPhi,
+                       const DisjointBoxLayout                                   & a_grids,
+                       const Box                                                 & a_domain,
+                       const Real                                                & a_dx,
+                       const EBIBC                                               & a_ebibc,
+                       const IntVect                                             & a_nghost,
+                       bool                                                        a_printStuff = false)
     {
       m_brit       = a_brit     ;
       m_geoserv    = a_geoserv  ;
+      m_exactPhi   = a_exactPhi;
       m_grids      = a_grids    ;
       m_domain     = a_domain   ;
       m_dx         = a_dx       ;
@@ -198,20 +202,23 @@ namespace hoeb
 
     //build stencils for higher order gradient
     void
-    getGradientStencilComponents(vector<EBIndex<     XFACE>                & a_destXFace,
+    getGradientStencilComponents(vector<EBIndex<     XFACE>               & a_destXFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
-                                 vector<EBIndex<     YFACE>                & a_destYFace,
+                                 vector<Real>                             & a_inhoXFace
+                                 vector<EBIndex<     YFACE>               & a_destYFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
-                                 vector<EBIndex<     ZFACE>                & a_destZFace,
+                                 vector<Real>                             & a_inhoYFace
+                                 vector<EBIndex<     ZFACE>               & a_destZFace,
                                  vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
-                                 Proto::Box                                & a_srcValid,
-                                 Proto::Box                                & a_dstValid,
-                                 Proto::Box                                & a_srcDomain,
-                                 Proto::Box                                & a_dstDomain,
-                                 Point                                     & a_srcGhost,
-                                 Point                                     & a_dstGhost,
-                                 const DataIndex                           & a_dit,
-                                 unsigned int                                a_ibox)
+                                 vector<Real>                             & a_inhoZFace
+                                 Proto::Box                               & a_srcValid,
+                                 Proto::Box                               & a_dstValid,
+                                 Proto::Box                               & a_srcDomain,
+                                 Proto::Box                               & a_dstDomain,
+                                 Point                                    & a_srcGhost,
+                                 Point                                    & a_dstGhost,
+                                 const DataIndex                          & a_dit,
+                                 unsigned int                               a_ibox)
     {
       const auto& graph = (*m_graphs)[a_dit];
       a_dstValid  = ProtoCh::getProtoBox(m_grids[a_dit]);
@@ -228,10 +235,10 @@ namespace hoeb
       a_dstZFace.resize(0);
 #endif
 
-      getGradientStencil<XFACE>(a_stenXFace, a_destXFace, a_dit);
-      getGradientStencil<YFACE>(a_stenYFace, a_destYFace, a_dit);
-#if DIM==3                                              
-      getGradientStencil<ZFACE>(a_stenZFace, a_destZFace, a_dit);
+      getGradientStencil<XFACE>(a_stenXFace, a_inhoXFace, a_destXFace, a_dit, 0);
+      getGradientStencil<YFACE>(a_stenYFace, a_inhoYFace, a_destYFace, a_dit, 1);
+#if DIM==3                                               
+      getGradientStencil<ZFACE>(a_stenZFace, a_inhoZFace, a_destZFace, a_dit, 2);
 #else
       a_stenZFace.resize(0);
 #endif      
@@ -239,16 +246,33 @@ namespace hoeb
 
     template<CENTERING cent>
     getGradientStencil(vector<LocalStencil<CELL, data_t> > & a_stencils,
+                       vector<Real>                        & a_inhomoge,
                        const vector<EBIndex<cent> >        & a_faces,
-                       const DataIndex                     & a_dit)
+                       const DataIndex                     & a_dit,
+                       int a_facedir)
     {
 
       const auto& graph = (*m_graphs)[a_dit];
       a_stencils.resize(a_faces.size());
+      a_inhomoge.resize(a_faces.size());
+      string dobcName[2*DIM];
+      string ebbcName = StencilNames::Neumann;
+      m_ebbc.projectionStencilStrings(dobcName);
       for(int iface = 0; iface < faces.size(); iface++)
       {
         const auto& face = a_faces[iface];
-        
+        //vofside is used to short circuit all this stuff for neumann boundary conditions
+        Side::LoHiSide vofside = Side::Lo;
+        if(face.m_isBoundary && !m_domain.contains(face.m_pt))
+        {
+          vofsize = Side::Hi;
+        }
+        //this is the whole stencil, including inhomogeneous bits.   We need to save the homogeneous bits into an ebstencil and the
+        // rest of it into a data holder.
+        CompositeStencil intFluxDA_sten = getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, a_printStuff);
+
+        a_inhomoge[iface] = intFluxDA_sten.evalInhomogeneousContribution(m_exactPhi, graph, m_geoserv, m_domain, m_dx, a_dit);
+        a_stencils[iface] = intFluxDA_sten.m_cellSten;
       }
     }
     
