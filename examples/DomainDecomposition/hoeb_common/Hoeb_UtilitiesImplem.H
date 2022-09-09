@@ -748,7 +748,7 @@ namespace hoeb
      starting vof never used
   */
   template <CENTERING cent>
-  CompositeStencil
+  inline CompositeStencil
   getDevendranIntFluxDACompositeStencil(const EBIndex<cent>                                 & a_face,
                                         const EBIndex<CELL>                                 & a_startingVoF,
                                         const std::string                                     a_dombcname[2*DIM],

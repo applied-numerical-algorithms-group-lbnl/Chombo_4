@@ -262,7 +262,7 @@ runProjection(int a_argc, char* a_argv[])
 
 
   EBIBC bc = getIBCs();
-  Hoeb_MAC_Projector proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV, bc);
+  Hoeb_MAC_Projector<MAX_ORDER> proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV, bc);
   Real tol = 1.0e-8;
   unsigned int maxiter = 27;
   proj.project(velo, gphi, tol, maxiter, true);

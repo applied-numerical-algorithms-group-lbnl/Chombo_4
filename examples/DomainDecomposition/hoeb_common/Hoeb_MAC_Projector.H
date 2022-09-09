@@ -19,25 +19,26 @@ namespace hoeb
   ///class to project face-centered velocity fields.
   /**
      for face-valued fields, subtracts off the pure gradient part of a vector field
-     Homogeneous boundary conditions for phi and vel are required for now.
+     Homogeneous boundary conditions for phi  are required for now
      as there is real work to do to make certain those boundary conditions
      are implmented with appropriate accuracy.
   **/
-
+  template <int order>
   class Hoeb_MAC_Projector
   {
   public:
     typedef CH4_Data_Choreography::DistributedData<EBGraph>                  graph_distrib_t;
     
-    Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<2, Real> >                      & a_brit,
-                       shared_ptr<GeometryService<2> >                           & a_geoserv,
-                       const DisjointBoxLayout                                   & a_grids,
-                       const Box                                                 & a_domain,
+    Hoeb_MAC_Projector(shared_ptr<EBEncyclopedia<order, Real> >                  & a_brit,
+                       shared_ptr<GeometryService<order> >                       & a_geoserv,
+                       const Chombo4::DisjointBoxLayout                          & a_grids,
+                       const Chombo4::Box                                        & a_domain,
                        const Real                                                & a_dx,
                        const EBIBC                                               & a_ebibc,
                        const IntVect                                             & a_nghost,
                        bool                                                        a_printStuff = false)
     {
+      CH_TIME("Hoeb_MACProjector::constructor");
       m_brit       = a_brit     ;
       m_geoserv    = a_geoserv  ;
       m_grids      = a_grids    ;
@@ -46,7 +47,7 @@ namespace hoeb
       m_ebibc      = a_ebibc    ;
       m_nghost     = a_nghost   ;      
       m_printStuff = a_printStuff;
-      m_graphs     = a_geoserv.getGraphs(a_domain);
+      m_graphs     = a_geoserv->getGraphs(a_domain);
       a_ebibc.projectionStencilStrings(m_domBCNamePoisson);
       m_EBBCNamePoisson = StencilNames::Neumann;
       m_EBBCNameGrad = string("no_bcs");
@@ -69,18 +70,33 @@ namespace hoeb
        advectionVel holds rotational component of vector field = U^V
        m_gphi holds the pure gradient = grad(phi) = U^p
        Alters input in place.   
+       VELOCITY BOUNDARY CONDITIONS ARE NOT ENFORCED at the domain boundaries.
+       Have the velocity at domain boundary faces set correctly coming into the 
+       projection.
     */
     void 
     project(shared_ptr< EBLevelFluxData<1> > & a_advectionVel,
-            bool a_printStuff = false) const
+            bool a_printStuff = false) 
     {
-      computeKappaDivU(a_advectionVel, a_printStuff);
+      CH_TIME("Hoeb_MACProjector::project");
+      computeKappaDiv(a_advectionVel, a_printStuff);
+      if(a_printStuff)
+      {
+        Real error = m_kappaDivU->maxNorm(0);
+        Chombo4::pout() << "Hoeb_MACProjector:: project: divergence befo projection = " << error;
+      }
 
-      m_poissonSolver->solve(*m_phi, *m_kappaDivU);
+      m_solver->solve(*m_phi, *m_kappaDivU);
 
-      computeGradient(*m_phi);
+      computeGradient(m_phi, a_printStuff);
 
       (*a_advectionVel) -= (*m_gradient);
+      if(a_printStuff)
+      {
+        computeKappaDiv(a_advectionVel, a_printStuff);
+        Real error = m_kappaDivU->maxNorm(0);
+        Chombo4::pout() << "Hoeb_MACProjector:: project: divergence after projection = " << error;
+      }
     }
 
 
@@ -111,10 +127,10 @@ namespace hoeb
     }
   
     ///input at construction
-    shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
-    shared_ptr<GeometryService<2> >        m_geoserv;
-    DisjointBoxLayout                      m_grids;
-    Box                                    m_domain;
+    shared_ptr<EBEncyclopedia<order, Real> >   m_brit;
+    shared_ptr<GeometryService<order> >        m_geoserv;
+    Chombo4::DisjointBoxLayout             m_grids;
+    Chombo4::Box                           m_domain;
     Real                                   m_dx;
     EBIBC                                  m_ebibc;
     IntVect                                m_nghost;
@@ -136,22 +152,26 @@ namespace hoeb
     void defineInternals()
     {
 
+      CH_TIME("Hoeb_MACProjector::defineInternals");
       m_kappaDivU       = shared_ptr< EBLevelBoxData<CELL, 1> >  (new EBLevelBoxData<CELL, 1> (m_grids, m_nghost, m_graphs));
       m_phi             = shared_ptr< EBLevelBoxData<CELL, 1> >  (new EBLevelBoxData<CELL, 1> (m_grids, m_nghost, m_graphs));
       m_gradient        = shared_ptr< EBLevelFluxData<     1> >  (new EBLevelFluxData<     1> (m_grids, m_nghost, m_graphs));
 
       auto cellDict= m_brit->m_cellToCell;
       Real alpha = 0; Real beta = 1; //poisson
+      bool printStuff  = false;
+      Point ptghost = ProtoCh::getPoint(m_nghost);
       m_solver = shared_ptr< Hoeb_PetscSolver<4> >
         (new Hoeb_PetscSolver<4>(m_geoserv, cellDict,    m_graphs, m_grids, m_domain,
                                  m_domBCNamePoisson, m_EBBCNamePoisson,
-                                 m_dx, alpha, beta,  m_nghost, a_printStuff));
+                                 m_dx, alpha, beta,  ptghost, printStuff));
 
       registerStencils();
     }
 
     void registerStencils()
     {
+      CH_TIME("Hoeb_MACProjector::registerStencil");
       //increment divergence by face difference
       m_brit->registerFaceToCell(StencilNames::DivergeFtoC         ,
                                  StencilNames::NoBC,
@@ -159,16 +179,16 @@ namespace hoeb
                                  m_domain, m_domain, false); // false is for needDiagonal
 
       //face-centered gradient
-      DataIterator dit = m_grids.dataIterator();
+      Chombo4::DataIterator dit = m_grids.dataIterator();
       for(int ibox = 0; ibox  < dit.size(); ibox++)
       {
         bool needDiag = false;  
-        vector<EBIndex<     XFACE>                destXFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenXFace;
-        vector<EBIndex<     YFACE>                destYFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenYFace;
-        vector<EBIndex<     ZFACE>                destZFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenZFace;
+        vector<EBIndex<     XFACE>          >     destXFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenXFace;
+        vector<EBIndex<     YFACE>          >     destYFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenYFace;
+        vector<EBIndex<     ZFACE>          >     destZFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenZFace;
         Proto::Box                                srcValid;
         Proto::Box                                dstValid;
         Proto::Box                                srcDomain;
@@ -191,7 +211,8 @@ namespace hoeb
                                      dit[ibox],
                                      ibox);
         
-        m_brit->registerCellToFace(m_stenNameGradient, m_ebbcNameGradient,
+        m_brit->registerCellToFace(m_stenNameGrad,
+                                   m_EBBCNameGrad,
                                    destXFace,stenXFace,
                                    destYFace, stenYFace,
                                    destZFace, stenZFace,
@@ -204,20 +225,20 @@ namespace hoeb
     }
 
     //build stencils for higher order gradient
-    void
-    getGradientStencilComponents(vector<EBIndex<     XFACE>               & a_destXFace,
-                                 vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
-                                 vector<EBIndex<     YFACE>               & a_destYFace,
-                                 vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
-                                 vector<EBIndex<     ZFACE>               & a_destZFace,
-                                 vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
+    inline void
+    getGradientStencilComponents(vector<EBIndex<     XFACE>         >     & a_destXFace,
+                                 vector<LocalStencil<CELL,  Real  > >     & a_stenXFace,
+                                 vector<EBIndex<     YFACE>         >     & a_destYFace,
+                                 vector<LocalStencil<CELL,  Real  > >     & a_stenYFace,
+                                 vector<EBIndex<     ZFACE>         >     & a_destZFace,
+                                 vector<LocalStencil<CELL,  Real  > >     & a_stenZFace,
                                  Proto::Box                               & a_srcValid,
                                  Proto::Box                               & a_dstValid,
                                  Proto::Box                               & a_srcDomain,
                                  Proto::Box                               & a_dstDomain,
                                  Point                                    & a_srcGhost,
                                  Point                                    & a_dstGhost,
-                                 const DataIndex                          & a_dit,
+                                 const Chombo4::DataIndex                 & a_dit,
                                  unsigned int                               a_ibox)
     {
       const auto& graph = (*m_graphs)[a_dit];
@@ -227,12 +248,12 @@ namespace hoeb
       a_dstDomain = ProtoCh::getProtoBox(m_domain);
       a_srcGhost =  ProtoCh::getPoint(m_nghost);
       a_dstGhost =  ProtoCh::getPoint(m_nghost);
-      a_destXFace = graph.getAllFaces<XFACE>(a_dstValid);
-      a_destYFace = graph.getAllFaces<YFACE>(a_dstValid);
-#if DIM==3        
-      a_destZFace = graph.getAllFaces<ZFACE>(a_dstValid);
+      a_destXFace = getAllFaces<XFACE>(a_dstValid, graph);
+      a_destYFace = getAllFaces<YFACE>(a_dstValid, graph);
+#if DIM==3                                             
+      a_destZFace = getAllFaces<ZFACE>(a_dstValid, graph);
 #else
-      a_dstZFace.resize(0);
+      a_destZFace.resize(0);
 #endif
 
       getGradientStencil<XFACE>(a_stenXFace,  a_destXFace, a_dit, 0);
@@ -245,30 +266,54 @@ namespace hoeb
     }
 
     template<CENTERING cent>
-    getGradientStencil(vector<LocalStencil<CELL, data_t> > & a_stencils,
+    inline void
+    getGradientStencil(vector<LocalStencil<CELL, Real  > > & a_stencils,
                        const vector<EBIndex<cent> >        & a_faces,
-                       const DataIndex                     & a_dit,
+                       const Chombo4::DataIndex            & a_dit,
                        int a_facedir)
     {
 
       const auto& graph = (*m_graphs)[a_dit];
+      auto gridbx = ProtoCh::getProtoBox(m_grids[a_dit]);
+      gridbx = gridbx.grow(1);
+      gridbx &= ProtoCh::getProtoBox(m_domain);
+      
       a_stencils.resize(a_faces.size());
       string dobcName[2*DIM];
       string ebbcName = StencilNames::Neumann;
-      m_ebbc.projectionStencilStrings(dobcName);
-      for(int iface = 0; iface < faces.size(); iface++)
+      m_ebibc.projectionStencilStrings(dobcName);
+      //need area fractions to go between integrals and average values
+      EBHostData<cent, Real  , 1> faceAlpha(gridbx, graph);
+      m_geoserv->fillFaceAlpha(faceAlpha, gridbx, a_dit, m_domain);
+      
+      for(int iface = 0; iface < a_faces.size(); iface++)
       {
         const auto& face = a_faces[iface];
         //vofside is used to short circuit all this stuff for neumann boundary conditions
         Side::LoHiSide vofside = Side::Lo;
         if(face.m_isBoundary && !m_domain.contains(face.m_pt))
         {
-          vofsize = Side::Hi;
+          vofside = Side::Hi;
         }
-        //this is the whole stencil, including inhomogeneous bits.   
-        // rest of it into a data holder.
-        CompositeStencil intFluxDA_sten = getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, a_printStuff);
-        a_stencils[iface] = intFluxDA_sten.m_cellSten;
+        //This is the whole stencil, including inhomogeneous bits.   
+        // For inhomogeneous (phi) boundary conditions, the inhomogeneous contribution
+        //would have to be archived here and dragged out again for operator evaluation.
+        //Since the application on which I am working does not require inhomogeneous pressure
+        //boundary conditions, this bit is left as exercise to the reader.
+        CompositeStencil intFluxDA_composite_sten =
+          getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, a_printStuff);
+
+        //since the above sten gives int(grad phi) dA, we need to divide out the area to get <grad phi>
+        //if there is no real area, set the stencil to zero.
+        Real   faceArea = faceAlpha(face, 0);
+        auto gradSten = intFluxDA_sten.m_cellSten;
+        Real   invAreaFactor = 0;
+        if(faceArea > 1.0e-10)
+        {
+          invAreaFactor = 1.0/faceArea;
+        }
+        gradSten *= invAreaFactor;
+        a_stencils[iface] = gradSten;
       }
     }
     
@@ -329,11 +374,11 @@ namespace hoeb
       {
         bool needDiag = false;  
         vector<EBIndex<     XFACE>                destXFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenXFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenXFace;
         vector<EBIndex<     YFACE>                destYFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenYFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenYFace;
         vector<EBIndex<     ZFACE>                destZFace;
-        vector<LocalStencil<CELL,  data_t>  >     stenZFace;
+        vector<LocalStencil<CELL,  Real  >  >     stenZFace;
         Proto::Box                                srcValid;
         Proto::Box                                dstValid;
         Proto::Box                                srcDomain;
@@ -372,8 +417,8 @@ namespace hoeb
     //disallowed because I like strong construction
     Hoeb_MAC_Projector();
 
+
+
   };
-
 }
-
 #endif
