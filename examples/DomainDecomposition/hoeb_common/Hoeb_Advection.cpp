@@ -4,7 +4,8 @@
 #include "Chombo_ParmParse.H"
 namespace Chombo4
 {
-/// 
+///
+#if 0  
   Hoeb_Conservative_Advection_Op::
   Hoeb_Advection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                  shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -39,5 +40,6 @@ namespace Chombo4
   {
     MayDay::Error("not implemented");
   }
+#endif
 } //end namespace chombo4
 

@@ -16,6 +16,7 @@ namespace Chombo4
   class Hoeb_Advection
   {
   public:
+    typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
 
     /// 
     Hoeb_Advection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -46,6 +47,7 @@ namespace Chombo4
     hybridDivergence(shared_ptr< EBLevelBoxData<CELL, 1> > & a_scal,
                      shared_ptr< EBLevelFluxData<1    >  > & a_advectionVel)
     {
+
       zeroRedistributionMass();
       computeHybridDivergence();
       redistributeDivergence();
@@ -75,6 +77,7 @@ namespace Chombo4
     ///junk drawer 
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_kappaConsDiv;
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_nonConsDiv;
+    shared_ptr< EBLevelBoxData<CELL, 1> >  m_hybridDiv;
     shared_ptr< EBLevelBoxData<CELL, 1> >  m_hybridDivergence;
     
     shared_ptr<graph_distrib_t>            m_graphs;
