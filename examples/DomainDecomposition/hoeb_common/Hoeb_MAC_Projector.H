@@ -300,13 +300,14 @@ namespace hoeb
         //would have to be archived here and dragged out again for operator evaluation.
         //Since the application on which I am working does not require inhomogeneous pressure
         //boundary conditions, this bit is left as exercise to the reader.
+        bool printStuff = false;
         CompositeStencil intFluxDA_composite_sten =
-          getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, a_printStuff);
+          getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, printStuff);
 
         //since the above sten gives int(grad phi) dA, we need to divide out the area to get <grad phi>
         //if there is no real area, set the stencil to zero.
         Real   faceArea = faceAlpha(face, 0);
-        auto gradSten = intFluxDA_sten.m_cellSten;
+        auto gradSten = intFluxDA_composite_sten.m_cellSten;
         Real   invAreaFactor = 0;
         if(faceArea > 1.0e-10)
         {
@@ -325,15 +326,15 @@ namespace hoeb
       CH_TIME("Hoeb_EBMACProjector::kappaDivU");
       if(a_printStuff)
       {
-        pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
+        Chombo4::pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
       }
-      a_velo.exchange(a_printStuff);
+      a_velo->exchange(a_printStuff);
 
       if(a_printStuff)
       {
-        pout() << "applying velocity boundary conditions and applying divergence stencils" << endl;
+        Chombo4::pout() << "applying velocity boundary conditions and applying divergence stencils" << endl;
       }
-      DataIterator dit = m_grids.dataIterator();
+      Chombo4::DataIterator dit = m_grids.dataIterator();
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
@@ -342,9 +343,6 @@ namespace hoeb
         const EBGraph  & graph = (*m_graphs)[dit[ibox]];
         Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
 
-        const EBFluxData<Real, 1>&  centroidFlux(grown, graph, useStack);
-        EBFluxStencil<2, Real> stencils = 
-          m_brit->getFluxStencil(StencilNames::InterpToFaceCentroid, StencilNames::NoBC, m_domain, m_domain, ibox);
         EBFluxData<Real,1>& flux = (*a_velo)[dit[ibox]]; 
 
         //I think this is harder in hoeb land.  for now, let us stay in homogeneous land for this operator
@@ -369,15 +367,15 @@ namespace hoeb
 
 
       //face-centered gradient
-      DataIterator dit = m_grids.dataIterator();
+      Chombo4::DataIterator dit = m_grids.dataIterator();
       for(int ibox = 0; ibox  < dit.size(); ibox++)
       {
         bool needDiag = false;  
-        vector<EBIndex<     XFACE>                destXFace;
+        vector<EBIndex<     XFACE>          >     destXFace;
         vector<LocalStencil<CELL,  Real  >  >     stenXFace;
-        vector<EBIndex<     YFACE>                destYFace;
+        vector<EBIndex<     YFACE>          >     destYFace;
         vector<LocalStencil<CELL,  Real  >  >     stenYFace;
-        vector<EBIndex<     ZFACE>                destZFace;
+        vector<EBIndex<     ZFACE>          >     destZFace;
         vector<LocalStencil<CELL,  Real  >  >     stenZFace;
         Proto::Box                                srcValid;
         Proto::Box                                dstValid;
@@ -401,7 +399,8 @@ namespace hoeb
                                      dit[ibox],
                                      ibox);
         
-        m_brit->registerCellToFace(m_stenNameGradient, m_ebbcNameGradient,
+        m_brit->registerCellToFace(m_stenNameGrad,
+                                   m_EBBCNameGrad,
                                    destXFace,stenXFace,
                                    destYFace, stenYFace,
                                    destZFace, stenZFace,

@@ -199,9 +199,6 @@ runProjection(int a_argc, char* a_argv[])
   int maxGrid = 32;
   pp.get("maxGrid", maxGrid); 
 
-  pp.get("nstream", nStream);
-
-    
   pp.get("numSmooth"  , numSmooth);
   pp.get("max_vel_mag"  , max_vel_mag);
   pp.get("max_vel_rad"  , max_vel_rad);
