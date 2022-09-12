@@ -150,14 +150,14 @@ public:
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights, 
+                                   a_needDiagonalWeights, 
                                    a_dstGrown);
     m_cellToYFace->registerStencil(a_stencilName,              
                                    a_domainBCName,             
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights, 
+                                   a_needDiagonalWeights, 
                                    a_dstGrown);
 #if DIM==3      
     m_cellToZFace->registerStencil(a_stencilName,              
@@ -165,7 +165,7 @@ public:
                                    a_ebbcName,                 
                                    a_srcDomain,                
                                    a_dstDomain,                
-                                   needDiagonalWeights, 
+                                   a_needDiagonalWeights, 
                                    a_dstGrown);
 #endif      
   }
@@ -184,12 +184,12 @@ public:
   inline void
   registerCellToFace (string                                            a_stencilName,
                       string                                            a_ebbcName,
-                      const vector<EBIndex<     XFACE>                & a_destXFace,
-                      const vector<LocalStencil<CELL,  data_t> >     & a_stenXFace,
-                      const vector<EBIndex<     YFACE>                & a_destYFace,
-                      const vector<LocalStencil<CELL,  data_t> >     & a_stenYFace,
-                      const vector<EBIndex<     ZFACE>                & a_destZFace,
-                      const vector<LocalStencil<CELL,  data_t> >     & a_stenZFace,
+                      const std::vector<EBIndex<     XFACE>         > & a_destXFace,
+                      const std::vector<LocalStencil<CELL,  data_t> > & a_stenXFace,
+                      const std::vector<EBIndex<     YFACE>         > & a_destYFace,
+                      const std::vector<LocalStencil<CELL,  data_t> > & a_stenYFace,
+                      const std::vector<EBIndex<     ZFACE>         > & a_destZFace,
+                      const std::vector<LocalStencil<CELL,  data_t> > & a_stenZFace,
                       const Proto::Box                                & a_srcValid,
                       const Proto::Box                                & a_dstValid,
                       const Proto::Box                                & a_srcDomain,
@@ -199,7 +199,7 @@ public:
                       bool                                              a_needDiagonalWeights,
                       unsigned int                                      a_ibox)                
   {
-    m_cellToXFace->->registerStencil(a_stencilName,              
+    m_cellToXFace->registerStencil(a_stencilName,              
                                     a_ebbcName,
                                     a_destXFace,
                                     a_stenXFace,
@@ -475,11 +475,11 @@ public:
   inline void
   registerFaceStencil(string                                            a_stencilName,
                       string                                            a_ebbcName,
-                      const vector<EBIndex<     XFACE>                & a_destXFace,
+                      const vector<EBIndex<     XFACE>          >     & a_destXFace,
                       const vector<LocalStencil<XFACE,  data_t> >     & a_stenXFace,
-                      const vector<EBIndex<     YFACE>                & a_destYFace,
+                      const vector<EBIndex<     YFACE>          >     & a_destYFace,
                       const vector<LocalStencil<YFACE,  data_t> >     & a_stenYFace,
-                      const vector<EBIndex<     ZFACE>                & a_destZFace,
+                      const vector<EBIndex<     ZFACE>          >     & a_destZFace,
                       const vector<LocalStencil<ZFACE,  data_t> >     & a_stenZFace,
                       const Proto::Box                                & a_srcValid,
                       const Proto::Box                                & a_dstValid,

@@ -131,6 +131,31 @@ public:
   }
 
   ///
+  EBLevelFluxData&
+  operator+=(const EBLevelFluxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]] += a_input[dit[ibox]];
+    }
+    return *this;
+  }
+
+  ///
+  EBLevelFluxData&
+  operator-=(const EBLevelFluxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]] -= a_input[dit[ibox]];
+    }
+    return *this;
+  }
+  ///
   Real maxNorm(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");

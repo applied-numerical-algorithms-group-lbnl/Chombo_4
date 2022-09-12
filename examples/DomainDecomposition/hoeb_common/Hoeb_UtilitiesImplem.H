@@ -119,82 +119,82 @@ namespace hoeb
     return gradval;
   }
 /***/
-  template <CENTERING cent>
-  Real
-  getDevendranFluxFace(const EBHostData<CELL, Real, 1>                     & a_phi,
-                       const EBGraph                                       & a_graph,
-                       const EBIndex<cent>                                 & a_face,
-                       const EBIndex<CELL>                                 & a_startingVoF,
-                       const std::string                                     a_dombcname[2*DIM],
-                       const std::string                                   & a_ebbcname,
-                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-                       const Chombo4::Box                                  & a_domain,
-                       Real a_dx, int a_facedir,
-                       Side::LoHiSide a_vofside, const Chombo4::DataIndex& a_dit, bool a_divideByArea,                       bool a_printStuff)
-  {
-    Real retval = 0;
-    shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> > exactSol =  hoeb::getBaseExactSoltuion();
-    unsigned int bindex = ebp_index(a_facedir, a_vofside);
-    bool isNeumannBoundaryFace = (a_face.m_isBoundary && (a_dombcname[bindex] == string("Neumann")));
-    if(isNeumannBoundaryFace)
-    {
-      retval =  getNeumannBoundaryFlux<cent>(exactSol,
-                                             a_phi,
-                                             a_graph,
-                                             a_face,
-                                             a_startingVoF,
-                                             a_dombcname,
-                                             a_ebbcname,
-                                             a_geoserv,
-                                             a_domain,
-                                             a_dx, a_facedir,
-                                             a_vofside, a_dit, a_divideByArea);
-    }
-    else
-    {
-      hoeb::CompositeStencil composite =
-        hoeb::getDevendranIntFluxDACompositeStencil(a_face,
-                                                    a_startingVoF,
-                                                    a_dombcname,
-                                                    a_ebbcname,
-                                                    a_geoserv,
-                                                    a_domain,
-                                                    a_dit,                              
-                                                    a_dx, a_facedir,
-                                                    a_vofside,
-                                                    a_printStuff);
-
-
-
-      retval= composite.evaluate(a_phi, *exactSol, a_graph, a_geoserv, a_domain, a_dx, a_dit);
-      if(a_divideByArea)
-      {
-        //the stencil evaluates to int(flux da) so we have to divide out the area
-        IndexedMoments<DIM-1, HOEB_MAX_ORDER> facemom;
-        if(a_graph.isFaceRegular(a_face))
-        {
-          facemom.setToRegular(a_dx);
-        }
-        else
-        {
-          
-          EBIndex<cent> dummy;
-          typedef CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, HOEB_MAX_ORDER>, 1 > > face_distrib_t;
-          shared_ptr< face_distrib_t > geodataptr = getFaceData<cent>(a_geoserv, a_domain, dummy);
-          facemom = (*geodataptr)[a_dit](a_face, 0);
-        }
-        Real area = facemom[IndexTM<int, DIM-1>::Zero];
-        if(area > 1.0e-10)
-        {
-          retval *= (1.0/area);
-        }
-      }
-    }
-    
-    return retval;
-  }
-
-  
+//  template <CENTERING cent>
+//  Real
+//  getDevendranFluxFace(const EBHostData<CELL, Real, 1>                     & a_phi,
+//                       const EBGraph                                       & a_graph,
+//                       const EBIndex<cent>                                 & a_face,
+//                       const EBIndex<CELL>                                 & a_startingVoF,
+//                       const std::string                                     a_dombcname[2*DIM],
+//                       const std::string                                   & a_ebbcname,
+//                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+//                       const Chombo4::Box                                  & a_domain,
+//                       Real a_dx, int a_facedir,
+//                       Side::LoHiSide a_vofside, const Chombo4::DataIndex& a_dit, bool a_divideByArea,                       bool a_printStuff)
+//  {
+//    Real retval = 0;
+//    shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> > exactSol =  hoeb::getBaseExactSoltuion();
+//    unsigned int bindex = ebp_index(a_facedir, a_vofside);
+//    bool isNeumannBoundaryFace = (a_face.m_isBoundary && (a_dombcname[bindex] == string("Neumann")));
+//    if(isNeumannBoundaryFace)
+//    {
+//      retval =  getNeumannBoundaryFlux<cent>(exactSol,
+//                                             a_phi,
+//                                             a_graph,
+//                                             a_face,
+//                                             a_startingVoF,
+//                                             a_dombcname,
+//                                             a_ebbcname,
+//                                             a_geoserv,
+//                                             a_domain,
+//                                             a_dx, a_facedir,
+//                                             a_vofside, a_dit, a_divideByArea);
+//    }
+//    else
+//    {
+//      hoeb::CompositeStencil composite =
+//        hoeb::getDevendranIntFluxDACompositeStencil(a_face,
+//                                                    a_startingVoF,
+//                                                    a_dombcname,
+//                                                    a_ebbcname,
+//                                                    a_geoserv,
+//                                                    a_domain,
+//                                                    a_dit,                              
+//                                                    a_dx, a_facedir,
+//                                                    a_vofside,
+//                                                    a_printStuff);
+//
+//
+//
+//      retval= composite.evaluate(a_phi, *exactSol, a_graph, a_geoserv, a_domain, a_dx, a_dit);
+//      if(a_divideByArea)
+//      {
+//        //the stencil evaluates to int(flux da) so we have to divide out the area
+//        IndexedMoments<DIM-1, HOEB_MAX_ORDER> facemom;
+//        if(a_graph.isFaceRegular(a_face))
+//        {
+//          facemom.setToRegular(a_dx);
+//        }
+//        else
+//        {
+//          
+//          EBIndex<cent> dummy;
+//          typedef CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, HOEB_MAX_ORDER>, 1 > > face_distrib_t;
+//          shared_ptr< face_distrib_t > geodataptr = getFaceData<cent>(a_geoserv, a_domain, dummy);
+//          facemom = (*geodataptr)[a_dit](a_face, 0);
+//        }
+//        Real area = facemom[IndexTM<int, DIM-1>::Zero];
+//        if(area > 1.0e-10)
+//        {
+//          retval *= (1.0/area);
+//        }
+//      }
+//    }
+//    
+//    return retval;
+//  }
+//
+//  
   ////
   inline void
   shiftMomentAndFillRow(LAPACKMatrix                            & a_mat,

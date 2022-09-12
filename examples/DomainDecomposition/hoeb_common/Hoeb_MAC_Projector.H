@@ -274,17 +274,19 @@ namespace hoeb
     {
 
       const auto& graph = (*m_graphs)[a_dit];
+      auto grid   = m_grids[a_dit];
       auto gridbx = ProtoCh::getProtoBox(m_grids[a_dit]);
       gridbx = gridbx.grow(1);
       gridbx &= ProtoCh::getProtoBox(m_domain);
-      
+
       a_stencils.resize(a_faces.size());
       string dobcName[2*DIM];
       string ebbcName = StencilNames::Neumann;
       m_ebibc.projectionStencilStrings(dobcName);
       //need area fractions to go between integrals and average values
       EBHostData<cent, Real  , 1> faceAlpha(gridbx, graph);
-      m_geoserv->fillFaceAlpha(faceAlpha, gridbx, a_dit, m_domain);
+      auto geolev  = (*m_geoserv)[m_domain];
+      Chombo4::fillFaceAlpha<cent, order>(faceAlpha, grid, a_dit, *geolev);
       
       for(int iface = 0; iface < a_faces.size(); iface++)
       {
@@ -339,15 +341,7 @@ namespace hoeb
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
 
-        Bx   grid   =  ProtoCh::getProtoBox(m_grids[dit[ibox]]);
-        const EBGraph  & graph = (*m_graphs)[dit[ibox]];
-        Bx  grown   =  grid.grow(ProtoCh::getPoint(m_nghost));
-
         EBFluxData<Real,1>& flux = (*a_velo)[dit[ibox]]; 
-
-        //I think this is harder in hoeb land.  for now, let us stay in homogeneous land for this operator
-        //applyVeloBoundaryConditions(flux, dit[ibox]);
-
         auto& kapdiv =  (*m_kappaDivU)[dit[ibox]];
         kapdiv.setVal(0.);
         for(unsigned int idir = 0; idir < DIM; idir++)

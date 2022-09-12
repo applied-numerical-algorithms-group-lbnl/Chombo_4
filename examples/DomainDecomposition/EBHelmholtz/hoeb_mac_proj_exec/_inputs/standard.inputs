@@ -1,3 +1,4 @@
+print_stuff = true
 initial_velo = "zero"
 initial_scal = "blob_scal_0"
 velocity_inflow_value = 1.

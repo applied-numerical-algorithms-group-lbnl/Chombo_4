@@ -218,7 +218,7 @@ runProjection(int a_argc, char* a_argv[])
 
 // EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
-  GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+  GeometryService<MAX_ORDER>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
@@ -244,8 +244,8 @@ runProjection(int a_argc, char* a_argv[])
     vecdx    [ilev] =           2*vecdx[ilev-1];
   }
 
-  shared_ptr<EBEncyclopedia<2, Real> > 
-    brit(new EBEncyclopedia<2, Real>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
+  shared_ptr<EBEncyclopedia<MAX_ORDER, Real> > 
+    brit(new EBEncyclopedia<MAX_ORDER, Real>(geoserv, vecgrids, vecdomain, vecdx, dataGhostPt));
 
 
   Chombo4::pout() << "inititializing data"   << endl;
@@ -253,21 +253,19 @@ runProjection(int a_argc, char* a_argv[])
   auto graphs = geoserv->getGraphs(domain.domainBox());
   Chombo4::DisjointBoxLayout& grids = vecgrids[0];
   shared_ptr< EBLevelFluxData<1>  > velo( new EBLevelFluxData<1>(grids, dataGhostIV, graphs));
-  shared_ptr< EBLevelFluxData<1>  > gphi( new EBLevelFluxData<1>(grids, dataGhostIV, graphs));
 
-  initializeData(velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
+  initializeData(*velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
 
 
   EBIBC bc = getIBCs();
-  Hoeb_MAC_Projector<MAX_ORDER> proj(brit, geoserv, grids, domain.domainBox(), dx, dataGhostIV, bc);
-  Real tol = 1.0e-8;
-  unsigned int maxiter = 27;
-  proj.project(velo, gphi, tol, maxiter, true);
+  bool printStuff = true;
+  pp.get("print_stuff", printStuff);
+  hoeb::Hoeb_MAC_Projector<MAX_ORDER> proj(brit, geoserv, grids, domain.domainBox(), dx, bc, dataGhostIV, printStuff);
+  proj.project(velo);
 
-  EBLevelBoxData<CELL,   1>&  divergence = proj.getRHSHolder();
-  proj.kappaDivU(divergence, velo, true);
+  auto divergence = proj.kappaDivergence(velo, printStuff);
   
-  Real divnorm = divergence.maxNorm(0);
+  Real divnorm = divergence->maxNorm(0);
   
   Chombo4::pout() << "max norm of post projection divergence(vel) = " << divnorm << endl;
    

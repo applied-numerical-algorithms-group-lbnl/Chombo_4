@@ -28,6 +28,7 @@
 /**
    makes geometric description from an implicit function.
 */
+
 template <int order>
 class LevelGeometryService
 {
@@ -91,7 +92,13 @@ public:
   typedef CH4_Data_Choreography::DistributedData<YFacData> yfac_distrib_t;
   typedef CH4_Data_Choreography::DistributedData<ZFacData> zfac_distrib_t;
   typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
-    
+
+  ///
+  inline Real dx() const
+  {
+    return m_dx;
+  }
+  
   ///
   inline DisjointBoxLayout const
   getDBL()
@@ -210,7 +217,7 @@ public:
     const EBGraph  & graph = (*m_graphs)[a_dit];
     HostBoxData<        Real, 1>& reghost = a_ebfacedata.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
-    Real fullCellArea = D_TERM(1.; *m_dx, *m_dx);
+    Real fullCellArea = D_TERM(1., *m_dx, *m_dx);
 
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
      { 
@@ -232,165 +239,13 @@ public:
           const EBIndex<BOUNDARY> ebf = vof.getCutFace();
           const IndMomSDMinOne&  momspt = ebfmo(ebf, 0);
           double ebalpha = momspt[0]/fullCellArea;
-          reghost(face.m_pt, 0) = ebalpha;
-          irrhost(face     , 0) = ebalpha;
+          reghost(vof.m_pt, 0) = ebalpha;
+          irrhost(vof     , 0) = ebalpha;
         }
       }
     }
   }
 
-  /// fill data holder with values of the EBFaceData.
-  template <CENTERING cent>
-  inline void 
-  fillFaceAlpha(EBHostData<cent, Real, 1> & a_ebfacedata,
-               const Box                & a_grbx ,
-               const DataIndex          & a_dit) const
-  {
-    MayDay::Error("template specialization apparently not being seen");
-  }
-
-  template < >
-  inline void 
-  fillFaceAlpha(EBHostData<XFACE, Real, 1> & a_alpha,
-                const Box                  & a_grbx ,
-                const DataIndex            & a_dit) const
-  {
-    Real fullCellArea = D_TERM(1.; *m_dx, *m_dx);
-    auto & irrdat  = (*m_xfacdata)[a_dit];
-    const EBGraph  & graph = (*m_graphs)[a_dit];
-    HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
-    HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
-    for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
-    { 
-      Point pt  = ProtoCh::getPoint(bit());
-
-      if(graph.isRegular(pt))
-      {
-        reghost(pt, 0) = 0.0;
-      }
-      else if(graph.isCovered(pt))
-      {
-        reghost(pt, 0) = 1.0;
-      }
-      else
-      { 
-        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-        for(int ivec = 0; ivec < vofs.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofs[ivec];
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            auto vec_faces = graph.getXFaces(vof, sit());
-            for(int iface  = 0; iface < vec_faces.size(); iface++)
-            {
-              const auto & face = vec_faces[iface];
-              const IndMomDMO&  momspt = irrdat(face, 0);
-              double facealpha = momspt[0]/fullCellArea;
-
-              reghost(face.m_pt, 0) = facealpha;
-              irrhost(vof      , 0) = facealpha;
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  template < >
-  inline void 
-  fillFaceAlpha(EBHostData<YFACE, Real, 1> & a_alpha,
-                const Box                  & a_grbx ,
-                const DataIndex            & a_dit) const
-  {
-    Real fullCellArea = D_TERM(1.; *m_dx, *m_dx);
-    auto & irrdat  = (*m_yfacdata)[a_dit];
-    const EBGraph  & graph = (*m_graphs)[a_dit];
-    HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
-    HostIrregData<YFACE, Real, 1>& irrhost = a_alpha.getIrrData();
-    for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
-    { 
-      Point pt  = ProtoCh::getPoint(bit());
-
-      if(graph.isRegular(pt))
-      {
-        reghost(pt, 0) = 0.0;
-      }
-      else if(graph.isCovered(pt))
-      {
-        reghost(pt, 0) = 1.0;
-      }
-      else
-      { 
-        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-        for(int ivec = 0; ivec < vofs.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofs[ivec];
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            auto vec_faces = graph.getYFaces(vof, sit());
-            for(int iface  = 0; iface < vec_faces.size(); iface++)
-            {
-              const auto & face = vec_faces[iface];
-              const IndMomDMO&  momspt = irrdat(face, 0);
-              double facealpha = momspt[0]/fullCellArea;
-
-              reghost(face.m_pt, 0) = facealpha;
-              irrhost(vof      , 0) = facealpha;
-            }
-          }
-        }
-      }
-    }
-  }
-
-#if DIM==3
-  template < >
-  inline void 
-  fillFaceAlpha(EBHostData<ZFACE, Real, 1> & a_alpha,
-                const Box                  & a_grbx ,
-                const DataIndex            & a_dit) const
-  {
-    Real fullCellArea = D_TERM(1.; *m_dx, *m_dx);
-    auto & irrdat  = (*m_zfacdata)[a_dit];
-    const EBGraph  & graph = (*m_graphs)[a_dit];
-    HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
-    HostIrregData<ZFACE, Real, 1>& irrhost = a_alpha.getIrrData();
-    for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
-    { 
-      Point pt  = ProtoCh::getPoint(bit());
-
-      if(graph.isRegular(pt))
-      {
-        reghost(pt, 0) = 0.0;
-      }
-      else if(graph.isCovered(pt))
-      {
-        reghost(pt, 0) = 1.0;
-      }
-      else
-      { 
-        vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
-        for(int ivec = 0; ivec < vofs.size(); ivec++)
-        {
-          const EBIndex<CELL>& vof = vofs[ivec];
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            auto vec_faces = graph.getZFaces(vof, sit());
-            for(int iface  = 0; iface < vec_faces.size(); iface++)
-            {
-              const auto & face = vec_faces[iface];
-              const IndMomDMO&  momspt = irrdat(face, 0);
-              double facealpha = momspt[0]/fullCellArea;
-
-              reghost(face.m_pt, 0) = facealpha;
-              irrhost(vof      , 0) = facealpha;
-            }
-          }
-        }
-      }
-    }
-  }
-#endif  
 protected:
   //for coarsening volume moment data
   template <CENTERING cent>
@@ -589,8 +444,188 @@ private:
 
 };
 
+/// fill data holder with values of the EBFaceData.
+
+template <CENTERING cent, int order>
+inline void 
+fillFaceAlpha(EBHostData<cent, Real, 1>         & a_ebfacedata,
+              const Box                         & a_grbx ,
+              const DataIndex                   & a_dit,
+              const LevelGeometryService<order> & a_geo)
+{
+  MayDay::Error("default not implemented");
+}
+
+///
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<XFACE, Real, 1>            & a_alpha,
+              const Box                             & a_grbx ,
+              const DataIndex                       & a_dit,
+              const LevelGeometryService<order>     & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getXFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
+
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getXFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
+
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
 
 
+
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<YFACE, Real, 1>        & a_alpha,
+              const Box                         & a_grbx ,
+              const DataIndex                   & a_dit,
+              const LevelGeometryService<order> & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getYFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
+
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getYFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
+
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
+
+#if DIM==3
+
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<ZFACE, Real, 1>        & a_alpha,
+              const Box                         & a_grbx ,
+              const DataIndex                   & a_dit,
+              const LevelGeometryService<order> & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getZFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
+
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getZFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
+
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
+#endif
 
 ///
 /**
@@ -810,18 +845,6 @@ public:
   }
 
 
-  /// fill a data holder in with eb face area fractions
-  template<CENTERING cent>
-  inline void
-  fillFaceAlpha(EBHostData<cent,Real, 1>& a_ebfdata,
-                const Box                & a_grid ,
-                const DataIndex          & a_dit,
-                const Box                & a_domain) const
-  { 
-
-    (*this)[a_domain]->fillFaceAlpha(a_ebfdata, a_grid, a_dit);
-  }
-  
   ///
   inline shared_ptr<ebfa_distrib_t >
   getEBFaceData(const Box& a_domain)
