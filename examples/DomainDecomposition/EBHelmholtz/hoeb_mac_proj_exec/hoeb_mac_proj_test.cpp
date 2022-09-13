@@ -30,6 +30,7 @@ using std::shared_ptr;
 using Proto::Var;
 using Proto::SimpleEllipsoidIF;
 
+inline 
 EBIBC getIBCs()
 {
   string veloIC, scalIC;
@@ -97,64 +98,6 @@ void initializeData(EBLevelFluxData<1>          &  a_velo,
       
 }
 
-///
-shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
-                                        Real  & a_geomRad,
-                                        int   & a_whichGeom)
-
-{
-  using Proto::BaseIF;
-  shared_ptr<BaseIF>  retval;
-  ParmParse pp;
-  
-  a_geomCen = 0;
-  a_geomRad = 1;
-  pp.get("which_geom", a_whichGeom);
-  if(a_whichGeom == -1)
-  {
-    using Proto::AllRegularIF;
-    Chombo4::pout() << "all regular geometry" << endl;
-    retval = shared_ptr<BaseIF>(new AllRegularIF());
-  }
-  else if(a_whichGeom == 0)
-  {
-    using Proto::SimpleEllipsoidIF;
-    Chombo4::pout() << "sphere" << endl;
-
-    pp.get("geom_cen", a_geomCen);
-    pp.get("geom_rad", a_geomRad);
-    Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
-    Chombo4::pout() << "geom_rad = " << a_geomRad       << endl;
-
-    RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
-    RealVect  X0 = RealVect::Unit();
-    X0 *= a_geomCen;
-
-    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, true));//true is for inside regular
-  }
-  else if(a_whichGeom ==  1)
-  {
-    using Proto::PlaneIF;
-    Chombo4::pout() << "plane" << endl;
-    RealVect normal, startPt;
-    vector<double> v_norm, v_start;
-    pp.getarr("geom_normal", v_norm, 0, DIM);
-    pp.getarr("geom_start_pt", v_start, 0, DIM);
-    for(int idir = 0; idir < DIM; idir++)
-    {
-      normal[ idir] = v_norm[ idir];
-      startPt[idir] = v_start[idir];
-      Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-      Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
-    }
-    retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
-  }
-  else
-  {
-    Chombo4::MayDay::Error("bogus geometry");
-  }
-  return retval;
-}
 //=================================================
 void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
                     const Chombo4::Box        & a_finestDomain,
@@ -177,11 +120,11 @@ void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
   Chombo4::pout() << "blob_cen = " << a_blobCen       << endl;
   Chombo4::pout() << "blob_rad = " << a_blobRad       << endl;
 
-  int geomGhost = 4;
+  int geomGhost = 6;
   RealVect origin = RealVect::Zero();
 
   Chombo4::pout() << "creating implicit function" << endl;
-  shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
+  shared_ptr<BaseIF>  impfunc = hoeb::getImplicitFunction();
 
   Chombo4::pout() << "creating geometry service" << endl;
   Chombo4::Box domain = a_finestDomain;
@@ -275,10 +218,9 @@ runProjection(int a_argc, char* a_argv[])
 
 int main(int a_argc, char* a_argv[])
 {
-#ifdef CH_MPI
-  MPI_Init(&a_argc, &a_argv);
-  Chombo4::pout() << "MPI INIT called" << std::endl;
-#endif
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
   {
@@ -294,10 +236,10 @@ int main(int a_argc, char* a_argv[])
 
   Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
-#ifdef CH_MPI
-  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
-  MPI_Finalize();
-#endif
+
+  Chombo4::pout() << "about to call petsc Finalize" << std::endl;
+  PetscFinalize();
+
   return 0;
 }
 
