@@ -256,8 +256,13 @@ namespace hoeb
     ParmParse pp;
     pp.query("default_neighbor_radius", radius);
     pp.query("maximum_neighbor_radius", maxrad);
-    Chombo4::pout() << "getCellNeighbors: default neighbor radius = " << radius << endl;
-    Chombo4::pout() << "getCellNeighbors: maximum neighbor radius = " << maxrad << endl;
+//    static bool printedAlready = false;
+//    if(!printedAlready)
+//    {
+//      Chombo4::pout() << "getCellNeighbors: default neighbor radius = " << radius << endl;
+//      Chombo4::pout() << "getCellNeighbors: maximum neighbor radius = " << maxrad << endl;
+//      printedAlready=true;
+//    }
     PR_assert(radius <= maxrad);
     bool hadEnough = false;
     Neighborhood <CELL> retval;

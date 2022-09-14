@@ -10,7 +10,7 @@ domain_bc_lo_2 = "slip_wall"
 domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 #domain size
-nx=       64
+nx=       32
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition

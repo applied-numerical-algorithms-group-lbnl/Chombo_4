@@ -444,17 +444,17 @@ private:
 
 };
 
-/// fill data holder with values of the EBFaceData.
-
-template <CENTERING cent, int order>
-inline void 
-fillFaceAlpha(EBHostData<cent, Real, 1>         & a_ebfacedata,
-              const Box                         & a_grbx ,
-              const DataIndex                   & a_dit,
-              const LevelGeometryService<order> & a_geo)
-{
-  MayDay::Error("default not implemented");
-}
+///// fill data holder with values of the EBFaceData.
+//
+//template <CENTERING cent, int order>
+//inline void 
+//fillFaceAlpha(EBHostData<cent, Real, 1>         & a_ebfacedata,
+//              const Box                         & a_grbx ,
+//              const DataIndex                   & a_dit,
+//              const LevelGeometryService<order> & a_geo)
+//{
+//  MayDay::Error("default not implemented");
+//}
 
 ///
 template <int order >
@@ -532,7 +532,7 @@ fillFaceAlpha(EBHostData<YFACE, Real, 1>        & a_alpha,
   const auto & irrdat = (*dataptr)[a_dit];
   const auto & graph  =  (*graphs)[a_dit];
   HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
-  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  HostIrregData<YFACE, Real, 1>& irrhost = a_alpha.getIrrData();
   for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
   { 
     Point pt  = ProtoCh::getPoint(bit());

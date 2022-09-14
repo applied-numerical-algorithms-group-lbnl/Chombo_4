@@ -286,7 +286,7 @@ namespace hoeb
       //need area fractions to go between integrals and average values
       EBHostData<cent, Real  , 1> faceAlpha(gridbx, graph);
       auto geolev  = (*m_geoserv)[m_domain];
-      Chombo4::fillFaceAlpha<cent, order>(faceAlpha, grid, a_dit, *geolev);
+      Chombo4::fillFaceAlpha<order>(faceAlpha, grid, a_dit, *geolev);
       
       for(int iface = 0; iface < a_faces.size(); iface++)
       {

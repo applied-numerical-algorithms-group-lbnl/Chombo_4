@@ -175,7 +175,7 @@ runProjection(int a_argc, char* a_argv[])
   Chombo4::Box domainb = domain.domainBox();
   defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
 
-  IntVect dataGhostIV =   4*IntVect::Unit;
+  IntVect dataGhostIV =   6*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
   Chombo4::pout() << "making dictionary" << endl;
@@ -204,7 +204,7 @@ runProjection(int a_argc, char* a_argv[])
   bool printStuff = true;
   pp.get("print_stuff", printStuff);
   hoeb::Hoeb_MAC_Projector<MAX_ORDER> proj(brit, geoserv, grids, domain.domainBox(), dx, bc, dataGhostIV, printStuff);
-  proj.project(velo);
+  proj.project(velo, printStuff);
 
   auto divergence = proj.kappaDivergence(velo, printStuff);
   
