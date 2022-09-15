@@ -84,6 +84,7 @@ namespace hoeb
       {
         Real error = m_kappaDivU->maxNorm(0);
         Chombo4::pout() << "Hoeb_MACProjector:: project: divergence befo projection = " << error;
+        m_kappaDivU->writeToFileHDF5(string("kappaDivU_input.hdf5"), 0.0);
       }
 
       m_solver->solve(*m_phi, *m_kappaDivU);
@@ -96,6 +97,8 @@ namespace hoeb
         computeKappaDiv(a_advectionVel, a_printStuff);
         Real error = m_kappaDivU->maxNorm(0);
         Chombo4::pout() << "Hoeb_MACProjector:: project: divergence after projection = " << error;
+        m_phi->writeToFileHDF5(string("phi.hdf5"), 0.0);
+        m_kappaDivU->writeToFileHDF5(string("kappaDivU_output.hdf5"), 0.0);
       }
     }
 
