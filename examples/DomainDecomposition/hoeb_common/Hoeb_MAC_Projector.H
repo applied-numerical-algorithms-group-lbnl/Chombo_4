@@ -275,11 +275,18 @@ namespace hoeb
                        const Chombo4::DataIndex            & a_dit,
                        int a_facedir)
     {
-
-      const auto& graph = (*m_graphs)[a_dit];
       auto grid   = m_grids[a_dit];
+      Bx dombx = ProtoCh::getProtoBox(m_domain);
       auto gridbx = ProtoCh::getProtoBox(m_grids[a_dit]);
-      gridbx = gridbx.grow(1);
+      Bx facegrdbx = gridbx;
+      Bx facedombx = dombx;
+      facedombx  = facedombx.growHi(a_facedir, 1);
+      facegrdbx  = facegrdbx.growHi(a_facedir, 1);
+
+      facegrdbx &= facedombx ;
+      
+      const auto& graph = (*m_graphs)[a_dit];
+      gridbx = gridbx.grow(a_facedir, 1);
       gridbx &= ProtoCh::getProtoBox(m_domain);
 
       a_stencils.resize(a_faces.size());
@@ -287,7 +294,7 @@ namespace hoeb
       string ebbcName = StencilNames::Neumann;
       m_ebibc.projectionStencilStrings(dobcName);
       //need area fractions to go between integrals and average values
-      EBHostData<cent, Real  , 1> faceAlpha(gridbx, graph);
+      EBHostData<cent, Real  , 1> faceAlpha(facegrdbx, graph);
       auto geolev  = (*m_geoserv)[m_domain];
       Chombo4::fillFaceAlpha<order>(faceAlpha, grid, a_dit, *geolev);
       

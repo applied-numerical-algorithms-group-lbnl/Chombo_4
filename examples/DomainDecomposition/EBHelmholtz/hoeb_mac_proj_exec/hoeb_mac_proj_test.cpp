@@ -18,6 +18,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelFluxData.H"
 #include "Hoeb_MAC_Projector.H"
+#include "EBMACProjector.H"
 #include "SetupFunctions.H"
 
 #include <iomanip>
@@ -33,12 +34,13 @@ using Proto::SimpleEllipsoidIF;
 inline 
 EBIBC getIBCs()
 {
-  string veloIC, scalIC;
+  string veloIC;
+  string scalIC("blob");
   string loDomBC[DIM];
   string hiDomBC[DIM];
   ParmParse pp;
-  pp.get("initial_velo", veloIC);
-  pp.get("initial_scal", scalIC);
+  pp.get("interior_velo", veloIC);
+
   using std::to_string;
   for(unsigned int idir = 0; idir < DIM; idir++)
   {
@@ -54,71 +56,44 @@ EBIBC getIBCs()
 
 
 //=================================================
-void initializeData(EBLevelFluxData<1>          &  a_velo,
-                    const Chombo4::DisjointBoxLayout     &  a_grids,
-                    const Real                  &  a_dx,
-                    const Real                  &  a_geomCen,
-                    const Real                  &  a_geomRad,
-                    const Real                  &  a_blobCen,
-                    const Real                  &  a_blobRad,
-                    const Real                  &  a_maxVelMag,
-                    const Real                  &  a_maxVelRad)
+void initializeVelocity(EBLevelFluxData<1>               &  a_velo,
+                        const Chombo4::DisjointBoxLayout &  a_grids,
+                        const Real                       &  a_dx)
 {
-  Chombo4::DataIterator dit = a_grids.dataIterator();
-  int ideb = 0;
-
-  for(int ibox = 0; ibox < dit.size(); ibox++)
+  string interior_velo;
+  ParmParse pp;
+  pp.get("interior_velo", interior_velo);
+  
+  if(interior_velo == string("zero"))
   {
-    auto& velofab = a_velo[dit[ibox]];
-    unsigned long long int numflopsvelo = (DIM+5)*DIM +4;
-
+    a_velo.setVal(0.);
+    Real inflow_value;
+    pp.get("velocity_inflow_value", inflow_value);
+    Chombo4::DataIterator dit = a_grids.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      auto& xvel = *velofab.m_xflux;
-      unsigned int facedir = 0;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  xvel.box(), xvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
+      int idir = 0; Side::LoHiSide sit = Side::Lo;  //only place I am setting a velocity
+      Bx valbx = ProtoCh::getProtoBox(a_grids[dit[ibox]]);
+      //I have to think of better names for functions.
+      EBMACProjector::setFaceStuff(idir, sit, a_velo[dit[ibox]], valbx, inflow_value);
     }
-    {
-      auto& yvel = *velofab.m_yflux;
-      unsigned int facedir = 1;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  yvel.box(), yvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
-    }
-
-#if DIM==3
-    {
-      auto& zvel = *velofab.m_zflux;
-      unsigned int facedir = 2;
-      ebforallInPlace_i(numflopsvelo, "InitializeVFace", InitializeVFace,  zvel.box(), zvel, 
-                        a_geomCen, a_geomRad, a_blobCen, a_blobRad, a_maxVelMag, a_maxVelRad, a_dx, facedir);
-    }
-#endif
-    ideb++;
+    
+    
+  }
+  else
+  {
+    Chombo4::MayDay::Error("initializeVelocity:unknown interior velocity");
   }
       
 }
 
-//=================================================
-void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
-                    const Chombo4::Box        & a_finestDomain,
-                    Real             & a_dx,
-                    Real             & a_geomCen,
-                    Real             & a_geomRad,
-                    Real             & a_blobCen,
-                    Real             & a_blobRad,
-                    int              & a_whichGeom,
-                    int              & a_nx,
-                    shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
+
+void defineGeometry(shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv,
+                    const std::vector<Chombo4::DisjointBoxLayout>& a_grids,
+                    const Chombo4::Box     & a_finestDomain,
+                    const Real             & a_dx)
 {
   Chombo4::pout() << "defining geometry" << endl;
-
-  ParmParse pp;
-    
-  pp.get("blob_cen", a_blobCen);
-  pp.get("blob_rad", a_blobRad);
-
-  Chombo4::pout() << "blob_cen = " << a_blobCen       << endl;
-  Chombo4::pout() << "blob_rad = " << a_blobRad       << endl;
 
   int geomGhost = 6;
   RealVect origin = RealVect::Zero();
@@ -128,29 +103,22 @@ void defineGeometry(std::vector<Chombo4::DisjointBoxLayout>& a_grids,
 
   Chombo4::pout() << "creating geometry service" << endl;
   Chombo4::Box domain = a_finestDomain;
-  a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
+  a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >
+    (new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
 int
 runProjection(int a_argc, char* a_argv[])
 {
   int nx      = 32;
-  Real max_vel_mag = 1.0;
-  Real max_vel_rad = 0.25;
-  int numSmooth;
   ParmParse pp;
   int maxGrid = 32;
   pp.get("maxGrid", maxGrid); 
 
-  pp.get("numSmooth"  , numSmooth);
-  pp.get("max_vel_mag"  , max_vel_mag);
-  pp.get("max_vel_rad"  , max_vel_rad);
   pp.get("nx"           , nx);
 
   Chombo4::pout() << "nx       = " << nx     << endl;
   Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
-  Chombo4::pout() << "max_vel_mag     = " << max_vel_mag     << endl;
-  Chombo4::pout() << "max_vel_rad     = " << max_vel_rad     << endl;
 
   Real dx = 1.0/nx;
   std::vector<Chombo4::DisjointBoxLayout> vecgrids;
@@ -159,21 +127,14 @@ runProjection(int a_argc, char* a_argv[])
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (nx - 1)*IntVect::Unit;
 
-// EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
   GeometryService<MAX_ORDER>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
-  Real geomCen;
-  Real geomRad;
-  Real blobCen;
-  Real blobRad;
-  int whichGeom;
-
   Chombo4::Box domainb = domain.domainBox();
-  defineGeometry(vecgrids, domainb, dx, geomCen, geomRad, blobCen, blobRad, whichGeom, nx,  geoserv);
+  defineGeometry(geoserv, vecgrids, domainb, dx);
 
   IntVect dataGhostIV =   6*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
@@ -197,8 +158,7 @@ runProjection(int a_argc, char* a_argv[])
   Chombo4::DisjointBoxLayout& grids = vecgrids[0];
   shared_ptr< EBLevelFluxData<1>  > velo( new EBLevelFluxData<1>(grids, dataGhostIV, graphs));
 
-  initializeData(*velo, grids, dx, geomCen, geomRad, blobCen, blobRad, max_vel_mag, max_vel_rad);
-
+  initializeVelocity(*velo, grids, dx);
 
   EBIBC bc = getIBCs();
   bool printStuff = true;

@@ -1,6 +1,7 @@
+#turns the verbosity way up
 print_stuff = true
-initial_velo = "zero"
-initial_scal = "blob_scal_0"
+interior_velo = "zero"
+
 velocity_inflow_value = 1.
 #also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "inflow"
@@ -11,19 +12,10 @@ domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 #domain size
 nx=       32
-#number of cuda streams (if used)
-nstream=  8
+
 #max grid size in domain decomposition
 maxGrid=  32
-numSmooth  = 8
-# center of the sphere
-geom_cen = 0.5
-# center of the blob
-blob_cen = 0.3
-# radius of the sphere
-geom_rad = 0.455
-# radius of the blob
-blob_rad = 0.2
+
 
 #mag of biggest velo
 max_vel_mag = 1.0
@@ -36,10 +28,11 @@ max_vel_rad = 0.25
 
 #
 ##sphere
-which_geom = "sphere" 
-radius = 0.455
-center = 0.5 0.5 0.5
-inside = true
+#which_geom = "sphere" 
+#radius = 0.455
+#center = 0.5 0.5 0.5
+#inside = true
 
+which_geom = "all_regular"
 default_neighbor_radius = 3
 maximum_neighbor_radius = 4
