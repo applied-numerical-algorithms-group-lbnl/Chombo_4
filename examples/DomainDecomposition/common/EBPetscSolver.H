@@ -17,6 +17,7 @@
 #include "petscvec.h"
 #include "petscksp.h"
 #include "petscviewer.h"
+#include "petscmat.h"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
 
@@ -91,6 +92,21 @@ public:
 
   }
 
+  ///apply the operator to get Y = A X
+  virtual
+  PetscErrorCode
+  applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
+          const EBLevelBoxData<CELL, 1> & a_phi,
+          bool a_printStuff = false)
+  {
+    CH_TIME("BaseEBPetscSolver::applyOp");
+    chomboToPetsc(m_xx, a_phi);
+    PetscErrorCode err = MatMult(m_mat, m_xx, m_bb);
+    petscToChombo(a_lph, m_bb);
+    return err;
+  }
+  
+  ///solve for X in AX = rhs
   virtual
   PetscErrorCode
   solve(EBLevelBoxData<CELL, 1>       & a_phi,
