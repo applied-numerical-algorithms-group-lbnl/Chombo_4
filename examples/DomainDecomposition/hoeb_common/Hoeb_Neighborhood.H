@@ -247,22 +247,18 @@ namespace hoeb
                    const EBGraph         & a_graph,
                    const string            a_dombcname[2*DIM],
                    const string          & a_ebbcname,
-                   const int             & a_facedir)
+                   const int             & a_facedir,
+                   int a_sten_radius,
+                   int a_max_radius,
+                   bool a_useBoundaries,
+                   bool a_printStuff)
   {
     //need at least as many neighbors as we have coefficients.
     static const int minsize = IndexedMoments<DIM, HOEB_MAX_ORDER>::size();
-    int radius = 3;
-    int maxrad = 4;
-    ParmParse pp;
-    pp.query("default_neighbor_radius", radius);
-    pp.query("maximum_neighbor_radius", maxrad);
-//    static bool printedAlready = false;
-//    if(!printedAlready)
-//    {
-//      Chombo4::pout() << "getCellNeighbors: default neighbor radius = " << radius << endl;
-//      Chombo4::pout() << "getCellNeighbors: maximum neighbor radius = " << maxrad << endl;
-//      printedAlready=true;
-//    }
+    int radius = a_sten_radius;
+    int maxrad = a_max_radius;
+
+
     PR_assert(radius <= maxrad);
     bool hadEnough = false;
     Neighborhood <CELL> retval;
@@ -293,63 +289,67 @@ namespace hoeb
         neighvofs.insert(neighvofs.end(), vofs.begin(), vofs.end());
           
         //now we do the EBBC
-        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        if(a_useBoundaries)
         {
-          const auto& vof = vofs[ivof];
-          if(a_graph.isIrregular(vof.m_pt))
+          for(int ivof = 0; ivof < vofs.size(); ivof++)
           {
-            EBIndex<BOUNDARY> cutface = vof.getCutFace();
-            if(a_ebbcname == string("no_bcs"))
+            const auto& vof = vofs[ivof];
+            if(a_graph.isIrregular(vof.m_pt))
             {
-              //do not add in this case
+              EBIndex<BOUNDARY> cutface = vof.getCutFace();
+              if(a_ebbcname == string("no_bcs"))
+              {
+                //do not add in this case
+              }
+              else if(a_ebbcname == string("Dirichlet"))
+              {
+                retval.m_cutfacesDiri.push_back(cutface);
+              }
+              else if(a_ebbcname == string("Neumann"))
+              {
+                retval.m_cutfacesNeum.push_back(cutface);
+              }
+              else
+              {
+                PROTO_ASSERT(false, "bogus ebbcname in get neighbors");
+              }
             }
-            else if(a_ebbcname == string("Dirichlet"))
+            //now for the domain boundary faces
+            for(SideIterator sit; sit.ok(); ++sit)
             {
-              retval.m_cutfacesDiri.push_back(cutface);
-            }
-            else if(a_ebbcname == string("Neumann"))
-            {
-              retval.m_cutfacesNeum.push_back(cutface);
-            }
-            else
-            {
-              PROTO_ASSERT(false, "bogus ebbcname in get neighbors");
-            }
-          }
-
-          //now for the domain boundary faces
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            auto xfaces = a_graph.getXFaces(vof, sit());
-            auto yfaces = a_graph.getYFaces(vof, sit());
+              auto xfaces = a_graph.getXFaces(vof, sit());
+              auto yfaces = a_graph.getYFaces(vof, sit());
             
-            auto xindex = ebp_index(0, sit());
-            auto yindex = ebp_index(1, sit());
-            addNeighborhoodBoundaryFaces<XFACE>(xfacesetNeum, xfacesetDiri,  xfaces,
-                                                a_graph, a_dombcname[xindex]);
-            addNeighborhoodBoundaryFaces<YFACE>(yfacesetNeum, yfacesetDiri,  yfaces,
-                                                a_graph, a_dombcname[yindex]);
+              auto xindex = ebp_index(0, sit());
+              auto yindex = ebp_index(1, sit());
+              addNeighborhoodBoundaryFaces<XFACE>(xfacesetNeum, xfacesetDiri,  xfaces,
+                                                  a_graph, a_dombcname[xindex]);
+              addNeighborhoodBoundaryFaces<YFACE>(yfacesetNeum, yfacesetDiri,  yfaces,
+                                                  a_graph, a_dombcname[yindex]);
 #if DIM==3                                                                    
-            auto zfaces = a_graph.getZFaces(vof, sit());
-            auto zindex = ebp_index(2, sit());
-            addNeighborhoodBoundaryFaces<ZFACE>(zfacesetNeum, zfacesetDiri,  zfaces,
-                                                a_graph, a_dombcname[zindex]);
+              auto zfaces = a_graph.getZFaces(vof, sit());
+              auto zindex = ebp_index(2, sit());
+              addNeighborhoodBoundaryFaces<ZFACE>(zfacesetNeum, zfacesetDiri,  zfaces,
+                                                  a_graph, a_dombcname[zindex]);
 #endif              
+            }
           }
         } //end loop over vofs in the cell
           
       } //end loop over the box
 
-      //insert the sets into the vectors
-      retval.m_xfacesDiri.assign(xfacesetDiri.begin(), xfacesetDiri.end());
-      retval.m_xfacesNeum.assign(xfacesetNeum.begin(), xfacesetNeum.end());
-      retval.m_yfacesDiri.assign(yfacesetDiri.begin(), yfacesetDiri.end());
-      retval.m_yfacesNeum.assign(yfacesetNeum.begin(), yfacesetNeum.end());
+      if(a_useBoundaries)
+      {
+        //insert the sets into the vectors
+        retval.m_xfacesDiri.assign(xfacesetDiri.begin(), xfacesetDiri.end());
+        retval.m_xfacesNeum.assign(xfacesetNeum.begin(), xfacesetNeum.end());
+        retval.m_yfacesDiri.assign(yfacesetDiri.begin(), yfacesetDiri.end());
+        retval.m_yfacesNeum.assign(yfacesetNeum.begin(), yfacesetNeum.end());
 #if DIM==3
-      retval.m_zfacesDiri.assign(zfacesetDiri.begin(), zfacesetDiri.end());
-      retval.m_zfacesNeum.assign(zfacesetNeum.begin(), zfacesetNeum.end());
+        retval.m_zfacesDiri.assign(zfacesetDiri.begin(), zfacesetDiri.end());
+        retval.m_zfacesNeum.assign(zfacesetNeum.begin(), zfacesetNeum.end());
 #endif        
-      
+      }
       //if we have too few neighbors, expand the radius
       hadEnough =((radius >= maxrad) || (retval.size() >= minsize));
       if(!hadEnough)

@@ -601,23 +601,34 @@ getKappaLphiHomogeneous(EBLevelBoxData<CELL, 1>                                 
     
     if(a_stencilname == string("Devendran"))
     {
+      bool printStuff = false;
+      Real alpha = 0;
+      Real beta  = 1;
+      int stenRad = 3;
+      int maxRad  = 4;
+      string dombcarray[2*DIM];
+      for(int ivec = 0; ivec < 2*DIM; ivec++)
+      {
+        dombcarray[ivec] = string("Neumann");
+      }
       hoeb::
         getHomogeneousDharshiStencil(stencilName,        
-                                     ebbcName,           
                                      dstVoFs,            
                                      stencil,            
                                      srcValid,           
                                      dstValid,           
                                      srcDomain,          
                                      dstDomain,          
-                                     srcGhost,           
-                                     dstGhost,
                                      needDiagonalWeights,
                                      a_geoserv,
                                      a_grids,
                                      a_domain,
                                      a_dx,
-                                     ibox);
+                                     ibox,
+                                     dombcarray,
+                                     ebbcName,
+                                     alpha, beta,
+                                     stenRad, maxRad, printStuff);
     }
     else if(a_stencilname == string("Schwartz"))
     {

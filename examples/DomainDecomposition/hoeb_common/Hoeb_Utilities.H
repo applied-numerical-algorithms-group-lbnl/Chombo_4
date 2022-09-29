@@ -693,7 +693,9 @@ namespace hoeb
                                         const Chombo4::Box                                  & a_srcDomain,
                                         const Chombo4::DataIndex                            & a_dit,
                                         Real a_dx, int a_facedir,
-                                        Side::LoHiSide a_vofside, bool a_printStuff)
+                                        Side::LoHiSide a_vofside,
+                                        int a_stenRadius, int a_maxStenRadius,
+                                        bool a_printStuff)
   {
     return
       getDevendranIntFluxDACompositeStencil(a_face,
@@ -702,7 +704,9 @@ namespace hoeb
                                             a_geoserv,
                                             a_srcDomain,
                                             a_dit,
-                                            a_dx, a_facedir,a_vofside,a_printStuff);
+                                            a_dx, a_facedir,a_vofside,
+                                            a_stenRadius, a_maxStenRadius,
+                                            a_printStuff);
   }
 
   ///
@@ -721,6 +725,7 @@ namespace hoeb
                                         const Chombo4::DataIndex& a_dit,
                                         Real a_dx, int a_facedir,
                                         Side::LoHiSide a_vofside,
+                                        int a_stenRadius, int a_maxStenRadius,
                                         bool a_printStuff)
   {
     //facedir == -1 means the EB
@@ -745,9 +750,15 @@ namespace hoeb
     }
     else
     {
+      bool useBoundaries = true;
+      //begin debug 
+      useBoundaries = false;
+      //end debug
       //get the neighborhood near the target face
       Neighborhood<CELL>  block =
-        getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir);
+        getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir,
+                               a_stenRadius, a_maxStenRadius, useBoundaries,
+                               a_printStuff);
       if(a_printStuff)
       {
         Chombo4::pout() << "in getDevendranIntFluxDACompositeStencil " << endl;
@@ -854,8 +865,9 @@ namespace hoeb
                              const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                              const Chombo4::Box                                  & a_srcDomain,
                              const Chombo4::DataIndex                            & a_dit,
-                             Real a_dx, int a_facedir,
-                             Side::LoHiSide a_vofside, bool a_printStuff)
+                             Real a_dx, int a_facedir, Side::LoHiSide a_vofside,
+                             int a_stenRadius, int a_maxStenRadius,
+                             bool a_printStuff)
   {
     CompositeStencil composite
       = getDevendranIntFluxDACompositeStencil(a_face,     
@@ -863,7 +875,9 @@ namespace hoeb
                                               a_ebbcname, 
                                               a_geoserv,  
                                               a_srcDomain,
-                                              a_dit, a_dx, a_facedir, a_vofside, a_printStuff);
+                                              a_dit, a_dx, a_facedir, a_vofside,
+                                              a_stenRadius, a_maxStenRadius,
+                                              a_printStuff);
     return composite.m_cellSten;
   }
 
@@ -876,7 +890,10 @@ namespace hoeb
                                const std::string                                   & a_ebbcname,
                                const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
                                Proto::Box                                          & a_srcDomain,
-                               unsigned int a_ibox, Real a_alpha, Real a_beta, Real a_dx) 
+                               unsigned int a_ibox, Real a_alpha, Real a_beta, Real a_dx,
+                               int a_stenRadius, int a_maxStenRadius,
+                               bool a_printStuff)
+  
   {
     LocalStencil<CELL, Real> vofsten;
     //use the age-old trick of building up the stencil by construction
@@ -884,6 +901,7 @@ namespace hoeb
     auto dit = dbl.dataIterator();
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
+    
     for(SideIterator sit; sit.ok(); ++sit)
     {
       int isign = sign(sit());
@@ -896,7 +914,8 @@ namespace hoeb
             getDharshiIntFluxDAStencil<XFACE>(face,
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
-                                              a_dx, 0, sit(), false);
+                                              a_dx, 0, sit(), 
+                                              a_stenRadius, a_maxStenRadius, false);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -910,7 +929,8 @@ namespace hoeb
             getDharshiIntFluxDAStencil<YFACE>(face,
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
-                                              a_dx, 1, sit(), false);
+                                              a_dx, 1, sit(), 
+                                              a_stenRadius, a_maxStenRadius, false);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -925,7 +945,9 @@ namespace hoeb
             getDharshiIntFluxDAStencil<ZFACE>(face,
                                               a_vof, a_dombcname, a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
-                                              a_dx, 2, sit(), false);
+                                              a_dx, 2, sit(), 
+                                              a_stenRadius, a_maxStenRadius, false);
+                                              
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -939,7 +961,9 @@ namespace hoeb
         getDharshiIntFluxDAStencil<BOUNDARY>(face,
                                              a_vof,a_dombcname,a_ebbcname,
                                              a_geoserv, a_srcDomain, dit[a_ibox],
-                                             a_dx, -1, Side::Invalid, false);
+                                             a_dx, -1, Side::Invalid, 
+                                             a_stenRadius, a_maxStenRadius, false);
+                                             
       vofsten += fluxsten;
     }
     //need to divide by dx^d to get kappa*lapl(phi)
@@ -970,7 +994,9 @@ namespace hoeb
                                unsigned int                                          a_ibox,
                                const string                                          a_dombcarray[2*DIM],
                                const string                                        & a_ebbcName,
-                               Real a_alpha, Real a_beta)
+                               Real a_alpha, Real a_beta,
+                               int a_stenRadius, int a_maxStenRadius,
+                               bool a_printStuff)
 
   {
     /* geometric multigrid is not a great idea here*/
@@ -1006,7 +1032,8 @@ namespace hoeb
           getHomogeneousDharshiStencil(vofs[ivof],
                                        a_dombcarray, a_ebbcName,
                                        a_geoserv, a_srcDomain, a_ibox,
-                                       alpha, beta, a_dx);
+                                       alpha, beta, a_dx,
+                                       a_stenRadius, a_maxStenRadius, a_printStuff);
         a_dstVoFs.push_back(vofs[ivof]);
         a_stencil.push_back(vofsten);
       }

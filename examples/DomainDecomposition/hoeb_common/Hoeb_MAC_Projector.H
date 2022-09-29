@@ -149,6 +149,8 @@ namespace hoeb
     string m_EBBCNamePoisson;
     string m_stenNameGrad;
     string m_EBBCNameGrad;
+    int m_stencilRadius;
+    int m_maxStenRadius;
     private:
     
     ///this stuff is too context-dependent to allow into the wild.
@@ -164,10 +166,14 @@ namespace hoeb
       Real alpha = 0; Real beta = 1; //poisson
       bool printStuff  = false;
       Point ptghost = ProtoCh::getPoint(m_nghost);
+      m_maxStenRadius = 4;
+      m_stencilRadius = 3;
       m_solver = shared_ptr< Hoeb_PetscSolver<4> >
         (new Hoeb_PetscSolver<4>(m_geoserv, cellDict,    m_graphs, m_grids, m_domain,
                                  m_domBCNamePoisson, m_EBBCNamePoisson,
-                                 m_dx, alpha, beta,  ptghost, printStuff));
+                                 m_dx, alpha, beta,  ptghost,
+                                 m_stencilRadius, m_maxStenRadius,
+                                 printStuff));
 
       registerStencils();
     }
@@ -314,7 +320,8 @@ namespace hoeb
         //boundary conditions, this bit is left as exercise to the reader.
         bool printStuff = false;
         CompositeStencil intFluxDA_composite_sten =
-          getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside, printStuff);
+          getDevendranIntFluxDACompositeStencil(face, dobcName, ebbcName, m_geoserv, m_domain, a_dit, m_dx, a_facedir, vofside,
+                                                m_stencilRadius, m_maxStenRadius, printStuff);
 
         //since the above sten gives int(grad phi) dA, we need to divide out the area to get <grad phi>
         //if there is no real area, set the stencil to zero.

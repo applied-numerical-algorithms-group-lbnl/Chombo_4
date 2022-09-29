@@ -53,6 +53,7 @@ namespace hoeb
                      string a_domainBCName[2*DIM],
                      string a_ebbcName,
                      Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
+                     int a_stenRadius, int a_maxStenRadius,
                      bool a_printStuff = false)
       :BaseEBPetscSolver<order>(a_geoserv,           
                                 a_ebdictionary,      
@@ -70,6 +71,8 @@ namespace hoeb
         this->m_domainBCName[iface] = a_domainBCName[iface];
       }
       this->m_ebbcName = a_ebbcName;
+      m_stenRadius    = a_stenRadius;
+      m_maxStenRadius = a_maxStenRadius;
       formMatrix();
     }
 
@@ -133,7 +136,8 @@ namespace hoeb
                                              this->m_geoserv,      this->m_grids,
                                              this->m_domain,       this->m_dx,   ibox,
                                              this->m_domainBCName, this->m_ebbcName,
-                                             this->m_alpha, this->m_beta);
+                                             this->m_alpha, this->m_beta,
+                                             m_stenRadius, m_maxStenRadius, a_printStuff);
                                              
           //now create the matrix
           for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
@@ -163,6 +167,9 @@ namespace hoeb
       }
       return 0;
     }
+
+  private:
+    int m_stenRadius, m_maxStenRadius;
   }; //end of class
 } //namespace hoeb
 #endif
