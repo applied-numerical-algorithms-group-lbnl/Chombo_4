@@ -130,83 +130,6 @@ namespace hoeb
                                                     a_dit, vof, a_divideByArea);
     return gradval;
   }
-/***/
-//  template <CENTERING cent>
-//  Real
-//  getDevendranFluxFace(const EBHostData<CELL, Real, 1>                     & a_phi,
-//                       const EBGraph                                       & a_graph,
-//                       const EBIndex<cent>                                 & a_face,
-//                       const EBIndex<CELL>                                 & a_startingVoF,
-//                       const std::string                                     a_dombcname[2*DIM],
-//                       const std::string                                   & a_ebbcname,
-//                       const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
-//                       const Chombo4::Box                                  & a_domain,
-//                       Real a_dx, int a_facedir,
-//                       Side::LoHiSide a_vofside, const Chombo4::DataIndex& a_dit, bool a_divideByArea,                       bool a_printStuff)
-//  {
-//    Real retval = 0;
-//    shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> > exactSol =  hoeb::getBaseExactSoltuion();
-//    unsigned int bindex = ebp_index(a_facedir, a_vofside);
-//    bool isNeumannBoundaryFace = (a_face.m_isBoundary && (a_dombcname[bindex] == string("Neumann")));
-//    if(isNeumannBoundaryFace)
-//    {
-//      retval =  getNeumannBoundaryFlux<cent>(exactSol,
-//                                             a_phi,
-//                                             a_graph,
-//                                             a_face,
-//                                             a_startingVoF,
-//                                             a_dombcname,
-//                                             a_ebbcname,
-//                                             a_geoserv,
-//                                             a_domain,
-//                                             a_dx, a_facedir,
-//                                             a_vofside, a_dit, a_divideByArea);
-//    }
-//    else
-//    {
-//      hoeb::CompositeStencil composite =
-//        hoeb::getDevendranIntFluxDACompositeStencil(a_face,
-//                                                    a_startingVoF,
-//                                                    a_dombcname,
-//                                                    a_ebbcname,
-//                                                    a_geoserv,
-//                                                    a_domain,
-//                                                    a_dit,                              
-//                                                    a_dx, a_facedir,
-//                                                    a_vofside,
-//                                                    a_printStuff);
-//
-//
-//
-//      retval= composite.evaluate(a_phi, *exactSol, a_graph, a_geoserv, a_domain, a_dx, a_dit);
-//      if(a_divideByArea)
-//      {
-//        //the stencil evaluates to int(flux da) so we have to divide out the area
-//        IndexedMoments<DIM-1, HOEB_MAX_ORDER> facemom;
-//        if(a_graph.isFaceRegular(a_face))
-//        {
-//          facemom.setToRegular(a_dx);
-//        }
-//        else
-//        {
-//          
-//          EBIndex<cent> dummy;
-//          typedef CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, HOEB_MAX_ORDER>, 1 > > face_distrib_t;
-//          shared_ptr< face_distrib_t > geodataptr = getFaceData<cent>(a_geoserv, a_domain, dummy);
-//          facemom = (*geodataptr)[a_dit](a_face, 0);
-//        }
-//        Real area = facemom[IndexTM<int, DIM-1>::Zero];
-//        if(area > 1.0e-10)
-//        {
-//          retval *= (1.0/area);
-//        }
-//      }
-//    }
-//    
-//    return retval;
-//  }
-//
-//  
   ////
   inline void
   shiftMomentAndFillRow(LAPACKMatrix                            & a_mat,
@@ -946,8 +869,92 @@ namespace hoeb
 
 
 
-  ///get the stencil for the laplacian described in Devendran, et al.
-  void
+  /******/  
+  inline LocalStencil<CELL, Real> 
+  getHomogeneousDharshiStencil(const EBIndex<CELL>                                 & a_vof,
+                               const std::string                                     a_dombcname[2*DIM],
+                               const std::string                                   & a_ebbcname,
+                               const shared_ptr< GeometryService<HOEB_MAX_ORDER> > & a_geoserv,
+                               Proto::Box                                          & a_srcDomain,
+                               unsigned int a_ibox, Real a_alpha, Real a_beta, Real a_dx) 
+  {
+    LocalStencil<CELL, Real> vofsten;
+    //use the age-old trick of building up the stencil by construction
+    auto dbl = a_geoserv->getDBL(a_srcDomain);
+    auto dit = dbl.dataIterator();
+    const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
+    const auto & graph = (*graphsldptr)[dit[a_ibox]];
+    for(SideIterator sit; sit.ok(); ++sit)
+    {
+      int isign = sign(sit());
+      {                                                // 
+        auto xfaces = graph.getXFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < xfaces.size(); iface++)
+        {
+          auto face = xfaces[iface];
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<XFACE>(face,
+                                              a_vof,a_dombcname,a_ebbcname,
+                                              a_geoserv, a_srcDomain, dit[a_ibox],
+                                              a_dx, 0, sit(), false);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+      {                                                // 
+        auto yfaces = graph.getYFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < yfaces.size(); iface++)
+        {
+          auto face = yfaces[iface];
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<YFACE>(face,
+                                              a_vof,a_dombcname,a_ebbcname,
+                                              a_geoserv, a_srcDomain, dit[a_ibox],
+                                              a_dx, 1, sit(), false);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+#if DIM==3      
+      {                                                // 
+        auto zfaces = graph.getZFaces(a_vof, sit());
+        for(unsigned int iface = 0; iface < zfaces.size(); iface++)
+        {
+          auto face = zfaces[iface];
+          LocalStencil<CELL, Real> fluxsten =
+            getDharshiIntFluxDAStencil<ZFACE>(face,
+                                              a_vof, a_dombcname, a_ebbcname,
+                                              a_geoserv, a_srcDomain, dit[a_ibox],
+                                              a_dx, 2, sit(), false);
+          fluxsten *= Real(isign);
+          vofsten += fluxsten;
+        }
+      }
+#endif
+    }
+    {
+      EBIndex<BOUNDARY> face = a_vof.getCutFace();
+      LocalStencil<CELL, Real>
+        fluxsten =
+        getDharshiIntFluxDAStencil<BOUNDARY>(face,
+                                             a_vof,a_dombcname,a_ebbcname,
+                                             a_geoserv, a_srcDomain, dit[a_ibox],
+                                             a_dx, -1, Side::Invalid, false);
+      vofsten += fluxsten;
+    }
+    //need to divide by dx^d to get kappa*lapl(phi)
+    Real cellvolinv = 1;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      cellvolinv /= a_dx;
+    }
+    vofsten *= cellvolinv;
+    
+    return vofsten;
+  }
+
+  /******/
+  inline void
   getHomogeneousDharshiStencil(string                                              & a_stencilName,
                                vector<EBIndex<CELL> >                              & a_dstVoFs,
                                vector<LocalStencil<CELL, Real> >                   & a_stencil,
@@ -963,7 +970,49 @@ namespace hoeb
                                unsigned int                                          a_ibox,
                                const string                                          a_dombcarray[2*DIM],
                                const string                                        & a_ebbcName,
-                               Real a_alpha, Real a_beta);
+                               Real a_alpha, Real a_beta)
+
+  {
+    /* geometric multigrid is not a great idea here*/
+    a_needDiagonalWeights = false;
+    a_srcDomain = ProtoCh::getProtoBox(a_domain);
+    a_dstDomain = ProtoCh::getProtoBox(a_domain);
+    Chombo4::ParmParse pp;
+    using Chombo4::pout;
+    Real alpha = a_alpha;
+    Real beta =  a_beta;
+
+    a_stencilName = string("Dharshi_Laplacian");
+
+    const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
+    const auto & voldatldptr = a_geoserv->getVoluData(  a_srcDomain);
+    const auto & ebfdatldptr = a_geoserv->getEBFaceData(a_srcDomain);
+    const auto & xfadatldptr = a_geoserv->getXFaceData( a_srcDomain);
+    const auto & yfadatldptr = a_geoserv->getYFaceData( a_srcDomain);
+    const auto & zfadatldptr = a_geoserv->getZFaceData( a_srcDomain);
+    const auto & dbl         = a_geoserv->getDBL(       a_srcDomain);
+    auto dit = dbl.dataIterator();
+
+    const auto & graph = (*graphsldptr)[dit[a_ibox]];
+    a_srcValid  = graph.validBox();
+    a_dstValid  = graph.validBox();
+    
+    for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
+    {
+      auto vofs = graph.getVoFs(*bit);
+      for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
+      {
+        LocalStencil<CELL, Real> vofsten =
+          getHomogeneousDharshiStencil(vofs[ivof],
+                                       a_dombcarray, a_ebbcName,
+                                       a_geoserv, a_srcDomain, a_ibox,
+                                       alpha, beta, a_dx);
+        a_dstVoFs.push_back(vofs[ivof]);
+        a_stencil.push_back(vofsten);
+      }
+    }
+  }
+
 
   ///get the stencil for the laplacian described in Schwartz, et al.
   void

@@ -164,6 +164,19 @@ runProjection(int a_argc, char* a_argv[])
   bool printStuff = true;
   pp.get("print_stuff", printStuff);
   hoeb::Hoeb_MAC_Projector<MAX_ORDER> proj(brit, geoserv, grids, domain.domainBox(), dx, bc, dataGhostIV, printStuff);
+
+//begin debug
+  shared_ptr< EBLevelBoxData<CELL, 1>  > testPhi( new EBLevelBoxData<CELL, 1>(grids, dataGhostIV, graphs));
+  shared_ptr< EBLevelBoxData<CELL, 1>  > testLph( new EBLevelBoxData<CELL, 1>(grids, dataGhostIV, graphs));
+  testPhi->setVal(1.);
+  testLph->setVal(0.);
+  proj.m_solver->applyOp(*testLph, *testPhi, printStuff);
+  testPhi->writeToFileHDF5(string("testPhi.hdf5"), 0.0);
+  testLph->writeToFileHDF5(string("testLph.hdf5"), 0.0);
+  Chombo4::pout() << "returning before projeciton" << endl;
+  return 0;
+//end debug
+  
   proj.project(velo, printStuff);
 
   auto divergence = proj.kappaDivergence(velo, printStuff);
