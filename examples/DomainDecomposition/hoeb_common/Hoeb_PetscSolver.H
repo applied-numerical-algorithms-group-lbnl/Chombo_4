@@ -76,24 +76,27 @@ namespace hoeb
       formMatrix();
     }
 
-    ///strictly for debugging.
+    ///strictly for debugging.   This will go very slowly.
     inline 
     void
     applyOpPointwiseHomogeneous( EBLevelBoxData<CELL, 1> & a_lph,
                                  EBLevelBoxData<CELL, 1> & a_phi,
-                                 bool a_printStuff = true;)
+                                 bool a_printStuff = true)
     {
       CH_TIME("BaseEBPetscSolver::applyOp");
       a_phi.exchange();
       typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_t;
       typedef GraphConstructorFactory<               EBHostData<CELL, Real, 1> > hostfactory_t;
-      host_distrib_t hostphi(this->m_grids, this->m_ivghost, hostfactory_t(m_graphs));
+      host_distrib_t hostphi(this->m_grids, this->m_ivghost, hostfactory_t(this->m_graphs));
+      host_distrib_t hostlph(this->m_grids, this->m_ivghost, hostfactory_t(this->m_graphs));
       EBLevelBoxData<CELL, 1>::copyToHost(hostphi, a_phi);
 
 
-      DataIterator dit = this->m_grids.dataIterator();
+      Chombo4::DataIterator dit = this->m_grids.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
+        hostlph[dit[ibox]].setVal(0.);
+        
         Bx srcValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
         Bx dstValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
         Bx srcDom = ProtoCh::getProtoBox(  this->m_domain);
@@ -112,33 +115,31 @@ namespace hoeb
                                            this->m_alpha, this->m_beta,
                                            m_stenRadius, m_maxStenRadius, a_printStuff);
                                              
-        //now create the matrix
-        for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
+        for(int idst = 0; idst < dstVoFs.size(); idst++)
         {
-          auto vof    =   dstVoFs[ivof];
-          auto& stenc =  wstencil[ivof];
+          auto  dstvof  =   dstVoFs[idst];
+          auto& stenc   =  wstencil[idst];
 
-          for(int ivof = 0; ivof < stenc.size(); ivof++)
+          Real lphval = 0;
+          for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
           {
-            auto& stenvof = stenc.m_entries[ivof].m_vof;
-            auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            auto& stenvof = stenc.m_entries[jsrc].m_vof;
+            auto& stenwgt = stenc.m_entries[jsrc].m_weight;
             Real weight = this->m_beta*stenwgt;
-            if(stenvof == vof)
+            if(stenvof == dstvof)
             {
               weight += this->m_alpha;
             }
-            int icol = this->m_gids[dit[ibox]](stenvof, 0);  
-            PetscInt irowpet = irow;
-            PetscInt icolpet = icol;
-            ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
-          } 
+            Real phival = hostphi[dit[ibox]](stenvof, 0);
+            lphval += weight*phival;
+          }
+          hostlph[dit[ibox]](dstvof, 0) = lphval;
+          
         }
       }
 
-
-
       EBLevelBoxData<CELL, 1>::copyToDevice(a_phi, hostphi);
-      return err;
+      return;
     }
 
 ///not necessary for the moment.
@@ -206,15 +207,15 @@ namespace hoeb
                                              m_stenRadius, m_maxStenRadius, a_printStuff);
                                              
           //now create the matrix
-          for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
+          for(int idst = 0; idst < dstVoFs.size(); idst++)
           {
-            auto vof    =   dstVoFs[ivof];
-            auto& stenc =  wstencil[ivof];
+            auto vof    =   dstVoFs[idst];
+            auto& stenc =  wstencil[idst];
             int irow = this->m_gids[dit[ibox]](vof, 0); 
-            for(int jvof = 0; jvof < stenc.size(); jvof++)
+            for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
             {
-              auto& stenvof = stenc.m_entries[jvof].m_vof;
-              auto& stenwgt = stenc.m_entries[jvof].m_weight;
+              auto& stenvof = stenc.m_entries[jsrc].m_vof;
+              auto& stenwgt = stenc.m_entries[jsrc].m_weight;
               Real weight = this->m_beta*stenwgt;
               if(stenvof == vof)
               {
