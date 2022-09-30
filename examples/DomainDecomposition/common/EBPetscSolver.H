@@ -746,15 +746,15 @@ public:
           }
         }
         //now create the matrix
-        for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
+        for(int idst = 0; idst < dstVoFs.size(); idst++)
         {
-          auto vof    =   dstVoFs[ivof];
-          auto& stenc =  wstencil[ivof];
+          auto vof    =   dstVoFs[idst];
+          auto& stenc =  wstencil[idst];
           int irow = this->m_gids[dit[ibox]](vof, 0); 
-          for(int ivof = 0; ivof < stenc.size(); ivof++)
+          for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
           {
-            auto& stenvof = stenc.m_entries[ivof].m_vof;
-            auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            auto& stenvof = stenc.m_entries[jsrc].m_vof;
+            auto& stenwgt = stenc.m_entries[jsrc].m_weight;
             Real weight = (this->m_beta)*stenwgt;
             if(stenvof == vof)
             {
