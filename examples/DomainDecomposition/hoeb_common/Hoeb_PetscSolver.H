@@ -76,6 +76,72 @@ namespace hoeb
       formMatrix();
     }
 
+    ///strictly for debugging.
+    inline 
+    void
+    applyOpPointwiseHomogeneous( EBLevelBoxData<CELL, 1> & a_lph,
+                                 EBLevelBoxData<CELL, 1> & a_phi,
+                                 bool a_printStuff = true;)
+    {
+      CH_TIME("BaseEBPetscSolver::applyOp");
+      a_phi.exchange();
+      typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_t;
+      typedef GraphConstructorFactory<               EBHostData<CELL, Real, 1> > hostfactory_t;
+      host_distrib_t hostphi(this->m_grids, this->m_ivghost, hostfactory_t(m_graphs));
+      EBLevelBoxData<CELL, 1>::copyToHost(hostphi, a_phi);
+
+
+      DataIterator dit = this->m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        Bx srcValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+        Bx dstValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+        Bx srcDom = ProtoCh::getProtoBox(  this->m_domain);
+        Bx dstDom = ProtoCh::getProtoBox(  this->m_domain);
+
+        vector< EBIndex<CELL> >            dstVoFs;
+        vector< Proto::LocalStencil<CELL, Real> > wstencil;
+        Stencil<Real>    regStencilInterior;
+        bool needDiag = false; //abandon all hope of goemetric multigrid
+        hoeb::getHomogeneousDharshiStencil(this->m_stencilName, 
+                                           dstVoFs, wstencil, srcValid, dstValid,
+                                           srcDom, dstDom,  needDiag,
+                                           this->m_geoserv,      this->m_grids,
+                                           this->m_domain,       this->m_dx,   ibox,
+                                           this->m_domainBCName, this->m_ebbcName,
+                                           this->m_alpha, this->m_beta,
+                                           m_stenRadius, m_maxStenRadius, a_printStuff);
+                                             
+        //now create the matrix
+        for(int ivof = 0; ivof < dstVoFs.size(); ivof++)
+        {
+          auto vof    =   dstVoFs[ivof];
+          auto& stenc =  wstencil[ivof];
+
+          for(int ivof = 0; ivof < stenc.size(); ivof++)
+          {
+            auto& stenvof = stenc.m_entries[ivof].m_vof;
+            auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            Real weight = this->m_beta*stenwgt;
+            if(stenvof == vof)
+            {
+              weight += this->m_alpha;
+            }
+            int icol = this->m_gids[dit[ibox]](stenvof, 0);  
+            PetscInt irowpet = irow;
+            PetscInt icolpet = icol;
+            ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
+          } 
+        }
+      }
+
+
+
+      EBLevelBoxData<CELL, 1>::copyToDevice(a_phi, hostphi);
+      return err;
+    }
+
+///not necessary for the moment.
 //    void
 //    modifyRHSForInhomogeneity(EBLevelBoxData<CELL, 1>& a_rhs, bool a_printStuff = false)
 //    {
@@ -145,10 +211,10 @@ namespace hoeb
             auto vof    =   dstVoFs[ivof];
             auto& stenc =  wstencil[ivof];
             int irow = this->m_gids[dit[ibox]](vof, 0); 
-            for(int ivof = 0; ivof < stenc.size(); ivof++)
+            for(int jvof = 0; jvof < stenc.size(); jvof++)
             {
-              auto& stenvof = stenc.m_entries[ivof].m_vof;
-              auto& stenwgt = stenc.m_entries[ivof].m_weight;
+              auto& stenvof = stenc.m_entries[jvof].m_vof;
+              auto& stenwgt = stenc.m_entries[jvof].m_weight;
               Real weight = this->m_beta*stenwgt;
               if(stenvof == vof)
               {
