@@ -4,8 +4,10 @@ interior_velo = "zero"
 
 velocity_inflow_value = 1.
 #also available: slip_wall, inflow, outflow
-domain_bc_lo_0 = "inflow"
-domain_bc_hi_0 = "outflow"
+#domain_bc_lo_0 = "inflow"
+#domain_bc_hi_0 = "outflow"
+domain_bc_lo_0 = "slip_wall"
+domain_bc_hi_0 = "slip_wall"
 domain_bc_lo_1 = "slip_wall"
 domain_bc_lo_2 = "slip_wall"
 domain_bc_hi_1 = "slip_wall"

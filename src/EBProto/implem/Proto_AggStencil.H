@@ -19,6 +19,15 @@ namespace Proto
   class LocalStencil
   {
   public:
+    data_t sum() const
+    {
+      data_t retval =  0;
+      for(int iwe = 0; iwe < m_entries.size(); iwe++)
+      {
+        retval += m_entries[iwe].m_weight;
+      }
+      return retval;
+    }
     struct entry_t
     {
       EBIndex<cent> m_vof;

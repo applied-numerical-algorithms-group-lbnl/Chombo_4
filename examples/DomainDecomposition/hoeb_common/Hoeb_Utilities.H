@@ -734,6 +734,7 @@ namespace hoeb
     const auto & datind = a_dit;
     const auto & graph = (*graphsldptr)[datind];
     CompositeStencil  retval;
+
     //when I know the answer, short circuit all the other stuff and return it
     int iindex = -1;
     if(a_facedir >= 0)
@@ -751,9 +752,7 @@ namespace hoeb
     else
     {
       bool useBoundaries = true;
-      //begin debug 
-      useBoundaries = false;
-      //end debug
+
       //get the neighborhood near the target face
       Neighborhood<CELL>  block =
         getCellNeighbors<cent>(a_face, graph, a_dombcname, a_ebbcname, a_facedir,
@@ -839,11 +838,22 @@ namespace hoeb
       LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat, GTGinvMat, weight);
       
       retval = hoeb::getStencilFromMatrix(Smat, block);
+    //begin debug
+   // 
+   //   retval.m_cellSten.clear();
+   //   Real coeff = 1.; //flux *da, in 2D takes out dx 
+   //   EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi); 
+   //   EBIndex<CELL> voflo = a_face.getVoF(Side::Lo); 
+   //   retval.m_cellSten.add(vofhi, coeff);
+   //   retval.m_cellSten.add(voflo,-coeff);
+    //end debug
       
       if(a_printStuff)
       {
-        Chombo4::pout() << "composite stencil = " << endl;
+        Real sumStenc = retval.m_cellSten.sum();
+        Chombo4::pout() << "composite stencil: "<<  endl;
         retval.poutAll();
+        Chombo4::pout() << "composite stencil sum of homogeneous bits =" << sumStenc <<  endl;
       }
     }
     return retval;
@@ -910,12 +920,16 @@ namespace hoeb
         for(unsigned int iface = 0; iface < xfaces.size(); iface++)
         {
           auto face = xfaces[iface];
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "X face " << iface << " = " << face.m_pt << endl;
+          }
           LocalStencil<CELL, Real> fluxsten =
             getDharshiIntFluxDAStencil<XFACE>(face,
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 0, sit(), 
-                                              a_stenRadius, a_maxStenRadius, false);
+                                              a_stenRadius, a_maxStenRadius, a_printStuff);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -925,28 +939,36 @@ namespace hoeb
         for(unsigned int iface = 0; iface < yfaces.size(); iface++)
         {
           auto face = yfaces[iface];
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Y face " << iface << " = " << face.m_pt << endl;
+          }
           LocalStencil<CELL, Real> fluxsten =
             getDharshiIntFluxDAStencil<YFACE>(face,
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 1, sit(), 
-                                              a_stenRadius, a_maxStenRadius, false);
+                                              a_stenRadius, a_maxStenRadius, a_printStuff);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
       }
 #if DIM==3      
-      {                                                // 
+      {
         auto zfaces = graph.getZFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < zfaces.size(); iface++)
         {
           auto face = zfaces[iface];
+          if(a_printStuff)
+          {
+            Chombo4::pout() << "Z face " << iface << " = " << face.m_pt << endl;
+          }
           LocalStencil<CELL, Real> fluxsten =
             getDharshiIntFluxDAStencil<ZFACE>(face,
                                               a_vof, a_dombcname, a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 2, sit(), 
-                                              a_stenRadius, a_maxStenRadius, false);
+                                              a_stenRadius, a_maxStenRadius, a_printStuff);
                                               
           fluxsten *= Real(isign);
           vofsten += fluxsten;
@@ -1022,19 +1044,30 @@ namespace hoeb
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
     a_srcValid  = graph.validBox();
     a_dstValid  = graph.validBox();
-    
+
+    int idst = 0;
     for(auto bit = a_dstValid.begin(); bit != a_dstValid.end(); ++bit)
     {
       auto vofs = graph.getVoFs(*bit);
       for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
       {
+        bool printStuff = a_printStuff;
+        //begin debug
+        int ideb = 0;
+        if(idst == 30)
+        {
+          ideb = 1;
+          printStuff = true;
+        }
+        //end debug
         LocalStencil<CELL, Real> vofsten =
           getHomogeneousDharshiStencil(vofs[ivof],
                                        a_dombcarray, a_ebbcName,
                                        a_geoserv, a_srcDomain, a_ibox,
                                        alpha, beta, a_dx,
-                                       a_stenRadius, a_maxStenRadius, a_printStuff);
+                                       a_stenRadius, a_maxStenRadius, printStuff);
         a_dstVoFs.push_back(vofs[ivof]);
+        idst++;
         a_stencil.push_back(vofsten);
       }
     }

@@ -100,8 +100,20 @@ public:
           bool a_printStuff = false)
   {
     CH_TIME("BaseEBPetscSolver::applyOp");
+
+    VecZeroEntries(m_xx);
+    VecZeroEntries(m_bb);
+
     chomboToPetsc(m_xx, a_phi);
+
+    VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
+    //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
+
     PetscErrorCode err = MatMult(m_mat, m_xx, m_bb);
+
+    VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
+    VecView(m_bb, PETSC_VIEWER_STDOUT_WORLD);
+
     petscToChombo(a_lph, m_bb);
     return err;
   }
@@ -340,21 +352,28 @@ protected:
 #else
     MPI_Comm wcomm = PETSC_COMM_SELF;
 #endif
-    int nc = 1;
+//    int nc = 1;
     PetscInt ierr;
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
     ierr = MatSetOptionsPrefix(m_mat,"");CHKERRQ(ierr);
 
-    //Chombo4::Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
-    ierr = MatSetSizes(m_mat,m_NN,m_NN,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
-    ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
-    ierr = MatSetType(m_mat,MATAIJ);CHKERRQ(ierr);
+    //Chombo4::Chombo4::pout() << "debug:: matsetsize m_numPtsThisProc = " << m_numPtsThisProc << std::endl;
+    ierr = MatSetSizes(m_mat,m_numPtsThisProc,m_numPtsThisProc,m_numPtsAllProcs,m_numPtsAllProcs);CHKERRQ(ierr);
+//    ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
+    ierr = MatSetType(m_mat,MATDENSE);CHKERRQ(ierr);
+#ifdef CH_MPI
+    ierr = MatMPIDenseSetPreallocation(m_mat, NULL);CHKERRQ(ierr);
+#else
+    PetscInt matsize = m_numPtsThisProc*m_numPtsThisProc;
+    PetscScalar* matspace = new PetscScalar[matsize];
+    ierr = MatSeqDenseSetPreallocation(m_mat, matspace);CHKERRQ(ierr);
+#endif    
 
     ierr = MatSetFromOptions( m_mat ); CHKERRQ(ierr);
     PetscInt *d_nnz=PETSC_NULL, *o_nnz=PETSC_NULL;
 
     PetscInt nglobal;
-    PetscInt NN = m_NN;
+    PetscInt NN = m_numPtsThisProc;
 #ifdef CH_MPI
     PetscInt nn = NN;
     MPI_Datatype mtype;
@@ -364,8 +383,8 @@ protected:
     nglobal = NN;
 #endif    
 
-    ierr = PetscMalloc( (m_NN+1)*sizeof(PetscInt), &d_nnz ); CHKERRQ(ierr);
-    ierr = PetscMalloc( (m_NN+1)*sizeof(PetscInt), &o_nnz ); CHKERRQ(ierr);
+    ierr = PetscMalloc( (m_numPtsThisProc+1)*sizeof(PetscInt), &d_nnz ); CHKERRQ(ierr);
+    ierr = PetscMalloc( (m_numPtsThisProc+1)*sizeof(PetscInt), &o_nnz ); CHKERRQ(ierr);
     for (PetscInt kk=0;kk<NN;kk++) d_nnz[kk] = o_nnz[kk] = 0;
 
     // fix bounds
@@ -389,12 +408,10 @@ protected:
     }
 
     // create vectors
-    ierr = MatCreateVecs(m_mat,&m_bb,&m_xx);CHKERRQ(ierr);
-    //ierr = VecCreate( wcomm, &m_bb ); CHKERRQ(ierr);
-    //ierr = VecSetFromOptions( m_bb ); CHKERRQ(ierr);
-    //ierr = VecSetSizes( m_bb, m_NN, PETSC_DECIDE ); CHKERRQ(ierr);
+    ierr = MatCreateVecs(m_mat,&m_bb, NULL);
+    ierr = VecDuplicate( m_bb, &m_xx);CHKERRQ(ierr);
     ierr = VecDuplicate( m_bb, &m_rr ); CHKERRQ(ierr);
-    //ierr = VecDuplicate( m_bb, &m_xx ); CHKERRQ(ierr);
+
 
     return 0;
   }
@@ -420,6 +437,7 @@ protected:
       }
     }
 
+    Chombo4::pout() << "BaseEBPetscSolver::defineGids: numptsThisProc = " << numPtsThisProc << endl;
     //decide which location maps to the first one of this proc
 
 #ifdef CH_MPI
@@ -468,15 +486,17 @@ protected:
     {
       totalNumPts += numPtsAllProcs[iproc];
     }
+
     using Chombo4::pout;
     using Chombo4::procID;
     Chombo4::pout()  << "BaseEBPetscSolver: procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
     int startgid = 0;
+    PetscInt totalNumPts = numPtsThisProc;
 #endif
     m_gid0     = startgid;
-    m_NN       = numPtsThisProc;
-    
+    m_numPtsThisProc       = numPtsThisProc;
+    m_numPtsAllProcs       = totalNumPts;
     int curgid = startgid;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
@@ -507,7 +527,8 @@ protected:
   //index space--allows us to to matrix to solution space
   host_distrib_int_t  m_gids;
   PetscInt m_gid0;
-  PetscInt m_NN;
+  PetscInt m_numPtsThisProc;
+  PetscInt m_numPtsAllProcs;
   bool m_nz_init_guess;
 
 
@@ -771,6 +792,7 @@ public:
       ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
+      
     }
     return 0;
   }

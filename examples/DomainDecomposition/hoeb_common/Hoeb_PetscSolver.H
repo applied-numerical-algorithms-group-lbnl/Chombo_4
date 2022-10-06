@@ -125,7 +125,16 @@ namespace hoeb
           {
             auto& stenvof = stenc.m_entries[jsrc].m_vof;
             auto& stenwgt = stenc.m_entries[jsrc].m_weight;
+
+            int irow = this->m_gids[dit[ibox]](dstvof , 0);
+            int icol = this->m_gids[dit[ibox]](stenvof, 0);
+            Real amat_weight;
+            MatGetValue(this->m_mat, irow, icol, &amat_weight);
             Real weight = this->m_beta*stenwgt;
+            if(std::abs(amat_weight - weight) > 1.0e-3)
+            {
+              Chombo4::pout() << "weight = " << weight << ", amat_weight = "<<  amat_weight << endl;
+            }
             if(stenvof == dstvof)
             {
               weight += this->m_alpha;
@@ -168,75 +177,97 @@ namespace hoeb
     virtual PetscInt formMatrix(bool a_printStuff = false)
     {
     
+      int numPtsThisProc = 0;
       CH_TIME("Hoeb_PetscSolver::formMatrix");
-      {
-        using Chombo4::DataIterator;
-        char str[256];
-        strcpy (str,"-");
-        strcat (str,this->m_prestring);
+      using Chombo4::DataIterator;
+      char str[256];
+      strcpy (str,"-");
+      strcat (str,this->m_prestring);
 #if PETSC_VERSION_GE(3,6,0)
-        strcat (str,"pc_gamg_square_graph 20");
+      strcat (str,"pc_gamg_square_graph 20");
 #else
-        strcat (str,"pc_gamg_square_graph true");
+      strcat (str,"pc_gamg_square_graph true");
 #endif
-        PetscInt  ierr;
+      PetscInt  ierr;
 #if PETSC_VERSION_GE(3,7,0)
-        ierr = PetscOptionsInsertString(PETSC_NULL,str);CHKERRQ(ierr);
+      ierr = PetscOptionsInsertString(PETSC_NULL,str);CHKERRQ(ierr);
 #else
-        ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
+      ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
 #endif
-        DataIterator dit = this->m_grids.dataIterator();
-        for(int ibox = 0; ibox < dit.size(); ibox++)
-        {
-          Bx srcValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
-          Bx dstValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
-          Bx srcDom = ProtoCh::getProtoBox(  this->m_domain);
-          Bx dstDom = ProtoCh::getProtoBox(  this->m_domain);
+      MatZeroEntries(this->m_mat);
 
-          vector< EBIndex<CELL> >            dstVoFs;
-          vector< Proto::LocalStencil<CELL, Real> > wstencil;
-          Stencil<Real>    regStencilInterior;
-          bool needDiag = false; //abandon all hope of goemetric multigrid
-          hoeb::getHomogeneousDharshiStencil(this->m_stencilName, 
-                                             dstVoFs, wstencil, srcValid, dstValid,
-                                             srcDom, dstDom,  needDiag,
-                                             this->m_geoserv,      this->m_grids,
-                                             this->m_domain,       this->m_dx,   ibox,
-                                             this->m_domainBCName, this->m_ebbcName,
-                                             this->m_alpha, this->m_beta,
-                                             m_stenRadius, m_maxStenRadius, a_printStuff);
+      DataIterator dit = this->m_grids.dataIterator();
+
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        Bx srcValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+        Bx dstValid = ProtoCh::getProtoBox(this->m_grids[dit[ibox]]);
+        Bx srcDom = ProtoCh::getProtoBox(  this->m_domain);
+        Bx dstDom = ProtoCh::getProtoBox(  this->m_domain);
+
+        vector< EBIndex<CELL> >            dstVoFs;
+        vector< Proto::LocalStencil<CELL, Real> > wstencil;
+        Stencil<Real>    regStencilInterior;
+        bool needDiag = false; //abandon all hope of goemetric multigrid
+        hoeb::getHomogeneousDharshiStencil(this->m_stencilName, 
+                                           dstVoFs, wstencil, srcValid, dstValid,
+                                           srcDom, dstDom,  needDiag,
+                                           this->m_geoserv,      this->m_grids,
+                                           this->m_domain,       this->m_dx,   ibox,
+                                           this->m_domainBCName, this->m_ebbcName,
+                                           this->m_alpha, this->m_beta,
+                                           m_stenRadius, m_maxStenRadius, a_printStuff);
                                              
-          //now create the matrix
-          for(int idst = 0; idst < dstVoFs.size(); idst++)
+        //now create the matrix
+        for(int idst = 0; idst < dstVoFs.size(); idst++)
+        {
+          numPtsThisProc++;
+              
+          auto vof    =   dstVoFs[idst];
+          auto& stenc =  wstencil[idst];
+          int irow = this->m_gids[dit[ibox]](vof, 0);
+          Real rowsum = 0;
+          for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
           {
-            auto vof    =   dstVoFs[idst];
-            auto& stenc =  wstencil[idst];
-            int irow = this->m_gids[dit[ibox]](vof, 0); 
-            for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
+            auto& stenvof = stenc.m_entries[jsrc].m_vof;
+            auto& stenwgt = stenc.m_entries[jsrc].m_weight;
+            Real weight = this->m_beta*stenwgt;
+            if(stenvof == vof)
             {
-              auto& stenvof = stenc.m_entries[jsrc].m_vof;
-              auto& stenwgt = stenc.m_entries[jsrc].m_weight;
-              Real weight = this->m_beta*stenwgt;
-              if(stenvof == vof)
-              {
-                weight += this->m_alpha;
-              }
-              int icol = this->m_gids[dit[ibox]](stenvof, 0);  
-              PetscInt irowpet = irow;
-              PetscInt icolpet = icol;
-              ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
-            } 
+              weight += this->m_alpha;
+            }
+            int icol = this->m_gids[dit[ibox]](stenvof, 0);  
+            PetscInt irowpet = irow;
+            PetscInt icolpet = icol;
+            ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
+            rowsum += weight;
+          }
+          int ideb = 0;
+          if(rowsum > 1.)
+          {
+            ideb = 1;
           }
         }
-
-        ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-        ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       }
+
+      ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+      Chombo4::pout() << "formmatrix: num pts this proc = " << numPtsThisProc  << endl;
+
+      Vec rowSum;
+      ierr = VecDuplicate( this->m_bb, &rowSum);CHKERRQ(ierr);
+      VecZeroEntries(rowSum);
+      ierr  = MatGetRowSum(this->m_mat, rowSum); CHKERRQ(ierr);
+      Chombo4::pout() << "row sums:" << endl;
+      
+      VecView(rowSum , PETSC_VIEWER_STDOUT_WORLD);
       return 0;
     }
 
-  private:
-    int m_stenRadius, m_maxStenRadius;
+
+private:
+  int m_stenRadius, m_maxStenRadius;
   }; //end of class
 } //namespace hoeb
 #endif

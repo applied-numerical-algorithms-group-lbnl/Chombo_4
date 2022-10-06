@@ -170,9 +170,13 @@ runProjection(int a_argc, char* a_argv[])
   shared_ptr< EBLevelBoxData<CELL, 1>  > testLph( new EBLevelBoxData<CELL, 1>(grids, dataGhostIV, graphs));
   testPhi->setVal(1.);
   testLph->setVal(0.);
-  proj.m_solver->applyOp(*testLph, *testPhi, printStuff);
-  testPhi->writeToFileHDF5(string("testPhi.hdf5"), 0.0);
-  testLph->writeToFileHDF5(string("testLph.hdf5"), 0.0);
+  proj.m_solver->applyOp(*testLph, *testPhi);
+  testPhi->writeToFileHDF5(string("testPhi1.hdf5"), 0.0);
+  testLph->writeToFileHDF5(string("testLph1.hdf5"), 0.0);
+  
+  proj.m_solver->applyOpPointwiseHomogeneous(*testLph, *testPhi, printStuff);
+  testPhi->writeToFileHDF5(string("testPhi2.hdf5"), 0.0);
+  testLph->writeToFileHDF5(string("testLph2.hdf5"), 0.0);
   Chombo4::pout() << "returning before projeciton" << endl;
   return 0;
 //end debug
@@ -187,13 +191,27 @@ runProjection(int a_argc, char* a_argv[])
    
   return 0;
 }
-
+//void stupidPetscTest()
+//{
+//  Mat A;
+//#ifdef CH_MPI
+//    MPI_Comm wcomm = Chombo_MPI::comm;
+//#else
+//    MPI_Comm wcomm = PETSC_COMM_SELF;
+//#endif
+////    int nc = 1;
+//    PetscInt ierr;
+//    ierr = MatCreate(wcomm,&A);CHKERRQ(ierr);
+// 
+//}
 
 int main(int a_argc, char* a_argv[])
 {
   //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
    PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
 
+//   stupidPetscTest();
+//   return 0;
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
   {
