@@ -489,6 +489,10 @@ namespace hoeb
       facmom = hoeb_basics::getIndexedMomentFace<cent>(a_face, a_geoserv, a_srcDomain, a_datind, a_dx);
     IndexedMoments<    DIM, HOEB_MAX_ORDER> volmom = hoeb_basics::getVolMomFromFacMom<DIM>(facmom, a_facedir);
 
+    typedef       IndexTM<int, DIM-1>          IvDMO;
+    IvDMO zeroind = IvDMO::Zero;
+
+    Real momzero = facmom[zeroind];
     RealVect facloc             = hoeb_basics::getFaceLocation<cent>(a_face, a_dx, a_facedir);
     IndexTM<Real, DIM> distance = hoeb_basics::getIndexDistance(facloc, a_xbar);
     volmom.shift(distance);
@@ -507,7 +511,10 @@ namespace hoeb
         int pd = momind[a_facedir];
         IndexTM<int, DIM> derind =momind - IndexTM<int, DIM>::BASISV(a_facedir);
         Real derval = volmom[derind];
-        matval = pd*derval;
+        if(std::abs(momzero) > 1.0e-10)
+        {
+          matval = pd*derval/momzero;
+        }
       }
       unsigned int currentCol = IndexedMoments<DIM, HOEB_MAX_ORDER>::indexOf(momind);
       Qmat(0,currentCol) = matval;
@@ -834,7 +841,12 @@ namespace hoeb
         Chombo4::pout() << "Qmat = " << endl;
         Qmat.poutAll();
       }
-      
+      Real qmatzero  =  Qmat(0, 0);
+      int ideb = 0;
+      if(std::abs(qmatzero) > 1.0e-6)
+      {
+        ideb = 1;
+      }
       LAPACKMatrix Smat = getStencilMatrix(Qmat, Gmat, GTGinvMat, weight);
       
       retval = hoeb::getStencilFromMatrix(Smat, block);
