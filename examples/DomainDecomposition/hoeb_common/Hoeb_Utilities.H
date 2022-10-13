@@ -1075,9 +1075,15 @@ namespace hoeb
       {
         bool printStuff = a_printStuff;
         //begin debug
+        auto vofpt = vofs[ivof].m_pt;
+        Point ptd1(D_DECL(1,  1 , 1 ));
+        Point ptd2(D_DECL(15, 15, 15));
         int ideb = 0;
-        if(idst == 30)
+        if((vofpt == ptd1) || (vofpt == ptd2))
         {
+          Chombo4::pout() << "*********************************************"  << endl;
+          Chombo4::pout() << "turning  up verbosity for point " << vofpt << endl;
+          Chombo4::pout() << "*********************************************"  << endl;
           ideb = 1;
           printStuff = true;
         }
