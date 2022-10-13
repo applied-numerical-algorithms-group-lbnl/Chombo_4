@@ -923,17 +923,25 @@ namespace hoeb
     auto dit = dbl.dataIterator();
     const auto & graphsldptr = a_geoserv->getGraphs(    a_srcDomain);
     const auto & graph = (*graphsldptr)[dit[a_ibox]];
+
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "GetHomogeneousDharshiStencil for vof = :: " << a_vof.m_pt << endl;
+    };
     
     for(SideIterator sit; sit.ok(); ++sit)
     {
       int isign = sign(sit());
-      {                                                // 
+      {
         auto xfaces = graph.getXFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < xfaces.size(); iface++)
         {
+          // only really want to print one face's worth of stuff
+          bool printstuff = a_printStuff && (isign == 1);
           auto face = xfaces[iface];
-          if(a_printStuff)
+          if(printstuff)
           {
+            Chombo4::pout() << "GetHomogeneousDharshiStencil:: ";
             Chombo4::pout() << "X face " << iface << " = " << face.m_pt << endl;
           }
           LocalStencil<CELL, Real> fluxsten =
@@ -941,7 +949,7 @@ namespace hoeb
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 0, sit(), 
-                                              a_stenRadius, a_maxStenRadius, a_printStuff);
+                                              a_stenRadius, a_maxStenRadius, printstuff);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -950,8 +958,13 @@ namespace hoeb
         auto yfaces = graph.getYFaces(a_vof, sit());
         for(unsigned int iface = 0; iface < yfaces.size(); iface++)
         {
+          // only really want to print one face's worth of stuff
+          bool printstuff = a_printStuff && (isign == 1);
+          //comment if you want to print y stuff
+          printstuff = false;
+          
           auto face = yfaces[iface];
-          if(a_printStuff)
+          if(printstuff)
           {
             Chombo4::pout() << "Y face " << iface << " = " << face.m_pt << endl;
           }
@@ -960,7 +973,7 @@ namespace hoeb
                                               a_vof,a_dombcname,a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 1, sit(), 
-                                              a_stenRadius, a_maxStenRadius, a_printStuff);
+                                              a_stenRadius, a_maxStenRadius, printstuff);
           fluxsten *= Real(isign);
           vofsten += fluxsten;
         }
@@ -971,16 +984,13 @@ namespace hoeb
         for(unsigned int iface = 0; iface < zfaces.size(); iface++)
         {
           auto face = zfaces[iface];
-          if(a_printStuff)
-          {
-            Chombo4::pout() << "Z face " << iface << " = " << face.m_pt << endl;
-          }
+
           LocalStencil<CELL, Real> fluxsten =
             getDharshiIntFluxDAStencil<ZFACE>(face,
                                               a_vof, a_dombcname, a_ebbcname,
                                               a_geoserv, a_srcDomain, dit[a_ibox],
                                               a_dx, 2, sit(), 
-                                              a_stenRadius, a_maxStenRadius, a_printStuff);
+                                              a_stenRadius, a_maxStenRadius, false);
                                               
           fluxsten *= Real(isign);
           vofsten += fluxsten;

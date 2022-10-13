@@ -208,11 +208,14 @@ namespace hoeb
     Real minDiag =  1.0e10;
     Real maxOffd = -1.0e10;
     Real minOffd =  1.0e10;
+    Real sumAll = 0;
+    
     for(int irow =0; irow < m_nrow; irow++)
     {
       for(int icol = 0; icol < m_ncol; icol++)
       {
         Real val = (*this)(irow, icol);
+        sumAll += val;
         if(irow == icol)
         {
           if(val > maxDiag)
@@ -237,10 +240,11 @@ namespace hoeb
         }
       }
     }
-    Chombo4::pout() << "max value ON  diagonal = " << maxDiag;
-    Chombo4::pout() << "min value ON  diagonal = " << minDiag;
-    Chombo4::pout() << "max value OFF diagonal = " << maxOffd;
-    Chombo4::pout() << "min value OFF diagonal = " << minOffd;
+    Chombo4::pout() << "LAPACKMatrix: max value ON  diagonal = " << maxDiag<< endl;
+    Chombo4::pout() << "LAPACKMatrix: min value ON  diagonal = " << minDiag<< endl;
+    Chombo4::pout() << "LAPACKMatrix: max value OFF diagonal = " << maxOffd<< endl;
+    Chombo4::pout() << "LAPACKMatrix: min value OFF diagonal = " << minOffd<< endl;
+    Chombo4::pout() << "LAPACKMatrix: the sum of all values  = " << sumAll << endl;
   }
 ///
   void

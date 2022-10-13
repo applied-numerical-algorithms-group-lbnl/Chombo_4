@@ -138,6 +138,18 @@ namespace hoeb
     ///return sqrt(sum of squares of all values)
     Real normLTwo() const;
 
+    Real sum() const
+    {
+      Real sum = 0;
+      for(int irow = 0; irow < m_nrow; irow++)
+      {
+        for(int icol = 0; icol < m_ncol; icol++)
+        {
+          sum += (*this)(irow, icol);
+        }
+      }
+      return sum;
+    }
     ///
     /**
        if(i==j)  M=1 else M=0   
