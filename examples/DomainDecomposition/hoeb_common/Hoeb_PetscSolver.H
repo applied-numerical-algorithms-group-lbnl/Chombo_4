@@ -255,13 +255,16 @@ namespace hoeb
 
       Chombo4::pout() << "formmatrix: num pts this proc = " << numPtsThisProc  << endl;
 
-      Vec rowSum;
-      ierr = VecDuplicate( this->m_bb, &rowSum);CHKERRQ(ierr);
-      VecZeroEntries(rowSum);
-      ierr  = MatGetRowSum(this->m_mat, rowSum); CHKERRQ(ierr);
-      Chombo4::pout() << "row sums:" << endl;
-      
-      VecView(rowSum , PETSC_VIEWER_STDOUT_WORLD);
+      if(a_printStuff)
+      {
+        Vec rowSum;
+        ierr = VecDuplicate( this->m_bb, &rowSum);CHKERRQ(ierr);
+        VecZeroEntries(rowSum);
+        ierr  = MatGetRowSum(this->m_mat, rowSum); CHKERRQ(ierr);
+
+        Chombo4::pout() << "row sums:" << endl;
+        VecView(rowSum , PETSC_VIEWER_STDOUT_WORLD);
+      }
       return 0;
     }
 

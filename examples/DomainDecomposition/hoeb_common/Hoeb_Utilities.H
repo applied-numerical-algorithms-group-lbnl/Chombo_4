@@ -1073,19 +1073,26 @@ namespace hoeb
       auto vofs = graph.getVoFs(*bit);
       for(unsigned int ivof = 0; ivof < vofs.size(); ivof++)
       {
-        bool printStuff = a_printStuff;
-        //begin debug
-        auto vofpt = vofs[ivof].m_pt;
-        Point ptd1(D_DECL(1,  1 , 1 ));
-        Point ptd2(D_DECL(15, 15, 15));
-        int ideb = 0;
-        if((vofpt == ptd1) || (vofpt == ptd2))
+        static bool alreadyPrinted = false;
+        bool printStuff = false;
+        if(!alreadyPrinted)
         {
-          Chombo4::pout() << "*********************************************"  << endl;
-          Chombo4::pout() << "turning  up verbosity for point " << vofpt << endl;
-          Chombo4::pout() << "*********************************************"  << endl;
-          ideb = 1;
-          printStuff = true;
+          printStuff = a_printStuff;          
+          //begin debug
+          auto vofpt = vofs[ivof].m_pt;
+          Point ptd1(D_DECL(1,  1 , 1 ));
+          Point ptd2(D_DECL(15, 15, 15));
+          int ideb = 0;
+//        if((vofpt == ptd1) || (vofpt == ptd2))
+          if((vofpt == ptd1) || (vofpt == ptd2))
+          {
+            Chombo4::pout() << "*********************************************"  << endl;
+            Chombo4::pout() << "turning  up verbosity for point " << vofpt << endl;
+            Chombo4::pout() << "*********************************************"  << endl;
+            ideb = 1;
+            printStuff = true;
+          }
+          alreadyPrinted = true;
         }
         //end debug
         LocalStencil<CELL, Real> vofsten =

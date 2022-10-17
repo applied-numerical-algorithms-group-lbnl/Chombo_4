@@ -106,13 +106,20 @@ public:
 
     chomboToPetsc(m_xx, a_phi);
 
-    VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
-    //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
+//    if(a_printStuff)
+//    {
+//      Chombo4::pout() << "EBPetscSolver::applyOp before mult: m_xx = " << endl;
+//      VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
+//      Chombo4::pout() << "EBPetscSolver::applyOp before mult : m_mat = " << endl;
+//      MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
+//    }
 
     PetscErrorCode err = MatMult(m_mat, m_xx, m_bb);
 
-    VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
-    VecView(m_bb, PETSC_VIEWER_STDOUT_WORLD);
+//      Chombo4::pout() << "EBPetscSolver::applyOp after mult: m_xx = " << endl;
+//    VecView(m_xx , PETSC_VIEWER_STDOUT_WORLD);
+//      Chombo4::pout() << "EBPetscSolver::applyOp after mult: m_bb = " << endl;
+//    VecView(m_bb, PETSC_VIEWER_STDOUT_WORLD);
 
     petscToChombo(a_lph, m_bb);
     return err;
