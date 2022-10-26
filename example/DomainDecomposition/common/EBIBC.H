@@ -88,7 +88,7 @@ public:
       }
       else
       {
-        MayDay::Error("EBIBC: unknown bc string");
+        MayDay::Error((("EBIBC: unknown bc string " + a_bcnames[ivec]).c_str()));
       }
     }
   }
@@ -127,10 +127,11 @@ public:
       }
       else
       {
-        MayDay::Error("EBIBC: unknown bc string");
+        MayDay::Error((("EBIBC: unknown bc string " + a_bcnames[ivec]).c_str()));
       }
     }
     a_ebbcname = StencilNames::Neumann;
+    //a_ebbcname = StencilNames::Dirichlet;
   }
 
   void insStencilStrings(vector<string> a_bcnames[2*DIM],
@@ -179,8 +180,9 @@ public:
                 }
               else
                 {
-                  MayDay::Error("EBIBC: unknown bc string");
+                  MayDay::Error((("EBIBC: unknown bc string " + a_bcnames[ivec][comp]).c_str()));
                 }
+              //a_bcnames[ivec][comp] = StencilNames::NoBC;
             }
         }
 

@@ -190,6 +190,7 @@ public:
   }
 
 
+
   /// 
   virtual void exchange(const Copier& copier)
   {
@@ -518,6 +519,12 @@ public:
     return retval;
   }
 
+  // Is there a reason this should not exist? There is no harm in sharing a smart pointer. The object already know what graph it came from, so there is no reason to pass around both the levelboxdata and graph separately.
+  shared_ptr<LevelData<EBGraph> >
+  getGraphs()
+    {
+      return m_graphs;
+    }
 
 private:
     shared_ptr<LevelData<EBGraph>  > m_graphs;

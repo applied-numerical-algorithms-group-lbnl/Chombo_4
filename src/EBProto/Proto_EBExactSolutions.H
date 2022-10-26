@@ -1267,6 +1267,132 @@ private:
   }
 };
 
+///class where phi is a approximate gaussian blob
+template <unsigned int order>
+class PseudoGaussian: public BaseExactSolution<order>
+{
+public:
+
+  typedef       IndexTM<int, DIM>            IvDIM;
+  typedef IndexedMoments<DIM  , order>       IndMomDIM;
+  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+  ///
+  /** phi = A*prod_i cos^6((x_i-x0_i)*(pi/2)/L_i), 0 when |x_i| > L_i
+      m_amp = A
+      m_leng = (L_x, L_y, L_z)
+      a_center = (x0,y0,z0)
+  */
+  ///
+  virtual Real getDerivative(IvDIM      a_p,
+                             RealVect   a_x) const
+  {
+    Real retval = m_amp;
+    for(int idir = 0; idir < DIM; idir++)
+      {
+        auto xi = a_x[idir]-m_center[idir];
+        auto Li = m_leng[idir];
+        if (abs(xi) > Li)
+          {
+            return 0;
+          }
+        else if ((Li <= 0)&&(a_p[idir]==0))
+          {
+            retval *= 1;
+          }
+        else if ((Li <= 0)&&(a_p[idir]!=0))
+          {
+            return 0;
+          }
+        else if(a_p[idir] == 0)
+          {
+            retval *= pow(cos((xi)*0.5*m_PI/Li), 6);
+          }
+        else if(a_p[idir] == 1)
+          {
+            retval *= -(3*m_PI*pow(cos((m_PI*xi)/(2*Li)), 5)*sin((m_PI*xi)/(2*Li)))/Li;
+          }
+        else if(a_p[idir] == 2)
+          {
+            retval *= -(3*pow(m_PI, 2)*pow(cos((m_PI*xi)/(2*Li)), 4)*(pow(cos((m_PI*xi)/(2*Li)),2) - 5*pow(sin((m_PI*xi)/(2*Li)), 2)))/(2*pow(Li,2));
+          }
+        else if(a_p[idir] == 3)
+          {
+            retval *= (3*pow(m_PI, 3)*pow(cos((m_PI*xi)/(2*Li)),3)*sin((m_PI*xi)/(2*Li))*(4*pow(cos((m_PI*xi)/(2*Li)),2) - 5*pow(sin((m_PI*xi)/(2*Li)),2)))/pow(Li,3);
+          }
+        else if(a_p[idir] == 4)
+          {
+            retval *= (3*pow(m_PI, 4)*(5*cos((m_PI*xi)/Li) + 32*cos((2*m_PI*xi)/Li) + 27*cos((3*m_PI*xi)/Li)))/(32*pow(Li,4));
+          }
+        else if(a_p[idir] == 5)
+          {
+            retval *= -(3*pow(m_PI, 5)*(43 + 64*cos((m_PI*xi)/Li) + 81*cos((2*m_PI*xi)/Li))*sin((m_PI*xi)/Li))/(16*pow(Li,5));
+          }
+        else
+          {
+            Chombo4::MayDay::Error("ran out of deriv cases");
+            retval = 0;
+          }
+      }
+    return retval;
+  }
+
+  virtual Real getPhiPoint(const RealVect   & a_x) const
+  {
+    IvDIM d = IvDIM::Zero;
+    return getDerivative(d, a_x);
+    // Real retval = m_amp;
+    // for(int idir = 0; idir < DIM; idir++)
+    // {
+    //   auto xi = a_x[idir];
+    //   auto Li = a_leng[i];
+    //   if (abs(xi) > Li)
+    //     {
+    //       return 0;
+    //     }
+    //   else
+    //     {
+    //       retval *= pow(cos((xi-m_center[idir])*0.5*m_PI/Li), 6);
+    //     }
+    // }
+    // return retval;
+  }
+
+  // integral over entire domain of existance
+  Real integral() const
+    {
+      // (a (30 π x + 45 l sin((π x)/l) + 9 l sin((2 π x)/l) + l sin((3 π x)/l)))/(96 π)
+      Real retval = m_amp;
+      for(int idir = 0; idir < DIM; idir++)
+        {
+          retval *= 5*m_leng[idir]/8;
+        }
+      return retval;
+    }
+
+  virtual ~PseudoGaussian()
+  {
+  }
+
+  PseudoGaussian(Real     a_amp,
+                 RealVect a_leng,
+                 RealVect a_center)
+  {
+    m_amp = a_amp;
+    m_leng = a_leng;
+    m_center = a_center;
+  }
+
+private:
+  Real      m_amp;
+  RealVect  m_leng;
+  RealVect  m_center;
+  Real      m_PI=3.141592653589793238462643383279502884197;
+
+  PseudoGaussian()
+  {
+  }
+};
+
 ///
 template <unsigned int order>
 class RotatingSphere: public BaseExactSolution<order>

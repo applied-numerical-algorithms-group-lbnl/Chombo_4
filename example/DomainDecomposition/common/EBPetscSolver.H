@@ -697,7 +697,7 @@ private:
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
             ierr = MatSetValues(m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
-          } 
+          }
         }
       }
 
@@ -706,6 +706,15 @@ private:
 
       m_inhoContr.exchange(m_exchangeCopier);
     }
+    // check row sum
+    // {
+    //   PetscInt ierr;
+    //   ierr = MatGetRowSum(m_mat, m_rr); CHKERRQ(ierr);
+    //   ierr = VecView(m_rr, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    //   EBLevelBoxData<CELL, 1> rowSumLv(m_kappa.disjointBoxLayout(), IntVect::Zero, m_kappa.getGraphs());
+    //   ierr = petscToChombo(rowSumLv, m_rr); CHKERRQ(ierr);
+    //   rowSumLv.dumpFile("row_sum.hdf5", 0);
+    // }
     return 0;
   }
   static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
@@ -784,6 +793,20 @@ private:
         ierr = PetscFree( coords );  CHKERRQ(ierr);
       }
     }
+    // account for free constants if all BCs are Neumann
+    bool constNullSpace = (m_ebbcName == StencilNames::Neumann);
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+      {
+        constNullSpace &= (m_domainBCName[ivec] == StencilNames::Neumann);
+      }
+    if (constNullSpace)
+      {
+        pout() << "EBPetscSolver: Matrix nullspace includes constants" << std::endl;
+        MatNullSpace nullspace;
+        MatNullSpaceCreate(PETSC_COMM_WORLD, PETSC_TRUE, 0, 0, &nullspace);
+        MatSetNullSpace(m_mat, nullspace);
+        MatNullSpaceDestroy(&nullspace);
+      }
 
     // print_memory_line("After AMG set up");
     //there is some stuff here about blocksize but it appears to be optional.

@@ -842,6 +842,28 @@ namespace Proto
     WT.transpose();
     multiply(MTWT, MT, WT);
 
+    //if (m_verbose)
+      // {
+      //   // invert and check
+      //   Chombo4::LAPACKMatrix Minv, I_M, MW, MWinv, I_MW;
+      //   // Minv = a_Mvol;
+      //   // Minv.pseudoInvertUsingQR();
+      //   // multiply(I_M, Minv, a_Mvol);
+      //   // a_Mvol.checkConditionNumber();
+      //   // pout() << "Show M*M^-1 " << std::endl;
+      //   // I_M.poutAll();
+
+      //   MW = MTWT;
+      //   MW.transpose();
+      //   MWinv = MW;
+      //   MW.pseudoInvertUsingSVD(10,
+      //                             1.0e-13);
+      //   multiply(I_MW, MW, MWinv);
+      //   MW.checkConditionNumber();
+      //   pout() << "Show WM*WM^-1 " << std::endl;
+      //   I_MW.poutAll();
+      // }
+
     Chombo4::LAPACKMatrix QT;
     QT = a_Qshift;
     QT.transpose();
@@ -1498,6 +1520,7 @@ namespace Proto
 
   //Getting flux stencil for laplacian operator at a face by a weighted average between 
   //two cell-centered flux stencils states computed by the neighbor cells sharing the face
+  //FIXME rename this
   template < int order>
   LocalStencil< CELL,  double>
   WLSStencil<order>::
@@ -1521,6 +1544,7 @@ namespace Proto
     Real expD = 1.0;
     Real distM = 1.0;
     Real distP = 1.0;
+    //REVIEW: DOES THIS WORK IN 3D?
     if (a_dir == 0 ){
       distM = pow(pow(pow(abs(centroidM[0]-0.5),2)+pow(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
       distP = pow(pow(pow(abs(centroidP[0]+0.5),2)+pow(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
@@ -1537,6 +1561,9 @@ namespace Proto
     return fluxStencil;
   }
 
+/**
+ * This function does stuff
+ */
   template < int order>
   double
   WLSStencil<order>::
@@ -1560,6 +1587,7 @@ namespace Proto
     Real expD = 1.0;
     Real distM = 1.0;
     Real distP = 1.0;
+    //REVIEW: DOES THIS WORK IN 3D?
     if (a_dir == 0 ){
       distM = pow(pow(pow(abs(centroidM[0]-0.5),2)+pow(abs(centroidM[1]-a_centroid[1]),2),0.5),expD);
       distP = pow(pow(pow(abs(centroidP[0]+0.5),2)+pow(abs(centroidP[1]-a_centroid[1]),2),0.5),expD);
