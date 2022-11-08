@@ -245,8 +245,8 @@ public:
   Real sum(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-    copyToHost(     hostdata, *this);
+    // LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    // copyToHost(     hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
     Real sumval = 0; 
@@ -261,7 +261,8 @@ public:
         for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
         {
           const EBIndex<CELL>& vof = vofspt[ivec];
-          sumval += hostdata[dit[ibox]](vof, a_icomp);
+          // sumval += hostdata[dit[ibox]](vof, a_icomp);
+          sumval += this->operator[](dit[ibox])(vof, a_icomp);
         }
       }
     }

@@ -2119,6 +2119,20 @@ namespace Proto
       a_inhoTerm += inhomogTerm;
       a_vofStencil += ebflux;
     }
+
+    // offset the stencil to respect constants
+    // Real stenSum, inhoSum;
+    // for(int ivec =  0; ivec < a_vofStencil.size(); ivec++)
+    //   {
+    //     stenSum += a_vofStencil.m_entries[ivec].m_weight;
+    //   }
+    // stenSum /= a_vofStencil.size();
+    // pout() << "Row sum adj = " << stenSum << std::endl;
+    // for(int ivec =  0; ivec < a_vofStencil.size(); ivec++)
+    //   {
+    //     a_vofStencil.m_entries[ivec].m_weight -= stenSum;
+    //   }
+
   }
 
   //Getting flux stencil for advection operator at a face by a weighted average between 

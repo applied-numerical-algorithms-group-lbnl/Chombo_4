@@ -148,6 +148,9 @@ public:
 
     chomboToPetsc(m_bb, rhs);
     chomboToPetsc(m_xx, a_phi);
+    PetscScalar sum;
+    VecSum(m_bb, &sum);
+    pout() << "rhs sum = " << sum << std::endl;
     // solve
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
@@ -684,10 +687,10 @@ private:
           auto& stenc =  wstencil[ivof];
           const Real kappa  = m_kappa[dit[ibox]](vof, 0);
           int irow = m_gids[dit[ibox]](vof, 0); 
-          for(int ivof = 0; ivof < stenc.size(); ivof++)
+          for(int jvof = 0; jvof < stenc.size(); jvof++)
           {
-            auto& stenvof = stenc.m_entries[ivof].m_vof;
-            auto& stenwgt = stenc.m_entries[ivof].m_weight;
+            auto& stenvof = stenc.m_entries[jvof].m_vof;
+            auto& stenwgt = stenc.m_entries[jvof].m_weight;
             Real weight = m_beta*stenwgt;
             if(stenvof == vof)
             {
@@ -707,14 +710,24 @@ private:
       m_inhoContr.exchange(m_exchangeCopier);
     }
     // check row sum
-    // {
-    //   PetscInt ierr;
-    //   ierr = MatGetRowSum(m_mat, m_rr); CHKERRQ(ierr);
-    //   ierr = VecView(m_rr, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-    //   EBLevelBoxData<CELL, 1> rowSumLv(m_kappa.disjointBoxLayout(), IntVect::Zero, m_kappa.getGraphs());
-    //   ierr = petscToChombo(rowSumLv, m_rr); CHKERRQ(ierr);
-    //   rowSumLv.dumpFile("row_sum.hdf5", 0);
-    // }
+    if (true)
+    {
+      PetscInt ierr;
+      ierr = MatGetRowMaxAbs(m_mat, m_rr, NULL); CHKERRQ(ierr);
+      PetscReal mmax = 0;
+      ierr = VecNorm(m_rr, NORM_INFINITY, &mmax); CHKERRQ(ierr);
+      ierr = MatGetRowSum(m_mat, m_rr); CHKERRQ(ierr);
+      //ierr = VecView(m_rr, PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+      PetscReal vnorm2 = 0;
+      PetscReal vnormI = 0;
+      ierr = VecNorm(m_rr, NORM_2, &vnorm2); CHKERRQ(ierr);
+      ierr = VecNorm(m_rr, NORM_INFINITY, &vnormI); CHKERRQ(ierr);
+      pout() << "PETSc row sum max = " << vnormI << " L2 norm = " << vnorm2
+             << "  relative to max matrix value "<< mmax << std::endl;
+      EBLevelBoxData<CELL, 1> rowSumLv(m_kappa.disjointBoxLayout(), IntVect::Zero, m_kappa.getGraphs());
+      ierr = petscToChombo(rowSumLv, m_rr); CHKERRQ(ierr);
+      rowSumLv.dumpFile("row_sum.hdf5", 0);
+    }
     return 0;
   }
   static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
@@ -982,10 +995,10 @@ private:
   Point   m_ptghost;
   IntVect m_ivghost;
   Mat m_mat;
-  void *m_ctx; // pointer for nonlnear solver call backs
+  //void *m_ctx; // pointer for nonlnear solver call backs
 
   Vec m_xx, m_rr, m_bb;
-  SNES m_snes;
+  // SNES m_snes;
   KSP m_ksp;
   PetscInt m_defined;
   char m_prestring[32];

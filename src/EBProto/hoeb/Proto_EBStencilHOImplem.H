@@ -1440,7 +1440,7 @@ namespace Proto
 
     int radius = 2;
     int powerE = -3;
-    bool verbose = 0;
+    bool verbose = false;
     int exactSolution = 1;
     //Neighbor list type. 0-FaceBased or 1-CellBased
     int neighListType = 1;
