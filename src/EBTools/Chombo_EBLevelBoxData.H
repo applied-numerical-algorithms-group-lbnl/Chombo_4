@@ -241,6 +241,68 @@ public:
     return maxval;
   }
 
+  ///
+  Real max(int a_icomp) const
+  {
+    CH_TIME("EBLevelBoxData::max");
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real maxval = 0;
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid     =         dbl[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      Real gridval = Proto::maxCell(hostdata[dit[ibox]], grbx, a_icomp);
+      if(gridval > maxval)
+      {
+        maxval = gridval;
+      }
+    }
+#ifdef CH_MPI
+    Real sendBuf = maxval;
+    int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL,MPI_MAX, Chombo_MPI::comm);
+
+    if (result != MPI_SUCCESS)
+    {
+      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+    }
+#endif
+    return maxval;
+  }
+
+    ///
+  Real min(int a_icomp) const
+  {
+    CH_TIME("EBLevelBoxData::min");
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
+    copyToHost(     hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real minval = 0;
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid     =         dbl[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      Real gridval = Proto::minCell(hostdata[dit[ibox]], grbx, a_icomp);
+      if(gridval > minval)
+      {
+        minval = gridval;
+      }
+    }
+#ifdef CH_MPI
+    Real sendBuf = minval;
+    int result = MPI_Allreduce(&sendBuf, &minval, 1, MPI_CH_REAL,MPI_MIN, Chombo_MPI::comm);
+
+    if (result != MPI_SUCCESS)
+    {
+      MayDay::Error("Communication error in EBLevelBoxData::minNorm");
+    }
+#endif
+    return minval;
+  }
+
   ///for dot products
   Real sum(int a_icomp) const
   {

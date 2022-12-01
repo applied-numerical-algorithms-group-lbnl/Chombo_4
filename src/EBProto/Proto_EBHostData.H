@@ -278,6 +278,54 @@ namespace Proto
       return maxval;
     }
 
+  ///template specialization for cell
+  template <typename  data_t, unsigned int ncomp>
+  data_t maxCell(const EBHostData<CELL, data_t, ncomp>& a_src,
+                     const Box& a_grid, unsigned int a_icomp)
+  {
+    data_t maxval = -1e300;
+    using Proto::BoxIterator;
+    for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = a_src.ebgraph().getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+          {
+            const EBIndex<CELL>& vof = vofspt[ivec];
+            data_t datval = a_src(vof, a_icomp);
+            if(datval > maxval)
+              {
+                maxval = datval;
+              }
+          }
+      }
+    return maxval;
+  }
+
+    ///template specialization for cell
+  template <typename  data_t, unsigned int ncomp>
+  data_t minCell(const EBHostData<CELL, data_t, ncomp>& a_src,
+                     const Box& a_grid, unsigned int a_icomp)
+  {
+    data_t minval = 1e300;
+    using Proto::BoxIterator;
+    for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = a_src.ebgraph().getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+          {
+            const EBIndex<CELL>& vof = vofspt[ivec];
+            data_t datval = a_src(vof, a_icomp);
+            if(datval < minval)
+              {
+                minval = datval;
+              }
+          }
+      }
+    return minval;
+  }
+
   ///
   template <CENTERING cent, typename  data_t, unsigned int ncomp>
   data_t maxNormFace(const EBHostData<cent, data_t, ncomp>& a_src,

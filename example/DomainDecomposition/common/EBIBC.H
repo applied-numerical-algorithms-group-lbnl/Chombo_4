@@ -65,6 +65,48 @@ public:
     return m_domainBC[index];
   }
 
+  void standardStencilStrings(string a_bcnames[2*DIM],
+                              string& a_ebbcname) const
+    {
+      for(int ivec = 0; ivec < 2*DIM; ivec++)
+        {
+          const string& faceBC = m_domainBC[ivec];
+          if(faceBC == "Neumann")
+            {
+              a_bcnames[ivec] = StencilNames::Neumann;
+            }
+          else if(faceBC == "Dirichlet")
+            {
+              a_bcnames[ivec] = StencilNames::Dirichlet;
+            }
+          else if(faceBC == "None")
+            {
+              a_bcnames[ivec] = StencilNames::NoBC;
+            }
+          else
+            {
+              MayDay::Error((("EBIBC: unknown bc string " + a_bcnames[ivec]).c_str()));
+            }
+        }
+
+      if(m_ebbc == "Neumann")
+        {
+         a_ebbcname = StencilNames::Neumann;
+        }
+      else if(m_ebbc == "Dirichlet")
+        {
+         a_ebbcname = StencilNames::Dirichlet;
+        }
+      else if(m_ebbc == "None")
+        {
+         a_ebbcname = StencilNames::NoBC;
+        }
+      else
+        {
+          MayDay::Error((("EBIBC: unknown eb bc string " + a_ebbcname).c_str()));
+        }
+    }
+
   void helmholtzStencilStrings(string a_bcnames[2*DIM]) const
   {
     for(int ivec = 0; ivec < 2*DIM; ivec++)

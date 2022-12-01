@@ -13,6 +13,7 @@
 
 #ifdef CH_USE_PETSC
 #include "petsc.h"
+#include "petscerror.h"
 #include "petscmat.h"
 #include "petscvec.h"
 #include "petscksp.h"
@@ -97,9 +98,16 @@ public:
         inhofab.setVal(0.0);
       }
 
-    m_inhoContr.exchange(m_exchangeCopier);
+    //m_inhoContr.exchange(m_exchangeCopier);
 
     fillKappa(a_geoserv);
+
+    // check if all BCs are Neumann, and the null space constants constants
+    m_constNullSpace = (m_ebbcName == StencilNames::Neumann);
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+      {
+        m_constNullSpace &= (m_domainBCName[ivec] == StencilNames::Neumann);
+      }
 
     //create map of locations in space to matrix row.
     defineGIDS();
@@ -148,9 +156,27 @@ public:
 
     chomboToPetsc(m_bb, rhs);
     chomboToPetsc(m_xx, a_phi);
-    PetscScalar sum;
-    VecSum(m_bb, &sum);
-    pout() << "rhs sum = " << sum << std::endl;
+
+    if (m_constNullSpace)
+      {
+        PetscScalar sumOld;
+        VecSum(m_bb, &sumOld);
+        pout() << "rhs sum orig = " << sumOld << std::endl;
+        for (int i=0; i!=10; i++)
+          {
+            PetscInt size;
+            VecGetSize(m_bb, &size);
+            PetscScalar sumAdj = sumOld;
+            sumAdj /= -size;
+            VecSet(m_rr, 1.);
+            VecAXPY(m_bb, sumAdj, m_rr);
+            PetscScalar sum;
+            VecSum(m_bb, &sum);
+            pout() << "rhs adj sum  = " << sum << std::endl;
+            if (sum == sumOld) break;
+            sumOld = sum;
+          }
+      }
     // solve
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
@@ -163,6 +189,13 @@ public:
     //std::cout << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
     //pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
     //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
+
+     // PetscViewer viewer;
+     // PetscViewerASCIIOpen(PETSC_COMM_WORLD, "mat.m", &viewer);
+     // PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+     // MatView(m_mat, viewer);
+     // PetscViewerPopFormat(viewer);
+     // PetscViewerDestroy(&viewer);
 
     //std::cout << "b vector" << std::endl;
     //VecView(m_bb , PETSC_VIEWER_STDOUT_WORLD);
@@ -306,6 +339,41 @@ public:
     }
   }
 
+  /****/
+  // THIS IS SLOW. ONLY USE IT FOR TESTING PURPOSES.
+  // It should behave identically to the normal applyOp function, but evaluates the op as stored in the PETSc matrix
+  void
+  applyOpPETSC(EBLevelBoxData<CELL, 1>       & a_lph,
+               const EBLevelBoxData<CELL, 1> & a_phi,
+               bool a_doExchange = true)
+
+  {
+    using Chombo4::DataIterator;
+    CH_TIME("EBPetscSolver::applyOpPETSc");
+    CH_assert(  a_lph.ghostVect() == a_phi.ghostVect());
+    CH_assert(m_kappa.ghostVect() == a_phi.ghostVect());
+
+    auto dbl = m_grids;
+    PetscErrorCode ierr;
+
+    // this is an interface in case some operations are needed on the rhs
+    // the default does nothing
+    ierr = VecSetOption(m_bb,VEC_IGNORE_OFF_PROC_ENTRIES,PETSC_TRUE);CHKERRQ(ierr);
+    ierr = VecSetOption(m_xx,VEC_IGNORE_OFF_PROC_ENTRIES,PETSC_TRUE);CHKERRQ(ierr);
+    // add X and B from Chombo to PETSc and add stuff for EB to B
+    ierr = VecSet( m_xx, 0.);CHKERRQ(ierr);
+    ierr = VecSet( m_bb, 0.);CHKERRQ(ierr);
+    // eval
+    chomboToPetsc(m_bb, a_phi);
+    ierr = MatMult(m_mat, m_bb, m_xx); CHKERRQ(ierr);
+    // subtract off inhomog
+    chomboToPetsc(m_bb, m_inhoContr);
+    PetscScalar c = 1;
+    ierr = VecAXPY(m_xx, c, m_bb); CHKERRQ(ierr);
+    // put solution into output
+    ierr = petscToChombo(a_lph, m_xx); CHKERRQ(ierr);
+  }
+
   virtual
   PetscErrorCode
   getPetscMatrix(Mat       & a_mat)
@@ -347,6 +415,11 @@ public:
   {
     return m_stencil;
   }
+
+  bool hasConstNullSpace() const
+    {
+      return m_constNullSpace;
+    }
 
 private:
   int chomboToPetsc(Vec                           & a_dst,
@@ -713,6 +786,15 @@ private:
     if (true)
     {
       PetscInt ierr;
+      ierr = chomboToPetsc(m_rr, m_kappa); CHKERRQ(ierr);
+      PetscViewer viewer;
+      PetscViewerASCIIOpen(PETSC_COMM_WORLD, "kappa.m", &viewer);
+      PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+      VecView(m_rr, viewer);
+      PetscViewerPopFormat(viewer);
+      PetscViewerDestroy(&viewer);
+
+
       ierr = MatGetRowMaxAbs(m_mat, m_rr, NULL); CHKERRQ(ierr);
       PetscReal mmax = 0;
       ierr = VecNorm(m_rr, NORM_INFINITY, &mmax); CHKERRQ(ierr);
@@ -807,12 +889,7 @@ private:
       }
     }
     // account for free constants if all BCs are Neumann
-    bool constNullSpace = (m_ebbcName == StencilNames::Neumann);
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
-      {
-        constNullSpace &= (m_domainBCName[ivec] == StencilNames::Neumann);
-      }
-    if (constNullSpace)
+    if (m_constNullSpace)
       {
         pout() << "EBPetscSolver: Matrix nullspace includes constants" << std::endl;
         MatNullSpace nullspace;
@@ -1003,6 +1080,7 @@ private:
   PetscInt m_defined;
   char m_prestring[32];
   Real m_alpha, m_beta;
+  bool m_constNullSpace; // special corrections are required when true
 
   EBLevelBoxData<CELL, 1> m_kappa;
   EBLevelBoxData<CELL, 1> m_inhoContr;
