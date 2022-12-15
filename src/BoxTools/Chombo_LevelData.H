@@ -206,12 +206,14 @@ public:
   ///
   const DisjointBoxLayout& getBoxes() const
   {
+    CH_assert(this->m_isdefined == true);
     return m_disjointBoxLayout;
   }
 
   ///
   const DisjointBoxLayout& disjointBoxLayout() const
   {
+    CH_assert(this->m_isdefined == true);
     return m_disjointBoxLayout;
   }
 

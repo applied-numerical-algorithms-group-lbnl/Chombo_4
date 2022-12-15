@@ -118,6 +118,9 @@ public:
     setupSolver();
   }
 
+  // solve for phi from alpha*phi + beta*Lap(phi) = rhs
+  // NOTE: rhs should be kappa weighted! the resulting phi is NOT kappa weighted
+  // Phi will be overwritten, but phi coming in MAY be used as an initial condition if the option for a non-zero initial conditions is previously set
   virtual
   PetscErrorCode
   solve(EBLevelBoxData<CELL, 1>       & a_phi,
@@ -220,6 +223,7 @@ public:
     return 0;
   }
 
+  // if set as true, the solve(..) function will will use the incoming phi as an initial guess
   void setInitialGuessNonzero( bool b = true )
   {
     m_nz_init_guess = b;
@@ -264,12 +268,15 @@ public:
     EBLevelBoxData<CELL, 1>::copyToDevice(inhodat, hostdat);
   }
 
+  // the internal alpha value in the alpha*phi + beta*Lap(phi) = rhs operator
   Real getAlpha() const
     {return m_alpha;}
 
+  // the internal beta value in the alpha*phi + beta*Lap(phi) = rhs operator
   Real getBeta() const
     {return m_beta;}
 
+  // the internally stored kappa values. Shouldn't these be accessible from the geometry service?
   EBLevelBoxData<CELL, 1> & getKappa()
   {
     return m_kappa;

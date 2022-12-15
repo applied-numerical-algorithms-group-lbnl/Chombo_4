@@ -116,13 +116,52 @@ public:
   {
     DisjointBoxLayout dbl = this->disjointBoxLayout();
     DataIterator dit = dbl.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    for(dit.begin(); dit.ok(); ++dit)
     {
-      (*this)[dit[ibox]] += a_input[dit[ibox]];
+      (*this)[dit()] += a_input[dit()];
     }
     return *this;
   }
-  
+
+  ///
+  EBLevelBoxData&
+  operator-=(const EBLevelBoxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(dit.begin(); dit.ok(); ++dit)
+    {
+      (*this)[dit()] -= a_input[dit()];
+    }
+    return *this;
+  }
+
+  ///
+  EBLevelBoxData&
+  operator*=(const EBLevelBoxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(dit.begin(); dit.ok(); ++dit)
+    {
+      (*this)[dit()] *= a_input[dit()];
+    }
+    return *this;
+  }
+
+  ///
+  EBLevelBoxData&
+  operator/=(const EBLevelBoxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(dit.begin(); dit.ok(); ++dit)
+    {
+      (*this)[dit()] /= a_input[dit()];
+    }
+    return *this;
+  }
+
   ///
   void checkIfPeriodic(const DisjointBoxLayout & a_dp) const
   {
