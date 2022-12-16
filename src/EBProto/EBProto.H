@@ -2,21 +2,48 @@
 
 #include "Proto.H"
 #include "Proto_LoHiSide.H"
+#include "Chombo_SPACE.H"
 
 namespace Proto
 {
 
   enum CENTERING {CELL=0,BOUNDARY,XFACE,YFACE,ZFACE};
-/// Return the index into the arc vector
-  inline int ebp_index(int a_idir, Side::LoHiSide a_side) 
+
+  // A way to loop over each face type
+  constexpr std::array<CENTERING, Chombo4::SpaceDim>   REG_FACES{D_DECL(XFACE, YFACE, ZFACE)};
+  constexpr std::array<CENTERING, Chombo4::SpaceDim+1> ALL_FACES{BOUNDARY, D_DECL(XFACE, YFACE, ZFACE)};
+
+  /// Return the index into a SpaceDim*2 vector
+  /// use case is:
+  /// for (int dir = 0; dir != SpaceDim; dir++)
+  /// {
+  ///    for (SideIterator sit; sit.ok(); ++sit)
+  ///      {
+  ///        int faceIndex = ebp_index(dir, side);
+  ///        val[faceIndex] = side.sign() * flux[dir];
+  ///      }
+  /// }
+  inline int ebp_index(const int a_idir,
+                       const Side::LoHiSide a_side)
   {
-    return a_idir + a_side*DIM;
+    return a_idir + a_side*Chombo4::SpaceDim;
   }
-/// side and direction from the arc vector index
-  inline void ebp_face(int a_index, int& a_idir, Side::LoHiSide& a_side)
+
+  /// Get the side and direction from a vector index
+  //  use case is:
+  /// for (int faceIdx = 0; faceIdx != 2*SpaceDim; faceIdx++)
+  /// {
+  ///    int faceDir;
+  ///    Side::LoHiSide faceSide
+  ///    ebp_face(faceIndx, faceDir, faceSide)
+  ///    val[faceIndex] = faceSide.sign() * flux[faceDir];
+  /// }
+  inline void ebp_face(const int a_index,
+                       int& a_idir,
+                       Side::LoHiSide& a_side)
   {
-    a_idir = a_index%DIM;
-    if (a_index/DIM == 0)
+    a_idir = a_index%Chombo4::SpaceDim;
+    if (a_index/Chombo4::SpaceDim == 0)
       {
         a_side = Side::Lo;
       }

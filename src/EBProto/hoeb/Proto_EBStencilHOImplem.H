@@ -1,4 +1,3 @@
-
 #ifndef _Proto_EBStencilHOImplem_H_
 #define _Proto_EBStencilHOImplem_H_
 #include "Chombo_ParmParse.H"
@@ -10,7 +9,7 @@ namespace Proto
 
   template <int order>
   vector<EBIndex<CELL> >
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start)
   {
     PR_TIME("getFlapVoFs");
@@ -29,12 +28,12 @@ namespace Proto
 
   template <int order>
   bool
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL, order, Real>::
   isRegularStencil(const EBIndex<CELL> & a_vof,
                    const int             a_radius,
                    const EBGraph       & a_graph,
                    const VoluData      & a_voludata,
-                   const double          a_dx)
+                   const Real          a_dx)
   {
     PR_TIME("isRegularStencil");
     using Chombo4::pout;
@@ -42,7 +41,7 @@ namespace Proto
     Vector<EBIndex<CELL> > vof_cont;
     vof_cont.push_back(a_vof);
     RealVect centroid;
-    double kappa;
+    Real kappa;
     Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, a_vof, a_graph, a_dx);
     if (kappa < 1.0) retval=false;  
     int startV = 0;
@@ -51,7 +50,7 @@ namespace Proto
     {
       int neighSize = vof_cont.size();
       for (int ineigh = startV; ineigh<neighSize && !gotoMainLoop; ineigh++){
-        vector< EBIndex<CELL> > volsinclusive=  getFlapVoFs(a_graph, vof_cont[ineigh]);
+        vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, vof_cont[ineigh]);
         for(int ivof = 0; ivof < volsinclusive.size() && !gotoMainLoop; ivof++)
         {
           bool incl = true;
@@ -101,9 +100,9 @@ namespace Proto
 
   template <int order>
   void
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   printWLSStencil(int                                  radius,
-                  const LocalStencil< CELL,  double> & a_stencil,
+                  const LocalStencil< CELL,  Real> & a_stencil,
                   const Point                        & a_vofPt) 
   {
     using Chombo4::pout;
@@ -160,12 +159,12 @@ namespace Proto
   //Returns whether there are domain boundary conditions
   template <int order>
   bool 
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
-             vector<LocalStencil<CELL, double> >       & a_stencil,
-             vector<double>                            & a_inhoContr,
-             Stencil<double>                           & a_regStencil,
-             vector<Stencil<double> >                    a_regStencilBCS[2*DIM],
+             vector<LocalStencil<CELL, Real> >       & a_stencil,
+             vector<Real>                            & a_inhoContr,
+             Stencil<Real>                           & a_regStencil,
+             vector<Stencil<Real> >                    a_regStencilBCS[2*DIM],
              vector<Box>                                 a_BCApplyBoxes[2*DIM],       
              Box                                       & a_regApplyBox,
              bool                                      & a_bcOnly,
@@ -188,7 +187,7 @@ namespace Proto
              const EBNormalData                        & a_ebnormxdata,
              const EBNormalData                        & a_ebnormydata,
              const EBNormalData                        & a_ebnormzdata,
-             double                                      a_dx,
+             Real                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown,
              const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions,
@@ -231,36 +230,37 @@ namespace Proto
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Poisson_All_Neumann"))
     {
-      bool forceNeumann = true;
-      return
-        getWLSPoissonStencil(a_dstVoFs,
-                             a_stencil,
-                             a_inhoContr,
-                             a_regStencil,
-                             a_regStencilBCS,
-                             a_BCApplyBoxes,
-                             a_regApplyBox,
-                             a_stencilName,
-                             a_domainBCName,
-                             a_ebbcName,
-                             a_srcValid,
-                             a_srcDomain,
-                             a_srcGhost,
-                             a_dstGhost,
-                             a_srcGraph,
-                             a_voludata,
-                             a_ebfadata,
-                             a_xfacdata,
-                             a_yfacdata,
-                             a_zfacdata,
-                             a_ebnormxdata,
-                             a_ebnormydata,
-                             a_ebnormzdata,
-                             a_dx,
-                             a_periodiconly,
-                             forceNeumann,
-                             a_boundarySolutions,
-                             a_boundarySolutionsEB);
+      CH_assert(false); // IF YOU ARE HERE RECONSIDER WHAT GOT YOU IN THIS PLACE. THIS IS BAD DESIGN
+      // bool forceNeumann = true;
+      // return
+      //   getWLSPoissonStencil(a_dstVoFs,
+      //                        a_stencil,
+      //                        a_inhoContr,
+      //                        a_regStencil,
+      //                        a_regStencilBCS,
+      //                        a_BCApplyBoxes,
+      //                        a_regApplyBox,
+      //                        a_stencilName,
+      //                        a_domainBCName,
+      //                        a_ebbcName,
+      //                        a_srcValid,
+      //                        a_srcDomain,
+      //                        a_srcGhost,
+      //                        a_dstGhost,
+      //                        a_srcGraph,
+      //                        a_voludata,
+      //                        a_ebfadata,
+      //                        a_xfacdata,
+      //                        a_yfacdata,
+      //                        a_zfacdata,
+      //                        a_ebnormxdata,
+      //                        a_ebnormydata,
+      //                        a_ebnormzdata,
+      //                        a_dx,
+      //                        a_periodiconly,
+      //                        forceNeumann,
+      //                        a_boundarySolutions,
+      //                        a_boundarySolutionsEB);
     }
     else if (a_stencilName == string("Weighted_Least_Squares_Advection"))
     {
@@ -302,12 +302,12 @@ namespace Proto
  
   template <int order>
   bool
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getWLSPoissonStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
-                       vector<LocalStencil<CELL, double> >       & a_stencil,                    
-                       vector<double>                            & a_inhoContr,
-                       Stencil<double>                           & a_regStencil,         
-                       vector<Stencil<double> >                    a_regStencilBC[2*DIM],       
+                       vector<LocalStencil<CELL, Real> >       & a_stencil,
+                       vector<Real>                            & a_inhoContr,
+                       Stencil<Real>                           & a_regStencil,
+                       vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
                        vector<Box>                                 a_BCApplyBoxes[2*DIM],       
                        Box                                       & a_regApplyBox,                
                        string                                      a_stencilName,                
@@ -326,7 +326,7 @@ namespace Proto
                        const EBNormalData                        & a_ebnormxdata,
                        const EBNormalData                        & a_ebnormydata,
                        const EBNormalData                        & a_ebnormzdata,
-                       double                                      a_dx,                         
+                       Real                                      a_dx,
                        bool                                        a_periodiconly,               
                        bool  a_forceNeumann,
                        const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions,
@@ -337,7 +337,7 @@ namespace Proto
     pout()<<setprecision(15)<<scientific;
 //    using std::pout();
 //    using std::endl;
-//    a_regStencil = Stencil<double>::Laplacian();
+//    a_regStencil = Stencil<Real>::Laplacian();
 //    pout() << "done with regular sten init" << endl;
 //    a_regStencil *= 1.0/(a_dx*a_dx);
 //    pout() << "done with regular sten scaling" << endl;
@@ -444,8 +444,8 @@ namespace Proto
 
     map<pair<int,int>,int >::iterator it;
     map<tuple<int,int,int>,EBIndex<CELL> >::iterator it2;
-    vector<LocalStencil<CELL, double> > row_stencil;
-    vector<double> row_inhoContr;
+    vector<LocalStencil<CELL, Real> > row_stencil;
+    vector<Real> row_inhoContr;
     vector<EBIndex<CELL> > row_index;
 
     int initRep = nrepRows;
@@ -461,7 +461,7 @@ namespace Proto
     }
 */
     bool storeRegSten = false;
-    LocalStencil<CELL, double> regSten;
+    LocalStencil<CELL, Real> regSten;
     regSten.clear();
     Real regInhContr;
     WLSStencil<order> lapSten;
@@ -479,7 +479,7 @@ namespace Proto
         //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
         bool isReg = false;
         Point pt = vofInd.m_pt;
-        // Why 2?
+        // FIXME Why 2?
 #if DIM==3
         if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
             pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2 &&
@@ -557,7 +557,7 @@ namespace Proto
                             a_dx);
   
         RealVect centroid;
-        double kappa;
+        Real kappa;
         Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
         a_stencil[ivof]*= 1.0/(a_dx*a_dx);
         inhoTerm*= 1.0/(a_dx*a_dx);
@@ -575,7 +575,7 @@ namespace Proto
           a_stencil[ivof].clear();
           a_stencil[ivof] = regSten;
           a_inhoContr[ivof] = regInhContr;
-          int difi = vofInd.m_pt[0] - a_stencil[ivof].m_entries[0].m_vof.m_pt[0] - 1;
+          int difi = vofInd.m_pt[0] - a_stencil[ivof].m_entries[0].m_vof.m_pt[0] - 1; // WTF is this -1 for? Its important but why?
           int difj = vofInd.m_pt[1] - a_stencil[ivof].m_entries[0].m_vof.m_pt[1];
 #if DIM==3
           int difk = vofInd.m_pt[2] - a_stencil[ivof].m_entries[0].m_vof.m_pt[2];
@@ -630,7 +630,7 @@ namespace Proto
 #if DIM==3
           int difk = vofInd.m_pt[2] - row_index[kk].m_pt[2];
 #endif
-          LocalStencil<CELL, double> new_stencil;
+          LocalStencil<CELL, Real> new_stencil;
           for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
           {
               int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
@@ -712,12 +712,12 @@ namespace Proto
 
   template <int order>
   bool
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getWLSAdvectionStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,                    
-                         vector<LocalStencil<CELL, double> >       & a_stencil,                    
-                         vector<double>                            & a_inhoContr,
-                         Stencil<double>                           & a_regStencil,         
-                         vector<Stencil<double> >                    a_regStencilBC[2*DIM],       
+                         vector<LocalStencil<CELL, Real> >       & a_stencil,
+                         vector<Real>                            & a_inhoContr,
+                         Stencil<Real>                           & a_regStencil,
+                         vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
                          vector<Box>                                 a_BCApplyBoxes[2*DIM],       
                          Box                                       & a_regApplyBox,                
                          string                                      a_stencilName,                
@@ -736,7 +736,7 @@ namespace Proto
                          const EBNormalData                        & a_ebnormxdata,
                          const EBNormalData                        & a_ebnormydata,
                          const EBNormalData                        & a_ebnormzdata,
-                         double                                      a_dx,                         
+                         Real                                      a_dx,
                          bool                                        a_periodiconly,               
                          bool  a_forceNeumann)               
   {
@@ -833,8 +833,8 @@ namespace Proto
 
     map<pair<int,int>,int >::iterator it;
     map<tuple<int,int,int>,EBIndex<CELL> >::iterator it2;
-    vector<LocalStencil<CELL, double> > row_stencil;
-    vector<double> row_inhoContr;
+    vector<LocalStencil<CELL, Real> > row_stencil;
+    vector<Real> row_inhoContr;
     vector<EBIndex<CELL> > row_index;
 
     int initRep = nrepRows;
@@ -850,7 +850,7 @@ namespace Proto
     }
 
     bool storeRegSten = false;
-    LocalStencil<CELL, double> regSten;
+    LocalStencil<CELL, Real> regSten;
     Real regInhContr;
     //Looping over all the valid VoFs
     for(int k = initRep; k<initRep + nrepRows; k++)
@@ -909,7 +909,7 @@ namespace Proto
                             a_dx);
   
         RealVect centroid;
-        double kappa;
+        Real kappa;
         Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
         a_stencil[ivof]*= 1.0/(kappa*a_dx);
         inhoTerm*= 1.0/(a_dx);
@@ -979,7 +979,7 @@ namespace Proto
 #if DIM==3
           int difk = vofInd.m_pt[2] - row_index[kk].m_pt[2];
 #endif
-          LocalStencil<CELL, double> new_stencil;
+          LocalStencil<CELL, Real> new_stencil;
           for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
           {
               int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
@@ -1063,12 +1063,12 @@ namespace Proto
 
   template <int order>
   bool
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getWLSDivergenceCompStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
-                              vector<vector<LocalStencil<CELL, double> > >      & a_stencil,
-                              vector<double>                            & a_inhoContr,
-                              Stencil<double>                           & a_regStencil,
-                              vector<Stencil<double> >                    a_regStencilBC[2*DIM],
+                              vector<vector<LocalStencil<CELL, Real> > >      & a_stencil,
+                              vector<Real>                            & a_inhoContr,
+                              Stencil<Real>                           & a_regStencil,
+                              vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
                               vector<Box>                                 a_BCApplyBoxes[2*DIM],
                               Box                                       & a_regApplyBox,
                               string                                      a_stencilName,
@@ -1087,9 +1087,7 @@ namespace Proto
                               const EBNormalData                        & a_ebnormxdata,
                               const EBNormalData                        & a_ebnormydata,
                               const EBNormalData                        & a_ebnormzdata,
-                              double                                      a_dx,
-                              bool                                        a_periodiconly,
-                              bool  a_forceNeumann,
+                              Real                                      a_dx,
                               const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions,
                               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
@@ -1098,71 +1096,37 @@ namespace Proto
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
-    a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, double> >(a_dstVoFs.size()));
+    a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, Real> >(a_dstVoFs.size()));
     a_inhoContr.resize(a_dstVoFs.size());
     int radius = 2;
     int powerE = -3;
     bool verbose = 0;
-    int exactSolution = 1;
     //Neighbor list type. 0-FaceBased or 1-CellBased
     int neighListType = 1;
 
     Vector<int> ptVec;
 
+    CH_assert(a_boundarySolutions.size() == 6); // FIXME this should be handled elsewhere
+
     //Reading parameters from the inputs file for WLS stencils
     ParmParse pp;
+    // FIXME okay, but better as arguments, or better yet a stencil neighborhood type
     pp.get("radius"   , radius);
     pp.get("powerE"   , powerE);
     pp.query("verbose"   , verbose);
     pp.query("neighListType"   , neighListType);
     radius += 1;
-    //Exact solution
-    if (a_boundarySolutions.size() != 6)
-      {
-        pout() << "WLSDivergenceCompStencil reading BC" << std::endl;
-        pp.get("exact_solution",exactSolution);
-      }
-    else
-      {
-        pout() << "WLSDivergenceCompStencil using externally specified BC" << std::endl;
-      }
 
-
+    // FIXME verbosity should be controlled externally
     if (verbose)
       {
         pp.getarr("pt_verbose",ptVec,0,DIM);
       }
 
-    string ebbc = a_ebbcName;
-    vector<string> dombc[2*DIM];
-
-    //Assigning domain and EB boundary conditions
-    if(a_forceNeumann)
-      {
-        ebbc = string("Neumann");
-      }
-    if(!a_periodiconly)
-      {
-        for(int ivec = 0; ivec < 2*DIM; ivec++)
-          {
-            dombc[ivec].resize(DIM);
-            for(int comp=0; comp !=DIM; comp++)
-              {
-                if(a_forceNeumann)
-                  {
-                    dombc[ivec][comp] = string("Neumann");
-                  }
-                else
-                  {
-                    dombc[ivec][comp] = a_domainBCName[ivec][comp];
-                  }
-              }
-          }
-      }
-
     // print out the boundary conditions
+    // FIXME this only exists because it is confusing how things come in
     pout() << "WLSDivergenceCompStencil boundary conditions:" << std::endl;
-    pout() << "\t" << "eb " << ebbc << std::endl;
+    pout() << "\t" << "eb " << a_ebbcName << std::endl;
     for(int comp=0; comp !=DIM; comp++)
       {
         pout() << "   " << "comp " << comp << std::endl;
@@ -1172,54 +1136,21 @@ namespace Proto
             Side::LoHiSide side;
             ebp_face(ivec, dir, side);
             pout() << "\t" << "dir " << dir << ", side " << side
-                   << " " << dombc[ivec][comp] << std::endl;
+                   << " " << a_domainBCName[ivec][comp] << std::endl;
           }
       }
-    // // Setup periodic boundaries
-    // int ncells = a_domain.size();
-    // int nrepRows = -1;
-    // //pp.get("nx"   , ncells);
-    // pp.query("nrepRows", nrepRows);
-    // vector<map<int, int> > map1;
-    // map<pair<int,int>, EBIndex<CELL> > map2;
-    // map1.resize(ncells);
-    // for(int k=0; k<ncells; k++)
-    //   {
-    //     //Looping over all the valid VoFs
-    //     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
-    //       {
-    //         Point pt = a_dstVoFs[ivof].m_pt;
-    //         pair<int,int> ptPair (pt[0],pt[1]);
-    //         map2[ptPair] = a_dstVoFs[ivof];
-    //         if (pt[1]==k)
-    //           {
-    //             map1[k][pt[0]] = ivof;
-    //           }
-    //       }
-    //   }
-    // map<int,int >::iterator it;
-    // map<pair<int,int>,EBIndex<CELL> >::iterator it2;
-    // vector<LocalStencil<CELL, double> > row_stencil;
-    // vector<double> row_inhoContr;
-    // vector<EBIndex<CELL> > row_index;
-    // int initRep = nrepRows;
-    // while(initRep<2*radius)
-    //   {
-    //     initRep += nrepRows;
-    //   }
 
-    // if (nrepRows == -1)
-    //   {
-    //     initRep = 0;
-    //     nrepRows = ncells;
-    //   }
+    //Creating the WLS fluxes needed for flux divergence - U on a face
+    bool pt_verbose = false;
+    DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
 
-    //Looping over all the valid VoFs and setting up their stencils
-    // for(int k = initRep; k<initRep + nrepRows; k++)
-    //   {
-    //     for (it = map1[k].begin(); it != map1[k].end(); it++)
-    //       {
-    //         int ivof = it->second;
+    vector<vector<LocalStencil<CELL, Real> > > stencilsLo = a_stencil;
+    vector<vector<LocalStencil<CELL, Real> > > stencilsHi = a_stencil;
+    vector<std::array<Real, 3*2> > inhoContrHi(a_inhoContr.size());
+    //
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
             EBIndex<CELL> vofInd = a_dstVoFs[ivof];
@@ -1242,34 +1173,26 @@ namespace Proto
                     }
               }
 
-            //Creating the WLS fluxes needed for flux divergence - U on a face
-            DivWLSFlux<XFACE, order> xflux;
-            DivWLSFlux<YFACE, order> yflux;
-            DivWLSFlux<ZFACE, order> zflux;
-            DivWLSFlux<BOUNDARY, order> ebflux;
-            if (a_boundarySolutions.size() < 6)
-              {
-                //pout() << "Using uniform div boundary values" << std::endl;
-                xflux = DivWLSFlux<XFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                yflux = DivWLSFlux<YFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, exactSolution, pt_verbose);
-                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, exactSolution, pt_verbose);
-              }
-            else
-              {
-                //pout() << "Using specified div boundary values" << std::endl;
-                xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-                yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-                zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-                ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
-              }
+            // FIXME these should be pushed deeper before unpacked
+            // auto& xfacdata = (*(geoServLevel->template getFaceData<XFACE>()))[dit[ibox]];
+            // auto& voludata = a_levelGeoServ.getVoluData()[a_validBox];
+            // auto& ebfadata = a_levelGeoServ.getEBFaceData()[a_validBox];
+            // auto& xfacdata = a_levelGeoServ.getXFaceData()[a_validBox];
+            // auto& yfacdata = a_levelGeoServ.getYFaceData()[a_validBox];
+            // auto& zfacdata = a_levelGeoServ.getZFaceData()[a_validBox];
+            // auto& ebnorxdata = a_levelGeoServ.getEBNormalData_x()[a_validBox];
+            // auto& ebnorydata = a_levelGeoServ.getEBNormalData_y()[a_validBox];
+            // auto& ebnorzdata = a_a_levelGeoServ.getEBNormalData_z()[a_validBox];
 
-            //Computing the flux divergence stencil
+            std::array<LocalStencil<CELL, Real>, SpaceDim > stencilPack{D_DECL(a_stencil[0][ivof],
+                                                                               a_stencil[1][ivof],
+                                                                               a_stencil[2][ivof])};
+
+            // Computing the divergence stencil from the fluxes
+            // REVIEW the fluxes and stencil are tightly linked, so why build them separately?
             Real inhoTerm = 0.0;
             WLSStencil<order> sten;
-            sten.getWLSDivFCompStencil(a_stencil[0][ivof],
-                                       a_stencil[1][ivof],
-                                       a_stencil[2][ivof],
+            sten.getWLSDivFCompStencil(stencilPack,
                                        vofInd,
                                        a_graph,
                                        a_voludata,
@@ -1277,22 +1200,24 @@ namespace Proto
                                        a_xfacdata, a_yfacdata, a_zfacdata,
                                        a_ebnormxdata, a_ebnormydata,
                                        a_ebnormzdata,
-                                       xflux, yflux, zflux, ebflux, ebbc, dombc,
+                                       xflux, yflux, zflux, ebflux,
+                                       a_ebbcName, a_domainBCName,
                                        inhoTerm,
                                        neighListType,
                                        a_dx);
 
+            D_TERM(a_stencil[0][ivof] = stencilPack[0];,
+                   a_stencil[1][ivof] = stencilPack[1];,
+                   a_stencil[2][ivof] = stencilPack[2];);
+
             RealVect centroid;
-            double kappa;
+            Real kappa;
             Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
-            for (int dir=0; dir!=SpaceDim; dir++)
+            for (int dir=0; dir!=SpaceDim; dir++) // FIXME banish dx from stencil
               {
                 a_stencil[dir][ivof] *= 1.0/(a_dx);
               }
             a_inhoContr[ivof] = inhoTerm/(a_dx);
-            // row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
-            // row_inhoContr.push_back(a_inhoContr[ivof]);
-            // row_index.push_back(vofInd);
 
             if (pt_verbose)
               {
@@ -1308,105 +1233,24 @@ namespace Proto
                       {
                         accDivF += a_stencil[comp][ivof].m_entries[ivec].m_weight;
                       }
-                    pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[comp][ivof].size()<< endl;
+                    pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<< a_stencil[comp][ivof].size()<< endl;
                     totalW += accDivF;
                   }
                 pout() << "Sum of all stencil direction weights " << totalW << endl;
               }
           }
-      //}
-
-//     // update stencils for periodic boundaries
-//     if (nrepRows != ncells)
-//       {
-//         int kk =0;
-//         for(int k = 0; k<map1.size(); k++)
-//           {
-//             for (it = map1[k].begin(); it != map1[k].end(); it++)
-//               {
-//                 if (k>=initRep && k<initRep + nrepRows) continue;
-//                 int ivof = it->second;
-//                 if (kk==row_stencil.size()) kk=0;
-//                 EBIndex<CELL> vofInd = a_dstVoFs[ivof];
-//                 int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
-//                 int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
-//                 LocalStencil<CELL, double> new_stencil;
-//                 for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
-//                   {
-//                     int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
-//                     int pt_y = row_stencil[kk].m_entries[ivec].m_vof.m_pt[1] + difj;
-//                     if (pt_y < 0) {
-//                       pt_y += ncells;
-//                       pt_x += ncells/nrepRows;
-//                       if (difi==0) pt_x -= ncells/nrepRows;
-//                     }
-//                     if (pt_y > ncells-1) {
-//                       pt_y -= ncells;
-//                       pt_x -= ncells/nrepRows;
-//                       if (difi==0) pt_x += ncells/nrepRows;
-//                     }
-//                     pair<int,int> pairPt (pt_x,pt_y);
-//                     it2 = map2.find(pairPt);
-//                     if (it2 != map2.end())
-//                       {
-//                         new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
-//                       }
-//                   }
-//                 Point pt = vofInd.m_pt;
-//                 bool pt_verbose = false;
-//                 if (verbose)
-//                   {
-// #if DIM==3
-//                     if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
-// #else
-//                       if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
-// #endif
-//                         {
-//                           pt_verbose = true;
-//                           pout() << "Debugging Point "<<pt<<endl;
-//                         }
-//                       else
-//                         {
-//                           pt_verbose = false;
-//                         }
-//                   }
-
-//                 a_stencil[ivof] = new_stencil;
-//                 a_inhoContr[ivof] = row_inhoContr[kk];
-//                 kk++;
-
-//                 if (pt_verbose)
-//                   {
-//                     pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
-//                     printWLSStencil(radius, a_stencil[ivof][0], vofInd.m_pt);
-//                     Real accDivF = 0.0;
-//                     for(int ivec =  0; ivec < a_stencil[ivof][0].size(); ivec++)
-//                       {
-//                         accDivF += a_stencil[ivof][0].m_entries[ivec].m_weight;
-//                       }
-
-//                     pout() << "Original pt " << row_index[kk-1].m_pt[0] <<" , "<<row_index[kk-1].m_pt[1]<< endl;
-//                     pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof][0].size()<< endl;
-//                   }
-
-
-//               }
-//           }
-//       }
-
-
     return true;
   }
 
 
   template <int order>
   bool
-  EBStencilHO<CELL, CELL,  order, double>::
+  EBStencilHO<CELL, CELL,  order, Real>::
   getWLSGradientStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
-                              vector<vector<LocalStencil<CELL, double> > >      & a_stencil,
-                              vector<vector<double> >                          & a_inhoContr,
-                              Stencil<double>                           & a_regStencil,
-                              vector<Stencil<double> >                    a_regStencilBC[2*DIM],
+                              vector<vector<LocalStencil<CELL, Real> > >      & a_stencil,
+                              vector<vector<Real> >                          & a_inhoContr,
+                              Stencil<Real>                           & a_regStencil,
+                              vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
                               vector<Box>                                 a_BCApplyBoxes[2*DIM],
                               Box                                       & a_regApplyBox,
                               string                                      a_stencilName,
@@ -1425,7 +1269,7 @@ namespace Proto
                               const EBNormalData                        & a_ebnormxdata,
                               const EBNormalData                        & a_ebnormydata,
                               const EBNormalData                        & a_ebnormzdata,
-                              double                                      a_dx,
+                              Real                                      a_dx,
                               bool                                        a_periodiconly,
                               bool  a_forceNeumann,
                               const shared_ptr<BaseExactSolution<order> >& a_boundarySolutions)
@@ -1435,8 +1279,8 @@ namespace Proto
     pout()<<setprecision(15)<<scientific;
     a_regApplyBox = a_validBox;
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
-    a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, double> >(a_dstVoFs.size()));
-    a_inhoContr.resize(SpaceDim, vector<double>(a_dstVoFs.size()));
+    a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, Real> >(a_dstVoFs.size()));
+    a_inhoContr.resize(SpaceDim, vector<Real>(a_dstVoFs.size()));
 
     int radius = 2;
     int powerE = -3;
@@ -1518,8 +1362,8 @@ namespace Proto
     //   }
     // map<int,int >::iterator it;
     // map<pair<int,int>,EBIndex<CELL> >::iterator it2;
-    // vector<LocalStencil<CELL, double> > row_stencil;
-    // vector<double> row_inhoContr;
+    // vector<LocalStencil<CELL, Real> > row_stencil;
+    // vector<Real> row_inhoContr;
     // vector<EBIndex<CELL> > row_index;
     // int initRep = nrepRows;
     // while(initRep<2*radius)
@@ -1575,7 +1419,7 @@ namespace Proto
               }
 
             //Computing the cell gradient stencil
-            //LocalStencil<CELL, double> cellStenZ;
+            //LocalStencil<CELL, Real> cellStenZ;
             vector<Real> inhoTerm(DIM, 0.);
             WLSStencil<order> sten;
             sten.getWLSGradStencil(a_stencil[0][ivof],
@@ -1596,7 +1440,7 @@ namespace Proto
                                    a_dx);
 
             RealVect centroid;
-            double kappa;
+            Real kappa;
             Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
             // scale by cell size
             for (int dir=0; dir!=SpaceDim; dir++)
@@ -1640,7 +1484,7 @@ namespace Proto
 //                 EBIndex<CELL> vofInd = a_dstVoFs[ivof];
 //                 int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
 //                 int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
-//                 LocalStencil<CELL, double> new_stencil;
+//                 LocalStencil<CELL, Real> new_stencil;
 //                 for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
 //                   {
 //                     int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
