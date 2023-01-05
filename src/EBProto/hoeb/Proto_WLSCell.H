@@ -6,6 +6,7 @@
 #include "Chombo_LAPACKMatrix.H"
 #include "EBProto.H"
 #include "Proto_EBExactSolutions.H"
+#include "Proto_MomentHolder.H"
 
 namespace Proto
 {
@@ -158,7 +159,6 @@ namespace Proto
     Real m_wallValue;
   };
 
-
   ///
   /**
    */
@@ -200,94 +200,6 @@ namespace Proto
   
     RealVect m_center;
     Real     m_omega;
-  
-  };
- 
-  ///class where phi is a monomial in x, y, z
-  template<int order> //order is so we can send in geometry info
-  class MonomialPhi
-  {
-  public:
-    typedef IndexTM<int,DIM> IndMomDIM;
-    ///
-    /** monomial is a funciton of x, y, z
-        a_power = (p1, p2, p3) 
-        a_point = (x0, y0, z0)
-        the monomial is (x-x0)^p1*(y-y0)^p2*(z-z0)^p3 */
-    MonomialPhi();
-  
-    ///
-    static inline Real getTaylorCoefficient(const RealVect   & a_x0,
-                                            const IndMomDIM  & a_p
-                                           )
-    {
-      IntVect m_power;
-      RealVect m_point;
-      Vector<int> powerVec;
-      Vector<Real> pointVec;
-
-      ParmParse pp;
-      pp.getarr("phi_power",powerVec,0,DIM);
-      pp.getarr("phi_point",pointVec,0,DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        m_point[idir] = pointVec[idir];
-        m_power[idir] = powerVec[idir];
-      }
-
-      Real retval = 1.0;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        if(a_p[idir] > m_power[idir])
-        {
-          return 0.;
-        }
-        else
-        {
-          Real prefix = 1.0;
-          for(int ipre = 0; ipre < a_p[idir]; ipre++)
-          {
-            prefix *= (m_power[idir] - ipre);
-          }
-          retval *= prefix*pow(a_x0[idir]-m_point[idir],m_power[idir]-a_p[idir])/factorial(a_p[idir]);
-        }
-      }
-    
-        return retval;
-    }
-
-    static inline Real getTaylorCoefficient(const RealVect   & a_x0,
-                                            const IndMomDIM  & a_p,
-                                            const IntVect    & a_power,
-                                            const RealVect   & a_point
-                                           )
-    {
-      Real retval = 1.0;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        if(a_p[idir] > a_power[idir])
-        {
-          return 0.;
-        }
-        else
-        {
-          Real prefix = 1.0;
-          for(int ipre = 0; ipre < a_p[idir]; ipre++)
-          {
-            prefix *= (a_power[idir] - ipre);
-          }
-          retval *= prefix*pow(a_x0[idir]-a_point[idir],a_power[idir]-a_p[idir])/factorial(a_p[idir]);
-        }
-      }
-
-        return retval;
-    }
-
-
-  
-    virtual ~MonomialPhi()
-    {
-    }
   
   };
 
@@ -526,6 +438,7 @@ namespace Proto
 
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
+    // DEPRECATED
     void
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
@@ -537,6 +450,17 @@ namespace Proto
                                 const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata, // last geoserv argument
+                                Neighbors<order> & a_neigh,
+                                int                      a_neighType,
+                                string                   a_ebbcName,
+                                string                   a_dombcName[2*DIM], // order is is not obvious
+                                Real                   a_dx) const;
+
+    // New version, use this
+    void
+    getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
+                                const EBGraph          & a_graph,
+                                const MomentHolder<order>  & a_momentData,
                                 Neighbors<order> & a_neigh,
                                 int                      a_neighType,
                                 string                   a_ebbcName,
@@ -577,11 +501,10 @@ namespace Proto
 
     //Compute stencil coefficients matrix 
     void
-    getStencilWeights(Chombo4::LAPACKMatrix        & a_phiCoef,
+    computeWLSStencilValues(Chombo4::LAPACKMatrix        & a_phiCoef,
                       const Chombo4::LAPACKMatrix  & a_Qshift,
                       const Chombo4::LAPACKMatrix  & a_Mvol,
-                      const Chombo4::LAPACKMatrix  & a_weights,
-                      Real                         a_dx) const;
+                      const Chombo4::LAPACKMatrix  & a_weights) const;
 
     //Compute inhomogeneous term
     Real
@@ -593,6 +516,7 @@ namespace Proto
                        Real                            a_dx) const;
 
     //Compute face centered flux stencil
+    //// DEPRECATED
     void
     getFaceCenteredStencil(LocalStencil<CELL, Real> & a_sten,
                            Real                       & a_inhomogTerm, //for inhomogeneous bcs
@@ -615,7 +539,25 @@ namespace Proto
                            Real                       a_signNormal,
                            Real                       a_dx) const;
 
+    //Compute face centered flux stencil
+    // New version, use this
+    void
+    getFaceCenteredStencil(LocalStencil<CELL, Real> & a_sten,
+                           Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                           const EBIndex<CELL>        & a_vof,
+                           const EBIndex<cent>        & a_face,
+                           const EBGraph              & a_graph,
+                           const MomentHolder<order>  & a_momentData,
+                           string                       a_ebbcName,
+                           string                       a_dombcName[2*DIM],
+                           const int                    a_dir,
+                           IndMomSDMinOne             & a_faceMom,
+                           int                        & a_neighType,
+                           Real                       a_signNormal,
+                           Real                       a_dx) const;
+
     //Compute EB face stencil
+    // DEPRECATED
     void
     getEBFluxStencil(LocalStencil<CELL, Real>    & a_facesten,
                      Real                          & a_inhomogTerm, //for inhomogeneous bcs
@@ -630,6 +572,21 @@ namespace Proto
                      const EBNormalData            & a_ebnormxdata,
                      const EBNormalData            & a_ebnormydata,
                      const EBNormalData            & a_ebnormzdata,
+                     Vector<IndMomDIM>             & a_ebnorm,
+                     string                          a_ebbcName,
+                     string                          a_dombcName[2*DIM],
+                     int                             a_neighType,
+                     const Real                    a_dx) const;
+
+    //Compute EB face stencil
+    // New version
+    void
+    getEBFluxStencil(LocalStencil<CELL, Real>    & a_facesten,
+                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                     const EBIndex<CELL>           & a_vof,
+                     const EBIndex<cent>           & a_face,
+                     const EBGraph                 & a_graph,
+                     const MomentHolder<order>  & a_momentData,
                      Vector<IndMomDIM>             & a_ebnorm,
                      string                          a_ebbcName,
                      string                          a_dombcName[2*DIM],
@@ -774,7 +731,7 @@ namespace Proto
         m_exactSolEB = exactSol;
       }
 
-    public:
+  public:
     //Radius needed for neighbors list around a face (Manhattan style)
     int m_radius = 1;
     //Exponent for the distance between the VoFs and the face in the weights matrix
@@ -996,6 +953,8 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<cent,order>::BaseWLSFlux;
+    using BaseWLSFlux<cent,order>::m_radius;
+    using BaseWLSFlux<cent,order>::m_verbose;
 
     //Compute rhs matrix for a face
     virtual void
@@ -1004,7 +963,7 @@ namespace Proto
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
                       Real                     a_signNormal,
-                      Real                     a_dx) const;
+                      Real                     a_dx) const override;
 
     //Compute rhs matrix for a EB face
     virtual void
@@ -1012,7 +971,38 @@ namespace Proto
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
                     Vector<IndMomDIM>        & a_ebnorm,
-                    Real                     a_dx) const;
+                    Real                     a_dx) const override;
+
+    //Compute face centered flux stencil, using all components and coupling BCs
+    void
+    getFaceCenteredStencilFull(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_sten,
+                               Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                               const EBIndex<CELL>        & a_vof,
+                               const EBIndex<cent>        & a_face,
+                               const EBGraph              & a_graph,
+                               const MomentHolder<order>  & a_momentData,
+                               string                       a_ebbcName,
+                               string                       a_dombcName[2*DIM],
+                               const int                    a_dir,
+                               IndMomSDMinOne             & a_faceMom,
+                               int                        & a_neighType,
+                               Real                       a_signNormal,
+                               Real                       a_dx) const;
+
+    //Compute EB face stencil
+    // New version
+    void
+    getEBFluxStencilFull(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_sten,
+                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                     const EBIndex<CELL>           & a_vof,
+                     const EBIndex<cent>           & a_face,
+                     const EBGraph                 & a_graph,
+                     const MomentHolder<order>  & a_momentData,
+                     Vector<IndMomDIM>             & a_ebnorm,
+                     string                          a_ebbcName,
+                     string                          a_dombcName[2*DIM],
+                     int                             a_neighType,
+                     const Real                    a_dx) const;
 
     virtual ~DivWLSFlux()
       {}
@@ -1028,13 +1018,6 @@ namespace Proto
                bool          a_verbose=false)
       :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolLo, a_exactSolHi, a_exactSolEB, 0, a_verbose)
       {}
-
-    // DivWLSFlux(int           a_radius,
-    //            int           a_powerE,
-    //            int           a_exactSolFun,
-    //            bool          a_verbose=false)
-    //   :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
-    //   {}
   };
 
   ///some basic infrastructure to support the WLS stencils
@@ -1129,14 +1112,7 @@ namespace Proto
     getWLSDivFCompStencil(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
                           const EBIndex<CELL>                 & a_vof,
                           const EBGraph                       & a_graph,
-                          const VoluData                      & a_voludata, // FIXME just want the geoservice
-                          const EBFaData                      & a_ebfadata,
-                          const XFacData                      & a_xfacdata,
-                          const YFacData                      & a_yfacdata,
-                          const ZFacData                      & a_zfacdata,
-                          const EBNormalData                  & a_ebnormxdata,
-                          const EBNormalData                  & a_ebnormydata,
-                          const EBNormalData                  & a_ebnormzdata,
+                          const MomentHolder<order>           & a_momentData,
                           const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
                           const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
                           const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
@@ -1144,36 +1120,63 @@ namespace Proto
                           string                                a_ebbcName,
                           vector<string>                                a_dombcName[2*DIM],
                           Real                                & a_inhoTerm,
-                          int                                 & a_neighType,
+                          int                                 a_neighType,
                           Real                                a_dx);
+
+    template<int dir>
+    void getWLSDivFCompStencilDir(
+      std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
+      const EBIndex<CELL>                 & a_vof,
+      const EBGraph                       & a_graph,
+      const MomentHolder<order>           & a_momentData,
+      const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
+      const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
+      const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
+      const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
+      string                                a_ebbcName,
+      vector<string>                        a_dombcName[2*DIM],
+      Real                                & a_inhoTerm,
+      int                                 a_neighType,
+      Real                                a_dx);
+
+    void
+    getDistanceWeightedFluxAvgCoeffs(
+      Real&    a_loSideWeight,
+      Real&    a_hiSideWeight,
+      const RealVect        a_faceCentroid,
+      const EBIndex<CELL> & a_voflo,
+      const EBIndex<CELL> & a_vofhi,
+      const int             a_dir,
+      const VoluData       & a_voludata,
+      const EBGraph        & a_graph,
+      const Real             a_dx);
 
     // Get a single face flux stencil at a face by a distance weighted average between
     // two cell-centered flux stencils states computed by the neighbor cells sharing the face
     // This was originally designed for the Laplacian stencil, but is generally applicable
-    inline
     LocalStencil< CELL,  Real>
     getDistanceWeightedFluxAvgStencil(
       LocalStencil< CELL,  Real> & a_fluxMStencil,
       LocalStencil< CELL,  Real> & a_fluxPStencil,
-      RealVect                     & a_centroid,
+      const RealVect                 a_centroid,
       const EBIndex<CELL>          & a_voflo,
       const EBIndex<CELL>          & a_vofhi,
-      int                            a_dir,
+      const int                      a_dir,
       const VoluData               & a_voludata,
       const EBGraph                & a_graph,
-      Real                         a_dx);
+      const Real                     a_dx);
 
-    inline
     Real
-    getLapinhomogTerm(Real                       & a_inhomogTermM,
-                      Real                       & a_inhomogTermP,
-                      RealVect                     & a_centroid,
-                      const EBIndex<CELL>          & a_voflo, 
-                      const EBIndex<CELL>          & a_vofhi,
-                      int                            a_dir,
-                      const VoluData               & a_voludata,
-                      const EBGraph                & a_graph,
-                      Real                         a_dx);
+    getLapinhomogTerm(
+      Real                         a_inhomogTermM,
+      Real                         a_inhomogTermP,
+      const RealVect               a_centroid,
+      const EBIndex<CELL>          & a_voflo,
+      const EBIndex<CELL>          & a_vofhi,
+      const int                      a_dir,
+      const VoluData               & a_voludata,
+      const EBGraph                & a_graph,
+      const Real                     a_dx);
  
     inline
     LocalStencil< CELL,  Real>
@@ -1203,6 +1206,40 @@ namespace Proto
     std::map<EBIndex<YFACE>,Real> yfacesInhTerm;
     std::map<EBIndex<ZFACE>,Real> zfacesInhTerm;
   };
+
+  // template <int order>
+  // template <>
+  // inline void
+  // WLSStencil<order>::
+  //   getWLSDivFCompStencilFull<0>(
+  //     std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
+  //     const EBIndex<CELL>                 & a_vof,
+  //     const EBGraph                       & a_graph,
+  //     const MomentHolder<order>           & a_momentData,
+  //     const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
+  //     const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
+  //     const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
+  //     const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
+  //     string                                a_ebbcName,
+  //     vector<string>                                a_dombcName[2*DIM],
+  //     Real                                & a_inhoTerm,
+  //     int                                 a_neighType,
+  //     Real                                a_dx)
+  //     {
+  //       getWLSDivFCompStencilDir<0>(a_vofStencil,
+  //                                   a_vof,
+  //                                   a_graph,
+  //                                   a_momentData,
+  //                                   a_xfaceflux,
+  //                                   a_yfaceflux,
+  //                                   a_zfaceflux,
+  //                                   a_ebflux,
+  //                                   a_ebbcName,
+  //                                   a_dombcName,
+  //                                   a_inhoTerm,
+  //                                   a_neighType,
+  //                                   a_dx);
+  //     }
 
   //Class to compute Dirichlet BCs at faces and EB Faces for the Moment Matrix.
   template<int order>

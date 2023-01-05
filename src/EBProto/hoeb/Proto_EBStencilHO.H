@@ -3,28 +3,57 @@
 
 #include "EBProto.H"
 #include "Proto_EBExactSolutions.H"
+#include "Proto_MomentHolder.H"
 //#include "Proto_Normalizor.H"
 #include "Chombo_ParmParse.H"
 
 namespace Proto
 {
-  struct stencilType
+  struct StencilTraits
   {
-    // How many cells around the stencil to grab
-    int cellRadius = 2;
-    // The weighting power to use
-    int powerExponent = -3;
-    // Neighbor list type. 0-FaceBased or 1-CellBased
-    int neighListType = 1;
-
     void
-    readStencilType(const std::string a_PPprefix)
+    readStencilTraits(const std::string a_PPprefix)
       {
         ParmParse pp;
-        pp.get("radius", cellRadius);
-        pp.get("powerE", powerExponent);
-        pp.query("neighListType", neighListType);
+        pp.get("radius", m_radius);
+        pp.get("powerE", m_weightPower);
+        pp.query("neighListType", m_neighListType);
       }
+
+    void
+    defaultStencilTraits(const int a_order)
+      {
+        int m_radius = a_order; // over-estimate but sufficiently large
+        int m_weightPower = -(a_order+1); // minimal reasonable weighting
+        int m_neighListType = 1;
+      }
+
+    StencilTraits()
+      {
+        readStencilTraits("");
+      }
+
+    StencilTraits(const int a_order)
+      {
+        defaultStencilTraits(a_order);
+      }
+
+    inline const int radius() const
+      { return m_radius;}
+
+    inline const int weightPower() const
+      { return m_weightPower;}
+
+    inline const int neighListType() const
+      { return m_neighListType;}
+
+    // How many cells around the stencil center to grab
+    int m_radius;
+    // The weighting power to use
+    int m_weightPower;
+    // Neighbor list type. 0-FaceBased or 1-CellBased
+    int m_neighListType;
+
   };
 
   template <CENTERING srcCenter, CENTERING dstCenter, int order, typename data_t>
@@ -197,15 +226,15 @@ namespace Proto
                                 const Point                               & a_srcGhost, // should this matter?
                                 const Point                               & a_dstGhost, // should this matter?
                                 const EBGraph                             & a_graph,
-                                //const LevelGeometryService<order>         & a_levelGeoServ,
-                                const VoluData                            & a_voludata,  // Really I am just asking for all the data stored in geometry service on a level
-                                const EBFaData                            & a_ebfadata,
-                                const XFacData                            & a_xfacdata,
-                                const YFacData                            & a_yfacdata,
-                                const ZFacData                            & a_zfacdata,
-                                const EBNormalData                        & a_ebnormxdata,
-                                const EBNormalData                        & a_ebnormydata,
-                                const EBNormalData                        & a_ebnormzdata, // last geoserv data
+                                const MomentHolder<order>                 & a_momentData,
+                                // const VoluData                            & a_voludata,  // Really I am just asking for all the data stored in geometry service on a level
+                                // const EBFaData                            & a_ebfadata,
+                                // const XFacData                            & a_xfacdata,
+                                // const YFacData                            & a_yfacdata,
+                                // const ZFacData                            & a_zfacdata,
+                                // const EBNormalData                        & a_ebnormxdata,
+                                // const EBNormalData                        & a_ebnormydata,
+                                // const EBNormalData                        & a_ebnormzdata, // last geoserv data
                                 Real                                      a_dx, // should be part of apply
                                 const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution = vector<shared_ptr<BaseExactSolution<order> > >(), // these are a mess, should be an array or struct to help with organization, similar to BCName. Ideally part of apply
                                 const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);

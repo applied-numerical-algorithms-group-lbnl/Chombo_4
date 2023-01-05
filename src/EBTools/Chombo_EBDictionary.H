@@ -3,8 +3,6 @@
 #define _Chombo_EBDictionary_H_
 
 
-#include "Proto.H"
-#include "EBProto.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_EBChombo.H"
 #include "Chombo_GeometryService.H"

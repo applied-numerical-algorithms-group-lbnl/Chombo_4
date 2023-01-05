@@ -13,12 +13,11 @@
 #define _Chombo_GeometryService_H_
 
 
-#include "Proto.H"
-#include "EBProto.H"
+#include "Chombo_EBChombo.H"
+#include "Proto_MomentHolder.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
-#include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_NamespaceHeader.H"
@@ -38,7 +37,7 @@ class LevelGeometryService
 {
 
 public:
-
+  typedef Proto::IndexTM<int,2>      Iv2;
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
   typedef MomentIterator<DIM  , order> MomItDIM;
@@ -146,7 +145,7 @@ public:
   const shared_ptr<LevelData<HostIrregData<ZFACE, IndMomSDMinOne, 1> > >
   getFaceData_dispatch(typenameTag<ZFACE>) const;
 
-  /// ONE ACCESSOR TO RULE THEM ALL, AND DOES
+  /// ONE ACCESSOR TO RULE THEM ALL
   template<CENTERING cent>
   const shared_ptr<LevelData<HostIrregData<cent, IndMomSDMinOne, 1> > >
   getFaceData() const
@@ -183,6 +182,24 @@ public:
     CH_assert((a_dir >= 0) && (a_dir < SpaceDim));
     return m_ebnormaldata[a_dir];
   }
+
+  // A struct for holding all the moments,
+  // now we can pass just 1 struct instead of 10 arguments and hide the problem dimensionality
+  // This only has proto dependencies, so usable in stencils
+  const
+  Proto::MomentHolder<order>
+  getAllMomentData(const DataIndex a_dit) const
+    {
+      Proto::MomentHolder<order> holder((*(getVoluData()))[a_dit],
+                                        (*(getEBFaceData()))[a_dit],
+                                        (*(getXFaceData()))[a_dit],
+                                        (*(getYFaceData()))[a_dit],
+                                        (*(getZFaceData()))[a_dit],
+                                        (*(getEBNormalData_x()))[a_dit],
+                                        (*(getEBNormalData_y()))[a_dit],
+                                        (*(getEBNormalData_z()))[a_dit]);
+      return holder;
+    }
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,

@@ -1079,14 +1079,15 @@ namespace Proto
                               const Point                               & a_srcGhost,
                               const Point                               & a_dstGhost,
                               const EBGraph                             & a_graph,
-                              const VoluData                            & a_voludata,
-                              const EBFaData                            & a_ebfadata,
-                              const XFacData                            & a_xfacdata,
-                              const YFacData                            & a_yfacdata,
-                              const ZFacData                            & a_zfacdata,
-                              const EBNormalData                        & a_ebnormxdata,
-                              const EBNormalData                        & a_ebnormydata,
-                              const EBNormalData                        & a_ebnormzdata,
+                              const MomentHolder<order>                 & a_momentData,
+                              // const VoluData                            & a_voludata,
+                              // const EBFaData                            & a_ebfadata,
+                              // const XFacData                            & a_xfacdata,
+                              // const YFacData                            & a_yfacdata,
+                              // const ZFacData                            & a_zfacdata,
+                              // const EBNormalData                        & a_ebnormxdata,
+                              // const EBNormalData                        & a_ebnormydata,
+                              // const EBNormalData                        & a_ebnormzdata,
                               Real                                      a_dx,
                               const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions,
                               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
@@ -1098,26 +1099,17 @@ namespace Proto
     a_dstVoFs = a_graph.getAllVoFs(a_validBox);
     a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, Real> >(a_dstVoFs.size()));
     a_inhoContr.resize(a_dstVoFs.size());
-    int radius = 2;
-    int powerE = -3;
     bool verbose = 0;
-    //Neighbor list type. 0-FaceBased or 1-CellBased
-    int neighListType = 1;
 
     Vector<int> ptVec;
 
     CH_assert(a_boundarySolutions.size() == 6); // FIXME this should be handled elsewhere
 
     //Reading parameters from the inputs file for WLS stencils
-    ParmParse pp;
-    // FIXME okay, but better as arguments, or better yet a stencil neighborhood type
-    pp.get("radius"   , radius);
-    pp.get("powerE"   , powerE);
-    pp.query("verbose"   , verbose);
-    pp.query("neighListType"   , neighListType);
-    radius += 1;
+    StencilTraits stenTraits;
 
     // FIXME verbosity should be controlled externally
+    ParmParse pp; // banish this from internals
     if (verbose)
       {
         pp.getarr("pt_verbose",ptVec,0,DIM);
@@ -1142,14 +1134,15 @@ namespace Proto
 
     //Creating the WLS fluxes needed for flux divergence - U on a face
     bool pt_verbose = false;
-    DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(radius, powerE, a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(radius, powerE, a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                              a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                              a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                              a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+    DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                                     a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
 
-    vector<vector<LocalStencil<CELL, Real> > > stencilsLo = a_stencil;
-    vector<vector<LocalStencil<CELL, Real> > > stencilsHi = a_stencil;
-    vector<std::array<Real, 3*2> > inhoContrHi(a_inhoContr.size());
     //
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
@@ -1173,17 +1166,7 @@ namespace Proto
                     }
               }
 
-            // FIXME these should be pushed deeper before unpacked
-            // auto& xfacdata = (*(geoServLevel->template getFaceData<XFACE>()))[dit[ibox]];
-            // auto& voludata = a_levelGeoServ.getVoluData()[a_validBox];
-            // auto& ebfadata = a_levelGeoServ.getEBFaceData()[a_validBox];
-            // auto& xfacdata = a_levelGeoServ.getXFaceData()[a_validBox];
-            // auto& yfacdata = a_levelGeoServ.getYFaceData()[a_validBox];
-            // auto& zfacdata = a_levelGeoServ.getZFaceData()[a_validBox];
-            // auto& ebnorxdata = a_levelGeoServ.getEBNormalData_x()[a_validBox];
-            // auto& ebnorydata = a_levelGeoServ.getEBNormalData_y()[a_validBox];
-            // auto& ebnorzdata = a_a_levelGeoServ.getEBNormalData_z()[a_validBox];
-
+            // pack together
             std::array<LocalStencil<CELL, Real>, SpaceDim > stencilPack{D_DECL(a_stencil[0][ivof],
                                                                                a_stencil[1][ivof],
                                                                                a_stencil[2][ivof])};
@@ -1193,26 +1176,37 @@ namespace Proto
             Real inhoTerm = 0.0;
             WLSStencil<order> sten;
             sten.getWLSDivFCompStencil(stencilPack,
+            // stencilsLo,
+                                       // stencilsLo,
+                                       // inhomLo,
+                                       // inhomHi,
                                        vofInd,
                                        a_graph,
-                                       a_voludata,
-                                       a_ebfadata,
-                                       a_xfacdata, a_yfacdata, a_zfacdata,
-                                       a_ebnormxdata, a_ebnormydata,
-                                       a_ebnormzdata,
+                                       a_momentData,
                                        xflux, yflux, zflux, ebflux,
                                        a_ebbcName, a_domainBCName,
                                        inhoTerm,
-                                       neighListType,
+                                       stenTraits.neighListType(),
                                        a_dx);
 
+            // unpack
             D_TERM(a_stencil[0][ivof] = stencilPack[0];,
                    a_stencil[1][ivof] = stencilPack[1];,
                    a_stencil[2][ivof] = stencilPack[2];);
 
+    //   }
+    // for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
+    //   {
+    //     Real inhoTerm = 0;
+    //     // Really just get the face average
+    //     a_stencil[0][ivof] = getDistanceWeightedFluxAvgStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
+    //     Real inhomogTermComp = getLapinhomogTerm(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
+
+
             RealVect centroid;
             Real kappa;
-            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
+            auto& voludata = a_momentData.volumeMoments();
+            Normalizor<order>::normalizedVoluMoments(kappa, centroid, voludata, vofInd, a_graph, a_dx);
             for (int dir=0; dir!=SpaceDim; dir++) // FIXME banish dx from stencil
               {
                 a_stencil[dir][ivof] *= 1.0/(a_dx);
@@ -1228,7 +1222,7 @@ namespace Proto
                   {
                     Real accDivF = 0.;
                     pout() << " stencil " << comp << " comp" << std::endl;
-                    printWLSStencil(radius, a_stencil[comp][ivof], vofInd.m_pt);
+                    printWLSStencil(stenTraits.radius(), a_stencil[comp][ivof], vofInd.m_pt);
                     for(int ivec = 0; ivec < a_stencil[comp][ivof].size(); ivec++)
                       {
                         accDivF += a_stencil[comp][ivof].m_entries[ivec].m_weight;

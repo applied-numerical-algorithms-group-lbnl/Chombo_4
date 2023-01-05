@@ -11,17 +11,13 @@
 #ifndef _EBLEVELBoxDATA_H____
 #define _EBLEVELBoxDATA_H____
 
-#include "Proto.H"
-#include "EBProto.H"
+#include "Chombo_EBChombo.H"
 #include "Chombo_LevelData.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
-#include "Chombo_EBChombo.H"
 #include "Chombo_ProtoFactories.H"
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_SPMD.H"
-#include "Proto_EBBoxData.H"
-#include "Proto_EBHostData.H"
 #include "Chombo_NamespaceHeader.H"
 
 #ifdef CH_MPI

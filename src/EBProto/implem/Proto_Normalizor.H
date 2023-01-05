@@ -1,4 +1,3 @@
-
 #ifndef _Proto_Normalizor__H_
 #define _Proto_Normalizor__H_
 
@@ -8,7 +7,7 @@
 namespace Proto
 {
 
-  ///
+  /// This class is used to provide nomalized moments (removes dependence on grid spacing)
   template <int order>
   class Normalizor
   {
@@ -26,6 +25,7 @@ namespace Proto
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
 
     ///
+    // the centroid is relative to the cartesian face center with unit length
     template <CENTERING cent>
     inline static void
     normalizedFaceMoments(double                                                      & a_areaFrac,
@@ -125,7 +125,7 @@ namespace Proto
 
     }
     
-
+    // the centroid is relative to the cartesian cell center with unit length
     inline static void
     normalizedVoluMoments(double                                                      & a_volFrac,
                           RealVect                                                    & a_centroid,
@@ -361,9 +361,19 @@ namespace Proto
     }
   };
 
-
-
-
+// Other utilities related to moments
+  // get the volume of a regular cell, given dx. Dimensionality is accounted for
+  inline Real
+  getRegularVolume(const Real a_dx)
+  {
+    return D_TERM(a_dx, *a_dx, *a_dx);
+  }
+  // get the volume of a regular face, given dx. Dimensionality is accounted for
+  inline Real
+  getRegularArea(const Real a_dx)
+  {
+    return D_TERM(1, *a_dx, *a_dx);
+  }
 
 }
 #include "Proto_EBStencilArchiveImplem.H"

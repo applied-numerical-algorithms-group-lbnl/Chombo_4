@@ -63,6 +63,16 @@ public:
       define(0, 0);
     }
 
+  inline int numRow() const
+    {
+      return m_nrow;
+    };
+
+  inline int numCol() const
+    {
+      return m_ncol;
+    }
+
   ///return sqrt(sum of squares of all values)
   Real normLTwo() const;
 

@@ -26,6 +26,8 @@ namespace Proto
   inline int ebp_index(const int a_idir,
                        const Side::LoHiSide a_side)
   {
+    CH_assert(a_idir >= 0);
+    //CH_assert(a_idir < Chombo4::SpaceDim); // FIXME add once dimensionality be better managed
     return a_idir + a_side*Chombo4::SpaceDim;
   }
 
@@ -42,6 +44,8 @@ namespace Proto
                        int& a_idir,
                        Side::LoHiSide& a_side)
   {
+    CH_assert(a_index >= 0);
+    //CH_assert(a_index < 2*Chombo4::SpaceDim); // FIXME add once dimensionality be better managed
     a_idir = a_index%Chombo4::SpaceDim;
     if (a_index/Chombo4::SpaceDim == 0)
       {
