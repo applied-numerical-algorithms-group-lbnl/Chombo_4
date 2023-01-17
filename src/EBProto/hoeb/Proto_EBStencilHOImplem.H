@@ -1110,6 +1110,7 @@ namespace Proto
 
     // FIXME verbosity should be controlled externally
     ParmParse pp; // banish this from internals
+    pp.query("verbose"   , verbose);
     if (verbose)
       {
         pp.getarr("pt_verbose",ptVec,0,DIM);
@@ -1132,23 +1133,13 @@ namespace Proto
           }
       }
 
-    //Creating the WLS fluxes needed for flux divergence - U on a face
-    bool pt_verbose = false;
-    DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
-                                                              a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
-                                                              a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
-                                                              a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-    DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits.radius(), stenTraits.weightPower(),
-                                                                     a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
-
     //
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
             EBIndex<CELL> vofInd = a_dstVoFs[ivof];
             Point pt = vofInd.m_pt;
             bool pt_verbose = false;
+
             if (verbose)
               {
 #if DIM==3
@@ -1165,6 +1156,16 @@ namespace Proto
                       pt_verbose = false;
                     }
               }
+
+            //Creating the WLS fluxes needed for flux divergence - U on a face
+            DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                                      a_boundarySolutions[ebp_index(0, Side::Lo)], a_boundarySolutions[ebp_index(0, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                                      a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                                      a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
+            DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits.radius(), stenTraits.weightPower(),
+                                                                             a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
 
             // pack together
             std::array<LocalStencil<CELL, Real>, SpaceDim > stencilPack{D_DECL(a_stencil[0][ivof],

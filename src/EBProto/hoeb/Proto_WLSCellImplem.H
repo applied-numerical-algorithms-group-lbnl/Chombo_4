@@ -607,21 +607,22 @@ namespace Proto
         //need to use the lower order moment declaration to
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
-        if (ebfneighFrac[iebf] < eps)
-        {
-          if (icol == 0)
-          {
-            a_Mvol(irow, icol) = 1.0;
-          }
-          else
-          {
-            a_Mvol(irow, icol) = 0.0;
-          }
-        }
-        else
-        {
-          a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
-        }
+        // if (ebfneighFrac[iebf] < eps)
+        // {
+        //   if (icol == 0)
+        //   {
+        //     a_Mvol(irow, icol) = 1.0;
+        //   }
+        //   else
+        //   {
+        //     a_Mvol(irow, icol) = 0.0;
+        //   }
+        // }
+        // else
+        // {
+        //   a_Mvol(irow, icol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
+        // }
+        a_Mvol(irow, icol) = -ebfneighNorm[iebf][0][momit()]/(ebfneighFrac[iebf]);
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
           pout() << ",icol = "  << icol << ", momind = " << momit() << ", mat(irow,icol) = " << a_Mvol(irow, icol) << endl;
@@ -1039,7 +1040,7 @@ namespace Proto
     for(int iface = 0; iface < nebf; iface++)
     {
       inhomogTerm += ebBCValues[iface]*a_stencil(0, a_nvolneigh + nfac + iface);
-      //if (m_verbose)
+      if (m_verbose)
         {
           pout() << " ebbc val " << ebBCValues[iface] << "  coef "
                  << a_stencil(0, a_nvolneigh + nfac + iface) << endl;
@@ -1388,10 +1389,11 @@ namespace Proto
     if (m_verbose) {pout()<<" centroid comp "<<faceLoc<<endl;}
     getWeightsMatrixFace(weights, neighs, faceLoc);
 
-    // Solve for the stencil vector S
-    Chombo4::LAPACKMatrix phiCoef;
-    computeWLSStencilValues(phiCoef, Qshift, Mvol, weights);
+    // // Solve for the stencil vector S // ORIGINAL VERSION
+    // Chombo4::LAPACKMatrix phiCoef;
+    // computeWLSStencilValues(phiCoef, Qshift, Mvol, weights);
 
+    int nmoms = momit.size();
     int nvolneigh = vols.size();
     int nfac = neighs.m_facMom.size();
     int nebf = neighs.m_ebfMom.size();
@@ -1402,38 +1404,93 @@ namespace Proto
     Chombo4::LAPACKMatrix W;
     Chombo4::LAPACKMatrix G;
     Chombo4::LAPACKMatrix S;
-    S = phiCoef;
-    {
-      // A dummy stencil matrix
-      int phiCoefSize = phiCoef.numCol();
-      CH_assert(phiCoefSize == ntotal);
-      S.define(1, DIM*ntotal);
-      S.setVal(0.);
-      const int& faceDir = a_face.direction();
-      for(int i=0; i!=ntotal; i++)
-        {
-          int offset = a_dir*ntotal;
-          S(0, i+offset) = phiCoef(0, i);
-        }
-    }
+
+    // {
+    //   // A dummy stencil matrix, that looks like it works with multiple components
+    //   int phiCoefSize = phiCoef.numCol();
+    //   CH_assert(phiCoefSize == ntotal);
+    //   S.define(1, DIM*ntotal);
+    //   S.setVal(0.);
+    //   const int& faceDir = a_face.direction();
+    //   for(int i=0; i!=ntotal; i++)
+    //     {
+    //       int offset = a_dir*ntotal;
+    //       S(0, i+offset) = phiCoef(0, i);
+    //     }
+    // }
+
     // comment out to return to old implementation
     //buildCompositeSystem(G, M, W);
     {
-      MomentIterator<DIM, order> momit;
-
-      // The W and M matrix
-      M.define(1, momit.size());
+// int ntotal_coup = DIM*(nvolneigh + nfac + nebf);
+      int ntotal_coup = DIM*(nvolneigh + nfac) + nebf;
+      int nmoms_coup = DIM*nmoms;
+      M.define(ntotal_coup, nmoms_coup);
       M.setVal(0.);
-      W.define(1, momit.size());
+      W.define(ntotal_coup, ntotal_coup);
       W.setVal(0.);
-      // for(momit.reset(); momit.ok(); ++momit)
+
+      // coupled version
+      for(int row_vol=0; row_vol!=nvolneigh; row_vol++)
+        {
+          int row = row_vol;
+          for (int dir=0; dir!=DIM; dir++)
+            {
+              int row_offset = row_vol + dir*nvolneigh; //ntotal;
+              W(row_offset, row_offset) = weights(row, row);
+
+              for (int col=0; col!=nmoms; col++)
+                {
+                  int col_offset = col + dir*nmoms;
+                  M(row_offset, col_offset) = Mvol(row, col);
+                }
+            }
+        }
+      for(int row_fac=0; row_fac!=nfac; row_fac++) // do the regular face moments
+        {
+          int row = nvolneigh + row_fac;
+          for (int dir=0; dir!=DIM; dir++)
+            {
+              int row_offset = row_fac + dir*nfac + DIM*(nvolneigh); //ntotal;
+              W(row_offset, row_offset) = weights(row, row);
+
+              for (int col=0; col!=nmoms; col++)
+                {
+                  int col_offset = col + dir*nmoms;
+                  M(row_offset, col_offset) = Mvol(row, col);
+                }
+            }
+        }
+      // for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the eb moments
       //   {
-      //     IndexTM<int, DIM> p = momit();
-      //     int pd = p[faceDir];
-      //     int jmom = IndexedMoments<DIM, order>::indexOf(p);
-      //     int offset = a_dir*momit.size();
-      //     G(0, jmom+offset) = Qshift(0, jmom);
+      //     int row = nvolneigh + nfac + row_ebf;
+      //     for (int dir=0; dir!=DIM; dir++)
+      //       {
+      //         int row_offset = row_ebf + dir*nebf + DIM*(nvolneigh + nfac); //ntotal;
+      //         W(row_offset, row_offset) = weights(row, row);
+
+      //         for (int col=0; col!=nmoms; col++)
+      //           {
+      //             int col_offset = col + dir*nmoms;
+      //             M(row_offset, col_offset) = Mvol(row, col);
+      //           }
+      //       }
       //   }
+      for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the coupled eb moments
+        {
+          int row = nvolneigh + nfac + row_ebf;
+          int row_offset = row_ebf + DIM*(nvolneigh + nfac); //ntotal;
+          W(row_offset, row_offset) = weights(row, row);
+
+          for (int dir=0; dir!=DIM; dir++)
+            {
+              for (int col=0; col!=nmoms; col++)
+                {
+                  int col_offset = col + dir*nmoms;
+                  M(row_offset, col_offset) = Mvol(row, col);
+                }
+            }
+        }
 
       // The G matrix, is Qshift for this dir, and zero otherwise
       G.define(1, DIM*momit.size());
@@ -1448,36 +1505,108 @@ namespace Proto
           G(0, jmom+offset) = Qshift(0, jmom);
         }
     }
-    //computeWLSStencilValues(S, G, M, W);
+    // comment out to get old decoupled version
+    computeWLSStencilValues(S, G, M, W);
 
+    if (m_verbose)
+      {
+        pout() << "W matrix matlab form" << std::endl;
+        W.poutDiagMatlab();
+        pout() << "M matrix matlab form" << std::endl;
+        M.poutMatlab();
+        pout() << "G matrix matlab form" << std::endl;
+        G.poutMatlab();
+        pout() << "S matrix matlab form" << std::endl;
+        S.poutMatlab();
+      }
 
     for(int dir=0; dir!=DIM; dir++) { a_sten[dir].clear(); }
     a_inhomogTerm = 0;
     //Filling stencil, prune out insignificant values
     Real stenMaxAbs = -1e300;
-    for(int ivof = 0; ivof < vols.size(); ivof++)
+    for(int i = 0; i!=S.numRow(); i++)
       {
-        stenMaxAbs = std::max(std::abs(phiCoef(0, ivof)), stenMaxAbs);
+        stenMaxAbs = std::max(std::abs(S(0, i)), stenMaxAbs);
       }
     Real coef_acc = 0.0;
     if (m_verbose) { pout() << " Coefs Matrix " << endl;}
     for(int dir=0; dir!=DIM; dir++)
       {
-        Chombo4::LAPACKMatrix Scomp(1, ntotal, (S.dataPtr()+dir*S.offset(0, ntotal)));
+        // grab a single components of the stencils to evaluate
+        //Chombo4::LAPACKMatrix Scomp(1, ntotal, (S.dataPtr()+dir*S.offset(0, ntotal)));
+        Chombo4::LAPACKMatrix Scomp(1, ntotal);
+        Scomp.setVal(0); // don't add eb part, do it later
+        {
+          for(int row_vol=0; row_vol!=nvolneigh; row_vol++)
+            {
+              int row = row_vol;
+              int row_offset = row_vol + dir*nvolneigh; //ntotal;
+              Scomp(0, row) = S(0, row_offset);
+            }
+          for(int row_fac=0; row_fac!=nfac; row_fac++) // do the regular face moments
+            {
+              int row = nvolneigh + row_fac;
+              int row_offset = row_fac + dir*nfac + DIM*(nvolneigh);
+              Scomp(0, row) = S(0, row_offset);
+            }
+          // for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the eb moments
+          //   {
+          //     int row = nvolneigh + nfac + row_ebf;
+          //     int row_offset = row_ebf + dir*nebf + DIM*(nvolneigh + nfac);
+          //     Scomp(0, row) = S(0, row_offset);
+          //   }
+          // for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the eb moments
+          //   {
+          //     int row = nvolneigh + nfac + row_ebf;
+          //     int row_offset = row_ebf + DIM*(nvolneigh + nfac);
+          //     Scomp(0, row) = S(0, row_offset);
+          //   }
+        }
+
+        // Add the stencils components for the U-dir component
         for(int ivof = 0; ivof < vols.size(); ivof++)
           {
             Real thisCo = Scomp(0, ivof);
             //Real thisCo = phiCoef(0, ivof);
-            if (std::abs(thisCo) > stenMaxAbs*1e-15)
+            //if (std::abs(thisCo) > stenMaxAbs*1e-15)
               {
                 a_sten[dir].add(vols[ivof], thisCo);
               }
             //else {pout()<< "ignoring stencil coef of "<< thisCo << endl;}
             if (m_verbose){
-              pout()<<"stencil coefs for Vof: "<<vols[ivof].m_pt<<" Coef: "<<thisCo<<endl;
+              pout() << "stencil coefs for Vof: " << vols[ivof].m_pt
+                     << " dir: " << dir
+                     <<" Coef: " << thisCo<<endl;
             }
             coef_acc += thisCo;
           }
+
+        // add the regular face contributions of U-dir
+        a_inhomogTerm += computeInhomogTerm(Scomp, neighs,
+                                            nvolneigh,
+                                            a_ebbcName, a_dombcName,
+                                            a_dx);
+      }
+
+    // add the EB face contribution
+    //for(int dir=0; dir!=DIM; dir++)
+      {
+        Chombo4::LAPACKMatrix Scomp(1, ntotal);
+        Scomp.setVal(0); // now do only the eb parts
+        {
+          // for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the eb moments
+          //   {
+          //     int row = nvolneigh + nfac + row_ebf;
+          //     int row_offset = row_ebf + dir*nebf + DIM*(nvolneigh + nfac);
+          //     Scomp(0, row) = S(0, row_offset);
+          //   }
+          for(int row_ebf=0; row_ebf!=nebf; row_ebf++) // do the eb moments
+            {
+              int row = nvolneigh + nfac + row_ebf;
+              int row_offset = row_ebf + DIM*(nvolneigh + nfac);
+              Scomp(0, row) = S(0, row_offset);
+            }
+        }
 
         a_inhomogTerm += computeInhomogTerm(Scomp, neighs,
                                             nvolneigh,
