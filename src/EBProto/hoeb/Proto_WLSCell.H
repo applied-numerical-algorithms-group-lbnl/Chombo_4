@@ -1,4 +1,3 @@
-
 #ifndef _Proto_WLSCell_H_
 #define _Proto_WLSCell_H_
 
@@ -7,9 +6,61 @@
 #include "EBProto.H"
 #include "Proto_EBExactSolutions.H"
 #include "Proto_MomentHolder.H"
+#include "Proto_WLSneighbors.H"
 
 namespace Proto
 {
+
+  /// A small class to hold parameters about how a stencil should be formed
+  struct StencilTraits
+  {
+    void
+    readStencilTraits(const std::string a_PPprefix)
+      {
+        ParmParse pp;
+        pp.get("radius", m_radius);
+        pp.get("powerE", m_weightPower);
+        pp.query("neighListType", m_neighListType);
+      }
+
+    void
+    defaultStencilTraits(const int a_order)
+      {
+        // defaults are an over-estimate but sufficiently large, and the minimal reasonable weighting
+        int m_radius = a_order; // how many cells out to grab
+        int m_weightPower = -(a_order+1); // WLS weighting power dist^P
+        int m_neighListType = 0;
+      }
+
+    StencilTraits()
+      {
+        readStencilTraits("");
+      }
+
+    StencilTraits(const int a_order)
+      {
+        defaultStencilTraits(a_order);
+      }
+
+    inline int radius() const
+      { return m_radius;}
+
+    inline int weightPower() const
+      { return m_weightPower;}
+
+    inline int neighListType() const
+      { return m_neighListType;}
+
+    // How many cells around the stencil center to grab
+    int m_radius = 0;
+    // The weighting power to use
+    int m_weightPower = 0;
+    // Neighbor list type. 0-FaceBased or 1-CellBased
+    int m_neighListType = 0;
+    // at what point do small cells stop being relevant
+    Real m_smallCellTol = 1e-11; // FIXME
+  };
+
   template<int order> 
   class BaseExactVelocity
   {
@@ -203,206 +254,6 @@ namespace Proto
   
   };
 
-  //Class that will contain all the information related to neighbors VoFs,
-  //boundary faces and eb faces in a certain radius.
-  template<int order>
-  class Neighbors
-  {
-  public:
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef MomentIterator<DIM  , order> MomItDIM;
-    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
-
-    Neighbors()
-    {
-      m_volMom.resize(0);
-      m_facMom.resize(0);
-      m_ebfMom.resize(0);
-      m_volLoc.resize(0);
-      m_facLoc.resize(0);
-      m_ebfLoc.resize(0);
-      m_weightDisVol.resize(0);
-      m_weightDisFac.resize(0);
-      m_weightDisEB.resize(0);
-      m_volneighFrac.resize(0);
-      m_ebfneighFrac.resize(0);
-      m_facneighFrac.resize(0);
-      m_ebfneighNorm.resize(0);
-      m_facneighDir.resize(0);
-      m_facneighSid.resize(0);
-    };
-
-    Neighbors(Vector<IndMomDIM>      & a_volMom,
-              Vector<IndMomSDMinOne> & a_facMom,
-              Vector<IndMomDIM>      & a_ebfMom,
-              Vector<RealVect>       & a_volLoc,
-              Vector<RealVect>       & a_facLoc,
-              Vector<RealVect>       & a_ebfLoc,
-	      Vector<Real>         & a_volneighFrac,
-              Vector<Real>         & a_ebfneighFrac,
-              Vector<Real>         & a_facneighFrac,
-              Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
-              Vector<int>            & a_facneighDir,
-              Vector<Side::LoHiSide> & a_facneighSid)
-    {
-      m_volMom = a_volMom;
-      m_facMom = a_facMom;
-      m_ebfMom = a_ebfMom;
-      m_volLoc = a_volLoc;
-      m_facLoc = a_facLoc;
-      m_ebfLoc = a_ebfLoc;
-      m_volneighFrac = a_volneighFrac;
-      m_ebfneighFrac = a_ebfneighFrac;
-      m_facneighFrac = a_facneighFrac;
-      m_ebfneighNorm = a_ebfneighNorm;
-      m_facneighDir = a_facneighDir;
-      m_facneighSid = a_facneighSid;
-    };
-
-    inline void setWeightDisVol (Vector<int> & a_weightDisVol)
-    {
-      m_weightDisVol = a_weightDisVol;
-    };
-
-    inline void setMomentsInfo (Vector<IndMomDIM>      & a_volMom,
-		                Vector<IndMomSDMinOne> & a_facMom,
-				Vector<IndMomDIM>      & a_ebfMom,
-				Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
-				Real                     a_dx)
-    {
-      m_volMom.resize(a_volMom.size());
-      Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
-      Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
-      for(int i = 0; i < a_volMom.size(); ++i)
-      {
-        IndMomDIM momspt = a_volMom[i];
-        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-        {
-          const IndexTM<int, DIM>& p = iter();
-          m_volMom[i][iter()] = momspt[iter()]/(volScaleFactor*POW(a_dx,p));
-        }
-      }
-      m_facMom.resize(a_facMom.size());
-      for(int i = 0; i < a_facMom.size(); ++i)
-      {
-        IndMomSDMinOne momspt = a_facMom[i];
-        for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-        {
-          const IndexTM<int, DIM-1>& p = iter();
-          m_facMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-        }
-      }
-      m_ebfMom.resize(a_ebfMom.size());
-      for(int i = 0; i < a_ebfMom.size(); ++i)
-      {
-        IndMomDIM momspt = a_ebfMom[i];
-        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-        {
-          const IndexTM<int, DIM>& p = iter();
-          m_ebfMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-        }
-      }
-      m_ebfneighNorm.resize(a_ebfneighNorm.size());
-      for (int i = 0; i < a_ebfneighNorm.size(); ++i)
-      {
-        m_ebfneighNorm[i].resize(a_ebfneighNorm[i].size());
-	for(int j = 0; j < a_ebfneighNorm[i].size(); ++j)
-        {
-          IndMomDIM momspt = a_ebfneighNorm[i][j];
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-          {
-            const IndexTM<int, DIM>& p = iter();
-            m_ebfneighNorm[i][j][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-          }
-        }
-      }
-    };
-
-    inline Vector<Vector<IndMomDIM> > getEBNormMoments () const
-    { 
-      Vector<Vector<IndMomDIM> > ebfneighNorm;
-      ebfneighNorm.resize(m_ebfneighNorm.size());
-      for (int i = 0; i < m_ebfneighNorm.size(); ++i)
-      {
-        ebfneighNorm[i] = m_ebfneighNorm[i];
-      }
-      return ebfneighNorm;
-    };
-
-    inline void setLocInfo (Vector<RealVect> & a_volLoc,
-                            Vector<RealVect> & a_facLoc,
-                            Vector<RealVect> & a_ebfLoc)
-    {
-      m_volLoc = a_volLoc;
-      m_facLoc = a_facLoc;
-      m_ebfLoc = a_ebfLoc;
-    };
-
-    inline void setWeightDisFacAndEB (Vector<int> & a_weightDisFac,
-                                      Vector<int> & a_weightDisEB)
-    {
-      m_weightDisFac = a_weightDisFac;
-      m_weightDisEB = a_weightDisEB;
-    };
-
-    inline void setFracInfo (Vector<Real> & a_volneighFrac,
-                             Vector<Real> & a_ebfneighFrac,
-                             Vector<Real> & a_facneighFrac)
-    {
-      m_volneighFrac = a_volneighFrac;
-      m_ebfneighFrac = a_ebfneighFrac;
-      m_facneighFrac = a_facneighFrac;
-    };
-
-    inline void setAdditionalFaceInfo (Vector<int>            & a_facneighDir,
-                                       Vector<Side::LoHiSide> & a_facneighSid)
-    {
-      m_facneighDir = a_facneighDir;
-      m_facneighSid = a_facneighSid;
-    };
-
-    inline int size()
-      {
-        return m_volMom.size() + m_facMom.size() + m_ebfMom.size();
-      }
-
-    //Volume moments
-    Vector<IndMomDIM>       m_volMom;
-    //Face moments
-    Vector<IndMomSDMinOne>  m_facMom;
-    //EB Faces moments
-    Vector<IndMomDIM>       m_ebfMom;
-    //EB Normal moments
-    Vector<Vector<IndMomDIM> > m_ebfneighNorm;
-    //Cell location, will be the cell center
-    Vector<RealVect>        m_volLoc;
-    //Boundary Face location, will be the face center 
-    Vector<RealVect>        m_facLoc;
-    //EB Face location, will be the cell center containing the EB Face
-    Vector<RealVect>        m_ebfLoc;
-    //Contain the manhattan distance from the face 
-    //or EB face being evaluated to the cell
-    Vector<int>             m_weightDisVol;
-    //Contain the manhattan distance from the face 
-    //or EB face being evaluated to the boundary face
-    Vector<int>             m_weightDisFac;
-    //Contain the manhattan distance from the face
-    //or EB face being evaluated to the EB Face
-    Vector<int>             m_weightDisEB;
-    //Volume fraction
-    Vector<Real>          m_volneighFrac;
-    //EB Face area fraction
-    Vector<Real>          m_ebfneighFrac;
-    //Face area fraction
-    Vector<Real>          m_facneighFrac;
-    //Face direction
-    Vector<int>             m_facneighDir;
-    //Face Side -- lo or hi
-    Vector<Side::LoHiSide>  m_facneighSid;
-  
-  };
-
   //Main function calls for all WLS flux calculations
   template<CENTERING cent, int order>
   class BaseWLSFlux
@@ -418,23 +269,6 @@ namespace Proto
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
-   
-    //Get neighbors VoFs through the faces of a specific cell.
-    vector<EBIndex<CELL> >
-    getFlapVoFs(const EBGraph       & a_graph,  
-	              const EBIndex<CELL> & a_start) const;
-
-    //Get neighbors VoFs of a given face within a specific radius.
-    //Radius starts at one for the cells sharing the face, and 
-    //increases by one for the neighbor cells sharing a face with the original
-    //cells of radius one.
-    Vector<EBIndex<CELL> >
-    getVoFsNeighbors(const EBIndex<cent> & a_face,
-                     const EBIndex<CELL> & a_vof,
-                     const int             a_radius,
-                     Neighbors<order>    & a_neigh,
-                     const EBGraph       & a_graph,
-                     int                   a_neighType) const;
 
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
@@ -456,26 +290,82 @@ namespace Proto
                                 string                   a_dombcName[2*DIM], // order is is not obvious
                                 Real                   a_dx) const;
 
-    // New version, use this
-    void
-    getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
-                                const EBGraph          & a_graph,
-                                const MomentHolder<order>  & a_momentData,
-                                Neighbors<order> & a_neigh,
-                                int                      a_neighType,
-                                string                   a_ebbcName,
-                                string                   a_dombcName[2*DIM], // order is is not obvious
-                                Real                   a_dx) const;
-
     //Compute the Moments Matrix
     void
     getShiftedMomentMatrix(Chombo4::LAPACKMatrix  & a_Mvol,
                            RealVect               & a_faceLoc,
-                           Real                   a_dx,
+                           Real                     a_dx,
                            const Neighbors<order> & a_neigh,
                            string                   a_ebbcName,
                            string                   a_dombcName[2*DIM]) const;
-		           
+
+    //Compute the moments matrix portion for cells in the neighborhood
+    void
+    getShiftedMomentMatrixVolumes(Chombo4::LAPACKMatrix  & a_Mblock,
+                                  RealVect           a_faceLoc,
+                                  Real               a_dx,
+                                  const Neighbors<order> & a_neigh,
+                                  IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+
+    //Compute the moments matrix portion for regular faces in the neighborhood
+    void
+    getShiftedMomentMatrixRegFaces(Chombo4::LAPACKMatrix  & a_Mblock,
+                                   RealVect                 a_faceLoc,
+                                   Real                     a_dx,
+                                   const Neighbors<order> & a_neigh,
+                                   string                   a_dombcName[2*DIM],
+                                   IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+
+    //Compute the moments matrix portion for cut faces in the neighborhood
+    void
+    getShiftedMomentMatrixEBFaces(Chombo4::LAPACKMatrix  & a_Mblock,
+                                  RealVect                 a_faceLoc,
+                                  Real                     a_dx,
+                                  const Neighbors<order> & a_neigh,
+                                  string                   a_ebbcName,
+                                  IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+
+    //Compute the moments matrix portion for cut faces in the neighborhood
+    void
+    getShiftedMomentMatrixEBNormalFaces(Chombo4::LAPACKMatrix  & a_Mblock,
+                                        RealVect                 a_faceLoc,
+                                        Real                     a_dx,
+                                        const Neighbors<order> & a_neigh,
+                                        int                      a_dir,
+                                        string                   a_ebbcName,
+                                        IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+
+    //Compute the moments matrix portion for cut faces in the neighborhood
+    void
+    getMomentMatrix(Chombo4::LAPACKMatrix   & a_Mblock,
+                    const Vector<IndMomDIM> & a_moments,
+                    const Vector<Real>      & a_fraction,
+                    IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+
+    // Will a block fit
+    void
+    checkSubMatrixSize(Chombo4::LAPACKMatrix  & a_Mblock,
+                       const IndexTM<int, 2>   a_blockSize,
+                       const IndexTM<int, 2>   a_start) const;
+
+    void
+    shiftMomentsToLoc(IndMomDIM & a_moment,
+                      RealVect    a_origLoc,
+                      RealVect    a_newLoc,
+                      Real        a_dx) const;
+
+    //Compute weight matrix
+    virtual void
+    getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
+                         const Neighbors<order> & a_neigh,
+                         RealVect               & a_faceLoc) const;
+
+    //Compute weight matrix for a set of distances
+    void
+    getWeightsMatrixComponent(Chombo4::LAPACKMatrix  & a_weights,
+                              const Vector<int>      & a_weightDist,
+                              IndexTM<int, 2>         a_start = IndexTM<Real, 2>{0, 0}) const;
+
     //Compute rhs matrix for a face
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
@@ -493,12 +383,6 @@ namespace Proto
                     Vector<IndMomDIM>        & a_ebnorm,
                     Real                     a_dx) const;
 
-    //Compute weight matrix 
-    virtual void
-    getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
-                         const Neighbors<order> & a_neigh,
-                         RealVect               & a_faceLoc) const;
-
     //Compute stencil coefficients matrix 
     void
     computeWLSStencilValues(Chombo4::LAPACKMatrix        & a_phiCoef,
@@ -507,6 +391,7 @@ namespace Proto
                       const Chombo4::LAPACKMatrix  & a_weights) const;
 
     //Compute inhomogeneous term
+    //Soon to be DEPRECATED
     Real
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
                        const Neighbors<order>          & a_neigh,
@@ -514,6 +399,20 @@ namespace Proto
                        string                            a_ebbcName,
                        string                            a_dombcName[2*DIM],
                        Real                            a_dx) const;
+
+    Real
+    computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+                          const Neighbors<order>          & a_neigh,
+                          const int                         a_nvolneigh,
+                          string                            a_dombcName[2*DIM],
+                          Real                            a_dx) const;
+
+    Real
+    computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+                         const Neighbors<order>          & a_neigh,
+                         const int                         a_nvolneigh,
+                         string                            a_ebbcName,
+                         Real                            a_dx) const;
 
     //Compute face centered flux stencil
     //// DEPRECATED
@@ -617,6 +516,7 @@ namespace Proto
         else
           m_exactSolEB = a_exactSolEB;
         m_fluxType = a_fluxType;
+        CH_assert(false); //DEPRECATED use the updated constructor
       }
 
     BaseWLSFlux(int           a_radius,
@@ -634,7 +534,21 @@ namespace Proto
         m_exactSolHi = a_exactSolHi;
         m_exactSolEB = a_exactSolEB;
         m_fluxType = a_fluxType;
+        //CH_assert(false); //DEPRECATED use the updated constructor
       }
+
+    // BaseWLSFlux(const StencilTraits          & a_stenTraits,
+    //             const EBDomainBC<DIM, order> & a_domainBC
+    //             bool          a_verbose=false)
+    //   {
+    //     m_radius = a_stenTraits.radius();
+    //     m_powerE = a_stenTraits.weightPower();
+    //     m_verbose = a_verbose;
+    //     m_exactSolLo = a_exactSolLo;
+    //     m_exactSolHi = a_exactSolHi;
+    //     m_exactSolEB = a_exactSolEB;
+    //     m_fluxType = 0;
+    //   }
 
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
@@ -744,7 +658,10 @@ namespace Proto
     shared_ptr<BaseExactSolution<order> >  m_exactSolLo;
     shared_ptr<BaseExactSolution<order> >  m_exactSolHi;
     shared_ptr<BaseExactSolution<order> >  m_exactSolEB;
-    
+
+    // Common, flux independent, dials for how to create a stencil
+    // Things like the starting neighborhood radius and weighting power
+    StencilTraits m_stenTraits;
   };
 
   //Main function calls for all WLS cell calculations, which follow the same process as the flux calculations
@@ -953,6 +870,7 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<cent,order>::BaseWLSFlux;
+    using BaseWLSFlux<cent,order>::m_powerE;
     using BaseWLSFlux<cent,order>::m_radius;
     using BaseWLSFlux<cent,order>::m_verbose;
 
@@ -993,16 +911,16 @@ namespace Proto
     // New version
     void
     getEBFluxStencilFull(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_sten,
-                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
-                     const EBIndex<CELL>           & a_vof,
-                     const EBIndex<cent>           & a_face,
-                     const EBGraph                 & a_graph,
-                     const MomentHolder<order>  & a_momentData,
-                     Vector<IndMomDIM>             & a_ebnorm,
-                     string                          a_ebbcName,
-                     string                          a_dombcName[2*DIM],
-                     int                             a_neighType,
-                     const Real                    a_dx) const;
+                         Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                         const EBIndex<CELL>           & a_vof,
+                         const EBIndex<cent>           & a_face,
+                         const EBGraph                 & a_graph,
+                         const MomentHolder<order>  & a_momentData,
+                         Vector<IndMomDIM>             & a_ebnorm,
+                         string                          a_ebbcName,
+                         string                          a_dombcName[2*DIM],
+                         int                             a_neighType,
+                         const Real                    a_dx) const;
 
     virtual ~DivWLSFlux()
       {}
@@ -1018,6 +936,17 @@ namespace Proto
                bool          a_verbose=false)
       :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolLo, a_exactSolHi, a_exactSolEB, 0, a_verbose)
       {}
+
+    DivWLSFlux(const StencilTraits          & a_stenTraits,
+               const EBDomainBC<DIM, order> & a_domainBC,
+               bool          a_verbose=false)
+      {
+        m_radius = a_stenTraits.radius();
+        m_powerE = a_stenTraits.weightPower();
+        m_domainBC = a_domainBC;
+      }
+
+    EBDomainBC<DIM, order> m_domainBC;
   };
 
   ///some basic infrastructure to support the WLS stencils

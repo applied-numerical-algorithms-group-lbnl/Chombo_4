@@ -1080,15 +1080,8 @@ namespace Proto
                               const Point                               & a_dstGhost,
                               const EBGraph                             & a_graph,
                               const MomentHolder<order>                 & a_momentData,
-                              // const VoluData                            & a_voludata,
-                              // const EBFaData                            & a_ebfadata,
-                              // const XFacData                            & a_xfacdata,
-                              // const YFacData                            & a_yfacdata,
-                              // const ZFacData                            & a_zfacdata,
-                              // const EBNormalData                        & a_ebnormxdata,
-                              // const EBNormalData                        & a_ebnormydata,
-                              // const EBNormalData                        & a_ebnormzdata,
                               Real                                      a_dx,
+                              const EBDomainBC<DIM, order>            & a_domainBC,
                               const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolutions,
                               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
   {
@@ -1130,6 +1123,8 @@ namespace Proto
             ebp_face(ivec, dir, side);
             pout() << "\t" << "dir " << dir << ", side " << side
                    << " " << a_domainBCName[ivec][comp] << std::endl;
+            pout() << "\t" << "dir " << dir << ", side " << side
+                   << " " << a_domainBC.getBCtypes().getRegComp(dir, side, comp) << std::endl;
           }
       }
 
@@ -1164,7 +1159,8 @@ namespace Proto
                                                                       a_boundarySolutions[ebp_index(1, Side::Lo)], a_boundarySolutions[ebp_index(1, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
             DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenTraits.radius(), stenTraits.weightPower(),
                                                                       a_boundarySolutions[ebp_index(2, Side::Lo)], a_boundarySolutions[ebp_index(2, Side::Hi)], a_boundarySolutionsEB, 0, pt_verbose);
-            DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits.radius(), stenTraits.weightPower(),
+            DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits.radius(),
+                                                                             stenTraits.weightPower(),
                                                                              a_boundarySolutionsEB, a_boundarySolutionsEB, a_boundarySolutionsEB, 0, pt_verbose);
 
             // pack together
