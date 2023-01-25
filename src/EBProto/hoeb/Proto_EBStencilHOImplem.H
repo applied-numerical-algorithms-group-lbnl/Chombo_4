@@ -2,7 +2,7 @@
 #define _Proto_EBStencilHOImplem_H_
 #include "Chombo_ParmParse.H"
 #include "../implem/Proto_Normalizor.H"
-#include "Proto_WLSCell.H"
+#include "Proto_WLSStencil.H"
 
 namespace Proto
 {

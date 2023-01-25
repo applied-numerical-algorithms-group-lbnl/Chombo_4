@@ -255,6 +255,8 @@ namespace Proto
   };
 
   //Main function calls for all WLS flux calculations
+  //FIXME this is pulling double duty as both general methods for WLS stencils and the laplacian stencil
+  // split into a base class for moment/weight matrix building and inherit a laplacian operator
   template<CENTERING cent, int order>
   class BaseWLSFlux
   {
@@ -343,16 +345,16 @@ namespace Proto
                     IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
 
     // Will a block fit
-    void
+    inline void
     checkSubMatrixSize(Chombo4::LAPACKMatrix  & a_Mblock,
                        const IndexTM<int, 2>   a_blockSize,
                        const IndexTM<int, 2>   a_start) const;
 
-    void
-    shiftMomentsToLoc(IndMomDIM & a_moment,
-                      RealVect    a_origLoc,
-                      RealVect    a_newLoc,
-                      Real        a_dx) const;
+    inline void
+    shiftMomentToLoc(IndMomDIM & a_moment,
+                     RealVect    a_origLoc,
+                     RealVect    a_newLoc,
+                     Real        a_dx) const;
 
     //Compute weight matrix
     virtual void
@@ -555,94 +557,94 @@ namespace Proto
                 int           a_exactSolFun,
                 bool          a_verbose=false)
       {
-        CH_assert(false); // DEPRECATED THIS FUNCTION IS A HORRIBLE DESIGN, DONT DO THIS!
-        m_radius = a_radius;
-        m_powerE = a_powerE;
-        m_verbose = a_verbose;
-        ParmParse pp;
-        shared_ptr<BaseExactSolution<order> > exactSol;
-        if (a_exactSolFun == 1)
-          {
-            Vector<int> phiPowerX;
-            Vector<int> phiPowerY;
-            Vector<int> phiPowerZ;
-            Vector<Real> phiCoef;
-            int num_mono = 0;
+        CH_assert(false); // DEPRECATED THIS FUNCTION IS A BAD DESIGN, THIS IS TOO LOW TO READ IN FROM A FILE!
+ //        m_radius = a_radius;
+//         m_powerE = a_powerE;
+//         m_verbose = a_verbose;
+//         ParmParse pp;
+//         shared_ptr<BaseExactSolution<order> > exactSol;
+//         if (a_exactSolFun == 1)
+//           {
+//             Vector<int> phiPowerX;
+//             Vector<int> phiPowerY;
+//             Vector<int> phiPowerZ;
+//             Vector<Real> phiCoef;
+//             int num_mono = 0;
 
-            pp.get("phi_num_mono"   , num_mono);
-            pp.getarr("phi_power_x",phiPowerX,0,num_mono);
-            pp.getarr("phi_power_y",phiPowerY,0,num_mono);
-            pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
-            pp.getarr("phi_coef",phiCoef,0,num_mono);
+//             pp.get("phi_num_mono"   , num_mono);
+//             pp.getarr("phi_power_x",phiPowerX,0,num_mono);
+//             pp.getarr("phi_power_y",phiPowerY,0,num_mono);
+//             pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
+//             pp.getarr("phi_coef",phiCoef,0,num_mono);
 
-            vector<pair<Point, Real> > entries;
-            for (int i=0; i<num_mono; i++)
-              {
-                std::pair<Point, Real> mono;
-                mono.first = Point::Zeros();
-                mono.first[0] = phiPowerX[i];
-                mono.first[1] = phiPowerY[i];
-#if DIM==3
-                mono.first[2] = phiPowerZ[i];
-#endif
-                mono.second = phiCoef[i];
-                entries.push_back(mono);
-              }
+//             vector<pair<Point, Real> > entries;
+//             for (int i=0; i<num_mono; i++)
+//               {
+//                 std::pair<Point, Real> mono;
+//                 mono.first = Point::Zeros();
+//                 mono.first[0] = phiPowerX[i];
+//                 mono.first[1] = phiPowerY[i];
+// #if DIM==3
+//                 mono.first[2] = phiPowerZ[i];
+// #endif
+//                 mono.second = phiCoef[i];
+//                 entries.push_back(mono);
+//               }
 
-            exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
-          }
-        else if (a_exactSolFun == 2 || a_exactSolFun == 3)
-          {
-            Real amplitude;
-            pp.get("phi_amp",amplitude);
+//             exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
+//           }
+//         else if (a_exactSolFun == 2 || a_exactSolFun == 3)
+//           {
+//             Real amplitude;
+//             pp.get("phi_amp",amplitude);
 
-            RealVect frequency;
-            RealVect center;
-            Vector<Real> freqVec;
-            Vector<Real> centerVec;
+//             RealVect frequency;
+//             RealVect center;
+//             Vector<Real> freqVec;
+//             Vector<Real> centerVec;
 
-            pp.getarr("phi_freq",freqVec,0,DIM);
-            pp.getarr("phi_center",centerVec,0,DIM);
-            for(int idir = 0; idir < DIM; idir++)
-              {
-                frequency[idir] = freqVec[idir];
-                center[idir] = centerVec[idir];
-              }
+//             pp.getarr("phi_freq",freqVec,0,DIM);
+//             pp.getarr("phi_center",centerVec,0,DIM);
+//             for(int idir = 0; idir < DIM; idir++)
+//               {
+//                 frequency[idir] = freqVec[idir];
+//                 center[idir] = centerVec[idir];
+//               }
 
-            if (a_exactSolFun == 2) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-            if (a_exactSolFun == 3) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
-          }
-        else if (a_exactSolFun == 4)
-          {
-            Real rad;
-            pp.get("phi_rad", rad);
-            Real cen;
-            pp.get("phi_cen", cen);
+//             if (a_exactSolFun == 2) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
+//             if (a_exactSolFun == 3) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
+//           }
+//         else if (a_exactSolFun == 4)
+//           {
+//             Real rad;
+//             pp.get("phi_rad", rad);
+//             Real cen;
+//             pp.get("phi_cen", cen);
 
-            exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-          }
-        else if (a_exactSolFun == 5)
-          {
-            Real coeff;
-            pp.get("phi_coeff",coeff);
+//             exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
+//           }
+//         else if (a_exactSolFun == 5)
+//           {
+//             Real coeff;
+//             pp.get("phi_coeff",coeff);
 
-            Real dfac;
-            pp.get("phi_dfac",dfac);
+//             Real dfac;
+//             pp.get("phi_dfac",dfac);
 
-            RealVect center;
-            Vector<Real> centerVec;
+//             RealVect center;
+//             Vector<Real> centerVec;
 
-            pp.getarr("phi_center",centerVec,0,DIM);
-            for(int idir = 0; idir < DIM; idir++)
-              {
-                center[idir] = centerVec[idir];
-              }
+//             pp.getarr("phi_center",centerVec,0,DIM);
+//             for(int idir = 0; idir < DIM; idir++)
+//               {
+//                 center[idir] = centerVec[idir];
+//               }
 
-            exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
-          }
-        m_exactSolLo = exactSol;
-        m_exactSolHi = exactSol;
-        m_exactSolEB = exactSol;
+//             exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
+//           }
+//         m_exactSolLo = exactSol;
+//         m_exactSolHi = exactSol;
+//         m_exactSolEB = exactSol;
       }
 
   public:
@@ -883,13 +885,13 @@ namespace Proto
                       Real                     a_signNormal,
                       Real                     a_dx) const override;
 
-    //Compute rhs matrix for a EB face
-    virtual void
-    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
-                    const EBIndex<cent>      & a_face,
-                    RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
-                    Real                     a_dx) const override;
+    // //Compute rhs matrix for a EB face
+    // virtual void
+    // getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+    //                 const EBIndex<cent>      & a_face,
+    //                 RealVect                 & a_faceLoc,
+    //                 Vector<IndMomDIM>        & a_ebnorm,
+    //                 Real                     a_dx) const override;
 
     //Compute face centered flux stencil, using all components and coupling BCs
     void
@@ -922,6 +924,20 @@ namespace Proto
                          int                             a_neighType,
                          const Real                    a_dx) const;
 
+    // Real
+    // computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+    //                       const Neighbors<order>          & a_neigh,
+    //                       const int                         a_nvolneigh,
+    //                       const EBDomainBC<DIM, order>    & a_domainBC,
+    //                       Real                            a_dx) const;
+
+    // Real
+    // computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+    //                      const Neighbors<order>          & a_neigh,
+    //                      const int                         a_nvolneigh,
+    //                      const EBDomainBC<DIM, order>    & a_domainBC,
+    //                      Real                              a_dx) const;
+
     virtual ~DivWLSFlux()
       {}
 
@@ -948,227 +964,6 @@ namespace Proto
 
     EBDomainBC<DIM, order> m_domainBC;
   };
-
-  ///some basic infrastructure to support the WLS stencils
-  template<int order>  //this is so we can send in the geometry information
-  class WLSStencil
-  {
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef MomentIterator<DIM  , order> MomItDIM;
-    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
-    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
-    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
-  public:
-
-    ///
-    //Gets Laplacian WLS flux divergence stencil
-    inline void
-    getLaplaWLSDivFStencil(LocalStencil< CELL,  Real>        & a_vofStencil,
-                           const EBIndex<CELL>                 & a_vof,
-                           const EBGraph                       & a_graph,
-                           const VoluData                      & a_voludata,
-                           const EBFaData                      & a_ebfadata,
-                           const XFacData                      & a_xfacdata,
-                           const YFacData                      & a_yfacdata,
-                           const ZFacData                      & a_zfacdata,
-                           const EBNormalData                  & a_ebnormxdata,
-                           const EBNormalData                  & a_ebnormydata,
-                           const EBNormalData                  & a_ebnormzdata,
-                           const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                           const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                           const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                           const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
-                           string                                a_ebbcName,
-                           string                                a_dombcName[2*DIM],
-                           Real                                & a_inhoTerm,
-                           int                                 & a_neighType,
-                           Real                                a_dx);
-
-    //Gets Advection WLS flux divergence stencil
-    inline void
-    getAdvWLSDivFStencil(LocalStencil< CELL,  Real>        & a_vofStencil,
-                         const EBIndex<CELL>                 & a_vof,
-                         const EBGraph                       & a_graph,
-                         const VoluData                      & a_voludata,
-                         const EBFaData                      & a_ebfadata,
-                         const XFacData                      & a_xfacdata,
-                         const YFacData                      & a_yfacdata,
-                         const ZFacData                      & a_zfacdata,
-                         const EBNormalData                  & a_ebnormxdata,
-                         const EBNormalData                  & a_ebnormydata,
-                         const EBNormalData                  & a_ebnormzdata,
-                         const ExactVelAdvectionWLSFlux<XFACE   , order>  & a_xfaceflux,
-                         const ExactVelAdvectionWLSFlux<YFACE   , order>  & a_yfaceflux,
-                         const ExactVelAdvectionWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                         const ExactVelAdvectionWLSFlux<BOUNDARY, order>  & a_ebflux,
-                         string                                a_ebbcName,
-                         string                                a_dombcName[2*DIM],
-                         Real                                & a_inhoTerm,
-                         int                                 & a_neighType,
-                         Real                                a_dx);
-
-    //Gets WLS stencil for each component the gradient of a scalar
-    // return a vector of stencils, one per component
-    inline void
-    getWLSGradStencil(LocalStencil<CELL, Real>    & a_vofStencilx,
-                      LocalStencil<CELL, Real>    & a_vofStencily,
-                      LocalStencil<CELL, Real>    & a_vofStencilz,
-                      const EBIndex<CELL>                 & a_vof,
-                      const EBGraph                       & a_graph,
-                      const VoluData                      & a_voludata,
-                      const EBFaData                      & a_ebfadata,
-                      const XFacData                      & a_xfacdata,
-                      const YFacData                      & a_yfacdata,
-                      const ZFacData                      & a_zfacdata,
-                      const EBNormalData                  & a_ebnormxdata,
-                      const EBNormalData                  & a_ebnormydata,
-                      const EBNormalData                  & a_ebnormzdata,
-                      const BaseWLSCell<order>  & a_cellConstruct,
-                      string                                a_ebbcName,
-                      string                                a_dombcName[2*DIM],
-                      vector<Real>                                & a_inhoTerm,
-                      int                                 & a_neighType,
-                      Real                                a_dx);
-
-        //Gets WLS flux divergence stencil in a direction
-    // return a vector of stencils, one per component
-    inline void
-    getWLSDivFCompStencil(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
-                          const EBIndex<CELL>                 & a_vof,
-                          const EBGraph                       & a_graph,
-                          const MomentHolder<order>           & a_momentData,
-                          const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
-                          const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
-                          const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                          const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-                          string                                a_ebbcName,
-                          vector<string>                                a_dombcName[2*DIM],
-                          Real                                & a_inhoTerm,
-                          int                                 a_neighType,
-                          Real                                a_dx);
-
-    template<int dir>
-    void getWLSDivFCompStencilDir(
-      std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
-      const EBIndex<CELL>                 & a_vof,
-      const EBGraph                       & a_graph,
-      const MomentHolder<order>           & a_momentData,
-      const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
-      const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
-      const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
-      const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-      string                                a_ebbcName,
-      vector<string>                        a_dombcName[2*DIM],
-      Real                                & a_inhoTerm,
-      int                                 a_neighType,
-      Real                                a_dx);
-
-    void
-    getDistanceWeightedFluxAvgCoeffs(
-      Real&    a_loSideWeight,
-      Real&    a_hiSideWeight,
-      const RealVect        a_faceCentroid,
-      const EBIndex<CELL> & a_voflo,
-      const EBIndex<CELL> & a_vofhi,
-      const int             a_dir,
-      const VoluData       & a_voludata,
-      const EBGraph        & a_graph,
-      const Real             a_dx);
-
-    // Get a single face flux stencil at a face by a distance weighted average between
-    // two cell-centered flux stencils states computed by the neighbor cells sharing the face
-    // This was originally designed for the Laplacian stencil, but is generally applicable
-    LocalStencil< CELL,  Real>
-    getDistanceWeightedFluxAvgStencil(
-      LocalStencil< CELL,  Real> & a_fluxMStencil,
-      LocalStencil< CELL,  Real> & a_fluxPStencil,
-      const RealVect                 a_centroid,
-      const EBIndex<CELL>          & a_voflo,
-      const EBIndex<CELL>          & a_vofhi,
-      const int                      a_dir,
-      const VoluData               & a_voludata,
-      const EBGraph                & a_graph,
-      const Real                     a_dx);
-
-    Real
-    getLapinhomogTerm(
-      Real                         a_inhomogTermM,
-      Real                         a_inhomogTermP,
-      const RealVect               a_centroid,
-      const EBIndex<CELL>          & a_voflo,
-      const EBIndex<CELL>          & a_vofhi,
-      const int                      a_dir,
-      const VoluData               & a_voludata,
-      const EBGraph                & a_graph,
-      const Real                     a_dx);
- 
-    inline
-    LocalStencil< CELL,  Real>
-    getAdvFluxStencil(LocalStencil< CELL,  Real> & a_fluxMStencil,
-                      LocalStencil< CELL,  Real> & a_fluxPStencil,
-                      RealVect                     & a_centroid,
-                      const EBIndex<CELL>          & a_voflo, 
-                      const EBIndex<CELL>          & a_vofhi, 
-                      const RealVect               & a_v_faceLoc, 
-                      int                            a_dir,
-                      const VoluData               & a_voludata, 
-                      const EBGraph                & a_graph, 
-                      Real                         a_dx);
-
-    virtual ~WLSStencil()
-    {
-    }
-
-    WLSStencil()
-    {
-    }
-
-    std::map<EBIndex<XFACE>,LocalStencil<CELL, Real> > xfacesFluxStencil;
-    std::map<EBIndex<YFACE>,LocalStencil<CELL, Real> > yfacesFluxStencil;
-    std::map<EBIndex<ZFACE>,LocalStencil<CELL, Real> > zfacesFluxStencil;
-    std::map<EBIndex<XFACE>,Real> xfacesInhTerm;
-    std::map<EBIndex<YFACE>,Real> yfacesInhTerm;
-    std::map<EBIndex<ZFACE>,Real> zfacesInhTerm;
-  };
-
-  // template <int order>
-  // template <>
-  // inline void
-  // WLSStencil<order>::
-  //   getWLSDivFCompStencilFull<0>(
-  //     std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
-  //     const EBIndex<CELL>                 & a_vof,
-  //     const EBGraph                       & a_graph,
-  //     const MomentHolder<order>           & a_momentData,
-  //     const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
-  //     const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
-  //     const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
-  //     const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-  //     string                                a_ebbcName,
-  //     vector<string>                                a_dombcName[2*DIM],
-  //     Real                                & a_inhoTerm,
-  //     int                                 a_neighType,
-  //     Real                                a_dx)
-  //     {
-  //       getWLSDivFCompStencilDir<0>(a_vofStencil,
-  //                                   a_vof,
-  //                                   a_graph,
-  //                                   a_momentData,
-  //                                   a_xfaceflux,
-  //                                   a_yfaceflux,
-  //                                   a_zfaceflux,
-  //                                   a_ebflux,
-  //                                   a_ebbcName,
-  //                                   a_dombcName,
-  //                                   a_inhoTerm,
-  //                                   a_neighType,
-  //                                   a_dx);
-  //     }
 
   //Class to compute Dirichlet BCs at faces and EB Faces for the Moment Matrix.
   template<int order>
@@ -1241,15 +1036,15 @@ namespace Proto
 
     //getIntegralPhi
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
-		                       const RealVect        & a_faceLoc,
+                                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-				       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                                       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
                                        const Real              a_dx);
 
     //getIntegralPhiAlongEB
     inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
                                      const RealVect   & a_ebfLoc,
-				     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
+                                     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
                                      const Real         a_dx); 
   
   };
@@ -1273,15 +1068,15 @@ namespace Proto
 
     //getIntegralNormalDerivative
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
-		                       const RealVect        & a_faceLoc,
+                                       const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-				       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
-		                       const Real              a_dx); 
+                                       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                                       const Real              a_dx);
 
     //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
-				     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
+                                     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
                                      const Real                a_dx);
  
   };

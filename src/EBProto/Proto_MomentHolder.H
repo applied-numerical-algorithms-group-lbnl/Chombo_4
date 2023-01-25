@@ -105,6 +105,8 @@ namespace Proto
           {
             return *m_ZEBNormData;
           }
+        Chombo4::MayDay::Error("EBnormal access error");
+        return *m_XEBNormData; // shut up the compiler warnings
       }
 
   private:

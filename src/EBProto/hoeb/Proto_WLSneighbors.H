@@ -51,6 +51,7 @@ namespace Proto
         m_ebfneighNorm = a_ebfneighNorm;
         m_facneighDir = a_facneighDir;
         m_facneighSid = a_facneighSid;
+        check();
       };
 
     inline void clear()
@@ -222,10 +223,88 @@ namespace Proto
         m_facneighSid = a_facneighSid;
       };
 
-    inline int size()
+    // How many neighbors are there
+    inline unsigned int
+    sizeVols() const
       {
-        return m_volMom.size() + m_facMom.size() + m_ebfMom.size();
+        return m_volLoc.size();
       }
+
+    inline unsigned int
+    sizeFaces() const
+      {
+        return m_facLoc.size();
+      }
+
+    inline unsigned int
+    sizeEB() const
+      {
+        return m_ebfLoc.size();
+      }
+
+    inline unsigned int
+    size() const
+      {
+        return sizeVols() + sizeFaces() + sizeEB();
+        // m_volMom.size() + m_facMom.size() + m_ebfMom.size();
+      }
+
+    // get a global neighbor index from the neighbor collection
+    inline unsigned int
+    indexFromVol(unsigned int a_volIndex) const
+      {
+        CH_assert(a_volIndex < sizeVols());
+        return a_volIndex;
+      }
+
+    inline unsigned int
+    indexFromFace(unsigned int a_faceIndex) const
+      {
+        CH_assert(a_faceIndex < sizeFaces());
+        return a_faceIndex + sizeVols();
+      }
+
+    inline unsigned int
+    indexFromEB(unsigned int a_ebIndex) const
+      {
+        CH_assert(a_ebIndex < sizeEB());
+        return a_ebIndex + sizeVols() + sizeFaces();
+      }
+
+    inline bool
+    isRegular() const
+      {
+        return (sizeEB == 0);
+      }
+
+    inline bool
+    isIterior() const
+      {
+        return ((sizeEB() == 0) & (sizeFaces() == 0));
+      }
+
+    // Make sure neighbor storage matches
+    inline void
+    check() const
+    {
+      CH_assert(sizeVols() == m_volMom.size());
+      CH_assert(sizeVols() == m_volLoc.size());
+      CH_assert(sizeVols() == m_weightDisVol.size());
+      CH_assert(sizeVols() == m_volneighFrac.size());
+
+      CH_assert(sizeFaces() == m_facMom.size());
+      CH_assert(sizeFaces() == m_facLoc.size());
+      CH_assert(sizeFaces() == m_weightDisFac.size());
+      CH_assert(sizeFaces() == m_facneighFrac.size());
+      CH_assert(sizeFaces() == m_facneighDir.size());
+      CH_assert(sizeFaces() == m_facneighSid.size());
+
+      CH_assert(sizeEB() == m_ebfMom.size());
+      CH_assert(sizeEB() == m_ebfLoc.size());
+      CH_assert(sizeEB() == m_weightDisEB.size());
+      CH_assert(sizeEB() == m_ebfneighFrac.size());
+      CH_assert(sizeEB() == m_ebfneighNorm.size());
+    }
 
     //Volume moments
     Vector<IndMomDIM>       m_volMom;
@@ -267,7 +346,8 @@ namespace Proto
   template<int order>
   vector<EBIndex<CELL> >
   Neighbors<order>::
-  getFlapVoFs(const EBGraph& a_graph, const EBIndex<CELL>& a_start) const
+  getFlapVoFs(const EBGraph& a_graph,
+              const EBIndex<CELL>& a_start) const
   {
     PR_TIME("getFlapVoFs");
     vector<EBIndex<CELL> > retval;
@@ -277,6 +357,7 @@ namespace Proto
         for(SideIterator sit; sit.ok(); ++sit)
           {
             vector<EBIndex<CELL> > neighbors = a_graph.getNeighborVoFs(a_start, idir, sit());
+            // append neighbors to retval
             retval.insert(retval.end(), neighbors.begin(), neighbors.end());
           }
       }
@@ -638,20 +719,22 @@ namespace Proto
     if (a_verbose)
       {
         pout()<<" Index order for the matrices " << endl;
-        for (int i=0; i<volp.size(); i++)
+        for (int i=0; i!=sizeVols(); i++)
           {
-            pout()<<" Vol "<<volp[i]<<endl;
+            pout() << " Vol " << i << ", neighbor " << indexFromVol(i) << endl;
           }
-        for (int i=0; i<facp.size(); i++)
+        for (int i=0; i!=sizeFaces(); i++)
           {
-            pout()<<" Face "<<facp[i]<<endl;
+            pout() << " Face " << i << ", neighbor " << indexFromFace(i) << endl;
           }
-        for (int i=0; i<ebfp.size(); i++)
+        for (int i=0; i!=sizeEB(); i++)
           {
-            pout()<<" EBFace "<<ebfp[i]<<endl;
+            pout() << " EB " << i << ", neighbor " << indexFromEB(i) << endl;
           }
       }
+    check();
   }
+
 } // end proto namespace
 
 #endif _Proto_WLSneighbors_H_

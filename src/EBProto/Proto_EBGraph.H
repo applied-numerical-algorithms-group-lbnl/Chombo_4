@@ -9,10 +9,14 @@ using std::set;
 
 namespace Proto
 {
+
+  ///
+  /// There is an important lesson to be learned here about template usage. On the surface this class makes a lot of sense as a template, it does something fairly different depending upon the centering. The problem with this becomes, now anything that uses this must also be dependent on the centering also. As a result, there is no sane way to loop over each direction or do things in a direction independent way, leading to lots of code reuse
+  /// REVIEW Consider changing this to store the centering as a trait of the index, rather than as a template
   template<CENTERING cent>
   class EBIndex
   {
-  public:
+  public: //private: //FIXME this is bad design, especially for such a simple class
 
     Point m_pt;
     //for faces, the high cell. for cells, this is the cell
@@ -23,6 +27,18 @@ namespace Proto
     ///
     bool m_isBoundary;
 
+  public:
+    EBIndex()
+      {
+        m_isBoundary = false;
+        m_vofIDLo = 0;
+        m_vofIDMe = 0;
+      }
+
+    ~EBIndex()
+      {
+      }
+
     ///for vof construction
     EBIndex(Point a_pt, int a_cellInd) 
     {
@@ -32,7 +48,16 @@ namespace Proto
       m_isBoundary = false;
     }
 
+    // not great, but at least we can stop calling the member data directly
+    Point& getPoint()
+      {
+        return m_pt;
+      }
 
+    bool& isBoundary()
+      {
+        return m_isBoundary;
+      }
 
     size_t linearSize( ) const
     {
@@ -94,17 +119,6 @@ namespace Proto
 #if DIM==3
       printf("((%d, %d, %d), %d, %d)", m_pt[0], m_pt[1], m_pt[2], m_vofIDMe, m_vofIDLo);
 #endif
-    }
-    
-    EBIndex()
-    {
-      m_isBoundary = false;
-      m_vofIDLo = 0;
-      m_vofIDMe = 0;
-    }
-
-    ~EBIndex()
-    {
     }
 
     CUDA_DECORATION
