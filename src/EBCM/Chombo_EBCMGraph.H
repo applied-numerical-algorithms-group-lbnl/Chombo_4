@@ -43,33 +43,82 @@ namespace EBCM
     defineAsRegular();
   };
 
-  class BlobGraph
+  class boxmap_t
   {
   public:
-    //tells which cells eb thinks are regular, irregular covered
-    shared_ptr<EBGraph> m_graph;
-
+  
     //going to be different than EBGraph info because of coarsening
     PointSet            m_regular;
     PointSet            m_irregular;
     PointSet            m_covered;
-    
-    
-    bool isRegular(Point a_pt) const
+    boxmap_t()
     {
-      return m_regular.contains(a_pt);
+      m_regular.clear();
+      m_irregular.clear();
+      m_covered.clear();
     }
-    
-    bool isIrregular(Point a_pt) const
+  }
+  class BlobGraph
+  {
+  public:
+
+    shared_ptr<std::set<EBIndex<CELL> > >
+    fillVolumesFromEB(shared_ptr<EBGraph> a_graph,
+                      shared_ptr<EBData>  a_data,
+                      Real                a_dx)
+
     {
-      return m_irregular.contains(a_pt);
+      shared_ptr<std::set<EBIndex<CELL> > > retval(new std::set<EBIndex<CELL> >() );
+      auto valid= a_graph.validBox();
+      for(auto bit = valid.begin(); bit != valid.end(); ++bit)
+      {
+        if(a_graph->isCovered(*bit))
+        {
+          //covered bits are not part of the solution 
+        }
+        else if( a_graph->isRegular())
+        {
+          
+        }
+        auto vofs = a_graph->getVoFs(*bit);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          const auto& vof = vofs[ivof];
+        }
+      }
+
+      return retval;
     }
 
-    bool isCovered(Point a_pt) const
+    BlobGraph(shared_ptr<EBGraph> a_graph,
+              shared_ptr<EBData>  a_data,
+              Real                a_dx,
+              bool                a_mergeSmallCells) const
     {
-      return m_covered.contains(a_pt);
+
+      shared_ptr<std::set<EBIndex<CELL> > > allEBVols = fillVolumesFromEB(a_graph, a_data, a_dx);
+
+      if(a_mergeSmallCells)
+      {
+        m_volumes = mergeSmallVolumes(allEBVols);
+      }
+      else
+      {
+        m_volumes = allEBVols;
+      }
+      return retval;
+                         
     }
-    
+  private:
+              
+   vector<BlobVoluIndex> m_volumes;
+              
+    //this reflects the information in the EBIS.   in this unstructured format, none of this stuff matters.
+    boxmap_t   m_boxmap;
+
+      
+    //weak construction is weak
+    BlobGraph();
   };
 }
 
