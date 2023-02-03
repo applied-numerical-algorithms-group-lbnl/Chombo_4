@@ -229,33 +229,7 @@ compile-time cpp macro that controls the dimensionality of
         for (int i1 = 0; i1 != n1; ++i1) {,
         for (int i2 = 0; i2 != n2; ++i2) {)
     D_TERM(},},})
-*/#ifdef DOXYGEN
-/**
-@ingroup macros
-
-  The D_CALL(func, args) macro expands to a comma-separated list of
-  1, 2, or all 3 of the arguments of the call, depending on the
-  value of CH_SPACEDIM.  This can be used to write portable
-  function calls that depend on 1, 2, or 3 arguments, corresponding
-  to the value of CH_SPACEDIM.
-
-  For example:
-  template<T> T ExampleFunction(int a, bool b)
-    {
-    // do stuff
-    };
-  D_CALLS(ExampleFunction, 2, true)
-
-  where the macro evaluates
-
-     ExampleFunction<0>(2, true); // if CH_SPACEDIM >= 1
-     ExampleFunction<1>(2, true); // if CH_SPACEDIM >= 2
-     ExampleFunction<2>(2, true); // if CH_SPACEDIM >= 3
-
 */
-#endif
-#  define D_CALLS(func, args...) D_TERM(func<0>(args);, func<1>(args);, func<2>(args);)
-
 #endif
 #  define D_INVTERM(a,b,c) c b a
 #  define D_INVTERM6(a,b,c,d,e,f) c b a

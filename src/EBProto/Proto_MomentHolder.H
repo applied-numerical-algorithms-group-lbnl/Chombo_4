@@ -40,8 +40,9 @@ namespace Proto
                  const EBNormalData & a_YEBNormData,
                  const EBNormalData & a_ZEBNormData)
       {
-        m_VoluData = &a_VoluData;
-        m_EBFaceData = &a_EBFaceData;
+        // I promise not to change things. Is casting away consts good? No. But this is a bandaid for bigger problems
+        m_VoluData = const_cast<VoluData*>(&a_VoluData);
+        m_EBFaceData = const_cast<EBFaData*>(&a_EBFaceData);
 #if DIM >= 1
         m_XFaceData = &a_XFacData;
         m_XEBNormData = &a_XEBNormData;

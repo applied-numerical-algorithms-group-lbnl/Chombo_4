@@ -24,26 +24,17 @@ namespace Proto
     ///
     //Gets Laplacian WLS flux divergence stencil
     inline void
-    getLaplaWLSDivFStencil(LocalStencil< CELL,  Real>        & a_vofStencil,
-                           const EBIndex<CELL>                 & a_vof,
-                           const EBGraph                       & a_graph,
-                           const VoluData                      & a_voludata,
-                           const EBFaData                      & a_ebfadata,
-                           const XFacData                      & a_xfacdata,
-                           const YFacData                      & a_yfacdata,
-                           const ZFacData                      & a_zfacdata,
-                           const EBNormalData                  & a_ebnormxdata,
-                           const EBNormalData                  & a_ebnormydata,
-                           const EBNormalData                  & a_ebnormzdata,
-                           const BaseWLSFlux<XFACE   , order>  & a_xfaceflux,
-                           const BaseWLSFlux<YFACE   , order>  & a_yfaceflux,
-                           const BaseWLSFlux<ZFACE   , order>  & a_zfaceflux,
-                           const BaseWLSFlux<BOUNDARY, order>  & a_ebflux,
-                           string                                a_ebbcName,
-                           string                                a_dombcName[2*DIM],
-                           Real                                & a_inhoTerm,
-                           int                                 & a_neighType,
-                           Real                                a_dx);
+    getLapWLSDivFStencil(LocalStencil< CELL,  Real>          & a_vofStencil,
+                         Real                                & a_inhoTerm,
+                         const EBIndex<CELL>                 & a_vof,
+                         const EBGraph                       & a_graph,
+                         const MomentHolder<order>           & a_momentData,
+                         const LapWLSFlux<XFACE   , order>   & a_xfaceflux,
+                         const LapWLSFlux<YFACE   , order>   & a_yfaceflux,
+                         const LapWLSFlux<ZFACE   , order>   & a_zfaceflux,
+                         const LapWLSFlux<BOUNDARY, order>   & a_ebflux,
+                         int                                 a_neighType,
+                         Real                                a_dx);
 
     //Gets Advection WLS flux divergence stencil
     inline void
@@ -95,6 +86,7 @@ namespace Proto
     // return a vector of stencils, one per component
     inline void
     getWLSDivFCompStencil(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
+                          Real                                & a_inhoTerm,
                           const EBIndex<CELL>                 & a_vof,
                           const EBGraph                       & a_graph,
                           const MomentHolder<order>           & a_momentData,
@@ -102,9 +94,6 @@ namespace Proto
                           const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
                           const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
                           const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-                          string                                a_ebbcName,
-                          vector<string>                                a_dombcName[2*DIM],
-                          Real                                & a_inhoTerm,
                           int                                 a_neighType,
                           Real                                a_dx);
 
@@ -114,6 +103,7 @@ namespace Proto
       const EBIndex<CELL>                 & a_vof,
       const EBGraph                       & a_graph,
       const MomentHolder<order>           & a_momentData,
+      const EBDomainBC<DIM, order>        & a_domainBC,
       const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
       const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
       const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
@@ -152,7 +142,8 @@ namespace Proto
       const Real                     a_dx);
 
     Real
-    getLapinhomogTerm(
+    //getLapinhomogTerm(
+    getDistanceWeightedFluxAvgStencil(
       Real                         a_inhomogTermM,
       Real                         a_inhomogTermP,
       const RealVect               a_centroid,
@@ -184,6 +175,8 @@ namespace Proto
     {
     }
 
+    // FIXME these should probably live locally inside each function. There is no practical way to reuse them
+    // There is a case to be made here for having the inhomogeneous term live inside the stencil
     std::map<EBIndex<XFACE>,LocalStencil<CELL, Real> > xfacesFluxStencil;
     std::map<EBIndex<YFACE>,LocalStencil<CELL, Real> > yfacesFluxStencil;
     std::map<EBIndex<ZFACE>,LocalStencil<CELL, Real> > zfacesFluxStencil;
@@ -193,4 +186,4 @@ namespace Proto
   };
 } // end proto namespace
 #include "Proto_WLSStencilImplem.H"
-#endif _Proto_WLSStencil_H_
+#endif // _Proto_WLSStencil_H_

@@ -384,7 +384,7 @@ getStencilComponents(const shared_ptr<GeometryService<2> >   & a_geoserv,
                      const Chombo4::DataIndex & a_dit)
 {
   typedef Proto::EBStencilArchive<CELL, CELL, 2, Real> archive_t;
-  typedef Proto::EBStencilHO<CELL, CELL, 2, Real> ho_t;
+  // typedef Proto::EBStencilHO<CELL, CELL, 2, Real> ho_t; // FIXME
   using Chombo4::Box;
   typedef IndexedMoments<DIM  , 2> IndMomDIM;
   typedef IndexedMoments<DIM-1, 2> IndMomSDMinOne;
@@ -428,17 +428,19 @@ getStencilComponents(const shared_ptr<GeometryService<2> >   & a_geoserv,
   Bx domainbx = ProtoCh::getProtoBox(m_domain);
   Point pghost= ProtoCh::getPoint(m_nghost);
 
-  ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior, 
-                   regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
-                   m_stenname,  m_dombcname, m_ebbcname,
-                   valbx, valbx,  domainbx, domainbx,
-                   pghost,  pghost,    
-                   graph,  graph,
-                   voludata,  ebfadata, 
-                   xfacdata,  yfacdata, zfacdata,   
-                   ebnorxdata, ebnorydata,
-                   ebnorzdata,
-                   m_dx, false, Point::Zeros());
+  // FIXME need to update this interface, but as of right now we don't use this code so it is a problem for later
+  CH_assert(false);
+  // ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior,
+  //                  regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+  //                  m_stenname,  m_dombcname, m_ebbcname,
+  //                  valbx, valbx,  domainbx, domainbx,
+  //                  pghost,  pghost,
+  //                  graph,  graph,
+  //                  voludata,  ebfadata,
+  //                  xfacdata,  yfacdata, zfacdata,
+  //                  ebnorxdata, ebnorydata,
+  //                  ebnorzdata,
+  //                  m_dx, false, Point::Zeros());
 
   fillInhoContr(inhoContr,a_dstVoFs,a_dit);
 

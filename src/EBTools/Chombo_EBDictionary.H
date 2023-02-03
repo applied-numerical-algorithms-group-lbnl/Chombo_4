@@ -16,8 +16,9 @@ namespace StencilNames
   static const string Poisson2("Second_Order_Poisson");
 
   ///WLS stencil
-  static const string PoissonWLS("Weighted_Least_Squares_Poisson");
-  static const string AdvectionWLS("Weighted_Least_Squares_Advection");
+  // FIXME these are going a slightly different direction and don't fit well anymore
+  // static const string PoissonWLS("Weighted_Least_Squares_Poisson");
+  // static const string AdvectionWLS("Weighted_Least_Squares_Advection");
 
   ///Signals Dirichlet BCs
   static const string Dirichlet("Dirichlet");

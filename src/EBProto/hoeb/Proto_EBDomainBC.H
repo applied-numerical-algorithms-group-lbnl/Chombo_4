@@ -82,6 +82,58 @@ namespace Proto
           }
       }
 
+    // Sometimes we need to work with a single component object.
+    // Hopefully typename T is cheap to copy
+    inline EBDomainBCRegister<T, 1>
+    makeSingleComponent(int a_comp)
+      {
+        EBDomainBCRegister<T, 1> newSingleComp;
+        // copy all the regular values
+        for(int dir = 0; dir!=DIM; dir++)
+          {
+            for(SideIterator sit; sit.ok(); ++sit)
+              {
+                newSingleComp.setRegComp(this-getRegComp(dir, sit(), a_comp),
+                                         dir, sit(), 0);
+              }
+          }
+        // copy the EB
+        newSingleComp.setEBComp(this->getEBComp(a_comp));
+
+        return newSingleComp;
+      }
+
+    // THIS ONLY EXISTS FOR BACKWARD COMPATIBILITY REASONS
+    // DO NOT USE UNLESS NECECCARY
+    void
+    fillFlatArray(string a_bcnames[2*DIM],
+                  int a_comp=0) const
+      {
+        for(int ivec = 0; ivec != 2*DIM; ivec++)
+          {
+            int idir;
+            Side::LoHiSide iside;
+            ebp_face(ivec, idir, iside);
+            a_bcnames[ivec] = getRegComp(idir, iside, a_comp);
+          }
+      }
+
+    void
+    fillFlatArray(vector<string> a_bcnames[2*DIM]) const
+      {
+        for(int ivec = 0; ivec != 2*DIM; ivec++)
+          {
+            for(int comp = 0; comp!=DIM; comp++)
+              {
+                a_bcnames[ivec].resize(DIM);
+                int idir;
+                Side::LoHiSide iside;
+                ebp_face(ivec, idir, iside);
+                a_bcnames[ivec][comp] = getRegComp(idir, iside, comp);
+              }
+          }
+      }
+
   private:
     std::array<std::array<std::array<T, Comps>, 2>, DIM> m_regbcData;
     std::array<T, Comps> m_ebbcData;
@@ -97,14 +149,30 @@ namespace Proto
   {
   public:
 
-    EBDomainBCtypes<Comps>&
-    getBCtypes()
+    inline
+    EBDomainBCtypes<Comps>
+    getBCtypes() const
       {
         return m_bcTypes;
       }
 
+    inline
+    EBDomainBCfuncs<Comps, order>
+    getBCfuncs() const
+      {
+        return m_bcFuncs;
+      }
+
+    inline
+    EBDomainBCtypes<Comps>&
+    updateBCtypes()
+      {
+        return m_bcTypes;
+      }
+
+    inline
     EBDomainBCfuncs<Comps, order>&
-    getBCfuncs()
+    updateBCfuncs()
       {
         return m_bcFuncs;
       }

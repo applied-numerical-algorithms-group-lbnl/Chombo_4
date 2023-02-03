@@ -13,6 +13,15 @@ namespace Proto
   constexpr std::array<CENTERING, Chombo4::SpaceDim>   REG_FACES{D_DECL(XFACE, YFACE, ZFACE)};
   constexpr std::array<CENTERING, Chombo4::SpaceDim+1> ALL_FACES{BOUNDARY, D_DECL(XFACE, YFACE, ZFACE)};
 
+  inline int FACE_DIR(CENTERING cent)
+  {
+    int retval = -1;
+    if (cent == XFACE) { retval = 0;}
+    else if (cent == YFACE) { retval = 1;}
+    else if (cent == ZFACE) { retval = 2;}
+    return retval;
+  }
+
   /// Return the index into a SpaceDim*2 vector
   /// use case is:
   /// for (int dir = 0; dir != SpaceDim; dir++)

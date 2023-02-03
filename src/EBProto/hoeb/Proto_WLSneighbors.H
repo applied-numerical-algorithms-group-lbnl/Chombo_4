@@ -26,36 +26,9 @@ namespace Proto
         clear();
       };
 
-    Neighbors(Vector<IndMomDIM>      & a_volMom,
-              Vector<IndMomSDMinOne> & a_facMom,
-              Vector<IndMomDIM>      & a_ebfMom,
-              Vector<RealVect>       & a_volLoc,
-              Vector<RealVect>       & a_facLoc,
-              Vector<RealVect>       & a_ebfLoc,
-              Vector<Real>         & a_volneighFrac,
-              Vector<Real>         & a_ebfneighFrac,
-              Vector<Real>         & a_facneighFrac,
-              Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
-              Vector<int>            & a_facneighDir,
-              Vector<Side::LoHiSide> & a_facneighSid)
-      {
-        m_volMom = a_volMom;
-        m_facMom = a_facMom;
-        m_ebfMom = a_ebfMom;
-        m_volLoc = a_volLoc;
-        m_facLoc = a_facLoc;
-        m_ebfLoc = a_ebfLoc;
-        m_volneighFrac = a_volneighFrac;
-        m_ebfneighFrac = a_ebfneighFrac;
-        m_facneighFrac = a_facneighFrac;
-        m_ebfneighNorm = a_ebfneighNorm;
-        m_facneighDir = a_facneighDir;
-        m_facneighSid = a_facneighSid;
-        check();
-      };
-
     inline void clear()
       {
+        m_cells.resize(0);
         m_volMom.resize(0);
         m_facMom.resize(0);
         m_ebfMom.resize(0);
@@ -87,9 +60,8 @@ namespace Proto
     getVoFsNeighbors(const EBIndex<cent> & a_face,
                      const EBIndex<CELL> & a_vof,
                      const int             a_radius,
-                     Neighbors<order>    & a_neigh,
                      const EBGraph       & a_graph,
-                     int                   a_neighType) const;
+                     int                   a_neighType);
 
     template<CENTERING cent>
     Vector<EBIndex<CELL> >
@@ -112,12 +84,41 @@ namespace Proto
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
                                 const MomentHolder<order>  & a_momentData,
-                                Neighbors<order> & a_neigh,
                                 string                   a_ebbcName,
                                 string                   a_dombcName[2*DIM], // order is is not obvious
                                 Real                   a_dx,
                                 bool a_verbose = false,
                                 int a_fluxType = 0) const;
+
+    // This is aiming to generate neighbors and moments, and have some way of checking the neighborhood is big enough
+    // FIXME this is a work in progress, and uses some adhoc checks at the moment
+    void
+    getNeighborsAndMoments(const EBGraph              & a_graph,
+                           const MomentHolder<order>  & a_momentData,
+                           string                       a_ebbcName,
+                           string                       a_dombcName[2*DIM], // order is is not obvious
+                           Real                         a_dx,
+                           bool a_verbose = false) const
+      {
+        MomentIterator<DIM,order> momit;
+        Vector<EBIndex<CELL> > vols;
+        // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
+        // while (this->size() <= momit.size()+DIM)
+        //   {
+        //     vols = neighs.getVoFsNeighbors(a_face, a_vof, radius, a_graph, a_neighType);
+
+        //     getMomentsInfoFromNeighbors(vols,
+        //                                 a_graph,
+        //                                 a_momentData,
+        //                                 a_ebbcName, a_dombcName, a_dx, a_verbose);
+
+        //     // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
+        //     radius += 1;
+        //     grows += 1;
+        //   }
+        // CH_assert(vols.size() > momit.size());
+        // CH_assert(neighs.size() > momit.size());
+      }
 
     inline void
     setWeightDisVol (Vector<int> & a_weightDisVol)
@@ -306,6 +307,8 @@ namespace Proto
       CH_assert(sizeEB() == m_ebfneighNorm.size());
     }
 
+    // the cells used in the neighborhood
+    Vector<EBIndex<CELL> >  m_cells;
     //Volume moments
     Vector<IndMomDIM>       m_volMom;
     //Face moments
@@ -375,17 +378,15 @@ namespace Proto
   getVoFsNeighbors(const EBIndex<cent> & a_face,
                    const EBIndex<CELL> & a_vof,
                    const int             a_radius,
-                   Neighbors<order>    & a_neigh,
                    const EBGraph       & a_graph,
-                   int                   a_neighType) const
+                   int                   a_neighType)
   {
     PR_TIME("getVoFsNeighbors");
     Vector<int>  weightDisVol;
-    Vector<EBIndex<CELL> > retval;
     MomentIterator<DIM,order> momit;
     if (a_neighType == 1)
       {
-        retval.push_back(a_vof);
+        m_cells.push_back(a_vof);
         weightDisVol.push_back(1);
       }
     else
@@ -393,7 +394,7 @@ namespace Proto
         if (cent == BOUNDARY)
           {
             EBIndex<CELL> voflo = a_face.getVoF();
-            retval.push_back(voflo);
+            m_cells.push_back(voflo);
             weightDisVol.push_back(1);
           }
         else
@@ -402,21 +403,21 @@ namespace Proto
             EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
             if (!a_face.m_isBoundary)
               {
-                retval.push_back(voflo);
+                m_cells.push_back(voflo);
                 weightDisVol.push_back(1);
-                retval.push_back(vofhi);
+                m_cells.push_back(vofhi);
                 weightDisVol.push_back(1);
               }
             else
               {
                 if (a_face.m_vofIDMe>=0)
                   {
-                    retval.push_back(vofhi);
+                    m_cells.push_back(vofhi);
                     weightDisVol.push_back(1);
                   }
                 if (a_face.m_vofIDLo>=0)
                   {
-                    retval.push_back(voflo);
+                    m_cells.push_back(voflo);
                     weightDisVol.push_back(1);
                   }
               }
@@ -426,15 +427,15 @@ namespace Proto
     int new_rad = a_radius;
     for (int irad = 1; irad<=new_rad; irad++)
       {
-        int neighSize = retval.size();
+        int neighSize = m_cells.size();
         for (int ineigh = startV; ineigh<neighSize; ineigh++){
-          vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, retval[ineigh]);
+          vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, m_cells[ineigh]);
           for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
             {
               bool incl = true;
-              for(int ivof2 = 0; ivof2 < retval.size(); ivof2++)
+              for(int ivof2 = 0; ivof2 < m_cells.size(); ivof2++)
                 {
-                  if (volsinclusive[ivof]==retval[ivof2])
+                  if (volsinclusive[ivof]==m_cells[ivof2])
                     {
                       incl=false;
                       break;
@@ -442,16 +443,16 @@ namespace Proto
                 }
               if (incl)
                 {
-                  retval.push_back(volsinclusive[ivof]);
+                  m_cells.push_back(volsinclusive[ivof]);
                   weightDisVol.push_back(irad+1);
                 }
             }
         }
         startV = neighSize;
-        if (irad==new_rad && retval.size()<=1.0*momit.size()) new_rad++;
+        if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
       }
-    a_neigh.setWeightDisVol(weightDisVol);
-    return retval;
+    setWeightDisVol(weightDisVol);
+    return m_cells;
   }
 
   //Gets all the moments and geometric info for the neighbors cells, boundary faces
@@ -462,7 +463,6 @@ namespace Proto
   getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> >  & a_vols,
                               const EBGraph           & a_graph,
                               const MomentHolder<order>  & a_momentData,
-                              Neighbors<order>  & a_neigh,
                               string                    a_ebbcName,
                               string                    a_dombcName[2*DIM],
                               Real                    a_dx,
@@ -507,7 +507,7 @@ namespace Proto
     regVolMom.setToRegular(a_dx);
     IndMomSDMinOne regFaceMom;
     regFaceMom.setToRegular(a_dx);
-    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
+    Vector<int> weightDisVol = m_weightDisVol;
 
     Vector<Point> volp;
     Vector<Point> facp;
@@ -699,21 +699,21 @@ namespace Proto
         ebfneighFrac.resize(0);
         weightDisEB.resize(0);
       }
-    a_neigh.setMomentsInfo(volmom, facmom,
+    setMomentsInfo(volmom, facmom,
                            ebfmom, ebfneighNorm,
                            a_dx);
 
-    a_neigh.setLocInfo(volneighLoc, facneighLoc,
+    setLocInfo(volneighLoc, facneighLoc,
                        ebfneighLoc);
 
-    a_neigh.setWeightDisFacAndEB(weightDisFac,
+    setWeightDisFacAndEB(weightDisFac,
                                  weightDisEB);
 
-    a_neigh.setFracInfo(volneighFrac,
+    setFracInfo(volneighFrac,
                         ebfneighFrac,
                         facneighFrac);
 
-    a_neigh.setAdditionalFaceInfo(facneighDir,
+    setAdditionalFaceInfo(facneighDir,
                                   facneighSid);
 
     if (a_verbose)
@@ -737,4 +737,4 @@ namespace Proto
 
 } // end proto namespace
 
-#endif _Proto_WLSneighbors_H_
+#endif //_Proto_WLSneighbors_H_

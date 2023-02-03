@@ -20,6 +20,7 @@
 #include "petscviewer.h"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "hoeb/Proto_EBDomainBC.H"
 #include "EBMultigridFunctions.H"
 
 /// Framework to solve an elliptic equation using PETSc (PeTSC? PETsC? PETsC?)
@@ -39,6 +40,7 @@ public:
   typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
   typedef EBStencil<order, Real, CELL, CELL>                    ebstencil_t;
 
+  // DEPRECATED, use updated version with better BC management
   EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
                 const shared_ptr<dictionary_t           >  & a_ebdictionary,
                 const shared_ptr<LevelData<EBGraph> >      & a_graphs,
@@ -50,6 +52,18 @@ public:
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
                 const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
                 const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
+  {
+    CH_assert(false);
+  }
+
+  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
+                const shared_ptr<dictionary_t           >  & a_ebdictionary,
+                const shared_ptr<LevelData<EBGraph> >      & a_graphs,
+                const Chombo4::DisjointBoxLayout                    & a_grids,
+                const Chombo4::Box                                  & a_domain,
+                string a_stencilName,
+                Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
+                const Proto::EBDomainBC<1, order>    & a_domainBC)
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -63,33 +77,27 @@ public:
     m_beta         =    a_beta;
     m_nz_init_guess = false;
     m_prestring[0] = '\0';
-    for(int iface = 0; iface < 2*DIM; iface++)
-    {
-      m_domainBCName[iface] = a_domainBCName[iface];
-    }
-    m_ebbcName = a_ebbcName;
+    m_domainBC = a_domainBC;
     
     m_ivghost      =    ProtoCh::getIntVect(a_ghost);
     m_ptghost      =    a_ghost;
 
-    m_boundarySolutions = a_boundarySolutions;
-    m_boundarySolutionsEB = a_boundarySolutionsEB;
     m_kappa.define(m_grids, m_ivghost, m_graphs);
     m_inhoContr.define(m_grids, m_ivghost, m_graphs);
     m_exchangeCopier.exchangeDefine(m_grids, m_ivghost);
 
-    {
-      pout() << "EBPetscSolver boundary conditions:" << std::endl;
-      pout() << "\t" << "eb " << m_ebbcName << std::endl;
-      for(int ivec = 0; ivec < 2*DIM; ivec++)
-        {
-          int dir;
-          Side::LoHiSide side;
-          ebp_face(ivec, dir, side);
-          pout() << "\t" << "dir " << dir << ", side " << side
-                 << " " << m_domainBCName[ivec] << std::endl;
-        }
-    }
+    // {
+    //   pout() << "EBPetscSolver boundary conditions:" << std::endl;
+    //   pout() << "\t" << "eb " << m_ebbcName << std::endl;
+    //   for(int ivec = 0; ivec < 2*DIM; ivec++)
+    //     {
+    //       int dir;
+    //       Side::LoHiSide side;
+    //       ebp_face(ivec, dir, side);
+    //       pout() << "\t" << "dir " << dir << ", side " << side
+    //              << " " << m_domainBCName[ivec] << std::endl;
+    //     }
+    // }
 
     Chombo4::DataIterator dit = m_grids.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -103,10 +111,13 @@ public:
     fillKappa(a_geoserv);
 
     // check if all BCs are Neumann, and the null space constants constants
-    m_constNullSpace = (m_ebbcName == StencilNames::Neumann);
-    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    m_constNullSpace = (m_domainBC.getBCtypes().getEBComp() == StencilNames::Neumann);
+    for(int dir = 0; dir!=DIM; dir++)
       {
-        m_constNullSpace &= (m_domainBCName[ivec] == StencilNames::Neumann);
+        for(SideIterator sit; sit.ok(); ++sit)
+          {
+            m_constNullSpace &= (m_domainBC.getBCtypes().getRegComp(dir, sit()) == StencilNames::Neumann);
+          }
       }
 
     //create map of locations in space to matrix row.
@@ -497,7 +508,8 @@ private:
             if(stenpt == justOutside)
             {
               int index = ebp_index(idir, sit());
-              string bcstr = m_domainBCName[index];
+              // string bcstr = m_domainBCName[index];
+              string bcstr = m_domainBC.getBCtypes().getRegComp(idir, sit());
               if(bcstr == StencilNames::Dirichlet)
               {
                 a_localSten.add(a_vof, -coefs[isten]);
@@ -518,9 +530,7 @@ private:
                            Proto::Stencil<Real>                       & a_regStencilInterior,
                            PointSet                            & a_allIrregPoints,
                            const Chombo4::DataIndex                     & a_dit,
-                           int                                            a_ibox,
-                           const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
-                           const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
+                           int                                            a_ibox)
   {
     CH_TIME("EBPetscSolver::getStencilComponents");
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
@@ -553,6 +563,9 @@ private:
     auto& ebnorxdata =(*ebnorxdatpld)[a_dit];
     auto& ebnorydata =(*ebnorydatpld)[a_dit];
     auto& ebnorzdata =(*ebnorzdatpld)[a_dit];
+
+    auto geoServLevel = (*m_geoserv)[m_domain];
+    auto momentData = geoServLevel->getAllMomentData(a_dit);
     vector<double> inhoContr;
     Box valid = m_grids[a_dit];
     Bx  valbx = ProtoCh::getProtoBox(valid);
@@ -564,34 +577,45 @@ private:
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
     if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Advection"))
     {
-      ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior, 
+      // ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior,
+      //                  regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
+      //                  m_stencilName,  m_domainBCName, m_ebbcName,
+      //                  valbx, valbx,  domainbx, domainbx,
+      //                  m_ptghost,  m_ptghost,
+      //                  graph,  graph,
+      //                  voludata,  ebfadata,
+      //                  xfacdata,  yfacdata, zfacdata,
+      //                  ebnorxdata, ebnorydata,
+      //                  ebnorzdata,
+      //                  m_dx, false, Point::Zeros(),
+      //                  a_boundarySolutions,
+      //                  a_boundarySolutionsEB);
+
+      ho_t::getStencil(a_dstVoFs, a_wstencil, inhoContr, a_regStencilInterior,
                        regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly,
-                       m_stencilName,  m_domainBCName, m_ebbcName,
+                       m_stencilName,
                        valbx, valbx,  domainbx, domainbx,
-                       m_ptghost,  m_ptghost,    
+                       m_ptghost,  m_ptghost,
                        graph,  graph,
-                       voludata,  ebfadata, 
-                       xfacdata,  yfacdata, zfacdata,   
-                       ebnorxdata, ebnorydata,
-                       ebnorzdata,
-                       m_dx, false, Point::Zeros(),
-                       a_boundarySolutions,
-                       a_boundarySolutionsEB);
+                       momentData,
+                       m_domainBC,
+                       m_dx);
  
     }
     else
     {
-      archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior,
-                            regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
-                            m_stencilName,  m_domainBCName, m_ebbcName,
-                            valbx, valbx,  domainbx, domainbx,
-                            m_ptghost,  m_ptghost,
-                            graph,  graph,
-                            voludata,  ebfadata,
-                            xfacdata,  yfacdata, zfacdata,
-                            m_dx, false, Point::Zeros());
-      
-      inhoContr.assign(a_dstVoFs.size(),0.0);
+      CH_assert(false); // we do high order now
+      // archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior,
+      //                       regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
+      //                       m_stencilName,  m_domainBCName, m_ebbcName,
+      //                       valbx, valbx,  domainbx, domainbx,
+      //                       m_ptghost,  m_ptghost,
+      //                       graph,  graph,
+      //                       voludata,  ebfadata,
+      //                       xfacdata,  yfacdata, zfacdata,
+      //                       m_dx, false, Point::Zeros());
+
+      // inhoContr.assign(a_dstVoFs.size(),0.0);
     }
 
     a_allIrregPoints.makeEmpty();
@@ -733,7 +757,7 @@ private:
         Stencil<Real>    regStencilInterior;
         PointSet irregSet;
         //use strings to get stencil for this particular operator.
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox, m_boundarySolutions, m_boundarySolutionsEB);
+        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox], ibox);
         
         auto& graph = (*m_graphs)[dit[ibox]];
         auto  grid  =     m_grids[dit[ibox]];
@@ -1072,8 +1096,7 @@ private:
   Real                                 m_dx;
   
   string m_stencilName;
-  string m_domainBCName[2*DIM];
-  string m_ebbcName;
+  Proto::EBDomainBC<1, order> m_domainBC;
 
   Vector<int> m_numPtsAllProc;
   Point   m_ptghost;
@@ -1093,9 +1116,6 @@ private:
   EBLevelBoxData<CELL, 1> m_inhoContr;
   Chombo4::Copier m_exchangeCopier;
   vector<shared_ptr<ebstencil_t> > m_stencil;
-
-  vector<shared_ptr<BaseExactSolution<order> > > m_boundarySolutions;
-  shared_ptr<BaseExactSolution<order> > m_boundarySolutionsEB;
 };
 
 #endif

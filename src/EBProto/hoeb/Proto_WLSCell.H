@@ -12,11 +12,14 @@ namespace Proto
 {
 
   /// A small class to hold parameters about how a stencil should be formed
-  struct StencilTraits
+  /// This exists for the meta data we need about stencil creation, and as an interface
+  class StencilTraits
   {
+  public:
     void
-    readStencilTraits(const std::string a_PPprefix)
+    readInputs(const std::string a_PPprefix)
       {
+        // FIXME use prefix, and better names
         ParmParse pp;
         pp.get("radius", m_radius);
         pp.get("powerE", m_weightPower);
@@ -34,7 +37,7 @@ namespace Proto
 
     StencilTraits()
       {
-        readStencilTraits("");
+        readInputs("");
       }
 
     StencilTraits(const int a_order)
@@ -51,6 +54,11 @@ namespace Proto
     inline int neighListType() const
       { return m_neighListType;}
 
+    inline int smallCellTol() const
+      { return m_smallCellTol;}
+
+  private:
+    /// Defaults are generally invalid, should be set in the constructor
     // How many cells around the stencil center to grab
     int m_radius = 0;
     // The weighting power to use
@@ -58,11 +66,11 @@ namespace Proto
     // Neighbor list type. 0-FaceBased or 1-CellBased
     int m_neighListType = 0;
     // at what point do small cells stop being relevant
-    Real m_smallCellTol = 1e-11; // FIXME
+    Real m_smallCellTol = 1e-11; // FIXME real aware
   };
 
   template<int order> 
-  class BaseExactVelocity
+  class BaseExactVelocity // FIXME a subset of exact solutions, don't reinvent them here
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -272,9 +280,11 @@ namespace Proto
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
+    // FIXME we need to stop using the dombcName strings. Maybe a single comp EBDomRegister is general enough?
+
     //Gets all the moments and geometric info for the neighbors cells, boundary faces
     //and EB faces. Stores all this info in the Neighbors object.
-    // DEPRECATED
+    // DEPRECATED now lives in neighbors
     void
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
@@ -286,11 +296,14 @@ namespace Proto
                                 const EBNormalData     & a_ebnormxdata,
                                 const EBNormalData     & a_ebnormydata,
                                 const EBNormalData     & a_ebnormzdata, // last geoserv argument
-                                Neighbors<order> & a_neigh,
+                                Neighbors<order>       & a_neigh,
                                 int                      a_neighType,
                                 string                   a_ebbcName,
                                 string                   a_dombcName[2*DIM], // order is is not obvious
-                                Real                   a_dx) const;
+                                Real                     a_dx) const
+      {
+        CH_assert(false);
+      }
 
     //Compute the Moments Matrix
     void
@@ -304,10 +317,10 @@ namespace Proto
     //Compute the moments matrix portion for cells in the neighborhood
     void
     getShiftedMomentMatrixVolumes(Chombo4::LAPACKMatrix  & a_Mblock,
-                                  RealVect           a_faceLoc,
-                                  Real               a_dx,
+                                  RealVect                 a_faceLoc,
+                                  Real                     a_dx,
                                   const Neighbors<order> & a_neigh,
-                                  IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+                                  IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
     //Compute the moments matrix portion for regular faces in the neighborhood
     void
@@ -316,7 +329,7 @@ namespace Proto
                                    Real                     a_dx,
                                    const Neighbors<order> & a_neigh,
                                    string                   a_dombcName[2*DIM],
-                                   IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+                                   IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
     //Compute the moments matrix portion for cut faces in the neighborhood
     void
@@ -325,7 +338,7 @@ namespace Proto
                                   Real                     a_dx,
                                   const Neighbors<order> & a_neigh,
                                   string                   a_ebbcName,
-                                  IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+                                  IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
     //Compute the moments matrix portion for cut faces in the neighborhood
     void
@@ -335,21 +348,16 @@ namespace Proto
                                         const Neighbors<order> & a_neigh,
                                         int                      a_dir,
                                         string                   a_ebbcName,
-                                        IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
+                                        IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
-    //Compute the moments matrix portion for cut faces in the neighborhood
-    void
-    getMomentMatrix(Chombo4::LAPACKMatrix   & a_Mblock,
-                    const Vector<IndMomDIM> & a_moments,
-                    const Vector<Real>      & a_fraction,
-                    IndexTM<int, 2>   a_start = IndexTM<int, 2>{0, 0}) const;
-
-    // Will a block fit
+    // Will a block fit, this is just some asserts
     inline void
     checkSubMatrixSize(Chombo4::LAPACKMatrix  & a_Mblock,
                        const IndexTM<int, 2>   a_blockSize,
                        const IndexTM<int, 2>   a_start) const;
 
+    // Shift moments from a_origLoc ot a_newLoc. Put here to avoid reuse
+    // REVIEW point to math
     inline void
     shiftMomentToLoc(IndMomDIM & a_moment,
                      RealVect    a_origLoc,
@@ -366,133 +374,31 @@ namespace Proto
     void
     getWeightsMatrixComponent(Chombo4::LAPACKMatrix  & a_weights,
                               const Vector<int>      & a_weightDist,
-                              IndexTM<int, 2>         a_start = IndexTM<Real, 2>{0, 0}) const;
+                              IndexTM<int, 2>          a_start = IndexTM<Real, 2>{0, 0}) const;
 
-    //Compute rhs matrix for a face
+    //Compute rhs matrix for a face. Pure virtual here
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                       const EBIndex<cent>      & a_face,
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
                       Real                     a_signNormal,
-                      Real                     a_dx) const;
+                      Real                     a_dx) const = 0;
 
-    //Compute rhs matrix for a EB face
+    //Compute rhs matrix for a EB face. Pure virtual here
     virtual void
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
                     Vector<IndMomDIM>        & a_ebnorm,
-                    Real                     a_dx) const;
+                    Real                     a_dx) const = 0;
 
-    //Compute stencil coefficients matrix 
+    //Compute the stencil from a weighted least squares system
     void
-    computeWLSStencilValues(Chombo4::LAPACKMatrix        & a_phiCoef,
-                      const Chombo4::LAPACKMatrix  & a_Qshift,
-                      const Chombo4::LAPACKMatrix  & a_Mvol,
-                      const Chombo4::LAPACKMatrix  & a_weights) const;
-
-    //Compute inhomogeneous term
-    //Soon to be DEPRECATED
-    Real
-    computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
-                       const Neighbors<order>          & a_neigh,
-                       const int                         a_nvolneigh,
-                       string                            a_ebbcName,
-                       string                            a_dombcName[2*DIM],
-                       Real                            a_dx) const;
-
-    Real
-    computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
-                          const Neighbors<order>          & a_neigh,
-                          const int                         a_nvolneigh,
-                          string                            a_dombcName[2*DIM],
-                          Real                            a_dx) const;
-
-    Real
-    computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
-                         const Neighbors<order>          & a_neigh,
-                         const int                         a_nvolneigh,
-                         string                            a_ebbcName,
-                         Real                            a_dx) const;
-
-    //Compute face centered flux stencil
-    //// DEPRECATED
-    void
-    getFaceCenteredStencil(LocalStencil<CELL, Real> & a_sten,
-                           Real                       & a_inhomogTerm, //for inhomogeneous bcs
-                           const EBIndex<CELL>        & a_vof,
-                           const EBIndex<cent>        & a_face,
-                           const EBGraph              & a_graph,
-                           const VoluData             & a_voludata,
-                           const EBFaData             & a_ebfadata,
-                           const XFacData             & a_xfacdata,
-                           const YFacData             & a_yfacdata,
-                           const ZFacData             & a_zfacdata,
-                           const EBNormalData         & a_ebnormxdata,
-                           const EBNormalData         & a_ebnormydata,
-                           const EBNormalData         & a_ebnormzdata,
-                           string                       a_ebbcName,
-                           string                       a_dombcName[2*DIM],
-                           const int                    a_dir,
-                           IndMomSDMinOne             & a_faceMom,
-                           int                        & a_neighType,
-                           Real                       a_signNormal,
-                           Real                       a_dx) const;
-
-    //Compute face centered flux stencil
-    // New version, use this
-    void
-    getFaceCenteredStencil(LocalStencil<CELL, Real> & a_sten,
-                           Real                       & a_inhomogTerm, //for inhomogeneous bcs
-                           const EBIndex<CELL>        & a_vof,
-                           const EBIndex<cent>        & a_face,
-                           const EBGraph              & a_graph,
-                           const MomentHolder<order>  & a_momentData,
-                           string                       a_ebbcName,
-                           string                       a_dombcName[2*DIM],
-                           const int                    a_dir,
-                           IndMomSDMinOne             & a_faceMom,
-                           int                        & a_neighType,
-                           Real                       a_signNormal,
-                           Real                       a_dx) const;
-
-    //Compute EB face stencil
-    // DEPRECATED
-    void
-    getEBFluxStencil(LocalStencil<CELL, Real>    & a_facesten,
-                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
-                     const EBIndex<CELL>           & a_vof,
-                     const EBIndex<cent>           & a_face,
-                     const EBGraph                 & a_graph,
-                     const VoluData                & a_voludata,
-                     const EBFaData                & a_ebfadata,
-                     const XFacData                & a_xfacdata,
-                     const YFacData                & a_yfacdata,
-                     const ZFacData                & a_zfacdata,
-                     const EBNormalData            & a_ebnormxdata,
-                     const EBNormalData            & a_ebnormydata,
-                     const EBNormalData            & a_ebnormzdata,
-                     Vector<IndMomDIM>             & a_ebnorm,
-                     string                          a_ebbcName,
-                     string                          a_dombcName[2*DIM],
-                     int                             a_neighType,
-                     const Real                    a_dx) const;
-
-    //Compute EB face stencil
-    // New version
-    void
-    getEBFluxStencil(LocalStencil<CELL, Real>    & a_facesten,
-                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
-                     const EBIndex<CELL>           & a_vof,
-                     const EBIndex<cent>           & a_face,
-                     const EBGraph                 & a_graph,
-                     const MomentHolder<order>  & a_momentData,
-                     Vector<IndMomDIM>             & a_ebnorm,
-                     string                          a_ebbcName,
-                     string                          a_dombcName[2*DIM],
-                     int                             a_neighType,
-                     const Real                    a_dx) const;
+    computeWLSStencilValues(Chombo4::LAPACKMatrix        & a_stencil,
+                            const Chombo4::LAPACKMatrix  & a_Qshift,
+                            const Chombo4::LAPACKMatrix  & a_Mvol,
+                            const Chombo4::LAPACKMatrix  & a_weights) const;
 
     virtual ~BaseWLSFlux()
     {
@@ -501,6 +407,13 @@ namespace Proto
     BaseWLSFlux()
       {}
 
+    BaseWLSFlux(const StencilTraits& a_stenTraits,
+                bool          a_verbose=false)
+      {
+        m_stenTraits = a_stenTraits;
+        m_verbose = a_verbose;
+      }
+
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
                 shared_ptr<BaseExactSolution<order> >  a_exactSol,
@@ -508,16 +421,6 @@ namespace Proto
                 int           a_fluxType=0,
                 bool          a_verbose=false)
       {
-        m_radius = a_radius;
-        m_powerE = a_powerE;
-        m_verbose = a_verbose;
-        m_exactSolLo = a_exactSol;
-        m_exactSolHi = a_exactSol;
-        if (a_exactSolEB == nullptr)
-          m_exactSolEB = a_exactSol;
-        else
-          m_exactSolEB = a_exactSolEB;
-        m_fluxType = a_fluxType;
         CH_assert(false); //DEPRECATED use the updated constructor
       }
 
@@ -529,122 +432,15 @@ namespace Proto
                 int           a_fluxType=0,
                 bool          a_verbose=false)
       {
-        m_radius = a_radius;
-        m_powerE = a_powerE;
-        m_verbose = a_verbose;
-        m_exactSolLo = a_exactSolLo;
-        m_exactSolHi = a_exactSolHi;
-        m_exactSolEB = a_exactSolEB;
-        m_fluxType = a_fluxType;
-        //CH_assert(false); //DEPRECATED use the updated constructor
+        CH_assert(false); //DEPRECATED use the updated constructor
       }
-
-    // BaseWLSFlux(const StencilTraits          & a_stenTraits,
-    //             const EBDomainBC<DIM, order> & a_domainBC
-    //             bool          a_verbose=false)
-    //   {
-    //     m_radius = a_stenTraits.radius();
-    //     m_powerE = a_stenTraits.weightPower();
-    //     m_verbose = a_verbose;
-    //     m_exactSolLo = a_exactSolLo;
-    //     m_exactSolHi = a_exactSolHi;
-    //     m_exactSolEB = a_exactSolEB;
-    //     m_fluxType = 0;
-    //   }
 
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
                 int           a_exactSolFun,
                 bool          a_verbose=false)
       {
-        CH_assert(false); // DEPRECATED THIS FUNCTION IS A BAD DESIGN, THIS IS TOO LOW TO READ IN FROM A FILE!
- //        m_radius = a_radius;
-//         m_powerE = a_powerE;
-//         m_verbose = a_verbose;
-//         ParmParse pp;
-//         shared_ptr<BaseExactSolution<order> > exactSol;
-//         if (a_exactSolFun == 1)
-//           {
-//             Vector<int> phiPowerX;
-//             Vector<int> phiPowerY;
-//             Vector<int> phiPowerZ;
-//             Vector<Real> phiCoef;
-//             int num_mono = 0;
-
-//             pp.get("phi_num_mono"   , num_mono);
-//             pp.getarr("phi_power_x",phiPowerX,0,num_mono);
-//             pp.getarr("phi_power_y",phiPowerY,0,num_mono);
-//             pp.getarr("phi_power_z",phiPowerZ,0,num_mono);
-//             pp.getarr("phi_coef",phiCoef,0,num_mono);
-
-//             vector<pair<Point, Real> > entries;
-//             for (int i=0; i<num_mono; i++)
-//               {
-//                 std::pair<Point, Real> mono;
-//                 mono.first = Point::Zeros();
-//                 mono.first[0] = phiPowerX[i];
-//                 mono.first[1] = phiPowerY[i];
-// #if DIM==3
-//                 mono.first[2] = phiPowerZ[i];
-// #endif
-//                 mono.second = phiCoef[i];
-//                 entries.push_back(mono);
-//               }
-
-//             exactSol = shared_ptr<BaseExactSolution<order> >(new PolynomialEF<order>(entries));
-//           }
-//         else if (a_exactSolFun == 2 || a_exactSolFun == 3)
-//           {
-//             Real amplitude;
-//             pp.get("phi_amp",amplitude);
-
-//             RealVect frequency;
-//             RealVect center;
-//             Vector<Real> freqVec;
-//             Vector<Real> centerVec;
-
-//             pp.getarr("phi_freq",freqVec,0,DIM);
-//             pp.getarr("phi_center",centerVec,0,DIM);
-//             for(int idir = 0; idir < DIM; idir++)
-//               {
-//                 frequency[idir] = freqVec[idir];
-//                 center[idir] = centerVec[idir];
-//               }
-
-//             if (a_exactSolFun == 2) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimCosProduct<order>(amplitude,frequency,center));
-//             if (a_exactSolFun == 3) exactSol = shared_ptr<BaseExactSolution<order> >(new OneDimSinProduct<order>(amplitude,frequency,center));
-//           }
-//         else if (a_exactSolFun == 4)
-//           {
-//             Real rad;
-//             pp.get("phi_rad", rad);
-//             Real cen;
-//             pp.get("phi_cen", cen);
-
-//             exactSol = shared_ptr<BaseExactSolution<order> >(new SineSphereEF<order>(rad, cen));
-//           }
-//         else if (a_exactSolFun == 5)
-//           {
-//             Real coeff;
-//             pp.get("phi_coeff",coeff);
-
-//             Real dfac;
-//             pp.get("phi_dfac",dfac);
-
-//             RealVect center;
-//             Vector<Real> centerVec;
-
-//             pp.getarr("phi_center",centerVec,0,DIM);
-//             for(int idir = 0; idir < DIM; idir++)
-//               {
-//                 center[idir] = centerVec[idir];
-//               }
-
-//             exactSol = shared_ptr<BaseExactSolution<order> >(new GaussianBlob<order>(coeff,dfac,center));
-//           }
-//         m_exactSolLo = exactSol;
-//         m_exactSolHi = exactSol;
-//         m_exactSolEB = exactSol;
+        CH_assert(false); // DEPRECATED
       }
 
   public:
@@ -656,17 +452,118 @@ namespace Proto
     bool m_verbose = false;
     //Flux type. 0-Laplacian, 1-Advection
     int m_fluxType = 0;
-    //Exact solution class holding different function types
-    shared_ptr<BaseExactSolution<order> >  m_exactSolLo;
-    shared_ptr<BaseExactSolution<order> >  m_exactSolHi;
-    shared_ptr<BaseExactSolution<order> >  m_exactSolEB;
+    // at what point to small cells become too small to deal with
+    Real m_eps = 1e-11; // FIXME should be precision dependent
 
     // Common, flux independent, dials for how to create a stencil
     // Things like the starting neighborhood radius and weighting power
+    // FIXME this is the only member data that makes sense in this class
     StencilTraits m_stenTraits;
   };
 
+  //Main function calls for DivWLS flux calculations
+  template<CENTERING cent, int order>
+  class LapWLSFlux: public BaseWLSFlux<cent,order>
+  {
+  public:
+    typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    typedef MomentIterator<DIM  , order> MomItDIM;
+    typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    using BaseWLSFlux<cent,order>::BaseWLSFlux;
+    using BaseWLSFlux<cent,order>::m_stenTraits;
+    using BaseWLSFlux<cent,order>::m_verbose;
+
+    //Compute rhs matrix for a face
+    virtual void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<cent>      & a_face,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      Real                       a_signNormal,
+                      Real                       a_dx) const override;
+
+    //Compute rhs matrix for a EB face
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    Real                       a_dx) const override;
+
+    //Compute inhomogeneous term
+    Real
+    computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
+                       const Neighbors<order>          & a_neigh,
+                       const int                         a_nvolneigh,
+                       const EBDomainBC<1, order>      & a_domainBC,
+                       Real                              a_dx) const;
+
+    Real
+    computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+                          const Neighbors<order>          & a_neigh,
+                          const int                         a_nvolneigh,
+                          const EBDomainBC<1, order>      & a_domainBC,
+                          Real                              a_dx) const;
+
+    Real
+    computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+                         const Neighbors<order>          & a_neigh,
+                         const int                         a_nvolneigh,
+                         const EBDomainBC<1, order>      & a_domainBC,
+                         Real                              a_dx) const;
+
+    //Compute face centered flux stencil
+    void
+    getFaceCenteredStencil(LocalStencil<CELL, Real> & a_sten,
+                           Real                       & a_inhomogTerm, //for inhomogeneous bcs
+                           const EBIndex<CELL>        & a_vof,
+                           const EBIndex<cent>        & a_face,
+                           const EBGraph              & a_graph,
+                           const MomentHolder<order>  & a_momentData,
+                           const int                    a_dir,
+                           IndMomSDMinOne             & a_faceMom,
+                           int                        & a_neighType,
+                           Real                         a_signNormal,
+                           Real                         a_dx) const;
+
+    //Compute EB face stencil
+    void
+    getEBFluxStencil(LocalStencil<CELL, Real>      & a_facesten,
+                     Real                          & a_inhomogTerm, //for inhomogeneous bcs
+                     const EBIndex<CELL>           & a_vof,
+                     const EBIndex<cent>           & a_face,
+                     const EBGraph                 & a_graph,
+                     const MomentHolder<order>     & a_momentData,
+                     Vector<IndMomDIM>             & a_ebnorm,
+                     int                             a_neighType,
+                     const Real                      a_dx) const;
+
+    virtual ~LapWLSFlux()
+      {}
+
+    LapWLSFlux() = delete;
+
+    LapWLSFlux(const StencilTraits          & a_stenTraits,
+               const EBDomainBC<1, order>   & a_domainBC,
+               bool                           a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
+      {
+        m_domainBC = a_domainBC;
+      }
+
+    EBDomainBC<1, order> m_domainBC;
+  };
+
   //Main function calls for all WLS cell calculations, which follow the same process as the flux calculations
+  // FIXME this really just does a cell average gradient, but eventually the cell averaged reconstruction machinery should be separate from the operators
   template<int order>
   class BaseWLSCell : public BaseWLSFlux<CELL, order>
   {
@@ -681,6 +578,10 @@ namespace Proto
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
+
+    using BaseWLSFlux<CELL, order>::BaseWLSFlux;
+    using BaseWLSFlux<CELL, order>::m_stenTraits;
+    using BaseWLSFlux<CELL, order>::m_verbose;
 
     //Compute rhs matrix for a face
     void
@@ -757,7 +658,7 @@ namespace Proto
                       RealVect                 & a_faceLoc,
                       IndMomSDMinOne           & a_faceMom,
                       Real                     a_signNormal,
-                      Real                     a_dx) const;
+                      Real                     a_dx) const override;
 
     //Compute rhs matrix for a EB face
     virtual void
@@ -765,13 +666,13 @@ namespace Proto
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
                     Vector<IndMomDIM>        & a_ebnorm,
-                    Real                     a_dx) const;
+                    Real                     a_dx) const override;
 
     //Compute weight matrix 
     virtual void
     getWeightsMatrixFace(Chombo4::LAPACKMatrix  & a_weights,
                          const Neighbors<order> & a_neigh,
-                         RealVect               & a_faceLoc) const;
+                         RealVect               & a_faceLoc) const override;
 
     virtual ~ExactVelAdvectionWLSFlux()
     {
@@ -872,8 +773,7 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<cent,order>::BaseWLSFlux;
-    using BaseWLSFlux<cent,order>::m_powerE;
-    using BaseWLSFlux<cent,order>::m_radius;
+    using BaseWLSFlux<cent,order>::m_stenTraits;
     using BaseWLSFlux<cent,order>::m_verbose;
 
     //Compute rhs matrix for a face
@@ -885,13 +785,16 @@ namespace Proto
                       Real                     a_signNormal,
                       Real                     a_dx) const override;
 
-    // //Compute rhs matrix for a EB face
-    // virtual void
-    // getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
-    //                 const EBIndex<cent>      & a_face,
-    //                 RealVect                 & a_faceLoc,
-    //                 Vector<IndMomDIM>        & a_ebnorm,
-    //                 Real                     a_dx) const override;
+    //Compute rhs matrix for a EB face
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<cent>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    Real                     a_dx) const override
+      {
+        CH_assert(false); // Don't need this function for divergence
+      }
 
     //Compute face centered flux stencil, using all components and coupling BCs
     void
@@ -901,8 +804,6 @@ namespace Proto
                                const EBIndex<cent>        & a_face,
                                const EBGraph              & a_graph,
                                const MomentHolder<order>  & a_momentData,
-                               string                       a_ebbcName,
-                               string                       a_dombcName[2*DIM],
                                const int                    a_dir,
                                IndMomSDMinOne             & a_faceMom,
                                int                        & a_neighType,
@@ -910,7 +811,6 @@ namespace Proto
                                Real                       a_dx) const;
 
     //Compute EB face stencil
-    // New version
     void
     getEBFluxStencilFull(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_sten,
                          Real                          & a_inhomogTerm, //for inhomogeneous bcs
@@ -918,47 +818,34 @@ namespace Proto
                          const EBIndex<cent>           & a_face,
                          const EBGraph                 & a_graph,
                          const MomentHolder<order>  & a_momentData,
-                         Vector<IndMomDIM>             & a_ebnorm,
-                         string                          a_ebbcName,
-                         string                          a_dombcName[2*DIM],
                          int                             a_neighType,
                          const Real                    a_dx) const;
 
-    // Real
-    // computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
-    //                       const Neighbors<order>          & a_neigh,
-    //                       const int                         a_nvolneigh,
-    //                       const EBDomainBC<DIM, order>    & a_domainBC,
-    //                       Real                            a_dx) const;
+    Real
+    computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+                          const Neighbors<order>          & a_neigh,
+                          const int                         a_nvolneigh,
+                          const EBDomainBC<DIM, order>    & a_domainBC,
+                          Real                            a_dx) const;
 
-    // Real
-    // computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
-    //                      const Neighbors<order>          & a_neigh,
-    //                      const int                         a_nvolneigh,
-    //                      const EBDomainBC<DIM, order>    & a_domainBC,
-    //                      Real                              a_dx) const;
+    Real
+    computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+                         const Neighbors<order>          & a_neigh,
+                         const int                         a_nvolneigh,
+                         const EBDomainBC<DIM, order>    & a_domainBC,
+                         Real                              a_dx) const;
 
+    // Constructor and destructor
     virtual ~DivWLSFlux()
       {}
 
-    DivWLSFlux()
-      {}
-
-    DivWLSFlux(int           a_radius,
-               int           a_powerE,
-               shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
-               shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
-               shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
-               bool          a_verbose=false)
-      :BaseWLSFlux<cent, order>(a_radius, a_powerE, a_exactSolLo, a_exactSolHi, a_exactSolEB, 0, a_verbose)
-      {}
+    DivWLSFlux() = delete;
 
     DivWLSFlux(const StencilTraits          & a_stenTraits,
                const EBDomainBC<DIM, order> & a_domainBC,
                bool          a_verbose=false)
+      :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
       {
-        m_radius = a_stenTraits.radius();
-        m_powerE = a_stenTraits.weightPower();
         m_domainBC = a_domainBC;
       }
 

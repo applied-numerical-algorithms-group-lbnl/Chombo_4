@@ -69,6 +69,8 @@ namespace Proto
                     const Point                        & a_vofPt); 
    
     ///   returns true if there are domain boundary conditions
+    ///   DEPRECATED, this is ugly to call and encourages bad design choices
+    ///   This is probaly in various stages of broken
     inline static bool
     getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
                vector<LocalStencil<CELL, Real> >       & a_stencil,
@@ -103,6 +105,29 @@ namespace Proto
                const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
 
+    ///   returns true if there are domain boundary conditions
+    inline static bool
+    getStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
+               vector<LocalStencil<CELL, Real> >       & a_stencil,
+               vector<Real>                            & a_inhoContr,
+               Stencil<Real>                           & a_regStencilInterior,
+               vector<Stencil<Real> >                    a_regStencilBCS[2*DIM],
+               vector<Box>                                 a_BCApplyBoxes[2*DIM],
+               Box                                       & a_regApplyBox,
+               bool                                      & a_bcOnly,
+               string                                      a_stencilName,
+               const Box                                 & a_srcValid,
+               const Box                                 & a_dstValid,
+               const Box                                 & a_srcDomain,
+               const Box                                 & a_dstDomain,
+               const Point                               & a_srcGhost,
+               const Point                               & a_dstGhost,
+               const EBGraph                             & a_srcGraph,
+               const EBGraph                             & a_dstGraph,
+               const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
+               const EBDomainBC<1, order>                & a_domainBC, // all the BC info
+               Real                                      a_dx);
+
     ///Gets WLS Poisson stencil
     inline static bool
     getWLSPoissonStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
@@ -113,26 +138,14 @@ namespace Proto
                          vector<Box>                                 a_BCApplyBoxes[2*DIM],
                          Box                                       & a_regApplyBox,
                          string                                      a_stencilName,
-                         string                                      a_domainBCName[2*DIM],
-                         string                                      a_ebbcName,
                          const Box                                 & a_validBox,
                          const Box                                 & a_domain,
                          const Point                               & a_srcGhost,
                          const Point                               & a_dstGhost,
                          const EBGraph                             & a_graph,
-                         const VoluData                            & a_voludata,
-                         const EBFaData                            & a_ebfadata,
-                         const XFacData                            & a_xfacdata,
-                         const YFacData                            & a_yfacdata,
-                         const ZFacData                            & a_zfacdata,
-                         const EBNormalData                        & a_ebnormxdata,
-                         const EBNormalData                        & a_ebnormydata,
-                         const EBNormalData                        & a_ebnormzdata,
-                         Real                                      a_dx,
-                         bool                                        a_periodiconly,
-                         bool  a_forceAllNeumann,
-                         const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
-                         const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
+                         const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
+                         const EBDomainBC<1, order>              & a_domainBC, // all the BC info
+                         Real                                      a_dx);
 
     ///Gets WLS Advection stencil
     inline static bool
@@ -173,26 +186,14 @@ namespace Proto
                                 vector<Box>                                 a_BCApplyBoxes[2*DIM], // not used
                                 Box                                       & a_regApplyBox,
                                 string                                      a_stencilName, // why?
-                                vector<string>                                      a_domainBCName[2*DIM], // how is this ordered?
-                                string                                      a_ebbcName,
                                 const Box                                 & a_validBox,
                                 const Box                                 & a_domain,
                                 const Point                               & a_srcGhost, // should this matter?
                                 const Point                               & a_dstGhost, // should this matter?
                                 const EBGraph                             & a_graph,
-                                const MomentHolder<order>                 & a_momentData,
-                                // const VoluData                            & a_voludata,  // Really I am just asking for all the data stored in geometry service on a level
-                                // const EBFaData                            & a_ebfadata,
-                                // const XFacData                            & a_xfacdata,
-                                // const YFacData                            & a_yfacdata,
-                                // const ZFacData                            & a_zfacdata,
-                                // const EBNormalData                        & a_ebnormxdata,
-                                // const EBNormalData                        & a_ebnormydata,
-                                // const EBNormalData                        & a_ebnormzdata, // last geoserv data
-                                Real                                      a_dx, // ideally part of apply
-                                const EBDomainBC<DIM, order>            & a_domainBC,
-                                const vector<shared_ptr<BaseExactSolution<order> > >& a_boundarySolution = vector<shared_ptr<BaseExactSolution<order> > >(), // these are a mess, should be an array or struct to help with organization, similar to BCName. Ideally part of apply
-                                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
+                                const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
+                                const EBDomainBC<DIM, order>              & a_domainBC, // all the BC info
+                                Real                                      a_dx);
 
     ///Gets WLS Divergence stencil
     inline static bool
