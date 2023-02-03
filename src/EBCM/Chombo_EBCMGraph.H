@@ -33,6 +33,7 @@ namespace EBCM
     vector<BlobFaceIndex<YFACE> > m_yfaces;
     vector<BlobFaceIndex<ZFACE> > m_zfaces;
     BlobFaceIndex<      BOUNDARY> m_ebface;
+
     
     bool                          m_regular;
     //centroid location
@@ -40,7 +41,10 @@ namespace EBCM
     IndexedMoments<DIM> m_volmom;
     IndexedMoments<DIM> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
-    defineAsRegular();
+    void defineAsRegular()
+    {
+      MayDay::Error("not implemented");
+    }
   };
 
   class boxmap_t
@@ -57,38 +61,92 @@ namespace EBCM
       m_irregular.clear();
       m_covered.clear();
     }
+
+    boxmap_t& operator=(const boxmap_t& a_input)
+    {
+      m_regular   = a_input.m_regular;
+      m_irregular = a_input.m_irregular;
+      m_covered   = a_input.m_covered;
+    }
+  };
+
+  ///
+  /**
+     unpacks EB description into a fully unstructured set of volumes 
+     Handy set calculus is provided to assist in keeping the final data structure sparse.
+     return value is me anticipating the need for an error code
+  */
+  inline  int
+  unpackEBDescription(std::set<EBIndex<CELL> >              & a_soluVolumes,
+                      boxmap_t                              & a_regIrregCov,
+                      const EBGraph                         & a_graph)
+
+  {
+    a_regIrregCov.clear();
+    a_soluVolumes.clear();
+    shared_ptr<std::set<EBIndex<CELL> > > retval(new std::set<EBIndex<CELL> >() );
+    auto valid= a_graph.validBox();
+    for(auto bit = valid.begin(); bit != valid.end(); ++bit)
+    {
+      if(a_graph->isCovered(*bit))
+      {
+        //covered bits are not part of the solution so do not go into the set
+        m_boxMapOrig.m_covered |= *bit;
+      }
+      else if( a_graph->isRegular())
+      {
+          
+        m_boxMapOrig.m_regular |= *bit;
+        EBIndex<CELL> regvol;
+        regvol.defineAsRegular(*bit);
+        a_soluVolumes.insert(regvol);
+      }
+      else
+      {
+        m_boxMapOrig.m_irregular |= *bit;
+        auto vofs = a_graph->getVoFs(*bit);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          a_soluVolumes.insert(vofs[ivof]);
+        }
+      }
+      
+      return 0;
+    }
+  }
+  ///
+  /**
+     Takes fully unstructured EB data and makes it sparse again by using the 
+     Blob structures.   Merges un
+ 
+     Handy set calculus is provided to assist in keeping the final data structure sparse.
+     return value is me anticipating the need for an error code
+
+     a_ebVolumesLeft this gets emptied as the merger goes on.    This side effect 
+     on a temporary data structure allows me to not copy it.   
+  */
+  inline  int
+  makeTheBlobs(std::set<BlobIndex     >              & a_soluVolumes,
+               std::set<EBIndex<CELL> >              & a_ebVolumesLeft,//should be null at exit
+               boxmap_t                              & a_regIrregCovFinal,
+               const EBGraph                         & a_graph,
+               const EBData                          & a_data,
+               const boxmap_t                        & a_regIrregCovOrig,
+               bool                                    a_mergeSmallCells)
+  {
+
+    if(!a_ebVolumesLeft.isEmpty())
+    {
+      int isize = a_ebVolumesLeft.size();
+      pout() << "EBCMGraph.H makeTheBlobs: "
+             << isize << " eb volumes are still left over" << endl;
+      MayDay::Error();
+    }
   }
   class BlobGraph
   {
   public:
 
-    shared_ptr<std::set<EBIndex<CELL> > >
-    fillVolumesFromEB(shared_ptr<EBGraph> a_graph,
-                      shared_ptr<EBData>  a_data,
-                      Real                a_dx)
-
-    {
-      shared_ptr<std::set<EBIndex<CELL> > > retval(new std::set<EBIndex<CELL> >() );
-      auto valid= a_graph.validBox();
-      for(auto bit = valid.begin(); bit != valid.end(); ++bit)
-      {
-        if(a_graph->isCovered(*bit))
-        {
-          //covered bits are not part of the solution 
-        }
-        else if( a_graph->isRegular())
-        {
-          
-        }
-        auto vofs = a_graph->getVoFs(*bit);
-        for(int ivof = 0; ivof < vofs.size(); ivof++)
-        {
-          const auto& vof = vofs[ivof];
-        }
-      }
-
-      return retval;
-    }
 
     BlobGraph(shared_ptr<EBGraph> a_graph,
               shared_ptr<EBData>  a_data,
@@ -96,16 +154,12 @@ namespace EBCM
               bool                a_mergeSmallCells) const
     {
 
-      shared_ptr<std::set<EBIndex<CELL> > > allEBVols = fillVolumesFromEB(a_graph, a_data, a_dx);
+      shared_ptr<std::set< EBIndex<CELL> > > allEBVols(new std::set< EBIndex<CELL> >());
+      shared_ptr<std::set< BlobVoluIndex > > finalVols(new std::set< BlobVoluIndex >());
+      
+      upackEBDescription(allEBVols, m_boxmapOrig);
+      makeTheBlobs(finalVols, m_boxmapMerg, allEBVols, m_boxmapOrig, a_mergeSmallCells);
 
-      if(a_mergeSmallCells)
-      {
-        m_volumes = mergeSmallVolumes(allEBVols);
-      }
-      else
-      {
-        m_volumes = allEBVols;
-      }
       return retval;
                          
     }
@@ -113,8 +167,9 @@ namespace EBCM
               
    vector<BlobVoluIndex> m_volumes;
               
-    //this reflects the information in the EBIS.   in this unstructured format, none of this stuff matters.
-    boxmap_t   m_boxmap;
+    //this reflects the information in the EBIS. 
+    boxmap_t   m_boxmapOrig;
+    boxmap_t   m_boxmapMerg;
 
       
     //weak construction is weak
