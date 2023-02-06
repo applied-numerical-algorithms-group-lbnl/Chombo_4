@@ -11,15 +11,15 @@ namespace EBCM
 {
   class BlobVolIndex;
   
-  ///BlobFaceIndex are made by collecting up EBIndex<cent> faces along a merged cell.  can be an EB face
+  ///
   template<CENTERING cent>
   class BlobFaceIndex
   {
   public:
     //centroid location
     RealVect m_cent;
-    BlobVolIndex m_lo;
-    BlobVolIndex m_hi;
+    EBIndex<CELL>  m_lo;
+    EBIndex<CELL>  m_hi;
     IndexedMoments<DIM> m_facmom;
     defineAsRegular();
 
@@ -47,28 +47,6 @@ namespace EBCM
     }
   };
 
-  class boxmap_t
-  {
-  public:
-  
-    //going to be different than EBGraph info because of coarsening
-    PointSet            m_regular;
-    PointSet            m_irregular;
-    PointSet            m_covered;
-    boxmap_t()
-    {
-      m_regular.clear();
-      m_irregular.clear();
-      m_covered.clear();
-    }
-
-    boxmap_t& operator=(const boxmap_t& a_input)
-    {
-      m_regular   = a_input.m_regular;
-      m_irregular = a_input.m_irregular;
-      m_covered   = a_input.m_covered;
-    }
-  };
 
   ///
   /**
@@ -164,12 +142,11 @@ namespace EBCM
                          
     }
   private:
-              
-   vector<BlobVoluIndex> m_volumes;
-              
-    //this reflects the information in the EBIS. 
-    boxmap_t   m_boxmapOrig;
-    boxmap_t   m_boxmapMerg;
+
+//irregular volumes   we do not store unmerged regular cell volumes              
+    vector<BlobVoluIndex> m_volumes;
+    //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
+    HostBoxData<double, 1> m_map;
 
       
     //weak construction is weak
