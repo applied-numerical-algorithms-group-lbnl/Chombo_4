@@ -41,6 +41,8 @@ namespace EBCM
     IndexedMoments<DIM> m_volmom;
     IndexedMoments<DIM> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
+    
+    vector<EBIndex<CELL> > m_subblobs;
     void defineAsRegular()
     {
       MayDay::Error("not implemented");
@@ -56,7 +58,6 @@ namespace EBCM
   */
   inline  int
   unpackEBDescription(std::set<EBIndex<CELL> >              & a_soluVolumes,
-                      boxmap_t                              & a_regIrregCov,
                       const EBGraph                         & a_graph)
 
   {
@@ -69,19 +70,16 @@ namespace EBCM
       if(a_graph->isCovered(*bit))
       {
         //covered bits are not part of the solution so do not go into the set
-        m_boxMapOrig.m_covered |= *bit;
       }
       else if( a_graph->isRegular())
       {
           
-        m_boxMapOrig.m_regular |= *bit;
         EBIndex<CELL> regvol;
         regvol.defineAsRegular(*bit);
         a_soluVolumes.insert(regvol);
       }
       else
       {
-        m_boxMapOrig.m_irregular |= *bit;
         auto vofs = a_graph->getVoFs(*bit);
         for(int ivof = 0; ivof < vofs.size(); ivof++)
         {
@@ -95,24 +93,21 @@ namespace EBCM
   ///
   /**
      Takes fully unstructured EB data and makes it sparse again by using the 
-     Blob structures.   Merges un
- 
-     Handy set calculus is provided to assist in keeping the final data structure sparse.
-     return value is me anticipating the need for an error code
-
+     Blob structures.   
+     The set that results is a fully unstructured (and merged, if you ask for it) graph.
      a_ebVolumesLeft this gets emptied as the merger goes on.    This side effect 
      on a temporary data structure allows me to not copy it.   
   */
   inline  int
   makeTheBlobs(std::set<BlobIndex     >              & a_soluVolumes,
                std::set<EBIndex<CELL> >              & a_ebVolumesLeft,//should be null at exit
-               boxmap_t                              & a_regIrregCovFinal,
                const EBGraph                         & a_graph,
                const EBData                          & a_data,
-               const boxmap_t                        & a_regIrregCovOrig,
+               const double                          & a_dx,
                bool                                    a_mergeSmallCells)
   {
 
+    
     if(!a_ebVolumesLeft.isEmpty())
     {
       int isize = a_ebVolumesLeft.size();
@@ -120,7 +115,28 @@ namespace EBCM
              << isize << " eb volumes are still left over" << endl;
       MayDay::Error();
     }
+    return 0;
   }
+
+  ///Translate irregular graph into the sparse  representation that we actually store.
+  /**
+     Basically, we just do not add regular volumes and set the integer in the map to the correct thing.
+     a_volumes: irregular volumes   we do not store unmerged regular cell volumes              
+     a_map:     map to box stuff regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
+     a_soluVolumes: full irregular representation
+     
+  **/
+  inline int
+  sparsifyTheBlobs(vector<BlobVoluIndex>                 & a_volumes,
+                   HostBoxData<int  , 1>                 & a_map,
+                   std::set<BlobIndex  >                 & a_soluVolumes)
+  {
+  }
+
+
+  ///Class to make merged sparse embedded boundary description
+  /**
+   */
   class BlobGraph
   {
   public:
@@ -132,21 +148,23 @@ namespace EBCM
               bool                a_mergeSmallCells) const
     {
 
-      shared_ptr<std::set< EBIndex<CELL> > > allEBVols(new std::set< EBIndex<CELL> >());
-      shared_ptr<std::set< BlobVoluIndex > > finalVols(new std::set< BlobVoluIndex >());
+      std::set< EBIndex<CELL> >  allEBInd;
+      std::set< BlobVoluIndex >  allBlobs;
       
-      upackEBDescription(allEBVols, m_boxmapOrig);
-      makeTheBlobs(finalVols, m_boxmapMerg, allEBVols, m_boxmapOrig, a_mergeSmallCells);
+      upackEBDescription(allEBInd, a_graph);
+      makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
 
+      //translate irregulkar graph into sparse  representation that we actually store
+      sparsifyTheBlobs(m_volumes, m_map, allBlobs)
       return retval;
                          
     }
   private:
 
-//irregular volumes   we do not store unmerged regular cell volumes              
+    //irregular volumes   we do not store unmerged regular cell volumes              
     vector<BlobVoluIndex> m_volumes;
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
-    HostBoxData<double, 1> m_map;
+    HostBoxData<int, 1>   m_map;
 
       
     //weak construction is weak
