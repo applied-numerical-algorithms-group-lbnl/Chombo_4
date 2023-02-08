@@ -14,10 +14,11 @@ namespace EBCM
 
   typedef Proto::EBGraph       pr_ebgrap;
   typedef Proto::EBData        pr_ebdata;
+  typedef Chombo::GeometryService
   typedef Proto::pr_vof pr_vof;
-  
+
   ///
-  template<CENTERING cent>
+  template<CENTERING cent, int order>
   class EBCMFace
   {
   public:
@@ -25,43 +26,84 @@ namespace EBCM
     RealVect m_cent;
     pr_vof  m_lo;
     pr_vof  m_hi;
-    IndexedMoments<DIM> m_facmom;
-    defineAsRegular();
+    IndexedMoments<DIM-1, order> m_facmom;
+    void defineAsRegular(pr_vof a_lo, pr_vof a_hi, Real a_dx)
+    {
+      m_lo = a_lo;
+      m_hi = a_hi;
+      m_facmom.setRegular(a_dx);
+    }
 
   };
 
-  
+
+  template<int order>
   class EBCMVolu
   {
   public:
-    vector<EBCMFace<XFACE> > m_xfaces;
-    vector<EBCMFace<YFACE> > m_yfaces;
-    vector<EBCMFace<ZFACE> > m_zfaces;
+    vector<EBCMFace<XFACE> > m_xfaceslo;
+    vector<EBCMFace<YFACE> > m_yfaceslo;
+    vector<EBCMFace<ZFACE> > m_zfaceslo;
+    vector<EBCMFace<XFACE> > m_xfaceshi;
+    vector<EBCMFace<YFACE> > m_yfaceshi;
+    vector<EBCMFace<ZFACE> > m_zfaceshi;
     EBCMFace<      BOUNDARY> m_ebface;
 
     
     bool                          m_regular;
-    //centroid location
+    //centroid location in global space (not relative to cell center)
     RealVect m_cent;
-    IndexedMoments<DIM> m_volmom;
-    IndexedMoments<DIM> m_ebfmom;
+    IndexedMoments<DIM, order> m_volmom;
+    IndexedMoments<DIM, order> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
     
     vector<pr_vof > m_subblobs;
-    void defineAsRegular(double a_dx)
+    void defineAsRegular(pr_pt a_pt, double a_dx)
     {
+      m_pt = a_pt;
+      m_ebfmom.setToZero();
+      m_volmom.setRegular(a_dx);
+      {
+      m_xfaceslo.resize(1);
+      m_xfaceshi.resize(1);
+        pr_pt lopt = m_pt - Point::Basis(0);
+        pr_pt hipt = m_pt + Point::Basis(0);
+        m_xfaceslo[0].setToRegular(lopt, m_pt, a_dx);
+        m_xfaceshi[0].setToRegular(m_pt, hipt, a_dx);
+      }
+      {
+        m_yfaceslo.resize(1);
+        m_yfaceshi.resize(1);
+        pr_pt lopt = m_pt - Point::Basis(1);
+        pr_pt hipt = m_pt + Point::Basis(1);
+        m_xfaceslo[0].setToRegular(lopt, m_pt, a_dx);
+        m_xfaceshi[0].setToRegular(m_pt, hipt, a_dx);
+      }
+#if DIM==3
+      {
+        pr_pt lopt = m_pt - Point::Basis(2);
+        pr_pt hipt = m_pt + Point::Basis(2);
+        m_zfaceslo.resize(1);
+        m_zfaceshi.resize(1);
+        m_zfaceslo[0].setToRegular(lopt, m_pt, a_dx);
+        m_zfaceshi[0].setToRegular(m_pt, hipt, a_dx);
+      }
+#endif      
       MayDay::Error("not implemented");
     }
   };
 
 
   ///create single-index ebcmvolume from EB description
+  template <int order>
   inline EBCMVolu
   createEBCMVolume(const pr_vof                          & a_vof,
-                   const EBGraph                         & a_graph,
-                   const EBData                          & a_data,
+                   const shared_ptr<ch_geoserv>          & a_geoserv,
+                   const Box                             & a_domain,
                    const double                          & a_dx)
   {
+    const EBGraph   & a_graph = (*a_geoserv)
+    HERE
     EBCMVolu retval;
     if(a_graph.isCovered(a_vof.m_pt))
     {
@@ -73,7 +115,14 @@ namespace EBCM
     }
     else
     {
-      HERE
+      retval.m_pt = a_vof.m_pt;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        retval.m_volmom = 
+        Real centerloc = (m_pt[idir] + 0.5)*a_dx;
+        Real scaledCent = volmom[1+idir];
+        retval.m_centroid[idir]= centerloc + (scaledCent/a_dx);
+      }
     }
 
     return retval;
