@@ -57,9 +57,64 @@ namespace EBCM
     IndexedMoments<DIM, order> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
     
-    vector<pr_vof > m_subblobs;
+
+    template <CENTERING cent>
+    void fillFaceData(vector< EBCMFace< cent> >                       & a_facedata,
+                      const vector< EBIndex<  cent> >                 & a_ebfaces,
+                      const HostIrregData<   cent, IndMomSDMinOne, 1> & a_facedat)
+    {
+
+      a_facedata.resize(a_ebfaces.size());
+      for(int ifac = 0; ifac < a_ebfaces.size(); ifac)
+      {
+        a_facedata[ifac].m_lo = a_ebfaces[iface].getVoF(Side::Lo);
+        a_facedata[ifac].m_hi = a_ebfaces[iface].getVoF(Side::Hi);
+        a_facedata[ifac].m_facmom = a_facedata(a_ebfaces[iface], 0);
+      }
+    }
+
+    void defineAsIrregular(const pr_vof                          & a_vof,
+                           const shared_ptr<ch_geoserv>          & a_geoserv,
+                           const Box                             & a_domain,
+                           const ch_dit                          & a_dit,
+                           const double                          & a_dx)
+    {
+      auto graph   = (*(a_geoserv->getGraphs(   a_domain)))[a_dit];
+      auto voludat = (*(a_geoserv->getVoluData( a_domain)))[a_dit];
+      auto xfacdat = (*(a_geoserv->getXFaceData(a_domain)))[a_dit];
+      auto yfacdat = (*(a_geoserv->getYFaceData(a_domain)))[a_dit];
+
+      auto xebfaclo= graph.getXFaces(Side::Lo);
+      auto xebfachi= graph.getXFaces(Side::Hi);
+      auto yebfaclo= graph.getYFaces(Side::Lo);
+      auto yebfachi= graph.getYFaces(Side::Hi);
+
+      fillFaceData<XFACE>(m_xfaceslo, xebfaclo, xfacdat);
+      fillFaceData<YFACE>(m_yfaceslo, yebfaclo, yfacdat);
+#if DIM=3                     
+      auto zfacdat = (*(a_geoserv->getZFaceData(a_domain)))[a_dit];
+      auto zebfaclo= graph.getZFaces(Side::Lo);
+      auto zebfachi= graph.getZFaces(Side::Hi);
+      fillFaceData<ZFACE>(m_zfaceslo, zebfaclo, zfacdat);
+#endif
+      m_regular = false;
+      m_pt = a_vof.m_pt;
+        
+      defineCentroid();
+    }
+
+    void defineCentroid()
+    {
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        Real centerloc = (m_pt[idir] + 0.5)*m_dx;
+        Real scaledCent = m_volmom[1+idir];
+        m_centroid[idir]= centerloc + (scaledCent/m_dx);
+      }
+    }
     void defineAsRegular(pr_pt a_pt, double a_dx)
     {
+      m_regular = true;
       m_pt = a_pt;
       m_ebfmom.setToZero();
       m_volmom.setRegular(a_dx);
@@ -89,7 +144,7 @@ namespace EBCM
         m_zfaceshi[0].setToRegular(m_pt, hipt, a_dx);
       }
 #endif      
-      MayDay::Error("not implemented");
+      defineCentroid();
     }
   };
 
@@ -100,6 +155,7 @@ namespace EBCM
   createEBCMVolume(const pr_vof                          & a_vof,
                    const shared_ptr<ch_geoserv>          & a_geoserv,
                    const Box                             & a_domain,
+                   const ch_dit                          & a_dit,
                    const double                          & a_dx)
   {
     const EBGraph   & a_graph = (*a_geoserv)
@@ -115,14 +171,7 @@ namespace EBCM
     }
     else
     {
-      retval.m_pt = a_vof.m_pt;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        retval.m_volmom = 
-        Real centerloc = (m_pt[idir] + 0.5)*a_dx;
-        Real scaledCent = volmom[1+idir];
-        retval.m_centroid[idir]= centerloc + (scaledCent/a_dx);
-      }
+      retval.defineAsIrregular(a_vof, a_geoserv, a_doomain, a_dit, a_dx)
     }
 
     return retval;
