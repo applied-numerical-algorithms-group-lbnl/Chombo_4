@@ -507,7 +507,6 @@ private:
             Point justOutside = startpt + isign*Point::Basis(idir);
             if(stenpt == justOutside)
             {
-              int index = ebp_index(idir, sit());
               // string bcstr = m_domainBCName[index];
               string bcstr = m_domainBC.getBCtypes().getRegComp(idir, sit());
               if(bcstr == StencilNames::Dirichlet)
@@ -536,33 +535,33 @@ private:
     typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
     typedef Proto::EBStencilHO<CELL, CELL, order, Real> ho_t;
     using Chombo4::Box;
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
-    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
-    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
-    shared_ptr< LevelData< VoluData >  > voldatpld = m_geoserv->getVoluData(  m_domain);
-    shared_ptr< LevelData< EBFaData >  > ebfdatpld = m_geoserv->getEBFaceData(m_domain);
-    shared_ptr< LevelData< XFacData >  > xfadatpld = m_geoserv->getXFaceData( m_domain);
-    shared_ptr< LevelData< YFacData >  > yfadatpld = m_geoserv->getYFaceData( m_domain);
-    shared_ptr< LevelData< ZFacData >  > zfadatpld = m_geoserv->getZFaceData( m_domain);
+    // typedef IndexedMoments<DIM  , order> IndMomDIM;
+    // typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
+    // typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+    // typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    // typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+    // typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+    // typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    // typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
+    // shared_ptr< LevelData< VoluData >  > voldatpld = m_geoserv->getVoluData(  m_domain);
+    // shared_ptr< LevelData< EBFaData >  > ebfdatpld = m_geoserv->getEBFaceData(m_domain);
+    // shared_ptr< LevelData< XFacData >  > xfadatpld = m_geoserv->getXFaceData( m_domain);
+    // shared_ptr< LevelData< YFacData >  > yfadatpld = m_geoserv->getYFaceData( m_domain);
+    // shared_ptr< LevelData< ZFacData >  > zfadatpld = m_geoserv->getZFaceData( m_domain);
 
-    shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(m_domain);
-    shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(m_domain);
-    shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(m_domain);
+    // shared_ptr< LevelData< EBNorData >  > ebnorxdatpld = m_geoserv->getEBNormalData_x(m_domain);
+    // shared_ptr< LevelData< EBNorData >  > ebnorydatpld = m_geoserv->getEBNormalData_y(m_domain);
+    // shared_ptr< LevelData< EBNorData >  > ebnorzdatpld = m_geoserv->getEBNormalData_z(m_domain);
 
-    auto& voludata =(*voldatpld)[a_dit];
-    auto& ebfadata =(*ebfdatpld)[a_dit];
-    auto& xfacdata =(*xfadatpld)[a_dit];
-    auto& yfacdata =(*yfadatpld)[a_dit];
-    auto& zfacdata =(*zfadatpld)[a_dit];
+    // auto& voludata =(*voldatpld)[a_dit];
+    // auto& ebfadata =(*ebfdatpld)[a_dit];
+    // auto& xfacdata =(*xfadatpld)[a_dit];
+    // auto& yfacdata =(*yfadatpld)[a_dit];
+    // auto& zfacdata =(*zfadatpld)[a_dit];
     auto& graph    =(*m_graphs )[a_dit];
-    auto& ebnorxdata =(*ebnorxdatpld)[a_dit];
-    auto& ebnorydata =(*ebnorydatpld)[a_dit];
-    auto& ebnorzdata =(*ebnorzdatpld)[a_dit];
+    // auto& ebnorxdata =(*ebnorxdatpld)[a_dit];
+    // auto& ebnorydata =(*ebnorydatpld)[a_dit];
+    // auto& ebnorzdata =(*ebnorzdatpld)[a_dit];
 
     auto geoServLevel = (*m_geoserv)[m_domain];
     auto momentData = geoServLevel->getAllMomentData(a_dit);

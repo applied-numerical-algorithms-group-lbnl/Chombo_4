@@ -35,31 +35,31 @@ namespace Proto
     // Start of the volume block matrix (row, column)
     IndexTM<int, 2> start = IndexTM<int, 2>{0, 0};
     // fill in the sub-matrix
-    getShiftedMomentMatrixVolumes(a_Mvol,
-                                  a_faceLoc,
-                                  a_dx,
-                                  a_neigh,
-                                  start);
+    this->getShiftedMomentMatrixVolumes(a_Mvol,
+                                        a_faceLoc,
+                                        a_dx,
+                                        a_neigh,
+                                        start);
 
     // Start of the face block matrix
     start = IndexTM<int, 2>{nvol, 0};
     // fill in the sub-matrix
-    getShiftedMomentMatrixRegFaces(a_Mvol,
-                                   a_faceLoc,
-                                   a_dx,
-                                   a_neigh,
-                                   a_dombcName,
-                                   start);
+    this->getShiftedMomentMatrixRegFaces(a_Mvol,
+                                         a_faceLoc,
+                                         a_dx,
+                                         a_neigh,
+                                         a_dombcName,
+                                         start);
 
     // Start of the EB block matrix
     start = IndexTM<int, 2>{nvol+nfac, 0};
     // fill in the sub-matrix
-    getShiftedMomentMatrixEBFaces(a_Mvol,
-                                  a_faceLoc,
-                                  a_dx,
-                                  a_neigh,
-                                  a_ebbcName,
-                                  start);
+    this->getShiftedMomentMatrixEBFaces(a_Mvol,
+                                        a_faceLoc,
+                                        a_dx,
+                                        a_neigh,
+                                        a_ebbcName,
+                                        start);
 
     if (m_verbose)
       {
@@ -1313,28 +1313,28 @@ namespace Proto
       W.define(ntotal_coup, ntotal_coup);
       W.setVal(0.);
 
-      // fill the volume moments and weights
+      // fill the volume and face moments and weights
       for (int dir=0; dir!=DIM; dir++)
         {
           // build each block of the volume moments
           IndexTM<int, 2> start = IndexTM<int, 2>{dir*nvolneigh, dir*nmoms}; // row, col block beginning
-          getShiftedMomentMatrixVolumes(M, faceLoc, a_dx, neighs, start);
+          this->getShiftedMomentMatrixVolumes(M, faceLoc, a_dx, neighs, start);
           IndexTM<int, 2> startW = start[0]*IndexTM<int, 2>::Unit; // diagonal entry, shared row ordering with moments
-          getWeightsMatrixComponent(W, neighs.m_weightDisVol, startW);
+          this->getWeightsMatrixComponent(W, neighs.m_weightDisVol, startW);
 
           // build each block of the regular face moments
           start = IndexTM<int, 2>{dir*nfac + DIM*(nvolneigh), dir*nmoms}; // row, col block beginning
-          getShiftedMomentMatrixRegFaces(M, faceLoc, a_dx, neighs, a_dombcName, start);
+          this->getShiftedMomentMatrixRegFaces(M, faceLoc, a_dx, neighs, a_dombcName, start);
           startW = start[0]*IndexTM<int, 2>::Unit; // diagonal entry, shared row ordering with moments
-          getWeightsMatrixComponent(W, neighs.m_weightDisFac, startW);
+          this->getWeightsMatrixComponent(W, neighs.m_weightDisFac, startW);
 
           // build each block of the eb moments
           start = IndexTM<int, 2>{DIM*(nvolneigh + nfac), dir*nmoms}; // row, col block beginning
-          getShiftedMomentMatrixEBNormalFaces(M, faceLoc, a_dx, neighs, dir, a_ebbcName, start);
+          this->getShiftedMomentMatrixEBNormalFaces(M, faceLoc, a_dx, neighs, dir, a_ebbcName, start);
         }
       // weights for EB section only get added once because they are coupled
       IndexTM<int, 2> startW = (DIM*(nvolneigh + nfac))*IndexTM<int, 2>::Unit; // diagonal entry, shared row ordering with moments
-      getWeightsMatrixComponent(W, neighs.m_weightDisEB, startW);
+      this->getWeightsMatrixComponent(W, neighs.m_weightDisEB, startW);
 
       // The G matrix, is Qshift for this dir, and zero otherwise
       G.define(1, DIM*momit.size());

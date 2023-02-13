@@ -44,16 +44,16 @@ namespace Proto
         m_VoluData = const_cast<VoluData*>(&a_VoluData);
         m_EBFaceData = const_cast<EBFaData*>(&a_EBFaceData);
 #if DIM >= 1
-        m_XFaceData = &a_XFacData;
-        m_XEBNormData = &a_XEBNormData;
+        m_XFaceData = const_cast<XFacData*>(&a_XFacData);
+        m_XEBNormData = const_cast<EBNormalData*>(&a_XEBNormData);
 #endif
 #if DIM >= 2
-        m_YFaceData = &a_YFacData;
-        m_YEBNormData = &a_YEBNormData;
+        m_YFaceData = const_cast<YFacData*>(&a_YFacData);
+        m_YEBNormData = const_cast<EBNormalData*>(&a_YEBNormData);
 #endif
 #if DIM >= 3
-        m_ZFaceData = &a_ZFacData;
-        m_ZEBNormData = &a_ZEBNormData;
+        m_ZFaceData = const_cast<ZFacData*>(&a_ZFacData);
+        m_ZEBNormData = const_cast<EBNormalData*>(&a_ZEBNormData);
 #endif
       }
 

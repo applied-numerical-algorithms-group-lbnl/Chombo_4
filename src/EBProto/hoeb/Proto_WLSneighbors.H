@@ -77,7 +77,7 @@ namespace Proto
     void
     growNeighbors(Vector<EBIndex<CELL> > &a_base,
                   const EBIndex<CELL> & a_vof,
-                  const EBGraph       & a_graph) const;
+                  const EBGraph       & a_graph);
 
     // New version, use this
     void
@@ -88,7 +88,7 @@ namespace Proto
                                 string                   a_dombcName[2*DIM], // order is is not obvious
                                 Real                   a_dx,
                                 bool a_verbose = false,
-                                int a_fluxType = 0) const;
+                                int a_fluxType = 0);
 
     // This is aiming to generate neighbors and moments, and have some way of checking the neighborhood is big enough
     // FIXME this is a work in progress, and uses some adhoc checks at the moment
@@ -98,7 +98,7 @@ namespace Proto
                            string                       a_ebbcName,
                            string                       a_dombcName[2*DIM], // order is is not obvious
                            Real                         a_dx,
-                           bool a_verbose = false) const
+                           bool a_verbose = false)
       {
         MomentIterator<DIM,order> momit;
         Vector<EBIndex<CELL> > vols;
@@ -275,7 +275,7 @@ namespace Proto
     inline bool
     isRegular() const
       {
-        return (sizeEB == 0);
+        return (sizeEB() == 0);
       }
 
     inline bool
@@ -468,7 +468,7 @@ namespace Proto
                               string                    a_dombcName[2*DIM],
                               Real                    a_dx,
                               bool a_verbose,
-                              int a_fluxType) const
+                              int a_fluxType)
   {
     auto& a_voludata = a_momentData.volumeMoments();
     auto& a_ebfadata = a_momentData.ebFaceMoments();

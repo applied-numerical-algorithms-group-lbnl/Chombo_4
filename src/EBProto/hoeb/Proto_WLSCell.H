@@ -30,9 +30,9 @@ namespace Proto
     defaultStencilTraits(const int a_order)
       {
         // defaults are an over-estimate but sufficiently large, and the minimal reasonable weighting
-        int m_radius = a_order; // how many cells out to grab
-        int m_weightPower = -(a_order+1); // WLS weighting power dist^P
-        int m_neighListType = 0;
+        m_radius = a_order; // how many cells out to grab
+        m_weightPower = -(a_order+1); // WLS weighting power dist^P
+        m_neighListType = 0;
       }
 
     StencilTraits()
@@ -54,7 +54,7 @@ namespace Proto
     inline int neighListType() const
       { return m_neighListType;}
 
-    inline int smallCellTol() const
+    inline Real smallCellTol() const
       { return m_smallCellTol;}
 
   private:
@@ -374,7 +374,7 @@ namespace Proto
     void
     getWeightsMatrixComponent(Chombo4::LAPACKMatrix  & a_weights,
                               const Vector<int>      & a_weightDist,
-                              IndexTM<int, 2>          a_start = IndexTM<Real, 2>{0, 0}) const;
+                              IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
     //Compute rhs matrix for a face. Pure virtual here
     virtual void
