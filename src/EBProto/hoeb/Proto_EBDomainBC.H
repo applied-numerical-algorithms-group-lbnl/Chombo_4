@@ -54,7 +54,7 @@ namespace Proto
 
     inline void
     setAllRegComp(const T& a_value,
-                  int a_comp)
+                  int a_comp=0)
       {
         for(int dir = 0; dir!=DIM; dir++)
           {
@@ -67,7 +67,7 @@ namespace Proto
 
     inline void
     setAllComp(const T& a_value,
-               int a_comp)
+               int a_comp=0)
       {
         setAllRegComp(a_value, a_comp);
         setEBComp(a_value, a_comp);

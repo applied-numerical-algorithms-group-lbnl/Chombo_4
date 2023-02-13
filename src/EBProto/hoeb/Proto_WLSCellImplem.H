@@ -979,9 +979,9 @@ namespace Proto
 
     // FIXME, no reason to unpack these here
     // further refactoring needed
-    string a_ebbcName = m_domainBC.getBCtypes().getEBComp(a_dir);
+    string a_ebbcName = m_domainBC.getBCtypes().getEBComp();
     string a_dombcName[2*DIM];
-    m_domainBC.getBCtypes().fillFlatArray(a_dombcName, a_dir);
+    m_domainBC.getBCtypes().fillFlatArray(a_dombcName);
 
     Neighbors<order> neighs;
 

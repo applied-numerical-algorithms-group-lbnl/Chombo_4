@@ -382,12 +382,13 @@ namespace Proto
                    int                   a_neighType)
   {
     PR_TIME("getVoFsNeighbors");
-    Vector<int>  weightDisVol;
+    m_weightDisVol.resize(0);
+    m_cells.resize(0);
     MomentIterator<DIM,order> momit;
     if (a_neighType == 1)
       {
         m_cells.push_back(a_vof);
-        weightDisVol.push_back(1);
+        m_weightDisVol.push_back(1);
       }
     else
       {
@@ -395,7 +396,7 @@ namespace Proto
           {
             EBIndex<CELL> voflo = a_face.getVoF();
             m_cells.push_back(voflo);
-            weightDisVol.push_back(1);
+            m_weightDisVol.push_back(1);
           }
         else
           {
@@ -404,21 +405,21 @@ namespace Proto
             if (!a_face.m_isBoundary)
               {
                 m_cells.push_back(voflo);
-                weightDisVol.push_back(1);
+                m_weightDisVol.push_back(1);
                 m_cells.push_back(vofhi);
-                weightDisVol.push_back(1);
+                m_weightDisVol.push_back(1);
               }
             else
               {
                 if (a_face.m_vofIDMe>=0)
                   {
                     m_cells.push_back(vofhi);
-                    weightDisVol.push_back(1);
+                    m_weightDisVol.push_back(1);
                   }
                 if (a_face.m_vofIDLo>=0)
                   {
                     m_cells.push_back(voflo);
-                    weightDisVol.push_back(1);
+                    m_weightDisVol.push_back(1);
                   }
               }
           }
@@ -444,14 +445,14 @@ namespace Proto
               if (incl)
                 {
                   m_cells.push_back(volsinclusive[ivof]);
-                  weightDisVol.push_back(irad+1);
+                  m_weightDisVol.push_back(irad+1);
                 }
             }
         }
         startV = neighSize;
         if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
       }
-    setWeightDisVol(weightDisVol);
+    CH_assert(m_cells.size() == m_weightDisVol.size());
     return m_cells;
   }
 
@@ -718,7 +719,7 @@ namespace Proto
 
     if (a_verbose)
       {
-        pout()<<" Index order for the matrices " << endl;
+        pout()<<" Index order of moments for the matrices " << endl;
         for (int i=0; i!=sizeVols(); i++)
           {
             pout() << " Vol " << i << ", neighbor " << indexFromVol(i) << endl;
