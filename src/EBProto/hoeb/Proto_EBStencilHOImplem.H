@@ -406,8 +406,8 @@ namespace Proto
     regSten.clear();
     Real regInhContr;
     WLSStencil<order> lapSten;
-    Point lodom = a_domain.low();
-    Point hidom = a_domain.high();
+    // Point lodom = a_domain.low();
+    // Point hidom = a_domain.high();
     //Looping over all the valid VoFs
     //for(int k = initRep; k<initRep + nrepRows; k++)
     //{

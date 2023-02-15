@@ -1339,11 +1339,11 @@ namespace Proto
       // The G matrix, is Qshift for this dir, and zero otherwise
       G.define(1, DIM*momit.size());
       G.setVal(0.);
-      const int& faceDir = a_face.direction();
+      //const int& faceDir = a_face.direction();
       for(momit.reset(); momit.ok(); ++momit)
         {
           IndexTM<int, DIM> p = momit();
-          int pd = p[faceDir];
+          // int pd = p[faceDir];
           int jmom = IndexedMoments<DIM, order>::indexOf(p);
           int offset = a_dir*momit.size();
           G(0, jmom+offset) = Qshift(0, jmom);
@@ -1472,20 +1472,20 @@ namespace Proto
     // Chombo4::LAPACKMatrix::s_verbose = true;
     std::array<IndMomDIM, DIM> ebnorm;
 
-    auto& a_voludata = a_momentData.volumeMoments();
+    //auto& a_voludata = a_momentData.volumeMoments();
     auto& a_ebfadata = a_momentData.ebFaceMoments();
 #if DIM >= 1
-    auto& a_xfacdata = a_momentData.template faceMoments<XFACE>();
+    //auto& a_xfacdata = a_momentData.template faceMoments<XFACE>();
     auto& a_ebnormxdata = a_momentData.ebNormal(0);
     ebnorm[0] = a_ebnormxdata(a_vof, 0);
 #endif
 #if DIM >= 2
-    auto& a_yfacdata = a_momentData.template faceMoments<YFACE>();
+    //auto& a_yfacdata = a_momentData.template faceMoments<YFACE>();
     auto& a_ebnormydata = a_momentData.ebNormal(1);
     ebnorm[1] = a_ebnormydata(a_vof, 0);
 #endif
 #if DIM >= 3
-    auto& a_zfacdata = a_momentData.template faceMoments<ZFACE>();
+    //auto& a_zfacdata = a_momentData.template faceMoments<ZFACE>();
     auto& a_ebnormzdata = a_momentData.ebNormal(2);
     ebnorm[2] = a_ebnormzdata(a_vof, 0);
 #endif
@@ -1496,8 +1496,6 @@ namespace Proto
                  "All EB BC's in all directions should be of the same type for divergence op");
 
     Real inhomogTerm = 0.0; //for inhomogeneous bcs
-    Real bndryArea, alpha;
-    RealVect centroid, normal;
 
     IndMomDIM ebfmom = a_ebfadata(a_face, 0);
     Normalizor<order>::normalizeFaceMoment(ebfmom, a_dx);

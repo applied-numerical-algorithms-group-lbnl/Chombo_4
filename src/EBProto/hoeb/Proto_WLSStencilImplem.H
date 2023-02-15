@@ -1224,18 +1224,18 @@ namespace Proto
     //         a_dx);
 
     auto& a_voludata = a_momentData.volumeMoments();
-    auto& a_ebfadata = a_momentData.ebFaceMoments();
+    //auto& a_ebfadata = a_momentData.ebFaceMoments();
 #if DIM >= 1
     auto& a_xfacdata = a_momentData.template faceMoments<XFACE>();
-    auto& a_ebnormxdata = a_momentData.ebNormal(0);
+    //auto& a_ebnormxdata = a_momentData.ebNormal(0);
 #endif
 #if DIM >= 2
     auto& a_yfacdata = a_momentData.template faceMoments<YFACE>();
-    auto& a_ebnormydata = a_momentData.ebNormal(1);
+    //auto& a_ebnormydata = a_momentData.ebNormal(1);
 #endif
 #if DIM >= 3
     auto& a_zfacdata = a_momentData.template faceMoments<ZFACE>();
-    auto& a_ebnormzdata = a_momentData.ebNormal(2);
+    //auto& a_ebnormzdata = a_momentData.ebNormal(2);
 #endif
 
     // a_vofStencil.clear();
