@@ -360,7 +360,7 @@ public:
   /****/
   // THIS IS SLOW. ONLY USE IT FOR TESTING PURPOSES.
   // It should behave identically to the normal applyOp function, but evaluates the op as stored in the PETSc matrix
-  void
+  int
   applyOpPETSC(EBLevelBoxData<CELL, 1>       & a_lph,
                const EBLevelBoxData<CELL, 1> & a_phi,
                bool a_doExchange = true)
@@ -390,6 +390,7 @@ public:
     ierr = VecAXPY(m_xx, c, m_bb); CHKERRQ(ierr);
     // put solution into output
     ierr = petscToChombo(a_lph, m_xx); CHKERRQ(ierr);
+    return ierr;
   }
 
   virtual
@@ -572,7 +573,7 @@ private:
     vector<Bx >               BCApplyBoxes[2*DIM];
     bool                      bcsOnly = false;
     Bx                        regApplyBox;
-    bool                      irregOnly = false;
+    // bool                      irregOnly = false;
     Bx domainbx = ProtoCh::getProtoBox(m_domain);
     if(m_stencilName == string("Weighted_Least_Squares_Poisson") || m_stencilName == string("Weighted_Least_Squares_Advection"))
     {

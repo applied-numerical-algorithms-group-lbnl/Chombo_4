@@ -134,8 +134,8 @@ namespace Proto
                    Real                     a_dx)
       {
         m_volMom.resize(a_volMom.size());
-        Real volScaleFactor  = (D_TERM(a_dx, *a_dx, *a_dx));
-        Real areaScaleFactor = (D_TERM(1.0,  *a_dx, *a_dx));
+        Real volScaleFactor  = getRegularVolume(a_dx);
+        Real areaScaleFactor = getRegularArea(a_dx);
         for(int i = 0; i < a_volMom.size(); ++i)
           {
             IndMomDIM momspt = a_volMom[i];
