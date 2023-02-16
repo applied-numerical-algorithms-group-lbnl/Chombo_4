@@ -50,8 +50,8 @@ public:
                 string a_domainBCName[2*DIM],
                 string a_ebbcName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
-                const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr)
+                const vector<shared_ptr<BaseExactSolution > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution > >(),
+                const shared_ptr<BaseExactSolution > & a_boundarySolutionsEB = nullptr)
   {
     CH_assert(false);
   }
@@ -63,7 +63,7 @@ public:
                 const Chombo4::Box                                  & a_domain,
                 string a_stencilName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                const Proto::EBDomainBC<1, order>    & a_domainBC)
+                const Proto::EBDomainBC<1>    & a_domainBC)
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -1096,7 +1096,7 @@ private:
   Real                                 m_dx;
   
   string m_stencilName;
-  Proto::EBDomainBC<1, order> m_domainBC;
+  Proto::EBDomainBC<1> m_domainBC;
 
   Vector<int> m_numPtsAllProc;
   Point   m_ptghost;

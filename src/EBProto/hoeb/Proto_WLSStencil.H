@@ -62,24 +62,13 @@ namespace Proto
     //Gets WLS stencil for each component the gradient of a scalar
     // return a vector of stencils, one per component
     inline void
-    getWLSGradStencil(LocalStencil<CELL, Real>    & a_vofStencilx,
-                      LocalStencil<CELL, Real>    & a_vofStencily,
-                      LocalStencil<CELL, Real>    & a_vofStencilz,
+    getWLSGradStencil(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
+                      vector<Real>                                & a_inhoTerm,
                       const EBIndex<CELL>                 & a_vof,
                       const EBGraph                       & a_graph,
-                      const VoluData                      & a_voludata,
-                      const EBFaData                      & a_ebfadata,
-                      const XFacData                      & a_xfacdata,
-                      const YFacData                      & a_yfacdata,
-                      const ZFacData                      & a_zfacdata,
-                      const EBNormalData                  & a_ebnormxdata,
-                      const EBNormalData                  & a_ebnormydata,
-                      const EBNormalData                  & a_ebnormzdata,
-                      const BaseWLSCell<order>  & a_cellConstruct,
-                      string                                a_ebbcName,
-                      string                                a_dombcName[2*DIM],
-                      vector<Real>                                & a_inhoTerm,
-                      int                                 & a_neighType,
+                      const MomentHolder<order>           & a_momentData,
+                      const GradWLSCell<order>            & a_cellConstruct,
+                      int                                 a_neighType,
                       Real                                a_dx);
 
         //Gets WLS flux divergence stencil in a direction
@@ -103,7 +92,7 @@ namespace Proto
       const EBIndex<CELL>                 & a_vof,
       const EBGraph                       & a_graph,
       const MomentHolder<order>           & a_momentData,
-      const EBDomainBC<DIM, order>        & a_domainBC,
+      const EBDomainBC<DIM>        & a_domainBC,
       const DivWLSFlux<XFACE   , order>  & a_xfaceflux, // Why build these separate?
       const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
       const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,

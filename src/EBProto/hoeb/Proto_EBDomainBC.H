@@ -14,6 +14,12 @@ namespace Proto
   {
   public:
 
+    inline unsigned int
+    numComp() const
+      {
+        return Comps;
+      }
+
     inline T
     getRegComp(int a_dir,
                Side::LoHiSide a_side,
@@ -85,7 +91,7 @@ namespace Proto
     // Sometimes we need to work with a single component object.
     // Hopefully typename T is cheap to copy
     inline EBDomainBCRegister<T, 1>
-    makeSingleComponent(int a_comp)
+    makeSingleComponent(int a_comp) const
       {
         EBDomainBCRegister<T, 1> newSingleComp;
         // copy all the regular values
@@ -93,7 +99,7 @@ namespace Proto
           {
             for(SideIterator sit; sit.ok(); ++sit)
               {
-                newSingleComp.setRegComp(this-getRegComp(dir, sit(), a_comp),
+                newSingleComp.setRegComp(this->getRegComp(dir, sit(), a_comp),
                                          dir, sit(), 0);
               }
           }
@@ -141,10 +147,10 @@ namespace Proto
 
   // aliases for common use cases
   template<unsigned int Comps> using EBDomainBCtypes = EBDomainBCRegister<std::string, Comps>;
-  template<unsigned int Comps, unsigned int order> using EBDomainBCfuncs = EBDomainBCRegister<std::shared_ptr<BaseExactSolution<order> >, Comps>;
+  template<unsigned int Comps> using EBDomainBCfuncs = EBDomainBCRegister<std::shared_ptr<BaseExactSolution>, Comps>;
 
   // couple a BC type (Dirichlet, Neuman, ...) with the values on that boundary
-  template<unsigned int Comps, unsigned int order>
+  template<unsigned int Comps>
   class EBDomainBC
   {
   public:
@@ -157,7 +163,7 @@ namespace Proto
       }
 
     inline
-    EBDomainBCfuncs<Comps, order>
+    EBDomainBCfuncs<Comps>
     getBCfuncs() const
       {
         return m_bcFuncs;
@@ -171,15 +177,24 @@ namespace Proto
       }
 
     inline
-    EBDomainBCfuncs<Comps, order>&
+    EBDomainBCfuncs<Comps>&
     updateBCfuncs()
       {
         return m_bcFuncs;
       }
 
+    inline EBDomainBC<1>
+    makeSingleComponent(int a_comp) const
+      {
+        EBDomainBC<1> newSingleComp;
+        newSingleComp.updateBCtypes() = this->getBCtypes().makeSingleComponent(a_comp);
+        newSingleComp.updateBCfuncs() = this->getBCfuncs().makeSingleComponent(a_comp);
+        return newSingleComp;
+      }
+
   private:
     EBDomainBCtypes<Comps> m_bcTypes;
-    EBDomainBCfuncs<Comps, order> m_bcFuncs;
+    EBDomainBCfuncs<Comps> m_bcFuncs;
   };
 
 

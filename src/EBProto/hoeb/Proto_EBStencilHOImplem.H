@@ -24,7 +24,8 @@ namespace Proto
       }
     }
     return retval;
-  } 
+  }
+
 
   template <int order>
   bool
@@ -190,8 +191,8 @@ namespace Proto
              Real                                      a_dx,
              bool                                        a_periodiconly, 
              Point                                       a_dstGrown,
-             const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions,
-             const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB)
+             const vector<shared_ptr<BaseExactSolution > > & a_boundarySolutions,
+             const shared_ptr<BaseExactSolution > & a_boundarySolutionsEB)
   {
     CH_assert(false); // If you get here, switch to the updated getStencil
 
@@ -326,7 +327,7 @@ namespace Proto
              const EBGraph                             & a_srcGraph,
              const EBGraph                             & a_dstGraph,
              const MomentHolder<order>                 & a_momentData,
-             const EBDomainBC<1, order>              & a_domainBC,
+             const EBDomainBC<1>              & a_domainBC,
              Real                                      a_dx)
   {
     PR_TIME("getStencil");
@@ -374,7 +375,7 @@ namespace Proto
                        const Point                               & a_dstGhost,                   
                        const EBGraph                             & a_graph,
                        const MomentHolder<order>                 & a_momentData,
-                       const EBDomainBC<1, order>              & a_domainBC,
+                       const EBDomainBC<1>              & a_domainBC,
                        Real                                      a_dx)
   {
     PR_TIME("getWLSPoissonStencil");
@@ -387,7 +388,7 @@ namespace Proto
     a_inhoContr.resize(a_dstVoFs.size());
 
     //Reading parameters from the inputs file for WLS stencils
-    StencilTraits stenTraits;
+    StencilAttributes stenAttb;
 
     Vector<int> ptVec;
 
@@ -483,10 +484,10 @@ namespace Proto
             // create the flux objects.
             // these really could be owned by the WLSstencil. They mostly contain operators
             // should re-think how the verbosity flag get passed in
-            LapWLSFlux<XFACE, order> xflux = LapWLSFlux<XFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            LapWLSFlux<YFACE, order> yflux = LapWLSFlux<YFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            LapWLSFlux<ZFACE, order> zflux = LapWLSFlux<ZFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            LapWLSFlux<BOUNDARY, order> ebflux = LapWLSFlux<BOUNDARY, order>(stenTraits, a_domainBC, pt_verbose);
+            LapWLSFlux<XFACE, order> xflux = LapWLSFlux<XFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            LapWLSFlux<YFACE, order> yflux = LapWLSFlux<YFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            LapWLSFlux<ZFACE, order> zflux = LapWLSFlux<ZFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            LapWLSFlux<BOUNDARY, order> ebflux = LapWLSFlux<BOUNDARY, order>(stenAttb, a_domainBC, pt_verbose);
 
             Real inhoTerm = 0.0;
   
@@ -498,7 +499,7 @@ namespace Proto
                                      a_graph,
                                      a_momentData,
                                      xflux, yflux, zflux, ebflux,
-                                     stenTraits.neighListType(),
+                                     stenAttb.neighListType(),
                                      a_dx);
 
             // scale by volume? FIXME This sure doesn't work in both 2D and 3D
@@ -540,7 +541,7 @@ namespace Proto
         if (pt_verbose) 
           {
             pout() << "Lapplacian stencil for " << vofInd.m_pt << ":" << endl;
-            printWLSStencil(stenTraits.radius(), a_stencil[ivof], vofInd.m_pt);
+            printWLSStencil(stenAttb.radius(), a_stencil[ivof], vofInd.m_pt);
             pout() << " inhomg term " << a_inhoContr[ivof] << endl;
             // sum up the stencil weights
             Real accDivF = 0.0;
@@ -926,7 +927,7 @@ namespace Proto
                               const Point                               & a_dstGhost,
                               const EBGraph                             & a_graph,
                               const MomentHolder<order>                 & a_momentData,
-                              const EBDomainBC<DIM, order>              & a_domainBC,
+                              const EBDomainBC<DIM>              & a_domainBC,
                               Real                                        a_dx)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
@@ -941,7 +942,7 @@ namespace Proto
     Vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
-    StencilTraits stenTraits;
+    StencilAttributes stenAttb;
 
     // FIXME verbosity should be controlled externally
     ParmParse pp; // banish this from internals
@@ -978,10 +979,10 @@ namespace Proto
             // create the flux objects.
             // these really could be owned by the WLSstencil. They mostly contain operators
             // should re-think how the verbosity flag get passed in
-            DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenTraits, a_domainBC, pt_verbose);
-            DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenTraits, a_domainBC, pt_verbose);
+            DivWLSFlux<XFACE, order> xflux = DivWLSFlux<XFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            DivWLSFlux<YFACE, order> yflux = DivWLSFlux<YFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            DivWLSFlux<ZFACE, order> zflux = DivWLSFlux<ZFACE, order>(stenAttb, a_domainBC, pt_verbose);
+            DivWLSFlux<BOUNDARY, order> ebflux = DivWLSFlux<BOUNDARY, order>(stenAttb, a_domainBC, pt_verbose);
 
             // pack the stencil together
             std::array<LocalStencil<CELL, Real>, SpaceDim > stencilPack{D_DECL(a_stencil[0][ivof],
@@ -998,7 +999,7 @@ namespace Proto
                                        a_graph,
                                        a_momentData,
                                        xflux, yflux, zflux, ebflux,
-                                       stenTraits.neighListType(),
+                                       stenAttb.neighListType(),
                                        a_dx);
 
             // unpack
@@ -1028,7 +1029,7 @@ namespace Proto
                   {
                     Real accDivF = 0.;
                     pout() << " stencil " << comp << " comp" << std::endl;
-                    printWLSStencil(stenTraits.radius(), a_stencil[comp][ivof], vofInd.m_pt);
+                    printWLSStencil(stenAttb.radius(), a_stencil[comp][ivof], vofInd.m_pt);
                     for(int ivec = 0; ivec < a_stencil[comp][ivof].size(); ivec++)
                       {
                         accDivF += a_stencil[comp][ivof].m_entries[ivec].m_weight;
@@ -1047,32 +1048,21 @@ namespace Proto
   bool
   EBStencilHO<CELL, CELL,  order, Real>::
   getWLSGradientStencil(vector<EBIndex<CELL> >                    & a_dstVoFs,
-                              vector<vector<LocalStencil<CELL, Real> > >      & a_stencil,
-                              vector<vector<Real> >                          & a_inhoContr,
-                              Stencil<Real>                           & a_regStencil,
-                              vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
-                              vector<Box>                                 a_BCApplyBoxes[2*DIM],
-                              Box                                       & a_regApplyBox,
-                              string                                      a_stencilName,
-                              string                                      a_domainBCName[2*DIM],
-                              string                                      a_ebbcName,
-                              const Box                                 & a_validBox,
-                              const Box                                 & a_domain,
-                              const Point                               & a_srcGhost,
-                              const Point                               & a_dstGhost,
-                              const EBGraph                             & a_graph,
-                              const VoluData                            & a_voludata,
-                              const EBFaData                            & a_ebfadata,
-                              const XFacData                            & a_xfacdata,
-                              const YFacData                            & a_yfacdata,
-                              const ZFacData                            & a_zfacdata,
-                              const EBNormalData                        & a_ebnormxdata,
-                              const EBNormalData                        & a_ebnormydata,
-                              const EBNormalData                        & a_ebnormzdata,
-                              Real                                      a_dx,
-                              bool                                        a_periodiconly,
-                              bool  a_forceNeumann,
-                              const shared_ptr<BaseExactSolution<order> >& a_boundarySolutions)
+                        vector<vector<LocalStencil<CELL, Real> > >      & a_stencil,
+                        vector<vector<Real> >                          & a_inhoContr,
+                        Stencil<Real>                           & a_regStencil,
+                        vector<Stencil<Real> >                    a_regStencilBC[2*DIM],
+                        vector<Box>                                 a_BCApplyBoxes[2*DIM],
+                        Box                                       & a_regApplyBox,
+                        string                                      a_stencilName,
+                        const Box                                 & a_validBox,
+                        const Box                                 & a_domain,
+                        const Point                               & a_srcGhost,
+                        const Point                               & a_dstGhost,
+                        const EBGraph                             & a_graph,
+                        const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
+                        const EBDomainBC<1>              & a_domainBC, // all the BC info
+                        Real                                      a_dx)
   {
     //a_stencil will compute its corresponding stencil for all the cells in the domain
     using Chombo4::pout;
@@ -1082,106 +1072,20 @@ namespace Proto
     a_stencil.resize(SpaceDim, vector<LocalStencil<CELL, Real> >(a_dstVoFs.size()));
     a_inhoContr.resize(SpaceDim, vector<Real>(a_dstVoFs.size()));
 
-    int radius = 2;
-    int powerE = -3;
     bool verbose = false;
-    int exactSolution = 1;
-    //Neighbor list type. 0-FaceBased or 1-CellBased
-    int neighListType = 1;
-
     Vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
-    ParmParse pp;
-    pp.get("radius"   , radius);
-    pp.get("powerE"   , powerE);
+    StencilAttributes stenAttb;
+
+    // FIXME verbosity should be controlled externally
+    ParmParse pp; // banish this from internals
     pp.query("verbose"   , verbose);
-    pp.query("neighListType"   , neighListType);
-
-    //Exact solution
-    if (a_boundarySolutions == nullptr)
-      {
-        pp.get("exact_solution",exactSolution);
-      }
-    else
-      {
-        pout() << "WLSGradientStencil using externally specified BC" << std::endl;
-      }
-
-
     if (verbose)
       {
         pp.getarr("pt_verbose",ptVec,0,DIM);
       }
 
-    string ebbc = a_ebbcName;
-    string dombc[2*DIM];
-
-    //Assigning domain and EB boundary conditions
-    if(a_forceNeumann)
-      {
-        ebbc = string("Neumann");
-      }
-    if(!a_periodiconly)
-      {
-        for(int ivec = 0; ivec < 2*DIM; ivec++)
-          {
-            if(a_forceNeumann)
-              {
-                dombc[ivec] = string("Neumann");
-              }
-            else
-              {
-                dombc[ivec] = a_domainBCName[ivec];
-              }
-          }
-      }
-
-    // // Setup periodic boundaries
-    // int ncells = 32;
-    // int nrepRows = -1;
-    // //pp.get("nx"   , ncells);
-    // ncells = 1.0/a_dx;
-    // pp.query("nrepRows", nrepRows);
-    // vector<map<int, int> > map1;
-    // map<pair<int,int>, EBIndex<CELL> > map2;
-    // map1.resize(ncells);
-    // for(int k=0; k<ncells; k++)
-    //   {
-    //     //Looping over all the valid VoFs
-    //     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
-    //       {
-    //         Point pt = a_dstVoFs[ivof].m_pt;
-    //         pair<int,int> ptPair (pt[0],pt[1]);
-    //         map2[ptPair] = a_dstVoFs[ivof];
-    //         if (pt[1]==k)
-    //           {
-    //             map1[k][pt[0]] = ivof;
-    //           }
-    //       }
-    //   }
-    // map<int,int >::iterator it;
-    // map<pair<int,int>,EBIndex<CELL> >::iterator it2;
-    // vector<LocalStencil<CELL, Real> > row_stencil;
-    // vector<Real> row_inhoContr;
-    // vector<EBIndex<CELL> > row_index;
-    // int initRep = nrepRows;
-    // while(initRep<2*radius)
-    //   {
-    //     initRep += nrepRows;
-    //   }
-
-    // if (nrepRows == -1)
-    //   {
-    //     initRep = 0;
-    //     nrepRows = ncells;
-    //   }
-
-    //Looping over all the valid VoFs and setting up their stencils
-    // for(int k = initRep; k<initRep + nrepRows; k++)
-    //   {
-    //     for (it = map1[k].begin(); it != map1[k].end(); it++)
-    //       {
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
       {
             // int ivof = it->second;
@@ -1206,51 +1110,36 @@ namespace Proto
               }
 
             //Creating the WLS fluxes needed for flux divergence - U on a face
-            BaseWLSCell<order> cellConstr;
-            if (a_boundarySolutions == nullptr)
-              {
-                // pout() << "Using uniform div boundary values" << std::endl;
-                cellConstr = BaseWLSCell<order>(radius, powerE, exactSolution, pt_verbose);
-              }
-            else
-              {
-                // pout() << "Using specified div boundary values" << std::endl;
-                cellConstr = BaseWLSCell<order>(radius, powerE, a_boundarySolutions, pt_verbose);
-              }
+            GradWLSCell<order> cellConstr(stenAttb, a_domainBC, pt_verbose);
+
+            // pack the stencil together
+            std::array<LocalStencil<CELL, Real>, SpaceDim > stencilPack{D_DECL(a_stencil[0][ivof],
+                                                                               a_stencil[1][ivof],
+                                                                               a_stencil[2][ivof])};
 
             //Computing the cell gradient stencil
-            //LocalStencil<CELL, Real> cellStenZ;
             vector<Real> inhoTerm(DIM, 0.);
             WLSStencil<order> sten;
-            sten.getWLSGradStencil(a_stencil[0][ivof],
-                                   a_stencil[1][ivof],
-                                   a_stencil[2][ivof],
-                                   //cellStenZ, // dummy for the z
+            sten.getWLSGradStencil(stencilPack,
+                                   inhoTerm,
                                    vofInd,
                                    a_graph,
-                                   a_voludata,
-                                   a_ebfadata,
-                                   a_xfacdata, a_yfacdata, a_zfacdata,
-                                   a_ebnormxdata, a_ebnormydata,
-                                   a_ebnormzdata,
+                                   a_momentData,
                                    cellConstr,
-                                   ebbc, dombc,
-                                   inhoTerm,
-                                   neighListType,
+                                   stenAttb.neighListType(),
                                    a_dx);
 
-            RealVect centroid;
-            Real kappa;
-            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, vofInd, a_graph, a_dx);
-            // scale by cell size
+            // unpack
+            D_TERM(a_stencil[0][ivof] = stencilPack[0];,
+                   a_stencil[1][ivof] = stencilPack[1];,
+                   a_stencil[2][ivof] = stencilPack[2];);
+
+            // scale by cell size. FIXME works in 3D?
             for (int dir=0; dir!=SpaceDim; dir++)
               {
                 a_stencil[dir][ivof] *= 1./(a_dx);
                 a_inhoContr[dir][ivof] = inhoTerm[dir]/(a_dx);
               }
-            // row_stencil.push_back(a_stencil[0][ivof]); // FIXME for multi-comp
-            // row_inhoContr.push_back(a_inhoContr[0][ivof]);
-            // row_index.push_back(vofInd);
 
             if (pt_verbose)
               {
@@ -1258,7 +1147,7 @@ namespace Proto
                   {
                     pout() << "Grad stencil for " << vofInd.m_pt << " comp" << comp << ":" << endl;
                     pout() << " inhomg term " << a_inhoContr[comp][ivof] << endl;
-                    printWLSStencil(radius, a_stencil[comp][ivof], vofInd.m_pt);
+                    printWLSStencil(stenAttb.radius(), a_stencil[comp][ivof], vofInd.m_pt);
                     Real accum = 0.0;
                     for(int ivec = 0; ivec < a_stencil[comp][ivof].size(); ivec++)
                       {
@@ -1268,86 +1157,6 @@ namespace Proto
                   }
               }
           }
-      //}
-
-//     // update stencils for periodic boundaries
-//     if (nrepRows != ncells)
-//       {
-//         int kk =0;
-//         for(int k = 0; k<map1.size(); k++)
-//           {
-//             for (it = map1[k].begin(); it != map1[k].end(); it++)
-//               {
-//                 if (k>=initRep && k<initRep + nrepRows) continue;
-//                 int ivof = it->second;
-//                 if (kk==row_stencil.size()) kk=0;
-//                 EBIndex<CELL> vofInd = a_dstVoFs[ivof];
-//                 int difi = vofInd.m_pt[0] - row_index[kk].m_pt[0];
-//                 int difj = vofInd.m_pt[1] - row_index[kk].m_pt[1];
-//                 LocalStencil<CELL, Real> new_stencil;
-//                 for(int ivec =  0; ivec < row_stencil[kk].size(); ivec++)
-//                   {
-//                     int pt_x = row_stencil[kk].m_entries[ivec].m_vof.m_pt[0] + difi;
-//                     int pt_y = row_stencil[kk].m_entries[ivec].m_vof.m_pt[1] + difj;
-//                     if (pt_y < 0) {
-//                       pt_y += ncells;
-//                       pt_x += ncells/nrepRows;
-//                       if (difi==0) pt_x -= ncells/nrepRows;
-//                     }
-//                     if (pt_y > ncells-1) {
-//                       pt_y -= ncells;
-//                       pt_x -= ncells/nrepRows;
-//                       if (difi==0) pt_x += ncells/nrepRows;
-//                     }
-//                     pair<int,int> pairPt (pt_x,pt_y);
-//                     it2 = map2.find(pairPt);
-//                     if (it2 != map2.end())
-//                       {
-//                         new_stencil.add(it2->second, row_stencil[kk].m_entries[ivec].m_weight);
-//                       }
-//                   }
-//                 Point pt = vofInd.m_pt;
-//                 bool pt_verbose = false;
-//                 if (verbose)
-//                   {
-// #if DIM==3
-//                     if (ptVec[0]==pt[0] && ptVec[1]==pt[1] && ptVec[2]==pt[2])
-// #else
-//                       if (ptVec[0]==pt[0] && ptVec[1]==pt[1])
-// #endif
-//                         {
-//                           pt_verbose = true;
-//                           pout() << "Debugging Point "<<pt<<endl;
-//                         }
-//                       else
-//                         {
-//                           pt_verbose = false;
-//                         }
-//                   }
-
-//                 a_stencil[ivof] = new_stencil;
-//                 a_inhoContr[ivof] = row_inhoContr[kk];
-//                 kk++;
-
-//                 if (pt_verbose)
-//                   {
-//                     pout() << "divF stencil for " << vofInd.m_pt << ":" << endl;
-//                     printWLSStencil(radius, a_stencil[ivof][0], vofInd.m_pt);
-//                     Real accDivF = 0.0;
-//                     for(int ivec =  0; ivec < a_stencil[ivof][0].size(); ivec++)
-//                       {
-//                         accDivF += a_stencil[ivof][0].m_entries[ivec].m_weight;
-//                       }
-
-//                     pout() << "Original pt " << row_index[kk-1].m_pt[0] <<" , "<<row_index[kk-1].m_pt[1]<< endl;
-//                     pout() << "Sum of all stencil weights " << accDivF <<" stencil size "<<a_stencil[ivof][0].size()<< endl;
-//                   }
-
-
-//               }
-//           }
-//       }
-
 
     return true;
   }

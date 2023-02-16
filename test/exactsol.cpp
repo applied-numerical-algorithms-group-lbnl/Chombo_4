@@ -25,7 +25,7 @@ void
 getPhi(EBLevelBoxData<CELL, 1>            & a_phi,
        shared_ptr<GeometryService<order> >& a_geoserv ,
        int a_nx, DisjointBoxLayout a_grids, Box a_domain, Real a_dx,
-       BaseExactSolution<order>& a_phigen)
+       BaseExactSolution& a_phigen)
 {
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef HostIrregData<CELL,      IndMomDIM, 1>  VoluData;

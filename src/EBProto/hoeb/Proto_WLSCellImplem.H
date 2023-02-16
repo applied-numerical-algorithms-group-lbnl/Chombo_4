@@ -685,7 +685,7 @@ namespace Proto
   computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
                      const Neighbors<order>         & a_neigh,
                      const int                        a_nvolneigh,
-                     const EBDomainBC<1, order>     & a_domainBC,
+                     const EBDomainBC<1>     & a_domainBC,
                      Real                             a_dx) const
   {
     PR_TIME("computeInhomogTerm");
@@ -712,7 +712,7 @@ namespace Proto
   computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                         const Neighbors<order>          & a_neigh,
                         const int                         a_nvolneigh,
-                        const EBDomainBC<1, order>      & a_domainBC,
+                        const EBDomainBC<1>      & a_domainBC,
                         Real                            a_dx) const
   {
     PR_TIME("computeInhomogTerm");
@@ -777,7 +777,7 @@ namespace Proto
   computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                        const Neighbors<order>          & a_neigh,
                        const int                         a_nvolneigh,
-                       const EBDomainBC<1, order>      & a_domainBC,
+                       const EBDomainBC<1>      & a_domainBC,
                        Real                            a_dx) const
   {
     PR_TIME("computeInhomogTermEB");
@@ -838,7 +838,7 @@ namespace Proto
   // computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
   //                    const Neighbors<order>         & a_neigh,
   //                    const int                        a_nvolneigh,
-  //                    const EBDomainBC<DIM, order>   & a_domainBC,
+  //                    const EBDomainBC<DIM>   & a_domainBC,
   //                    int                              a_bcComp,
   //                    Real                           a_dx) const
   // {
@@ -1007,10 +1007,7 @@ namespace Proto
       {
         vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
 
-        neighs.getMomentsInfoFromNeighbors(vols,
-                                           a_graph,
-                                           a_momentData,
-                                           a_ebbcName, a_dombcName, a_dx);
+        neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
 
         // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
         radius += 1;
@@ -1155,10 +1152,7 @@ namespace Proto
           {
             vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
 
-            neighs.getMomentsInfoFromNeighbors(vols,
-                                               a_graph,
-                                               a_momentData,
-                                               a_ebbcName, a_dombcName, a_dx);
+            neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
 
             // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
             radius += 1;
@@ -1243,6 +1237,8 @@ namespace Proto
     string a_dombcName[2*DIM];
     m_domainBC.getBCtypes().fillFlatArray(a_dombcName, a_dir);
 
+    EBDomainBC<1> domainBCdir = m_domainBC.makeSingleComponent(a_dir);
+
     Neighbors<order> neighs;
 
     RealVect faceLoc;
@@ -1267,10 +1263,7 @@ namespace Proto
       {
         vols = neighs.getVoFsNeighbors(a_face, a_vof, radius, a_graph, a_neighType);
 
-        neighs.getMomentsInfoFromNeighbors(vols,
-                                            a_graph,
-                                            a_momentData,
-                                            a_ebbcName, a_dombcName, a_dx, m_verbose);
+        neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, domainBCdir, a_dx, m_verbose);
 
         // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
         radius += 1;
@@ -1608,7 +1601,7 @@ namespace Proto
   computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                         const Neighbors<order>          & a_neigh,
                         const int                         a_nvolneigh,
-                        const EBDomainBC<DIM, order>    & a_domainBC,
+                        const EBDomainBC<DIM>    & a_domainBC,
                         Real                            a_dx) const
   {
     PR_TIME("computeInhomogTerm");
@@ -1672,7 +1665,7 @@ namespace Proto
   computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                        const Neighbors<order>          & a_neigh,
                        const int                         a_nvolneigh,
-                       const EBDomainBC<DIM, order>    & a_domainBC,
+                       const EBDomainBC<DIM>    & a_domainBC,
                        Real                            a_dx) const
   {
     PR_TIME("computeInhomogTermEB");
@@ -1732,7 +1725,7 @@ namespace Proto
   //Compute rhs matrix for a face
   template<int order>
   void
-  BaseWLSCell<order>::
+  GradWLSCell<order>::
   getEvalCellMatrix(Chombo4::LAPACKMatrix    & a_cellMatrix,
                     const EBIndex<CELL>      & a_cell,
                     RealVect                 & a_cellLoc,
@@ -1787,29 +1780,24 @@ namespace Proto
   //Compute face centered flux stencil
   template<int order>
   void
-  BaseWLSCell<order>::
+  GradWLSCell<order>::
   getCellStencil(LocalStencil<CELL, Real> & a_sten,
                  Real                       & a_inhomogTerm, //for inhomogeneous bcs
                  const EBIndex<CELL>        & a_vof,
                  const EBGraph              & a_graph,
-                 const VoluData             & a_voludata,
-                 const EBFaData             & a_ebfadata,
-                 const XFacData             & a_xfacdata,
-                 const YFacData             & a_yfacdata,
-                 const ZFacData             & a_zfacdata,
-                 const EBNormalData         & a_ebnormxdata,
-                 const EBNormalData         & a_ebnormydata,
-                 const EBNormalData         & a_ebnormzdata,
-                 string                       a_ebbcName,
-                 string                       a_dombcName[2*DIM],
-                 IndMomDIM                 & a_cellMom,
+                 const MomentHolder<order>  & a_momentData,
+                 IndMomDIM                  & a_cellMom,
                  Real                       a_dx,
-                 const IndexTM<int, DIM> a_deriv) const
+                 const IndexTM<int, DIM>    a_deriv) const
   {
     PR_TIME("getCellStencil");
     using Chombo4::pout;
     Chombo4::LAPACKMatrix::s_verbose = this->m_verbose;
     // Chombo4::LAPACKMatrix::s_verbose = true;
+
+    string a_ebbcName = m_domainBC.getBCtypes().getEBComp();
+    string a_dombcName[2*DIM];
+    m_domainBC.getBCtypes().fillFlatArray(a_dombcName);
 
     Neighbors<order> neighs;
     EBIndex<CELL> cell = a_vof; // a dummy, since we want cell bases neighbors
@@ -1819,18 +1807,24 @@ namespace Proto
       {
         cellLoc[dir] = a_dx * (0.5 + cell.m_pt[dir]);
       }
-
-    Vector<EBIndex<CELL> >  vols = neighs.template getVoFsNeighbors<CELL>(cell, a_vof, m_stenTraits.radius(), a_graph, neighType);
+    int radius = m_stenTraits.radius();
+    Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
-    if (vols.size()<=momit.size()) pout()<<"DANGER: NUMBER OF NEIGHS "<<vols.size()<<" and NUMBER OF coef "<<momit.size()<<endl;
+    int grows = 0;
 
-    this->getMomentsInfoFromNeighbors(vols,
-                                      a_graph, a_voludata, a_ebfadata,
-                                      a_xfacdata, a_yfacdata, a_zfacdata,
-                                      a_ebnormxdata, a_ebnormydata,
-                                      a_ebnormzdata,
-                                      neighs, neighType,
-                                      a_ebbcName, a_dombcName, a_dx);
+    // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
+    while (neighs.size() <= momit.size()+DIM)
+      {
+        vols = neighs.template getVoFsNeighbors<CELL>(a_vof, a_vof, radius, a_graph, neighType);
+
+        neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
+
+        // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
+        radius += 1;
+        grows += 1;
+      }
+    CH_assert(vols.size() > momit.size());
+    CH_assert(neighs.size() > momit.size());
 
     //first fill M with moments,  shifted to the cell center
     Chombo4::LAPACKMatrix  Mvol;
@@ -1867,11 +1861,163 @@ namespace Proto
     int nvolneigh = vols.size();
     a_inhomogTerm = this->computeInhomogTerm(phiCoef, neighs,
                                              nvolneigh,
-                                             a_ebbcName, a_dombcName,
+                                             m_domainBC,
                                              a_dx);
     if (this->m_verbose) {pout()<<"For phi=1 "<<coef_acc<<" "<<a_inhomogTerm<<" "<<coef_acc+a_inhomogTerm<<endl;}
   }
 
+ //Compute inhomogeneous term
+  template<int order>
+  Real
+  GradWLSCell<order>::
+  computeInhomogTerm(const Chombo4::LAPACKMatrix    & a_stencil,
+                     const Neighbors<order>         & a_neigh,
+                     const int                        a_nvolneigh,
+                     const EBDomainBC<1>     & a_domainBC,
+                     Real                             a_dx) const
+  {
+    PR_TIME("computeInhomogTerm");
+    using Chombo4::pout;
+    Real inhomogTermReg = computeInhomogTermReg(a_stencil,
+                                                a_neigh,
+                                                a_nvolneigh,
+                                                a_domainBC,
+                                                a_dx);
+
+    Real inhomogTermEB = computeInhomogTermEB(a_stencil,
+                                                a_neigh,
+                                                a_nvolneigh,
+                                                a_domainBC,
+                                                a_dx);
+
+    return inhomogTermReg + inhomogTermEB;
+  }
+
+
+  template<int order>
+  Real
+  GradWLSCell<order>::
+  computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+                        const Neighbors<order>          & a_neigh,
+                        const int                         a_nvolneigh,
+                        const EBDomainBC<1>      & a_domainBC,
+                        Real                            a_dx) const
+  {
+    PR_TIME("computeInhomogTerm");
+    using Chombo4::pout;
+    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
+    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
+    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
+    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
+    Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
+    Real areaScaleFactor = getRegularArea(a_dx);
+
+    Real inhomogTerm = 0.0;
+
+    for(int iface = 0; iface < a_neigh.sizeFaces(); iface++)
+    {
+      Real bcValue = 0;
+      RealVect a_faceLocDiff = a_facneighLoc[iface];
+      int faceDir = a_facneighDir[iface];
+      Side::LoHiSide faceSide = a_facneighSid[iface];
+      string bcName = m_domainBC.getBCtypes().getRegComp(faceDir, faceSide);
+      if(bcName == string("Neumann"))
+      {
+        bcValue = NeumannExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+                                               a_faceLocDiff,
+                                               faceDir,
+                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
+                                               a_dx);
+      }
+      else if(bcName == string("Dirichlet"))
+      {
+        bcValue = DirichletExactSoln<order>::
+                               getFaceIntegral(a_facmom[iface],
+                                               a_faceLocDiff,
+                                               faceDir,
+                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
+                                               a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
+      if (facneighFrac[iface] < this->m_eps)
+      {
+        bcValue = 0.0;
+      }
+      else
+      {
+        bcValue /= (facneighFrac[iface]*areaScaleFactor);
+      }
+
+      inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromFace(iface));
+    }
+
+    return inhomogTerm;
+  }
+
+  template<int order>
+  Real
+  GradWLSCell<order>::
+  computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+                       const Neighbors<order>          & a_neigh,
+                       const int                         a_nvolneigh,
+                       const EBDomainBC<1>      & a_domainBC,
+                       Real                            a_dx) const
+  {
+    PR_TIME("computeInhomogTermEB");
+    using Chombo4::pout;
+    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
+    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
+    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
+    Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
+    Real areaScaleFactor = getRegularArea(a_dx);
+
+    Real inhomogTerm = 0.0;
+
+    for(int iface = 0; iface < a_neigh.sizeEB(); iface++)
+    {
+      Real bcValue = 0;
+      RealVect a_ebfLocDiff = a_ebfneighLoc[iface];
+      string a_ebbcName = a_domainBC.getBCtypes().getEBComp();
+      if(a_ebbcName == string("Neumann"))
+      {
+        bcValue = NeumannExactSoln<order>::
+                               getEBIntegral(a_ebfneighNorm[iface],
+                                             a_ebfLocDiff,
+                                             a_domainBC.getBCfuncs().getEBComp(),
+                                             a_dx);
+      }
+      else if(a_ebbcName == string("Dirichlet"))
+      {
+        bcValue = DirichletExactSoln<order>::
+                               getEBIntegral(a_ebfmom[iface],
+                                             a_ebfLocDiff,
+                                             a_domainBC.getBCfuncs().getEBComp(),
+                                             a_dx);
+      }
+      else
+      {
+        PROTO_ASSERT(false, "could not find domBC string");
+      }
+
+      if (ebfneighFrac[iface] < this->m_eps)
+      {
+        bcValue = 0.0;
+      }
+      else
+      {
+        bcValue /= (ebfneighFrac[iface]*areaScaleFactor);
+      }
+
+      inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromEB(iface));
+    }
+
+    return inhomogTerm;
+  }
 
 
   //Compute Dirichlet BCs at faces for the Moment Matrix.
@@ -1995,7 +2141,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                   const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-                  const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
+                  const shared_ptr<BaseExactSolution >  & a_exactSol,
                   const Real              a_dx)  
   {
     PR_TIME("getFaceIntegralNeumannExactSoln");
@@ -2039,7 +2185,7 @@ namespace Proto
   getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                   const RealVect        & a_faceLoc,
                   int                     a_faceDir,
-                  const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
+                  const shared_ptr<BaseExactSolution >  & a_exactSol,
                   const Real              a_dx) 
   {
     PR_TIME("getFaceIntegralDirichletExactSoln");
@@ -2082,7 +2228,7 @@ namespace Proto
   DirichletExactSoln<order>::
   getEBIntegral(const IndMomDIM  & a_ebfMom,
                 const RealVect   & a_ebfLoc,
-                const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
+                const shared_ptr<BaseExactSolution >  & a_exactSol,
                 const Real         a_dx) 
   {
     PR_TIME("getEBIntegralDirichletExactSoln");
@@ -2110,7 +2256,7 @@ namespace Proto
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
                 const RealVect           & a_ebfLoc,
-                const shared_ptr<BaseExactSolution<order> >  & a_exactSol,
+                const shared_ptr<BaseExactSolution >  & a_exactSol,
                 const Real                 a_dx) 
   {
     PR_TIME("getEBIntegralNeumannExactSoln");

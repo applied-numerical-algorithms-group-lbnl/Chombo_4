@@ -8,6 +8,13 @@
 #include "Proto_EBDomainBC.H"
 #include "Chombo_ParmParse.H"
 
+// Call these to generate a order-variable stencil for the specified operator
+// These in general no longer conform to the dictionary approach, since it is too restrictive, especially with regards to high-order BC treatment, and multi-component operators.
+//
+// The regular apply content is generally not supported
+//
+// Ideally this will come back to the dictionary concept eventually
+
 namespace Proto
 {
   template <CENTERING srcCenter, CENTERING dstCenter, int order, typename data_t>
@@ -53,8 +60,9 @@ namespace Proto
     EBStencilHO() {}
     ~EBStencilHO() {}
 
+    // FIXME This make no sense to live at his level. See WLSneighbors
     inline static vector<EBIndex<CELL> >
-    getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start); 
+    getFlapVoFs(const EBGraph& a_graph,  EBIndex<CELL>& a_start);
 
     inline static bool 
     isRegularStencil(const EBIndex<CELL> & a_vof,
@@ -102,8 +110,8 @@ namespace Proto
                Real                                      a_dx,
                bool                                        a_periodiconly,
                Point                                       a_dstGrown,
-               const vector<shared_ptr<BaseExactSolution<order> > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution<order> > >(),
-               const shared_ptr<BaseExactSolution<order> > & a_boundarySolutionsEB = nullptr);
+               const vector<shared_ptr<BaseExactSolution > > & a_boundarySolutions = vector<shared_ptr<BaseExactSolution > >(),
+               const shared_ptr<BaseExactSolution > & a_boundarySolutionsEB = nullptr);
 
     ///   returns true if there are domain boundary conditions
     inline static bool
@@ -125,7 +133,7 @@ namespace Proto
                const EBGraph                             & a_srcGraph,
                const EBGraph                             & a_dstGraph,
                const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
-               const EBDomainBC<1, order>                & a_domainBC, // all the BC info
+               const EBDomainBC<1>                & a_domainBC, // all the BC info
                Real                                      a_dx);
 
     ///Gets WLS Poisson stencil
@@ -144,7 +152,7 @@ namespace Proto
                          const Point                               & a_dstGhost,
                          const EBGraph                             & a_graph,
                          const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
-                         const EBDomainBC<1, order>              & a_domainBC, // all the BC info
+                         const EBDomainBC<1>              & a_domainBC, // all the BC info
                          Real                                      a_dx);
 
     ///Gets WLS Advection stencil
@@ -184,7 +192,7 @@ namespace Proto
                                 Stencil<Real>                           & a_regStencilInterior, // actually should use this
                                 vector<Stencil<Real> >                    a_regStencilBC[2*DIM], // not used
                                 vector<Box>                                 a_BCApplyBoxes[2*DIM], // not used
-                                Box                                       & a_regApplyBox,
+                                Box                                       & a_regApplyBox, // everything thing up to hear really could be packaged under an "operable stencil"
                                 string                                      a_stencilName, // why?
                                 const Box                                 & a_validBox,
                                 const Box                                 & a_domain,
@@ -192,7 +200,7 @@ namespace Proto
                                 const Point                               & a_dstGhost, // should this matter?
                                 const EBGraph                             & a_graph,
                                 const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
-                                const EBDomainBC<DIM, order>              & a_domainBC, // all the BC info
+                                const EBDomainBC<DIM>              & a_domainBC, // all the BC info
                                 Real                                      a_dx);
 
     ///Gets WLS Divergence stencil
@@ -205,25 +213,14 @@ namespace Proto
                           vector<Box>                                 a_BCApplyBoxes[2*DIM],
                           Box                                       & a_regApplyBox,
                           string                                      a_stencilName,
-                          string                                      a_domainBCName[2*DIM],
-                          string                                      a_ebbcName,
                           const Box                                 & a_validBox,
                           const Box                                 & a_domain,
                           const Point                               & a_srcGhost,
                           const Point                               & a_dstGhost,
                           const EBGraph                             & a_graph,
-                          const VoluData                            & a_voludata,
-                          const EBFaData                            & a_ebfadata,
-                          const XFacData                            & a_xfacdata,
-                          const YFacData                            & a_yfacdata,
-                          const ZFacData                            & a_zfacdata,
-                          const EBNormalData                        & a_ebnormxdata,
-                          const EBNormalData                        & a_ebnormydata,
-                          const EBNormalData                        & a_ebnormzdata,
-                          Real                                      a_dx,
-                          bool                                        a_periodiconly,
-                          bool  a_forceAllNeumann,
-                          const shared_ptr<BaseExactSolution<order> >& a_boundarySolution = nullptr);
+                          const MomentHolder<order>                 & a_momentData, // holds all geoservice info on a box
+                          const EBDomainBC<1>              & a_domainBC, // all the BC info
+                          Real                                      a_dx);
 
   };
 

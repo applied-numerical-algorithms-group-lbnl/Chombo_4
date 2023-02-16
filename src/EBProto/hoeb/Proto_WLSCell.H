@@ -13,7 +13,7 @@ namespace Proto
 
   /// A small class to hold parameters about how a stencil should be formed
   /// This exists for the meta data we need about stencil creation, and as an interface
-  class StencilTraits
+  class StencilAttributes
   {
   public:
     void
@@ -27,7 +27,7 @@ namespace Proto
       }
 
     void
-    defaultStencilTraits(const int a_order)
+    defaultStencilAttributes(const int a_order)
       {
         // defaults are an over-estimate but sufficiently large, and the minimal reasonable weighting
         m_radius = a_order; // how many cells out to grab
@@ -35,14 +35,14 @@ namespace Proto
         m_neighListType = 0;
       }
 
-    StencilTraits()
+    StencilAttributes()
       {
         readInputs("");
       }
 
-    StencilTraits(const int a_order)
+    StencilAttributes(const int a_order)
       {
-        defaultStencilTraits(a_order);
+        defaultStencilAttributes(a_order);
       }
 
     inline int radius() const
@@ -376,6 +376,16 @@ namespace Proto
                               const Vector<int>      & a_weightDist,
                               IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
+    //Compute rhs matrix for a face
+    void
+    getFaceOpEvalMatrix(Chombo4::LAPACKMatrix    & a_Op,
+                        const EBIndex<cent>      & a_face,
+                        RealVect                 & a_faceLoc,
+                        IndMomSDMinOne           & a_faceMom,
+                        Real                     a_signNormal,
+                        Real                     a_dx,
+                        IndexTM<int, DIM>        a_deriv) const;
+
     //Compute rhs matrix for a face. Pure virtual here
     virtual void
     getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
@@ -407,7 +417,7 @@ namespace Proto
     BaseWLSFlux()
       {}
 
-    BaseWLSFlux(const StencilTraits& a_stenTraits,
+    BaseWLSFlux(const StencilAttributes& a_stenTraits,
                 bool          a_verbose=false)
       {
         m_stenTraits = a_stenTraits;
@@ -416,8 +426,8 @@ namespace Proto
 
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
-                shared_ptr<BaseExactSolution<order> >  a_exactSol,
-                shared_ptr<BaseExactSolution<order> >  a_exactSolEB = nullptr,
+                shared_ptr<BaseExactSolution >  a_exactSol,
+                shared_ptr<BaseExactSolution >  a_exactSolEB = nullptr,
                 int           a_fluxType=0,
                 bool          a_verbose=false)
       {
@@ -426,9 +436,9 @@ namespace Proto
 
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
-                shared_ptr<BaseExactSolution<order> >  a_exactSolLo,
-                shared_ptr<BaseExactSolution<order> >  a_exactSolHi,
-                shared_ptr<BaseExactSolution<order> >  a_exactSolEB,
+                shared_ptr<BaseExactSolution >  a_exactSolLo,
+                shared_ptr<BaseExactSolution >  a_exactSolHi,
+                shared_ptr<BaseExactSolution >  a_exactSolEB,
                 int           a_fluxType=0,
                 bool          a_verbose=false)
       {
@@ -458,7 +468,7 @@ namespace Proto
     // Common, flux independent, dials for how to create a stencil
     // Things like the starting neighborhood radius and weighting power
     // FIXME this is the only member data that makes sense in this class
-    StencilTraits m_stenTraits;
+    StencilAttributes m_stenTraits;
   };
 
   //Main function calls for DivWLS flux calculations
@@ -503,21 +513,21 @@ namespace Proto
     computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
                        const Neighbors<order>          & a_neigh,
                        const int                         a_nvolneigh,
-                       const EBDomainBC<1, order>      & a_domainBC,
+                       const EBDomainBC<1>      & a_domainBC,
                        Real                              a_dx) const;
 
     Real
     computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                           const Neighbors<order>          & a_neigh,
                           const int                         a_nvolneigh,
-                          const EBDomainBC<1, order>      & a_domainBC,
+                          const EBDomainBC<1>      & a_domainBC,
                           Real                              a_dx) const;
 
     Real
     computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                          const Neighbors<order>          & a_neigh,
                          const int                         a_nvolneigh,
-                         const EBDomainBC<1, order>      & a_domainBC,
+                         const EBDomainBC<1>      & a_domainBC,
                          Real                              a_dx) const;
 
     //Compute face centered flux stencil
@@ -551,21 +561,21 @@ namespace Proto
 
     LapWLSFlux() = delete;
 
-    LapWLSFlux(const StencilTraits          & a_stenTraits,
-               const EBDomainBC<1, order>   & a_domainBC,
+    LapWLSFlux(const StencilAttributes          & a_stenTraits,
+               const EBDomainBC<1>   & a_domainBC,
                bool                           a_verbose=false)
       :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
       {
         m_domainBC = a_domainBC;
       }
 
-    EBDomainBC<1, order> m_domainBC;
+    EBDomainBC<1> m_domainBC;
   };
 
-  //Main function calls for all WLS cell calculations, which follow the same process as the flux calculations
-  // FIXME this really just does a cell average gradient, but eventually the cell averaged reconstruction machinery should be separate from the operators
+  // Methods for evaluating cell averaged gradient using the WLS construction method. same process as the flux calculations
+  // TODO eventually the cell averaged reconstruction machinery could be separate from the operator
   template<int order>
-  class BaseWLSCell : public BaseWLSFlux<CELL, order>
+  class GradWLSCell : public BaseWLSFlux<CELL, order>
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -583,6 +593,25 @@ namespace Proto
     using BaseWLSFlux<CELL, order>::m_stenTraits;
     using BaseWLSFlux<CELL, order>::m_verbose;
 
+    //Compute rhs matrix for a face. Doesn't make sense in the context
+    virtual void
+    getFaceFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                      const EBIndex<CELL>      & a_face,
+                      RealVect                 & a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      Real                     a_signNormal,
+                      Real                     a_dx) const override
+      {CH_assert(false)};
+
+    //Compute rhs matrix for a EB face. Doesn't make sense in this context
+    virtual void
+    getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
+                    const EBIndex<CELL>      & a_face,
+                    RealVect                 & a_faceLoc,
+                    Vector<IndMomDIM>        & a_ebnorm,
+                    Real                     a_dx) const override
+    {CH_assert(false)};
+
     //Compute rhs matrix for a face
     void
     getEvalCellMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
@@ -598,39 +627,47 @@ namespace Proto
                    Real                       & a_inhomogTerm, //for inhomogeneous bcs
                    const EBIndex<CELL>        & a_vof,
                    const EBGraph              & a_graph,
-                   const VoluData             & a_voludata,
-                   const EBFaData             & a_ebfadata,
-                   const XFacData             & a_xfacdata,
-                   const YFacData             & a_yfacdata,
-                   const ZFacData             & a_zfacdata,
-                   const EBNormalData         & a_ebnormxdata,
-                   const EBNormalData         & a_ebnormydata,
-                   const EBNormalData         & a_ebnormzdata,
-                   string                       a_ebbcName,
-                   string                       a_dombcName[2*DIM],
+                   const MomentHolder<order>  & a_momentData,
                    IndMomDIM                  & a_cellMom,
                    Real                       a_dx,
                    const IndexTM<int, DIM> a_deriv = IndexTM<int, DIM>::Zero) const;
 
-    virtual ~BaseWLSCell()
+    //Compute inhomogeneous term
+    Real
+    computeInhomogTerm(const Chombo4::LAPACKMatrix     & a_stencil,
+                       const Neighbors<order>          & a_neigh,
+                       const int                         a_nvolneigh,
+                       const EBDomainBC<1>      & a_domainBC,
+                       Real                              a_dx) const;
+
+    Real
+    computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
+                          const Neighbors<order>          & a_neigh,
+                          const int                         a_nvolneigh,
+                          const EBDomainBC<1>      & a_domainBC,
+                          Real                              a_dx) const;
+
+    Real
+    computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
+                         const Neighbors<order>          & a_neigh,
+                         const int                         a_nvolneigh,
+                         const EBDomainBC<1>      & a_domainBC,
+                         Real                              a_dx) const;
+
+    ~GradWLSCell()
       {}
 
-    BaseWLSCell()
-      {}
+    GradWLSCell() = delete;
 
-    BaseWLSCell(int           a_radius,
-                int           a_powerE,
-                shared_ptr<BaseExactSolution<order> >  a_exactSol,
-                bool          a_verbose=false)
-      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSol, 0, a_verbose)
-      {}
+    GradWLSCell(const StencilAttributes          & a_stenTraits,
+                const EBDomainBC<1>   & a_domainBC,
+                bool                           a_verbose=false)
+      :BaseWLSFlux<CELL, order>(a_stenTraits, a_verbose)
+      {
+        m_domainBC = a_domainBC;
+      }
 
-    BaseWLSCell(int           a_radius,
-                int           a_powerE,
-                int           a_exactSolFun,
-                bool          a_verbose=false)
-      :BaseWLSFlux<CELL, order>(a_radius, a_powerE, a_exactSolFun, a_verbose)
-      {}
+    EBDomainBC<1> m_domainBC;
   };
 
   //Main function calls for ExactVelAdvectionWLS flux calculations
@@ -825,14 +862,14 @@ namespace Proto
     computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                           const Neighbors<order>          & a_neigh,
                           const int                         a_nvolneigh,
-                          const EBDomainBC<DIM, order>    & a_domainBC,
+                          const EBDomainBC<DIM>    & a_domainBC,
                           Real                            a_dx) const;
 
     Real
     computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                          const Neighbors<order>          & a_neigh,
                          const int                         a_nvolneigh,
-                         const EBDomainBC<DIM, order>    & a_domainBC,
+                         const EBDomainBC<DIM>    & a_domainBC,
                          Real                              a_dx) const;
 
     // Constructor and destructor
@@ -841,15 +878,15 @@ namespace Proto
 
     DivWLSFlux() = delete;
 
-    DivWLSFlux(const StencilTraits          & a_stenTraits,
-               const EBDomainBC<DIM, order> & a_domainBC,
+    DivWLSFlux(const StencilAttributes          & a_stenTraits,
+               const EBDomainBC<DIM> & a_domainBC,
                bool          a_verbose=false)
       :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
       {
         m_domainBC = a_domainBC;
       }
 
-    EBDomainBC<DIM, order> m_domainBC;
+    EBDomainBC<DIM> m_domainBC;
   };
 
   //Class to compute Dirichlet BCs at faces and EB Faces for the Moment Matrix.
@@ -925,13 +962,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                                        const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-                                       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                                       const shared_ptr<BaseExactSolution >  & m_exactSol,
                                        const Real              a_dx);
 
     //getIntegralPhiAlongEB
     inline static Real getEBIntegral(const IndMomDIM  & a_ebfMom,
                                      const RealVect   & a_ebfLoc,
-                                     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
+                                     const shared_ptr<BaseExactSolution > & m_exactSol,
                                      const Real         a_dx); 
   
   };
@@ -957,13 +994,13 @@ namespace Proto
     inline static Real getFaceIntegral(const IndMomSDMinOne  & a_faceMom,
                                        const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
-                                       const shared_ptr<BaseExactSolution<order> >  & m_exactSol,
+                                       const shared_ptr<BaseExactSolution >  & m_exactSol,
                                        const Real              a_dx);
 
     //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
-                                     const shared_ptr<BaseExactSolution<order> > & m_exactSol,
+                                     const shared_ptr<BaseExactSolution > & m_exactSol,
                                      const Real                a_dx);
  
   };

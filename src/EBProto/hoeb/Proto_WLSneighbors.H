@@ -84,8 +84,7 @@ namespace Proto
     getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
                                 const MomentHolder<order>  & a_momentData,
-                                string                   a_ebbcName,
-                                string                   a_dombcName[2*DIM], // order is is not obvious
+                                const EBDomainBC<1>      & a_domainBC,
                                 Real                   a_dx,
                                 bool a_verbose = false,
                                 int a_fluxType = 0);
@@ -95,8 +94,7 @@ namespace Proto
     void
     getNeighborsAndMoments(const EBGraph              & a_graph,
                            const MomentHolder<order>  & a_momentData,
-                           string                       a_ebbcName,
-                           string                       a_dombcName[2*DIM], // order is is not obvious
+                           const EBDomainBC<1>      & a_domainBC,
                            Real                         a_dx,
                            bool a_verbose = false)
       {
@@ -114,10 +112,10 @@ namespace Proto
 
         //     // if (grows>0) pout() << "neigh set tight for " << a_vof.m_pt << ", growing radius by 1" << endl;
         //     radius += 1;
-        //     grows += 1;
         //   }
-        // CH_assert(vols.size() > momit.size());
-        // CH_assert(neighs.size() > momit.size());
+        CH_assert(vols.size() > momit.size());
+        CH_assert(this->size() > momit.size());
+        CH_assert(this->size() >= vols.size());
       }
 
     inline void
@@ -464,8 +462,7 @@ namespace Proto
   getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> >  & a_vols,
                               const EBGraph           & a_graph,
                               const MomentHolder<order>  & a_momentData,
-                              string                    a_ebbcName,
-                              string                    a_dombcName[2*DIM],
+                              const EBDomainBC<1>      & a_domainBC,
                               Real                    a_dx,
                               bool a_verbose,
                               int a_fluxType)
@@ -572,9 +569,8 @@ namespace Proto
                               found = true;
                             }
                         }
-                      int index = ebp_index(0, sit());
                       if(!found && x_face.m_isBoundary
-                         && (a_dombcName[index] != string("no_bcs")))
+                         && (a_domainBC.getBCtypes().getRegComp(0, sit()) != string("no_bcs")))
                         {
                           RealVect XfaceLoc;
                           for (int idir = 0; idir < DIM; idir++)
@@ -615,9 +611,8 @@ namespace Proto
                               found = true;
                             }
                         }
-                      int index = ebp_index(1, sit());
                       if(!found && y_face.m_isBoundary
-                         && (a_dombcName[index] != string("no_bcs")))
+                         && (a_domainBC.getBCtypes().getRegComp(1, sit()) != string("no_bcs")))
                         {
                           RealVect YfaceLoc;
                           for (int idir = 0; idir < DIM; idir++)
@@ -659,9 +654,8 @@ namespace Proto
                               found = true;
                             }
                         }
-                      int index = ebp_index(2, sit());
                       if(!found && z_face.m_isBoundary
-                         && (a_dombcName[index] != string("no_bcs")))
+                         && (a_domainBC.getBCtypes().getRegComp(2, sit()) != string("no_bcs")))
                         {
                           RealVect ZfaceLoc;
                           for (int idir = 0; idir < DIM; idir++)
@@ -692,7 +686,7 @@ namespace Proto
         }
       }//End vol neighbors loop
 
-    if(a_ebbcName == string("no_bcs"))
+    if(a_domainBC.getBCtypes().getEBComp() == string("no_bcs"))
       {
         ebfmom.resize(0);
         ebfneighNorm.resize(0);

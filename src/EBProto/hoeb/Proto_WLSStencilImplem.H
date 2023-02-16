@@ -1684,35 +1684,24 @@ namespace Proto
   template <int order>
   void
   WLSStencil<order>::
-  getWLSGradStencil(LocalStencil<CELL, Real>    & a_vofStencilx,
-                    LocalStencil<CELL, Real>    & a_vofStencily,
-                    LocalStencil<CELL, Real>    & a_vofStencilz,
-                    const EBIndex<CELL>                   & a_vof,
-                    const EBGraph                         & a_graph,
-                    const VoluData                        & a_voludata,
-                    const EBFaData                        & a_ebfadata,
-                    const XFacData                        & a_xfacdata,
-                    const YFacData                        & a_yfacdata,
-                    const ZFacData                        & a_zfacdata,
-                    const EBNormalData                    & a_ebnormxdata,
-                    const EBNormalData                    & a_ebnormydata,
-                    const EBNormalData                    & a_ebnormzdata,
-                    const BaseWLSCell<order>              & a_cellConstruct,
-                    string                             a_ebbcName,
-                    string                             a_dombcName[2*DIM],
-                    vector<Real>                               & a_inhoTerm,
-                    int                                & a_neighType,
-                    Real                                  a_dx)
+  getWLSGradStencil(std::array<LocalStencil<CELL, Real>, SpaceDim >& a_vofStencil,
+                    vector<Real>                                & a_inhoTerm,
+                    const EBIndex<CELL>                 & a_vof,
+                    const EBGraph                       & a_graph,
+                    const MomentHolder<order>           & a_momentData,
+                    const GradWLSCell<order>            & a_cellConstruct,
+                    int                                 a_neighType,
+                    Real                                a_dx)
   {
     PR_TIME("getWLSGradStencil");
     using Chombo4::pout;
-    // a_vofStencil.clear();
-    a_vofStencilx.clear();
+
+    a_vofStencil[0].clear();
 #if DIM>=2
-    a_vofStencily.clear();
+    a_vofStencil[1].clear();
 #endif
 #if DIM>=3
-    a_vofStencilz.clear();
+    a_vofStencil[2].clear();
 #endif
     CH_assert(a_inhoTerm.size() >= DIM);
     for (int dir=0; dir!=DIM; dir++)
@@ -1722,179 +1711,197 @@ namespace Proto
 
     Real volScaleFactor  = getRegularVolume(a_dx);
 
+    auto& a_voludata = a_momentData.volumeMoments();
     Real   voluFrac;
     RealVect centroid;
     Normalizor<order>::normalizedVoluMoments(voluFrac, centroid, a_voludata, a_vof, a_graph, a_dx);
 
-    // x direction
-    {
-      IndMomDIM voluMom;
-      if (voluFrac < 1.0)
-        {
-          voluMom = a_voludata(a_vof, 0);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-      else
-        {
-          voluMom.setToRegular(a_dx);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-
-      if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
-
-      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
-      deriv[0] = 1; // x-derivative stencil
-      a_cellConstruct.getCellStencil(a_vofStencilx,
-                                     a_inhoTerm[0],
-                                     a_vof,
-                                     a_graph,
-                                     a_voludata,
-                                     a_ebfadata,
-                                     a_xfacdata,
-                                     a_yfacdata,
-                                     a_zfacdata,
-                                     a_ebnormxdata,
-                                     a_ebnormydata,
-                                     a_ebnormzdata,
-                                     a_ebbcName,
-                                     a_dombcName,
-                                     voluMom,
-                                     a_dx,
-                                     deriv);
-      if (a_cellConstruct.m_verbose)
-        {
-          pout() << " inhomogTerm xdir " << a_inhoTerm[0] << endl;
-          pout() << " grad stencil " << endl;
-          a_vofStencilx.print();
-        }
-    }
-    // y-direction
-    {
-      IndMomDIM voluMom;
-      if (voluFrac < 1.0)
-        {
-          voluMom = a_voludata(a_vof, 0);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-      else
-        {
-          voluMom.setToRegular(a_dx);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-
-      if (a_cellConstruct.m_verbose) {pout() << " stencil ydir "<< a_vof.m_pt << endl;}
-
-      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
-      deriv[1] = 1; // y-derivative stencil
-      a_cellConstruct.getCellStencil(a_vofStencily,
-                                     a_inhoTerm[1],
-                                     a_vof,
-                                     a_graph,
-                                     a_voludata,
-                                     a_ebfadata,
-                                     a_xfacdata,
-                                     a_yfacdata,
-                                     a_zfacdata,
-                                     a_ebnormxdata,
-                                     a_ebnormydata,
-                                     a_ebnormzdata,
-                                     a_ebbcName,
-                                     a_dombcName,
-                                     voluMom,
-                                     a_dx,
-                                     deriv);
-      if (a_cellConstruct.m_verbose)
-        {
-          pout() << " inhomogTerm ydir " << a_inhoTerm[1] << endl;
-          pout() << " stencil " << endl;
-          a_vofStencily.print();
-        }
-    }
-#if DIM>=3
-    // z direction
-    {
-      IndMomDIM voluMom;
-      if (voluFrac < 1.0)
-        {
-          voluMom = a_voludata(a_vof, 0);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-      else
-        {
-          voluMom.setToRegular(a_dx);
-          for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-            {
-              const auto& p = iter();
-              voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
-            }
-        }
-
-      if (a_cellConstruct.m_verbose) {pout() << " stencil zdir "<< a_vof.m_pt << endl;}
-
-      IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
-      deriv[2] = 1; // z-derivative stencil
-      a_cellConstruct.getCellStencil(a_vofStencilz,
-                                     a_inhoTerm[2],
-                                     a_vof,
-                                     a_graph,
-                                     a_voludata,
-                                     a_ebfadata,
-                                     a_xfacdata,
-                                     a_yfacdata,
-                                     a_zfacdata,
-                                     a_ebnormxdata,
-                                     a_ebnormydata,
-                                     a_ebnormzdata,
-                                     a_ebbcName,
-                                     a_dombcName,
-                                     voluMom,
-                                     a_dx,
-                                     deriv);
-      if (a_cellConstruct.m_verbose)
-        {
-          pout() << " inhomogTerm zdir " << a_inhoTerm[2] << endl;
-          pout() << " grad stencil " << endl;
-          a_vofStencilz.print();
-        }
-    }
-#endif
-    //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
+    for (int dir=0; dir!=DIM; dir++)
       {
-        Real diagweight;
-        // a_vofStencilx.print();
-        bool foundVoF = a_vofStencilx.getValueAtVoF(diagweight, a_vof);
-        PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilx.setBetaWeight(diagweight);
+        IndMomDIM voluMom;
+        if (voluFrac < 1.0)
+          {
+            voluMom = a_voludata(a_vof, 0);
+            for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+              {
+                const auto& p = iter();
+                voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+              }
+          }
+        else
+          {
+            voluMom.setToRegular(a_dx);
+            for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+              {
+                const auto& p = iter();
+                voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+              }
+          }
 
-        foundVoF = a_vofStencily.getValueAtVoF(diagweight, a_vof);
-        PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencily.setBetaWeight(diagweight);
-#if DIM>=3
-        foundVoF = a_vofStencilz.getValueAtVoF(diagweight, a_vof);
-        PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilz.setBetaWeight(diagweight);
-#endif
+        if (a_cellConstruct.m_verbose) {pout() << " stencil dir " << dir << " " << a_vof.m_pt << endl;}
+
+        IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+        deriv[dir] = 1; // dir-derivative stencil
+        a_cellConstruct.getCellStencil(a_vofStencil[dir],
+                                       a_inhoTerm[dir],
+                                       a_vof,
+                                       a_graph,
+                                       a_momentData,
+                                       voluMom,
+                                       a_dx,
+                                       deriv);
+        if (a_cellConstruct.m_verbose)
+          {
+            pout() << " inhomogTerm dir " << dir << " " << a_inhoTerm[dir] << endl;
+            pout() << " grad stencil " << dir << " " << endl;
+            a_vofStencil[dir].print();
+          }
       }
+
+   //  // x direction
+//     {
+//       IndMomDIM voluMom;
+//       if (voluFrac < 1.0)
+//         {
+//           voluMom = a_voludata(a_vof, 0);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+//       else
+//         {
+//           voluMom.setToRegular(a_dx);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+
+//       if (a_cellConstruct.m_verbose) {pout() << " stencil xdir "<< a_vof.m_pt << endl;}
+
+//       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+//       deriv[0] = 1; // x-derivative stencil
+//       a_cellConstruct.getCellStencil(a_vofStencil[0],
+//                                      a_inhoTerm[0],
+//                                      a_vof,
+//                                      a_graph,
+//                                      a_momentData,
+//                                      voluMom,
+//                                      a_dx,
+//                                      deriv);
+//       if (a_cellConstruct.m_verbose)
+//         {
+//           pout() << " inhomogTerm xdir " << a_inhoTerm[0] << endl;
+//           pout() << " grad stencil " << endl;
+//           a_vofStencil[0].print();
+//         }
+//     }
+//     // y-direction
+//     {
+//       IndMomDIM voluMom;
+//       if (voluFrac < 1.0)
+//         {
+//           voluMom = a_voludata(a_vof, 0);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+//       else
+//         {
+//           voluMom.setToRegular(a_dx);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+
+//       if (a_cellConstruct.m_verbose) {pout() << " stencil ydir "<< a_vof.m_pt << endl;}
+
+//       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+//       deriv[1] = 1; // y-derivative stencil
+//       a_cellConstruct.getCellStencil(a_vofStencil[1],
+//                                      a_inhoTerm[1],
+//                                      a_vof,
+//                                      a_graph,
+//                                      a_momentData,
+//                                      voluMom,
+//                                      a_dx,
+//                                      deriv);
+//       if (a_cellConstruct.m_verbose)
+//         {
+//           pout() << " inhomogTerm ydir " << a_inhoTerm[1] << endl;
+//           pout() << " stencil " << endl;
+//           a_vofStencil[1].print();
+//         }
+//     }
+// #if DIM>=3
+//     // z direction
+//     {
+//       IndMomDIM voluMom;
+//       if (voluFrac < 1.0)
+//         {
+//           voluMom = a_voludata(a_vof, 0);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+//       else
+//         {
+//           voluMom.setToRegular(a_dx);
+//           for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+//             {
+//               const auto& p = iter();
+//               voluMom[iter()] = voluMom[iter()]/(volScaleFactor*POW(a_dx, p));
+//             }
+//         }
+
+//       if (a_cellConstruct.m_verbose) {pout() << " stencil zdir "<< a_vof.m_pt << endl;}
+
+//       IndexTM<int, DIM> deriv = IndexTM<int, DIM>::Zero;
+//       deriv[2] = 1; // z-derivative stencil
+//       a_cellConstruct.getCellStencil(a_vofStencil[2],
+//                                      a_inhoTerm[2],
+//                                      a_vof,
+//                                      a_graph,
+//                                      a_momentData,
+//                                      voluMom,
+//                                      a_dx,
+//                                      deriv);
+//       if (a_cellConstruct.m_verbose)
+//         {
+//           pout() << " inhomogTerm zdir " << a_inhoTerm[2] << endl;
+//           pout() << " grad stencil " << endl;
+//           a_vofStencil[2].print();
+//         }
+//     }
+// #endif
+
+    // REVIEW does this matter?
+    // //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
+//       {
+//         Real diagweight;
+//         // a_vofStencilx.print();
+//         bool foundVoF = a_vofStencil[0].getValueAtVoF(diagweight, a_vof);
+//         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+//         a_vofStencil[0].setBetaWeight(diagweight);
+
+//         foundVoF = a_vofStencil[1].getValueAtVoF(diagweight, a_vof);
+//         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+//         a_vofStencil[1].setBetaWeight(diagweight);
+// #if DIM>=3
+//         foundVoF = a_vofStencil[2].getValueAtVoF(diagweight, a_vof);
+//         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
+//         a_vofStencil[2].setBetaWeight(diagweight);
+// #endif
+//       }
   }
 
 }

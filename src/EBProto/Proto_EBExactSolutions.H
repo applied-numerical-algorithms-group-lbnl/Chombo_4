@@ -33,15 +33,12 @@ using Proto::EBStencilArchive;
 #ifndef __EBEExactSolutions__
 #define __EBEExactSolutions__
 
-template <unsigned int order>
+// template <unsigned int order>
 class BaseExactSolution
 {
 public:
-  typedef Proto::IndexedMoments<DIM  , order> IndMomDIM;
   typedef       Proto::IndexTM<int, DIM>            IvDIM;
-  typedef Proto::HostIrregData<CELL,IndMomDIM , 1>  VoluData;
 
-  
   virtual ~BaseExactSolution()
   {
   }
@@ -50,10 +47,12 @@ public:
   {
   }
 
-  ///
+  //FIXME just template this function, not the entire class
+  template <int order>
   Real operator()(const EBGraph & a_graph,
                   const Real    & a_dx,
-                  const VoluData& a_voldat,
+                  //const VoluData& a_voldat,
+                  const Proto::HostIrregData<CELL,Proto::IndexedMoments<DIM, order>, 1>& a_voldat,
                   const EBIndex<CELL>   & a_vof,
                   const IvDIM & a_baseDeriv = IvDIM::Zero) const
   {
@@ -77,7 +76,7 @@ public:
     {
       moments = a_voldat(a_vof, 0);
     }
-      
+
     Real volu = moments[IvDIM::Zero];
     for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
     {
@@ -99,22 +98,60 @@ public:
     {
       retval /= volu;
     }
-    return retval;   
+    return retval;
   }
+
+  // // evaluate the function value (or derivative) over the specified
+  // template <int order>
+  // Real operator()(const EBIndex<CELL>   & a_vof,
+  //                 const Real            & a_dx,
+  //                 const Proto::IndexedMoments<DIM, Order>& a_moments,
+  //                 const IvDIM & a_baseDeriv = IvDIM::Zero) const
+  // {
+  //   RealVect centloc;
+  //   Point cell = a_vof.m_pt;
+  //   for(int idir = 0; idir < DIM; idir++)
+  //   {
+  //     centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
+  //   }
+
+  //   Real retval = 0;
+  //   Real volu = a_moments[IvDIM::Zero];
+  //   for(MomentIterator<DIM, Order> momit; momit.ok(); ++momit)
+  //   {
+  //     IvDIM  power = momit();
+  //     IvDIM  derivPower = power + a_baseDeriv;
+  //     // higher derivatives are not supported, but solutions still should be globally 4th order
+  //     if (derivPower.sum() <= Order)
+  //       {
+  //         Real   deriv = getDerivative(derivPower, centloc);
+  //         int   idenom = power.factorial();
+  //         Real   denom = (Real)(idenom);
+  //         Real   momen = a_moments[power];
+  //         Real   incre = deriv*momen/denom;
+  //         retval += incre;
+  //       }
+  //   }
+  //   Real minvol = 1.0e-16;
+  //   if(volu > minvol)
+  //   {
+  //     retval /= volu;
+  //   }
+  //   return retval;
+  // }
 
   virtual Real getDerivative(IvDIM    a_power,
                              RealVect a_loc) const = 0;
 };
 
 ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
-template <unsigned int order>
-class ZeroSolution: public BaseExactSolution<order>
+// template <unsigned int order>
+class ZeroSolution: public BaseExactSolution
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order> IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   
   virtual Real getDerivative(IvDIM    a_power,
                              RealVect a_loc) const
@@ -133,14 +170,13 @@ public:
 };
 
 ///class for always returning a constant (for bcs as opposed to being for testing convergence rates)
-template <unsigned int order>
-class UniformSolution: public BaseExactSolution<order>
+// template <unsigned int order>
+class UniformSolution: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order> IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
 
   virtual Real getDerivative(IvDIM    a_power,
                              RealVect a_loc) const
@@ -169,14 +205,13 @@ public:
 };
 
 ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
-template <unsigned int order>
-class SineSphereEF: public BaseExactSolution<order>
+// template <unsigned int order>
+class SineSphereEF: public BaseExactSolution
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order> IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   
   virtual Real getDerivative(IvDIM    a_deriv,
                              RealVect a_loc) const
@@ -496,14 +531,13 @@ private:
 
 
 ///phi = cp x^p  
-template <unsigned int order>
-class MonomialEF: public BaseExactSolution<order>
+// template <unsigned int order>
+class MonomialEF: public BaseExactSolution
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   
   virtual Real getDerivative(IvDIM    a_deriv,
                              RealVect a_loc) const
@@ -873,14 +907,13 @@ private:
 };
 
 ///phi = sum cp x^p  
-template <unsigned int order>
-class PolynomialEF: public BaseExactSolution<order>
+// template <unsigned int order>
+class PolynomialEF: public BaseExactSolution
 {
 public:
   
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   
   virtual Real getDerivative(IvDIM    a_deriv,
                              RealVect a_loc) const
@@ -888,7 +921,7 @@ public:
     Real retval = 0;
     for(int ient = 0; ient < m_entries.size(); ient++)
     {
-      MonomialEF<order> mono(m_entries[ient]);
+      MonomialEF mono(m_entries[ient]);
       Real monoval = mono.getDerivative(a_deriv, a_loc);
       retval += monoval;
     }
@@ -914,14 +947,13 @@ private:
 };
 
 ///class where phi is a product of one dimensional cosines
-template <unsigned int order>
-class OneDimCosProduct: public BaseExactSolution<order>
+// template <unsigned int order>
+class OneDimCosProduct: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*cos(pi*m1*(x-x0))*cos(pi*m2*(y-y0))*cos(pi*m3*(z-z0))
       a_amp = A
@@ -992,14 +1024,13 @@ private:
 };
 
 ///class where phi is a product of one dimensional sines
-template <unsigned int order>
-class OneDimSinProduct: public BaseExactSolution<order>
+// template <unsigned int order>
+class OneDimSinProduct: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*sin(pi*m1*(x-x0))*sin(pi*m2*(y-y0))*sin(pi*m3*(z-z0))
       a_amp = A
@@ -1070,14 +1101,13 @@ private:
 };
 
 ///class where phi is a gaussian blob
-template <unsigned int order>
-class GaussianBlob: public BaseExactSolution<order>
+// template <unsigned int order>
+class GaussianBlob: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*exp(-m*(x-x0)^2+(y-y0)^2+(z-z0)^2)
       m_coeff = A
@@ -1268,14 +1298,13 @@ private:
 };
 
 ///class where phi is a approximate gaussian blob
-template <unsigned int order>
-class PseudoGaussian: public BaseExactSolution<order>
+// template <unsigned int order>
+class PseudoGaussian: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*prod_i cos^6((x_i-x0_i)*(pi/2)/L_i), 0 when |x_i| > L_i
       m_amp = A
@@ -1394,14 +1423,13 @@ private:
 };
 
 ///
-template <unsigned int order>
-class RotatingSphere: public BaseExactSolution<order>
+// template <unsigned int order>
+class RotatingSphere: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*exp(-m*(x-x0)^2+(y-y0)^2+(z-z0)^2)
       m_coeff = A
@@ -1512,14 +1540,13 @@ private:
 };
 
 ///class where phi is a product of one dimensional sines
-template <unsigned int order>
-class ExponentialProduct: public BaseExactSolution<order>
+// template <unsigned int order>
+class ExponentialProduct: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = A*exp(a*(x-x0))*exp(b*(y-y0))*exp(c*(z-z0))
       a_amp = A
@@ -1578,13 +1605,12 @@ private:
 /**
    SUM_i( PROD_j(A_i*cos(pi*b_ij*(x_j-x0_ij))) = f(x,y,z)
 */
-template <unsigned int order>
-class CosSurf: public BaseExactSolution<order>
+// template <unsigned int order>
+class CosSurf: public BaseExactSolution
 {
 public:
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
 
   ///
   CosSurf(const std::vector<RealVect> a_center,
@@ -1660,14 +1686,13 @@ private:
 
 
 /// Solution to a stokes flow translating liquid drop
-template <unsigned int order>
-class StokesLiquidDrop: public BaseExactSolution<order>
+// template <unsigned int order>
+class StokesLiquidDrop: public BaseExactSolution
 {
 public:
 
   typedef       IndexTM<int, DIM>            IvDIM;
-  typedef IndexedMoments<DIM  , order>       IndMomDIM;
-  typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+
   ///
   /** phi = 1/(2*(lambda+1)) * (2*lambda +3-2*a^2/r^2) V_x when velDir = 0
       phi = 1/(2*(lambda+1)) * (x*y/a^2)*V_y               when velDir = 1
