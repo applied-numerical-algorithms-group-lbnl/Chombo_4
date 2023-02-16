@@ -48,7 +48,7 @@ namespace EBCM
     vector<EBCMFace<YFACE> > m_yfaceshi;
     vector<EBCMFace<ZFACE> > m_zfaceshi;
     EBCMFace<      BOUNDARY> m_ebface;
-
+    
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
@@ -69,7 +69,7 @@ namespace EBCM
       {
         a_facedata[ifac].m_lo = a_ebfaces[iface].getVoF(Side::Lo);
         a_facedata[ifac].m_hi = a_ebfaces[iface].getVoF(Side::Hi);
-        a_facedata[ifac].m_facmom = a_facedata(a_ebfaces[iface], 0);
+        a_facedata[ifac].m_facmom = a_facedat(a_ebfaces[iface], 0);
       }
     }
 
@@ -99,17 +99,25 @@ namespace EBCM
 #endif
       m_regular = false;
       m_pt = a_vof.m_pt;
-        
-      defineCentroid();
+      EBIndex<BOUNDARY> ebf = a_vof.getCutFace();
+      auto levvol_ptr = a_geoserv->getVoluData(a_domain);
+      auto levebf_ptr = a_geoserv->getEBFaData(a_domain);
+      const auto& voldat = (*levvol_ptr)[a_dit];
+      const auto& ebfdat = (*levebf_ptr)[a_dit];
+
+      m_volmom = voldat(a_vof, 0);
+      m_ebfmom = ebfdat(ebf, 0);;
+      defineCentroid(a_dx);
     }
 
-    void defineCentroid()
+    void defineCentroid(Real a_dx)
     {
+      //relies upon volmom  and dx being set
       for(int idir = 0; idir < DIM; idir++)
       {
-        Real centerloc = (m_pt[idir] + 0.5)*m_dx;
+        Real centerloc = (m_pt[idir] + 0.5)*a_dx;
         Real scaledCent = m_volmom[1+idir];
-        m_centroid[idir]= centerloc + (scaledCent/m_dx);
+        m_centroid[idir]= centerloc + (scaledCent/a_dx);
       }
     }
     void defineAsRegular(pr_pt a_pt, double a_dx)
@@ -119,8 +127,8 @@ namespace EBCM
       m_ebfmom.setToZero();
       m_volmom.setRegular(a_dx);
       {
-      m_xfaceslo.resize(1);
-      m_xfaceshi.resize(1);
+        m_xfaceslo.resize(1);
+        m_xfaceshi.resize(1);
         pr_pt lopt = m_pt - Point::Basis(0);
         pr_pt hipt = m_pt + Point::Basis(0);
         m_xfaceslo[0].setToRegular(lopt, m_pt, a_dx);
@@ -136,15 +144,15 @@ namespace EBCM
       }
 #if DIM==3
       {
-        pr_pt lopt = m_pt - Point::Basis(2);
-        pr_pt hipt = m_pt + Point::Basis(2);
         m_zfaceslo.resize(1);
         m_zfaceshi.resize(1);
+        pr_pt lopt = m_pt - Point::Basis(2);
+        pr_pt hipt = m_pt + Point::Basis(2);
         m_zfaceslo[0].setToRegular(lopt, m_pt, a_dx);
         m_zfaceshi[0].setToRegular(m_pt, hipt, a_dx);
       }
 #endif      
-      defineCentroid();
+      defineCentroid(a_dx);
     }
   };
 
@@ -180,11 +188,10 @@ namespace EBCM
   ///
   /**
      unpacks EB description into a fully unstructured set of volumes 
-     Handy set calculus is provided to assist in keeping the final data structure sparse.
      return value is me anticipating the need for an error code
   */
   inline  int
-  unpackEBDescription(shared_ptr <set<pr_vof > > & a_soluVolumes,
+  unpackEBDescription(shared_ptr <set<pr_vof > >        & a_soluVolumes,
                       const pr_ebgrap                   & a_graph)
 
   {
@@ -217,11 +224,18 @@ namespace EBCM
     }
   }
 
+  inline int
+  mergeVolumesOnBox(shared_ptr<set<EBCMVolu> > & a_soluVolumes)
+  {
+    //error! not written yet! 
+    return -1;
+  }
   ///
   /**
-     Takes fully unstructured EB data and makes it sparse again by using the 
+     Takes fully unstructured EB data and puts it into EBCM volumes that 
      Blob structures.   
      The set that results is a fully unstructured (and merged, if you ask for it) graph.
+     return value = 0 means no errors.
   */
   inline  int
   makeTheBlobs(shared_ptr<set<EBCMVolu > >           & a_soluVolumes,
@@ -245,17 +259,19 @@ namespace EBCM
       if(errval != 0)
       {
         MayDay::Error("maketheblobs: mergeVolumes on box says we have a small vof somewhere");
+        return errval;
       }
     }
     return 0;
   }
 
-  ///Translate irregular graph into the sparse  representation that we actually store.
+  ///Translate irregular graph  and data into the sparse  representation that we actually store.
   /**
      Basically, we just do not add regular volumes and set the integer in the map to the correct thing.
      a_volumes: irregular volumes   we do not store unmerged regular cell volumes              
-     a_map:     map to box stuff regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
-     a_soluVolumes: full irregular representation
+     a_map: -1= regular -2 covered, >= 0 is the index into m_volumes.  
+     Merged cells both hold the same vector index so iterating over this can double count.
+     a_soluVolumes: full irregular representation (discard after use).
      
   **/
   inline int
@@ -263,6 +279,7 @@ namespace EBCM
                    HostBoxData<int  , 1>            & a_map,
                    std::set<EBCMVolu>               & a_soluVolumes)
   {
+    for(int ivol = 0; ivol
   }
 
 
@@ -285,11 +302,11 @@ namespace EBCM
 
       ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
       //(those distinctions will change here because of merger making regulars into irregulars)
-      upackEBDescription(allEBInd, a_graph);
+      unpackEBDescription(allEBInd, a_graph);
       //put all moment info into a (still fully irregular) a set of volumes
       makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
 
-      //translate irregular graph and datat into sparse  representation that we actually store
+      //translate irregular graph and data into sparse  representation that we actually store
       sparsifyTheBlobs(m_volumes, m_map, allBlobs)
       return retval;
                          
