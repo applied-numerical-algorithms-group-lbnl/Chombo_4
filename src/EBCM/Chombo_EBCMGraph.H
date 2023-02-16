@@ -79,6 +79,7 @@ namespace EBCM
                            const ch_dit                          & a_dit,
                            const double                          & a_dx)
     {
+      m_regular = false;
       auto graph   = (*(a_geoserv->getGraphs(   a_domain)))[a_dit];
       auto voludat = (*(a_geoserv->getVoluData( a_domain)))[a_dit];
       auto xfacdat = (*(a_geoserv->getXFaceData(a_domain)))[a_dit];
@@ -167,7 +168,7 @@ namespace EBCM
                    const double                          & a_dx)
   {
     const EBGraph   & a_graph = (*a_geoserv)
-    HERE
+
     EBCMVolu retval;
     if(a_graph.isCovered(a_vof.m_pt))
     {
@@ -277,9 +278,27 @@ namespace EBCM
   inline int
   sparsifyTheBlobs(vector<EBCMVolu>                 & a_volumes,
                    HostBoxData<int  , 1>            & a_map,
-                   std::set<EBCMVolu>               & a_soluVolumes)
+                   std::set<EBCMVolu>               & a_soluVolumes,
+                   const pr_ebgrap                  & a_graph))
   {
-    for(int ivol = 0; ivol
+    a_volumes.resize(0);
+    a_map.define(a_graph.box());
+    a_map.setVal(-2);
+    
+    //define the map and set it all to covered.   the input set contains only regular and irregular
+    for(auto it = a_soluVolumes.begin(); it != soluVolumes.end(); ++it)
+    {
+      const auto& volu = *it;
+      if(volu.m_regular)
+      {
+        a_map(volu.m_pt, 0) = -1;
+      }
+      else
+      {
+        a_map(volu.m_pt, 0) = a_volumes.size();
+        a_volumes.push_back(volu);
+      }
+    }
   }
 
 
@@ -307,7 +326,7 @@ namespace EBCM
       makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
 
       //translate irregular graph and data into sparse  representation that we actually store
-      sparsifyTheBlobs(m_volumes, m_map, allBlobs)
+      sparsifyTheBlobs(m_volumes, m_map, allBlobs, a_graph)
       return retval;
                          
     }
