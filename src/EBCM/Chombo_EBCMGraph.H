@@ -56,7 +56,7 @@ namespace EBCM
     IndexedMoments<DIM, order> m_volmom;
     IndexedMoments<DIM, order> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
-    
+    vector<Point> m_cells; //all cells marked for this entry.   
 
     template <CENTERING cent>
     void fillFaceData(vector< EBCMFace< cent> >                       & a_facedata,
@@ -100,6 +100,7 @@ namespace EBCM
 #endif
       m_regular = false;
       m_pt = a_vof.m_pt;
+      m_cells.resize(1, m_pt);
       EBIndex<BOUNDARY> ebf = a_vof.getCutFace();
       auto levvol_ptr = a_geoserv->getVoluData(a_domain);
       auto levebf_ptr = a_geoserv->getEBFaData(a_domain);
@@ -125,6 +126,7 @@ namespace EBCM
     {
       m_regular = true;
       m_pt = a_pt;
+      m_cells.resize(1, m_pt);
       m_ebfmom.setToZero();
       m_volmom.setRegular(a_dx);
       {
@@ -295,9 +297,11 @@ namespace EBCM
       }
       else
       {
-        a_map(volu.m_pt, 0) = a_volumes.size();
-        a_volumes.push_back(volu);
-      }
+        for(int ipt = 0; ipt < volu.m_cells.size(); ipt++)
+        {
+          a_map(volu.m_cells[ipt], 0) = a_volumes.size();  //set all merged cells to the vector value.
+          a_volumes.push_back(volu);
+        }
     }
   }
 
