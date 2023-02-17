@@ -991,10 +991,9 @@ namespace Proto
 
             // Computing the divergence stencil from the fluxes
             // REVIEW the fluxes and stencil are tightly linked, so why build them separately?
-            Real inhoTerm = 0.0;
             WLSStencil<order> sten;
             sten.getWLSDivFCompStencil(stencilPack,
-                                       inhoTerm,
+                                       a_inhoContr[ivof],
                                        vofInd,
                                        a_graph,
                                        a_momentData,
@@ -1018,8 +1017,9 @@ namespace Proto
               {
                 a_stencil[dir][ivof] *= 1.0/(a_dx);
               }
-            a_inhoContr[ivof] = inhoTerm/(a_dx);
+            a_inhoContr[ivof] /= (a_dx);
 
+            // debugging info
             if (pt_verbose)
               {
                 pout() << "divVel stencil for " << vofInd.m_pt << ":" << endl;

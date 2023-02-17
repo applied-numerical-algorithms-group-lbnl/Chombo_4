@@ -154,7 +154,7 @@ namespace Proto
   class EBDomainBC
   {
   public:
-
+    // accessors
     inline
     EBDomainBCtypes<Comps>
     getBCtypes() const
@@ -169,6 +169,7 @@ namespace Proto
         return m_bcFuncs;
       }
 
+    // modify data
     inline
     EBDomainBCtypes<Comps>&
     updateBCtypes()
@@ -183,6 +184,7 @@ namespace Proto
         return m_bcFuncs;
       }
 
+    // get a single component copy
     inline EBDomainBC<1>
     makeSingleComponent(int a_comp) const
       {

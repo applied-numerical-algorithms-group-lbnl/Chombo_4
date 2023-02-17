@@ -1645,7 +1645,7 @@ namespace Proto
       if(a_graph.isIrregular(a_vof.m_pt))
         {
           LocalStencil<CELL, Real> ebflux;
-          Real inhomogTerm = 0.0; //for inhomogeneous bcs
+          Real inhomogTerm; //for inhomogeneous bcs
           // no stencil on EB face, yet
           std::array<LocalStencil<CELL, Real>, SpaceDim > fullFluxStencil;
           a_ebflux.getEBFluxStencilFull(fullFluxStencil,

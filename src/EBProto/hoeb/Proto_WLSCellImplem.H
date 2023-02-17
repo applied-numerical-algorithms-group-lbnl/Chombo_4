@@ -591,7 +591,7 @@ namespace Proto
   {
     PR_TIME("getWeightsMatrixFace");
 
-    int powerE = m_powerE;
+    int powerE = m_stenAttb.weightPower();
 
     for(int ineigh = 0; ineigh != a_weightDist.size(); ineigh++)
     {
@@ -992,7 +992,7 @@ namespace Proto
       if (a_dir == dir) faceLoc[dir] = a_dx * (a_face.m_pt[dir]);
     }
 
-    int radius = m_stenTraits.radius();
+    int radius = m_stenAttb.radius();
     Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
@@ -1136,7 +1136,7 @@ namespace Proto
           {
             faceLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
           }
-        int radius = m_stenTraits.radius();
+        int radius = m_stenAttb.radius();
 
         Vector<EBIndex<CELL> > vols;
         MomentIterator<DIM,order> momit;
@@ -1248,7 +1248,7 @@ namespace Proto
       if (a_dir == dir) faceLoc[dir] = a_dx * (a_face.m_pt[dir]);
     }
 
-    int radius = m_stenTraits.radius();
+    int radius = m_stenAttb.radius();
     Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
@@ -1298,6 +1298,12 @@ namespace Proto
     Chombo4::LAPACKMatrix S;
 
     // build the composite system
+    // in 2D:
+    // [ M_vols     0  ]
+    // [ 0      M_vols ]
+    // [ M_xface    0  ]
+    // [ 0      M_yface]
+    // [ M_xeb  M_yeb  ]
     {
       int ntotal_coup = DIM*(nvolneigh + nfac) + nebf;
       int nmoms_coup = DIM*nmoms;
@@ -1305,7 +1311,6 @@ namespace Proto
       M.setVal(0.);
       W.define(ntotal_coup, ntotal_coup);
       W.setVal(0.);
-
       // fill the volume and face moments and weights
       for (int dir=0; dir!=DIM; dir++)
         {
@@ -1406,14 +1411,11 @@ namespace Proto
           }
 
         // add the regular face contributions of U-dir
-        // a_inhomogTerm += this->computeInhomogTermReg(Scomp, neighs,
-        //                                        nvolneigh,
-        //                                        a_dombcName,
-        //                                        a_dx);
-        a_inhomogTerm += computeInhomogTermReg(Scomp, neighs,
-                                                     nvolneigh,
-                                                     m_domainBC,
-                                                     a_dx);
+        a_inhomogTerm += computeInhomogTermReg(Scomp,
+                                               neighs,
+                                               dir,
+                                               m_domainBC,
+                                               a_dx);
       }
 
     // add the EB face contribution
@@ -1429,15 +1431,10 @@ namespace Proto
               Scomp(0, row) = S(0, row_offset);
             }
         }
-
-        // a_inhomogTerm += this->computeInhomogTermEB(Scomp, neighs,
-        //                                       nvolneigh,
-        //                                       a_ebbcName,
-        //                                       a_dx);
-        a_inhomogTerm += computeInhomogTermEB(Scomp, neighs,
-                                                    nvolneigh,
-                                                    m_domainBC,
-                                                    a_dx);
+        a_inhomogTerm += computeInhomogTermEB(Scomp,
+                                              neighs,
+                                              m_domainBC,
+                                              a_dx);
       }
     if (m_verbose)
       {
@@ -1511,7 +1508,7 @@ namespace Proto
                             m_domainBC.getBCfuncs().getEBComp(dir),
                             a_dx);
           }
-        a_inhomogTerm += inhomogTerm/getRegularArea(a_dx);
+        a_inhomogTerm = inhomogTerm/getRegularArea(a_dx);
       }
     else
       {
@@ -1600,7 +1597,7 @@ namespace Proto
   DivWLSFlux<cent, order>::
   computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                         const Neighbors<order>          & a_neigh,
-                        const int                         a_nvolneigh,
+                        const int                         a_dir,
                         const EBDomainBC<DIM>    & a_domainBC,
                         Real                            a_dx) const
   {
@@ -1618,26 +1615,25 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeFaces(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_faceLocDiff = a_facneighLoc[iface];
+      RealVect faceLocDiff = a_facneighLoc[iface];
       int faceDir = a_facneighDir[iface];
       Side::LoHiSide faceSide = a_facneighSid[iface];
-      int comp = FACE_DIR(cent); // the face direction and component
-      if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, comp) == string("Neumann"))
+      if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, a_dir) == string("Neumann"))
       {
         bcValue = NeumannExactSoln<order>::
                                getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                                               faceLocDiff,
                                                faceDir,
-                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, comp),
+                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, a_dir),
                                                a_dx);
       }
-      else if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, comp) == string("Dirichlet"))
+      else if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, a_dir) == string("Dirichlet"))
       {
         bcValue = DirichletExactSoln<order>::
                                getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                                               faceLocDiff,
                                                faceDir,
-                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, comp),
+                                               m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, a_dir),
                                                a_dx);
       }
       else
@@ -1655,6 +1651,12 @@ namespace Proto
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromFace(iface));
+
+      if (m_verbose)
+        {
+          pout() << "face loc" << faceLocDiff <<
+            " boundary value " << bcValue << std::endl;
+        }
     }
     return inhomogTerm;
   }
@@ -1664,7 +1666,6 @@ namespace Proto
   DivWLSFlux<cent, order>::
   computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                        const Neighbors<order>          & a_neigh,
-                       const int                         a_nvolneigh,
                        const EBDomainBC<DIM>    & a_domainBC,
                        Real                            a_dx) const
   {
@@ -1807,7 +1808,7 @@ namespace Proto
       {
         cellLoc[dir] = a_dx * (0.5 + cell.m_pt[dir]);
       }
-    int radius = m_stenTraits.radius();
+    int radius = m_stenAttb.radius();
     Vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
@@ -2443,8 +2444,8 @@ namespace Proto
     RealVect x_upw = (a_faceLoc/dx) - coeff*(v_faceLoc);
 
     //int powerE = this->m_powerE;
-    //if (max_rad-1 == m_stenTraits.radius()) powerE = this->m_powerE;
-    //else powerE = this->m_powerE - (2.0*(max_rad-m_stenTraits.radius()-1));
+    //if (max_rad-1 == m_stenAttb.radius()) powerE = this->m_powerE;
+    //else powerE = this->m_powerE - (2.0*(max_rad-m_stenAttb.radius()-1));
     if (this->m_verbose) { pout() << " Weights Matrix Adv " << endl;}
     for(int ineigh = 0; ineigh < nrows; ineigh++)
     {

@@ -417,10 +417,10 @@ namespace Proto
     BaseWLSFlux()
       {}
 
-    BaseWLSFlux(const StencilAttributes& a_stenTraits,
+    BaseWLSFlux(const StencilAttributes& a_stenAttb,
                 bool          a_verbose=false)
       {
-        m_stenTraits = a_stenTraits;
+        m_stenAttb = a_stenAttb;
         m_verbose = a_verbose;
       }
 
@@ -454,10 +454,10 @@ namespace Proto
       }
 
   public:
-    //Radius needed for neighbors list around a face (Manhattan style)
-    int m_radius = 1;
-    //Exponent for the distance between the VoFs and the face in the weights matrix
-    int m_powerE = -3;
+    // //Radius needed for neighbors list around a face (Manhattan style)
+    // int m_radius = 1;
+    // //Exponent for the distance between the VoFs and the face in the weights matrix
+    // int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
     //Flux type. 0-Laplacian, 1-Advection
@@ -468,7 +468,7 @@ namespace Proto
     // Common, flux independent, dials for how to create a stencil
     // Things like the starting neighborhood radius and weighting power
     // FIXME this is the only member data that makes sense in this class
-    StencilAttributes m_stenTraits;
+    StencilAttributes m_stenAttb;
   };
 
   //Main function calls for DivWLS flux calculations
@@ -488,7 +488,7 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<cent,order>::BaseWLSFlux;
-    using BaseWLSFlux<cent,order>::m_stenTraits;
+    using BaseWLSFlux<cent,order>::m_stenAttb;
     using BaseWLSFlux<cent,order>::m_verbose;
 
     //Compute rhs matrix for a face
@@ -561,10 +561,10 @@ namespace Proto
 
     LapWLSFlux() = delete;
 
-    LapWLSFlux(const StencilAttributes          & a_stenTraits,
+    LapWLSFlux(const StencilAttributes          & a_stenAttb,
                const EBDomainBC<1>   & a_domainBC,
                bool                           a_verbose=false)
-      :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
+      :BaseWLSFlux<cent, order>(a_stenAttb, a_verbose)
       {
         m_domainBC = a_domainBC;
       }
@@ -590,7 +590,7 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<CELL, order>::BaseWLSFlux;
-    using BaseWLSFlux<CELL, order>::m_stenTraits;
+    using BaseWLSFlux<CELL, order>::m_stenAttb;
     using BaseWLSFlux<CELL, order>::m_verbose;
 
     //Compute rhs matrix for a face. Doesn't make sense in the context
@@ -659,10 +659,10 @@ namespace Proto
 
     GradWLSCell() = delete;
 
-    GradWLSCell(const StencilAttributes          & a_stenTraits,
+    GradWLSCell(const StencilAttributes          & a_stenAttb,
                 const EBDomainBC<1>   & a_domainBC,
                 bool                           a_verbose=false)
-      :BaseWLSFlux<CELL, order>(a_stenTraits, a_verbose)
+      :BaseWLSFlux<CELL, order>(a_stenAttb, a_verbose)
       {
         m_domainBC = a_domainBC;
       }
@@ -810,7 +810,7 @@ namespace Proto
     typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNormalData;
 
     using BaseWLSFlux<cent,order>::BaseWLSFlux;
-    using BaseWLSFlux<cent,order>::m_stenTraits;
+    using BaseWLSFlux<cent,order>::m_stenAttb;
     using BaseWLSFlux<cent,order>::m_verbose;
 
     //Compute rhs matrix for a face
@@ -861,14 +861,13 @@ namespace Proto
     Real
     computeInhomogTermReg(const Chombo4::LAPACKMatrix     & a_stencil,
                           const Neighbors<order>          & a_neigh,
-                          const int                         a_nvolneigh,
+                          const int                         a_dir,
                           const EBDomainBC<DIM>    & a_domainBC,
                           Real                            a_dx) const;
 
     Real
     computeInhomogTermEB(const Chombo4::LAPACKMatrix     & a_stencil,
                          const Neighbors<order>          & a_neigh,
-                         const int                         a_nvolneigh,
                          const EBDomainBC<DIM>    & a_domainBC,
                          Real                              a_dx) const;
 
@@ -878,10 +877,10 @@ namespace Proto
 
     DivWLSFlux() = delete;
 
-    DivWLSFlux(const StencilAttributes          & a_stenTraits,
+    DivWLSFlux(const StencilAttributes          & a_stenAttb,
                const EBDomainBC<DIM> & a_domainBC,
                bool          a_verbose=false)
-      :BaseWLSFlux<cent, order>(a_stenTraits, a_verbose)
+      :BaseWLSFlux<cent, order>(a_stenAttb, a_verbose)
       {
         m_domainBC = a_domainBC;
       }
