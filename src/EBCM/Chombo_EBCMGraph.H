@@ -119,7 +119,7 @@ namespace EBCM
       {
         Real centerloc = (m_pt[idir] + 0.5)*a_dx;
         Real scaledCent = m_volmom[1+idir];
-        m_centroid[idir]= centerloc + (scaledCent/a_dx);
+        m_centroid[idir]= centerloc + scaledCent;
       }
     }
     void defineAsRegular(pr_pt a_pt, double a_dx)
