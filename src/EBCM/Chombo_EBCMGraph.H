@@ -52,7 +52,8 @@ namespace EBCM
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
-    RealVect m_cent;
+    RealVect m_centroid;
+    Real     m_kappa; //volume fraction
     IndexedMoments<DIM, order> m_volmom;
     IndexedMoments<DIM, order> m_ebfmom;
     Point    m_pt; //just used as a unique identifier
@@ -109,14 +110,17 @@ namespace EBCM
 
       m_volmom = voldat(a_vof, 0);
       m_ebfmom = ebfdat(ebf, 0);;
-      defineCentroid(a_dx);
+      defineUnscaledMeasures(a_dx);
     }
 
-    void defineCentroid(Real a_dx)
+    void defineUnscaledMeasures(Real a_dx)
     {
+      Real cellVol = D_TERM(a_dx; *a_dx; *a_dx);
+      m_kappa = m_volmom[0]/cellVol;
       //relies upon volmom  and dx being set
       for(int idir = 0; idir < DIM; idir++)
       {
+        cellVol *= a_dx;
         Real centerloc = (m_pt[idir] + 0.5)*a_dx;
         Real scaledCent = m_volmom[1+idir];
         m_centroid[idir]= centerloc + scaledCent;
@@ -155,23 +159,23 @@ namespace EBCM
         m_zfaceshi[0].setToRegular(m_pt, hipt, a_dx);
       }
 #endif      
-      defineCentroid(a_dx);
+      defineUnscaledMeasures(a_dx);
     }
   };
 
 
   ///create single-index ebcmvolume from EB description
   template <int order>
-  inline EBCMVolu
+  inline EBCMVolu<order>
   createEBCMVolume(const pr_vof                          & a_vof,
                    const shared_ptr<ch_geoserv>          & a_geoserv,
                    const Box                             & a_domain,
                    const ch_dit                          & a_dit,
                    const double                          & a_dx)
   {
-    const EBGraph   & a_graph = (*a_geoserv)
+    const EBGraph   & a_graph = (*a_geoserv);
 
-    EBCMVolu retval;
+    EBCMVolu<order> retval;
     if(a_graph.isCovered(a_vof.m_pt))
     {
       MayDay::Error("cannot create EBCMVolume from a covered cell");
@@ -182,7 +186,7 @@ namespace EBCM
     }
     else
     {
-      retval.defineAsIrregular(a_vof, a_geoserv, a_doomain, a_dit, a_dx)
+      retval.defineAsIrregular(a_vof, a_geoserv, a_doomain, a_dit, a_dx);
     }
 
     return retval;
@@ -221,17 +225,138 @@ namespace EBCM
         {
           a_soluVolumes->insert(vofs[ivof]);
         }
-      }
-      
+      } //end irregular
+    } //end loop over box
       return 0;
+  } //end function
+
+
+  template<int order>
+  inline int
+  findBigNeighbor(EBCMVolu<order>                      & a_bigNeigh,
+                  const EBCMVolu<order>                & a_start, 
+                  shared_ptr< set<EBCMVolu<order> > >    a_remaining)
+  {
+    bool found = false;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      for(SideIterator sit; sit.ok(); ++sit)
+      {
+        int isign  = sign(sit());
+        pr_pt newpt = a_start.m_pt + pr_pt::Basis(idir*isign);
+        if(!found)
+        {
+          for(auto volit = a_remaining->begin(); volit != a_remaining->end(); ++volit)
+          {
+            const auto& volu = *it;
+            Real sumkappa = a_start.m_kappa + volu.m_kappa;
+            if( (volu.m_pt == newpt) && (volu.m_regular || (sumkappa >= 1.)))
+            {
+              found = true;
+              a_bigNeigh = volu;
+            }
+          }
+        }
+      }
     }
+    if(!found)
+    {
+      pout() << "findBigNeighbor could not find big neighbor" << endl;
+      return -1;
+    }
+    return 0;
   }
 
+  
+  template<int order>
   inline int
-  mergeVolumesOnBox(shared_ptr<set<EBCMVolu> > & a_soluVolumes)
+  mergeTwoVolumessIntoThird(EBCMVolu<order>                      & a_merged,
+                            EBCMVolu<order>                      & a_bigNeigh,
+                            const EBCMVolu<order>                & a_start, 
+                            shared_ptr< set<EBCMVolu<order> > >    a_remaining)
   {
-    //error! not written yet! 
+    pout() << "mergeTwoVolumesIntoThird not implemented"  << endl;
     return -1;
+  }
+  template<int order>
+  inline int
+  mergeWithBigNeighbor(EBCMVolu<order>                      & a_merged,
+                       EBCMVolu<order>                      & a_bigNeigh,
+                       const EBCMVolu<order>                & a_start, 
+                       shared_ptr< set<EBCMVolu<order> > >    a_remaining)
+  {
+    {
+      int neival = findBigNeighbor(a_bigNeigh, a_start, a_remaining);
+      if(!neival)
+      {
+        pout() << "mergeWithABigNeighbor failed " << endl;
+        return neival;
+      }
+    }
+    {
+      int mergeval = mergeTwoVolumesIntoThird(a_merged, a_bigNeigh, a_start);
+      if(!mergeval)
+      {
+        pout() << "mergeTwoVolumesIntoThird failed " << endl;
+        return neival;
+      }
+  }
+    
+  ///modify a fully irregular description to merge neighboring volumes to eliminate smaller cells
+  template <int order>
+  inline int
+  mergeVolumesOnBox(shared_ptr<set<EBCMVolu<order> > > & a_soluVolumes)
+  {
+    shared_ptr<set<EBCMVolu<order> > >     returnVolumes(new set<EBCMVolu<order> >());
+    shared_ptr<set<EBCMVolu<order> > >  volumesRemaining(new set<EBCMVolu<order> >());
+    *volumesRemaining = *a_soluVolumes;
+    for(auto volit = a_soluVolumes->begin(); volit != a_soluVolumes->end(); ++volit)
+    {
+      const auto& volu = *it;
+      if(volumesRemaining->find(volu) != volumeRemaining.end())
+      {
+        volumesRemaining->erase(volu);
+        if(volu.m_regular)
+        {
+          returnVolumes->insert(volu);
+        }
+        else
+        {
+          EBCMVolu<order> merged;
+          EBCMVolu<order> bigNeigh;
+          int neival = mergeWithBigNeighbor(merged, bigNeigh, volu,  volumesRemaining);
+          if(!neival)
+          {
+            volumesRemaining.erase(bigNeigh);
+            returnVolumes.insert(merged);
+          }
+          else
+          {
+            pout() << "mergeVolumes: problem in mergeWithABigNeighbor failed" << endl;
+            return neival;
+          }
+        }
+      }
+    }
+
+    //replace input argument with new set.
+    *a_soluVolumes = *returnVolumes;
+    
+    //check to see if we have been successful
+    bool stillHaveSmallVolumes = false;
+    for(auto volit = a_soluVolumes.begin(); volit != a_soluVolumes.end(); ++volit)
+    {
+      const auto volu = *it;
+      if(volu.kappa < 1.0)
+      {
+        stillHaveSmallVolumes = true;
+      }
+    }
+    if(stillHaveSmallVolumes)
+    {
+      pout() << "mergeVolumesOnBox: mergeVolumesOnBox failed." << endl;
+      return -1;
+    }
   }
   ///
   /**
@@ -301,16 +426,18 @@ namespace EBCM
         {
           a_map(volu.m_cells[ipt], 0) = a_volumes.size();  //set all merged cells to the vector value.
           a_volumes.push_back(volu);
-        }
-    }
-  }
+        } //end loop over cell merger
+      } //end if irregular
+    } //end loop over solution volumes
+  }//end function
 
 
-  ///Class to make merged sparse embedded boundary description
-  /**
-    */
-  class EBCMGraph
-  {
+///Class to make merged sparse embedded boundary description
+/**
+ */
+template< int order>
+class EBCMGraph
+{
   public:
 
     EBCMGraph(shared_ptr<pr_ebgrap>  a_graph,
@@ -320,7 +447,7 @@ namespace EBCM
       m_graph(a_graph), m_data(a_data), m_dx(a_dx)
     {
 
-      shared_ptr< set< pr_vof > >        allEBInd;
+      shared_ptr< set< pr_vof > >   allEBInd;
       shared_ptr< set< EBCMVolu > > allBlobs;
 
       ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
