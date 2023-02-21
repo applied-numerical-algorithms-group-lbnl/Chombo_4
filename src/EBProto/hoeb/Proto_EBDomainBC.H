@@ -3,6 +3,7 @@
 #ifndef _PROTO_EB_DOMAIN_BC_
 #define _PROTO_EB_DOMAIN_BC_
 
+#include <iostream>
 #include "EBProto.H"
 #include "Proto_EBExactSolutions.H"
 
@@ -108,6 +109,27 @@ namespace Proto
 
         return newSingleComp;
       }
+
+    // overlaod operator for printing
+    // this assumes the template type T is something that can be printed
+    friend std::ostream&
+    operator<< (std::ostream& a_os,
+               const EBDomainBCRegister<T, Comps>& a_domBC)
+      {
+        for(int comp=0; comp!=Comps; comp++)
+          {
+            for(int dir = 0; dir!=DIM; dir++)
+              {
+                for(SideIterator sit; sit.ok(); ++sit)
+                  {
+                    a_os << "dir: " << dir << " side: " << sit() << " comp " << comp << " = " << a_domBC.getRegComp(dir, sit(), comp) << std::endl;
+                  }
+              }
+            a_os << "eb comp: " << comp << " = " << a_domBC.getEBComp(comp) << std::endl;
+          }
+        return a_os;
+      }
+
 
     // THIS ONLY EXISTS FOR BACKWARD COMPATIBILITY REASONS
     // DO NOT USE UNLESS NECECCARY

@@ -380,11 +380,10 @@ namespace Proto
     void
     getFaceOpEvalMatrix(Chombo4::LAPACKMatrix    & a_Op,
                         const EBIndex<cent>      & a_face,
-                        RealVect                 & a_faceLoc,
+                        const RealVect             a_faceLoc,
                         IndMomSDMinOne           & a_faceMom,
-                        Real                     a_signNormal,
-                        Real                     a_dx,
-                        IndexTM<int, DIM>        a_deriv) const;
+                        const Real                 a_dx,
+                        const IndexTM<int, DIM>    a_deriv) const;
 
     //Compute rhs matrix for a face. Pure virtual here
     virtual void
@@ -426,27 +425,6 @@ namespace Proto
 
     BaseWLSFlux(int           a_radius,
                 int           a_powerE,
-                shared_ptr<BaseExactSolution >  a_exactSol,
-                shared_ptr<BaseExactSolution >  a_exactSolEB = nullptr,
-                int           a_fluxType=0,
-                bool          a_verbose=false)
-      {
-        CH_assert(false); //DEPRECATED use the updated constructor
-      }
-
-    BaseWLSFlux(int           a_radius,
-                int           a_powerE,
-                shared_ptr<BaseExactSolution >  a_exactSolLo,
-                shared_ptr<BaseExactSolution >  a_exactSolHi,
-                shared_ptr<BaseExactSolution >  a_exactSolEB,
-                int           a_fluxType=0,
-                bool          a_verbose=false)
-      {
-        CH_assert(false); //DEPRECATED use the updated constructor
-      }
-
-    BaseWLSFlux(int           a_radius,
-                int           a_powerE,
                 int           a_exactSolFun,
                 bool          a_verbose=false)
       {
@@ -454,10 +432,6 @@ namespace Proto
       }
 
   public:
-    // //Radius needed for neighbors list around a face (Manhattan style)
-    // int m_radius = 1;
-    // //Exponent for the distance between the VoFs and the face in the weights matrix
-    // int m_powerE = -3;
     //Boolean to enable print out statements for debugging
     bool m_verbose = false;
     //Flux type. 0-Laplacian, 1-Advection
@@ -467,7 +441,7 @@ namespace Proto
 
     // Common, flux independent, dials for how to create a stencil
     // Things like the starting neighborhood radius and weighting power
-    // FIXME this is the only member data that makes sense in this class
+    // this is the only member data that makes sense in this class
     StencilAttributes m_stenAttb;
   };
 

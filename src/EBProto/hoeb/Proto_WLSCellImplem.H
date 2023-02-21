@@ -383,6 +383,82 @@ namespace Proto
     a_moment.shift(diffrv);
   }
 
+  // REVIEW untested
+  template<CENTERING cent, int order>
+  void
+  BaseWLSFlux<cent, order>::
+  getFaceOpEvalMatrix(Chombo4::LAPACKMatrix    & a_opMatrix,
+                      const EBIndex<cent>      & a_face,
+                      const RealVect             a_faceLoc,
+                      IndMomSDMinOne           & a_faceMom,
+                      const Real                 a_dx,
+                      const IndexTM<int, DIM>    a_deriv) const
+  {
+    PR_TIME("getFaceOpEvalMatrix");
+    using Chombo4::pout;
+    RealVect startLoc;
+    for (int dir = 0; dir < DIM; dir++)
+    {
+      startLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
+      if (a_face.direction() == dir) startLoc[dir] = a_dx * (a_face.m_pt[dir]);
+    }
+    // shift center of moments to a_faceLoc.
+    // the moments are centered at the face center initially
+    RealVect diff = startLoc;
+    diff -= a_faceLoc;
+    IndexTM<Real, DIM-1> diffrv;
+    int index = 0;
+    for(int dir = 0; dir < DIM; dir++)
+    {
+      if(dir != a_face.direction())
+      {
+        diffrv[index] = diff[dir]/a_dx;
+        index++;
+      }
+    }
+    a_faceMom.shift(diffrv);
+
+    MomentIterator<DIM, order> momit;
+    a_opMatrix.define(1, momit.size());
+    a_opMatrix.setVal(0.);
+    const int& faceDir = a_face.direction();
+    if (this->m_verbose){ pout() << " Face Flux Matrix deriv" << a_deriv << endl;}
+
+    for(momit.reset(); momit.ok(); ++momit)
+    {
+      IndexTM<int, DIM> p = momit();
+      int pd = p[faceDir];
+      int jmom = IndexedMoments<DIM, order>::indexOf(p);
+      IndexTM<int, DIM> pmq = p - a_deriv; // p minus q
+      if ((pmq.min() < 0) || // dropping below a zero moment has value of zero
+          (pd != a_deriv[faceDir])) // no support for non-aligned quantities
+        {
+          a_opMatrix(0, jmom) = 0;
+        }
+      else
+        {
+          // pfaceshift are all components of p that are not in the faceDir direction
+          IndexTM<int, DIM-1> pfaceshift;
+          int index = 0;
+          for(int dir = 0; dir < DIM; dir++)
+            {
+              if(dir != faceDir)
+                {
+                  pfaceshift[index] = p[dir];
+                  index++;
+                }
+            }
+          Real derivCoef = p.factorial()/pmq.factorial();
+          a_opMatrix(0, jmom) = derivCoef*a_faceMom[pfaceshift];
+        }
+
+      if(Chombo4::LAPACKMatrix::s_verbose)
+        {
+          pout() << ",icol = "  << jmom <<  ", Q(0,icol) = " << a_opMatrix(0, jmom) << endl;
+        }
+    }
+  }
+
   //Compute rhs matrix for a face
   template<CENTERING cent, int order>
   void
@@ -1510,9 +1586,13 @@ namespace Proto
           }
         a_inhomogTerm = inhomogTerm/getRegularArea(a_dx);
       }
+    else if(a_ebbcName == string("no_bcs"))
+      {
+        a_inhomogTerm = 0;
+      }
     else
       {
-        PROTO_ASSERT(false, "could not find EBBC string");
+        PROTO_ASSERT(false, ("could not find EBBC string"+a_ebbcName).c_str());
       }
 
   }
@@ -1761,7 +1841,7 @@ namespace Proto
         IndexTM<int, DIM> p = momit();
         int jmom = IndexedMoments<DIM, order>::indexOf(p);
         IndexTM<int, DIM> pmq = p - a_deriv; // p minus q
-        if (pmq.min() < 0) // dropping bellow a zero moment has value of zero
+        if (pmq.min() < 0) // dropping below a zero moment has value of zero
           {
             a_cellMatrix(0, jmom) = 0.;
           }
