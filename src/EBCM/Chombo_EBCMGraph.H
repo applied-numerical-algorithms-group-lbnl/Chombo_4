@@ -47,7 +47,7 @@ namespace EBCM
     vector<EBCMFace<XFACE> > m_xfaceshi;
     vector<EBCMFace<YFACE> > m_yfaceshi;
     vector<EBCMFace<ZFACE> > m_zfaceshi;
-    EBCMFace<      BOUNDARY> m_ebface;
+    vector<EBCMFace< BOUNDARY> > m_ebfaces;
     
     
     bool                          m_regular;
@@ -81,6 +81,8 @@ namespace EBCM
                            const double                          & a_dx)
     {
       m_regular = false;
+      m_pt = a_vof.m_pt;
+      m_cells.resize(1, m_pt);
       auto graph   = (*(a_geoserv->getGraphs(   a_domain)))[a_dit];
       auto voludat = (*(a_geoserv->getVoluData( a_domain)))[a_dit];
       auto xfacdat = (*(a_geoserv->getXFaceData(a_domain)))[a_dit];
@@ -261,23 +263,120 @@ namespace EBCM
     }
     if(!found)
     {
-      pout() << "findBigNeighbor could not find big neighbor" << endl;
+      pout() << "Function findBigNeighbor could not find a big neighbor; returning -1." << endl;
       return -1;
     }
     return 0;
   }
 
   
+
+  template<int order, CENTERING cent>
+  mergeFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
+             const vector<EBCMFace<cent> > &  a_startFacesLo,
+             const vector<EBCMFace<cent> > &  a_bigNeighFacesLo)
+  {
+    a_mergedFacesLo = a_startFaces;
+    a_mergedFacesLo.insert(a_mergedFacesLo.end(), a_bigNeighFaces.start(), a_bigNeighFaces.end());
+  }
+
+  template<int order, CENTERING cent>
+  mergeFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
+             vector<EBCMFace<cent> >       &  a_mergedFacesHi,
+             const vector<EBCMFace<cent> > &  a_startFacesLo,
+             const vector<EBCMFace<cent> > &  a_startFacesHi,
+             const vector<EBCMFace<cent> > &  a_bigNeighFacesLo,
+             const vector<EBCMFace<cent> > &  a_bigNeighFacesHi)
+  {
+    a_mergedFacesLo = a_startFaces;
+    a_mergedFacesLo.insert(a_mergedFacesLo.end(), a_bigNeighFaces.start(), a_bigNeighFaces.end());
+  }
+
   template<int order>
   inline int
   mergeTwoVolumessIntoThird(EBCMVolu<order>                      & a_merged,
-                            EBCMVolu<order>                      & a_bigNeigh,
-                            const EBCMVolu<order>                & a_start, 
-                            shared_ptr< set<EBCMVolu<order> > >    a_remaining)
-  {
-    pout() << "mergeTwoVolumesIntoThird not implemented"  << endl;
-    return -1;
-  }
+                            const EBCMVolu<order>                & a_volOne,
+                            const EBCMVolu<order>                & a_volTwo)
+ {
+    pr_pt diff = a_volOne.m_pt - a_volTwo.m_pt;
+    mergeFaces<order, BOUNDARY>(a_merged.m_ebfaces, a_volOne.m_ebfaces, a_volTwo.m_ebaces);
+    
+    if(diff[0] == 0) 
+    {
+      //No difference in x.  The points are adjacent
+      mergeFaces<order, XFACE>(a_merged.m_xfaceslo, a_volOne.m_xfaceslo, a_volTwo.m_xfaceslo);
+      mergeFaces<order, XFACE>(a_merged.m_xfaceshi, a_volOne.m_xfaceshi, a_volTwo.m_xfaceshi);
+    }
+    if(diff[1] == 0) 
+    {
+      //No difference in x.  The points are adjacent
+      mergeFaces<order, YFACE>(a_merged.m_yfaceslo, a_volOne.m_yfaceslo, a_volTwo.m_yfaceslo);
+      mergeFaces<order, YFACE>(a_merged.m_yfaceshi, a_volOne.m_yfaceshi, a_volTwo.m_yfaceshi);
+    }
+#if DIM==3
+    if(diff[2] == 0) 
+    {
+      //No difference in x.  The points are adjacent
+      mergeFaces<order, ZFACE>(a_merged.m_zfaceslo, a_volOne.m_zfaceslo, a_volTwo.m_zfaceslo);
+      mergeFaces<order, ZFACE>(a_merged.m_zfaceshi, a_volOne.m_zfaceshi, a_volTwo.m_zfaceshi);
+    }
+#endif
+    if(std::abs(diff[0] == 1))
+    {
+      bool volOneHigher = diff[0] == 1;
+
+      if(volOneHigher)
+      {
+        pickFaces<order, XFACE>(a_merged.m_xfaceslo, a_merged.m_xfaceshi,
+                                a_volOne.m_xfaceslo, a_volOne.m_xfaceshi, 
+                                a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi);
+      }
+      else
+      {
+        pickFaces<order, XFACE>(a_merged.m_xfaceslo, a_merged.m_xfaceshi,
+                                a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi, 
+                                a_volOne.m_xfaceslo, a_volOne.m_xfaceshi);
+      }
+    }
+    if(std::abs(diff[1] == 1))
+    {
+      bool volOneHigher = diff[1] == 1;
+      if(volOneHigher)
+      {
+        pickFaces<order, YFACE>(a_merged.m_yfaceslo, a_merged.m_yfaceshi,
+                                a_volOne.m_yfaceslo, a_volOne.m_yfaceshi, 
+                                a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi);
+      }
+      else
+      {
+        pickFaces<order, YFACE>(a_merged.m_yfaceslo, a_merged.m_yfaceshi,
+                                a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi, 
+                                a_volOne.m_yfaceslo, a_volOne.m_yfaceshi);
+      }
+    }
+#if DIM==3
+    if(std::abs(diff[2] == 1))
+    {
+      bool volOneHigher = diff[2] == 1;
+      if(volOneHigher)
+      {
+        pickFaces<order, ZFACE>(a_merged.m_zfaceslo, a_merged.m_zfaceshi,
+                                a_volOne.m_zfaceslo, a_volOne.m_zfaceshi, 
+                                a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi);
+      }
+      else
+      {
+        pickFaces<order, ZFACE>(a_merged.m_zfaceslo, a_merged.m_zfaceshi,
+                                a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi, 
+                                a_volOne.m_zfaceslo, a_volOne.m_zfaceshi);
+      }
+    }
+
+#else    
+
+    return 0;
+ }
+
   template<int order>
   inline int
   mergeWithBigNeighbor(EBCMVolu<order>                      & a_merged,
@@ -289,7 +388,7 @@ namespace EBCM
       int neival = findBigNeighbor(a_bigNeigh, a_start, a_remaining);
       if(!neival)
       {
-        pout() << "mergeWithABigNeighbor failed " << endl;
+        pout() << "mergeWithBigNeighbor: findBigNeighbor returned with error code " << neival << endl;
         return neival;
       }
     }
@@ -297,8 +396,8 @@ namespace EBCM
       int mergeval = mergeTwoVolumesIntoThird(a_merged, a_bigNeigh, a_start);
       if(!mergeval)
       {
-        pout() << "mergeTwoVolumesIntoThird failed " << endl;
-        return neival;
+        pout() << "Function mergeTwoVolumesIntoThird failed; returning error code " << mergeval << endl;
+        return mergeval;
       }
   }
     
@@ -332,7 +431,7 @@ namespace EBCM
           }
           else
           {
-            pout() << "mergeVolumes: problem in mergeWithABigNeighbor failed" << endl;
+            pout() << "mergeVolumes: mergeWithBigNeighbor failed with error code " << retval << endl;
             return neival;
           }
         }
@@ -354,7 +453,7 @@ namespace EBCM
     }
     if(stillHaveSmallVolumes)
     {
-      pout() << "mergeVolumesOnBox: mergeVolumesOnBox failed." << endl;
+      pout() << "mergeVolumesOnBox:  Leaving with a small volume still there; returning -1." << endl;
       return -1;
     }
   }
