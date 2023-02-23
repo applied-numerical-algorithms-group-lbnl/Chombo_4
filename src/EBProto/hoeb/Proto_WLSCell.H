@@ -968,7 +968,8 @@ namespace Proto
                                        const RealVect        & a_faceLoc,
                                        int                     a_faceDir,
                                        const shared_ptr<BaseExactSolution >  & m_exactSol,
-                                       const Real              a_dx);
+                                       const Real              a_dx,
+                                       const int a_evalType = 0);
 
     //getIntegralGradPhiDotNormal
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,

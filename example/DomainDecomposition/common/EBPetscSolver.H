@@ -175,7 +175,7 @@ public:
       {
         PetscScalar sumOld;
         VecSum(m_bb, &sumOld);
-        pout() << "rhs sum orig = " << sumOld << std::endl;
+        //pout() << "rhs sum orig = " << sumOld << std::endl;
         for (int i=0; i!=10; i++)
           {
             PetscInt size;
@@ -186,7 +186,8 @@ public:
             VecAXPY(m_bb, sumAdj, m_rr);
             PetscScalar sum;
             VecSum(m_bb, &sum);
-            pout() << "rhs adj sum  = " << sum << std::endl;
+            // need verbosity flag
+            // pout() << "rhs adj sum  = " << sum << std::endl;
             if (sum == sumOld) break;
             sumOld = sum;
           }
@@ -846,7 +847,8 @@ private:
   static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
   {
     using Chombo4::pout;
-    pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
+    // This is very verbose and needs a flag
+    // pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
     return 0;
   }
   virtual PetscInt setupSolver()

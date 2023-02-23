@@ -216,6 +216,12 @@ namespace Proto
         return newSingleComp;
       }
 
+    inline int evalType() const
+      {
+        return m_evalType;
+      }
+
+    int m_evalType = 0; // 0 eval derivs (this specifies phi) , 1 eval as is (this specifies d/dx phi)
   private:
     EBDomainBCtypes<Comps> m_bcTypes;
     EBDomainBCfuncs<Comps> m_bcFuncs;

@@ -816,7 +816,8 @@ namespace Proto
                                                a_faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
-                                               a_dx);
+                                               a_dx,
+                                               m_domainBC.evalType());
       }
       else if(bcName == string("Dirichlet"))
       {
@@ -2009,7 +2010,8 @@ namespace Proto
                                                a_faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
-                                               a_dx);
+                                               a_dx,
+                                               m_domainBC.evalType());
       }
       else if(bcName == string("Dirichlet"))
       {
@@ -2223,7 +2225,8 @@ namespace Proto
                   const RealVect        & a_faceLoc,
                   int                     a_faceDir,
                   const shared_ptr<BaseExactSolution >  & a_exactSol,
-                  const Real              a_dx)  
+                  const Real              a_dx,
+                  const int a_evalType)
   {
     PR_TIME("getFaceIntegralNeumannExactSoln");
     Real retval = 0.0;
@@ -2233,26 +2236,31 @@ namespace Proto
     {
       IndexTM<int,DIM-1>  pSDMinOne = momit();
       IndexTM<int,DIM>  pSpaceDim;
+      IndexTM<int,DIM>  pFuncDeriv;
       // face moment is zero unless p in face direction is 1 (because we take a derivative in 
       // the face direction)
       int index = 0;
       for(int dir = 0; dir < DIM; dir++)
       {
-        if(dir == a_faceDir)
+        if((dir == a_faceDir))
         {
           pSpaceDim[dir] = 1;
+          pFuncDeriv[dir] = pSpaceDim[dir];
+          if(a_evalType == 1) {pFuncDeriv[dir] = 0;}
         }
         else
         {
           pSpaceDim[dir] = pSDMinOne[index];
+          pFuncDeriv[dir] = pSpaceDim[dir];
           index++;
         }
+
       }
 
       Real moment = a_faceMom[pSDMinOne];
  
       // pSpaceDim[a_face.direction()] is 1 so no need to multiply
-      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_exactSol->getDerivative(pSpaceDim,a_faceLoc)/(pSpaceDim.factorial());
+      retval += moment*(areaScaleFactor*POW(a_dx,pSpaceDim))*a_exactSol->getDerivative(pFuncDeriv,a_faceLoc)/(pSpaceDim.factorial());
     }
   
     return retval;
