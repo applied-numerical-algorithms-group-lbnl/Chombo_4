@@ -22,13 +22,12 @@ namespace EBCM
   class EBCMFace
   {
   public:
-    //centroid location
-    RealVect m_cent;
+
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
     void defineAsRegular(pr_vof a_lo, pr_vof a_hi, Real a_dx)
-    {
+    {                                                  // 
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
@@ -36,6 +35,22 @@ namespace EBCM
 
   };
 
+  template<int order>
+  class IrregFace
+  {
+  public:
+
+    pr_pt m_pt;
+    IndexedMoments<DIM, order> m_ebfmom;
+    void defineAsRegular(pr_vof a_vof);
+    {
+      m_pt =  a_vof.m_pt;
+
+      m_ebfmom.setToZero();
+    }
+
+  };
+  
 
   template<int order>
   class EBCMVolu
@@ -47,7 +62,7 @@ namespace EBCM
     vector<EBCMFace<XFACE> > m_xfaceshi;
     vector<EBCMFace<YFACE> > m_yfaceshi;
     vector<EBCMFace<ZFACE> > m_zfaceshi;
-    vector<EBCMFace< BOUNDARY> > m_ebfaces;
+    vector<IrregFace> > m_ebfaces;
     
     
     bool                          m_regular;
@@ -55,7 +70,7 @@ namespace EBCM
     RealVect m_centroid;
     Real     m_kappa; //volume fraction
     IndexedMoments<DIM, order> m_volmom;
-    IndexedMoments<DIM, order> m_ebfmom;
+
     Point    m_pt; //just used as a unique identifier
     vector<Point> m_cells; //all cells marked for this entry.   
 
@@ -111,7 +126,7 @@ namespace EBCM
       const auto& ebfdat = (*levebf_ptr)[a_dit];
 
       m_volmom = voldat(a_vof, 0);
-      m_ebfmom = ebfdat(ebf, 0);;
+      m_irregface.m_ebfmom = ebfdat(ebf, 0);;
       defineUnscaledMeasures(a_dx);
     }
 
@@ -272,6 +287,7 @@ namespace EBCM
   
 
   template<int order, CENTERING cent>
+  inline void
   mergeFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
              const vector<EBCMFace<cent> > &  a_startFacesLo,
              const vector<EBCMFace<cent> > &  a_bigNeighFacesLo)
@@ -281,23 +297,48 @@ namespace EBCM
   }
 
   template<int order, CENTERING cent>
-  mergeFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
+  inline void
+  pickFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
              vector<EBCMFace<cent> >       &  a_mergedFacesHi,
-             const vector<EBCMFace<cent> > &  a_startFacesLo,
-             const vector<EBCMFace<cent> > &  a_startFacesHi,
-             const vector<EBCMFace<cent> > &  a_bigNeighFacesLo,
-             const vector<EBCMFace<cent> > &  a_bigNeighFacesHi)
+             const vector<EBCMFace<cent> > &  a_hiVoFFacesLo,
+             const vector<EBCMFace<cent> > &  a_hiVoFFacesHi,
+             const vector<EBCMFace<cent> > &  a_loVoFFacesLo,
+             const vector<EBCMFace<cent> > &  a_loVoFFacesHi)
   {
-    a_mergedFacesLo = a_startFaces;
-    a_mergedFacesLo.insert(a_mergedFacesLo.end(), a_bigNeighFaces.start(), a_bigNeighFaces.end());
+    a_mergedFacesLo = a_loVoFFacesLo;
+    a_mergedFacesHi = a_hiVoFFacesHi;
   }
-
+/**
+   Data that needs to be filled:
+   vector<EBCMFace<XFACE> > m_xfaceslo;
+   vector<EBCMFace<YFACE> > m_yfaceslo;
+   vector<EBCMFace<ZFACE> > m_zfaceslo;
+   vector<EBCMFace<XFACE> > m_xfaceshi;
+   vector<EBCMFace<YFACE> > m_yfaceshi;
+   vector<EBCMFace<ZFACE> > m_zfaceshi;
+   vector<EBCMFace< BOUNDARY> > m_ebfaces;
+    
+    
+   bool                          m_regular;
+   //centroid location in global space (not relative to cell center)
+   RealVect m_centroid;
+   Real     m_kappa; //volume fraction
+   IndexedMoments<DIM, order> m_volmom;
+   IndexedMoments<DIM, order> m_ebfmom;
+   Point    m_pt; //just used as a unique identifier
+   vector<Point> m_cells; //all cells marked for this entry.   
+*/
   template<int order>
   inline int
   mergeTwoVolumessIntoThird(EBCMVolu<order>                      & a_merged,
                             const EBCMVolu<order>                & a_volOne,
                             const EBCMVolu<order>                & a_volTwo)
- {
+  {
+    a_merged.m_regular = false;
+    a_merged.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
+    a_merged.m_cells = a_volOne.m_cells;
+    a_merged.m_cells.insert(a_merged.m_cells.end(), a_volTwo.m_cells.begin(), a_volTwo.m_cells.end());
+    a_merged.m_volmom = a_volTwo.m_volMom;
     pr_pt diff = a_volOne.m_pt - a_volTwo.m_pt;
     mergeFaces<order, BOUNDARY>(a_merged.m_ebfaces, a_volOne.m_ebfaces, a_volTwo.m_ebaces);
     
