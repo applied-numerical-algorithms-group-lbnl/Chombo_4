@@ -56,14 +56,14 @@ namespace EBCM
   class EBCMVolu
   {
   public:
-    vector<EBCMFace<XFACE> > m_xfaceslo;
-    vector<EBCMFace<YFACE> > m_yfaceslo;
-    vector<EBCMFace<ZFACE> > m_zfaceslo;
-    vector<EBCMFace<XFACE> > m_xfaceshi;
-    vector<EBCMFace<YFACE> > m_yfaceshi;
-    vector<EBCMFace<ZFACE> > m_zfaceshi;
-    vector<IrregFace> > m_ebfaces;
-    
+    //
+    vector<EBCMFace<XFACE> >  m_xfaceslo;
+    vector<EBCMFace<YFACE> >  m_yfaceslo;
+    vector<EBCMFace<ZFACE> >  m_zfaceslo;
+    vector<EBCMFace<XFACE> >  m_xfaceshi;
+    vector<EBCMFace<YFACE> >  m_yfaceshi;
+    vector<EBCMFace<ZFACE> >  m_zfaceshi;
+    vector<IrregFace<order> > m_irregFaces;
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
@@ -71,7 +71,11 @@ namespace EBCM
     Real     m_kappa; //volume fraction
     IndexedMoments<DIM, order> m_volmom;
 
-    Point    m_pt; //just used as a unique identifier
+    //used as a unique identifier.  
+    //Also volume moments are centered around this cell center.  Hence dx.
+    Point    m_pt; 
+    Real     m_dx;
+
     vector<Point> m_cells; //all cells marked for this entry.   
 
     template <CENTERING cent>
@@ -97,6 +101,7 @@ namespace EBCM
     {
       m_regular = false;
       m_pt = a_vof.m_pt;
+      m_dx = a_dx;
       m_cells.resize(1, m_pt);
       auto graph   = (*(a_geoserv->getGraphs(   a_domain)))[a_dit];
       auto voludat = (*(a_geoserv->getVoluData( a_domain)))[a_dit];
@@ -126,11 +131,14 @@ namespace EBCM
       const auto& ebfdat = (*levebf_ptr)[a_dit];
 
       m_volmom = voldat(a_vof, 0);
-      m_irregface.m_ebfmom = ebfdat(ebf, 0);;
-      defineUnscaledMeasures(a_dx);
+      m_irregfaces.resize(1);
+      m_irregfaces[0].m_ebfmom = ebfdat(ebf, 0);
+      m_irregfaces[0].m_pt = m_pt;
+      
+      defineDerivedMeasures(a_dx);
     }
 
-    void defineUnscaledMeasures(Real a_dx)
+    void defineDerivedMeasures(Real a_dx)
     {
       Real cellVol = D_TERM(a_dx; *a_dx; *a_dx);
       m_kappa = m_volmom[0]/cellVol;
@@ -147,6 +155,7 @@ namespace EBCM
     {
       m_regular = true;
       m_pt = a_pt;
+      m_dx = a_dx;
       m_cells.resize(1, m_pt);
       m_ebfmom.setToZero();
       m_volmom.setRegular(a_dx);
@@ -176,7 +185,7 @@ namespace EBCM
         m_zfaceshi[0].setToRegular(m_pt, hipt, a_dx);
       }
 #endif      
-      defineUnscaledMeasures(a_dx);
+      defineDerivedMeasures(a_dx);
     }
   };
 
@@ -308,58 +317,139 @@ namespace EBCM
     a_mergedFacesLo = a_loVoFFacesLo;
     a_mergedFacesHi = a_hiVoFFacesHi;
   }
-/**
-   Data that needs to be filled:
-   vector<EBCMFace<XFACE> > m_xfaceslo;
-   vector<EBCMFace<YFACE> > m_yfaceslo;
-   vector<EBCMFace<ZFACE> > m_zfaceslo;
-   vector<EBCMFace<XFACE> > m_xfaceshi;
-   vector<EBCMFace<YFACE> > m_yfaceshi;
-   vector<EBCMFace<ZFACE> > m_zfaceshi;
-   vector<EBCMFace< BOUNDARY> > m_ebfaces;
+  
+  ///code that fills EBCMVolu objects
+  /**
+     Face objects contain moment informaiton
+     Data that needs to be filled:
+
+     vector<EBCMFace<XFACE> >  m_xfaceslo;
+     vector<EBCMFace<YFACE> >  m_yfaceslo;
+     vector<EBCMFace<ZFACE> >  m_zfaceslo;
+     vector<EBCMFace<XFACE> >  m_xfaceshi;
+     vector<EBCMFace<YFACE> >  m_yfaceshi;
+     vector<EBCMFace<ZFACE> >  m_zfaceshi;
+     vector<IrregFace<order> > m_irregFaces;
+
+     //only true if it started as a regular cell and never got merged
+     bool                          m_regular;
+
+     //centroid location in global space (not relative to cell center)
+     RealVect m_centroid;
+     Real     m_kappa; //volume fraction
+     IndexedMoments<DIM, order> m_volmom;
+
+    //used as a unique identifier.  
+     //Also volume moments are centered around this cell center.  Hence dx.
+     Point    m_pt; 
+     Real     m_dx
+     vector<Point> m_cells; //all cells marked for this entry.   
+  */
+
+
+  ///  get how far to shift moments when merging two volumes
+  template<int order>
+  inline void
+  getShifts(RealVect                             & a_shiftOne,
+            RealVect                             & a_shiftTwo,
+            const EBCMVolu<order>                & a_volMer,
+            const EBCMVolu<order>                & a_volOne,
+            const EBCMVolu<order>                & a_volTwo)
+  {
+    RealVect locMer, locOne, locTwo;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      locMer[idir] = a_volMer.m_dx*(a_volMer.m_pt[idir] + 0.5);
+      locOne[idir] = a_volOne.m_dx*(a_volOne.m_pt[idir] + 0.5);
+      locTwo[idir] = a_volTwo.m_dx*(a_volTwo.m_pt[idir] + 0.5);
+    }
+    a_shiftOne = locMer - locOne;
+    a_shiftTwo = locMer - locTwo;
+  }
+
+  ///
+  template<int order>
+  inline void
+  shiftAndMergeVolumeData(EBCMVolu<order>                      & a_volMer,
+                          const EBCMVolu<order>                & a_volOne,
+                          const EBCMVolu<order>                & a_volTwo)
+  {
+    RealVect shiftOne, shiftTwo;
     
+    getShifts(shiftOne, shiftTwo, a_volMer, a_volOne, a_volTwo)
+    auto momone = a_volOne.m_volmom;
+    auto momtwo = a_volTwo.m_volmom;
+    momone.shift(shiftOne);
+    momtwo.shift(shiftTwo);
+    a_volMer.m_volmom = momone + momtwo;
+  }
+  
+
+  ///
+  template<int order>
+  inline void
+  shiftAndMergeIrregData(EBCMVolu<order>                      & a_volMer,
+                         const EBCMVolu<order>                & a_volOne,
+                         const EBCMVolu<order>                & a_volTwo)
+  {
+    ///this does the same thing as mergeFaces (just slap the two vectors together into the third),
+    ///the moments are all wrong, though, and need to be shifted
+    a_volMer.m_irregFaces = a_volOne.m_irregFaces;
+    a_volMer.m_irregFaces.insert(a_volMer.m_irrregFaces.end(), a_volTwo.m_irregFaces.start(), a_volTwo.m_irregFaces.end());
+    RealVect shiftOne, shiftTwo;
     
-   bool                          m_regular;
-   //centroid location in global space (not relative to cell center)
-   RealVect m_centroid;
-   Real     m_kappa; //volume fraction
-   IndexedMoments<DIM, order> m_volmom;
-   IndexedMoments<DIM, order> m_ebfmom;
-   Point    m_pt; //just used as a unique identifier
-   vector<Point> m_cells; //all cells marked for this entry.   
-*/
+    getShifts(shiftOne, shiftTwo, a_volMer, a_volOne, a_volTwo)
+    auto momone = a_volOne.m_volmom;
+    auto momtwo = a_volTwo.m_volmom;
+    //remember that we put the volones in first
+    int volOneSize = a_volOne.size(); //usually one or zero
+    int curVol = 0;
+    for(auto it = a_volMer.m_irregFaces.begin();  it != a_volMer.m_irregFaces.end(); ++it)
+    {
+      auto& curmom = *it;
+      if(curVol < volOneSize)
+      {
+        curmom.shift(shiftOne);
+      }
+      else
+      {
+        curmom.shift(shiftTwo);
+      }
+    }
+  }
+  
   template<int order>
   inline int
-  mergeTwoVolumessIntoThird(EBCMVolu<order>                      & a_merged,
+  mergeTwoVolumessIntoThird(EBCMVolu<order>                      & a_volMer,
                             const EBCMVolu<order>                & a_volOne,
                             const EBCMVolu<order>                & a_volTwo)
   {
-    a_merged.m_regular = false;
-    a_merged.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
-    a_merged.m_cells = a_volOne.m_cells;
-    a_merged.m_cells.insert(a_merged.m_cells.end(), a_volTwo.m_cells.begin(), a_volTwo.m_cells.end());
-    a_merged.m_volmom = a_volTwo.m_volMom;
-    pr_pt diff = a_volOne.m_pt - a_volTwo.m_pt;
-    mergeFaces<order, BOUNDARY>(a_merged.m_ebfaces, a_volOne.m_ebfaces, a_volTwo.m_ebaces);
+    a_volMer.m_regular = false;
+    a_volMer.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
+    a_volMer.m_cells = a_volOne.m_cells;
+    a_volMer.m_cells.insert(a_volMer.m_cells.end(), a_volTwo.m_cells.begin(), a_volTwo.m_cells.end());
+    shiftAndMergeVolumeData(a_volMer, a_volOne, a_volTwo);
+    shiftAndMergeIrregData( a_volMer, a_volOne, a_volTwo);
     
+    pr_pt diff = a_volOne.m_pt - a_volTwo.m_pt;
     if(diff[0] == 0) 
     {
       //No difference in x.  The points are adjacent
-      mergeFaces<order, XFACE>(a_merged.m_xfaceslo, a_volOne.m_xfaceslo, a_volTwo.m_xfaceslo);
-      mergeFaces<order, XFACE>(a_merged.m_xfaceshi, a_volOne.m_xfaceshi, a_volTwo.m_xfaceshi);
+      mergeFaces<order, XFACE>(a_volMer.m_xfaceslo, a_volOne.m_xfaceslo, a_volTwo.m_xfaceslo);
+      mergeFaces<order, XFACE>(a_volMer.m_xfaceshi, a_volOne.m_xfaceshi, a_volTwo.m_xfaceshi);
     }
     if(diff[1] == 0) 
     {
       //No difference in x.  The points are adjacent
-      mergeFaces<order, YFACE>(a_merged.m_yfaceslo, a_volOne.m_yfaceslo, a_volTwo.m_yfaceslo);
-      mergeFaces<order, YFACE>(a_merged.m_yfaceshi, a_volOne.m_yfaceshi, a_volTwo.m_yfaceshi);
+      mergeFaces<order, YFACE>(a_volMer.m_yfaceslo, a_volOne.m_yfaceslo, a_volTwo.m_yfaceslo);
+      mergeFaces<order, YFACE>(a_volMer.m_yfaceshi, a_volOne.m_yfaceshi, a_volTwo.m_yfaceshi);
     }
 #if DIM==3
     if(diff[2] == 0) 
     {
       //No difference in x.  The points are adjacent
-      mergeFaces<order, ZFACE>(a_merged.m_zfaceslo, a_volOne.m_zfaceslo, a_volTwo.m_zfaceslo);
-      mergeFaces<order, ZFACE>(a_merged.m_zfaceshi, a_volOne.m_zfaceshi, a_volTwo.m_zfaceshi);
+      mergeFaces<order, ZFACE>(a_volMer.m_zfaceslo, a_volOne.m_zfaceslo, a_volTwo.m_zfaceslo);
+      mergeFaces<order, ZFACE>(a_volMer.m_zfaceshi, a_volOne.m_zfaceshi, a_volTwo.m_zfaceshi);
     }
 #endif
     if(std::abs(diff[0] == 1))
@@ -368,13 +458,13 @@ namespace EBCM
 
       if(volOneHigher)
       {
-        pickFaces<order, XFACE>(a_merged.m_xfaceslo, a_merged.m_xfaceshi,
+        pickFaces<order, XFACE>(a_volMer.m_xfaceslo, a_volMer.m_xfaceshi,
                                 a_volOne.m_xfaceslo, a_volOne.m_xfaceshi, 
                                 a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi);
       }
       else
       {
-        pickFaces<order, XFACE>(a_merged.m_xfaceslo, a_merged.m_xfaceshi,
+        pickFaces<order, XFACE>(a_volMer.m_xfaceslo, a_volMer.m_xfaceshi,
                                 a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi, 
                                 a_volOne.m_xfaceslo, a_volOne.m_xfaceshi);
       }
@@ -384,13 +474,13 @@ namespace EBCM
       bool volOneHigher = diff[1] == 1;
       if(volOneHigher)
       {
-        pickFaces<order, YFACE>(a_merged.m_yfaceslo, a_merged.m_yfaceshi,
+        pickFaces<order, YFACE>(a_volMer.m_yfaceslo, a_volMer.m_yfaceshi,
                                 a_volOne.m_yfaceslo, a_volOne.m_yfaceshi, 
                                 a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi);
       }
       else
       {
-        pickFaces<order, YFACE>(a_merged.m_yfaceslo, a_merged.m_yfaceshi,
+        pickFaces<order, YFACE>(a_volMer.m_yfaceslo, a_volMer.m_yfaceshi,
                                 a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi, 
                                 a_volOne.m_yfaceslo, a_volOne.m_yfaceshi);
       }
@@ -401,13 +491,13 @@ namespace EBCM
       bool volOneHigher = diff[2] == 1;
       if(volOneHigher)
       {
-        pickFaces<order, ZFACE>(a_merged.m_zfaceslo, a_merged.m_zfaceshi,
+        pickFaces<order, ZFACE>(a_volMer.m_zfaceslo, a_volMer.m_zfaceshi,
                                 a_volOne.m_zfaceslo, a_volOne.m_zfaceshi, 
                                 a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi);
       }
       else
       {
-        pickFaces<order, ZFACE>(a_merged.m_zfaceslo, a_merged.m_zfaceshi,
+        pickFaces<order, ZFACE>(a_volMer.m_zfaceslo, a_volMer.m_zfaceshi,
                                 a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi, 
                                 a_volOne.m_zfaceslo, a_volOne.m_zfaceshi);
       }
@@ -420,7 +510,7 @@ namespace EBCM
 
   template<int order>
   inline int
-  mergeWithBigNeighbor(EBCMVolu<order>                      & a_merged,
+  mergeWithBigNeighbor(EBCMVolu<order>                      & a_volMer,
                        EBCMVolu<order>                      & a_bigNeigh,
                        const EBCMVolu<order>                & a_start, 
                        shared_ptr< set<EBCMVolu<order> > >    a_remaining)
@@ -434,7 +524,7 @@ namespace EBCM
       }
     }
     {
-      int mergeval = mergeTwoVolumesIntoThird(a_merged, a_bigNeigh, a_start);
+      int mergeval = mergeTwoVolumesIntoThird(a_volMer, a_bigNeigh, a_start);
       if(!mergeval)
       {
         pout() << "Function mergeTwoVolumesIntoThird failed; returning error code " << mergeval << endl;
