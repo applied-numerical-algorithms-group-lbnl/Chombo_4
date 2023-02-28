@@ -14,7 +14,8 @@ namespace EBCM
 
   typedef Proto::EBGraph       pr_ebgrap;
   typedef Proto::EBData        pr_ebdata;
-  typedef Chombo::GeometryService
+  typedef Chombo::GeometryService ch_geoserv;
+  
   typedef Proto::pr_vof pr_vof;
 
   ///
@@ -253,7 +254,7 @@ namespace EBCM
         }
       } //end irregular
     } //end loop over box
-      return 0;
+    return 0;
   } //end function
 
 
@@ -308,11 +309,11 @@ namespace EBCM
   template<int order, CENTERING cent>
   inline void
   pickFaces(vector<EBCMFace<cent> >       &  a_mergedFacesLo,
-             vector<EBCMFace<cent> >       &  a_mergedFacesHi,
-             const vector<EBCMFace<cent> > &  a_hiVoFFacesLo,
-             const vector<EBCMFace<cent> > &  a_hiVoFFacesHi,
-             const vector<EBCMFace<cent> > &  a_loVoFFacesLo,
-             const vector<EBCMFace<cent> > &  a_loVoFFacesHi)
+            vector<EBCMFace<cent> >       &  a_mergedFacesHi,
+            const vector<EBCMFace<cent> > &  a_hiVoFFacesLo,
+            const vector<EBCMFace<cent> > &  a_hiVoFFacesHi,
+            const vector<EBCMFace<cent> > &  a_loVoFFacesLo,
+            const vector<EBCMFace<cent> > &  a_loVoFFacesHi)
   {
     a_mergedFacesLo = a_loVoFFacesLo;
     a_mergedFacesHi = a_hiVoFFacesHi;
@@ -339,7 +340,7 @@ namespace EBCM
      Real     m_kappa; //volume fraction
      IndexedMoments<DIM, order> m_volmom;
 
-    //used as a unique identifier.  
+     //used as a unique identifier.  
      //Also volume moments are centered around this cell center.  Hence dx.
      Point    m_pt; 
      Real     m_dx
@@ -377,7 +378,7 @@ namespace EBCM
     RealVect shiftOne, shiftTwo;
     
     getShifts(shiftOne, shiftTwo, a_volMer, a_volOne, a_volTwo)
-    auto momone = a_volOne.m_volmom;
+      auto momone = a_volOne.m_volmom;
     auto momtwo = a_volTwo.m_volmom;
     momone.shift(shiftOne);
     momtwo.shift(shiftTwo);
@@ -399,7 +400,7 @@ namespace EBCM
     RealVect shiftOne, shiftTwo;
     
     getShifts(shiftOne, shiftTwo, a_volMer, a_volOne, a_volTwo)
-    auto momone = a_volOne.m_volmom;
+      auto momone = a_volOne.m_volmom;
     auto momtwo = a_volTwo.m_volmom;
     //remember that we put the volones in first
     int volOneSize = a_volOne.size(); //usually one or zero
@@ -506,7 +507,7 @@ namespace EBCM
 #else    
 
     return 0;
- }
+  }
 
   template<int order>
   inline int
@@ -530,113 +531,113 @@ namespace EBCM
         pout() << "Function mergeTwoVolumesIntoThird failed; returning error code " << mergeval << endl;
         return mergeval;
       }
-  }
+    }
     
-  ///modify a fully irregular description to merge neighboring volumes to eliminate smaller cells
-  template <int order>
-  inline int
-  mergeVolumesOnBox(shared_ptr<set<EBCMVolu<order> > > & a_soluVolumes)
-  {
-    shared_ptr<set<EBCMVolu<order> > >     returnVolumes(new set<EBCMVolu<order> >());
-    shared_ptr<set<EBCMVolu<order> > >  volumesRemaining(new set<EBCMVolu<order> >());
-    *volumesRemaining = *a_soluVolumes;
-    for(auto volit = a_soluVolumes->begin(); volit != a_soluVolumes->end(); ++volit)
+    ///modify a fully irregular description to merge neighboring volumes to eliminate smaller cells
+    template <int order>
+      inline int
+      mergeVolumesOnBox(shared_ptr<set<EBCMVolu<order> > > & a_soluVolumes)
     {
-      const auto& volu = *it;
-      if(volumesRemaining->find(volu) != volumeRemaining.end())
+      shared_ptr<set<EBCMVolu<order> > >     returnVolumes(new set<EBCMVolu<order> >());
+      shared_ptr<set<EBCMVolu<order> > >  volumesRemaining(new set<EBCMVolu<order> >());
+      *volumesRemaining = *a_soluVolumes;
+      for(auto volit = a_soluVolumes->begin(); volit != a_soluVolumes->end(); ++volit)
       {
-        volumesRemaining->erase(volu);
-        if(volu.m_regular)
+        const auto& volu = *it;
+        if(volumesRemaining->find(volu) != volumeRemaining.end())
         {
-          returnVolumes->insert(volu);
-        }
-        else
-        {
-          EBCMVolu<order> merged;
-          EBCMVolu<order> bigNeigh;
-          int neival = mergeWithBigNeighbor(merged, bigNeigh, volu,  volumesRemaining);
-          if(!neival)
+          volumesRemaining->erase(volu);
+          if(volu.m_regular)
           {
-            volumesRemaining.erase(bigNeigh);
-            returnVolumes.insert(merged);
+            returnVolumes->insert(volu);
           }
           else
           {
-            pout() << "mergeVolumes: mergeWithBigNeighbor failed with error code " << retval << endl;
-            return neival;
+            EBCMVolu<order> merged;
+            EBCMVolu<order> bigNeigh;
+            int neival = mergeWithBigNeighbor(merged, bigNeigh, volu,  volumesRemaining);
+            if(!neival)
+            {
+              volumesRemaining.erase(bigNeigh);
+              returnVolumes.insert(merged);
+            }
+            else
+            {
+              pout() << "mergeVolumes: mergeWithBigNeighbor failed with error code " << retval << endl;
+              return neival;
+            }
           }
         }
       }
-    }
 
-    //replace input argument with new set.
-    *a_soluVolumes = *returnVolumes;
+      //replace input argument with new set.
+      *a_soluVolumes = *returnVolumes;
     
-    //check to see if we have been successful
-    bool stillHaveSmallVolumes = false;
-    for(auto volit = a_soluVolumes.begin(); volit != a_soluVolumes.end(); ++volit)
-    {
-      const auto volu = *it;
-      if(volu.kappa < 1.0)
+      //check to see if we have been successful
+      bool stillHaveSmallVolumes = false;
+      for(auto volit = a_soluVolumes.begin(); volit != a_soluVolumes.end(); ++volit)
       {
-        stillHaveSmallVolumes = true;
+        const auto volu = *it;
+        if(volu.kappa < 1.0)
+        {
+          stillHaveSmallVolumes = true;
+        }
+      }
+      if(stillHaveSmallVolumes)
+      {
+        pout() << "mergeVolumesOnBox:  Leaving with a small volume still there; returning -1." << endl;
+        return -1;
       }
     }
-    if(stillHaveSmallVolumes)
+    ///
+    /**
+       Takes fully unstructured EB data and puts it into EBCM volumes that 
+       Blob structures.   
+       The set that results is a fully unstructured (and merged, if you ask for it) graph.
+       return value = 0 means no errors.
+    */
+    inline  int
+      makeTheBlobs(shared_ptr<set<EBCMVolu > >           & a_soluVolumes,
+                   shared_ptr<set<pr_vof   > >           & a_ebVolumes, 
+                   const EBGraph                         & a_graph,
+                   const EBData                          & a_data,
+                   const double                          & a_dx,
+                   bool                                    a_mergeSmallCells)
     {
-      pout() << "mergeVolumesOnBox:  Leaving with a small volume still there; returning -1." << endl;
-      return -1;
-    }
-  }
-  ///
-  /**
-     Takes fully unstructured EB data and puts it into EBCM volumes that 
-     Blob structures.   
-     The set that results is a fully unstructured (and merged, if you ask for it) graph.
-     return value = 0 means no errors.
-  */
-  inline  int
-  makeTheBlobs(shared_ptr<set<EBCMVolu > >           & a_soluVolumes,
-               shared_ptr<set<pr_vof   > >           & a_ebVolumes, 
-               const EBGraph                         & a_graph,
-               const EBData                          & a_data,
-               const double                          & a_dx,
-               bool                                    a_mergeSmallCells)
-  {
-    a_soluVolumes = shared_ptr< set< EBCMVolu > >(new set<EBCMVolu>());
-    for(auto vof = a_ebVolumes.begin(); vof != a_ebVolumes.end(); ++vof)
-    {
-      EBCMVolu volume = createEBCMVolume(*vof, a_graph, a_data, a_dx);
-      a_soluVolumes.insert(volume);
-    }
-    
-    if(a_mergeSmallCells)
-    {
-      //return != 0 means we still have small volumes left
-      int errval = mergeVolumesOnBox(a_soluVolumes);
-      if(errval != 0)
+      a_soluVolumes = shared_ptr< set< EBCMVolu > >(new set<EBCMVolu>());
+      for(auto vof = a_ebVolumes.begin(); vof != a_ebVolumes.end(); ++vof)
       {
-        MayDay::Error("maketheblobs: mergeVolumes on box says we have a small vof somewhere");
-        return errval;
+        EBCMVolu volume = createEBCMVolume(*vof, a_graph, a_data, a_dx);
+        a_soluVolumes.insert(volume);
       }
+    
+      if(a_mergeSmallCells)
+      {
+        //return != 0 means we still have small volumes left
+        int errval = mergeVolumesOnBox(a_soluVolumes);
+        if(errval != 0)
+        {
+          MayDay::Error("maketheblobs: mergeVolumes on box says we have a small vof somewhere");
+          return errval;
+        }
+      }
+      return 0;
     }
-    return 0;
-  }
 
-  ///Translate irregular graph  and data into the sparse  representation that we actually store.
-  /**
-     Basically, we just do not add regular volumes and set the integer in the map to the correct thing.
-     a_volumes: irregular volumes   we do not store unmerged regular cell volumes              
-     a_map: -1= regular -2 covered, >= 0 is the index into m_volumes.  
-     Merged cells both hold the same vector index so iterating over this can double count.
-     a_soluVolumes: full irregular representation (discard after use).
+    ///Translate irregular graph  and data into the sparse  representation that we actually store.
+    /**
+       Basically, we just do not add regular volumes and set the integer in the map to the correct thing.
+       a_volumes: irregular volumes   we do not store unmerged regular cell volumes              
+       a_map: -1= regular -2 covered, >= 0 is the index into m_volumes.  
+       Merged cells both hold the same vector index so iterating over this can double count.
+       a_soluVolumes: full irregular representation (discard after use).
      
-  **/
-  inline int
-  sparsifyTheBlobs(vector<EBCMVolu>                 & a_volumes,
-                   HostBoxData<int  , 1>            & a_map,
-                   std::set<EBCMVolu>               & a_soluVolumes,
-                   const pr_ebgrap                  & a_graph))
+    **/
+    inline int
+      sparsifyTheBlobs(vector<EBCMVolu>                 & a_volumes,
+                       HostBoxData<int  , 1>            & a_map,
+                       std::set<EBCMVolu>               & a_soluVolumes,
+                       const pr_ebgrap                  & a_graph))
   {
     a_volumes.resize(0);
     a_map.define(a_graph.box());
@@ -665,9 +666,9 @@ namespace EBCM
 ///Class to make merged sparse embedded boundary description
 /**
  */
-template< int order>
-class EBCMGraph
-{
+  template< int order>
+  class EBCMGraph
+  {
   public:
 
     EBCMGraph(shared_ptr<pr_ebgrap>  a_graph,
@@ -676,26 +677,50 @@ class EBCMGraph
               bool                   a_mergeSmallCells) const:
       m_graph(a_graph), m_data(a_data), m_dx(a_dx)
     {
+      m_dx         = a_dx;
+      m_volumes.resize(0);
+      
+      //keeping the allregular
+      if(a_graph->isAllRegular())
+      {
+        m_allRegular  = true;
+        m_allCovered  = false;
+      }
+      else if(a_graph->isAllCovered())
+      {
+        m_allRegular = false;
+        m_allCovered = true;
+        
+      }
+      else
+      {
+        m_allRegular = false;
+        m_allCovered = false;
+        shared_ptr< set< pr_vof > >   allEBInd;
+        shared_ptr< set< EBCMVolu > > allBlobs;
 
-      shared_ptr< set< pr_vof > >   allEBInd;
-      shared_ptr< set< EBCMVolu > > allBlobs;
+        ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
+        //(those distinctions will change here because of merger making regulars into irregulars)
+        unpackEBDescription(allEBInd, a_graph);
+        //put all moment info into a (still fully irregular) a set of volumes
+        makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
 
-      ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
-      //(those distinctions will change here because of merger making regulars into irregulars)
-      unpackEBDescription(allEBInd, a_graph);
-      //put all moment info into a (still fully irregular) a set of volumes
-      makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
+        //translate irregular graph and data into sparse  representation that we actually store
+        sparsifyTheBlobs(m_volumes, m_map, allBlobs, a_graph);
 
-      //translate irregular graph and data into sparse  representation that we actually store
-      sparsifyTheBlobs(m_volumes, m_map, allBlobs, a_graph)
-      return retval;
-                         
+      }
     }
-  private:
-    ///input EB stuff will be necessary if we want to go between descriptions
+    
+
+    ///
+    /**
+       I am not bothering with fancy accessor functions.   Membwer data is left in the clear.  Use it wisely.
+       Remember the map and the vector are not defined if allRegular or allCovered are true.   This should save a 
+       ton of memory where there is not much EB.
+    **/
+    bool m_allRegular;
+    bool m_allCovered;
     //need  dx because we compute regular moment info on the fly.
-    shared_ptr<pr_ebgrap>  m_graph;
-    shared_ptr<pr_ebdata>  m_data;
     Real                   m_dx;
 
     //irregular volumes   we do not store unmerged regular cell volumes              
@@ -704,11 +729,25 @@ class EBCMGraph
     HostBoxData<int, 1>   m_map;
 
     double m_dx;
-    Box
+ 
     //weak construction is weak
     EBCMGraph();
   };
-}
+
+
+  template <int order>
+  class EBCMMetaDataLevel
+  {
+  public:
+    typedef Chombo::Box ch_box;
+    typedef CH4_Data_Choreography::DistributedData<EBCMMGraph<order> > cmgraph_distrib_t;
+    EBCMMetaDataLevel(const ch_geoserv& a_geoserv, const ch_box& a_domain)
+    {
+    }
+
+    cmgraph_distrib_t m_graphs;
+  }; //end class EBCMLevel
+} //end namespace EBCM
 
 
 #endif
