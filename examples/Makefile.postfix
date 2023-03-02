@@ -5,7 +5,9 @@ CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools
 CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/AMRTools
 CHOMBO_CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
 CHOMBO_CPPFLAGS += -I../../common
-CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBProto 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBCM
 
 
 #need to use depxx because petsc links with g++
