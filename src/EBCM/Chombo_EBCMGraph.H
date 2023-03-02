@@ -13,7 +13,6 @@ namespace EBCM
   using std::shared_ptr;
 
   typedef Proto::EBGraph       pr_ebgrap;
-  typedef Proto::EBData        pr_ebdata;
   typedef Chombo::GeometryService ch_geoserv;
   
   typedef Proto::pr_vof pr_vof;
@@ -599,15 +598,16 @@ namespace EBCM
     inline  int
       makeTheBlobs(shared_ptr<set<EBCMVolu > >           & a_soluVolumes,
                    shared_ptr<set<pr_vof   > >           & a_ebVolumes, 
-                   const EBGraph                         & a_graph,
-                   const EBData                          & a_data,
+                   const shared_ptr<ch_geoserv>          & a_geoserv,
+                   const Box                             & a_domain,
+                   const ch_dit                          & a_dit,
                    const double                          & a_dx,
                    bool                                    a_mergeSmallCells)
     {
       a_soluVolumes = shared_ptr< set< EBCMVolu > >(new set<EBCMVolu>());
       for(auto vof = a_ebVolumes.begin(); vof != a_ebVolumes.end(); ++vof)
       {
-        EBCMVolu volume = createEBCMVolume(*vof, a_graph, a_data, a_dx);
+        EBCMVolu volume = createEBCMVolume(*vof, a_geoserv, a_domain, a_dit, a_dx);
         a_soluVolumes.insert(volume);
       }
     
@@ -663,21 +663,29 @@ namespace EBCM
   }//end function
 
 
-///Class to make merged sparse embedded boundary description
-/**
- */
+  ///Class to make merged sparse embedded boundary description
+  /**
+   */
   template< int order>
   class EBCMGraph
   {
   public:
-
-    EBCMGraph(shared_ptr<pr_ebgrap>  a_graph,
-              shared_ptr<pr_ebdata>  a_data,
-              Real                   a_dx,
-              bool                   a_mergeSmallCells) const:
-      m_graph(a_graph), m_data(a_data), m_dx(a_dx)
+    //strong construction would be better but way less convenient
+    EBCMGraph()
     {
+      m_defined = false;
+    }
+
+    inline void 
+    define(const shared_ptr<ch_geoserv>          & a_geoserv,
+           const Box                             & a_domain,
+           const ch_dit                          & a_dit,
+           const double                          & a_dx,
+           bool                   a_mergeSmallCells) 
+    {
+      m_defined = true;
       m_dx         = a_dx;
+      m_domain     = a_domain;
       m_volumes.resize(0);
       
       //keeping the allregular
@@ -701,9 +709,10 @@ namespace EBCM
 
         ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
         //(those distinctions will change here because of merger making regulars into irregulars)
-        unpackEBDescription(allEBInd, a_graph);
+        auto graphs = a_geoserv->getGraphs(a_domain);
+        unpackEBDescription(allEBInd, (*graphs)[a_dit]);
         //put all moment info into a (still fully irregular) a set of volumes
-        makeTheBlobs(allBlobs,  allEBInd, a_graph, a_data, a_dx, a_mergeSmallCells);
+        makeTheBlobs(allBlobs,  allEBInd, a_geoserv, a_domain, a_dit, a_dx, a_mergeSmallCells);
 
         //translate irregular graph and data into sparse  representation that we actually store
         sparsifyTheBlobs(m_volumes, m_map, allBlobs, a_graph);
@@ -711,10 +720,15 @@ namespace EBCM
       }
     }
     
+    //whether define function has been called on this object
+    /**
+       If this == false, everything else is not defined.
+     **/
+    bool m_defined;
 
     ///
     /**
-       I am not bothering with fancy accessor functions.   Membwer data is left in the clear.  Use it wisely.
+       I am not bothering with fancy accessor functions.   Member data is left in the clear.  Use it wisely.
        Remember the map and the vector are not defined if allRegular or allCovered are true.   This should save a 
        ton of memory where there is not much EB.
     **/
@@ -722,30 +736,52 @@ namespace EBCM
     bool m_allCovered;
     //need  dx because we compute regular moment info on the fly.
     Real                   m_dx;
-
-    //irregular volumes   we do not store unmerged regular cell volumes              
+    ch_box                 m_domain;
+    /**
+       Irregular volume information.   We do not store unmerged regular cell volumes.
+       The stuff below is not defined if m_allRegular or m_allCovered are true
+    **/
     vector<EBCMVolu> m_volumes;
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     HostBoxData<int, 1>   m_map;
 
     double m_dx;
  
-    //weak construction is weak
-    EBCMGraph();
   };
-
 
   template <int order>
   class EBCMMetaDataLevel
   {
   public:
-    typedef Chombo::Box ch_box;
+    typedef Chombo::Box                         ch_box;
+    typedef Chombo::DisjointBoxLayout           ch_dbl;
+    typedef Chombo::LevelGeometryService<order> ch_levelgeo;
+    typedef Chombo::NullConstructorDataFactory<EBCMGraph<order> >      cmgraph_factory_t;    
     typedef CH4_Data_Choreography::DistributedData<EBCMMGraph<order> > cmgraph_distrib_t;
-    EBCMMetaDataLevel(const ch_geoserv& a_geoserv, const ch_box& a_domain)
+    
+    EBCMMetaDataLevel(const shared_ptr<ch_geoserv>& a_geoserv,
+                      const ch_box                & a_domain,
+                      const Realb                  & a_dx,
+                      bool                          a_mergeSmallCells)
     {
+      shared_ptr<ch_levelgeo> eb_description = a_geoserv[a_domain];
+      m_grids  = eb_description.getDBL();
+      m_domain = a_domain;
+      m_dx     = a_dx;
+      auto ghost = eb_description.ghostVect();
+      m_graphs   = shared_ptr<cmgraph_distrib_t >
+        ( new cmgraph_distrib_t(m_grids,  ghost, cmgraph_factory_t()));
+      auto dit = m_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        m_graphs[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx, a_mergeSmallCells);
+      }
     }
 
-    cmgraph_distrib_t m_graphs;
+    shared_ptr<cmgraph_distrib_t>  m_graphs;
+    ch_dbl                         m_grids;
+    ch_box                         m_domain;
+    Real                           m_dx;
   }; //end class EBCMLevel
 } //end namespace EBCM
 
