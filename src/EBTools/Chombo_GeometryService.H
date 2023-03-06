@@ -61,7 +61,7 @@ public:
   */
   LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
                        const RealVect               &      a_origin,
-                       const double                 &      a_dx,
+                      const double                 &      a_dx,
                        const Box                    &      a_domain,
                        const DisjointBoxLayout      &      a_grids,
                        const int                    &      a_ghost,
@@ -246,6 +246,10 @@ public:
     }
   }
 
+  IntVect ghostVect() const
+  {
+    return m_geomgrow;
+  }
 protected:
   //for coarsening volume moment data
   template <CENTERING cent>
