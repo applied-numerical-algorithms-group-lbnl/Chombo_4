@@ -44,7 +44,14 @@ makeMergedGeometry()
 
   pout() << "nx"        << " = " <<  nx         << endl;
   pout() << "max_grid"  << " = " <<  maxGrid    << endl;
-  pout() << "coveredval"<< " = " <<  coveredval << endl;         
+  if(mergeSmallCells)
+  {
+    pout() << "Cell merging is turned ON."  << endl;
+  }
+  else
+  {
+    pout() << "Cell merging is turned OFF."  << endl;
+  }
   
 
   IntVect domLo = IntVect::Zero;
@@ -61,13 +68,15 @@ makeMergedGeometry()
   pout() << "defining geometry in EB land" << endl;
   Real dx = 1.0/(Real(nx));
   RealVect origin = RealVect::Zero();
-  typedef Chombo::GeometryService<  HOEB_MAX_ORDER> > ch_geoserv;
-  typedef  EBCM:::EBCMMetaDataLevel<HOEB_MAX_ORDER> > ebcm_meta;
+  typedef Chombo4::GeometryService<  HOEB_MAX_ORDER >   ch_geoserv;
+  typedef    EBCM::MetaDataLevel<    HOEB_MAX_ORDER >   ebcm_meta;
   shared_ptr< ch_geoserv > geoserv
     (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
 
-  shared_ptr< ebcm_meta  > ebcm_meta
-    (new ebcm_meta(geoserv, domain.domainBox(), dx));
+  
+
+  shared_ptr< ebcm_meta  >
+    metaDataPtrPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, mergeSmallCells));
 
   return 0;
 }
@@ -102,7 +111,7 @@ int main(int a_argc, char* a_argv[])
 
     //the important stuff
     int retval = makeMergedGeometry();
-    pout() << "make mergedGeometry returned "  << retval; << endl;
+    pout() << "make mergedGeometry returned "  << retval  << endl;
 
   }
 
