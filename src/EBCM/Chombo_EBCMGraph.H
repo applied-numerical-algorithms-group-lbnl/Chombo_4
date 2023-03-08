@@ -671,14 +671,14 @@ namespace EBCM
      
     **/
     static inline int
-    sparsifyTheBlobs(vector<EBCMVolu<order> >                  & a_volumes,
-                     HostBoxData<int  , 1>                     & a_map,
+    sparsifyTheBlobs(shared_ptr<vector<EBCMVolu<order> > >     & a_volumes,
+                     shared_ptr<HostBoxData<int  , 1>  >       & a_map,
                      shared_ptr< set<EBCMVolu<order> > >       & a_soluVolumes,
                      const pr_ebgrap                           & a_graph)
     {
-      a_volumes.resize(0);
-      a_map.define(a_graph.box());
-      a_map.setVal(-2);
+      a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order>());
+      a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>());
+      a_map->setVal(-2);
     
       //define the map and set it all to covered.   the input set contains only regular and irregular
       for(auto it = a_soluVolumes->begin(); it != a_soluVolumes->end(); ++it)
@@ -686,14 +686,15 @@ namespace EBCM
         const auto& volu = *it;
         if(volu.m_regular)
         {
-          a_map(volu.m_pt, 0) = -1;
+          (*a_map)(volu.m_pt, 0) = -1;
         }
         else
         {
           for(int ipt = 0; ipt < volu.m_cells.size(); ipt++)
           {
-            a_map(volu.m_cells[ipt], 0) = a_volumes.size();  //set all merged cells to the vector value.
-            a_volumes.push_back(volu);
+            //set all merged cells to the vector value.
+            (*a_map)(volu.m_cells[ipt], 0) = a_volumes->size();  
+            a_volumes0->push_back(volu);
           } //end loop over cell merger
         } //end if irregular
       }
@@ -776,9 +777,19 @@ namespace EBCM
        Irregular volume information.   We do not store unmerged regular cell volumes.
        The stuff below is not defined if m_allRegular or m_allCovered are true
     **/
-    vector<EBCMVolu<order> > m_volumes;
+    shared_ptr< vector<EBCMVolu<order> > > m_volumes;
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
-    HostBoxData<int, 1>   m_map;
+    shared_ptr< HostBoxData<int, 1> >      m_map;
+
+
+    bool isRegular(ch_pt a_pt) const
+    {
+      return (m_map(a_pt, 0) == -1);
+    }
+    bool isCovered(ch_pt a_pt) const
+    {
+      return (m_map(a_pt, 0) == -2);
+    }
 
  
   }; //end ebcmgraph class
@@ -818,6 +829,78 @@ namespace EBCM
     ch_box                         m_domain;
     Real                           m_dx;
   }; //end class EBCMMetaDataLevel
+
+
+  ///way to get through the volumes on a graph
+  template <int order>
+  class SubVolumeIterator
+  {
+  public:
+    SubVolumeIter(const EBCMGraph<order> & a_graph, const pr_box& a_region)
+    {
+      //I cannot just iterate through box points or I double count if there is merging.
+      //First we get the  regular volumes that fit the region; we then check the irregular volumes.
+      for (auto it = a_region.begin(); it != a_region.end(); ++it)
+      {
+        if(a_graph.isRegular(*it))
+        {
+          m_regularPoints.push_back(*it);
+        }
+      }
+      for(int ivec = 0; ivec < a_graph.m_volumes.size(); ivec++)
+      {
+        const auto& volu = a_graph.m_volumes[ivec];
+        if(a_region.contains(volu.m_pt))
+        {
+          m_irregularIndicies.push_back(ivec);
+        }
+      }
+      m_current = 0;
+      m_totalSize = m_irregIndicies.size() + m_regularPoints.size();
+      m_dx    = a_graph.m_dx;
+      m_graph = a_graph;
+    }
+
+    void begin()
+    {
+      m_current = 0;
+    }
+    bool ok() const
+    {
+      return (m_current < m_totalSize);
+    }
+
+    EBCMVolu<order> operator*()
+    {
+      EBCMVolu<order> retval;
+      if(m_current < m_regularPoints.size())
+      {
+        retval.defineAsRegular(m_regularPoints[m_current], m_dx);
+        reurn retval;
+      }
+      else if(m_current < m_totalSize())
+      {
+        unsigned int irregInd = m_current - m_regularPoints.size();
+        unsigned int graphind = m_irregIndicies[irregInd];
+        return (*m_graph.m_volumes)[graphind];
+      }
+      else
+      {
+        ch_mayday("bogus dude");
+      }
+      //should never get here but this will shut up compilers
+      return retval;
+    }
+    
+  private:
+    SubVolumeIterator();
+    
+    EBCMGraph    m_graph;
+    unsigned int m_current, m_totalSize;
+    vector<ch_pt>         m_regularPoints;
+    vector<unsigned int>  m_irregIndicies;
+    double                m_dx;
+  }
 } //end namespace EBCM
 
 
