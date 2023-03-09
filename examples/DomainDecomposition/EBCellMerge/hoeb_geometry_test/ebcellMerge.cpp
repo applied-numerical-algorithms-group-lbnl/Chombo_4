@@ -27,13 +27,15 @@
 typedef Chombo4::GeometryService<      HOEB_MAX_ORDER >   ch_geoserv;
 typedef    EBCM::MetaDataLevel<        HOEB_MAX_ORDER >   ebcm_meta;
 typedef    EBCM::SubVolumeIterator<    HOEB_MAX_ORDER >   ebcm_subvol_it;
-
+typedef Chombo4::DisjointBoxLayout ch_dbl;
+typedef Chombo4::ProblemDomain ch_probdom;
+typedef Chombo4::DataIterator  ch_dit;
 /****/
 void
 makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
-                      DisjointBoxLayout         & a_grids,
+                      ch_dbl                    & a_grids,
                       double                    & a_dx,
-                      ProblemDomain             & a_domain)
+                      ch_probdom                & a_domain)
 {
   using Chombo4::pout;
 
@@ -65,7 +67,7 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
 
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  vector<Chombo4::DisjointBoxLayout> vecgrids;
+  vector<ch_dbl> vecgrids;
   pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
@@ -83,7 +85,7 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
     metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, mergeSmallCells));
 
   //smuggle stuff out to make this a little bit useful.
-  a_ebcm   = ebcm_meta;
+  a_ebcm   = metaDataPtr;
   a_grids  = vecgrids[0];
   a_dx     = dx;
   a_domain = domain;
@@ -92,15 +94,17 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
    Print out max and min volume fraction in a meta.
 **/
 
-void checkKappa(double                  & a_maxKappa,
-                double                  & a_minKappa,
-                shared_ptr< ebcm_meta  >  a_meta,
-                const DisjointBoxLayout & a_grids)
+void
+checkKappa(double                  & a_maxKappa,
+           double                  & a_minKappa,
+           shared_ptr< ebcm_meta  >  a_meta,
+           const ch_dbl            & a_grids)
 {
-  using Chombo4::pout();
+
   double maxKappa = -1.0e10;
   double minKappa =  1.0e10;
-  DataIterator dit = a_grids.dataIterator();
+  using Chombo4::pout;
+  ch_dit dit = a_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {
     const auto& valid = a_grids[dit[ibox]];
@@ -111,7 +115,7 @@ void checkKappa(double                  & a_maxKappa,
     //Yes the syntax here is weird and old.  it was easier and I am just one guy.
     for(iterator.begin(); iterator.ok(); ++iterator)
     {
-      EBCMVolu<HOEB_MAX_ORDER> volu = *iterator;
+      auto volu = *iterator;
       maxKappaBox = std::max(volu.m_kappa, maxKappaBox);
       minKappaBox = std::min(volu.m_kappa, minKappaBox);
     }
@@ -155,10 +159,10 @@ int main(int a_argc, char* a_argv[])
     //the important stuff
     //see if we can make a geometry
     shared_ptr< ebcm_meta  > ebcm;
-    DisjointBoxLayout        grids;
+    ch_dbl                   grids;
     double                   dx;
-    ProblemDomain            domain;
-    shared_ptr< ebcm_meta  > ebcm =  makeMergedGeometry(ebcm, grids, dx, domain);
+    ch_probdom               domain;
+    makeMergedGeometry(ebcm, grids, dx, domain);
 
     Real maxKapp, minKapp;
     //this tries out iteration and checks kappa
