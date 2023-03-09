@@ -24,10 +24,16 @@
 #include "Hoeb_LAPACKMatrix.H"
 #include <iomanip>
 
+typedef Chombo4::GeometryService<      HOEB_MAX_ORDER >   ch_geoserv;
+typedef    EBCM::MetaDataLevel<        HOEB_MAX_ORDER >   ebcm_meta;
+typedef    EBCM::SubVolumeIterator<    HOEB_MAX_ORDER >   ebcm_subvol_it;
 
 /****/
-unsigned int
-makeMergedGeometry()
+void
+makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
+                      DisjointBoxLayout         & a_grids,
+                      double                    & a_dx,
+                      ProblemDomain             & a_domain)
 {
   using Chombo4::pout;
 
@@ -68,19 +74,56 @@ makeMergedGeometry()
   pout() << "defining geometry in EB land" << endl;
   Real dx = 1.0/(Real(nx));
   RealVect origin = RealVect::Zero();
-  typedef Chombo4::GeometryService<  HOEB_MAX_ORDER >   ch_geoserv;
-  typedef    EBCM::MetaDataLevel<    HOEB_MAX_ORDER >   ebcm_meta;
   shared_ptr< ch_geoserv > geoserv
     (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
 
   
 
   shared_ptr< ebcm_meta  >
-    metaDataPtrPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, mergeSmallCells));
+    metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, mergeSmallCells));
 
-  return 0;
+  //smuggle stuff out to make this a little bit useful.
+  a_ebcm   = ebcm_meta;
+  a_grids  = vecgrids[0];
+  a_dx     = dx;
+  a_domain = domain;
 }
-  
+/**
+   Print out max and min volume fraction in a meta.
+**/
+
+void checkKappa(double                  & a_maxKappa,
+                double                  & a_minKappa,
+                shared_ptr< ebcm_meta  >  a_meta,
+                const DisjointBoxLayout & a_grids)
+{
+  using Chombo4::pout();
+  double maxKappa = -1.0e10;
+  double minKappa =  1.0e10;
+  DataIterator dit = a_grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    const auto& valid = a_grids[dit[ibox]];
+    const auto& graph = (*(a_meta->m_graphs))[dit[ibox]];
+    double maxKappaBox = -1.0e10;
+    double minKappaBox =  1.0e10;
+    ebcm_subvol_it iterator(graph, valid);
+    //Yes the syntax here is weird and old.  it was easier and I am just one guy.
+    for(iterator.begin(); iterator.ok(); ++iterator)
+    {
+      EBCMVolu<HOEB_MAX_ORDER> volu = *iterator;
+      maxKappaBox = std::max(volu.m_kappa, maxKappaBox);
+      minKappaBox = std::min(volu.m_kappa, minKappaBox);
+    }
+    pout() << "maximum (non covered) volume fraction for grids[" << ibox << "] = " << maxKappaBox << endl;
+    pout() << "minimum (non covered) volume fraction for grids[" << ibox << "] = " << minKappaBox << endl;
+
+    maxKappa = std::max(maxKappaBox, maxKappa);
+    minKappa = std::max(minKappaBox, minKappa);
+  }
+  pout() << "maximum volume fraction overall = " << maxKappa << endl;
+  pout() << "minimum volume fraction overall = " << minKappa << endl;
+}
 /****/
 
 int main(int a_argc, char* a_argv[])
@@ -110,9 +153,16 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
 
     //the important stuff
-    int retval = makeMergedGeometry();
-    pout() << "make mergedGeometry returned "  << retval  << endl;
+    //see if we can make a geometry
+    shared_ptr< ebcm_meta  > ebcm;
+    DisjointBoxLayout        grids;
+    double                   dx;
+    ProblemDomain            domain;
+    shared_ptr< ebcm_meta  > ebcm =  makeMergedGeometry(ebcm, grids, dx, domain);
 
+    Real maxKapp, minKapp;
+    //this tries out iteration and checks kappa
+    checkKappa(maxKapp, minKapp, ebcm, grids);
   }
 
   //the stuff after the important stuff

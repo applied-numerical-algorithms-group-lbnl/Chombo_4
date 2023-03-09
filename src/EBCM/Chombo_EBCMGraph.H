@@ -782,11 +782,11 @@ namespace EBCM
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
 
-    bool isRegular(ch_pt a_pt) const
+    bool isRegular(pr_pt a_pt) const
     {
       return (m_map(a_pt, 0) == -1);
     }
-    bool isCovered(ch_pt a_pt) const
+    bool isCovered(pr_pt a_pt) const
     {
       return (m_map(a_pt, 0) == -2);
     }
@@ -890,6 +890,12 @@ namespace EBCM
       }
       //should never get here but this will shut up compilers
       return retval;
+
+    }
+
+    void operator++()
+    {
+      m_current++;
     }
     
   private:
