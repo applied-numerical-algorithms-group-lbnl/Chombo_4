@@ -123,7 +123,7 @@ checkKappa(double                  & a_maxKappa,
     pout() << "minimum (non covered) volume fraction for grids[" << ibox << "] = " << minKappaBox << endl;
 
     maxKappa = std::max(maxKappaBox, maxKappa);
-    minKappa = std::max(minKappaBox, minKappa);
+    minKappa = std::min(minKappaBox, minKappa);
   }
   pout() << "maximum volume fraction overall = " << maxKappa << endl;
   pout() << "minimum volume fraction overall = " << minKappa << endl;

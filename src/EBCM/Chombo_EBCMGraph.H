@@ -765,9 +765,10 @@ namespace EBCM
 
     ///
     /**
-       I am not bothering with fancy accessor functions.   Member data is left in the clear.  Use it wisely.
-       Remember the map and the vector are not defined if allRegular or allCovered are true.   This should save a 
-       ton of memory where there is not much EB.
+       I am not bothering with fancy accessor functions.   Member data is left in the clear.  
+       Use it wisely.
+       Remember the map and the vector are not defined if allRegular or allCovered are true.   
+       This should save a ton of memory where there is not much EB.
     **/
     bool m_allRegular;
     bool m_allCovered;
@@ -782,16 +783,50 @@ namespace EBCM
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
-
+    ///
     bool isRegular(pr_pt a_pt) const
     {
-      return ((*m_map)(a_pt, 0) == -1);
-    }
-    bool isCovered(pr_pt a_pt) const
-    {
-      return ((*m_map)(a_pt, 0) == -2);
+      bool retval;
+      if(m_allRegular)
+      {
+        retval = true;
+      }
+      else if (m_allCovered)
+      {
+        retval = false;
+      }
+      else
+      {
+        
+        retval = ((*m_map)(a_pt, 0) == -1);
+      }
+      return retval;
     }
 
+    ///
+    bool isCovered(pr_pt a_pt) const
+    {
+      bool retval;
+      if(m_allRegular)
+      {
+        retval = false;
+      }
+      else if(m_allCovered)
+      {
+        retval = true;
+      }
+      else
+      {
+        retval = ((*m_map)(a_pt, 0) == -2);
+      }
+      return  retval;
+    }
+
+    bool hasIrregular() const
+    {
+      bool     regularOrCovered = m_allRegular  || m_allCovered;
+      return (!regularOrCovered);
+    }
  
   }; //end ebcmgraph class
 
@@ -844,6 +879,8 @@ namespace EBCM
   public:
     SubVolumeIterator(const EBCMGraph<order> & a_graph, const ch_box& a_region)
     {
+      m_regularPoints.resize(0);
+      m_irregIndicies.resize(0);
       Proto::Box prregion = ProtoCh::getProtoBox(a_region);
       for (auto it = prregion.begin(); it != prregion.end(); ++it)
       {
@@ -852,12 +889,15 @@ namespace EBCM
           m_regularPoints.push_back(*it);
         }
       }
-      for(int ivec = 0; ivec < a_graph.m_volumes->size(); ivec++)
+      if(a_graph.hasIrregular())
       {
-        const auto& volu = (*(a_graph.m_volumes))[ivec];
-        if(a_region.contains(volu.m_pt))
+        for(int ivec = 0; ivec < a_graph.m_volumes->size(); ivec++)
         {
-          m_irregIndicies.push_back(ivec);
+          const auto& volu = (*(a_graph.m_volumes))[ivec];
+          if(a_region.contains(volu.m_pt))
+          {
+            m_irregIndicies.push_back(ivec);
+          }
         }
       }
       m_current = 0;
