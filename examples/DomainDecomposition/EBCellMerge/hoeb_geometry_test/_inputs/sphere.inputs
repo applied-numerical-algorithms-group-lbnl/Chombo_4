@@ -1,0 +1,10 @@
+#domain size
+nx=       32
+maxGrid=  32
+
+#so far can be plane or sphere
+which_geom = "sphere"
+center =       0.5 0.5 0.5
+radius =   0.45
+inside = true
+
