@@ -680,9 +680,10 @@ namespace EBCM
     {
       a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order> > ());
       a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>      ());
+      //define the map and set it all to covered.   the input set contains only regular and irregular
+      a_map->define(a_graph.getRegion());
       a_map->setVal(-2);
     
-      //define the map and set it all to covered.   the input set contains only regular and irregular
       for(auto it = a_soluVolumes->begin(); it != a_soluVolumes->end(); ++it)
       {
         const auto& volu = *it;

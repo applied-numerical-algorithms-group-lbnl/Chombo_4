@@ -1,5 +1,5 @@
 
-#configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
+#configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=TRUE,OpenMP=FALSE
 
 CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/examples/..
 DIM := 2
@@ -36,35 +36,33 @@ CHOMBO_SRC += $(wildcard ../../hoeb_common/*.cpp)
 VPATH +=  ../../hoeb_common/
 
 CHOMBO_CPPFLAGS = -std=c++14
+PROTO_HOME =$(HOME)/_proto/proto
+EFENCEFLAGS = -L/usr/lib -lefence
+CHOMBO_PETSC_DIR   = $(HOME)
 
-PROTO_HOME = $(HOME)/_proto/proto
 CHOMBO_DEPXX=g++
 CHOMBO_CXX=g++
 
-CHOMBO_CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic -Wall
-CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
-
-#CHOMBO_LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-#CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-CHOMBO_HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
-CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
-CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
-
-CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)
-CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
-#end mach dependent
-
-
-
-
+CHOMBO_CXXALLFLAGS := -std=c++11 -Wno-sign-compare -Wno-misleading-indentation -Wno-unknown-pragmas -Wno-format
+CHOMBO_CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wno-variadic-macros
+CHOMBO_CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CHOMBO_LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack -lrt -lgfortran
+CHOMBO_HDFINCFLAGS =  -I/usr/include/hdf5/serial
+CHOMBO_HDFLIBFLAGS = -L/usr/lib/x86_64-linux-gnu  -lhdf5_serial
 
 CHOMBO_CPPFLAGS += -DCH_USE_HDF5 
 
 CHOMBO_CPPFLAGS += $(CHOMBO_HDFINCFLAGS)
 
 CHOMBO_LIBS     += $(CHOMBO_HDFLIBFLAGS)
- 
+ include $(CHOMBO_PETSC_DIR)/lib/petsc/conf/variables
+
+CHOMBO_CPPFLAGS += -DCH_USE_PETSC 
+
+CHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES) 
+
+CHOMBO_LIBS     += $(PETSC_KSP_LIB)
+
 CHOMBO_CXXFLAGS += $(CHOMBO_CXXALLFLAGS) -DCH_USE_DOUBLE
 
 CHOMBO_CXXFLAGS+=$(CHOMBO_CXXDBGFLAGS) 
