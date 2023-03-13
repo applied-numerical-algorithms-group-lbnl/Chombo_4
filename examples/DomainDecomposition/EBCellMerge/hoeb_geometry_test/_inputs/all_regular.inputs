@@ -3,4 +3,4 @@ nx=       32
 maxGrid=  32
 
 which_geom      = "all_regular"
-mergeSmallCells = false
+mergeSmallCells = true

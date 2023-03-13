@@ -2,8 +2,9 @@
 nx=       32
 maxGrid=  32
 
-#so far can be plane or sphere
-#which_geom = "plane"
+#so far can be plane, sphere or all regular
+
+which_geom = "sphere"
 center =       0.5 0.5 0.5
 radius =   0.45
 inside = true
@@ -12,5 +13,5 @@ inside = true
 geom_start_pt  = 0. 0. 0.
 geom_normal    = 1. 1. 0.
 
-which_geom      = "all_regular"
+#which_geom      = "all_regular"
 mergeSmallCells = false
