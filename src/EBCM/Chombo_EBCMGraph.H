@@ -535,25 +535,123 @@ namespace EBCM
 
       return 0;
     }
+    
     ///
     static
     inline EBCMVolu<order>
-    getMergedVolume(vector<pr_vof>                        & a_mergevec,
-                    const EBCMVolu<order>                 & a_startvol,
-                    const shared_ptr<ch_geoserv>          & a_geoserv,
-                    const ch_box                          & a_domain,
-                    const ch_dit                          & a_dit,
-                    const double                          & a_dx,
-                    const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
-                    const pr_ebgrap                       & a_graph,
-                    const bool                            & a_mergeSmallCells)
+    mergeManyIntoOne(vector<EBCMVolu<order>& a_many)
+    {
+      EBCMVolu<order> retval;
+      if(a_many.size() == 1)
+      {
+        retval = a_many[0];
+      }
+      else
+      {
+        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_volsLeft[0], a_volsLeft[1]);
+        //we reduce the size of the vector by one with every call.
+        vector<EBCMVolu<order> > volsLeft(a_many.size() - 1);
+        volsLeft[0] = third;
+        //-2 below because we just replaced the first two
+        for(int ivol = 0; ivol < a_many.size() - 2; ivol++)
+        {
+          //+1 because  used one slot for the merged one
+          volsLeft[ivol] = a_many[ivol+1];
+        }
+        //the rare instance where recusion is just way easier.
+        retval = mergeManyIntoOne(volsLeft);
+      }
+
+      return retval;
+    }
+    ///
+    static
+    inline EBCMVolu<order>
+    getGhostedVolume(vector<pr_vof>                        & a_allvofs,
+                     double                                & a_sumkappa,
+                     const  pr_vof                         & a_startvof,
+                     const shared_ptr<ch_geoserv>          & a_geoserv,
+                     const ch_box                          & a_domain,
+                     const ch_dit                          & a_dit,
+                     const double                          & a_dx,
+                     const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
+                     const pr_ebgrap                       & a_graph,
+                     int numGhost)
     {
       EBCMVolu retval;
+      pr_box ptbox(a_startvol.m_pt, a_startvol.m_pt);
+      pr_box grownbox = ptbox.grow(1);
+      grownbox &= a_graph.getRegion();
+      a_allvofs.resize(0);
+      for(auto bit = grownbox.begin(); bit != grownbox.end(); ++bit)
+      {
+        auto pt = *bit;
+        vector<pr_vof> vofs = a_graph.getVoFs(pt);
+        for(int ivof = 0; ivof < vofs.size(); ivof++)
+        {
+          //have to be certain to not double count here.
+          if(a_vofsLeft.find(vofs[ivof]) != a_vofsLeft.end())
+          {
+            a_allvofs.push_back(vofs[ivof;]
+          }
+        }
+      }
+      
+      vector<EBCMVolu<order> > allvols(a_allvofs.size());
+      for(int ivol = 0; ivol <         a_allvofs.size(); ivol++)
+      {
+        auto curpt = a_allvofs[ivol].m_pt;
+        if(a_graph.isCovered(curpt))
+        {
+          Chombo4::MayDay::Error("cannot create EBCMVolume from a covered cell");
+        }
+        else if(a_graph.isRegular(curpt))
+        {
+          allvols[ivol].defineAsRegular(curpt, a_dx);
+        }
+        else
+        {
+          allvols[ivol].defineAsIrregular(allvofs[ivof], a_geoserv, a_domain, a_dit, a_dx);
+        }
+      }
+
+      //make two into one until there are no more
+      retval = mergeManyIntoOne(allvols[ivol], 0);
       Chombo4::MayDay::Error("not implemented");
 
       return retval;
     }
     
+    ///
+    static
+    inline EBCMVolu<order>
+    getMergedVolume(vector<pr_vof>                        & a_allvofs,
+                    const  pr_vof                         & a_startvof,
+                    const shared_ptr<ch_geoserv>          & a_geoserv,
+                    const ch_box                          & a_domain,
+                    const ch_dit                          & a_dit,
+                    const double                          & a_dx,
+                    const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
+                    const pr_ebgrap                       & a_graph)
+    {
+      double sumkappa = 0;
+      int numghost = 1;
+      EBCMVolu<order> retval;
+      {
+        int numghost = 1;
+        retval = getGhostedVolume(a_allvofs, sumkappa, a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+      }
+      if(sumkappa < 1)
+      {
+        int numghost = 2;
+        retval = getGhostedVolume(a_allvofs, sumkappa, a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+      }
+      if(sumkappa < 1)
+      {
+        MayDay::Error("could not find a full cell even with ghost rad = 2");
+      }
+      return retval;
+    }
     ///
     static
     inline EBCMVolu<order>
@@ -570,11 +668,11 @@ namespace EBCM
       EBCMVolu<order> startvol, retval;
       a_mergevec.resize(1, a_vof);
       
-      if(a_.isCovered(a_vof.m_pt))
+      if(a_graph.isCovered(a_vof.m_pt))
       {
         Chombo4::MayDay::Error("cannot create EBCMVolume from a covered cell");
       }
-      else if(ebgrap.isRegular(a_vof.m_pt))
+      else if(a_graph.isRegular(a_vof.m_pt))
       {
         startvol.defineAsRegular(a_vof.m_pt, a_dx);
       }
@@ -583,21 +681,20 @@ namespace EBCM
         startvol.defineAsIrregular(a_vof, a_geoserv, a_domain, a_dit, a_dx);
       }
       
-      if(startvol.m_kappa == 1.)
+      if( (startvol.m_kappa == 1.) || (!a_mergeSmallCells))
       {
         retval = startvol;
       }
       else
       {
         retval = getMergedVolume(a_mergevec,
-                                 startvol,
+                                 a_vof, 
                                  a_geoserv,        
                                  a_domain,         
                                  a_dit,            
                                  a_dx,             
                                  a_vofsLeft,       
-                                 a_graph,          
-                                 a_mergeSmallCells);
+                                 a_graph);
                                  
       }
       return retval;
