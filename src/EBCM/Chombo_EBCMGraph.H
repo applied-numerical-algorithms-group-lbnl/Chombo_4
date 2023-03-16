@@ -539,7 +539,7 @@ namespace EBCM
     ///
     static
     inline EBCMVolu<order>
-    mergeManyIntoOne(vector<EBCMVolu<order>& a_many)
+    mergeManyIntoOne(const vector<EBCMVolu<order>& a_many)
     {
       EBCMVolu<order> retval;
       if(a_many.size() == 1)
@@ -548,15 +548,37 @@ namespace EBCM
       }
       else
       {
+        int vofind0 = 0;
+        const auto & volu0 = a_many[0];
+        //find first vof connected to first vof
+        int vofind1 = -1;
+        bool found = false;
+        for(int ivec = 0; (ivec < a_many.size()) && (!found); ivec++)
+        {
+          if(volumesConnected(volu0, a_many[ivec]))
+          {
+            vofind1 = ivec;
+            found = true;
+          }
+        }
+        if(!found)
+        {
+          Chombo4::MayDay::Error("could not find connected volume"
+        }
+          
         EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_volsLeft[0], a_volsLeft[1]);
         //we reduce the size of the vector by one with every call.
         vector<EBCMVolu<order> > volsLeft(a_many.size() - 1);
         volsLeft[0] = third;
-        //-2 below because we just replaced the first two
-        for(int ivol = 0; ivol < a_many.size() - 2; ivol++)
+        int ileft = 1;
+        for(int imany = 0; imany < a_many.size(); imany++)
         {
           //+1 because  used one slot for the merged one
-          volsLeft[ivol] = a_many[ivol+1];
+          if((imany != vofind0) && (imany != vofind1))
+          {
+            volsLeft[ileft] = a_many[imany];
+            ileft++;
+          }
         }
         //the rare instance where recusion is just way easier.
         retval = mergeManyIntoOne(volsLeft);
