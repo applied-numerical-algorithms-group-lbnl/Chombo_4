@@ -19,6 +19,7 @@ namespace EBCM
   
   typedef Proto::EBIndex<CELL> pr_vof;
   typedef Proto::Point         pr_pt;
+  typedef Proto::Box           pr_box;
   typedef Chombo4::Box         ch_box;
   typedef Chombo4::DataIndex   ch_dit;
   
@@ -534,12 +535,16 @@ namespace EBCM
 #endif
 
       return 0;
-    }
-    
-    ///
+    } //end funciton mergeTwoIntoThird
+
+    /// 
+    /**
+       Recursive function that merges a vector of volumes into a single volume.
+       Fails with MayDay::Error if the vector is not has disconnected components.
+    **/ 
     static
     inline EBCMVolu<order>
-    mergeManyIntoOne(const vector<EBCMVolu<order>& a_many)
+    mergeManyIntoOne(const vector<EBCMVolu<order> >& a_many)
     {
       EBCMVolu<order> retval;
       if(a_many.size() == 1)
@@ -563,10 +568,10 @@ namespace EBCM
         }
         if(!found)
         {
-          Chombo4::MayDay::Error("could not find connected volume"
+          Chombo4::MayDay::Error("could not find connected volume");
         }
           
-        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_volsLeft[0], a_volsLeft[1]);
+        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_many[0], a_many[1]);
         //we reduce the size of the vector by one with every call.
         vector<EBCMVolu<order> > volsLeft(a_many.size() - 1);
         volsLeft[0] = third;
@@ -585,8 +590,34 @@ namespace EBCM
       }
 
       return retval;
-    }
+    } //end function mergeManyIntoOne
+    
     ///
+    /**
+       This implements the very simple merger strategy of just 
+       ghost the volume and merge it all together.  
+       Sometimes the obvious solution can work.
+       
+       Right now this is all on-box.   
+       This has the unfortunate consequence that we can have
+       solutions that depend on how the grid is divided into boxes.
+
+       In my particular numerical tradition, this is heresy. 
+       Numerical algorithms are supposed to produce answers that are
+       independent of how the domain is divided up into boxes.
+       (Of course, since this is the grid generation phase,
+       perhaps we can avoid schism in that we are changing the underlying 
+       meta data of the problem so box-division independence doctrine 
+       does not necessarily apply.)
+
+       In any case, enforcing the standard doctrine of box-division 
+       independence requires careful thought and lots of MPI communication 
+       so I am going to see if we can manage to  accomplish something 
+       despite knowingly committing heresy and hope that I may not be labelled 
+       apostate by my peers.
+
+       --dtg
+    **/
     static
     inline EBCMVolu<order>
     getGhostedVolume(vector<pr_vof>                        & a_allvofs,
@@ -600,8 +631,8 @@ namespace EBCM
                      const pr_ebgrap                       & a_graph,
                      int numGhost)
     {
-      EBCMVolu retval;
-      pr_box ptbox(a_startvol.m_pt, a_startvol.m_pt);
+      EBCMVolu<order> retval;
+      pr_box ptbox(a_startvof.m_pt, a_startvof.m_pt);
       pr_box grownbox = ptbox.grow(1);
       grownbox &= a_graph.getRegion();
       a_allvofs.resize(0);
@@ -612,12 +643,13 @@ namespace EBCM
         for(int ivof = 0; ivof < vofs.size(); ivof++)
         {
           //have to be certain to not double count here.
+          //vofsLeft gets updated after createEBCMVolume returns
           if(a_vofsLeft.find(vofs[ivof]) != a_vofsLeft.end())
           {
-            a_allvofs.push_back(vofs[ivof;]
-          }
-        }
-      }
+            a_allvofs.push_back(vofs[ivof]);
+          }//
+        }//end loop over vofs  in cell
+      }//  end loop over cells in grown box
       
       vector<EBCMVolu<order> > allvols(a_allvofs.size());
       for(int ivol = 0; ivol <         a_allvofs.size(); ivol++)
@@ -635,16 +667,20 @@ namespace EBCM
         {
           allvols[ivol].defineAsIrregular(allvofs[ivof], a_geoserv, a_domain, a_dit, a_dx);
         }
-      }
+      } // end loop over input vofs in the ghosted region
 
       //make two into one until there are no more
       retval = mergeManyIntoOne(allvols[ivol], 0);
-      Chombo4::MayDay::Error("not implemented");
-
       return retval;
-    }
-    
+    } //end function getGhostedVolume 
+
     ///
+      /**
+         Call getGhostedVolume with nghost = 1.  if that is not big enough, try 2.
+         Sheer algorithmic brilliance, I tell you.   
+         If we cannot find (kappa > 1) with two ghost cells,  we give up in despair.
+         vofsLeft gets updated after createEBCMVolume returns
+      **/
     static
     inline EBCMVolu<order>
     getMergedVolume(vector<pr_vof>                        & a_allvofs,
@@ -661,20 +697,31 @@ namespace EBCM
       EBCMVolu<order> retval;
       {
         int numghost = 1;
-        retval = getGhostedVolume(a_allvofs, sumkappa, a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+        retval =
+          getGhostedVolume(a_allvofs, sumkappa, a_startvof,
+                           a_geoserv, a_domain, a_dit, a_dx,
+                           a_vofsLeft, a_graph,numghost);
       }
       if(sumkappa < 1)
       {
         int numghost = 2;
-        retval = getGhostedVolume(a_allvofs, sumkappa, a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+        retval =
+          getGhostedVolume(a_allvofs, sumkappa, a_startvof,
+                           a_geoserv, a_domain, a_dit, a_dx,
+                           a_vofsLeft, a_graph,numghost);
       }
       if(sumkappa < 1)
       {
         MayDay::Error("could not find a full cell even with ghost rad = 2");
       }
       return retval;
-    }
+    } //end function getMergedVolume.
+    
     ///
+    /**
+       Creates volume from EB description.   If merger is necessary and called for,
+       it calls for merger.   VoFsLeft gets modified by calling function.
+     */
     static
     inline EBCMVolu<order>
     createEBCMVolume(vector<pr_vof>                        & a_mergevec,
@@ -741,22 +788,22 @@ namespace EBCM
     {
       a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order> > ());
       a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>      ());
-      //define the map and set it all to covered.   the input set contains only regular and irregular
+      //define the map and set it all to covered.
+      //the input set contains only regular and irregular
       a_map->define(a_graph.getRegion());
       a_map->setVal(-2);
       shared_ptr<set<pr_vof   > >  vofsLeft(new set<pr_vof>() );
       *vofLeft = a_inputVoFs;
       
-      for(auto vofit = a_ebVolumes->begin(); vofit != a_ebVolumes->end(); ++vofit)
+      for(auto vofit = a_inputVoFs->begin(); vofit != a_inputVoFs->end(); ++vofit)
       {
         auto vof = *vofit;
         if(a_graph->isRegular(vof.m_pt))
         {
-          //only reset it if it is set to covered.   It can also be reset to the vector value if merged
           int mapval = (*a_map)(vof.m_pt, 0);
           if(mapval == -2)
           {
-            //again, can be reset in the irreg section
+            //can be reset to irregular in the irreg section due to merger
             (*a_map)(vof.m_pt, 0) = -1;
           }
         }
@@ -765,22 +812,23 @@ namespace EBCM
           if(vofsLeft->find(vof) != vofsLeft->end())
           {
             vector<pr_vof> mergevec;
-            EBCMVolu<order> volume = createEBCMVolume(mergevec, *vof, , a_geoserv, a_domain, a_dit, a_dx,
-                                                      vofsLeft, a_graph, a_mergeSmallCells);
+            EBCMVolu<order> volume =
+              createEBCMVolume(mergevec, *vof, , a_geoserv, a_domain, a_dit, a_dx,
+                               vofsLeft, a_graph, a_mergeSmallCells);
             int vecInd = a_volumes.size();
             for(int ivec = 0; ivec < mergevec.size(); ivec++)
             {
-              (*a_map)(mergevec[ivec], 0) = vecInd;
+              (*a_map)(       mergevec[ivec], 0) = vecInd;
+              vofsLeft->erase(mergevec[ivec]);
             }
             a_volumes->push_back(volume);
-          }
-      }
-    
+          } //end if(this vof is still available
+        } //end if this is irregular
+      } //end loop over input vofs
+
+      
       return 0;
-    }
-
-
-
+    }//end  function makeTheBlobs
 
     //strong construction would be better but way less convenient
     EBCMGraph()
