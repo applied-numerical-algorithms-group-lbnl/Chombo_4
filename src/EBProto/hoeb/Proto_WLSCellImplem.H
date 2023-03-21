@@ -549,6 +549,7 @@ namespace Proto
                   Real                     a_dx) const
   {
     PR_TIME("getEBFluxMatrix");
+    using Chombo4::pout;
     MomentIterator<DIM, order> momit;
     a_fluxMatrix.define(1, momit.size());
     a_fluxMatrix.setVal(0.);
@@ -666,6 +667,7 @@ namespace Proto
                             IndexTM<int, 2>         a_start) const
   {
     PR_TIME("getWeightsMatrixFace");
+    using Chombo4::pout;
 
     int powerE = m_stenAttb.weightPower();
 
@@ -705,6 +707,8 @@ namespace Proto
                           const Chombo4::LAPACKMatrix  & a_weights) const
   {
     PR_TIME("computeWLSStencilValues");
+    using Chombo4::pout;
+
     Chombo4::LAPACKMatrix MT, WT, MTWT;
     MT = a_Moments;
     MT.transpose();
@@ -2112,6 +2116,7 @@ namespace Proto
                  IndMomSDMinOne & a_facmom)
   {
     PR_TIME("getFaceMomentsDirichletBC");
+    using Chombo4::pout;
     MomentIterator<DIM, order> momit;
 
     for(momit.reset(); momit.ok(); ++momit)
@@ -2147,6 +2152,7 @@ namespace Proto
                  IndMomSDMinOne & a_facmom)
   {
     PR_TIME("getFaceMomentsNeumannBC");
+    using Chombo4::pout;
     MomentIterator<DIM, order> momit;
     IndMomDIM volmom;
 
@@ -2199,6 +2205,7 @@ namespace Proto
                Vector<IndMomDIM> & a_ebfNorm)
   {
     PR_TIME("getEBMomentsNeumannBC");
+    using Chombo4::pout;
     // important because we will sum over each of the dimensions
     MomentIterator<DIM, order> momit;
     a_ebfmom.setToZero();
@@ -2217,7 +2224,8 @@ namespace Proto
   }
 
   //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
-  //getIntegralNormalDerivative
+  // integrates d/dx phi
+  // or if a_eval type is 1 then Phi, where Phi = d/dx phi. ie the exact solution is the derivative
   template < int order>
   Real
   NeumannExactSoln<order>::
@@ -2229,6 +2237,7 @@ namespace Proto
                   const int a_evalType)
   {
     PR_TIME("getFaceIntegralNeumannExactSoln");
+    using Chombo4::pout;
     Real retval = 0.0;
     Real areaScaleFactor = getRegularArea(a_dx);
     MomentIterator<DIM-1, order> momit;
@@ -2267,7 +2276,7 @@ namespace Proto
   }
 
   //Compute Dirichlet BCs at faces and EB Faces. Required for inhomogeneous conditions.
-  //getIntegralPhi
+  // integrates phi
   template < int order>
   Real
   DirichletExactSoln<order>::
@@ -2278,6 +2287,7 @@ namespace Proto
                   const Real              a_dx) 
   {
     PR_TIME("getFaceIntegralDirichletExactSoln");
+    using Chombo4::pout;
     Real retval = 0.0;
     Real areaScaleFactor = getRegularArea(a_dx);
     MomentIterator<DIM-1, order> momit;
@@ -2311,7 +2321,7 @@ namespace Proto
   }
 
   //Compute Dirichlet BCs at faces and EB Faces. Required for inhomogeneous conditions.
-  //getIntegralPhiAlongEB
+  // integrates phi
   template < int order>
   Real
   DirichletExactSoln<order>::
@@ -2321,7 +2331,7 @@ namespace Proto
                 const Real         a_dx) 
   {
     PR_TIME("getEBIntegralDirichletExactSoln");
-
+    using Chombo4::pout;
     Real retval = 0.0;
     Real areaScaleFactor = getRegularArea(a_dx);
 
@@ -2339,17 +2349,18 @@ namespace Proto
   }
 
   //Compute Neumann BCs at faces and EB Faces. Required for inhomogeneous conditions.
-  //getIntegralGradPhiDotNormal
+  // integrates grad(phi) dot normal
   template < int order>
   Real
   NeumannExactSoln<order>::
   getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
                 const RealVect           & a_ebfLoc,
                 const shared_ptr<BaseExactSolution >  & a_exactSol,
-                const Real                 a_dx) 
+                const Real                 a_dx,
+                const int a_evalType)
   {
     PR_TIME("getEBIntegralNeumannExactSoln");
-
+    using Chombo4::pout;
     Real retval = 0.0;
     Real areaScaleFactor = getRegularArea(a_dx);
     for(int ndir = 0; ndir < DIM; ndir++)

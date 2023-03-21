@@ -975,7 +975,8 @@ namespace Proto
     inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
                                      const shared_ptr<BaseExactSolution > & m_exactSol,
-                                     const Real                a_dx);
+                                     const Real                a_dx,
+                                     const int a_evalType = 0);
  
   };
 

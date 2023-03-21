@@ -65,14 +65,9 @@ namespace Proto
 
     template<CENTERING cent>
     Vector<EBIndex<CELL> >
-    getNeighborsFromFace(const EBIndex<cent> & a_face,
-                         const int             a_baseRadius,
-                         const EBGraph       & a_graph) const;
-
-    Vector<EBIndex<CELL> >
-    getNeighborsFromCell(const EBIndex<CELL> & a_vof,
-                         const int             a_baseRadius,
-                         const EBGraph       & a_graph) const;
+    getNeighborsFrom(const EBIndex<cent> & a_face,
+                     const int             a_baseRadius,
+                     const EBGraph       & a_graph) const;
 
     void
     growNeighbors(Vector<EBIndex<CELL> > &a_base,
@@ -245,7 +240,6 @@ namespace Proto
     size() const
       {
         return sizeVols() + sizeFaces() + sizeEB();
-        // m_volMom.size() + m_facMom.size() + m_ebfMom.size();
       }
 
     // get a global neighbor index from the neighbor collection
