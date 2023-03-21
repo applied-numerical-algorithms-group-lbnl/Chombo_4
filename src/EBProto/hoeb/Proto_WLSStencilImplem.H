@@ -56,6 +56,7 @@ namespace Proto
     const EBGraph                & a_graph,
     const Real                     a_dx)
   {
+    PR_TIME("getDistanceWeightedFluxAvgStencil");
     LocalStencil< CELL,  Real> fluxStencil;
 
     Real weightM, weightP;
@@ -168,15 +169,15 @@ namespace Proto
         Real factor = Real(isign);
         std::map<EBIndex<XFACE>,LocalStencil<CELL, Real> >::iterator it;
         it = xfacesFluxStencil.find(xfaces[iface]);
-        if (it != xfacesFluxStencil.end())
-        {
-          fluxStencil = it->second;
-          inhomogTerm = xfacesInhTerm[xfaces[iface]];
-          fluxStencil *= factor;
-          a_inhoTerm += inhomogTerm*factor;
-          a_vofStencil += fluxStencil;
-        }
-        else
+        // if (it != xfacesFluxStencil.end())
+        // {
+        //   fluxStencil = it->second;
+        //   inhomogTerm = xfacesInhTerm[xfaces[iface]];
+        //   fluxStencil *= factor;
+        //   a_inhoTerm += inhomogTerm*factor;
+        //   a_vofStencil += fluxStencil;
+        // }
+        // else
         {
           Real   areaFrac;
           RealVect centroid;
@@ -202,7 +203,7 @@ namespace Proto
             }
           }
 
-          if (a_xfaceflux.m_verbose) {pout()<<" stencil Xface "<<xfaces[iface].m_pt<<endl;}
+          if (a_xfaceflux.m_verbose) {pout() << "====================" << " stencil Xface" << xfaces[iface].m_pt << "====================" << endl;}
 
           if (!xfaces[iface].m_isBoundary && a_neighType){
             LocalStencil<CELL, Real> fluxMStencil;
@@ -232,8 +233,14 @@ namespace Proto
 
             fluxStencil = getDistanceWeightedFluxAvgStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
             inhomogTerm = getDistanceWeightedFluxAvgStencil(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
-
-
+            if (a_xfaceflux.m_verbose) {
+              Real loContrib, hiContrib;
+              getDistanceWeightedFluxAvgCoeffs(loContrib, hiContrib, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
+              pout() << " Stencil averaging: "
+                     << "lo contrib " << loContrib
+                     << "hi contrib " << hiContrib
+                     << std::endl;
+            }
           }else{
             a_xfaceflux.getFaceCenteredStencil(fluxStencil, inhomogTerm, a_vof, xfaces[iface],
                                                a_graph,
@@ -243,6 +250,7 @@ namespace Proto
                                                a_neighType,
                                                factor,
                                                a_dx);
+            if (a_xfaceflux.m_verbose) {pout() << " Boundary stencil, no averaging" << std::endl;}
           }
 
           if (a_xfaceflux.m_verbose)
@@ -272,15 +280,15 @@ namespace Proto
         Real factor = Real(isign);
         std::map<EBIndex<YFACE>,LocalStencil<CELL, Real> >::iterator it;
         it = yfacesFluxStencil.find(yfaces[iface]);
-        if (it != yfacesFluxStencil.end())
-        {
-          fluxStencil = it->second;
-          inhomogTerm = yfacesInhTerm[yfaces[iface]];
-          fluxStencil *= factor;
-          a_inhoTerm += inhomogTerm*factor;
-          a_vofStencil += fluxStencil;
-        }
-        else
+        // if (it != yfacesFluxStencil.end())
+        // {
+        //   fluxStencil = it->second;
+        //   inhomogTerm = yfacesInhTerm[yfaces[iface]];
+        //   fluxStencil *= factor;
+        //   a_inhoTerm += inhomogTerm*factor;
+        //   a_vofStencil += fluxStencil;
+        // }
+        // else
         {
           Real   areaFrac;
           RealVect centroid;
@@ -305,7 +313,7 @@ namespace Proto
             }
           }
 
-          if (a_yfaceflux.m_verbose) {pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;}
+          if (a_yfaceflux.m_verbose) {pout()<<"====================" << " stencilY face " << yfaces[iface].m_pt << "====================" << endl;}
 
           if (!yfaces[iface].m_isBoundary && a_neighType){
             LocalStencil<CELL, Real> fluxMStencil;
@@ -334,6 +342,14 @@ namespace Proto
                                            a_dx);
             fluxStencil = getDistanceWeightedFluxAvgStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
             inhomogTerm = getDistanceWeightedFluxAvgStencil(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
+            if (a_yfaceflux.m_verbose) {
+              Real loContrib, hiContrib;
+              getDistanceWeightedFluxAvgCoeffs(loContrib, hiContrib, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
+              pout() << " Stencil averaging: "
+                     << "lo contrib " << loContrib
+                     << "hi contrib " << hiContrib
+                     << std::endl;
+            }
             //if (a_yfaceflux.m_verbose)
             //{
             //  pout()<<" yflux"<<endl;
@@ -349,6 +365,7 @@ namespace Proto
                                                a_neighType,
                                                factor,
                                                a_dx);
+            if (a_yfaceflux.m_verbose) {pout() << " Boundary stencil, no averaging" << std::endl;}
           }
 
           if (a_yfaceflux.m_verbose)
@@ -378,15 +395,15 @@ namespace Proto
         Real factor = Real(isign);
         std::map<EBIndex<ZFACE>,LocalStencil<CELL, Real> >::iterator it;
         it = zfacesFluxStencil.find(zfaces[iface]);
-        if (it != zfacesFluxStencil.end())
-        {
-          fluxStencil = it->second;
-          inhomogTerm = zfacesInhTerm[zfaces[iface]];
-          fluxStencil *= factor;
-          a_inhoTerm += inhomogTerm*factor;
-          a_vofStencil += fluxStencil;
-        }
-        else
+        // if (it != zfacesFluxStencil.end())
+        // {
+        //   fluxStencil = it->second;
+        //   inhomogTerm = zfacesInhTerm[zfaces[iface]];
+        //   fluxStencil *= factor;
+        //   a_inhoTerm += inhomogTerm*factor;
+        //   a_vofStencil += fluxStencil;
+        // }
+        // else
         {
           Real   areaFrac;
           RealVect centroid;
@@ -447,7 +464,7 @@ namespace Proto
                                                a_neighType,
                                                factor,
                                                a_dx);
-
+            pout() << " Boundary stencil, no averaging" << std::endl;
           }
           zfacesFluxStencil[zfaces[iface]] = fluxStencil;
           zfacesInhTerm[zfaces[iface]] = inhomogTerm;
@@ -489,7 +506,7 @@ namespace Proto
 #endif
       Normalizor<order>::normalizedBndryMoments(alpha, centroid, a_ebfadata,  cutface, a_graph, a_dx);
 
-      if (a_ebflux.m_verbose) {pout()<<" stencil ebface "<<a_vof.m_pt<<endl;}
+      if (a_ebflux.m_verbose) {pout()<<"==================== stencil eb boundary face "<< a_vof.m_pt << "====================" << endl;}
 
       a_ebflux.getEBFluxStencil(ebflux, inhomogTerm, a_vof,
                                 cutface,
@@ -1507,16 +1524,16 @@ namespace Proto
         LocalStencil<CELL, Real> fluxStencil;
         Real inhomogTerm=0.0; //for inhomogeneous bcs
         Real factor = Real(isign);
-        std::map<EBIndex<ZFACE>,LocalStencil<CELL, Real> >::iterator it;
-        it = zfacesFluxStencil.find(zfaces[iface]);
-        if (it != zfacesFluxStencil.end())
-        {
-          fluxStencil = it->second;
-          inhomogTerm = zfacesInhTerm[zfaces[iface]];
-          fluxStencil *= factor;
-          a_inhoTerm += inhomogTerm*factor;
-          a_vofStencilz += fluxStencil;
-        }
+        // std::map<EBIndex<ZFACE>,LocalStencil<CELL, Real> >::iterator it;
+        // it = zfacesFluxStencil.find(zfaces[iface]);
+        // if (it != zfacesFluxStencil.end())
+        // {
+        //   fluxStencil = it->second;
+        //   inhomogTerm = zfacesInhTerm[zfaces[iface]];
+        //   fluxStencil *= factor;
+        //   a_inhoTerm += inhomogTerm*factor;
+        //   a_vofStencilz += fluxStencil;
+        // }
         else
         {
           EBIndex<CELL> voflo = zfaces[iface].getVoF(Side::Lo);

@@ -540,7 +540,7 @@ namespace Proto
         //row_index.push_back(vofInd);
         if (pt_verbose) 
           {
-            pout() << "Lapplacian stencil for " << vofInd.m_pt << ":" << endl;
+            pout() << "====================\n" << "Total Laplacian stencil for " << vofInd.m_pt << ":" << endl;
             printWLSStencil(stenAttb.radius(), a_stencil[ivof], vofInd.m_pt);
             pout() << " inhomg term " << a_inhoContr[ivof] << endl;
             // sum up the stencil weights

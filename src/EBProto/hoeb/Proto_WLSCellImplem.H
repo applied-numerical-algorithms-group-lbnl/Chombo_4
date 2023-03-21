@@ -666,7 +666,7 @@ namespace Proto
                             const Vector<int>      & a_weightDist,
                             IndexTM<int, 2>         a_start) const
   {
-    PR_TIME("getWeightsMatrixFace");
+    PR_TIME("getWeightsMatrixComponent");
     using Chombo4::pout;
 
     int powerE = m_stenAttb.weightPower();
