@@ -33,12 +33,16 @@ namespace EBCM
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
     void defineAsRegular(pr_vof a_lo, pr_vof a_hi, Real a_dx)
-    {                                                  // 
+    {                                                  
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
     }
 
+    bool operator==(const EBCMFace& a_input) const
+    {
+      return ((m_lo == a__input.m_lo)  && (m_hi == a_input.m_hi));
+    }
   };
 
   template<int order>
@@ -90,6 +94,61 @@ namespace EBCM
     }
     vector<Point> m_cells; //all cells marked for this entry.   
 
+    //keeping it simple---just looking for matching faces
+    template<CENTERING cent>
+    static bool foundMatch(const vector< EBCMFace<cent, order>  > & a_vecOne,
+                           const vector< EBCMFace<cent, order>  > & a_vecTwo)
+    {
+      bool matchFound = false;
+      for(int ione= 0; ione < a_vecOne.size(); ione++)
+      {
+        for(int itwo= 0; itwo < a_vecTwo.size(); itwo++)
+        {
+          if(a_vecOne[ione] == a_vecTwo[itwo])
+          {
+            matchFound = true;
+          }
+        }
+      }
+
+      return matchFound;
+    }
+
+    //see if ones low faces matches the others high faces.
+    static bool isConnectedTo(const EBCMVolu<order>& a_volOne,
+                              const EBCMVolu<order>& a_volTwo)
+    {
+      bool connected = false;
+      if(!connected)
+      {        
+        connected = foundMatch<XFACE>(a_volOne.m_xfaceslo, a_volTwo.m_xfaceshi);
+      }
+      if(!connected)
+      {
+        connected = foundMatch<XFACE>(a_volOne.m_xfaceshi, a_volTwo.m_xfaceslo);
+      }
+      if(!connected)
+      {
+        connected = foundMatch<YFACE>(a_volOne.m_yfaceslo, a_volTwo.m_yfaceshi);
+      }
+      if(!connected)
+      {
+        connected = foundMatch<YFACE>(a_volOne.m_yfaceshi, a_volTwo.m_yfaceslo);
+      }
+#if DIM==3
+
+      if(!connected)
+      {
+        connected = foundMatch<ZFACE>(a_volOne.m_zfaceslo, a_volTwo.m_zfaceshi);
+      }
+      if(!connected)
+      {
+        connected= foundMatch<ZFACE>(a_volOne.m_zfaceshi, a_volTwo.m_zfaceslo);
+      }
+#endif      
+
+      return connected;
+    }
     template <CENTERING cent>
     void fillFaceData(vector< EBCMFace< cent, order> >                & a_facedata,
                       const vector< EBIndex<  cent > >                & a_ebfaces,
@@ -269,59 +328,6 @@ namespace EBCM
     } //end function
 
 
-    static
-    inline int 
-    findBigNeighbor(EBCMVolu<order>                      & a_bigNeigh,
-                    const EBCMVolu<order>                & a_start, 
-                    shared_ptr< set<EBCMVolu<order> > >    a_remaining)
-    {
-      auto startpt    = a_start.m_pt;
-      auto startkappa = a_start.m_kappa;
-      bool found = false;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        for(SideIterator sit; sit.ok(); ++sit)
-        {
-          int isign  = sign(sit());
-          pr_pt newpt = a_start.m_pt + pr_pt::Basis(idir, isign);
-          if(!found)
-          {
-            for(auto volit = a_remaining->begin(); volit != a_remaining->end(); ++volit)
-            {
-              const auto& volu = *volit;
-              if(volu.m_pt == newpt)
-              {
-                if(volu.m_regular)
-                {
-                  Chombo4::pout() << "found one!" << endl;
-                  found = true;
-                  a_bigNeigh = volu;
-                }
-                else
-                {
-                  auto neikappa =  volu.m_kappa;
-                  auto sumkappa = startkappa + neikappa;
-                  if(sumkappa >= 1.0)
-                  {
-                    Chombo4::pout() << "found one!" << endl;
-                    found = true;
-                    a_bigNeigh = volu;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      if(!found)
-      {
-        
-        Chombo4::pout() << "Function findBigNeighbor:a_start.m_pt = " << a_start.m_pt << endl;
-        Chombo4::pout() << "Function findBigNeighbor:could not find a big neighbor; returning -1." << endl;
-        return -1;
-      }
-      return 0;
-    }
 
   
     ///code that fills EBCMVolu objects
@@ -537,6 +543,12 @@ namespace EBCM
       return 0;
     } //end funciton mergeTwoIntoThird
 
+    static inline bool
+    volumesConnected(const EBCMVolu<order>& a_volOne,
+                     const EBCMVolu<order>& a_volTwo)
+    {
+      return a_volOne.isConnectedTo(a_volTwo);
+    }
     /// 
     /**
        Recursive function that merges a vector of volumes into a single volume.
@@ -553,9 +565,9 @@ namespace EBCM
       }
       else
       {
+        //find a vof connected to first vof
         int vofind0 = 0;
         const auto & volu0 = a_many[0];
-        //find first vof connected to first vof
         int vofind1 = -1;
         bool found = false;
         for(int ivec = 0; (ivec < a_many.size()) && (!found); ivec++)
@@ -570,15 +582,15 @@ namespace EBCM
         {
           Chombo4::MayDay::Error("could not find connected volume");
         }
-          
-        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_many[0], a_many[1]);
+
+        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_many[vofind0], a_many[vofind1]);
+
         //we reduce the size of the vector by one with every call.
         vector<EBCMVolu<order> > volsLeft(a_many.size() - 1);
         volsLeft[0] = third;
         int ileft = 1;
         for(int imany = 0; imany < a_many.size(); imany++)
         {
-          //+1 because  used one slot for the merged one
           if((imany != vofind0) && (imany != vofind1))
           {
             volsLeft[ileft] = a_many[imany];
@@ -587,8 +599,8 @@ namespace EBCM
         }
         //the rare instance where recusion is just way easier.
         retval = mergeManyIntoOne(volsLeft);
+      
       }
-
       return retval;
     } //end function mergeManyIntoOne
     
@@ -621,7 +633,6 @@ namespace EBCM
     static
     inline EBCMVolu<order>
     getGhostedVolume(vector<pr_vof>                        & a_allvofs,
-                     double                                & a_sumkappa,
                      const  pr_vof                         & a_startvof,
                      const shared_ptr<ch_geoserv>          & a_geoserv,
                      const ch_box                          & a_domain,
@@ -644,13 +655,14 @@ namespace EBCM
         {
           //have to be certain to not double count here.
           //vofsLeft gets updated after createEBCMVolume returns
-          if(a_vofsLeft.find(vofs[ivof]) != a_vofsLeft.end())
+          if(a_vofsLeft->find(vofs[ivof]) != a_vofsLeft->end())
           {
             a_allvofs.push_back(vofs[ivof]);
-          }//
-        }//end loop over vofs  in cell
-      }//  end loop over cells in grown box
-      
+          }
+        }
+      } // end loop over cells in grown box      
+
+
       vector<EBCMVolu<order> > allvols(a_allvofs.size());
       for(int ivol = 0; ivol <         a_allvofs.size(); ivol++)
       {
@@ -665,22 +677,24 @@ namespace EBCM
         }
         else
         {
-          allvols[ivol].defineAsIrregular(allvofs[ivof], a_geoserv, a_domain, a_dit, a_dx);
+          allvols[ivol].defineAsIrregular(a_allvofs[ivol], a_geoserv, a_domain, a_dit, a_dx);
         }
+
       } // end loop over input vofs in the ghosted region
 
       //make two into one until there are no more
-      retval = mergeManyIntoOne(allvols[ivol], 0);
+      retval = mergeManyIntoOne(allvols);
       return retval;
     } //end function getGhostedVolume 
 
+
     ///
-      /**
-         Call getGhostedVolume with nghost = 1.  if that is not big enough, try 2.
-         Sheer algorithmic brilliance, I tell you.   
-         If we cannot find (kappa > 1) with two ghost cells,  we give up in despair.
-         vofsLeft gets updated after createEBCMVolume returns
-      **/
+    /**
+       Call getGhostedVolume with nghost = 1.  if that is not big enough, try 2.
+       Sheer algorithmic brilliance, I tell you.   
+       If we cannot find (kappa > 1) with two ghost cells,  we give up in despair.
+       vofsLeft gets updated after createEBCMVolume returns
+    **/
     static
     inline EBCMVolu<order>
     getMergedVolume(vector<pr_vof>                        & a_allvofs,
@@ -692,30 +706,22 @@ namespace EBCM
                     const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                     const pr_ebgrap                       & a_graph)
     {
-      double sumkappa = 0;
-      int numghost = 1;
       EBCMVolu<order> retval;
       {
         int numghost = 1;
-        retval =
-          getGhostedVolume(a_allvofs, sumkappa, a_startvof,
-                           a_geoserv, a_domain, a_dit, a_dx,
-                           a_vofsLeft, a_graph,numghost);
+        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
       }
-      if(sumkappa < 1)
+      if(retval.m_kappa < 1)
       {
         int numghost = 2;
-        retval =
-          getGhostedVolume(a_allvofs, sumkappa, a_startvof,
-                           a_geoserv, a_domain, a_dit, a_dx,
-                           a_vofsLeft, a_graph,numghost);
+        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
       }
-      if(sumkappa < 1)
+      if(retval.m_kappa < 1)
       {
-        MayDay::Error("could not find a full cell even with ghost rad = 2");
+        MayDay::Error("could not find a full cell even with ghost rad == 2");
       }
       return retval;
-    } //end function getMergedVolume.
+    }
     
     ///
     /**
@@ -732,11 +738,10 @@ namespace EBCM
                      const double                          & a_dx,
                      const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                      const pr_ebgrap                       & a_graph,
-                     const bool                            & a_mergeSmallCells)
+                     bool                                    a_mergeSmallCells)
     {
       EBCMVolu<order> startvol, retval;
       a_mergevec.resize(1, a_vof);
-      
       if(a_graph.isCovered(a_vof.m_pt))
       {
         Chombo4::MayDay::Error("cannot create EBCMVolume from a covered cell");
@@ -770,10 +775,7 @@ namespace EBCM
     }
     ///
     /**
-       Takes fully unstructured EB data and puts it into EBCM volumes that 
-       Blob structures.   
-       The set that results is a fully unstructured (and merged, if you ask for it) graph.
-       return value = 0 means no errors.
+       Translate all this mixed stuff into sparse  representation that we actually store
     */
     static inline  int
     makeTheBlobs(shared_ptr<vector<EBCMVolu<order> > >     & a_volumes,
@@ -788,45 +790,44 @@ namespace EBCM
     {
       a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order> > ());
       a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>      ());
-      //define the map and set it all to covered.
-      //the input set contains only regular and irregular
+      //define the map and set it all to covered.   the input set contains only regular and irregular
       a_map->define(a_graph.getRegion());
       a_map->setVal(-2);
       shared_ptr<set<pr_vof   > >  vofsLeft(new set<pr_vof>() );
-      *vofLeft = a_inputVoFs;
+      *vofsLeft = *a_inputVoFs;
       
       for(auto vofit = a_inputVoFs->begin(); vofit != a_inputVoFs->end(); ++vofit)
       {
         auto vof = *vofit;
-        if(a_graph->isRegular(vof.m_pt))
+        if(a_graph.isRegular(vof.m_pt))
         {
+          //only reset it if it is set to covered.   It can also be reset to the vector value if merged
+          //and we do not want to undo the merger work of nearby volumes.
           int mapval = (*a_map)(vof.m_pt, 0);
           if(mapval == -2)
           {
-            //can be reset to irregular in the irreg section due to merger
+            //again, can be reset in the irreg section if nearby volumes merge
             (*a_map)(vof.m_pt, 0) = -1;
           }
-        }
-        else if(a_graph->isIrregular(vof.m_pt))
+        } //end if (this point regular          
+        else if(a_graph.isIrregular(vof.m_pt))
         {
-          if(vofsLeft->find(vof) != vofsLeft->end())
-          {
-            vector<pr_vof> mergevec;
-            EBCMVolu<order> volume =
-              createEBCMVolume(mergevec, *vof, , a_geoserv, a_domain, a_dit, a_dx,
-                               vofsLeft, a_graph, a_mergeSmallCells);
-            int vecInd = a_volumes.size();
-            for(int ivec = 0; ivec < mergevec.size(); ivec++)
-            {
-              (*a_map)(       mergevec[ivec], 0) = vecInd;
-              vofsLeft->erase(mergevec[ivec]);
-            }
-            a_volumes->push_back(volume);
-          } //end if(this vof is still available
-        } //end if this is irregular
-      } //end loop over input vofs
 
-      
+          vector<pr_vof> mergevec;
+          EBCMVolu<order> volume =
+            createEBCMVolume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
+                             vofsLeft, a_graph, a_mergeSmallCells);
+            
+          int vecInd = a_volumes->size();
+          for(int ivec = 0; ivec < mergevec.size(); ivec++)
+          {
+            (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
+            vofsLeft->erase(mergevec[ivec]);
+          }
+          a_volumes->push_back(volume);
+        } // end if this cell irregular
+      } // end oop over a_ebvolumes
+
       return 0;
     }//end  function makeTheBlobs
 
@@ -871,10 +872,8 @@ namespace EBCM
         //(those distinctions will change here because of merger making regulars into irregulars)
         unpackEBDescription(allEBInd, ebgrap);
         
-        //put all moment info into a (still fully irregular) a set of volumes
         //translate all this mixed stuff into sparse  representation that we actually store
-        makeTheBlobs(m_volumes, m_map, allBlobs, ebgrap, allEBInd, a_geoserv, a_domain, a_dit, a_dx, a_mergeSmallCells);
-
+        makeTheBlobs(m_volumes, m_map, allEBInd, a_geoserv, a_domain, a_dit, a_dx, ebgrap, a_mergeSmallCells);
       }
     }
     
@@ -993,7 +992,7 @@ namespace EBCM
      Given a specfied subbox covered by EBCMGraph, this iterator will move through the volumes 
      within the subbox.   They are divide by m_pt so this could get weird when merging happens.
      This can be used to find the volumes within the neighborhood of a particular cell.
-   */
+  */
   template <int order>
   class SubVolumeIterator
   {
@@ -1073,7 +1072,8 @@ namespace EBCM
     vector<unsigned int>  m_irregIndicies;
     double                m_dx;
   }; //end class subvolumeiterator
-} //end namespace EBCM
+
+}//end namespace EBCM
 
 
 #endif
