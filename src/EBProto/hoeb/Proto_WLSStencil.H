@@ -33,7 +33,6 @@ namespace Proto
                          const LapWLSFlux<YFACE   , order>   & a_yfaceflux,
                          const LapWLSFlux<ZFACE   , order>   & a_zfaceflux,
                          const LapWLSFlux<BOUNDARY, order>   & a_ebflux,
-                         int                                 a_neighType,
                          Real                                a_dx);
 
     //Gets Advection WLS flux divergence stencil
@@ -68,7 +67,6 @@ namespace Proto
                       const EBGraph                       & a_graph,
                       const MomentHolder<order>           & a_momentData,
                       const GradWLSCell<order>            & a_cellConstruct,
-                      int                                 a_neighType,
                       Real                                a_dx);
 
         //Gets WLS flux divergence stencil in a direction
@@ -83,7 +81,6 @@ namespace Proto
                           const DivWLSFlux<YFACE   , order>  & a_yfaceflux,
                           const DivWLSFlux<ZFACE   , order>  & a_zfaceflux,
                           const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-                          int                                 a_neighType,
                           Real                                a_dx);
 
     template<int dir>
@@ -100,7 +97,6 @@ namespace Proto
       string                                a_ebbcName,
       vector<string>                        a_dombcName[2*DIM],
       Real                                & a_inhoTerm,
-      int                                 a_neighType,
       Real                                a_dx);
 
     void

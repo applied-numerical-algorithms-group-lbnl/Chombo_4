@@ -1049,7 +1049,6 @@ namespace Proto
                          const MomentHolder<order>  & a_momentData,
                          const int                    a_dir,
                          IndMomSDMinOne             & a_faceMom,
-                         int                        & a_neighType,
                          Real                       a_signNormal,
                          Real                       a_dx) const
   {
@@ -1086,7 +1085,8 @@ namespace Proto
     // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
     while (neighs.size() <= momit.size()+DIM)
       {
-        vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
+        // vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
+        vols = neighs.getFaceNeighbors(a_face, radius, a_graph);
 
         neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
 
@@ -1176,7 +1176,6 @@ namespace Proto
                    const EBGraph                 & a_graph,
                    const MomentHolder<order>     & a_momentData,
                    Vector<IndMomDIM>             & a_ebnorm,
-                   int                             a_neighType,
                    const Real                    a_dx) const
   {
     PR_TIME("getEBFluxStencil");
@@ -1231,7 +1230,8 @@ namespace Proto
         // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
         while (neighs.size() <= momit.size()+DIM)
           {
-            vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
+            // vols = neighs.template getVoFsNeighbors<cent>(a_face, a_vof, radius, a_graph, a_neighType);
+            vols = neighs.getFaceNeighbors(a_face, radius, a_graph);
 
             neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
 
@@ -1303,7 +1303,6 @@ namespace Proto
                              const MomentHolder<order>  & a_momentData,
                              const int                    a_dir,
                              IndMomSDMinOne             & a_faceMom,
-                             int                        & a_neighType,
                              Real                       a_signNormal,
                              Real                       a_dx) const
   {
@@ -1342,7 +1341,8 @@ namespace Proto
     // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
     while (neighs.size() <= momit.size()+DIM)
       {
-        vols = neighs.getVoFsNeighbors(a_face, a_vof, radius, a_graph, a_neighType);
+        // vols = neighs.getVoFsNeighbors(a_face, a_vof, radius, a_graph, a_neighType);
+        vols = neighs.getFaceNeighbors(a_face,  radius, a_graph);
 
         neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, domainBCdir, a_dx, m_verbose);
 
@@ -1534,7 +1534,6 @@ namespace Proto
                        const EBIndex<cent>           & a_face,
                        const EBGraph                 & a_graph,
                        const MomentHolder<order>     & a_momentData,
-                       int                             a_neighType,
                        const Real                    a_dx) const
   {
     PR_TIME("getEBFluxStencil");
@@ -1901,7 +1900,8 @@ namespace Proto
     // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
     while (neighs.size() <= momit.size()+DIM)
       {
-        vols = neighs.template getVoFsNeighbors<CELL>(a_vof, a_vof, radius, a_graph, neighType);
+        // vols = neighs.template getVoFsNeighbors<CELL>(a_vof, a_vof, radius, a_graph, neighType);
+        vols = neighs.getCellNeighbors(a_vof, radius, a_graph);
 
         neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, m_domainBC, a_dx);
 

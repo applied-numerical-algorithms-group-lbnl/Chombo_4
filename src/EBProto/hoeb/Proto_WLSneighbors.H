@@ -63,15 +63,19 @@ namespace Proto
                      const EBGraph       & a_graph,
                      int                   a_neighType);
 
+    Vector<EBIndex<CELL> >
+    getCellNeighbors(const EBIndex<CELL> & a_vof,
+                     const int             a_baseRadius,
+                     const EBGraph       & a_graph);
+
     template<CENTERING cent>
     Vector<EBIndex<CELL> >
-    getNeighborsFrom(const EBIndex<cent> & a_face,
+    getFaceNeighbors(const EBIndex<cent> & a_face,
                      const int             a_baseRadius,
-                     const EBGraph       & a_graph) const;
+                     const EBGraph       & a_graph);
 
-    void
-    growNeighbors(Vector<EBIndex<CELL> > &a_base,
-                  const EBIndex<CELL> & a_vof,
+    Vector<EBIndex<CELL> >
+    growNeighbors(const int             a_baseRadius,
                   const EBGraph       & a_graph);
 
     // New version, use this
@@ -363,6 +367,7 @@ namespace Proto
   //Radius starts at one for the cells sharing the face, and
   //increases by one for the neighbor cells sharing a face with the original
   //cells of radius one.
+  //DEPRECATED, use cell or face specific version
   template<int order>
   template<CENTERING cent>
   Vector<EBIndex<CELL> >
@@ -374,6 +379,7 @@ namespace Proto
                    int                   a_neighType)
   {
     PR_TIME("getVoFsNeighbors");
+    CH_assert(false);
     m_weightDisVol.resize(0);
     m_cells.resize(0);
     MomentIterator<DIM,order> momit;
@@ -443,6 +449,116 @@ namespace Proto
         }
         startV = neighSize;
         if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
+      }
+    CH_assert(m_cells.size() == m_weightDisVol.size());
+    return m_cells;
+  }
+
+  template<int order>
+  Vector<EBIndex<CELL> >
+  Neighbors<order>::
+  getCellNeighbors(const EBIndex<CELL> & a_vof,
+                   const int             a_baseRadius,
+                   const EBGraph       & a_graph)
+  {
+    PR_TIME("getCellNeighbors");
+    m_weightDisVol.resize(0);
+    m_cells.resize(0);
+    MomentIterator<DIM,order> momit;
+    {
+      m_cells.push_back(a_vof);
+      m_weightDisVol.push_back(1);
+    }
+    return growNeighbors(a_baseRadius, a_graph);
+  }
+
+  template<int order>
+  template<CENTERING cent>
+  Vector<EBIndex<CELL> >
+  Neighbors<order>::
+  getFaceNeighbors(const EBIndex<cent> & a_face,
+                   const int             a_baseRadius,
+                   const EBGraph       & a_graph)
+  {
+    PR_TIME("getFaceNeighbors");
+    m_weightDisVol.resize(0);
+    m_cells.resize(0);
+    MomentIterator<DIM,order> momit;
+    {
+      if (cent == BOUNDARY)
+        {
+          EBIndex<CELL> voflo = a_face.getVoF();
+          m_cells.push_back(voflo);
+          m_weightDisVol.push_back(1);
+        }
+      else
+        {
+          EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
+          EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
+          if (!a_face.m_isBoundary)
+            {
+              m_cells.push_back(voflo);
+              m_weightDisVol.push_back(1);
+              m_cells.push_back(vofhi);
+              m_weightDisVol.push_back(1);
+            }
+          else
+            {
+              if (a_face.m_vofIDMe>=0)
+                {
+                  m_cells.push_back(vofhi);
+                  m_weightDisVol.push_back(1);
+                }
+              if (a_face.m_vofIDLo>=0)
+                {
+                  m_cells.push_back(voflo);
+                  m_weightDisVol.push_back(1);
+                }
+            }
+        }
+    }
+    return growNeighbors(a_baseRadius, a_graph);
+  }
+
+  template<int order>
+  Vector<EBIndex<CELL> >
+  Neighbors<order>::
+  growNeighbors(const int             a_baseRadius,
+                const EBGraph       & a_graph)
+  {
+    PR_TIME("growNeighbors");
+    CH_assert(m_cells.size() > 0);
+    CH_assert(m_weightDisVol.size() > 0);
+    CH_assert(m_cells.size() == m_weightDisVol.size());
+
+    MomentIterator<DIM,order> momit;
+    int startV = 0;
+    int new_rad = a_baseRadius;
+    for (int irad = 1; irad<=new_rad; irad++)
+      {
+        int neighSize = m_cells.size();
+        for (int ineigh = startV; ineigh<neighSize; ineigh++){
+          vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, m_cells[ineigh]);
+          for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
+            {
+              bool incl = true;
+              for(int ivof2 = 0; ivof2 < m_cells.size(); ivof2++)
+                {
+                  if (volsinclusive[ivof]==m_cells[ivof2])
+                    {
+                      incl=false;
+                      break;
+                    }
+                }
+              if (incl)
+                {
+                  m_cells.push_back(volsinclusive[ivof]);
+                  m_weightDisVol.push_back(irad+1);
+                }
+            }
+        }
+        startV = neighSize;
+        if (irad==new_rad && m_cells.size()<=momit.size()) new_rad++;
       }
     CH_assert(m_cells.size() == m_weightDisVol.size());
     return m_cells;

@@ -134,7 +134,6 @@ namespace Proto
                        const LapWLSFlux<YFACE   , order>   & a_yfaceflux,
                        const LapWLSFlux<ZFACE   , order>   & a_zfaceflux,
                        const LapWLSFlux<BOUNDARY, order>   & a_ebflux,
-                       int                                 a_neighType,
                        Real                                a_dx)
   {
     PR_TIME("getLaplaWLSDivFStencil");
@@ -205,7 +204,7 @@ namespace Proto
 
           if (a_xfaceflux.m_verbose) {pout() << "====================" << " stencil Xface" << xfaces[iface].m_pt << "====================" << endl;}
 
-          if (!xfaces[iface].m_isBoundary && a_neighType){
+          if (!xfaces[iface].m_isBoundary){
             LocalStencil<CELL, Real> fluxMStencil;
             LocalStencil<CELL, Real> fluxPStencil;
             Real inhomogTermM;
@@ -218,7 +217,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -227,7 +225,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -236,9 +233,9 @@ namespace Proto
             if (a_xfaceflux.m_verbose) {
               Real loContrib, hiContrib;
               getDistanceWeightedFluxAvgCoeffs(loContrib, hiContrib, centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
-              pout() << " Stencil averaging: "
-                     << "lo contrib " << loContrib
-                     << "hi contrib " << hiContrib
+              pout() << " Stencil averaging:"
+                     << " lo contrib " << loContrib
+                     << " hi contrib " << hiContrib
                      << std::endl;
             }
           }else{
@@ -247,7 +244,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
             if (a_xfaceflux.m_verbose) {pout() << " Boundary stencil, no averaging" << std::endl;}
@@ -315,7 +311,7 @@ namespace Proto
 
           if (a_yfaceflux.m_verbose) {pout()<<"====================" << " stencilY face " << yfaces[iface].m_pt << "====================" << endl;}
 
-          if (!yfaces[iface].m_isBoundary && a_neighType){
+          if (!yfaces[iface].m_isBoundary){
             LocalStencil<CELL, Real> fluxMStencil;
             LocalStencil<CELL, Real> fluxPStencil;
             Real inhomogTermM;
@@ -328,7 +324,6 @@ namespace Proto
                                            a_momentData,
                                            1,
                                            faceMom,
-                                           a_neighType,
                                            factor,
                                            a_dx);
 
@@ -337,7 +332,6 @@ namespace Proto
                                            a_momentData,
                                            1,
                                            faceMom,
-                                           a_neighType,
                                            factor,
                                            a_dx);
             fluxStencil = getDistanceWeightedFluxAvgStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
@@ -345,9 +339,9 @@ namespace Proto
             if (a_yfaceflux.m_verbose) {
               Real loContrib, hiContrib;
               getDistanceWeightedFluxAvgCoeffs(loContrib, hiContrib, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
-              pout() << " Stencil averaging: "
-                     << "lo contrib " << loContrib
-                     << "hi contrib " << hiContrib
+              pout() << " Stencil averaging:"
+                     << " lo contrib " << loContrib
+                     << " hi contrib " << hiContrib
                      << std::endl;
             }
             //if (a_yfaceflux.m_verbose)
@@ -362,7 +356,6 @@ namespace Proto
                                                a_momentData,
                                                1,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
             if (a_yfaceflux.m_verbose) {pout() << " Boundary stencil, no averaging" << std::endl;}
@@ -428,7 +421,7 @@ namespace Proto
             }
           }
 
-          if (!zfaces[iface].m_isBoundary && a_neighType){
+          if (!zfaces[iface].m_isBoundary){
             LocalStencil<CELL, Real> fluxMStencil;
             LocalStencil<CELL, Real> fluxPStencil;
             Real inhomogTermM;
@@ -441,7 +434,6 @@ namespace Proto
                                            a_momentData,
                                            2,
                                            faceMom,
-                                           a_neighType,
                                            factor,
                                            a_dx);
 
@@ -450,7 +442,6 @@ namespace Proto
                                            a_momentData,
                                            2,
                                            faceMom,
-                                           a_neighType,
                                            factor,
                                            a_dx);
             fluxStencil = getDistanceWeightedFluxAvgStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, 2, a_voludata, a_graph, a_dx);
@@ -461,7 +452,6 @@ namespace Proto
                                                a_momentData,
                                                2,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
             pout() << " Boundary stencil, no averaging" << std::endl;
@@ -513,7 +503,6 @@ namespace Proto
                                 a_graph,
                                 a_momentData,
                                 ebnorm,
-                                a_neighType,
                                 a_dx);
 
       if (a_ebflux.m_verbose)
@@ -1218,7 +1207,6 @@ namespace Proto
                         const DivWLSFlux<YFACE, order>  & a_yfaceflux,
                         const DivWLSFlux<ZFACE, order>  & a_zfaceflux,
                         const DivWLSFlux<BOUNDARY, order>  & a_ebflux,
-                        int                                a_neighType,
                         Real                                  a_dx)
   {
     PR_TIME("getWLSDivFCompStencil");
@@ -1336,7 +1324,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
             // the high side stencil (P)lus
@@ -1346,7 +1333,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -1363,7 +1349,6 @@ namespace Proto
                                                a_momentData,
                                                0,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
           }
@@ -1458,7 +1443,6 @@ namespace Proto
                                                a_momentData,
                                                1,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -1468,7 +1452,6 @@ namespace Proto
                                                a_momentData,
                                                1,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
             // fluxStencil = getAdvFluxStencil(fluxMStencil, fluxPStencil, centroid, voflo, vofhi, v_faceLoc, 1, a_voludata, a_graph, a_dx);
@@ -1488,7 +1471,6 @@ namespace Proto
                                                a_momentData,
                                                1,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
           }
@@ -1595,7 +1577,6 @@ namespace Proto
                                                zdombcName,
                                                2,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -1613,7 +1594,6 @@ namespace Proto
                                                zdombcName,
                                                2,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -1635,7 +1615,6 @@ namespace Proto
                                                zdombcName,
                                                2,
                                                faceMom,
-                                               a_neighType,
                                                factor,
                                                a_dx);
 
@@ -1671,7 +1650,6 @@ namespace Proto
                                         a_vof.getCutFace(),
                                         a_graph,
                                         a_momentData,
-                                        a_neighType,
                                         a_dx);
           a_inhoTerm += inhomogTerm;
         }
@@ -1707,7 +1685,6 @@ namespace Proto
                     const EBGraph                       & a_graph,
                     const MomentHolder<order>           & a_momentData,
                     const GradWLSCell<order>            & a_cellConstruct,
-                    int                                 a_neighType,
                     Real                                a_dx)
   {
     PR_TIME("getWLSGradStencil");

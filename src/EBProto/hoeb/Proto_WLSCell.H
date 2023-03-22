@@ -23,7 +23,6 @@ namespace Proto
         ParmParse pp;
         pp.get("radius", m_radius);
         pp.get("powerE", m_weightPower);
-        pp.query("neighListType", m_neighListType);
       }
 
     void
@@ -32,7 +31,6 @@ namespace Proto
         // defaults are an over-estimate but sufficiently large, and the minimal reasonable weighting
         m_radius = a_order; // how many cells out to grab
         m_weightPower = -(a_order+1); // WLS weighting power dist^P
-        m_neighListType = 0;
       }
 
     StencilAttributes()
@@ -51,8 +49,8 @@ namespace Proto
     inline int weightPower() const
       { return m_weightPower;}
 
-    inline int neighListType() const
-      { return m_neighListType;}
+    // inline int neighListType() const
+    //   { return m_neighListType;}
 
     inline Real smallCellTol() const
       { return m_smallCellTol;}
@@ -63,8 +61,6 @@ namespace Proto
     int m_radius = 0;
     // The weighting power to use
     int m_weightPower = 0;
-    // Neighbor list type. 0-FaceBased or 1-CellBased
-    int m_neighListType = 0;
     // at what point do small cells stop being relevant
     Real m_smallCellTol = 1e-11; // FIXME real aware
   };
@@ -514,7 +510,6 @@ namespace Proto
                            const MomentHolder<order>  & a_momentData,
                            const int                    a_dir,
                            IndMomSDMinOne             & a_faceMom,
-                           int                        & a_neighType,
                            Real                         a_signNormal,
                            Real                         a_dx) const;
 
@@ -527,7 +522,6 @@ namespace Proto
                      const EBGraph                 & a_graph,
                      const MomentHolder<order>     & a_momentData,
                      Vector<IndMomDIM>             & a_ebnorm,
-                     int                             a_neighType,
                      const Real                      a_dx) const;
 
     virtual ~LapWLSFlux()
@@ -817,7 +811,6 @@ namespace Proto
                                const MomentHolder<order>  & a_momentData,
                                const int                    a_dir,
                                IndMomSDMinOne             & a_faceMom,
-                               int                        & a_neighType,
                                Real                       a_signNormal,
                                Real                       a_dx) const;
 
@@ -829,7 +822,6 @@ namespace Proto
                          const EBIndex<cent>           & a_face,
                          const EBGraph                 & a_graph,
                          const MomentHolder<order>  & a_momentData,
-                         int                             a_neighType,
                          const Real                    a_dx) const;
 
     Real

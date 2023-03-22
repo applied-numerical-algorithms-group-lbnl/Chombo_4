@@ -499,7 +499,6 @@ namespace Proto
                                      a_graph,
                                      a_momentData,
                                      xflux, yflux, zflux, ebflux,
-                                     stenAttb.neighListType(),
                                      a_dx);
 
             // scale by volume? FIXME This sure doesn't work in both 2D and 3D
@@ -998,7 +997,6 @@ namespace Proto
                                        a_graph,
                                        a_momentData,
                                        xflux, yflux, zflux, ebflux,
-                                       stenAttb.neighListType(),
                                        a_dx);
 
             // unpack
@@ -1126,7 +1124,6 @@ namespace Proto
                                    a_graph,
                                    a_momentData,
                                    cellConstr,
-                                   stenAttb.neighListType(),
                                    a_dx);
 
             // unpack
