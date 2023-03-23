@@ -41,7 +41,7 @@ namespace EBCM
 
     bool operator==(const EBCMFace& a_input) const
     {
-      return ((m_lo == a__input.m_lo)  && (m_hi == a_input.m_hi));
+      return ((m_lo == a_input.m_lo)  && (m_hi == a_input.m_hi));
     }
   };
 
@@ -115,8 +115,8 @@ namespace EBCM
     }
 
     //see if ones low faces matches the others high faces.
-    static bool isConnectedTo(const EBCMVolu<order>& a_volOne,
-                              const EBCMVolu<order>& a_volTwo)
+    static bool connected(const EBCMVolu<order>& a_volOne,
+                          const EBCMVolu<order>& a_volTwo)
     {
       bool connected = false;
       if(!connected)
@@ -547,7 +547,7 @@ namespace EBCM
     volumesConnected(const EBCMVolu<order>& a_volOne,
                      const EBCMVolu<order>& a_volTwo)
     {
-      return a_volOne.isConnectedTo(a_volTwo);
+      return EBCMVolu<order>::connected(a_volOne, a_volTwo); // 
     }
     /// 
     /**
@@ -580,10 +580,14 @@ namespace EBCM
         }
         if(!found)
         {
-          Chombo4::MayDay::Error("could not find connected volume");
+          Chombo4::MayDay::Error("mergeManyIntoOne error: could not find connected volume");
         }
-
-        EBCMVolu<order> third = mergeTwoVolumesIntoThird(a_many[vofind0], a_many[vofind1]);
+        EBCMVolu<order> third; 
+        int errflag = mergeTwoVolumesIntoThird(third, a_many[vofind0], a_many[vofind1]);
+        if(errflag != 0)
+        {
+          Chombo4::MayDay::Error("mergeManyIntoOne error: function mergeTwoVolumesIntoOne failed");
+        }
 
         //we reduce the size of the vector by one with every call.
         vector<EBCMVolu<order> > volsLeft(a_many.size() - 1);
