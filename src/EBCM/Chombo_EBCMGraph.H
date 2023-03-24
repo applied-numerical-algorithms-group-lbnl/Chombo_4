@@ -69,12 +69,9 @@ namespace EBCM
     typedef Proto::IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef Proto::IndexedMoments<DIM  , order> IndMomSpaceDim;
     //
-    vector<EBCMFace<XFACE, order> >  m_xfaceslo;
-    vector<EBCMFace<YFACE, order> >  m_yfaceslo;
-    vector<EBCMFace<ZFACE, order> >  m_zfaceslo;
-    vector<EBCMFace<XFACE, order> >  m_xfaceshi;
-    vector<EBCMFace<YFACE, order> >  m_yfaceshi;
-    vector<EBCMFace<ZFACE, order> >  m_zfaceshi;
+    vector<EBCMFace<XFACE, order> >  m_xfaces;
+    vector<EBCMFace<YFACE, order> >  m_yfaces;
+    vector<EBCMFace<ZFACE, order> >  m_zfaces;
     vector<IrregFace<order> > m_irregFaces;
     
     bool                          m_regular;
@@ -121,29 +118,17 @@ namespace EBCM
       bool connected = false;
       if(!connected)
       {        
-        connected = foundMatch<XFACE>(a_volOne.m_xfaceslo, a_volTwo.m_xfaceshi);
+        connected = foundMatch<XFACE>(a_volOne.m_xfaces, a_volTwo.m_xfaces);
       }
       if(!connected)
       {
-        connected = foundMatch<XFACE>(a_volOne.m_xfaceshi, a_volTwo.m_xfaceslo);
+        connected = foundMatch<YFACE>(a_volOne.m_yfaces, a_volTwo.m_yfaces);
       }
-      if(!connected)
-      {
-        connected = foundMatch<YFACE>(a_volOne.m_yfaceslo, a_volTwo.m_yfaceshi);
-      }
-      if(!connected)
-      {
-        connected = foundMatch<YFACE>(a_volOne.m_yfaceshi, a_volTwo.m_yfaceslo);
-      }
-#if DIM==3
 
+#if DIM==3
       if(!connected)
       {
-        connected = foundMatch<ZFACE>(a_volOne.m_zfaceslo, a_volTwo.m_zfaceshi);
-      }
-      if(!connected)
-      {
-        connected= foundMatch<ZFACE>(a_volOne.m_zfaceshi, a_volTwo.m_zfaceslo);
+        connected = foundMatch<ZFACE>(a_volOne.m_zfaces, a_volTwo.m_zfaces);
       }
 #endif      
 
@@ -183,17 +168,21 @@ namespace EBCM
       auto yebfaclo= graph.getYFaces(a_vof, Side::Lo);
       auto yebfachi= graph.getYFaces(a_vof, Side::Hi);
 
-      fillFaceData<XFACE>(m_xfaceslo, xebfaclo, xfacdat);
-      fillFaceData<XFACE>(m_xfaceshi, xebfachi, xfacdat);
-      fillFaceData<YFACE>(m_yfaceslo, yebfaclo, yfacdat);
-      fillFaceData<YFACE>(m_yfaceshi, yebfachi, yfacdat);
+      auto xebfac = xebfaclo;
+      auto yebfac = yebfaclo;
+      xebfac.insert(xebfac.end(), xebfachi.begin(), xebfachi.end());
+      yebfac.insert(yebfac.end(), yebfachi.begin(), yebfachi.end());
+      
+      fillFaceData<XFACE>(m_xfaces, xebfac, xfacdat);
+      fillFaceData<YFACE>(m_yfaces, yebfac, yfacdat);
+
 #if DIM==3                     
+      auto zebfac = zebfaclo;
+      zebfac.insert(zebfac.end(), zebfachi.begin(), zebfachi.end());
       const auto & zfacdat = (*(a_geoserv->getZFaceData(a_domain)))[a_dit];
-      auto         zebfaclo= graph.getZFaces(a_vof, Side::Lo);
-      auto         zebfachi= graph.getZFaces(a_vof, Side::Hi);
-      fillFaceData<ZFACE>(m_zfaceslo, zebfaclo, zfacdat);
-      fillFaceData<ZFACE>(m_zfaceshi, zebfachi, zfacdat);
+      fillFaceData<ZFACE>(m_zfaces, zebfac, zfacdat);
 #endif
+      
       m_regular = false;
       m_pt = a_vof.m_pt;
       m_cells.resize(1, m_pt);
@@ -233,38 +222,35 @@ namespace EBCM
       m_irregFaces.resize(0);
       m_volmom.setRegular(a_dx);
       {
-        m_xfaceslo.resize(1);
-        m_xfaceshi.resize(1);
+        m_xfaces.resize(2);
         pr_pt lopt = m_pt - Point::Basis(0);
         pr_pt hipt = m_pt + Point::Basis(0);
         pr_vof lovof(lopt, 0);
         pr_vof hivof(hipt, 0);
         pr_vof ptvof(m_pt, 0);
-        m_xfaceslo[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_xfaceshi[0].defineAsRegular(ptvof, hivof, a_dx);
+        m_xfaces[0].defineAsRegular(lovof, ptvof, a_dx);
+        m_xfaces[1].defineAsRegular(ptvof, hivof, a_dx);
       }
       {
-        m_yfaceslo.resize(1);
-        m_yfaceshi.resize(1);
+        m_yfaceslo.resize(2);
         pr_pt lopt = m_pt - Point::Basis(1);
         pr_pt hipt = m_pt + Point::Basis(1);
         pr_vof lovof(lopt, 0);
         pr_vof hivof(hipt, 0);
         pr_vof ptvof(m_pt, 0);
 
-        m_yfaceslo[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_yfaceshi[0].defineAsRegular(ptvof, hivof, a_dx);
+        m_yfaces[0].defineAsRegular(lovof, ptvof, a_dx);
+        m_yfaces[1].defineAsRegular(ptvof, hivof, a_dx);
       }
 #if DIM==3
       {
-        m_zfaceslo.resize(1);
-        m_zfaceshi.resize(1);
+        m_zfaceshi.resize(2);
         pr_pt lopt = m_pt - Point::Basis(2);
         pr_pt hipt = m_pt + Point::Basis(2);
         pr_vof hivof(hipt, 0);
         pr_vof ptvof(m_pt, 0);
-        m_zfaceslo[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_zfaceshi[0].defineAsRegular(ptvof, hivof, a_dx);
+        m_zfaces[0].defineAsRegular(lovof, ptvof, a_dx);
+        m_zfaces[1].defineAsRegular(ptvof, hivof, a_dx);
       }
 #endif      
       defineDerivedMeasures(a_dx);
@@ -403,31 +389,6 @@ namespace EBCM
     }
   
 
-    ///make two vectors into one long one when merged faces align
-    template< CENTERING cent>
-    static inline void
-    mergeFaces(vector<EBCMFace<      cent, order> >       &  a_mergedFaces,
-               const vector<EBCMFace<cent, order> >       &  a_startFaces,
-               const vector<EBCMFace<cent, order> >       &  a_bigNeighFaces)
-    {
-      a_mergedFaces = a_startFaces;
-      a_mergedFaces.insert(a_mergedFaces.end(), a_bigNeighFaces.begin(), a_bigNeighFaces.end());
-    }
-
-    ///pick the correct faces for low and high if we are side by side
-    template< CENTERING cent>
-    static inline void
-    pickFaces(vector<EBCMFace<      cent, order> >       &  a_mergedFacesLo,
-              vector<EBCMFace<      cent, order> >       &  a_mergedFacesHi,
-              const vector<EBCMFace<cent, order> >       &  a_hiVoFFacesLo,
-              const vector<EBCMFace<cent, order> >       &  a_hiVoFFacesHi,
-              const vector<EBCMFace<cent, order> >       &  a_loVoFFacesLo,
-              const vector<EBCMFace<cent, order> >       &  a_loVoFFacesHi)
-    {
-      a_mergedFacesLo = a_loVoFFacesLo;
-      a_mergedFacesHi = a_hiVoFFacesHi;
-    }
-
     ///
     static inline void
     shiftAndMergeIrregData(EBCMVolu<order>                      & a_volMer,
@@ -453,7 +414,55 @@ namespace EBCM
       }
     }
 
+    ///
+    /**
+       makes the face centered structures of merged volume volMer from face structures
+       in volOne and volTwo.   If we detect matching faces, that is the line over which 
+       we are merging and those faces go away.  All other faces get thrown into the mix.
+    */
+    template <CENTERING cent>
+    consolidateFaces(vector<      EBCMFace<cent, order> >  & a_merged,
+                     const vector<EBCMFace<cent, order> >  & a_vecOne,
+                     const vector<EBCMFace<cent, order> &  & a_vecTwo)
+    {
+      a_merged.resize(0);
+      //add all faces from vecOne that have no match in vecTwo
+      addAllFirstNotInSecondToThird(a_merged, a_vecOne, a_vecTwo);
+      //add all faces from vecTwo that have no match in vecOne
+      addAllFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecTwo);
+      set<EBCMFace<order> > setOne, setTwo;
+      for(int ivec = 0; ivec < a_vecOne.size(); ivec++)
+      {
+        setOne.insert(a_vecOne[ivec]);
+      }
+      for(int ivec = 0; ivec < a_vecTwo.size(); ivec++)
+      {
+        setTwo.insert(a_vecTwo[ivec]);
+      }
 
+      for(int ivec = 0; ivec < a_vecOne.size(); ivec++)
+      {
+        
+        bool match = setTwo.find
+      }
+      }
+    
+    ///Consolidate in each direction
+    static inline void
+    consolidateFaces(EBCMVolu<order>                      & a_volMer,
+                     const EBCMVolu<order>                & a_volOne,
+                     const EBCMVolu<order>                & a_volTwo)
+    {
+
+      consolidateFaces<XFACE>(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces); 
+      consolidateFaces<YFACE>(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces);
+#if DIM==3      
+      consolidateFaces<ZFACE>(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces);
+#endif      
+    }
+
+
+    ///make EBCMVolu volMer that has eaten both volOne and volTwo
     static inline int
     mergeTwoVolumesIntoThird(EBCMVolu<order>                      & a_volMer,
                              const EBCMVolu<order>                & a_volOne,
@@ -465,80 +474,9 @@ namespace EBCM
       a_volMer.m_cells.insert(a_volMer.m_cells.end(), a_volTwo.m_cells.begin(), a_volTwo.m_cells.end());
       shiftAndMergeVolumeData(a_volMer, a_volOne, a_volTwo);
       shiftAndMergeIrregData( a_volMer, a_volOne, a_volTwo);
-    
-      pr_pt diff = a_volOne.m_pt - a_volTwo.m_pt;
-      if(diff[0] == 0) 
-      {
-        //No difference in x.  The points are adjacent
-        mergeFaces<XFACE>(a_volMer.m_xfaceslo, a_volOne.m_xfaceslo, a_volTwo.m_xfaceslo);
-        mergeFaces<XFACE>(a_volMer.m_xfaceshi, a_volOne.m_xfaceshi, a_volTwo.m_xfaceshi);
-      }
-      if(diff[1] == 0) 
-      {
-        //No difference in y.  The points are adjacent
-        mergeFaces<YFACE>(a_volMer.m_yfaceslo, a_volOne.m_yfaceslo, a_volTwo.m_yfaceslo);
-        mergeFaces<YFACE>(a_volMer.m_yfaceshi, a_volOne.m_yfaceshi, a_volTwo.m_yfaceshi);
-      }
-#if DIM==3
-      if(diff[2] == 0) 
-      {
-        //No difference in z.  The points are adjacent
-        mergeFaces<ZFACE>(a_volMer.m_zfaceslo, a_volOne.m_zfaceslo, a_volTwo.m_zfaceslo);
-        mergeFaces<ZFACE>(a_volMer.m_zfaceshi, a_volOne.m_zfaceshi, a_volTwo.m_zfaceshi);
-      }
-#endif
-      if(std::abs(diff[0] == 1))
-      {
-        bool volOneHigher = diff[0] == 1;
 
-        if(volOneHigher)
-        {
-          pickFaces<XFACE>(a_volMer.m_xfaceslo, a_volMer.m_xfaceshi,
-                           a_volOne.m_xfaceslo, a_volOne.m_xfaceshi, 
-                           a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi);
-        }
-        else
-        {
-          pickFaces<XFACE>(a_volMer.m_xfaceslo, a_volMer.m_xfaceshi,
-                           a_volTwo.m_xfaceslo, a_volTwo.m_xfaceshi, 
-                           a_volOne.m_xfaceslo, a_volOne.m_xfaceshi);
-        }
-      }
-      if(std::abs(diff[1] == 1))
-      {
-        bool volOneHigher = diff[1] == 1;
-        if(volOneHigher)
-        {
-          pickFaces<YFACE>(a_volMer.m_yfaceslo, a_volMer.m_yfaceshi,
-                           a_volOne.m_yfaceslo, a_volOne.m_yfaceshi, 
-                           a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi);
-        }
-        else
-        {
-          pickFaces<YFACE>(a_volMer.m_yfaceslo, a_volMer.m_yfaceshi,
-                           a_volTwo.m_yfaceslo, a_volTwo.m_yfaceshi, 
-                           a_volOne.m_yfaceslo, a_volOne.m_yfaceshi);
-        }
-      }
-#if DIM==3
-      if(std::abs(diff[2] == 1))
-      {
-        bool volOneHigher = diff[2] == 1;
-        if(volOneHigher)
-        {
-          pickFaces<ZFACE>(a_volMer.m_zfaceslo, a_volMer.m_zfaceshi,
-                           a_volOne.m_zfaceslo, a_volOne.m_zfaceshi, 
-                           a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi);
-        }
-        else
-        {
-          pickFaces<ZFACE>(a_volMer.m_zfaceslo, a_volMer.m_zfaceshi,
-                           a_volTwo.m_zfaceslo, a_volTwo.m_zfaceshi, 
-                           a_volOne.m_zfaceslo, a_volOne.m_zfaceshi);
-        }
-      }
-
-#endif
+      consolidateFaces( a_volMer, a_volOne, a_volTwo);
+      
 
       return 0;
     } //end funciton mergeTwoIntoThird
@@ -570,7 +508,8 @@ namespace EBCM
         const auto & volu0 = a_many[0];
         int vofind1 = -1;
         bool found = false;
-        for(int ivec = 0; (ivec < a_many.size()) && (!found); ivec++)
+        //start at 1 because vofind0= 0
+        for(int ivec = 1; (ivec < a_many.size()) && (!found); ivec++)
         {
           if(volumesConnected(volu0, a_many[ivec]))
           {
