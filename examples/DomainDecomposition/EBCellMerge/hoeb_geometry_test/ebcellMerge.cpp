@@ -84,6 +84,8 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
   shared_ptr< ebcm_meta  >
     metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, mergeSmallCells));
 
+  string filename("graph_pic.hdf5");
+  metaDataPtr->outputGraphMapAsHDF5(filename);
   //smuggle stuff out to make this a little bit useful.
   a_ebcm   = metaDataPtr;
   a_grids  = vecgrids[0];

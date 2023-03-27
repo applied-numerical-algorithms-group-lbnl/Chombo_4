@@ -232,7 +232,7 @@ namespace EBCM
         m_xfaces[1].defineAsRegular(ptvof, hivof, a_dx);
       }
       {
-        m_yfaceslo.resize(2);
+        m_yfaces.resize(2);
         pr_pt lopt = m_pt - Point::Basis(1);
         pr_pt hipt = m_pt + Point::Basis(1);
         pr_vof lovof(lopt, 0);
@@ -244,7 +244,7 @@ namespace EBCM
       }
 #if DIM==3
       {
-        m_zfaceshi.resize(2);
+        m_zfaces.resize(2);
         pr_pt lopt = m_pt - Point::Basis(2);
         pr_pt hipt = m_pt + Point::Basis(2);
         pr_vof hivof(hipt, 0);
@@ -414,6 +414,34 @@ namespace EBCM
       }
     }
 
+
+    //the vectors should be very short 
+    template <CENTERING cent>
+    static inline void
+    addAllOfFirstNotInSecondToThird(vector<      EBCMFace<cent, order> >  & a_merged,
+                                    const vector<EBCMFace<cent, order> >  & a_vecOne,
+                                    const vector<EBCMFace<cent, order> >  & a_vecTwo)
+    {
+      for(int ione= 0; ione < a_vecOne.size(); ione++)
+      {
+        const auto& oneval = a_vecOne[ione];
+        bool matchFound = false;
+        for(int itwo= 0; itwo < a_vecTwo.size(); itwo++)
+        {
+          const auto& twoval = a_vecTwo[itwo];
+          if(oneval == twoval) //the old one -two
+          {
+            matchFound = true;
+          }
+        }
+        if(!matchFound)
+        {
+          a_merged.push_back(oneval);
+        }
+      }
+    }
+
+      
     ///
     /**
        makes the face centered structures of merged volume volMer from face structures
@@ -421,43 +449,29 @@ namespace EBCM
        we are merging and those faces go away.  All other faces get thrown into the mix.
     */
     template <CENTERING cent>
+    static inline void
     consolidateFaces(vector<      EBCMFace<cent, order> >  & a_merged,
                      const vector<EBCMFace<cent, order> >  & a_vecOne,
-                     const vector<EBCMFace<cent, order> &  & a_vecTwo)
+                     const vector<EBCMFace<cent, order> >  & a_vecTwo)
     {
       a_merged.resize(0);
       //add all faces from vecOne that have no match in vecTwo
-      addAllFirstNotInSecondToThird(a_merged, a_vecOne, a_vecTwo);
+      addAllOfFirstNotInSecondToThird(a_merged, a_vecOne, a_vecTwo);
       //add all faces from vecTwo that have no match in vecOne
-      addAllFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecTwo);
-      set<EBCMFace<order> > setOne, setTwo;
-      for(int ivec = 0; ivec < a_vecOne.size(); ivec++)
-      {
-        setOne.insert(a_vecOne[ivec]);
-      }
-      for(int ivec = 0; ivec < a_vecTwo.size(); ivec++)
-      {
-        setTwo.insert(a_vecTwo[ivec]);
-      }
-
-      for(int ivec = 0; ivec < a_vecOne.size(); ivec++)
-      {
-        
-        bool match = setTwo.find
-      }
-      }
+      addAllOfFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecTwo);
+    }
     
-    ///Consolidate in each direction
+    ///Consolidate in each direction    static inline void
     static inline void
-    consolidateFaces(EBCMVolu<order>                      & a_volMer,
-                     const EBCMVolu<order>                & a_volOne,
-                     const EBCMVolu<order>                & a_volTwo)
+    consolidateFacesAllDirections(EBCMVolu<order>        & a_volMer,
+                                  const EBCMVolu<order>  & a_volOne,
+                                  const EBCMVolu<order>  & a_volTwo)
     {
 
-      consolidateFaces<XFACE>(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces); 
-      consolidateFaces<YFACE>(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces);
+      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces); 
+      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces);
 #if DIM==3      
-      consolidateFaces<ZFACE>(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces);
+      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces);
 #endif      
     }
 
@@ -475,7 +489,7 @@ namespace EBCM
       shiftAndMergeVolumeData(a_volMer, a_volOne, a_volTwo);
       shiftAndMergeIrregData( a_volMer, a_volOne, a_volTwo);
 
-      consolidateFaces( a_volMer, a_volOne, a_volTwo);
+      consolidateFacesAllDirections( a_volMer, a_volOne, a_volTwo);
       
 
       return 0;
@@ -670,7 +684,7 @@ namespace EBCM
     /**
        Creates volume from EB description.   If merger is necessary and called for,
        it calls for merger.   VoFsLeft gets modified by calling function.
-     */
+    */
     static
     inline EBCMVolu<order>
     createEBCMVolume(vector<pr_vof>                        & a_mergevec,
@@ -923,6 +937,40 @@ namespace EBCM
       }
     }
 
+    void outputGraphMapAsHDF5(const string & a_filename) const
+    {
+      LevelData<FArrayBox>  ldfabs(m_grids, 1, IntVect::Zero);
+      Chombo4::DataIterator dit = m_grids.dataIterator();
+
+      for(int ibox = 0;  ibox < dit.size(); ibox++)
+      {
+        auto& fab = ldfabs[dit[ibox]];
+        const auto& cmgraph = (*m_graphs)[dit[ibox]];
+        if(cmgraph.m_allRegular)
+        {
+          fab.setVal(-1);
+        }
+        else if(cmgraph.m_allCovered)
+        {
+          fab.setVal(-2);
+        }
+        else
+        {
+          ch_box chbox = m_grids[dit[ibox]];
+          pr_box prbox = ProtoCh::getProtoBox(chbox);
+          const auto &graphfab = *(cmgraph.m_map);
+          for(auto bit = prbox.begin(); bit != prbox.end(); ++bit)
+          {
+            auto pt = *bit;
+            auto iv = ProtoCh::getIntVect(pt);
+            fab(iv, 0) = graphfab(pt, 0);
+          }
+        } //end has irregular 
+          
+      } //end loop over boxes
+
+      writeLevelname(&ldfabs, a_filename.c_str());
+    }
     shared_ptr<cmgraph_distrib_t>  m_graphs;
     ch_dbl                         m_grids;
     ch_box                         m_domain;
