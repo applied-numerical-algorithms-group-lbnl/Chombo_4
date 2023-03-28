@@ -11,6 +11,7 @@ using std::set;
 namespace EBCM
 {
   using std::set;
+  using std::endl;
   using std::shared_ptr;
   using Chombo4::pout;
   using Chombo4::MayDay;
@@ -43,6 +44,13 @@ namespace EBCM
     {
       return ((m_lo == a_input.m_lo)  && (m_hi == a_input.m_hi));
     }
+
+    //for debugging.   proper IO would involve the moments.
+    inline void print() const
+    {
+      int icent = cent;
+      pout() << icent << "-side face:( " << m_lo << " , " << m_hi << " )" << endl;
+    }
   };
 
   template<int order>
@@ -57,6 +65,11 @@ namespace EBCM
       m_pt =  a_vof.m_pt;
 
       m_ebfmom.setToZero();
+    }
+
+    inline void print() const
+    {
+      pout() <<  "cut face:(" << m_pt << ")" << endl;
     }
 
   };
@@ -85,6 +98,11 @@ namespace EBCM
     Point    m_pt; 
     Real     m_dx;
 
+    inline void print() const
+    {
+      pout() << "volume :(" << m_pt << ")" << endl;
+    }
+    
     bool operator < (const EBCMVolu<order>& a_input) const
     {
       return (m_pt < a_input.m_pt);
@@ -425,6 +443,9 @@ namespace EBCM
       for(int ione= 0; ione < a_vecOne.size(); ione++)
       {
         const auto& oneval = a_vecOne[ione];
+
+        oneval.print();
+        
         bool matchFound = false;
         for(int itwo= 0; itwo < a_vecTwo.size(); itwo++)
         {
@@ -457,8 +478,15 @@ namespace EBCM
       a_merged.resize(0);
       //add all faces from vecOne that have no match in vecTwo
       addAllOfFirstNotInSecondToThird(a_merged, a_vecOne, a_vecTwo);
+      
       //add all faces from vecTwo that have no match in vecOne
-      addAllOfFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecTwo);
+      addAllOfFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecOne);
+
+      int icent = cent;
+      pout() << icent << "-side face sizes" 
+        << ": merged = "  << a_merged.size() 
+        << ", vecone = "  << a_vecOne.size() 
+        << ", vectwo = "  << a_vecTwo.size() << endl;
     }
     
     ///Consolidate in each direction    static inline void
