@@ -444,8 +444,6 @@ namespace EBCM
       {
         const auto& oneval = a_vecOne[ione];
 
-        oneval.print();
-        
         bool matchFound = false;
         for(int itwo= 0; itwo < a_vecTwo.size(); itwo++)
         {
@@ -473,7 +471,8 @@ namespace EBCM
     static inline void
     consolidateFaces(vector<      EBCMFace<cent, order> >  & a_merged,
                      const vector<EBCMFace<cent, order> >  & a_vecOne,
-                     const vector<EBCMFace<cent, order> >  & a_vecTwo)
+                     const vector<EBCMFace<cent, order> >  & a_vecTwo,
+                     bool a_printStuff)
     {
       a_merged.resize(0);
       //add all faces from vecOne that have no match in vecTwo
@@ -482,24 +481,28 @@ namespace EBCM
       //add all faces from vecTwo that have no match in vecOne
       addAllOfFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecOne);
 
-      int icent = cent;
-      pout() << icent << "-side face sizes" 
-        << ": merged = "  << a_merged.size() 
-        << ", vecone = "  << a_vecOne.size() 
-        << ", vectwo = "  << a_vecTwo.size() << endl;
+      if(a_printStuff)
+      {
+        int icent = cent;
+        pout() << icent << "-side face sizes" 
+               << ": merged = "  << a_merged.size() 
+               << ", vecone = "  << a_vecOne.size() 
+               << ", vectwo = "  << a_vecTwo.size() << endl;
+      }
     }
     
     ///Consolidate in each direction    static inline void
     static inline void
     consolidateFacesAllDirections(EBCMVolu<order>        & a_volMer,
                                   const EBCMVolu<order>  & a_volOne,
-                                  const EBCMVolu<order>  & a_volTwo)
+                                  const EBCMVolu<order>  & a_volTwo,
+                                  bool a_printStuff)
     {
 
-      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces); 
-      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces);
-#if DIM==3      
-      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces);
+      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces,a_printStuff); 
+      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces,a_printStuff);
+#if DIM==3                                                                    
+      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces,a_printStuff);
 #endif      
     }
 
@@ -508,7 +511,8 @@ namespace EBCM
     static inline int
     mergeTwoVolumesIntoThird(EBCMVolu<order>                      & a_volMer,
                              const EBCMVolu<order>                & a_volOne,
-                             const EBCMVolu<order>                & a_volTwo)
+                             const EBCMVolu<order>                & a_volTwo,
+                             Real a_dx, bool a_printStuff)
     {
       a_volMer.m_regular = false;
       a_volMer.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
@@ -517,9 +521,9 @@ namespace EBCM
       shiftAndMergeVolumeData(a_volMer, a_volOne, a_volTwo);
       shiftAndMergeIrregData( a_volMer, a_volOne, a_volTwo);
 
-      consolidateFacesAllDirections( a_volMer, a_volOne, a_volTwo);
+      consolidateFacesAllDirections( a_volMer, a_volOne, a_volTwo, a_printStuff);
       
-
+      a_volMer.defineDerivedMeasures(a_dx);
       return 0;
     } //end funciton mergeTwoIntoThird
 
@@ -536,7 +540,8 @@ namespace EBCM
     **/ 
     static
     inline EBCMVolu<order>
-    mergeManyIntoOne(const vector<EBCMVolu<order> >& a_many)
+    mergeManyIntoOne(const vector<EBCMVolu<order> >& a_many,
+                     Real a_dx, bool a_printStuff)
     {
       EBCMVolu<order> retval;
       if(a_many.size() == 1)
@@ -563,11 +568,13 @@ namespace EBCM
         {
           Chombo4::MayDay::Error("mergeManyIntoOne error: could not find connected volume");
         }
-        EBCMVolu<order> third; 
-        int errflag = mergeTwoVolumesIntoThird(third, a_many[vofind0], a_many[vofind1]);
+        EBCMVolu<order>          third; 
+        int errflag =
+          mergeTwoVolumesIntoThird(third, a_many[vofind0], a_many[vofind1],
+                                   a_dx, a_printStuff);
         if(errflag != 0)
         {
-          Chombo4::MayDay::Error("mergeManyIntoOne error: function mergeTwoVolumesIntoOne failed");
+          MayDay::Error("mergeManyIntoOne error: function mergeTwoVolumesIntoOne failed");
         }
 
         //we reduce the size of the vector by one with every call.
@@ -583,7 +590,7 @@ namespace EBCM
           }
         }
         //the rare instance where recusion is just way easier.
-        retval = mergeManyIntoOne(volsLeft);
+        retval = mergeManyIntoOne(volsLeft, a_dx, a_printStuff);
       
       }
       return retval;
@@ -609,7 +616,7 @@ namespace EBCM
 
        In any case, enforcing the standard doctrine of box-division 
        independence requires careful thought and lots of MPI communication 
-       so I am going to see if we can manage to  accomplish something 
+       so I am going to see if we can manage to  accomplish something worthwhile
        despite knowingly committing heresy and hope that I may not be labelled 
        apostate by my peers.
 
@@ -625,13 +632,17 @@ namespace EBCM
                      const double                          & a_dx,
                      const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                      const pr_ebgrap                       & a_graph,
-                     int numGhost)
+                     int a_numGhost, bool a_printStuff)
     {
       EBCMVolu<order> retval;
       pr_box ptbox(a_startvof.m_pt, a_startvof.m_pt);
-      pr_box grownbox = ptbox.grow(1);
+      pr_box grownbox = ptbox.grow(a_numGhost);
       grownbox &= a_graph.getRegion();
       a_allvofs.resize(0);
+      if(a_printStuff)
+      {
+        pout() << "grownbox = " << grownbox << endl;
+      }
       for(auto bit = grownbox.begin(); bit != grownbox.end(); ++bit)
       {
         auto pt = *bit;
@@ -640,14 +651,30 @@ namespace EBCM
         {
           //have to be certain to not double count here.
           //vofsLeft gets updated after createEBCMVolume returns
-          if(a_vofsLeft->find(vofs[ivof]) != a_vofsLeft->end())
+          bool stillhere = (a_vofsLeft->find(vofs[ivof]) != a_vofsLeft->end());
+          if(stillhere)
           {
             a_allvofs.push_back(vofs[ivof]);
+            if(a_printStuff)
+            {
+              pout() << "adding   " << vofs[ivof].m_pt << endl;
+            }
           }
+          else
+          {
+            if(a_printStuff)
+            {
+              pout() << "skipping " << vofs[ivof].m_pt << endl;
+            }
+          }
+          
         }
       } // end loop over cells in grown box      
 
-
+      if(a_printStuff)
+      {
+        pout() << "getGhostedVolume: a_allvofs.size() == " << a_allvofs.size() << endl;
+      }
       vector<EBCMVolu<order> > allvols(a_allvofs.size());
       for(int ivol = 0; ivol <         a_allvofs.size(); ivol++)
       {
@@ -668,7 +695,7 @@ namespace EBCM
       } // end loop over input vofs in the ghosted region
 
       //make two into one until there are no more
-      retval = mergeManyIntoOne(allvols);
+      retval = mergeManyIntoOne(allvols, a_dx, a_printStuff);
       return retval;
     } //end function getGhostedVolume 
 
@@ -689,17 +716,18 @@ namespace EBCM
                     const ch_dit                          & a_dit,
                     const double                          & a_dx,
                     const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
-                    const pr_ebgrap                       & a_graph)
+                    const pr_ebgrap                       & a_graph,
+                    bool a_printStuff)
     {
       EBCMVolu<order> retval;
       {
         int numghost = 1;
-        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost, a_printStuff);
       }
       if(retval.m_kappa < 1)
       {
         int numghost = 2;
-        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost);
+        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost, a_printStuff);
       }
       if(retval.m_kappa < 1)
       {
@@ -723,7 +751,8 @@ namespace EBCM
                      const double                          & a_dx,
                      const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                      const pr_ebgrap                       & a_graph,
-                     bool                                    a_mergeSmallCells)
+                     bool                                    a_mergeSmallCells,
+                     bool                                    a_printStuff)
     {
       EBCMVolu<order> startvol, retval;
       a_mergevec.resize(1, a_vof);
@@ -753,7 +782,8 @@ namespace EBCM
                                  a_dit,            
                                  a_dx,             
                                  a_vofsLeft,       
-                                 a_graph);
+                                 a_graph,
+                                 a_printStuff);
                                  
       }
       return retval;
@@ -797,19 +827,25 @@ namespace EBCM
         } //end if (this point regular          
         else if(a_graph.isIrregular(vof.m_pt))
         {
-
-          vector<pr_vof> mergevec;
-          EBCMVolu<order> volume =
-            createEBCMVolume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
-                             vofsLeft, a_graph, a_mergeSmallCells);
-            
-          int vecInd = a_volumes->size();
-          for(int ivec = 0; ivec < mergevec.size(); ivec++)
+          if(vofsLeft->find(vof) != vofsLeft->end())
           {
-            (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
-            vofsLeft->erase(mergevec[ivec]);
-          }
-          a_volumes->push_back(volume);
+            bool  printStuff = false;
+            //begin debug
+            printStuff = ((vof.m_pt[0]==25) && (vof.m_pt[1]== 27));
+            //end debug
+            vector<pr_vof> mergevec;
+            EBCMVolu<order> volume =
+              createEBCMVolume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
+                               vofsLeft, a_graph, a_mergeSmallCells, printStuff);
+            
+            int vecInd = a_volumes->size();
+            for(int ivec = 0; ivec < mergevec.size(); ivec++)
+            {
+              (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
+              vofsLeft->erase(mergevec[ivec]);
+            }
+            a_volumes->push_back(volume);
+          } //end if this is in vofsleft
         } // end if this cell irregular
       } // end oop over a_ebvolumes
 
