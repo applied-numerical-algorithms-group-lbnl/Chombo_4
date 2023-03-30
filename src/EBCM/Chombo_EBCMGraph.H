@@ -596,49 +596,36 @@ namespace EBCM
       return retval;
     } //end function mergeManyIntoOne
     
+
     ///
     /**
-       This implements the very simple merger strategy of just 
-       ghost the volume and merge it all together.  
-       Sometimes the obvious solution can work.
-       
-       Right now this is all on-box.   
-       This has the unfortunate consequence that we can have
-       solutions that depend on how the grid is divided into boxes.
-
-       In my particular numerical tradition, this is heresy. 
-       Numerical algorithms are supposed to produce answers that are
-       independent of how the domain is divided up into boxes.
-       (Of course, since this is the grid generation phase,
-       perhaps we can avoid schism in that we are changing the underlying 
-       meta data of the problem so box-division independence doctrine 
-       does not necessarily apply.)
-
-       In any case, enforcing the standard doctrine of box-division 
-       independence requires careful thought and lots of MPI communication 
-       so I am going to see if we can manage to  accomplish something worthwhile
-       despite knowingly committing heresy and hope that I may not be labelled 
-       apostate by my peers.
-
+      This coarsens, then refines the input cell to get a 2x2x2
+      (at least in cells, some may be covered cells) region
+       merge it all together.    This algorithm should be independent 
+       of box division decisions because of the blocking factor thing.
+       Absolutely not guaranteed to get kappa >= 1.
        --dtg
     **/
     static
     inline EBCMVolu<order>
-    getGhostedVolume(vector<pr_vof>                        & a_allvofs,
-                     const  pr_vof                         & a_startvof,
-                     const shared_ptr<ch_geoserv>          & a_geoserv,
-                     const ch_box                          & a_domain,
-                     const ch_dit                          & a_dit,
-                     const double                          & a_dx,
-                     const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
-                     const pr_ebgrap                       & a_graph,
-                     int a_numGhost, bool a_printStuff)
+    getRefinedCoarseVolume(vector<pr_vof>                        & a_vofsEaten,
+                           const  pr_vof                         & a_startvof,
+                           const shared_ptr<ch_geoserv>          & a_geoserv,
+                           const ch_box                          & a_domain,
+                           const ch_dit                          & a_dit,
+                           const double                          & a_dx,
+                           const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
+                           const pr_ebgrap                       & a_graph,
+                           bool a_printStuff)
     {
       EBCMVolu<order> retval;
-      pr_box ptbox(a_startvof.m_pt, a_startvof.m_pt);
-      pr_box grownbox = ptbox.grow(a_numGhost);
+      pr_pt finept = a_startvof.m_pt;
+      pr_pt coarpt = finept.coarsen(2);
+      pr_box coarbox(coarpt, coarpt);
+      pr_box finebox = coarbox.refine(2);
+      pr_box grownbox = finebox;
       grownbox &= a_graph.getRegion();
-      a_allvofs.resize(0);
+      a_vofsEaten.resize(0);
       if(a_printStuff)
       {
         pout() << "grownbox = " << grownbox << endl;
@@ -654,7 +641,7 @@ namespace EBCM
           bool stillhere = (a_vofsLeft->find(vofs[ivof]) != a_vofsLeft->end());
           if(stillhere)
           {
-            a_allvofs.push_back(vofs[ivof]);
+            a_vofsEaten.push_back(vofs[ivof]);
             if(a_printStuff)
             {
               pout() << "adding   " << vofs[ivof].m_pt << endl;
@@ -673,12 +660,12 @@ namespace EBCM
 
       if(a_printStuff)
       {
-        pout() << "getGhostedVolume: a_allvofs.size() == " << a_allvofs.size() << endl;
+        pout() << "getGhostedVolume: a_vofsEaten.size() == " << a_vofsEaten.size() << endl;
       }
-      vector<EBCMVolu<order> > allvols(a_allvofs.size());
-      for(int ivol = 0; ivol <         a_allvofs.size(); ivol++)
+      vector<EBCMVolu<order> > allvols(a_vofsEaten.size());
+      for(int ivol = 0; ivol <         a_vofsEaten.size(); ivol++)
       {
-        auto curpt = a_allvofs[ivol].m_pt;
+        auto curpt = a_vofsEaten[ivol].m_pt;
         if(a_graph.isCovered(curpt))
         {
           Chombo4::MayDay::Error("cannot create EBCMVolume from a covered cell");
@@ -689,7 +676,7 @@ namespace EBCM
         }
         else
         {
-          allvols[ivol].defineAsIrregular(a_allvofs[ivol], a_geoserv, a_domain, a_dit, a_dx);
+          allvols[ivol].defineAsIrregular(a_vofsEaten[ivol], a_geoserv, a_domain, a_dit, a_dx);
         }
 
       } // end loop over input vofs in the ghosted region
@@ -697,44 +684,8 @@ namespace EBCM
       //make two into one until there are no more
       retval = mergeManyIntoOne(allvols, a_dx, a_printStuff);
       return retval;
-    } //end function getGhostedVolume 
-
-
-    ///
-    /**
-       Call getGhostedVolume with nghost = 1.  if that is not big enough, try 2.
-       Sheer algorithmic brilliance, I tell you.   
-       If we cannot find (kappa > 1) with two ghost cells,  we give up in despair.
-       vofsLeft gets updated after createEBCMVolume returns
-    **/
-    static
-    inline EBCMVolu<order>
-    getMergedVolume(vector<pr_vof>                        & a_allvofs,
-                    const  pr_vof                         & a_startvof,
-                    const shared_ptr<ch_geoserv>          & a_geoserv,
-                    const ch_box                          & a_domain,
-                    const ch_dit                          & a_dit,
-                    const double                          & a_dx,
-                    const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
-                    const pr_ebgrap                       & a_graph,
-                    bool a_printStuff)
-    {
-      EBCMVolu<order> retval;
-      {
-        int numghost = 1;
-        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost, a_printStuff);
-      }
-      if(retval.m_kappa < 1)
-      {
-        int numghost = 2;
-        retval = getGhostedVolume(a_allvofs,  a_startvof, a_geoserv, a_domain, a_dit, a_dx, a_vofsLeft, a_graph,numghost, a_printStuff);
-      }
-      if(retval.m_kappa < 1)
-      {
-        MayDay::Error("could not find a full cell even with ghost rad == 2");
-      }
-      return retval;
     }
+    
     
     ///
     /**
@@ -743,8 +694,8 @@ namespace EBCM
     */
     static
     inline EBCMVolu<order>
-    createEBCMVolume(vector<pr_vof>                        & a_mergevec,
-                     const pr_vof                          & a_vof,
+    createEBCMVolume(vector<pr_vof>                        & a_vofsEaten,
+                     const pr_vof                          & a_startvof,
                      const shared_ptr<ch_geoserv>          & a_geoserv,
                      const ch_box                          & a_domain,
                      const ch_dit                          & a_dit,
@@ -755,39 +706,55 @@ namespace EBCM
                      bool                                    a_printStuff)
     {
       EBCMVolu<order> startvol, retval;
-      a_mergevec.resize(1, a_vof);
-      if(a_graph.isCovered(a_vof.m_pt))
+      if(a_graph.isCovered(a_startvof.m_pt))
       {
         Chombo4::MayDay::Error("cannot create EBCMVolume from a covered cell");
       }
-      else if(a_graph.isRegular(a_vof.m_pt))
+      else if(a_graph.isRegular(a_startvof.m_pt))
       {
-        startvol.defineAsRegular(a_vof.m_pt, a_dx);
+        startvol.defineAsRegular(a_startvof.m_pt, a_dx);
       }
       else
       {
-        startvol.defineAsIrregular(a_vof, a_geoserv, a_domain, a_dit, a_dx);
+        startvol.defineAsIrregular(a_startvof, a_geoserv, a_domain, a_dit, a_dx);
       }
       
       if( (startvol.m_kappa == 1.) || (!a_mergeSmallCells))
       {
         retval = startvol;
+        a_vofsEaten.resize(1, a_startvof);
       }
       else
       {
-        retval = getMergedVolume(a_mergevec,
-                                 a_vof, 
-                                 a_geoserv,        
-                                 a_domain,         
-                                 a_dit,            
-                                 a_dx,             
-                                 a_vofsLeft,       
-                                 a_graph,
-                                 a_printStuff);
-                                 
+        a_vofsEaten.resize(0);
+
+        EBCMVolu<order> retval =
+        getRefinedCoarseVolume(a_vofsEaten,  a_startvof, a_geoserv, a_domain,
+                               a_dit, a_dx, a_vofsLeft, a_graph, a_printStuff);
       }
       return retval;
     }
+
+    ///
+    /**
+       Modifies a_volumes in place by merging all of the entries in a_tooSmall
+       to their neighbors found in a_volumes.   a_volumes should not change in size
+       but some of its entries will get fatter.
+    */
+    static inline void
+    mergeSmallVolumesWithNeighbors(shared_ptr<vector<EBCMVolu<order> > >     & a_volumes,
+                                   shared_ptr<vector<EBCMVolu<order> > >     & a_tooSmall,
+                                   const shared_ptr<ch_geoserv>              & a_geoserv,
+                                   const ch_box                              & a_domain,
+                                   const ch_dit                              & a_dit,
+                                   const double                              & a_dx,
+                                   const shared_ptr<set<pr_vof   > >         & a_vofsLeft,
+                                   const pr_ebgrap                           & a_graph,
+                                   bool a_printStuff)
+    {
+      MayDay::Error("not implemented");
+    }
+
     ///
     /**
        Translate all this mixed stuff into sparse  representation that we actually store
@@ -803,6 +770,7 @@ namespace EBCM
                  const pr_ebgrap                           & a_graph,
                  bool                                        a_mergeSmallCells)
     {
+      bool  printStuff = false;
       a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order> > ());
       a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>      ());
       //define the map and set it all to covered.   the input set contains only regular and irregular
@@ -810,7 +778,7 @@ namespace EBCM
       a_map->setVal(-2);
       shared_ptr<set<pr_vof   > >  vofsLeft(new set<pr_vof>() );
       *vofsLeft = *a_inputVoFs;
-      
+      shared_ptr< vector<EBCMVolu<order> > > tooSmalls(new vector<EBCMVolu<order> >());
       for(auto vofit = a_inputVoFs->begin(); vofit != a_inputVoFs->end(); ++vofit)
       {
         auto vof = *vofit;
@@ -829,7 +797,6 @@ namespace EBCM
         {
           if(vofsLeft->find(vof) != vofsLeft->end())
           {
-            bool  printStuff = false;
             //begin debug
             printStuff = ((vof.m_pt[0]==25) && (vof.m_pt[1]== 27));
             //end debug
@@ -844,11 +811,25 @@ namespace EBCM
               (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
               vofsLeft->erase(mergevec[ivec]);
             }
-            a_volumes->push_back(volume);
+            if( (volume.m_kappa < 1.) && (a_mergeSmallCells))
+            {
+              tooSmalls->push_back(volume);
+            }
+            else
+            {
+              a_volumes->push_back(volume);
+            }
           } //end if this is in vofsleft
         } // end if this cell irregular
       } // end oop over a_ebvolumes
 
+      if(tooSmalls->size() > 0)
+      {
+        printStuff= false;
+        mergeSmallVolumesWithNeighbors(a_volumes, tooSmalls,
+                                       a_geoserv, a_domain, a_dit, a_dx,
+                                       vofsLeft, a_graph, printStuff);
+      }
       return 0;
     }//end  function makeTheBlobs
 
