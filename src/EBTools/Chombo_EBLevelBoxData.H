@@ -637,7 +637,8 @@ writeEBLevelHDF5(const string& a_filename,
                  const Box                             & a_domain,
                  shared_ptr<LevelData<EBGraph>  > a_graphs,
                  Real                             a_coveredval = 0.0,
-                 Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0)
+                 Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0,
+                 std::vector<std::string> a_varNames={})
 {
 
 #ifdef CH_USE_HDF5
@@ -696,7 +697,14 @@ writeEBLevelHDF5(const string& a_filename,
   Vector<string> names(NUMCOMPS+1);
   for(unsigned int icomp = 0; icomp < NUMCOMPS; icomp++)
   {
-    names[icomp] = string("var_") + std::to_string(icomp);
+    if ((a_varNames.size()==NUMCOMPS) && (a_varNames[icomp]!=""))
+      {
+        names[icomp] = a_varNames[icomp];
+      }
+    else
+      {
+        names[icomp] = string("var_") + std::to_string(icomp);
+      }
   }
   names[NUMCOMPS] = string("fraction-0");
 

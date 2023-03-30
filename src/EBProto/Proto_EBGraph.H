@@ -11,7 +11,7 @@ namespace Proto
 {
 
   /// FIXME forgive the rant, but this class causes many cascading challenges
-  /// There is an important lesson to be learned here about template usage. On the surface this class makes a lot of sense as a template, it does something fairly different depending upon the centering. The problem with this becomes, now anything that uses this must also be dependent on the centering also. As a result, there is no sane way to loop over each direction or do things in a direction independent way, leading to lots of code reuse
+  /// There is an important lesson to be learned here about template usage. On the surface this class makes a lot of sense as a template, it does something fairly different depending upon the centering. The problem with this becomes, now anything that uses this must also be dependent on the centering also. As a result, there is no sane way to loop over each direction or do things in a direction independent way, leading to lots of code duplication
   /// REVIEW Consider changing this to store the centering as a trait of the index, rather than as a template.
   template<CENTERING cent>
   class EBIndex

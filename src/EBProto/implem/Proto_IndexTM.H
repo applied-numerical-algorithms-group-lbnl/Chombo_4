@@ -41,6 +41,10 @@ namespace Proto
   template<typename T, int N> std::ostream& operator<<(std::ostream       & a_os,
                                                        const IndexTM<T,N> & a_iv);
 
+
+  using IndexIDim = IndexTM<int, DIM>;
+  using IndexICodim = IndexTM<int, DIM-1>;
+
 ///
 /**
    Returns a basis vector in the given coordinate direction.<br>

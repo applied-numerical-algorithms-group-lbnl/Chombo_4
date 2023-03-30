@@ -47,7 +47,6 @@ public:
   {
   }
 
-  //FIXME just template this function, not the entire class
   template <int order>
   Real operator()(const EBGraph & a_graph,
                   const Real    & a_dx,
@@ -143,6 +142,99 @@ public:
   virtual Real getDerivative(IvDIM    a_power,
                              RealVect a_loc) const = 0;
 };
+
+/// Build a composite function of the form a*f(x)+b*g(x)+c*h(x)+...
+class FunctionSumSolution: public BaseExactSolution
+{
+public:
+  typedef IndexTM<int, DIM> IvDIM;
+
+  FunctionSumSolution(const vector<Real>& a_coef,
+                      const vector<shared_ptr<BaseExactSolution> >& a_funcs)
+    {
+      m_coef = a_coef;
+      m_funcs = a_funcs;
+      CH_assert(m_coef.size() == m_funcs.size());
+    }
+
+  virtual ~FunctionSumSolution()
+    {
+    }
+
+  virtual Real getDerivative(IvDIM    a_power,
+                             RealVect a_loc) const
+    {
+      // simple derivative sum rule
+      Real deriv = 0;
+      for(int i=0; i!=m_funcs.size(); i++)
+        {
+          deriv += m_coef[i]*m_funcs[i]->getDerivative(a_power, a_loc);
+        }
+      return deriv;
+    }
+
+private:
+  vector<Real> m_coef;
+  vector<shared_ptr<BaseExactSolution> > m_funcs;
+};
+
+// /// Build a composite function of the form f(x)*g(x)
+// class FunctionProdSolution: public BaseExactSolution
+// {
+// public:
+//   typedef IndexTM<int, DIM> IvDIM;
+
+//   FunctionProdSolution(BaseExactSolution& a_fx,
+//                        BaseExactSolution& a_gx)
+//     {
+//       m_fx = a_fx;
+//       m_gx = a_gx;
+//     }
+
+//   virtual ~FunctionProdSolution()
+//     {
+//     }
+
+//   virtual Real getDerivative(IvDIM    a_power,
+//                              RealVect a_loc) const
+//     {
+//       // derivative product rule. Only for 2 functions, any higher derivative
+//       Real deriv = 0;
+//       for(int d=0; d!=DIM; d++)
+//         {
+//           for (int k=0; k!=n; k++) // dx_i^n (f*g)
+//             {
+//               IvDIM fDeriv = a_power;
+//               fDeriv[d] = k;
+//               IvDIM gDeriv = a_power;
+//               gDeriv[d] = n-k;
+//               deriv += binomial(n, k) * m_fx.getDerivative(a_power, a_loc) * m_gx.getDerivative(a_power, a_loc);
+//             }
+//         }
+//       return deriv;
+//     }
+
+//    void sumDerivTerms(vector<stint>& a_derivs,
+//                       vector<Real>& a_coef,
+//                       int a_power) const
+//     {
+//       a_derivs.resize(a_power+1);
+//       a_coef.resize(a_power+1);
+//       for (int k=0; k!=a_power; k++) // dx_i^n (f*g)
+//         {
+//           IvDIM fDeriv = a_power;
+//           fDeriv[d] = k;
+//           IvDIM gDeriv = a_power;
+//           gDeriv[d] = n-k;
+//           deriv += binomial(n, k) * m_fx.getDerivative(a_power, a_loc) * m_gx.getDerivative(a_power, a_loc);
+//         }
+//       return deriv;
+//     }
+
+// private:
+//   BaseExactSolution m_fx;
+//   BaseExactSolution m_gx;
+// };
 
 ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
 // template <unsigned int order>

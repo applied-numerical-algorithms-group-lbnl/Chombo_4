@@ -8,6 +8,12 @@
 namespace Proto
 {
 
+  // template<int order>
+  // class NeighborData
+  // {
+
+  // };
+
   //Class that will contain all the information related to neighbors VoFs,
   //boundary faces and eb faces in a certain radius.
   //FIXME this class is too transparent about how data is stored,
@@ -303,6 +309,7 @@ namespace Proto
       CH_assert(sizeEB() == m_ebfneighNorm.size());
     }
 
+    // These are things really don't need to be public and make more sense as a unordered map of tuples
     // the cells used in the neighborhood
     Vector<EBIndex<CELL> >  m_cells;
     //Volume moments
@@ -368,91 +375,91 @@ namespace Proto
   //increases by one for the neighbor cells sharing a face with the original
   //cells of radius one.
   //DEPRECATED, use cell or face specific version
-  template<int order>
-  template<CENTERING cent>
-  Vector<EBIndex<CELL> >
-  Neighbors<order>::
-  getVoFsNeighbors(const EBIndex<cent> & a_face,
-                   const EBIndex<CELL> & a_vof,
-                   const int             a_radius,
-                   const EBGraph       & a_graph,
-                   int                   a_neighType)
-  {
-    PR_TIME("getVoFsNeighbors");
-    CH_assert(false);
-    m_weightDisVol.resize(0);
-    m_cells.resize(0);
-    MomentIterator<DIM,order> momit;
-    if (a_neighType == 1)
-      {
-        m_cells.push_back(a_vof);
-        m_weightDisVol.push_back(1);
-      }
-    else
-      {
-        if (cent == BOUNDARY)
-          {
-            EBIndex<CELL> voflo = a_face.getVoF();
-            m_cells.push_back(voflo);
-            m_weightDisVol.push_back(1);
-          }
-        else
-          {
-            EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
-            EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
-            if (!a_face.m_isBoundary)
-              {
-                m_cells.push_back(voflo);
-                m_weightDisVol.push_back(1);
-                m_cells.push_back(vofhi);
-                m_weightDisVol.push_back(1);
-              }
-            else
-              {
-                if (a_face.m_vofIDMe>=0)
-                  {
-                    m_cells.push_back(vofhi);
-                    m_weightDisVol.push_back(1);
-                  }
-                if (a_face.m_vofIDLo>=0)
-                  {
-                    m_cells.push_back(voflo);
-                    m_weightDisVol.push_back(1);
-                  }
-              }
-          }
-      }
-    int startV = 0;
-    int new_rad = a_radius;
-    for (int irad = 1; irad<=new_rad; irad++)
-      {
-        int neighSize = m_cells.size();
-        for (int ineigh = startV; ineigh<neighSize; ineigh++){
-          vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, m_cells[ineigh]);
-          for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
-            {
-              bool incl = true;
-              for(int ivof2 = 0; ivof2 < m_cells.size(); ivof2++)
-                {
-                  if (volsinclusive[ivof]==m_cells[ivof2])
-                    {
-                      incl=false;
-                      break;
-                    }
-                }
-              if (incl)
-                {
-                  m_cells.push_back(volsinclusive[ivof]);
-                  m_weightDisVol.push_back(irad+1);
-                }
-            }
-        }
-        startV = neighSize;
-        if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
-      }
-    CH_assert(m_cells.size() == m_weightDisVol.size());
-    return m_cells;
-  }
+  // template<int order>
+  // template<CENTERING cent>
+  // Vector<EBIndex<CELL> >
+  // Neighbors<order>::
+  // getVoFsNeighbors(const EBIndex<cent> & a_face,
+  //                  const EBIndex<CELL> & a_vof,
+  //                  const int             a_radius,
+  //                  const EBGraph       & a_graph,
+  //                  int                   a_neighType)
+  // {
+  //   PR_TIME("getVoFsNeighbors");
+  //   CH_assert(false);
+  //   m_weightDisVol.resize(0);
+  //   m_cells.resize(0);
+  //   MomentIterator<DIM,order> momit;
+  //   if (a_neighType == 1)
+  //     {
+  //       m_cells.push_back(a_vof);
+  //       m_weightDisVol.push_back(1);
+  //     }
+  //   else
+  //     {
+  //       if (cent == BOUNDARY)
+  //         {
+  //           EBIndex<CELL> voflo = a_face.getVoF();
+  //           m_cells.push_back(voflo);
+  //           m_weightDisVol.push_back(1);
+  //         }
+  //       else
+  //         {
+  //           EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
+  //           EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
+  //           if (!a_face.m_isBoundary)
+  //             {
+  //               m_cells.push_back(voflo);
+  //               m_weightDisVol.push_back(1);
+  //               m_cells.push_back(vofhi);
+  //               m_weightDisVol.push_back(1);
+  //             }
+  //           else
+  //             {
+  //               if (a_face.m_vofIDMe>=0)
+  //                 {
+  //                   m_cells.push_back(vofhi);
+  //                   m_weightDisVol.push_back(1);
+  //                 }
+  //               if (a_face.m_vofIDLo>=0)
+  //                 {
+  //                   m_cells.push_back(voflo);
+  //                   m_weightDisVol.push_back(1);
+  //                 }
+  //             }
+  //         }
+  //     }
+  //   int startV = 0;
+  //   int new_rad = a_radius;
+  //   for (int irad = 1; irad<=new_rad; irad++)
+  //     {
+  //       int neighSize = m_cells.size();
+  //       for (int ineigh = startV; ineigh<neighSize; ineigh++){
+  //         vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, m_cells[ineigh]);
+  //         for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
+  //           {
+  //             bool incl = true;
+  //             for(int ivof2 = 0; ivof2 < m_cells.size(); ivof2++)
+  //               {
+  //                 if (volsinclusive[ivof]==m_cells[ivof2])
+  //                   {
+  //                     incl=false;
+  //                     break;
+  //                   }
+  //               }
+  //             if (incl)
+  //               {
+  //                 m_cells.push_back(volsinclusive[ivof]);
+  //                 m_weightDisVol.push_back(irad+1);
+  //               }
+  //           }
+  //       }
+  //       startV = neighSize;
+  //       if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
+  //     }
+  //   CH_assert(m_cells.size() == m_weightDisVol.size());
+  //   return m_cells;
+  // }
 
   template<int order>
   Vector<EBIndex<CELL> >

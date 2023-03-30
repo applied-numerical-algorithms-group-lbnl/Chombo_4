@@ -396,12 +396,7 @@ namespace Proto
   {
     PR_TIME("getFaceOpEvalMatrix");
     using Chombo4::pout;
-    RealVect startLoc;
-    for (int dir = 0; dir < DIM; dir++)
-    {
-      startLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
-      if (a_face.direction() == dir) startLoc[dir] = a_dx * (a_face.m_pt[dir]);
-    }
+    RealVect startLoc = Normalizor<order>::faceCenter(a_face, a_dx);
     // shift center of moments to a_faceLoc.
     // the moments are centered at the face center initially
     RealVect diff = startLoc;
@@ -474,12 +469,7 @@ namespace Proto
     using Chombo4::pout;
     //Real areaScaleFactor  = getRegularArea(a_dx);
 
-    RealVect startLoc;
-    for (int dir = 0; dir < DIM; dir++)
-    {
-      startLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
-      if (a_face.direction() == dir) startLoc[dir] = a_dx * (a_face.m_pt[dir]);
-    }
+    RealVect startLoc = Normalizor<order>::faceCenter(a_face, a_dx);
     // shift center of moments to a_faceLoc.
     // the moments are centered at the face center initially
     RealVect diff = startLoc;
@@ -744,6 +734,7 @@ namespace Proto
 
     Chombo4::LAPACKMatrix X, sT;
 
+    Real tol = std::numeric_limits<Real>::epsilon()*100; // all but the last two digits
     int info = solveLSTSVD(X, MTWT, QT,
                            10,
                            1.0e-13); // FIXME why this tolerance?
@@ -1065,12 +1056,7 @@ namespace Proto
 
     Neighbors<order> neighs;
 
-    RealVect faceLoc;
-    for (int dir = 0; dir < DIM; dir++)
-    {
-      faceLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
-      if (a_dir == dir) faceLoc[dir] = a_dx * (a_face.m_pt[dir]);
-    }
+    RealVect faceLoc = Normalizor<order>::faceCenter(a_face, a_dx);
 
     int radius = m_stenAttb.radius();
     Vector<EBIndex<CELL> > vols;
@@ -1614,12 +1600,7 @@ namespace Proto
   {
     PR_TIME("getFaceFluxMatrix");
     using Chombo4::pout;
-    RealVect startLoc;
-    for (int dir = 0; dir < DIM; dir++)
-    {
-      startLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
-      if (a_face.direction() == dir) startLoc[dir] = a_dx * (a_face.m_pt[dir]);
-    }
+    RealVect startLoc = Normalizor<order>::faceCenter(a_face, a_dx);
     // shift center of moments to a_faceLoc.
     // the moments are centered at the face center initially
     RealVect diff = startLoc;
@@ -2404,12 +2385,7 @@ namespace Proto
     MomentIterator<DIM, order> momit;
     IndMomDIM facemomDIM;
 
-    RealVect startLoc;
-    for (int dir = 0; dir < DIM; dir++)
-    {
-      startLoc[dir] = a_dx * (0.5 + a_face.m_pt[dir]);
-      if (a_face.direction() == dir) startLoc[dir] = a_dx * (a_face.m_pt[dir]);
-    }
+    RealVect startLoc = Normalizor<order>::faceCenter(a_face, a_dx);
     // shift center of moments to a_faceLoc.
     // the moments are centered at the face center initially
     RealVect diff = startLoc;
