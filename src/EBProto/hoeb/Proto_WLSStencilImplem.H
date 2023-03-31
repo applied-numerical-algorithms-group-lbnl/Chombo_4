@@ -1232,29 +1232,21 @@ namespace Proto
 
     auto& a_voludata = a_momentData.volumeMoments();
     //auto& a_ebfadata = a_momentData.ebFaceMoments();
-#if DIM >= 1
-    auto& a_xfacdata = a_momentData.template faceMoments<XFACE>();
-    //auto& a_ebnormxdata = a_momentData.ebNormal(0);
-    auto& a_vofStencilx = a_vofStencil[0];
-    a_vofStencilx.clear();
-#endif
-#if DIM >= 2
-    auto& a_yfacdata = a_momentData.template faceMoments<YFACE>();
-    //auto& a_ebnormydata = a_momentData.ebNormal(1);
-    auto& a_vofStencily = a_vofStencil[1];
-    a_vofStencily.clear();
-#endif
-#if DIM >= 3
-    auto& a_zfacdata = a_momentData.template faceMoments<ZFACE>();
-    //auto& a_ebnormzdata = a_momentData.ebNormal(2);
-    auto& a_vofStencilz = a_vofStencil[2];
-    a_vofStencilz.clear();
-#endif
 
+    // start with empty stencils
+    for (int dir=0; dir!=DIM; dir++)
+      {
+        a_vofStencil[dir].clear();
+      }
     a_inhoTerm = 0.;
     Real areaScaleFactor = getRegularArea(a_dx);
 
     /// First do all the x-face stuff
+#if DIM >= 1
+    {
+    auto& a_xfacdata = a_momentData.template faceMoments<XFACE>();
+    //auto& a_ebnormxdata = a_momentData.ebNormal(0);
+    auto& a_vofStencilx = a_vofStencil[0];
     for (SideIterator sit; sit.ok(); ++sit)
     {
       //vector< EBIndex<FACE> > xfaces = a_graph.getFaces<FACE>(a_vof, sit());
@@ -1367,8 +1359,15 @@ namespace Proto
         }
       }
     }
+    }
+#endif// DIM>=1
 
     // the y face stuff
+#if DIM >= 2
+    {
+    auto& a_yfacdata = a_momentData.template faceMoments<YFACE>();
+    //auto& a_ebnormydata = a_momentData.ebNormal(1);
+    auto& a_vofStencily = a_vofStencil[1];
     for (SideIterator sit; sit.ok(); ++sit)
     {
       vector< EBIndex<YFACE> > yfaces = a_graph.getYFaces(a_vof, sit());
@@ -1403,24 +1402,15 @@ namespace Proto
           IndMomSDMinOne faceMom;
           if (areaFrac < 1.0)
             {
-            faceMom = a_yfacdata(yfaces[iface], 0);
-            for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-            {
-              const IndexTM<int, DIM-1>& p = iter();
-              faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+              faceMom = a_yfacdata(yfaces[iface], 0);
             }
-          }
           else
             {
-            faceMom.setToRegular(a_dx);
-            for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-            {
-              const IndexTM<int, DIM-1>& p = iter();
-              faceMom[iter()] = faceMom[iter()]/(areaScaleFactor*POW(a_dx,p));
+              faceMom.setToRegular(a_dx);
             }
-          }
+          Normalizor<order>::normalizeFaceMoment(faceMom, a_dx);
 
-          if (a_yfaceflux.m_verbose) {pout()<<" stencilY face "<<yfaces[iface].m_pt<<endl;}
+          if (a_yfaceflux.m_verbose) {pout() << " stencilY face " <<yfaces[iface].m_pt << endl;}
 
           if (!yfaces[iface].m_isBoundary){
             Real inhomogTermM = 0;
@@ -1444,7 +1434,7 @@ namespace Proto
                                                a_dx);
             for (int dir = 0; dir!=DIM; dir++)
               {
-                fullFluxStencil[dir] = getDistanceWeightedFluxAvgStencil(fullFluxStencilM[dir], fullFluxStencilP[dir], centroid, voflo, vofhi, 0, a_voludata, a_graph, a_dx);
+                fullFluxStencil[dir] = getDistanceWeightedFluxAvgStencil(fullFluxStencilM[dir], fullFluxStencilP[dir], centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
               }
             inhomogTerm = getDistanceWeightedFluxAvgStencil(inhomogTermM, inhomogTermP, centroid, voflo, vofhi, 1, a_voludata, a_graph, a_dx);
           }
@@ -1479,9 +1469,15 @@ namespace Proto
         }
       }
     }
+    }
+#endif //DIM>=2
 
     // the z-face stuff
-#if DIM>=3
+#if DIM >= 3
+    {
+    auto& a_zfacdata = a_momentData.template faceMoments<ZFACE>();
+    //auto& a_ebnormzdata = a_momentData.ebNormal(2);
+    auto& a_vofStencilz = a_vofStencil[2];
     for (SideIterator sit; sit.ok(); ++sit)
     {
       //vector< EBIndez<FACE> > zfaces = a_graph.getFaces<FACE>(a_vof, sit());
@@ -1530,7 +1526,7 @@ namespace Proto
 
           if (a_zfaceflux.m_verbose)
             {
-              pout() << std::endl <<" stencil Zface "<<zfaces[iface].m_pt<<endl;
+              pout() << std::endl << " stencil Zface "<< zfaces[iface].m_pt << endl;
             }
 
           if (!zfaces[iface].m_isBoundary)
@@ -1569,7 +1565,7 @@ namespace Proto
                                                      inhomogTerm, a_vof, zfaces[iface],
                                                      a_graph,
                                                      a_momentData,
-                                                     0,
+                                                     2,
                                                      faceMom,
                                                      factor,
                                                      a_dx);
@@ -1594,8 +1590,8 @@ namespace Proto
         }
       }
     }
-
-#endif
+    }
+#endif //DIM >= 3
 
     {
       if(a_graph.isIrregular(a_vof.m_pt))
@@ -1616,22 +1612,13 @@ namespace Proto
     }
 
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
+    for (int dir=0; dir!=DIM; dir++)
       {
         Real diagweight;
         // a_vofStencilx.print();
-        bool foundVoF = a_vofStencilx.getValueAtVoF(diagweight, a_vof);
+        bool foundVoF = a_vofStencil[dir].getValueAtVoF(diagweight, a_vof);
         PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilx.setBetaWeight(diagweight);
-#if DIM>=2
-        foundVoF = a_vofStencily.getValueAtVoF(diagweight, a_vof);
-        PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencily.setBetaWeight(diagweight);
-#endif
-#if DIM>=3
-        foundVoF = a_vofStencilz.getValueAtVoF(diagweight, a_vof);
-        PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
-        a_vofStencilz.setBetaWeight(diagweight);
-#endif
+        a_vofStencil[dir].setBetaWeight(diagweight);
       }
   }
 

@@ -433,6 +433,16 @@ namespace Proto
 //             {
 //               isReg = isRegularStencil(vofInd, radius+2, a_graph, a_voludata, a_dx);
 //             }
+
+        {
+          // make the neighborhood about this cell to see if regular
+          Neighbors<order> neighs;
+          // base radius, +1 for cell/face centering, +1 to be safe
+          auto vols = neighs.getCellNeighbors(vofInd, stenAttb.radius()+2, a_graph);
+          neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, a_domainBC, a_dx, false);
+          if(neighs.isIterior()) {pout() << vofInd.m_pt << "is interior" << std::endl;}
+        }
+        
         bool pt_verbose = false;
         if (verbose)
           {
@@ -494,12 +504,12 @@ namespace Proto
             //Computing the flux divergence stencil
             lapSten.
               getLapWLSDivFStencil(a_stencil[ivof],
-                                     inhoTerm,
-                                     vofInd,
-                                     a_graph,
-                                     a_momentData,
-                                     xflux, yflux, zflux, ebflux,
-                                     a_dx);
+                                   inhoTerm,
+                                   vofInd,
+                                   a_graph,
+                                   a_momentData,
+                                   xflux, yflux, zflux, ebflux,
+                                   a_dx);
 
             // scale by volume? FIXME This sure doesn't work in both 2D and 3D
             a_stencil[ivof]*= 1.0/(a_dx*a_dx);
@@ -1009,11 +1019,11 @@ namespace Proto
             // auto& voludata = a_momentData.volumeMoments();
             // Normalizor<order>::normalizedVoluMoments(kappa, centroid, voludata, vofInd, a_graph, a_dx);
 
-            // scale by face? FIXME This sure doesn't work in both 2D and 3D
-            CH_assert(DIM == 2);
+            // scale by face? FIXME This sure doesn't seem right for both 2D and 3D
+            // CH_assert(DIM == 2);
             for (int dir=0; dir!=SpaceDim; dir++)
               {
-                a_stencil[dir][ivof] *= 1.0/(a_dx);
+                a_stencil[dir][ivof] *= 1./(a_dx);
               }
             a_inhoContr[ivof] /= (a_dx);
 

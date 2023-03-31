@@ -821,6 +821,7 @@ int solveLSTSVD(LAPACKMatrix& A, LAPACKMatrix& B, int a_maxiter, Real a_tol)
   X.setVal(0);
   while((iter== 0)|| ((residnorm >= tol) && (iter < a_maxiter) && (residnorm > a_tol)))
     {
+      pout() << "LSTSVD iter " << iter << std::endl;
       //this puts the answer into resid
       INFO = solveLSTSVDOnce(A, resid);
       incr = resid;
@@ -853,9 +854,9 @@ int solveLSTSVDOnce(LAPACKMatrix& A, LAPACKMatrix& B)
 {
   CH_TIME("LAPACKMatrix::solveLSTSVDOnce");
   // TODO - check that the sizes of A, B and C are compatible
-  int M = A.m_nrow;
-  int N = A.m_ncol;
-  int NRHS = B.m_ncol;
+  int M = A.numRow();
+  int N = A.numCol();
+  int NRHS = B.numCol();
   int LDA = N;
   int LDB = std::max(M,N);
 
@@ -1000,7 +1001,33 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   int LDA = M;
   int LDB = std::max(M,N);
 
-  int maxMxN = 4000;
+
+  Real RCOND = -1;
+  int INFO;
+  int RANK;
+
+  int maxMxN = 4000; // arbitrary high water mark
+  { // LAPACK will spit back how much space we need
+    int minMN = std::min(M,N);
+    //int LWORK = maxMxN;
+    int LWORK[2] = {1,1};
+    LWORK[0] = -1; // tells LAPACK to figure it out
+    LAPACKMatrix WORK(1, maxMxN);
+    CH_START(t1);
+    WORK.setVal(0);
+    CH_STOP(t1);
+    Real* S = new Real[minMN];
+    int* IWORK = new int[25*minMN];
+
+    LAPACKMatrix Acopy = A;
+    LAPACKMatrix Bcopy = B;
+    LAPACK(GELSD,gelsd)(&M, &N, &NRHS, Acopy.dataPtr(), &LDA,
+                        Bcopy.dataPtr(), &LDB, S, &RCOND, &RANK,
+                        WORK.dataPtr(), LWORK, IWORK, &INFO);
+    maxMxN = WORK(0,0);
+  }
+
+  
 
   int minMN = std::min(M,N);
   //int LWORK = maxMxN;
@@ -1012,11 +1039,6 @@ int solveLSTSVDOnce(LAPACKMatrix      & X,
   CH_STOP(t1);
   Real* S = new Real[minMN];
   int* IWORK = new int[25*minMN];
-  
-
-  Real RCOND = -1;
-  int INFO;
-  int RANK;
 
   X = LAPACKMatrix(N,NRHS);
   // LAPACK(GELSD,gelsd) destroys A, so send in a copy instead

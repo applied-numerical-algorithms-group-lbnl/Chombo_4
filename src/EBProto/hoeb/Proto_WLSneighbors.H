@@ -8,11 +8,10 @@
 namespace Proto
 {
 
-  // template<int order>
-  // class NeighborData
-  // {
+  template<int order>
+  class NeighborIter{
 
-  // };
+  };
 
   //Class that will contain all the information related to neighbors VoFs,
   //boundary faces and eb faces in a certain radius.
@@ -308,6 +307,7 @@ namespace Proto
       CH_assert(sizeEB() == m_ebfneighFrac.size());
       CH_assert(sizeEB() == m_ebfneighNorm.size());
     }
+
 
     // These are things really don't need to be public and make more sense as a unordered map of tuples
     // the cells used in the neighborhood
