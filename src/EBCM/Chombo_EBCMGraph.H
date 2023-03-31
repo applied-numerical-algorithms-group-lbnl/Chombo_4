@@ -752,7 +752,61 @@ namespace EBCM
                                    const pr_ebgrap                           & a_graph,
                                    bool a_printStuff)
     {
-      MayDay::Error("not implemented");
+      if(a_tooSmall->size() > 0)
+      {
+        //remember input volumes
+        vector<EBCMVolu<order> > inputVols = *a_volumes;
+        a_volumes->resize(0);
+
+        /**
+           Remember which members of inputVols get used in merger
+           so we do not double add them to a_volumes
+        **/
+        set<int> alreadyUsed;
+
+        for(int ismall = 0; ismall < a_tooSmall->size(); ismall++)
+        {
+          const auto& smallvol = (*a_tooSmall)[ismall];
+          int ineigh = -1; bool found = false;
+          //find a neighbor in the input volumes (which are all big)
+          for(int ivol = 0; ((ivol < inputVols.size()) && (!found)); ivol++)
+          {
+            const auto& bigvol = inputVols[ivol];
+            if(volumesConnected(smallvol, bigvol))
+            {
+              ineigh = ivol;
+              found = true;
+            }
+          }
+          if(!found)
+          {
+            pout() << "mergeSmallVolumesWithNeighbors ismall = " << ismall << endl;
+            MayDay::Error("small volume has no connections");
+          }
+          const auto& bigvol = inputVols[ineigh];
+          EBCMVolu<order> merged;
+          mergeTwoVolumesIntoThird(merged, smallvol, bigvol, a_dx, a_printStuff);
+          a_volumes->push_back(merged);
+          alreadyUsed.insert(ineigh);
+        }
+
+        /**
+           Add into a_volumes any inputs that were not used in merging.
+           The merged ones are already in a_volumes.
+        **/
+        for(int ivol = 0; ivol < inputVols.size(); ivol++)
+        {
+          if(alreadyUsed.find(ivol) == alreadyUsed.end())
+          {
+            a_volumes->push_back(inputVols[ivol]);
+          }
+        }
+        if(a_volumes->size() != inputVols.size())
+        {
+          //if this gets triggered, I probably got my set calculus wrong.
+          MayDay::Error("logic error");
+        }
+      }
     }
 
     ///
@@ -768,7 +822,8 @@ namespace EBCM
                  const ch_dit                              & a_dit,
                  const double                              & a_dx,
                  const pr_ebgrap                           & a_graph,
-                 bool                                        a_mergeSmallCells)
+                 bool                                        a_mergeSmallCells,
+                 bool a_printStuff)
     {
       bool  printStuff = false;
       a_volumes = shared_ptr<vector<EBCMVolu<order> > >(new vector<EBCMVolu<order> > ());
@@ -779,6 +834,9 @@ namespace EBCM
       shared_ptr<set<pr_vof   > >  vofsLeft(new set<pr_vof>() );
       *vofsLeft = *a_inputVoFs;
       shared_ptr< vector<EBCMVolu<order> > > tooSmalls(new vector<EBCMVolu<order> >());
+      ///two pass merger algorithm.   merge on coarsened cell then try to find neighbors
+      //for the orphans that did not have enough volume inthe 
+      double kappamin = 1.0;
       for(auto vofit = a_inputVoFs->begin(); vofit != a_inputVoFs->end(); ++vofit)
       {
         auto vof = *vofit;
@@ -811,6 +869,7 @@ namespace EBCM
               (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
               vofsLeft->erase(mergevec[ivec]);
             }
+            kappamin = std::min(kappamin, volume.m_kappa);
             if( (volume.m_kappa < 1.) && (a_mergeSmallCells))
             {
               tooSmalls->push_back(volume);
@@ -823,6 +882,11 @@ namespace EBCM
         } // end if this cell irregular
       } // end oop over a_ebvolumes
 
+      if(a_printStuff)
+      {
+        pout() << "makeTheBlobs: number of small cells = " << tooSmalls->size() <<", min kappa = " << kappamin << endl;
+      }
+      
       if(tooSmalls->size() > 0)
       {
         printStuff= false;
@@ -844,7 +908,8 @@ namespace EBCM
            const ch_box                          & a_domain,
            const ch_dit                          & a_dit,
            const double                          & a_dx,
-           bool                                    a_mergeSmallCells) 
+           bool                                    a_mergeSmallCells,
+           bool                                    a_printStuff) 
     {
       m_defined = true;
       m_dx         = a_dx;
@@ -875,7 +940,8 @@ namespace EBCM
         unpackEBDescription(allEBInd, ebgrap);
         
         //translate all this mixed stuff into sparse  representation that we actually store
-        makeTheBlobs(m_volumes, m_map, allEBInd, a_geoserv, a_domain, a_dit, a_dx, ebgrap, a_mergeSmallCells);
+        makeTheBlobs(m_volumes, m_map, allEBInd, a_geoserv, a_domain, a_dit, a_dx, ebgrap,
+                     a_mergeSmallCells, a_printStuff);
       }
     }
     
@@ -966,7 +1032,8 @@ namespace EBCM
     MetaDataLevel(const shared_ptr<ch_geoserv>& a_geoserv,
                   const ch_box                & a_domain,
                   const Real                  & a_dx,
-                  bool                          a_mergeSmallCells)
+                  bool                          a_mergeSmallCells,
+                  bool                          a_printStuff)
     {
       shared_ptr<ch_levelgeo> eb_description = (*a_geoserv)[a_domain];
       m_grids  = eb_description->getDBL();
@@ -978,7 +1045,8 @@ namespace EBCM
       auto dit = m_grids.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        (*m_graphs)[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx, a_mergeSmallCells);
+        (*m_graphs)[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx,
+                                      a_mergeSmallCells, a_printStuff);
       }
     }
 
