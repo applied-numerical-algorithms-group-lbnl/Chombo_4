@@ -873,8 +873,8 @@ namespace Proto
 
     inline static void
     getFaceMoments(IndMomDIM      & a_fac2volmom,
-                   int              a_faceDir,
-                   IndMomSDMinOne & a_facmom);
+                   const int        a_faceDir,
+                   const IndMomSDMinOne & a_facmom);
 
   };
 
@@ -897,12 +897,12 @@ namespace Proto
 
     inline static void
     getFaceMoments(IndMomDIM      & a_fac2volmom,
-                   int              a_faceDir,
-                   IndMomSDMinOne & a_facmom);
+                   const int        a_faceDir,
+                   const IndMomSDMinOne & a_facmom);
 
     inline static void
     getEBMoments(IndMomDIM         & a_ebfmom,
-		 Vector<IndMomDIM> & a_ebfNorm);
+                 const Vector<IndMomDIM> & a_ebfNorm);
 
   };
 

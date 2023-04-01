@@ -9,7 +9,8 @@ namespace Proto
 {
 
   template<int order>
-  class NeighborIter{
+  class NeighborIter
+  {
 
   };
 
@@ -90,8 +91,7 @@ namespace Proto
                                 const MomentHolder<order>  & a_momentData,
                                 const EBDomainBC<1>      & a_domainBC,
                                 Real                   a_dx,
-                                bool a_verbose = false,
-                                int a_fluxType = 0);
+                                bool a_verbose = false);
 
     // This is aiming to generate neighbors and moments, and have some way of checking the neighborhood is big enough
     // FIXME this is a work in progress, and uses some adhoc checks at the moment
@@ -123,62 +123,29 @@ namespace Proto
       }
 
     inline void
-    setWeightDisVol (Vector<int> & a_weightDisVol)
+    scaleMoments(Vector<IndMomDIM>      & a_volMom,
+                 Vector<IndMomSDMinOne> & a_facMom,
+                 Vector<IndMomDIM>      & a_ebfMom,
+                 Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
+                 Real                     a_dx)
       {
-        m_weightDisVol = a_weightDisVol;
-      };
-
-    inline void
-    setMomentsInfo(Vector<IndMomDIM>      & a_volMom,
-                   Vector<IndMomSDMinOne> & a_facMom,
-                   Vector<IndMomDIM>      & a_ebfMom,
-                   Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
-                   Real                     a_dx)
-      {
-        m_volMom.resize(a_volMom.size());
-        Real volScaleFactor  = getRegularVolume(a_dx);
-        Real areaScaleFactor = getRegularArea(a_dx);
         for(int i = 0; i < a_volMom.size(); ++i)
           {
-            IndMomDIM momspt = a_volMom[i];
-            for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-              {
-                const IndexTM<int, DIM>& p = iter();
-                m_volMom[i][iter()] = momspt[iter()]/(volScaleFactor*POW(a_dx,p));
-              }
+            Normalizor<order>::normalizeVolumeMoment(a_volMom[i], a_dx);
           }
-        m_facMom.resize(a_facMom.size());
         for(int i = 0; i < a_facMom.size(); ++i)
           {
-            IndMomSDMinOne momspt = a_facMom[i];
-            for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
-              {
-                const IndexTM<int, DIM-1>& p = iter();
-                m_facMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-              }
+            Normalizor<order>::normalizeFaceMoment(a_facMom[i], a_dx);
           }
-        m_ebfMom.resize(a_ebfMom.size());
         for(int i = 0; i < a_ebfMom.size(); ++i)
           {
-            IndMomDIM momspt = a_ebfMom[i];
-            for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-              {
-                const IndexTM<int, DIM>& p = iter();
-                m_ebfMom[i][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-              }
+            Normalizor<order>::normalizeFaceMoment(a_ebfMom[i], a_dx);
           }
-        m_ebfneighNorm.resize(a_ebfneighNorm.size());
         for (int i = 0; i < a_ebfneighNorm.size(); ++i)
           {
-            m_ebfneighNorm[i].resize(a_ebfneighNorm[i].size());
             for(int j = 0; j < a_ebfneighNorm[i].size(); ++j)
               {
-                IndMomDIM momspt = a_ebfneighNorm[i][j];
-                for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
-                  {
-                    const IndexTM<int, DIM>& p = iter();
-                    m_ebfneighNorm[i][j][iter()] = momspt[iter()]/(areaScaleFactor*POW(a_dx,p));
-                  }
+                Normalizor<order>::normalizeFaceMoment(a_ebfneighNorm[i][j], a_dx);
               }
           }
       };
@@ -192,38 +159,6 @@ namespace Proto
             ebfneighNorm[i] = m_ebfneighNorm[i];
           }
         return ebfneighNorm;
-      };
-
-    inline void setLocInfo (Vector<RealVect> & a_volLoc,
-                            Vector<RealVect> & a_facLoc,
-                            Vector<RealVect> & a_ebfLoc)
-      {
-        m_volLoc = a_volLoc;
-        m_facLoc = a_facLoc;
-        m_ebfLoc = a_ebfLoc;
-      };
-
-    inline void setWeightDisFacAndEB (Vector<int> & a_weightDisFac,
-                                      Vector<int> & a_weightDisEB)
-      {
-        m_weightDisFac = a_weightDisFac;
-        m_weightDisEB = a_weightDisEB;
-      };
-
-    inline void setFracInfo (Vector<Real> & a_volneighFrac,
-                             Vector<Real> & a_ebfneighFrac,
-                             Vector<Real> & a_facneighFrac)
-      {
-        m_volneighFrac = a_volneighFrac;
-        m_ebfneighFrac = a_ebfneighFrac;
-        m_facneighFrac = a_facneighFrac;
-      };
-
-    inline void setAdditionalFaceInfo (Vector<int>            & a_facneighDir,
-                                       Vector<Side::LoHiSide> & a_facneighSid)
-      {
-        m_facneighDir = a_facneighDir;
-        m_facneighSid = a_facneighSid;
       };
 
     // How many neighbors are there
@@ -273,6 +208,7 @@ namespace Proto
         return a_ebIndex + sizeVols() + sizeFaces();
       }
 
+    // Query neighborhood properties
     inline bool
     isRegular() const
       {
@@ -308,6 +244,55 @@ namespace Proto
       CH_assert(sizeEB() == m_ebfneighNorm.size());
     }
 
+
+    // the cells used in the neighborhood
+    inline EBIndex<CELL>
+    getCells(const int a_idx) const {return m_cells[a_idx];}
+    //Volume moments
+    inline IndMomDIM
+    getVolMoment(const int a_idx) const {return m_volMom[a_idx];}
+    //Face moments
+    inline IndMomSDMinOne
+    getFaceMoment(const int a_idx) const {return m_facMom[a_idx];}
+    //EB Faces moments
+    inline IndMomDIM
+    getEBFaceMoment(const int a_idx) const {return m_ebfMom[a_idx];}
+    //EB Normal moments
+    inline Vector<IndMomDIM>
+    getEBFaceNormal(const int a_idx) const {return m_ebfneighNorm[a_idx];}
+    //Cell location, will be the cell center
+    inline RealVect
+    getVolLoc(const int a_idx) const {return m_volLoc[a_idx];}
+    //Boundary Face location, will be the face center
+    inline RealVect
+    getFaceLoc(const int a_idx) const {return m_facLoc[a_idx];}
+    //EB Face location, will be the cell center containing the EB Face
+    inline RealVect
+    getEBFaceLoc(const int a_idx) const {return m_ebfLoc[a_idx];}
+    //or EB face being evaluated to the cell
+    inline int
+    getWeightDisVol(const int a_idx) const {return m_weightDisVol[a_idx];}
+    //or EB face being evaluated to the boundary face
+    inline int
+    getWeightDisFace(const int a_idx) const {return m_weightDisFac[a_idx];}
+    //or EB face being evaluated to the EB Face
+    inline int
+    getWeightDisEB(const int a_idx) const {return m_weightDisEB[a_idx];}
+    //Volume fraction
+    inline Real
+    getVolFrac(const int a_idx) const {return m_volneighFrac[a_idx];}
+    //EB Face area fraction
+    inline Real
+    getEBFaceFrac(const int a_idx) const {return m_ebfneighFrac[a_idx];}
+    //Face area fraction
+    inline Real
+    getFaceFrac(const int a_idx) const {return m_facneighFrac[a_idx];}
+    //Face direction
+    inline int
+    getFaceDir(const int a_idx) const {return m_facneighDir[a_idx];}
+    //Face Side -- lo or hi
+    inline Side::LoHiSide
+    getFaceSide(const int a_idx) const {return m_facneighSid[a_idx];}
 
     // These are things really don't need to be public and make more sense as a unordered map of tuples
     // the cells used in the neighborhood
@@ -369,97 +354,6 @@ namespace Proto
       }
     return retval;
   }
-
-  //Get neighbors VoFs of a given face within a specific radius.
-  //Radius starts at one for the cells sharing the face, and
-  //increases by one for the neighbor cells sharing a face with the original
-  //cells of radius one.
-  //DEPRECATED, use cell or face specific version
-  // template<int order>
-  // template<CENTERING cent>
-  // Vector<EBIndex<CELL> >
-  // Neighbors<order>::
-  // getVoFsNeighbors(const EBIndex<cent> & a_face,
-  //                  const EBIndex<CELL> & a_vof,
-  //                  const int             a_radius,
-  //                  const EBGraph       & a_graph,
-  //                  int                   a_neighType)
-  // {
-  //   PR_TIME("getVoFsNeighbors");
-  //   CH_assert(false);
-  //   m_weightDisVol.resize(0);
-  //   m_cells.resize(0);
-  //   MomentIterator<DIM,order> momit;
-  //   if (a_neighType == 1)
-  //     {
-  //       m_cells.push_back(a_vof);
-  //       m_weightDisVol.push_back(1);
-  //     }
-  //   else
-  //     {
-  //       if (cent == BOUNDARY)
-  //         {
-  //           EBIndex<CELL> voflo = a_face.getVoF();
-  //           m_cells.push_back(voflo);
-  //           m_weightDisVol.push_back(1);
-  //         }
-  //       else
-  //         {
-  //           EBIndex<CELL> voflo = a_face.getVoF(Side::Lo);
-  //           EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
-  //           if (!a_face.m_isBoundary)
-  //             {
-  //               m_cells.push_back(voflo);
-  //               m_weightDisVol.push_back(1);
-  //               m_cells.push_back(vofhi);
-  //               m_weightDisVol.push_back(1);
-  //             }
-  //           else
-  //             {
-  //               if (a_face.m_vofIDMe>=0)
-  //                 {
-  //                   m_cells.push_back(vofhi);
-  //                   m_weightDisVol.push_back(1);
-  //                 }
-  //               if (a_face.m_vofIDLo>=0)
-  //                 {
-  //                   m_cells.push_back(voflo);
-  //                   m_weightDisVol.push_back(1);
-  //                 }
-  //             }
-  //         }
-  //     }
-  //   int startV = 0;
-  //   int new_rad = a_radius;
-  //   for (int irad = 1; irad<=new_rad; irad++)
-  //     {
-  //       int neighSize = m_cells.size();
-  //       for (int ineigh = startV; ineigh<neighSize; ineigh++){
-  //         vector< EBIndex<CELL> > volsinclusive = getFlapVoFs(a_graph, m_cells[ineigh]);
-  //         for(int ivof = 0; ivof < volsinclusive.size(); ivof++)
-  //           {
-  //             bool incl = true;
-  //             for(int ivof2 = 0; ivof2 < m_cells.size(); ivof2++)
-  //               {
-  //                 if (volsinclusive[ivof]==m_cells[ivof2])
-  //                   {
-  //                     incl=false;
-  //                     break;
-  //                   }
-  //               }
-  //             if (incl)
-  //               {
-  //                 m_cells.push_back(volsinclusive[ivof]);
-  //                 m_weightDisVol.push_back(irad+1);
-  //               }
-  //           }
-  //       }
-  //       startV = neighSize;
-  //       if (irad==new_rad && m_cells.size()<=1.0*momit.size()) new_rad++;
-  //     }
-  //   CH_assert(m_cells.size() == m_weightDisVol.size());
-  //   return m_cells;
-  // }
 
   template<int order>
   Vector<EBIndex<CELL> >
@@ -581,8 +475,7 @@ namespace Proto
                               const MomentHolder<order>  & a_momentData,
                               const EBDomainBC<1>      & a_domainBC,
                               Real                    a_dx,
-                              bool a_verbose,
-                              int a_fluxType)
+                              bool a_verbose)
   {
     auto& a_voludata = a_momentData.volumeMoments();
     auto& a_ebfadata = a_momentData.ebFaceMoments();
@@ -601,32 +494,34 @@ namespace Proto
 
     PR_TIME("getMomentsInfoFromNeighbors");
     using Chombo4::pout;
-    Vector<IndMomDIM> volmom, ebfmom;
-    Vector<IndMomSDMinOne> facmom;
-    Vector<RealVect> volneighLoc;
-    Vector<RealVect> ebfneighLoc;
-    Vector<RealVect> facneighLoc;
-    Vector<Real> volneighFrac;
-    Vector<Real> ebfneighFrac;
-    Vector<Real> facneighFrac;
-    Vector<Vector<IndMomDIM> > ebfneighNorm;
-    Vector<int> facneighDir;
-    Vector<Side::LoHiSide> facneighSid;
-    Vector<int> weightDisFac;
-    Vector<int> weightDisEB;
+    // Vector<IndMomDIM> volMom, ebfMom;
+    // Vector<IndMomSDMinOne> facmom;
+    // Vector<Vector<IndMomDIM> > ebfneighNorm;
+    m_volMom.resize(0);
+    m_ebfMom.resize(0);
+    m_facMom.resize(0);
+    m_ebfneighNorm.resize(0);
 
-    Vector< EBIndex<XFACE> > Xfacneigh;
-    Vector< EBIndex<YFACE> > Yfacneigh;
-    Vector< EBIndex<ZFACE> > Zfacneigh;
+    m_volLoc.resize(0);
+    m_ebfLoc.resize(0);
+    m_facLoc.resize(0);
+    m_volneighFrac.resize(0);
+    m_ebfneighFrac.resize(0);
+    m_facneighFrac.resize(0);
+    m_facneighDir.resize(0);
+    m_facneighSid.resize(0);
+    m_weightDisFac.resize(0);
+    m_weightDisEB.resize(0);
+
+    vector< EBIndex<XFACE> > Xfacneigh;
+    vector< EBIndex<YFACE> > Yfacneigh;
+    vector< EBIndex<ZFACE> > Zfacneigh;
+
     IndMomDIM regVolMom;
     regVolMom.setToRegular(a_dx);
     IndMomSDMinOne regFaceMom;
     regFaceMom.setToRegular(a_dx);
-    Vector<int> weightDisVol = m_weightDisVol;
 
-    Vector<Point> volp;
-    Vector<Point> facp;
-    Vector<Point> ebfp;
 
     for(int ivof = 0; ivof < a_vols.size(); ivof++)
       {
@@ -636,35 +531,32 @@ namespace Proto
           {
             volLoc[idir] = a_dx * (0.5 + volInd.m_pt[idir]);
           }
-        volp.push_back(volInd.m_pt);
-        volneighLoc.push_back(volLoc);
+        // volp.push_back(volInd.m_pt);
+        m_volLoc.push_back(volLoc);
 
         if(a_graph.isIrregular(volInd.m_pt))
           {
-            volmom.push_back(a_voludata(volInd, 0));
-            volneighFrac.push_back(a_voludata(volInd, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM));
-            if (a_fluxType==0){
-              const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
-              Vector<IndMomDIM> ebnorm (DIM);
-              ebnorm[0] = a_ebnormxdata(volInd, 0);
-              ebnorm[1] = a_ebnormydata(volInd, 0);
+            m_volMom.push_back(a_voludata(volInd, 0));
+            m_volneighFrac.push_back(a_voludata(volInd, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM));
+            const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
+            Vector<IndMomDIM> ebnorm (DIM);
+            ebnorm[0] = a_ebnormxdata(volInd, 0);
+            ebnorm[1] = a_ebnormydata(volInd, 0);
 #if DIM==3
-              ebnorm[2] = a_ebnormzdata(volInd, 0);
+            ebnorm[2] = a_ebnormzdata(volInd, 0);
 #endif
-              ebfmom.push_back(a_ebfadata(ebf, 0));
-              ebfneighLoc.push_back(volLoc);
-              weightDisEB.push_back(weightDisVol[ivof]);
-              ebfneighNorm.push_back(ebnorm);
-              ebfneighFrac.push_back(a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM-1));
-              ebfp.push_back(volInd.m_pt);
-            }
+            m_ebfneighNorm.push_back(ebnorm);
+            m_ebfMom.push_back(a_ebfadata(ebf, 0));
+            m_ebfLoc.push_back(volLoc);
+            m_weightDisEB.push_back(m_weightDisVol[ivof]);
+            m_ebfneighFrac.push_back(a_ebfadata(ebf, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM-1));
           }
         else
           {
-            volmom.push_back(regVolMom);
-            volneighFrac.push_back(1.0);
+            m_volMom.push_back(regVolMom);
+            m_volneighFrac.push_back(1.0);
           }
-        if (a_fluxType==0){
+        {
           for(SideIterator sit; sit.ok(); ++sit)
             {
               vector<EBIndex<XFACE> > xfaces = a_graph.getXFaces(volInd, sit());
@@ -697,20 +589,19 @@ namespace Proto
                             }
                           if(a_graph.isIrregular(volInd.m_pt))
                             {
-                              facmom.push_back(a_xfacdata(x_face, 0));
-                              facneighFrac.push_back(a_xfacdata(x_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
+                              m_facMom.push_back(a_xfacdata(x_face, 0));
+                              m_facneighFrac.push_back(a_xfacdata(x_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
                             }
                           else
                             {
-                              facmom.push_back(regFaceMom);
-                              facneighFrac.push_back(1.0);
+                              m_facMom.push_back(regFaceMom);
+                              m_facneighFrac.push_back(1.0);
                             }
                           Xfacneigh.push_back(x_face);
-                          facneighLoc.push_back(XfaceLoc);
-                          facneighDir.push_back(x_face.direction());
-                          facneighSid.push_back(sit());
-                          weightDisFac.push_back(weightDisVol[ivof]);
-                          facp.push_back(x_face.m_pt);
+                          m_facLoc.push_back(XfaceLoc);
+                          m_facneighDir.push_back(x_face.direction());
+                          m_facneighSid.push_back(sit());
+                          m_weightDisFac.push_back(m_weightDisVol[ivof]);
                         }
                     }
                 }
@@ -739,24 +630,23 @@ namespace Proto
                             }
                           if(a_graph.isIrregular(volInd.m_pt))
                             {
-                              facmom.push_back(a_yfacdata(y_face, 0));
-                              facneighFrac.push_back(a_yfacdata(y_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
+                              m_facMom.push_back(a_yfacdata(y_face, 0));
+                              m_facneighFrac.push_back(a_yfacdata(y_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
                             }
                           else
                             {
-                              facmom.push_back(regFaceMom);
-                              facneighFrac.push_back(1.0);
+                              m_facMom.push_back(regFaceMom);
+                              m_facneighFrac.push_back(1.0);
                             }
                           Yfacneigh.push_back(y_face);
-                          facneighLoc.push_back(YfaceLoc);
-                          facneighDir.push_back(y_face.direction());
-                          facneighSid.push_back(sit());
-                          weightDisFac.push_back(weightDisVol[ivof]);
-                          facp.push_back(y_face.m_pt);
+                          m_facLoc.push_back(YfaceLoc);
+                          m_facneighDir.push_back(y_face.direction());
+                          m_facneighSid.push_back(sit());
+                          m_weightDisFac.push_back(m_weightDisVol[ivof]);
                         }
                     }
                 }
-#if DIM==3
+#if DIM>=3
               if(zfaces.size() > 0)
                 {
                   for(int iface = 0; iface < zfaces.size(); iface++)
@@ -782,19 +672,19 @@ namespace Proto
                             }
                           if(a_graph.isIrregular(volInd.m_pt))
                             {
-                              facmom.push_back(a_zfacdata(z_face, 0));
-                              facneighFrac.push_back(a_zfacdata(z_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
+                              m_facMom.push_back(a_zfacdata(z_face, 0));
+                              m_facneighFrac.push_back(a_zfacdata(z_face, 0)[IndexTM<int,DIM-1>::Zero]/POW(a_dx,DIM-1));
                             }
                           else
                             {
-                              facmom.push_back(regFaceMom);
-                              facneighFrac.push_back(1.0);
+                              m_facMom.push_back(regFaceMom);
+                              m_facneighFrac.push_back(1.0);
                             }
                           Zfacneigh.push_back(z_face);
-                          facneighLoc.push_back(ZfaceLoc);
-                          facneighDir.push_back(z_face.direction());
-                          facneighSid.push_back(sit());
-                          weightDisFac.push_back(weightDisVol[ivof]);
+                          m_facLoc.push_back(ZfaceLoc);
+                          m_facneighDir.push_back(z_face.direction());
+                          m_facneighSid.push_back(sit());
+                          m_weightDisFac.push_back(m_weightDisVol[ivof]);
                         }
                     }
                 }
@@ -805,28 +695,14 @@ namespace Proto
 
     if(a_domainBC.getBCtypes().getEBComp() == string("no_bcs"))
       {
-        ebfmom.resize(0);
-        ebfneighNorm.resize(0);
-        ebfneighLoc.resize(0);
-        ebfneighFrac.resize(0);
-        weightDisEB.resize(0);
+        m_ebfMom.resize(0);
+        m_ebfneighNorm.resize(0);
+        m_ebfLoc.resize(0);
+        m_ebfneighFrac.resize(0);
+        m_weightDisEB.resize(0);
       }
-    setMomentsInfo(volmom, facmom,
-                           ebfmom, ebfneighNorm,
-                           a_dx);
 
-    setLocInfo(volneighLoc, facneighLoc,
-                       ebfneighLoc);
-
-    setWeightDisFacAndEB(weightDisFac,
-                                 weightDisEB);
-
-    setFracInfo(volneighFrac,
-                        ebfneighFrac,
-                        facneighFrac);
-
-    setAdditionalFaceInfo(facneighDir,
-                                  facneighSid);
+    scaleMoments(m_volMom, m_facMom, m_ebfMom, m_ebfneighNorm, a_dx);
 
     if (a_verbose)
       {

@@ -17,13 +17,14 @@ namespace Proto
     PR_TIME("getShiftedMomentMatrix");
     using Chombo4::pout;
 
-    int nvol = a_neigh.m_volMom.size();
-    int nfac = a_neigh.m_facMom.size();
-    int nebf = a_neigh.m_ebfMom.size();
+    int nvol = a_neigh.sizeVols();
+    int nfac = a_neigh.sizeFaces();
+    int nebf = a_neigh.sizeEB();
 
-    int nrows = nvol + nfac + nebf;
+    int nrows = a_neigh.size();
     MomentIterator<DIM, order> momit;
     a_Mvol.define(nrows, momit.size());
+    CH_assert(nrows >= momit.size());
 
     if (m_verbose) 
     {
@@ -80,18 +81,16 @@ namespace Proto
   {
     PR_TIME("getShiftedMomentMatrixVolumes");
     using Chombo4::pout;
-    Vector<IndMomDIM> volmom = a_neigh.m_volMom;
-    Vector<RealVect> volneighLoc = a_neigh.m_volLoc;
-    const Vector<Real> volneighFrac = a_neigh.m_volneighFrac;
-
-    int nvol = volmom.size();
+    int nvol = a_neigh.sizeVols();
     MomentIterator<DIM, order> momit;
 
     //Adding volume moments
     for(int irow = 0; irow < nvol; irow++)
       {
         //the moments start at the cell CENTER
-        shiftMomentToLoc(volmom[irow], volneighLoc[irow], a_faceLoc, a_dx);
+        auto volmom = a_neigh.getVolMoment(irow);
+        auto volneighLoc = a_neigh.getVolLoc(irow);
+        shiftMomentToLoc(volmom, volneighLoc, a_faceLoc, a_dx);
 
         if(Chombo4::LAPACKMatrix::s_verbose)
           {
@@ -104,7 +103,8 @@ namespace Proto
             //get the correct column number
             int icol = IndexedMoments<DIM, order>::indexOf(momit());
             int mcol = icol + a_start[1];
-            if (volneighFrac[irow] < m_eps)
+            auto volneighFrac = a_neigh.getVolFrac(irow);
+            if (volneighFrac < m_eps)
               {
                 Chombo4::MayDay::Warning("Zeroing all but the first element of a volume moment row");
                 if (icol == 0)
@@ -118,7 +118,7 @@ namespace Proto
               }
             else
               {
-                a_Mblock(mrow, mcol) = volmom[irow][momit()]/(volneighFrac[irow]);
+                a_Mblock(mrow, mcol) = volmom[momit()]/(volneighFrac);
               }
             if(Chombo4::LAPACKMatrix::s_verbose)
               {
@@ -141,14 +141,9 @@ namespace Proto
   {
     PR_TIME("getShiftedMomentMatrixFaces");
     using Chombo4::pout;
-    Vector<IndMomSDMinOne> facmom = a_neigh.m_facMom;
-    Vector<RealVect> facneighLoc = a_neigh.m_facLoc;
-    Vector<int> facneighDir = a_neigh.m_facneighDir;
-    Vector<Side::LoHiSide> facneighSid = a_neigh.m_facneighSid;
-    const Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
     Vector<IndMomDIM> fac2volmom;
     MomentIterator<DIM, order> momit;
-    int nfac = facmom.size();
+    int nfac = a_neigh.sizeFaces();
     fac2volmom.resize(nfac);
 
     //Adding face moments
@@ -156,22 +151,23 @@ namespace Proto
     {
       int irow = iface;
 
-      int a_faceDir = facneighDir[iface];
-      Side::LoHiSide faceSid = facneighSid[iface];
-      int index = ebp_index(a_faceDir, faceSid);
+      int faceDir = a_neigh.getFaceDir(iface);
+      Side::LoHiSide faceSid = a_neigh.getFaceSide(iface);
+      int index = ebp_index(faceDir, faceSid);\
+      auto facmom = a_neigh.getFaceMoment(iface);
       if(a_dombcName[index] == string("Neumann"))
       {
         NeumannBC<order>::
           getFaceMoments(fac2volmom[iface],
-                         a_faceDir,
-                         facmom[iface]);
+                         faceDir,
+                         facmom);
       }
       else if(a_dombcName[index] == string("Dirichlet"))
       {
         DirichletBC<order>::
           getFaceMoments(fac2volmom[iface],
-                         a_faceDir,
-                         facmom[iface]);
+                         faceDir,
+                         facmom);
       }
       else
       {
@@ -179,7 +175,8 @@ namespace Proto
       }
 
       //fac2volmom[iface].shift(diffrv);
-      shiftMomentToLoc(fac2volmom[iface], facneighLoc[iface], a_faceLoc, a_dx);
+      auto facneighLoc = a_neigh.getFaceLoc(iface);
+      shiftMomentToLoc(fac2volmom[iface], facneighLoc, a_faceLoc, a_dx);
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
@@ -192,7 +189,8 @@ namespace Proto
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
         int mcol = icol + a_start[1];
-        if (facneighFrac[iface] < m_eps)
+        auto facneighFrac = a_neigh.getFaceFrac(iface);
+        if (facneighFrac < m_eps)
         {
           Chombo4::MayDay::Warning("Zeroing all but the first element of a face moment row");
           if (icol == 0)
@@ -206,7 +204,7 @@ namespace Proto
         }
         else
         {
-          a_Mblock(mrow, mcol) = fac2volmom[iface][momit()]/(facneighFrac[iface]);
+          a_Mblock(mrow, mcol) = fac2volmom[iface][momit()]/(facneighFrac);
         }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
@@ -229,22 +227,20 @@ namespace Proto
   {
     PR_TIME("getShiftedMomentMatrixEBFaces");
     using Chombo4::pout;
-    Vector<IndMomDIM> ebfmom = a_neigh.m_ebfMom;
-    const Vector<RealVect> ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<Vector<IndMomDIM> > ebfneighNorm = a_neigh.getEBNormMoments();
-    const Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
     MomentIterator<DIM, order> momit;
-    int nebf = ebfmom.size();
+    int nebf = a_neigh.sizeEB();
 
     //Adding eb moments
     for(int iebf = 0; iebf < nebf; iebf++)
     {
+      auto ebfmom = a_neigh.getEBFaceMoment(iebf);
+      auto ebfneighNorm = a_neigh.getEBFaceNormal(iebf);
       int irow = iebf;
       if(a_ebbcName == string("Neumann"))
       {
         NeumannBC<order>::
-          getEBMoments(ebfmom[iebf],
-                       ebfneighNorm[iebf]);
+          getEBMoments(ebfmom,
+                       ebfneighNorm);
       }
       else if(a_ebbcName == string("Dirichlet"))
       {
@@ -255,7 +251,8 @@ namespace Proto
         PROTO_ASSERT(false, "could not find ebBC string ");
       }
 
-      shiftMomentToLoc(ebfmom[iebf], ebfneighLoc[iebf], a_faceLoc, a_dx);
+      auto ebfneighLoc = a_neigh.getEBFaceLoc(iebf);
+      shiftMomentToLoc(ebfmom, ebfneighLoc, a_faceLoc, a_dx);
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
@@ -268,7 +265,8 @@ namespace Proto
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
         int mcol = icol + a_start[1];
-        if (ebfneighFrac[iebf] < m_eps)
+        auto ebfneighFrac = a_neigh.getEBFaceFrac(iebf);
+        if (ebfneighFrac < m_eps)
         {
           Chombo4::MayDay::Warning("Zeroing all but the first element of a eb face moment row");
           if (icol == 0)
@@ -282,7 +280,7 @@ namespace Proto
         }
         else
         {
-          a_Mblock(mrow, mcol) = ebfmom[iebf][momit()]/(ebfneighFrac[iebf]);
+          a_Mblock(mrow, mcol) = ebfmom[momit()]/(ebfneighFrac);
         }
         if(Chombo4::LAPACKMatrix::s_verbose)
         {
@@ -306,18 +304,16 @@ namespace Proto
   {
     PR_TIME("getShiftedMomentMatrixEBNormalFaces");
     using Chombo4::pout;
-    Vector<IndMomDIM> ebfmom = a_neigh.m_ebfMom;
-    Vector<RealVect> ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<Vector<IndMomDIM> > ebfneighNorm = a_neigh.getEBNormMoments();
-    const Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
     MomentIterator<DIM, order> momit;
-    int nebf = ebfmom.size();
-
     //Adding eb moments
-    for(int iebf = 0; iebf < nebf; iebf++)
+    for(int iebf = 0; iebf < a_neigh.sizeEB(); iebf++)
     {
       int irow = iebf;
-      shiftMomentToLoc(ebfneighNorm[iebf][a_dir], ebfneighLoc[iebf], a_faceLoc, a_dx);
+      auto ebfmom = a_neigh.getEBFaceMoment(iebf);
+      auto ebfneighNorm = a_neigh.getEBFaceNormal(iebf);
+      auto ebfneighLoc = a_neigh.getEBFaceLoc(iebf);
+
+      shiftMomentToLoc(ebfneighNorm[a_dir], ebfneighLoc, a_faceLoc, a_dx);
 
       if(Chombo4::LAPACKMatrix::s_verbose)
       {
@@ -330,14 +326,15 @@ namespace Proto
         //get the correct column number
         int icol = IndexedMoments<DIM, order>::indexOf(momit());
         int mcol = icol + a_start[1];
-        if ((ebfneighFrac[iebf] < m_eps) && (icol != 0))
+        auto ebfneighFrac = a_neigh.getEBFaceFrac(iebf);
+        if ((ebfneighFrac < m_eps) && (icol != 0))
         {
           Chombo4::MayDay::Warning("Zeroing all but the first element of a eb normal moment row");
           a_Mblock(mrow, mcol) = 0.0;
         }
         else
         {
-          a_Mblock(mrow, mcol) = -ebfneighNorm[iebf][a_dir][momit()]/(ebfneighFrac[iebf]); // FIXME sign
+          a_Mblock(mrow, mcol) = -ebfneighNorm[a_dir][momit()]/(ebfneighFrac); // FIXME sign
         }
 
         if(Chombo4::LAPACKMatrix::s_verbose)
@@ -383,7 +380,7 @@ namespace Proto
     a_moment.shift(diffrv);
   }
 
-  // REVIEW untested
+  // REVIEW untested, but in theory universal for linear ops
   template<CENTERING cent, int order>
   void
   BaseWLSFlux<cent, order>::
@@ -615,7 +612,7 @@ namespace Proto
     Vector<int> weightDisFac = a_neigh.m_weightDisFac;
     Vector<int> weightDisEB = a_neigh.m_weightDisEB;
 
-    int nrows = weightDisVol.size()+weightDisFac.size()+weightDisEB.size();
+    int nrows = a_neigh.size();
     a_weights.define(nrows, nrows);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
 
@@ -632,13 +629,13 @@ namespace Proto
     //else powerE = m_powerE - (2.0*(max_rad-m_radius-1));
 
     // add the volume weights
-    IndexTM<int, 2> start = 0*IndexTM<int, 2>::Unit;
+    IndexTM<int, 2> start = (a_neigh.indexFromVol(0))*IndexTM<int, 2>::Unit;
     getWeightsMatrixComponent(a_weights, weightDisVol, start);
     // add the regular face weights
-    start = (weightDisVol.size())*IndexTM<int, 2>::Unit;
+    start = (a_neigh.indexFromFace(0))*IndexTM<int, 2>::Unit;
     getWeightsMatrixComponent(a_weights, weightDisFac, start);
     // add the eb face weights
-    start = (weightDisVol.size() + weightDisFac.size())*IndexTM<int, 2>::Unit;
+    start = (a_neigh.indexFromEB(0))*IndexTM<int, 2>::Unit;
     getWeightsMatrixComponent(a_weights, weightDisEB, start);
 
     if(Chombo4::LAPACKMatrix::s_verbose)
@@ -788,11 +785,6 @@ namespace Proto
   {
     PR_TIME("computeInhomogTerm");
     using Chombo4::pout;
-    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
-    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
-    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
-    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-    Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -800,15 +792,16 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeFaces(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_faceLocDiff = a_facneighLoc[iface];
-      int faceDir = a_facneighDir[iface];
-      Side::LoHiSide faceSide = a_facneighSid[iface];
+      auto facmom = a_neigh.getFaceMoment(iface);
+      RealVect faceLocDiff = a_neigh.getFaceLoc(iface);
+      int faceDir = a_neigh.getFaceDir(iface);
+      Side::LoHiSide faceSide = a_neigh.getFaceSide(iface);
       string bcName = m_domainBC.getBCtypes().getRegComp(faceDir, faceSide);
       if(bcName == string("Neumann"))
       {
         bcValue = NeumannExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                               getFaceIntegral(facmom,
+                                               faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
                                                a_dx,
@@ -817,8 +810,8 @@ namespace Proto
       else if(bcName == string("Dirichlet"))
       {
         bcValue = DirichletExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                               getFaceIntegral(facmom,
+                                               faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
                                                a_dx);
@@ -828,14 +821,15 @@ namespace Proto
         PROTO_ASSERT(false, "could not find domBC string");
       }
 
-      if (facneighFrac[iface] < this->m_eps)
-      {
-        bcValue = 0.0;
-      }
+      auto facneighFrac = a_neigh.getFaceFrac(iface);
+      if (facneighFrac < this->m_eps)
+        {
+          bcValue = 0.0;
+        }
       else
-      {
-        bcValue /= (facneighFrac[iface]*areaScaleFactor);
-      }
+        {
+          bcValue /= (facneighFrac*areaScaleFactor);
+        }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromFace(iface));
     }
@@ -854,10 +848,7 @@ namespace Proto
   {
     PR_TIME("computeInhomogTermEB");
     using Chombo4::pout;
-    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
-    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
+
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -865,21 +856,23 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeEB(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_ebfLocDiff = a_ebfneighLoc[iface];
-      string a_ebbcName = a_domainBC.getBCtypes().getEBComp();
-      if(a_ebbcName == string("Neumann"))
+      RealVect ebfLoc = a_neigh.getEBFaceLoc(iface);
+      string ebbcName = a_domainBC.getBCtypes().getEBComp();
+      if(ebbcName == string("Neumann"))
       {
+        auto ebfneighNorm = a_neigh.getEBFaceNormal(iface);
         bcValue = NeumannExactSoln<order>::
-                               getEBIntegral(a_ebfneighNorm[iface],
-                                             a_ebfLocDiff,
+                               getEBIntegral(ebfneighNorm,
+                                             ebfLoc,
                                              a_domainBC.getBCfuncs().getEBComp(),
                                              a_dx);
       }
-      else if(a_ebbcName == string("Dirichlet"))
+      else if(ebbcName == string("Dirichlet"))
       {
+        auto ebfmom = a_neigh.getEBFaceMoment(iface);
         bcValue = DirichletExactSoln<order>::
-                               getEBIntegral(a_ebfmom[iface],
-                                             a_ebfLocDiff,
+                               getEBIntegral(ebfmom,
+                                             ebfLoc,
                                              a_domainBC.getBCfuncs().getEBComp(),
                                              a_dx);
       }
@@ -888,13 +881,14 @@ namespace Proto
         PROTO_ASSERT(false, "could not find domBC string");
       }
 
-      if (ebfneighFrac[iface] < this->m_eps)
+      auto ebfneighFrac = a_neigh.getEBFaceFrac(iface);
+      if (ebfneighFrac < this->m_eps)
       {
         bcValue = 0.0;
       }
       else
       {
-        bcValue /= (ebfneighFrac[iface]*areaScaleFactor);
+        bcValue /= (ebfneighFrac*areaScaleFactor);
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromEB(iface));
@@ -1668,11 +1662,6 @@ namespace Proto
   {
     PR_TIME("computeInhomogTerm");
     using Chombo4::pout;
-    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
-    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
-    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
-    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-    Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -1680,13 +1669,14 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeFaces(); iface++)
     {
       Real bcValue = 0;
-      RealVect faceLocDiff = a_facneighLoc[iface];
-      int faceDir = a_facneighDir[iface];
-      Side::LoHiSide faceSide = a_facneighSid[iface];
+      auto facmom = a_neigh.getFaceMoment(iface);
+      RealVect faceLocDiff = a_neigh.getFaceLoc(iface);
+      int faceDir = a_neigh.getFaceDir(iface);
+      Side::LoHiSide faceSide = a_neigh.getFaceSide(iface);
       if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, a_dir) == string("Neumann"))
       {
         bcValue = NeumannExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
+                               getFaceIntegral(facmom,
                                                faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, a_dir),
@@ -1695,7 +1685,7 @@ namespace Proto
       else if(m_domainBC.getBCtypes().getRegComp(faceDir, faceSide, a_dir) == string("Dirichlet"))
       {
         bcValue = DirichletExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
+                               getFaceIntegral(facmom,
                                                faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide, a_dir),
@@ -1705,14 +1695,14 @@ namespace Proto
       {
         PROTO_ASSERT(false, "could not find domBC string");
       }
-
-      if (facneighFrac[iface] < this->m_eps)
+      auto facneighFrac = a_neigh.getFaceFrac(iface);
+      if (facneighFrac < this->m_eps)
       {
         bcValue = 0.0;
       }
       else
       {
-        bcValue /= (facneighFrac[iface]*areaScaleFactor);
+        bcValue /= (facneighFrac*areaScaleFactor);
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromFace(iface));
@@ -1736,10 +1726,7 @@ namespace Proto
   {
     PR_TIME("computeInhomogTermEB");
     using Chombo4::pout;
-    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
-    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
+
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -1747,12 +1734,12 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeEB(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_ebfLocDiff = a_ebfneighLoc[iface];
+      RealVect ebfLocDiff = a_neigh.getEBFaceLoc(iface);
       if(m_domainBC.getBCtypes().getEBComp(0) == string("Neumann"))
       {
         // bcValue = NeumannExactSoln<order>::
-        //                        getEBIntegral(a_ebfneighNorm[iface],
-        //                                      a_ebfLocDiff,
+        //                        getEBIntegral(ebfneighNorm[iface],
+        //                                      ebfLocDiff,
         //                                      m_exactSolEB,
         //                                      a_dx);
       }
@@ -1761,10 +1748,11 @@ namespace Proto
         // bcValue is U dot n, sum up each component
         for (int dir=0; dir!=DIM; dir++)
           {
+            auto ebfneighNorm = a_neigh.getEBFaceNormal(iface);
             //Normalizor<order>::normalizeFaceMoment(a_ebfneighNorm[dir][iface], a_dx);
             bcValue -= DirichletExactSoln<order>::
-              getEBIntegral(a_ebfneighNorm[iface][dir],
-                            a_ebfLocDiff,
+              getEBIntegral(ebfneighNorm[dir],
+                            ebfLocDiff,
                             m_domainBC.getBCfuncs().getEBComp(dir),
                             a_dx);
           }
@@ -1773,14 +1761,14 @@ namespace Proto
       {
         PROTO_ASSERT(false, "could not find domBC string");
       }
-
-      if (ebfneighFrac[iface] < this->m_eps)
+      auto ebfneighFrac = a_neigh.getEBFaceFrac(iface);
+      if (ebfneighFrac < this->m_eps)
       {
         bcValue = 0.0;
       }
       else
       {
-        bcValue /= (ebfneighFrac[iface]*areaScaleFactor);
+        bcValue /= (ebfneighFrac*areaScaleFactor);
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromEB(iface));
@@ -1972,11 +1960,7 @@ namespace Proto
   {
     PR_TIME("computeInhomogTerm");
     using Chombo4::pout;
-    Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
-    Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
-    Vector<int> a_facneighDir = a_neigh.m_facneighDir;
-    Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-    Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
+
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -1984,15 +1968,16 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeFaces(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_faceLocDiff = a_facneighLoc[iface];
-      int faceDir = a_facneighDir[iface];
-      Side::LoHiSide faceSide = a_facneighSid[iface];
+      auto facmom = a_neigh.getFaceMoment(iface);
+      RealVect faceLocDiff = a_neigh.getFaceLoc(iface);
+      int faceDir = a_neigh.getFaceDir(iface);
+      Side::LoHiSide faceSide = a_neigh.getFaceSide(iface);
       string bcName = m_domainBC.getBCtypes().getRegComp(faceDir, faceSide);
       if(bcName == string("Neumann"))
       {
         bcValue = NeumannExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                               getFaceIntegral(facmom,
+                                               faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
                                                a_dx,
@@ -2001,8 +1986,8 @@ namespace Proto
       else if(bcName == string("Dirichlet"))
       {
         bcValue = DirichletExactSoln<order>::
-                               getFaceIntegral(a_facmom[iface],
-                                               a_faceLocDiff,
+                               getFaceIntegral(facmom,
+                                               faceLocDiff,
                                                faceDir,
                                                m_domainBC.getBCfuncs().getRegComp(faceDir, faceSide),
                                                a_dx);
@@ -2012,13 +1997,14 @@ namespace Proto
         PROTO_ASSERT(false, "could not find domBC string");
       }
 
-      if (facneighFrac[iface] < this->m_eps)
+      auto facneighFrac = a_neigh.getFaceFrac(iface);
+      if (facneighFrac < this->m_eps)
       {
         bcValue = 0.0;
       }
       else
       {
-        bcValue /= (facneighFrac[iface]*areaScaleFactor);
+        bcValue /= (facneighFrac*areaScaleFactor);
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromFace(iface));
@@ -2038,10 +2024,7 @@ namespace Proto
   {
     PR_TIME("computeInhomogTermEB");
     using Chombo4::pout;
-    Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
-    Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-    Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
+
     Real areaScaleFactor = getRegularArea(a_dx);
 
     Real inhomogTerm = 0.0;
@@ -2049,21 +2032,23 @@ namespace Proto
     for(int iface = 0; iface < a_neigh.sizeEB(); iface++)
     {
       Real bcValue = 0;
-      RealVect a_ebfLocDiff = a_ebfneighLoc[iface];
-      string a_ebbcName = a_domainBC.getBCtypes().getEBComp();
-      if(a_ebbcName == string("Neumann"))
+      RealVect ebfLocDiff = a_neigh.getEBFaceLoc(iface);
+      string ebbcName = a_domainBC.getBCtypes().getEBComp();
+      if(ebbcName == string("Neumann"))
       {
+        auto ebfneighNorm = a_neigh.getEBFaceNorm(iface);
         bcValue = NeumannExactSoln<order>::
-                               getEBIntegral(a_ebfneighNorm[iface],
-                                             a_ebfLocDiff,
+                               getEBIntegral(ebfneighNorm,
+                                             ebfLocDiff,
                                              a_domainBC.getBCfuncs().getEBComp(),
                                              a_dx);
       }
-      else if(a_ebbcName == string("Dirichlet"))
+      else if(ebbcName == string("Dirichlet"))
       {
+        auto ebfmom = a_neigh.getEBFaceMoment(iface);
         bcValue = DirichletExactSoln<order>::
-                               getEBIntegral(a_ebfmom[iface],
-                                             a_ebfLocDiff,
+                               getEBIntegral(ebfmom,
+                                             ebfLocDiff,
                                              a_domainBC.getBCfuncs().getEBComp(),
                                              a_dx);
       }
@@ -2072,13 +2057,14 @@ namespace Proto
         PROTO_ASSERT(false, "could not find domBC string");
       }
 
-      if (ebfneighFrac[iface] < this->m_eps)
+      auto ebfneighFrac = a_neigh.getEBFaceFrac(iface);
+      if (ebfneighFrac < this->m_eps)
       {
         bcValue = 0.0;
       }
       else
       {
-        bcValue /= (ebfneighFrac[iface]*areaScaleFactor);
+        bcValue /= (ebfneighFrac*areaScaleFactor);
       }
 
       inhomogTerm += bcValue*a_stencil(0, a_neigh.indexFromEB(iface));
@@ -2093,8 +2079,8 @@ namespace Proto
   void
   DirichletBC<order>::
   getFaceMoments(IndMomDIM      & a_fac2volmom,
-                 int              a_faceDir,
-                 IndMomSDMinOne & a_facmom)
+                 const int              a_faceDir,
+                 const IndMomSDMinOne & a_facmom)
   {
     PR_TIME("getFaceMomentsDirichletBC");
     using Chombo4::pout;
@@ -2129,8 +2115,8 @@ namespace Proto
   void
   NeumannBC<order>::
   getFaceMoments(IndMomDIM      & a_fac2volmom,
-                 int              a_faceDir,
-                 IndMomSDMinOne & a_facmom)
+                 const int              a_faceDir,
+                 const IndMomSDMinOne & a_facmom)
   {
     PR_TIME("getFaceMomentsNeumannBC");
     using Chombo4::pout;
@@ -2183,7 +2169,7 @@ namespace Proto
   void
   NeumannBC<order>::
   getEBMoments(IndMomDIM         & a_ebfmom,
-               Vector<IndMomDIM> & a_ebfNorm)
+               const Vector<IndMomDIM> & a_ebfNorm)
   {
     PR_TIME("getEBMomentsNeumannBC");
     using Chombo4::pout;
