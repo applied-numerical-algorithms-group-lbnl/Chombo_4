@@ -779,7 +779,7 @@ namespace EBCM
         for(int icell = 0; icell < volpts.size(); icell++)
         {
           const pr_pt& curpt = volpts[icell];
-          (*a_map)(curpt, 0) = icell;
+          (*a_map)(curpt, 0) = ivol;
         }
       }
     }
