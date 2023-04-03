@@ -7,4 +7,3 @@ radius =   0.45
 inside = true
 
 mergeSmallCells = true
-#mergeSmallCells = false

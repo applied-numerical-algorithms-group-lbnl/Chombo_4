@@ -683,6 +683,7 @@ namespace EBCM
 
       //make two into one until there are no more
       retval = mergeManyIntoOne(allvols, a_dx, a_printStuff);
+
       return retval;
     }
     
@@ -728,7 +729,7 @@ namespace EBCM
       {
         a_vofsEaten.resize(0);
 
-        EBCMVolu<order> retval =
+        retval =
         getRefinedCoarseVolume(a_vofsEaten,  a_startvof, a_geoserv, a_domain,
                                a_dit, a_dx, a_vofsLeft, a_graph, a_printStuff);
       }
@@ -868,11 +869,6 @@ namespace EBCM
           {
             a_volumes->push_back(inputVols[ivol]);
           }
-        }
-        if(a_volumes->size() != inputVols.size())
-        {
-          //if this gets triggered, I probably got my set calculus wrong.
-          MayDay::Error("logic error");
         }
       }
 
