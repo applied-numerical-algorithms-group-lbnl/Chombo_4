@@ -736,6 +736,53 @@ namespace EBCM
     }
 
     ///
+    static inline bool
+    getRegularNeighborPoint(pr_pt                           & a_regpt,
+                            const EBCMVolu<order>           & a_smallvol,
+                            const HostBoxData<int  , 1>     & a_map)
+    {
+      const pr_pt& startpt = a_smallvol.m_pt;
+      bool found = false;
+      pr_box graphregion= a_map.box();
+      for(SideIterator sit; sit.ok(); ++sit)
+      {
+        int isign = sign(sit());
+        for(int idir = 0; ((idir < DIM) && !found); ++idir)
+        {
+          pr_pt offset = isign*pr_pt::Basis(idir);
+          auto newpt = startpt + offset;
+          if(graphregion.contains(newpt))
+          {
+            if(a_map(newpt, 0) == -1)
+            {
+              a_regpt= newpt;
+              found = true;
+            }
+          }
+        }
+      }
+      return found;
+    }
+
+
+    ///put indicies of volumes in correct places in map
+    static inline void
+    fixVolumeEntriesInMap(shared_ptr<HostBoxData<int  , 1> >          & a_map,
+                          const shared_ptr<vector<EBCMVolu<order> > > & a_volumes)
+    {
+      for(int ivol = 0; ivol < a_volumes->size(); ivol++)
+      {
+        const auto& curvol = (*a_volumes)[ivol];
+        //these are the points that went into the volume
+        const auto& volpts = curvol.m_cells;
+        for(int icell = 0; icell < volpts.size(); icell++)
+        {
+          const pr_pt& curpt = volpts[icell];
+          (*a_map)(curpt, 0) = icell;
+        }
+      }
+    }
+    ///
     /**
        Modifies a_volumes in place by merging all of the entries in a_tooSmall
        to their neighbors found in a_volumes.   a_volumes should not change in size
@@ -743,6 +790,7 @@ namespace EBCM
     */
     static inline void
     mergeSmallVolumesWithNeighbors(shared_ptr<vector<EBCMVolu<order> > >     & a_volumes,
+                                   shared_ptr<HostBoxData<int  , 1> >        & a_map,
                                    shared_ptr<vector<EBCMVolu<order> > >     & a_tooSmall,
                                    const shared_ptr<ch_geoserv>              & a_geoserv,
                                    const ch_box                              & a_domain,
@@ -767,27 +815,47 @@ namespace EBCM
         for(int ismall = 0; ismall < a_tooSmall->size(); ismall++)
         {
           const auto& smallvol = (*a_tooSmall)[ismall];
-          int ineigh = -1; bool found = false;
-          //find a neighbor in the input volumes (which are all big)
-          for(int ivol = 0; ((ivol < inputVols.size()) && (!found)); ivol++)
+          EBCMVolu<order> merged, bigvol;
+          Point regPt;
+          bool hasRegularNeighbor = getRegularNeighborPoint(regPt, smallvol,  *a_map);
+          if(hasRegularNeighbor)
           {
-            const auto& bigvol = inputVols[ivol];
-            if(volumesConnected(smallvol, bigvol))
+            bigvol.defineAsRegular(regPt, a_dx);
+            //set map to fake non-negative number so it will no longer get tagged as regular
+            //map gets fixed up at the end of this function.
+            (*a_map)(regPt, 0) = 4586;
+          }
+          else
+          {
+            int ineigh = -1; bool found = false;
+            //find a neighbor in the input volumes (which are all big)
+            for(int ivol = 0; ((ivol < inputVols.size()) && (!found)); ivol++)
             {
-              ineigh = ivol;
-              found = true;
+              const auto& bigvol = inputVols[ivol];
+              if(volumesConnected(smallvol, bigvol))
+              {
+                ineigh = ivol;
+                found = true;
+              }
             }
+            if(!found)
+            {
+              pout() << "mergeSmallVolumesWithNeighbors ismall = " << ismall << endl;
+              MayDay::Error("small volume has no connections");
+            }
+            bigvol = inputVols[ineigh];
+            alreadyUsed.insert(ineigh);
           }
-          if(!found)
-          {
-            pout() << "mergeSmallVolumesWithNeighbors ismall = " << ismall << endl;
-            MayDay::Error("small volume has no connections");
-          }
-          const auto& bigvol = inputVols[ineigh];
-          EBCMVolu<order> merged;
+
           mergeTwoVolumesIntoThird(merged, smallvol, bigvol, a_dx, a_printStuff);
+          int curIndex = a_volumes->size();
+          //fix map to match merger
+          for(int icell = 0; icell < merged.m_cells.size(); icell++)
+          {
+            auto map_pt=  merged.m_cells[icell];
+            (*a_map)(map_pt, 0) = curIndex;
+          }
           a_volumes->push_back(merged);
-          alreadyUsed.insert(ineigh);
         }
 
         /**
@@ -807,6 +875,8 @@ namespace EBCM
           MayDay::Error("logic error");
         }
       }
+
+      fixVolumeEntriesInMap(a_map, a_volumes);
     }
 
     ///
@@ -863,10 +933,9 @@ namespace EBCM
               createEBCMVolume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
                                vofsLeft, a_graph, a_mergeSmallCells, printStuff);
             
-            int vecInd = a_volumes->size();
+      
             for(int ivec = 0; ivec < mergevec.size(); ivec++)
             {
-              (*a_map)(mergevec[ivec].m_pt, 0) = vecInd;
               vofsLeft->erase(mergevec[ivec]);
             }
             kappamin = std::min(kappamin, volume.m_kappa);
@@ -882,6 +951,8 @@ namespace EBCM
         } // end if this cell irregular
       } // end oop over a_ebvolumes
 
+      fixVolumeEntriesInMap(a_map, a_volumes);
+
       if(a_printStuff)
       {
         pout() << "makeTheBlobs: number of small cells = " << tooSmalls->size() <<", min kappa = " << kappamin << endl;
@@ -890,7 +961,7 @@ namespace EBCM
       if(tooSmalls->size() > 0)
       {
         printStuff= false;
-        mergeSmallVolumesWithNeighbors(a_volumes, tooSmalls,
+        mergeSmallVolumesWithNeighbors(a_volumes, a_map,  tooSmalls,
                                        a_geoserv, a_domain, a_dit, a_dx,
                                        vofsLeft, a_graph, printStuff);
       }
