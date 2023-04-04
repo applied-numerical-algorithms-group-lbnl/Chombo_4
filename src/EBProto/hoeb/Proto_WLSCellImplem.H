@@ -608,35 +608,26 @@ namespace Proto
   { 
     PR_TIME("getWeightsMatrixFace");
     using Chombo4::pout;
-    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
-    Vector<int> weightDisFac = a_neigh.m_weightDisFac;
-    Vector<int> weightDisEB = a_neigh.m_weightDisEB;
 
     int nrows = a_neigh.size();
     a_weights.define(nrows, nrows);
     a_weights.setToIdentity(); //this sets all the off diagonals to zero
 
-    // int max_rad = 0.0;
-    // for(int ineigh = 0; ineigh < weightDisVol.size(); ineigh++)
-    // {
-    //   if (max_rad<weightDisVol[ineigh])
-    //   {
-    //     max_rad = weightDisVol[ineigh];
-    //   }
-    // }
-    //int powerE;
-    //if (max_rad-1 == m_radius) powerE = m_powerE;
-    //else powerE = m_powerE - (2.0*(max_rad-m_radius-1));
-
     // add the volume weights
     IndexTM<int, 2> start = (a_neigh.indexFromVol(0))*IndexTM<int, 2>::Unit;
-    getWeightsMatrixComponent(a_weights, weightDisVol, start);
+    getWeightsMatrixComponent(a_weights, a_neigh.m_weightDisVol, start);
     // add the regular face weights
-    start = (a_neigh.indexFromFace(0))*IndexTM<int, 2>::Unit;
-    getWeightsMatrixComponent(a_weights, weightDisFac, start);
+    if (a_neigh.sizeFaces() > 0)
+      {
+        start = (a_neigh.indexFromFace(0))*IndexTM<int, 2>::Unit;
+        getWeightsMatrixComponent(a_weights, a_neigh.m_weightDisFac, start);
+      }
     // add the eb face weights
-    start = (a_neigh.indexFromEB(0))*IndexTM<int, 2>::Unit;
-    getWeightsMatrixComponent(a_weights, weightDisEB, start);
+    if (a_neigh.sizeEB() > 0)
+      {
+        start = (a_neigh.indexFromEB(0))*IndexTM<int, 2>::Unit;
+        getWeightsMatrixComponent(a_weights, a_neigh.m_weightDisEB, start);
+      }
 
     if(Chombo4::LAPACKMatrix::s_verbose)
       {

@@ -419,28 +419,16 @@ namespace Proto
         EBIndex<CELL> vofInd = a_dstVoFs[ivof];
         //int ivof = it->second;
         //EBIndex<CELL> vofInd = a_dstVoFs[ivof];
-        bool isReg = false;
         Point pt = vofInd.m_pt;
-//         // FIXME Why 2? I don't think this is the right way to determine regular regions
-// #if DIM==3
-//         if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
-//             pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2 &&
-//             pt[2]>=a_validBox.low()[2]+radius+2 && pt[2]<=a_validBox.high()[2]-radius-2)
-// #else
-//           if (pt[0]>=a_validBox.low()[0]+radius+2 && pt[0]<=a_validBox.high()[0]-radius-2 &&
-//               pt[1]>=a_validBox.low()[1]+radius+2 && pt[1]<=a_validBox.high()[1]-radius-2)
-// #endif
-//             {
-//               isReg = isRegularStencil(vofInd, radius+2, a_graph, a_voludata, a_dx);
-//             }
-
+        bool isReg = false;
         {
           // make the neighborhood about this cell to see if regular
           Neighbors<order> neighs;
-          // base radius, +1 for cell/face centering, +1 to be safe
+          // base radius, +1 for shift from face to cell centering, +1 to be safe
           auto vols = neighs.getCellNeighbors(vofInd, stenAttb.radius()+2, a_graph);
-          neighs.getMomentsInfoFromNeighbors(vols, a_graph, a_momentData, a_domainBC, a_dx, false);
-          if(neighs.isIterior()) {pout() << vofInd.m_pt << "is interior" << std::endl;}
+          // check out the stencil
+          bool isRegSten = neighs.checkIsRegular(vols, a_graph);
+          if(isRegSten) {pout() << vofInd.m_pt << "is interior" << std::endl;}
         }
         
         bool pt_verbose = false;

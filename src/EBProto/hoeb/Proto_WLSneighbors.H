@@ -161,6 +161,10 @@ namespace Proto
         return ebfneighNorm;
       };
 
+    bool
+    checkIsRegular(const Vector<EBIndex<CELL> >  & a_vols,
+                   const EBGraph           & a_graph) const;
+
     // How many neighbors are there
     inline unsigned int
     sizeVols() const
@@ -559,12 +563,9 @@ namespace Proto
         {
           for(SideIterator sit; sit.ok(); ++sit)
             {
+#if DIM>=1
               vector<EBIndex<XFACE> > xfaces = a_graph.getXFaces(volInd, sit());
-              vector<EBIndex<YFACE> > yfaces = a_graph.getYFaces(volInd, sit());
-#if DIM==3
-              vector<EBIndex<ZFACE> > zfaces = a_graph.getZFaces(volInd, sit());
-#endif
-              if(xfaces.size() > 0)
+              if (xfaces.size() > 0)
                 {
                   for(int iface = 0; iface < xfaces.size(); iface++)
                     {
@@ -576,6 +577,7 @@ namespace Proto
                           if(Xfacneigh[jface] == x_face)
                             {
                               found = true;
+                              break;
                             }
                         }
                       if(!found && x_face.m_isBoundary
@@ -605,7 +607,10 @@ namespace Proto
                         }
                     }
                 }
-              if(yfaces.size() > 0)
+#endif
+#if DIM>=2
+              vector<EBIndex<YFACE> > yfaces = a_graph.getYFaces(volInd, sit());
+              if (yfaces.size() > 0)
                 {
                   for(int iface = 0; iface < yfaces.size(); iface++)
                     {
@@ -617,6 +622,7 @@ namespace Proto
                           if(Yfacneigh[jface] == y_face)
                             {
                               found = true;
+                              break;
                             }
                         }
                       if(!found && y_face.m_isBoundary
@@ -646,8 +652,10 @@ namespace Proto
                         }
                     }
                 }
+#endif
 #if DIM>=3
-              if(zfaces.size() > 0)
+              vector<EBIndex<ZFACE> > zfaces = a_graph.getZFaces(volInd, sit());
+              if (zfaces.size() > 0)
                 {
                   for(int iface = 0; iface < zfaces.size(); iface++)
                     {
@@ -659,6 +667,7 @@ namespace Proto
                           if(Zfacneigh[jface] == z_face)
                             {
                               found = true;
+                              break;
                             }
                         }
                       if(!found && z_face.m_isBoundary
@@ -723,6 +732,78 @@ namespace Proto
     check();
   }
 
+
+  // Check the volumes to determine if the are a regular stencil
+  template<int order>
+  bool
+  Neighbors<order>::
+  checkIsRegular(const Vector<EBIndex<CELL> >  & a_vols,
+                 const EBGraph           & a_graph) const
+  {
+    PR_TIME("checkIsRegular");
+    using Chombo4::pout;
+
+    bool isRegular = true; // until proven otherwise
+
+    vector< EBIndex<CELL> > EBneigh;
+    vector< EBIndex<XFACE> > Xfacneigh;
+    vector< EBIndex<YFACE> > Yfacneigh;
+    vector< EBIndex<ZFACE> > Zfacneigh;
+
+    for(int ivof = 0; ivof < a_vols.size(); ivof++)
+      {
+        EBIndex<CELL> volInd = a_vols[ivof];
+        if(a_graph.isIrregular(volInd.m_pt))
+          {
+            isRegular = false;
+            EBneigh.push_back(volInd);
+            break;
+          }
+       else
+         { // check which sides are boundaries
+            for(SideIterator sit; sit.ok(); ++sit)
+              {
+#if DIM>=1
+                vector<EBIndex<XFACE> > Xfaces = a_graph.getXFaces(volInd, sit());
+                for(int iface = 0; iface < Xfaces.size(); iface++)
+                  {
+                    const EBIndex<XFACE> X_face = Xfaces[iface];
+                    if(X_face.m_isBoundary)
+                      {
+                        Xfacneigh.push_back(X_face);
+                        isRegular = false;
+                      }
+                  }
+#endif
+#if DIM>=2
+                vector<EBIndex<YFACE> > Yfaces = a_graph.getYFaces(volInd, sit());
+                for(int iface = 0; iface < Yfaces.size(); iface++)
+                  {
+                    const EBIndex<YFACE> Y_face = Yfaces[iface];
+                    if(Y_face.m_isBoundary)
+                      {
+                        Yfacneigh.push_back(Y_face);
+                        isRegular = false;
+                      }
+                  }
+#endif
+#if DIM>=3
+                vector<EBIndex<ZFACE> > Zfaces = a_graph.getZFaces(volInd, sit());
+                for(int iface = 0; iface < Zfaces.size(); iface++)
+                  {
+                    const EBIndex<ZFACE> Z_face = Zfaces[iface];
+                    if(Z_face.m_isBoundary)
+                      {
+                        Zfacneigh.push_back(Z_face);
+                        isRegular = false;
+                      }
+                  }
+#endif
+            }//End SideIterator loop
+        }
+      }//End vol neighbors loop
+    return isRegular;
+  }
 } // end proto namespace
 
 #endif //_Proto_WLSneighbors_H_

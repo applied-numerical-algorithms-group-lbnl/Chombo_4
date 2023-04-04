@@ -1788,20 +1788,20 @@ public:
   ///
   /** phi = 1/(2*(lambda+1)) * (2*lambda +3-2*a^2/r^2) V_x when velDir = 0
       phi = 1/(2*(lambda+1)) * (x*y/a^2)*V_y               when velDir = 1
-      r = sqrt(x^2 + y^2)
+      r^2 = x^2 + y^2
       (x,y) -= center
   */
   ///
   virtual Real getDerivative(IvDIM      a_p,
                              RealVect   a_x) const
   {
-    Real retval = 0.5/(m_lambda+1);
-    for(int idir = 0; idir < DIM; idir++)
+    Real retval = 1./(2.*(m_lambda+1.));
+    // for(int idir = 0; idir < DIM; idir++)
       {
         auto xi = a_x-m_center;
         Real r2 = pow(xi[0],2)+pow(xi[1],2);
         Real a2 = pow(m_radius,2);
-        if (m_velDir == 0)
+        if (m_velComp == 0)
           {
             // p = 0
             if((a_p[0] == 0)&&(a_p[1] == 0))
@@ -1875,30 +1875,30 @@ public:
                 retval = 0;
               }
           }
-        else if (m_velDir == 1)
+        else if (m_velComp == 1)
           {
             if((a_p[0] == 0)&&(a_p[1] == 0))
               {
-                retval *= m_vel[0]*xi[0]*xi[1]/a2;
+                retval *= m_vel[1]*xi[0]*xi[1]/a2;
               }
             else if((a_p[0] == 1)&&(a_p[1] == 0))
               {
-                retval *= m_vel[0]*xi[1]/a2;
+                retval *= m_vel[1]*xi[1]/a2;
               }
             else if((a_p[0] == 0)&&(a_p[1] == 1))
               {
-                retval *= m_vel[0]*xi[0]/a2;
+                retval *= m_vel[1]*xi[0]/a2;
               }
             else if((a_p[0] == 1)&&(a_p[1] == 1))
               {
-                retval *= m_vel[0]/a2;
+                retval *= m_vel[1]/a2;
               }
             else
               {
                 retval = 0;
               }
           }
-        else
+        else // 2D contribution only
           {
             retval = 0;
           }
@@ -1920,13 +1920,13 @@ public:
                    Real      a_radius,
                    RealVect  a_center,
                    RealVect  a_vel,
-                   int a_velDir)
+                   int a_velComp)
     {
       m_lambda = a_lambda;
       m_radius = a_radius;
       m_center = a_center;
       m_vel = a_vel;
-      m_velDir = a_velDir;
+      m_velComp = a_velComp;
   }
 
 private:
@@ -1934,7 +1934,7 @@ private:
   Real      m_radius;
   RealVect  m_center;
   RealVect  m_vel;
-  int       m_velDir;
+  int       m_velComp;
 
   StokesLiquidDrop() = delete;
 };
