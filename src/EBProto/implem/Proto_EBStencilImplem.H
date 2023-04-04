@@ -80,8 +80,6 @@ namespace Proto
                             a_xfacdata,  a_yfacdata, a_zfacdata,    
                             a_dx, a_periodiconly, a_dstGrown);
 
-    if(m_hasDomainBCs) defineApplyITZ();
-
     if(!m_bcsOnly)
     {
       m_irregStencil = shared_ptr<AggStencil<srcCenter, dstCenter, data_t> >
@@ -174,7 +172,7 @@ namespace Proto
       //have to compute stuff on the host first
       EBHostData<dstCenter, data_t, 1> hostDiagonal(grownBox, a_graph);
       //first set the regular data to the value of the regular stencil's diagonal.
-      data_t regDiagonal = m_regStencilInterior.diagonalValue();
+      data_t regDiagonal = m_regStencilInterior.diagonal();
       hostDiagonal.setVal(regDiagonal);
     
       //now fix up values on irregular cells
@@ -210,15 +208,6 @@ namespace Proto
     }
   }
 
-  template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
-  void
-  EBStencil<order, data_t, srcCenter, dstCenter>::
-  defineApplyITZ() 
-  {
-//#ifdef PROTO_CUDA
-//      sFused.define(m_regStencilBCS, m_BCApplyBoxes, 2*DIM);
-//#endif
-  }
 
   ///
   template <int order, typename data_t, CENTERING srcCenter, CENTERING dstCenter>
@@ -227,18 +216,21 @@ namespace Proto
   applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
            const EBBoxData< srcCenter, data_t, 1>  &   a_src,
            double                                      a_scale,
-           bool a_initToZero)  const
+           bool                                        a_printStuff)  const
   {
     PR_TIME("EBStencil::applyITZ");
     
     //first set the boundary conditions at the domain box
     //this fills the ghost cells when the box abuts the domain.
+    bool initToZero = true;  //hence the itz
+    bool incrementOnly = !initToZero;
+    if(a_printStuff)
+    {//begin debug
+      dumpArea(a_src, string("ebstencil: src before bc apply"));
+    }
+    //end debug
     if(m_hasDomainBCs && (!m_irregOnly))
     {
-/*#ifdef PROTO_CUDA
-      const BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
-      sFused.cudaApplyFused(castSrc, (BoxData<data_t, 1> &) (a_src.getRegData()), true, 1.0);
-#else*/
       BoxData<data_t, 1>& castSrc = const_cast<BoxData<data_t, 1> &>(a_src.getRegData());
       for(int ibc = 0; ibc < 2*DIM; ibc++)
       {
@@ -246,22 +238,33 @@ namespace Proto
         {
           Box bcsrcbox = m_BCApplyBoxes[ibc][ivec];
           m_regStencilBCS[ibc][ivec].apply(castSrc, castSrc,
-                                           bcsrcbox, a_initToZero, 1.0);
+                                           bcsrcbox, initToZero, 1.0);
         }
       }
-//#endif
     }
+    if(a_printStuff)
+    {//begin debug
+      dumpArea(a_dst, string("ebstencil: dst after bc apply"));
+    }//end debug
     if(!m_bcsOnly)
     {
-      bool incrementOnly = !a_initToZero;
       if(!m_irregOnly)
       {
         m_regStencilInterior.apply(a_src.getRegData(), 
                                  a_dst.getRegData(),
-                                 m_regApplyBox, a_initToZero, a_scale);
+                                 m_regApplyBox, initToZero, a_scale);
       }
+      if(a_printStuff)
+      {//begin debug
+        dumpArea(a_dst, string("ebstencil: dst after regular apply"));
+      }//end debug
 
-      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly);
+      m_irregStencil->apply(a_dst, a_src, a_scale, incrementOnly, a_printStuff);
+
+      if(a_printStuff)
+      {//begin debug
+        dumpArea(a_dst, string("ebstencil: dst after irreg apply"));
+      }//end debug
     }
     
   }
@@ -274,12 +277,13 @@ namespace Proto
   apply(EBBoxData<       dstCenter, data_t, 1>  &  a_dst,
         const EBBoxData< srcCenter, data_t, 1>  &  a_src,
         bool                                       a_initToZero,
-        double                                     a_scale)  const
+        double                                     a_scale,
+        bool                                       a_printStuff)  const
   {
     PR_TIME("EBStencil::apply");
     if(a_initToZero)
     {
-      applyITZ(a_dst, a_src, a_scale, true);
+      applyITZ(a_dst, a_src, a_scale, a_printStuff);
     }
     else
     {
@@ -288,7 +292,7 @@ namespace Proto
 
       EBBoxData< dstCenter, data_t, 1>   incr(a_dst.inputBox(), a_dst.ebgraph(), useStack);
       incr.setVal(0.);
-      applyITZ(incr, a_src, a_scale, true);
+      applyITZ(incr, a_src, a_scale, a_printStuff);
       a_dst += incr;
     }
   }

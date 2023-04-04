@@ -18,6 +18,7 @@ class EBINS
 public:
 
   enum ParabolicSolverType {BackwardEuler=0, CrankNicolson, TGA};
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   ///
   /**Strictly speaking num_species and diffusionCoefficients are 
@@ -37,8 +38,9 @@ public:
         ParabolicSolverType                      a_solver,
         EBIBC                                    a_ibc,
         unsigned int                             a_num_species = 0,
-        vector<Real> a_diffusionCoeffs = vector<Real>());
-
+        vector<Real> a_diffusionCoeffs = vector<Real>(),
+        bool a_printStuff= false);
+    
   void readDataFromCheckpoint(Real         & a_curTime,
                               unsigned int & a_curStep,
                               const string & a_checkpointName);
@@ -100,15 +102,14 @@ public:
   shared_ptr<BCGVelAdvect>                      m_bcgAdvect;
   shared_ptr<BaseEBParabolic>                   m_heatSolverVelo;
   shared_ptr<BaseEBParabolic>                   m_heatSolverSpec;
-  shared_ptr<LevelData<EBGraph> >               m_graphs;
+  shared_ptr<graph_distrib_t>                   m_graphs;
                                                 
   DisjointBoxLayout                             m_grids;
   Box                                           m_domain;
   IntVect                                       m_nghost;
   Real                                          m_dx;
   Real                                          m_viscosity;
-  Copier                                        m_exchangeCopier;
-  Copier                                        m_copyCopier;
+
   shared_ptr<CrunchInterface>                   m_crunch;
 
 private:
@@ -122,7 +123,8 @@ private:
   void  defineInternals(EBIBC                a_ibc,
                         unsigned int         a_num_species,
                         Real                 a_viscosity,
-                        ParabolicSolverType  a_solver);
+                        ParabolicSolverType  a_solver,
+                        bool a_printStuff);
   
   void projectVelocityAndCorrectPressure(Real a_dt,
                                          Real a_tol,                         

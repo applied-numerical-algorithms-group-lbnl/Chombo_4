@@ -42,7 +42,7 @@ void cfgamma(const int ncomp,
   ShapeArray<double, 1> chg(chg_1d, ncomp + nspec); 
   ShapeArray<double, 4> gam(gam_4d, nz, ny, nx, ncomp + nspec);
 
-  double ctotal,ah,bh,bdt,sum,aa1,tempc,molal;
+  double ctotal,ah,bh,bdt,sum,aa1,tempc;
   ctotal = 0.0;
   for (int ik = 0; ik < (ncomp + nspec); ++ik) {
     ctotal = ctotal + sp10[jz][jy][jx][ik];

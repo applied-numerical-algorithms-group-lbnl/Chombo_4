@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <memory>
-#include "Proto_Box.H"
+#include "base/Proto_Box.H"
 #include "EBProto.H"
 #include "Proto_EBIrregStruct.H"
 
@@ -21,6 +21,7 @@ namespace Proto
   class IrregData
   {
   public:
+    
     typedef EBIndex<cent> index_t;
     ///
     IrregData() 
@@ -28,6 +29,12 @@ namespace Proto
       m_boxdefined = false;
     }
 
+    ///to conform with mpi interface
+    int nComp() const
+    {
+      return ncomp;
+    }
+    
     /// constructor by copying
     IrregData(Box a_box, data_t* a_data, std::vector<index_t>& a_indicies) : m_boxdefined(true)
     {

@@ -50,6 +50,8 @@ public:
 
 
   //rule britannica
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>  graph_distrib_t;
+  
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
   shared_ptr<GeometryService<2> >        m_geoserv;
   shared_ptr<EBLevelBoxData<CELL, DIM> > m_velo;
@@ -63,7 +65,8 @@ public:
   shared_ptr<EBCCProjector >             m_ccProj;
   shared_ptr<EBMultigrid>                m_helmholtz;
   shared_ptr<BaseEBParabolic>            m_heatSolver;
-  shared_ptr<LevelData<EBGraph> >        m_graphs;
+
+  shared_ptr<graph_distrib_t>        m_graphs;
   
   DisjointBoxLayout                      m_grids;
   Box                                    m_domain;
@@ -73,8 +76,7 @@ public:
   Real                                   m_viscosity   ; 
   Real                                   m_permeability;
   Real                                   m_diffusivity ;  
-  Copier                                 m_exchangeCopier;
-  Copier                                 m_copyCopier;
+
   EBIBC                                  m_ibc;
 
 private:

@@ -88,18 +88,18 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   if(a_whichGeom == -1)
   {
     using Proto::AllRegularIF;
-    pout() << "all regular geometry" << endl;
+    Chombo4::pout() << "all regular geometry" << endl;
     retval = shared_ptr<BaseIF>(new AllRegularIF());
   }
   else if(a_whichGeom == 0)
   {
     using Proto::SimpleEllipsoidIF;
-    pout() << "sphere" << endl;
+    Chombo4::pout() << "sphere" << endl;
 
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
-    pout() << "geom_cen = " << a_geomCen       << endl;
-    pout() << "geom_rad = " << a_geomRad       << endl;
+    Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
+    Chombo4::pout() << "geom_rad = " << a_geomRad       << endl;
 
     RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
     RealVect  X0 = RealVect::Unit();
@@ -111,7 +111,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   else if(a_whichGeom ==  1)
   {
     using Proto::PlaneIF;
-    pout() << "plane" << endl;
+    Chombo4::pout() << "plane" << endl;
     RealVect normal, startPt;
     vector<double> v_norm, v_start;
     pp.getarr("geom_normal", v_norm, 0, DIM);
@@ -120,8 +120,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     {
       normal[ idir] = v_norm[ idir];
       startPt[idir] = v_start[idir];
-      pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-      pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+      Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+      Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
     }
     retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
   }
@@ -132,9 +132,9 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   return retval;
 }
 //=================================================
-void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
-                    Vector<Box>                     & a_vecdom,
-                    Vector<Real>                    & a_vecdx,
+void defineGeometry(std::vector<DisjointBoxLayout >      & a_grids,
+                    std::vector<Box>                     & a_vecdom,
+                    std::vector<Real>                    & a_vecdx,
                     shared_ptr<GeometryService<2> > & a_geoserv,
                     Real  & a_geomCen,
                     Real  & a_geomRad,
@@ -143,12 +143,12 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
                     const int                       & a_nx)
 {
   CH_TIME("defineGeometry");
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
 
   ParmParse pp;
   int maxGrid = 32;
   pp.get("maxGrid", maxGrid);
-  pout() << "maxGrid  = " << maxGrid  << endl;
+  Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_nx - 1)*IntVect::Unit;
@@ -157,7 +157,7 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
   Box domain(domLo, domHi);
 
 
-  pout() << "creating grid hierarchy" << endl;
+  Chombo4::pout() << "creating grid hierarchy" << endl;
   GeometryService<2>::generateGrids(a_grids, domain, maxGrid);
   a_vecdom.resize(a_grids.size());
   a_vecdx.resize( a_grids.size());
@@ -176,13 +176,13 @@ void defineGeometry(Vector<DisjointBoxLayout >      & a_grids,
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
-  pout() << "creating implicit function" << endl;
+  Chombo4::pout() << "creating implicit function" << endl;
   
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen,
                                                     a_geomRad,
                                                     a_whichGeom);
 
-  pout() << "creating geometry service" << endl;
+  Chombo4::pout() << "creating geometry service" << endl;
   a_geoserv  = shared_ptr<GeometryService<2> >(new GeometryService<2>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
@@ -199,7 +199,7 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   CH_TIME("InitialData");
   DataIterator dit = a_grids.dataIterator();
 
-  pout() << "calling initializespot for scalar " << endl;
+  Chombo4::pout() << "calling initializespot for scalar " << endl;
 
   for(int ibox = 0; ibox < dit.size(); ibox++)
   {

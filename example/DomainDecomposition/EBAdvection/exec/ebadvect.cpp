@@ -5,7 +5,6 @@
 
 #include "EBProto.H"
 #include "Chombo_EBLevelBoxData.H"
-#include "Chombo_LevelData.H"
 #include "Chombo_BaseFab.H"
 
 #include "Chombo_ParmParse.H"
@@ -80,11 +79,11 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   pp.query("which_velo", whichvelo);
   if(whichvelo == 0)
   {
-    pout() << "calling initializevel for velocity" << endl;
+    Chombo4::pout() << "calling initializevel for velocity" << endl;
   }
   else if(whichvelo == -1)
   {
-    pout() << "calling initializevelconst for velocity" << endl;
+    Chombo4::pout() << "calling initializevelconst for velocity" << endl;
   }
   else
   {
@@ -94,11 +93,11 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
   pp.query("which_scal", whichscal);
   if(whichscal == 0)
   {
-    pout() << "calling initializespot for scalar " << endl;
+    Chombo4::pout() << "calling initializespot for scalar " << endl;
   }
   else if(whichscal == -1)
   {
-    pout() << "calling initializeline for scalar" << endl;
+    Chombo4::pout() << "calling initializeline for scalar" << endl;
   }
   else
   {
@@ -139,11 +138,11 @@ void initializeData(EBLevelBoxData<CELL,   1>   &  a_scalcell,
         pp.query("solid_body_rot", solidBody);
         if(solidBody)
         {
-          pout() << "solid body rotation ON" << endl;
+          Chombo4::pout() << "solid body rotation ON" << endl;
         }
         else
         {
-          pout() << "solid body rotation OFF" << endl;
+          Chombo4::pout() << "solid body rotation OFF" << endl;
         }
         ebforallInPlace_i(numflopsvelo, "IntializeVCell", InitializeVCell,  velobox, 
                           velofab, a_geomCen, a_geomRad, a_maxVelMag, a_maxVelRad, 
@@ -171,7 +170,7 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
                const int        & a_nx,
                const int        & a_maxGrid)
 {
-  pout() << "making grids" << endl;
+  Chombo4::pout() << "making grids" << endl;
 
   using Chombo4::ProblemDomain;
   using Chombo4::DisjointBoxLayout;
@@ -186,11 +185,11 @@ void makeGrids(Chombo4::DisjointBoxLayout& a_grids,
   // EB and periodic do not mix
   ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::Box> boxes;
+  std::vector<Chombo4::Box> boxes;
   unsigned int blockfactor = 8;
-  domainSplit(domain, boxes, a_maxGrid, blockfactor);
+  domainSplit(domain.domainBox(), boxes, a_maxGrid, blockfactor);
   
-  Vector<int> procs;
+  std::vector<int> procs;
 
   a_dx = 1.0/a_nx;
   LoadBalance(procs, boxes);
@@ -213,11 +212,11 @@ void computeDt(Real                        &  a_dt,
   if(maxvel > 1.0e-16)
   {
     a_dt = a_cfl*a_dx/maxvel;
-    pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
+    Chombo4::pout() << "maxvel = " << maxvel << ", dx = " << a_dx << ", dt = " << a_dt << endl;
   }    
   else
   {
-    pout() << "velocity seems to be zero--setting dt to dx" << endl;
+    Chombo4::pout() << "velocity seems to be zero--setting dt to dx" << endl;
     a_dt = a_dx;
   }
 }
@@ -244,18 +243,18 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   if(a_whichGeom == -1)
   {
     using Proto::AllRegularIF;
-    pout() << "all regular geometry" << endl;
+    Chombo4::pout() << "all regular geometry" << endl;
     retval = shared_ptr<BaseIF>(new AllRegularIF());
   }
   else if(a_whichGeom == 0)
   {
     using Proto::SimpleEllipsoidIF;
-    pout() << "sphere" << endl;
+    Chombo4::pout() << "sphere" << endl;
 
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
-    pout() << "geom_cen = " << a_geomCen       << endl;
-    pout() << "geom_rad = " << a_geomRad       << endl;
+    Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
+    Chombo4::pout() << "geom_rad = " << a_geomRad       << endl;
 
     RealVect ABC = RealVect::Unit(); //this is what it makes it a sphere instead of an ellipse
     RealVect  X0 = RealVect::Unit();
@@ -266,7 +265,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   else if(a_whichGeom ==  1)
   {
     using Proto::PlaneIF;
-    pout() << "plane" << endl;
+    Chombo4::pout() << "plane" << endl;
     RealVect normal, startPt;
     vector<double> v_norm, v_start;
     pp.getarr("geom_normal", v_norm, 0, DIM);
@@ -275,8 +274,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     {
       normal[ idir] = v_norm[ idir];
       startPt[idir] = v_start[idir];
-      pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-      pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+      Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+      Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
     }
     retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
   }
@@ -297,7 +296,7 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
                     int              & a_nx,
                     shared_ptr<GeometryService<MAX_ORDER> >&  a_geoserv)
 {
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
 
   ParmParse pp;
   int maxGrid = 32;
@@ -307,20 +306,20 @@ void defineGeometry(Chombo4::DisjointBoxLayout& a_grids,
   pp.get("blob_cen", a_blobCen);
   pp.get("blob_rad", a_blobRad);
 
-  pout() << "nx       = " << a_nx     << endl;
-  pout() << "maxGrid  = " << maxGrid  << endl;
-  pout() << "blob_cen = " << a_blobCen       << endl;
-  pout() << "blob_rad = " << a_blobRad       << endl;
+  Chombo4::pout() << "nx       = " << a_nx     << endl;
+  Chombo4::pout() << "maxGrid  = " << maxGrid  << endl;
+  Chombo4::pout() << "blob_cen = " << a_blobCen       << endl;
+  Chombo4::pout() << "blob_rad = " << a_blobRad       << endl;
 
   makeGrids(a_grids, a_dx, a_nx, maxGrid);
   Chombo4::Box domain = a_grids.physDomain().domainBox();
   int geomGhost = 4;
   RealVect origin = RealVect::Zero();
 
-  pout() << "creating implicit function" << endl;
+  Chombo4::pout() << "creating implicit function" << endl;
   shared_ptr<BaseIF>  impfunc = getImplicitFunction(a_geomCen, a_geomRad, a_whichGeom);
 
-  pout() << "creating geometry service" << endl;
+  Chombo4::pout() << "creating geometry service" << endl;
   a_geoserv  = shared_ptr<GeometryService<MAX_ORDER> >(new GeometryService<MAX_ORDER>(impfunc, origin, a_dx, domain, a_grids, geomGhost));
 }
 
@@ -350,18 +349,18 @@ runAdvection(int a_argc, char* a_argv[])
   pp.get("max_vel_mag"  , max_vel_mag);
   pp.get("max_vel_rad"  , max_vel_rad);
 
-  pout() << "num_streams     = " << nStream         << endl;
-  pout() << "max_step        = " << max_step        << endl;
-  pout() << "max_time        = " << max_time        << endl;
-  pout() << "output interval = " << outputInterval  << endl;
-  pout() << "cfl             = " << cfl             << endl;
-  pout() << "max_vel_mag     = " << max_vel_mag     << endl;
-  pout() << "max_vel_rad     = " << max_vel_rad     << endl;
+  Chombo4::pout() << "num_streams     = " << nStream         << endl;
+  Chombo4::pout() << "max_step        = " << max_step        << endl;
+  Chombo4::pout() << "max_time        = " << max_time        << endl;
+  Chombo4::pout() << "output interval = " << outputInterval  << endl;
+  Chombo4::pout() << "cfl             = " << cfl             << endl;
+  Chombo4::pout() << "max_vel_mag     = " << max_vel_mag     << endl;
+  Chombo4::pout() << "max_vel_rad     = " << max_vel_rad     << endl;
 
   Real dx;
   Chombo4::DisjointBoxLayout grids;
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   shared_ptr<GeometryService<MAX_ORDER> >  geoserv;
 
   Real geomCen;
@@ -374,14 +373,14 @@ runAdvection(int a_argc, char* a_argv[])
   IntVect dataGhostIV =   4*IntVect::Unit;
   Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
 
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
   Chombo4::Box domain = grids.physDomain().domainBox();
   shared_ptr<EBEncyclopedia<2, Real> > 
     brit(new EBEncyclopedia<2, Real>(geoserv, grids, domain, dx, dataGhostPt));
 
-  pout() << "inititializing data"   << endl;
+  Chombo4::pout() << "inititializing data"   << endl;
   
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(domain);
+  auto graphs = geoserv->getGraphs(domain);
   EBLevelBoxData<CELL,   1>  scalcell(grids, dataGhostIV, graphs);
 
   shared_ptr<EBLevelBoxData<CELL, DIM> >  velocell(new EBLevelBoxData<CELL, DIM>(grids, dataGhostIV, graphs));
@@ -391,7 +390,7 @@ runAdvection(int a_argc, char* a_argv[])
 
   int step = 0; Real time = 0;
   Real dt = 0;
-  pout() << "computing the time step"  << endl;
+  Chombo4::pout() << "computing the time step"  << endl;
   computeDt(dt, *velocell, dx, cfl);
   EBIBC bc = getIBCs();
   EBAdvection advectOp(brit, geoserv, velocell, grids, domain,  dx, bc, dataGhostIV);
@@ -405,7 +404,7 @@ runAdvection(int a_argc, char* a_argv[])
     writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
   }
 
-  pout() << "running advection operator " << endl;
+  Chombo4::pout() << "running advection operator " << endl;
 
   while((step < max_step) && (time < max_time))
   {
@@ -414,7 +413,7 @@ runAdvection(int a_argc, char* a_argv[])
     pp.get("scalar_inflow_value",   fluxval);
     advectOp.advance(scalcell,  dt, fluxval);
 
-    pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
+    Chombo4::pout() <<" step = " << step << " time = " << time << " time step = " << dt << endl;
     step++;
     time += dt;
 
@@ -424,7 +423,7 @@ runAdvection(int a_argc, char* a_argv[])
       writeEBLevelHDF5<1>(  filep,  scalcell, kappa, domain, graphs, coveredval, dx, dt, time);
     }
   }
-  pout() << "exiting runAdvection" << endl;
+  Chombo4::pout() << "exiting runAdvection" << endl;
   return 0;
 }
 
@@ -433,7 +432,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebadvect.time.table");
@@ -448,10 +447,10 @@ int main(int a_argc, char* a_argv[])
     runAdvection(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout()  << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

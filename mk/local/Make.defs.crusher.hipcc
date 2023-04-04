@@ -1,0 +1,20 @@
+
+PROTO_HOME =$(SCRATCH)/_proto/proto
+
+CHOMBO_DEPXX=g++
+CHOMBO_CXX=hipcc
+CHOMBO_MPICXX=hipcc
+
+CHOMBO_HDFINCFLAGS=-I$(OLCF_HDF5_ROOT)/include -DH5_USE_110_API
+CHOMBO_HDFLIBFLAGS=-L$(OLCF_HDF5_ROOT)/lib -lhdf5 -lz
+
+CHOMBO_CXXALLFLAGS+= -I$(MPICH_DIR)/include
+CHOMBO_CXXALLFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP  -D__HIP_ROCclr__ -D__HIP_ARCH_GFX90A__=1 --rocm-path=${ROCM_PATH} --offload-arch=gfx90a -x hip -I${ROCM_PATH}/include -I${ROCM_PATH}/include/roctracer
+CHOMBO_DEPFLAGS += -I${MPICH_DIR}/include
+CHOMBO_CXXOPTFLAGS+=-g
+CHOMBO_CXXOPTFLAGS+=-DmemoryFootPrint 
+#curly braces and parentheses mean the same thing in gmake
+
+CHOMBO_LIBS+=-L${MPICH_DIR}/lib -lmpi
+CHOMBO_LIBS+= -L/$(ROCM_PATH)/lib/
+CHOMBO_LIBS+= -lroctx64 -lroctracer64

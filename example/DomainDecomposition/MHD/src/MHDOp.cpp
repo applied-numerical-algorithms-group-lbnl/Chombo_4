@@ -39,8 +39,8 @@ Stencil<Real> MHDOp::s_behind_shift[DIM];
 Stencil<Real> MHDOp::s_copy_f[DIM];
 Copier          MHDOp::s_exchangeCopier;
 
-typedef BoxData<Real,1,1,1> PScalar;
-typedef BoxData<Real,NUMCOMPS,1,1> PVector;
+typedef BoxData<Real,1,::Proto::MEMTYPE_DEFAULT,1,1> PScalar;
+typedef BoxData<Real,NUMCOMPS,::Proto::MEMTYPE_DEFAULT,1,1> PVector;
 
 
 
@@ -1221,7 +1221,7 @@ Real gatherMaxWave(Real maxwaveproc)
   Real maxwaveall = maxwaveproc;
 #ifdef CH_MPI
   Real sendBuf = maxwaveall;
-  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
+  int result = MPI_Allreduce(&sendBuf, &maxwaveall, 1, MPI_CH_REAL, MPI_MAX, CH4_SPMD::Chombo_MPI::comm);
   if (result != MPI_SUCCESS)
   {
     MayDay::Error("communication error in gather");

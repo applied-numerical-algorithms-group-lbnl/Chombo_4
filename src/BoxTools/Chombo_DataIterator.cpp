@@ -8,7 +8,7 @@
  */
 #endif
 
-#include "implem/Proto_ClockTicks.H"
+#include "base/implem/Proto_ClockTicks.H"
 #include "Chombo_DataIterator.H"
 //#include "implem/Proto_DisjointBoxLayout.H"
 #include "Chombo_NamespaceHeader.H"
@@ -106,7 +106,7 @@ DataIterator::
 mergeTime()
 {
   int count = m_time.size();
-  Vector<unsigned long long> tmp(count);
+  std::vector<unsigned long long> tmp(count);
   MPI_Allreduce(&(m_time[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, CH4_SPMD::Chombo_MPI::comm);
   m_time = tmp;
 }
@@ -116,7 +116,7 @@ DataIterator::
 mergePeak()
 {
   int count = m_peak.size();
-  Vector<unsigned long long> tmp(count);
+  std::vector<unsigned long long> tmp(count);
   MPI_Allreduce(&(m_peak[0]),&(tmp[0]), count, MPI_LONG_LONG_INT, MPI_SUM, CH4_SPMD::Chombo_MPI::comm);
   m_peak = tmp;
 }

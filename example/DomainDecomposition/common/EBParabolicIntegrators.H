@@ -14,12 +14,15 @@
 class BaseEBParabolic
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+ 
   ///the boundary conditions for the EBMultigrid have to be correct.  Alpha and Beta do not as they are constantly reset
   BaseEBParabolic(shared_ptr<EBMultigrid>            a_diffusionSolver,
                   shared_ptr<GeometryService<2> >    a_geoserv,
                   const DisjointBoxLayout          & a_grids,
                   const Box                        & a_domain,
-                  const IntVect                    & a_nghost)
+                  const IntVect                    & a_nghost,
+                  bool a_printStuff = false)
   {
     m_diffusionSolver = a_diffusionSolver;
     m_geoserv         = a_geoserv;
@@ -64,8 +67,8 @@ protected:
   DisjointBoxLayout       m_grids;
   Box                     m_domain;
   IntVect                 m_nghost;
-  shared_ptr<GeometryService<2> >    m_geoserv;
-  shared_ptr<LevelData<EBGraph>  >   m_graphs; 
+  shared_ptr<GeometryService<2> > m_geoserv;
+  shared_ptr<graph_distrib_t  >   m_graphs; 
 
 private:
   
@@ -80,17 +83,23 @@ class EBBackwardEuler: public BaseEBParabolic
 {
 public:
   ///
-  EBBackwardEuler(shared_ptr<EBMultigrid>              a_diffusionSolver,
+  EBBackwardEuler(shared_ptr<EBMultigrid>            a_diffusionSolver,
                   shared_ptr<GeometryService<2> >    a_geoserv,
                   const DisjointBoxLayout          & a_grids,
                   const Box                        & a_domain,
-                  const IntVect                    & a_nghost)
+                  const IntVect                    & a_nghost,
+                  bool a_printStuff = false)
     :BaseEBParabolic(a_diffusionSolver, 
                      a_geoserv,         
                      a_grids,           
                      a_domain,          
-                     a_nghost)
+                     a_nghost,
+                     a_printStuff)
   {
+    if(a_printStuff)
+    {
+      pout() << "EBBackwardEuler constructor: building rhs" << endl;
+    }
     m_rhs.define(m_grids, m_nghost, m_graphs);
   }         
 
@@ -126,12 +135,14 @@ public:
                   shared_ptr<GeometryService<2> >    a_geoserv,
                   const DisjointBoxLayout          & a_grids,
                   const Box                        & a_domain,
-                  const IntVect                    & a_nghost)
+                  const IntVect                    & a_nghost,
+                  bool a_printStuff = false)
     :BaseEBParabolic(a_diffusionSolver, 
                      a_geoserv,         
                      a_grids,           
                      a_domain,          
-                     a_nghost)
+                     a_nghost,
+                     a_printStuff)
   {
     m_rhs.define(     m_grids, m_nghost, m_graphs);
     m_kappaLph.define(m_grids, m_nghost, m_graphs);
@@ -170,12 +181,14 @@ public:
         shared_ptr<GeometryService<2> >    a_geoserv,
         const DisjointBoxLayout          & a_grids,
         const Box                        & a_domain,
-        const IntVect                    & a_nghost)
+        const IntVect                    & a_nghost,
+        bool a_printStuff = false)
     :BaseEBParabolic(a_diffusionSolver, 
                      a_geoserv,         
                      a_grids,           
                      a_domain,          
-                     a_nghost)
+                     a_nghost,
+                     a_printStuff)
   {
     m_rhst.define(     m_grids, m_nghost, m_graphs);
     m_srct.define(     m_grids, m_nghost, m_graphs);

@@ -1,5 +1,6 @@
 initial_velo = "zero"
 initial_scal = "blob_scal_0"
+
 #also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "inflow"
 domain_bc_hi_0 = "outflow"
@@ -43,6 +44,7 @@ which_geom = 0
 geom_rad = 0.455
 # center of the sphere
 geom_cen = 0.5
+velocity_inflow_value = 1.
 #
 ##plane 
 ##which_geom = 1 

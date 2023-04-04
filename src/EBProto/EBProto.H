@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Proto.H"
-#include "Proto_LoHiSide.H"
-#include "Chombo_SPACE.H"
+#include "base/Proto_LoHiSide.H"
 
 namespace Proto
 {
@@ -10,8 +9,8 @@ namespace Proto
   enum CENTERING {CELL=0,BOUNDARY,XFACE,YFACE,ZFACE};
 
   // A way to loop over each face type
-  constexpr std::array<CENTERING, Chombo4::SpaceDim>   REG_FACES{D_DECL(XFACE, YFACE, ZFACE)};
-  constexpr std::array<CENTERING, Chombo4::SpaceDim+1> ALL_FACES{BOUNDARY, D_DECL(XFACE, YFACE, ZFACE)};
+  constexpr std::array<CENTERING, DIM>   REG_FACES{D_DECL(XFACE, YFACE, ZFACE)};
+  constexpr std::array<CENTERING, DIM+1> ALL_FACES{BOUNDARY, D_DECL(XFACE, YFACE, ZFACE)};
 
   inline int FACE_DIR(CENTERING cent)
   {
@@ -73,7 +72,7 @@ namespace Proto
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_IrregNode.H"
 #include "Proto_EBGraph.H"
-//#include "implem/Proto_LevelData.H"
+//#include "Proto_LevelData.H"
 
 #include "Proto_EBBoxData.H"
 #include "Proto_EBFluxData.H"
@@ -82,8 +81,8 @@ namespace Proto
 #include "implem/Proto_EBStencilArchive.H"
 #include "Proto_SimpleImplicitFunctions.H"
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
 #include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
 #include "implem/Proto_IrregNode.H"
@@ -91,7 +90,7 @@ namespace Proto
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-//#include "implem/Proto_LevelData.H"
+//#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencil.H"
 

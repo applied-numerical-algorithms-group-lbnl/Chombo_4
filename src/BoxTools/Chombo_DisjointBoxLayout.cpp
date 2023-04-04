@@ -9,7 +9,7 @@
 #endif
 #include <list>
 
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_DisjointBoxLayout.H"
 #include "Chombo_MayDay.H"
 #include "Chombo_DataIterator.H"
@@ -38,8 +38,8 @@ numPointsThisProc() const
   return retval;
 }
 
-DisjointBoxLayout::DisjointBoxLayout(const Vector<Box>& a_boxes,
-                                     const Vector<int>& a_procIDs)
+DisjointBoxLayout::DisjointBoxLayout(const std::vector<Box>& a_boxes,
+                                     const std::vector<int>& a_procIDs)
   :BoxLayout(a_boxes,a_procIDs)
 {
   CH_assert(isDisjoint());
@@ -47,8 +47,8 @@ DisjointBoxLayout::DisjointBoxLayout(const Vector<Box>& a_boxes,
 
 }
 
-DisjointBoxLayout::DisjointBoxLayout(const Vector<Box>& a_boxes,
-                                     const Vector<int>& a_procIDs,
+DisjointBoxLayout::DisjointBoxLayout(const std::vector<Box>& a_boxes,
+                                     const std::vector<int>& a_procIDs,
                                      const ProblemDomain& a_physDomain)
   :BoxLayout(a_boxes,a_procIDs), m_physDomain(a_physDomain)
 {
@@ -57,17 +57,10 @@ DisjointBoxLayout::DisjointBoxLayout(const Vector<Box>& a_boxes,
                       // happen in constructors.
 }
 
-DisjointBoxLayout::DisjointBoxLayout(const LayoutData<Box>& a_newLayout)
-  : BoxLayout(a_newLayout)
-{
-  CH_assert(isDisjoint());
-  computeNeighbors(); // even though BoxLayout::close is virtual, virtual dispatch does not
-                      // happen in constructors.
-}
                                      
 void
-DisjointBoxLayout::define(const Vector<Box>& a_boxes,
-                          const Vector<int>& a_procIDs)
+DisjointBoxLayout::define(const std::vector<Box>& a_boxes,
+                          const std::vector<int>& a_procIDs)
 {
   BoxLayout::define(a_boxes,a_procIDs);
   CH_assert(isDisjoint());
@@ -75,8 +68,8 @@ DisjointBoxLayout::define(const Vector<Box>& a_boxes,
 }
 
 void
-DisjointBoxLayout::define(const Vector<Box>& a_boxes,
-                          const Vector<int>& a_procIDs,
+DisjointBoxLayout::define(const std::vector<Box>& a_boxes,
+                          const std::vector<int>& a_procIDs,
                           const ProblemDomain& a_physDomain)
 {
   m_physDomain = a_physDomain;
@@ -157,7 +150,7 @@ DisjointBoxLayout::closeNoSort()
 }
 
 void
-DisjointBoxLayout::closeN(RefCountedPtr<Vector<Vector<std::pair<int, LayoutIndex> > > > neighbors)
+DisjointBoxLayout::closeN(RefCountedPtr<std::vector<std::vector<std::pair<int, LayoutIndex> > > > neighbors)
 
 {
   if (!*m_closed)  //do nothing if already closed
@@ -174,7 +167,7 @@ DisjointBoxLayout::closeN(RefCountedPtr<Vector<Vector<std::pair<int, LayoutIndex
 void DisjointBoxLayout::computeNeighbors()
 {
   CH_TIME("DisjointBoxLayout::computeNeighbors");
-  const Vector<Entry>& boxes = *m_boxes;
+  const std::vector<Entry>& boxes = *m_boxes;
   int n = boxes.size();
   int maxI=0;
   for (int i=0; i<n; ++i)
@@ -222,18 +215,18 @@ void DisjointBoxLayout::computeNeighbors()
   unsigned int id = 0;
   unsigned int start = 0;
   unsigned int end   = size();
-  m_neighbors = RefCountedPtr<Vector<Vector<std::pair<int, LayoutIndex > > > >(
-            new Vector<Vector<std::pair<int, LayoutIndex> > >());
+  m_neighbors = RefCountedPtr<std::vector<std::vector<std::pair<int, LayoutIndex > > > >(
+            new std::vector<std::vector<std::pair<int, LayoutIndex> > >());
   DataIterator dit = dataIterator();
   m_neighbors->resize(size());
   LayoutIterator lit = layoutIterator();
-  const Vector<LayoutIndex>& vecLayoutIndex = *(lit.m_indicies);
+  const std::vector<LayoutIndex>& vecLayoutIndex = *(lit.m_indicies);
 
   for (DataIterator dit=dataIterator(); dit.ok(); ++dit)
     {
       Box gbox = get(dit());
       gbox.grow(1);
-      Vector<std::pair<int, LayoutIndex> >& neighbors = (*m_neighbors)[dit().intCode()];
+      std::vector<std::pair<int, LayoutIndex> >& neighbors = (*m_neighbors)[dit().intCode()];
       int low =  gbox.smallEnd()[0] - maxI;
       int high = gbox.smallEnd()[0] + maxI + 1;
       for (id=start; id<end; ++id)
@@ -308,8 +301,8 @@ DisjointBoxLayout::degenerate( DisjointBoxLayout& a_to,
                                const SliceSpec& a_sliceSpec,
                                bool a_maintainProcAssign) const
 {
-  Vector<Box> boxes;
-  Vector<int> procAssign;
+  std::vector<Box> boxes;
+  std::vector<int> procAssign;
   boxes.reserve( this->size() );
   bool outofbounds;
   for (LayoutIterator it(this->layoutIterator()); it.ok(); ++it)
@@ -337,8 +330,8 @@ DisjointBoxLayout::degenerate( DisjointBoxLayout& a_to,
 }
 
 void
-DisjointBoxLayout::defineAndLoadBalance(const Vector<Box>& a_boxes,
-                                        Vector<int> * a_procIDs)
+DisjointBoxLayout::defineAndLoadBalance(const std::vector<Box>& a_boxes,
+                                        std::vector<int> * a_procIDs)
 {
   ProblemDomain bogusProbDomain;
   defineAndLoadBalance(a_boxes, a_procIDs, bogusProbDomain);
@@ -346,13 +339,13 @@ DisjointBoxLayout::defineAndLoadBalance(const Vector<Box>& a_boxes,
 }
 
 void
-DisjointBoxLayout::defineAndLoadBalance(const Vector<Box>& a_boxes,
-                                        Vector<int> * a_procIDs,
+DisjointBoxLayout::defineAndLoadBalance(const std::vector<Box>& a_boxes,
+                                        std::vector<int> * a_procIDs,
                                         const ProblemDomain& a_physDomain)
 {
     CH_assert( (!a_procIDs) || (a_procIDs->size() == 0) );
 
-    Vector<int> procIDs;
+    std::vector<int> procIDs;
     procIDs.reserve( a_boxes.size() );
     LoadBalance( procIDs, a_boxes );
     if ( a_procIDs )
@@ -368,7 +361,7 @@ DisjointBoxLayout::isDisjoint() const
   // this is a holder for boxes in the periodic case -- if a box
   // needs to be checked for its periodic images, then save it
   // and come back to it later (to preserve O(N) algorithm)
-  Vector<Box> periodicCheckBoxes;
+  std::vector<Box> periodicCheckBoxes;
   for (unsigned int i=0; i<size(); ++i)
   {
     const Box& a = m_boxes->operator[](i).box;
@@ -533,7 +526,7 @@ coarsen(DisjointBoxLayout& a_output, const DisjointBoxLayout& a_input,
 
   // copy first, then coarsen everything
   // a_output.deepCopy(a_input);
-  a_output.m_boxes      = RefCountedPtr<Vector<Entry> >(new Vector<Entry>(*(a_input.m_boxes)));
+  a_output.m_boxes      = RefCountedPtr<std::vector<Entry> >(new std::vector<Entry>(*(a_input.m_boxes)));
   a_output.m_layout     = a_input.m_layout;
 #ifdef CH_MPI
   a_output.m_dataIndex  = a_input.m_dataIndex;
@@ -541,7 +534,7 @@ coarsen(DisjointBoxLayout& a_output, const DisjointBoxLayout& a_input,
   // now coarsen the physDomain
   a_output.m_physDomain = coarsen(a_input.m_physDomain, a_refinement);
 
-  Vector<Entry>& boxes = *(a_output.m_boxes);
+  std::vector<Entry>& boxes = *(a_output.m_boxes);
   int j=0;
   for (int i=0 ; i<=(int)boxes.size()-4; i+=4)
     {

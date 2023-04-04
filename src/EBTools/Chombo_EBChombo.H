@@ -20,8 +20,8 @@
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_ProtoFactories.H"
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
 #include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
 #include "implem/Proto_IrregNode.H"
@@ -29,7 +29,7 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-//#include "implem/Proto_LevelData.H"
+//#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencil.H"
 #include "Proto_EBBoxData.H"
@@ -77,11 +77,13 @@ using Proto::EBStencilArchive;
 using Chombo4::DisjointBoxLayout;
 using Chombo4::DataIterator;
 using Chombo4::DataIndex;
-using Chombo4::Copier;
 
-typedef Proto::Box Bx;
 using ProtoCh::getProtoBox;
-//typedef Proto::IndexTM<int,2>      Iv2;
+typedef Proto::Box Bx;
+typedef Chombo4::Box          ChBx;
+typedef Chombo4::DataIterator ChDit;
+
+typedef Proto::IndexTM<int,2>      Iv2;
 typedef Proto::IndexTM<int,DIM>    IvgDim;
 typedef Proto::IndexTM<int,DIM-1 > IvgLess1;
 typedef Proto::IndexTM<double,DIM> RvgDim;

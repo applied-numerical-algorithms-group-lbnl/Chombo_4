@@ -13,6 +13,7 @@
 
 #include "Chombo_LevelData.H"
 #include "Proto.H"
+#include "base/Proto_MemType.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
 #include "Chombo_NamespaceHeader.H"
@@ -145,7 +146,7 @@ public:
       Real*       hostPtr = hostfab.dataPtr(0);
       const Real* deviPtr = devifab.dataPtr(0);
 
-      protoMemcpyAsync( Proto::MEMTYPE_DEFAULT,hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
+      protoMemcpyAsync(Proto::MEMTYPE_DEFAULT,hostPtr, deviPtr, datSize, protoMemcpyDeviceToHost,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 
@@ -163,7 +164,7 @@ public:
       const Real* hostPtr = hostfab.dataPtr(0);
       Real*       deviPtr = devifab.dataPtr(0);
 
-      protoMemcpyAsync(  Proto::MEMTYPE_DEFAULT,deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
+      protoMemcpyAsync(Proto::MEMTYPE_DEFAULT,deviPtr, hostPtr, datSize, protoMemcpyHostToDevice,Proto::DisjointBoxLayout::getCurrentStream());
     }
   }
 

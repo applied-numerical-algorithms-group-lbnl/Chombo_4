@@ -267,6 +267,20 @@ namespace Proto
 
   };
 
+  template<CENTERING cent>
+  inline
+  std::ostream& operator<<(std::ostream        & a_os,
+                           const EBIndex<cent> & a_rv)
+  {
+    a_os << "(";
+    a_os << a_rv.m_pt << ", ";
+    a_os << a_rv.m_vofIDMe << ", ";
+    a_os << a_rv.m_vofIDLo << ", ";
+    a_os << a_rv.m_isBoundary;
+    a_os << ")";
+    return a_os;
+  }
+  
   template <CENTERING dstCent, CENTERING srcCent>
   EBIndex<dstCent> getEBIndex(const EBIndex<srcCent>& a_src)
     {
@@ -316,55 +330,6 @@ namespace Proto
     }
     return retval;
   }
-
-
-  // This is an extension of the proto Point that is EB aware
-  // Starting a redesign of EBIndex
-  // The notable difference is this is not a template class
-  class EBPoint
-  {
-  private:
-    // The cartesian index, not EB aware
-    Point m_pt;
-    //for faces, the high cell. for cells, this is the cell
-    int   m_vofIDMe;
-    //for faces, the low cell. for cells, undefined
-    int   m_vofIDLo;
-    /// Is this touching an EB boundary?
-    bool m_isBoundary;
-
-  public:
-    EBPoint()
-      {
-        m_isBoundary = false;
-        m_vofIDLo = 0;
-        m_vofIDMe = 0;
-      }
-
-    ~EBPoint()
-      {
-      }
-
-    ///for vof construction
-    EBPoint(Point a_pt, int a_cellInd)
-      {
-        m_pt = a_pt;
-        m_vofIDMe = a_cellInd;
-        m_vofIDLo = 0;
-        m_isBoundary = false;
-      }
-
-    // not great, but at least we can stop calling the member data directly
-    Point getPoint()
-      {
-        return m_pt;
-      }
-
-    bool isBoundary()
-      {
-        return m_isBoundary;
-      }
-  };
   
   ///
   /**
@@ -854,6 +819,12 @@ namespace Proto
       m_isDefined = false;
     }
 
+    ///not meaningful in this context.    used by the mpi code
+    int nComp() const
+    {
+      return 1;
+    }
+
     ///
     template<CENTERING cent>
     inline 
@@ -1281,31 +1252,40 @@ namespace Proto
     }
 
     //for serialization --defines this object from a byte stream
-    inline EBGraph(void * a_buf);
+    inline EBGraph(void * a_buf,
+                   size_t a_expectedSize,
+                   bool a_printStuff = false);
 
     //for serialization --puts this object into a byte stream
-    inline void energize(void *a_buf) const;
+    inline void energize(void *a_buf,
+                         size_t a_expected_size,
+                         bool a_printStuff = false) const;
     
     ///Chombo leveldata serialization routines
     //this one defines the size of the aformentioned byte stream
     inline
     virtual std::size_t charsize(const Box&   a_bx,
                                  unsigned int a_startcomp,
-                                 unsigned int a_numcomps) const;
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const;
 
     ///
     inline
     virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
-                           unsigned int           a_numcomps);
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false);
     
     ///
     inline
     virtual void linearOut(void*               a_buf,
+                           size_t                 a_expectedSize,
                            const Box       &   a_bx,
                            unsigned int        a_startcomp,
-                           unsigned int        a_numcomps) const;
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const;
 
 
 

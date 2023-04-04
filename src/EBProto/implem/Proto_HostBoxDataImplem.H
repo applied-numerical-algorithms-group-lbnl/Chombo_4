@@ -7,6 +7,23 @@
 namespace Proto
 {
 
+  template <class T, unsigned int C> 
+  HostBoxData<T,C>::HostBoxData(const BoxData<T, C>& a_devifab)
+  {
+    define(a_devifab);
+  }
+
+  template <class T, unsigned int C>
+  void
+  HostBoxData<T,C>::define(const BoxData<T, C>& a_devifab)
+  {
+#ifdef PROTO_CUDA
+    PROTO_ASSERT(false, "aliasing device data to host data is only okay when the device is a lie");
+#endif    
+    m_box    = a_devifab.box();
+    m_data   = a_devifab.getData();
+    m_rawPtr = (T*)(a_devifab.rawPtr());
+  }
 // Default Constructor
   template <class T, unsigned int C> 
   HostBoxData<T,C>::HostBoxData()
@@ -83,8 +100,8 @@ namespace Proto
   template <class T, unsigned int C>
   T& HostBoxData<T,C>::operator()(const Point& a_pt, unsigned int a_c)
   {
-    unsigned long long int index = m_box.index(a_pt);
-    unsigned long long int vsize = m_box.size();
+    int index = m_box.index(a_pt);
+    int vsize = m_box.size();
     return m_rawPtr[a_c*vsize + index];
   }
 
@@ -92,8 +109,8 @@ namespace Proto
   template <class T, unsigned int C>
   const T& HostBoxData<T,C>::operator()(const Point& a_pt, unsigned int a_c) const
   {
-    unsigned long long int index = m_box.index(a_pt);
-    unsigned long long int vsize = m_box.size();
+    int index = m_box.index(a_pt);
+    int vsize = m_box.size();
     return m_rawPtr[a_c*vsize + index];
   }
 }

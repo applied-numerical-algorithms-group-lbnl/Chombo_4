@@ -20,6 +20,7 @@ class EBMACProjector
 public:
   /// the cc proj class uses a bunch of mac projector internals
   friend class EBCCProjector;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   
   EBMACProjector(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                  shared_ptr<GeometryService<2> >        & a_geoserv,
@@ -27,7 +28,8 @@ public:
                  const Box                              & a_domain,
                  const Real                             & a_dx,
                  const IntVect                          & a_nghost,
-                 const EBIBC                            & a_ebibc)
+                 const EBIBC                            & a_ebibc,
+                 bool a_printStuff = false)
   {
     define(a_brit,          
            a_geoserv,       
@@ -35,7 +37,8 @@ public:
            a_domain,        
            a_dx,            
            a_nghost,
-           a_ebibc);
+           a_ebibc,
+           a_printStuff);
   }
 
   void define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
@@ -44,7 +47,8 @@ public:
               const Box                              & a_domain,
               const Real                             & a_dx,
               const IntVect                          & a_nghost,
-              const EBIBC                            & a_ebibc);
+              const EBIBC                            & a_ebibc,
+              bool a_printStuff = false);
   
   /// Divide  a velocity field into its two Hodge Decomposition bits.
   /**
@@ -55,7 +59,8 @@ public:
   void 
   project(EBLevelFluxData<1>   & a_velo,
           EBLevelFluxData<1>   & a_gphi,
-          Real a_tolerance, unsigned int a_maxiterations);
+          Real a_tolerance, unsigned int a_maxiterations,
+          bool a_printStuff);
 
 
   ///
@@ -65,7 +70,8 @@ public:
    */
   void 
   kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
-            EBLevelFluxData<1>      & a_velo);
+            EBLevelFluxData<1>      & a_velo,
+            bool a_printStuff);
 
   
   ///
@@ -73,8 +79,6 @@ public:
   {
     return m_rhs;
   }
-
-  Copier                                 m_exchangeCopier;
 
   static void setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval);
 
@@ -88,7 +92,8 @@ private:
   applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
                               const DataIndex     & a_dit);
   
-  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv);
+  void defineInternals(shared_ptr<GeometryService<2> >        & a_geoserv,
+                       bool a_printStuff = false);
   void registerStencils();
   //rule britannica
   shared_ptr<EBEncyclopedia<2, Real> >   m_brit;
@@ -98,7 +103,7 @@ private:
   Real m_dx;
   EBIBC                                  m_ebibc;
   //internals
-  shared_ptr<LevelData<EBGraph>  >       m_graphs;
+  shared_ptr<graph_distrib_t>            m_graphs;
   EBLevelBoxData<CELL, 1>                m_rhs;
   EBLevelBoxData<CELL, 1>                m_phi;
 

@@ -55,6 +55,7 @@ namespace Proto
     */
     inline void   define(const Box& a_box, const EBGraph& a_graph)
     {
+      m_box = a_box;
       auto* ptrx = new EBHostData<XFACE, data_t, ncomp>(a_box, a_graph);
       auto* ptry = new EBHostData<YFACE, data_t, ncomp>(a_box, a_graph);
       m_xflux = shared_ptr< EBHostData<XFACE, data_t, ncomp> >(ptrx); 
@@ -86,8 +87,12 @@ namespace Proto
       return maxval;
     }
 
+    int nComp() const
+    {
+      return ncomp;
+    }
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
-    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab, unsigned int a_idir)
+    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab, unsigned int a_idir) const
     {
       if(a_idir == 0)
       {
@@ -128,9 +133,10 @@ namespace Proto
     ///this DOES include sizeof(T)  
     virtual std::size_t charsize(const Box&   a_bx,
                                  unsigned int a_startcomp,
-                                 unsigned int a_numcomps) const
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const
     {
-      size_t sumsize = 0;
+      size_t sumsize = 3*sizeof(size_t);
       sumsize += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
       sumsize += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
 #if DIM==3      
@@ -140,37 +146,90 @@ namespace Proto
       
     }
     virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedCharSize,
                            const Box       &      a_bx,
                            unsigned int           a_startcomp,
-                           unsigned int           a_numcomps)
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false)
     {
       PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      char* charbuf = (char*)a_buf;
-      m_xflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
-      m_yflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+      char*  charbuf = (char*)a_buf;
+      size_t charsiz = 0;
+      size_t* longbuf = (size_t *)(charbuf);
+
+      size_t xSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+      size_t ySize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #if DIM==3      
-      m_zflux->linearIn(charbuf,   a_bx, a_startcomp, a_numcomps);
-      charbuf += m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
-#endif      
-    }
-    virtual void linearOut(void*               a_buf,
-                           const Box       &   a_bx,
-                           unsigned int        a_startcomp,
-                           unsigned int        a_numcomps) const
-    {
-      PR_assert((a_startcomp + a_numcomps-1) < ncomp);
-      char* charbuf = (char*)a_buf;
-      m_xflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
-      m_yflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
-#if DIM==3      
-      m_zflux->linearOut(charbuf,  a_bx, a_startcomp, a_numcomps);
-      charbuf += m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t zSize = *longbuf;    longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
 #endif      
 
+      
+      m_xflux->linearIn(charbuf,   xSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += xSize;
+      charsiz += xSize;
+      
+      m_yflux->linearIn(charbuf,   ySize, a_bx, a_startcomp, a_numcomps);
+      charbuf += ySize;
+      charsiz += ySize;
+#if DIM==3      
+      m_zflux->linearIn(charbuf,   zSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
+      charsiz += zSize;
+#endif
+    }
+    virtual void linearOut(void*               a_buf,
+                           size_t              a_expectedCharSize,
+                           const Box       &   a_bx,
+                           unsigned int        a_startcomp,
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const
+    {
+      PR_assert((a_startcomp + a_numcomps-1) < ncomp);
+      char* charbuf = (char*)a_buf;
+      size_t charsiz = 0;
+      
+      size_t xSize = m_xflux->charsize(a_bx, a_startcomp, a_numcomps);
+      size_t ySize = m_yflux->charsize(a_bx, a_startcomp, a_numcomps);
+
+#if DIM==3      
+      size_t zSize = 0;
+      zSize = m_zflux->charsize(a_bx, a_startcomp, a_numcomps);
+#endif      
+      
+      size_t* longbuf = (size_t*)(charbuf);
+      *longbuf = xSize;      longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+      *longbuf = ySize;      longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+      
+#if DIM==3      
+      *longbuf = zSize;      longbuf++;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+#endif
+        
+      m_xflux->linearOut(charbuf,  xSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += xSize;
+      charsiz += xSize;
+      
+      m_yflux->linearOut(charbuf,  ySize, a_bx, a_startcomp, a_numcomps);
+      charbuf += ySize;
+      charsiz += ySize;
+#if DIM==3      
+      m_zflux->linearOut(charbuf,  zSize, a_bx, a_startcomp, a_numcomps);
+      charbuf += zSize;
+      charsiz += zSize;
+#endif      
     }
     ///
     static int preAllocatable()
@@ -182,8 +241,13 @@ namespace Proto
     {
       return 0;
     }
-    
+
+    Box box() const
+    {
+      return m_box;
+    }
   protected:
+    Box m_box;
     EBHostFluxData(const            EBHostFluxData<data_t, ncomp>& a_src);
     EBHostFluxData& operator=(const EBHostFluxData<data_t, ncomp>& a_src);
 

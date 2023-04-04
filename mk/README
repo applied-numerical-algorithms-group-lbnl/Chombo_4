@@ -1,0 +1,28 @@
+To get Chombo4 to compile, you need a Make.defs.local.
+It should have in it defined:
+
+PROTO_HOME = "where you put proto"
+
+CHOMBO_DEPXX="compiler to do dependencies"
+CHOMBO_CXX="compiler to compile" (mpicc, g++... whatever)
+
+
+CHOMBO_HDFINCFLAGS="include flags for hdf5"
+CHOMBO_HDFLIBFLAGS="link flags for hdf5"
+
+CHOMBO_CXXALLFLAGS+= "compilaiton flags you want in all cses"
+CHOMBO_DEPFLAGS += "dependency flags"
+CHOMBO_LIBS+="libs to which you want to link"
+
+#machine-specific reading material:
+
+Igor notes:
+Make.defs.igor ought to work
+
+ANAG notes.
+Make.defs.ANAG.serial/Make.defs.ANAG.parallel should work
+
+Crusher notes:
+For CC (no gpu), Make.defs.crusher.CC ought to work.
+For hipcc (gpu):
+module load PrgEnv-amd hdf5 craype-accel-amd-gfx90a rocm

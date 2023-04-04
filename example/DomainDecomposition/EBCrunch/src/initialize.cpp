@@ -14,9 +14,6 @@ extern"C" {
   char *trimwhitespace(char *str);
   int maxval(int m, int n, int a[][n]);
 
-  allocateStuff()
-  {
-  }
   int initialize(const int ncompchombo, 
 		 const int nspecchombo, 
 		 const int nkinchombo,
@@ -48,42 +45,29 @@ extern"C" {
     // ncomp+nspec,nx,ny,nz
     //
     // double sp[1][32][32][15]; // allocate(sp(ncomp+nspec,nx,ny,nz),stat=ierr); sp = 0.0d0
-    double (* sp)[ny][nx][ncompchombo + nspecchombo];
-    sp = (double (*)[ny][nx][ncompchombo + nspecchombo])calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
+    double *sp = (double *)calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
 
     // double sp10[1][32][32][15]; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
-    double (* sp10)[ny][nx][ncompchombo + nspecchombo];
-    sp10 = (double (*)[ny][nx][ncompchombo + nspecchombo])calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
-
-    // double spold[1][32][32][15]; // allocate(spold(ncomp+nspec,nx,ny,nz),stat=ierr); spold = 0.0d0
-    double (* spold)[ny][nx][ncompchombo + nspecchombo];
-    spold = (double (*)[ny][nx][ncompchombo + nspecchombo])calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
+    double *sp10 = (double *)calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
 
     // double gam[1][32][32][15]; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
-    double (* gam)[ny][nx][ncompchombo + nspecchombo];
-    gam = (double (*)[ny][nx][ncompchombo + nspecchombo])calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
+    double *gam = (double *)calloc((ncompchombo + nspecchombo) * nx * ny * nz, sizeof(double));
 
     // double s[1][32][32][6]; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
-    double (* s)[ny][nx][ncompchombo];
-    s = (double (*)[ny][nx][ncompchombo])calloc(ncompchombo * nx * ny * nz, sizeof(double));
+    double *s = (double *)calloc(ncompchombo * nx * ny * nz, sizeof(double));
 
     // double sn[1][32][32][6]; // allocate(sn(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
-    double (* sn)[ny][nx][ncompchombo];
-    sn = (double (*)[ny][nx][ncompchombo])calloc(ncompchombo * nx * ny * nz, sizeof(double));
+    double *sn = (double *)calloc(ncompchombo * nx * ny * nz, sizeof(double));
 
     // double sion[1][32][32]; // allocate(sion(nx,ny,nz),stat=ierr); sion = 0.0d0
-    double (* sion)[ny][nx];
-    sion = (double (*)[ny][nx])calloc(nx * ny * nz, sizeof(double));
+    double *sion = (double *)calloc(nx * ny * nz, sizeof(double));
 
     // double t[1][32][32]; // allocate(t(nx,ny,nz),stat=ierr); t = 25.0d0
-    double (* t)[ny][nx];
-    t = (double (*)[ny][nx])calloc(nx * ny * nz, sizeof(double));
+    double *t = (double *)calloc(nx * ny * nz, sizeof(double));
 
-    double (* mumin)[nkinchombo][MAX_PATH];
-    mumin = (double (*)[nkinchombo][MAX_PATH])calloc(ncompchombo * nkinchombo * MAX_PATH, sizeof(double));
+    double *mumin = (double *)calloc(ncompchombo * nkinchombo * MAX_PATH, sizeof(double));
 
-    double (* muaq)[nspecchombo];
-    muaq = (double (*)[nspecchombo])calloc(ncompchombo * nspecchombo, sizeof(double));
+    double *muaq = (double *)calloc(ncompchombo * nspecchombo, sizeof(double));
 
     double (* acmp);
     acmp = (double (*))calloc(ncompchombo * nspecchombo, sizeof(double));
@@ -101,8 +85,7 @@ extern"C" {
     ulab = (char * (*))calloc(ncompchombo + nspecchombo, sizeof(char *));
 
     // [NBASIS][nspec + nkin * max_path]
-    double (* as1)[nspecchombo + nkinchombo * MAX_PATH];
-    as1 = (double (*)[nspecchombo + nkinchombo * MAX_PATH])calloc(NBASIS * (nspecchombo + nkinchombo * MAX_PATH), sizeof(double));
+    double *as1 = (double *)calloc(NBASIS * (nspecchombo + nkinchombo * MAX_PATH), sizeof(double));
 
     // dppt = (double (*)[ny][nx][nkinchombo])calloc(nz * ny * nx * nkinchombo, sizeof(double));
     // u_rate = (double (*)[ny][nx][nkinchombo])calloc(nz * ny * nx * nkinchombo, sizeof(double));
@@ -284,7 +267,7 @@ extern"C" {
       {
         // initialize row j in muaq[ncomp][nspec]
         for(int j = 0; j < ncomp; j++)
-          muaq[j][i] = 0.0;
+          muaq[j*nspec+i] = 0.0;
 
         // example stoichiometry: -2.0 'H+'  1.0 'CO2(aq)'  1.0 'Ca++'
         char *tokenPtr = strtok(complexes[i].stoichiometry, " "); // begin tokenizing stoichiometry
@@ -313,7 +296,7 @@ extern"C" {
               for(j = 0; j < ncomp; j++)
                 if(!strcmp(p+1, ulab[j]))
                 {
-                  muaq[j][i] = mu;
+                  muaq[j*nspec+i] = mu;
                   break;
                 }
               if(j >= ncomp)
@@ -340,7 +323,7 @@ extern"C" {
         // equilibrium constant stuff
         if(ntemp > 1)
         {
-          fit_(&nbasis,&ntemp,complexes[i].keq,bvec,&vec[0][0],&iflgint,INT,&ntt,namcx[i]);
+          fit(&nbasis,&ntemp,complexes[i].keq,bvec,&vec[0][0],&iflgint,INT,&ntt,namcx[i]);
 
           if(iflgint == 1)
           {
@@ -366,7 +349,7 @@ extern"C" {
           // put it in the permanent vector of coefficients
           for(int j = 0; j < NBASIS; ++j)
             // double as1[NBASIS][12]; // transposed from fortran as1(12,5)
-            as1[j][i] = bvec[j];
+            as1[j*nspec+i] = bvec[j];
         }
         else if (ntemp == 1)
           eqhom[i] = complexes[i].keq[0];
@@ -409,7 +392,7 @@ extern"C" {
         // initialize mumin
         for(int ncompIndex = 0; ncompIndex < ncomp; ++ncompIndex)
           for(int npIndex = 0; npIndex < np; ++npIndex)
-            mumin[ncompIndex][nkinIndex][npIndex] = 0.0; // transpose of (np,nkin,ncomp), mumin(:,i,:) = 0.0d0
+            mumin[ncompIndex*nkin*np+nkinIndex*np+npIndex] = 0.0; // transpose of (np,nkin,ncomp), mumin(:,i,:) = 0.0d0
 
         // example mineral reaction stoichiometry: 1.0 'Ca++'  -2.0 'H+'  1.0 'CO2(aq)'
         char *tokenPtr = strtok(minerals[nkinIndex].stoichiometry, " "); // begin tokenizing stoichiometry
@@ -446,7 +429,7 @@ extern"C" {
                   {
                     for(int k = 0; k < np; ++k)
                     {
-                      mumin[j][nkinIndex][k] = mu;
+                      mumin[j*nkin*np+nkinIndex*np+k] = mu;
                       // fprintf(stderr,"mumin[%d][%d][%d] = %.4e\n",j,nkinIndex,k,mu);
                     }
                     break;
@@ -475,7 +458,7 @@ extern"C" {
         {
           //   void fit_(int *nbasis, int *ntemp, double *alogk0, double *bvecF, double *vecF, int *iflgint, int *inoutint, int *ntt, char *nameTransfer)
           // fprintf(stderr,"fit: cpp %s, %d\n",namin[nkinIndex],nkinIndex);
-          fit_(&nbasis, &ntemp, minerals[nkinIndex].keq, bvec, &vec[0][0], &iflgint, INT, &ntt, namin[nkinIndex]);
+          fit(&nbasis, &ntemp, minerals[nkinIndex].keq, bvec, &vec[0][0], &iflgint, INT, &ntt, namin[nkinIndex]);
 
           if (iflgint == 1)
           {
@@ -527,16 +510,19 @@ extern"C" {
     // stoichchombo(1,1:nkin,1:ncomp) = mumin(1,1:nkin,1:ncomp)
     for(int i = 0; i < ncomp; ++i)
       for(int j = 0; j < nkin; ++j)
-        for(int k = 0; k < np; ++k)
-          stoichchombo[i][j][k] = mumin[i][j][k];
+        for(int k = 0; k < np; ++k) {
+          size_t idx = i*nkin*np+j*np+k;
+          stoichchombo[i][j][k] = mumin[idx];
+        }
   
     for(int k = 0; k < nz; ++k)
       for(int j = 0; j < ny; ++j)
         for(int i = 0; i < nx; ++i)
           for(int l = 0; l < neqn; ++l)
           {
-            s[k][j][i][l] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
-            sn[k][j][i][l] = 0.0; // allocate(sn(neqn,nx,ny,nz),stat=ierr); sn = 0.0d0
+            size_t idx = k*ny*nx*neqn+j*nx*neqn*i*neqn+l;
+            s[idx] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
+            sn[idx] = 0.0; // allocate(sn(neqn,nx,ny,nz),stat=ierr); sn = 0.0d0
           }
 
     //
@@ -544,8 +530,9 @@ extern"C" {
       for(int j = 0; j < ny; ++j)
         for(int i = 0; i < nx; ++i)
         {
-          sion[k][j][i] = 0.0;
-          t[k][j][i] = 25.0;
+          size_t idx = k*ny*nx+j*nx+i;
+          sion[idx] = 0.0;
+          t[idx] = 25.0;
         }
 
 
@@ -572,7 +559,7 @@ extern"C" {
           {
             if (!strcmp(species->name, ulab[j]))
             {
-              sp10[0][0][0][j] = species->nu;
+              sp10[j] = species->nu;
               // fprintf(stderr,"sp10[0][0][0][%d] = %.3e (%s)\n",j,species->nu,ulab[j]);
               break;
             }
@@ -581,7 +568,7 @@ extern"C" {
           {   
             if (!strcmp(species->name, namcx[j-ncomp]))
             {
-              sp10[0][0][0][j] = species->nu;
+              sp10[j] = species->nu;
               // fprintf(stderr,"sp10[0][0][0][%d] = %.3e (%s)\n",j,species->nu,namcx[j-ncomp]);
               break;
             }
@@ -601,7 +588,7 @@ extern"C" {
           break; // no more species in list
       }
 
-      t[0][0][0] = temp;
+      t[0] = temp;
 
       if (!strcmp(solutions[i].name,"inlet"))
       {
@@ -647,8 +634,8 @@ extern"C" {
 
         for(size_t i = 0; i < ncomp; ++i)
         {
-          inflowchombo[i] = s[0][0][0][i]/1000.0;
-          inflowchombosp10[i] = sp10[0][0][0][i]/1000.0;
+          inflowchombo[i] = s[i]/1000.0;
+          inflowchombosp10[i] = sp10[i]/1000.0;
         }
 
 
@@ -656,15 +643,17 @@ extern"C" {
           for(int j = 0; j < ny; ++j)
             for(int i = 0; i < nx; ++i)
               for(int l = 0; l < neqn; ++l)
-                s[k][j][i][l] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
+                s[k*(ny*nx*neqn)+j*(nx*neqn)+i*neqn+l] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
 
         for(int k = 0; k < nz; ++k)
           for(int j = 0; j < ny; ++j)
             for(int i = 0; i < nx; ++i)
               for(int l = 0; l < ncomp + nspec; ++l)
 	      {
-		sp10[k][j][i][l] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
-		gam[k][j][i][l] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
+              int nc = ncomp+nspec;
+              size_t idx = k*(ny*nx*nc)+j*(nx*nc)+i*nc+l;
+              sp10[idx] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
+              gam[idx] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
 	      }
 
       }
@@ -711,15 +700,17 @@ extern"C" {
           for(int j = 0; j < ny; ++j)
             for(int i = 0; i < nx; ++i)
               for(int l = 0; l < neqn; ++l)
-                s[k][j][i][l] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
+                s[k*(ny*nx*neqn)+j*(nx*neqn)+i*neqn+l] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
 
         for(int k = 0; k < nz; ++k)
           for(int j = 0; j < ny; ++j)
             for(int i = 0; i < nx; ++i)
               for(int l = 0; l < ncomp + nspec; ++l)
               {
-                sp10[k][j][i][l] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
-                gam[k][j][i][l] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
+                int nc = ncomp+nspec;
+                size_t idx = k*(ny*nx*nc)+j*(nx*nc)+i*nc+l;
+                sp10[idx] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
+                gam[idx] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
               }
 	      
       }
@@ -763,27 +754,27 @@ extern"C" {
 
         for(size_t i = 0; i < ncomp; ++i)
         {
-          initchombo[i] = s[0][0][0][i]/1000.0;
+          initchombo[i] = s[i]/1000.0;
         }
 
         for(size_t i = 0; i < ncomp + nspec; ++i)
         {
-          initchombosp10[i] = sp10[0][0][0][i];
-          initchombosp[i] = log(sp10[0][0][0][i]);
+          initchombosp10[i] = sp10[i];
+          initchombosp[i] = log(sp10[i]);
         }
 
         for(size_t i = 0; i < ncompchombo + nspecchombo; ++i)
-          initgamma[i] = gam[0][0][0][i];
+          initgamma[i] = gam[i];
 
         // reset to zero
         //
         for(size_t i = 0; i < neqn; ++i)
-          s[0][0][0][i] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
+          s[i] = 0.0; // allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
 
         for(size_t i = 0; i < ncompchombo + nspecchombo; ++i)
         {
-          sp10[0][0][0][i] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
-          gam[0][0][0][i] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
+          sp10[i] = 0.0; // allocate(sp10(ncomp+nspec,nx,ny,nz),stat=ierr); sp10 = 0.0d0
+          gam[i] = 0.0; // allocate(gam(ncomp+nspec,nx,ny,nz),stat=ierr); gam = 0.0d0
         }
       }
       else 
@@ -800,23 +791,30 @@ extern"C" {
         for(size_t i = 0; i < nx; ++i)
         {
           for(size_t l = 0; l < neqn; ++l)
-            s[k][j][i][l] = initchombo[l] * 1000.0; // s(1:neqn,2,1,1), allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
+            s[k*ny*nx*neqn+j*nx*neqn+i*neqn+l] = initchombo[l] * 1000.0; // s(1:neqn,2,1,1), allocate(s(neqn,nx,ny,nz),stat=ierr); s = 0.0d0
           for(size_t l = 0; l < ncompchombo + nspecchombo; ++l)
           {
-            sp10[k][j][i][l] = initchombosp10[l]; // sp10(1:ncomp+nspec,2,1,1)
-            gam[k][j][i][l]  = initgamma[l]; // gam(1:ncomp+nspec,2,1,1)
+            int nc = ncompchombo+nspecchombo;
+            size_t idx = k*(ny*nx*nc)+j*(nx*nc)+i*nc+l;
+            sp10[idx] = initchombosp10[l]; // sp10(1:ncomp+nspec,2,1,1)
+            gam[idx]  = initgamma[l]; // gam(1:ncomp+nspec,2,1,1)
           }
         }
 
     // initialize sn, and sp
+    int nc = ncompchombo + nspecchombo;
     for(int k = 0; k < nz; ++k)
       for(int j = 0; j < ny; ++j)
         for(int i = 0; i < nx; ++i)
         {
-          for(int l = 0; l < neqn; ++l)
-            sn[k][j][i][l] = s[k][j][i][l];
-          for(int l = 0; l < ncompchombo + nspecchombo; ++l)
-            sp[k][j][i][l] = log(sp10[k][j][i][l]);
+          for(int l = 0; l < neqn; ++l) {
+            size_t idx = k*(ny*nx*neqn)+j*(nx*neqn)+i*neqn+l;
+            sn[idx] = s[idx];
+          }
+          for(int l = 0; l < ncompchombo + nspecchombo; ++l) {
+            size_t idx = k*(ny*nx*nc)+j*(nx*nc)+i*nc+l;
+            sp[idx] = log(sp10[idx]);
+          }
         }
 
     // ______________________ HARDWIRED ________________________

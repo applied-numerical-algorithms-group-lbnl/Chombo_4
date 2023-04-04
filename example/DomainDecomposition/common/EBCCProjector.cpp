@@ -12,10 +12,15 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
        const Box                              & a_domain,   
        const Real                             & a_dx,       
        const IntVect                          & a_nghost,
-       const EBIBC                            & a_ebibc)
+       const EBIBC                            & a_ebibc,
+       bool a_printStuff)
 
 {
   CH_TIME("EBCCProjector::define");
+  if(a_printStuff)
+  {
+    pout() << "EBCCProjector::define calling EBMACProjector constructor" << endl;
+  }
   m_macprojector = shared_ptr<EBMACProjector>
     (new EBMACProjector(a_brit,     
                         a_geoserv,  
@@ -23,7 +28,18 @@ define(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
                         a_domain,   
                         a_dx,       
                         a_nghost,
-                        a_ebibc));
+                        a_ebibc,
+                        a_printStuff));
+
+  //auto & doma    = m_macprojector->m_domain;
+  auto & graphs  = m_macprojector->m_graphs;
+  auto & grids   = m_macprojector->m_grids;
+  m_macGradient.define(grids, a_nghost, graphs);
+
+  if(a_printStuff)
+  {
+    pout() << "EBCCProjector::define calling register stencils" << endl;
+  }
   registerStencils();
 }
 
@@ -35,16 +51,13 @@ registerStencils()
   CH_TIME("EBCCProjector::registerStencils");
   auto & brit    = m_macprojector->m_brit;
   auto & doma    = m_macprojector->m_domain;
-  auto & grids   = m_macprojector->m_grids;
-
   //dirichlet at domain to get zero normal velocity at domain boundaries
   //grown by one to allow interpolation to face centroids
   brit->registerCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, StencilNames::Neumann, doma, doma, false, Point::Ones(2));
- brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
+  brit->registerFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC   , StencilNames::NoBC   , doma, doma);
 
   //below here is stuff used in the conservative gradient
   Point ghost = Point::Zeroes();
-  m_copyToCopier.define(grids, grids);
   bool needDiag = false;
   m_nobcsLabel = StencilNames::NoBC;
   m_ncdivLabel     = StencilNames::NCDivergeRoot + string("1"); //this is for the normalizor 
@@ -63,28 +76,67 @@ registerStencils()
   brit->registerFaceStencil(StencilNames::ExtrapToDomainFace,
                             m_nobcsLabel, m_nobcsLabel,  doma, doma, needDiag);
 }
+///
+void
+EBCCProjector::
+printVectorMax(const EBLevelBoxData<CELL, DIM>& a_velo,
+               const string                   & a_prefix) const
+{
+  Chombo4::pout() << a_prefix << " = (";
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    Real maxvel;
+    EBIndex<CELL> maxvof;
+    maxvel = a_velo.maxNorm(maxvof, idir);
+    Chombo4::pout() << maxvel << "@" << maxvof.m_pt ;
+    if(idir < (DIM-1))
+    {
+      Chombo4:: pout() << ",";
+    }
+  }
+  Chombo4::pout() << a_prefix << ")"  << std::endl;
+}
 /// 
 void 
 EBCCProjector::
 project(EBLevelBoxData<CELL, DIM>   & a_velo,
         EBLevelBoxData<CELL, DIM>   & a_gphi,
-        Real a_tol, unsigned int a_maxiter)
+        Real a_tol, unsigned int a_maxiter,
+        bool a_printStuff)
 {
   CH_TIME("EBCCProjector::project");
   auto & rhs     = m_macprojector->m_rhs;
   auto & phi     = m_macprojector->m_phi;
   auto & solver  = m_macprojector->m_solver;
   auto & grids   = m_macprojector->m_grids;
-  auto & graphs  = m_macprojector->m_graphs;
   
-  a_velo.exchange(m_macprojector->m_exchangeCopier);
+  a_velo.exchange();
+  if(a_printStuff)
+  {
+    printVectorMax(a_velo, string("EBCCProjector::project: |input velo|max"));;
+  }
   
   // set rhs = kappa*div (vel)
-  kappaDivU(rhs, a_velo);
+  kappaDivU(rhs, a_velo, a_printStuff);
 
+  if(a_printStuff)
+  {
+    EBIndex<CELL> vofmax;
+    Real kapDivUMax = rhs.maxNorm(vofmax, 0);
+    Chombo4::pout() << "EBCCProjector::project: |kappa DiVU|max  = " << kapDivUMax << "@" << vofmax.m_pt << endl;
+  }
+    
+    
   //solve kappa*lapl(phi) = kappa*div(vel)
   solver->solve(phi, rhs, a_tol, a_maxiter);
-  
+  phi.exchange();
+  if(a_printStuff)
+  {
+    EBIndex<CELL> vofmax;
+    Real phiMax = phi.maxNorm(vofmax, 0);
+    Chombo4::pout() << "EBCCProjector::project: |phi|max  = " << phiMax << "@" << vofmax.m_pt << endl;
+  }
+    
   //v := v - gphi
   DataIterator dit = grids.dataIterator();
   bool useConservativeGradient = false;
@@ -93,35 +145,36 @@ project(EBLevelBoxData<CELL, DIM>   & a_velo,
   if(useConservativeGradient)
   {
     pout() << "Using a **conservative discretization*** for the CC gradient." << endl;
+    kappaConservativeGradient(a_gphi, phi);
   }
   else
   {
     pout() << "Using the ***average of MAC gradients*** for the CC gradient." << endl;
+    averageFaceToCellGradient(a_gphi, phi);
   }
-
   
-  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  if(a_printStuff)
   {
-    const EBGraph  & graph = (*graphs)[dit[ibox]];
-    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
-    auto& phifab =    phi[dit[ibox]];
-    auto& gphfab = a_gphi[dit[ibox]];
-    if(useConservativeGradient)
-    {
-      kappaConservativeGradient(gphfab, phifab, graph, grid, ibox);
-    }
-    else
-    {
-      computeAverageFaceToCellGradient(gphfab, phifab, graph, grid, ibox);
-    }
-
+    printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max"));
   }
+  
   //conservative gradient really produces kappa*grad phi so
   //we have to normalize
   if(useConservativeGradient)
   {
+    if(a_printStuff)
+    {
+      printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max before normalization"));
+    }
+    
     normalizeGradient(a_gphi);
+
+    if(a_printStuff)
+    {
+      printVectorMax(a_gphi, string("EBLevelCCProjector::project:|gph|max after normalization"));
+    }
   }
+
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
     auto& gphfab = a_gphi[dit[ibox]];
@@ -138,17 +191,16 @@ normalizeGradient(EBLevelBoxData<CELL, DIM>& a_gphi)
   auto & grids          = m_macprojector->m_grids;
   auto & graphs         = m_macprojector->m_graphs;
   auto & nghost         = m_macprojector->m_nghost;
-  auto & exchangeCopier = m_macprojector->m_exchangeCopier;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
   
   EBLevelBoxData<CELL, DIM>  kappaGrad(grids, nghost, graphs);
   //right now gphi holds kappa * grad
-  Interval interv(0, DIM-1);
-  a_gphi.copyTo(interv, kappaGrad, interv, m_copyToCopier);
+  a_gphi.copyTo(kappaGrad);
+  
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
-  kappaGrad.exchange(exchangeCopier);
+  kappaGrad.exchange();
   
   DataIterator dit = grids.dataIterator();
   for(unsigned int idir = 0; idir < DIM; idir++)
@@ -171,11 +223,61 @@ normalizeGradient(EBLevelBoxData<CELL, DIM>& a_gphi)
 ///
 void
 EBCCProjector::
-computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
-                                 EBBoxData<CELL, Real,   1> & a_phi,
-                                 const EBGraph              & a_graph,
-                                 const Bx                   & a_grid,
-                                 const unsigned int         & a_ibox)
+averageFaceToCellGradient(EBLevelBoxData<CELL, DIM>  & a_gph,
+                          EBLevelBoxData<CELL,   1>  & a_phi)
+{
+  auto & doma    = m_macprojector->m_domain;
+  auto & grids   = m_macprojector->m_grids;
+  auto & brit    = m_macprojector->m_brit;
+  
+  a_phi.exchange();
+  DataIterator dit = grids.dataIterator();
+
+  //first get mac gradient
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
+    auto& phifab = a_phi[dit[ibox]];
+    //get the mac gradient at face centers.
+    auto& facegrad = m_macGradient[dit[ibox]];
+    //gphi = grad(phi)
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initZero = true;
+      //registered by the mac projector
+      brit->applyCellToFace(StencilNames::MACGradient, StencilNames::NoBC, doma,
+                            facegrad, phifab, idir, ibox, initZero, 1.0);
+    }
+  }
+  //exchange mac gradient
+  m_macGradient.exchange();
+  
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
+
+    auto& gphfab   = a_gph[dit[ibox]];
+    auto& facegrad = m_macGradient[dit[ibox]];
+    //gphi = grad(phi)
+    for(unsigned int idir = 0; idir < DIM; idir++)
+    {
+      bool initZero = true;
+      EBBoxData<CELL, Real, 1> gradComp;
+      ///aliasing define to get correct component of the cell centered gradient
+      gradComp.define(gphfab, idir);
+      brit->applyFaceToCell(StencilNames::AveFaceToCell, StencilNames::NoBC, doma,
+                            gradComp, facegrad,  idir, ibox, initZero, 1.0);
+    }
+  }
+}
+///
+void
+EBCCProjector::
+averageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
+                          EBBoxData<CELL, Real,   1> & a_phi,
+                          const EBGraph              & a_graph,
+                          const Bx                   & a_grid,
+                          const unsigned int         & a_ibox)
 {
   bool useStack = true;
   CH_TIME("EBCCProjector::avefacetocell_gradient");
@@ -204,6 +306,27 @@ computeAverageFaceToCellGradient(EBBoxData<CELL, Real, DIM> & a_gph,
   }
   return;
 }
+///
+void
+EBCCProjector::
+kappaConservativeGradient(EBLevelBoxData<CELL, DIM>  & a_kappaGrad,
+                          EBLevelBoxData<CELL,   1>  & a_phi)
+{
+  auto & grids   = m_macprojector->m_grids;
+  auto & graphs  = m_macprojector->m_graphs;
+  
+  a_phi.exchange();
+  DataIterator dit = grids.dataIterator();
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    const auto & graph = (*graphs)[dit[ibox]];
+    Bx   grid   =  ProtoCh::getProtoBox(grids[dit[ibox]]);
+    auto& phifab = a_phi[dit[ibox]];
+    auto& gphfab = a_kappaGrad[dit[ibox]];
+    kappaConservativeGradient(gphfab, phifab, graph, grid, ibox);
+  }
+}
+///
 void
 EBCCProjector::
 kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
@@ -212,8 +335,7 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
                           const Bx                   & a_grid,
                           const unsigned int         & a_ibox)
 {
-  bool useStack = true;
- CH_TIME("EBCCProjector::kappaConservativeGradient");
+  CH_TIME("EBCCProjector::kappaConservativeGradient");
   auto & nghost  = m_macprojector->m_nghost;
   auto & doma    = m_macprojector->m_domain;
   auto & brit    = m_macprojector->m_brit;
@@ -221,12 +343,12 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   Bx  grown   =  a_grid.grow(ProtoCh::getPoint(nghost));
 
   //get phi at face centers.
-  EBFluxData<Real, 1>         phiFaceCent(grown, a_graph, useStack);
+  EBFluxData<Real, 1>         phiFaceCent(grown, a_graph);
   brit->applyCellToFace(StencilNames::AveCellToFace, StencilNames::Neumann, 
                         doma, phiFaceCent, a_phi,  a_ibox,  true, 1.0);
 
   //interpolate phi to face centroids
-  EBFluxData<Real, 1>         phiCentroid(grown, a_graph, useStack);
+  EBFluxData<Real, 1>         phiCentroid(grown, a_graph);
   //registered by the mac projector
   EBFluxStencil<2, Real> centroidStencils =
     brit->getFluxStencil(StencilNames::InterpToFaceCentroid, m_nobcsLabel, doma, doma, a_ibox);
@@ -239,7 +361,7 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
   //get phi at centroids
   centroidStencils.apply(phiCentroid, phiFaceCent, true, 1.0);  
   
-  EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph, useStack);
+  EBBoxData<BOUNDARY, Real, 1> ebflux(grown, a_graph);
   //these two are used in the conservative gradient
   auto copystenptr  = brit->m_cellToBoundary->getEBStencil(StencilNames::CopyCellValueToCutFace,
                                                            StencilNames::NoBC, doma, doma, a_ibox);
@@ -279,7 +401,8 @@ kappaConservativeGradient(EBBoxData<CELL, Real, DIM> & a_kappaGrad,
 void 
 EBCCProjector::
 kappaDivU(EBLevelBoxData<CELL, 1  > & a_divu,
-          EBLevelBoxData<CELL, DIM> & a_velo)
+          EBLevelBoxData<CELL, DIM> & a_velo,
+          bool a_printStuff)
 {
   bool useStack = true;
   CH_TIME("EBCCProjector::kappaDivU");

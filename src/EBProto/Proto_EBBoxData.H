@@ -147,7 +147,7 @@ namespace Proto
       const data_t*  retval = nullptr;
       if(a_dataType == 0)
       {
-        retval = m_regData.dataPtr(a_ivar);
+        retval = m_regData.data(a_ivar);
       }
       else
       {
@@ -163,7 +163,7 @@ namespace Proto
       data_t*  retval = nullptr;
       if(a_dataType == 0)
       {
-        retval = m_regData.dataPtr(a_ivar);
+        retval = m_regData.data(a_ivar);
       }
       else
       {
@@ -217,17 +217,17 @@ namespace Proto
 
     
     ///for data transfers.  datasize does NOT include sizeof(data_t) (to conform with boxdata::size)
-    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab)
+    void dataInfo(data_t*& a_dataPtr, size_t& a_datasize, unsigned int a_whichfab) const
     {
       PR_assert((a_whichfab == 0) || (a_whichfab == 1));
       if(a_whichfab == 0)
       {
-        a_dataPtr  =  m_regData.data();
+        a_dataPtr  =  (data_t*)( m_regData.rawPtr());
         a_datasize =  m_regData.size();
       }
       else 
       {
-        a_dataPtr  =  m_irrData.data();
+        a_dataPtr  =  (data_t*)( m_irrData.data());
         a_datasize =  m_irrData.size();
       }
     }
@@ -265,7 +265,12 @@ namespace Proto
       this->m_graph = a_graph;
 
       this->m_irrData.define(a_box, this->m_graph);  
-      this->m_regData.define(a_box, a_useStack);  //stack allocation turned off for now
+      this->m_regData.define(a_box);
+      
+//begin debug
+//      Chombo4::pout() << "in box define for EBBoxData: " ;
+//      Chombo4::pout() << "irrdata.vecsize = " << this->m_irrData.vecsize() << std::endl;
+//end debug      
     }
 
     /// for AggStencil -- not really part of the public interface.
@@ -450,6 +455,6 @@ namespace Proto
 
 
 #include "implem/Proto_EBForAllImplem.H"
-//#include "implem/Proto_fusedLinear.H"
+
 #endif
 

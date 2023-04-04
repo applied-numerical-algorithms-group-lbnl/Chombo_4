@@ -17,10 +17,9 @@
 #include "Chombo_BoxIterator.H"
 #include "Chombo_SPMD.H"
 #include "Chombo_CH_Timer.H"
-
 #include "Chombo_parstream.H"
 #include <chrono>
-
+#include "base/Proto_MemType.H"
 #include <vector>
 #include "Chombo_NamespaceHeader.H"
 
@@ -41,7 +40,7 @@ void CopierBuffer::clear()
     protoPointerAttributes att;
     protoPointerGetAttributes(&att, m_sendbuffer);
 #ifdef PROTO_HIP
-    if(att.memoryType == hipMemoryTypeDevice) { protoFree(MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
+    if(att.memoryType == hipMemoryTypeDevice) { protoFree(Proto::MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #else
     if(att.type == 2) {protoFree(Proto::MEMTYPE_DEFAULT,m_sendbuffer);} // = 2-> device allocation
 #endif
@@ -162,7 +161,7 @@ Copier& Copier::operator= (const Copier& b)
 }
 
 void Copier::trimMotion(const DisjointBoxLayout& a_exchangedLayout, const IntVect& a_ghost,
-                        const Vector<MotionItem*>& a_oldItems, Vector<MotionItem*>& a_newItems)
+                        const std::vector<MotionItem*>& a_oldItems, std::vector<MotionItem*>& a_newItems)
 {
   for (int i = 0; i < a_oldItems.size(); ++i)
   {
@@ -552,7 +551,7 @@ void Copier::define(const BoxLayout& a_level,
   // "to" boxes are not completely contained within the primary
   // domain.  these boxes are then candidates for filling by
   // periodic images of the "from" data.
-  Vector<DataIndex> periodicallyFilledToVect;
+  std::vector<DataIndex> periodicallyFilledToVect;
 
   // in order to cull which "from" data may be needed to
   // fill the "to" data, keep track of the radius around the
@@ -571,7 +570,7 @@ void Copier::define(const BoxLayout& a_level,
   // since valid regions of the "from" DBL may also be outside
   // the primary domain, need to keep track of whether any of these
   // need to be checked separately.
-  Vector<DataIndex> periodicFromVect;
+  std::vector<DataIndex> periodicFromVect;
   // use same domain trick here as well
   Box grownFromDomainCheckBox = a_domain.domainBox();
   int periodicFromCheckRadius = 1;
@@ -1171,7 +1170,7 @@ void Copier::sort()
 {
   //return;
   /*
-    std::vector<MotionItem*>& vlocal = m_localMotionPlan.stdVector();
+    std::vector<MotionItem*>& vlocal = m_localMotionPlan.stdstd::vector();
     std::sort(vlocal.begin(), vlocal.end(), [](MotionItem* const & lhs, MotionItem* const& rhs)->bool{ return lhs->toIndex.intCode()<rhs->toIndex.intCode();});
     m_range.resize(0);
     int items = vlocal.size();
@@ -1193,9 +1192,9 @@ void Copier::sort()
     m_range.back()[1]=items;
     }
   */
-  std::vector<MotionItem*>& vfrom  = m_fromMotionPlan.stdVector();
+  std::vector<MotionItem*>& vfrom  = m_fromMotionPlan;
   std::sort(vfrom.begin(), vfrom.end(), MotionItemSorter());
-  std::vector<MotionItem*>& vto = m_toMotionPlan.stdVector();
+  std::vector<MotionItem*>& vto = m_toMotionPlan;
   std::sort(vto.begin(), vto.end(), MotionItemSorter());
 }
 

@@ -21,13 +21,14 @@ class EBRelaxSolver
 {
 
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
   ///
   /**
      Define the solver.   a_op is the linear operator.
   */
   EBRelaxSolver(EBMultigridLevel*                     a_op, 
                 const DisjointBoxLayout             & a_grids,
-                const shared_ptr<LevelData<EBGraph> > a_graphs,
+                const shared_ptr<graph_distrib_t>     a_graphs,
                 const IntVect                       & a_ghost)
   {
     m_op = a_op;
@@ -47,7 +48,10 @@ public:
   {
     CH_TIME("EBRelaxSolver::solve");
     m_res.setVal(0);
-    m_op->residual(m_res, a_phi, a_rhs);
+
+    bool printStuff = false;
+    bool doExchange = true;
+    m_op->residual(m_res, a_phi, a_rhs, doExchange, printStuff);
 
     Real norm = m_res.maxNorm(0);
 
@@ -67,7 +71,7 @@ public:
         m_op->preCond(m_cor, m_res);
         a_phi += m_cor;
 
-        m_op->residual(m_res, a_phi, a_rhs);
+        m_op->residual(m_res, a_phi, a_rhs, doExchange, printStuff);
 
 //        Real oldNorm = norm;
         norm = m_res.maxNorm(0);

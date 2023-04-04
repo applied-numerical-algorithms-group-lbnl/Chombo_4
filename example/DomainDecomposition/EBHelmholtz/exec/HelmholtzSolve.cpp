@@ -16,7 +16,7 @@
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
 #include "EBMultigrid.H"
-#include "Proto_DebugHooks.H"
+
 #include "DebugFunctions.H"
 #include <iomanip>
 
@@ -24,6 +24,7 @@
 int
 runTest(int a_argc, char* a_argv[])
 {
+  using Chombo4::pout;
   Real coveredval = -1;
   int nx      = 32;
   int maxGrid = 32;
@@ -96,8 +97,8 @@ runTest(int a_argc, char* a_argv[])
 // EB and periodic do not mix
   Chombo4::ProblemDomain domain(domLo, domHi);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  pout() << "making grids" << endl;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  Chombo4::pout() << "making grids" << endl;
   GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
   Chombo4::DisjointBoxLayout grids = vecgrids[0];
@@ -115,12 +116,12 @@ runTest(int a_argc, char* a_argv[])
   shared_ptr<BaseIF>    impfunc(new Proto::SimpleEllipsoidIF(ABC, X0, R, insideRegular));
 //  Bx domainpr = getProtoBox(domain.domainBox());
 
-  pout() << "defining geometry" << endl;
+  Chombo4::pout() << "defining geometry" << endl;
   GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost);
 //  GeometryService<2>* geomptr = new GeometryService<2>(impfunc, origin, dx, domain.domainBox(), vecgrids[0], geomGhost);
   shared_ptr< GeometryService<2> >  geoserv(geomptr);
 
-  pout() << "making dictionary" << endl;
+  Chombo4::pout() << "making dictionary" << endl;
 
   vector<Chombo4::Box>    vecdomain(vecgrids.size(), domain.domainBox());
   vector<Real>   vecdx    (vecgrids.size(), dx);
@@ -138,49 +139,56 @@ runTest(int a_argc, char* a_argv[])
   if(dombc == 0)
   {
     dombcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at domain" << endl;
+    Chombo4::pout() << "using Neumann BCs at domain" << endl;
   }
   else
   {
     dombcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at domain" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at domain" << endl;
   }
 
   if(ebbc == 0)
   {
     ebbcname = StencilNames::Neumann;
-    pout() << "using Neumann BCs at EB" << endl;
+    Chombo4::pout() << "using Neumann BCs at EB" << endl;
   }
   else
   {
     ebbcname = StencilNames::Dirichlet;
-    pout() << "using Dirichlet BCs at EB" << endl;
+    Chombo4::pout() << "using Dirichlet BCs at EB" << endl;
   }
   Chombo4::Box dombox = domain.domainBox();
-  shared_ptr<LevelData<EBGraph> > graphs = geoserv->getGraphs(dombox);
+  auto graphs = geoserv->getGraphs(dombox);
 
-  pout() << "making data" << endl;
+  Chombo4::pout() << "making data" << endl;
   EBLevelBoxData<CELL,   1>  phi(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  rhs(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  res(grids, dataGhostIV, graphs);
   EBLevelBoxData<CELL,   1>  cor(grids, dataGhostIV, graphs);
 
-  bool directToBottom = false;
-  pp.query("direct_to_bottom", directToBottom);
+  bool direct_to_bottom = false;
+  bool useWCycle = false;
+  bool printStuff = true;
+  string prefix;
+  string bottom_solver;
+  pp.get("direct_to_bottom", direct_to_bottom);
+  pp.get("solver_prefix", prefix);
+  pp.get("bottom_solver", bottom_solver);
+  pp.get("useWCycle", useWCycle);
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
-                     stenname, dombcname, ebbcname, dombox,
-                     dataGhostIV, directToBottom);
+                     stenname, dombcname, ebbcname, dombox, dataGhostIV,
+                     bottom_solver, direct_to_bottom, prefix, useWCycle, numSmooth,
+                     printStuff);
   
-  EBMultigridLevel::s_numSmoothUp   = numSmooth;
-  EBMultigridLevel::s_numSmoothDown = numSmooth;
+
   Chombo4::DataIterator dit = grids.dataIterator();
-  pout() << "setting values" << endl;
+  Chombo4::pout() << "setting values" << endl;
   int numsolves = 1;
   pp.query("num_solves", numsolves);
-  pout() << "number of solves = " <<  numsolves << endl;
+  Chombo4::pout() << "number of solves = " <<  numsolves << endl;
   for(int isolve =0; isolve < numsolves; isolve++)
   {
-    pout() << "going into solve number " << isolve << endl;
+    Chombo4::pout() << "going into solve number " << isolve << endl;
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
@@ -191,17 +199,14 @@ runTest(int a_argc, char* a_argv[])
       corbd.setVal(0.0);
     }
 
-    solver.solve(phi, rhs, tol, maxIter, false);
+    bool initToZero = false;
+    solver.solve(phi, rhs, tol, maxIter, initToZero, printStuff);
   }
-  pout() << "done with solves " << endl;
+  Chombo4::pout() << "done with solves " << endl;
   
-//  auto& kappa = solver.getKappa();
-//  writeEBLevelHDF5<1>(string("phi.hdf5"), phi, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("rhs.hdf5"), rhs, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
-//  writeEBLevelHDF5<1>(string("res.hdf5"), res, kappa, dombox, graphs, coveredval, dx, 1.0, 0.0);
   
   CH_TIMER_REPORT();
-  pout() << "exiting " << endl;
+  Chombo4::pout() << "exiting " << endl;
   return 0;
 }
 
@@ -214,7 +219,7 @@ int main(int a_argc, char* a_argv[])
 #else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
 #endif
   
@@ -230,15 +235,15 @@ int main(int a_argc, char* a_argv[])
     ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
     runTest(a_argc, a_argv);
   }
-
-  pout() << "printing time table " << endl;
+  using Chombo4::pout;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
 #ifdef CH_USE_PETSC
-  pout() << "about to call petsc Finalize" << std::endl;
+  Chombo4::pout() << "about to call petsc Finalize" << std::endl;
   PetscFinalize();
 #else  
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
 #endif

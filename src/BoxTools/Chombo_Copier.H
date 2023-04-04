@@ -13,7 +13,7 @@
 
 #include "Chombo_DisjointBoxLayout.H"
 #include "Chombo_Pool.H"
-#include "Chombo_Vector.H"
+#include <vector>
 #include "Chombo_ProblemDomain.H"
 #include <unordered_map>
 #include <cstdint>
@@ -113,13 +113,13 @@ public:
   };
 
 #endif
-  mutable Vector<bufEntry> m_fromMe;
-  mutable Vector<bufEntry> m_toMe;
-  mutable Vector<Vector<bufEntry> > m_toMeUnpack;
+  mutable std::vector<bufEntry> m_fromMe;
+  mutable std::vector<bufEntry> m_toMe;
+  mutable std::vector<std::vector<bufEntry> > m_toMeUnpack;
 
 #ifdef CH_MPI
-  mutable Vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
-  mutable Vector<MPI_Status>   m_receiveStatus, m_sendStatus;
+  mutable std::vector<MPI_Request>  m_sendRequests,  m_receiveRequests;
+  mutable std::vector<MPI_Status>   m_receiveStatus, m_sendStatus;
 #endif
   mutable int numSends, numReceives;
 
@@ -363,9 +363,9 @@ protected:
   friend class CopyIterator;
 
 
-  Vector<MotionItem*> m_localMotionPlan;
-  Vector<MotionItem*> m_fromMotionPlan;
-  Vector<MotionItem*> m_toMotionPlan;
+  std::vector<MotionItem*> m_localMotionPlan;
+  std::vector<MotionItem*> m_fromMotionPlan;
+  std::vector<MotionItem*> m_toMotionPlan;
 
   friend void dumpmemoryatexit();
   static Pool s_motionItemPool;
@@ -379,7 +379,7 @@ protected:
   bool m_isDefined;
 
   void trimMotion(const DisjointBoxLayout& a_exchangedLayout, const IntVect& a_ghost,
-                  const Vector<MotionItem*>& a_oldItems, Vector<MotionItem*>& a_newItems);
+                  const std::vector<MotionItem*>& a_oldItems, std::vector<MotionItem*>& a_newItems);
 
   void sort();
 
@@ -454,7 +454,7 @@ public:
   inline size_t size(){ return m_motionplanPtr->size();}
 
 private:
-  const Vector<MotionItem*>* m_motionplanPtr;
+  const std::vector<MotionItem*>* m_motionplanPtr;
   unsigned int  m_current;
 };
 

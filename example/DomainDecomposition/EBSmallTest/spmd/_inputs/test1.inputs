@@ -1,0 +1,12 @@
+#domain size
+nx=       32
+
+#max grid size in domain decomposition
+maxGrid=  16
+
+##sphere
+which_geom = 0 
+#radius of the sphere
+geom_rad = 45.5
+# center of the sphere
+geom_cen = 0.5

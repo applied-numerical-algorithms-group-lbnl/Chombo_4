@@ -570,7 +570,7 @@ ProblemDomain::dumpOn(ostream& strm) const
 {
 
   strm << "domainBox: ";
-  m_domainBox.dumpOn(strm);
+  strm << m_domainBox;
   strm << " isPeriodic = "
        << D_TERM6(m_isPeriodic[0], << " " <<
                   m_isPeriodic[1], << " " <<

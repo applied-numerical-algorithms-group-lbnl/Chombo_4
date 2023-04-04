@@ -17,6 +17,7 @@
 #include "Chombo_LevelBoxData.H"
 #include "Chombo_BaseFab.H"
 #include "Chombo_Copier.H"
+#include "Chombo_SPMD.H"
 
 constexpr unsigned int NUMCOMPS=2*DIM+2;
 

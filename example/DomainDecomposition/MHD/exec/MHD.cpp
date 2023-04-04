@@ -225,7 +225,7 @@ unsigned int InitializeStateF(State& a_U,
 	a_U(4) = e;        //Energy
 	a_U(5) = Bx;	   //Bx
 	a_U(6) = By;       //By
-	a_U(7) = Bw;       //Bz
+	a_U(7) = Bz;       //Bz
 #endif
 	
     return 0;
@@ -349,10 +349,6 @@ void MHDRun(const RunParams& a_params)
   Real tstop = a_params.tmax;
   int maxStep  = a_params.nstepmax;
   int nGhost = NGHOST;
-
-#ifdef PROTO_CUDA
-  Proto::DisjointBoxLayout::setNumStreams(a_params.nstream);
-#endif
 
   IntVect domLo = IntVect::Zero;
   IntVect domHi  = (a_params.nx - 1)*IntVect::Unit;

@@ -1,0 +1,38 @@
+#turns the verbosity way up
+print_stuff = true
+interior_velo = "zero"
+
+velocity_inflow_value = 1.
+#also available: slip_wall, inflow, outflow
+domain_bc_lo_0 = "inflow"
+domain_bc_hi_0 = "outflow"
+domain_bc_lo_1 = "slip_wall"
+domain_bc_lo_2 = "slip_wall"
+domain_bc_hi_1 = "slip_wall"
+domain_bc_hi_2 = "slip_wall"
+#domain size
+nx=       32
+
+#max grid size in domain decomposition
+maxGrid=  32
+
+
+#mag of biggest velo
+max_vel_mag = 1.0
+#radial locaiton of biggest velo
+max_vel_rad = 0.25
+
+## -1 all reg, 1 regular, 2 sphere
+#all regular geometry
+#which_geom = -1
+
+#
+##sphere
+#which_geom = "sphere" 
+#radius = 0.455
+#center = 0.5 0.5 0.5
+#inside = true
+
+which_geom = "all_regular"
+default_neighbor_radius = 3
+maximum_neighbor_radius = 4

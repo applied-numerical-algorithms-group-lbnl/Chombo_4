@@ -9,45 +9,44 @@ CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools -I$(CHOMBO_HOME)/src/EBProto
 
 
 #need to use depxx because petsc links with g++
-LINK=$(DEPXX)
-OBJDIR = o
-DEPDIR = d
-TARGET = main.exe
+CHOMBO_LINK=$(CHOMBO_CXX)
+CHOMBO_OBJDIR = o
+CHOMBO_DEPDIR = d
+CHOMBO_TARGET = main.exe
 
-$(TARGET): $(OBJ)
-	$(LINK)  $(OBJ) $(LIBS) -o $(TARGET)
+$(CHOMBO_TARGET): $(CHOMBO_OBJ)
+	$(CHOMBO_LINK)  $(CHOMBO_OBJ) $(CHOMBO_LIBS) -o $(CHOMBO_TARGET)
 
-$(OBJDIR): ; mkdir -p $@
+$(CHOMBO_OBJDIR): ; mkdir -p $@
 
 
-$(DEPDIR): ; mkdir  -p $@
+$(CHOMBO_DEPDIR): ; mkdir  -p $@
 
-DEPFILES := $(NODIRSRC:%.cpp=$(DEPDIR)/%.d)
+CHOMBO_DEPFILES := $(CHOMBO_NODIRSRC:%.cpp=$(CHOMBO_DEPDIR)/%.d)
 
-$(DEPFILES):
+$(CHOMBO_DEPFILES):
 
-DEPFLAGS = -MT $@ -MF $(DEPDIR)/$*.d 
-LIBS+= $(LAPACKLIBS)
+CHOMBO_DEPFLAGS += -MT $@ -MF $(CHOMBO_DEPDIR)/$*.d 
 
-ifeq ($(CXX),nvcc)
+ifeq ($(CHOMBO_CXX),nvcc)
 #broke the build
 #LIBS+= -lnvToolsExt
 endif
 
-ifeq ($(DEPXX),nvcc)
-DEPFLAGS += --generate-dependencies
+ifeq ($(CHOMBO_DEPXX),nvcc)
+CHOMBO_DEPFLAGS += --generate-dependencies
 else
-DEPFLAGS += -MM
+CHOMBO_DEPFLAGS += -MM
 endif
 
-$(OBJDIR)/%.o : %.cpp  $(DEPDIR)/%.d | $(DEPDIR) 
-	@mkdir -p $(OBJDIR)
-	$(DEPXX) $(DEPFLAGS) $(CHOMBO_CPPFLAGS) $< 
-	$(CXX) -c -o $@ $< $(CHOMBO_CXXFLAGS) $(CHOMBO_CPPFLAGS) 
+$(CHOMBO_OBJDIR)/%.o : %.cpp  $(CHOMBO_DEPDIR)/%.d | $(CHOMBO_DEPDIR) 
+	@mkdir -p $(CHOMBO_OBJDIR)
+	$(CHOMBO_DEPXX) $(CHOMBO_DEPFLAGS) $(CHOMBO_CPPFLAGS) $< 
+	$(CHOMBO_CXX) -c -o $@ $< $(CHOMBO_CXXFLAGS) $(CHOMBO_CPPFLAGS) 
 
-all: $(TARGET)
+all: $(CHOMBO_TARGET)
 
--include $(DEPFILES)
+-include $(CHOMBO_DEPFILES)
 
 .PHONY: clean realclean print dirs
 

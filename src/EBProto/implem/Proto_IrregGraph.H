@@ -3,7 +3,7 @@
 #define _Proto_IRREGGRAPH_H_
 
 
-#include "Proto_Point.H"
+#include "base/Proto_Point.H"
 
 using std::vector;
 namespace Proto

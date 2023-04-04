@@ -1,3 +1,8 @@
+
+mac_proj.direct_to_bottom = true
+mac_proj.bottom_solver = "petsc"
+mac_proj.useWCycle     = false
+mac_proj.numSmooth     = 4
 #eb benchmark
 mac_proj.direct_to_bottom_solve = false
 
@@ -15,7 +20,7 @@ domain_bc_hi_1 = "slip_wall"
 domain_bc_hi_2 = "slip_wall"
 pressure_iterations = 0
 
-num_species = 3
+num_species = 0
 diffusion_coeff_0 = 0.1
 diffusion_coeff_1 = 0.01
 diffusion_coeff_2 = 0.001

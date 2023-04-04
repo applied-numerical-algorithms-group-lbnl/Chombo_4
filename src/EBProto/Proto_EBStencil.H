@@ -4,8 +4,8 @@
 
 
 #include "Proto_RealVect.H"
-#include "Proto_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Box.H"
+#include "base/Proto_Point.H"
 #include "implem/Proto_LSquares.H"
 #include "Proto_BaseIF.H"
 #include "implem/Proto_IrregNode.H"
@@ -13,10 +13,10 @@
 #include "Proto_HostBoxData.H"
 #include "implem/Proto_HostIrregData.H"
 #include "implem/Proto_PointSet.H"
-//#include "implem/Proto_LevelData.H"
+//#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "implem/Proto_EBStencilArchive.H"
-#include <implem/Proto_StencilImplem.H>
+#include "base/Proto_Stencil.H"
 
 //for HOEB
 #include "hoeb/Proto_EBStencilHO.H"
@@ -154,21 +154,18 @@ namespace Proto
     inline
     void apply(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
                const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-               bool   a_initToZero = false,
-               double a_scale      = 1)  const;
+               bool   a_initToZero,
+               double a_scale     ,
+               bool a_printStuff= false)  const;
                
 
-    
-    inline
-    void defineApplyITZ();
     
     // this forces initToZero = true
     inline
     void applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
                   const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-                  double a_scale      = 1,
-                  bool   a_initToZero = false) const;
-
+                  double a_scale      ,
+                  bool a_printStuff   = false)  const;
                
 
     /// get the diagonal weights of the stencil
@@ -207,6 +204,63 @@ namespace Proto
     void operator=(const EBStencil<order, data_t, srcCenter, dstCenter>& a_inp);
 
   };
+  template <CENTERING cent>
+  inline void 
+  dumpArea(const EBBoxData<cent, double, 1>& a_fab, string a_prefix)
+  {
+    pout() << "tough to do this for general centering" << endl;
+  }
+  
+  template < >
+  inline void 
+  dumpArea(const EBBoxData<CELL, double, 1>& a_fab, string a_prefix)
+  {
+#if DIM==2
+    Point lodeb(3, 12);
+    Point hideb(9, 21);
+    auto graph = a_fab.ebgraph();
+      
+    using std::cout;
+    using std::endl;
+
+    cout    << setprecision(8)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    const EBBoxData<CELL, double, 1> & data = a_fab;
+    auto databox = data.box();
+    databox &= graph.getDomain();
+    if((databox.contains(lodeb)) || (databox.contains(hideb)))
+    {
+      cout << a_prefix << ":" << endl;
+      for(int j = hideb[1]; j >= lodeb[1]; j--)
+      {
+        for(int i = lodeb[0]; i <= hideb[0]; i++)
+        {
+          Point pt(i,j);
+          if(databox.contains(pt))
+          {
+            vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+            cout << pt << ":";
+            if(vofs.size() >  0)
+            {
+              if(data(vofs[0], 0) >= 0)
+              {
+                cout << " ";
+              }
+              cout  << data(vofs[0], 0) << "  ";
+            }
+            else
+            {
+              cout  << "---------------" << "  ";
+            }
+          }
+        }
+        cout << endl;
+      }
+    }
+#endif    
+  }
 }
 #include "implem/Proto_EBStencilImplem.H"
 #endif

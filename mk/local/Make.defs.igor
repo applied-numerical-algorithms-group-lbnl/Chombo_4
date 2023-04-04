@@ -1,20 +1,13 @@
 PROTO_HOME =$(HOME)/_proto/proto
 EFENCEFLAGS = -L/usr/lib -lefence
-PETSC_DIR   = $(HOME)/src/petsc-3.13.5
-include $(PETSC_DIR)/lib/petsc/conf/variables
-DEPXX=clang++
-CXX=clang++
+CHOMBO_PETSC_DIR   = $(HOME)
 
-CXXALLFLAGS := -Wall  -std=c++11 
-CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wall 
-CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CHOMBO_DEPXX=g++
+CHOMBO_CXX=g++
 
-#LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-HDFINCFLAGS =  -I$(HOME)/_hdf5/include 
-HDFLIBFLAGS = -L/$(HOME)/_hdf5/lib -lhdf5_hl -lhdf5 -ldl
-#end mach dependent
-
-
-
-
+CHOMBO_CXXALLFLAGS := -std=c++11 -Wno-sign-compare -Wno-misleading-indentation -Wno-unknown-pragmas -Wno-format
+CHOMBO_CXXDBGFLAGS:=$(CXXALLFLAGS) -g -pedantic -Wno-variadic-macros
+CHOMBO_CXXOPTFLAGS:=$(CXXALLFLAGS) -O3
+CHOMBO_LAPACKLIBS  =  -lgfortran -lm  -llapack_atlas -lblas -llapack -lrt -lgfortran
+CHOMBO_HDFINCFLAGS =  -I/usr/include/hdf5/serial
+CHOMBO_HDFLIBFLAGS = -L/usr/lib/x86_64-linux-gnu  -lhdf5_serial

@@ -2,6 +2,143 @@
 #define __GeometryServiceImplem__
 
 /*********************************************/
+//makes levelgeometry service on refined coarse layout.  Used for agglomeration
+template <int order>
+LevelGeometryService<order>::
+LevelGeometryService(const LevelGeometryService   & a_fineLevel,
+                     const LevelGeometryService   & a_coarLevel,
+                     bool a_printStuff)
+{
+
+  DisjointBoxLayout gridsCoar = a_coarLevel.m_grids;
+  m_baseIF  = a_fineLevel.m_baseIF;
+  m_domain  = a_fineLevel.m_domain;
+  m_origin  = a_fineLevel.m_origin;
+  m_dx      = a_fineLevel.m_dx;
+  m_geomgrow =a_fineLevel.m_geomgrow;
+  m_degreeP = a_fineLevel.m_degreeP;
+  
+  DisjointBoxLayout gridsReCo;
+  refine(gridsReCo, gridsCoar, 2);
+  m_grids = gridsReCo;
+
+  defineData();
+  //define as all regular then copy over
+  DataIterator dit = m_grids.dataIterator();
+  //need to fill graph first and exchange because the exchange can change the graph
+  // and we want the data to be defined consistent with the final graph
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box smgrBox = grow(validBox, m_geomgrow-1);
+
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    Bx domain   = getProtoBox(m_domain);
+    Bx validBx  = getProtoBox(validBox);
+
+    (*m_graphs)[dit[ibox]].defineAsAllRegular(validBx, interBox,   domain);
+  }
+
+//  //begin debug
+//  Chombo4::pout() << "fine level = " << endl;
+//  a_fineLevel.m_graphs->printGrids();
+//  Chombo4::pout() << "coarse level = " << endl;
+//  m_graphs->printGrids();
+//  //now fill in the moment information
+//  for(int ibox = 0; ibox < dit.size(); ibox++)
+//  {
+//    auto graph = (*m_graphs)[dit[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "has irreg" << endl;
+//    }
+//  }
+//  
+//  auto ditf = a_fineLevel.m_grids.dataIterator();
+//  for(int ibox = 0; ibox < ditf.size(); ibox++)
+//  {
+//    auto graphs = a_fineLevel.m_graphs;
+//    auto graph = (*graphs)[ditf[ibox]];
+//    if(graph.isAllRegular())
+//    {
+//      std::cout << "finer all regular" << endl;
+//    }
+//    else if(graph.isAllCovered())
+//    {
+//      std::cout << "finer all covered" << endl;
+//    }
+//    else
+//    {
+//      std::cout << "finer has irreg" << endl;
+//    }
+//  }
+//  //end debug
+
+  bool printStuff = false;
+
+  a_fineLevel.m_graphs->copyTo(*m_graphs, printStuff);
+  //pout() << "after copyTo" << endl;
+  m_graphs->exchange(printStuff);
+  //pout() << "after exchange" << endl;
+  
+  //now fill in the moment information
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    Box validBox = m_grids[dit[ibox]];
+    Box grownBox = grow(validBox, m_geomgrow);
+    Box interBoxCh = grownBox & m_domain;
+    Bx interBox = getProtoBox(interBoxCh);
+    
+    (*m_voludata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_ebfadata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_xfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+    (*m_yfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+#if DIM==3
+    (*m_zfacdata)[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]);
+#endif
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      (*m_ebnormaldata[idir])[dit[ibox]].define(interBox,  (*m_graphs)[dit[ibox]]); 
+    }
+  }
+  
+  a_fineLevel.m_voludata->copyTo(*m_voludata);  
+  a_fineLevel.m_ebfadata->copyTo(*m_ebfadata);
+  a_fineLevel.m_xfacdata->copyTo(*m_xfacdata);
+  a_fineLevel.m_yfacdata->copyTo(*m_yfacdata);
+  
+#if DIM==3  
+  a_fineLevel.m_zfacdata->copyTo(*m_zfacdata);
+#endif
+  
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    a_fineLevel.m_ebnormaldata[idir]->copyTo(*m_ebnormaldata[idir]);
+  }
+
+  m_voludata->exchange();  
+  m_ebfadata->exchange();
+  m_xfacdata->exchange();
+  m_yfacdata->exchange();
+#if DIM==3  
+  m_zfacdata->exchange();
+#endif  
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    m_ebnormaldata[idir]->exchange();
+  }
+}
+/*********************************************/
 template <int order>
 LevelGeometryService<order>::
 LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
@@ -9,7 +146,8 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
                      const double                 &      a_dx,
                      const Box                    &      a_domain,
                      const DisjointBoxLayout      &      a_grids,
-                     const int                    &      a_ghost)
+                     const int                    &      a_ghost,
+                     bool a_printStuff)
 {
   PR_TIME("LevelGeometryService::LevelGeometryService");
 
@@ -25,11 +163,19 @@ LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
   m_grids  = a_grids;
   m_domain = a_domain;
 
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService BaseIF constructor: defining data" << endl;
+  }
   defineData();
 //finest level of moment data comes from the geometry service
 //typically, you need graphs to be a bit bigger than the actual stencil
 
-  defineFinestLevel(a_origin, a_dx);
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService BaseIF constructor:going into defineFinestLevel" << endl;
+  }
+  defineFinestLevel(a_origin, a_dx, a_printStuff);
   
 }
 /*********************************************/
@@ -44,28 +190,36 @@ defineData()
     m_cellVol *= m_dx;
   }
   //the 2* is because of coarsening means ghost cells need to be more numerous on finer levels than coarser levels
-  m_exchangeCopier.exchangeDefine(m_grids, m_geomgrow);
-  m_graphs   = shared_ptr<LevelData<EBGraph > > ( new LevelData<EBGraph> (m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBGraph >()));
-  m_voludata = shared_ptr<LevelData<VoluData> > ( new LevelData<VoluData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<VoluData>()));
-  m_ebfadata = shared_ptr<LevelData<EBFaData> > ( new LevelData<EBFaData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBFaData>()));
-  m_xfacdata = shared_ptr<LevelData<XFacData> > ( new LevelData<XFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<XFacData>()));
-  m_yfacdata = shared_ptr<LevelData<YFacData> > ( new LevelData<YFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<YFacData>()));
-  m_zfacdata = shared_ptr<LevelData<ZFacData> > ( new LevelData<ZFacData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<ZFacData>()));
-  for(int idir = 0; idir < 3; idir++)
+  m_graphs   = shared_ptr<graph_distrib_t > ( new graph_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBGraph >()));
+  m_voludata = shared_ptr< volu_distrib_t > ( new  volu_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<VoluData>()));
+  m_ebfadata = shared_ptr< ebfa_distrib_t > ( new  ebfa_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBFaData>()));
+  m_xfacdata = shared_ptr< xfac_distrib_t > ( new  xfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<XFacData>()));
+  m_yfacdata = shared_ptr< yfac_distrib_t > ( new  yfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<YFacData>()));
+  m_zfacdata = shared_ptr< zfac_distrib_t > ( new  zfac_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<ZFacData>()));
+  for(int idir = 0; idir < 3; idir++)  //one of the rare times it has to be 3, not DIM
   {
-    m_ebnormaldata[idir] = shared_ptr<LevelData<EBNormalData> > ( new LevelData<EBNormalData>(m_grids, 1, m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
+    m_ebnormaldata[idir] = shared_ptr<ebnorm_distrib_t> ( new ebnorm_distrib_t(m_grids,  m_geomgrow, NullConstructorDataFactory<EBNormalData>()));
   }
 }
 /*********************************************/
 template<int order>
 void LevelGeometryService<order>::
 defineFinestLevel(const RealVect               & a_origin,
-                  const double                 & a_dx )
+                  const double                 & a_dx ,
+                  bool a_printStuff)
 {
   PR_TIME("LevelGeometryService::defineFinestLevel");
-  pout() << "defining finest GeometryService level" << endl;
+  
+  if(a_printStuff)
+  {
+    pout() << "defining finest GeometryService level" << endl;
+  }
   LayoutData<vector< IrregNode<order> > > ldnodes(m_grids);
   using Proto::getIrregGraphFromNodes;
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: defining graphs" << endl;
+  }
   DataIterator dit = m_grids.dataIterator();
   //need to fill graph first and exchange because the exchange can change the graph
   // and we want the data to be defined consistent with the final graph
@@ -99,9 +253,15 @@ defineFinestLevel(const RealVect               & a_origin,
       (*m_graphs  )[dit[ibox]].defineFromPrimitives(validBx, regIrregCovered, irrgraph, interBox, domain);
     }
   }
-//  pout() << "exchanging graph data" << endl;
-  m_graphs  ->exchange(m_exchangeCopier);
-//  pout() << "done with graph exchange" << endl;
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: exchanging graph data" << endl;
+  }
+  m_graphs  ->exchange(a_printStuff);
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: done with exchanging graph data" << endl;
+  }
   
   //now fill in the moment information
   for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -157,60 +317,152 @@ defineFinestLevel(const RealVect               & a_origin,
       }
     }
   }
-  m_graphs  ->exchange(m_exchangeCopier);       
-  exchange();
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+  }
+  
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: exchanging data" << endl;
+  }
+  exchange(a_printStuff);
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::defineFinestLevel: waiting for other procs to catch up again" << endl;
+  }
+  CH4_SPMD::barrier();
 }
 /*********************************************/
 template <int order>
 void
 LevelGeometryService<order>::
-exchange()
+exchange(bool a_printStuff)
 {
   PR_TIME("LevelGeometryService::exchange");
-//  pout() << "exchanging moment data" << endl;
-  Interval interv(0,0);
-  m_voludata->exchange(m_exchangeCopier);       
-  m_ebfadata->exchange(m_exchangeCopier);       
-  m_xfacdata->exchange(m_exchangeCopier);       
-  m_yfacdata->exchange(m_exchangeCopier);       
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging volume moment data" << endl;
+  }
+
+  m_voludata->exchange();       
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging cut face moment data" << endl;
+  }
+
+  m_ebfadata->exchange();       
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging x   face moment data" << endl;
+  }
+  m_xfacdata->exchange();       
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging y   face moment data" << endl;
+  }
+  m_yfacdata->exchange();       
 #if DIM==3
-  m_zfacdata->exchange(m_exchangeCopier);
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange: exchanging z   face moment data" << endl;
+  }
+  m_zfacdata->exchange();
 #endif
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService::exchange: waiting for other procs to catch up" << endl;
+    CH4_SPMD::barrier();
+    pout() << "LevelGeometryService::exchange exchanging normal data" << endl;
+  }
   for(int idir = 0; idir < DIM; idir++)
   {
-    m_ebnormaldata[idir]->exchange(m_exchangeCopier);
+     m_ebnormaldata[idir]->exchange();
   }
 }
   
 /*********************************************/
 template <int order>
 LevelGeometryService<order>::
-LevelGeometryService(const LevelGeometryService   &      a_finerLevel,
-                     const DisjointBoxLayout      &      a_grids)
+LevelGeometryService(const LevelGeometryService   &      a_finer,
+                     const DisjointBoxLayout      &      a_grids,
+                     bool a_printStuff)
 {
-  PR_TIME("LevelGeometryService::defineFromcoarser");
-  pout() << "creating coarser GeometryService level" << endl;
-  m_baseIF   = a_finerLevel.m_baseIF;
-  m_domain   = coarsen(a_finerLevel.m_domain,2);
-  m_origin   =         a_finerLevel.m_origin;
-  m_dx       =      2.*a_finerLevel.m_dx;
-  m_geomgrow =         a_finerLevel.m_geomgrow;
-  m_degreeP =          a_finerLevel.m_degreeP;
+  PR_TIME("LevelGeometryService::defineFromFinerLevel");
+  if(a_printStuff)
+  {
+    pout() << "creating coarser GeometryService level" << endl;
+  }
 
-  m_grids  = a_grids;
+  LevelGeometryService<order>* finerLevelOnProcPtr = NULL;
+  bool needDelete = false;
+  m_baseIF   = a_finer.m_baseIF;
+  m_domain   = coarsen(a_finer.m_domain,2);
+  m_origin   =         a_finer.m_origin;
+  m_dx       =      2.*a_finer.m_dx;
+  m_geomgrow =         a_finer.m_geomgrow;
+  m_degreeP  =         a_finer.m_degreeP;
+  m_grids    = a_grids;
+  
+  if(a_finer.m_grids.compatible(m_grids))
+  {
+    finerLevelOnProcPtr = (LevelGeometryService<order>*)(&a_finer);
+    needDelete = false;
+  }
+  else
+  {
+    finerLevelOnProcPtr = new LevelGeometryService<order>(a_finer, *this, a_printStuff);
+  }
 
+  auto& finerLevel = *finerLevelOnProcPtr;
+  
+  
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: defining internal data" << endl;
+  }
   defineData();
 
-  PROTO_ASSERT(a_grids.compatible(a_finerLevel.m_grids), "GeometryService:problem in grid generation");
+  PROTO_ASSERT(a_grids.compatible(finerLevel.m_grids), "GeometryService:problem in grid generation");
   
-  coarsenGraph(a_finerLevel);
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: coarsening the graph" << endl;
+  }
+  coarsenGraph(finerLevel);
   
-//  pout() << "exchanging graph info" << endl;
-  m_graphs  ->exchange(m_exchangeCopier);       
-//  pout() << "done with graph exchange" << endl;
-  coarsenData(a_finerLevel);
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: exchanging the coarsened graph" << endl;
+  }
+  m_graphs  ->exchange(a_printStuff);       
 
-  exchange();
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: coarsening the data" << endl;
+  }
+  coarsenData(finerLevel);
+
+  if(a_printStuff)
+  {
+    pout() << "LevelGeometryService coarsening constructor: filling ghost with exchange" << endl;
+  }
+  exchange(a_printStuff);
 }
 /*********************************************/
 template <int order>

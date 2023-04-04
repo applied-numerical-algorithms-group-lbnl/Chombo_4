@@ -99,16 +99,17 @@ test2(int a_argc, char* a_argv[])
   }
 
   cout << "doing serialization dance" << endl;
-  int sizeSrc = src.charsize(intBx, 0, 1);
-  int sizeDst = dst.charsize(intBx, 0, 1);
+  size_t sizeSrc = src.charsize(intBx, 0, 1);
+  size_t sizeDst = dst.charsize(intBx, 0, 1);
   if (sizeSrc != sizeDst)
   {
     MayDay::Abort("test2 LinearizationTest failure: dest and source have different sizes");
   }
-  Vector<char> buffer(sizeSrc);
+  std::vector<char> buffer(sizeSrc);
   void* buf = (void*)&(buffer[0]);
-  src.linearOut(buf, intBx, 0, 1);
-  dst.linearIn (buf, intBx, 0, 1);
+  size_t expected = sizeSrc;
+  src.linearOut(buf, expected, intBx, 0, 1, true);
+  dst.linearIn (buf, expected, intBx, 0, 1, true);
 
   cout << "checking the answer" << endl;
   for(int iind = 0; iind < intInd->size(); iind++)
@@ -147,16 +148,17 @@ test3(int a_argc, char* a_argv[])
   dst.setVal(dstVal);
 
   cout << "doing serialization dance" << endl;
-  int sizeSrc = src.charsize(intBx, 0, 1);
-  int sizeDst = dst.charsize(intBx, 0, 1);
+  size_t sizeSrc = src.charsize(intBx, 0, 1);
+  size_t sizeDst = dst.charsize(intBx, 0, 1);
   if (sizeSrc != sizeDst)
   {
     MayDay::Abort("test 3 LinearizationTest failure: dest and source have different sizes");
   }
-  Vector<char> buffer(sizeSrc);
+  std::vector<char> buffer(sizeSrc);
   void* buf = (void*)&(buffer[0]);
-  src.linearOut(buf, intBx, 0, 1);
-  dst.linearIn (buf, intBx, 0, 1);
+  size_t expected = sizeSrc;
+  src.linearOut(buf, expected, intBx, 0, 1, true);
+  dst.linearIn (buf, expected, intBx, 0, 1, true);
 
   cout << "checking the answer" << endl;
   for(int iind = 0; iind < intInd->size(); iind++)
@@ -183,7 +185,7 @@ int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
   //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebapply.time.table");
@@ -200,10 +202,10 @@ int main(int a_argc, char* a_argv[])
     Chombo4::test3(a_argc, a_argv);
   }
 
-  pout() << "printing time table " << endl;
+  Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;

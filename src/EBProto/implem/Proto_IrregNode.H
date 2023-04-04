@@ -3,9 +3,9 @@
 #define _Proto_IRREGNODE_H_
 
 
-#include "Proto_Point.H"
+#include "base/Proto_Point.H"
 #include "Proto_RealVect.H"
-#include "Proto_LoHiSide.H"
+#include "base/Proto_LoHiSide.H"
 #include "Proto_IndexedMoments.H"
 #include "EBProto.H"
 #include "Proto_IrregGraph.H"

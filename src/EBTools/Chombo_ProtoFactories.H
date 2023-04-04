@@ -17,9 +17,62 @@
 #include "EBProto.H"
 #include "Proto_EBGraph.H"
 #include "Chombo_EBChombo.H"
-#include "Chombo_LevelData.H"
 #include "Chombo_ProtoInterface.H"
+#include "Chombo_EBDataChoreography.H"
 #include "Chombo_NamespaceHeader.H"
+
+/// Factory object to data members of a BoxLayoutData container where objects need a graph in the constructor
+
+///this one uses aliases instead of memcopy to get data to host data holder when we are running in CPU-only land
+template <CENTERING cent, typename  data_t, unsigned int ncomp>
+class DeviToHostAliasFactory: public DataFactory<EBHostData<cent, data_t, ncomp> >
+{
+public:
+  typedef Proto::EBBoxData<  cent, data_t, ncomp>  devi_fab_t;
+  typedef Proto::EBHostData< cent, data_t, ncomp>  host_fab_t;
+  typedef CH4_Data_Choreography::DistributedData<host_fab_t>  host_distrib_t;  
+  typedef CH4_Data_Choreography::DistributedData<devi_fab_t>  devi_distrib_t;  
+
+  
+  virtual bool graphConstructor() const
+  {
+    return true;
+  }
+  
+  virtual ~DeviToHostAliasFactory()
+  {
+  }
+
+  DeviToHostAliasFactory(const devi_distrib_t& a_srcData)
+  {
+    m_devi_data_ptr = (devi_distrib_t*)(&a_srcData);
+  }
+
+  /// factory function.  creates a new 'T' object
+  /** creates a new 'T' object and returns a pointer to it.
+   */
+  virtual host_fab_t* create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  {
+    Proto::Box bx = ProtoCh::getProtoBox(a_box);
+    return new host_fab_t((*m_devi_data_ptr)[a_datInd]);
+  }
+
+  virtual bool callDelete() const
+  {
+    return true;
+  }
+
+  //return true if copy and construction are thread safe
+  virtual bool threadSafe() const
+  {
+    return false;
+  }
+
+private:
+  DeviToHostAliasFactory();
+  devi_distrib_t*              m_devi_data_ptr;
+};
+
 
 /// factory where constructor called is the null constructor
 template <typename DataHolder >
@@ -63,12 +116,19 @@ template <typename DataHolder>
 class GraphConstructorFactory: public DataFactory< DataHolder >
 {
 public:
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>  graph_distrib_t;
 
+  
+  virtual bool graphConstructor() const
+  {
+    return true;
+  }
+  
   virtual ~GraphConstructorFactory()
   {
   }
 
-  GraphConstructorFactory(shared_ptr<LevelData<EBGraph> > a_graphs)
+  GraphConstructorFactory(shared_ptr<graph_distrib_t> a_graphs)
   {
     m_graphs = a_graphs;
   }
@@ -96,7 +156,7 @@ public:
 
 private:
   GraphConstructorFactory();
-  shared_ptr<LevelData<EBGraph> > m_graphs;
+  shared_ptr<graph_distrib_t > m_graphs;
 };
 
 

@@ -59,12 +59,12 @@ int fitgamma(double *a,
   if( info < 0 )
     {
       fprintf(stderr,"fitgamma: LAPACKE_dgetrf: the %d-th argument had an illegal value\n", info);
-      exit;
+      exit(EXIT_FAILURE);
     }
   else if( info > 0 )
     {
       fprintf(stderr,"fitgamma: LAPACKE_dgetrf: U(%d,%d) is exactly zero. The factorization has been completed, but the factor U is exactly singular, and division by zero will occur if it is used to solve a system of equations.\n", info, info );
-      exit;
+      exit(EXIT_FAILURE);
     }
 
   info = LAPACKE_dgetrs(LAPACK_ROW_MAJOR,trans,n,nrhs,*w,lda,ipiv,bvec,ldb);
@@ -72,7 +72,7 @@ int fitgamma(double *a,
   if( info < 0 )
     {
       fprintf(stderr,"fitgamma: LAPACKE_dgetrs: the %d-th argument had an illegal value\n", info);
-      exit;
+      exit(EXIT_FAILURE);
     }
 
   return 0;

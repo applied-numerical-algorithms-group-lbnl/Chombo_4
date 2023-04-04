@@ -14,7 +14,7 @@
 #include "Proto.H"
 #include "Chombo_IntVect.H"
 #include "Chombo_Box.H"
-#include "Proto_Point.H"
+#include "base/Proto_Point.H"
 #include "Chombo_NamespaceHeader.H"
 
 ///these functions are meant to interface with the Proto language.
@@ -33,6 +33,9 @@ namespace ProtoCh
 ///get chombo box from proto box
   extern Box getBox(const ::Proto::Box & a_bx);
 
+///get chombo box from proto box
+  Box getChomboBox(const ::Proto::Box & a_bx);
+  
 } 
 
 #include "Chombo_NamespaceFooter.H"

@@ -11,8 +11,6 @@
 #ifndef _hoeb_LAPACK_H_
 #define _hoeb_LAPACK_H_
 #include "Hoeb_FortranNameMacro.H"
-namespace hoeb
-{
 
   /// Forward declaration of lapack routines
   extern "C" 
@@ -91,7 +89,6 @@ namespace hoeb
                                 const int* M, const int* N, const Real* ALPHA,
                                 const Real* A, const int* LDA,
                                 Real* B, const int* LDB);
-  }
 
 }
 #endif

@@ -69,9 +69,7 @@ runNavierStokes()
   pp.get("covered_value", coveredval);
   pp.get("num_smooth", numSmooth);
   pp.get("use_w_cycle", useWCycle);
-  EBMultigridLevel::s_numSmoothUp   = numSmooth;
-  EBMultigridLevel::s_numSmoothDown = numSmooth;
-  EBMultigridLevel::s_useWCycle     = useWCycle;
+
   pout() << "max_step        = " << max_step        << endl;
   pout() << "max_time        = " << max_time        << endl;
   pout() << "checkpoint interval = " << checkpointInterval  << endl;
@@ -85,17 +83,20 @@ runNavierStokes()
   pout() << "nx       = " << nx     << endl;
   Real dx = 1.0/Real(nx);
 
-  Vector<Chombo4::DisjointBoxLayout> vecgrids;
-  Vector<Chombo4::Box>               vecdomains;
-  Vector<Real> vecdx;
+  std::vector<Chombo4::DisjointBoxLayout> vecgrids;
+  std::vector<Chombo4::Box>               vecdomains;
+  std::vector<Real> vecdx;
   int whichGeom;
 
   Real geomCen, geomRad;
   defineGeometry(vecgrids, vecdomains, vecdx, geoserv, geomCen, geomRad, whichGeom, dx, nx);
 
   IntVect dataGhostIV =   4*IntVect::Unit;
-  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV); 
-  
+  Point   dataGhostPt = ProtoCh::getPoint(dataGhostIV);
+//begin debug  
+//  pout() << "leaving after geometry" << endl;
+//  return 0;
+//end debug    
   
   pout() << "making dictionary" << endl;
   shared_ptr<EBEncyclopedia<2, Real> > 
@@ -176,11 +177,17 @@ runNavierStokes()
     pp.get(diffname.c_str(), thisco);
     diffusion_coeffs[ispec] = thisco;
   }
-  
+
+  bool printStuff = false;
   EBINS solver(brit, geoserv, grids, domain,  dx, viscosity, dataGhostIV, 
-               paraSolver, ibc, num_species, diffusion_coeffs);
+               paraSolver, ibc, num_species, diffusion_coeffs, printStuff);
 
 
+  pout() << "after EBINS constructor" << endl;
+////begin debug  
+//  pout() << "leaving after EBINS constructor" << endl;
+//  return 0;
+////end debug    
   unsigned int starting_step = 0;
   Real         starting_time = 0;
   string checkpointFile;
@@ -197,6 +204,10 @@ runNavierStokes()
     pout() << "going into initialize data " << endl;
     initializeData(solver, grids, dx, geomCen, geomRad, blobCen, blobRad, maxVelMag, maxVelRad, ibc);
   }
+////begin debug  
+//  pout() << "leaving after EBINS initialization" << endl;
+//  return 0;
+////end debug    
   if(starting_step == 0)
   {
     if(stokesFlowInitialization)

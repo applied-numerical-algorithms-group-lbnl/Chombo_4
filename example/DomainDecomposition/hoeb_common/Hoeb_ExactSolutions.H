@@ -4,7 +4,7 @@ using std::cerr;
 
 #ifndef __hoeb_EBEExactSolutions__
 #define __hoeb_EBEExactSolutions__
-
+#include "Hoeb_Basics.H"
 namespace hoeb
 {
   template <unsigned int order>
@@ -12,7 +12,10 @@ namespace hoeb
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
+    typedef IndexedMoments<DIM-1, order> IndMomDMO;
+    
     typedef       IndexTM<int, DIM>            IvDIM;
+    typedef       IndexTM<int, DIM-1>          IvDMO;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
 
   
@@ -24,11 +27,12 @@ namespace hoeb
     {
     }
 
-    ///
+    ///shortcut for cell data
     Real operator()(const EBGraph & a_graph,
                     const Real    & a_dx,
                     const VoluData& a_voldat,
-                    const EBIndex<CELL>   & a_vof)
+                    const EBIndex<CELL>   & a_vof,
+                    bool a_divideByArea)
     {
       Real retval = 0;
       RealVect centloc;
@@ -62,18 +66,281 @@ namespace hoeb
         Real   incre = deriv*momen/denom;
         retval += incre;
       }
-      Real minvol = 1.0e-16;
-      if(volu > minvol)
+      if(a_divideByArea)
       {
-        retval /= volu;
+        Real minvol = 1.0e-16;
+        if(volu > minvol)
+        {
+          retval /= volu;
+        }
       }
       return retval;   
     }
 
-    virtual Real getDerivative(IvDIM    a_power,
-                               RealVect a_loc) = 0;
-  };
+    virtual Real getDerivative(IndexTM<int, DIM>  a_power,
+                               RealVect a_loc) const
+    {
+      Chombo4::MayDay::Error("bogus dude");
+    }
 
+    ///
+    template <CENTERING cent>
+    Real evaluateDIM(const EBGraph & a_graph,
+                     const Real    & a_dx,
+                     const HostIrregData<cent,IndMomDIM , 1>& a_voldat,
+                     const EBIndex<cent>   & a_vof,
+                     bool a_divideByArea) const
+    {
+      Real retval = 0;
+      RealVect centloc;
+      Point cell = a_vof.m_pt;
+      IndexedMoments<DIM, order> moments;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
+      }
+        
+      if(a_graph.isRegular(cell))
+      {
+        moments.setToRegular(a_dx);
+      }
+      else if(a_graph.isCovered(cell))
+      {
+        return 0;
+      }
+      else
+      {
+        moments = a_voldat(a_vof, 0);
+      }
+      
+      Real volu = moments[IvDIM::Zero];
+      for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
+      {
+        IvDIM  power = momit();
+        Real   deriv = getDerivative(power, centloc);
+        int   idenom = (power.factorial());
+        Real   denom = (Real)(idenom);
+        Real   momen = moments[power];
+        Real   incre = deriv*momen/denom;
+        retval += incre;
+      }
+      if(a_divideByArea)
+      {
+        Real minvol = 1.0e-16;
+        if(volu > minvol)
+        {
+          retval /= volu;
+        }
+      }
+      return retval;   
+    }
+
+    typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
+    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+    typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
+    typedef CH4_Data_Choreography::DistributedData<EBFaData    > ebfa_distrib_t;
+
+    ///get integral (grad phi dot n dA)
+    inline 
+    Real evaluateGradDIM(const EBGraph                          & a_graph,
+                         const Real                             & a_dx,
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_x, 
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_y, 
+                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_z,
+                         const shared_ptr<   ebfa_distrib_t   > & a_ebmom,
+                         const Chombo4::DataIndex               & a_dit,
+                         const EBIndex<CELL>                    & a_vof,
+                         bool a_divideByArea) const
+    {
+      Real retval = 0;
+      Point cell = a_vof.m_pt;
+      if(a_graph.isRegular(cell))
+      {
+        return 0;
+      }
+      else if(a_graph.isCovered(cell))
+      {
+        return 0;
+      }
+      else
+      {
+        RealVect centloc;
+        IndexedMoments<DIM, order> momentsx, momentsy, momentsz;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
+        }
+        
+        momentsx = (*a_ebnormmom_x)[a_dit](a_vof, 0);
+        momentsy = (*a_ebnormmom_y)[a_dit](a_vof, 0);
+#if DIM==3        
+        momentsz = (*a_ebnormmom_z)[a_dit](a_vof, 0);
+#endif        
+        EBIndex<BOUNDARY> ebfac = a_vof.getCutFace();
+        const auto& ebmom = (*a_ebmom)[a_dit](ebfac, 0);
+        Real area   = ebmom[IvDIM::Zero];
+        IvDIM unitx = Proto::BASISV_TM<int, DIM>(0);
+        IvDIM unity = Proto::BASISV_TM<int, DIM>(1);
+#if DIM==3        
+        IvDIM unitz = Proto::BASISV_TM<int, DIM>(2);
+#endif
+      
+        for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
+        {
+          IvDIM  power = momit();
+
+          Real incre = 0;
+
+          Real   deriv = getDerivative(power, centloc);
+          int   idenom = (power.factorial());
+          Real   denom = (Real)(idenom);
+          Real Cp = deriv/denom;
+
+          if(power[0] > 0)
+          {
+            int px  = power[0];
+            Real   momenx = momentsx[power- unitx];
+            incre += Cp*px*momenx;
+          }
+          if(power[1] > 0)
+          {
+            int py  = power[1];
+            Real   momeny = momentsy[power- unity];
+            incre += Cp*py*momeny;
+          }
+#if DIM==3        
+          if(power[2] > 0)
+          {
+            int pz  = power[2];
+            Real   momenz = momentsz[power- unitz];
+            incre += Cp*pz*momenz;
+          }
+#endif
+          retval += incre;
+          
+        }
+        if(a_divideByArea)
+        {
+          Real minarea = 1.0e-16;
+          if(area > minarea)
+          {
+            retval /= area;
+          }
+        }
+      }
+      return retval;   
+    }
+    
+    ///
+    template <CENTERING cent>
+    Real evaluateDMO(const EBGraph & a_graph,
+                     const Real    & a_dx,
+                     const HostIrregData<cent,IndMomDMO, 1>& a_facdat,
+                     const EBIndex<cent>   & a_face,
+                     int a_facedir, bool a_dividebyarea) const
+    {
+      Real retval = 0;
+      RealVect centloc = hoeb_basics::getFaceLocation(a_face, a_dx, a_facedir);
+      IndexedMoments<DIM-1, order> moments;
+      Point cell = a_face.m_pt;
+      if(a_face.m_vofIDMe < 0) cell -= Point::Basis(a_facedir);
+
+
+      if(a_graph.isRegular(cell))
+      {
+        moments.setToRegular(a_dx);
+      }
+      else if(a_graph.isCovered(cell))
+      {
+        return 0;
+      }
+      else
+      {
+        moments = a_facdat(a_face, 0);
+      }
+      
+      Real area = moments[IvDMO::Zero];
+      for(MomentIterator<DIM-1, order> momit; momit.ok(); ++momit)
+      {
+        IvDMO  powerdmo = momit();
+        IvDIM  powerdim = hoeb_basics::getVolIndexFromFace<DIM>(powerdmo, a_facedir);
+        Real   deriv = getDerivative(powerdim, centloc);
+        int   idenom = (powerdim.factorial());
+        Real   denom = (Real)(idenom);
+        Real   momen = moments[powerdmo];
+        Real   incre = deriv*momen/denom;
+        retval += incre;
+      }
+      if(a_dividebyarea)
+      {
+        Real minarea = 1.0e-16;
+        if(area > minarea)
+        {
+          retval /= area;
+        }
+      }
+      return retval;   
+    }
+
+    ///
+    template <CENTERING cent>
+    Real evaluateGradDMO(const EBGraph & a_graph,
+                         const Real    & a_dx,
+                         const HostIrregData<cent,IndMomDMO, 1>& a_facdat,
+                         const EBIndex<cent>   & a_face,
+                         int a_facedir, bool a_dividebyarea) const
+    {
+      Real retval = 0;
+      RealVect centloc = hoeb_basics::getFaceLocation(a_face, a_dx, a_facedir);
+      IndexedMoments<DIM-1, order> moments;
+      Point cell = a_face.m_pt;
+      if(a_face.m_vofIDMe < 0) cell -= Point::Basis(a_facedir);
+
+
+      if(a_graph.isRegular(cell))
+      {
+        moments.setToRegular(a_dx);
+      }
+      else if(a_graph.isCovered(cell))
+      {
+        return 0;
+      }
+      else
+      {
+        moments = a_facdat(a_face, 0);
+      }
+      
+      Real area = moments[IvDMO::Zero];
+      for(MomentIterator<DIM-1, order> momit; momit.ok(); ++momit)
+      {
+        IvDMO  powerdmo = momit();
+
+        IvDMO  powerdmed = powerdmo - Proto::BASISV_TM<int, DIM-1>(a_facedir);
+        IvDIM  powerdim = hoeb_basics::getVolIndexFromFace<DIM>(powerdmo, a_facedir);
+        if(powerdim[a_facedir] > 0)
+        {
+          Real   deriv = getDerivative(powerdim, centloc);
+          int   idenom = (powerdim.factorial());
+          Real   denom = (Real)(idenom);
+          Real   momen = moments[powerdmed];
+          Real   incre = powerdim[a_facedir]*deriv*momen/denom;
+          retval += incre;
+        }
+      }
+
+      if(a_dividebyarea)
+      {
+        Real minarea = 1.0e-16;
+        if(area > minarea)
+        {
+          retval /= area;
+        }
+      }
+      return retval;   
+    }
+    
+  };
+  
   ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
   template <unsigned int order>
   class ZeroSolution: public BaseExactSolution
@@ -84,8 +351,8 @@ namespace hoeb
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IvDIM    a_power,
-                               RealVect a_loc)
+    virtual Real getDerivative(IndexTM<int, DIM> a_power,
+                               RealVect a_loc) const
     {
       return 0.;
     }
@@ -111,8 +378,8 @@ namespace hoeb
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IvDIM    a_deriv,
-                               RealVect a_loc)
+    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
+                               RealVect a_loc) const
     {
       Real x = a_loc[0] - m_center[0];
       Real y = a_loc[1] - m_center[1];
@@ -438,8 +705,8 @@ namespace hoeb
     typedef IndexedMoments<DIM  , order>       IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IvDIM    a_deriv,
-                               RealVect a_loc)
+    virtual Real getDerivative(IndexTM<int, DIM>    a_deriv,
+                               RealVect a_loc) const
     {
       Real  C     = m_entry.second;  //coefficient
       Point expon = m_entry.first; //exponent
@@ -814,14 +1081,14 @@ namespace hoeb
     typedef IndexedMoments<DIM  , order>       IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IvDIM    a_deriv,
-                               RealVect a_loc)
+    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
+                               RealVect a_loc) const
     {
       Real retval = 0;
       for(int ient = 0; ient < m_entries.size(); ient++)
       {
         MonomialEF<order> mono(m_entries[ient]);
-        Real monoval = mono.derivative(a_deriv, a_loc);
+        Real monoval = mono.getDerivative(a_deriv, a_loc);
         retval += monoval;
       }
       return retval;
@@ -845,4 +1112,5 @@ namespace hoeb
     }
   };
 }
+
 #endif

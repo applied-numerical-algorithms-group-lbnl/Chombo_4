@@ -8,16 +8,22 @@ using Proto::Var;
 PROTO_KERNEL_START 
 unsigned int  addAlphaPhiPtF(int a_pt[DIM],
                              Var<Real, 1>     a_lph,
-                           Var<Real, 1>     a_phi,
-                           Var<Real, 1>     a_kap,
-                           Real    a_alpha,
-                           Real    a_beta)
+                             Var<Real, 1>     a_phi,
+                             Var<Real, 1>     a_kap,
+                             Real    a_alpha,
+                             Real    a_beta)
 {
   //kappa and beta are already in lph
   //kappa because we did not divide by kappa
   //beta was sent in to ebstencil::apply
-  
-
+  //begin debug
+  int ideb = 6;
+  int jdeb = 16;
+  int istop = 0;
+  if ((a_pt[0] == ideb) && (a_pt[1]==jdeb))
+  {
+    istop = 1;
+  }
   
   Real kappdiv = a_lph(0);
   Real bkdivF  = a_beta*kappdiv;

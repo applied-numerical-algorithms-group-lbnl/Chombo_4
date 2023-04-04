@@ -14,7 +14,7 @@
 #include "Chombo_DataIndex.H"
 #include "Chombo_BoxLayout.H"
 #include "Chombo_SPMD.H"
-#include "Chombo_Vector.H"
+
 #include "Chombo_LayoutIterator.H"
 #include "Chombo_DataIterator.H"
 #include "Chombo_NamespaceHeader.H"
@@ -38,18 +38,18 @@ public:
   void clearTime();
 
   ///gets current time data
-  Vector<unsigned long long>& getTime()
+  std::vector<unsigned long long>& getTime()
   {
     return m_time;
   }
 
-  Vector<Box> getBoxes()
+  std::vector<Box> getBoxes()
   {
     return m_layout.boxArray();
   }
 
   ///gets current time data in microseconds
-  const Vector<unsigned long long>& getTime() const
+  const std::vector<unsigned long long>& getTime() const
   {
     return m_time;
   }
@@ -73,7 +73,7 @@ public:
 private:
   int m_size;
   void defineTime();
-  Vector<unsigned long long> m_time;
+  std::vector<unsigned long long> m_time;
   bool m_timeEnabled;
   bool m_timeDefined;
   unsigned long long m_startTime;

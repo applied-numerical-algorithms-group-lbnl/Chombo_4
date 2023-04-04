@@ -26,7 +26,8 @@ EBAdvection(shared_ptr<EBEncyclopedia<2, Real> >   & a_brit,
             const Box                              & a_domain,
             const Real                             & a_dx,
             const EBIBC                            & a_ebibc,
-            const IntVect                          & a_nghost):
+            const IntVect                          & a_nghost,
+            bool a_printStuff):
 m_ebibc(a_ebibc)
 {
   CH_TIME("EBAdvection::define");
@@ -34,7 +35,6 @@ m_ebibc(a_ebibc)
   m_grids  = a_grids;
   m_domain = a_domain;
   m_nghost = a_nghost;
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
   m_grids      = a_grids;      
   m_domain     = a_domain;     
   m_brit       = a_brit;
@@ -42,6 +42,7 @@ m_ebibc(a_ebibc)
   defineData(a_geoserv);
   fillKappa( a_geoserv);
   registerStencils();
+  Chombo4::pout() << "EBAdvection::constructor leaving" << endl;
 }
 ////
 void  
@@ -57,7 +58,6 @@ defineData(shared_ptr<GeometryService<2> >        & a_geoserv)
   m_kappaDiv.define(  m_grids, m_nghost, m_graphs);
   m_source.define(    m_grids, m_nghost, m_graphs);
   m_source.setVal(0.); //necessary in case the app does not  have a source
-  m_exchangeCopier.exchangeDefine(m_grids, m_nghost);
 }
 ////
 void  
@@ -78,7 +78,9 @@ fillKappa(shared_ptr<GeometryService<2> >        & a_geoserv)
     // now copy to the device
     EBLevelBoxData<CELL, 1>::copyToDevice(m_kappa[dit[ibox]], hostdat);
   }
-  m_kappa.exchange(m_exchangeCopier);
+  Chombo4::pout() << "EBAdvection::fillkappa : about to exchange" << endl;
+  m_kappa.exchange();
+  Chombo4::pout() << "EBAdvection::fillkappa : done with" << endl;
 }
 ////
 void  
@@ -119,7 +121,7 @@ getFaceCenteredVel(EBFluxData<Real, 1>            & a_fcvel,
                    const int                      & a_ibox)
 {
   CH_TIME("EBAdvection::getFaceCenteredVel");
-  m_veloCell->exchange(m_exchangeCopier);
+  m_veloCell->exchange();
   EBBoxData<CELL, Real, DIM>& veccell = (*m_veloCell)[a_dit];
   getFaceVelComp<XFACE>(*(a_fcvel.m_xflux),  m_brit->m_cellToXFace, veccell, 0, a_ibox);
   getFaceVelComp<YFACE>(*(a_fcvel.m_yflux),  m_brit->m_cellToYFace, veccell, 1, a_ibox);
@@ -309,6 +311,8 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
 
   EBFluxData<Real, 1>  scalHi(grown, graph, useStack);
   EBFluxData<Real, 1>  scalLo(grown, graph, useStack);
+  scalHi.setVal(0.0);
+  scalLo.setVal(0.0);
   auto & sourfab = m_source[a_dit];
   bcgExtrapolateScalar(scalLo, scalHi, veccell, a_scal, sourfab,
                        grown, graph, a_dit, a_ibox, a_dt);
@@ -320,7 +324,6 @@ getFaceCenteredFlux(EBFluxData<Real, 1>      & a_fcflux,
 
   assembleFlux(a_fcflux, upwindScal, a_fcvel);
 }
-///
 void
 EBAdvection::
 getKapDivFFromCentroidFlux(EBBoxData<CELL, Real, 1> &  a_kapdiv,
@@ -398,7 +401,7 @@ kappaConsDiv(EBLevelBoxData<CELL, 1>   & a_scal,
              const Real& a_dt, Real a_inflowVal)
 {
   CH_TIME("EBAdvection::kappaConsDiv");
-  a_scal.exchange(m_exchangeCopier);
+  a_scal.exchange();
   //coming into this we have the scalar at time = n dt
   // velocity field at cell centers. Leaving, we have filled
   // kappa* div(u scal)
@@ -444,7 +447,7 @@ nonConsDiv()
   CH_TIME("EBAdvection::nonConsDiv");
   //this makes ncdiv = divF on regular cells
   //and ncdiv = vol_weighted_ave(div) on cut cells
-  m_kappaDiv.exchange(m_exchangeCopier);
+  m_kappaDiv.exchange();
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   for(int ibox = 0; ibox < dit.size(); ++ibox)
@@ -466,7 +469,7 @@ redistribute(EBLevelBoxData<CELL, 1>& a_hybridDiv)
   CH_TIME("EBAdvection::redistribute");
   //hybrid div comes in holding kappa*div^c + (1-kappa)div^nc
   //this redistributes delta M into the hybrid divergence.
-  m_deltaM.exchange(m_exchangeCopier);
+  m_deltaM.exchange();
   DataIterator dit = m_grids.dataIterator();
   for(int ibox = 0; ibox < dit.size(); ++ibox)
   {
@@ -533,7 +536,7 @@ hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
                  Real a_inflowVal)
 {
   CH_TIME("EBAdvection::hybridDivergence");
-  a_phi.exchange(m_exchangeCopier);
+  a_phi.exchange();
   //compute kappa div^c F
   kappaConsDiv(a_phi, a_dt, a_inflowVal);
 
@@ -544,7 +547,7 @@ hybridDivergence(EBLevelBoxData<CELL, 1>       & a_phi,
   kappaDivPlusOneMinKapDivNC(m_hybridDiv);
   //advance solution, compute delta M
  
-  m_deltaM.exchange(m_exchangeCopier);
+  m_deltaM.exchange();
   //redistribute delta M
   redistribute(m_hybridDiv);
 

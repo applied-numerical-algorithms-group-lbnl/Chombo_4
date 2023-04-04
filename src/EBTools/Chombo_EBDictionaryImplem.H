@@ -140,8 +140,8 @@ registerStencil(string a_stencilName,
   int dstIndex = getIndex(ch_dstDom);
 
   
-  shared_ptr< LevelData< EBGraph  >  > ldgraphS = m_geoserv->getGraphs(ch_srcDom);
-  shared_ptr< LevelData< EBGraph  >  > ldgraphD = m_geoserv->getGraphs(ch_dstDom);
+  auto ldgraphS = m_geoserv->getGraphs(ch_srcDom);
+  auto ldgraphD = m_geoserv->getGraphs(ch_dstDom);
 
   DataIterator dit = m_grids[dstIndex].dataIterator();
 
@@ -177,13 +177,13 @@ registerStencil(string a_stencilName,
   int dstIndex = getIndex(a_dstDomain);
 
   
-  shared_ptr< LevelData< EBGraph  >  > graphS = m_geoserv->getGraphs(    a_srcDomain);
-  shared_ptr< LevelData< EBGraph  >  > graphD = m_geoserv->getGraphs(    a_dstDomain);
-  shared_ptr< LevelData< VoluData >  > voldat = m_geoserv->getVoluData(  a_srcDomain);
-  shared_ptr< LevelData< EBFaData >  > ebfdat = m_geoserv->getEBFaceData(a_srcDomain);
-  shared_ptr< LevelData< XFacData >  > xfadat = m_geoserv->getXFaceData( a_srcDomain);
-  shared_ptr< LevelData< YFacData >  > yfadat = m_geoserv->getYFaceData( a_srcDomain);
-  shared_ptr< LevelData< ZFacData >  > zfadat = m_geoserv->getZFaceData( a_srcDomain);
+  auto graphS = m_geoserv->getGraphs(    a_srcDomain);
+  auto graphD = m_geoserv->getGraphs(    a_dstDomain);
+  auto voldat = m_geoserv->getVoluData(  a_srcDomain);
+  auto ebfdat = m_geoserv->getEBFaceData(a_srcDomain);
+  auto xfadat = m_geoserv->getXFaceData( a_srcDomain);
+  auto yfadat = m_geoserv->getYFaceData( a_srcDomain);
+  auto zfadat = m_geoserv->getZFaceData( a_srcDomain);
 
   DataIterator dit = m_grids[dstIndex].dataIterator();
   for(int ibox = 0; ibox < dit.size(); ibox++)

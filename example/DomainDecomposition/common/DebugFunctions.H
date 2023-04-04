@@ -10,8 +10,8 @@
 //Area functions
 //cell centered and please keep them in the domain
 ////upper left corner of 64^2
-Point areaLo(28, 21);
-Point areaHi(31, 31);
+Point areaLo(0, 0);
+Point areaHi(3, 3);
 //the bit underneath the circle rad=0.1, center = 0.5
 //Point areaLo(28, 24);
 //Point areaHi(30, 26);                                    
@@ -30,7 +30,7 @@ void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)
 }
 #endif
 void 
-dumpVecRV(Vector<RealVect>* a_dataPtr)
+dumpVecRV(std::vector<RealVect>* a_dataPtr)
 {
   if(a_dataPtr != NULL)
   {
@@ -68,7 +68,9 @@ dumpPS(PointSet* dataPtr)
   }
 }
 
-#if DIM==2
+#if DIM==2 
+Point lodeb(52, 14);
+Point hideb(56, 19);
 void 
 dumpBDDIM(BoxData<Real, DIM>* dataPtr)
 {
@@ -105,7 +107,6 @@ dumpBDDIM(BoxData<Real, DIM>* dataPtr)
 
 void 
 dumpBD1(BoxData< Real, 1>* dataPtr)
-  
 {
 if(dataPtr != NULL)
   {
@@ -129,6 +130,45 @@ if(dataPtr != NULL)
           cout << " ";
         }
         cout  << data(pt, 0) << "  ";
+      }
+      cout << endl;
+    }
+  }
+}
+
+void
+dumpEB1(EBBoxData<CELL, Real, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    cout    << setprecision(6)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+
+    Bx area(lodeb, hideb);
+
+    EBGraph graph = dataPtr->ebgraph();
+    EBBoxData<CELL, Real, 1> & data = *dataPtr;
+    Bx databox = dataPtr->box();
+    cout << "data region contains:" << endl;
+    for(int j = hideb[1]; j >= lodeb[1]; j--)
+    {
+      for(int i = lodeb[0]; i <= hideb[0]; i++)
+      {
+        Point pt(i,j);
+        if(databox.contains(pt))
+        {
+          vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+          cout << pt << ":";
+          if(vofs.size() >  0)
+          {
+            cout  << data(vofs[0], 0) << "  ";
+          }
+          else
+          {
+            cout  << "------------" << "  ";
+          }
+        }
       }
       cout << endl;
     }
@@ -847,8 +887,16 @@ dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
     DataIterator dit = data.dataIterator();
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
-      cout << "ibox = " << ibox << ":" << endl;
-      genDumpCell1(&data[dit[ibox]], areaLo, areaHi);
+      Box area(areaLo, areaHi);
+      Box valid = data.disjointBoxLayout()[dit[ibox]];
+      valid &= area;
+      if(!valid.isEmpty())
+      {
+        Point lovalid = ProtoCh::getPoint(valid.smallEnd());
+        Point hivalid = ProtoCh::getPoint(valid.bigEnd());
+        cout << "ibox = " << ibox << ":" << endl;
+        genDumpCell1(&data[dit[ibox]], lovalid, hivalid);
+      }
     }
   }
 }
