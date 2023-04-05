@@ -62,31 +62,31 @@ namespace Proto
     //increases by one for the neighbor cells sharing a face with the original
     //cells of radius one.
     template<CENTERING cent>
-    Vector<EBIndex<CELL> >
+    vector<EBIndex<CELL> >
     getVoFsNeighbors(const EBIndex<cent> & a_face,
                      const EBIndex<CELL> & a_vof,
                      const int             a_radius,
                      const EBGraph       & a_graph,
                      int                   a_neighType);
 
-    Vector<EBIndex<CELL> >
+    vector<EBIndex<CELL> >
     getCellNeighbors(const EBIndex<CELL> & a_vof,
                      const int             a_baseRadius,
                      const EBGraph       & a_graph);
 
     template<CENTERING cent>
-    Vector<EBIndex<CELL> >
+    vector<EBIndex<CELL> >
     getFaceNeighbors(const EBIndex<cent> & a_face,
                      const int             a_baseRadius,
                      const EBGraph       & a_graph);
 
-    Vector<EBIndex<CELL> >
+    vector<EBIndex<CELL> >
     growNeighbors(const int             a_baseRadius,
                   const EBGraph       & a_graph);
 
     // New version, use this
     void
-    getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
+    getMomentsInfoFromNeighbors(vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
                                 const MomentHolder<order>  & a_momentData,
                                 const EBDomainBC<1>      & a_domainBC,
@@ -103,7 +103,7 @@ namespace Proto
                            bool a_verbose = false)
       {
         MomentIterator<DIM,order> momit;
-        Vector<EBIndex<CELL> > vols;
+        vector<EBIndex<CELL> > vols;
         // REVIEW Make sure stencils are big enough. Size is not a sufficient measure, this should check the stencil is solvable
         // while (this->size() <= momit.size()+DIM)
         //   {
@@ -123,10 +123,10 @@ namespace Proto
       }
 
     inline void
-    scaleMoments(Vector<IndMomDIM>      & a_volMom,
-                 Vector<IndMomSDMinOne> & a_facMom,
-                 Vector<IndMomDIM>      & a_ebfMom,
-                 Vector<Vector<IndMomDIM> > & a_ebfneighNorm,
+    scaleMoments(vector<IndMomDIM>      & a_volMom,
+                 vector<IndMomSDMinOne> & a_facMom,
+                 vector<IndMomDIM>      & a_ebfMom,
+                 vector<vector<IndMomDIM> > & a_ebfneighNorm,
                  Real                     a_dx)
       {
         for(int i = 0; i < a_volMom.size(); ++i)
@@ -150,9 +150,9 @@ namespace Proto
           }
       };
 
-    inline Vector<Vector<IndMomDIM> > getEBNormMoments () const
+    inline vector<vector<IndMomDIM> > getEBNormMoments () const
       {
-        Vector<Vector<IndMomDIM> > ebfneighNorm;
+        vector<vector<IndMomDIM> > ebfneighNorm;
         ebfneighNorm.resize(m_ebfneighNorm.size());
         for (int i = 0; i < m_ebfneighNorm.size(); ++i)
           {
@@ -162,7 +162,7 @@ namespace Proto
       };
 
     bool
-    checkIsRegular(const Vector<EBIndex<CELL> >  & a_vols,
+    checkIsRegular(const vector<EBIndex<CELL> >  & a_vols,
                    const EBGraph           & a_graph) const;
 
     // How many neighbors are there
@@ -262,7 +262,7 @@ namespace Proto
     inline IndMomDIM
     getEBFaceMoment(const int a_idx) const {return m_ebfMom[a_idx];}
     //EB Normal moments
-    inline Vector<IndMomDIM>
+    inline vector<IndMomDIM>
     getEBFaceNormal(const int a_idx) const {return m_ebfneighNorm[a_idx];}
     //Cell location, will be the cell center
     inline RealVect
@@ -300,40 +300,40 @@ namespace Proto
 
     // These are things really don't need to be public and make more sense as a unordered map of tuples
     // the cells used in the neighborhood
-    Vector<EBIndex<CELL> >  m_cells;
+    vector<EBIndex<CELL> >  m_cells;
     //Volume moments
-    Vector<IndMomDIM>       m_volMom;
+    vector<IndMomDIM>       m_volMom;
     //Face moments
-    Vector<IndMomSDMinOne>  m_facMom;
+    vector<IndMomSDMinOne>  m_facMom;
     //EB Faces moments
-    Vector<IndMomDIM>       m_ebfMom;
+    vector<IndMomDIM>       m_ebfMom;
     //EB Normal moments
-    Vector<Vector<IndMomDIM> > m_ebfneighNorm;
+    vector<vector<IndMomDIM> > m_ebfneighNorm;
     //Cell location, will be the cell center
-    Vector<RealVect>        m_volLoc;
+    vector<RealVect>        m_volLoc;
     //Boundary Face location, will be the face center
-    Vector<RealVect>        m_facLoc;
+    vector<RealVect>        m_facLoc;
     //EB Face location, will be the cell center containing the EB Face
-    Vector<RealVect>        m_ebfLoc;
+    vector<RealVect>        m_ebfLoc;
     //Contain the manhattan distance from the face
     //or EB face being evaluated to the cell
-    Vector<int>             m_weightDisVol;
+    vector<int>             m_weightDisVol;
     //Contain the manhattan distance from the face
     //or EB face being evaluated to the boundary face
-    Vector<int>             m_weightDisFac;
+    vector<int>             m_weightDisFac;
     //Contain the manhattan distance from the face
     //or EB face being evaluated to the EB Face
-    Vector<int>             m_weightDisEB;
+    vector<int>             m_weightDisEB;
     //Volume fraction
-    Vector<Real>          m_volneighFrac;
+    vector<Real>          m_volneighFrac;
     //EB Face area fraction
-    Vector<Real>          m_ebfneighFrac;
+    vector<Real>          m_ebfneighFrac;
     //Face area fraction
-    Vector<Real>          m_facneighFrac;
+    vector<Real>          m_facneighFrac;
     //Face direction
-    Vector<int>             m_facneighDir;
+    vector<int>             m_facneighDir;
     //Face Side -- lo or hi
-    Vector<Side::LoHiSide>  m_facneighSid;
+    vector<Side::LoHiSide>  m_facneighSid;
   };
 
 
@@ -360,7 +360,7 @@ namespace Proto
   }
 
   template<int order>
-  Vector<EBIndex<CELL> >
+  vector<EBIndex<CELL> >
   Neighbors<order>::
   getCellNeighbors(const EBIndex<CELL> & a_vof,
                    const int             a_baseRadius,
@@ -379,7 +379,7 @@ namespace Proto
 
   template<int order>
   template<CENTERING cent>
-  Vector<EBIndex<CELL> >
+  vector<EBIndex<CELL> >
   Neighbors<order>::
   getFaceNeighbors(const EBIndex<cent> & a_face,
                    const int             a_baseRadius,
@@ -426,7 +426,7 @@ namespace Proto
   }
 
   template<int order>
-  Vector<EBIndex<CELL> >
+  vector<EBIndex<CELL> >
   Neighbors<order>::
   growNeighbors(const int             a_baseRadius,
                 const EBGraph       & a_graph)
@@ -474,7 +474,7 @@ namespace Proto
   template<int order>
   void
   Neighbors<order>::
-  getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> >  & a_vols,
+  getMomentsInfoFromNeighbors(vector<EBIndex<CELL> >  & a_vols,
                               const EBGraph           & a_graph,
                               const MomentHolder<order>  & a_momentData,
                               const EBDomainBC<1>      & a_domainBC,
@@ -498,9 +498,9 @@ namespace Proto
 
     PR_TIME("getMomentsInfoFromNeighbors");
     using Chombo4::pout;
-    // Vector<IndMomDIM> volMom, ebfMom;
-    // Vector<IndMomSDMinOne> facmom;
-    // Vector<Vector<IndMomDIM> > ebfneighNorm;
+    // vector<IndMomDIM> volMom, ebfMom;
+    // vector<IndMomSDMinOne> facmom;
+    // vector<vector<IndMomDIM> > ebfneighNorm;
     m_volMom.resize(0);
     m_ebfMom.resize(0);
     m_facMom.resize(0);
@@ -543,7 +543,7 @@ namespace Proto
             m_volMom.push_back(a_voludata(volInd, 0));
             m_volneighFrac.push_back(a_voludata(volInd, 0)[IndexTM<int,DIM>::Zero]/POW(a_dx,DIM));
             const EBIndex<BOUNDARY> ebf = volInd.getCutFace();
-            Vector<IndMomDIM> ebnorm (DIM);
+            vector<IndMomDIM> ebnorm (DIM);
             ebnorm[0] = a_ebnormxdata(volInd, 0);
             ebnorm[1] = a_ebnormydata(volInd, 0);
 #if DIM==3
@@ -737,7 +737,7 @@ namespace Proto
   template<int order>
   bool
   Neighbors<order>::
-  checkIsRegular(const Vector<EBIndex<CELL> >  & a_vols,
+  checkIsRegular(const vector<EBIndex<CELL> >  & a_vols,
                  const EBGraph           & a_graph) const
   {
     PR_TIME("checkIsRegular");

@@ -141,7 +141,7 @@ namespace Proto
   {
     PR_TIME("getShiftedMomentMatrixFaces");
     using Chombo4::pout;
-    Vector<IndMomDIM> fac2volmom;
+    vector<IndMomDIM> fac2volmom;
     MomentIterator<DIM, order> momit;
     int nfac = a_neigh.sizeFaces();
     fac2volmom.resize(nfac);
@@ -532,7 +532,7 @@ namespace Proto
   getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
                   const EBIndex<cent>      & a_face,
                   RealVect                 & a_faceLoc,
-                  Vector<IndMomDIM>        & a_ebnorm,
+                  vector<IndMomDIM>        & a_ebnorm,
                   Real                     a_dx) const
   {
     PR_TIME("getEBFluxMatrix");
@@ -641,7 +641,7 @@ namespace Proto
   void
   BaseWLSFlux<cent, order>::
   getWeightsMatrixComponent(Chombo4::LAPACKMatrix  & a_weights,
-                            const Vector<int>      & a_weightDist,
+                            const vector<int>      & a_weightDist,
                             IndexTM<int, 2>         a_start) const
   {
     PR_TIME("getWeightsMatrixComponent");
@@ -901,18 +901,18 @@ namespace Proto
   // {
   //   PR_TIME("computeInhomogTerm");
   //   using Chombo4::pout;
-  //   Vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
-  //   Vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
-  //   Vector<Vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
-  //   Vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
-  //   Vector<int> a_facneighDir = a_neigh.m_facneighDir;
-  //   Vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
-  //   Vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
-  //   Vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
-  //   Vector<Real> facneighFrac = a_neigh.m_facneighFrac;
+  //   vector<IndMomSDMinOne> a_facmom = a_neigh.m_facMom;
+  //   vector<IndMomDIM> a_ebfmom= a_neigh.m_ebfMom;
+  //   vector<vector<IndMomDIM> > a_ebfneighNorm = a_neigh.m_ebfneighNorm;
+  //   vector<RealVect> a_facneighLoc = a_neigh.m_facLoc;
+  //   vector<int> a_facneighDir = a_neigh.m_facneighDir;
+  //   vector<Side::LoHiSide> a_facneighSid = a_neigh.m_facneighSid;
+  //   vector<RealVect> a_ebfneighLoc = a_neigh.m_ebfLoc;
+  //   vector<Real> ebfneighFrac = a_neigh.m_ebfneighFrac;
+  //   vector<Real> facneighFrac = a_neigh.m_facneighFrac;
   //   Real areaScaleFactor = getRegularArea(a_dx);
 
-  //   Vector<Real> domBCValues, ebBCValues;
+  //   vector<Real> domBCValues, ebBCValues;
   //   int nrows = a_facmom.size();
   //   domBCValues.resize(nrows);
   //   for(int iface = 0; iface < nrows; iface++)
@@ -1044,7 +1044,7 @@ namespace Proto
     RealVect faceLoc = Normalizor<order>::faceCenter(a_face, a_dx);
 
     int radius = m_stenAttb.radius();
-    Vector<EBIndex<CELL> > vols;
+    vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
     // HACK - this grows outlet stencils to make sure they are well posed, but there should be a better way to check this. FIXME Hard coded for high side boundaries
@@ -1146,7 +1146,7 @@ namespace Proto
                    const EBIndex<cent>           & a_face,
                    const EBGraph                 & a_graph,
                    const MomentHolder<order>     & a_momentData,
-                   Vector<IndMomDIM>             & a_ebnorm,
+                   vector<IndMomDIM>             & a_ebnorm,
                    const Real                    a_dx) const
   {
     PR_TIME("getEBFluxStencil");
@@ -1189,7 +1189,7 @@ namespace Proto
           }
         int radius = m_stenAttb.radius();
 
-        Vector<EBIndex<CELL> > vols;
+        vector<EBIndex<CELL> > vols;
         MomentIterator<DIM,order> momit;
         int grows = 0;
         // HACK - this grows outlet stencils to make sure they are well posed, but there should be a better way to check this. FIXME Hard coded for high side boundaries
@@ -1300,7 +1300,7 @@ namespace Proto
     }
 
     int radius = m_stenAttb.radius();
-    Vector<EBIndex<CELL> > vols;
+    vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
     // HACK - this grows outlet stencils to make sure they are well posed, but there should be a better way to check this. FIXME Hard coded for high side boundaries
@@ -1853,7 +1853,7 @@ namespace Proto
         cellLoc[dir] = a_dx * (0.5 + cell.m_pt[dir]);
       }
     int radius = m_stenAttb.radius();
-    Vector<EBIndex<CELL> > vols;
+    vector<EBIndex<CELL> > vols;
     MomentIterator<DIM,order> momit;
     int grows = 0;
 
@@ -2160,7 +2160,7 @@ namespace Proto
   void
   NeumannBC<order>::
   getEBMoments(IndMomDIM         & a_ebfmom,
-               const Vector<IndMomDIM> & a_ebfNorm)
+               const vector<IndMomDIM> & a_ebfNorm)
   {
     PR_TIME("getEBMomentsNeumannBC");
     using Chombo4::pout;
@@ -2311,7 +2311,7 @@ namespace Proto
   template < int order>
   Real
   NeumannExactSoln<order>::
-  getEBIntegral(const Vector<IndMomDIM>  & a_ebfNormalMom,
+  getEBIntegral(const vector<IndMomDIM>  & a_ebfNormalMom,
                 const RealVect           & a_ebfLoc,
                 const shared_ptr<BaseExactSolution >  & a_exactSol,
                 const Real                 a_dx,
@@ -2441,7 +2441,7 @@ namespace Proto
   getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_fluxMatrix,
                   const EBIndex<cent>      & a_face,
                   RealVect                 & a_faceLoc,
-                  Vector<IndMomDIM>        & a_ebnorm,
+                  vector<IndMomDIM>        & a_ebnorm,
                   Real                     a_dx) const
   {
     PR_TIME("getEBFluxMatrix");
@@ -2458,13 +2458,13 @@ namespace Proto
   { 
     PR_TIME("getWeightsMatrixFace");
     using Chombo4::pout;
-    Vector<int> weightDisVol = a_neigh.m_weightDisVol;
-    Vector<int> weightDisFac = a_neigh.m_weightDisFac;
-    Vector<int> weightDisEB = a_neigh.m_weightDisEB;
-    Vector<RealVect> volneighLoc = a_neigh.m_volLoc;
-    Vector<RealVect> ebfneighLoc = a_neigh.m_ebfLoc;
-    Vector<IndMomDIM> volMom = a_neigh.m_volMom; 
-    Vector<IndMomDIM> ebfMom = a_neigh.m_ebfMom; 
+    vector<int> weightDisVol = a_neigh.m_weightDisVol;
+    vector<int> weightDisFac = a_neigh.m_weightDisFac;
+    vector<int> weightDisEB = a_neigh.m_weightDisEB;
+    vector<RealVect> volneighLoc = a_neigh.m_volLoc;
+    vector<RealVect> ebfneighLoc = a_neigh.m_ebfLoc;
+    vector<IndMomDIM> volMom = a_neigh.m_volMom;
+    vector<IndMomDIM> ebfMom = a_neigh.m_ebfMom;
     RealVect v_faceLoc = m_exactVel->getVelocityAtPoint(a_faceLoc);
 #if DIM==2
     Real v_faceLoc_mag = pow(pow(v_faceLoc[0],2)+pow(v_faceLoc[1],2),0.5);
@@ -2550,7 +2550,7 @@ namespace Proto
 
   template<int order>
   RealVect
-  ConstantVectorVel<order>::
+  ConstantvectorVel<order>::
   getVelocityAtPoint(const RealVect& a_x) const
   { 
     return m_value;
@@ -2559,7 +2559,7 @@ namespace Proto
   /***/
   template<int order>
   IndexedMoments<DIM  , order>
-  ConstantVectorVel<order>::
+  ConstantvectorVel<order>::
   getVelCompTaylorCoeffs(const RealVect   & a_x0,
                          const int        & a_velcomp) const
   {
@@ -2662,7 +2662,7 @@ getVelCompTaylorCoeffs(const RealVect   & a_x0,
 /***/
 template<int order>
 RealVect
-PoiseuilleVectorVel<order>::
+PoiseuillevectorVel<order>::
 getVelocityAtPoint(const RealVect& a_x) const
 {
   RealVect rvec = a_x - m_center;
@@ -2677,7 +2677,7 @@ getVelocityAtPoint(const RealVect& a_x) const
 /***/
 template<int order>
 IndexedMoments<DIM  , order>
-PoiseuilleVectorVel<order>::
+PoiseuillevectorVel<order>::
 getVelCompTaylorCoeffs(const RealVect   & a_x0,
                        const int        & a_velcomp) const
 {

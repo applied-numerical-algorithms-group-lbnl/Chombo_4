@@ -473,7 +473,7 @@ namespace Proto
     {
       EBIndex<BOUNDARY> cutface = a_vof.getCutFace();
       RealVect centroid, normal;
-      Vector<IndMomDIM> ebnorm (DIM);
+      vector<IndMomDIM> ebnorm (DIM);
       ebnorm[0] = a_ebnormxdata(a_vof, 0);
       for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
       {

@@ -18,25 +18,28 @@
 #include "petscvec.h"
 #include "petscksp.h"
 #include "petscviewer.h"
-#include "petscmat.h"
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "hoeb/Proto_EBDomainBC.H"
 #include "EBMultigridFunctions.H"
 
-/// Stuff petsc frameworks have in common
-/**
-*/
+/// Framework to solve an elliptic equation using PETSc
+/// Probably a good candidate to move into Chombo4/src
 template <int order>
-class BaseEBPetscSolver
+class EBPetscSolver
 {
 public:
   typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
-  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> >  host_fact_real_t;
+  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  hostfactint_t;
+  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> > hostfactreal_t;
   typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
-<<<<<<< HEAD
   typedef EBStencil<order, Real, CELL, CELL>                    ebstencil_t;
+
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
+  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
+  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
+  typedef CH4_Data_Choreography::DistributedData<EBGraph>                    graph_distrib_t;
 
   // DEPRECATED, use updated version with better BC management
   EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
@@ -62,25 +65,6 @@ public:
                 string a_stencilName,
                 Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
                 const Proto::EBDomainBC<1>    & a_domainBC)
-=======
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBGraph>                    graph_distrib_t;
-
-  virtual ~BaseEBPetscSolver()
-  {
-  }
-  
-  BaseEBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
-                    const shared_ptr<dictionary_t           >  & a_ebdictionary,
-                    const shared_ptr<graph_distrib_t>          & a_graphs,
-                    const Chombo4::DisjointBoxLayout           & a_grids,
-                    const Chombo4::Box                         & a_domain,
-                    Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
-                    bool a_printStuff = false)
->>>>>>> master
   {
     CH_TIME("EBPetscSolver::EBPetscSolver");
     m_geoserv      =    a_geoserv;
@@ -88,12 +72,12 @@ public:
     m_graphs       =    a_graphs;
     m_grids        =    a_grids;
     m_domain       =    a_domain;
+    m_stencilName  =    a_stencilName;
     m_dx           =    a_dx;
     m_alpha        =    a_alpha;
     m_beta         =    a_beta;
     m_nz_init_guess = false;
     m_prestring[0] = '\0';
-<<<<<<< HEAD
     m_domainBC = a_domainBC;
     
     m_ivghost      =    ProtoCh::getIntVect(a_ghost);
@@ -149,73 +133,16 @@ public:
   // solve for phi from alpha*phi + beta*Lap(phi) = rhs
   // NOTE: rhs should be kappa weighted! the resulting phi is NOT kappa weighted
   // Phi will be overwritten, but phi coming in MAY be used as an initial condition if the option for a non-zero initial conditions is previously set
-=======
-    
-    m_ivghost      =    ProtoCh::getIntVect(a_ghost);
-    m_ptghost      =    a_ghost;
-    
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver: create map of locations in space to matrix row." << endl;
-    }
-    
-    defineGIDS(a_printStuff);
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver:: create space for a matrix and the necessary vectors.." << endl;
-    }
-
-    createMatrixAndVectors(a_printStuff);
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver:: put actual values into the matrix" << endl;
-    }
-    //
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscsolver:calling setupSolver" << endl;
-    }
-    setupSolver(a_printStuff);
-
-  }
-
-  ///apply the operator to get Y = A X
-  virtual
-  PetscErrorCode
-  applyOp(EBLevelBoxData<CELL, 1>       & a_lph,
-          const EBLevelBoxData<CELL, 1> & a_phi,
-          bool a_printStuff = false)
-  {
-    CH_TIME("BaseEBPetscSolver::applyOp");
-    chomboToPetsc(m_xx, a_phi);
-    PetscErrorCode err = MatMult(m_mat, m_xx, m_bb);
-    petscToChombo(a_lph, m_bb);
-    return err;
-  }
-  
-  ///solve for X in AX = rhs
->>>>>>> master
   virtual
   PetscErrorCode
   solve(EBLevelBoxData<CELL, 1>       & a_phi,
-        const EBLevelBoxData<CELL, 1> & a_rhs,
-        bool a_printStuff = false)
+        const EBLevelBoxData<CELL, 1> & a_rhs )
   {
-<<<<<<< HEAD
     using Chombo4::DataIterator;
     CH_TIME("EBPetscSolver::solve");
     CH_assert(  a_rhs.ghostVect() == a_phi.ghostVect());
     EBLevelBoxData<CELL, 1> rhs;
     rhs.define(m_grids, m_ivghost, m_graphs);
-=======
-
-    
-    CH_TIME("BaseEBPetscSolver::solve");
-    auto dbl = m_grids;
->>>>>>> master
 
     DataIterator dit = m_grids.dataIterator();
     int ideb  = 0;
@@ -270,12 +197,15 @@ public:
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
     //with all the host to device and device to host stuff going on, this is probably
-    //unnessary.   The PETSc team, however, tells me that the communication between
+    //unnessary.   The peTsC team, however, tells me that the communication between
     //host and device will unnecessary soon so I left the barrier in the code.
     MPI_Barrier(wcomm);
 #endif
+    //begin debug
+    //std::cout << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //pout() << "debug::just before KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //MatView(m_mat, PETSC_VIEWER_STDOUT_WORLD);
 
-<<<<<<< HEAD
      // PetscViewer viewer;
      // PetscViewerASCIIOpen(PETSC_COMM_WORLD, "mat.m", &viewer);
      // PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
@@ -288,16 +218,21 @@ public:
     //std::cout << "x vector" << std::endl;
     //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
     //end debug
-=======
->>>>>>> master
     {
       CH_TIME("actual ksp solve");
       ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
     }
+    //begin debug
+    //std::cout << "debug::just after  KSPSolve for proc = " << CH4_SPMD::procID() << std::endl;
+    //std::cout << "x vector" << std::endl;
+    //VecView(m_xx  , PETSC_VIEWER_STDOUT_WORLD);
+    //end debug
 
     // put solution into output
     ierr = petscToChombo( a_phi, m_xx );CHKERRQ(ierr);
-    a_phi.exchange();
+    Chombo4::Copier styx;
+    styx.exchangeDefine(m_grids, m_ivghost);
+    a_phi.exchange(styx);
     return 0;
   }
 
@@ -380,7 +315,6 @@ public:
       // now copy to the device
       EBLevelBoxData<CELL, 1>::copyToDevice(kappdat, hostdat);
   
-<<<<<<< HEAD
       ideb++;
     }
     m_kappa.exchange(m_exchangeCopier);
@@ -509,13 +443,10 @@ public:
     }
 
 private:
-=======
-protected:
->>>>>>> master
   int chomboToPetsc(Vec                           & a_dst,
                     const EBLevelBoxData<CELL, 1> & a_deviceSrc)
   {
-    CH_TIME("BaseEBPetscSolver::chomboToPetsc");
+    CH_TIME("EBPetscSolver::chomboToPetsc");
     PetscErrorCode ierr;
     //copy data to host.
     host_fact_real_t factory(m_graphs);
@@ -548,7 +479,6 @@ protected:
     return 0;
   }
 
-<<<<<<< HEAD
   void getLocalRegularStencil(Proto::LocalStencil<CELL, Real> & a_localSten,
                               const EBIndex<CELL>      & a_vof,
                               const Proto::Stencil<Real >     & a_regSten)
@@ -704,13 +634,11 @@ protected:
 
     return 0;
   }
-=======
->>>>>>> master
 
   int petscToChombo(EBLevelBoxData<CELL, 1> & a_deviceDst,
                     const Vec               & a_src)
   {
-    CH_TIME("BaseEBPetscSolver::petscToChombo");
+    CH_TIME("EBPetscSolver::petscToChombo");
     using Chombo4::DataIterator;
     PetscErrorCode ierr;
     const PetscScalar *arr;
@@ -721,8 +649,26 @@ protected:
     VecGetOwnershipRange( a_src ,&localStart,&localEnd);
     VecGetLocalSize(a_src ,&localSize);
 
-    host_fact_real_t factory(m_graphs);
-    host_distrib_real_t hostDst(m_grids, a_deviceDst.ghostVect(), factory);
+    //begin debug
+//    pout() << "  localStart = " << localStart << ", localEnd = " << localEnd << ", localSize = " << localSize << endl;
+//    //copy data to host.
+//
+//    for(PetscInt ii = 0; ii < localSize; ii++)
+//    {
+//      const double&  petscval = arr[ii];
+//      pout() << "ii = " << ii << ",  xx[ii] = " <<  petscval << endl;
+//    }
+//
+//    std::cout << "vgar vector" << std::endl;
+//    VecView(a_src  , PETSC_VIEWER_STDOUT_WORLD);
+//    
+//    pout() << "vgar vector" << std::endl;
+//    pout() <<    "filling up stuff before solve " << endl;
+//    std::cout << "filling up stuff before solve " << endl;
+    //end debug
+    
+    hostfactreal_t factory(m_graphs);
+    LevelData<EBHostData<CELL, Real, 1> > hostDst(m_grids, 1, a_deviceDst.ghostVect(), factory);
 
     DataIterator dit = m_grids.dataIterator();
     for (int ibox=0;ibox< dit.size(); ibox++)
@@ -742,6 +688,14 @@ protected:
           PetscInt localIndex = ki - localStart;
           hostfab(vof, 0) = arr[localIndex];
 	  
+	  //begin debug	      
+//	  PetscInt petsciv = ki;
+//	  Real chombval = hostfab(vof, 0);
+//	  PetscScalar petscval = arr[ki];
+//	  pout() << "host: petsciv = " << petsciv << ", iv = " << pt << ", chombval = "
+//		 <<  chombval << ", petscval = " << petscval << endl;
+	  //end debug
+	
         }
       }
     }
@@ -749,13 +703,34 @@ protected:
     ///copy data back to device. 
     EBLevelBoxData<CELL, 1>::copyToDevice(a_deviceDst, hostDst);
 
+    //begin debug
+//    pout() << "data on device:" << endl;
+//    for (int ibox=0;ibox< dit.size(); ibox++)
+//    {
+//      auto& devfab =   a_deviceDst[dit[ibox]];
+//      auto& graph = (*m_graphs)[dit[ibox]];
+//      auto  grid  =     m_grids[dit[ibox]];
+//      Bx grbx = ProtoCh::getProtoBox(grid);
+//      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+//      {
+//        auto pt = *bit;
+//        auto vofs = graph.getVoFs(pt);
+//        for(int ivof = 0; ivof < vofs.size(); ivof++)
+//        {
+//          EBIndex<CELL> vof(pt, 0);
+//	  Real chombval = devfab(vof, 0);
+//	  pout() << "device: iv = " << pt << ", chombval = "
+//		 <<  chombval << endl;
+//	
+//        }
+//      }
+//    }
 
     //end debug
     return 0;
   }
 
   
-<<<<<<< HEAD
   virtual PetscInt formMatrix()
   {
     CH_TIME("EBPetscSolver::formMatrix");
@@ -875,17 +850,11 @@ protected:
     using Chombo4::pout;
     // This is very verbose and needs a flag
     // pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
-=======
-  static PetscErrorCode ksp_monitor_pout(KSP ksp, PetscInt it, PetscReal rnorm  ,void *ctx)
-  {
-    using Chombo4::pout;
-    Chombo4::pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
->>>>>>> master
     return 0;
   }
-  virtual PetscInt setupSolver(bool a_printStuff = false)
+  virtual PetscInt setupSolver()
   {
-    CH_TIME("BaseEBPetscSolver::setupSolver");
+    CH_TIME("EBPetscSolver::setupSolver");
     // create solvers
     PetscBool ism = PETSC_FALSE;
 #if PETSC_VERSION_GE(3,7,0)
@@ -973,9 +942,9 @@ protected:
     return 1000;
   }
   
-  PetscInt createMatrixAndVectors(bool a_printStuff = false)
+  PetscInt createMatrixAndVectors()
   {
-    CH_TIME("BaseEBPetscSolver::createMatrixAndVectors");
+    CH_TIME("EBPetscSolver::createMatrixAndVectors");
     // create matrix
     //apparently we are in supportnnzexact land
     PetscInt nnzrow = 0;
@@ -989,7 +958,7 @@ protected:
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
     ierr = MatSetOptionsPrefix(m_mat,"");CHKERRQ(ierr);
 
-    //Chombo4::Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
+    //Chombo4::pout() << "debug:: matsetsize m_NN = " << m_NN << std::endl;
     ierr = MatSetSizes(m_mat,m_NN,m_NN,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
     ierr = MatSetType(m_mat,MATAIJ);CHKERRQ(ierr);
@@ -1020,7 +989,7 @@ protected:
     }
     nnzrow = 0;
 
-    //Chombo4::pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
+    //pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
     ierr = MatSeqAIJSetPreallocation(m_mat,nnzrow, d_nnz);CHKERRQ(ierr);
     ierr = MatMPIAIJSetPreallocation(m_mat,nnzrow, d_nnz, nnzrow/2, o_nnz);CHKERRQ(ierr);
     ierr = MatSetOption(m_mat,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE) ;CHKERRQ(ierr);
@@ -1043,16 +1012,12 @@ protected:
     return 0;
   }
   
-  void defineGIDS(bool a_printStuff = false)
+  void defineGIDS()
   {
-    CH_TIME("BaseEBPetscSolver::defineGIDS");
+    CH_TIME("EBPetscSolver::defineGIDS");
     using Chombo4::DataIterator;
     IntVect gidghost = 6*IntVect::Unit;
-<<<<<<< HEAD
     m_gids.define(m_grids, 1, gidghost, hostfactint_t(m_graphs));
-=======
-    m_gids.define(m_grids,  gidghost, host_fact_int_t(m_graphs));
->>>>>>> master
     DataIterator dit = m_grids.dataIterator();
     //get the number of points on each proc.
     int numPtsThisProc = 0;
@@ -1069,43 +1034,18 @@ protected:
     }
 
     //decide which location maps to the first one of this proc
-
 #ifdef CH_MPI
-    std::vector<int> numPtsAllProcs(CH4_SPMD::numProc());
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver::defineGids: doing gather numptsThisProc = " << numPtsThisProc << endl;
-    }
-    MPI_Gather(&numPtsThisProc, 1, MPI_INT, &numPtsAllProcs[0], 1, MPI_INT, 0, Chombo_MPI::comm);
-    
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver::defineGids: after gather " << endl;
-      if(CH4_SPMD::procID() == 0)
-      {
-        Chombo4::pout() << "BaseEBPetscSolver::defineGids: numPtsAllProcs = " << endl;
-        for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
-        {
-          Chombo4::pout() << "EBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
-        }
-      }
-    }
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver::defineGids:before broadcast " << endl;
-    }
-    MPI_Bcast(numPtsAllProcs.data(), numPtsAllProcs.size(), MPI_INT, 0, Chombo_MPI::comm);
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "BaseEBPetscSolver::defineGids:after broadcast " << endl;
-      for(int iproc = 0; iproc < numPtsAllProcs.size(); iproc++)
-      {
-        Chombo4::pout() << "BaseEBPetscSolver::defineGids: iproc = " << iproc << ", numpts[iproc] = " << numPtsAllProcs[iproc] << endl;
-      }
-    }
+//    MPI_Comm wcomm = Chombo_MPI::comm;
+//    PetscInt data = numPtsThisProc;
+//    PetscInt result;
+//    MPI_Datatype mtype;
+//    PetscDataTypeToMPIDataType(PETSC_INT,&mtype);
+//    MPI_Scan( &data, &result, 1, mtype, MPI_SUM, wcomm );
+//    PetscInt numPtsAllProc = result;
+//    int startgid =  result - data;
+    Vector<int> numPtsAllProcs;
+    CH4_SPMD::gather<int>(numPtsAllProcs, numPtsThisProc, 0);
+    CH4_SPMD::broadcast<Vector<int> >(    numPtsAllProcs, 0);
     PetscInt startgid = 0;
     PetscInt totalNumPts = 0; 
     for(int iproc = 0; iproc < Chombo4::procID(); iproc++)
@@ -1118,7 +1058,7 @@ protected:
     }
     using Chombo4::pout;
     using Chombo4::procID;
-    Chombo4::pout()  << "BaseEBPetscSolver: procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
+    pout()  << "procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
     int startgid = 0;
 #endif
@@ -1141,30 +1081,19 @@ protected:
         }
       }
     }
-
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "EBPetscSolver::defineGids: calling exchange on gids" << endl;
-    }
-    m_gids.exchange(a_printStuff);
-    if(a_printStuff)
-    {
-      Chombo4::pout() << "EBPetscSolver::defineGids: leaving" << endl;
-    }
+    Chombo4::Copier exchangeCopier;
+    exchangeCopier.exchangeDefine(m_grids, gidghost);
+    m_gids.exchange(exchangeCopier);
   }
   //index space--allows us to to matrix to solution space
-  host_distrib_int_t  m_gids;
+  LevelData<EBHostData<CELL, int, 1> > m_gids;
   PetscInt m_gid0;
   PetscInt m_NN;
   bool m_nz_init_guess;
 
   shared_ptr<GeometryService<order> >  m_geoserv;
   shared_ptr< dictionary_t>            m_ebdictionary;
-<<<<<<< HEAD
-  shared_ptr<LevelData<EBGraph> >      m_graphs;
-=======
   shared_ptr<graph_distrib_t>          m_graphs;
->>>>>>> master
   Chombo4::DisjointBoxLayout           m_grids;
   Chombo4::Box                         m_domain;
   Real                                 m_dx;
@@ -1172,7 +1101,7 @@ protected:
   string m_stencilName;
   Proto::EBDomainBC<1> m_domainBC;
 
-  std::vector<int> m_numPtsAllProc;
+  Vector<int> m_numPtsAllProc;
   Point   m_ptghost;
   IntVect m_ivghost;
   Mat m_mat;
@@ -1190,246 +1119,6 @@ protected:
   EBLevelBoxData<CELL, 1> m_inhoContr;
   Chombo4::Copier m_exchangeCopier;
   vector<shared_ptr<ebstencil_t> > m_stencil;
-};
-
-
-template <int order>
-class EBPetscSolver: public BaseEBPetscSolver<order>
-{
-public:
-  typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
-  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> >  host_fact_real_t;
-  typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
-
-  virtual ~EBPetscSolver()
-  {
-  }
-  
-  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
-                const shared_ptr<dictionary_t           >  & a_ebdictionary,
-                const shared_ptr<graph_distrib_t>          & a_graphs,
-                const Chombo4::DisjointBoxLayout           & a_grids,
-                const Chombo4::Box                         & a_domain,
-                string                                       a_stencilName,
-                string                                       a_domainBCName[2*DIM],
-                string                                       a_ebbcName,
-                Real                                         a_dx,
-                Real                                         a_alpha,
-                Real                                         a_beta,
-                Point                                        a_ghost,
-                bool                                         a_printStuff = false)
-  :BaseEBPetscSolver<order>(a_geoserv,           
-                            a_ebdictionary,      
-                            a_graphs,            
-                            a_grids,             
-                            a_domain,            
-                            a_dx,                
-                            a_alpha,             
-                            a_beta,              
-                            a_ghost,             
-                            a_printStuff)
-  {
-    this->m_stencilName = a_stencilName;
-    for(int iface = 0; iface < 2*DIM; iface++)
-    {
-      this->m_domainBCName[iface] = a_domainBCName[iface];
-    }
-    this->m_ebbcName = a_ebbcName;
-    this->formMatrix(a_printStuff);
-  }
-
-
-  ///
-  void getLocalRegularStencil(Proto::LocalStencil<CELL, Real> & a_localSten,
-                              const EBIndex<CELL>             & a_vof,
-                              const Proto::Stencil<Real >     & a_regSten)
-  {
-    a_localSten.m_entries.resize(0);
-    auto startpt = a_vof.m_pt;
-    auto coefs   = a_regSten.coefs();
-    auto offsets = a_regSten.offsets();
-    Bx domainbx = ProtoCh::getProtoBox(this->m_domain);
-    for(int isten =  0; isten < coefs.size(); isten++)
-    {
-      Point stenpt = startpt + offsets[isten];
-      if(domainbx.contains(stenpt))
-      {
-        EBIndex<CELL> stenvof;
-        stenvof.defineAsRegular(stenpt);
-        a_localSten.add(stenvof, coefs[isten]);
-      }
-      else
-      {
-        //compensate for neumann or dirichlet bcs
-        //here is where we diverge from canon.
-        //The original just ignored stuff outside the domain.
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          for(SideIterator sit; sit.ok(); ++sit)
-          {
-            int isign = sign(sit());
-            Point justOutside = startpt + isign*Point::Basis(idir);
-            if(stenpt == justOutside)
-            {
-              int index = ebp_index(idir, sit());
-              string bcstr = this->m_domainBCName[index];
-              if(bcstr == StencilNames::Dirichlet)
-              {
-                a_localSten.add(a_vof, -coefs[isten]);
-              }
-              else if(bcstr == StencilNames::Neumann)
-              {
-                a_localSten.add(a_vof,  coefs[isten]);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  int getStencilComponents(vector< EBIndex<CELL> >             & a_dstVoFs, 
-                           vector< Proto::LocalStencil<CELL, Real> >  & a_wstencil,
-                           Proto::Stencil<Real>                       & a_regStencilInterior,
-                           PointSet                            & a_allIrregPoints,
-                           const Chombo4::DataIndex                     & a_dit)
-  {
-    CH_TIME("EBPetscSolver::getStencilComponents");
-    typedef Proto::EBStencilArchive<CELL, CELL, order, Real> archive_t;
-    using Chombo4::Box;
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
-    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
-    typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
-    typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
-    typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
-    auto voldatpld = this->m_geoserv->getVoluData(  this->m_domain);
-    auto ebfdatpld = this->m_geoserv->getEBFaceData(this->m_domain);
-    auto xfadatpld = this->m_geoserv->getXFaceData( this->m_domain);
-    auto yfadatpld = this->m_geoserv->getYFaceData( this->m_domain);
-    auto zfadatpld = this->m_geoserv->getZFaceData( this->m_domain);
-
-    auto& voludata =(*voldatpld)[a_dit];
-    auto& ebfadata =(*ebfdatpld)[a_dit];
-    auto& xfacdata =(*xfadatpld)[a_dit];
-    auto& yfacdata =(*yfadatpld)[a_dit];
-    auto& zfacdata =(*zfadatpld)[a_dit];
-    auto& graph    =(*(this->m_graphs))[a_dit];
-    Box valid = this->m_grids[a_dit];
-    Bx  valbx = ProtoCh::getProtoBox(valid);
-    vector<Proto::Stencil<Real> >    regStencilBCS[2*DIM];
-    vector<Bx >               BCApplyBoxes[2*DIM];
-    bool                      bcsOnly = false;
-    Bx                        regApplyBox;
-    bool                      irregOnly = false;
-    Bx domainbx = ProtoCh::getProtoBox(this->m_domain);
-    archive_t::getStencil(a_dstVoFs, a_wstencil, a_regStencilInterior, 
-                          regStencilBCS, BCApplyBoxes, regApplyBox, bcsOnly, irregOnly,
-                          this->m_stencilName,  this->m_domainBCName, this->m_ebbcName,
-                          valbx, valbx,  domainbx, domainbx,
-                          this->m_ptghost,  this->m_ptghost,    
-                          graph,  graph,
-                          voludata,  ebfadata,    
-                          xfacdata,  yfacdata, zfacdata,    
-                          this->m_dx, false, Point::Zeros());
-
-    a_allIrregPoints.makeEmpty();
-    for(int ipt = 0; ipt < a_dstVoFs.size(); ipt++)
-    {
-      a_allIrregPoints |= a_dstVoFs[ipt].m_pt;
-    }
-
-    return 0;
-  }
-
-
-  virtual PetscInt formMatrix(bool a_printStuff = false)
-  {
-    
-    CH_TIME("EBPetscSolver::formMatrix");
-    {
-      using Chombo4::DataIterator;
-      char str[256];
-      strcpy (str,"-");
-      strcat (str,this->m_prestring);
-#if PETSC_VERSION_GE(3,6,0)
-      strcat (str,"pc_gamg_square_graph 20");
-#else
-      strcat (str,"pc_gamg_square_graph true");
-#endif
-      PetscInt  ierr;
-#if PETSC_VERSION_GE(3,7,0)
-      ierr = PetscOptionsInsertString(PETSC_NULL,str);CHKERRQ(ierr);
-#else
-      ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
-#endif
-      DataIterator dit = this->m_grids.dataIterator();
-      for(int ibox = 0; ibox < dit.size(); ibox++)
-      {
-        vector< EBIndex<CELL> >            dstVoFs;
-        vector< Proto::LocalStencil<CELL, Real> > wstencil;
-        Stencil<Real>    regStencilInterior;
-        PointSet irregSet;
-        //use strings to get stencil for this particular operator.
-        getStencilComponents(dstVoFs, wstencil, regStencilInterior, irregSet, dit[ibox]);
-        
-        auto& graph = (*this->m_graphs)[dit[ibox]];
-        auto  grid  =     this->m_grids[dit[ibox]];
-        Bx grbx = ProtoCh::getProtoBox(grid);
-        //add stencils for cells that are in the regular stencil regime to the irregular
-        //set.   This includes adjusting for boundary condtions
-        for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
-        {
-          auto pt = *bit;
-          if(graph.isCovered(pt))
-          {
-            //do nothing
-          }
-          else if(!irregSet.contains(pt))
-          {
-            EBIndex<CELL> vof;
-            vof.defineAsRegular(pt);
-            LocalStencil<CELL, Real> regSten;
-            getLocalRegularStencil(regSten,  vof, regStencilInterior);
-            dstVoFs.push_back(vof);
-            wstencil.push_back(regSten);
-          }
-        }
-        //now create the matrix
-        for(int idst = 0; idst < dstVoFs.size(); idst++)
-        {
-          auto vof    =   dstVoFs[idst];
-          auto& stenc =  wstencil[idst];
-          int irow = this->m_gids[dit[ibox]](vof, 0); 
-          for(int jsrc = 0; jsrc < stenc.size(); jsrc++)
-          {
-            auto& stenvof = stenc.m_entries[jsrc].m_vof;
-            auto& stenwgt = stenc.m_entries[jsrc].m_weight;
-            Real weight = (this->m_beta)*stenwgt;
-            if(stenvof == vof)
-            {
-              weight += this->m_alpha;
-            }
-            int icol = (this->m_gids)[dit[ibox]](stenvof, 0);  
-            PetscInt irowpet = irow;
-            PetscInt icolpet = icol;
-            ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
-          } 
-        }
-      }
-
-      ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-    }
-    return 0;
-  }
 };
 
 #endif

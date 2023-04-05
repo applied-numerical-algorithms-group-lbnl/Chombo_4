@@ -129,7 +129,7 @@ namespace Proto
   /**
    */
   template<int order> 
-  class ConstantVectorVel: public BaseExactVelocity<order>
+  class ConstantvectorVel: public BaseExactVelocity<order>
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -139,7 +139,7 @@ namespace Proto
     ///  
     /**
      */
-    ConstantVectorVel(const RealVect & a_value)
+    ConstantvectorVel(const RealVect & a_value)
       :BaseExactVelocity<order>(true) // this is location based
     {
       m_value = a_value;
@@ -154,13 +154,13 @@ namespace Proto
   
     virtual RealVect getVelocityAtPoint(const RealVect& a_x) const;
   
-    virtual ~ConstantVectorVel()
+    virtual ~ConstantvectorVel()
     {
     }
   
   private:
     //weak construction is bad
-    ConstantVectorVel();
+    ConstantvectorVel();
   
     RealVect m_value;
   };
@@ -169,7 +169,7 @@ namespace Proto
   /**
    */
   template<int order> 
-  class PoiseuilleVectorVel: public BaseExactVelocity<order>
+  class PoiseuillevectorVel: public BaseExactVelocity<order>
   {
   public:
     typedef IndexedMoments<DIM  , order> IndMomDIM;
@@ -179,7 +179,7 @@ namespace Proto
     ///  
     /**
      */
-    PoiseuilleVectorVel(const Real & a_centerValue,
+    PoiseuillevectorVel(const Real & a_centerValue,
                         const Real & a_wallValue,
                         const Real & a_radius,
                         const RealVect & a_center)
@@ -200,13 +200,13 @@ namespace Proto
   
     virtual RealVect getVelocityAtPoint(const RealVect& a_x) const;
   
-    virtual ~PoiseuilleVectorVel()
+    virtual ~PoiseuillevectorVel()
     {
     }
   
   private:
     //weak construction is bad
-    PoiseuilleVectorVel();
+    PoiseuillevectorVel();
   
     RealVect m_center;
     Real m_radius;
@@ -282,7 +282,7 @@ namespace Proto
     //and EB faces. Stores all this info in the Neighbors object.
     // DEPRECATED now lives in neighbors
     void
-    getMomentsInfoFromNeighbors(Vector<EBIndex<CELL> > & a_vols,
+    getMomentsInfoFromNeighbors(vector<EBIndex<CELL> > & a_vols,
                                 const EBGraph          & a_graph,
                                 const VoluData         & a_voludata, // FIXME so we just need the whole geoservg
                                 const EBFaData         & a_ebfadata,
@@ -369,7 +369,7 @@ namespace Proto
     //Compute weight matrix for a set of distances
     void
     getWeightsMatrixComponent(Chombo4::LAPACKMatrix  & a_weights,
-                              const Vector<int>      & a_weightDist,
+                              const vector<int>      & a_weightDist,
                               IndexTM<int, 2>          a_start = IndexTM<int, 2>{0, 0}) const;
 
     //Compute rhs matrix for a face
@@ -395,7 +395,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
+                    vector<IndMomDIM>        & a_ebnorm,
                     Real                     a_dx) const = 0;
 
     //Compute the stencil from a weighted least squares system
@@ -475,7 +475,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
+                    vector<IndMomDIM>        & a_ebnorm,
                     Real                       a_dx) const override;
 
     //Compute inhomogeneous term
@@ -521,7 +521,7 @@ namespace Proto
                      const EBIndex<cent>           & a_face,
                      const EBGraph                 & a_graph,
                      const MomentHolder<order>     & a_momentData,
-                     Vector<IndMomDIM>             & a_ebnorm,
+                     vector<IndMomDIM>             & a_ebnorm,
                      const Real                      a_dx) const;
 
     virtual ~LapWLSFlux()
@@ -576,7 +576,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<CELL>      & a_face,
                     RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
+                    vector<IndMomDIM>        & a_ebnorm,
                     Real                     a_dx) const override
     {CH_assert(false)};
 
@@ -670,7 +670,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
+                    vector<IndMomDIM>        & a_ebnorm,
                     Real                     a_dx) const override;
 
     //Compute weight matrix 
@@ -704,7 +704,7 @@ namespace Proto
         Real omega;
         pp.get("vel_omega",omega);
   
-        Vector<Real> centerVec;
+        vector<Real> centerVec;
   
         pp.getarr("vel_center",centerVec,0,DIM);
         for(int idir = 0; idir < DIM; idir++)
@@ -717,7 +717,7 @@ namespace Proto
       else if (exactVel == 2)
       {
         RealVect centerVel;
-        Vector<Real> velVec;
+        vector<Real> velVec;
 
         pp.getarr("vel_vec",velVec,0,DIM);
         for(int idir = 0; idir < DIM; idir++)
@@ -731,12 +731,12 @@ namespace Proto
 #endif
         centerVel = centerVel/mag;
 
-        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantVectorVel<order>(centerVel));
+        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new ConstantvectorVel<order>(centerVel));
       }    
       else if (exactVel == 3)
       {
         RealVect centerVel;
-        Vector<Real> centerVec;
+        vector<Real> centerVec;
 
         pp.getarr("vel_center",centerVec,0,DIM);
         for(int idir = 0; idir < DIM; idir++)
@@ -751,7 +751,7 @@ namespace Proto
         pp.get("wallVel",wallVel);
         pp.get("radiusVel",radiusVel);
  
-        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new PoiseuilleVectorVel<order>(centerMagVel, wallVel, radiusVel, centerVel));
+        m_exactVel = shared_ptr<BaseExactVelocity<order> >(new PoiseuillevectorVel<order>(centerMagVel, wallVel, radiusVel, centerVel));
       }     
  
     }
@@ -795,7 +795,7 @@ namespace Proto
     getEBFluxMatrix(Chombo4::LAPACKMatrix    & a_Qshift,
                     const EBIndex<cent>      & a_face,
                     RealVect                 & a_faceLoc,
-                    Vector<IndMomDIM>        & a_ebnorm,
+                    vector<IndMomDIM>        & a_ebnorm,
                     Real                     a_dx) const override
       {
         CH_assert(false); // Don't need this function for divergence
@@ -902,7 +902,7 @@ namespace Proto
 
     inline static void
     getEBMoments(IndMomDIM         & a_ebfmom,
-                 const Vector<IndMomDIM> & a_ebfNorm);
+                 const vector<IndMomDIM> & a_ebfNorm);
 
   };
 
@@ -964,7 +964,7 @@ namespace Proto
                                        const int a_evalType = 0);
 
     //getIntegralGradPhiDotNormal
-    inline static Real getEBIntegral(const Vector<IndMomDIM> & a_ebfNormalMom,
+    inline static Real getEBIntegral(const vector<IndMomDIM> & a_ebfNormalMom,
                                      const RealVect          & a_ebfLoc,
                                      const shared_ptr<BaseExactSolution > & m_exactSol,
                                      const Real                a_dx,

@@ -975,7 +975,7 @@ public:
     Real diff = std::abs(retval - retval_simp);
     if ((diff > tol))
       {
-        pout() << diff << std::endl;
+        //pout() << diff << std::endl;
         Chombo4::MayDay::Error("broken elegance");
       }
     return retval_simp;

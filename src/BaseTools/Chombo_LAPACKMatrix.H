@@ -12,7 +12,7 @@
 #define _LAPACKMATRIX_H_
 
 #include "Chombo_REAL.H"
-#include "Proto_LoHiSide.H"
+//#include "Proto_LoHiSide.H"
 #include <utility>
 #include "Chombo_NamespaceHeader.H"
 

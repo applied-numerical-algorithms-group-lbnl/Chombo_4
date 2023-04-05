@@ -39,7 +39,7 @@ namespace Proto
     PR_TIME("isRegularStencil");
     using Chombo4::pout;
     bool retval = true;
-    Vector<EBIndex<CELL> > vof_cont;
+    vector<EBIndex<CELL> > vof_cont;
     vof_cont.push_back(a_vof);
     RealVect centroid;
     Real kappa;
@@ -390,7 +390,7 @@ namespace Proto
     //Reading parameters from the inputs file for WLS stencils
     StencilAttributes stenAttb;
 
-    Vector<int> ptVec;
+    vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
     ParmParse pp;
@@ -601,7 +601,7 @@ namespace Proto
     //Neighbor list type. 0-FaceBased or 1-CellBased
     int neighListType = 1;
 
-    Vector<int> ptVec;
+    vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
     ParmParse pp;
@@ -936,7 +936,7 @@ namespace Proto
     a_inhoContr.resize(a_dstVoFs.size());
 
     bool verbose = false;
-    Vector<int> ptVec;
+    vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
     StencilAttributes stenAttb;
@@ -1069,7 +1069,7 @@ namespace Proto
     a_inhoContr.resize(SpaceDim, vector<Real>(a_dstVoFs.size()));
 
     bool verbose = false;
-    Vector<int> ptVec;
+    vector<int> ptVec;
 
     //Reading parameters from the inputs file for WLS stencils
     StencilAttributes stenAttb;

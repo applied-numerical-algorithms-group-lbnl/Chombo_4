@@ -642,21 +642,7 @@ public:
     }
 
   }
-  
 
-  ///
-  EBLevelBoxData&
-  operator+=(const EBLevelBoxData& a_input)
-  {
-    DisjointBoxLayout dbl = this->disjointBoxLayout();
-    DataIterator dit = dbl.dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
-    {
-      (*this)[dit[ibox]] += a_input[dit[ibox]];
-    }
-    return *this;
-  }
-  
   ///
   static 
   void copyToDevice(      devi_distrib_t & a_deviDat,
@@ -776,7 +762,7 @@ public:
   }
 
   // Is there a reason this should not exist? There is no harm in sharing a smart pointer. The object already know what graph it came from, so there is no reason to pass around both the levelboxdata and graph separately.
-  shared_ptr<LevelData<EBGraph> >
+  shared_ptr<graph_distrib_t >
   getGraphs()
     {
       return m_graphs;
@@ -861,10 +847,12 @@ writeEBLevelHDF5(const string& a_filename,
                  const EBLevelBoxData<CELL, NUMCOMPS>  & a_data,
                  const EBLevelBoxData<CELL, 1       >  & a_kapp,
                  const Box                             & a_domain,
-                 shared_ptr<LevelData<EBGraph>  > a_graphs,
-                 Real                             a_coveredval = 0.0,
-                 Real a_dx= 1.0, Real a_dt=1.0, Real a_time=1.0,
-                 std::vector<std::string> a_varNames={})
+                 shared_ptr<CH4_Data_Choreography::DistributedData<EBGraph> >  a_graphs,
+                 Real                                    a_coveredval = 0.0,
+                 Real                                    a_dx= 1.0,
+                 Real                                    a_dt=1.0,
+                 Real                                    a_time=1.0,
+                 std::vector<std::string>                a_varNames={})
 {
 
 #ifdef CH_USE_HDF5

@@ -9,8 +9,24 @@ namespace Proto
   enum CENTERING {CELL=0,BOUNDARY,XFACE,YFACE,ZFACE};
 
   // A way to loop over each face type
-  constexpr std::array<CENTERING, DIM>   REG_FACES{D_DECL(XFACE, YFACE, ZFACE)};
-  constexpr std::array<CENTERING, DIM+1> ALL_FACES{BOUNDARY, D_DECL(XFACE, YFACE, ZFACE)};
+  constexpr std::array<CENTERING, DIM>   REG_FACES{
+    XFACE
+#if DIM>=2
+    ,YFACE
+#endif
+#if DIM>= 3
+    ,ZFACE
+#endif
+  };
+  constexpr std::array<CENTERING, DIM+1> ALL_FACES{BOUNDARY,
+    XFACE
+#if DIM>=2
+    ,YFACE
+#endif
+#if DIM>= 3
+    ,ZFACE
+#endif
+  };
 
   inline int FACE_DIR(CENTERING cent)
   {
@@ -34,9 +50,9 @@ namespace Proto
   inline int ebp_index(const int a_idir,
                        const Side::LoHiSide a_side)
   {
-    CH_assert(a_idir >= 0);
+    PR_assert(a_idir >= 0);
     //CH_assert(a_idir < Chombo4::SpaceDim); // FIXME add once dimensionality be better managed
-    return a_idir + a_side*Chombo4::SpaceDim;
+    return a_idir + a_side*DIM;
   }
 
   /// Get the side and direction from a vector index
@@ -52,10 +68,10 @@ namespace Proto
                        int& a_idir,
                        Side::LoHiSide& a_side)
   {
-    CH_assert(a_index >= 0);
+    PR_assert(a_index >= 0);
     //CH_assert(a_index < 2*Chombo4::SpaceDim); // FIXME add once dimensionality be better managed
-    a_idir = a_index%Chombo4::SpaceDim;
-    if (a_index/Chombo4::SpaceDim == 0)
+    a_idir = a_index%DIM;
+    if (a_index/DIM == 0)
       {
         a_side = Side::Lo;
       }
