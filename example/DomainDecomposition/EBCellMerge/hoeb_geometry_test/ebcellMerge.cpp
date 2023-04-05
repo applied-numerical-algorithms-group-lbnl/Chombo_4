@@ -14,7 +14,8 @@
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_EBChombo.H"
-#include "Chombo_EBCMGraph.H"
+#include "Chombo_EBCM_Graph.H"
+#include "Chombo_EBCM_HostLevelData.H"
 #include "EBMultigrid.H"
 
 #include "DebugFunctions.H"
@@ -92,6 +93,16 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
   a_grids  = vecgrids[0];
   a_dx     = dx;
   a_domain = domain;
+
+  
+}
+
+/****/
+void
+makeEBCMData(   shared_ptr< ebcm_meta  >  & a_ebcm)
+{
+
+  EBCM::HostLevelData<double ,1, HOEB_MAX_ORDER>(a_ebcm, Chombo4::IntVect::Zero);
 }
 /**
    Print out max and min volume fraction in a meta.
@@ -166,6 +177,8 @@ int main(int a_argc, char* a_argv[])
     Real maxKapp, minKapp;
     //this tries out iteration and checks kappa
     checkKappa(maxKapp, minKapp, ebcm, grids);
+
+    makeEBCMData(ebcm);
   }
 
   //the stuff after the important stuff
