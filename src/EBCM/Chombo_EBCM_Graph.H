@@ -195,6 +195,9 @@ namespace EBCM
       fillFaceData<YFACE>(m_yfaces, yebfac, yfacdat);
 
 #if DIM==3                     
+      auto zebfaclo= graph.getZFaces(a_vof, Side::Lo);
+      auto zebfachi= graph.getZFaces(a_vof, Side::Hi);
+      
       auto zebfac = zebfaclo;
       zebfac.insert(zebfac.end(), zebfachi.begin(), zebfachi.end());
       const auto & zfacdat = (*(a_geoserv->getZFaceData(a_domain)))[a_dit];
@@ -265,6 +268,7 @@ namespace EBCM
         m_zfaces.resize(2);
         pr_pt lopt = m_pt - Point::Basis(2);
         pr_pt hipt = m_pt + Point::Basis(2);
+        pr_vof lovof(lopt, 0);
         pr_vof hivof(hipt, 0);
         pr_vof ptvof(m_pt, 0);
         m_zfaces[0].defineAsRegular(lovof, ptvof, a_dx);

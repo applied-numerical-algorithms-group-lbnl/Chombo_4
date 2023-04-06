@@ -121,11 +121,11 @@ for t in targets:
             f.write("\nCHOMBO_CXXGPUFLAGS:= -Xcompiler '$(CHOMBO_CXXOPTFLAGS)'\n")
             f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXGPUFLAGS) \n')
         else:
-            f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXOPTFLAGS) \n')
         if(args.hip == 'TRUE'):
             f.write('# insert secret hip optimization flags here\n')
         else:
-            f.write('\nCHOMBO_CXXFLAGS+=$(CXXOPTFLAGS) \n')
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXOPTFLAGS) \n')
 
     if(args.cuda == 'TRUE'):
         f.write('\nCHOMBO_LIBS+= -lnvToolsExt -lgomp\n')
