@@ -422,9 +422,12 @@ namespace Proto
         RealVect faceLoc;
         RealVect shift = RealVect::Unit();
         if (cent==XFACE) {shift[0] = 0;}
+#if DIM>=2
         else if (cent==YFACE) {shift[1] = 0;}
+#endif
+#if DIM>=3
         else if (cent==ZFACE) {shift[2] = 0;}
-
+#endif
         for (int idir = 0; idir != DIM; idir++)
           {
             faceLoc[idir] = a_dx * (0.5*shift[idir] + a_face.m_pt[idir]);

@@ -85,6 +85,6 @@ velocity_inflow_value = 1.
 bicgstab.tol      = 1.0e-6
 bicgstab.hang     = 1.0e-8
 bicgstab.small    = 1.0e-16
-bicgstab.imax     = 10
+bicgstab.imax     = 0
 bicgstab.nrestart = 27
 bicgstab.verbosity = 1

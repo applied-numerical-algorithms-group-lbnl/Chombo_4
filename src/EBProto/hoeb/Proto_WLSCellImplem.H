@@ -2027,7 +2027,7 @@ namespace Proto
       string ebbcName = a_domainBC.getBCtypes().getEBComp();
       if(ebbcName == string("Neumann"))
       {
-        auto ebfneighNorm = a_neigh.getEBFaceNorm(iface);
+        auto ebfneighNorm = a_neigh.getEBFaceNormal(iface);
         bcValue = NeumannExactSoln<order>::
                                getEBIntegral(ebfneighNorm,
                                              ebfLocDiff,
