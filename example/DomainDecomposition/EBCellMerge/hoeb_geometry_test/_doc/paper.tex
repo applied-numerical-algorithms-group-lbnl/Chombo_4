@@ -182,9 +182,7 @@
 \begin{document}
 
 \title{Polynomial expansions of finite volume data in a cut cell context}
-\author{P. Schwartz     \footnotemark[1]
-   \and N. Overton-Katz \footnotemark[1]
-   \and T. Ligocki      \footnotemark[1]
+\author{N. Overton-Katz \footnotemark[1]
    \and H. Johansen     \footnotemark[1]
    \and D. T. Graves    \footnotemark[1]
    \and D. Devendran    \footnotemark[1]
@@ -195,35 +193,59 @@
   CA. Research at LBNL was supported financially by the Office of
   Advanced Scientific Computing Research of the US Department of
   Energy under contract number DE-AC02-05CH11231.}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 
-\section
 \begin{abstract}
 
   We discuss the mechanics of forming stable local polynomial
   expansions of finite volume data in the context of cut cell grids.
   We show that significant solvability issues can arise from certain weighting
   functions.    A very rudimentary but stable cell merger algorithm is
-  presented in an attempt to show that these solvability issues are
-  really an artifact of small-cell instabilties.
+  presented as we present evidence that these solvability issues may be
+  an artifact of small-cell instabilties.
   
 \end{abstract}
-  
-  function 
-We present an algorithm to produce the necessary geometric information
-for finite volume calculations in the context of Cartesian grids with
-embedded boundaries.      Given an order of accuracy for the
-overall calculation, we show what accuracy is required for each of the
-geometric quantites and we demonstrate how to calculate the moments
-using the divergence theorem.   We demonstrate that, for  a known
-flux, these moments can be used to create a flux divergence of the
-expected order.
 
-\end{abstract}
+
 \section{Introduction}
 
+Embedded boundary (EB) grids are formed when one passes an  surface
+through a Cartesian mesh.    For sufficiently complex geomtries, these methods
+are very attactive because grid generation is a solved problem
+and not computationally overwhelming \cite{trebotich-graves}.
+
+In the current context, we form the cutting surface as the zero
+surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
+For smooth ($I$),  moments can be generated to any
+accuracy \cite{geometry_paper}.
+
+EB grids can produce cells that arbitrarily small.    This produces
+algorithmic difficulties that generations of researchers have labored
+to overcome with great success.   EB methods are used for high speed
+compressible flows \cite{compresible_ns_paper, ebamrhscl} and for
+slower, incompressible applications \cite{miller-trebotich}.
+
+Formally, the underlying description of space
+is given by rectangular control volumes on a Cartesian mesh
+$\Upsilon_\ibold = [(\ibold-\half {\ubold})h, (\ibold+\half
+{\ubold})h], \ibold \in \bigzbold^D$, where $D$ is the dimensionality
+of the problem, $h$ is the mesh spacing, and ${\ubold}$ is the vector
+whose entries are all one (note we use bold font $\ubold = (u_1, \dots, u_d,
+\dots, u_D)$ to indicate a vector quantity).
+Given an irregular domain $\Omega$, we
+obtain control volumes $V_\ibold = \Upsilon_\ibold \bigcap \Omega$ and
+faces $A_{\ibold,d\pm} = A_{\ibold \pm \half \ebold_d}$ which are the
+intersection of the boundary of $\partial V_\ibold$ with the
+coordinate planes $\{{\xbold}:x_d = (i_d \pm \half)h \}$ ($\ebold_d$ is
+the unit vector in the $d$ direction).  We also
+define $A_{B,\ibold}$ to be the intersection of the boundary of the
+irregular domain with the Cartesian control volume: $A_{B,\ibold}
+= \partial \Omega \bigcap \Upsilon_\ibold$. 
 
 
-Throughout this paper, we use the following compact ``multi-index'' notation:
+\section {Finite volume notation}
+
+Throughout this paper, we use the following compact notation:
 \begin{align*}
 (\xbold - \xbar)^\pbold &= \prod\limits^D_{d=1} (x_d - {\bar x}_d)^{p_d} \\
 \pbold! &= \prod\limits^D_{d = 1} p_d!
@@ -235,50 +257,42 @@ moment of the volume $V$ relative to the point $\xbar$.
 m_v^\pbold(\xbar)  =  \int\limits_{V} (\xbold - \xbar)^\pbold dV
 \label{eqn::volmoment}
 \end{equation}
-Clearly, the volume of the cut cell $|V| = m_v^\zbold$,
-  where $\zbold$ is the zero vector.
-We define the face moments $m_{d\pm}^\pbold(\xbar)$ to be the $\pbold^{th}$  
-moments (relative to the point $\xbar$) of the faces $A_{d\pm}$.
-\begin{equation}
-m_{d\pm}^\pbold(\xbar)  = \int\limits_{A_{d\pm}} (\xbold - \xbar)^\pbold dA
-\label{eqn::facemoment}
-\end{equation}
-We define two moments corresponding to the embedded boundary face $A_B$: $m^{\pbold}_{B}$ and $m^{\pbold}_{B,d}$: 
-\begin{equation}
-m^{\pbold}_{B}(\xbar)  = \int\limits_{A_B} (\xbold
--\xbar)^\pbold \,  dA
-\label{eqn::ebmomentB}
-\end{equation}
-and
-\begin{equation}
-m^{\pbold}_{B,d}(\xbar)  = \int\limits_{A_B} (\xbold
--\xbar)^\pbold \, n_d(\xbold) \, dA.
-\label{eqn::ebmoment}
-\end{equation}
-Note that (\ref{eqn::ebmoment}) includes the normal to the embedded boundary face.
+
  
 Given a sufficiently smooth function $\psi$, we can approximate $\psi$
-in the neighborhood of $\xbar$ using a multi-dimensional Taylor expansion:
+in the neighborhood of $\xbar$ using a Taylor expansion to order $P$:
 \begin{equation}
-\psi(\xbold) = \sum_{|\qbold| < Q} \frac{1}{\qbold!}\psi^{(\qbold)}(\xbar)
-\, (\xbold - \xbar)^\qbold + O(\dx^{Q}),
-\label{eqn::taylor}
+\psi(\xbold)  =  \sum\limits_{p < P} C^p (\xbar - \xbar)^p \label{eqn::taylor}
 \end{equation}
-with the multi-index partial derivative notation
+where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
 \begin{equation}
-\psi^{(\qbold)} = 
-  \partial^{\qbold} \psi =
-  \frac{\partial^{q_1}}{\partial x_1^{q_1}} \dots
-  \frac{\partial^{q_D}}{\partial x_D^{q_D}} \psi \, .
-\end{equation}
-We express averages over volumes as 
+  C^p =\frac(1){p!}
+      \frac{\partial^{p_0}}{\partial x_0}
+      \frac{\partial^{p_1}}{\partial x_1}
+      \frac{\partial^{p_2}}{\partial x_2}  (\psi).
+\end{equation}  
+
+
+In finite volume  methods, we define grid data to be
+averages over volumes.   So if we discretize the smooth function
+$\psi$, the average over the volume $\ibold$ is given by
 \begin{equation*}
-  \left< \nabla \cdot \Fbold \right>_V \equiv \frac{1}{|V|} 
-  \int\limits_{V} \left( \nabla \cdot \Fbold \right) \, dV
+ V_\ibold <\psi>_\ibold = \int\limits_{V_\ibold} \psi(\xbold) dV
 \end{equation*}
-We define the volume fraction $\kappa$ to be fraction of the volume
-of the cell inside the solution domain, so that 
-\begin{equation}
-\kappa = h^{-D} |V| = h^{-D} m_v^\zbold \quad .
-\label{eqn::kappa}
-\end{equation}
+If we insert the Taylor expansion \ref{eqn::taylor}, we get a discrete
+approximation to the smooth function $\psi$ that is accurate to order $P$.
+\begin{equation*}
+ V_\ibold <\psi>_\ibold = \sum\limits_{p < P} C^p m^p. 
+\end{equation*}
+This forms a local polynomial expansion of $\psi$ around the volume
+$\ibold$ expressed in terms  moments ($m$)  which are the natural
+products of grid generation.
+Modern, higher order embedded boundary methods use this description
+directly to generate stencils
+ \cite{nate-stokes-paper,  dharshi-poisson, geometry-paper}.    At the core
+of these algorithms is a similar procedure for finding the Taylor
+coefficients $C$ which is
+worth discussing.
+
+\section
+\end{document}
