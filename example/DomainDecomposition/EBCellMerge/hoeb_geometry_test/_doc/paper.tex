@@ -294,5 +294,37 @@ of these algorithms is a similar procedure for finding the Taylor
 coefficients $C$ which is
 worth discussing.
 
-\section
+\section{Computing Taylor coefficients}
+
+Consider a finite volume grid where we know all geometric moments to
+order $P$.   Given values of $<\psi>$ everwhere on the grid, we wish to
+approximate the Taylor coefficients at a volume $\ibold$ given that we
+know $\cn_\ibold = \{\jbold\}$, the set of $N_v$ closest neighbors of
+the volume $\ibold$.   Using the Taylor expansion at each point gives
+us $N_v$ equations for $C^p$
+\begin{equation}
+  V_\jbold <\psi>_\jbold = \sum\limits_{p < P} C^p_\ibold m^p_\jbold.
+\end{equation}
+Let's say there are $N_p$ Taylor coefficients.   We can force
+$N_v > N_p$ by getting a large enough neighborhood.    This means that
+we have an overdetermined system of the form
+\begin{equation*}
+M C = P 
+\end{equation*}
+where $M = \{\{m^{pi}_\jbold\}\}$ and $P= \{<\psi_\jbold>\}$.
+Since the system is overdetermined, we can introduce a 
+meaningful weighting matrix $W$ and solve
+\begin{equation*}
+WMC = WP.
+\end{equation*}
+Diagonal weighing matricies are common.  Typically, the equations for volumes near the
+target volume receive higher weights.   Since these matricies are
+(deliberately) not square, we approximate the solution using a
+Moore-Penrose pseudo-inverse:
+\begin{equation*}
+C = ((WM)^T(WM))^{-1} (WM)^T P.
+\end{equation*}
+The matrix inversion at the heart of this  method requires that we
+need know to what degree the matrix $A = (WM)^T(WM)$  is invertable.
+
 \end{document}
