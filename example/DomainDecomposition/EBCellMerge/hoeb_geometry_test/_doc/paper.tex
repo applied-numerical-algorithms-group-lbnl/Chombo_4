@@ -207,19 +207,21 @@
 Embedded boundary (EB) grids are formed when one passes an  surface
 through a Cartesian mesh.    For sufficiently complex geomtries, these methods
 are very attactive because grid generation is a solved problem
-and not computationally overwhelming \cite{trebotich-graves}.
+and not computationally overwhelming even in a moving-boundary context
+\cite{MillerTrebotich2012}.
 
 In the current context, we form the cutting surface as the zero
 surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
 For smooth ($I$),  moments can be generated to any
-accuracy \cite{geometry_paper}.
+accuracy \cite{Schwartz2015}.
 
 EB grids can contain volumes that are arbitrarily small.    This
 "small-cell problem'' produces
 algorithmic difficulties that generations of researchers have labored
 to overcome with great success.   EB methods are used for high speed
-compressible flows \cite{compresible_ns_paper, ebamrhscl} and for
-slower, incompressible applications \cite{miller-trebotich}.
+compressible flows \cite{Colella2006, Graves2013} and for
+slower, incompressible applications \cite{Trebotich2015} and conjugate
+heat transfer \cite{Crockett2010}.
 
 Formally, the underlying description of space
 is given by rectangular control volumes on a Cartesian mesh
@@ -284,9 +286,9 @@ This forms a local polynomial expansion of $\psi$ around the volume
 $\ibold$ expressed in terms moments ($m$) which are the natural
 products of grid generation.  Modern, higher order embedded boundary
 methods use this description directly to generate stencils
-\cite{nate-stokes-paper, dharshi-poisson, geometry-paper}.  At the
+\cite{Overton2022a, Devendran2017, Schwartz2015}.  At the
 core, all these algorithms have a similar procedure for finding the
-Taylor coefficients $C$ which is worth discussing.
+Taylor coefficients $C^p$ which is worth discussing.
 
 \section{Computing Taylor coefficients and Matrix Conditioning}
 
@@ -336,18 +338,46 @@ done both with and without cell merger in the hope hope that this
 exploration may lead to simpler, more robust cut cell algorithms to
 solve partial differential equations at high order.
 
-\section{Cell Merger}
+\section{Cell Merger Algorithm}
 
-Dammit I have to insert pictures here.
+We use a very simple cell merger algorithm.  Given a cut cell
+$\ibold$, we define the box containing only that cell
+$B_c = B(\ibold, \ibold)$ 
+We form a $2^D$ cell rectangular region
+by coarsening and then refining $B_c$ to form $B_v = R(C(B_c))$
+\footnotemark[6].
+After that process, any left over small cells are merged with their
+biggest neighbor.    See figures \ref{fig::unmerged2dmap} and
+\ref{fig::merged2dmap} for a simple example of how this algorithm
+creates fairly chunky grids   \footnotemark[5].
+
+We define the volume fraction $\kappa_\ibold \equiv  V_\ibold/h^D$.
+For unmerged grids, $ 0 < \kappa <= 1$.   When merged using this
+algorithm, $\kappa$ can be larger than $2^D$.   
+
+\begin{figure}
+\centerline{\epsfig{figure=unmerged.ps,width=0.4\linewidth }} 
+\caption{Map for EB grid produced by a cutting cirle. $\kappa <= 1$.
+  Each cut cell has a unique positive integer.}
+\end{figure}
+
+\begin{figure}
+\centerline{\epsfig{figure=merged.ps,width=0.4\linewidth } }
+\label{fig::merged2dmap}
+\caption{Map of EB grid shown in \ref{fig::unmerged2dmap} after using
+  cell merger algorithm.
+  Each cut cell has a unique positive integer. $\kappa <= 4.1433$}
+\end{figure}
 
 \footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
   CA. Research at LBNL was supported financially by the Office of
   Advanced Scientific Computing Research of the US Department of
   Energy under contract number DE-AC02-05CH11231.}
-\footnotetext[2]{Ford Motor Company, Sunnyvale California.}
+\footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
 \footnotetext[3]{If the matrix $M$ is square, a weighting matrix can
   have no effect and the Moore-Penrose psueudoinverse becomes
   $M^{-1}$.}
+
 \footnotetext[4]{Defining $\xbar_\ibold = 0$, the
   equations for volumes $\jbold$ where $\xbar_\jbold$ target receive
   higher weights.  Diagonal weighting matricies are common.  Usually,
@@ -355,10 +385,22 @@ Dammit I have to insert pictures here.
   two volumes $\ibold$ and $\jbold$.  Typically they make
   $W_{\jbold,\jbold}$ decrease strongly with increasing $D(\ibold,
   \jbold)$ to assign higher importance to the equations for volumes
-  closer to $\ibold$.  Devendran, for example \cite{poisson-paper},
+  closer to $\ibold$.  Devendran for example \cite{Devendran2017},
   uses a weighting function that varies with $W_{\ibold,\jbold}
   \approx 1./D(\ibold,\jbold)^5$ }.
 
+\footnotetext[5] {Merging two cells is simply a matter of removing the
+  intervening faces, shifting all moments them to a common location
+  and adding them together.  No accuracy is lost in this process
+  outside of the fact that we have fewer degress of freedom because
+  semantically, we are just adding volume integrals over distinct
+  volumes, which is exact.}
+
+\footnotetext[6] {We mean a Box as defined in Chombo, a subset of
+  $Z^D$.  Coarsening and refining has the standard Chombo semantic
+  \cite{ChomboDesign, ChomboDesignEB}.}
+
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
+\bibliography{references}
 
 \end{document}
