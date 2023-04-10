@@ -97,13 +97,19 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
   
 }
 
-/****/
+/**
+**/
 void
 makeEBCMData(   shared_ptr< ebcm_meta  >  & a_ebcm)
 {
 
   EBCM::HostLevelData<double ,1, HOEB_MAX_ORDER>(a_ebcm, Chombo4::IntVect::Zero);
 }
+
+/**
+**/
+void 
+
 /**
    Print out max and min volume fraction in a meta.
 **/

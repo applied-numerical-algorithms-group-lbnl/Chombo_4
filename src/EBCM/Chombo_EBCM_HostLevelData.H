@@ -63,7 +63,7 @@ namespace EBCM
       }
     }
 
-    void    writeToHDF5(string a_filename) const;
+    void    writeToHDF5(string a_filename) const
     {
       ch_ldfab fabdata(m_meta->m_grids, ncomp, ch_iv::Zero);
       ch_dit dit =     m_meta->m_grids.dataIterator();
