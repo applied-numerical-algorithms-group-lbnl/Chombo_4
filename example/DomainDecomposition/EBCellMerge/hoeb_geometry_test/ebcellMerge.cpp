@@ -28,6 +28,9 @@
 typedef Chombo4::GeometryService<      HOEB_MAX_ORDER >   ch_geoserv;
 typedef    EBCM::MetaDataLevel<        HOEB_MAX_ORDER >   ebcm_meta;
 typedef    EBCM::SubVolumeIterator<    HOEB_MAX_ORDER >   ebcm_subvol_it;
+typedef    EBCM::EBCM_Volu<            HOEB_MAX_ORDER >   ebcm_volume;
+typedef    EBCM::EBCM_Graph<           HOEB_MAX_ORDER >   ebcm_graph;
+typedef Chombo4::Box               ch_box;
 typedef Chombo4::DisjointBoxLayout ch_dbl;
 typedef Chombo4::ProblemDomain ch_probdom;
 typedef Chombo4::DataIterator  ch_dit;
@@ -106,10 +109,40 @@ makeEBCMData(   shared_ptr< ebcm_meta  >  & a_ebcm)
   EBCM::HostLevelData<double ,1, HOEB_MAX_ORDER>(a_ebcm, Chombo4::IntVect::Zero);
 }
 
+///
+
+class  neighborhood_t
+{
+public:
+  vector<ebcm_volume> m_volumes;
+  neighborhood_t(const ebcm_graph    & a_graph,
+                 const ebcm_volume   & a_volume,
+                 const ch_iv         & a_iv,
+                 int nghost)
+  {
+    m_volumes.resize(0);
+    ch_box region(a_iv, a_iv);
+    region.grow(nghost);
+    region &= a_graph.m_domain;
+    ebcm_subvol_it iterator(a_graph, a_region);
+    for(iterator.begin(); iterator.ok(); ++iterator)
+    {
+      m_volumes.push_back(*iterator);
+    }
+  }
+
+
+private:
+
+neighborhood_t();
+};
 /**
 **/
 void 
-
+checkConditionNumber()
+{
+  //HERE
+}
 /**
    Print out max and min volume fraction in a meta.
 **/

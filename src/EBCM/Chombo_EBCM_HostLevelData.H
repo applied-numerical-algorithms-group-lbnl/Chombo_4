@@ -28,11 +28,11 @@ namespace EBCM
   /// Simple structure to hold data on a level in an ebcm context.  volume data only
   /**
    */
-  template<typename data_t, int  NUMCOMPS, int order>
+  template<typename data_t, int  ncomp, int order>
   class HostLevelData
   {
   public:
-    typedef EBCM::VolBoxData<data_t, NUMCOMPS, order>            ebcm_fab_t;
+    typedef EBCM::VolBoxData<data_t, ncomp,  order>            ebcm_fab_t;
     typedef Chombo4::NullConstructorDataFactory<    ebcm_fab_t>  null_factory_t;
     typedef CH4_Data_Choreography::DistributedData< ebcm_fab_t > mpi_frame_t;
     typedef    EBCM::MetaDataLevel<        order >               ebcm_meta_t;
@@ -75,7 +75,7 @@ namespace EBCM
         for(ch_bit bit(grid); bit.ok(); ++bit)
         {
           auto  iv = bit();
-          ch_pt pt = ProtoCh::getPoint(iv);
+          pr_pt pt = ProtoCh::getPoint(iv);
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
             fabdata(iv, icomp) = ebcmdata(pt, icomp);
