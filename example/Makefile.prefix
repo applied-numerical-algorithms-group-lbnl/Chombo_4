@@ -8,15 +8,15 @@ CHOMBO_CXXFLAGS =
 
 CHOMBO_SRC := $(wildcard *.cpp) 
 CHOMBO_SRC += $(wildcard ../src/*.cpp) 
-CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp) 
-CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp) 
-CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/AMRTools/*.cpp) 
+CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/BaseTools/*.cpp)
+CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/LinearAlgebra/*.cpp)
+CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/BoxTools/*.cpp)
 CHOMBO_SRC += $(wildcard ../../common/*.cpp) 
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp) 
 
-VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/AMRTools 
-VPATH +=  $(CHOMBO_HOME)/src/EBTools 
+VPATH=o. ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/LinearAlgebra
+VPATH += $(CHOMBO_HOME)/src/EBTools
 
 CHOMBO_NODIRSRC = $(notdir $(CHOMBO_SRC))
 CHOMBO_NODIROBJ = $(subst .cpp,.o,$(CHOMBO_NODIRSRC))

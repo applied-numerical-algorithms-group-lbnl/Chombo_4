@@ -385,7 +385,7 @@ namespace Proto
                      const Box& a_grid, unsigned int a_icomp)
                      
     {
-      data_t maxval = 0; 
+      data_t maxval = -std::numeric_limits<Real>::max(); // largest negative thing as "invalid" starting value
       using Proto::BoxIterator;
       for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {
@@ -411,7 +411,7 @@ namespace Proto
   data_t maxCell(const EBHostData<CELL, data_t, ncomp>& a_src,
                      const Box& a_grid, unsigned int a_icomp)
   {
-    data_t maxval = -1e300;
+    data_t maxval = -std::numeric_limits<Real>::max(); // largest negative thing as "invalid" starting value
     using Proto::BoxIterator;
     for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {
@@ -435,7 +435,7 @@ namespace Proto
   data_t minCell(const EBHostData<CELL, data_t, ncomp>& a_src,
                      const Box& a_grid, unsigned int a_icomp)
   {
-    data_t minval = 1e300;
+    data_t minval = std::numeric_limits<Real>::max(); // largest possible thing as "invalid" starting value
     using Proto::BoxIterator;
     for(auto bit = a_grid.begin(); bit != a_grid.end(); ++bit)
       {

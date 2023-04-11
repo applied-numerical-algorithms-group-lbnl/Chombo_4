@@ -725,7 +725,7 @@ namespace Proto
     Real tol = std::numeric_limits<Real>::epsilon()*100; // all but the last two digits
     int info = solveLSTSVD(X, MTWT, QT,
                            10,
-                           1.0e-13); // FIXME why this tolerance?
+                           tol);
 
     if(info != 0)
     {

@@ -350,14 +350,11 @@ public:
   Real maxNorm(EBIndex<CELL>& a_vofMaxThisProc, int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::maxNorm");
-
     host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
-    
     copyToHost(     hostdata, *this);
-    
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
-    Real maxval = 0; 
+    Real maxval = -std::numeric_limits<Real>::max(); // most negative possible thing as "invalid" starting value
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
       const Box & grid     =         dbl[dit[ibox]];
@@ -370,10 +367,9 @@ public:
         a_vofMaxThisProc = vofmax;
       }
     }
-
 #ifdef CH_MPI    
     Real sendBuf = maxval;
-    int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL,MPI_MAX, Chombo_MPI::comm);
+    int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
 
     if (result != MPI_SUCCESS)
     {
@@ -383,18 +379,172 @@ public:
     return maxval;
   }
 
+  /// The L_inf norm split by EB and regular cells
+  /// a_volWeighted=false means weighted by number of cells, true is by volume of cells
+  /// always normalized (not dx aware)
+  /// Returns array with the norms of [all, EB, regular]
+  std::array<Real, 3>
+  maxNormSplit(int a_icomp) const
+    {
+    CH_TIME("EBLevelBoxData::maxNormSplit");
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    copyToHost(hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    // largest negative thing as "invalid" starting value
+    Real regNorm = -std::numeric_limits<Real>::max();
+    Real ebNorm = -std::numeric_limits<Real>::max();
+
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid = dbl[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      auto graph = hostdata[dit[ibox]].ebgraph();
+      const auto& data = hostdata[dit[ibox]];
+
+      using Proto::BoxIterator;
+      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = graph.getVoFs(pt);
+        for(int ivec = 0; ivec < vofspt.size(); ivec++)
+          {
+            const EBIndex<CELL>& vof = vofspt[ivec];
+            Real datval = std::abs(data(vof, a_icomp));
+            if(graph.isRegular(pt))
+              {
+                regNorm = std::max(datval, regNorm);
+              }
+            else if(graph.isIrregular(pt))
+              {
+                ebNorm = std::max(datval, ebNorm);
+              }
+          }
+      }
+    }
+#ifdef CH_MPI
+    {
+      Real sendBuf = ebNorm;
+      int result = MPI_Allreduce(&sendBuf, &ebNorm, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::maxNormSplit");
+        }
+      sendBuf = regNorm;
+      result = MPI_Allreduce(&sendBuf, &regNorm, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::maxNormSplit");
+        }
+    }
+#endif
+    std::array<Real, 3> norms {std::max(ebNorm, regNorm), ebNorm, regNorm};
+    return norms;
+  }
+
+  /// The L_p norm split by regular and EB cells
+  /// a_volWeighted=false means weighted by number of cells, true is by volume of cells
+  /// always normalized (not dx aware)
+  /// Returns array with the norms of [all, EB, regular]
+  template <int order>
+  std::array<Real, 3>
+  pNormSplit(int a_icomp,
+              Real a_p,
+              shared_ptr<GeometryService<order> > a_geoserv,
+              bool a_volWeighted=false) const
+  {
+    CH_TIME("EBLevelBoxData::pNormSplit");
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
+    copyToHost(hostdata, *this);
+    DataIterator dit = this->dataIterator();
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    Real norm = 0, volume = 0;
+    Real regNorm = 0, regVol = 0;
+    Real ebNorm = 0, ebVol = 0;
+    auto innerTerm = [](auto a_val, auto a_vol, auto a_p) { return std::pow(std::abs(a_vol*a_val), a_p); };
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      const Box & grid = dbl[dit[ibox]];
+      Bx grbx = ProtoCh::getProtoBox(grid);
+      auto graph = hostdata[dit[ibox]].ebgraph();
+      const auto& data = hostdata[dit[ibox]];
+      //auto geoserv = a_geoserv[dit[ibox]];
+      EBHostData<CELL, Real, 1>  hostkappa(data.box(), graph);
+      a_geoserv->fillKappa(hostkappa, grid, dit[ibox], dbl.getDomain());
+
+      using Proto::BoxIterator;
+      for(auto bit = grbx.begin(); bit != grbx.end(); ++bit)
+      {
+        Point pt = *bit;
+        vector<EBIndex<CELL> > vofspt = graph.getVoFs(pt);
+        for(int ivec = 0 ; ivec < vofspt.size(); ivec++)
+          {
+            const EBIndex<CELL>& vof = vofspt[ivec];
+            Real datval = data(vof, a_icomp);
+            Real vol = 0;
+            if (a_volWeighted) {vol += hostkappa(vof, 0);}
+            else               {vol += 1.;}
+            if(graph.isRegular(pt))
+              {
+                regNorm += innerTerm(datval, vol, a_p);
+                regVol += vol;
+              }
+            else if(graph.isIrregular(pt))
+              {
+                ebNorm += innerTerm(datval, vol, a_p);
+                ebVol += vol;
+              }
+          }
+      }
+    }
+#ifdef CH_MPI
+    {
+      Real sendBuf = ebNorm;
+      int result = MPI_Allreduce(&sendBuf, &ebNorm, 1, MPI_CH_REAL, MPI_SUM, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::pNormSplit");
+        }
+      sendBuf = regNorm;
+      result = MPI_Allreduce(&sendBuf, &regNorm, 1, MPI_CH_REAL, MPI_SUM, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::pNormSplit");
+        }
+      sendBuf = ebVol;
+      result = MPI_Allreduce(&sendBuf, &ebVol, 1, MPI_CH_REAL, MPI_SUM, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::pNormSplit");
+        }
+      sendBuf = regVol;
+      result = MPI_Allreduce(&sendBuf, &regVol, 1, MPI_CH_REAL, MPI_SUM, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+        {
+          MayDay::Error("Communication error in EBLevelBoxData::pNormSplit");
+        }
+    }
+#endif
+    auto outerTerm = [](auto a_val, auto a_vol, auto a_p) {return std::pow(a_val/a_vol, 1./a_p); };
+    std::array<Real, 3> norms {
+      outerTerm((ebNorm+regNorm), (ebVol+regVol), a_p),
+      outerTerm(ebNorm, ebVol, a_p),
+      outerTerm(regNorm, regVol, a_p)};
+    return norms;
+  }
+
   ///
   Real max(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::max");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-    copyToHost(     hostdata, *this);
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
-    Real maxval = 0;
+    Real maxval = -std::numeric_limits<Real>::max(); // most negative possible thing as "invalid" starting value
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      const Box & grid     =         dbl[dit[ibox]];
+      const Box & grid = dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
       Real gridval = Proto::maxCell(hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > maxval)
@@ -408,7 +558,7 @@ public:
 
     if (result != MPI_SUCCESS)
     {
-      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+      MayDay::Error("Communication error in EBLevelBoxData::max");
     }
 #endif
     return maxval;
@@ -418,14 +568,14 @@ public:
   Real min(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::min");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost   , hostfactory_t(m_graphs));
-    copyToHost(     hostdata, *this);
+    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
-    Real minval = 0;
+    Real minval = std::numeric_limits<Real>::max(); // largest possible thing as "invalid" starting value
     for(int ibox = 0;  ibox < dit.size(); ibox++)
     {
-      const Box & grid     =         dbl[dit[ibox]];
+      const Box & grid = dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
       Real gridval = Proto::minCell(hostdata[dit[ibox]], grbx, a_icomp);
       if(gridval > minval)
@@ -439,7 +589,7 @@ public:
 
     if (result != MPI_SUCCESS)
     {
-      MayDay::Error("Communication error in EBLevelBoxData::minNorm");
+      MayDay::Error("Communication error in EBLevelBoxData::min");
     }
 #endif
     return minval;
@@ -478,7 +628,7 @@ public:
 
     if (result != MPI_SUCCESS)
     {
-      MayDay::Error("Communication error in EBLevelBoxData::maxNorm");
+      MayDay::Error("Communication error in EBLevelBoxData::sum");
     }
 #endif
     return sumval;

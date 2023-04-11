@@ -19,6 +19,6 @@
 #    define BASEFAB_REAL_SETVAL 1.23456789e+300
 #    define CH_BADVAL           (Real)1.0e99
 
-typedef double Real ;
+typedef double Real;
 
 #endif
