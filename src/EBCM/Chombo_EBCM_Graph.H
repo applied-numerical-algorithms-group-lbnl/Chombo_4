@@ -1168,11 +1168,11 @@ namespace EBCM
 
   ///
   /**
-     Contains a vector<ebcm_volumes> that corresponds with all the volumes in region defined by a box.
+     Subvolume is a a vector<ebcm_volumes> that corresponds with all the volumes in region defined by a box.
      This can be used to find the volumes within the neighborhood of a particular cell.
   */
   template <int order>
-  class SubVolumeVector: public std::vector<EBCM_volu<order> >
+  class SubVolumeVector: public std::vector<EBCM_Volu<order> >
   {
 
   public:    
@@ -1203,14 +1203,14 @@ namespace EBCM
           }
         }
       }
-      int totalSize = m_irregIndicies.size() + m_regularPoints.size();
+      int totalSize = irregIndicies.size() + regularPoints.size();
       this->resize(totalSize);
-      for(int ientry = 0; ientry < totalSize(); ientry++)
+      for(int ientry = 0; ientry < totalSize; ientry++)
       {
         EBCM_Volu<order> curVolu;
         if(ientry < regularPoints.size())
         {
-          curVolu.defineAsRegular(m_regularPoints[ientry], a_dx);
+          curVolu.defineAsRegular(regularPoints[ientry], a_graph.m_dx);
         }
         else 
         {
@@ -1226,7 +1226,7 @@ namespace EBCM
   private:
     SubVolumeVector();
 
-  }; //end class subvolumeiterator
+  }; //end class subvolumevector
 
 }//end namespace EBCM
 

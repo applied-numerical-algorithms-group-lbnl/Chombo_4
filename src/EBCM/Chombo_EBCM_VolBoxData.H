@@ -95,6 +95,15 @@ namespace EBCM
       const data_t* retvalptr = castme->dataPtr(a_pt, a_icomp);
       return *retvalptr;
     }
+
+    void setVal(data_t a_value)
+    {
+      m_regdat.setVal(a_value);
+      for(int idat = 0; idat < m_irrdat.size(); idat++)
+      {
+        m_irrdat[idat] = a_value;
+      }
+    }
   private:
     //private because their use is not obvious.    see fancy operator() functions
     ebcm_graph_t   m_graph;

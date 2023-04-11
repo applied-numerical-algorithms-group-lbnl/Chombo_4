@@ -27,13 +27,18 @@
 
 typedef Chombo4::GeometryService<      HOEB_MAX_ORDER >   ch_geoserv;
 typedef    EBCM::MetaDataLevel<        HOEB_MAX_ORDER >   ebcm_meta;
-typedef    EBCM::SubVolumeIterator<    HOEB_MAX_ORDER >   ebcm_subvol_it;
+typedef    EBCM::SubVolumeVector  <    HOEB_MAX_ORDER >   ebcm_subvol_vec;
 typedef    EBCM::EBCM_Volu<            HOEB_MAX_ORDER >   ebcm_volume;
 typedef    EBCM::EBCM_Graph<           HOEB_MAX_ORDER >   ebcm_graph;
+typedef    EBCM::HostLevelData<Real,1, HOEB_MAX_ORDER>    ebcm_leveldata;
+
+
 typedef Chombo4::Box               ch_box;
 typedef Chombo4::DisjointBoxLayout ch_dbl;
-typedef Chombo4::ProblemDomain ch_probdom;
-typedef Chombo4::DataIterator  ch_dit;
+typedef Chombo4::ProblemDomain     ch_probdom;
+typedef Chombo4::DataIterator      ch_dit;
+typedef Chombo4::IntVect           ch_iv;
+typedef Chombo4::MayDay            ch_mayday;
 /****/
 void
 makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
@@ -100,49 +105,101 @@ makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
   
 }
 
-/**
-**/
-void
-makeEBCMData(   shared_ptr< ebcm_meta  >  & a_ebcm)
-{
-
-  EBCM::HostLevelData<double ,1, HOEB_MAX_ORDER>(a_ebcm, Chombo4::IntVect::Zero);
-}
 
 ///
-
 class  neighborhood_t
 {
 public:
-  vector<ebcm_volume> m_volumes;
+  
+  ch_iv                            m_startiv;
+  int                              m_nghost;
+  RealVect                         m_startloc;
+  shared_ptr<ebcm_subvol_vec>      m_volumes;
+  vector<Real>                     m_distance;
+  
   neighborhood_t(const ebcm_graph    & a_graph,
-                 const ebcm_volume   & a_volume,
-                 const ch_iv         & a_iv,
-                 int nghost)
+                 const ch_iv         & a_start,
+                 int a_nghost)
   {
-    m_volumes.resize(0);
-    ch_box region(a_iv, a_iv);
-    region.grow(nghost);
+    m_startiv = a_start;
+    m_nghost  = a_nghost;
+    m_startloc.setToCCLocation(a_start, a_graph.m_dx);
+
+    ch_box region(a_start, a_start);
+    region.grow(a_nghost);
     region &= a_graph.m_domain;
-    ebcm_subvol_it iterator(a_graph, a_region);
-    for(iterator.begin(); iterator.ok(); ++iterator)
+
+    m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region));
+    m_distance.resize(m_volumes->size());
+    for(int ivec = 0; ivec < m_volumes->size(); ivec++)
     {
-      m_volumes.push_back(*iterator);
+      m_distance[ivec] = distanceMetric((*m_volumes)[ivec]);
     }
+  }
+
+  //Cartesian makes more sense in this context than anything else (since which cell stuff lives in is undefined)
+  Real distanceMetric(const ebcm_volume& a_volu)  const
+  {
+    RealVect  vectDist = a_volu.m_centroid - this->m_startloc;
+    Real distance = vectDist.vectorLength();
+    return distance;
   }
 
 
 private:
 
-neighborhood_t();
+  neighborhood_t();
 };
-/**
-**/
-void 
-checkConditionNumber()
+
+///
+Real
+getInvCondNumber(const ebcm_volume   &  a_volu,
+                 const ebcm_graph    &  a_graph)
 {
+  Real retval;
   //HERE
+  ch_mayday::Error("not implemented");
+  return retval;
 }
+///
+/**
+   Returns 1/invCondNumber
+**/
+shared_ptr<ebcm_leveldata>
+plotInverseConditionNumberData(const shared_ptr< ebcm_meta  >  & a_ebcm,
+                               const string                    & a_filename)
+{
+  shared_ptr<ebcm_leveldata>
+    data(new ebcm_leveldata(a_ebcm, Chombo4::IntVect::Zero));
+  
+  const auto& ldgraph = *(a_ebcm->m_graphs);
+  const auto&   grids =   a_ebcm->m_grids;
+  ch_dit dit = a_ebcm->m_grids.dataIterator();
+  auto& mpidata = *(data->m_data);
+  for(int ibox = 0; ibox < dit.size(); ibox++)
+  {
+    ///set to zero everywhere so covered cells get something
+    auto&     datafab = mpidata[dit[ibox]];
+    const auto& graph = ldgraph[dit[ibox]];
+    ch_box       grid =   grids[dit[ibox]];
+    ebcm_subvol_vec allVols(graph, grid);
+    for(int ivec = 0; ivec < allVols.size(); ivec++)
+    {
+      const auto& volu = allVols[ivec];
+      auto allpts= volu.m_cells;
+      Real invCondNum = getInvCondNumber(volu, graph);
+      //because of merger, a volume can span multiple cells.
+      for(int ipt = 0; ipt < allpts.size(); ipt++)
+      {
+        datafab(allpts[ipt], 0) = invCondNum;
+      }
+    }
+  }
+  data->writeToHDF5(a_filename);
+  return data;
+}
+
+///
 /**
    Print out max and min volume fraction in a meta.
 **/
@@ -164,11 +221,10 @@ checkKappa(double                  & a_maxKappa,
     const auto& graph = (*(a_meta->m_graphs))[dit[ibox]];
     double maxKappaBox = -1.0e10;
     double minKappaBox =  1.0e10;
-    ebcm_subvol_it iterator(graph, valid);
-    //Yes the syntax here is weird and old.  it was easier and I am just one guy.
-    for(iterator.begin(); iterator.ok(); ++iterator)
+    ebcm_subvol_vec volumes(graph, valid);
+    for(int ivec = 0; ivec < volumes.size(); ivec++)
     {
-      auto volu = *iterator;
+      const auto& volu = volumes[ivec];
       maxKappaBox = std::max(volu.m_kappa, maxKappaBox);
       minKappaBox = std::min(volu.m_kappa, minKappaBox);
     }
@@ -217,7 +273,11 @@ int main(int a_argc, char* a_argv[])
     //this tries out iteration and checks kappa
     checkKappa(maxKapp, minKapp, ebcm, grids);
 
-    makeEBCMData(ebcm);
+    //makes data of inv condition number info and plots it out
+    string condition_plot_filename("condition.hdf5");
+    pp.query("condition_plot_filename", condition_plot_filename);
+    shared_ptr<ebcm_leveldata> data = 
+      plotInverseConditionNumberData(ebcm, condition_plot_filename);
   }
 
   //the stuff after the important stuff
