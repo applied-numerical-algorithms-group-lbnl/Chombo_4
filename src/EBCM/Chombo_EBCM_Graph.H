@@ -1168,24 +1168,28 @@ namespace EBCM
 
   ///
   /**
-     Given a specfied subbox covered by EBCM_Graph, this iterator will move through the volumes 
-     within the subbox.   They are divide by m_pt so this could get weird when merging happens.
+     Contains a vector<ebcm_volumes> that corresponds with all the volumes in region defined by a box.
      This can be used to find the volumes within the neighborhood of a particular cell.
   */
   template <int order>
-  class SubVolumeIterator
+  class SubVolumeVector: public std::vector<EBCM_volu<order> >
   {
-  public:
-    SubVolumeIterator(const EBCM_Graph<order> & a_graph, const ch_box& a_region)
+
+  public:    
+    virtual ~SubVolumeVector()
     {
-      m_regularPoints.resize(0);
-      m_irregIndicies.resize(0);
+    }
+    
+    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region)
+    {
+      vector<pr_pt>   regularPoints(0);
+      vector<int>     irregIndicies(0);
       Proto::Box prregion = ProtoCh::getProtoBox(a_region);
       for (auto it = prregion.begin(); it != prregion.end(); ++it)
       {
         if(a_graph.isRegular(*it))
         {
-          m_regularPoints.push_back(*it);
+          regularPoints.push_back(*it);
         }
       }
       if(a_graph.hasIrregular())
@@ -1195,61 +1199,33 @@ namespace EBCM
           const auto& volu = (*(a_graph.m_volumes))[ivec];
           if(a_region.contains(volu.m_pt))
           {
-            m_irregIndicies.push_back(ivec);
+            irregIndicies.push_back(ivec);
           }
         }
       }
-      m_current = 0;
-      m_totalSize = m_irregIndicies.size() + m_regularPoints.size();
-      m_dx    = a_graph.m_dx;
-      m_graph = a_graph;
-    }
-
-    void begin()
-    {
-      m_current = 0;
-    }
-    bool ok() const
-    {
-      return (m_current < m_totalSize);
-    }
-
-    EBCM_Volu<order> operator*()
-    {
-      EBCM_Volu<order> retval;
-      if(m_current < m_regularPoints.size())
+      int totalSize = m_irregIndicies.size() + m_regularPoints.size();
+      this->resize(totalSize);
+      for(int ientry = 0; ientry < totalSize(); ientry++)
       {
-        retval.defineAsRegular(m_regularPoints[m_current], m_dx);
-        return retval;
+        EBCM_Volu<order> curVolu;
+        if(ientry < regularPoints.size())
+        {
+          curVolu.defineAsRegular(m_regularPoints[ientry], a_dx);
+        }
+        else 
+        {
+          unsigned int irregInd = ientry - regularPoints.size();
+          unsigned int graphind = irregIndicies[irregInd];
+          curVolu = (*a_graph.m_volumes)[graphind];
+        }
+        this->push_back(curVolu);
       }
-      else if(m_current < m_totalSize)
-      {
-        unsigned int irregInd = m_current - m_regularPoints.size();
-        unsigned int graphind = m_irregIndicies[irregInd];
-        return (*m_graph.m_volumes)[graphind];
-      }
-      else
-      {
-        Chombo4::MayDay::Error("subvolumeiterator: bogus ebcm iteration");
-      }
-      //should never get here but this will shut up compilers
-      return retval;
-
     }
 
-    void operator++()
-    {
-      m_current++;
-    }
     
   private:
-    SubVolumeIterator();
-    
-    EBCM_Graph<order>    m_graph;
-    unsigned int m_current, m_totalSize;
-    vector<pr_pt>         m_regularPoints;
-    vector<unsigned int>  m_irregIndicies;
-    double                m_dx;
+    SubVolumeVector();
+
   }; //end class subvolumeiterator
 
 }//end namespace EBCM
