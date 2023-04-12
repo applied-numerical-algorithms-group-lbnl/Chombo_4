@@ -25,7 +25,13 @@
 class LAPACKMatrix
 {
 public:
-  
+
+  //alternative interface
+  inline Real conditionNumberInverse() 
+  {
+    Real inverse = getInverseOfConditionNumber(*this);
+    return inverse;
+  }
 
   ///  main constructor.  Matrix of Chombo Real type.  values are unintitialized
   LAPACKMatrix(int a_nrow, int a_ncol):m_nrow(a_nrow),m_ncol(a_ncol),m_data(new Real[a_nrow*a_ncol]){}

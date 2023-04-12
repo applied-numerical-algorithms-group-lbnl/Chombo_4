@@ -39,6 +39,7 @@ typedef Chombo4::ProblemDomain     ch_probdom;
 typedef Chombo4::DataIterator      ch_dit;
 typedef Chombo4::IntVect           ch_iv;
 typedef Chombo4::MayDay            ch_mayday;
+typedef Chombo4::LAPACKMatrix      ch_mat;
 /****/
 void
 makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
@@ -116,10 +117,11 @@ public:
   RealVect                         m_startloc;
   shared_ptr<ebcm_subvol_vec>      m_volumes;
   vector<Real>                     m_distance;
+  vector<Real>                     m_weight;
   
   neighborhood_t(const ebcm_graph    & a_graph,
                  const ch_iv         & a_start,
-                 int a_nghost)
+                 int a_nghost, int a_weightPower)
   {
     m_startiv = a_start;
     m_nghost  = a_nghost;
@@ -133,7 +135,13 @@ public:
     m_distance.resize(m_volumes->size());
     for(int ivec = 0; ivec < m_volumes->size(); ivec++)
     {
-      m_distance[ivec] = distanceMetric((*m_volumes)[ivec]);
+      Real xbar = distanceMetric((*m_volumes)[ivec]);
+      m_distance[ivec] = xbar;
+      m_weight[ivec] = 1;
+      for(int iweight = 0; iweight < a_weightPower; iweight++)
+      {
+        m_weight[ivec] /= xbar;
+      }
     }
   }
 
@@ -150,15 +158,65 @@ private:
 
   neighborhood_t();
 };
+///
+shared_ptr<ch_mat>
+getWeightMatrix(shared_ptr<neighborhood_t> a_locality)
+{
+  int nrows = a_locality->m_weight.size();
+  shared_ptr<ch_mat> weight_p(new ch_mat(nrows, 1));
+  weight_p->setVal(0.);
+  for(int irow = 0; irow < nrows; irow++)
+  {
+    (*weight_p)(irow, 0) = a_locality->m_weight[irow];
+  }
+  return weight_p;
+}
+///
+shared_ptr<ch_mat>
+getMomentMatrix(shared_ptr<neighborhood_t> a_locality)
+{
+  shared_ptr<ch_mat> Mmat_p(new ch_mat());
 
+  ch_mayday::Error("HERE");
+  return Mmat_p;
+}
+///
+shared_ptr<ch_mat>
+getAMatrix(const ebcm_volume   &  a_volu,
+           const ebcm_graph    &  a_graph,
+           int a_nghost, int a_weightPower)
+{
+  
+  shared_ptr<neighborhood_t>
+    locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower));
+  
+  shared_ptr<ch_mat> Wmat_p = getWeightMatrix(locality);
+  shared_ptr<ch_mat> Mmat_p = getMomentMatrix(locality);
+
+  ch_mat WMmat;
+  multiply(WMmat, *Wmat_p, *Mmat_p);
+  
+  ch_mat WMTmat = WMmat;
+  WMTmat.transpose();
+  
+  shared_ptr<ch_mat> Amat_p(new ch_mat());
+  multiply(*Amat_p, WMTmat, WMmat);
+
+  return Amat_p;
+}
 ///
 Real
 getInvCondNumber(const ebcm_volume   &  a_volu,
                  const ebcm_graph    &  a_graph)
 {
-  Real retval;
-  //HERE
-  ch_mayday::Error("not implemented");
+  ParmParse pp;
+  int stenrad, weightpower;
+  pp.get("stencil_radius", stenrad);
+  pp.get("weight_power", weightpower);
+  shared_ptr<ch_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower);
+  
+  Real retval = Amat->conditionNumberInverse();
+
   return retval;
 }
 ///

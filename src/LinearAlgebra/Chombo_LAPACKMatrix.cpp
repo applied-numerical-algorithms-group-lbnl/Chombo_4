@@ -478,7 +478,7 @@ writeToFile(std::string a_filename) const
              << setiosflags(ios::showpoint)
              << setiosflags(ios::scientific);
   outfile.open(a_filename.c_str(), ios::out);
-  outfile << m_nrow << " x " << m_ncol << endl;
+  outfile << "matrix size = " << m_nrow << " x " << m_ncol << endl;
   for(int irow = 0; irow < m_nrow; irow++)
   {
     for(int icol = 0; icol < m_ncol; icol++)
