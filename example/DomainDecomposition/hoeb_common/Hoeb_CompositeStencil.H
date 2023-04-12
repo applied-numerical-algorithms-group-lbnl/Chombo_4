@@ -7,7 +7,7 @@
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
 #include "Chombo_ParmParse.H"
-#include "Hoeb_LAPACKMatrix.H"
+#include "Chombo_LAPACKMatrix.H"
 #include "Hoeb_ExactSolutions.H"
 #include "implem/Proto_Factorial.H"
 #include "implem/Proto_AggStencil.H"

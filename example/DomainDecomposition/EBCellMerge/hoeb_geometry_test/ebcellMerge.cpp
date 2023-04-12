@@ -22,7 +22,7 @@
 #include "Hoeb_ExactSolutions.H"
 //this one defines HOEB_MAX_ORDER
 #include "Hoeb_Utilities.H"
-#include "Hoeb_LAPACKMatrix.H"
+#include "Chombo_LAPACKMatrix.H"
 #include <iomanip>
 
 typedef Chombo4::GeometryService<      HOEB_MAX_ORDER >   ch_geoserv;

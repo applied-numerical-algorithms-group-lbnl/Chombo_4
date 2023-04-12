@@ -155,6 +155,9 @@ public:
   void poutAll() const;
 
   ///
+  void poutMaxMins() const;
+  
+  ///
   void poutDiag() const;
 
   ///

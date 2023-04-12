@@ -194,6 +194,42 @@ poutAll() const
     }
 }
 ///
+void 
+LAPACKMatrix::
+poutMaxMins() const
+{
+  Real minVal = 4.586e30;
+  Real maxVal =-4.586e30;
+  int rowmax=-1, colmax=-1, rowmin=-1, colmin=-1;
+  for(int irow =0; irow < m_nrow; irow++)
+    {
+      for(int icol = 0; icol < m_ncol; icol++)
+        {
+          //          pout() << "(" << irow  << "," << icol << ")";
+          Real val = (*this)(irow, icol);
+          if(val > maxVal)
+          {
+            maxVal = val;
+            rowmax = irow;
+            colmax = icol;
+          }
+          if(val < minVal)
+          {
+            minVal = val;
+            rowmin = irow;
+            colmin = icol;
+          }
+        }
+    }
+  pout()    << setprecision(15)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+  pout() << "LAPACKMatrix: max value = " <<  maxVal
+         << "at (" <<   rowmax << ", " << colmax  << ")" << endl;
+  pout() << "LAPACKMatrix: min value = " <<  minVal
+         << "at (" <<   rowmin << ", " << colmin  << ")" << endl;
+}
+///
 void
 LAPACKMatrix::
 poutMatlab() const
