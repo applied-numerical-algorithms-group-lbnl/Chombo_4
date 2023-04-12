@@ -343,7 +343,7 @@ namespace hoeb
   
   ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
   template <unsigned int order>
-  class ZeroSolution: public BaseExactSolution
+  class ZeroSolution: public BaseExactSolution<order>
   {
   public:
   
@@ -370,7 +370,7 @@ namespace hoeb
 
   ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
   template <unsigned int order>
-  class SineSphereEF: public BaseExactSolution
+  class SineSphereEF: public BaseExactSolution<order>
   {
   public:
   
@@ -697,7 +697,7 @@ namespace hoeb
 
   ///phi = cp x^p  
   template <unsigned int order>
-  class MonomialEF: public BaseExactSolution
+  class MonomialEF: public BaseExactSolution<order>
   {
   public:
   
@@ -1073,7 +1073,7 @@ namespace hoeb
 
   ///phi = sum cp x^p  
   template <unsigned int order>
-  class PolynomialEF: public BaseExactSolution
+  class PolynomialEF: public BaseExactSolution<order>
   {
   public:
   
