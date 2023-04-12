@@ -537,7 +537,7 @@ public:
   Real max(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::max");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
@@ -568,7 +568,7 @@ public:
   Real min(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::min");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
