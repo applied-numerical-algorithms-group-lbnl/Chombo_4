@@ -1,5 +1,0 @@
-add_subdirectory(ebforall)
-add_subdirectory(exchange)
-add_subdirectory(exec)
-add_subdirectory(noebsten)
-add_subdirectory(serialization)
