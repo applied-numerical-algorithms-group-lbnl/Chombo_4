@@ -13,7 +13,11 @@ using std::pow;
 
 #include "Chombo_BoxLayoutData.H"
 #ifdef CH_MPI
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#else
 #include "mpi.h"
+#endif
 #endif
 #include "Chombo_NamespaceHeader.H"
 

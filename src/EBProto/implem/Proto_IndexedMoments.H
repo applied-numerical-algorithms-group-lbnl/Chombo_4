@@ -246,9 +246,9 @@ namespace Proto
   private:
 
     // Indicator that we contain only "full" moments
-    int m_isRegular; 
+    int m_isRegular;
 
-    // Our moments to store    
+    // Our moments to store
     vector<double> m_moms;
 
 //    static const int s_max_sizes[][CH_IM_MAX_POWER+1];

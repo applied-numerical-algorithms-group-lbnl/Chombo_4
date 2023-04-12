@@ -372,6 +372,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
 
     EBStencilArchive() {}
     ~EBStencilArchive() {}

@@ -12,18 +12,26 @@
 #ifndef _Chombo_GeometryService_H_
 #define _Chombo_GeometryService_H_
 
-
-#include "Proto.H"
-#include "EBProto.H"
+// #include "Proto.H"
+// #include "EBProto.H"
+#include "Chombo_EBChombo.H"
+#include "Proto_MomentHolder.H"
+#include "Chombo_LevelData.H"
 #include "Chombo_EBDataChoreography.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
-#include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_ParmParse.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
+
+// Used in a hack to allow indexing dimensional components again. This save a lot of code duplication higher up
+// This shouldn't be needed, but the fix needs to go really low
+template<CENTERING>
+struct typenameTag {};
+
+
 ///
 /**
    makes geometric description from an implicit function.
@@ -34,7 +42,7 @@ class LevelGeometryService
 {
 
 public:
-
+  typedef Proto::IndexTM<int,2>      Iv2;
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
   typedef MomentIterator<DIM  , order> MomItDIM;
@@ -149,6 +157,24 @@ public:
     return m_zfacdata;
   }
 
+  const shared_ptr<LevelData<HostIrregData<XFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<XFACE>) const;
+
+  const shared_ptr<LevelData<HostIrregData<YFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<YFACE>) const;
+
+  const shared_ptr<LevelData<HostIrregData<ZFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<ZFACE>) const;
+
+  /// ONE ACCESSOR TO RULE THEM ALL
+  template<CENTERING cent>
+  const shared_ptr<LevelData<HostIrregData<cent, IndMomSDMinOne, 1> > >
+  getFaceData() const
+  {
+    return getFaceData_dispatch(typenameTag<cent>{});
+    //MayDay::Error("invalid face centering");
+  }
+
   ///Get eb moment in the x direction 
   inline const shared_ptr<ebnorm_distrib_t >
   getEBNormalData_x() const
@@ -170,7 +196,32 @@ public:
     return m_ebnormaldata[2];
   }
 
-  
+  ///Get eb moment in the
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData(const int a_dir) const
+  {
+    CH_assert((a_dir >= 0) && (a_dir < SpaceDim));
+    return m_ebnormaldata[a_dir];
+  }
+
+  // A struct for holding all the moments,
+  // now we can pass just 1 struct instead of 10 arguments and hide the problem dimensionality
+  // This only has proto dependencies, so usable in stencils
+  const
+  Proto::MomentHolder<order>
+  getAllMomentData(const DataIndex a_dit) const
+    {
+      Proto::MomentHolder<order> holder((*(getVoluData()))[a_dit],
+                                        (*(getEBFaceData()))[a_dit],
+                                        (*(getXFaceData()))[a_dit],
+                                        (*(getYFaceData()))[a_dit],
+                                        (*(getZFaceData()))[a_dit],
+                                        (*(getEBNormalData_x()))[a_dit],
+                                        (*(getEBNormalData_y()))[a_dit],
+                                        (*(getEBNormalData_z()))[a_dit]);
+      return holder;
+    }
+
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
                         const Box                & a_grbx ,
@@ -448,18 +499,6 @@ private:
 
 };
 
-///// fill data holder with values of the EBFaceData.
-//
-//template <CENTERING cent, int order>
-//inline void 
-//fillFaceAlpha(EBHostData<cent, Real, 1>         & a_ebfacedata,
-//              const Box                         & a_grbx ,
-//              const DataIndex                   & a_dit,
-//              const LevelGeometryService<order> & a_geo)
-//{
-//  MayDay::Error("default not implemented");
-//}
-
 ///
 template <int order >
 inline void
@@ -516,7 +555,26 @@ fillFaceAlpha(EBHostData<XFACE, Real, 1>            & a_alpha,
   }
 }
 
+template<int order>
+const shared_ptr<LevelData<HostIrregData<XFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<XFACE>) const
+{
+  return this->getXFaceData();
+}
 
+template<int order>
+const shared_ptr<LevelData<HostIrregData<YFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<YFACE>) const
+{
+  return this->getYFaceData();
+}
+
+template<int order>
+const shared_ptr<LevelData<HostIrregData<ZFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<ZFACE>) const
+{
+  return this->getZFaceData();
+}
 
 template <int order >
 inline void
@@ -731,7 +789,8 @@ public:
     bool doAgglom = true;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
-    
+
+    //while((currDBL.coarsenable(4)) && ((a_grids.size()-1)!=a_maxCoarsen))
     if(doAgglom)
     {
       int ilev = 0;
@@ -890,17 +949,17 @@ public:
   {
     return (*this)[a_domain]->getEBNormalData_y();
   }
-
-  inline DisjointBoxLayout getDBL(const Box& a_domain)
-  {
-    return (*this)[a_domain]->getDBL();
-  }
   
   ///Get eb moment in the z direction
   inline shared_ptr<ebnorm_distrib_t >
   getEBNormalData_z(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_z();
+  }
+
+  inline DisjointBoxLayout getDBL(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getDBL();
   }
 
   ///

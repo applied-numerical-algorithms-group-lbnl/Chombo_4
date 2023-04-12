@@ -9,10 +9,14 @@ using std::set;
 
 namespace Proto
 {
+
+  /// FIXME forgive the rant, but this class causes many cascading challenges
+  /// There is an important lesson to be learned here about template usage. On the surface this class makes a lot of sense as a template, it does something fairly different depending upon the centering. The problem with this becomes, now anything that uses this must also be dependent on the centering also. As a result, there is no sane way to loop over each direction or do things in a direction independent way, leading to lots of code duplication
+  /// REVIEW Consider changing this to store the centering as a trait of the index, rather than as a template.
   template<CENTERING cent>
   class EBIndex
   {
-  public:
+  public: //private: //FIXME this is strange design, especially for such a simple class. The naming/lack of docs is hard
 
     Point m_pt;
     //for faces, the high cell. for cells, this is the cell
@@ -23,6 +27,18 @@ namespace Proto
     ///
     bool m_isBoundary;
 
+  public:
+    EBIndex()
+      {
+        m_isBoundary = false;
+        m_vofIDLo = 0;
+        m_vofIDMe = 0;
+      }
+
+    ~EBIndex()
+      {
+      }
+
     ///for vof construction
     EBIndex(Point a_pt, int a_cellInd) 
     {
@@ -31,6 +47,17 @@ namespace Proto
       m_vofIDLo = 0;
       m_isBoundary = false;
     }
+
+    // not great, but at least we can stop calling the member data directly
+    Point& getPoint()
+      {
+        return m_pt;
+      }
+
+    bool& isBoundary()
+      {
+        return m_isBoundary;
+      }
 
     size_t linearSize( ) const
     {
@@ -93,17 +120,6 @@ namespace Proto
       printf("((%d, %d, %d), %d, %d)", m_pt[0], m_pt[1], m_pt[2], m_vofIDMe, m_vofIDLo);
 #endif
     }
-    
-    EBIndex()
-    {
-      m_isBoundary = false;
-      m_vofIDLo = 0;
-      m_vofIDMe = 0;
-    }
-
-    ~EBIndex()
-    {
-    }
 
     CUDA_DECORATION
     bool operator< (const EBIndex<cent>& a_ind) const
@@ -151,6 +167,7 @@ namespace Proto
       }
       return retval;
     }
+
     //for getting the vof of a cut face 
     inline EBIndex<CELL> getVoF() const
     {
@@ -161,7 +178,6 @@ namespace Proto
       retval.m_isBoundary = false;
       return retval;
     }
-
 
     //for getting the  boundary face  of a vof
     inline EBIndex<BOUNDARY> getCutFace() const
@@ -195,6 +211,34 @@ namespace Proto
       return retval;
     }
     
+    //for getting the  boundary face  of a vof
+    inline RealVect getCenter(double a_dx) const
+      {
+        RealVect loc;
+        for (int idir = 0; idir != DIM; idir++)
+          {
+            loc[idir] = m_pt[idir] + 0.5;
+          }
+        // cent == CELL is the default
+        if(cent == XFACE)
+          {
+            loc[0] -= 0.5;
+          }
+        else if(cent == YFACE)
+          {
+            loc[1] -= 0.5;
+          }
+        else if(cent == ZFACE)
+          {
+            loc[2] -= 0.5;
+          }
+        else if(cent == BOUNDARY)
+          {
+            PR_assert(false);
+          }
+        loc *= a_dx;
+        return loc;
+      }
 
     void defineAsRegular(const Point& a_pt)
     {
@@ -286,7 +330,6 @@ namespace Proto
     }
     return retval;
   }
-
   
   ///
   /**

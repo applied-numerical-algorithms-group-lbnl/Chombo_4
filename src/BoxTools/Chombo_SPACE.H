@@ -91,6 +91,7 @@ compile-time cpp macro that controls the dimensionality of
 #undef D_TERM6
 #undef D_INVTERM6
 #undef D_SELECT6
+#undef D_CALLS
 #endif
 
 #if CH_SPACEDIM==1
@@ -287,4 +288,32 @@ compile-time cpp macro that controls the dimensionality of
 // note that D_TERM, D_DECL, D_EXPR, D_SELECT are not defined for DIM>3
 #  define LAST_SPACE_H_SPACEDIM CH_SPACEDIM
 #endif
+
+#ifdef DOXYGEN
+/**
+@ingroup macros
+
+  The D_CALL(func, args) macro expands to a comma-separated list of
+  1, 2, or all 3 of the arguments of the call, depending on the
+  value of CH_SPACEDIM.  This can be used to write portable
+  function calls that depend on 1, 2, or 3 arguments, corresponding
+  to the value of CH_SPACEDIM.
+
+  For example:
+  template<T> T ExampleFunction(int a, bool b)
+    {
+    // do stuff
+    };
+  D_CALLS(ExampleFunction, 2, true)
+
+  where the macro evaluates
+
+     ExampleFunction<0>(2, true); // if CH_SPACEDIM >= 1
+     ExampleFunction<1>(2, true); // if CH_SPACEDIM >= 2
+     ExampleFunction<2>(2, true); // if CH_SPACEDIM >= 3
+
+*/
+#endif
+#  define D_CALLS(func, args...) D_TERM(func<0>(args);, func<1>(args);, func<2>(args);)
+
 #endif /* matches CH_SPACEDIM != LAST_SPACE_H_SPACEDIM */

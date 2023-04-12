@@ -1,4 +1,3 @@
-
 #ifndef _Proto_Normalizor__H_
 #define _Proto_Normalizor__H_
 
@@ -8,7 +7,23 @@
 namespace Proto
 {
 
-  ///
+  // Utilities related to moments
+  // get the volume of a regular cell, given dx. Dimensionality is accounted for
+  inline Real
+  getRegularVolume(const Real a_dx)
+  {
+    return D_TERM(a_dx, *a_dx, *a_dx);
+  }
+
+  // get the volume of a regular face, given dx. Dimensionality is accounted for
+  inline Real
+  getRegularArea(const Real a_dx)
+  {
+    return D_TERM(1, *a_dx, *a_dx);
+  }
+
+
+  /// This class is used to provide nomalized moments (removes dependence on grid spacing)
   template <int order>
   class Normalizor
   {
@@ -26,6 +41,7 @@ namespace Proto
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
 
     ///
+    // the centroid is relative to the cartesian face center with unit length
     template <CENTERING cent>
     inline static void
     normalizedFaceMoments(double                                                      & a_areaFrac,
@@ -125,7 +141,7 @@ namespace Proto
 
     }
     
-
+    // the centroid is relative to the cartesian cell center with unit length
     inline static void
     normalizedVoluMoments(double                                                      & a_volFrac,
                           RealVect                                                    & a_centroid,
@@ -359,11 +375,67 @@ namespace Proto
         }
       }
     }
+
+    // normalize a volume moment by removing dependence on dx
+    inline static void
+    normalizeFaceMoment(IndexedMoments<DIM-1, order> & a_faceMoment,
+                        const Real a_dx)
+      {
+        Real areaScaleFactor = getRegularArea(a_dx);
+        for(MomentIterator<DIM-1, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM-1>& p = iter();
+            a_faceMoment[iter()] /= (areaScaleFactor*POW(a_dx, p));
+          }
+      }
+
+    inline static void
+    normalizeFaceMoment(IndexedMoments<DIM, order> & a_faceMoment,
+                        const Real a_dx)
+      {
+        Real areaScaleFactor = getRegularArea(a_dx);
+        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM>& p = iter();
+            a_faceMoment[iter()] /= (areaScaleFactor*POW(a_dx, p));
+          }
+      }
+
+    // normalize a face moment by removing dependence on dx
+    inline static void
+    normalizeVolumeMoment(IndexedMoments<DIM, order> & a_volMoment,
+                          const Real a_dx)
+      {
+        Real volumeScaleFactor = getRegularVolume(a_dx);
+        for(MomentIterator<DIM, order> iter; iter.ok(); ++iter)
+          {
+            const IndexTM<int, DIM>& p = iter();
+            a_volMoment[iter()] /= (volumeScaleFactor*POW(a_dx, p));
+          }
+      }
+
+    template <CENTERING cent>
+    inline static RealVect
+    faceCenter(EBIndex<cent> a_face,
+               const Real a_dx)
+      {
+        RealVect faceLoc;
+        RealVect shift = RealVect::Unit();
+        if (cent==XFACE) {shift[0] = 0;}
+#if DIM>=2
+        else if (cent==YFACE) {shift[1] = 0;}
+#endif
+#if DIM>=3
+        else if (cent==ZFACE) {shift[2] = 0;}
+#endif
+        for (int idir = 0; idir != DIM; idir++)
+          {
+            faceLoc[idir] = a_dx * (0.5*shift[idir] + a_face.m_pt[idir]);
+          }
+
+        return faceLoc;
+      }
   };
-
-
-
-
 
 }
 #include "Proto_EBStencilArchiveImplem.H"

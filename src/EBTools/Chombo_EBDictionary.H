@@ -17,6 +17,11 @@ namespace StencilNames
   ///second order Poisson stencil a la Schwartz, et al.
   static const string Poisson2("Second_Order_Poisson");
 
+  ///WLS stencil
+  // FIXME these are going a slightly different direction and don't fit well anymore
+  // static const string PoissonWLS("Weighted_Least_Squares_Poisson");
+  // static const string AdvectionWLS("Weighted_Least_Squares_Advection");
+
   ///Signals Dirichlet BCs
   static const string Dirichlet("Dirichlet");
 
@@ -150,6 +155,7 @@ public:
   typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
   typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
   typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
 
   ///
   /**
@@ -229,7 +235,37 @@ public:
                   const Point                                     & a_dstGhost,
                   bool                                              a_needDiagonalWeights,
                   unsigned int                                      a_ibox);
-  
+
+  inline void registerStencilWLS(string a_stencilName,
+                              string a_domainBCName[2*DIM],
+                              string a_ebbcName,
+                              Box    a_srcDomain,
+                              Box    a_dstDomain,
+                              bool needDiagonalWeights = false,
+                              Point  a_destGrow = Point::Zeros());
+
+  inline void registerStencilWLS(string a_stencilName,
+                              string a_domainBCName,
+                              string a_ebbcName,
+                              Box    a_srcDomain,
+                              Box    a_dstDomain,
+                              bool   a_needDiagonalWeights = false,
+                              Point  a_destGrow = Point::Zeros())
+  {
+    string domBCNames[2*DIM];
+    for(int ivec = 0; ivec < 2*DIM; ivec++)
+    {
+      domBCNames[ivec] = a_domainBCName;
+    }
+    registerStencilWLS(a_stencilName,
+                    domBCNames,
+                    a_ebbcName,
+                    a_srcDomain,
+                    a_dstDomain,
+                    a_needDiagonalWeights,
+                    a_destGrow);
+  }
+ 
   inline void registerStencil(string a_stencilName,
                               string a_domainBCName,
                               string a_ebbcName,

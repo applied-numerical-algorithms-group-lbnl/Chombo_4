@@ -1,0 +1,265 @@
+#pragma once
+
+#ifndef _PROTO_EB_DOMAIN_BC_
+#define _PROTO_EB_DOMAIN_BC_
+
+#include <iostream>
+#include "EBProto.H"
+#include "Proto_EBExactSolutions.H"
+
+namespace Proto
+{
+  // A simple register that stores things on each domain face
+  template<typename T, unsigned int Comps = 1>
+  class EBDomainBCRegister
+  {
+  public:
+
+    inline unsigned int
+    numComp() const
+      {
+        return Comps;
+      }
+
+    inline T
+    getRegComp(int a_dir,
+               Side::LoHiSide a_side,
+               int a_comp=0) const
+      {
+        CH_assert((a_dir >= 0) && (a_dir < DIM));
+        CH_assert(((int)a_side == 0) || (a_side == 1));
+        CH_assert((a_comp >= 0) && (a_comp < Comps));
+        return m_regbcData[a_dir][(int)a_side][a_comp];
+      }
+
+    inline T
+    getEBComp(int a_comp=0) const
+      {
+        CH_assert((a_comp >= 0) && (a_comp < Comps));
+        return m_ebbcData[a_comp];
+      }
+
+    inline void
+    setRegComp(const T& a_value,
+               int a_dir,
+               Side::LoHiSide a_side,
+               int a_comp=0)
+      {
+        CH_assert((a_comp >= 0) && (a_comp < Comps));
+        CH_assert((a_dir >= 0) && (a_dir < DIM));
+        CH_assert(((int)a_side == 0) || ((int)a_side == 1));
+        m_regbcData[a_dir][(int)a_side][a_comp] = a_value;
+      }
+
+    inline void
+    setEBComp(const T& a_value,
+              int a_comp=0)
+      {
+        CH_assert((a_comp >= 0) && (a_comp < Comps));
+        m_ebbcData[a_comp] = a_value;
+      }
+
+    inline void
+    setAllRegComp(const T& a_value,
+                  int a_comp=0)
+      {
+        for(int dir = 0; dir!=DIM; dir++)
+          {
+            for(SideIterator sit; sit.ok(); ++sit)
+              {
+                setRegComp(a_value, dir, sit(), a_comp);
+              }
+          }
+      }
+
+    inline void
+    setAllComp(const T& a_value,
+               int a_comp=0)
+      {
+        setAllRegComp(a_value, a_comp);
+        setEBComp(a_value, a_comp);
+      }
+
+    inline void
+    setAll(const T& a_value)
+      {
+        for(int comp=0; comp!=Comps; comp++)
+          {
+            setAllComp(a_value, comp);
+          }
+      }
+
+    // Sometimes we need to work with a single component object.
+    // Hopefully typename T is cheap to copy
+    inline EBDomainBCRegister<T, 1>
+    makeSingleComponent(int a_comp) const
+      {
+        EBDomainBCRegister<T, 1> newSingleComp;
+        // copy all the regular values
+        for(int dir = 0; dir!=DIM; dir++)
+          {
+            for(SideIterator sit; sit.ok(); ++sit)
+              {
+                newSingleComp.setRegComp(this->getRegComp(dir, sit(), a_comp),
+                                         dir, sit(), 0);
+              }
+          }
+        // copy the EB
+        newSingleComp.setEBComp(this->getEBComp(a_comp));
+
+        return newSingleComp;
+      }
+
+    // overlaod operator for printing
+    // this assumes the template type T is something that can be printed
+    friend std::ostream&
+    operator<< (std::ostream& a_os,
+               const EBDomainBCRegister<T, Comps>& a_domBC)
+      {
+        for(int comp=0; comp!=Comps; comp++)
+          {
+            for(int dir = 0; dir!=DIM; dir++)
+              {
+                for(SideIterator sit; sit.ok(); ++sit)
+                  {
+                    a_os << "dir: " << dir << " side: " << sit() << " comp " << comp << " = " << a_domBC.getRegComp(dir, sit(), comp) << std::endl;
+                  }
+              }
+            a_os << "eb comp: " << comp << " = " << a_domBC.getEBComp(comp) << std::endl;
+          }
+        return a_os;
+      }
+
+
+    // THIS ONLY EXISTS FOR BACKWARD COMPATIBILITY REASONS
+    // DO NOT USE UNLESS NECECCARY
+    void
+    fillFlatArray(string a_bcnames[2*DIM],
+                  int a_comp=0) const
+      {
+        for(int ivec = 0; ivec != 2*DIM; ivec++)
+          {
+            int idir;
+            Side::LoHiSide iside;
+            ebp_face(ivec, idir, iside);
+            a_bcnames[ivec] = getRegComp(idir, iside, a_comp);
+          }
+      }
+
+    void
+    fillFlatArray(vector<string> a_bcnames[2*DIM]) const
+      {
+        for(int ivec = 0; ivec != 2*DIM; ivec++)
+          {
+            for(int comp = 0; comp!=DIM; comp++)
+              {
+                a_bcnames[ivec].resize(DIM);
+                int idir;
+                Side::LoHiSide iside;
+                ebp_face(ivec, idir, iside);
+                a_bcnames[ivec][comp] = getRegComp(idir, iside, comp);
+              }
+          }
+      }
+
+  private:
+    std::array<std::array<std::array<T, Comps>, 2>, DIM> m_regbcData;
+    std::array<T, Comps> m_ebbcData;
+  };
+
+  // aliases for common use cases
+  template<unsigned int Comps> using EBDomainBCtypes = EBDomainBCRegister<std::string, Comps>;
+  template<unsigned int Comps> using EBDomainBCfuncs = EBDomainBCRegister<std::shared_ptr<BaseExactSolution>, Comps>;
+
+  // couple a BC type (Dirichlet, Neuman, ...) with the values on that boundary
+  template<unsigned int Comps>
+  class EBDomainBC
+  {
+  public:
+    // accessors
+    inline
+    EBDomainBCtypes<Comps>
+    getBCtypes() const
+      {
+        return m_bcTypes;
+      }
+
+    inline
+    EBDomainBCfuncs<Comps>
+    getBCfuncs() const
+      {
+        return m_bcFuncs;
+      }
+
+    // modify data
+    inline
+    EBDomainBCtypes<Comps>&
+    updateBCtypes()
+      {
+        return m_bcTypes;
+      }
+
+    inline
+    EBDomainBCfuncs<Comps>&
+    updateBCfuncs()
+      {
+        return m_bcFuncs;
+      }
+
+    // get a single component copy
+    inline EBDomainBC<1>
+    makeSingleComponent(int a_comp) const
+      {
+        EBDomainBC<1> newSingleComp;
+        newSingleComp.updateBCtypes() = this->getBCtypes().makeSingleComponent(a_comp);
+        newSingleComp.updateBCfuncs() = this->getBCfuncs().makeSingleComponent(a_comp);
+        return newSingleComp;
+      }
+
+    inline int evalType() const
+      {
+        return m_evalType;
+      }
+
+    int m_evalType = 0; // 0 eval derivs (this specifies phi) , 1 eval as is (this specifies d/dx phi)
+  private:
+    EBDomainBCtypes<Comps> m_bcTypes;
+    EBDomainBCfuncs<Comps> m_bcFuncs;
+  };
+
+
+  // // Utilities to build EBDomainBC from old array storage formats
+  // void
+  // fillDomBCFromArrays(
+  //   EBDomainBCtypes & a_domBC,
+  //   int a_comp,
+  //   const string & a_ebbcName,
+  //   const string & a_dombcName[2*DIM])
+  // {
+  //   a_domBC.setEBComp(a_ebbcName, a_comp);
+  //   for (int face=0; face!=2*DIM; face++)
+  //     {
+  //       int idir; Side::LoHiSide iside;
+  //       ebp_face(face, idir, iside);
+  //       a_domBC.setRegComp(a_domainBCName[face][idir], idir, iside, comp);
+  //     }
+  // }
+
+  // void
+  // fillArraysFromDomBC(
+  //   cost EBDomainBCtypes & a_domBC,
+  //   int a_comp,
+  //   string & a_ebbcName,
+  //   string & a_dombcName[2*DIM])
+  // {
+  //   a_domBC.setEBComp(a_ebbcName, a_comp);
+  //   for (int face=0; face!=2*DIM; face++)
+  //     {
+  //       int idir; Side::LoHiSide iside;
+  //       ebp_face(face, idir, iside);
+  //       a_domBC.setRegComp(a_domainBCName[face][idir], idir, iside, comp);
+  //     }
+  // }
+
+} // end namespace Proto
+#endif // end include guard
