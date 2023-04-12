@@ -17,6 +17,7 @@
 #include "Chombo_CH_Timer.H"
 #include <cmath>
 #include <cblas.h>
+#include <string>
 #include "Chombo_NamespaceHeader.H"
 
 bool LAPACKMatrix::s_checkConditionNumber = false;
@@ -467,21 +468,27 @@ invert()
   return INFO;
 }
 ///
-// LAPACKMatrix::
-// LAPACKMatrix( int a_nrow, int a_ncol, const Real* const a_data)
-// {
-//   CH_TIME("Matrix::define1");
-//   setDefaultValues();
-//   define(a_nrow, a_ncol); 
-//   for(int irow = 0; irow < m_nrow; irow++)
-//     {
-//       for(int icol = 0; icol < m_ncol; icol++)
-//         {
-//           int ioff = offset(irow, icol);
-//           (*this)(irow, icol) = *(a_data + ioff);
-//         }
-//     }  
-// }
+void
+LAPACKMatrix::
+writeToFile(std::string a_filename) const
+{
+  
+  ofstream outfile;
+  outfile    << setprecision(15)
+             << setiosflags(ios::showpoint)
+             << setiosflags(ios::scientific);
+  outfile.open(a_filename.c_str(), ios::out);
+  outfile << m_nrow << " x " << m_ncol << endl;
+  for(int irow = 0; irow < m_nrow; irow++)
+  {
+    for(int icol = 0; icol < m_ncol; icol++)
+    {
+      outfile << (*this)(irow, icol) << " " ;
+    }
+    outfile << endl;
+  }
+  outfile.close();
+}
 
 ///
 void

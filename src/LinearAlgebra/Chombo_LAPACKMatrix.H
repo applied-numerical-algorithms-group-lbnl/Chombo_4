@@ -14,6 +14,7 @@
 #include "Chombo_REAL.H"
 //#include "Proto_LoHiSide.H"
 #include <utility>
+#include <string>
 #include "Chombo_NamespaceHeader.H"
 
 ///
@@ -153,7 +154,8 @@ public:
 
   ///
   void poutAll() const;
-
+  
+  void writeToFile(std::string a_filename) const;
   ///
   void poutMaxMins() const;
   
