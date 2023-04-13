@@ -269,8 +269,6 @@ where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
       \frac{\partial^{p_1}}{\partial x_1}
       \frac{\partial^{p_2}}{\partial x_2}  (\psi).
 \end{equation}  
-
-
 In finite volume  methods, we define grid data to be
 averages over volumes.   So if we discretize the smooth function
 $\psi$, the average over the volume $\ibold$ is given by
@@ -288,7 +286,7 @@ products of grid generation.  Modern, higher order embedded boundary
 methods use this description directly to generate stencils
 \cite{Overton2022a, Devendran2017, Schwartz2015}.  At the
 core, all these algorithms have a similar procedure for finding the
-Taylor coefficients $C^p$ which is worth discussing.
+Taylor coefficients $C^p$ which is worth discussing \footnotemark[7].
 
 \section{Computing Taylor coefficients and Matrix Conditioning}
 
@@ -399,6 +397,17 @@ algorithm, $\kappa$ can be larger than $2^D$.
 \footnotetext[6] {We mean a Box as defined in Chombo, a subset of
   $Z^D$.  Coarsening and refining has the standard Chombo semantic
   \cite{ChomboDesign, ChomboDesignEB}.}
+
+\footnotetext[6] {The discerning reader will notice that this
+  discussion assumes that the equation set used to create $C$ only
+  includes the volume equations.   Devendran \cite{Devendran2017} also
+  include boundary condition equations in the equation set.  For
+  simple enough boundary conditions, this works very well.   There are
+  many equation sets, however, which do not lend themselves easily to
+  this approach.   Notably, hyperbolic equations often have boundary 
+  conditions which are fomulated in terms of characteristic
+  variables.    Using this information in the system of equations used
+  to calculate Taylor coefficients is still a matter of research.}
 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
