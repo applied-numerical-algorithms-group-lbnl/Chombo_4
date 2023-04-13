@@ -206,59 +206,6 @@ namespace hoeb
     }
   }
 
-  shared_ptr<BaseIF> getImplicitFunction()
-  {
-    using Proto::BaseIF;
-    shared_ptr<BaseIF>  retval;
-    ParmParse pp;
-    string which_geom;
-    pp.get("which_geom", which_geom);
-    using Chombo4::pout;
-    if(which_geom == string("sphere"))
-    {
-      RealVect center = 0.5*RealVect::Unit();
-      Real radius = 0.1;
-      bool inside = false;
-      std::vector<Real> centvec;
-      pp.get("radius", radius);
-      pp.get("inside", inside);
-      pp.getarr("center", centvec, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        center[idir] = centvec[idir];
-      }
-      Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
-      pout() << "sphere implicit function with radius = " << radius << ", center = " << center << ", and inside = " << inside << endl;
-      retval = shared_ptr<BaseIF>(static_cast<BaseIF*>(sphereptr));
-    }
-    else if(which_geom == string("all_regular"))
-    {
-      pout() << "all regular geometry" << endl;
-      retval = shared_ptr<BaseIF>(new Proto::AllRegularIF());
-    }
-    else if(which_geom == string("plane"))
-    {
-      using Proto::PlaneIF;
-      pout() << "plane implicit function" << endl;
-      RealVect normal, startPt;
-      vector<double> v_norm, v_start;
-      pp.getarr("geom_normal", v_norm, 0, DIM);
-      pp.getarr("geom_start_pt", v_start, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        normal[ idir] = v_norm[ idir];
-        startPt[idir] = v_start[idir];
-        pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-        pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
-      }
-      retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
-    }
-    else
-    {
-      Chombo4::MayDay::Error("bogus geometry");
-    }
-    return retval;
-  }
 
   /****/
   shared_ptr<hoeb::BaseExactSolution<HOEB_MAX_ORDER> > 
