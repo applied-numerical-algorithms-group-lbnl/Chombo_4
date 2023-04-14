@@ -67,7 +67,7 @@ public:
   static shared_ptr<pr_baseif> getImplicitFunction()
   {
     shared_ptr<pr_baseif>  retval;
-    ParmParse pp;
+    ParmParse pp("getImplicitFunction");
     string which_geom;
     pp.get("which_geom", which_geom);
     using Chombo4::pout;
@@ -131,7 +131,7 @@ public:
     int maxGrid          = 32;
     bool mergeSmallCells = true;
     
-    ParmParse pp;
+    ParmParse pp("makeMergedGeometry");
 
     pp.get("nx"             , nx);
     pp.get("maxGrid"        , maxGrid);
@@ -172,7 +172,7 @@ public:
       metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx,
                                 mergeSmallCells, a_printStuff));
 
-    string graph_filename("graph_pic.hdf5");
+    string graph_filename;
     pp.get("graph_filename"         , graph_filename);
     metaDataPtr->outputGraphMapAsHDF5(graph_filename);
     
@@ -193,7 +193,7 @@ public:
     pr_rv                            m_startloc;
     shared_ptr<ebcm_subvol_vec>      m_volumes;
     vector<Real>                     m_distance;
-    vector<Real>                     m_weight;
+    vector<Real>                     m_eqweight;
   
     neighborhood_t(const ebcm_graph    & a_graph,
                    const ch_iv         & a_start,
@@ -218,6 +218,7 @@ public:
         ch_mayday::Error();
       }
       m_distance.resize(m_volumes->size());
+      m_eqweight.resize(m_volumes->size());
     
       for(int ivec = 0; ivec < m_volumes->size(); ivec++)
       {
@@ -233,10 +234,10 @@ public:
           ch_mayday::Error();
         }
         m_distance[ivec] = xbar;
-        m_weight[ivec] = 1;
+        m_eqweight[ivec] = 1;
         for(int iweight = 0; iweight < a_weightPower; iweight++)
         {
-          m_weight[ivec] /= xbar;
+          m_eqweight[ivec] /= xbar;
         }
       }
     }
@@ -255,12 +256,12 @@ public:
   shared_ptr<ch_mat>
   getWeightMatrix(shared_ptr<neighborhood_t> a_locality)
   {
-    int nrows = a_locality->m_weight.size();
-    shared_ptr<ch_mat> weight_p(new ch_mat(nrows, 1));
+    int nrows = a_locality->m_eqweight.size();
+    shared_ptr<ch_mat> weight_p(new ch_mat(nrows, nrows));
     weight_p->setVal(0.);
     for(int irow = 0; irow < nrows; irow++)
     {
-      (*weight_p)(irow, 0) = a_locality->m_weight[irow];
+      (*weight_p)(irow, irow) = a_locality->m_eqweight[irow];
     }
     return weight_p;
   }
@@ -351,9 +352,12 @@ public:
   getInvCondNumber(const ebcm_volu     &  a_volu,
                    const ebcm_graph    &  a_graph)
   {
-    ParmParse pp;
+    //this stuff is probably more general than just this function
+    //but the perfect API is eluding me at the moment so we will just
+    //give the parameter a generic-ish base.
+    ParmParse pp("stencil");
     int stenrad, weightpower;
-    pp.get("stencil_radius", stenrad);
+    pp.get("radius", stenrad);
     pp.get("weight_power", weightpower);
     shared_ptr<ch_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower);
   
@@ -450,38 +454,37 @@ public:
     checkKappa(maxKapp, minKapp, ebcm, grids);
 
     //makes data of inv condition number info and plots it out
-    string condition_plot_filename("condition.hdf5");
-    ParmParse pp;
-    pp.get("condition_plot_filename", condition_plot_filename);
+    string plot_filename;
+    ParmParse pp("main");  //kinda pendantic to use anything else
+    pp.get("inv_cond_filename", plot_filename);
     shared_ptr<ebcm_leveldata> data = 
-      plotInverseConditionNumberData(ebcm, condition_plot_filename);
+      plotInverseConditionNumberData(ebcm, plot_filename);
   }
 };
 /****/
 
 int main(int a_argc, char* a_argv[])
 {
-  //the stuff before the important stuff
-  using Chombo4::pout;
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   Chombo4::pout() << "MPI INIT called" << std::endl;
 #endif
 
   using Chombo4::pout;
-  //needs to be called after MPI_Init
   CH_TIMER_SETFILE("ebcellmerge.time.table");
   {
     
     if (a_argc < 2)
     {
       cerr<< " usage " << a_argv[0] << " <input_file_name> " << endl;
-      exit(0);
+      return -2;
     }
     char* in_file = a_argv[1];
-    ParmParse  pp(a_argc-2,a_argv+2,NULL,in_file);
+    //We need to declare the first  parmparse this way because that is the way PP works.  
+    ParmParse  ppdecl(a_argc-2,a_argv+2,NULL,in_file);
 
     int order;
+    ParmParse pp("main");
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running test for polynomial order = " << order << endl;
     if(order == 4)
@@ -500,11 +503,13 @@ int main(int a_argc, char* a_argv[])
     {
       EBCM_Framework<1>::runTests();
     }
-    
-      
+    else
+    {
+      Chombo4::pout() << "main: unknown order = " << order << endl;
+      return -1;
+    }
   }
 
-  //the stuff after the important stuff
   Chombo4::pout() << "printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
