@@ -17,6 +17,7 @@
 #include "Chombo_CH_Timer.H"
 #include <cmath>
 #include <cblas.h>
+#include <string>
 #include "Chombo_NamespaceHeader.H"
 
 bool LAPACKMatrix::s_checkConditionNumber = false;
@@ -192,6 +193,42 @@ poutAll() const
         }
       pout() << endl;
     }
+}
+///
+void 
+LAPACKMatrix::
+poutMaxMins() const
+{
+  Real minVal = 4.586e30;
+  Real maxVal =-4.586e30;
+  int rowmax=-1, colmax=-1, rowmin=-1, colmin=-1;
+  for(int irow =0; irow < m_nrow; irow++)
+    {
+      for(int icol = 0; icol < m_ncol; icol++)
+        {
+          //          pout() << "(" << irow  << "," << icol << ")";
+          Real val = (*this)(irow, icol);
+          if(val > maxVal)
+          {
+            maxVal = val;
+            rowmax = irow;
+            colmax = icol;
+          }
+          if(val < minVal)
+          {
+            minVal = val;
+            rowmin = irow;
+            colmin = icol;
+          }
+        }
+    }
+  pout()    << setprecision(15)
+            << setiosflags(ios::showpoint)
+            << setiosflags(ios::scientific);
+  pout() << "LAPACKMatrix: max value = " <<  maxVal
+         << "at (" <<   rowmax << ", " << colmax  << ")" << endl;
+  pout() << "LAPACKMatrix: min value = " <<  minVal
+         << "at (" <<   rowmin << ", " << colmin  << ")" << endl;
 }
 ///
 void
@@ -431,21 +468,27 @@ invert()
   return INFO;
 }
 ///
-// LAPACKMatrix::
-// LAPACKMatrix( int a_nrow, int a_ncol, const Real* const a_data)
-// {
-//   CH_TIME("Matrix::define1");
-//   setDefaultValues();
-//   define(a_nrow, a_ncol); 
-//   for(int irow = 0; irow < m_nrow; irow++)
-//     {
-//       for(int icol = 0; icol < m_ncol; icol++)
-//         {
-//           int ioff = offset(irow, icol);
-//           (*this)(irow, icol) = *(a_data + ioff);
-//         }
-//     }  
-// }
+void
+LAPACKMatrix::
+writeToFile(std::string a_filename) const
+{
+  
+  ofstream outfile;
+  outfile    << setprecision(15)
+             << setiosflags(ios::showpoint)
+             << setiosflags(ios::scientific);
+  outfile.open(a_filename.c_str(), ios::out);
+  outfile << "matrix size = " << m_nrow << " x " << m_ncol << endl;
+  for(int irow = 0; irow < m_nrow; irow++)
+  {
+    for(int icol = 0; icol < m_ncol; icol++)
+    {
+      outfile << (*this)(irow, icol) << " " ;
+    }
+    outfile << endl;
+  }
+  outfile.close();
+}
 
 ///
 void

@@ -5,7 +5,7 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_GeometryService.H"
 #include "Chombo_EBDictionary.H"
-#include "Hoeb_LAPACKMatrix.H"
+#include "Chombo_LAPACKMatrix.H"
 #include "Hoeb_Neighborhood.H"
 #include "Hoeb_CompositeStencil.H"
 #define HOEB_MAX_ORDER 4

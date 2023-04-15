@@ -719,7 +719,7 @@ namespace std {
     bool operator()(const IntVect& a, const IntVect& b) const
       { return a.lexLT(b);}
   };
-};
+}
 //#include "Chombo_NamespaceVar.H"
 
 ///functions for linearization
