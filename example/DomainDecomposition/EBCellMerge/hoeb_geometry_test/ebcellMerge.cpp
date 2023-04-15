@@ -443,7 +443,44 @@ public:
 
   static void runEigenTests()
   {
-    eigen_mat fnerg(4, 4);
+
+    int n =4;
+    eigen_mat A(n, n);
+    Real val = 1;
+
+    for(int irow = 0; irow < n; irow++)
+    {
+      for(int icol = 0; icol < n; icol++)
+      {
+        bool odd = (irow%2 == 1);
+        if(odd && (irow== icol))
+          A(irow, icol) = -val;
+        else
+          A(irow, icol) =  val;
+        val += 1;
+      }
+    }
+
+    eigen_mat Ainv = A;
+    Ainv.invert();
+
+
+    eigen_mat AAinv;
+    multiply(AAinv, A, Ainv);
+    using Chombo4::pout;
+    pout() << "eigen inverse test" << endl;
+    pout() << "A = " << endl;
+    A.poutAll();
+    pout() << endl;
+
+    pout() << "Ainv = " << endl;
+    Ainv.poutAll();
+    pout() << endl;
+
+    pout() << "A * Ainv = " << endl;
+    AAinv.poutAll();
+    pout() << endl;
+
   }
   static  void runTests()
   {

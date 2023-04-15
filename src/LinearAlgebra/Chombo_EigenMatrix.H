@@ -11,30 +11,34 @@
 #ifndef _EigenMATRIX_H_
 #define _EigenMATRIX_H_
 
-#include "Chombo_REAL.H"
-//#include "Proto_LoHiSide.H"
 #include "Eigen/Core"
+#include "Eigen/SVD"
+#include "Eigen/LU"
 #include <utility>
 #include <string>
+#include <memory>
 namespace ch_eigen
 {
 
+    typedef Chombo4::MayDay  ch_mayday;
+    typedef Eigen::MatrixXd  eigen_mat;
 ///
 /**
    Very simple wrapper around Eigen::matrix class designed to 
-   be a transition from using the LAPACKMatrix class toward
-   simply using the excellent Eigen infrastrucutre for our
+   be a transition from between the LAPACKMatrix class and
+   simply using the excellent Eigen infrastructure for our
    linear algebra needs.
 */
   class Matrix
   {
   public:
-    typedef Chombo4::MayDay  ch_mayday;
-    typedef Eigen::MatrixXd  eigen_mat;
     
-    ///This is the actual matrix.  The class has no other data
-    shared_ptr<eigen_mat> m_mat_p;
-    
+    ///This is the actual matrix.  The class has no other data.
+    std::shared_ptr<eigen_mat> m_mat_p;
+
+    Matrix()
+    {
+    }
 
     Matrix(int a_nrow, int a_ncol)
     {
@@ -45,21 +49,20 @@ namespace ch_eigen
     ///  deep copy constructor
     Matrix(const Matrix& a_input)
     {
-      (*m_mat_p) =  (*a_input.m_mat_p)
+      int nrow = a_input.m_mat_p->rows();
+      int ncol = a_input.m_mat_p->cols();
+      m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(nrow, ncol));
+      
+      (*m_mat_p) =  (*a_input.m_mat_p);
     }
 
 
-
-    inline Real normLTwo() const
+    ///returns the L-2 norm (what Eigen calls the Euclidean norm).
+    inline double norm() const
     {
-      return 0;
+      return m_mat_p->norm();
     }
   
-    inline Real normMax() const
-    {
-      return 0;
-    }
-
     /// Eigen probably has way faster ways to do this 
     inline void setToIdentity()
     {
@@ -91,21 +94,21 @@ namespace ch_eigen
       }
     }
 
-
-    const Real& operator() (int irow, int icol) const
+    ///
+    const inline double& operator() (int irow, int icol) const
     {
       return (*m_mat_p)(irow, icol);
     }
   
     ///
-    double& operator() (int irow, int icol)
+    inline double& operator() (int irow, int icol)
     {
       return (*m_mat_p)(irow, icol);
     }
       
 
     ///return pair <nrow, ncol>
-    std::pair<int, int>  dims() const
+    inline std::pair<int, int>  dims() const
     {
     
       std::pair<int, int>  retval;
@@ -115,68 +118,144 @@ namespace ch_eigen
     }
 
     /// deep assign. 
-    Matrix& operator=(const Matrix& a_matrix)
+    inline Matrix& operator=(const Matrix& a_input)
     {
-      (*m_mat_p) = (*a_matrix.m_mat_p);
+      int nrow = a_input.m_mat_p->rows();
+      int ncol = a_input.m_mat_p->cols();
+      m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(nrow, ncol));
+      
+      (*m_mat_p) = (*a_input.m_mat_p);
       return *this;
     }
     
-    ///
-    Matrix& operator+=(const Matrix& a_matrix)
+    ///increment
+    inline Matrix& operator+=(const Matrix& a_matrix)
     {
       (*m_mat_p) += (*a_matrix.m_mat_p);
       return *this;
     }
 
-    ///
-    Matrix& operator-=(const Matrix& a_matrix)
+    ///decrement
+    inline Matrix& operator-=(const Matrix& a_matrix)
     {
       (*m_mat_p) -= (*a_matrix.m_mat_p);
       return *this;
     }
 
-    ///
-    Matrix& operator*=(const double& a_scalingFactor)
+    ///scale
+    inline Matrix& operator*=(const double& a_scalingFactor)
     {
-      (m_mat_p) *= a_scalingFactor;
+      (*m_mat_p) *= a_scalingFactor;
       return *this;
     }
 
-    double invConditionNumber() const
+    ///get 1/condition number.  Goes to zero if poorly conditioned.
+    inline double invConditionNumber() const
     {
       double bigeig, liteig;
-      getBiggestAndSmallestEigenvalues(bigeig, liteig);
-      double inverseConditionNumber = liteig/bigeig;
-      return inverseCondtionNumber;
+      getLargestAndSmallestEigenvalues(bigeig, liteig);
+
+      return liteig/bigeig;
     }
 
-    void
-    getBiggestAndSmallestEigenvalues(double & a_biggestEigenvalue,
-                                     double & a_smallestEigenvalue)
+    ///
+    inline void
+    getLargestAndSmallestEigenvalues(double & a_biggestEigenvalue,
+                                     double & a_smallestEigenvalue) const
     {
-      JacobiSVD<MatrixXd> svd(*m_mat_p);
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd(*m_mat_p);
       int ifirs = 0;
       int ilast = svd.singularValues().size()-1;
-      
-      double alpha = svd.singularValues()(ifirst); 
-      double omega = svd.singularValues()(ilast ); 
-      double cond = svd.singularValues()();
+
+      double alpha = svd.singularValues()(ifirs); 
+      double omega = svd.singularValues()(ilast);
+      a_biggestEigenvalue  = alpha;
+      a_smallestEigenvalue = omega;
     }
 
-    void writeToFile(std::string a_filename) const;
-    ///
-    void poutMaxMins() const;
-  
-    ///
-    void poutAll() const;
+    ///Eigen probably has way faster ways to do this 
+    void writeToFile(std::string a_filename) const
+    {
+      ofstream outfile;
+      outfile    << setprecision(15)
+                 << setiosflags(ios::showpoint)
+                 << setiosflags(ios::scientific);
+      
+      outfile.open(a_filename.c_str(), ios::out);
+      int nrow = m_mat_p->rows();
+      int ncol = m_mat_p->cols();
+      outfile << "matrix size = " << nrow << " x " << ncol << endl;
+      for(int irow = 0; irow < nrow; irow++)
+      {
+        for(int icol = 0; icol < ncol; icol++)
+        {
+          outfile << (*this)(irow, icol) << " " ;
+        }
+        outfile << endl;
+      }
+      outfile.close();
+    }
+    
+    /// debugging aid
+    void poutMaxMins() const
+    {
+      Chombo4::pout() << setprecision(15)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      
+      Chombo4::pout() << "Matrix: maxCoef = " << m_mat_p->maxCoeff()
+                      <<       ", minCoef = " << m_mat_p->minCoeff()
+                      << endl;
+    }
+    
+    ///debugging aid
+    void poutAll() const
+    {
+      Chombo4::pout() << setprecision(15)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      int nrow = m_mat_p->rows();
+      int ncol = m_mat_p->cols();
+      Chombo4::pout() << "matrix size = " << nrow << " x " << ncol << endl;
+      for(int irow = 0; irow < nrow; irow++)
+      {
+        for(int icol = 0; icol < ncol; icol++)
+        {
+          Chombo4::pout() << (*this)(irow, icol) << " " ;
+        }
+        Chombo4::pout() << endl;
+      }
+    }
     
   
-    ///
-    void poutDiag() const;
+    ///debugging aid
+    void poutDiag() const
+    {
+      Chombo4::pout() << setprecision(15)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      int nrow = m_mat_p->rows();
+      int ncol = m_mat_p->cols();
+      if(nrow != ncol)
+      {
+        ch_mayday::Error("ch_eigen::poutDiag written for square matricies");
+      }
+      
+      for(int irow = 0; irow < nrow; irow++)
+      {
+        Chombo4::pout() << "M("<< irow << ","  << irow << ") = "
+                        << (*this)(irow, irow) << endl;
+      }
+    }
 
  
-    ///inverts this matix.  I only want this to work when the matrix is square.
-    int invert()
+    ///
+    /**
+       This function inverts this matix in place.  
+       I only want this to work when the matrix is square
+       as I prefer to deal with Moore-Penrose manually.
+    */
+    inline void invert()
     {
       if(m_mat_p->rows() != m_mat_p->cols())
       {
@@ -186,7 +265,7 @@ namespace ch_eigen
     }
 
     //for tiny cells, set moments to their limits (1 0 0 0...)
-    void setSmallCellRow(const int& a_irow)
+    inline void setSmallCellRow(const int& a_irow)
     {
       Matrix& Mvol = *this;
       Mvol(a_irow, 0) = 1.0;
@@ -198,29 +277,35 @@ namespace ch_eigen
 
 
     ///
-    void transpose()
+    inline void transpose()
     {
-      m_mat_p->transpose();
+      (*m_mat_p) = (m_mat_p->transpose());
     }
 
   };//end class ch_eigen::matrix
 
 ///
 /**
-   sets product = a_left* a_right
-   fails if a_left.m_col != a_right.m_rows
+   This function sets a_prod = a_left* a_right.
+   This fails if left matrix column count is not the same as the right matrix row count
+   (i.e. if a_left.m_mat_p->cols() != a_right.m_mat_p->rows()).
+   Eigen may do something smarter but I find a lot of bugs this way.
 */
-  void multiply(Matrix& a_product, 
+  void multiply(Matrix      & a_prod, 
                 const Matrix& a_left,
                 const Matrix& a_righ)
   {
-    int leftcolumns = a_left.m_mat_p->cols();
-    int rightrows   = a_righ.m_mat_p->rows();
-    if(leftcolumns != rightrows)
+    int leftrow = a_left.m_mat_p->rows();
+    int leftcol = a_left.m_mat_p->cols();
+    int righrow = a_righ.m_mat_p->rows();
+    int righcol = a_righ.m_mat_p->cols();
+    if(leftcol != righrow)
     {
-      ch_mayday::Error("ch_eigen::multiply needs left n_columns to match right n_rows")
+      Chombo4::MayDay::Error("ch_eigen::multiply needs left n_columns to match right n_rows");
     }
-    (*a_product.m_mat_p) = (*a_left.m_mat_p) * (*a_righ.m_mat_p);
+    a_prod.m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(leftrow, righcol));
+    
+    (*a_prod.m_mat_p) = (*a_left.m_mat_p) * (*a_righ.m_mat_p);
   }
 
 
