@@ -16,6 +16,7 @@
 #include "Chombo_EBChombo.H"
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBCM_HostLevelData.H"
+#include "Chombo_EigenMatrix.H"
 #include "EBMultigrid.H"
 
 #include "DebugFunctions.H"
@@ -38,6 +39,7 @@ typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
 typedef Proto::IndexTM<Real, DIM-1>                    pr_itm_r_dmo;
 typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
 typedef Proto::BaseIF                                  pr_baseif;
+typedef ch_eigen::Matrix                               eigen_mat;
 
 ///
 /**
@@ -439,8 +441,14 @@ public:
   }
 
 
+  static void runEigenTests()
+  {
+    eigen_mat fnerg(4, 4);
+  }
   static  void runTests()
   {
+    //linear algebra machinery check
+    runEigenTests();
     //the important stuff
     //see if we can make a geometry
     shared_ptr< ebcm_meta  > ebcm;

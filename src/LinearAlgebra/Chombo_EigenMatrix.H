@@ -13,6 +13,7 @@
 
 #include "Chombo_REAL.H"
 //#include "Proto_LoHiSide.H"
+#include "Eigen/Core"
 #include <utility>
 #include <string>
 namespace ch_eigen
@@ -20,35 +21,26 @@ namespace ch_eigen
 
 ///
 /**
-   Getting sick of writing the basics here over and over.
-   Silly class but it will cut down on the typing.
+   Very simple wrapper around Eigen::matrix class.
 */
-  class EigenMatrix
+  class Matrix
   {
-    typedef Chombo4::MayDay  ch_mayday; 
   public:
-    bool m_defined;
+    typedef Chombo4::MayDay  ch_mayday;
+    typedef Eigen::MatrixXd  eigen_mat;
+    
+    ///this is the actual matrix
+    shared_ptr<eigen_mat> m_mat_p;
+    
 
-    EigenMatrix()
+    Matrix(int a_nrow, int a_ncol)
     {
-      m_defined = false;
-    }
-  
-    EigenMatrix(int a_nrow, int a_ncol)
-    {
-      define(a_irow, a_icol);
-    }
-
-    ///
-    inline void define(int nrow, int ncol)
-    {
-      m_defined = true;
-      ch_mayday::Error("not implemented");
+      m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(a_nrow, a_ncol));
     }
 
 
     ///  deep copy constructor
-    EigenMatrix(const EigenMatrix& a_input)
+    Matrix(const Matrix& a_input)
     {
       ch_mayday::Error("not implemented");
     }
@@ -57,10 +49,12 @@ namespace ch_eigen
 
     inline Real normLTwo() const
     {
+      return 0;
     }
   
     inline Real normMax() const
     {
+      return 0;
     }
 
     inline void setToIdentity()
@@ -69,15 +63,12 @@ namespace ch_eigen
   
 
     ///
-    ~EigenMatrix()
-    {
-    }
-
-    ///
     inline void  setVal(const double& a_val);
 
 
     const Real& operator() (int irow, int icol) const;
+
+      
   
     ///
     Real & operator() (int irow, int icol);
@@ -87,32 +78,36 @@ namespace ch_eigen
     {
     
       std::pair<int, int>  retval;
-      retval.first = m_nrow;
-      retval.second= m_ncol;
+      retval.first = m_mat_p->rows();
+      retval.second= m_mat_p->cols();
       return retval;
     }
 
     /// deep assign. 
-    EigenMatrix& operator=(const EigenMatrix& a_matrix)
+    Matrix& operator=(const Matrix& a_matrix)
     {
+      (*m_mat_p) = (*a_matrix.m_mat_p);
       return *this;
     }
     
     ///
-    EigenMatrix& operator+=(const EigenMatrix& a_matrix);
+    Matrix& operator+=(const Matrix& a_matrix)
     {
+      (*m_mat_p) += (*a_matrix.m_mat_p);
       return *this;
     }
 
     ///
-    EigenMatrix& operator-=(const EigenMatrix& a_matrix);
+    Matrix& operator-=(const Matrix& a_matrix)
     {
+      (*m_mat_p) -= (*a_matrix.m_mat_p);
       return *this;
     }
 
     ///
-    EigenMatrix& operator*=(const double& a_scalingFactor);
+    Matrix& operator*=(const double& a_scalingFactor)
     {
+      //
       return *this;
     }
 
@@ -143,9 +138,10 @@ namespace ch_eigen
     //for tiny cells, set moments to their limits (1 0 0 0...)
     void setSmallCellRow(const int& irow)
     {
-      EigenMatrix& Mvol = *this;
+      Matrix& Mvol = *this;
       Mvol(irow, 0) = 1.0;
-      for(int icol = 1; icol < m_ncol; icol++)
+      int ncol = m_mat_p->cols();
+      for(int icol = 1; icol < ncol; icol++)
       {
         Mvol(irow, icol) = 0.0;
       }
@@ -164,9 +160,9 @@ namespace ch_eigen
    sets product = a_left* a_right
    fails if a_left.m_col != a_right.m_rows
 */
-  void multiply(EigenMatrix& a_product, 
-                const EigenMatrix& a_left,
-                const EigenMatrix& a_right);
+  void multiply(Matrix& a_product, 
+                const Matrix& a_left,
+                const Matrix& a_right);
 
 
 
