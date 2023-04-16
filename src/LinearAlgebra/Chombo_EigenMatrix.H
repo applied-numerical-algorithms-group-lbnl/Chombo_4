@@ -211,7 +211,7 @@ namespace ch_eigen
     ///debugging aid
     void poutAll() const
     {
-      Chombo4::pout() << setprecision(15)
+      Chombo4::pout() << setprecision(3)
                       << setiosflags(ios::showpoint)
                       << setiosflags(ios::scientific);
       int nrow = m_mat_p->rows();
@@ -221,7 +221,12 @@ namespace ch_eigen
       {
         for(int icol = 0; icol < ncol; icol++)
         {
-          Chombo4::pout() << (*this)(irow, icol) << " " ;
+          double val = (*this)(irow, icol);
+          if(val >= 0)
+          {
+            Chombo4::pout() << " ";
+          }
+          Chombo4::pout() << val << " " ;
         }
         Chombo4::pout() << endl;
       }

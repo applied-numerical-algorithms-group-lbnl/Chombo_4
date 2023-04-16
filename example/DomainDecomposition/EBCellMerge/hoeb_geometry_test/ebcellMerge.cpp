@@ -32,7 +32,7 @@ typedef Chombo4::ProblemDomain                         ch_probdom;
 typedef Chombo4::DataIterator                          ch_dit;
 typedef Chombo4::IntVect                               ch_iv;
 typedef Chombo4::MayDay                                ch_mayday;
-typedef Chombo4::LAPACKMatrix                          ch_mat;
+//typedef Chombo4::LAPACKMatrix                          ch_mat;
 typedef Proto::RealVect                                pr_rv;
 typedef Proto::IndexTM<Real, DIM>                      pr_itm_r_dim;
 typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
@@ -244,6 +244,7 @@ public:
       }
     }
 
+
     //Cartesian makes more sense in this context than anything else (since which cell stuff lives in is undefined)
     Real distanceMetric(const ebcm_volu & a_volu)  const
     {
@@ -255,11 +256,11 @@ public:
   };
   ///
   static inline
-  shared_ptr<ch_mat>
-  getWeightMatrix(shared_ptr<neighborhood_t> a_locality)
+  shared_ptr<eigen_mat>
+  getWeightMatrix(shared_ptr<neighborhood_t> a_locality, bool a_printStuff)
   {
     int nrows = a_locality->m_eqweight.size();
-    shared_ptr<ch_mat> weight_p(new ch_mat(nrows, nrows));
+    shared_ptr<eigen_mat> weight_p(new eigen_mat(nrows, nrows));
     weight_p->setVal(0.);
     for(int irow = 0; irow < nrows; irow++)
     {
@@ -268,13 +269,23 @@ public:
     return weight_p;
   }
 
+
   ///
   static inline void
-  shiftMomentAndFillRow(ch_mat            & a_mat,
+  shiftMomentAndFillRow(eigen_mat         & a_mat,
                         const pr_mom_dim  & a_moment,
                         const pr_rv       & a_distance,
-                        const int         & a_currentRow)
+                        const int         & a_currentRow,
+                        bool a_printStuff)
   {
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "shiftMomentAndFillRow: a_currentRow = " << a_currentRow << endl;
+      Chombo4::pout() << "shiftMomentAndFillRow: a_distance   = " <<   a_distance << endl;
+      Chombo4::pout() << "shiftMomentAndFillRow: input mat: " << endl;
+      a_mat.poutAll();
+    }
+
     pr_itm_r_dim itm_dist;
     for(int idir = 0; idir < DIM; idir++)
     {
@@ -283,11 +294,22 @@ public:
 
     pr_mom_dim shiftedMom = a_moment;
     shiftedMom.shift(itm_dist);
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "shiftMomentAndFillRow:   a_moment =" << endl;
+      a_moment.print();
+      Chombo4::pout() << "shiftMomentAndFillRow: shiftedMom =" << endl;
+      shiftedMom.print();
+    }
 
     Real volume = shiftedMom[pr_itm_i_dim::Zero];
     bool divide = (volume > 1.0e-16);
     if(!divide)
     {
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "shiftMomentAndFillRow: smallCellRow with volume = " << volume << endl;
+      }
       a_mat.setSmallCellRow(a_currentRow);
     }
     else
@@ -299,11 +321,17 @@ public:
         a_mat(a_currentRow, currentCol) = shiftedMom[momind]/volume;
       }
     }
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "shiftMomentAndFillRow: amat leaving = "  << endl;
+      a_mat.poutAll();
+    }
   }
 
   ///
-  static shared_ptr<ch_mat>
-  getMomentMatrix(shared_ptr<neighborhood_t> a_locality)
+  static shared_ptr<eigen_mat>
+  getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
+                  bool a_printStuff)
   {
     //number of equations
     int n_equations = a_locality->m_volumes->size();
@@ -315,37 +343,54 @@ public:
     int n_rows = n_equations;
     int n_cols = n_unknowns;
     
-    shared_ptr<ch_mat> Mmat_p(new ch_mat(n_rows, n_cols));
+    shared_ptr<eigen_mat> Mmat_p(new eigen_mat(n_rows, n_cols));
     for(int irow = 0; irow < n_rows; irow++)
     {
       const auto& volmom   =   (*(a_locality->m_volumes ))[irow].m_volmom;
       const auto& distance =   ( (a_locality->m_distance))[irow];
-      shiftMomentAndFillRow(*Mmat_p, volmom, distance, irow);
+      shiftMomentAndFillRow(*Mmat_p, volmom, distance, irow, a_printStuff);
     }
     return Mmat_p;
   }
 
   ///
-  static inline shared_ptr<ch_mat>
+  static inline shared_ptr<eigen_mat>
   getAMatrix(const ebcm_volu     &  a_volu,
              const ebcm_graph    &  a_graph,
-             int a_nghost, int a_weightPower)
+             int a_nghost, int a_weightPower,
+             bool a_printStuff)
   {
   
     shared_ptr<neighborhood_t>
       locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower));
   
-    shared_ptr<ch_mat> Wmat_p = getWeightMatrix(locality);
-    shared_ptr<ch_mat> Mmat_p = getMomentMatrix(locality);
+    shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_printStuff);
+    shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_printStuff);
 
-    ch_mat WMmat;
+    eigen_mat WMmat;
     multiply(WMmat, *Wmat_p, *Mmat_p);
-  
-    ch_mat WMTmat = WMmat;
+    eigen_mat WMTmat = WMmat;
     WMTmat.transpose();
   
-    shared_ptr<ch_mat> Amat_p(new ch_mat());
+    shared_ptr<eigen_mat> Amat_p(new eigen_mat());
     multiply(*Amat_p, WMTmat, WMmat);
+    
+    if(a_printStuff)
+    {
+      Chombo4::pout() << "Weight matrix: " << endl;
+      Wmat_p->poutAll();
+      Chombo4::pout() << "Moment matrix: " << endl;
+      Mmat_p->poutAll();
+      
+      Chombo4::pout() << "WM   matrix: " << endl;
+      WMmat.poutAll();
+      
+      Chombo4::pout() << "WM^T matrix: " << endl;
+      WMTmat.poutAll();
+
+      Chombo4::pout() << "A matrix: " << endl;
+      Amat_p->poutAll();
+    }
 
     return Amat_p;
   }
@@ -361,9 +406,12 @@ public:
     int stenrad, weightpower;
     pp.get("radius", stenrad);
     pp.get("weight_power", weightpower);
-    shared_ptr<ch_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower);
+    //just print everything for the first one
+    static bool printedAlready = false;
+    shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, !printedAlready);
+    printedAlready = true;
   
-    Real retval = Amat->conditionNumberInverse();
+    Real retval = Amat->invConditionNumber();
 
     return retval;
   }
