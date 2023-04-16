@@ -100,7 +100,9 @@ namespace EBCM
 
     inline void print() const
     {
-      pout() << "volume :(" << m_pt << ")" << endl;
+      pout() << "volume :(" << m_pt << "), ";
+      pout() << "volmom = " << endl;
+      m_volmom.print();
     }
     
     bool operator < (const EBCM_Volu<order>& a_input) const
@@ -1180,7 +1182,7 @@ namespace EBCM
     {
     }
     
-    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region)
+    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region, bool a_printStuff)
     {
       vector<pr_pt>   regularPoints(0);
       vector<int>     irregIndicies(0);
@@ -1207,7 +1209,8 @@ namespace EBCM
       this->resize(totalSize);
       for(int ientry = 0; ientry < totalSize; ientry++)
       {
-        EBCM_Volu<order> curVolu;
+        auto& curVolu =  (*this)[ientry];
+
         if(ientry < regularPoints.size())
         {
           curVolu.defineAsRegular(regularPoints[ientry], a_graph.m_dx);
@@ -1218,7 +1221,17 @@ namespace EBCM
           unsigned int graphind = irregIndicies[irregInd];
           curVolu = (*a_graph.m_volumes)[graphind];
         }
-        this->push_back(curVolu);
+        if(a_printStuff)
+        {
+          static bool printedFirstOne = false;
+          if(!printedFirstOne) //turn this off if you want way too much info
+          {
+            Chombo4::pout() << "SubVolVec: ientry = " << ientry << endl;
+            curVolu.print();
+            printedFirstOne = true;
+          }
+            
+        }
       }
     }
 

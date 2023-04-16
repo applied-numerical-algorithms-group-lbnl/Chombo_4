@@ -231,6 +231,29 @@ namespace ch_eigen
         Chombo4::pout() << endl;
       }
     }
+
+    ///debugging aid
+    void poutRow(int a_row) const
+    {
+      Chombo4::pout() << setprecision(3)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      int nrow = m_mat_p->rows();
+      int ncol = m_mat_p->cols();
+      Chombo4::pout() << "matrix size = " << nrow << " x " << ncol << endl;
+      int irow = a_row;
+      for(int icol = 0; icol < ncol; icol++)
+      {
+        double val = (*this)(irow, icol);
+        if(val >= 0)
+        {
+          Chombo4::pout() << " ";
+        }
+        Chombo4::pout() << val << " " ;
+      }
+      Chombo4::pout() << endl;
+
+    }
     
   
     ///debugging aid

@@ -199,7 +199,7 @@ public:
   
     neighborhood_t(const ebcm_graph    & a_graph,
                    const ch_iv         & a_start,
-                   int a_nghost, int a_weightPower)
+                   int a_nghost, int a_weightPower, bool a_printStuff)
     {
       m_startiv = a_start;
       m_nghost  = a_nghost;
@@ -209,7 +209,11 @@ public:
       region.grow(a_nghost);
       region &= a_graph.m_domain;
 
-      m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region));
+      m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region, a_printStuff));
+      //begin debug
+      Chombo4::pout() << "first volmom in the neighborhood" << endl;
+      (*m_volumes)[0].m_volmom.print();
+      //end debug
       int n_equations = m_volumes->size();
       int n_unknowns  = pr_mom_dim::size();
       if(n_unknowns > n_equations)
@@ -282,8 +286,10 @@ public:
     {
       Chombo4::pout() << "shiftMomentAndFillRow: a_currentRow = " << a_currentRow << endl;
       Chombo4::pout() << "shiftMomentAndFillRow: a_distance   = " <<   a_distance << endl;
-      Chombo4::pout() << "shiftMomentAndFillRow: input mat: " << endl;
-      a_mat.poutAll();
+      Chombo4::pout() << "shiftMomentAndFillRow: input mat row: " << endl;
+      a_mat.poutRow(a_currentRow);
+      Chombo4::pout() << "shiftMomentAndFillRow:   a_moment =" << endl;
+      a_moment.print();
     }
 
     pr_itm_r_dim itm_dist;
@@ -296,8 +302,6 @@ public:
     shiftedMom.shift(itm_dist);
     if(a_printStuff)
     {
-      Chombo4::pout() << "shiftMomentAndFillRow:   a_moment =" << endl;
-      a_moment.print();
       Chombo4::pout() << "shiftMomentAndFillRow: shiftedMom =" << endl;
       shiftedMom.print();
     }
@@ -324,7 +328,7 @@ public:
     if(a_printStuff)
     {
       Chombo4::pout() << "shiftMomentAndFillRow: amat leaving = "  << endl;
-      a_mat.poutAll();
+      a_mat.poutRow(a_currentRow);
     }
   }
 
@@ -347,6 +351,10 @@ public:
     for(int irow = 0; irow < n_rows; irow++)
     {
       const auto& volmom   =   (*(a_locality->m_volumes ))[irow].m_volmom;
+      if(a_printStuff)
+      {
+        volmom.print();
+      }
       const auto& distance =   ( (a_locality->m_distance))[irow];
       shiftMomentAndFillRow(*Mmat_p, volmom, distance, irow, a_printStuff);
     }
@@ -362,7 +370,7 @@ public:
   {
   
     shared_ptr<neighborhood_t>
-      locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower));
+      locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower, a_printStuff));
   
     shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_printStuff);
     shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_printStuff);
@@ -433,7 +441,7 @@ public:
       auto&     datafab = mpidata[dit[ibox]];
       const auto& graph = ldgraph[dit[ibox]];
       ch_box       grid =   grids[dit[ibox]];
-      ebcm_subvol_vec allVols(graph, grid);
+      ebcm_subvol_vec allVols(graph, grid, false);
       for(int ivec = 0; ivec < allVols.size(); ivec++)
       {
         const auto& volu = allVols[ivec];
@@ -471,7 +479,7 @@ public:
       const auto& graph = (*(a_meta->m_graphs))[dit[ibox]];
       double maxKappaBox = -1.0e10;
       double minKappaBox =  1.0e10;
-      ebcm_subvol_vec volumes(graph, valid);
+      ebcm_subvol_vec volumes(graph, valid, false);
       for(int ivec = 0; ivec < volumes.size(); ivec++)
       {
         const auto& volu = volumes[ivec];
