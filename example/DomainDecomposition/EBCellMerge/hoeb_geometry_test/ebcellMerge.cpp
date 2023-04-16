@@ -228,17 +228,9 @@ public:
     
       for(int ivec = 0; ivec < m_volumes->size(); ivec++)
       {
-        Real xbar = distanceMetric((*m_volumes)[ivec]);
+        const auto& curVol = (*m_volumes)[ivec];
+        Real xbar = getXBar(curVol);
       
-        //putting this check because someone is going to hack the distance function      
-        if(xbar < 1.0e-16) 
-        {
-          if(xbar < 0)
-            Chombo4::pout() << "neighborhood_t::distanceMetric returned a negtive number." << endl;
-          else
-            Chombo4::pout() << "neighborhood_t::distanceMetric returned too small a positive number." << endl;
-          ch_mayday::Error();
-        }
         m_distance[ivec] = xbar;
         m_eqweight[ivec] = 1;
         for(int iweight = 0; iweight < a_weightPower; iweight++)
@@ -250,11 +242,15 @@ public:
 
 
     //Cartesian makes more sense in this context than anything else (since which cell stuff lives in is undefined)
-    Real distanceMetric(const ebcm_volu & a_volu)  const
+    //to keep powers of xbar from getting insane, nondimensionalize
+    //and make 1 the smallest distance  so 1/xbar^N goes to no worse than 1.
+    Real getXBar(const ebcm_volu & a_volu)  const
     {
       pr_rv  vectDist = a_volu.m_centroid - this->m_startloc;
-      Real distance = vectDist.vectorLength();
-      return distance;
+      double xbar = vectDist.vectorLength();
+      xbar /= a_volu.m_dx;
+      xbar  = std::max(xbar, 1.);
+      return xbar;
     }
 
   };
@@ -379,10 +375,7 @@ public:
     multiply(WMmat, *Wmat_p, *Mmat_p);
     eigen_mat WMTmat = WMmat;
     WMTmat.transpose();
-    //begin debug
-    WMmat.poutAll();
-    WMTmat.poutAll();
-    //end debug
+
     shared_ptr<eigen_mat> Amat_p(new eigen_mat());
     multiply(*Amat_p, WMTmat, WMmat);
     
