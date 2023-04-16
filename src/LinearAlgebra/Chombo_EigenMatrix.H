@@ -307,7 +307,8 @@ namespace ch_eigen
     ///
     inline void transpose()
     {
-      (*m_mat_p) = (m_mat_p->transpose());
+      auto startmat = *(m_mat_p);
+      *m_mat_p = startmat.transpose();
     }
 
   };//end class ch_eigen::matrix

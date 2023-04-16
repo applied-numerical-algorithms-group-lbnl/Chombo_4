@@ -214,7 +214,7 @@ public:
       Chombo4::pout() << "first volmom in the neighborhood" << endl;
       (*m_volumes)[0].m_volmom.print();
       //end debug
-      int n_equations = m_volumes->size();
+      int n_equations =  m_volumes->size();
       int n_unknowns  = pr_mom_dim::size();
       if(n_unknowns > n_equations)
       {
@@ -379,7 +379,10 @@ public:
     multiply(WMmat, *Wmat_p, *Mmat_p);
     eigen_mat WMTmat = WMmat;
     WMTmat.transpose();
-  
+    //begin debug
+    WMmat.poutAll();
+    WMTmat.poutAll();
+    //end debug
     shared_ptr<eigen_mat> Amat_p(new eigen_mat());
     multiply(*Amat_p, WMTmat, WMmat);
     
