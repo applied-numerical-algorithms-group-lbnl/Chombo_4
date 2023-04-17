@@ -241,15 +241,23 @@ public:
     }
 
 
-    //Cartesian makes more sense in this context than anything else (since which cell stuff lives in is undefined)
-    //to keep powers of xbar from getting insane, nondimensionalize
-    //and make 1 the smallest distance  so 1/xbar^N goes to no worse than 1.
-    Real getXBar(const ebcm_volu & a_volu)  const
+    double getXBar(const ebcm_volu & a_volu)  const
     {
-      pr_rv  vectDist = a_volu.m_centroid - this->m_startloc;
-      double xbar = vectDist.vectorLength();
-      xbar /= a_volu.m_dx;
-      xbar  = std::max(xbar, 1.);
+      //cartesian with weird flooring and all that
+      //pr_rv  vectDist = a_volu.m_centroid - this->m_startloc;
+      //double xbar = vectDist.vectorLength();
+      //xbar /= a_volu.m_dx;
+      //xbar  = std::max(xbar, 1.);
+      //return xbar;
+      //manhattan
+      double xbar = 1; //important that it not go to zero.
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        int idiff = a_volu.m_pt[idir] - m_startiv[idir];
+        double rdiff = std::abs(double(idiff));
+        xbar += rdiff;
+      }
+      xbar = 1;
       return xbar;
     }
 

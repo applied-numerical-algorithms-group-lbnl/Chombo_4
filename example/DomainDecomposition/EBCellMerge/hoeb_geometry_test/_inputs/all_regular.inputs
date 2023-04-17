@@ -26,7 +26,7 @@ makeMergedGeometry.graph_filename    = "all_regular_graph.hdf5"
 getImplicitFunction.which_geom       = "all_regular"
 
 main.inv_cond_filename = "all_regular_inv_cond.hdf5"
-main.polynomial_order  = 4
+main.polynomial_order  = 2
 stencil.weight_power   = 5
-stencil.radius         = 3
+stencil.radius         = 2
 
