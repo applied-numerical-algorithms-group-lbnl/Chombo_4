@@ -194,7 +194,11 @@ public:
     int                              m_nghost;
     pr_rv                            m_startloc;
     shared_ptr<ebcm_subvol_vec>      m_volumes;
+    //this is the actual distance stuff gets shifted
+    vector<pr_rv>                    m_xbar;
+    ///this is the distance used in  calculating weights
     vector<Real>                     m_distance;
+    ///this is the weight of each equation (the diagonal of the weight matrix)
     vector<Real>                     m_eqweight;
   
     neighborhood_t(const ebcm_graph    & a_graph,
@@ -223,33 +227,33 @@ public:
                << a_start << endl;
         ch_mayday::Error();
       }
+      m_xbar.resize(    m_volumes->size());
       m_distance.resize(m_volumes->size());
       m_eqweight.resize(m_volumes->size());
     
       for(int ivec = 0; ivec < m_volumes->size(); ivec++)
       {
         const auto& curVol = (*m_volumes)[ivec];
-        Real xbar = getXBar(curVol);
-      
-        m_distance[ivec] = xbar;
-        m_eqweight[ivec] = 1;
-        for(int iweight = 0; iweight < a_weightPower; iweight++)
+        m_xbar[ivec] = curVol.m_centroid - m_startloc;
+        m_distance[ivec] = getManhattanDistance(curVol);
+        double eqnweight = 1;
+        if(m_distance[ivec] > 1)
         {
-          m_eqweight[ivec] /= xbar;
+          for(int iweight = 0; iweight < a_weightPower; iweight++)
+          {
+            eqnweight /= m_distance[ivec];
+          }
         }
+        m_eqweight[ivec] = eqnweight;
+        //debug
+        //m_eqweight[ivec] = 1;
+        //end debug
       }
     }
 
 
-    double getXBar(const ebcm_volu & a_volu)  const
+    double getManhattanDistance(const ebcm_volu & a_volu)  const
     {
-      //cartesian with weird flooring and all that
-      //pr_rv  vectDist = a_volu.m_centroid - this->m_startloc;
-      //double xbar = vectDist.vectorLength();
-      //xbar /= a_volu.m_dx;
-      //xbar  = std::max(xbar, 1.);
-      //return xbar;
-      //manhattan
       double xbar = 1; //important that it not go to zero.
       for(int idir = 0; idir < DIM; idir++)
       {
@@ -257,7 +261,6 @@ public:
         double rdiff = std::abs(double(idiff));
         xbar += rdiff;
       }
-      xbar = 1;
       return xbar;
     }
 
@@ -359,8 +362,8 @@ public:
       {
         volmom.print();
       }
-      const auto& distance =   ( (a_locality->m_distance))[irow];
-      shiftMomentAndFillRow(*Mmat_p, volmom, distance, irow, a_printStuff);
+      pr_rv & xbar =    ( (a_locality->m_xbar))[irow];
+      shiftMomentAndFillRow(*Mmat_p, volmom, xbar, irow, a_printStuff);
     }
     return Mmat_p;
   }
@@ -421,9 +424,14 @@ public:
     //just print everything for the first one
     static bool printedAlready = false;
     shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, !printedAlready);
-    printedAlready = true;
   
     Real retval = Amat->invConditionNumber();
+
+    if(!printedAlready)
+    {
+      Amat->poutEigenvalues();
+      printedAlready = true;
+    }
 
     return retval;
   }

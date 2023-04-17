@@ -173,8 +173,27 @@ namespace ch_eigen
       a_smallestEigenvalue = omega;
     }
 
+    ///
+    inline void
+    poutEigenvalues() const
+    {
+      Chombo4::pout() << setprecision(15)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      
+      Eigen::JacobiSVD<Eigen::MatrixXd> svd(*m_mat_p);
+      int neig = svd.singularValues().size();
+      int ifirs = 0;
+      int ilast =  neig - 1;
+      Chombo4::pout() << neig << " matrix eigenvalues: " << endl;
+      for(int ivec = 0; ivec < neig; ivec++)
+      {
+        double beta = svd.singularValues()(ivec);
+        Chombo4::pout() << "(" << ivec << "): " << beta << endl;
+      }
+    }
     ///Eigen probably has way faster ways to do this 
-    void writeToFile(std::string a_filename) const
+    inline void writeToFile(std::string a_filename) const
     {
       ofstream outfile;
       outfile    << setprecision(15)
