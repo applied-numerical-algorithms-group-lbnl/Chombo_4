@@ -64,6 +64,7 @@ public:
   typedef Chombo4::GeometryService<       ebcm_order >   ch_geoserv;
   typedef Proto::IndexedMoments<DIM  ,    ebcm_order >   pr_mom_dim;
   typedef Proto::IndexedMoments<DIM-1,    ebcm_order >   pr_mom_dmo;
+  typedef Proto::Point pr_pt;
 
   
   static shared_ptr<pr_baseif> getImplicitFunction()
@@ -215,8 +216,8 @@ public:
 
       m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region, a_printStuff));
       //begin debug
-      Chombo4::pout() << "first volmom in the neighborhood" << endl;
-      (*m_volumes)[0].m_volmom.print();
+      //Chombo4::pout() << "first volmom in the neighborhood" << endl;
+      //(*m_volumes)[0].m_volmom.print();
       //end debug
       int n_equations =  m_volumes->size();
       int n_unknowns  = pr_mom_dim::size();
@@ -410,9 +411,12 @@ public:
     return Amat_p;
   }
   ///
-  static inline Real
-  getInvCondNumber(const ebcm_volu     &  a_volu,
-                   const ebcm_graph    &  a_graph)
+  static inline void
+  getConditionNumberInfo(double & a_invCondNumber,
+                         double & a_maxEigenvalue,
+                         double & a_minEigenvalue,
+                         const ebcm_volu     &  a_volu,
+                         const ebcm_graph    &  a_graph)
   {
     //this stuff is probably more general than just this function
     //but the perfect API is eluding me at the moment so we will just
@@ -421,32 +425,65 @@ public:
     int stenrad, weightpower;
     pp.get("radius", stenrad);
     pp.get("weight_power", weightpower);
-    //just print everything for the first one
-    static bool printedAlready = false;
-    shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, !printedAlready);
-  
-    Real retval = Amat->invConditionNumber();
 
-    if(!printedAlready)
-    {
-      Amat->poutEigenvalues();
-      printedAlready = true;
-    }
+    shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, false);
 
-    return retval;
+    Amat->getLargestAndSmallestEigenvalues(a_maxEigenvalue, a_minEigenvalue);
+    a_invCondNumber = a_minEigenvalue/a_maxEigenvalue;
+
+    //begin debug
+    //  Amat->poutEigenvalues();
+    //end debug
   }
-  ///
-  static inline shared_ptr<ebcm_leveldata>
-  plotInverseConditionNumberData(const shared_ptr< ebcm_meta  >  & a_ebcm,
-                                 const string                    & a_filename)
-  {
-    shared_ptr<ebcm_leveldata>
-      data(new ebcm_leveldata(a_ebcm, Chombo4::IntVect::Zero));
   
+  class
+  condition_t
+  {
+  public:
+    double m_inv_condition;
+    double m_max_eigenvalue;
+    double m_min_eigenvalue;
+    pr_pt  m_pt;
+    inline void poutLatexTable(int a_P, int a_G) const
+    {
+
+      using Chombo4::pout;
+      
+      pout() << setw(12)
+             << setprecision(6)
+             << setiosflags(ios::showpoint)
+             << setiosflags(ios::scientific);
+      pout() << "\\begin{table}" << endl;
+      pout() << "\\begin{center}" << endl;
+      pout() << "\\begin{tabular}{|cc|ccc|} \\hline" << endl;
+
+      pout() << " P & G & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
+      pout() << "\\hline " << endl;
+      pout() << a_P << " & " << a_G << " & " << m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
+      pout() << " \\\\ " << endl;
+
+      pout() << "\\hline " << endl;
+      pout() << "\\end{tabular}" << endl;
+      pout() << "\\end{center}" << endl;
+      pout() << "\\end{table}" << endl;
+    }
+  };
+  ///
+  static inline void
+  getConditionNumberData(shared_ptr<ebcm_leveldata>      & a_data,
+                         shared_ptr<condition_t>         & a_worst,
+                         const shared_ptr< ebcm_meta  >  & a_ebcm)
+  {
+    
+    a_data  = shared_ptr<ebcm_leveldata>(new ebcm_leveldata(a_ebcm, Chombo4::IntVect::Zero));
+    a_worst = shared_ptr<condition_t>(new condition_t());
+
+    double minInvCond = 1.0e30;
+    
     const auto& ldgraph = *(a_ebcm->m_graphs);
     const auto&   grids =   a_ebcm->m_grids;
     ch_dit dit = a_ebcm->m_grids.dataIterator();
-    auto& mpidata = *(data->m_data);
+    auto& mpidata = *(a_data->m_data);
     for(int ibox = 0; ibox < dit.size(); ibox++)
     {
       ///set to zero everywhere so covered cells get something
@@ -458,7 +495,16 @@ public:
       {
         const auto& volu = allVols[ivec];
         auto allpts= volu.m_cells;
-        Real invCondNum = getInvCondNumber(volu, graph);
+        double invCondNum, maxEig, minEig;
+        getConditionNumberInfo(invCondNum, maxEig, minEig, volu, graph);
+        if(invCondNum < minInvCond)
+        {
+          minInvCond = invCondNum;
+          a_worst->m_inv_condition  = minInvCond;
+          a_worst->m_min_eigenvalue = minEig;
+          a_worst->m_max_eigenvalue = maxEig;
+          a_worst->m_pt = volu.m_pt;
+        }
         //because of merger, a volume can span multiple cells.
         for(int ipt = 0; ipt < allpts.size(); ipt++)
         {
@@ -466,8 +512,6 @@ public:
         }
       }
     }
-    data->writeToHDF5(a_filename);
-    return data;
   }
 
   ///
@@ -567,11 +611,23 @@ public:
     checkKappa(maxKapp, minKapp, ebcm, grids);
 
     //makes data of inv condition number info and plots it out
+    shared_ptr<ebcm_leveldata> invCondition;
+    shared_ptr<condition_t>    worst;
+    getConditionNumberData(invCondition, worst, ebcm);
+
+    int P = ebcm_order;
+    int G;
+    ParmParse ppsten("stencil");
+    ppsten.get("radius", G);
+    
+    worst->poutLatexTable(P, G);
+    Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
+    
     string plot_filename;
-    ParmParse pp("main");  //kinda pendantic to use anything else
-    pp.get("inv_cond_filename", plot_filename);
-    shared_ptr<ebcm_leveldata> data = 
-      plotInverseConditionNumberData(ebcm, plot_filename);
+    ParmParse ppmain("main");  //kinda pendantic to use anything else
+    ppmain.get("inv_cond_filename",   plot_filename);
+    invCondition->writeToHDF5(plot_filename);
+    
   }
 };
 /****/

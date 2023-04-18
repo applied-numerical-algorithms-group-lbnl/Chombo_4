@@ -199,7 +199,6 @@ namespace ch_eigen
       outfile    << setprecision(15)
                  << setiosflags(ios::showpoint)
                  << setiosflags(ios::scientific);
-      
       outfile.open(a_filename.c_str(), ios::out);
       int nrow = m_mat_p->rows();
       int ncol = m_mat_p->cols();

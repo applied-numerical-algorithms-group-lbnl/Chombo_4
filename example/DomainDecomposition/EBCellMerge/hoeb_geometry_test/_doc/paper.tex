@@ -258,9 +258,11 @@ m_v^\pbold(\xbar)  =  \int\limits_{V} (\xbold - \xbar)^\pbold dV
 
  
 Given a sufficiently smooth function $\psi$, we can approximate $\psi$
-in the neighborhood of $\xbar$ using a Taylor expansion to order $P$:
+in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
-\psi(\xbold)  =  \sum\limits_{p < P} C^p (\xbar - \xbar)^p \label{eqn::taylor}
+\psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -
+\xbar)^p \label{eqn::taylor}
+\label{eqn::taylor}
 \end{equation}
 where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
 \begin{equation}
@@ -276,9 +278,9 @@ $\psi$, the average over the volume $\ibold$ is given by
  V_\ibold <\psi>_\ibold = \int\limits_{V_\ibold} \psi(\xbold) dV
 \end{equation*}
 If we insert the Taylor expansion \ref{eqn::taylor}, we get a discrete
-approximation to the smooth function $\psi$ that is accurate to order $P$.
+approximation to the smooth function $\psi$ that is accurate to order $P_T$.
 \begin{equation*}
- V_\ibold <\psi>_\ibold = \sum\limits_{p < P} C^p m^p. 
+ V_\ibold <\psi>_\ibold = \sum\limits_{p < P_T} C^p m^p. 
 \end{equation*}
 This forms a local polynomial expansion of $\psi$ around the volume
 $\ibold$ expressed in terms moments ($m$) which are the natural
@@ -290,7 +292,7 @@ Taylor coefficients $C^p$ which is worth discussing.
 
 The discerning reader will notice that
 the equation set used to create $C$ only includes the volume
-equations.  Devendran \cite{Devendran2017} also include boundary
+equations.  Devendran et al. \cite{Devendran2017} also include boundary
 condition equations in the equation set.  For simple enough boundary
 conditions, this works very well.  There are many equation sets,
 however, which do not lend themselves easily to this approach.
@@ -304,13 +306,13 @@ developers of this class of algorithms.
 \section{Computing Taylor coefficients and Matrix Conditioning}
 
 Consider a finite volume grid where we know all geometric moments to
-order $P$.  Given values of $<\psi>$ everwhere on the grid, we wish to
+order $P_T$.  Given values of $<\psi>$ everwhere on the grid, we wish to
 approximate the Taylor coefficients at a volume $\ibold$ given that we
 know $\cn_\ibold = \{\jbold\}$, the set of $N_v$ closest neighbors of
 the volume $\ibold$.  Using the Taylor expansion at each point gives
 us $N_v$ equations for $C^p$
 \begin{equation}
-  V_\jbold <\psi>_\jbold = \sum\limits_{p < P} C^p_\ibold m^p_\jbold.
+  V_\jbold <\psi>_\jbold = \sum\limits_{p < P_T} C^p_\ibold m^p_\jbold.
 \end{equation}
 Let's say there are $N_p$ Taylor coefficients.  We can force $N_v >
 N_p$ by getting a large enough neighborhood.  This means that we have
@@ -329,45 +331,68 @@ WMC = WP.
 \end{equation*}
 Since these matricies are (deliberately) not square, we approximate
 the solution using a Moore-Penrose pseudo-inverse:
-\begin{equation*}
-C = ((WM)^T(WM))^{-1} (WM)^T P.
-\end{equation*}
+\begin{equation}
+  C = ((WM)^T(WM))^{-1} (WM)^T P.
+\label{eqn::getC}  
+\end{equation}
 This formulation can woven into the computation for stencil
 components;  Devendran \cite{Dendran2017}, for example, explains the
 process for Poisson's equation.
 
 Unfortunately, the matrix $A \equiv (WM)^T(WM)$ can be poorly conditioned.
-That these algorithms invert a matrix to compute
+That these algorithms can invert a poorly-conditioned matrix to compute
 stencil coefficients introduces an interesting type of uncertainty: error in
 the very coefficients of a stencil operation.   If the matrix is poorly
 conditioned, the coefficients of the stencil can only be known to
 limited precision.   This lack of precision is measurable as are its
 consequences.
 
-\section{All Regular geometry}
+\section{Condition number measurements}
 
-To investigate the consequences of this geometry, we consider as a
-motivating example a geometry wherein all cells are uncut.  
+To gain insight into this process, we evaluate the matrix $A \equiv
+(WM)^T(WM)$ at every volume in a computational grid and analyze its
+eigenvalues.   Given a matrix $A_i$ with the set of eigenvalues
+$\{ \lambda_{i}\}$, the inverse of the condition number $I_i$ is given by
+\begin{equation*}
+  I_i = \frac{\lambda_i|_{min}}{\lambda_i|_{max}},
+\end{equation*}
+which goes to zero as the maximum and minimum eigenvalues diverge and
+the matrix becomes more poorly conditioned.   These eigenvalues are
+obtained through  SVD decompostion \footnotemark[7].
 
+First we  measure   an uncut, Cartesian mesh to
+provide a baseline without the complications involved with cut cells.
+Next we cut the mesh with a very smooth implicit function and do the
+same measurements.   Finally we take this cut mesh and merge its small
+cells to neighbors to eliminate all cells smaller than a Cartesian
+volume to isolate the effects of small cells.
 
-The matrix inversion at the heart of this method requires that we need
-know to what degree the matrix $A \equiv (WM)^T(WM)$ is
-well-conditioned.  Experience suggests that small cells play a role in
-that conditioning and that the weighting matrix $W$ can be used to
-mitigate conditioning issues that unweighted least squares may
-produce.
+All volumes $V_i$ start with a index $i \in Z^D$.
+We start from volume $V_0$.   For 
+weighting function, we need to measure $D_{w, V_0}(V_1)$,
+the Manhattan disance to the volume $V_1$:
+\begin{equation}
+  D_{W, V_0}}(V_1) = \sum\limits_{d \in {1...D}} |i_1^d - i_0^d|.
+\label{eqn::uptownFunk}
+\end{equation}
+We define $W_{v_0}(V_1)$, the weighting function used by volume $V_0$ for the
+equation describing  volume $V_1$ we use is given by
+\begin{equation}
+  W_{v_0}(V_1)  \equiv \frac{1}{D^{P_w}_{V_0}(V_1)},
+\label{eqn::weightFunk}  
+\end{equation}
+where $ 0 < P_w < 6$, the weighting power.   We present results for
+polynomial order $0 < P_T < 5$.
 
-To explore the roles of small cells and weighting functions, we first
-introduce a merged cut cell space where there are no small cells.
-This merged space still has geometric moments accurate to the same order 
-as the original cut cell space.
+\subsection{All Regular geometry}
 
-We study how weighting matricies change the conditioning of $A$.  This is
-done both with and without cell merger in the hope hope that this
-exploration may lead to simpler, more robust cut cell algorithms to
-solve partial differential equations at high order.
+We begin with a motivating example a geometry wherein all cells are uncut.  
 
-\section{Cell Merger Algorithm}
+\subsection{Cut Cell Geometry}
+\subsection{Merged Geometry}
+
+\section{Conclusions}
+\section{Appendix:Cell Merger Algorithm}
 
 We use a very simple cell merger algorithm.  Given a cut cell
 $\ibold$, we define the box containing only that cell
@@ -385,13 +410,13 @@ For unmerged grids, $ 0 < \kappa <= 1$.   When merged using this
 algorithm, $\kappa$ can be larger than $2^D$.   
 
 \begin{figure}
-\centerline{\epsfig{figure=unmerged.ps,width=0.4\linewidth }} 
+\centerline{\epsfig{figure=_fig/unmerged.ps,width=0.4\linewidth }} 
 \caption{Map for EB grid produced by a cutting cirle. $\kappa <= 1$.
   Each cut cell has a unique positive integer.}
 \end{figure}
 
 \begin{figure}
-\centerline{\epsfig{figure=merged.ps,width=0.4\linewidth } }
+\centerline{\epsfig{figure=_figmerged.ps,width=0.4\linewidth } }
 \label{fig::merged2dmap}
 \caption{Map of EB grid shown in \ref{fig::unmerged2dmap} after using
   cell merger algorithm.
@@ -412,8 +437,8 @@ algorithm, $\kappa$ can be larger than $2^D$.
   higher weights.  Diagonal weighting matricies are common.  Usually,
   these algorithms define a distance metric $D(\ibold, \jbold)$ for
   two volumes $\ibold$ and $\jbold$.  Typically they make
-  $W_{\jbold,\jbold}$ decrease strongly with increasing $D(\ibold,
-  \jbold)$ to assign higher importance to the equations for volumes
+  $W_{\jbold,\jbold}$ decrease strongly with increasing 
+  $D(\ibold,\jbold)$ to assign higher importance to the equations for volumes
   closer to $\ibold$.  Devendran for example \cite{Devendran2017},
   uses a weighting function that varies with $W_{\ibold,\jbold}
   \approx 1./D(\ibold,\jbold)^5$ }.
