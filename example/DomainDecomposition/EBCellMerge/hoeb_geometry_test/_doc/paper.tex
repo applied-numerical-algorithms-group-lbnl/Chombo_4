@@ -332,6 +332,24 @@ the solution using a Moore-Penrose pseudo-inverse:
 \begin{equation*}
 C = ((WM)^T(WM))^{-1} (WM)^T P.
 \end{equation*}
+This formulation can woven into the computation for stencil
+components;  Devendran \cite{Dendran2017}, for example, explains the
+process for Poisson's equation.
+
+Unfortunately, the matrix $A \equiv (WM)^T(WM)$ can be poorly conditioned.
+That these algorithms invert a matrix to compute
+stencil coefficients introduces an interesting type of uncertainty: error in
+the very coefficients of a stencil operation.   If the matrix is poorly
+conditioned, the coefficients of the stencil can only be known to
+limited precision.   This lack of precision is measurable as are its
+consequences.
+
+\section{All Regular geometry}
+
+To investigate the consequences of this geometry, we consider as a
+motivating example a geometry wherein all cells are uncut.  
+
+
 The matrix inversion at the heart of this method requires that we need
 know to what degree the matrix $A \equiv (WM)^T(WM)$ is
 well-conditioned.  Experience suggests that small cells play a role in
@@ -411,6 +429,9 @@ algorithm, $\kappa$ can be larger than $2^D$.
   $Z^D$.  Coarsening and refining has the standard Chombo semantic
   \cite{ChomboDesign, ChomboDesignEB}.}
 
+\footnotetext[7] {All matrix computations here are performed using
+  Eigen \cite{eigenweb}, a beautifully designed and implemented
+  package for on-processor linear algebra that is freely available.}
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
