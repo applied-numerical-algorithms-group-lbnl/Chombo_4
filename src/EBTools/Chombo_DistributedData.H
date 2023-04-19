@@ -231,7 +231,8 @@ namespace CH4_Data_Choreography
     */
     DistributedData(const Chombo4::DisjointBoxLayout     & a_grids,
                     const Chombo4::IntVect               & a_ghost,
-                    const Chombo4::DataFactory<fabtype_t>& a_factory)
+                    const Chombo4::DataFactory<fabtype_t>& a_factory,
+                    bool                                   a_enableStaticCache = false)
     {
       define(a_grids, a_ghost, a_factory);
     }
@@ -240,15 +241,16 @@ namespace CH4_Data_Choreography
     ///datafactory has an ncomps argument that shall be ignored here
     void define(const Chombo4::DisjointBoxLayout     & a_grids,
                 const Chombo4::IntVect               & a_ghost,
-                const Chombo4::DataFactory<fabtype_t>& a_factory)
+                const Chombo4::DataFactory<fabtype_t>& a_factory,
+                bool                                   a_enableStaticCache = false)
     {
       CH_TIME("DistributedData constructor");
       m_procID = CH4_SPMD::procID();
       m_isDefined = true;
       m_grids = a_grids;
       m_ghost = a_ghost;
-      m_graphConstructed= a_factory.graphConstructor();
-      
+      m_graphConstructed = a_factory.graphConstructor();
+      m_enableStaticCache = a_enableStaticCache;
       Chombo4::DataIterator dit = a_grids.dataIterator();
       m_data.resize(dit.size(), NULL);
       
@@ -289,16 +291,22 @@ namespace CH4_Data_Choreography
     void exchange(bool a_printStuff = false)
     {
       CH_TIME("DistributedData::exchange");
-#if 1      
-      auto& cache = getMetaDataCache();
-      auto metapair_ptr = cache.getExchangePair(m_grids, m_ghost, m_data, a_printStuff);
-      BoxPattern& pattern                          = *(metapair_ptr->m_pattern );
-      CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
-#else      
-      BoxPattern pattern(m_grids, m_ghost, a_printStuff);
-      CommunicationMetaData<fabtype_t> metadataco(pattern, m_data, a_printStuff);
-#endif      
-      communicate(*this, pattern, metadataco, *this  , a_printStuff, m_graphConstructed);
+      if (m_enableStaticCache)
+        {
+          auto& cache = getMetaDataCache();
+          auto metapair_ptr = cache.getExchangePair(m_grids, m_ghost, m_data, a_printStuff);
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::exchange: using cache" << endl;}
+          BoxPattern& pattern                          = *(metapair_ptr->m_pattern );
+          CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
+          communicate(*this, pattern, metadataco, *this  , a_printStuff, m_graphConstructed);
+        }
+      else
+        {
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::exchange: eschewing cache!" << endl;}
+          BoxPattern pattern(m_grids, m_ghost, a_printStuff);
+          CommunicationMetaData<fabtype_t> metadataco(pattern, m_data, a_printStuff);
+          communicate(*this, pattern, metadataco, *this  , a_printStuff, m_graphConstructed);
+        }
     }
     
     ///
@@ -306,24 +314,27 @@ namespace CH4_Data_Choreography
                 bool a_printStuff = false)
     {
       CH_TIME("DistributedData::copyTo");
-
-#if 1      
-      auto& cache = getMetaDataCache();
-      auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, m_data, a_printStuff);
-      
-      BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
-      CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
-#else      
-      Chombo4::pout() << "DistributedData::copyTo: eschewing cache!" << endl;
-      BoxPattern pattern(m_grids, a_dst.m_grids, true);
-      CommunicationMetaData<fabtype_t> metadataco(pattern,
-                                                  m_data, true);
-      Chombo4::pout() << "DistributedData::copyTo: m_grids: " << endl;
-      m_grids.print();
-      Chombo4::pout() << "DistributedData::copyTo: a_dst.m_grids:" << endl;
-      a_dst.m_grids.print();
-#endif
-      communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
+      if (m_enableStaticCache)
+        {
+          auto& cache = getMetaDataCache();
+          auto metapair_ptr = cache.getCopyToPair(m_grids, a_dst.m_grids, m_data, a_printStuff);
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::copyTo: using cache" << endl;}
+          BoxPattern& pattern                          = *(metapair_ptr->m_pattern  );
+          CommunicationMetaData<fabtype_t>& metadataco = *(metapair_ptr->m_commMeta);
+          communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
+        }
+      else
+        {
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::copyTo: eschewing cache!" << endl;}
+          BoxPattern pattern(m_grids, a_dst.m_grids, true);
+          CommunicationMetaData<fabtype_t> metadataco(pattern,
+                                                      m_data, true);
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::copyTo: m_grids: " << endl;}
+          m_grids.print();
+          if (a_printStuff) {Chombo4::pout() << "DistributedData::copyTo: a_dst.m_grids:" << endl;}
+          a_dst.m_grids.print();
+          communicate(a_dst,  pattern, metadataco, *this, a_printStuff, m_graphConstructed);
+        }
     }
 
     ///
@@ -509,17 +520,17 @@ namespace CH4_Data_Choreography
             int icomp = 0;  int ncomp = localfab.nComp(); //
             
             size_t charsize = localfab.charsize(motion.m_src.m_region, icomp, ncomp);
-            CH_assert(charsize == vecbuf[ivec]);
-            checkbufsize += charsize;
-          
             if(a_printStuff)
             {
               Chombo4::pout() << "DistributedData::postSends: send:    ivec= "    <<  ivec
-                              << ", region = "   << motion.m_src.m_region 
+                              << ", region = "   << motion.m_src.m_region
                               << ", dstProc = "   << motion.m_dst.m_procID
-                              << ", charsize = "   << charsize << endl;
+                              << ", charsize = "   << charsize
+                              << ", vecbuf = "   << vecbuf[ivec] << endl;
             }
-
+            CH_assert(charsize == vecbuf[ivec]);
+            checkbufsize += charsize;
+          
             size_t expectedSize = charsize;
             localfab.linearOut(bufloc, expectedSize, motion.m_src.m_region, icomp, ncomp, a_printStuff);
             bufloc += charsize;  
@@ -707,6 +718,7 @@ namespace CH4_Data_Choreography
     IntVect m_ghost;
     Chombo4::DisjointBoxLayout m_grids;
     bool m_isDefined;
+    bool m_enableStaticCache;
     bool m_graphConstructed;
 
   private:
