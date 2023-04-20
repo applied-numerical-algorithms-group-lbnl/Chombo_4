@@ -24,8 +24,6 @@ homestr = os.getcwd();
 print ("homedir = " + homestr)
 neartopstr = homestr + "/_" +args.prefix
 strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
-f_inputtemplate = open(args.input,'r')
-f_batchtemplate = open(args.batch,'r')
 
 
 topstr = neartopstr +"_" + strtoday
@@ -50,14 +48,20 @@ taylor_P = 1
 submitstr = "submit."  + args.prefix + ".jobs"
 subfile = open(submitstr,'w')
 subfile.write('#/usr/bin/csh\n')
-inputfilename = os.path.basename(args.input)
-batchfilename = os.path.basename(args.batch)
+inputfilebase = os.path.basename(args.input)
+batchfilebase = os.path.basename(args.batch)
+executablename  = "../../../main.exe"
 
+inputtemplatename = homestr + "/" + args.input
+batchtemplatename = homestr + "/" + args.batch
 while taylor_P <= max_taylor:
     weight_P = 1
     while weight_P <= max_weight:
 
-        configstr = "__taylorP_eq_" + str(taylor_P) + "__weightP_eq_" + str(weight_P)
+        f_inputtemplate = open(inputtemplatename,'r')
+        f_batchtemplate = open(batchtemplatename,'r')
+        
+        configstr = "_T" + str(taylor_P) + "__W" + str(weight_P)
         print (configstr);
 
         print ("changing directory to " + homestr)
@@ -68,6 +72,7 @@ while taylor_P <= max_taylor:
 
         dir_str = configstr
         
+        batchfilename = batchfilebase + str(weight_P) + str(taylor_P)
         commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. \n"
         subfile.write(commstr)
 
@@ -79,33 +84,36 @@ while taylor_P <= max_taylor:
         print ("changing directory to " + dir_str)
         os.chdir(dir_str)
 
+        inputfilename = inputfilebase + str(weight_P) + str(taylor_P)
+        print ("processing input file " + inputfilename)
         f_inp = open(inputfilename,'w')
-        f_bat = open(batchfilename,'w')
-        print ("processing input file")
+        
         for inputstr in f_inputtemplate:
             t1str = inputstr;
             t2str = t1str.replace("TAYLOR_MAX", str(taylor_P))
             t3str = t2str.replace("WGT_POWER",  str(weight_P))
             f_inp.write(t3str)
         
-        print ("processing batch file")
-        executablename  = "../../../main.exe"
-        for batchster in f_batchtemplate:
-            t1str = batchster
+        f_inp.close()
+        
+        print ("processing batch file " + batchfilename)
+        f_bat = open(batchfilename,'w')
+        for batchstr in f_batchtemplate:
+            t1str = batchstr
             t2str = t1str.replace("INPUT_FILE", inputfilename)
             t3str = t2str.replace("EXECUTABLE_FILE", executablename)
             f_bat.write(t3str)
 
         f_bat.close()
-        f_inp.close()
+        f_inputtemplate.close()
+        f_batchtemplate.close()
+        
         weight_P +=  1
 #       end inner scope        
     taylor_P += 1
 #   end outer scope
 
 print("out of loop")
-f_inputtemplate.close()
-f_batchtemplate.close()
 subfile.close();
 
     

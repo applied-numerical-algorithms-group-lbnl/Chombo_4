@@ -433,14 +433,17 @@ public:
     pp.get("radius", stenrad);
     pp.get("weight_power", weightpower);
 
-    shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, false);
+    static bool printedOne = false;
+    shared_ptr<eigen_mat> Amat = getAMatrix(a_volu, a_graph, stenrad, weightpower, !printedOne);
 
     Amat->getLargestAndSmallestEigenvalues(a_maxEigenvalue, a_minEigenvalue);
     a_invCondNumber = a_minEigenvalue/a_maxEigenvalue;
 
-    //begin debug
-    //  Amat->poutEigenvalues();
-    //end debug
+    if(!printedOne)
+    {
+      Amat->poutEigenvalues();
+      printedOne = true;
+    }
   }
   
   class
