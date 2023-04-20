@@ -69,6 +69,7 @@ public:
   
   static shared_ptr<pr_baseif> getImplicitFunction()
   {
+    CH_TIME("EBCM_Framework::getImplicitFunction");
     shared_ptr<pr_baseif>  retval;
     ParmParse pp("getImplicitFunction");
     string which_geom;
@@ -128,6 +129,7 @@ public:
                         bool a_outputGraph,
                         bool a_printStuff)
   {
+    CH_TIME("EBCM_Framework::makeMergedGeometry");
     using Chombo4::pout;
 
     int nx               = 32;
@@ -206,6 +208,7 @@ public:
                    const ch_iv         & a_start,
                    int a_nghost, int a_weightPower, bool a_printStuff)
     {
+      CH_TIME("EBCM_Framework::neigborhood_t constructor");
       m_startiv = a_start;
       m_nghost  = a_nghost;
       m_startloc.setToCCLocation(a_start, a_graph.m_dx);
@@ -252,7 +255,6 @@ public:
       }
     }
 
-
     double getManhattanDistance(const ebcm_volu & a_volu)  const
     {
       double xbar = 1; //important that it not go to zero.
@@ -290,6 +292,7 @@ public:
                         const int         & a_currentRow,
                         bool a_printStuff)
   {
+    CH_TIME("EBCM_Framework::shiftMomentAndFillRow");
     if(a_printStuff)
     {
       Chombo4::pout() << "shiftMomentAndFillRow: a_currentRow = " << a_currentRow << endl;
@@ -345,6 +348,7 @@ public:
   getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
                   bool a_printStuff)
   {
+    CH_TIME("EBCM_Framework::getMomentMatrix");
     //number of equations
     int n_equations = a_locality->m_volumes->size();
     int n_unknowns  = pr_mom_dim::size();
@@ -377,6 +381,7 @@ public:
              bool a_printStuff)
   {
   
+    CH_TIME("EBCM_Framework::AMatrix");
     shared_ptr<neighborhood_t>
       locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower, a_printStuff));
   
@@ -418,6 +423,8 @@ public:
                          const ebcm_volu     &  a_volu,
                          const ebcm_graph    &  a_graph)
   {
+    CH_TIME("EBCM_Framework::getConditionNumberInfo");
+
     //this stuff is probably more general than just this function
     //but the perfect API is eluding me at the moment so we will just
     //give the parameter a generic-ish base.
@@ -475,6 +482,7 @@ public:
                          const shared_ptr< ebcm_meta  >  & a_ebcm)
   {
     
+    CH_TIME("EBCM_Framework::getConditionNumberData");
     a_data  = shared_ptr<ebcm_leveldata>(new ebcm_leveldata(a_ebcm, Chombo4::IntVect::Zero));
     a_worst = shared_ptr<condition_t>(new condition_t());
 
@@ -525,6 +533,7 @@ public:
              const ch_dbl            & a_grids)
   {
 
+    CH_TIME("EBCM_Framework::checkKappa");
     double maxKappa = -1.0e10;
     double minKappa =  1.0e10;
     using Chombo4::pout;
@@ -555,6 +564,7 @@ public:
 
   static void runEigenTests()
   {
+    CH_TIME("EBCM_Framework::eigenTests");
 
     int n =4;
     eigen_mat A(n, n);
@@ -596,6 +606,7 @@ public:
   }
   static  void runTests()
   {
+    CH_TIME("EBCM_Framework::runTests");
     //linear algebra machinery check
     runEigenTests();
     //the important stuff
@@ -640,7 +651,7 @@ int main(int a_argc, char* a_argv[])
 #endif
 
   using Chombo4::pout;
-  CH_TIMER_SETFILE("ebcellmerge.time.table");
+  CH_TIMER_SETFILE("ebcm_framework_time_table");
   {
     
     if (a_argc < 2)
@@ -649,13 +660,22 @@ int main(int a_argc, char* a_argv[])
       return -2;
     }
     char* in_file = a_argv[1];
-    //We need to declare the first  parmparse this way because that is the way PP works.  
+    //We need to declare the first  parmparse this way
+    //(the reason for this is lost in time).
     ParmParse  ppdecl(a_argc-2,a_argv+2,NULL,in_file);
 
     int order;
     ParmParse pp("main");
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running test for polynomial order = " << order << endl;
+    if(order == 6)
+    {
+      EBCM_Framework<6>::runTests();
+    }
+    else if(order == 5)
+    {
+      EBCM_Framework<5>::runTests();
+    }
     if(order == 4)
     {
       EBCM_Framework<4>::runTests();
