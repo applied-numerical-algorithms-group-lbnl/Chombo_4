@@ -163,7 +163,6 @@ namespace ch_eigen
     getLargestAndSmallestEigenvalues(double & a_biggestEigenvalue,
                                      double & a_smallestEigenvalue) const
     {
-      poutEigenvalues();
       Eigen::JacobiSVD<Eigen::MatrixXd> svd(*m_mat_p);
       int ifirs = 0;
       int ilast = svd.singularValues().size()-1;
