@@ -454,10 +454,17 @@ public:
     double m_max_eigenvalue;
     double m_min_eigenvalue;
     pr_pt  m_pt;
-    inline void poutLatexTable(int a_P, int a_G) const
+    inline void poutLatexTable() const
     {
 
       using Chombo4::pout;
+
+      ParmParse ppmain("main");
+      ParmParse ppsten("stencil");
+      int stnrad, wgtpow, taymax;
+      ppmain.get("polynomial_order", taymax);
+      ppsten.get("weight_power"    , wgtpow);
+      ppsten.get("radius"          , stnrad);
       
       pout() << setw(12)
              << setprecision(6)
@@ -465,11 +472,11 @@ public:
              << setiosflags(ios::scientific);
       pout() << "\\begin{table}" << endl;
       pout() << "\\begin{center}" << endl;
-      pout() << "\\begin{tabular}{|cc|ccc|} \\hline" << endl;
+      pout() << "\\begin{tabular}{|ccc|ccc|} \\hline" << endl;
 
-      pout() << " P & G & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
+      pout() << " Order  & $P^W$ & $R_s$ & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
       pout() << "\\hline " << endl;
-      pout() << a_P << " & " << a_G << " & " << m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
+      pout() <<  "GREP_HOOK" << taymax << " & " << wgtpow << " & " <<  stnrad << " & "<< m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
       pout() << " \\\\ " << endl;
 
       pout() << "\\hline " << endl;
@@ -629,12 +636,7 @@ public:
     shared_ptr<condition_t>    worst;
     getConditionNumberData(invCondition, worst, ebcm);
 
-    int P = ebcm_order;
-    int G;
-    ParmParse ppsten("stencil");
-    ppsten.get("radius", G);
-    
-    worst->poutLatexTable(P, G);
+    worst->poutLatexTable();
     Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
     
     string plot_filename;

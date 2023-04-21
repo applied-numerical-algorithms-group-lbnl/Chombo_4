@@ -260,8 +260,7 @@ m_v^\pbold(\xbar)  =  \int\limits_{V} (\xbold - \xbar)^\pbold dV
 Given a sufficiently smooth function $\psi$, we can approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
-\psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -
-\xbar)^p \label{eqn::taylor}
+\psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -\xbar)^p
 \label{eqn::taylor}
 \end{equation}
 where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
@@ -288,20 +287,8 @@ products of grid generation.  Modern, higher order embedded boundary
 methods use this description directly to generate stencils
 \cite{Overton2022a, Devendran2017, Schwartz2015}.  At the
 core, all these algorithms have a similar procedure for finding the
-Taylor coefficients $C^p$ which is worth discussing. 
+Taylor coefficients $C^p$ which is worth discussing.  \footnotemark[8]
 
-The discerning reader will notice that
-the equation set used to create $C$ only includes the volume
-equations.  Devendran et al. \cite{Devendran2017} also include boundary
-condition equations in the equation set.  For simple enough boundary
-conditions, this works very well.  There are many equation sets,
-however, which do not lend themselves easily to this approach.
-Notably, hyperbolic equations often have boundary conditions which are
-fomulated in terms of characteristic variables.  Using this
-information in the system of equations for Taylor coefficients is
-still a matter of research.  We therefore believe that restricting
-ourselves to the volume equations can provide insight valuable to
-developers of this class of algorithms.
 
 \section{Computing Taylor coefficients and Matrix Conditioning}
 
@@ -336,7 +323,7 @@ the solution using a Moore-Penrose pseudo-inverse:
 \label{eqn::getC}  
 \end{equation}
 This formulation can woven into the computation for stencil
-components;  Devendran \cite{Dendran2017}, for example, explains the
+components;  Devendran \cite{Devendran2017}, for example, explains the
 process for Poisson's equation.
 
 Unfortunately, the matrix $A \equiv (WM)^T(WM)$ can be poorly conditioned.
@@ -347,10 +334,22 @@ conditioned, the coefficients of the stencil can only be known to
 limited precision.   This lack of precision is measurable as are its
 consequences.
 
+Broadly speaking, there are two approaches to dealing with this poor
+conditioning. One can improve the accuracy of the matrix
+representation so she can absorb the reduction in precision and still
+produce coefficients of sufficient accuracy.
+Lo, et al. \cite{Lo2019} show good results using quad-precision arithmetic
+for matrices which produce double precision coefficients.
+The other approach is to improve the
+conditioning of the matrix by careful choices of weighting matrix and
+neighborhood.  
+
+
 \section{Condition number measurements}
 
-To gain insight into this process, we evaluate the matrix $A \equiv
-(WM)^T(WM)$ at every volume in a computational grid and analyze its
+To gain insight into the connection between solvability, weighting and
+order, we evaluate the matrix $A \equiv (WM)^T(WM)$
+at every volume in a computational grid and analyze its
 eigenvalues.   Given a matrix $A_i$ with the set of eigenvalues
 $\{ \lambda_{i}\}$, the inverse of the condition number $I_i$ is given by
 \begin{equation*}
@@ -372,7 +371,7 @@ We start from volume $V_0$.   For
 weighting function, we need to measure $D_{w, V_0}(V_1)$,
 the Manhattan disance to the volume $V_1$:
 \begin{equation}
-  D_{W, V_0}}(V_1) = \sum\limits_{d \in {1...D}} |i_1^d - i_0^d|.
+  D_{W, V_0}(V_1) = \sum\limits_{d \in {1...D}} |i_1^d - i_0^d|.
 \label{eqn::uptownFunk}
 \end{equation}
 We define $W_{v_0}(V_1)$, the weighting function used by volume $V_0$ for the
@@ -386,7 +385,59 @@ polynomial order $0 < P_T < 5$.
 
 \subsection{All Regular geometry}
 
-We begin with a motivating example a geometry wherein all cells are uncut.  
+We begin with the simplest possible motivating example: a two
+dimensional Cartesian geometry wherein all cells are uncut.  Figure  
+\ref{fig::T3W3} shows $I$ with $P_w = P_T = 3$.  Table
+\ref{tab::all_reg2d}  shows the worst condition number in this simple
+grid for a number of values of $P_w$ and $P_T$.
+We hshow  that $I$ can get quite small, especially near the domain
+boundaries.   The data show clearly that there is a connection between
+solvability, weighting  funciton, and polynomial order.  Very interestingly,
+we show, that for a fixed polynomial order,
+a higher weighting power can make the solvability
+problem worse.
+
+\begin{figure}
+\centerline{\epsfig{figure=_fig/all_reg_t3_w3_inv_cond.ps,width=0.4\linewidth } }
+\label{fig::T3W3}
+\caption{$I$ (inverse of ondition number for matrix $A$ for a $32^2$
+  uncut grid where $P_w = P_T = 3$.}
+
+\end{figure}
+\begin{table}
+\begin{center}
+\begin{tabular}{|ccc|ccc|} \hline
+$P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+\hline
+1 & 1 & 3 & 2.280975e+00 & 1.471897e-03 & 6.452929e-04 \\ 
+1 & 2 & 3 & 1.184453e+00 & 1.544110e-04 & 1.303648e-04 \\ 
+1 & 3 & 3 & 1.036586e+00 & 2.327227e-05 & 2.245088e-05 \\ 
+1 & 4 & 3 & 1.008340e+00 & 4.569664e-06 & 4.531869e-06 \\ 
+1 & 5 & 3 & 1.002008e+00 & 1.029556e-06 & 1.027493e-06 \\ 
+2 & 1 & 3 & 2.280983e+00 & 1.185321e-06 & 5.196535e-07 \\ 
+2 & 2 & 3 & 1.184453e+00 & 8.194451e-08 & 6.918341e-08 \\ 
+2 & 3 & 3 & 1.036586e+00 & 5.067663e-09 & 4.888801e-09 \\ 
+2 & 4 & 3 & 1.008340e+00 & 3.385548e-10 & 3.357547e-10 \\ 
+2 & 5 & 3 & 1.002008e+00 & 2.634337e-11 & 2.629058e-11 \\ 
+3 & 1 & 3 & 2.280983e+00 & 5.060791e-10 & 2.218689e-10 \\ 
+3 & 2 & 3 & 1.184453e+00 & 4.179917e-11 & 3.528985e-11 \\ 
+3 & 3 & 3 & 1.036586e+00 & 2.762010e-12 & 2.664525e-12 \\ 
+3 & 4 & 3 & 1.008340e+00 & 1.380647e-13 & 1.369228e-13 \\ 
+3 & 5 & 3 & 1.002008e+00 & 6.886907e-15 & 6.873105e-15 \\ 
+4 & 1 & 3 & 2.744326e+00 & 2.848432e-25 & 1.037935e-25 \\ 
+4 & 2 & 3 & 1.184453e+00 & 1.481174e-27 & 1.250513e-27 \\ 
+4 & 3 & 3 & 1.055930e+00 & 4.257688e-26 & 4.032168e-26 \\ 
+4 & 4 & 3 & 1.008340e+00 & 1.078564e-23 & 1.069643e-23 \\ 
+4 & 5 & 3 & 1.002008e+00 & 5.873348e-25 & 5.861578e-25 \\ 
+\hline
+
+\label{tab::all_reg2d}
+\end{tabular}
+\end{center}
+  \caption{$I$ for a variety of Taylor power $P^T$ and weighting
+    function exponents $P^W$.}
+
+\end{table}
 
 \subsection{Cut Cell Geometry}
 \subsection{Merged Geometry}
@@ -413,14 +464,15 @@ algorithm, $\kappa$ can be larger than $2^D$.
 \centerline{\epsfig{figure=_fig/unmerged.ps,width=0.4\linewidth }} 
 \caption{Map for EB grid produced by a cutting cirle. $\kappa <= 1$.
   Each cut cell has a unique positive integer.}
+\label{fig::unmerged2dmap}
 \end{figure}
 
 \begin{figure}
-\centerline{\epsfig{figure=_figmerged.ps,width=0.4\linewidth } }
-\label{fig::merged2dmap}
+\centerline{\epsfig{figure=_fig/merged.ps,width=0.4\linewidth } }
 \caption{Map of EB grid shown in \ref{fig::unmerged2dmap} after using
   cell merger algorithm.
   Each cut cell has a unique positive integer. $\kappa <= 4.1433$}
+\label{fig::merged2dmap}
 \end{figure}
 
 \footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
@@ -457,6 +509,20 @@ algorithm, $\kappa$ can be larger than $2^D$.
 \footnotetext[7] {All matrix computations here are performed using
   Eigen \cite{eigenweb}, a beautifully designed and implemented
   package for on-processor linear algebra that is freely available.}
+
+\footnotetext[8]{The discerning reader will notice that
+the equation set used to create $C$ only includes the volume
+equations.  Devendran et al. \cite{Devendran2017} also include boundary
+condition equations in the equation set.  For simple enough boundary
+conditions, this works very well.  There are many equation sets,
+however, which do not lend themselves easily to this approach.
+Notably, hyperbolic equations often have boundary conditions which are
+fomulated in terms of characteristic variables.  Using this
+information in the system of equations for Taylor coefficients is
+still a matter of research.  We therefore believe that restricting
+ourselves to the volume equations can provide insight valuable to
+developers of this class of algorithms.}
+
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
