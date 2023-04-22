@@ -474,9 +474,10 @@ public:
       pout() << "\\begin{center}" << endl;
       pout() << "\\begin{tabular}{|ccc|ccc|} \\hline" << endl;
 
-      pout() << " Order  & $P^W$ & $R_s$ & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
+      pout() << " $D$ & $P^T$  & $P^W$ & $R_s$ & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
       pout() << "\\hline " << endl;
-      pout() <<  "GREP_HOOK" << taymax << " & " << wgtpow << " & " <<  stnrad << " & "<< m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
+      int dim = DIM;
+      pout() <<  "-GREP_HOOK-" << dim << " & " << taymax << " & " << wgtpow << " & " <<  stnrad << " & "<< m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
       pout() << " \\\\ " << endl;
 
       pout() << "\\hline " << endl;
