@@ -13,9 +13,9 @@ parser = ArgumentParser()
 
 parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default='4')
 parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
-parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/sphere.inputs")
+parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/merged.inputs")
 parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
-parser.add_argument('--prefix', type=str, help='name of test["test"]',default="unmerged")
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default="merged_3d")
 
 args = parser.parse_args()
 print(args)
@@ -74,6 +74,8 @@ while taylor_P <= max_taylor:
         
         batchfilename = batchfilebase + str(weight_P) + str(taylor_P)
         commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. \n"
+        echostr = "echo \" " + commstr + " \" "
+        subfile.write(echostr)
         subfile.write(commstr)
 
         if not os.path.exists(dir_str):
