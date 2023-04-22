@@ -323,7 +323,7 @@ the solution using a Moore-Penrose pseudo-inverse:
 \label{eqn::getC}  
 \end{equation}
 This formulation can woven into the computation for stencil
-components;  Devendran \cite{Devendran2017}, for example, explains the
+components;  Devendran et al. \cite{Devendran2017}, for example, explains the
 process for Poisson's equation.
 
 Unfortunately, the matrix $A \equiv (WM)^T(WM)$ can be poorly conditioned.
@@ -331,8 +331,8 @@ That these algorithms can invert a poorly-conditioned matrix to compute
 stencil coefficients introduces an interesting type of uncertainty: error in
 the very coefficients of a stencil operation.   If the matrix is poorly
 conditioned, the coefficients of the stencil can only be known to
-limited precision.   This lack of precision is measurable as are its
-consequences.
+limited precision.   This lack of precision is measurable as it tracks
+the condition number of the matrix.
 
 Broadly speaking, there are two approaches to dealing with this poor
 conditioning. One can improve the accuracy of the matrix
@@ -390,14 +390,7 @@ $D$-dimensional Cartesian geometry wherein all cells are uncut.
 Figure \ref{fig::T3W3} shows all values of $I$ for $D=2$, $I$ with
 $P_w = P_T = 3$.  Table \ref{tab::worst_all_reg_inv_conv} shows the
 worst condition number in this simple grid for a number of values of
-$P_w$ and $P_T$.  We show first that for a safe (low) choice of
-$P_T$, even the worst condition number in a given grid can be quite
-reasonable. With more aggressive choices of $P_T$, $I$ can be quite
-small (especially near the domain boundaries).  The data also
-show clearly that there is a connection between solvability, weighting
-function, and polynomial order.  Unexpectedly, we show that for a
-fixed polynomial order $P_T$, a higher weighting power $P_w$ can make the
-solvability problem worse.
+$P_w$ and $P_T$. 
 
 \begin{figure}
 \centerline{\epsfig{figure=_fig/all_reg_t3_w3_inv_cond.ps,width=0.4\linewidth } }
@@ -461,7 +454,7 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 \end{center}
 \caption
     {
-      We show the lowest value 
+      We show the lowest value of
       $I$ for an entire Cartesian grid of size $32^D$.
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$. 
@@ -470,13 +463,33 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 
 \section{Cut Cell Geometry}
 \label{sec::eb}
+
 Our next  grid is a Cartesian grid cut  by a sphere (or a circle in two
 dimensions). The computational domain is the unit cube.   The cutting
 sphere center is the center of the cube.   The radius of the cutting
 sphere is 0.45.  The grid moments are generated using the algorithm
 specified in \cite{Schwartz2015}.  The moments are accurate to
-order $h^{P^T}$.   The map for the 2D case is shown in figure
-\ref{fig::unmerged2dmap}.
+order $h^{P^T}$.
+
+If we use grid volumes at this point, the volume fraction
+\begin{equation*}
+\kappa_\ibold \equiv V_\ibold/h^D$ 
+\end{equation*}
+can be arbitrarily small ($ 0 < \kappa <= 1$).   We can also choose to
+merge small volumes with larger neighbors without formal loss of
+accuracy. The simple merger we use is described in
+described in appendix \ref{appendix::merge}.
+When merged using this algorithm, $\kappa$ can be larger than $2^D$.
+
+Without using cell merger, the volume map in two dimensions is shown
+in figure \ref{fig::unmerged2dmap}.   With cell merger, that same map
+becomes the grid shown in figure{fig::unmerged2dmap}.
+Tables \ref{tab::worst_unmerged_inv_conv} and
+\ref{tab::worst_merged_inv_conv}
+show the worst condition number for the unmerged and merged  grids
+respectively while varying $P_w$ and $P_T$.   Merger does not seem to
+help substantially with this issue.
+
 
 \begin{figure}
 \centerline{\epsfig{figure=_fig/unmerged.ps,width=0.4\linewidth }} 
@@ -488,11 +501,143 @@ order $h^{P^T}$.   The map for the 2D case is shown in figure
 \end{figure}
 
 
-\subsection{Merged Geometry}
+\begin{table}
+\begin{center}
+\begin{tabular}{|cccc|ccc|} \hline
+$D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+  \hline
+2 & 1 & 1 & 3 & 2.652364e+00 & 1.404997e-03 & 5.297151e-04 \\ 
+2 & 1 & 2 & 3 & 1.208056e+00 & 1.014262e-04 & 8.395817e-05 \\ 
+2 & 1 & 3 & 3 & 1.038877e+00 & 8.361926e-06 & 8.049002e-06 \\ 
+2 & 1 & 4 & 3 & 1.008924e+00 & 1.034928e-06 & 1.025774e-06 \\ 
+2 & 1 & 5 & 3 & 1.002428e+00 & 1.818655e-07 & 1.814249e-07 \\ 
+2 & 2 & 1 & 3 & 2.714706e+00 & 6.503682e-07 & 2.395722e-07 \\ 
+2 & 2 & 2 & 3 & 1.208056e+00 & 4.514952e-08 & 3.737369e-08 \\ 
+2 & 2 & 3 & 3 & 1.038878e+00 & 2.933277e-09 & 2.823506e-09 \\ 
+2 & 2 & 4 & 3 & 1.008924e+00 & 1.838097e-10 & 1.821840e-10 \\ 
+2 & 2 & 5 & 3 & 1.002428e+00 & 1.202042e-11 & 1.199130e-11 \\ 
+2 & 3 & 1 & 3 & 2.714706e+00 & 2.057098e-10 & 7.577609e-11 \\ 
+2 & 3 & 2 & 3 & 1.208056e+00 & 1.761011e-11 & 1.457723e-11 \\ 
+2 & 3 & 3 & 3 & 1.039039e+00 & 1.175442e-12 & 1.131278e-12 \\ 
+2 & 3 & 4 & 3 & 1.008867e+00 & 6.513002e-14 & 6.455759e-14 \\ 
+2 & 3 & 5 & 3 & 1.002428e+00 & 3.467198e-15 & 3.458798e-15 \\ 
+2 & 4 & 1 & 3 & 2.714706e+00 & 1.027685e-15 & 3.785620e-16 \\   
+2 & 4 & 2 & 3 & 1.211905e+00 & 6.107792e-17 & 5.039827e-17 \\ 
+2 & 4 & 3 & 3 & 1.056037e+00 & 5.698627e-18 & 5.396236e-18 \\ 
+2 & 4 & 4 & 3 & 1.012707e+00 & 1.518532e-18 & 1.499478e-18 \\ 
+2 & 4 & 5 & 3 & 1.003135e+00 & 5.995871e-19 & 5.977134e-19 \\ 
+3 & 1 & 1 & 3 & 6.913890e+00 & 3.982271e-03 & 5.759812e-04 \\ 
+3 & 1 & 2 & 3 & 1.457799e+00 & 1.829378e-04 & 1.254890e-04 \\ 
+3 & 1 & 3 & 3 & 1.066961e+00 & 8.913398e-06 & 8.354003e-06 \\ 
+3 & 1 & 4 & 3 & 1.014131e+00 & 7.252280e-07 & 7.151226e-07 \\ 
+3 & 1 & 5 & 3 & 1.003774e+00 & 1.047053e-07 & 1.043116e-07 \\ 
+3 & 2 & 1 & 3 & 7.173851e+00 & 1.868373e-06 & 2.604421e-07 \\ 
+3 & 2 & 2 & 3 & 1.457801e+00 & 7.350629e-08 & 5.042274e-08 \\ 
+3 & 2 & 3 & 3 & 1.066958e+00 & 3.054784e-09 & 2.863077e-09 \\ 
+3 & 2 & 4 & 3 & 1.014128e+00 & 1.439525e-10 & 1.419470e-10 \\ 
+3 & 2 & 5 & 3 & 1.003771e+00 & 6.965181e-12 & 6.939012e-12 \\ 
+3 & 3 & 1 & 3 & 7.173852e+00 & 5.736142e-10 & 7.995902e-11 \\ 
+3 & 3 & 2 & 3 & 1.463399e+00 & 3.367341e-11 & 2.301041e-11 \\ 
+3 & 3 & 3 & 3 & 1.067176e+00 & 1.250758e-12 & 1.172027e-12 \\ 
+3 & 3 & 4 & 3 & 1.014128e+00 & 4.489644e-14 & 4.427098e-14 \\ 
+3 & 3 & 5 & 3 & 1.003771e+00 & 1.609961e-15 & 1.603912e-15 \\ 
+3 & 4 & 1 & 3 & 7.173852e+00 & 8.922302e-15 & 1.243725e-15 \\ 
+3 & 4 & 2 & 3 & 1.463399e+00 & 3.078368e-16 & 2.103574e-16 \\ 
+3 & 4 & 3 & 3 & 1.067186e+00 & 2.577668e-17 & 2.415387e-17 \\ 
+3 & 4 & 4 & 3 & 1.014048e+00 & 4.440651e-18 & 4.379133e-18 \\ 
+3 & 4 & 5 & 3 & 1.005227e+00 & 8.527341e-19 & 8.483000e-19 \\ 
 
-Our next  grid is a the same grid show in section \ref{sec::eb}.
-Here, however, we  use a very simple cell merger algorithm to force
-all cells to have a volume at least as large as an uncut cell.
+  \label{tab::worst_unmerged_inv_conv}
+\end{tabular}
+\end{center}
+\caption
+    {
+      We show the lowest value of
+      $I$ for an entire Cartesian grid of size $32^D$.
+      Volumes are  formed by a sphere (or circle in 2D) cutting the
+      grid.   Volumes here can be arbitrarily small (no cell merging
+      happens here).
+      We vary Taylor power $P^T$, weighting
+      function exponents $P^W$, and dimensionality $D$. 
+    }
+\end{table}
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|cccc|ccc|} \hline
+$D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+  \hline
+2 & 1 & 1 & 3 & 2.516834e+00 & 1.345987e-04 & 5.347936e-05 \\ 
+2 & 1 & 2 & 3 & 1.940391e+00 & 5.761694e-06 & 2.969347e-06 \\ 
+2 & 1 & 3 & 3 & 1.890620e+00 & 3.134007e-07 & 1.657661e-07 \\ 
+2 & 1 & 4 & 3 & 2.315204e+00 & 2.362198e-08 & 1.020298e-08 \\ 
+2 & 1 & 5 & 3 & 2.314798e+00 & 1.256411e-09 & 5.427736e-10 \\ 
+2 & 2 & 1 & 3 & 5.133178e+00 & 3.150951e-08 & 6.138402e-09 \\ 
+2 & 2 & 2 & 3 & 3.875948e+00 & 1.019905e-09 & 2.631369e-10 \\ 
+2 & 2 & 3 & 3 & 3.677407e+00 & 3.374831e-11 & 9.177202e-12 \\ 
+2 & 2 & 4 & 3 & 3.633887e+00 & 1.196563e-12 & 3.292791e-13 \\ 
+2 & 2 & 5 & 3 & 1.100852e+00 & 1.071019e-14 & 9.729001e-15 \\ 
+2 & 3 & 1 & 3 & 1.461766e+00 & 8.698889e-14 & 5.950944e-14 \\ 
+2 & 3 & 2 & 3 & 1.118751e+00 & 4.096970e-15 & 3.662093e-15 \\ 
+2 & 3 & 3 & 3 & 1.102424e+00 & 1.662951e-16 & 1.508449e-16 \\ 
+2 & 3 & 4 & 3 & 3.178329e+00 & 1.221190e-16 & 3.842238e-17 \\ 
+2 & 3 & 5 & 3 & 1.924223e+00 & 3.044738e-18 & 1.582320e-18 \\ 
+3 & 1 & 1 & 3 & 5.278376e+00 & 5.346601e-04 & 1.012926e-04 \\ 
+3 & 1 & 2 & 3 & 2.898394e+00 & 1.760686e-05 & 6.074697e-06 \\ 
+3 & 1 & 3 & 3 & 2.480330e+00 & 4.867477e-07 & 1.962431e-07 \\ 
+3 & 1 & 4 & 3 & 2.602304e+00 & 1.708061e-08 & 6.563648e-09 \\ 
+3 & 1 & 5 & 3 & 2.594257e+00 & 5.017396e-10 & 1.934039e-10 \\ 
+3 & 2 & 1 & 3 & 8.172169e+00 & 1.320095e-07 & 1.615355e-08 \\ 
+3 & 2 & 2 & 3 & 4.770044e+00 & 3.005370e-09 & 6.300508e-10 \\ 
+3 & 2 & 3 & 3 & 4.426838e+00 & 7.734334e-11 & 1.747146e-11 \\ 
+3 & 2 & 4 & 3 & 4.521378e+00 & 1.996373e-12 & 4.415410e-13 \\ 
+3 & 2 & 5 & 3 & 4.508090e+00 & 4.439516e-14 & 9.847886e-15 \\ 
+3 & 3 & 1 & 3 & 5.015663e+00 & 9.627815e-12 & 1.919550e-12 \\ 
+3 & 3 & 2 & 3 & 6.602139e+00 & 4.969235e-13 & 7.526705e-14 \\ 
+3 & 3 & 3 & 3 & 6.132610e+00 & 1.126536e-14 & 1.836961e-15 \\ 
+3 & 3 & 4 & 3 & 5.482751e+00 & 3.670736e-16 & 6.695062e-17 \\ 
+3 & 3 & 5 & 3 & 5.346895e+00 & 4.774068e-17 & 8.928674e-18 \\ 
+3 & 4 & 1 & 3 & 1.161979e+01 & 5.372252e-18 & 4.623365e-19 \\ 
+3 & 4 & 2 & 3 & 4.069086e+00 & 1.622222e-17 & 3.986699e-18 \\ 
+\hline
+\label{tab::worst_merged_inv_conv}
+\end{tabular}
+\end{center}
+\caption
+    {
+      We show the lowest value of
+      $I$ for an entire Cartesian grid of size $32^D$.
+      Volumes are  formed by a sphere (or circle in 2D) cutting the
+      grid.   Small volumes here are merged with neighbors.
+      We vary Taylor power $P^T$, weighting
+      function exponents $P^W$, and dimensionality $D$. 
+    }
+\end{table}
+
+
+\section{Conclusions}
+
+We show first that for a safe (low) choice of
+$P_T$, even the worst condition number in a given grid can be quite
+reasonable. With more aggressive choices of $P_T$, $I$ can be very
+small.  The data also
+show clearly that there is a connection between solvability, weighting
+function, and polynomial order.  Unexpectedly, we show that for a
+fixed polynomial order $P_T$, a higher weighting power $P_w$ can make the
+solvability problem worse.
+
+We do also show that matrix conditioning is a  potential issue for
+this class of algorihms.   In fact, for certain parameters,
+the condition number  can be so severe that an
+increase in matrix arithmetic precision will not be sufficient.
+Since cell merger does not really help the
+problem, this lack of conditioning is not an issue with small cells.
+With careful choices of polynomial order and weighting matrix, the
+solvability problem can be managed, however.
+
+\section{Appendix: Simple algorithm for cell merger}
+\label{appendix::merger}
 
 Given a cut cell $\ibold$, we define the box containing only that cell
 $B_c = B(\ibold, \ibold)$ We form a $2^D$ cell rectangular region by
@@ -500,7 +645,7 @@ coarsening and then refining $B_c$ to form $B_v = R(C(B_c))$
 \footnotemark[6].  After that process, any left over small cells are
 merged with their biggest neighbor.  See figures
 \ref{fig::unmerged2dmap} and \ref{fig::merged2dmap} for a simple
-example of how this algorithm creates fairly chunky grids
+example of how this algorithm creates fairly chunky grids.
 
 Merging two cells is simply a matter of removing the
 intervening faces, shifting all moments them to a common location
@@ -513,10 +658,6 @@ For unmerged grids, the volume fraction $\kappa_\ibold \equiv
 V_\ibold/h^D$ can be arbitrarily small ($ 0 < \kappa <= 1$).
 When merged using this algorithm, $\kappa$ can be larger than $2^D$.
 
-
-
-
-
 \begin{figure}
 \centerline{\epsfig{figure=_fig/merged.ps,width=0.4\linewidth } }
 \caption{Map of EB grid shown in \ref{fig::unmerged2dmap} after using
@@ -525,8 +666,7 @@ When merged using this algorithm, $\kappa$ can be larger than $2^D$.
 \label{fig::merged2dmap}
 \end{figure}
 
-\section{Conclusions}
-\section{Appendix:Cell Merger Algorithm}
+
 
 
 
@@ -546,7 +686,7 @@ When merged using this algorithm, $\kappa$ can be larger than $2^D$.
   two volumes $\ibold$ and $\jbold$.  Typically they make
   $W_{\jbold,\jbold}$ decrease strongly with increasing 
   $D(\ibold,\jbold)$ to assign higher importance to the equations for volumes
-  closer to $\ibold$.  Devendran for example \cite{Devendran2017},
+  closer to $\ibold$.  Devendran et al. for example \cite{Devendran2017},
   uses a weighting function that varies with $W_{\ibold,\jbold}
   \approx 1./D(\ibold,\jbold)^5$ }.
 
