@@ -197,7 +197,8 @@
   We show that significant solvability issues can arise from certain weighting
   functions.    A very rudimentary but stable cell merger algorithm is
   presented as we show that these solvability issues are not 
-  an artifact of small-cell instabilties.
+  an artifact of small-cell instabilties.    We show that one can
+  manage these solvability issues with careful algorithm choices.
   
 \end{abstract}
 
@@ -336,7 +337,7 @@ the condition number of the matrix.
 
 Broadly speaking, there are two approaches to dealing with this poor
 conditioning. One can improve the accuracy of the matrix
-representation so she can absorb the reduction in precision and still
+representation so she may absorb the reduction in precision and still
 produce coefficients of sufficient accuracy.
 Lo, et al. \cite{Lo2019} show good results using quad-precision arithmetic
 for matrices which produce double precision coefficients.
@@ -366,7 +367,7 @@ same measurements.   Finally we take this cut mesh and merge its small
 cells to neighbors to eliminate all cells smaller than a Cartesian
 volume to isolate the effects of small cells.
 
-All volumes $V_i$ start with a index $i \in Z^D$.
+All volumes $V_i$ start with an  index $i \in Z^D$.
 We start from volume $V_0$.   For 
 weighting function, we need to measure $D_{w, V_0}(V_1)$,
 the Manhattan disance to the volume $V_1$:
@@ -380,7 +381,7 @@ equation describing  volume $V_1$ we use is given by
   W_{v_0}(V_1)  \equiv \frac{1}{D^{P_w}_{V_0}(V_1)},
 \label{eqn::weightFunk}  
 \end{equation}
-where we vary $P_w$, and the 
+where we vary the weighting exponent $P_w$, and the 
 polynomial order $P_T$.
 
 \subsection{All Regular geometry}
@@ -402,12 +403,12 @@ $P_w$ and $P_T$.
     }
 \end{figure}
 
-
+\begin{small}
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
-  \hline
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+\hline
 2 & 1 & 1 & 3 & 2.280975e+00 & 1.471897e-03 & 6.452929e-04 \\ 
 2 & 1 & 2 & 3 & 1.184453e+00 & 1.544110e-04 & 1.303648e-04 \\ 
 2 & 1 & 3 & 3 & 1.036586e+00 & 2.327227e-05 & 2.245088e-05 \\ 
@@ -447,11 +448,11 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 3 & 4 & 2 & 3 & 1.474014e+00 & 1.231139e-27 & 8.352288e-28 \\ 
 3 & 4 & 3 & 3 & 1.102368e+00 & 5.433012e-27 & 4.928491e-27 \\ 
 3 & 4 & 4 & 3 & 1.012826e+00 & 1.327379e-23 & 1.310570e-23 \\ 
-3 & 4 & 5 & 3 & 1.003042e+00 & 6.807789e-25 & 6.787141e-25 \\ 
+3 & 4 & 5 & 3 & 1.003042e+00 & 6.807789e-25 & 6.787141e-25 \\
 \hline
-\label{tab::worst_all_reg_inv_conv}
 \end{tabular}
 \end{center}
+\label{tab::worst_all_reg_inv_conv}
 \caption
     {
       We show the lowest value of
@@ -460,6 +461,7 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
       function exponents $P^W$, and dimensionality $D$. 
     }
 \end{table}
+\end{small}
 
 \section{Cut Cell Geometry}
 \label{sec::eb}
@@ -501,10 +503,11 @@ help substantially with this issue.
 \end{figure}
 
 
+\begin{small}
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
   \hline
 2 & 1 & 1 & 3 & 2.652364e+00 & 1.404997e-03 & 5.297151e-04 \\ 
 2 & 1 & 2 & 3 & 1.208056e+00 & 1.014262e-04 & 8.395817e-05 \\ 
@@ -545,11 +548,11 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 3 & 4 & 2 & 3 & 1.463399e+00 & 3.078368e-16 & 2.103574e-16 \\ 
 3 & 4 & 3 & 3 & 1.067186e+00 & 2.577668e-17 & 2.415387e-17 \\ 
 3 & 4 & 4 & 3 & 1.014048e+00 & 4.440651e-18 & 4.379133e-18 \\ 
-3 & 4 & 5 & 3 & 1.005227e+00 & 8.527341e-19 & 8.483000e-19 \\ 
-
-  \label{tab::worst_unmerged_inv_conv}
+3 & 4 & 5 & 3 & 1.005227e+00 & 8.527341e-19 & 8.483000e-19 \\
+\hline
 \end{tabular}
 \end{center}
+\label{tab::worst_unmerged_inv_conv}
 \caption
     {
       We show the lowest value of
@@ -561,12 +564,13 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
       function exponents $P^W$, and dimensionality $D$. 
     }
 \end{table}
+\end{small}
 
 
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
   \hline
 2 & 1 & 1 & 3 & 2.516834e+00 & 1.345987e-04 & 5.347936e-05 \\ 
 2 & 1 & 2 & 3 & 1.940391e+00 & 5.761694e-06 & 2.969347e-06 \\ 
@@ -599,11 +603,11 @@ $D$ $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 3 & 3 & 4 & 3 & 5.482751e+00 & 3.670736e-16 & 6.695062e-17 \\ 
 3 & 3 & 5 & 3 & 5.346895e+00 & 4.774068e-17 & 8.928674e-18 \\ 
 3 & 4 & 1 & 3 & 1.161979e+01 & 5.372252e-18 & 4.623365e-19 \\ 
-3 & 4 & 2 & 3 & 4.069086e+00 & 1.622222e-17 & 3.986699e-18 \\ 
+3 & 4 & 2 & 3 & 4.069086e+00 & 1.622222e-17 & 3.986699e-18 \\
 \hline
-\label{tab::worst_merged_inv_conv}
 \end{tabular}
 \end{center}
+\label{tab::worst_merged_inv_conv}
 \caption
     {
       We show the lowest value of
