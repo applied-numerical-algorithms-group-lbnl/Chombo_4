@@ -325,7 +325,7 @@ the solution using a Moore-Penrose pseudo-inverse:
 \end{equation}
 This formulation can woven into the computation for stencil
 components;  Devendran et al. \cite{Devendran2017}, for example, explains the
-process for Poisson's equation.
+process for Poisson's equation.    
 
 Unfortunately, the matrix $A \equiv (WM)^T(WM)$ can be poorly conditioned.
 That these algorithms can invert a poorly-conditioned matrix to compute
@@ -349,7 +349,11 @@ neighborhood.
 \section{Condition number measurements}
 
 To gain insight into the connection between solvability, weighting and
-order, we evaluate the matrix $A \equiv (WM)^T(WM)$
+order, we evaluate the matrix
+\begin{equation}
+A \equiv (WM)^T(WM)
+\label{eqn::normalEq}
+\end{equation}
 at every volume in a computational grid and analyze its
 eigenvalues.   Given a matrix $A_i$ with the set of eigenvalues
 $\{ \lambda_{i}\}$, the inverse of the condition number $I_i$ is given by
@@ -359,6 +363,18 @@ $\{ \lambda_{i}\}$, the inverse of the condition number $I_i$ is given by
 which goes to zero as the maximum and minimum eigenvalues diverge and
 the matrix becomes more poorly conditioned.   These eigenvalues are
 obtained through  SVD decompostion \footnotemark[7].
+
+Solving the normal equations (\ref{eqn::normalEq}) for the
+coeffients is not ideal because the condition number of $A$ is the
+square of the condition number of
+$WM$  \cite{BigCheese}.     SVD can be used to solve the system with
+the condition number of $WM$.   That, however, requires interweaving
+the computation of the stencil with  the target application's
+equations.   Since we are doing this 
+analysis in the absence of a
+specific target stancil, one should interpret our condition number
+results as the square of the effective condition number that algorithm
+developers will encounter.
 
 First we  measure   an uncut, Cartesian mesh to
 provide a baseline without the complications involved with cut cells.
@@ -384,6 +400,7 @@ equation describing  volume $V_1$ we use is given by
 where we vary the weighting exponent $P_w$, and the 
 polynomial order $P_T$.
 
+
 \subsection{All Regular geometry}
 
 We begin with the simplest possible motivating example: a
@@ -391,7 +408,7 @@ $D$-dimensional Cartesian geometry wherein all cells are uncut.
 Figure \ref{fig::T3W3} shows all values of $I$ for $D=2$, $I$ with
 $P_w = P_T = 3$.  Table \ref{tab::worst_all_reg_inv_conv} shows the
 worst condition number in this simple grid for a number of values of
-$P_w$ and $P_T$. 
+$P_w$ and $P_T$.    
 
 \begin{figure}
 \centerline{\epsfig{figure=_fig/all_reg_t3_w3_inv_cond.ps,width=0.4\linewidth } }
@@ -413,37 +430,44 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 2 & 1 & 2 & 3 & 1.184453e+00 & 1.544110e-04 & 1.303648e-04 \\ 
 2 & 1 & 3 & 3 & 1.036586e+00 & 2.327227e-05 & 2.245088e-05 \\ 
 2 & 1 & 4 & 3 & 1.008340e+00 & 4.569664e-06 & 4.531869e-06 \\ 
-2 & 1 & 5 & 3 & 1.002008e+00 & 1.029556e-06 & 1.027493e-06 \\ 
+2 & 1 & 5 & 3 & 1.002008e+00 & 1.029556e-06 & 1.027493e-06 \\
+\hline
 2 & 2 & 1 & 3 & 2.280983e+00 & 1.185321e-06 & 5.196535e-07 \\ 
 2 & 2 & 2 & 3 & 1.184453e+00 & 8.194451e-08 & 6.918341e-08 \\ 
 2 & 2 & 3 & 3 & 1.036586e+00 & 5.067663e-09 & 4.888801e-09 \\ 
 2 & 2 & 4 & 3 & 1.008340e+00 & 3.385548e-10 & 3.357547e-10 \\ 
 2 & 2 & 5 & 3 & 1.002008e+00 & 2.634337e-11 & 2.629058e-11 \\ 
+\hline
 2 & 3 & 1 & 3 & 2.280983e+00 & 5.060791e-10 & 2.218689e-10 \\ 
 2 & 3 & 2 & 3 & 1.184453e+00 & 4.179917e-11 & 3.528985e-11 \\ 
 2 & 3 & 3 & 3 & 1.036586e+00 & 2.762010e-12 & 2.664525e-12 \\ 
 2 & 3 & 4 & 3 & 1.008340e+00 & 1.380647e-13 & 1.369228e-13 \\ 
 2 & 3 & 5 & 3 & 1.002008e+00 & 6.886907e-15 & 6.873105e-15 \\ 
+\hline
 2 & 4 & 1 & 3 & 2.744326e+00 & 2.848432e-25 & 1.037935e-25 \\ 
 2 & 4 & 2 & 3 & 1.184453e+00 & 1.481174e-27 & 1.250513e-27 \\ 
 2 & 4 & 3 & 3 & 1.055930e+00 & 4.257688e-26 & 4.032168e-26 \\ 
 2 & 4 & 4 & 3 & 1.008340e+00 & 1.078564e-23 & 1.069643e-23 \\ 
 2 & 4 & 5 & 3 & 1.002008e+00 & 5.873348e-25 & 5.861578e-25 \\ 
+\hline
 3 & 1 & 1 & 3 & 4.207341e+00 & 3.347096e-03 & 7.955372e-04 \\ 
 3 & 1 & 2 & 3 & 1.335375e+00 & 2.299835e-04 & 1.722239e-04 \\ 
 3 & 1 & 3 & 3 & 1.058688e+00 & 2.726319e-05 & 2.575186e-05 \\ 
 3 & 1 & 4 & 3 & 1.012826e+00 & 4.843834e-06 & 4.782494e-06 \\ 
 3 & 1 & 5 & 3 & 1.003042e+00 & 1.052599e-06 & 1.049406e-06 \\ 
+\hline
 3 & 2 & 1 & 3 & 4.207383e+00 & 2.698941e-06 & 6.414775e-07 \\ 
 3 & 2 & 2 & 3 & 1.335376e+00 & 1.349331e-07 & 1.010450e-07 \\ 
 3 & 2 & 3 & 3 & 1.058688e+00 & 6.504992e-09 & 6.144388e-09 \\ 
 3 & 2 & 4 & 3 & 1.012826e+00 & 3.782273e-10 & 3.734376e-10 \\ 
 3 & 2 & 5 & 3 & 1.003042e+00 & 2.753365e-11 & 2.745014e-11 \\ 
+\hline
 3 & 3 & 1 & 3 & 4.207383e+00 & 1.150489e-09 & 2.734453e-10 \\ 
 3 & 3 & 2 & 3 & 1.335376e+00 & 6.641096e-11 & 4.973204e-11 \\ 
 3 & 3 & 3 & 3 & 1.058688e+00 & 3.224905e-12 & 3.046133e-12 \\ 
 3 & 3 & 4 & 3 & 1.012826e+00 & 1.004670e-13 & 9.919476e-14 \\ 
 3 & 3 & 5 & 3 & 1.003042e+00 & 3.476637e-15 & 3.466092e-15 \\ 
+\hline
 3 & 4 & 1 & 3 & 5.166875e+00 & 1.524000e-25 & 2.949559e-26 \\ 
 3 & 4 & 2 & 3 & 1.474014e+00 & 1.231139e-27 & 8.352288e-28 \\ 
 3 & 4 & 3 & 3 & 1.102368e+00 & 5.433012e-27 & 4.928491e-27 \\ 
@@ -458,7 +482,8 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
       We show the lowest value of
       $I$ for an entire Cartesian grid of size $32^D$.
       We vary Taylor power $P^T$, weighting
-      function exponents $P^W$, and dimensionality $D$. 
+      function exponents $P^W$, and dimensionality $D$.   Keep in mind
+      that the effective condition number of the problem will be $(1/\sqrt(I))$.
     }
 \end{table}
 \end{small}
@@ -513,37 +538,44 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 2 & 1 & 2 & 3 & 1.208056e+00 & 1.014262e-04 & 8.395817e-05 \\ 
 2 & 1 & 3 & 3 & 1.038877e+00 & 8.361926e-06 & 8.049002e-06 \\ 
 2 & 1 & 4 & 3 & 1.008924e+00 & 1.034928e-06 & 1.025774e-06 \\ 
-2 & 1 & 5 & 3 & 1.002428e+00 & 1.818655e-07 & 1.814249e-07 \\ 
+2 & 1 & 5 & 3 & 1.002428e+00 & 1.818655e-07 & 1.814249e-07 \\
+\hline
 2 & 2 & 1 & 3 & 2.714706e+00 & 6.503682e-07 & 2.395722e-07 \\ 
 2 & 2 & 2 & 3 & 1.208056e+00 & 4.514952e-08 & 3.737369e-08 \\ 
 2 & 2 & 3 & 3 & 1.038878e+00 & 2.933277e-09 & 2.823506e-09 \\ 
 2 & 2 & 4 & 3 & 1.008924e+00 & 1.838097e-10 & 1.821840e-10 \\ 
 2 & 2 & 5 & 3 & 1.002428e+00 & 1.202042e-11 & 1.199130e-11 \\ 
+\hline
 2 & 3 & 1 & 3 & 2.714706e+00 & 2.057098e-10 & 7.577609e-11 \\ 
 2 & 3 & 2 & 3 & 1.208056e+00 & 1.761011e-11 & 1.457723e-11 \\ 
 2 & 3 & 3 & 3 & 1.039039e+00 & 1.175442e-12 & 1.131278e-12 \\ 
 2 & 3 & 4 & 3 & 1.008867e+00 & 6.513002e-14 & 6.455759e-14 \\ 
 2 & 3 & 5 & 3 & 1.002428e+00 & 3.467198e-15 & 3.458798e-15 \\ 
+\hline
 2 & 4 & 1 & 3 & 2.714706e+00 & 1.027685e-15 & 3.785620e-16 \\   
 2 & 4 & 2 & 3 & 1.211905e+00 & 6.107792e-17 & 5.039827e-17 \\ 
 2 & 4 & 3 & 3 & 1.056037e+00 & 5.698627e-18 & 5.396236e-18 \\ 
 2 & 4 & 4 & 3 & 1.012707e+00 & 1.518532e-18 & 1.499478e-18 \\ 
 2 & 4 & 5 & 3 & 1.003135e+00 & 5.995871e-19 & 5.977134e-19 \\ 
+\hline
 3 & 1 & 1 & 3 & 6.913890e+00 & 3.982271e-03 & 5.759812e-04 \\ 
 3 & 1 & 2 & 3 & 1.457799e+00 & 1.829378e-04 & 1.254890e-04 \\ 
 3 & 1 & 3 & 3 & 1.066961e+00 & 8.913398e-06 & 8.354003e-06 \\ 
 3 & 1 & 4 & 3 & 1.014131e+00 & 7.252280e-07 & 7.151226e-07 \\ 
 3 & 1 & 5 & 3 & 1.003774e+00 & 1.047053e-07 & 1.043116e-07 \\ 
+\hline
 3 & 2 & 1 & 3 & 7.173851e+00 & 1.868373e-06 & 2.604421e-07 \\ 
 3 & 2 & 2 & 3 & 1.457801e+00 & 7.350629e-08 & 5.042274e-08 \\ 
 3 & 2 & 3 & 3 & 1.066958e+00 & 3.054784e-09 & 2.863077e-09 \\ 
 3 & 2 & 4 & 3 & 1.014128e+00 & 1.439525e-10 & 1.419470e-10 \\ 
 3 & 2 & 5 & 3 & 1.003771e+00 & 6.965181e-12 & 6.939012e-12 \\ 
+\hline
 3 & 3 & 1 & 3 & 7.173852e+00 & 5.736142e-10 & 7.995902e-11 \\ 
 3 & 3 & 2 & 3 & 1.463399e+00 & 3.367341e-11 & 2.301041e-11 \\ 
 3 & 3 & 3 & 3 & 1.067176e+00 & 1.250758e-12 & 1.172027e-12 \\ 
 3 & 3 & 4 & 3 & 1.014128e+00 & 4.489644e-14 & 4.427098e-14 \\ 
 3 & 3 & 5 & 3 & 1.003771e+00 & 1.609961e-15 & 1.603912e-15 \\ 
+\hline
 3 & 4 & 1 & 3 & 7.173852e+00 & 8.922302e-15 & 1.243725e-15 \\ 
 3 & 4 & 2 & 3 & 1.463399e+00 & 3.078368e-16 & 2.103574e-16 \\ 
 3 & 4 & 3 & 3 & 1.067186e+00 & 2.577668e-17 & 2.415387e-17 \\ 
@@ -562,6 +594,8 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
       happens here).
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$. 
+      Keep in mind
+      that the effective condition number of the problem will be $(1/\sqrt(I))$.
     }
 \end{table}
 \end{small}
@@ -577,31 +611,37 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 2 & 1 & 3 & 3 & 1.890620e+00 & 3.134007e-07 & 1.657661e-07 \\ 
 2 & 1 & 4 & 3 & 2.315204e+00 & 2.362198e-08 & 1.020298e-08 \\ 
 2 & 1 & 5 & 3 & 2.314798e+00 & 1.256411e-09 & 5.427736e-10 \\ 
+\hline
 2 & 2 & 1 & 3 & 5.133178e+00 & 3.150951e-08 & 6.138402e-09 \\ 
 2 & 2 & 2 & 3 & 3.875948e+00 & 1.019905e-09 & 2.631369e-10 \\ 
 2 & 2 & 3 & 3 & 3.677407e+00 & 3.374831e-11 & 9.177202e-12 \\ 
 2 & 2 & 4 & 3 & 3.633887e+00 & 1.196563e-12 & 3.292791e-13 \\ 
 2 & 2 & 5 & 3 & 1.100852e+00 & 1.071019e-14 & 9.729001e-15 \\ 
+\hline
 2 & 3 & 1 & 3 & 1.461766e+00 & 8.698889e-14 & 5.950944e-14 \\ 
 2 & 3 & 2 & 3 & 1.118751e+00 & 4.096970e-15 & 3.662093e-15 \\ 
 2 & 3 & 3 & 3 & 1.102424e+00 & 1.662951e-16 & 1.508449e-16 \\ 
 2 & 3 & 4 & 3 & 3.178329e+00 & 1.221190e-16 & 3.842238e-17 \\ 
 2 & 3 & 5 & 3 & 1.924223e+00 & 3.044738e-18 & 1.582320e-18 \\ 
+\hline
 3 & 1 & 1 & 3 & 5.278376e+00 & 5.346601e-04 & 1.012926e-04 \\ 
 3 & 1 & 2 & 3 & 2.898394e+00 & 1.760686e-05 & 6.074697e-06 \\ 
 3 & 1 & 3 & 3 & 2.480330e+00 & 4.867477e-07 & 1.962431e-07 \\ 
 3 & 1 & 4 & 3 & 2.602304e+00 & 1.708061e-08 & 6.563648e-09 \\ 
 3 & 1 & 5 & 3 & 2.594257e+00 & 5.017396e-10 & 1.934039e-10 \\ 
+\hline
 3 & 2 & 1 & 3 & 8.172169e+00 & 1.320095e-07 & 1.615355e-08 \\ 
 3 & 2 & 2 & 3 & 4.770044e+00 & 3.005370e-09 & 6.300508e-10 \\ 
 3 & 2 & 3 & 3 & 4.426838e+00 & 7.734334e-11 & 1.747146e-11 \\ 
 3 & 2 & 4 & 3 & 4.521378e+00 & 1.996373e-12 & 4.415410e-13 \\ 
 3 & 2 & 5 & 3 & 4.508090e+00 & 4.439516e-14 & 9.847886e-15 \\ 
+\hline
 3 & 3 & 1 & 3 & 5.015663e+00 & 9.627815e-12 & 1.919550e-12 \\ 
 3 & 3 & 2 & 3 & 6.602139e+00 & 4.969235e-13 & 7.526705e-14 \\ 
 3 & 3 & 3 & 3 & 6.132610e+00 & 1.126536e-14 & 1.836961e-15 \\ 
 3 & 3 & 4 & 3 & 5.482751e+00 & 3.670736e-16 & 6.695062e-17 \\ 
 3 & 3 & 5 & 3 & 5.346895e+00 & 4.774068e-17 & 8.928674e-18 \\ 
+\hline
 3 & 4 & 1 & 3 & 1.161979e+01 & 5.372252e-18 & 4.623365e-19 \\ 
 3 & 4 & 2 & 3 & 4.069086e+00 & 1.622222e-17 & 3.986699e-18 \\
 \hline
@@ -616,6 +656,8 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
       grid.   Small volumes here are merged with neighbors.
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$. 
+      Keep in mind
+      that the effective condition number of the problem will be $(1/\sqrt(I))$.
     }
 \end{table}
 
@@ -635,7 +677,7 @@ We do also show that matrix conditioning is a  potential issue for
 this class of algorihms.   In fact, for certain parameters,
 the condition number  can be so severe that an
 increase in matrix arithmetic precision will not be sufficient.
-Since cell merger does not really help the
+Since cell merger does not help the
 problem, this lack of conditioning is not an issue with small cells.
 With careful choices of polynomial order and weighting matrix, the
 solvability problem can be managed, however.
