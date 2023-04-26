@@ -158,6 +158,8 @@
 \newcommand{\EB}{\text{EB}}
 \newcommand{\vol}{\mathcal{V}}
 \newcommand{\face}{\mathcal{F}}
+\newcommand{\cali}{\mathcal{I}}
+\newcommand{\calc}{\mathcal{C}}
 \newcommand{\zerobold}{{\bf{0}}}
 \newcommand{\xz}{{\bf{x}_0}}
 
@@ -205,14 +207,15 @@
 
 \section{Introduction}
 
-Embedded boundary (EB) grids are formed when one passes an  surface
+Embedded boundary (EB) grids are formed when one passes a surface
 through a Cartesian mesh.    For sufficiently complex geomtries, these methods
 are very attactive because grid generation is a solved problem
 and not computationally overwhelming even in a moving-boundary context
 \cite{MillerTrebotich2012}.
 
 In the current context, we form the cutting surface as the zero
-surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
+surface of an implicit function  of space
+$I(\xbold) = 0, \xbold \in R^D$.
 For smooth ($I$),  moments can be generated to any
 accuracy \cite{Schwartz2015}.
 
@@ -356,27 +359,28 @@ A \equiv (WM)^T(WM)
 \end{equation}
 at every volume in a computational grid and analyze its
 eigenvalues.   Given a matrix $A_i$ with the set of eigenvalues
-$\{ \lambda_{i}\}$, the inverse of the condition number $I_i$ is given by
+$\{ \lambda_{i}\}$, the inverse of the condition number $\_i$ is given by
 \begin{equation*}
-  I_i = \frac{\lambda_i|_{min}}{\lambda_i|_{max}},
+  \cali_i = \frac{|\lambda_i|_{min}}{|\lambda_i|_{max}},
 \end{equation*}
 which goes to zero as the maximum and minimum eigenvalues diverge and
 the matrix becomes more poorly conditioned.   These eigenvalues are
 obtained through  SVD decompostion \footnotemark[7].
 
 Solving the normal equations (\ref{eqn::normalEq}) for the
-coeffients is not ideal because the condition number of $A$ is the
-square of the condition number of
-$WM$  \cite{BigCheese}.     SVD can be used to solve the system with
-the condition number of $WM$.   That, however, requires interweaving
-the computation of the stencil with  the target application's
-equations.   Since we are doing this 
-analysis in the absence of a
-specific target stancil, one should interpret our condition number
-results as the square of the effective condition number that algorithm
-developers will encounter.
+coeffients is not ideal because the $\calc_A$, condition number of $A$ is the
+square of the $\calc_{WM}$,  condition number of $WM$  \cite{BigCheese}.  
+\begin{equation}
+  \calc_A = \calc^2_{WM}
+\end{equation}  
+SVD can be used to solve the system with the condition number of
+$\calc_{WM}$.  That, however, requires interweaving the computation of
+the stencil with the target application's equations.  Since we are
+doing this analysis independent of a specific target stancil, one should
+interpret our condition number results as the square of the effective
+condition number that algorithm developers will encounter.
 
-First we  measure   an uncut, Cartesian mesh to
+First we  measure   an uncut Cartesian mesh to
 provide a baseline without the complications involved with cut cells.
 Next we cut the mesh with a very smooth implicit function and do the
 same measurements.   Finally we take this cut mesh and merge its small
@@ -401,22 +405,52 @@ where we vary the weighting exponent $P_w$, and the
 polynomial order $P_T$.
 
 
-\subsection{All Regular geometry}
+\section{Test description}
+\label{sec::eb}
 
 We begin with the simplest possible motivating example: a
 $D$-dimensional Cartesian geometry wherein all cells are uncut.
-Figure \ref{fig::T3W3} shows all values of $I$ for $D=2$, $I$ with
+Figure \ref{fig::T3W3} shows all values of $\cali$ for $D=2$, $\cali$ with
 $P_w = P_T = 3$.  Table \ref{tab::worst_all_reg_inv_conv} shows the
 worst condition number in this simple grid for a number of values of
 $P_w$ and $P_T$.    
+
+Our next  grid is a Cartesian grid cut  by a sphere (or a circle in two
+dimensions). The computational domain is the unit cube.   The cutting
+sphere center is the center of the cube.   The radius of the cutting
+sphere is 0.45.  The grid moments are generated using the algorithm
+specified in \cite{Schwartz2015}.  The moments are accurate to
+order $h^{P^T}$.
+
+If we use grid volumes at this point, the volume fraction
+\begin{equation*}
+\kappa_\ibold \equiv V_\ibold/h^D 
+\end{equation*}
+can be arbitrarily small ($ 0 < \kappa <= 1$).
+
+We can also choose to
+merge small volumes with larger neighbors without formal loss of
+accuracy. The simple merger we use is described in
+described in appendix \ref{appendix::merger}.
+When merged using this algorithm, $\kappa$ can be larger than $2^D$.
+
+Without using cell merger, the volume map in two dimensions is shown
+in figure \ref{fig::unmerged2dmap}.   With cell merger, that same map
+becomes the grid shown in figure{fig::unmerged2dmap}.
+Tables \ref{tab::worst_unmerged_inv_conv} and
+\ref{tab::worst_merged_inv_conv}
+show the worst $\cali$ for the unmerged and merged  grids
+respectively while varying $P_w$ and $P_T$.   
 
 \begin{figure}
 \centerline{\epsfig{figure=_fig/all_reg_t3_w3_inv_cond.ps,width=0.4\linewidth } }
 \label{fig::T3W3}
 \caption
-    {
-      $I$ (inverse of the condition number for matrix $A$ for a $32^2$
-      uncut grid where $P_w = P_T = 3$.
+    {   Values of of the inverse of the condition number
+      $\cali_A = 1/\calc_A$
+      for an uncut Cartesian $32^2$
+      grid where $P_w = P_T = 3$.
+      Keep in mind that $\calc_A = \calc^2_{WM}$.
     }
 \end{figure}
 
@@ -424,7 +458,7 @@ $P_w$ and $P_T$.
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $\cali$ \\
 \hline
 2 & 1 & 1 & 3 & 2.280975e+00 & 1.471897e-03 & 6.452929e-04 \\ 
 2 & 1 & 2 & 3 & 1.184453e+00 & 1.544110e-04 & 1.303648e-04 \\ 
@@ -480,43 +514,14 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 \caption
     {
       We show the lowest value of
-      $I$ for an entire Cartesian grid of size $32^D$.
+      $\cali$ for an entire Cartesian grid of size $32^D$.
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$.   Keep in mind
-      that the effective condition number of the problem will be $(1/\sqrt(I))$.
+      that the effective condition number of the problem will be 
+      $C_{WM} = (1/\sqrt(\cali))$.
     }
 \end{table}
 \end{small}
-
-\section{Cut Cell Geometry}
-\label{sec::eb}
-
-Our next  grid is a Cartesian grid cut  by a sphere (or a circle in two
-dimensions). The computational domain is the unit cube.   The cutting
-sphere center is the center of the cube.   The radius of the cutting
-sphere is 0.45.  The grid moments are generated using the algorithm
-specified in \cite{Schwartz2015}.  The moments are accurate to
-order $h^{P^T}$.
-
-If we use grid volumes at this point, the volume fraction
-\begin{equation*}
-\kappa_\ibold \equiv V_\ibold/h^D 
-\end{equation*}
-can be arbitrarily small ($ 0 < \kappa <= 1$).   We can also choose to
-merge small volumes with larger neighbors without formal loss of
-accuracy. The simple merger we use is described in
-described in appendix \ref{appendix::merger}.
-When merged using this algorithm, $\kappa$ can be larger than $2^D$.
-
-Without using cell merger, the volume map in two dimensions is shown
-in figure \ref{fig::unmerged2dmap}.   With cell merger, that same map
-becomes the grid shown in figure{fig::unmerged2dmap}.
-Tables \ref{tab::worst_unmerged_inv_conv} and
-\ref{tab::worst_merged_inv_conv}
-show the worst condition number for the unmerged and merged  grids
-respectively while varying $P_w$ and $P_T$.   Merger does not seem to
-help substantially with this issue.
-
 
 \begin{figure}
 \centerline{\epsfig{figure=_fig/unmerged.ps,width=0.4\linewidth }} 
@@ -532,7 +537,7 @@ help substantially with this issue.
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $\cali$ \\
   \hline
 2 & 1 & 1 & 3 & 2.652364e+00 & 1.404997e-03 & 5.297151e-04 \\ 
 2 & 1 & 2 & 3 & 1.208056e+00 & 1.014262e-04 & 8.395817e-05 \\ 
@@ -588,14 +593,15 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 \caption
     {
       We show the lowest value of
-      $I$ for an entire Cartesian grid of size $32^D$.
+      $\cali$ for an entire Cartesian grid of size $32^D$.
       Volumes are  formed by a sphere (or circle in 2D) cutting the
       grid.   Volumes here can be arbitrarily small (no cell merging
       happens here).
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$. 
       Keep in mind
-      that the effective condition number of the problem will be $(1/\sqrt(I))$.
+      that the effective condition number of the problem will be 
+      $C_{WM} = (1/\sqrt(\cali))$.
     }
 \end{table}
 \end{small}
@@ -604,7 +610,7 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 \begin{table}
 \begin{center}
 \begin{tabular}{|cccc|ccc|} \hline
-$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
+$D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $\cali$ \\
   \hline
 2 & 1 & 1 & 3 & 2.516834e+00 & 1.345987e-04 & 5.347936e-05 \\ 
 2 & 1 & 2 & 3 & 1.940391e+00 & 5.761694e-06 & 2.969347e-06 \\ 
@@ -651,13 +657,13 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 \caption
     {
       We show the lowest value of
-      $I$ for an entire Cartesian grid of size $32^D$.
+      $\cali$ for an entire Cartesian grid of size $32^D$.
       Volumes are  formed by a sphere (or circle in 2D) cutting the
       grid.   Small volumes here are merged with neighbors.
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$. 
       Keep in mind
-      that the effective condition number of the problem will be $(1/\sqrt(I))$.
+      that the effective condition number of the problem will be $(1/\sqrt(\cali))$.
     }
 \end{table}
 
@@ -666,7 +672,7 @@ $D$ & $P^T$  & $P^W$ & $R_s$ & $\lambda_{max}$ & $\lambda_{min}$   & $I$ \\
 
 We show first that for a safe (low) choice of
 $P_T$, even the worst condition number in a given grid can be quite
-reasonable. With more aggressive choices of $P_T$, $I$ can be very
+reasonable. With more aggressive choices of $P_T$, $\cali$ can be very
 small.  The data also
 show clearly that there is a connection between solvability, weighting
 function, and polynomial order.  Unexpectedly, we show that for a
