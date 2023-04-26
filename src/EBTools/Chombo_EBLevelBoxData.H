@@ -105,6 +105,34 @@ public:
   }
 
   ///
+  virtual
+  void define(const DisjointBoxLayout        & a_dp,
+              const IntVect                  & a_ghost,
+              shared_ptr<graph_distrib_t>      a_graphs)
+  {
+    m_graphs = a_graphs;
+    devi_distrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
+  }
+
+
+  template <unsigned int srcComp>
+  void define(EBLevelBoxData<cent, srcComp>       & a_input,
+              unsigned int                          a_comp,
+              shared_ptr<graph_distrib_t >          a_graphs)
+  {
+    //for making scalar holders out of vector ones.
+
+    auto dp    = a_input.disjointBoxLayout();
+    auto ghost = a_input.ghostVect();
+    m_graphs = a_graphs;
+    typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, srcComp> > srccomp_devi_t;
+    srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
+    ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
+
+    devi_distrib_t::define(dp, ghost, fact);
+  }
+
+  ///
   EBLevelBoxData&
   operator+=(const EBLevelBoxData& a_input)
   {
@@ -165,40 +193,36 @@ public:
     }
   }
 
-  ///
-  virtual
-  void define(const DisjointBoxLayout        & a_dp, 
-              const IntVect                  & a_ghost,
-              shared_ptr<graph_distrib_t>      a_graphs)
-  {
-    m_graphs = a_graphs;
-    devi_distrib_t::define(a_dp, a_ghost, devifactory_t(a_graphs));
-  }
-
-
-  template <unsigned int srcComp>
-  void define(EBLevelBoxData<cent, srcComp>       & a_input,
-              unsigned int                          a_comp,
-              shared_ptr<graph_distrib_t >          a_graphs)
-  {
-    //for making scalar holders out of vector ones.
-
-    auto dp    = a_input.disjointBoxLayout();
-    auto ghost = a_input.ghostVect();
-    m_graphs = a_graphs;
-    typedef CH4_Data_Choreography::DistributedData<EBBoxData< cent, Real, srcComp> > srccomp_devi_t;
-    srccomp_devi_t * inputPtr = static_cast<srccomp_devi_t* >(&a_input);
-    ScalarAliasFactory<srcComp, NUMCOMPS>  fact(inputPtr, a_comp) ;
-
-    devi_distrib_t::define(dp, ghost, fact);
-  }
-
+  // this = scalar
   void setVal(Real a_value)
   {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
     DataIterator dit = this->dataIterator();
-    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    for(dit.begin(); dit.ok(); ++dit)
     {
-      (*this)[dit[ibox]].setVal(a_value);
+      (*this)[dit()].setVal(a_value);
+    }
+  }
+
+  // this *= scalar
+  void scale(Real a_value)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = this->dataIterator();
+    for(dit.begin(); dit.ok(); ++dit)
+    {
+      (*this)[dit()].scale(a_value);
+    }
+  }
+
+  // this += scalar*input
+  void incr(const EBLevelBoxData& a_input, Real a_value)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(dit.begin(); dit.ok(); ++dit)
+    {
+      (*this)[dit()].incr(a_input[dit()], a_value);
     }
   }
   
@@ -537,7 +561,7 @@ public:
   Real max(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::max");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
@@ -568,7 +592,7 @@ public:
   Real min(int a_icomp) const
   {
     CH_TIME("EBLevelBoxData::min");
-    LevelData<EBHostData<cent, Real, NUMCOMPS> > hostdata(this->disjointBoxLayout(), NUMCOMPS,  this->m_ghost, hostfactory_t(m_graphs));
+    host_distrib_t  hostdata(this->disjointBoxLayout(), this->ghostVect(), hostfactory_t(m_graphs));
     copyToHost(hostdata, *this);
     DataIterator dit = this->dataIterator();
     DisjointBoxLayout dbl = this->disjointBoxLayout();
@@ -578,7 +602,7 @@ public:
       const Box & grid = dbl[dit[ibox]];
       Bx grbx = ProtoCh::getProtoBox(grid);
       Real gridval = Proto::minCell(hostdata[dit[ibox]], grbx, a_icomp);
-      if(gridval > minval)
+      if(gridval < minval)
       {
         minval = gridval;
       }
