@@ -19,7 +19,7 @@
 #include "base/Proto_Stencil.H"
 
 //for HOEB
-#include "hoeb/Proto_EBStencilHO.H"
+//#include "hoeb/Proto_EBStencilHO.H"
 
 using std::shared_ptr;
 using std::vector;
@@ -38,7 +38,7 @@ namespace Proto
 
   public:
     typedef EBStencilArchive<srcCenter, dstCenter, order, data_t> archive_t;
-    typedef EBStencilHO<srcCenter, dstCenter, order, data_t> ho_t;
+    //typedef EBStencilHO<srcCenter, dstCenter, order, data_t> ho_t;
 
     typedef IndexedMoments<DIM  , order> IndMomDIM;
     typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;

@@ -1806,7 +1806,7 @@ public:
             // p = 0
             if((a_p[0] == 0)&&(a_p[1] == 0))
               {
-                retval *= 2*m_lambda+3-2*m_vel[0]*a2/r2;
+                retval *= (2*m_lambda+3-2*a2/r2)*m_vel[0];
               }
             //p = 1
             else if((a_p[0] == 1)&&(a_p[1] == 0))
@@ -1871,7 +1871,7 @@ public:
             // beyond
             else
               {
-                //Chombo4::MayDay::Error("ran out of deriv cases");
+                Chombo4::MayDay::Error("ran out of deriv cases");
                 retval = 0;
               }
           }
@@ -1879,19 +1879,19 @@ public:
           {
             if((a_p[0] == 0)&&(a_p[1] == 0))
               {
-                retval *= m_vel[1]*xi[0]*xi[1]/a2;
+                retval *= m_vel[0]*xi[0]*xi[1]/a2;
               }
             else if((a_p[0] == 1)&&(a_p[1] == 0))
               {
-                retval *= m_vel[1]*xi[1]/a2;
+                retval *= m_vel[0]*xi[1]/a2;
               }
             else if((a_p[0] == 0)&&(a_p[1] == 1))
               {
-                retval *= m_vel[1]*xi[0]/a2;
+                retval *= m_vel[0]*xi[0]/a2;
               }
             else if((a_p[0] == 1)&&(a_p[1] == 1))
               {
-                retval *= m_vel[1]/a2;
+                retval *= m_vel[0]/a2;
               }
             else
               {

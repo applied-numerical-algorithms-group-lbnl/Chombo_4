@@ -113,4 +113,4 @@ namespace Proto
 #include "Proto_EBHostData.H"
 #include "Proto_EBHostFluxData.H"
 
-#include "hoeb/Proto_EBStencilHO.H"
+//#include "hoeb/Proto_EBStencilHO.H"
