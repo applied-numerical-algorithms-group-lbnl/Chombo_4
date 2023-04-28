@@ -29,34 +29,25 @@
   Numerical stability for elliptic operators is well understood.  To
   be numerically stable, a numerical operator for an elliptic equation
   cannot have non-zero positive real eigenvalues.  We explore a family
-  of elliptic operators and attempt to define the boundaries of
-  stability for this family of algorithms.
+  of high order finite volume elliptic operators. We attempt to
+  define for this family of algorithms the boundaries of stability
+  within its parameter space.
   
 \end{abstract}
 
 
-\section{Introduction}
+\section{Underlying mathematics}
+
 Embedded boundary (EB) grids are formed when one passes an  surface
 through a Cartesian mesh.    For sufficiently complex geomtries, these methods
 are very attactive because grid generation is a solved problem
-\cite{MillerTrebotich2012}.
-
-  
-Devendran, et al. \cite{Devendran2017} present an algorithm that
-solves Poisson's equation to fourth-order accuracy using an EB grid.
-Katz, et al. \cite{Katz2023} looked more closely at the mechanics of
-this algorithm and discussed solvability for stencil coefficients for
-a while varying dimensionality, weighting
-function exponents, and polynomial order.   They present results for
-uncut, standard EB, and merged grids.
-
-We take this analysis to the entire numerical system.  We vary these
-same algorithm parameters and analyze the eigenstructure of the
-
+even for moving grids \cite{MillerTrebotich2012}.
 In the current context, we form the cutting surface as the zero
 surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
 For smooth ($I$),  moments can be generated to any
 accuracy \cite{Schwartz2015}.
+
+
 
 Formally, the underlying description of space
 is given by rectangular control volumes on a Cartesian mesh
@@ -75,20 +66,48 @@ define $A_{B,\ibold}$ to be the intersection of the boundary of the
 irregular domain with the Cartesian control volume: $A_{B,\ibold}
 = \partial \Omega \bigcap \Upsilon_\ibold$. 
 
-Throughout this paper, we use the following compact notation:
+We use the compact notation
 \begin{align*}
 (\xbold - \xbar)^\pbold &= \prod\limits^D_{d=1} (x_d - {\bar x}_d)^{p_d} \\
 \pbold! &= \prod\limits^D_{d = 1} p_d!
 \end{align*}
-Given a point in space $\xbar$, and a $D$-dimensional integer vector
-$\pbold$, we define $m_v^\pbold(\xbar)$ to be the $\pbold^{th}$
-moment of the volume $V$ relative to the point $\xbar$.
+Given a $D$-dimensional region of space $\ibold$, 
+and a $D$-dimensional integer vector
+$\pbold$, we define $m_\ibold^\pbold(\xbar)$ to be the $\pbold^{th}$
+moment of $\ibold$ to the point $\xbar$.
 \begin{equation}
-m_v^\pbold(\xbar)  =  \int\limits_{V} (\xbold - \xbar)^\pbold dV
+m_\ibold^\pbold(\xbar)  =  \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV^D.
 \label{eqn::volmoment}
 \end{equation}
+This breaks out into three different cases, volumes, coordinate faces
+and irregular faces.
+A coordinate face $f_{12}$  is the area where two
+volumes ($V_1, V_2$) intersect.
+A irregular face $f_V$  is area where the cutting surface
+intersects the volume $V$.
+The volume moment for a particular power $\pbold$  is
+given by
+\begin{equation}
+  m^\pold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
+  \label{eqn::volmom}
+\end{equation}
+The $\pbold^{th}$ coordinate face moment for the area of where volumes $V_1, V2$
+intersect is given by
+\begin{equation}
+  m^\pold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
+  \label{eqn::facmom}
+\end{equation}
+The cutting surface of the boundary $G$ is given by  the zero
+surface of the  implicit function ($I(\xbold)= 0$) used in grid generation.
+The $\pbold^{th}$ irregular face moment is given by an integral over
+the intersection of this cutting surface and the Euclidean volume:
+\begin{equation}
+  m^\pold_{V}} = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
+  \label{eqn::irrmom}
+\end{equation}
+These moments are the natural product of the grid generation algorithm
+in \cite{Schwartz2015}.
 
- 
 Given a sufficiently smooth function $\psi$, we can approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
@@ -111,17 +130,48 @@ $\psi$, the average over the volume $\ibold$ is given by
 If we insert the Taylor expansion \ref{eqn::taylor}, we get a discrete
 approximation to the smooth function $\psi$ that is accurate to order $P_T$.
 \begin{equation*}
- V_\ibold <\psi>_\ibold = \sum\limits_{p < P_T} C^p m^p. 
+  <\psi>_\ibold = \frac{1}{V_\ibold} \sum\limits_{p < P_T} C^p m^p
+  \label{eqn::vol}.
 \end{equation*}
 This forms a local polynomial expansion of $\psi$ around the volume
-$\ibold$ expressed in terms moments ($m$) which are the natural
-products of grid generation.  Modern, higher order embedded boundary
-methods use this description directly to generate stencils
-\cite{Overton2022a, Devendran2017, Schwartz2015}.
+$\ibold$ expressed in terms moments ($m$).
+Modern, higher order embedded boundary
+methods use this description directly to generate stencil coefficients
+\cite{Overton2022a, Devendran2017, Schwartz2015, Katz2023}.
+
+\section{Family of finite volume elliptic operators}
+
+Devendran, et al. \cite{Devendran2017} present an algorithm that
+solves Poisson's equation to fourth-order accuracy using an EB grid.
+Generalizing somewhat  the framework they present, one can define an
+elliptic operator of any accuracy.
+
+At each volume $V$, we define the neighborhood $\neigh_v$
+volumes within a radius $R_s$ number of cells from the volume.
+Fix $\xbar$ to be the distance from the center of the target cell.
+Let's say there are
+$N_v$ volumes in the neighborhood and $F_D$ domain faces and $F_C$ cut
+cell faces in the domain.  Following (\cite{Devendran2017}), we create
+an equation for each volume and boundary condition within the
+neighborhood to form an  overdetermined system of equation for the
+Taylor coefficients in $V$.    Each volume gets an equation of the
+form of equation \ref{eqn::vol}.    Faces at the boundary domain with
+Neumann boundary conditions get an equation of the form 
+by We For each volume, we have The equations for the volumes and the
+boundary conditions form an overdetermined  system.
 
 
 
-\section{Results}
+\section{Stability and Conditioning}
+
+The matrix $A_{P_T, P_W}$ for a particular polynomial order $P_T$ and
+weighting exponent  $P_W$ may be unstable or poorly conditioned.   We
+measure both while varying $P_T, P_W$ in both two and three
+dimensions.    All these calculations are done using SLEPc and PETc
+\cite{petsc-user-ref, petsc-efficient, slepc}.
+
+
+
 
 \section{Conclusions}
 
