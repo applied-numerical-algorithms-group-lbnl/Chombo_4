@@ -46,10 +46,10 @@ namespace EBCM
    All functions are static.
 */
   template <int ebcm_order>
-  class EBCM_Framework
+  class Algorithm_Framework
   {
   public:
-    EBCM_Framework()
+    Algorithm_Framework()
     {}    
   
 
@@ -68,7 +68,7 @@ namespace EBCM
   
     static shared_ptr<pr_baseif> getImplicitFunction()
     {
-      CH_TIME("EBCM_Framework::getImplicitFunction");
+      CH_TIME("Algorithm_Framework::getImplicitFunction");
       shared_ptr<pr_baseif>  retval;
       ParmParse pp("getImplicitFunction");
       string which_geom;
@@ -128,7 +128,7 @@ namespace EBCM
                           bool a_outputGraph,
                           bool a_printStuff)
     {
-      CH_TIME("EBCM_Framework::makeMergedGeometry");
+      CH_TIME("Algorithm_Framework::makeMergedGeometry");
       using Chombo4::pout;
 
       int nx               = 32;
@@ -207,7 +207,7 @@ namespace EBCM
                      const ch_iv         & a_start,
                      int a_nghost, int a_weightPower, bool a_printStuff)
       {
-        CH_TIME("EBCM_Framework::neigborhood_t constructor");
+        CH_TIME("Algorithm_Framework::neigborhood_t constructor");
         m_startiv = a_start;
         m_nghost  = a_nghost;
         m_startloc.setToCCLocation(a_start, a_graph.m_dx);
@@ -291,7 +291,7 @@ namespace EBCM
                           const int         & a_currentRow,
                           bool a_printStuff)
     {
-      CH_TIME("EBCM_Framework::shiftMomentAndFillRow");
+      CH_TIME("Algorithm_Framework::shiftMomentAndFillRow");
       if(a_printStuff)
       {
         Chombo4::pout() << "shiftMomentAndFillRow: a_currentRow = " << a_currentRow << endl;
@@ -347,7 +347,7 @@ namespace EBCM
     getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
                     bool a_printStuff)
     {
-      CH_TIME("EBCM_Framework::getMomentMatrix");
+      CH_TIME("Algorithm_Framework::getMomentMatrix");
       //number of equations
       int n_equations = a_locality->m_volumes->size();
       int n_unknowns  = pr_mom_dim::size();
@@ -380,7 +380,7 @@ namespace EBCM
                bool a_printStuff)
     {
   
-      CH_TIME("EBCM_Framework::AMatrix");
+      CH_TIME("Algorithm_Framework::AMatrix");
       shared_ptr<neighborhood_t>
         locality(new neighborhood_t(a_graph, a_volu.m_pt, a_nghost, a_weightPower, a_printStuff));
   
@@ -427,7 +427,7 @@ namespace EBCM
                const ch_dbl            & a_grids)
     {
 
-      CH_TIME("EBCM_Framework::checkKappa");
+      CH_TIME("Algorithm_Framework::checkKappa");
       double maxKappa = -1.0e10;
       double minKappa =  1.0e10;
       using Chombo4::pout;
@@ -454,7 +454,24 @@ namespace EBCM
       Chombo4::pout() << "maximum volume fraction overall = " << maxKappa << endl;
       Chombo4::pout() << "minimum volume fraction overall = " << minKappa << endl;
     }
-  };//end class ebcm framework
+
+    static  void runTests()
+    {
+      CH_TIME("Algorithm_Framework::runTests");
+
+      //the important stuff
+      //see if we can make a geometry
+      shared_ptr< ebcm_meta  > ebcm;
+      ch_dbl                   grids;
+      double                   dx;
+      ch_probdom               domain;
+      makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+
+      Real maxKapp, minKapp;
+      //this tries out iteration and checks kappa
+      checkKappa(maxKapp, minKapp, ebcm, grids);
+    }
+  };//end class Algorithm_Framework
 
 } //end namespace ebcm  
 #endif
