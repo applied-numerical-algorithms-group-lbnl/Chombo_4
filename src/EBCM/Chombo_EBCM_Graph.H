@@ -282,8 +282,9 @@ namespace EBCM
   };
 
 
-  ///Class to make merged sparse embedded boundary description
+  ///
   /**
+     Class to make merged sparse embedded boundary description. 
    */
   template< int order>
   class EBCM_Graph

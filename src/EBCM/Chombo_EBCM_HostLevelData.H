@@ -18,7 +18,7 @@
 #include "Chombo_ProtoFactories.H"
 
 #include "Chombo_SPMD.H"
-#include "Chombo_EBCM_VolBoxData.H"
+#include "Proto_HostBoxData.H"
 #include "Chombo_EBDataChoreography.H"
 #include "Chombo_GeometryService.H"
 #include "Chombo_AMRIO.H"
@@ -32,9 +32,9 @@ namespace EBCM
   class HostLevelData
   {
   public:
-    typedef EBCM::VolBoxData<data_t, ncomp,  order>            ebcm_fab_t;
-    typedef Chombo4::NullConstructorDataFactory<    ebcm_fab_t>  null_factory_t;
-    typedef CH4_Data_Choreography::DistributedData< ebcm_fab_t > mpi_frame_t;
+    typedef Proto::HostBoxData<data_t, ncomp>                    pr_fab_t;
+    typedef Chombo4::NullConstructorDataFactory<    pr_fab_t>    null_factory_t;
+    typedef CH4_Data_Choreography::DistributedData< pr_fab_t >   mpi_frame_t;
     typedef    EBCM::MetaDataLevel<        order >               ebcm_meta_t;
     typedef Chombo4::GeometryService<      order >               ch_geoserv;
     typedef Chombo4::DisjointBoxLayout                           ch_dbl;
@@ -57,9 +57,10 @@ namespace EBCM
       auto dit = grids.dataIterator();
       for(int ibox =0; ibox < dit.size(); ibox++)
       {
-        auto      &   fab = (*m_data)[dit[ibox]];
-        const auto& graph = (*graphs)[dit[ibox]];
-        fab.define(graph);
+        auto valid = grids[dit[ibox]];
+        auto grown = valid.grow(a_ghost);
+        grown &= a_meta->m_domain;
+        (*m_data)[dit[ibox]].define(grown);
       }
     }
 
@@ -85,6 +86,7 @@ namespace EBCM
       }     //end loop over boxes
       writeLevelname(&levelfabs, a_filename.c_str());
     }
+    
     shared_ptr< ebcm_meta_t >  m_meta;
     shared_ptr< mpi_frame_t >  m_data;
     
