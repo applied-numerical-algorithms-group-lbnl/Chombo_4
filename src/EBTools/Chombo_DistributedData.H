@@ -234,7 +234,7 @@ namespace CH4_Data_Choreography
                     const Chombo4::DataFactory<fabtype_t>& a_factory,
                     bool                                   a_enableStaticCache = true)
     {
-      define(a_grids, a_ghost, a_factory);
+      define(a_grids, a_ghost, a_factory, a_enableStaticCache);
     }
 
     
@@ -242,7 +242,7 @@ namespace CH4_Data_Choreography
     void define(const Chombo4::DisjointBoxLayout     & a_grids,
                 const Chombo4::IntVect               & a_ghost,
                 const Chombo4::DataFactory<fabtype_t>& a_factory,
-                bool                                   a_enableStaticCache = false)
+                bool                                   a_enableStaticCache = true)
     {
       CH_TIME("DistributedData constructor");
       m_procID = CH4_SPMD::procID();

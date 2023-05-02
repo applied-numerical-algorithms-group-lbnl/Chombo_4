@@ -33,7 +33,7 @@ namespace EBCM
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
-    void defineAsRegular(pr_vof a_lo, pr_vof a_hi, Real a_dx)
+    void defineAsRegular(pr_vof a_lo, pr_vof a_hi, double a_dx)
     {                                                  
       m_lo = a_lo;
       m_hi = a_hi;
@@ -78,6 +78,28 @@ namespace EBCM
   class EBCM_Volu
   {
   public:
+
+    ///Get the size of this object 
+    size_t charsize() const
+    {
+      size_t retval = 0;
+
+      ch_mayday::Error("EBCM_Volu::linearSize not implemented");
+      return retval;
+    }
+
+    void linearOut(void* const a_outbuf) const
+    {
+      ch_mayday::Error("EBCM_Volu::linearOut not implemented");
+
+    }
+
+    void linearIn(const void* const a_inbuf)
+    {
+     ch_mayday::Error("EBCM_Volu::linearIn  not implemented");
+    }
+
+
     typedef Chombo4::GeometryService<order> ch_geoserv;
     typedef Proto::IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef Proto::IndexedMoments<DIM  , order> IndMomSpaceDim;
@@ -90,13 +112,13 @@ namespace EBCM
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
     RealVect m_centroid;
-    Real     m_kappa; //volume fraction
+    double     m_kappa; //volume fraction
     IndexedMoments<DIM, order> m_volmom;
 
     //used as a unique identifier.  
     //Also volume moments are centered around this cell center.  Hence dx.
     Point    m_pt; 
-    Real     m_dx;
+    double     m_dx;
 
     inline void print() const
     {
@@ -223,16 +245,16 @@ namespace EBCM
       defineDerivedMeasures(a_dx);
     }
 
-    void defineDerivedMeasures(Real a_dx)
+    void defineDerivedMeasures(double a_dx)
     {
-      Real cellVol = D_TERM(a_dx, *a_dx, *a_dx);
+      double cellVol = D_TERM(a_dx, *a_dx, *a_dx);
       m_kappa = m_volmom[0]/cellVol;
       //relies upon volmom  and dx being set
       for(int idir = 0; idir < DIM; idir++)
       {
         cellVol *= a_dx;
-        Real centerloc = (m_pt[idir] + 0.5)*a_dx;
-        Real scaledCent = m_volmom[1+idir];
+        double centerloc = (m_pt[idir] + 0.5)*a_dx;
+        double scaledCent = m_volmom[1+idir];
         m_centroid[idir]= centerloc + scaledCent;
       }
     }
@@ -359,13 +381,13 @@ namespace EBCM
 
        //centroid location in global space (not relative to cell center)
        RealVect m_centroid;
-       Real     m_kappa; //volume fraction
+       double     m_kappa; //volume fraction
        IndexedMoments<DIM, order> m_volmom;
 
        //used as a unique identifier.  
        //Also volume moments are centered around this cell center.  Hence dx.
        Point    m_pt; 
-       Real     m_dx
+       double     m_dx
        vector<Point> m_cells; //all cells marked for this entry.   
     */
 
@@ -519,7 +541,7 @@ namespace EBCM
     mergeTwoVolumesIntoThird(EBCM_Volu<order>                      & a_volMer,
                              const EBCM_Volu<order>                & a_volOne,
                              const EBCM_Volu<order>                & a_volTwo,
-                             Real a_dx, bool a_printStuff)
+                             double a_dx, bool a_printStuff)
     {
       a_volMer.m_regular = false;
       a_volMer.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
@@ -548,7 +570,7 @@ namespace EBCM
     static
     inline EBCM_Volu<order>
     mergeManyIntoOne(const vector<EBCM_Volu<order> >& a_many,
-                     Real a_dx, bool a_printStuff)
+                     double a_dx, bool a_printStuff)
     {
       EBCM_Volu<order> retval;
       if(a_many.size() == 1)
@@ -1020,34 +1042,6 @@ namespace EBCM
                      a_mergeSmallCells, a_printStuff);
       }
     }
-    
-    //whether define function has been called on this object
-    /**
-       If this == false, everything else is not defined.
-    **/
-    bool m_defined;
-
-    ///
-    /**
-       I am not bothering with fancy accessor functions.   Member data is left in the clear.  
-       Use it wisely.
-       Remember the map and the vector are not defined if allRegular or allCovered are true.   
-       This should save a ton of memory where there is not much EB.
-       Assignment ought to work.
-    **/
-    bool m_allRegular;
-    bool m_allCovered;
-    //need  dx because we compute regular moment info on the fly.
-    Real                   m_dx;
-    ch_box                 m_domain;
-    ch_box                 m_grid;
-    /**
-       Irregular volume information.   We do not store unmerged regular cell volumes.
-       The stuff below is not defined if m_allRegular or m_allCovered are true
-    **/
-    shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
-    //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
-    shared_ptr< HostBoxData<int, 1> >      m_map;
 
     ///
     bool isRegular(pr_pt a_pt) const
@@ -1088,12 +1082,168 @@ namespace EBCM
       return  retval;
     }
 
+    ///
     bool hasIrregular() const
     {
       bool     regularOrCovered = m_allRegular  || m_allCovered;
       return (!regularOrCovered);
     }
- 
+
+    ///serialization routines
+    
+
+    ///Fills byte stream from with all the data from this object.
+    inline void energize(void *a_buf,
+                         size_t a_expected_size,
+                         bool a_printStuff = false) const
+    {
+      using ProtoSer::linearOutToCharBuf;
+      using ProtoSer::linearCharBufSize;
+      size_t charsiz = 0;
+      char* charbuf = (char *) a_buf;
+      
+      if(!m_defined)
+      {
+        ch_mayday::Error("EBCM_Graph::energize called when object is undefined");
+      }
+
+      //output a magic tag to show if all regular, all covered or has irregular
+      int label = 4586;
+      if(m_allRegular)
+      {
+        label = -1;
+      }
+      else if(m_allCovered)
+      {
+        label = -2;
+      }
+      // tag for all reg, all covered, has irreg
+      {
+        int* intbuf = (int *)(charbuf);
+        *intbuf = label;
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+      }
+      //m_dx
+      {
+        double* doubbuf = (double*)(charbuf);
+        *doubbuf = m_dx;
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      
+      // m_grid
+      {
+        linearOutToCharBuf(charbuf,  m_grid);
+        charbuf += linearCharBufSize(m_grid);
+        charsiz += linearCharBufSize(m_grid);
+        
+        // m_domain
+        linearOutToCharBuf(charbuf , m_domain);
+        charbuf += linearCharBufSize(m_domain);
+        charsiz += linearCharBufSize(m_domain);
+      }
+      
+      /**
+       Irregular volume information.  The stuff below are  only defined if 
+       hasIrregular is true (which means allRegular and allCovered are false).
+       or m_allCovered are true.  
+
+       ///This is the meta data and moment information.
+       shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+       //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
+       shared_ptr< HostBoxData<int, 1> >      m_map;
+      **/
+      if( hasIrregular() )
+      {
+        int vecsize = m_volumes->size();
+        int intbuf =  charbuf;
+        *sizbuf = vecsize;
+        charbuf += sizeof(int);
+        charbuf += sizeof(int);
+        for(int ivec = 0; ivec < vecsize; ivec++)
+        {
+          const auto& entry = (*m_volumes)[ivec];
+          size_t 
+        }
+      }
+        
+
+      
+    }
+    ///
+    /**
+       Defines this object from a byte stream.  This has to be
+       symmetric with the energize function.  If I could figure out
+       how to force this, I would.
+    */
+    EBCM_Graph(void * a_buf,
+               size_t a_expectedSize,
+               bool a_printStuff = false)
+    {
+      m_defined = true;
+    }
+    
+     ///Returns the size of the byte stream
+    inline
+    virtual std::size_t charsize(const ch_box&   a_bx,
+                                 unsigned int a_startcomp,
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const
+    {
+      using ProtoSer::linearCharBufSize;
+    }
+
+    ///this is for MPI communication
+    inline
+    virtual void  linearIn(void*                  a_buf,
+                           size_t                 a_expectedSize,
+                           const ch_box    &      a_bx,
+                           unsigned int           a_startcomp,
+                           unsigned int           a_numcomps,
+                           bool a_printStuff = false)
+    {
+    }
+    
+    ///this is for MPI communication
+    inline
+    virtual void linearOut(void*               a_buf,
+                           size_t                 a_expectedSize,
+                           const Box       &   a_bx,
+                           unsigned int        a_startcomp,
+                           unsigned int        a_numcomps,
+                           bool a_printStuff = false) const
+    {
+    }
+    ///Class Data
+    /**
+       I am not bothering with fancy accessor functions.   Member data is left in the clear.  
+       Use it wisely.
+       Remember the map and the vector are not defined if allRegular or allCovered are true.   
+       This should save a ton of memory where there is not much EB.
+       Assignment ought to work.
+    **/
+
+    ///Whether define function has been called on this object. If m_defined == false, everything else is not defined.
+    bool m_defined;
+
+    ///
+    bool m_allRegular;
+    bool m_allCovered;
+    //need  dx because we compute regular moment info on the fly.
+    double                 m_dx;
+    ch_box                 m_domain;
+    ch_box                 m_grid;
+    /**
+       Irregular volume information.   We do not store unmerged regular cell volumes.
+       The stuff below is not defined if m_allRegular or m_allCovered are true
+    **/
+
+    ///This is the meta data and moment information.
+    shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+    //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
+    shared_ptr< HostBoxData<int, 1> >      m_map;
+
   }; //end ebcmgraph class
 
   template <int order>
@@ -1109,7 +1259,7 @@ namespace EBCM
     
     MetaDataLevel(const shared_ptr<ch_geoserv>& a_geoserv,
                   const ch_box                & a_domain,
-                  const Real                  & a_dx,
+                  const double                  & a_dx,
                   bool                          a_mergeSmallCells,
                   bool                          a_printStuff)
     {
@@ -1165,7 +1315,7 @@ namespace EBCM
     shared_ptr<cmgraph_distrib_t>  m_graphs;
     ch_dbl                         m_grids;
     ch_box                         m_domain;
-    Real                           m_dx;
+    double                           m_dx;
   }; //end class EBCMMetaDataLevel
 
 
