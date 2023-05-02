@@ -85,13 +85,13 @@ intersects the volume $V$.
 The volume moment for a particular power $\pbold$  is
 given by
 \begin{equation}
-  m^\pold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
+  m^\pbold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
   \label{eqn::volmom}
 \end{equation}
 The $\pbold^{th}$ coordinate face moment for the area of where volumes $V_1, V2$
 intersect is given by
 \begin{equation}
-  m^\pold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
+  m^\pbold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
   \label{eqn::facmom}
 \end{equation}
 The cutting surface of the boundary $G$ is given by  the zero
@@ -99,7 +99,7 @@ surface of the  implicit function ($I(\xbold)= 0$) used in grid generation.
 The $\pbold^{th}$ irregular face moment is given by an integral over
 the intersection of this cutting surface and the Euclidean volume:
 \begin{equation}
-  m^\pold_{V}} = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
+  m^\pbold_V = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
   \label{eqn::irrmom}
 \end{equation}
 These moments are the natural product of the grid generation algorithm
