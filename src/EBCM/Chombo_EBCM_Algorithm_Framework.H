@@ -28,10 +28,8 @@ namespace EBCM
   typedef Chombo4::Box                                   ch_box;
   typedef Chombo4::DisjointBoxLayout                     ch_dbl;
   typedef Chombo4::ProblemDomain                         ch_probdom;
-  typedef Chombo4::DataIterator                          ch_dit;
   typedef Chombo4::IntVect                               ch_iv;
   typedef Chombo4::MayDay                                ch_mayday;
-//typedef Chombo4::LAPACKMatrix                          ch_mat;
   typedef Proto::RealVect                                pr_rv;
   typedef Proto::IndexTM<Real, DIM>                      pr_itm_r_dim;
   typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
@@ -125,6 +123,7 @@ namespace EBCM
                           ch_dbl                    & a_grids,
                           double                    & a_dx,
                           ch_probdom                & a_domain,
+                          int  a_ghost,
                           bool a_outputGraph,
                           bool a_printStuff)
     {
@@ -173,7 +172,7 @@ namespace EBCM
 
   
       shared_ptr< ebcm_meta  >
-        metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx,
+        metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, a_ghost,
                                   mergeSmallCells, a_printStuff));
 
       string graph_filename;
@@ -465,7 +464,8 @@ namespace EBCM
       ch_dbl                   grids;
       double                   dx;
       ch_probdom               domain;
-      makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+      int nghost = 0;
+      makeMergedGeometry(ebcm, grids, dx, domain, nghost, true, true);
 
       Real maxKapp, minKapp;
       //this tries out iteration and checks kappa

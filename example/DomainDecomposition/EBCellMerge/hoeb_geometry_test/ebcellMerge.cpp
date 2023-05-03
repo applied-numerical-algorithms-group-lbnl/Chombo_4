@@ -172,9 +172,9 @@ public:
     shared_ptr< ch_geoserv > geoserv
       (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
 
-  
+    int ghost = 0;
     shared_ptr< ebcm_meta  >
-      metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx,
+      metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, ghost,
                                 mergeSmallCells, a_printStuff));
 
     string graph_filename;

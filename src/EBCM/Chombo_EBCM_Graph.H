@@ -15,14 +15,18 @@ namespace EBCM
   using std::shared_ptr;
   using Chombo4::pout;
   using Chombo4::MayDay;
+//  using CH4_SPMD::linearIn;  
+//  using CH4_SPMD::linearOut;  
+//  using CH4_SPMD::linearSize;
   
-  typedef Proto::EBGraph       pr_ebgrap;
-  
-  typedef Proto::EBIndex<CELL> pr_vof;
-  typedef Proto::Point         pr_pt;
-  typedef Proto::Box           pr_box;
-  typedef Chombo4::Box         ch_box;
-  typedef Chombo4::DataIndex   ch_dit;
+  typedef Proto::EBGraph           pr_ebgrap;
+  typedef Proto::EBIndex<CELL>     pr_vof;
+  typedef Proto::Point             pr_pt;
+  typedef Proto::Box               pr_box;
+  typedef Chombo4::Box             ch_box;
+  typedef Chombo4::DataIterator    ch_dit;
+  typedef Chombo4::DataIndex       ch_datind;
+  typedef Chombo4::MayDay          ch_mayday;
   
   ///
   template<CENTERING cent, int order>
@@ -84,7 +88,7 @@ namespace EBCM
     {
       size_t retval = 0;
 
-      ch_mayday::Error("EBCM_Volu::linearSize not implemented");
+      ch_mayday::Error("EBCM_Volu::charsize not implemented");
       return retval;
     }
 
@@ -96,7 +100,7 @@ namespace EBCM
 
     void linearIn(const void* const a_inbuf)
     {
-     ch_mayday::Error("EBCM_Volu::linearIn  not implemented");
+      ch_mayday::Error("EBCM_Volu::linearIn  not implemented");
     }
 
 
@@ -194,7 +198,7 @@ namespace EBCM
     void defineAsIrregular(const pr_vof                          & a_vof,
                            const shared_ptr<ch_geoserv>          & a_geoserv,
                            const ch_box                          & a_domain,
-                           const ch_dit                          & a_dit,
+                           const ch_datind                       & a_dit,
                            const double                          & a_dx)
     {
       m_regular = false;
@@ -307,7 +311,7 @@ namespace EBCM
   ///
   /**
      Class to make merged sparse embedded boundary description. 
-   */
+  */
   template< int order>
   class EBCM_Graph
   {
@@ -628,8 +632,8 @@ namespace EBCM
 
     ///
     /**
-      This coarsens, then refines the input cell to get a 2x2x2
-      (at least in cells, some may be covered cells) region
+       This coarsens, then refines the input cell to get a 2x2x2
+       (at least in cells, some may be covered cells) region
        merge it all together.    This algorithm should be independent 
        of box division decisions because of the blocking factor thing.
        Absolutely not guaranteed to get kappa >= 1.
@@ -641,7 +645,7 @@ namespace EBCM
                            const  pr_vof                         & a_startvof,
                            const shared_ptr<ch_geoserv>          & a_geoserv,
                            const ch_box                          & a_domain,
-                           const ch_dit                          & a_dit,
+                           const ch_datind                       & a_dit,
                            const double                          & a_dx,
                            const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                            const pr_ebgrap                       & a_graph,
@@ -728,7 +732,7 @@ namespace EBCM
                       const pr_vof                          & a_startvof,
                       const shared_ptr<ch_geoserv>          & a_geoserv,
                       const ch_box                          & a_domain,
-                      const ch_dit                          & a_dit,
+                      const ch_datind                       & a_dit,
                       const double                          & a_dx,
                       const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                       const pr_ebgrap                       & a_graph,
@@ -759,8 +763,8 @@ namespace EBCM
         a_vofsEaten.resize(0);
 
         retval =
-        getRefinedCoarseVolume(a_vofsEaten,  a_startvof, a_geoserv, a_domain,
-                               a_dit, a_dx, a_vofsLeft, a_graph, a_printStuff);
+          getRefinedCoarseVolume(a_vofsEaten,  a_startvof, a_geoserv, a_domain,
+                                 a_dit, a_dx, a_vofsLeft, a_graph, a_printStuff);
       }
       return retval;
     }
@@ -824,7 +828,7 @@ namespace EBCM
                                    shared_ptr<vector<EBCM_Volu<order> > >    & a_tooSmall,
                                    const shared_ptr<ch_geoserv>              & a_geoserv,
                                    const ch_box                              & a_domain,
-                                   const ch_dit                              & a_dit,
+                                   const ch_datind                           & a_dit,
                                    const double                              & a_dx,
                                    const shared_ptr<set<pr_vof   > >         & a_vofsLeft,
                                    const pr_ebgrap                           & a_graph,
@@ -914,7 +918,7 @@ namespace EBCM
                  shared_ptr<set<pr_vof   > >               & a_inputVoFs, 
                  const shared_ptr<ch_geoserv>              & a_geoserv,
                  const ch_box                              & a_domain,
-                 const ch_dit                              & a_dit,
+                 const ch_datind                           & a_dit,
                  const double                              & a_dx,
                  const pr_ebgrap                           & a_graph,
                  bool                                        a_mergeSmallCells,
@@ -956,7 +960,7 @@ namespace EBCM
             vector<pr_vof> mergevec;
             EBCM_Volu<order> volume =
               createEBCM_Volume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
-                               vofsLeft, a_graph, a_mergeSmallCells, printStuff);
+                                vofsLeft, a_graph, a_mergeSmallCells, printStuff);
             
       
             for(int ivec = 0; ivec < mergevec.size(); ivec++)
@@ -1002,8 +1006,9 @@ namespace EBCM
     inline void 
     define(const shared_ptr<ch_geoserv>          & a_geoserv,
            const ch_box                          & a_domain,
-           const ch_dit                          & a_dit,
+           const ch_datind                       & a_dit,
            const double                          & a_dx,
+           int                                     a_ghost,
            bool                                    a_mergeSmallCells,
            bool                                    a_printStuff) 
     {
@@ -1013,6 +1018,9 @@ namespace EBCM
       auto grids = a_geoserv->getDBL(a_domain);
       
       m_grid = grids[a_dit];
+      m_grid.grow(a_ghost);
+      m_grid &= a_domain;
+      
       const auto& graphs = a_geoserv->getGraphs(a_domain);
       const auto& ebgrap = (*graphs)[a_dit];
       //keeping the allregular
@@ -1097,8 +1105,6 @@ namespace EBCM
                          size_t a_expected_size,
                          bool a_printStuff = false) const
     {
-      using ProtoSer::linearOutToCharBuf;
-      using ProtoSer::linearCharBufSize;
       size_t charsiz = 0;
       char* charbuf = (char *) a_buf;
       
@@ -1134,43 +1140,130 @@ namespace EBCM
       
       // m_grid
       {
-        linearOutToCharBuf(charbuf,  m_grid);
-        charbuf += linearCharBufSize(m_grid);
-        charsiz += linearCharBufSize(m_grid);
+        m_grid.linearOut(charbuf);
+        charbuf += m_grid.charsize();
+        charsiz += m_grid.charsize();
         
         // m_domain
-        linearOutToCharBuf(charbuf , m_domain);
-        charbuf += linearCharBufSize(m_domain);
-        charsiz += linearCharBufSize(m_domain);
+        m_domain.linearOut(charbuf);
+        charbuf += m_domain.charsize();
+        charsiz += m_domain.charsize();
       }
       
       /**
-       Irregular volume information.  The stuff below are  only defined if 
-       hasIrregular is true (which means allRegular and allCovered are false).
-       or m_allCovered are true.  
-
-       ///This is the meta data and moment information.
-       shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
-       //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
-       shared_ptr< HostBoxData<int, 1> >      m_map;
+         Irregular volume information.  The stuff below are  only defined if 
+         hasIrregular is true (which means allRegular and allCovered are false).
+         or m_allCovered are true.  
+         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< HostBoxData<int, 1> >      m_map;
       **/
       if( hasIrregular() )
       {
         int vecsize = m_volumes->size();
-        int intbuf =  charbuf;
-        *sizbuf = vecsize;
+        int* intbuf =  (int* )charbuf;
+        *intbuf = vecsize;
         charbuf += sizeof(int);
-        charbuf += sizeof(int);
+        charsiz += sizeof(int);
         for(int ivec = 0; ivec < vecsize; ivec++)
         {
-          const auto& entry = (*m_volumes)[ivec];
-          size_t 
+          const auto& entry    = (*m_volumes)[ivec];
+          size_t      entrysiz = entry.charsize();
+          size_t*   sizbuf = (size_t*) charbuf;
+          *sizbuf = entrysiz;
+          charbuf += sizeof(size_t);
+          charsiz += sizeof(size_t);
+          
+          entry.linearOut(charbuf);
+          charbuf += entrysiz;
+          charsiz += entrysiz;
         }
+
+        ch_box fabbox  = m_map->box();
+        fabbox.linearOut(charbuf);
+        charbuf += fabbox.charsize();
+        charsiz += fabbox.charsize();
+        
+        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
+        m_map->linearOut(charbuf, fabsize, fabbox, 0, 1, a_printStuff);
+        charbuf += fabsize;
+        charsiz += fabsize;
       }
         
-
-      
+      if(a_expected_size != charsiz)
+      {
+        ch_mayday::Error("EBCMGraph::energize: size mismatch");
+      }
     }
+
+    ///Returns the size of the byte stream
+    inline
+    virtual std::size_t charsize(const ch_box&   a_bx,
+                                 unsigned int a_startcomp,
+                                 unsigned int a_numcomps,
+                                 bool a_printStuff = false) const
+    {
+      using ProtoSer::linearCharBufSize;
+      size_t charsiz = 0;
+      
+      if(!m_defined)
+      {
+        ch_mayday::Error("EBCM_Graph::energize called when object is undefined");
+      }
+
+      //output a magic tag to show if all regular, all covered or has irregular
+      {
+        charsiz += sizeof(int);
+      }
+      //m_dx
+      {
+        charsiz += sizeof(double);
+      }
+      
+      {
+        // m_grid
+        charsiz += m_grid.charsize();
+        
+        // m_domain
+        charsiz += m_domain.charsize();
+      }
+      
+      /**
+         Irregular volume information.  The stuff below are  only defined if 
+         hasIrregular is true (which means allRegular and allCovered are false).
+         or m_allCovered are true.  
+         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< HostBoxData<int, 1> >      m_map;
+      **/
+      if( hasIrregular() )
+      {
+        //volume size
+        int vecsize = m_volumes->size();
+        charsiz += sizeof(int);
+        for(int ivec = 0; ivec < vecsize; ivec++)
+        {
+          const auto& entry    = (*m_volumes)[ivec];
+          //entry size
+          charsiz += sizeof(size_t);
+
+          //entry data
+          size_t      entrysiz = entry.charsize();
+          charsiz += entrysiz;
+        }
+        ch_box fabbox  = m_map->box();
+        charsiz += fabbox.charsize();
+        
+        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
+        charsiz += fabsize;
+      }
+      return charsiz;
+    }
+
+    ///blame it all on MPI
+    int nComp() const
+    {
+      return 1;
+    }
+    
     ///
     /**
        Defines this object from a byte stream.  This has to be
@@ -1181,19 +1274,132 @@ namespace EBCM
                size_t a_expectedSize,
                bool a_printStuff = false)
     {
+
       m_defined = true;
-    }
+
+      
+      size_t charsiz = 0;
+      char* charbuf = (char *) a_buf;
+      
+      //input a magic tag to show if all regular, all covered or has irregular
+      {
+        int* intbuf = (int *)(charbuf);
+        int label = *intbuf;
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+
+        if(label == -1)
+        {
+          m_allRegular = true;
+          m_allCovered = false;
+        }
+        else if(label == -2)
+        {
+          m_allRegular = false;
+          m_allCovered = true;
+        }
+        else if(label == 4586)
+        {
+          //this one has cut cells
+          m_allRegular = false;
+          m_allCovered = false;
+        }
+        else
+        {
+          ch_mayday::Error("EBCMGraph bytstream constructor: bogus regirregcov flag");
+        }
+      }
+      //m_dx
+      {
+        double* doubbuf = (double*)(charbuf);
+        m_dx = *doubbuf;
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      
+      // m_grid
+      m_grid.linearIn(charbuf);
+      charbuf += m_grid.charsize();
+      charsiz += m_grid.charsize();
+        
+      // m_domain
+      m_domain.linearIn(charbuf);
+      charbuf += m_domain.charsize();
+      charsiz += m_domain.charsize();
+
+      
+      /**
+         Irregular volume information.  The stuff below are  only defined if 
+         hasIrregular is true (which means allRegular and allCovered are false).
+         or m_allCovered are true.  
+         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< HostBoxData<int, 1> >      m_map;
+
+         The function isIrregular ought to work because we have set m_allRegular and m_allCovered.
+         Do not move this section of code to before that is true.
+      **/
+      if( hasIrregular() )
+      {
+        int* intbuf =  (int*) charbuf;
+        int vecsize = *intbuf;
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+        
+        m_volumes = shared_ptr< vector<EBCM_Volu<order> > >
+          ( new vector<EBCM_Volu<order> >(vecsize));
+            
+        for(int ivec = 0; ivec < vecsize; ivec++)
+        {
+          auto& entry    = (*m_volumes)[ivec];
+          size_t* sizbuf  = (size_t*) charbuf;
+          size_t entrysiz = *sizbuf;
+          charbuf += sizeof(size_t);
+          charsiz += sizeof(size_t);
+          
+          entry.linearIn(charbuf);
+          charbuf += entrysiz;
+          charsiz += entrysiz;
+        }
+        
+        ch_box fabbox  = m_map->box();
+        fabbox.linearIn(charbuf);
+        charbuf += fabbox.charsize();
+        charsiz += fabbox.charsize();
+        
+        m_map = shared_ptr< HostBoxData<int, 1> >
+          (new HostBoxData<int, 1>(fabbox));
+
+        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
+        m_map->linearIn( charbuf, fabsize, fabbox, 0, 1, a_printStuff);
+        charbuf += fabsize;
+        charsiz += fabsize;
+      }
     
-     ///Returns the size of the byte stream
-    inline
-    virtual std::size_t charsize(const ch_box&   a_bx,
-                                 unsigned int a_startcomp,
-                                 unsigned int a_numcomps,
-                                 bool a_printStuff = false) const
+      if(a_expectedSize != charsiz)
+      {
+        ch_mayday::Error("EBCMGraph::energize: size mismatch");
+      }
+    }
+    /// for exchange.   checks over box and adds volumes as needed from source.
+    void
+    copy(const EBCM_Graph              & a_src,
+         const ch_box                  & a_region)
     {
-      using ProtoSer::linearCharBufSize;
+      ch_mayday::Error("not implemented");
     }
 
+    ///
+    void
+    copy(const EBCM_Graph              & a_src,
+         const ch_box                  & a_srcBox,
+         unsigned int                 a_srcComp,
+         const ch_box                  & a_destBox,
+         unsigned int                 a_destComp,
+         unsigned int                 a_numcomp)
+    {
+      copy(a_src, a_srcBox);
+    }
+    
     ///this is for MPI communication
     inline
     virtual void  linearIn(void*                  a_buf,
@@ -1203,17 +1409,30 @@ namespace EBCM
                            unsigned int           a_numcomps,
                            bool a_printStuff = false)
     {
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "EBCM_Graph::linearIn: entering " << endl;
+      }
+
+      EBCM_Graph srcGraph(a_buf, a_expectedSize, a_printStuff);
+      copy(srcGraph, a_bx);
+
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "EBCM_Graph::linearIn: leaving " << endl;
+      }
     }
     
     ///this is for MPI communication
     inline
     virtual void linearOut(void*               a_buf,
-                           size_t                 a_expectedSize,
-                           const Box       &   a_bx,
+                           size_t              a_expectedSize,
+                           const ch_box    &   a_bx,
                            unsigned int        a_startcomp,
                            unsigned int        a_numcomps,
                            bool a_printStuff = false) const
     {
+      energize(a_buf, a_expectedSize, a_printStuff);
     }
     ///Class Data
     /**
@@ -1252,6 +1471,7 @@ namespace EBCM
   public:
     typedef Chombo4::GeometryService<order>      ch_geoserv;
     typedef Chombo4::Box                         ch_box;
+
     typedef Chombo4::DisjointBoxLayout           ch_dbl;
     typedef Chombo4::LevelGeometryService<order> ch_levelgeo;
     typedef Chombo4::NullConstructorDataFactory<   EBCM_Graph<order> >      cmgraph_factory_t;    
@@ -1259,7 +1479,8 @@ namespace EBCM
     
     MetaDataLevel(const shared_ptr<ch_geoserv>& a_geoserv,
                   const ch_box                & a_domain,
-                  const double                  & a_dx,
+                  const double                & a_dx,
+                  int                           a_ghost,
                   bool                          a_mergeSmallCells,
                   bool                          a_printStuff)
     {
@@ -1273,9 +1494,10 @@ namespace EBCM
       auto dit = m_grids.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        (*m_graphs)[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx,
+        (*m_graphs)[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx, a_ghost,
                                       a_mergeSmallCells, a_printStuff);
       }
+      m_graphs->exchange();
     }
 
     void outputGraphMapAsHDF5(const string & a_filename) const
@@ -1315,7 +1537,7 @@ namespace EBCM
     shared_ptr<cmgraph_distrib_t>  m_graphs;
     ch_dbl                         m_grids;
     ch_box                         m_domain;
-    double                           m_dx;
+    double                         m_dx;
   }; //end class EBCMMetaDataLevel
 
 

@@ -71,27 +71,27 @@ int main(int a_argc, char* a_argv[])
     Chombo4::pout() <<  "Running test for polynomial order = " << order << endl;
     if(order == 6)
     {
-      EBCM_Framework<6>::runTests();
+      EBCM::Algorithm_Framework<6>::runTests();
     }
     else if(order == 5)
     {
-      EBCM_Framework<5>::runTests();
+      EBCM::Algorithm_Framework<5>::runTests();
     }
     if(order == 4)
     {
-      EBCM_Framework<4>::runTests();
+      EBCM::Algorithm_Framework<4>::runTests();
     }
     else if(order == 3)
     {
-      EBCM_Framework<3>::runTests();
+      EBCM::Algorithm_Framework<3>::runTests();
     }
     else if(order == 2)
     {
-      EBCM_Framework<2>::runTests();
+      EBCM::Algorithm_Framework<2>::runTests();
     }
     else if(order == 1)
     {
-      EBCM_Framework<1>::runTests();
+      EBCM::Algorithm_Framework<1>::runTests();
     }
     else
     {
