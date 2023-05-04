@@ -27,6 +27,87 @@ namespace EBCM
   typedef Chombo4::DataIterator    ch_dit;
   typedef Chombo4::DataIndex       ch_datind;
   typedef Chombo4::MayDay          ch_mayday;
+
+  ///get the serialization size of this vector
+  template<typename entry_t>
+  size_t
+  vector_charsize(const vector<entry_t>& a_vec)
+  {
+    //start with the size of the vector as an int
+    size_t charsiz = sizeof(int);
+    for(int ivec = 0; ivec < a_vec.size())
+    {
+      charsiz += sizeof(size_t); //size of entry
+      charsiz += a_vec[ivec].charsize(); //data for entry
+    }
+    return charsiz;
+  }
+
+  ///output this vector to a bytestream
+  template<typename entry_t>
+  size_t
+  vector_energize(char* a_outbuf, const vector<entry_t> & a_vec, size_t a_expected_size)
+  {
+      char*  charbuf = a_outbuf;
+      size_t charsiz = 0;
+      {
+        int* intbuf = (int*) charbuf;
+        *intbuf = a_vec.size();
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+      }
+      for(int ivec = 0; ivec < a_vec.size(); ivec++)
+      {
+        const auto& entry = a_vec[ivec];
+        size_t entrysize  = entry.charsize();
+        
+        size_t* sizbuf = (size_t*) charbuf;
+        *sizbuf = entrysize;
+        charbuf += sizeof(size_t);
+        charsiz += sizeof(size_t);
+        
+        
+        entry.energize(charbuf, entrysize);
+        charbuf += entrysize;
+        charsiz += entrysize;
+      } 
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMVolu::energize: size check failed");
+      }
+  }
+
+  ///define this vector from a bytestream
+  template<typename entry_t>
+  size_t
+  vector_linearIn(char* a_outbuf, const vector<entry_t> & a_vec, size_t a_expected_size)
+  {
+    char*  charbuf = a_outbuf;
+    size_t charsiz = 0;
+    int* intbuf = (int*) charbuf;
+    int vecsize = *intbuf;
+    charbuf += sizeof(int);
+    charsiz += sizeof(int);
+      
+    a_vec.resize(vecsize);
+    for(int ivec = 0; ivec < a_vec.size(); ivec++)
+    {
+      auto& entry = a_vec[ivec];
+        
+      size_t* sizbuf = (size_t*) charbuf;
+      size_t entrysize  = *sizbuf;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
+        
+      entry.linearIn(charbuf, entrysize);
+      charbuf += entrysize;
+      charsiz += entrysize;
+    } 
+    if(charsiz != a_expected_size)
+    {
+      ch_mayday::Error("EBCMVolu::energize: size check failed");
+    }
+  }
   
   ///
   template<CENTERING cent, int order>
@@ -55,6 +136,21 @@ namespace EBCM
       int icent = cent;
       pout() << icent << "-side face:( " << m_lo << " , " << m_hi << " )" << endl;
     }
+    size_t charsize() const
+    {
+      ch_mayday::Error("not implemented");
+      return 0;
+    }
+    void energize(char* a_outbuf, size_t a_expected_size) const
+    {
+      ch_mayday::Error("not implemented");
+
+    }
+    void linearIn(char* a_inbuf, size_t a_expected_size) const
+    {
+      ch_mayday::Error("not implemented");
+
+    }
   };
 
   template<int order>
@@ -76,6 +172,21 @@ namespace EBCM
       pout() <<  "cut face:(" << m_pt << ")" << endl;
     }
 
+    size_t charsize() const
+    {
+      ch_mayday::Error("not implemented");
+      return 0;
+    }
+    void energize(char* a_outbuf, size_t a_expected_size) const
+    {
+      ch_mayday::Error("not implemented");
+
+    }
+    void linearIn(char* a_inbuf, size_t a_expected_size) const
+    {
+      ch_mayday::Error("not implemented");
+
+    }
   };
 
   template<int order>
@@ -83,47 +194,209 @@ namespace EBCM
   {
   public:
 
-    ///Get the size of this object 
-    size_t charsize() const
-    {
-      size_t retval = 0;
-
-      ch_mayday::Error("EBCM_Volu::charsize not implemented");
-      return retval;
-    }
-
-    void linearOut(void* const a_outbuf) const
-    {
-      ch_mayday::Error("EBCM_Volu::linearOut not implemented");
-
-    }
-
-    void linearIn(const void* const a_inbuf)
-    {
-      ch_mayday::Error("EBCM_Volu::linearIn  not implemented");
-    }
-
-
+    ///Data:
+    ///this is another one of those classes with its data just hanging out in the breeze
     typedef Chombo4::GeometryService<order> ch_geoserv;
     typedef Proto::IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef Proto::IndexedMoments<DIM  , order> IndMomSpaceDim;
-    //
-    vector<EBCM_Face<XFACE, order> >  m_xfaces;
-    vector<EBCM_Face<YFACE, order> >  m_yfaces;
-    vector<EBCM_Face<ZFACE, order> >  m_zfaces;
-    vector<IrregFace<order> > m_irregFaces;
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
-    RealVect m_centroid;
-    double     m_kappa; //volume fraction
+    RealVect   m_centroid;
+
+    //volume fraction
+    double     m_kappa; 
     IndexedMoments<DIM, order> m_volmom;
 
     //used as a unique identifier.  
     //Also volume moments are centered around this cell center.  Hence dx.
-    Point    m_pt; 
+    Point      m_pt; 
     double     m_dx;
+    
+    //
+    vector<EBCM_Face<XFACE, order> >  m_xfaces;
+    vector<EBCM_Face<YFACE, order> >  m_yfaces;
+    vector<EBCM_Face<ZFACE, order> >  m_zfaces;
+    vector<IrregFace<order> > m_ifaces;
 
+    ///The usual set of functions involved in serialization
+
+    ///fill a bytestream with the necessary data to reproduce this class
+    void energize(char* a_outbuf, size_t a_expected_size) const
+    {
+      char*  charbuf = a_outbuf;
+      size_t charsiz = 0;
+      //flag for regular or not
+      int iflag = -486;
+      if(m_regular)
+      {
+        iflag = 1;
+      }
+      {
+        ///flag for m_regular
+        int* intbuf = (int *)charbuf;
+        *intbuf = iflag;
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+
+        ///m_dx
+        double* doubbuf = (double*) charbuf;
+        *doubbuf = m_dx;
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //m_pt 
+        int* intbuf = (int*)charbuf;
+        *intbuf = m_pt[idir];
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+        
+        //m_centroid
+        double* doubbuf = (double*) charbuf;
+        *doubbuf = m_centroid[idir];
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      
+      //4 vectors
+      size_t xsize = vector_charsize(m_xfaces);
+      size_t ysize = vector_charsize(m_xfaces);
+      size_t zsize = vector_charsize(m_xfaces);
+      size_t isize = vector_charsize(m_ifaces);
+      {
+        size_t* sizbuf = (size_t*) charbuf;
+        *sizbuf = xsize; sizbuf++;
+        *sizbuf = ysize; sizbuf++;
+        *sizbuf = zsize; sizbuf++;
+        *sizbuf = isize; 
+      
+        charbuf += 4*sizeof(size_t);
+        charsiz += 4*sizeof(size_t);
+      }
+
+
+
+      vector_energize(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
+      vector_energize(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
+      vector_energize(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
+      vector_energize(charbuf, m_ifaces, isize); charbuf += isize; charsiz += isize;
+
+      //
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMVolu::energize: size check failed");
+      }
+    }
+    
+    ///define this object via bytestream
+    void linearIn(char* a_inbuf, size_t a_expected_size)
+    {
+      char*  charbuf = a_outbuf;
+      size_t charsiz = 0;
+      //flag for regular or not
+      int iflag = -486;
+      if(m_regular)
+      {
+        iflag = 1;
+      }
+      {
+        ///flag for m_regular
+        int* intbuf = (int *)charbuf;
+        *intbuf = iflag;
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+
+        ///m_dx
+        double* doubbuf = (double*) charbuf;
+        *doubbuf = m_dx;
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //m_pt 
+        int* intbuf = (int*)charbuf;
+        *intbuf = m_pt[idir];
+        charbuf += sizeof(int);
+        charsiz += sizeof(int);
+        
+        //m_centroid
+        double* doubbuf = (double*) charbuf;
+        *doubbuf = m_centroid[idir];
+        charbuf += sizeof(double);
+        charsiz += sizeof(double);
+      }
+      
+      //4 vectors
+      size_t xsize,ysize, zsize, isize;
+      {
+        size_t* sizbuf = (size_t*) charbuf;
+        xsize = *sizbuf; sizbuf++;
+        ysize = *sizbuf; sizbuf++;
+        zsize = *sizbuf; sizbuf++;
+        isize = *sizbuf; 
+      
+        charbuf += 4*sizeof(size_t);
+        charsiz += 4*sizeof(size_t);
+      }
+        
+
+      vector_linearIn(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
+      vector_linearIn(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
+      vector_linearIn(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
+      vector_linearIn(charbuf, m_ifaces, isize); charbuf += isize; charsiz += isize;
+
+      //
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMVolu::linearIn: size check failed");
+      }
+      
+    }
+    
+    ///Get the bytestream size required to hold this object
+    size_t charsize() const
+    {
+      size_t charsiz = 0;
+      //flag for regular or not
+      charsiz += sizeof(int);
+      ///m_dx
+      charsiz += sizeof(double);
+
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //m_pt , m_centroid
+        charsiz += sizeof(int);
+        charsiz += sizeof(double);
+      }
+      
+      //4 vectors
+      {
+        charbuf += 4*sizeof(size_t);
+        charsiz += 4*sizeof(size_t);
+      }
+      size_t xsize = vector_charsize(m_xfaces);
+      size_t ysize = vector_charsize(m_xfaces);
+      size_t zsize = vector_charsize(m_xfaces);
+      size_t isize = vector_charsize(m_ifaces);
+        
+
+      charsiz += xsize;
+      charsiz += ysize;
+      charsiz += zsize;
+      charsiz += isize;
+
+      return charsiz;
+    }
+
+    ///older name for energize (bit more gravitas, I guess)
+    void linearOut(char* a_outbuf, size_t a_expected_size) const
+    {
+      energize(a_outbuf);
+    }
+    
     inline void print() const
     {
       pout() << "volume :(" << m_pt << "), ";
@@ -242,9 +515,9 @@ namespace EBCM
       const auto& ebfdat = (*levebf_ptr)[a_dit];
 
       m_volmom = voldat(a_vof, 0);
-      m_irregFaces.resize(1);
-      m_irregFaces[0].m_ebfmom = ebfdat(ebf, 0);
-      m_irregFaces[0].m_pt = m_pt;
+      m_ifaces.resize(1);
+      m_ifaces[0].m_ebfmom = ebfdat(ebf, 0);
+      m_ifaces[0].m_pt = m_pt;
       
       defineDerivedMeasures(a_dx);
     }
@@ -268,7 +541,7 @@ namespace EBCM
       m_pt = a_pt;
       m_dx = a_dx;
       m_cells.resize(1, m_pt);
-      m_irregFaces.resize(0);
+      m_ifaces.resize(0);
       m_volmom.setRegular(a_dx);
       {
         m_xfaces.resize(2);
@@ -378,7 +651,7 @@ namespace EBCM
        vector<EBCM_Face<XFACE> >  m_xfaceshi;
        vector<EBCM_Face<YFACE> >  m_yfaceshi;
        vector<EBCM_Face<ZFACE> >  m_zfaceshi;
-       vector<IrregFace<order> > m_irregFaces;
+       vector<IrregFace<order> > m_ifaces;
 
        //only true if it started as a regular cell and never got merged
        bool                          m_regular;
@@ -448,19 +721,19 @@ namespace EBCM
     {
       ///This does the same thing as mergeFaces (just slap the two vectors together into the third).
       ///The moments are all wrong, though, and need to be shifted
-      a_volMer.m_irregFaces = a_volOne.m_irregFaces;
-      a_volMer.m_irregFaces.insert(a_volMer.m_irregFaces.end(), a_volTwo.m_irregFaces.begin(), a_volTwo.m_irregFaces.end());
+      a_volMer.m_ifaces = a_volOne.m_ifaces;
+      a_volMer.m_ifaces.insert(a_volMer.m_ifaces.end(), a_volTwo.m_ifaces.begin(), a_volTwo.m_ifaces.end());
       IndexTM<double, DIM> shiftOne, shiftTwo;
 
       int curmer = 0;
-      for(int iface = 0; iface < a_volOne.m_irregFaces.size(); iface++)
+      for(int iface = 0; iface < a_volOne.m_ifaces.size(); iface++)
       {
-        a_volMer.m_irregFaces[curmer].m_ebfmom.shift(shiftOne);
+        a_volMer.m_ifaces[curmer].m_ebfmom.shift(shiftOne);
         curmer++;
       }
-      for(int iface = 0; iface < a_volTwo.m_irregFaces.size(); iface++)
+      for(int iface = 0; iface < a_volTwo.m_ifaces.size(); iface++)
       {
-        a_volMer.m_irregFaces[curmer].m_ebfmom.shift(shiftTwo);
+        a_volMer.m_ifaces[curmer].m_ebfmom.shift(shiftTwo);
         curmer++;
       }
     }
