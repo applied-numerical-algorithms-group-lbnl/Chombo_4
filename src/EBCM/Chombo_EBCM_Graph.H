@@ -142,19 +142,66 @@ namespace EBCM
       int icent = cent;
       pout() << icent << "-side face:( " << m_lo << " , " << m_hi << " )" << endl;
     }
+
+    
     size_t charsize() const
     {
-      ch_mayday::Error("not implemented");
-      return 0;
+      size_t charsiz = 0;
+      charsiz += m_lo.charsize();
+      charsiz += m_hi.charsize();
+      charsiz += m_facmom.charsize();
+      return charsiz;
     }
-    void energize(char* a_outbuf, size_t a_expected_size) const
+    size_t energize(char* a_outbuf, size_t a_expected_size) const
     {
-      ch_mayday::Error("not implemented");
+      size_t charsiz = 0;
+      char*  charbuf = (char*) a_outbuf;
 
+      m_lo.energize(charbuf);
+      charbuf += m_lo.charsize();
+      charsiz += m_lo.charsize();
+
+      m_hi.energize(charbuf);
+      charbuf += m_hi.charsize();
+      charsiz += m_hi.charsize();
+
+      m_facmom.energize(charbuf);
+      charbuf += m_facmom.charsize();
+      charsiz += m_facmom.charsize();
+
+
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMFace::energize: size check error");
+      }
+      return charsiz;
     }
-    void linearIn(char* a_inbuf, size_t a_expected_size) const
+
+    ///
+    size_t linearIn(char* a_inbuf, size_t a_expected_size) 
     {
-      ch_mayday::Error("not implemented");
+
+      size_t charsiz = 0;
+      char*  charbuf = (char*) a_inbuf;
+
+      m_lo.linearIn(charbuf);
+      charbuf += m_lo.charsize();
+      charsiz += m_lo.charsize();
+
+      m_hi.linearIn(charbuf);
+      charbuf += m_hi.charsize();
+      charsiz += m_hi.charsize();
+
+      m_facmom.linearIn(charbuf);
+      charbuf += m_facmom.charsize();
+      charsiz += m_facmom.charsize();
+
+
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMFace::linearIn: size check error");
+      }
+      return charsiz;
 
     }
   };

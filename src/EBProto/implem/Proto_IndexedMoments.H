@@ -86,6 +86,18 @@ namespace Proto
       return retval;
     }
 
+    ///seeking out strange new APIs
+    void energize(char* a_outbuf) const
+    {
+      linearOut(a_outbuf);
+    }
+
+    ///another new name for an old thing
+    static size_t charsize()
+    {
+      return linearSize();
+    }
+    
     void linearOut(void* const a_outbuf) const
     {
       double* realbuf = (double*) a_outbuf;

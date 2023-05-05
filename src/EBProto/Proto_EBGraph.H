@@ -66,7 +66,18 @@ namespace Proto
       return retval;
     }
 
-    ///
+    ///new name for an old thing
+    size_t charsize() const
+    {
+      return linearSize();
+    }
+
+    ///new name for an old thing
+    void energize(char* a_buf) const
+    {
+      linearOut(a_buf);
+    }
+    
     static vector< EBIndex<cent> > getRefinedRegular(const EBIndex<cent>& a_pt,
                                                      const Box&           a_fineDomain) ;
 
