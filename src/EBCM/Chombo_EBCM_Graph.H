@@ -35,7 +35,7 @@ namespace EBCM
   {
     //start with the size of the vector as an int
     size_t charsiz = sizeof(int);
-    for(int ivec = 0; ivec < a_vec.size())
+    for(int ivec = 0; ivec < a_vec.size(); ivec++)
     {
       charsiz += sizeof(size_t); //size of entry
       charsiz += a_vec[ivec].charsize(); //data for entry
@@ -46,43 +46,48 @@ namespace EBCM
   ///output this vector to a bytestream
   template<typename entry_t>
   size_t
-  vector_energize(char* a_outbuf, const vector<entry_t> & a_vec, size_t a_expected_size)
+  vector_energize(char*                   a_outbuf,
+                  const vector<entry_t> & a_vec,
+                  size_t                  a_expected_size)
   {
-      char*  charbuf = a_outbuf;
-      size_t charsiz = 0;
-      {
-        int* intbuf = (int*) charbuf;
-        *intbuf = a_vec.size();
-        charbuf += sizeof(int);
-        charsiz += sizeof(int);
-      }
-      for(int ivec = 0; ivec < a_vec.size(); ivec++)
-      {
-        const auto& entry = a_vec[ivec];
-        size_t entrysize  = entry.charsize();
+    char*  charbuf = a_outbuf;
+    size_t charsiz = 0;
+    {
+      int* intbuf = (int*) charbuf;
+      *intbuf = a_vec.size();
+      charbuf += sizeof(int);
+      charsiz += sizeof(int);
+    }
+    for(int ivec = 0; ivec < a_vec.size(); ivec++)
+    {
+      const auto& entry = a_vec[ivec];
+      size_t entrysize  = entry.charsize();
         
-        size_t* sizbuf = (size_t*) charbuf;
-        *sizbuf = entrysize;
-        charbuf += sizeof(size_t);
-        charsiz += sizeof(size_t);
+      size_t* sizbuf = (size_t*) charbuf;
+      *sizbuf = entrysize;
+      charbuf += sizeof(size_t);
+      charsiz += sizeof(size_t);
         
         
-        entry.energize(charbuf, entrysize);
-        charbuf += entrysize;
-        charsiz += entrysize;
-      } 
-      if(charsiz != a_expected_size)
-      {
-        ch_mayday::Error("EBCMVolu::energize: size check failed");
-      }
+      entry.energize(charbuf, entrysize);
+      charbuf += entrysize;
+      charsiz += entrysize;
+    } 
+    if(charsiz != a_expected_size)
+    {
+      ch_mayday::Error("EBCMVolu::energize: size check failed");
+    }
+    return charsiz;
   }
 
   ///define this vector from a bytestream
   template<typename entry_t>
   size_t
-  vector_linearIn(char* a_outbuf, const vector<entry_t> & a_vec, size_t a_expected_size)
+  vector_linearIn(char*             a_inbuf,
+                  vector<entry_t> & a_vec,
+                  size_t            a_expected_size)
   {
-    char*  charbuf = a_outbuf;
+    char*  charbuf = a_inbuf;
     size_t charsiz = 0;
     int* intbuf = (int*) charbuf;
     int vecsize = *intbuf;
@@ -107,6 +112,7 @@ namespace EBCM
     {
       ch_mayday::Error("EBCMVolu::energize: size check failed");
     }
+    return charsiz;
   }
   
   ///
@@ -276,8 +282,6 @@ namespace EBCM
         charsiz += 4*sizeof(size_t);
       }
 
-
-
       vector_energize(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
       vector_energize(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
       vector_energize(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
@@ -291,9 +295,9 @@ namespace EBCM
     }
     
     ///define this object via bytestream
-    void linearIn(char* a_inbuf, size_t a_expected_size)
+    void linearIn(const char* a_inbuf, size_t a_expected_size)
     {
-      char*  charbuf = a_outbuf;
+      char*  charbuf = (char*)a_inbuf;
       size_t charsiz = 0;
       //flag for regular or not
       int iflag = -486;
@@ -342,7 +346,6 @@ namespace EBCM
         charsiz += 4*sizeof(size_t);
       }
         
-
       vector_linearIn(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
       vector_linearIn(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
       vector_linearIn(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
@@ -372,11 +375,9 @@ namespace EBCM
         charsiz += sizeof(double);
       }
       
-      //4 vectors
-      {
-        charbuf += 4*sizeof(size_t);
-        charsiz += 4*sizeof(size_t);
-      }
+      //4 vectors each need a length
+      charsiz += 4*sizeof(size_t);
+
       size_t xsize = vector_charsize(m_xfaces);
       size_t ysize = vector_charsize(m_xfaces);
       size_t zsize = vector_charsize(m_xfaces);
@@ -1374,9 +1375,10 @@ namespace EBCM
     
 
     ///Fills byte stream from with all the data from this object.
-    inline void energize(void *a_buf,
-                         size_t a_expected_size,
-                         bool a_printStuff = false) const
+    inline void
+    energize(char*                a_buf,
+             size_t               a_expected_size,
+             bool                 a_printStuff = false) const
     {
       size_t charsiz = 0;
       char* charbuf = (char *) a_buf;
@@ -1432,32 +1434,32 @@ namespace EBCM
       **/
       if( hasIrregular() )
       {
-        int vecsize = m_volumes->size();
-        int* intbuf =  (int* )charbuf;
-        *intbuf = vecsize;
-        charbuf += sizeof(int);
-        charsiz += sizeof(int);
-        for(int ivec = 0; ivec < vecsize; ivec++)
+        size_t volsize = vector_charsize(*m_volumes);
         {
-          const auto& entry    = (*m_volumes)[ivec];
-          size_t      entrysiz = entry.charsize();
-          size_t*   sizbuf = (size_t*) charbuf;
-          *sizbuf = entrysiz;
+          size_t* sizbuf = (size_t*)charbuf;
+          *sizbuf = volsize;
           charbuf += sizeof(size_t);
           charsiz += sizeof(size_t);
-          
-          entry.linearOut(charbuf);
-          charbuf += entrysiz;
-          charsiz += entrysiz;
         }
-
+        
+        vector_energize(charbuf, *m_volumes, volsize);
+        charbuf += volsize;
+        charsiz += volsize;
+        
         ch_box fabbox  = m_map->box();
-        fabbox.linearOut(charbuf);
+        fabbox.energize(charbuf);
         charbuf += fabbox.charsize();
         charsiz += fabbox.charsize();
         
-        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
-        m_map->linearOut(charbuf, fabsize, fabbox, 0, 1, a_printStuff);
+        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_printStuff);;
+        {
+          size_t* sizbuf = (size_t*)charbuf;
+          *sizbuf = fabsize; 
+          charbuf += sizeof(size_t);
+          charsiz += sizeof(size_t);
+        }
+        
+        m_map->linearOut( charbuf, fabsize, fabbox, 0, 1, a_printStuff);;
         charbuf += fabsize;
         charsiz += fabsize;
       }
@@ -1470,10 +1472,11 @@ namespace EBCM
 
     ///Returns the size of the byte stream
     inline
-    virtual std::size_t charsize(const ch_box&   a_bx,
-                                 unsigned int a_startcomp,
-                                 unsigned int a_numcomps,
-                                 bool a_printStuff = false) const
+    std::size_t
+    charsize(const ch_box&   a_bx,
+             unsigned int a_startcomp,
+             unsigned int a_numcomps,
+             bool a_printStuff = false) const
     {
       using ProtoSer::linearCharBufSize;
       size_t charsiz = 0;
@@ -1509,23 +1512,20 @@ namespace EBCM
       **/
       if( hasIrregular() )
       {
-        //volume size
-        int vecsize = m_volumes->size();
-        charsiz += sizeof(int);
-        for(int ivec = 0; ivec < vecsize; ivec++)
-        {
-          const auto& entry    = (*m_volumes)[ivec];
-          //entry size
-          charsiz += sizeof(size_t);
-
-          //entry data
-          size_t      entrysiz = entry.charsize();
-          charsiz += entrysiz;
-        }
+        //byte length of volume vector
+        charsiz += sizeof(size_t);
+        
+        size_t volsize = vector_charsize(*m_volumes);
+        charsiz += volsize;
+        
         ch_box fabbox  = m_map->box();
         charsiz += fabbox.charsize();
+
+        //space  for fabsize
+        charsiz += sizeof(size_t);
         
-        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
+        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_printStuff);
+        //space for data
         charsiz += fabsize;
       }
       return charsiz;
@@ -1613,26 +1613,17 @@ namespace EBCM
       **/
       if( hasIrregular() )
       {
-        int* intbuf =  (int*) charbuf;
-        int vecsize = *intbuf;
-        charbuf += sizeof(int);
-        charsiz += sizeof(int);
-        
-        m_volumes = shared_ptr< vector<EBCM_Volu<order> > >
-          ( new vector<EBCM_Volu<order> >(vecsize));
-            
-        for(int ivec = 0; ivec < vecsize; ivec++)
+        size_t volsize;
         {
-          auto& entry    = (*m_volumes)[ivec];
-          size_t* sizbuf  = (size_t*) charbuf;
-          size_t entrysiz = *sizbuf;
+          size_t* sizbuf = (size_t*)charbuf;
+          volsize = *sizbuf;
           charbuf += sizeof(size_t);
           charsiz += sizeof(size_t);
-          
-          entry.linearIn(charbuf);
-          charbuf += entrysiz;
-          charsiz += entrysiz;
         }
+        
+        vector_linearIn(charbuf, *m_volumes, volsize);
+        charbuf += volsize;
+        charsiz += volsize;
         
         ch_box fabbox  = m_map->box();
         fabbox.linearIn(charbuf);
@@ -1642,7 +1633,13 @@ namespace EBCM
         m_map = shared_ptr< HostBoxData<int, 1> >
           (new HostBoxData<int, 1>(fabbox));
 
-        size_t fabsize = m_map->charsize(  fabbox, 0, 1, a_printStuff);
+        size_t fabsize;
+        {
+          size_t* sizbuf = (size_t*)charbuf;
+          fabsize = *sizbuf;
+          charbuf += sizeof(size_t);
+          charsiz += sizeof(size_t);
+        }
         m_map->linearIn( charbuf, fabsize, fabbox, 0, 1, a_printStuff);
         charbuf += fabsize;
         charsiz += fabsize;
@@ -1650,7 +1647,7 @@ namespace EBCM
     
       if(a_expectedSize != charsiz)
       {
-        ch_mayday::Error("EBCMGraph::energize: size mismatch");
+        ch_mayday::Error("EBCMGraph::EBCMGraph(char*): size mismatch");
       }
     }
     /// for exchange.   checks over box and adds volumes as needed from source.
@@ -1674,13 +1671,13 @@ namespace EBCM
     }
     
     ///this is for MPI communication
-    inline
-    virtual void  linearIn(void*                  a_buf,
-                           size_t                 a_expectedSize,
-                           const ch_box    &      a_bx,
-                           unsigned int           a_startcomp,
-                           unsigned int           a_numcomps,
-                           bool a_printStuff = false)
+    inline void
+    linearIn(char*                  a_buf,
+             size_t                 a_expectedSize,
+             const ch_box    &      a_bx,
+             unsigned int           a_startcomp,
+             unsigned int           a_numcomps,
+             bool a_printStuff = false)
     {
       if(a_printStuff)
       {
@@ -1698,7 +1695,7 @@ namespace EBCM
     
     ///this is for MPI communication
     inline
-    virtual void linearOut(void*               a_buf,
+    virtual void linearOut(char*               a_buf,
                            size_t              a_expectedSize,
                            const ch_box    &   a_bx,
                            unsigned int        a_startcomp,
