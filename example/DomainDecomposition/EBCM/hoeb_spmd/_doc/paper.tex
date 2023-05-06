@@ -1,0 +1,83 @@
+\documentclass{article}
+
+\bibliographystyle{plain}
+
+\usepackage{epsfig}
+\usepackage{xcolor}
+\usepackage{amsmath}
+
+\input{abbrev.tex}
+
+\begin{document}
+
+\title{Communication test for EBCM framework}
+\author{
+    D. Devendran   \footnotemark[2] \and
+    D. T. Graves    \footnotemark[1]
+        }
+\date{May 4, 2023 ce.}
+\maketitle
+
+\section{Introduction}
+
+We are testing the communications infrastructure for {\tt
+Chombo4/src/EBCM}, the bits of Chombo that handle calculations
+within the context merged and
+unmerged cut cell geometries.   
+
+See Katz, et al (\cite{Katz 2023}) for a basic idea of the mathematical
+framework in which higher order cut cell algorithms live.
+
+\subsection{The blessed shortcut}
+
+Important note: we are not dealing multivalued cells (cells in which
+more than one computational volume lives in a Cartesian grid cell) for
+EBCM calculations yet.  They are a difficult case that we can easily
+avoid.  For EB aficionados, here are the technical reasons we are
+taking this blessed shortcut:
+\begin{itemize}
+  \item Multivalued cells create enormous complications in data
+    structures and require special graph-based data holders instead of
+    much simpler box-based data holders.
+ \item That means they require a whole new set of serialization
+   routines that are difficult to debug.   
+ \item Because we have cell merging, we are never forced to use
+   multivalued cells.
+ \item Chombo does not produces multivalued cells at the finest EB
+   level, which is all the EBCM uses.
+ \item Premature generalization is as bad as premature optimization.
+\end{itemize}
+Here is the downside of the blessed shortcut.
+\begin{itemize}
+\item Cell merging makes adaptivew mesh refinement (AMR)
+  and geometric multigrid (GMG) more difficult.   
+\item A volume's possible graph connections to finer and coarser
+  volumes can no longer be inferred by its Cartesian cell.
+\item The blessed shortcut makes the process of managing coarse and
+  fine connections even more complicated because it forces merging at
+  coarser levels. 
+\item For the class of algorithms in which we are interested, however,
+  both  reliable GMG and AMR are both still research  problems.
+\item  Devendran, et al. provide some insight into the difficulties
+  geometric multigrid in a higher order EB context \cite{Devendran2014}.
+\end{itemize}
+
+\section{The bit we are testing}
+
+
+
+
+
+\section{Conclusions}
+
+
+
+\footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
+  CA. Research at LBNL was supported financially by the Office of
+  Advanced Scientific Computing Research of the US Department of
+  Energy under contract number DE-AC02-05CH11231.}
+\footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}\
+\bibliography{references}
+
+\end{document}
