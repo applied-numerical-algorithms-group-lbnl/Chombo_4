@@ -1,0 +1,32 @@
+\documentclass{article}
+
+\begin{document}
+
+\title{EBCM Directory Roadmap}
+\author{
+    D. T. Graves    \footnotemark[1]
+        }
+\date{May 7, 2023 ce.}
+\maketitle
+
+\section{hoeb geometry test}
+
+This test makes a single-box EBCM::MetaDataLevel.  It then makes a ton
+of data on matrix conditioning in an hoeb/ebcm context.    The
+associated technical report is quite complete.
+
+\section{hoeb spmd}
+
+This tests the communications infrastructure for {\tt
+Chombo4/src/EBCM}, the bits of Chombo that handle calculations
+within the context merged and
+unmerged cut cell geometries.   The associated document is complete
+but minimal.
+
+
+\section{hoeb petsc}
+
+This test investigates the eigenvalues and eigenvectors of stencils to
+solve Poisson's equation.
+
+\end{document}
