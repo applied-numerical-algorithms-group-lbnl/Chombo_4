@@ -25,7 +25,7 @@ Chombo4/src/EBCM}, the bits of Chombo that handle calculations
 within the context merged and
 unmerged cut cell geometries.   
 
-See Katz, et al (\cite{Katz 2023}) for a basic idea of the mathematical
+See Katz, et al (\cite{Katz2023}) for a basic idea of the mathematical
 framework in which higher order cut cell algorithms live.
 
 \subsection{The blessed shortcut}
@@ -43,33 +43,48 @@ taking this blessed shortcut:
    routines that are difficult to debug.   
  \item Because we have cell merging, we are never forced to use
    multivalued cells.
+ \item In fact, cell merging makes even some of the
+   regular grid redundant (which is a complication we already manage
+   when it comes to covered cells).
  \item Chombo does not produces multivalued cells at the finest EB
-   level, which is all the EBCM uses.
- \item Premature generalization is as bad as premature optimization.
+   level (which is all the EBCM infrastructure uses).
+ \item Premature generalization is bad and can lead to all kinds of
+   problems.   
 \end{itemize}
-Here is the downside of the blessed shortcut.
-\begin{itemize}
-\item Cell merging makes adaptivew mesh refinement (AMR)
-  and geometric multigrid (GMG) more difficult.   
-\item A volume's possible graph connections to finer and coarser
-  volumes can no longer be inferred by its Cartesian cell.
-\item The blessed shortcut makes the process of managing coarse and
-  fine connections even more complicated because it forces merging at
-  coarser levels. 
-\item For the class of algorithms in which we are interested, however,
-  both  reliable GMG and AMR are both still research  problems.
-\item  Devendran, et al. provide some insight into the difficulties
-  geometric multigrid in a higher order EB context \cite{Devendran2014}.
-\end{itemize}
+Here is the downside of the blessed shortcut: cell merging makes
+geometric multigrid (GMG) more difficult.  With cell merging, managing
+coarse and fine graph connections becomes more complicated. A volume's
+possible graph connections to finer and coarser volumes can no longer
+be inferred by its Cartesian cell. On the other hand, for the class of
+algorithms in which we are interested, reliable GMG is an ongoing
+research problem.  Devendran, et al. \cite{Devendran2014}
+provide some insight into the difficulties geometric multigrid in a
+higher order EB context.  The current effort will only use PETSc
+\cite{petsc-user-ref, petsc-efficient} algebraic multigrid (AMG)
+solvers.
 
 \section{The bit we are testing}
 
+We need to test two bits of infrastructure, both of them related to
+SPMD communication.  
+\begin{itemize}
+  \item We need ghost cells for the geometric data which lives in {\tt
+    EBCM::MetaDataLevel }.
+  \item We need ghost cells for the simulation data which lives in {\tt
+    EBCM::HostLevelData}.
+\end{itemize}
+In both cases, we do the obvious test.
+For $T \in \{\mbox{MetaDataLevel, HostLevelData} \}$:
+\begin{itemize}
+  \item We make $T_{dom}$, where one box covers the whole domain, and
+    $T_{dist}$, which covers the domain with many boxes.
+  \item The test passes if $T_{dom} == T_{dist}$ everywhere in the domain.
+\end{itemize}
 
+\section{Unreasonable expectations}
 
-
-
-\section{Conclusions}
-
+When the infrastructure is working the code should simply return that
+all tests have passed.
 
 
 \footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
