@@ -101,10 +101,6 @@ namespace Proto
     void linearOut(void* const a_outbuf) const
     {
       double* realbuf = (double*) a_outbuf;
-//      using std::cout;
-//      using std::endl;
-//      int isize = m_moms.size();
-//      cout  << "indexedmoments::linearout with moms size " << isize << endl;
       for(int ivec = 0; ivec < size(); ivec++)
       {
         *realbuf = m_moms[ivec];
@@ -116,10 +112,6 @@ namespace Proto
 
     void linearIn(const void* const a_inbuf)
     {
-//      int isize = m_moms.size();
-//      using std::cout;
-//      using std::endl;
-//      cout  << "indexedmoments::linearin  with moms size " << isize << endl;
       double* realbuf = (double*) a_inbuf;
       for(int ivec = 0; ivec < size(); ivec++)
       {
