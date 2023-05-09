@@ -47,13 +47,12 @@ namespace EBCM
 
     
     HostLevelData(const shared_ptr<ebcm_meta_t>& a_meta,
-                  const ch_iv                  & a_ghost)
+                  const int                    & a_ghost)
     {
       m_meta = a_meta;
-
       const auto& graphs = (m_meta->m_graphs);
       const auto& grids  = (m_meta->m_grids);
-      m_data = shared_ptr<mpi_frame_t>(new mpi_frame_t(grids, a_ghost, null_factory_t()));
+      m_data = shared_ptr<mpi_frame_t>(new mpi_frame_t(grids, a_ghost*ch_iv::Unit, null_factory_t()));
       auto dit = grids.dataIterator();
       for(int ibox =0; ibox < dit.size(); ibox++)
       {
@@ -89,7 +88,11 @@ namespace EBCM
     
     shared_ptr< ebcm_meta_t >  m_meta;
     shared_ptr< mpi_frame_t >  m_data;
-    
+
+    void exchange(bool a_printStuff)
+    {
+      m_data->exchange(a_printStuff);
+    }
   private:    //only disallowing weak construction 
     HostLevelData();
   }; //end class hostleveldata

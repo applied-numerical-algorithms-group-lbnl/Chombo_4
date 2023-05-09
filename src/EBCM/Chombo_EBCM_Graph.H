@@ -24,6 +24,7 @@ namespace EBCM
   typedef Proto::Point             pr_pt;
   typedef Proto::Box               pr_box;
   typedef Chombo4::Box             ch_box;
+  typedef Chombo4::IntVect         ch_iv;
   typedef Chombo4::DataIterator    ch_dit;
   typedef Chombo4::DataIndex       ch_datind;
   typedef Chombo4::MayDay          ch_mayday;
@@ -1779,6 +1780,37 @@ namespace EBCM
     shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     shared_ptr< HostBoxData<int, 1> >      m_map;
+
+    ///For stencil stuff, you should really use SubVolumeVector.   This is meant to be just for diagonostics.
+    EBCM_Volu<order> getVolumeCoveringPoint(const pr_pt& a_pt) const
+    {
+      EBCM_Volu<order> retval;
+      if(m_allCovered)
+      {
+        ch_mayday::Error("EBCMGraph:: covered points do not have volumes");
+      }
+      else if(m_allRegular)
+      {
+        retval.defineAsRegular(a_pt, m_dx);
+      }
+      else
+      {
+        int mapval = (*m_map)(a_pt, 0);
+        if(mapval == -2)
+        {
+          ch_mayday::Error("EBCMGraph:: covered points do not have volumes");
+        }
+        else if(mapval == -1)
+        {
+          retval.defineAsRegular(a_pt, m_dx);
+        }
+        else
+        {
+          retval = (*m_volumes)[mapval];
+        }
+      }
+      return retval;
+    }
 
   }; //end ebcmgraph class
 

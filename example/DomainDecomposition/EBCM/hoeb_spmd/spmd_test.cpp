@@ -28,15 +28,15 @@
 
 
 typedef Chombo4::Box                                   ch_box;
+typedef Chombo4::BoxIterator                           ch_boxit;
 typedef Chombo4::DisjointBoxLayout                     ch_dbl;
-typedef Chombo4::ProblemDomain                         ch_probdom;
 typedef Chombo4::DataIterator                          ch_dit;
 typedef Chombo4::IntVect                               ch_iv;
 typedef Chombo4::MayDay                                ch_mayday;
-typedef Proto::doubleVect                                pr_rv;
-typedef Proto::IndexTM<double, DIM>                      pr_itm_r_dim;
+typedef Proto::RealVect                                pr_rv;
+typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
 typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-typedef Proto::IndexTM<double, DIM-1>                    pr_itm_r_dmo;
+typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
 typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
 typedef Proto::BaseIF                                  pr_baseif;
 typedef ch_eigen::Matrix                               eigen_mat;
@@ -50,7 +50,6 @@ namespace EBCM
 {
   typedef Chombo4::Box                                   ch_box;
   typedef Chombo4::DisjointBoxLayout                     ch_dbl;
-  typedef Chombo4::ProblemDomain                         ch_probdom;
   typedef Chombo4::IntVect                               ch_iv;
   typedef Chombo4::MayDay                                ch_mayday;
   typedef Proto::RealVect                                pr_rv;
@@ -133,16 +132,17 @@ namespace EBCM
     //if (a_forceSingleGridOnProc){ EVERY PROC WILL HOLD THE WHOLE DOMAIN.  THIS WILL NOT SCALE WELL.}
     static inline void
     getGridInfo(ch_dbl          & a_grid,
-                ch_probdom      & a_domain,
+                ch_box          & a_domain,
                 double          & a_dx,
                 int a_nx, int a_maxGrid,
                 bool a_forceSingleGridOnEveryProc,
                 string a_prefix, bool a_printStuff)
     {
       ch_iv domLo = ch_iv::Zero;
-      ch_iv domHi  = (nx - 1)*ch_iv::Unit;
+      ch_iv domHi  = (a_nx - 1)*ch_iv::Unit;
 
-      a_domain= ch_probdom(domLo, domHi);
+      ch_box dombox;
+      a_domain= ch_box(domLo, domHi);
       a_dx = 1./a_nx;
       if(a_forceSingleGridOnEveryProc)
       {
@@ -152,7 +152,7 @@ namespace EBCM
         }
         int procID = CH4_SPMD::procID();
         vector<ch_box> boxes(1, a_domain);
-        vector<ch_box> procs(1, procID);
+        vector<int   > procs(1, procID);
         a_grid = ch_dbl(boxes, procs);
       }
       else
@@ -162,7 +162,7 @@ namespace EBCM
         {
           Chombo4::pout() << "making grids using GeometryService for distributed data" << endl;
         }
-        GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+        GeometryService<2>::generateGrids(vecgrids, a_domain, a_maxGrid);
         a_grid = vecgrids[0];
       }
       if(a_printStuff)
@@ -174,7 +174,7 @@ namespace EBCM
     makeMergedGeometry(   shared_ptr< ebcm_meta  >        & a_ebcm,
                           const ch_dbl                    & a_grids,
                           const double                    & a_dx,
-                          const ch_probdom                & a_domain,
+                          const ch_box                    & a_domain,
                           int  a_ghost,  int a_nx, 
                           bool a_mergeSmalls, string a_prefix, bool a_printStuff)
     {
@@ -182,15 +182,11 @@ namespace EBCM
       using Chombo4::pout;
 
     
-      int nx               = a_nx;
-      int maxGrid          = a_maxGrid;
-      bool mergeSmallCells = a_mergeSmalls;
-
       if(a_printStuff)
       {
         Chombo4::pout() << "making ebcm_meta for " << a_prefix << " case." << endl;
-        Chombo4::pout() << "nx"        << " = " <<  nx         << endl;
-        if(mergeSmallCells)
+        Chombo4::pout() << "nx"        << " = " <<  a_nx         << endl;
+        if(a_mergeSmalls)
         {
           Chombo4::pout() << "Cell merging is turned ON."  << endl;
         }
@@ -203,16 +199,23 @@ namespace EBCM
       vector<ch_dbl> vecgrids(1, a_grids);
       int geomGhost = 6;
       shared_ptr<BaseIF>    impfunc = getImplicitFunction();
-      Chombo4::pout() << "defining geometry in EB land" << endl;
-      double dx = 1.0/(double(nx));
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "Defining geometry in EB land." << endl;
+      }
+      double dx = 1.0/(double(a_nx));
       pr_rv origin = pr_rv::Zero();
       shared_ptr< ch_geoserv > geoserv
-        (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
+        (new ch_geoserv(impfunc, origin, a_dx, a_domain, vecgrids, geomGhost));
 
   
+      if(a_printStuff)
+      {
+        Chombo4::pout() << "Defining geometry in our new EBCM beachhead." << endl;
+      }
       shared_ptr< ebcm_meta  >
-        metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, a_ghost,
-                                  mergeSmallCells, a_printStuff));
+        metaDataPtr(new ebcm_meta(geoserv, a_domain, a_dx, a_ghost,
+                                  a_mergeSmalls, a_printStuff));
 
       a_ebcm   = metaDataPtr;
     }
@@ -253,29 +256,69 @@ namespace EBCM
       Chombo4::pout() << a_prefix << " minimum volume fraction overall = " << minKappa << endl;
     }
 
+    static int compareVolumes(const ebcm_volu& a_volu_sing,
+                              const ebcm_volu& a_volu_dist)
+    {
+      return 0;
+    }
+    
     ///see that meta data matches a single-grid distribution
-    static void compareMeta(
+    static int compareMeta(
       const shared_ptr< ebcm_meta  > & a_meta_single_grid,
       const shared_ptr< ebcm_meta  > & a_meta_distributed,
       const ch_dbl                   & a_grid_single_grid,
       const ch_dbl                   & a_grid_distributed,
       const double                   & a_dx,
-      const ch_probdom               & a_domain,
-      const int                      & a_nghost )
+      const ch_box                   & a_domain,
+      const int                      & a_nghost,
+      bool a_cellMerged, bool a_printStuff)
     {
+      
+
+      int eekflag = 0;
+      ch_datind ind_sing = a_grid_single_grid.dataIterator()[0];
+      const auto& ld_graph_sing = *(a_meta_single_grid->m_graphs);
+      const auto& ld_graph_dist = *(a_meta_distributed->m_graphs);
+
+      ch_dit    dit_dist = a_grid_distributed.dataIterator();
+      for(int ibox = 0; ibox < dit_dist.size(); ibox++)
+      {
+        ch_datind  ind_dist    =    dit_dist[ibox];
+        ch_box   valid_dist    = a_grid_distributed[ind_dist];
+        const auto& graph_sing =      ld_graph_sing[ind_sing];
+        const auto& graph_dist =      ld_graph_dist[ind_dist];
+        ch_box grown = grow(valid_dist, a_nghost);
+        grown &= a_domain;
+        pr_box prgrown = ProtoCh::getProtoBox(grown);
+        for(auto bit = prgrown.begin(); bit != prgrown.end(); ++bit)
+        {
+          auto pt = *bit;
+          auto volu_sing = graph_sing.getVolumeCoveringPoint(pt);
+          auto volu_dist = graph_dist.getVolumeCoveringPoint(pt);
+          int eek = compareVolumes(volu_sing, volu_dist);
+          if(eek  != 0)
+          {
+            Chombo4::pout() << "EBCM::test_framework::compareMeta problem at point " << pt << endl;
+            return eek;
+          }
+        }
+        
+      }
+      return eekflag;
     }
     ///fill data with known values
     static void fillData(
-      ebcm_leveldata                 & a_data
+      ebcm_leveldata                 & a_data,
       const shared_ptr< ebcm_meta  > & a_meta,
       const ch_dbl                   & a_grid,
       const double                   & a_dx,
-      const ch_probdom               & a_domain,
-      const int                      & a_nghost )
+      const ch_box                   & a_domain,
+      const int                      & a_nghost,
+      bool a_printStuff)
     {
     }
     /// compare data (ghost and otherwise) 
-    static void compareData(
+    static int compareData(
       const ebcm_leveldata           & a_data_single_grid,
       const ebcm_leveldata           & a_data_distributed,
       const shared_ptr< ebcm_meta  > & a_meta_single_grid,
@@ -283,26 +326,30 @@ namespace EBCM
       const ch_dbl                   & a_grid_single_grid,
       const ch_dbl                   & a_grid_distributed,
       const double                   & a_dx,
-      const ch_probdom               & a_domain,
-      const int                      & a_nghost )
+      const ch_box                   & a_domain,
+      const int                      & a_nghost,
+      bool a_cellMerged, bool a_printStuff)
     {
+      int eekflag = 0;
+      return eekflag;
     }
     ///compare distribted data vs. single grid data
-    static  void spmd_tests()
+    static  int runTests()
     {
       CH_TIME("Algorithm_Framework::runTests");
 
-      //the important stuff
+      //define both single-box and multi box (distributed) objects 
       shared_ptr< ebcm_meta  > meta_single_grid;
       shared_ptr< ebcm_meta  > meta_distributed;
       ch_dbl                   grid_single_grid;
       ch_dbl                   grid_distributed;
       double                   dx;
-      ch_probdom               domain;
+      ch_box                   domain;
       int nghost = 4;
       ParmParse pp("makeMergedGeometry");
 
-
+      int nx, maxGrid;
+      bool mergeSmallCells;
       pp.get("nx"             , nx);
       pp.get("maxGrid"        , maxGrid);
       pp.get("mergeSmallCells", mergeSmallCells);
@@ -324,34 +371,65 @@ namespace EBCM
                           string("single_grid"), true);
 
 
-      double maxKapp, minKapp;
+      //compare both single-box and multi box (distributed) objects 
+      double max_distributed, min_distributed;
+      double max_single_grid, min_single_grid;
       //this tries out iteration and checks kappa
-      checkKappa(maxKapp, minKapp, meta_distributed, grid_distributed, string("distributed"));
-      checkKappa(maxKapp, minKapp, meta_single_grid, grid_single_grid, string("single-grid"));
+      checkKappa(max_distributed, min_distributed, meta_distributed, grid_distributed, string("distributed"));
+      checkKappa(max_single_grid, min_single_grid, meta_single_grid, grid_single_grid, string("single-grid"));
 
-      compareMeta( meta_single_grid, meta_distributed,
-                   grid_single_grid, grid_distributed,
-                   dx,        domain,        nghost );
+      if(mergeSmallCells)
+      {
+        Chombo4::pout() << "These might not match!   Merging can cause this." << endl;
+      }
+      else
+      {
+        double diffmax = std::abs(max_distributed - max_single_grid);
+        double diffmin = std::abs(min_distributed - min_single_grid);
+        double tol = 1.0e-8;
+        if( (diffmax > tol) || (diffmin > tol) )
+        {
+          Chombo4::pout() << "Even without merging, we have a serial/parallel mismatch in volume fraction comparison." << endl;
+          return -1;
+        }
+      }
+
+      int eekflag = compareMeta( meta_single_grid, meta_distributed,
+                                 grid_single_grid, grid_distributed,
+                                 dx, domain, nghost, mergeSmallCells, true );
+      
+      if(eekflag != 0)
+      {
+        Chombo4::pout() << "test_framework::compareMeta returned " << eekflag << endl;
+        return eekflag;
+      }
 
       ebcm_leveldata data_distributed(meta_distributed, nghost);
       ebcm_leveldata data_single_grid(meta_single_grid, nghost);
       
-      fillData(data_distributed, meta_distributed, grid_distributed, dx, domain, nghost);
-      fillData(data_single_grid, meta_single_grid, grid_single_grid, dx, domain, nghost);
+      fillData(data_distributed, meta_distributed, grid_distributed, dx, domain, nghost, true);
+      fillData(data_single_grid, meta_single_grid, grid_single_grid, dx, domain, nghost, true);
 
-      data_distributed.exchange();
-      data_single_grid.exchange();
+      data_distributed.exchange(true);
+      data_single_grid.exchange(true);
         
-      compareData( data_single_grid, data_distributed,
-                   meta_single_grid, meta_distributed,
-                   grid_single_grid, grid_distributed,
-                   dx,        domain,        nghost );
+      eekflag = compareData( data_single_grid, data_distributed,
+                             meta_single_grid, meta_distributed,
+                             grid_single_grid, grid_distributed,
+                             dx, domain, nghost, mergeSmallCells, true );
 
-    }
+      if(eekflag != 0)
+      {
+        Chombo4::pout() << "test_framework::compareData returned " << eekflag << endl;
+        return eekflag;
+      }
+      return 0;
+    } //end function runTests
   };//end class test_framework
 }//end namespace EBCM
 int main(int a_argc, char* a_argv[])
 {
+    int eekflag = 0;
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
   Chombo4::pout() << "MPI INIT called" << std::endl;
@@ -377,32 +455,41 @@ int main(int a_argc, char* a_argv[])
     Chombo4::pout() <<  "Running test for polynomial order = " << order << endl;
     if(order == 6)
     {
-      EBCM::test_framework<6>::runTests();
+      eekflag = EBCM::test_framework<6>::runTests();
     }
     else if(order == 5)
     {
-      EBCM::test_framework<5>::runTests();
+      eekflag = EBCM::test_framework<5>::runTests();
     }
     if(order == 4)
     {
-      EBCM::test_framework<4>::runTests();
+      eekflag = EBCM::test_framework<4>::runTests();
     }
     else if(order == 3)
     {
-      EBCM::test_framework<3>::runTests();
+      eekflag = EBCM::test_framework<3>::runTests();
     }
     else if(order == 2)
     {
-      EBCM::test_framework<2>::runTests();
+      eekflag = EBCM::test_framework<2>::runTests();
     }
     else if(order == 1)
     {
-      EBCM::test_framework<1>::runTests();
+      eekflag = EBCM::test_framework<1>::runTests();
     }
     else
     {
       Chombo4::pout() << "main: unknown order = " << order << endl;
       return -1;
+    }
+    Chombo4::pout() << "EBCM::test_framework::runTest  returned " << eekflag << endl;
+    if(eekflag == 0)
+    {
+      Chombo4::pout() << "Woo hoo! \n ---H.J.S." << endl;
+    }
+    else if(eekflag == 1)
+    {
+      Chombo4::pout() << "Doh!     \n ---H.J.S." << endl;
     }
   }
 
@@ -412,5 +499,5 @@ int main(int a_argc, char* a_argv[])
   Chombo4::pout() << "about to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
-  return 0;
+  return eekflag;
 }
