@@ -273,6 +273,8 @@ namespace EBCM
     vector<EBCM_Face<ZFACE, order> >  m_zfaces;
     vector<IrregFace<order> > m_ifaces;
 
+    vector<Point> m_cells; //all cells marked for this entry.   
+
     ///The usual set of functions involved in serialization
 
     ///fill a bytestream with the necessary data to reproduce this class
@@ -312,28 +314,32 @@ namespace EBCM
         *doubbuf = m_centroid[idir];
         charbuf += sizeof(double);
         charsiz += sizeof(double);
+
       }
       
-      //4 vectors
+      //5 vectors
       size_t xsize = vector_charsize(m_xfaces);
       size_t ysize = vector_charsize(m_xfaces);
       size_t zsize = vector_charsize(m_xfaces);
       size_t isize = vector_charsize(m_ifaces);
+      size_t csize = vector_charsize(m_cells);
       {
         size_t* sizbuf = (size_t*) charbuf;
         *sizbuf = xsize; sizbuf++;
         *sizbuf = ysize; sizbuf++;
         *sizbuf = zsize; sizbuf++;
-        *sizbuf = isize; 
+        *sizbuf = isize; sizbuf++;
+        *sizbuf = csize;
       
-        charbuf += 4*sizeof(size_t);
-        charsiz += 4*sizeof(size_t);
+        charbuf += 5*sizeof(size_t);
+        charsiz += 5*sizeof(size_t);
       }
 
       vector_energize(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
       vector_energize(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
       vector_energize(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
       vector_energize(charbuf, m_ifaces, isize); charbuf += isize; charsiz += isize;
+      vector_energize(charbuf, m_cells , csize); charbuf += csize; charsiz += csize;
 
       //
       if(charsiz != a_expected_size)
@@ -381,23 +387,25 @@ namespace EBCM
         charsiz += sizeof(double);
       }
       
-      //4 vectors
-      size_t xsize,ysize, zsize, isize;
+      //5 vectors
+      size_t xsize,ysize, zsize, isize, csize;
       {
         size_t* sizbuf = (size_t*) charbuf;
         xsize = *sizbuf; sizbuf++;
         ysize = *sizbuf; sizbuf++;
         zsize = *sizbuf; sizbuf++;
-        isize = *sizbuf; 
+        isize = *sizbuf; sizbuf++;
+        csize = *sizbuf;
       
-        charbuf += 4*sizeof(size_t);
-        charsiz += 4*sizeof(size_t);
+        charbuf += 5*sizeof(size_t);
+        charsiz += 5*sizeof(size_t);
       }
         
       vector_linearIn(charbuf, m_xfaces, xsize); charbuf += xsize; charsiz += xsize;
       vector_linearIn(charbuf, m_yfaces, ysize); charbuf += ysize; charsiz += ysize;
       vector_linearIn(charbuf, m_zfaces, zsize); charbuf += zsize; charsiz += zsize;
       vector_linearIn(charbuf, m_ifaces, isize); charbuf += isize; charsiz += isize;
+      vector_linearIn(charbuf, m_cells , csize); charbuf += csize; charsiz += csize;
 
       //
       if(charsiz != a_expected_size)
@@ -423,19 +431,21 @@ namespace EBCM
         charsiz += sizeof(double);
       }
       
-      //4 vectors each need a length
-      charsiz += 4*sizeof(size_t);
+      //5 vectors each need a length
+      charsiz += 5*sizeof(size_t);
 
       size_t xsize = vector_charsize(m_xfaces);
       size_t ysize = vector_charsize(m_xfaces);
       size_t zsize = vector_charsize(m_xfaces);
       size_t isize = vector_charsize(m_ifaces);
+      size_t csize = vector_charsize(m_cells);
         
 
       charsiz += xsize;
       charsiz += ysize;
       charsiz += zsize;
       charsiz += isize;
+      charsiz += csize;
 
       return charsiz;
     }
@@ -457,8 +467,6 @@ namespace EBCM
     {
       return (m_pt < a_input.m_pt);
     }
-    vector<Point> m_cells; //all cells marked for this entry.   
-
     //keeping it simple---just looking for matching faces
     template<CENTERING cent>
     static bool foundMatch(const vector< EBCM_Face<cent, order>  > & a_vecOne,
@@ -627,12 +635,12 @@ namespace EBCM
 #endif      
       defineDerivedMeasures(a_dx);
     }
-  };
+  };// end class EBCM_volu
 
 
   ///
   /**
-     Class to make merged sparse embedded boundary description. 
+     Class holds a optionally-merged sparse embedded boundary description. 
   */
   template< int order>
   class EBCM_Graph

@@ -73,6 +73,8 @@ namespace EBCM
     typedef Chombo4::GeometryService<       ebcm_order >   ch_geoserv;
     typedef   Proto::IndexedMoments<DIM  ,  ebcm_order >   pr_mom_dim;
     typedef   Proto::IndexedMoments<DIM-1,  ebcm_order >   pr_mom_dmo;
+    typedef   Proto::MomentIterator<DIM  ,  ebcm_order >   pr_momit_dim;
+    typedef   Proto::MomentIterator<DIM-1,  ebcm_order >   pr_momit_dmo;
     typedef   Proto::Point pr_pt;
   
     static shared_ptr<pr_baseif> getImplicitFunction()
@@ -255,10 +257,88 @@ namespace EBCM
       Chombo4::pout() << a_prefix << " maximum volume fraction overall = " << maxKappa << endl;
       Chombo4::pout() << a_prefix << " minimum volume fraction overall = " << minKappa << endl;
     }
-
-    static int compareVolumes(const ebcm_volu& a_volu_sing,
-                              const ebcm_volu& a_volu_dist)
+    ///
+    template<CENTERING cent>
+    static int
+    compareFaces(const vector<EBCM_Face<cent, ebcm_order> > & a_vec_sing,
+                 const vector<EBCM_Face<cent, ebcm_order> > & a_vec_dist)
     {
+      static bool printedOnce = false;
+      if(printedOnce)
+      {
+        Chombo4::pout() << "EBCM::compareFaces template not implemented" << endl;
+        printedOnce = true;
+      }
+      return 0;
+    }
+    ///
+    static int
+    compareIrregFaces(const vector<IrregFace<ebcm_order> > & a_vec_sing,
+                      const vector<IrregFace<ebcm_order> > & a_vec_dist)
+    {
+      static bool printedOnce = false;
+      if(printedOnce)
+      {
+        Chombo4::pout() << "EBCM::compareIrregFaces not implemented" << endl;
+        printedOnce = true;
+      }
+      return 0;
+    }
+    ///
+    static int
+    compareVolumes(const ebcm_volu& a_volu_sing,
+                   const ebcm_volu& a_volu_dist,
+                   bool a_cellMerged)
+    {
+      double tol = 1.0e-9;
+      double dxdiff = std::abs(a_volu_sing.m_dx - a_volu_dist.m_dx);
+      if(a_volu_sing.m_regular != a_volu_dist.m_regular)
+      {
+        Chombo4::pout() << "EBCM::compareVolumes: m_regular mismatch" << endl;
+        return -1;
+      }
+      if(dxdiff > tol)
+      {
+        Chombo4::pout() << "EBCM::compareVolumes: m_dx mismatch" << endl;
+        return -2;
+      }
+      int csize_sing = a_volu_sing.m_cells.size();
+      int csize_dist = a_volu_dist.m_cells.size();
+      //this checks to see if this volume comes from a merger
+      if((csize_sing==1)  && (csize_dist==1))//everything should match in this case.
+      {
+        if(a_volu_sing.m_pt != a_volu_dist.m_pt)
+        {
+          Chombo4::pout() << "EBCM::compareVolumes: m_pt mismatch" << endl;
+          return -3;
+        }
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          double centdiff = a_volu_sing.m_centroid[idir] - a_volu_dist.m_centroid[idir];
+          if(std::abs(centdiff) > tol)
+          {
+            Chombo4::pout() << "EBCM::compareVolumes: m_centroid mismatch" << endl;
+            return -4;
+          }
+        }
+        if(std::abs(a_volu_sing.m_kappa - a_volu_dist.m_kappa) > tol)
+        {
+            Chombo4::pout() << "EBCM::compareVolumes: m_kappa mismatch" << endl;
+            return -5;
+        }
+        
+        //if these fail, compareFaces will bark
+        int xeek = compareFaces<XFACE>(a_volu_sing.m_xfaces, a_volu_dist.m_xfaces); if(!xeek) return xeek;
+        int yeek = compareFaces<YFACE>(a_volu_sing.m_yfaces, a_volu_dist.m_yfaces); if(!yeek) return yeek;
+        int zeek = compareFaces<ZFACE>(a_volu_sing.m_zfaces, a_volu_dist.m_zfaces); if(!zeek) return zeek;
+        int ieek = compareIrregFaces(  a_volu_sing.m_ifaces, a_volu_dist.m_ifaces); if(!ieek) return ieek;
+      }
+      else
+      {
+        static bool printed_once = false;
+        Chombo4::pout()  << "****************The Merged case is not being tested yet*******************" << endl;
+        printed_once = true;
+      }
       return 0;
     }
     
@@ -273,8 +353,6 @@ namespace EBCM
       const int                      & a_nghost,
       bool a_cellMerged, bool a_printStuff)
     {
-      
-
       int eekflag = 0;
       ch_datind ind_sing = a_grid_single_grid.dataIterator()[0];
       const auto& ld_graph_sing = *(a_meta_single_grid->m_graphs);
@@ -295,7 +373,7 @@ namespace EBCM
           auto pt = *bit;
           auto volu_sing = graph_sing.getVolumeCoveringPoint(pt);
           auto volu_dist = graph_dist.getVolumeCoveringPoint(pt);
-          int eek = compareVolumes(volu_sing, volu_dist);
+          int eek = compareVolumes(volu_sing, volu_dist, a_cellMerged);
           if(eek  != 0)
           {
             Chombo4::pout() << "EBCM::test_framework::compareMeta problem at point " << pt << endl;
