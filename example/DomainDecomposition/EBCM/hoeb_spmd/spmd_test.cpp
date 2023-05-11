@@ -41,10 +41,9 @@ typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
 typedef Proto::BaseIF                                  pr_baseif;
 typedef ch_eigen::Matrix                               eigen_mat;
 
-/****/
 ///
 /**
-   Print out max and min volume fraction in a meta.
+   This is the testing framework for EBCM SPMD.
 **/
 namespace EBCM
 {
@@ -258,29 +257,109 @@ namespace EBCM
       Chombo4::pout() << a_prefix << " minimum volume fraction overall = " << minKappa << endl;
     }
     ///
-    template<CENTERING cent>
     static int
-    compareFaces(const vector<EBCM_Face<cent, ebcm_order> > & a_vec_sing,
-                 const vector<EBCM_Face<cent, ebcm_order> > & a_vec_dist)
+    compareIrregFaces(const vector<IrregFace<ebcm_order> > & a_vec_sing,
+                      const vector<IrregFace<ebcm_order> > & a_vec_dist,
+                      bool a_cellMerged)
     {
-      static bool printedOnce = false;
-      if(printedOnce)
+      if(!a_cellMerged)
       {
-        Chombo4::pout() << "EBCM::compareFaces template not implemented" << endl;
-        printedOnce = true;
+        int sing_size  = a_vec_sing.size();
+        int dist_size  = a_vec_dist.size();
+        if(sing_size != dist_size)
+        {
+          Chombo4::pout() << "EBCM::compareIrregFaces: vector size mismatch" << endl;
+          return -1;
+        }
+        for(int ivec = 0; ivec < sing_size; ivec++)
+        {
+          const auto& face_sing = a_vec_sing[ivec];
+          const auto& face_dist = a_vec_dist[ivec];
+
+          if(face_sing.m_pt != face_dist.m_pt)
+          {
+            Chombo4::pout() << "EBCM::compareIrregFaces: face mismatch at ivec = " << ivec << endl;
+            return -2;
+          }
+          
+          //see if the moments are in the ballpark.
+          auto mom_diff = face_sing.m_ebfmom;
+          mom_diff     -= face_dist.m_ebfmom;
+          double tol = 1.0e-9;
+          double biggestDiffest = mom_diff.maxAbs();  //with apologies to Mel Brooks
+          if(biggestDiffest > tol)
+          {
+            Chombo4::pout() << "EBCM::compareIrregFaces: m_facmom mismatch" << endl;
+            return -6;
+          }
+        }
+              
+      }
+      else
+      {
+        static bool printedOnce = false;
+        if(printedOnce)
+        {
+          Chombo4::pout() << "***EBCM::compareFaces: vector test for merged case not complete***" << endl;
+          printedOnce = true;
+        }
       }
       return 0;
     }
     ///
+    template<CENTERING cent>
     static int
-    compareIrregFaces(const vector<IrregFace<ebcm_order> > & a_vec_sing,
-                      const vector<IrregFace<ebcm_order> > & a_vec_dist)
+    compareFaces(const vector<EBCM_Face<cent, ebcm_order> > & a_vec_sing,
+                 const vector<EBCM_Face<cent, ebcm_order> > & a_vec_dist,
+                 bool a_cellMerged)
     {
-      static bool printedOnce = false;
-      if(printedOnce)
+      if(!a_cellMerged)
       {
-        Chombo4::pout() << "EBCM::compareIrregFaces not implemented" << endl;
-        printedOnce = true;
+        int sing_size  = a_vec_sing.size();
+        int dist_size  = a_vec_dist.size();
+        if(sing_size != dist_size)
+        {
+          Chombo4::pout() << "EBCM::compareFaces: vector size mismatch" << endl;
+          return -1;
+        }
+        for(int ivec = 0; ivec < sing_size; ivec++)
+        {
+          const auto& face_sing = a_vec_sing[ivec];
+          const auto& face_dist = a_vec_dist[ivec];
+          //this just checks low vof and high vof (not any of the moment information)
+          if(face_sing.m_lo != face_dist.m_lo)
+          {
+            Chombo4::pout() << "EBCM::compareFaces: lo face mismatch at ivec = " << ivec << endl;
+            return -7;
+          }
+          if(face_sing.m_hi != face_dist.m_hi)
+          {
+            Chombo4::pout() << "EBCM::compareFaces: hi face mismatch at ivec = " << ivec << endl;
+            return -2;
+          }
+          
+          //see if the moments are in the ballpark.
+          auto mom_diff = face_sing.m_facmom;
+          mom_diff     -= face_dist.m_facmom;
+          double tol = 1.0e-9;
+          double biggestDiffest = mom_diff.maxAbs();  //with apologies to Mel Brooks
+          if(biggestDiffest > tol)
+          {
+            Chombo4::pout() << "EBCM::compareFaces: m_facmom mismatch" << endl;
+            return -6;
+          }
+          
+        }
+              
+      }
+      else
+      {
+        static bool printedOnce = false;
+        if(printedOnce)
+        {
+          Chombo4::pout() << "***EBCM::compareFaces: vector test for merged case not complete***" << endl;
+          printedOnce = true;
+        }
       }
       return 0;
     }
@@ -326,19 +405,31 @@ namespace EBCM
             Chombo4::pout() << "EBCM::compareVolumes: m_kappa mismatch" << endl;
             return -5;
         }
-        
-        //if these fail, compareFaces will bark
-        int xeek = compareFaces<XFACE>(a_volu_sing.m_xfaces, a_volu_dist.m_xfaces); if(!xeek) return xeek;
-        int yeek = compareFaces<YFACE>(a_volu_sing.m_yfaces, a_volu_dist.m_yfaces); if(!yeek) return yeek;
-        int zeek = compareFaces<ZFACE>(a_volu_sing.m_zfaces, a_volu_dist.m_zfaces); if(!zeek) return zeek;
-        int ieek = compareIrregFaces(  a_volu_sing.m_ifaces, a_volu_dist.m_ifaces); if(!ieek) return ieek;
+
+        auto mom_diff = a_volu_sing.m_volmom;
+        mom_diff     -= a_volu_dist.m_volmom;
+        double tol = 1.0e-9;
+        double biggestDiffest = mom_diff.maxAbs();  //with apologies to Mel Brooks
+        if(biggestDiffest > tol)
+        {
+            Chombo4::pout() << "EBCM::compareVolumes: m_volmom mismatch" << endl;
+            return -6;
+        }
       }
       else
       {
         static bool printed_once = false;
-        Chombo4::pout()  << "****************The Merged case is not being tested yet*******************" << endl;
-        printed_once = true;
+        if(!printed_once)
+        {
+          Chombo4::pout()  << "***EBCM::compareVolumes: Merged case does not yes test communcation of pt, centroid or kappa***" << endl;
+          printed_once = true;
+        }
       }
+      //if these fail, compareFaces will bark
+      int xeek = compareFaces<XFACE>(a_volu_sing.m_xfaces, a_volu_dist.m_xfaces, a_cellMerged); if(!xeek) return xeek;
+      int yeek = compareFaces<YFACE>(a_volu_sing.m_yfaces, a_volu_dist.m_yfaces, a_cellMerged); if(!yeek) return yeek;
+      int zeek = compareFaces<ZFACE>(a_volu_sing.m_zfaces, a_volu_dist.m_zfaces, a_cellMerged); if(!zeek) return zeek;
+      int ieek = compareIrregFaces(  a_volu_sing.m_ifaces, a_volu_dist.m_ifaces, a_cellMerged); if(!ieek) return ieek;
       return 0;
     }
     

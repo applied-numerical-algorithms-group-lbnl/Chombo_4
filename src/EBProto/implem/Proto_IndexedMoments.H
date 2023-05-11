@@ -27,6 +27,19 @@ namespace Proto
     //! Destructor
     ~IndexedMoments() {};
 
+    ///not semantically sensible but makes for easier diagnostics
+    double maxAbs() const
+    {
+      double retval = 0;
+      for(int imom = 0; imom < size(); imom++)
+      {
+        double momval = (*this)[imom];
+        retval = std::max(retval, momval);
+      }
+
+      return retval;
+    }
+
 
     //! Retrieve the moment from the index 
     //! \params a_index The lexigraphical index to the data
@@ -59,6 +72,16 @@ namespace Proto
     ///add compoenentwise
     IndexedMoments<Dim, P>&  operator+=(const IndexedMoments<Dim, P>& increment);
 
+    inline
+    IndexedMoments<Dim, P>&  operator-=(const IndexedMoments<Dim, P>& increment)
+    {
+      auto decrement = increment;
+      decrement *= -1.;
+      *this += decrement;
+      return *this;
+    }
+      
+    
     ///multiply each component by constant
     IndexedMoments<Dim, P>&  operator*=(const double& a_factor);
 
