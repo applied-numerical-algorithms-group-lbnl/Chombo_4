@@ -19,15 +19,16 @@ namespace EBCM
 //  using CH4_SPMD::linearOut;  
 //  using CH4_SPMD::linearSize;
   
-  typedef Proto::EBGraph           pr_ebgrap;
-  typedef Proto::EBIndex<CELL>     pr_vof;
-  typedef Proto::Point             pr_pt;
-  typedef Proto::Box               pr_box;
-  typedef Chombo4::Box             ch_box;
-  typedef Chombo4::IntVect         ch_iv;
-  typedef Chombo4::DataIterator    ch_dit;
-  typedef Chombo4::DataIndex       ch_datind;
-  typedef Chombo4::MayDay          ch_mayday;
+  typedef Proto::EBGraph                           pr_ebgrap;
+  typedef Proto::EBIndex<CELL>                     pr_vof;
+  typedef Proto::Point                             pr_pt;
+  typedef Proto::Box                               pr_box;
+  typedef Proto::HostBoxData<int, 1>               pr_hbd_int;
+  typedef Chombo4::Box                             ch_box;
+  typedef Chombo4::IntVect                         ch_iv;
+  typedef Chombo4::DataIterator                    ch_dit;
+  typedef Chombo4::DataIndex                       ch_datind;
+  typedef Chombo4::MayDay                          ch_mayday;
 
   ///get the serialization size of this vector
   template<typename entry_t>
@@ -228,17 +229,52 @@ namespace EBCM
 
     size_t charsize() const
     {
-      ch_mayday::Error("not implemented");
-      return 0;
+      size_t charsiz = 0;
+      charsiz +=     m_pt.charsize();
+      charsiz += m_ebfmom.charsize();
+      return charsiz;
     }
     void energize(char* a_outbuf, size_t a_expected_size) const
     {
-      ch_mayday::Error("not implemented");
+      size_t charsiz = 0;
+      char*  charbuf = (char*) a_outbuf;
+
+      size_t ptsize = m_pt.charsize();
+      m_pt.energize(charbuf, ptsize);
+      charbuf += m_pt.charsize();
+      charsiz += m_pt.charsize();
+
+
+      m_ebfmom.energize(charbuf);
+      charbuf += m_ebfmom.charsize();
+      charsiz += m_ebfmom.charsize();
+
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCM::IrregFace::energize: size check error");
+      }
+      return;
 
     }
-    void linearIn(char* a_inbuf, size_t a_expected_size) const
+    void linearIn(char* a_inbuf, size_t a_expected_size) 
     {
-      ch_mayday::Error("not implemented");
+      size_t charsiz = 0;
+      char*  charbuf = (char*) a_inbuf;
+      size_t ptsize = m_pt.charsize();
+
+      m_pt.linearIn(charbuf);
+      charbuf += m_pt.charsize();
+      charsiz += m_pt.charsize();
+
+      m_ebfmom.linearIn(charbuf);
+      charbuf += m_ebfmom.charsize();
+      charsiz += m_ebfmom.charsize();
+
+      if(charsiz != a_expected_size)
+      {
+        ch_mayday::Error("EBCMFace::linearIn: size check error");
+      }
+      return;
 
     }
   };
@@ -253,6 +289,10 @@ namespace EBCM
     typedef Chombo4::GeometryService<order> ch_geoserv;
     typedef Proto::IndexedMoments<DIM-1, order> IndMomSDMinOne;
     typedef Proto::IndexedMoments<DIM  , order> IndMomSpaceDim;
+    typedef EBCM::EBCM_Face<XFACE, order> ebcm_xface;
+    typedef EBCM::EBCM_Face<YFACE, order> ebcm_yface;
+    typedef EBCM::EBCM_Face<ZFACE, order> ebcm_zface;
+    typedef EBCM::IrregFace<       order> ebcm_iface;
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
@@ -268,10 +308,10 @@ namespace EBCM
     double     m_dx;
     
     //
-    vector<EBCM_Face<XFACE, order> >  m_xfaces;
-    vector<EBCM_Face<YFACE, order> >  m_yfaces;
-    vector<EBCM_Face<ZFACE, order> >  m_zfaces;
-    vector<IrregFace<order> > m_ifaces;
+    vector<ebcm_xface>  m_xfaces;
+    vector<ebcm_yface>  m_yfaces;
+    vector<ebcm_zface>  m_zfaces;
+    vector<ebcm_iface>  m_ifaces;
 
     vector<Point> m_cells; //all cells marked for this entry.   
 
@@ -511,9 +551,9 @@ namespace EBCM
       return connected;
     }
     template <CENTERING cent>
-    void fillFaceData(vector< EBCM_Face< cent, order> >                & a_facedata,
-                      const vector< EBIndex<  cent > >                & a_ebfaces,
-                      const HostIrregData<   cent, IndMomSDMinOne, 1> & a_facedat)
+    void fillFaceData(      vector< EBCM_Face< cent, order> >           & a_facedata,
+                      const vector< EBIndex<   cent > >                 & a_ebfaces,
+                      const HostIrregData<     cent, IndMomSDMinOne, 1> & a_facedat)
     {
 
       a_facedata.resize(a_ebfaces.size());
@@ -652,7 +692,7 @@ namespace EBCM
     **/
     ///Speaking of which,
     typedef Chombo4::GeometryService<order> ch_geoserv;
-    
+    typedef EBCM_Volu<order>                ebcm_volu;
   
     ///
     /**
@@ -702,10 +742,10 @@ namespace EBCM
        Face objects contain moment informaiton
        Data that needs to be filled:
 
-       vector<EBCM_Face<XFACE> >  m_xfaceslo;
+       vector<ebcm_xface >  m_xfaceslo;
        vector<EBCM_Face<YFACE> >  m_yfaceslo;
        vector<EBCM_Face<ZFACE> >  m_zfaceslo;
-       vector<EBCM_Face<XFACE> >  m_xfaceshi;
+       vector<ebcm_xface   >  m_xfaceshi;
        vector<EBCM_Face<YFACE> >  m_yfaceshi;
        vector<EBCM_Face<ZFACE> >  m_zfaceshi;
        vector<IrregFace<order> > m_ifaces;
@@ -731,9 +771,9 @@ namespace EBCM
     inline void
     getShifts(IndexTM<double, DIM>                 & a_shiftOne,
               IndexTM<double, DIM>                 & a_shiftTwo,
-              const EBCM_Volu<order>                & a_volMer,
-              const EBCM_Volu<order>                & a_volOne,
-              const EBCM_Volu<order>                & a_volTwo)
+              const ebcm_volu                      & a_volMer,
+              const ebcm_volu                      & a_volOne,
+              const ebcm_volu                      & a_volTwo)
     {
       RealVect locMer, locOne, locTwo;
       for(int idir = 0; idir < DIM; idir++)
@@ -754,9 +794,9 @@ namespace EBCM
     ///
     static
     inline void
-    shiftAndMergeVolumeData(EBCM_Volu<order>                      & a_volMer,
-                            const EBCM_Volu<order>                & a_volOne,
-                            const EBCM_Volu<order>                & a_volTwo)
+    shiftAndMergeVolumeData(      ebcm_volu                      & a_volMer,
+                            const ebcm_volu                      & a_volOne,
+                            const ebcm_volu                      & a_volTwo)
     {
       IndexTM<double, DIM> shiftOne, shiftTwo;
     
@@ -772,9 +812,9 @@ namespace EBCM
 
     ///
     static inline void
-    shiftAndMergeIrregData(EBCM_Volu<order>                      & a_volMer,
-                           const EBCM_Volu<order>                & a_volOne,
-                           const EBCM_Volu<order>                & a_volTwo)
+    shiftAndMergeIrregData(      ebcm_volu                      & a_volMer,
+                           const ebcm_volu                      & a_volOne,
+                           const ebcm_volu                      & a_volTwo)
     {
       ///This does the same thing as mergeFaces (just slap the two vectors together into the third).
       ///The moments are all wrong, though, and need to be shifted
@@ -856,9 +896,9 @@ namespace EBCM
     
     ///Consolidate in each direction    static inline void
     static inline void
-    consolidateFacesAllDirections(EBCM_Volu<order>        & a_volMer,
-                                  const EBCM_Volu<order>  & a_volOne,
-                                  const EBCM_Volu<order>  & a_volTwo,
+    consolidateFacesAllDirections(      ebcm_volu        & a_volMer,
+                                  const ebcm_volu        & a_volOne,
+                                  const ebcm_volu        & a_volTwo,
                                   bool a_printStuff)
     {
 
@@ -872,9 +912,9 @@ namespace EBCM
 
     ///make EBCM_Volu volMer that has eaten both volOne and volTwo
     static inline int
-    mergeTwoVolumesIntoThird(EBCM_Volu<order>                      & a_volMer,
-                             const EBCM_Volu<order>                & a_volOne,
-                             const EBCM_Volu<order>                & a_volTwo,
+    mergeTwoVolumesIntoThird(      ebcm_volu                      & a_volMer,
+                             const ebcm_volu                      & a_volOne,
+                             const ebcm_volu                      & a_volTwo,
                              double a_dx, bool a_printStuff)
     {
       a_volMer.m_regular = false;
@@ -891,8 +931,8 @@ namespace EBCM
     } //end funciton mergeTwoIntoThird
 
     static inline bool
-    volumesConnected(const EBCM_Volu<order>& a_volOne,
-                     const EBCM_Volu<order>& a_volTwo)
+    volumesConnected(const ebcm_volu      & a_volOne,
+                     const ebcm_volu      & a_volTwo)
     {
       return EBCM_Volu<order>::connected(a_volOne, a_volTwo); // 
     }
@@ -902,11 +942,11 @@ namespace EBCM
        Fails with MayDay::Error if the vector is not has disconnected components.
     **/ 
     static
-    inline EBCM_Volu<order>
-    mergeManyIntoOne(const vector<EBCM_Volu<order> >& a_many,
+    inline ebcm_volu      
+    mergeManyIntoOne(const vector<ebcm_volu>& a_many,
                      double a_dx, bool a_printStuff)
     {
-      EBCM_Volu<order> retval;
+      ebcm_volu retval;
       if(a_many.size() == 1)
       {
         retval = a_many[0];
@@ -931,7 +971,7 @@ namespace EBCM
         {
           Chombo4::MayDay::Error("mergeManyIntoOne error: could not find connected volume");
         }
-        EBCM_Volu<order>          third; 
+        ebcm_volu   third; 
         int errflag =
           mergeTwoVolumesIntoThird(third, a_many[vofind0], a_many[vofind1],
                                    a_dx, a_printStuff);
@@ -941,7 +981,7 @@ namespace EBCM
         }
 
         //we reduce the size of the vector by one with every call.
-        vector<EBCM_Volu<order> > volsLeft(a_many.size() - 1);
+        vector<ebcm_volu> volsLeft(a_many.size() - 1);
         volsLeft[0] = third;
         int ileft = 1;
         for(int imany = 0; imany < a_many.size(); imany++)
@@ -970,7 +1010,7 @@ namespace EBCM
        --dtg
     **/
     static
-    inline EBCM_Volu<order>
+    inline ebcm_volu
     getRefinedCoarseVolume(vector<pr_vof>                        & a_vofsEaten,
                            const  pr_vof                         & a_startvof,
                            const shared_ptr<ch_geoserv>          & a_geoserv,
@@ -981,7 +1021,7 @@ namespace EBCM
                            const pr_ebgrap                       & a_graph,
                            bool a_printStuff)
     {
-      EBCM_Volu<order> retval;
+      ebcm_volu retval;
       pr_pt finept = a_startvof.m_pt;
       pr_pt coarpt = finept.coarsen(2);
       pr_box coarbox(coarpt, coarpt);
@@ -1025,7 +1065,7 @@ namespace EBCM
       {
         pout() << "getGhostedVolume: a_vofsEaten.size() == " << a_vofsEaten.size() << endl;
       }
-      vector<EBCM_Volu<order> > allvols(a_vofsEaten.size());
+      vector<ebcm_volu > allvols(a_vofsEaten.size());
       for(int ivol = 0; ivol <         a_vofsEaten.size(); ivol++)
       {
         auto curpt = a_vofsEaten[ivol].m_pt;
@@ -1057,7 +1097,7 @@ namespace EBCM
        it calls for merger.   VoFsLeft gets modified by calling function.
     */
     static
-    inline EBCM_Volu<order>
+    inline ebcm_volu
     createEBCM_Volume(vector<pr_vof>                        & a_vofsEaten,
                       const pr_vof                          & a_startvof,
                       const shared_ptr<ch_geoserv>          & a_geoserv,
@@ -1069,7 +1109,7 @@ namespace EBCM
                       bool                                    a_mergeSmallCells,
                       bool                                    a_printStuff)
     {
-      EBCM_Volu<order> startvol, retval;
+      ebcm_volu startvol, retval;
       if(a_graph.isCovered(a_startvof.m_pt))
       {
         Chombo4::MayDay::Error("cannot create EBCM_Volume from a covered cell");
@@ -1101,9 +1141,9 @@ namespace EBCM
 
     ///
     static inline bool
-    getRegularNeighborPoint(pr_pt                           & a_regpt,
-                            const EBCM_Volu<order>           & a_smallvol,
-                            const HostBoxData<int  , 1>     & a_map)
+    getRegularNeighborPoint(pr_pt                            & a_regpt,
+                            const ebcm_volu                  & a_smallvol,
+                            const pr_hbd_int                 & a_map)
     {
       const pr_pt& startpt = a_smallvol.m_pt;
       bool found = false;
@@ -1131,8 +1171,8 @@ namespace EBCM
 
     ///put indicies of volumes in correct places in map
     static inline void
-    fixVolumeEntriesInMap(shared_ptr<HostBoxData<int  , 1> >          & a_map,
-                          const shared_ptr<vector<EBCM_Volu<order> > > & a_volumes)
+    fixVolumeEntriesInMap(shared_ptr<pr_hbd_int >                      & a_map,
+                          const shared_ptr<vector<ebcm_volu> >         & a_volumes)
     {
       for(int ivol = 0; ivol < a_volumes->size(); ivol++)
       {
@@ -1153,9 +1193,9 @@ namespace EBCM
        but some of its entries will get fatter.
     */
     static inline void
-    mergeSmallVolumesWithNeighbors(shared_ptr<vector<EBCM_Volu<order> > >    & a_volumes,
-                                   shared_ptr<HostBoxData<int  , 1> >        & a_map,
-                                   shared_ptr<vector<EBCM_Volu<order> > >    & a_tooSmall,
+    mergeSmallVolumesWithNeighbors(shared_ptr<vector<ebcm_volu > >           & a_volumes,
+                                   shared_ptr<pr_hbd_int>                    & a_map,
+                                   shared_ptr<vector<ebcm_volu > >           & a_tooSmall,
                                    const shared_ptr<ch_geoserv>              & a_geoserv,
                                    const ch_box                              & a_domain,
                                    const ch_datind                           & a_dit,
@@ -1167,7 +1207,7 @@ namespace EBCM
       if(a_tooSmall->size() > 0)
       {
         //remember input volumes
-        vector<EBCM_Volu<order> > inputVols = *a_volumes;
+        vector<ebcm_volu > inputVols = *a_volumes;
         a_volumes->resize(0);
 
         /**
@@ -1179,7 +1219,7 @@ namespace EBCM
         for(int ismall = 0; ismall < a_tooSmall->size(); ismall++)
         {
           const auto& smallvol = (*a_tooSmall)[ismall];
-          EBCM_Volu<order> merged, bigvol;
+          ebcm_volu merged, bigvol;
           Point regPt;
           bool hasRegularNeighbor = getRegularNeighborPoint(regPt, smallvol,  *a_map);
           if(hasRegularNeighbor)
@@ -1243,8 +1283,8 @@ namespace EBCM
        Translate all this mixed stuff into sparse  representation that we actually store
     */
     static inline  int
-    makeTheBlobs(shared_ptr<vector<EBCM_Volu<order> > >     & a_volumes,
-                 shared_ptr<HostBoxData<int  , 1>  >       & a_map,
+    makeTheBlobs(shared_ptr<vector<ebcm_volu > >     & a_volumes,
+                 shared_ptr<pr_hbd_int >                   & a_map,
                  shared_ptr<set<pr_vof   > >               & a_inputVoFs, 
                  const shared_ptr<ch_geoserv>              & a_geoserv,
                  const ch_box                              & a_domain,
@@ -1255,14 +1295,14 @@ namespace EBCM
                  bool a_printStuff)
     {
       bool  printStuff = false;
-      a_volumes = shared_ptr<vector<EBCM_Volu<order> > >(new vector<EBCM_Volu<order> > ());
-      a_map    =  shared_ptr<HostBoxData<    int, 1 > >(new HostBoxData<int, 1>      ());
+      a_volumes = shared_ptr<vector<ebcm_volu > >(new vector<ebcm_volu > ());
+      a_map    =  shared_ptr<pr_hbd_int>(new pr_hbd_int());
       //define the map and set it all to covered.   the input set contains only regular and irregular
       a_map->define(a_graph.getRegion());
       a_map->setVal(-2);
       shared_ptr<set<pr_vof   > >  vofsLeft(new set<pr_vof>() );
       *vofsLeft = *a_inputVoFs;
-      shared_ptr< vector<EBCM_Volu<order> > > tooSmalls(new vector<EBCM_Volu<order> >());
+      shared_ptr< vector<ebcm_volu > > tooSmalls(new vector<ebcm_volu >());
       ///two pass merger algorithm.   merge on coarsened cell then try to find neighbors
       //for the orphans that did not have enough volume inthe 
       double kappamin = 1.0;
@@ -1288,7 +1328,7 @@ namespace EBCM
             printStuff = ((vof.m_pt[0]==25) && (vof.m_pt[1]== 27));
             //end debug
             vector<pr_vof> mergevec;
-            EBCM_Volu<order> volume =
+            ebcm_volu volume =
               createEBCM_Volume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
                                 vofsLeft, a_graph, a_mergeSmallCells, printStuff);
             
@@ -1485,7 +1525,7 @@ namespace EBCM
          Irregular volume information.  The stuff below are  only defined if 
          hasIrregular is true (which means allRegular and allCovered are false).
          or m_allCovered are true.  
-         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< vector<ebcm_volu > > m_volumes;
          shared_ptr< HostBoxData<int, 1> >      m_map;
       **/
       if( hasIrregular() )
@@ -1563,7 +1603,7 @@ namespace EBCM
          Irregular volume information.  The stuff below are  only defined if 
          hasIrregular is true (which means allRegular and allCovered are false).
          or m_allCovered are true.  
-         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< vector<ebcm_volu > > m_volumes;
          shared_ptr< HostBoxData<int, 1> >      m_map;
       **/
       if( hasIrregular() )
@@ -1661,7 +1701,7 @@ namespace EBCM
          Irregular volume information.  The stuff below are  only defined if 
          hasIrregular is true (which means allRegular and allCovered are false).
          or m_allCovered are true.  
-         shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+         shared_ptr< vector<ebcm_volu > > m_volumes;
          shared_ptr< HostBoxData<int, 1> >      m_map;
 
          The function isIrregular ought to work because we have set m_allRegular and m_allCovered.
@@ -1706,13 +1746,6 @@ namespace EBCM
         ch_mayday::Error("EBCMGraph::EBCMGraph(char*): size mismatch");
       }
     }
-    /// for exchange.   checks over box and adds volumes as needed from source.
-    void
-    copy(const EBCM_Graph              & a_src,
-         const ch_box                  & a_region)
-    {
-      ch_mayday::Error("not implemented");
-    }
 
     ///
     void
@@ -1750,23 +1783,128 @@ namespace EBCM
     }
     
     ///this is for MPI communication
-    inline
-    virtual void linearOut(char*               a_buf,
-                           size_t              a_expectedSize,
-                           const ch_box    &   a_bx,
-                           unsigned int        a_startcomp,
-                           unsigned int        a_numcomps,
-                           bool a_printStuff = false) const
+    inline void
+    linearOut(char*               a_buf,
+              size_t              a_expectedSize,
+              const ch_box    &   a_bx,
+              unsigned int        a_startcomp,
+              unsigned int        a_numcomps,
+              bool a_printStuff = false) const
     {
       energize(a_buf, a_expectedSize, a_printStuff);
     }
+
+      
+    /// for exchange.   checks over box and adds volumes as needed from source.
+    inline void
+    copy(const EBCM_Graph              & a_src,
+         const ch_box                  & a_region)
+    {
+      if((!m_defined) || (!a_src.m_defined))
+      {
+        ch_mayday::Error("EBCM::Graph::copy called using undefined objects");
+      }
+      if((m_allRegular && a_src.m_allRegular) || (m_allCovered && a_src.m_allCovered))
+      {
+        return;
+      }
+      else if((m_allRegular && a_src.m_allCovered) || (m_allCovered && a_src.m_allRegular))
+      {
+        Chombo4::pout() << "EBCM::Graph::copy: how is there an all regular graph trying to talk to an all covered one?";
+        Chombo4::pout() << "Sanity demands there should be intervening cut cells." << endl;
+        ch_mayday::Error();
+      }
+      else if(m_allRegular || m_allCovered)
+      {
+        //unsparsify recasts this object
+        //so we can add irregular cells
+        unsparsify();
+      }
+      pr_box region = ProtoCh::getProtoBox(a_region);
+      std::set<pr_pt> alreadyCopied; //have to do this because of merging
+      for(auto bit = region.begin(); bit != region.end(); ++bit)
+      {
+        auto pt = *bit;
+        auto alit =          alreadyCopied.find(pt);
+        bool done = (alit != alreadyCopied.end());
+        if( !done)
+        {
+          alreadyCopied.insert(pt);
+          if(a_src.isRegular(pt))
+          {
+            (*m_map)(pt, 0) = -1;
+
+          }
+          else if(a_src.isCovered(pt))
+          {
+            (*m_map)(pt, 0) = -2;
+          }
+          else
+          {
+            ebcm_volu  inputVol = a_src.getVolumeCoveringPoint(pt);
+            
+            (*m_map)(pt, 0) = m_volumes->size();
+            m_volumes->push_back(inputVol);
+            for(int ivec = 0; ivec < inputVol.m_cells.size(); ivec++)
+            {
+              alreadyCopied.insert(inputVol.m_cells[ivec]);
+            }
+          }
+        }
+      }
+        
+    }
+
+    ///
+    /**
+       The function unsparsify recasts this object as a fully mature 
+       graph so  we can add irregular cells when filling in ghost cell
+       informaiton.  This happens in the copy function just as it does
+       in standard EB.
+    **/
+    inline void
+    unsparsify()
+    {
+      if(!m_defined)
+      {
+        ch_mayday::Error("EBCM::Graph::unsparsify: called on undefined object");
+      }
+      if((!m_allRegular) && (!m_allCovered))
+      {
+        return;  //already not sparse
+      }
+      else
+      {
+        int mapval = 4586;
+        if(m_allRegular)
+        {
+          mapval = -1;
+        }
+        else if(m_allCovered)
+        {
+          mapval = -2;
+        }
+        else
+        {
+          //I do not see how I can get here but I have been wrong before.
+          ch_mayday::Error("EBCM::Graph::unsparsify: logic error");
+        }
+        m_allRegular = false;
+        m_allCovered = false;
+        m_volumes = shared_ptr< vector<ebcm_volu > >(new vector<ebcm_volu >());
+        m_map     = shared_ptr< pr_hbd_int        > (new pr_hbd_int(m_grid));
+        m_map->setVal(mapval);
+      }
+    }
+    
     ///Class Data
     /**
        I am not bothering with fancy accessor functions.   Member data is left in the clear.  
        Use it wisely.
        Remember the map and the vector are not defined if allRegular or allCovered are true.   
        This should save a ton of memory where there is not much EB.
-       Assignment ought to work.
+       Assignment ought to work but it will be shallow 
+       (std::shared_ptr semantics).
     **/
 
     ///Whether define function has been called on this object. If m_defined == false, everything else is not defined.
@@ -1779,20 +1917,23 @@ namespace EBCM
     double                 m_dx;
     ch_box                 m_domain;
     ch_box                 m_grid;
+
+    ///Irregular volume information.   
     /**
-       Irregular volume information.   We do not store unmerged regular cell volumes.
-       The stuff below is not defined if m_allRegular or m_allCovered are true
+       We do not store unmerged regular cell volumes.
+       The stuff below is not defined if(m_allRegular or m_allCovered are true
+       (if(m_allRegular || m_allCovered)).
     **/
 
     ///This is the meta data and moment information.
-    shared_ptr< vector<EBCM_Volu<order> > > m_volumes;
+    shared_ptr< vector<ebcm_volu > > m_volumes;
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
     ///For stencil stuff, you should really use SubVolumeVector.   This is meant to be just for diagonostics.
-    EBCM_Volu<order> getVolumeCoveringPoint(const pr_pt& a_pt) const
+    ebcm_volu getVolumeCoveringPoint(const pr_pt& a_pt) const
     {
-      EBCM_Volu<order> retval;
+      ebcm_volu retval;
       if(m_allCovered)
       {
         ch_mayday::Error("EBCMGraph:: covered points do not have volumes");
