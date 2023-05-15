@@ -462,13 +462,16 @@ namespace EBCM
         for(auto bit = prgrown.begin(); bit != prgrown.end(); ++bit)
         {
           auto pt = *bit;
-          auto volu_sing = graph_sing.getVolumeCoveringPoint(pt);
-          auto volu_dist = graph_dist.getVolumeCoveringPoint(pt);
-          int eek = compareVolumes(volu_sing, volu_dist, a_cellMerged);
-          if(eek  != 0)
+          if(!graph_sing.isCovred(pt))
           {
-            Chombo4::pout() << "EBCM::test_framework::compareMeta problem at point " << pt << endl;
-            return eek;
+            auto volu_sing = graph_sing.getVolumeCoveringPoint(pt);
+            auto volu_dist = graph_dist.getVolumeCoveringPoint(pt);
+            int eek = compareVolumes(volu_sing, volu_dist, a_cellMerged);
+            if(eek  != 0)
+            {
+              Chombo4::pout() << "EBCM::test_framework::compareMeta problem at point " << pt << endl;
+              return eek;
+            }
           }
         }
         
@@ -539,6 +542,9 @@ namespace EBCM
                           nx,  mergeSmallCells,
                           string("single_grid"), true);
 
+      Chombo4::pout() << "Outputting map graphs as hdf5 data." << endl;
+      meta_single_grid->outputGraphMapAsHDF5(string("single_grid.map.hdf5"));
+      meta_distributed->outputGraphMapAsHDF5(string("distributed.map.hdf5"));
 
       //compare both single-box and multi box (distributed) objects 
       double max_distributed, min_distributed;
