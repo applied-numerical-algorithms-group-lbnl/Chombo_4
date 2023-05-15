@@ -462,7 +462,7 @@ namespace EBCM
         for(auto bit = prgrown.begin(); bit != prgrown.end(); ++bit)
         {
           auto pt = *bit;
-          if(!graph_sing.isCovred(pt))
+          if(!graph_sing.isCovered(pt))
           {
             auto volu_sing = graph_sing.getVolumeCoveringPoint(pt);
             auto volu_dist = graph_dist.getVolumeCoveringPoint(pt);
