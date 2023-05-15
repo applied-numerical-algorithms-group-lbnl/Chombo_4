@@ -1821,13 +1821,26 @@ namespace EBCM
         unsparsify();
       }
       pr_box region = ProtoCh::getProtoBox(a_region);
+      //begin debug
+      pr_pt debpt; debpt[0] = 17; debpt[1]=1;
+      bool gettinWarma = region.contains(debpt);
+      if(gettinWarma)
+      {
+        Chombo4::pout() << "getting warmer" << endl;
+      }
+      //end debug
       std::set<pr_pt> alreadyCopied; //have to do this because of merging
       for(auto bit = region.begin(); bit != region.end(); ++bit)
       {
         auto pt = *bit;
+      //begin debug
+        if(pt== debpt)
+        {
+          Chombo4::pout() << "pretty close" << endl;
+        }
+      //end debug  
         auto alit =          alreadyCopied.find(pt);
-        bool done = (alit != alreadyCopied.end());
-        if( !done)
+        if(alit != alreadyCopied.end())
         {
           alreadyCopied.insert(pt);
           if(a_src.isRegular(pt))
