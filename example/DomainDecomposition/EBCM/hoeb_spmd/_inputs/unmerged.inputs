@@ -1,36 +1,21 @@
-# Chombo4/DomainDecomposition/EBCellMerge/hoeb_geometry_test inputs:
+# Chombo4/DomainDecomposition/EBCellMerge/spmd_geometry_test inputs:
 # nx                : domain is sized nx^D
 # maxGrid           : maximum box size in domain decomposition
 # mergeSmallCells   : true turns on cell merging (disallowing small cells)
 # polynomial_order  : Order of moments (P)
 # 		    
-# weight_power      : exponent of distance in weight function 
-#                     weight_power >= 0
-#                     W = 1/D^5 (if weightpower = 5)
-# stencil_radius    : number of points to grow a cell to get a neighborhood
-#                     This one may be automatically grown by one in places.
 # which_geom        : Magic string that tells code which implicit function to use.
 #                     For now, this may be only "all_regular", "plane", or "sphere".
-# graph_filename    : File in which to put an HDF5 plot of the graph map  coordinates.
-#                     Useful for handy pictures of merged/unmerged configurations
-# inv_cond_filename : File in  which to put hdf5 plot of the inverse of the condition number
-#                     of the weighted moment matrix.  This is the important data of this
-#                     particular test.
-#  The prefix usually names the function which is using ParmParse unless I expect
-#  to use the parameter elsewhere, in which case it gets something general, like "stencil".
 
 makeMergedGeometry.nx                = 32
-makeMergedGeometry.maxGrid           = 32
+makeMergedGeometry.maxGrid           = 16
 makeMergedGeometry.mergeSmallCells   = false
-stencil.radius                       = 3
 
 getImplicitFunction.center           = 0.5 0.5 0.5
 getImplicitFunction.radius           = 0.45
 getImplicitFunction.inside           = true
-makeMergedGeometry.graph_filename    = "sphere_graph.hdf5"
 getImplicitFunction.which_geom       = "sphere"
-main.inv_cond_filename               = "sphere_inv_cond.hdf5"
 main.polynomial_order  = 1
-stencil.weight_power   = 1
+
 
 
