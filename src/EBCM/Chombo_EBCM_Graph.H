@@ -1822,25 +1822,27 @@ namespace EBCM
       }
       pr_box region = ProtoCh::getProtoBox(a_region);
       //begin debug
-      pr_pt debpt; debpt[0] = 17; debpt[1]=1;
-      bool gettinWarma = region.contains(debpt);
-      if(gettinWarma)
-      {
-        Chombo4::pout() << "getting warmer" << endl;
-      }
+//      pr_pt debpt; debpt[0] = 17; debpt[1]=1;
+//      bool gettinWarma = region.contains(debpt);
+//      if(gettinWarma)
+//      {
+//        Chombo4::pout() << "getting warmer" << endl;
+//      }
       //end debug
+
       std::set<pr_pt> alreadyCopied; //have to do this because of merging
       for(auto bit = region.begin(); bit != region.end(); ++bit)
       {
         auto pt = *bit;
-      //begin debug
-        if(pt== debpt)
-        {
-          Chombo4::pout() << "pretty close" << endl;
-        }
-      //end debug  
-        auto alit =          alreadyCopied.find(pt);
-        if(alit != alreadyCopied.end())
+        Chombo4::pout() << "pt = " << pt << endl;
+//      //begin debug
+//        if(pt== debpt)
+//        {
+//          Chombo4::pout() << "pretty close" << endl;
+//        }
+//      //end debug  
+        bool notFound = (alreadyCopied.find(pt) == alreadyCopied.end());
+        if(notFound) //only go in if we have not already been there
         {
           alreadyCopied.insert(pt);
           if(a_src.isRegular(pt))
@@ -1855,12 +1857,22 @@ namespace EBCM
           else
           {
             ebcm_volu  inputVol = a_src.getVolumeCoveringPoint(pt);
-            
-            (*m_map)(pt, 0) = m_volumes->size();
+
+            int myindex = m_volumes->size();
+            (*m_map)(pt, 0) =  myindex;
             m_volumes->push_back(inputVol);
             for(int ivec = 0; ivec < inputVol.m_cells.size(); ivec++)
             {
-              alreadyCopied.insert(inputVol.m_cells[ivec]);
+              auto inputpt = inputVol.m_cells[ivec];
+              (*m_map)(inputpt, 0) = myindex;
+              //begin debug
+//              if(inputpt == debpt)
+//              {
+//                Chombo4::pout() << "red hot?"  << endl;
+//              }
+              ///end debug
+              alreadyCopied.insert(inputpt);
+
             }
           }
         }
