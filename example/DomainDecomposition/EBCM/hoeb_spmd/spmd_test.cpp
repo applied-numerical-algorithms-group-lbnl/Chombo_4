@@ -149,7 +149,7 @@ namespace EBCM
       {
         if(a_printStuff)
         {
-          Chombo4::pout() << "For comparison meta, put everything on every proc" << endl;
+          Chombo4::pout() << "For comparison meta, putting everything on every proc." << endl;
         }
         int procID = CH4_SPMD::procID();
         vector<ch_box> boxes(1, a_domain);
@@ -161,7 +161,7 @@ namespace EBCM
         vector<ch_dbl> vecgrids;
         if(a_printStuff)
         {
-          Chombo4::pout() << "making grids using GeometryService for distributed data" << endl;
+          ;          Chombo4::pout() << "Making grids using GeometryService for distributed data." << endl;
         }
         GeometryService<2>::generateGrids(vecgrids, a_domain, a_maxGrid);
         a_grid = vecgrids[0];
