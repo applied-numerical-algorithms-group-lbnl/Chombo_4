@@ -478,6 +478,19 @@ namespace EBCM
       }
       return eekflag;
     }
+    static double dataval(const pr_pt& a_loc, double a_dx)
+    {
+      double retval = 4586;
+      pr_rv loc;
+      double sumsq= 0;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        loc[idir]= a_dx*(double(a_loc[idir]) + 0.5);
+        sumsq += loc[idir]*loc[idir];
+      }
+      retval  = sumsq;
+      return retval;
+    }
     ///fill data with known values
     static void fillData(
       ebcm_leveldata                 & a_data,
@@ -488,7 +501,22 @@ namespace EBCM
       const int                      & a_nghost,
       bool a_printStuff)
     {
+      int eekflag = 0;
+      ch_dit    dit = a_grid.dataIterator();
+
+      auto& lddata = *a_data.m_data;
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& grid = a_grid[dit[ibox]];
+        auto      & data = lddata[dit[ibox]];
+        pr_box prgrid = ProtoCh::getProtoBox(grid);
+        for(auto bit = prgrid.begin(); bit != prgrid.end(); ++bit)
+        {
+          data(*bit, 0) = dataval(*bit, a_dx);
+        }
+      }
     }
+    
     /// compare data (ghost and otherwise) 
     static int compareData(
       const ebcm_leveldata           & a_data_single_grid,
@@ -503,6 +531,41 @@ namespace EBCM
       bool a_cellMerged, bool a_printStuff)
     {
       int eekflag = 0;
+      ch_datind ind_sing = a_grid_single_grid.dataIterator()[0];
+      const auto& ld_grap_sing = *(a_meta_single_grid->m_graphs);
+      const auto& ld_grap_dist = *(a_meta_distributed->m_graphs);
+      const auto& ld_data_sing = *a_data_single_grid.m_data;
+      const auto& ld_data_dist = *a_data_distributed.m_data;
+
+      ch_dit    dit_dist = a_grid_distributed.dataIterator();
+      for(int ibox = 0; ibox < dit_dist.size(); ibox++)
+      {
+        ch_datind  ind_dist    =    dit_dist[ibox];
+        ch_box   valid_dist    = a_grid_distributed[ind_dist];
+        const auto& grap_sing =        ld_grap_sing[ind_sing];
+        const auto& grap_dist =        ld_grap_dist[ind_dist];
+        const auto& data_sing =        ld_data_sing[ind_sing];
+        const auto& data_dist =        ld_data_dist[ind_dist];
+        ch_box grown = grow(valid_dist, a_nghost);
+        grown &= a_domain;
+        pr_box prgrown = ProtoCh::getProtoBox(grown);
+        for(auto bit = prgrown.begin(); bit != prgrown.end(); ++bit)
+        {
+          auto pt = *bit;
+          if(!grap_sing.isCovered(pt))
+          {
+            double tol = 1.0e-9;
+            double singval = data_sing(pt, 0);
+            double distval = data_dist(pt, 0);
+            if(std::abs(singval - distval) > tol)
+            {
+              Chombo4::pout() << "compareData: Data mismatch at point " << pt << endl;
+              return -1;
+            }
+          }
+        }
+        
+      }
       return eekflag;
     }
     ///compare distribted data vs. single grid data

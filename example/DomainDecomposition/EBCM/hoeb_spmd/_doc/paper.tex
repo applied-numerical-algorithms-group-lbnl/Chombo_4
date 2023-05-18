@@ -28,7 +28,7 @@ unmerged cut cell geometries.
 See Katz, et al (\cite{Katz2023}) for a basic idea of the mathematical
 framework in which higher order cut cell algorithms live.
 
-\subsection{The blessed shortcut}
+\subsection{The blessed Shortcut (TBS)}
 
 Important note: we are not dealing multivalued cells (cells in which
 more than one computational volume lives in a Cartesian grid cell) for
@@ -84,7 +84,9 @@ For $T \in \{\mbox{MetaDataLevel, HostLevelData} \}$:
 \section{Unreasonable expectations}
 
 When the infrastructure is working the code should simply return that
-all tests have passed.
+all tests have passed.   As of May 18, 2023, that is true.   Single
+grid and distributed versions of both meta data and data data match
+for all three (regular, unmerged, merged) cases.   TBS made that easier.
 
 
 \footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
