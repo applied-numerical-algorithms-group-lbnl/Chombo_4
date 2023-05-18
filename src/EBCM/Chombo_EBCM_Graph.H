@@ -1354,7 +1354,7 @@ namespace EBCM
 
       if(a_printStuff)
       {
-        pout() << "makeTheBlobs: number of small cells = " << tooSmalls->size() <<", min kappa = " << kappamin << endl;
+        pout() << "makeTheBlobs: before merger, number of small cells = " << tooSmalls->size() <<", min kappa = " << kappamin << endl;
       }
       
       if(tooSmalls->size() > 0)
@@ -1834,8 +1834,8 @@ namespace EBCM
       for(auto bit = region.begin(); bit != region.end(); ++bit)
       {
         auto pt = *bit;
-        Chombo4::pout() << "pt = " << pt << endl;
 //      //begin debug
+//        Chombo4::pout() << "pt = " << pt << endl;
 //        if(pt== debpt)
 //        {
 //          Chombo4::pout() << "pretty close" << endl;
