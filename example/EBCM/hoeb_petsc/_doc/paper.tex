@@ -23,13 +23,13 @@
 
 \begin{abstract}
 
-  Numerical stability for elliptic operators is well understood.  To
-  be numerically stable, a numerical operator for an elliptic equation
-  cannot have non-zero positive real eigenvalues.  We explore a family
-  of high order finite volume elliptic operators. We attempt to
-  define for this family of algorithms the boundaries of stability
-  within its parameter space.
-  
+Devendran, et al. \cite{Devendran2017} present an algorithm that
+solves Poisson's equation to fourth-order accuracy using an EB grid.
+Generalizing somewhat  the framework they present, we can define a
+family of elliptic operators.
+Here we investigate how the accuracy and stability of this family
+of operators varies within its parameter space.
+
 \end{abstract}
 
 
@@ -43,8 +43,6 @@ In the current context, we form the cutting surface as the zero
 surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
 For smooth ($I$),  moments can be generated to any
 accuracy \cite{Schwartz2015}.
-
-
 
 Formally, the underlying description of space
 is given by rectangular control volumes on a Cartesian mesh
@@ -105,7 +103,49 @@ the intersection of this cutting surface and the Euclidean volume:
 These moments are the natural product of the grid generation algorithm
 in \cite{Schwartz2015}.
 
-Given a sufficiently smooth function $\psi$, we can approximate $\psi$
+
+\section{Family of finite volume elliptic operators}
+
+Devendran, et al. \cite{Devendran2017} present an algorithm that
+solves Poisson's equation to fourth-order accuracy using embedded
+boundaries.  Generalizing somewhat  the framework they present, we
+present a family of elliptic operators.
+
+We are solving Poisson's equation for field $\psi$, given charge $\rho$:
+\begin{equation}
+  \nabla \cdot (\nabla \psi) = \rho
+  \label{eqn::poisson}
+\end{equation}
+If we integrate equation \ref{eqn::poisson} and apply the divergence theorem 
+over control volumes we get
+\begin{equation}
+\int_{V_\ibold} \nabla \cdot (\nabla \phi ) dV = \int_{\partial
+  V_\ibold} \nabla \phi\cdot \nhat  dA = \int_{V_\ibold} \rho dV
+\end{equation}
+Without approximation, we can say that the surface integral can be
+computed by a sum over the faces that comprise the surface of the
+volume.
+\begin{equation}
+\sum_{f: f \in \partial V_\ibold} \nabla \phi \cdot \nhat dA = \int_{V_\ibold} \rho dV
+\end{equation}
+Using equations \ref{eqn::faceavg} and \ref{eqn::volavg}, this becomes 
+\begin{equation}
+\sum_{f: f \in \partial V_\ibold} \avg{\nabla \phi \cdot \nhat}_f A_f
+= \avg{\rho}_\ibold V_\ibold
+\label{eqn::discretePoisson}
+\end{equation}
+A finite volume operator is defined by the algorithm to
+compute the integral of  fluxes at each face.   We have three types of
+face, open faces (the faces between two volumes that are aligned with
+coordinate directions), domain  faces, and cut faces.    For now, let's say we have
+homogeneous Neumann boundary conditions at domain and cut faces $\nabla \psi
+\cdot \nhat  = 0 |\partial \Omega$.   In this case, to describe the
+algorithm, we need only describe how to compute $<\nabla \psi \cdot
+\nhat>$ on open faces.
+
+\section{Open face flux}
+\section{Dirichlet fluxes at boundaries}
+We can approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
 \psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -\xbar)^p
@@ -117,10 +157,18 @@ where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
       \frac{\partial^{p_0}}{\partial x_0}
       \frac{\partial^{p_1}}{\partial x_1}
       \frac{\partial^{p_2}}{\partial x_2}  (\psi).
-\end{equation}  
+\end{equation}
+If we know the local Taylor coeffiencts,
+the gradient of the field  in direction $d$ is given by
+\begin{equation}
+  \frac{\partial \psi}{\partial x^d} \psi =
+  \sum\limits_{p < P_T} p^d C^{p-e^d} (\xbar -\xbar)^{p-e^d}
+\end{equation}
+
 In finite volume  methods, we define grid data to be
-averages over volumes.   So if we discretize the smooth function
-$\psi$, the average over the volume $\ibold$ is given by
+averages over volumes and fluxes between volumes are averages over the
+faces between volumes.   
+For the field $\psi$, the average over the volume $\ibold$ is given by
 \begin{equation*}
  V_\ibold <\psi>_\ibold = \int\limits_{V_\ibold} \psi(\xbold) dV
 \end{equation*}
@@ -130,34 +178,19 @@ approximation to the smooth function $\psi$ that is accurate to order $P_T$.
   <\psi>_\ibold = \frac{1}{V_\ibold} \sum\limits_{p < P_T} C^p m^p
   \label{eqn::vol}.
 \end{equation*}
-This forms a local polynomial expansion of $\psi$ around the volume
-$\ibold$ expressed in terms moments ($m$).
-Modern, higher order embedded boundary
-methods use this description directly to generate stencil coefficients
-\cite{Overton2022a, Devendran2017, Schwartz2015, Katz2023}.
+Similarly, integrating the flux over a d-directional face $\fbold$:
+\begin{equation*}
+  <\nabla \psi_d>_\ibold = \frac{1}{A_f\bold}
+  \sum\limits_{p < P_T} p^d C^{p-e^d} m^{p-e^d}
+  \label{eqn::vol}.
+\end{equation*}
+To solve for the Taylor coefficients, we use the neighboring volumes's
+values  to form a system of equations (equation \eqn::vol
+for each volume $\ibold \in N_f$, the neighborhood of $f$).  Boundary
+condition equations are also added to the system.   We force there
+to be enough neighbors so that this system is overdetermined.
 
-\section{Family of finite volume elliptic operators}
-
-Devendran, et al. \cite{Devendran2017} present an algorithm that
-solves Poisson's equation to fourth-order accuracy using an EB grid.
-Generalizing somewhat  the framework they present, one can define an
-elliptic operator of any accuracy.
-
-At each volume $V$, we define the neighborhood $\neigh_v$
-volumes within a radius $R_s$ number of cells from the volume.
-Fix $\xbar$ to be the distance from the center of the target cell.
-Let's say there are
-$N_v$ volumes in the neighborhood and $F_D$ domain faces and $F_C$ cut
-cell faces in the domain.  Following (\cite{Devendran2017}), we create
-an equation for each volume and boundary condition within the
-neighborhood to form an  overdetermined system of equation for the
-Taylor coefficients in $V$.    Each volume gets an equation of the
-form of equation \ref{eqn::vol}.    Faces at the boundary domain with
-Neumann boundary conditions get an equation of the form 
-by We For each volume, we have The equations for the volumes and the
-boundary conditions form an overdetermined  system.
-
-
+\section{}
 
 \section{Stability and Conditioning}
 
