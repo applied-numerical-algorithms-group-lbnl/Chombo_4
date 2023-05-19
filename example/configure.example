@@ -49,9 +49,9 @@ targets=['DomainDecomposition/EBApply/exec',
          'DomainDecomposition/EBHelmholtz/hoeb_truncation',
          'DomainDecomposition/EBAdvection/hoeb_exec',
          'DomainDecomposition/EBHelmholtz/hoeb_mac_proj_exec' ,
-         'DomainDecomposition/EBCM/hoeb_geometry_test' ,
-         'DomainDecomposition/EBCM/hoeb_petsc_test' ,
-         'DomainDecomposition/EBCM/hoeb_spmd',
+         'EBCM/hoeb_geometry' ,
+         'EBCM/hoeb_petsc' ,
+         'EBCM/hoeb_spmd',
          'DomainDecomposition/EBHelmholtz/hoeb_exec']
 
 top = os.getcwd()
