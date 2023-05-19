@@ -134,16 +134,16 @@ Using equations \ref{eqn::faceavg} and \ref{eqn::volavg}, this becomes
 = \avg{\rho}_\ibold V_\ibold
 \label{eqn::discretePoisson}
 \end{equation}
-A finite volume operator is defined by the algorithm to
-compute the integral of  fluxes at each face.   We have three types of
-face, open faces (the faces between two volumes that are aligned with
-coordinate directions), domain  faces, and cut faces.    For now, let's say we have
-homogeneous Neumann boundary conditions at domain and cut faces $\nabla \psi
-\cdot \nhat  = 0 |\partial \Omega$.   In this case, to describe the
-algorithm, we need only describe how to compute $<\nabla \psi \cdot
-\nhat>$ on open faces.
+A finite volume operator is defined by the algorithm to compute the
+integral of fluxes at each face.  We have three types of face, open
+faces (the faces between two volumes that are aligned with coordinate
+directions), domain faces, and cut faces.  For now, let's say we have
+homogeneous Neumann boundary conditions at domain and cut faces
+$\nabla \psi \cdot \nhat = 0 |\partial \Omega$.  In this case, to
+describe the algorithm, we need only describe how to compute $<\nabla
+\psi \cdot \nhat>$ on open faces.
 
-\section{Open face flux}
+\section{Open face flux computation}
 \section{Dirichlet fluxes at boundaries}
 We can approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
