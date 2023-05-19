@@ -18,10 +18,6 @@
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EBCM_Algorithm_Framework.H"
 #include "Chombo_EigenMatrix.H"
-#include "EBMultigrid.H"
-
-#include "DebugFunctions.H"
-#include "Hoeb_ExactSolutions.H"
 
 #include "Chombo_LAPACKMatrix.H"
 #include <iomanip>

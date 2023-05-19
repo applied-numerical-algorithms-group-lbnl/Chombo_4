@@ -658,7 +658,7 @@ namespace CH4_Data_Choreography
     {
       CH_TIME("DistributedData::doLocalCopies");
       bool goFaster = !a_printStuff;
-      goFaster = true;
+      //goFaster = true;
       if(goFaster)
       {
         //this is probably faster

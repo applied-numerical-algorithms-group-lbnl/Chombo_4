@@ -17,12 +17,7 @@
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EigenMatrix.H"
-#include "EBMultigrid.H"
 
-#include "DebugFunctions.H"
-#include "Hoeb_ExactSolutions.H"
-
-#include "Chombo_LAPACKMatrix.H"
 #include <iomanip>
 
 
@@ -494,7 +489,7 @@ public:
   {
     
     CH_TIME("EBCM_Framework::getConditionNumberData");
-    a_data  = shared_ptr<ebcm_leveldata>(new ebcm_leveldata(a_ebcm, Chombo4::IntVect::Zero));
+    a_data  = shared_ptr<ebcm_leveldata>(new ebcm_leveldata(a_ebcm, 0));
     a_worst = shared_ptr<condition_t>(new condition_t());
 
     double minInvCond = 1.0e30;
