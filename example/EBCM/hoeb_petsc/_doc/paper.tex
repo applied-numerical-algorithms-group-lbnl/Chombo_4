@@ -71,7 +71,7 @@ and a $D$-dimensional integer vector
 $\pbold$, we define $m_\ibold^\pbold(\xbar)$ to be the $\pbold^{th}$
 moment of $\ibold$ to the point $\xbar$.
 \begin{equation}
-m_\ibold^\pbold(\xbar)  =  \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV^D.
+\mcal_\ibold^\pbold(\xbar)  =  \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV^D.
 \label{eqn::volmoment}
 \end{equation}
 This breaks out into three different cases, volumes, coordinate faces
@@ -83,13 +83,13 @@ intersects the volume $V$.
 The volume moment for a particular power $\pbold$  is
 given by
 \begin{equation}
-  m^\pbold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
+  \mcal^\pbold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
   \label{eqn::volmom}
 \end{equation}
 The $\pbold^{th}$ coordinate face moment for the area of where volumes $V_1, V2$
 intersect is given by
 \begin{equation}
-  m^\pbold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
+  \mcal^\pbold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
   \label{eqn::facmom}
 \end{equation}
 The cutting surface of the boundary $G$ is given by  the zero
@@ -97,7 +97,7 @@ surface of the  implicit function ($I(\xbold)= 0$) used in grid generation.
 The $\pbold^{th}$ irregular face moment is given by an integral over
 the intersection of this cutting surface and the Euclidean volume:
 \begin{equation}
-  m^\pbold_V = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
+  \mcal^\pbold_V = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
   \label{eqn::irrmom}
 \end{equation}
 These moments are the natural product of the grid generation algorithm
@@ -143,9 +143,14 @@ $\nabla \psi \cdot \nhat = 0 |\partial \Omega$.  In this case, to
 describe the algorithm, we need only describe how to compute $<\nabla
 \psi \cdot \nhat>$ on open faces.
 
-\section{Open face flux computation}
-\section{Dirichlet fluxes at boundaries}
-We can approximate $\psi$
+\section{Open face Poisson flux computation with Neumann boundary conditions}
+
+An open face is one that connects two volumes in the solution.  These
+faces are aligned with a coordinate direction.   Consider an open face
+$\fbold$ aligned with coordinate direction $d$.   We define $\ncal_\fbold$
+to be all the volumes within $N_G$ ghost cells of $\fbold$ \footnotemark{3].
+
+We approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
 \psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -\xbar)^p
@@ -161,7 +166,7 @@ where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
 If we know the local Taylor coeffiencts,
 the gradient of the field  in direction $d$ is given by
 \begin{equation}
-  \frac{\partial \psi}{\partial x^d} \psi =
+  \frac{\partial \psi}{\partial x^d}  =
   \sum\limits_{p < P_T} p^d C^{p-e^d} (\xbar -\xbar)^{p-e^d}
 \end{equation}
 
@@ -175,22 +180,51 @@ For the field $\psi$, the average over the volume $\ibold$ is given by
 If we insert the Taylor expansion \ref{eqn::taylor}, we get a discrete
 approximation to the smooth function $\psi$ that is accurate to order $P_T$.
 \begin{equation*}
-  <\psi>_\ibold = \frac{1}{V_\ibold} \sum\limits_{p < P_T} C^p m^p
+  <\psi>_\ibold = \frac{1}{V_\ibold} \sum\limits_{p < P_T} C^p \mcal^p
   \label{eqn::vol}.
 \end{equation*}
 Similarly, integrating the flux over a d-directional face $\fbold$:
 \begin{equation*}
   <\nabla \psi_d>_\ibold = \frac{1}{A_f\bold}
-  \sum\limits_{p < P_T} p^d C^{p-e^d} m^{p-e^d}
+  \sum\limits_{p < P_T} p^d C^{p-e^d} \mcal^{p-e^d}
   \label{eqn::vol}.
 \end{equation*}
 To solve for the Taylor coefficients, we use the neighboring volumes's
-values  to form a system of equations (equation \eqn::vol
+values  to form a system of equations (equation \ref{eqn::vol}.
 for each volume $\ibold \in N_f$, the neighborhood of $f$).  Boundary
-condition equations are also added to the system.   We force there
-to be enough neighbors so that this system is overdetermined.
+condition equations are also added to the system.   Since we have
+homogeneous Neumann boundary conditions, for every domain face $\bbold$
+within $\ncal_\fbold$, we have an equation of the form
+\begin{equation}
+  <\frac{\partial \psi}{\partial x^d}>_\bbold  =
+  \sum\limits_{p < P_T} p^d C^{p} m\limits^{p-e^d}_\bbold = 0.
+\end{equation}
+Consider a face $\cbold$ which is cut by a surface whose
+normal in direction $d$ is given by $n^d(\xbold)$.  We define the
+normal moments $\ecal^d$ to be the integral of this product:
+\begin{equation}
+\ecal^{\pbold, d}_\cbold  =  \int\limits_{A(\cbold)} \xminxbar n^d dA.
+\label{eqn::normmoment}
+\end{equation}
+These normal moments are natural products of the \cite{Schwartz:2015}
+grid generation algorithm. 
+For each $\cbold$ within the $\ncal_\fbold$, we get an equation of the form
+\begin{equation}
+  \int\limits_{A(\cbold)}  \nabla \psi \cdot \nhat dA =
+  \sum\limits_{d < D} \int\limits_{A(\cbold)} \sum_{p < P} p_d C_p
+  \xminxbar^{p-e^d} dA
+  = 
+\sum\limits_{d < D} \sum_{p < P}  p_d C_p \ecal^{p-e^d,d}_\cbold = 0.
+\end{equation}
+We force there to be enough neighbors so that this system is
+overdetermined.  Let's say $\ncal_\fbold$ contains $N_B$ boundary faces and
+$N_V$ volumes.   If we are solving for $N_T$ Taylor coefficients, this
+means that we require that $N_T < (N_B+ N_V)$.
 
-\section{}
+
+\section{Truncation error for Poisson operator with Neumann boundary conditions}
+\section{Dirichlet fluxes at boundaries}
+
 
 \section{Stability and Conditioning}
 
@@ -212,6 +246,13 @@ dimensions.    All these calculations are done using SLEPc and PETc
   Advanced Scientific Computing Research of the US Department of
   Energy under contract number DE-AC02-05CH11231.}
 \footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
+\footnotetext[3]{This includes corner volumes.   The neighborhood is
+  formed by taking all the volumes within a grown box. The grown box
+  is formed by growning the box made from the low and high cells of
+  the target face, growing it by $N_G$ and itersecting with the
+  domain.  We use the   Chombo
+  (\cite{ChomboDesign,ChomboDesignEB,ChomboDesign3}
+  box grow semantic. 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
