@@ -150,6 +150,8 @@ faces are aligned with a coordinate direction.   Consider an open face
 $\fbold$ aligned with coordinate direction $d$.   We define $\ncal_\fbold$
 to be all the volumes within $N_G$ ghost cells of $\fbold$ \footnotemark{3].
 
+\subsection{Moment matrix}
+
 We approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
@@ -181,23 +183,26 @@ If we insert the Taylor expansion \ref{eqn::taylor}, we get a discrete
 approximation to the smooth function $\psi$ that is accurate to order $P_T$.
 \begin{equation*}
   <\psi>_\ibold = \frac{1}{V_\ibold} \sum\limits_{p < P_T} C^p \mcal^p
-  \label{eqn::vol}.
+  \label{eqn::volavg}.
 \end{equation*}
 Similarly, integrating the flux over a d-directional face $\fbold$:
 \begin{equation*}
-  <\nabla \psi_d>_\ibold = \frac{1}{A_f\bold}
+  <\nabla \psi_d>_\ibold = \frac{1}{A_\fbold}
   \sum\limits_{p < P_T} p^d C^{p-e^d} \mcal^{p-e^d}
-  \label{eqn::vol}.
+  \label{eqn::faceavg}.
 \end{equation*}
+
+\subsection{Taylor expansion around face}
+
 To solve for the Taylor coefficients, we use the neighboring volumes's
-values  to form a system of equations (equation \ref{eqn::vol}.
+values  to form a system of equations (equation \ref{eqn::volavg}.
 for each volume $\ibold \in N_f$, the neighborhood of $f$).  Boundary
 condition equations are also added to the system.   Since we have
 homogeneous Neumann boundary conditions, for every domain face $\bbold$
 within $\ncal_\fbold$, we have an equation of the form
 \begin{equation}
   <\frac{\partial \psi}{\partial x^d}>_\bbold  =
-  \sum\limits_{p < P_T} p^d C^{p} m\limits^{p-e^d}_\bbold = 0.
+  \sum\limits_{p < P_T} p^d C^{p} \mcal^{p-e^d}_\bbold = 0.
 \end{equation}
 Consider a face $\cbold$ which is cut by a surface whose
 normal in direction $d$ is given by $n^d(\xbold)$.  We define the
@@ -206,7 +211,7 @@ normal moments $\ecal^d$ to be the integral of this product:
 \ecal^{\pbold, d}_\cbold  =  \int\limits_{A(\cbold)} \xminxbar n^d dA.
 \label{eqn::normmoment}
 \end{equation}
-These normal moments are natural products of the \cite{Schwartz:2015}
+These normal moments are natural products of the \cite{Schwartz2015}
 grid generation algorithm. 
 For each $\cbold$ within the $\ncal_\fbold$, we get an equation of the form
 \begin{equation}
@@ -218,8 +223,38 @@ For each $\cbold$ within the $\ncal_\fbold$, we get an equation of the form
 \end{equation}
 We force there to be enough neighbors so that this system is
 overdetermined.  Let's say $\ncal_\fbold$ contains $N_B$ boundary faces and
-$N_V$ volumes.   If we are solving for $N_T$ Taylor coefficients, this
-means that we require that $N_T < (N_B+ N_V)$.
+$N_V$ volumes.   To solve for Taylor coefficients, we have a system 
+of the form
+\begin{equation*}
+M C = P 
+\end{equation*}
+where $C=\{C^p\}$, 
+
+\begin{equation}
+  M_\fbold =\left\{
+    \begin{array}{c} 
+       m^p_\jbold  \\
+       p^d b^{p-e^d}_\bbold  \\
+       p^d c^{p-e^d}_\cbold  
+    \end{array}
+ \right\},
+\end{equation}
+and
+\begin{equation}
+  P_\fbold =
+    \left\{
+    \begin{array}{c} 
+       <\psi>_\jbold  \\
+      0  \\
+      0  
+    \end{array}
+    \right\}
+\end{equation}
+for every volume $\jbold$, cut face $\cbold$ and domain face $\bbold$
+in $\ncal_\fbold$.
+Since the system is overdetermined, we can introduce a 
+meaningful weighting matrix $W$ \footnotemark[4]. 
+
 
 
 \section{Truncation error for Poisson operator with Neumann boundary conditions}
@@ -252,7 +287,10 @@ dimensions.    All these calculations are done using SLEPc and PETc
   the target face, growing it by $N_G$ and itersecting with the
   domain.  We use the   Chombo
   (\cite{ChomboDesign,ChomboDesignEB,ChomboDesign3}
-  box grow semantic. 
+  box grow semantic. }
+\footnotetext[4]{If the matrix $M$ is square, a weighting matrix can
+  have no effect and the Moore-Penrose psueudoinverse becomes
+  $M^{-1}$.}
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
