@@ -13,7 +13,8 @@
 
 \begin{document}
 
-\title{Elliptic operator stability and small cells on  finite volume grids}
+\title{Accuracy and stability for elliptic operators
+  in a finite volume context}
 \author{
    \and D. Devendran    \footnotemark[2]
    \and D. T. Graves    \footnotemark[1]
@@ -100,7 +101,7 @@ the intersection of this cutting surface and the Euclidean volume:
   \mcal^\pbold_V = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
   \label{eqn::irrmom}
 \end{equation}
-These moments are the natural product of the grid generation algorithm
+These moments are natural products of the grid generation algorithm
 in \cite{Schwartz2015}.
 
 
@@ -119,18 +120,18 @@ We are solving Poisson's equation for field $\psi$, given charge $\rho$:
 If we integrate equation \ref{eqn::poisson} and apply the divergence theorem 
 over control volumes we get
 \begin{equation}
-\int_{V_\ibold} \nabla \cdot (\nabla \phi ) dV = \int_{\partial
-  V_\ibold} \nabla \phi\cdot \nhat  dA = \int_{V_\ibold} \rho dV
+\int_{V_\ibold} \nabla \cdot (\nabla \psi ) dV = \int_{\partial
+  V_\ibold} \nabla \psi\cdot \nhat  dA = \int_{V_\ibold} \rho dV
 \end{equation}
 Without approximation, we can say that the surface integral can be
 computed by a sum over the faces that comprise the surface of the
 volume.
 \begin{equation}
-\sum_{f: f \in \partial V_\ibold} \nabla \phi \cdot \nhat dA = \int_{V_\ibold} \rho dV
+\sum_{f: f \in \partial V_\ibold} \nabla \psi \cdot \nhat dA = \int_{V_\ibold} \rho dV
 \end{equation}
 Using equations \ref{eqn::faceavg} and \ref{eqn::volavg}, this becomes 
 \begin{equation}
-\sum_{f: f \in \partial V_\ibold} \avg{\nabla \phi \cdot \nhat}_f A_f
+\sum_{f: f \in \partial V_\ibold} \avg{\nabla \psi \cdot \nhat}_f A_f
 = \avg{\rho}_\ibold V_\ibold
 \label{eqn::discretePoisson}
 \end{equation}
@@ -155,7 +156,7 @@ to be all the volumes within $N_G$ ghost cells of $\fbold$ \footnotemark{3].
 We approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
 \begin{equation}
-\psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbar -\xbar)^p
+\psi(\xbold)  =  \sum\limits_{p < P_T} C^p (\xbold -\xbar)^p
 \label{eqn::taylor}
 \end{equation}
 where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
@@ -169,7 +170,7 @@ If we know the local Taylor coeffiencts,
 the gradient of the field  in direction $d$ is given by
 \begin{equation}
   \frac{\partial \psi}{\partial x^d}  =
-  \sum\limits_{p < P_T} p^d C^{p-e^d} (\xbar -\xbar)^{p-e^d}
+  \sum\limits_{p < P_T} p^d C^{p} (\xbar -\xbar)^{p-e^d}
 \end{equation}
 
 In finite volume  methods, we define grid data to be
@@ -188,9 +189,11 @@ approximation to the smooth function $\psi$ that is accurate to order $P_T$.
 Similarly, integrating the flux over a d-directional face $\fbold$:
 \begin{equation*}
   <\nabla \psi_d>_\ibold = \frac{1}{A_\fbold}
-  \sum\limits_{p < P_T} p^d C^{p-e^d} \mcal^{p-e^d}
+  \sum\limits_{p < P_T} p^d C^{p} \mcal^{p-e^d}
   \label{eqn::faceavg}.
 \end{equation*}
+
+\subsection{Boundary condition equations}
 
 To solve for the Taylor coefficients, we use the neighboring volumes's
 values  to form a system of equations (equation \ref{eqn::volavg})
@@ -210,11 +213,14 @@ normal moments $\ecal^d$ to be the integral of this product:
 \label{eqn::normmoment}
 \end{equation}
 These normal moments are natural products of the \cite{Schwartz2015}
-grid generation algorithm. 
+grid generation algorithm.
+
+\subsection{Moment matrix $M$ and system matrix $A$}
+
 For each $\cbold$ within the $\ncal_\fbold$, we get an equation of the form
 \begin{equation}
   \int\limits_{A(\cbold)}  \nabla \psi \cdot \nhat dA =
-  \sum\limits_{d < D} \int\limits_{A(\cbold)} \sum_{p < P} p_d C_p
+  \sum\limits_{d < D} \int\limits_{A(\cbold)} \sum_{p < P} p_d C^p
   \xminxbar^{p-e^d} dA
   = 
 \sum\limits_{d < D} \sum_{p < P}  p_d C_p \ecal^{p-e^d,d}_\cbold = 0.
@@ -252,17 +258,80 @@ for every volume $\jbold$, cut face $\cbold$ and domain face $\bbold$
 in $\ncal_\fbold$.
 Since the system is overdetermined, we can introduce a 
 meaningful weighting matrix $W$ \footnotemark[4]. 
+ Choice of $W$
+is crucial to the stability of these algorithms
+\footnotemark[5].   
+We multiply and solve
+\begin{equation*}
+WMC = WP.
+\end{equation*}
+Since the system is (deliberately) not square, we approximate
+the solution using a Moore-Penrose pseudo-inverse:
+\begin{equation}
+  C = ((WM)^T(WM))^{-1} (WM)^T P.
+\label{eqn::getC}  
+\end{equation}
+where $A \equiv ((WM)^T(WM))_\fbold$ is the system matrix for face
+$\fbold$.
 
+\subsection{Manhattan Distance and the weighting matrix $W$}
 
-
+All volumes and faces  start with an  index $\ibold \in Z^D$.
+We start from face $\fbold$.   Say we want to get
+the distance from $\fbold$ with index $\ibold$ to a volume $V_1$
+with index $\vbold$.  The distance $D_\fbold(V_1)$ is given by
+the Manhattan disance:
+\begin{equation}
+  D_\fbold{V_1) = \sum\limits_{d \in {1...D}} |\vbold^d - \ibold_0^d|.
+\label{eqn::uptownFunk}
+\end{equation}
+$\gbold_\fbold(V_1)$, the weight of the $V_1$ equation in $\fbold$ system
+is given by
+\begin{equation}
+  \gbold_\fbold(V_1))  \equiv \frac{1}{D\fbold(\V1)^{P_w})},
+\label{eqn::weightFunk}  
+\end{equation}
+where we call $P_w$ the weighting exponent.
+The weighting matrix $W_\fbold = \{\{\wbold_{i,j}\}\}$ is diagonal
+\begin{equation}
+w_{i,j} =
+\left(
+\begin{array}{l}
+ \gbold_\fbold(V_i) \mbox{ if } $(i==j)$)
+ 0  \mbox{otherwise}}
+\end{array}
+\right)
+$$
+Once one has the Taylor coefficients, she can compute the flux through
+the open face using  equation \ref{eqn::faceavg}.   Put into matrix
+form, we define  vector  $Q_\fbold = \{q^p_\fbold\}$:
+$$
+q^p_\fbold = p^d \mcal^{p-e^d}_\fbold
+$$
+and the flux at the face is given by
+$$
+<\nabla \psi>_\fbold = Q C P= Q ((WM)^T(WM))^{-1} (WM)^T  P.
+$$
+One would like to avoid inverting $A$ every time one withes to apply
+an elliptic operator at a point.  Since everything in sight is a
+linear operator, we can simply say that there must exist an equivalent
+operator $S$ such that
+$$
+(S P)_\fbold = <\nabla \psi>_\fbold = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P)_\fbold.
+$$
+Since this has to work for all $\psi$, we can define the stencil as
+$$
+ S_\fbold = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  )_\fbold = Q A^{-1} WM^T.
+ $$
+ 
 \section{Solvability of the $A$ matrix}
 
 Overton-Katz, et al. \cite{Katz2023} present the above procedure in
-the absence of boundary condition equtions   They show that, for
+the absence of boundary condition equations   They show that, for
 certain values of $P_T$ and $P_N$, the resulting $A$ matrix can have a
 severe mismatch between its largest and smallest eigenvalues,
-resulting in poorly-conditioned matrices.    Their data shows the
-worst solvability issues near the domain boundary.    It stands to
+signalling poorly-conditioned matrices.    Their data shows the
+worst solvability issues occur near the domain boundary.    It stands to
 reason that including boundary condition equations could improve the
 conditioning of the resultant matricies. To test this, we present the
 same measurement of condition number for  several values of $P_T$ and
@@ -272,9 +341,9 @@ part of the neighborhood.
 
 
 
-\section{Stability and Conditioning}
+\section{Stability and Conditioning of the entire system}
 
-The matrix $A_{P_T, P_W}$ for a particular polynomial order $P_T$ and
+The matrix $L_{P_T, P_W}$ for a particular polynomial order $P_T$ and
 weighting exponent  $P_W$ may be unstable or poorly conditioned.   We
 measure both while varying $P_T, P_W$ in both two and three
 dimensions.    All these calculations are done using SLEPc and PETc
@@ -297,11 +366,22 @@ dimensions.    All these calculations are done using SLEPc and PETc
   is formed by growning the box made from the low and high cells of
   the target face, growing it by $N_G$ and itersecting with the
   domain.  We use the   Chombo
-  (\cite{ChomboDesign,ChomboDesignEB,ChomboDesign3}
-  box grow semantic. }
+  (\cite{ChomboDesign,ChomboDesignEB,ChomboDesign3})
+  box growth semantic. }
 \footnotetext[4]{If the matrix $M$ is square, a weighting matrix can
   have no effect and the Moore-Penrose psueudoinverse becomes
   $M^{-1}$.}
+\footnotetext[5]{The 
+  equations for volumes $\jbold$ where $\xbar_\jbold$ is large
+  receive  higher weights.  Diagonal weighting matricies are common.
+  Usually, these algorithms define a distance metric $D(\ibold, \jbold)$ for
+  two volumes $\ibold$ and $\jbold$.  Typically they make
+  $W_{\jbold,\jbold}$ decrease strongly with increasing 
+  $D(\ibold,\jbold)$ to assign higher importance to the equations for volumes
+  closer to $\ibold$.  Devendran et al. for example \cite{Devendran2017},
+  uses a weighting function that varies with $W_{\ibold,\jbold}
+  \approx 1./D(\ibold,\jbold)^5$ }.
+
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
