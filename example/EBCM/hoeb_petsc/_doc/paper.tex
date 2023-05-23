@@ -150,7 +150,7 @@ faces are aligned with a coordinate direction.   Consider an open face
 $\fbold$ aligned with coordinate direction $d$.   We define $\ncal_\fbold$
 to be all the volumes within $N_G$ ghost cells of $\fbold$ \footnotemark{3].
 
-\subsection{Moment matrix}
+\subsection{Taylor expansion around face}
 
 We approximate $\psi$
 in the neighborhood of $\xbar$ using a Taylor expansion to order $P_T$:
@@ -192,10 +192,8 @@ Similarly, integrating the flux over a d-directional face $\fbold$:
   \label{eqn::faceavg}.
 \end{equation*}
 
-\subsection{Taylor expansion around face}
-
 To solve for the Taylor coefficients, we use the neighboring volumes's
-values  to form a system of equations (equation \ref{eqn::volavg}.
+values  to form a system of equations (equation \ref{eqn::volavg})
 for each volume $\ibold \in N_f$, the neighborhood of $f$).  Boundary
 condition equations are also added to the system.   Since we have
 homogeneous Neumann boundary conditions, for every domain face $\bbold$
@@ -257,8 +255,21 @@ meaningful weighting matrix $W$ \footnotemark[4].
 
 
 
-\section{Truncation error for Poisson operator with Neumann boundary conditions}
-\section{Dirichlet fluxes at boundaries}
+\section{Solvability of the $A$ matrix}
+
+Overton-Katz, et al. \cite{Katz2023} present the above procedure in
+the absence of boundary condition equtions   They show that, for
+certain values of $P_T$ and $P_N$, the resulting $A$ matrix can have a
+severe mismatch between its largest and smallest eigenvalues,
+resulting in poorly-conditioned matrices.    Their data shows the
+worst solvability issues near the domain boundary.    It stands to
+reason that including boundary condition equations could improve the
+conditioning of the resultant matricies. To test this, we present the
+same measurement of condition number for  several values of $P_T$ and
+$P_N$ where boundary condition equations are included when they are
+part of the neighborhood.
+
+
 
 
 \section{Stability and Conditioning}
