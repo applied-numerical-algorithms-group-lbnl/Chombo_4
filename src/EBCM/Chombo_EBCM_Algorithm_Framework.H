@@ -47,6 +47,38 @@ namespace EBCM
   class Algorithm_Framework
   {
   public:
+    ///test function for example/EBCM/hoeb_petsc_test
+  static  void run_hoeb_petsc_tests()
+    {
+    CH_TIME("EBCM_Framework::runTests");
+    //linear algebra machinery check
+    runEigenTests();
+    //the important stuff
+    //see if we can make a geometry
+    shared_ptr< ebcm_meta  > ebcm;
+    ch_dbl                   grids;
+    double                   dx;
+    ch_probdom               domain;
+    makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+
+    Real maxKapp, minKapp;
+    //this tries out iteration and checks kappa
+    checkKappa(maxKapp, minKapp, ebcm, grids);
+
+    //makes data of inv condition number info and plots it out
+    shared_ptr<ebcm_leveldata> invCondition;
+    shared_ptr<condition_t>    worst;
+    getConditionNumberData(invCondition, worst, ebcm);
+
+    worst->poutLatexTable();
+    Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
+    
+    string plot_filename;
+    ParmParse ppmain("main");  //kinda pendantic to use anything else
+    ppmain.get("inv_cond_filename",   plot_filename);
+    invCondition->writeToHDF5(plot_filename);
+    
+  }
     Algorithm_Framework()
     {}    
   

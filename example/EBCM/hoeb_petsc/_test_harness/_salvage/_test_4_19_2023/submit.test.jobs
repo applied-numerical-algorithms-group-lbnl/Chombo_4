@@ -1,0 +1,2 @@
+#/usr/bin/csh
+cd __taylorP_eq_1__weightP_eq_1; source serial.batch; cd .. 

@@ -44,6 +44,7 @@ typedef ch_eigen::Matrix                               eigen_mat;
 
 /****/
 
+
 int main(int a_argc, char* a_argv[])
 {
 #ifdef CH_MPI
@@ -68,30 +69,30 @@ int main(int a_argc, char* a_argv[])
     int order;
     ParmParse pp("main");
     pp.get("polynomial_order", order);
-    Chombo4::pout() <<  "Running test for polynomial order = " << order << endl;
+    Chombo4::pout() <<  "Running hoeb_petsc_test for polynomial order = " << order << endl;
     if(order == 6)
     {
-      EBCM::Algorithm_Framework<6>::runTests();
+      EBCM::Algorithm_Framework<6>::run_hoeb_petsc_tests();
     }
     else if(order == 5)
     {
-      EBCM::Algorithm_Framework<5>::runTests();
+      EBCM::Algorithm_Framework<5>::run_hoeb_petsc_tests();
     }
     if(order == 4)
     {
-      EBCM::Algorithm_Framework<4>::runTests();
+      EBCM::Algorithm_Framework<4>::run_hoeb_petsc_tests();
     }
     else if(order == 3)
     {
-      EBCM::Algorithm_Framework<3>::runTests();
+      EBCM::Algorithm_Framework<3>::run_hoeb_petsc_tests();
     }
     else if(order == 2)
     {
-      EBCM::Algorithm_Framework<2>::runTests();
+      EBCM::Algorithm_Framework<2>::run_hoeb_petsc_tests();
     }
     else if(order == 1)
     {
-      EBCM::Algorithm_Framework<1>::runTests();
+      EBCM::Algorithm_Framework<1>::run_hoeb_petsc_tests();
     }
     else
     {
