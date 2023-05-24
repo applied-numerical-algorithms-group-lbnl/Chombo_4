@@ -141,8 +141,8 @@ faces (the faces between two volumes that are aligned with coordinate
 directions), domain faces, and cut faces.  For now, let's say we have
 homogeneous Neumann boundary conditions at domain and cut faces
 $\nabla \psi \cdot \nhat = 0 |\partial \Omega$.  In this case, to
-describe the algorithm, we need only describe how to compute $<\nabla
-\psi \cdot \nhat>$ on open faces.
+describe the algorithm, we need only describe how to compute 
+$<\nabla\psi \cdot \nhat>$ on open faces.
 
 \section{Open face Poisson flux computation with Neumann boundary conditions}
 
@@ -282,13 +282,13 @@ the distance from $\fbold$ with index $\ibold$ to a volume $V_1$
 with index $\vbold$.  The distance $D_\fbold(V_1)$ is given by
 the Manhattan disance:
 \begin{equation}
-  D_\fbold{V_1) = \sum\limits_{d \in {1...D}} |\vbold^d - \ibold_0^d|.
+  D_\fbold(V_1) = \sum\limits_{0 <= d < D} |\vbold^d - \ibold_0^d|.
 \label{eqn::uptownFunk}
 \end{equation}
 $\gbold_\fbold(V_1)$, the weight of the $V_1$ equation in $\fbold$ system
 is given by
 \begin{equation}
-  \gbold_\fbold(V_1))  \equiv \frac{1}{D\fbold(\V1)^{P_w})},
+  \gbold_\fbold(V_1)  \equiv \left(\frac{1}{D_\fbold(V_1) } \right)^{P_w},
 \label{eqn::weightFunk}  
 \end{equation}
 where we call $P_w$ the weighting exponent.
@@ -296,33 +296,36 @@ The weighting matrix $W_\fbold = \{\{\wbold_{i,j}\}\}$ is diagonal
 \begin{equation}
 w_{i,j} =
 \left(
-\begin{array}{l}
- \gbold_\fbold(V_i) \mbox{ if } $(i==j)$)
- 0  \mbox{otherwise}}
+\begin{array}{ll}
+ \gbold_\fbold(V_i) & \mbox{ if } $(i==j)$ \\
+ 0   & \mbox{ otherwise }
 \end{array}
 \right)
-$$
+\end{equation}
 Once one has the Taylor coefficients, she can compute the flux through
 the open face using  equation \ref{eqn::faceavg}.   Put into matrix
 form, we define  vector  $Q_\fbold = \{q^p_\fbold\}$:
-$$
+\begin{equation}
 q^p_\fbold = p^d \mcal^{p-e^d}_\fbold
-$$
+\end{equation}
 and the flux at the face is given by
-$$
+\begin{equation}
 <\nabla \psi>_\fbold = Q C P= Q ((WM)^T(WM))^{-1} (WM)^T  P.
-$$
-One would like to avoid inverting $A$ every time one withes to apply
+\end{equation}
+
+\subsection{Stencil formulation}
+One would like to avoid inverting $A$ every time she wishes to apply
 an elliptic operator at a point.  Since everything in sight is a
 linear operator, we can simply say that there must exist an equivalent
 operator $S$ such that
-$$
+\begin{equation}
 (S P)_\fbold = <\nabla \psi>_\fbold = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P)_\fbold.
-$$
+\end{equation}
 Since this has to work for all $\psi$, we can define the stencil as
-$$
+\begin{equation}
  S_\fbold = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  )_\fbold = Q A^{-1} WM^T.
- $$
+\end{equation}
+
  
 \section{Solvability of the $A$ matrix}
 
