@@ -317,11 +317,12 @@ and the flux at the face is given by
 One would like to avoid inverting $A$ every time she wishes to apply
 an elliptic operator at a point.  Since everything in sight is a
 linear operator, we can simply say that there must exist an equivalent
-operator $S$ such that
+linear operator $S$ such that
 \begin{equation}
 (S P)_\fbold = <\nabla \psi>_\fbold = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P)_\fbold.
 \end{equation}
-Since this has to work for all $\psi$, we can define the stencil as
+Since this equivalence has to hold for all $\psi$, the stencil $S$ must be
+given by:
 \begin{equation}
  S_\fbold = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  )_\fbold = Q A^{-1} WM^T.
 \end{equation}
@@ -330,10 +331,10 @@ Since this has to work for all $\psi$, we can define the stencil as
 \section{Solvability of the $A$ matrix}
 
 Overton-Katz, et al. \cite{Katz2023} present the above procedure in
-the absence of boundary condition equations   They show that, for
+the absence of boundary condition equations.   They show that, for
 certain values of $P_T$ and $P_N$, the resulting $A$ matrix can have a
 severe mismatch between its largest and smallest eigenvalues,
-signalling poorly-conditioned matrices.    Their data shows the
+signalling that $A$ is poorly conditioned.    Their data show the
 worst solvability issues occur near the domain boundary.    It stands to
 reason that including boundary condition equations could improve the
 conditioning of the resultant matricies. To test this, we present the
