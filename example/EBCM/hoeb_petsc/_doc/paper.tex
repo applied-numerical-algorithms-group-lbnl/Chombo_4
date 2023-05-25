@@ -378,12 +378,12 @@ dimensions.    All these calculations are done using SLEPc and PETc
 \footnotetext[5]{The 
   equations for volumes $\jbold$ where $\xbar_\jbold$ is large
   receive  higher weights.  Diagonal weighting matricies are common.
-  Usually, these algorithms define a distance metric $D(\ibold, \jbold)$ for
-  two volumes $\ibold$ and $\jbold$.  Typically they make
+  Usually these algorithms define a distance metric $D(\ibold, \jbold)$ for
+  two volumes $\ibold$ and $\jbold$ and make
   $W_{\jbold,\jbold}$ decrease strongly with increasing 
-  $D(\ibold,\jbold)$ to assign higher importance to the equations for volumes
+  $D(\ibold,\jbold)$.  This assign higher importance to the equations for volumes
   closer to $\ibold$.  Devendran et al. for example \cite{Devendran2017},
-  uses a weighting function that varies with $W_{\ibold,\jbold}
+  uses a weighting function  $W_{\ibold,\jbold}
   \approx 1./D(\ibold,\jbold)^5$ }.
 
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
