@@ -145,6 +145,12 @@ namespace EBCM
       pout() << icent << "-side face:( " << m_lo << " , " << m_hi << " )" << endl;
     }
 
+    bool domainBoundary() const
+    {
+      bool retval = ((m_lo.m_vofIDMe < 0) ||
+                     (m_hi.m_vofIDMe < 0));
+      return retval;
+    }
     
     size_t charsize() const
     {
