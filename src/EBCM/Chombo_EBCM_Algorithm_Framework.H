@@ -225,7 +225,7 @@ namespace EBCM
     static inline shared_ptr<eigen_mat>
     getSystemMatrix(const EBCM_Face<cent, ebcm_order>  &  a_face,
                     const ebcm_graph                   &  a_graph,
-                    int a_nghost, int a_weightPower,
+                    int a_nghost, int a_weight_power,
                     bool a_print)
     {
       CH_TIME("EBCM_Framework::getSystemMatrix");
@@ -233,7 +233,7 @@ namespace EBCM
         locality(new neighborhood_t(a_graph,
                                     a_face.m_lo.m_pt,
                                     a_face.m_hi.m_pt,
-                                    a_nghost, a_weightPower, a_print));
+                                    a_nghost, a_weight_power, a_print));
   
       shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
       shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
@@ -574,15 +574,15 @@ namespace EBCM
       vector<double>                     m_dist_cut_faces;
       
       ///this is the weight of each equation (the diagonal of the weight matrix)
-      vector<double>                     m_wght_volumes;
-      vector<double>                     m_wght_dom_faces;
-      vector<double>                     m_wght_cut_faces;
+      vector<double>                     m_weig_volumes;
+      vector<double>                     m_weig_dom_faces;
+      vector<double>                     m_weig_cut_faces;
 
       ///
       neighborhood_t(const ebcm_graph    & a_graph,
                      const ch_iv         & a_facelo,
                      const ch_iv         & a_facehi,
-                     int a_nghost, int a_weightPower, bool a_print)
+                     int a_nghost, int a_weight_power, bool a_print)
       {
         CH_TIME("Algorithm_Framework::neigborhood_t constructor");
 
@@ -600,7 +600,7 @@ namespace EBCM
 
         m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region, a_print));
 
-        fillDerived(a_graph,  a_nghost,  a_weightPower,  a_print);
+        fillDerived(a_graph,  a_nghost,  a_weight_power,  a_print);
       }
 
     protected:
@@ -608,13 +608,13 @@ namespace EBCM
       //This is really part of the constructor so I do not want this called twice for the same object.
       inline void
       fillDerived(const ebcm_graph    & a_graph,
-                  int a_nghost, int a_weightPower, bool a_print)
+                  int a_nghost, int a_weight_power, bool a_print)
       {
         ///first get the addresses of domain and cut faces around each volume
  
-        getVolumeDerived(a_graph,   a_nghost,  a_weightPower,  a_print);
+        getVolumeDerived(a_graph,   a_nghost,  a_weight_power,  a_print);
 
-        getBoundaryDerived(a_graph, a_nghost,  a_weightPower,  a_print);
+        getBoundaryDerived(a_graph, a_nghost,  a_weight_power,  a_print);
 
         int n_equations  = m_volumes->size() + m_dom_faces->size() + m_cut_faces->size();
         int  n_unknowns  = pr_mom_dim::size();
@@ -629,6 +629,7 @@ namespace EBCM
 
 
       template <CENTERING cent>
+      inline void
       getFaceDetails(pr_pt                              & a_neigh_lo,                    
                      pr_pt                              & a_neigh_hi,
                      pr_rv                              & a_neigh_centroid,
@@ -636,14 +637,16 @@ namespace EBCM
                      const EBCM_Face<cent, ebcm_order>  & a_neigh_face,
                      const double                       & a_dx)
       {
-        a_neigh_lo = a_neigh_face.m_lo;
-        a_neigh_hi = a_neigh_face.m_hi;
-        const auto& facmom = a_neigh_face.m_facmom;
+        a_neigh_lo = a_neigh_face.m_lo.m_pt;
+        a_neigh_hi = a_neigh_face.m_hi.m_pt;
+        const pr_mom_dmo& facmom = a_neigh_face.m_facmom;
+        ///This is the face mom with all derivatives in a_neigh_dir set to zero.
+        pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, a_neigh_dir);
         
         for(int idir = 0; idir < DIM; idir ++)
         {
           double centerloc = 4586;
-          if(idir == a_neigh_face)
+          if(idir == a_neigh_dir)
           {
             centerloc = a_dx*(a_neigh_hi[idir]);
           }
@@ -651,21 +654,22 @@ namespace EBCM
           {
             centerloc = a_dx*(a_neigh_hi[idir] + 0.5);
           }
-          double scaledCent = volmom[1+idir];
+          double scaledCent = volmomfromfac[1+idir];
           a_neigh_centroid[idir]  = centerloc + scaledCent;
         }
       }
 
       inline void getFaceInfo(pr_rv            & a_neigh_xbar,   // R^D distance to shift moments
                               double           & a_neigh_dist,   // manhattan distance used in  calculating weights
-                              double           & a_neigh_wght,   // weight of neighbor equation
+                              double           & a_neigh_weig,   // weight of neighbor equation
                               const dom_face_t & a_curfac, 
-                              const ebcm_graph & a_graph)
+                              const ebcm_graph & a_graph,
+                              const int        & a_weight_power)
       {
         double     dx = a_graph.m_dx;
         pr_pt neigh_lo, neigh_hi;
         int neigh_dir = a_curfac.m_direction;
-        const& auto curvol = (*a_graph.m_volumes)[a_curfac.m_subvol_index];
+        const auto& curvol = (*a_graph.m_volumes)[a_curfac.m_subvol_index];
         pr_rv neigh_centroid;
         if(neigh_dir == 0)
         {
@@ -690,10 +694,10 @@ namespace EBCM
 
         double distlo, weiglo;
         double disthi, weighi;
-        getDistanceAndWeight(distlo, weiglo,  m_facelo, neigh_lo, a_weightPower);
-        getDistanceAndWeight(disthi, weighi,  m_facehi, neigh_hi, a_weightPower);
+        getDistanceAndWeight(distlo, weiglo,  m_facelo, neigh_lo, a_weight_power);
+        getDistanceAndWeight(disthi, weighi,  m_facehi, neigh_hi, a_weight_power);
         a_neigh_dist  = 0.5*(distlo + disthi);
-        m_neigh_weig  = 0.5*(weiglo + weighi);
+        a_neigh_weig  = 0.5*(weiglo + weighi);
         a_neigh_xbar  = neigh_centroid -  m_startloc;
 
       }
@@ -701,8 +705,9 @@ namespace EBCM
       ///
       inline void
       getBoundaryDerived(const ebcm_graph    & a_graph,
-                         int a_nghost, int a_weightPower, bool a_print)
+                         int a_nghost, int a_weight_power, bool a_print)
       {
+        double dx = a_graph.m_dx;
         m_dom_faces = shared_ptr< vector< dom_face_t > >(new vector<dom_face_t>());
         m_cut_faces = shared_ptr< vector< cut_face_t > >(new vector<cut_face_t>());
         ///this fills in the hooks to boundary condition informaiton
@@ -740,71 +745,56 @@ namespace EBCM
           }
         }
         m_xbar_dom_faces.resize(m_dom_faces->size());   
-        m_wght_dom_faces.resize(m_dom_faces->size());
+        m_weig_dom_faces.resize(m_dom_faces->size());
         m_dist_dom_faces.resize(m_dom_faces->size());
         m_xbar_cut_faces.resize(m_cut_faces->size());
-        m_wght_cut_faces.resize(m_cut_faces->size());
+        m_weig_cut_faces.resize(m_cut_faces->size());
         m_dist_cut_faces.resize(m_cut_faces->size());
         for(int ivec = 0; ivec < m_dom_faces->size(); ivec++)
         {
-          const auto& curfac = (*m_dom_faces)[ivec];
-          pr_pt neigh_lo, neigh_hi;
-          int   neigh_dir;
-          getFaceInfo(neigh_lo, neigh_hi, neigh_dir, curfac);
-          /**
-             THIS IS BROKEN 
-          pr_pt faceind;
-          pr_rv facecent;
-          getFaceInfo(faceind, facecent, curfac);
-          double dist, weig;
-          getDistanceAndWeight(dist, weig,  faceind, a_weightPower);
-          m_xbar_dom_faces[ivec] = facecent - m_startloc;
-          m_dist_dom_faces[ivec] = dist;
-          m_wght_dom_faces[ivec] = weig;
+          const dom_face_t& curfac = (*m_dom_faces)[ivec]; //indexing info for domain boundary face
+          pr_rv    neigh_xbar;   // R^D distance to shift moments
+          double   neigh_dist;   // manhattan distance used in  calculating weights
+          double   neigh_weig;   // weight of neighbor equation
+          getFaceInfo( neigh_xbar,   
+                       neigh_dist,   
+                       neigh_weig,   
+                       curfac, a_graph, a_weight_power);
 
-
-
-
-
-
-
-
-          const auto& curVol = (*m_volumes)[ivec];
-          m_xbar_volumes[ivec] = curVol.m_centroid - m_startloc;
-          double distlo, weiglo;
-          double disthi, weighi;
-          getDistanceAndWeight(distlo, weiglo,  m_facelo, curVol.m_pt, a_weightPower);
-          getDistanceAndWeight(disthi, weighi,  m_facehi, curVol.m_pt, a_weightPower);
-          m_dist_volumes[ivec] = 0.5*(distlo + disthi);
-          m_wght_volumes[ivec] = 0.5*(weiglo + weighi);
-
-
-
-          **/
+          m_xbar_dom_faces[ivec] = neigh_xbar;
+          m_dist_dom_faces[ivec] = neigh_dist;
+          m_weig_dom_faces[ivec] = neigh_weig;
         }
 
         for(int ivec = 0; ivec < m_cut_faces->size(); ivec++)
         {
-          /**
-             THIS IS BROKEN 
+
           const auto& curfac = (*m_cut_faces)[ivec];
-          pr_pt faceind  = curfac.m_pt;
-          pr_rv facecent = curfac.m_centroid;
+          const auto& cur_vol = (*m_volumes)    [curfac.m_subvol_index] ;
+          const auto& cut_fac = cur_vol.m_ifaces[curfac.m_iface_index ] ;
+          const auto& ebf_mom = cut_fac.m_ebfmom;
+          
+          pr_pt faceind  = cut_fac.m_pt;
+          pr_rv facecent;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            double scaledCent = ebf_mom[1+idir];
+            double centerloc  = dx*(faceind[idir] + 0.5);
+            facecent[idir]  = centerloc + scaledCent;
+          }
           double dist, weig;
-          getDistanceAndWeight(dist, weig,  faceind, a_weightPower);
+          getDistanceAndWeight(dist,   weig,    faceind, cur_vol.m_pt, a_weight_power);
           m_xbar_cut_faces[ivec] = facecent - m_startloc;
           m_dist_cut_faces[ivec] = dist;
-          m_wght_cut_faces[ivec] = weig;
-          **/
+          m_weig_cut_faces[ivec] = weig;
         }
-        
-      }
+      }//end function getBoundaryDerived
 
       
       ///
       inline void
       getVolumeDerived(const ebcm_graph    & a_graph,
-                       int a_nghost, int a_weightPower, bool a_print)
+                       int a_nghost, int a_weight_power, bool a_print)
       {
         //begin debug
         //Chombo4::pout() << "first volmom in the neighborhood" << endl;
@@ -813,7 +803,7 @@ namespace EBCM
         
         m_xbar_volumes.resize(    m_volumes->size());
         m_dist_volumes.resize(m_volumes->size());
-        m_wght_volumes.resize(m_volumes->size());
+        m_weig_volumes.resize(m_volumes->size());
     
         for(int ivec = 0; ivec < m_volumes->size(); ivec++)
         {
@@ -821,10 +811,10 @@ namespace EBCM
           m_xbar_volumes[ivec] = curVol.m_centroid - m_startloc;
           double distlo, weiglo;
           double disthi, weighi;
-          getDistanceAndWeight(distlo, weiglo,  m_facelo, curVol.m_pt, a_weightPower);
-          getDistanceAndWeight(disthi, weighi,  m_facehi, curVol.m_pt, a_weightPower);
+          getDistanceAndWeight(distlo, weiglo,  m_facelo, curVol.m_pt, a_weight_power);
+          getDistanceAndWeight(disthi, weighi,  m_facehi, curVol.m_pt, a_weight_power);
           m_dist_volumes[ivec] = 0.5*(distlo + disthi);
-          m_wght_volumes[ivec] = 0.5*(weiglo + weighi);
+          m_weig_volumes[ivec] = 0.5*(weiglo + weighi);
         }
       }
 
@@ -834,12 +824,12 @@ namespace EBCM
                            double      & a_weight,
                            const ch_iv & a_start,
                            const ch_iv & a_end,
-                           int           a_weightPower)
+                           int           a_weight_power)
       {
         a_distance = getManhattanDistance(a_start, a_end);
         a_weight = 1;
 
-        for(int iweight = 0; iweight < a_weightPower; iweight++)
+        for(int iweight = 0; iweight < a_weight_power; iweight++)
         {
           a_weight /= a_distance;
         }
@@ -868,9 +858,9 @@ namespace EBCM
     shared_ptr<eigen_mat>
     getWeightMatrix(shared_ptr<neighborhood_t> a_locality, bool a_print)
     {
-      int nrows_volumes   = a_locality->m_wght_volumes.size();
-      int nrows_dom_faces = a_locality->m_wght_dom_faces.size();
-      int nrows_cut_faces = a_locality->m_wght_cut_faces.size();
+      int nrows_volumes   = a_locality->m_weig_volumes.size();
+      int nrows_dom_faces = a_locality->m_weig_dom_faces.size();
+      int nrows_cut_faces = a_locality->m_weig_cut_faces.size();
       int nrows = nrows_volumes + nrows_dom_faces + nrows_cut_faces;
       
       shared_ptr<eigen_mat> weight_p(new eigen_mat(nrows, nrows));
@@ -878,17 +868,17 @@ namespace EBCM
       int irow_global = 0;
       for(int irow = 0; irow < nrows_volumes; irow++)
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_wght_volumes[irow];
+        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_volumes[irow];
         irow_global++;
       }
       for(int irow = 0; irow < nrows_dom_faces; irow++)
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_wght_dom_faces[irow];
+        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_dom_faces[irow];
         irow_global++;
       }
       for(int irow = 0; irow < nrows_cut_faces; irow++)
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_wght_cut_faces[irow];
+        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_cut_faces[irow];
         irow_global++;
       }
       return weight_p;
@@ -960,9 +950,9 @@ namespace EBCM
                     bool a_print)
     {
       CH_TIME("Algorithm_Framework::getMomentMatrix");
-      int nrows_volumes   = a_locality->m_wght_volumes.size();
-      int nrows_dom_faces = a_locality->m_wght_dom_faces.size();
-      int nrows_cut_faces = a_locality->m_wght_cut_faces.size();
+      int nrows_volumes   = a_locality->m_weig_volumes.size();
+      int nrows_dom_faces = a_locality->m_weig_dom_faces.size();
+      int nrows_cut_faces = a_locality->m_weig_cut_faces.size();
       int nrows = nrows_volumes + nrows_dom_faces + nrows_cut_faces;
       int n_equations = nrows;
       int n_unknowns  = pr_mom_dim::size();
@@ -988,12 +978,12 @@ namespace EBCM
       /**
       for(int irow = 0; irow < nrows_dom_faces; irow++)
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_wght_dom_faces[irow];
+        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_dom_faces[irow];
         irow_global++;
       }
       for(int irow = 0; irow < nrows_cut_faces; irow++)
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_wght_cut_faces[irow];
+        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_cut_faces[irow];
         irow_global++;
       }
 

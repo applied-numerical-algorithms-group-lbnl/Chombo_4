@@ -11,7 +11,7 @@ namespace ebcm_basics
   IndexTM<int, DIM>
   getVolIndexFromFace(const  IndexTM<int, DIM-1>& a_facind, int a_facedir)
   {
-    IndexTM<int, D> retval;
+    IndexTM<int, DIM> retval;
     int ifac = 0;
     for(int idir = 0; idir < DIM; idir++)
     {
@@ -28,8 +28,8 @@ namespace ebcm_basics
     return retval;
   }
   IndexTM<int, DIM-1>
-  getFaceIndexFromVol(const  IndexTM<int, DIM>& a_volind,
-                      int                       a_facedir)
+  getFaceIndexFromVolIndex(const  IndexTM<int, DIM>& a_volind,
+                           int                       a_facedir)
   {
     IndexTM<int, DIM-1> retval;
     int ifac = 0;
@@ -49,10 +49,10 @@ namespace ebcm_basics
   getVolMomFromFacMom(const IndexedMoments<DIM-1, ebcm_order>& a_facmom,
                       int                                      a_facedir)
   {
-    IndexedMoments<D, ebcm_order> retval;
-    for(MomentIterator< D, order> momit; momit.ok(); ++momit)
+    IndexedMoments<DIM, ebcm_order> retval;
+    for(MomentIterator< DIM, ebcm_order> momit; momit.ok(); ++momit)
     {
-      IndexTM<int, D> volpow = momit();
+      IndexTM<int, DIM> volpow = momit();
       Real momval;
       if(volpow[a_facedir] > 0) //no derivs in this direction
       {
@@ -60,7 +60,7 @@ namespace ebcm_basics
       }
       else
       {
-        IndexTM<int, D-1> facpow = getFaceIndexFromVol<DIM>(volpow, a_facedir);
+        IndexTM<int, DIM-1> facpow = getFaceIndexFromVolIndex(volpow, a_facedir);
         momval = a_facmom[facpow];
       }
       retval[volpow] = momval;

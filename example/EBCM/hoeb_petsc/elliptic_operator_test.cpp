@@ -19,24 +19,8 @@
 #include "Chombo_EBCM_Algorithm_Framework.H"
 #include "Chombo_EigenMatrix.H"
 
-#include "Chombo_LAPACKMatrix.H"
 #include <iomanip>
 
-
-typedef Chombo4::Box                                   ch_box;
-typedef Chombo4::DisjointBoxLayout                     ch_dbl;
-typedef Chombo4::ProblemDomain                         ch_probdom;
-typedef Chombo4::DataIterator                          ch_dit;
-typedef Chombo4::IntVect                               ch_iv;
-typedef Chombo4::MayDay                                ch_mayday;
-//typedef Chombo4::LAPACKMatrix                          ch_mat;
-typedef Proto::RealVect                                pr_rv;
-typedef Proto::IndexTM<Real, DIM>                      pr_itm_r_dim;
-typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-typedef Proto::IndexTM<Real, DIM-1>                    pr_itm_r_dmo;
-typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
-typedef Proto::BaseIF                                  pr_baseif;
-typedef ch_eigen::Matrix                               eigen_mat;
 
 /****/
 
@@ -92,15 +76,15 @@ int main(int a_argc, char* a_argv[])
     }
     else
     {
-      Chombo4::pout() << "main: unknown order = " << order << endl;
+      Chombo4::pout() << "main: Doh! unknown order = " << order << endl;
       return -1;
     }
   }
 
-  Chombo4::pout() << "printing time table " << endl;
+  Chombo4::pout() << "Printing time table " << endl;
   CH_TIMER_REPORT();
 #ifdef CH_MPI
-  Chombo4::pout() << "about to call MPI Finalize" << std::endl;
+  Chombo4::pout() << "Woo hoo! \n About to call MPI Finalize" << std::endl;
   MPI_Finalize();
 #endif
   return 0;
