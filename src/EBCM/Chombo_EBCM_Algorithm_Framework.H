@@ -19,8 +19,9 @@
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EigenMatrix.H"
+#include "Chombo_EBCM_Basics.H"
 
-#include "Chombo_LAPACKMatrix.H"
+
 #include <iomanip>
 
 namespace EBCM
@@ -627,6 +628,75 @@ namespace EBCM
       }
 
 
+      template <CENTERING cent>
+      getFaceDetails(pr_pt                              & a_neigh_lo,                    
+                     pr_pt                              & a_neigh_hi,
+                     pr_rv                              & a_neigh_centroid,
+                     const int                          & a_neigh_dir,         
+                     const EBCM_Face<cent, ebcm_order>  & a_neigh_face,
+                     const double                       & a_dx)
+      {
+        a_neigh_lo = a_neigh_face.m_lo;
+        a_neigh_hi = a_neigh_face.m_hi;
+        const auto& facmom = a_neigh_face.m_facmom;
+        
+        for(int idir = 0; idir < DIM; idir ++)
+        {
+          double centerloc = 4586;
+          if(idir == a_neigh_face)
+          {
+            centerloc = a_dx*(a_neigh_hi[idir]);
+          }
+          else
+          {
+            centerloc = a_dx*(a_neigh_hi[idir] + 0.5);
+          }
+          double scaledCent = volmom[1+idir];
+          a_neigh_centroid[idir]  = centerloc + scaledCent;
+        }
+      }
+
+      inline void getFaceInfo(pr_rv            & a_neigh_xbar,   // R^D distance to shift moments
+                              double           & a_neigh_dist,   // manhattan distance used in  calculating weights
+                              double           & a_neigh_wght,   // weight of neighbor equation
+                              const dom_face_t & a_curfac, 
+                              const ebcm_graph & a_graph)
+      {
+        double     dx = a_graph.m_dx;
+        pr_pt neigh_lo, neigh_hi;
+        int neigh_dir = a_curfac.m_direction;
+        const& auto curvol = (*a_graph.m_volumes)[a_curfac.m_subvol_index];
+        pr_rv neigh_centroid;
+        if(neigh_dir == 0)
+        {
+          const auto& neigh_face = curvol.m_xfaces[a_curfac.m_volume_index];
+          getFaceDetails<XFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
+        }
+        else if(neigh_dir == 1)
+        {
+          const auto& neigh_face = curvol.m_yfaces[a_curfac.m_volume_index];
+          getFaceDetails<YFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
+        }
+        else if(neigh_dir == 2)
+        {
+          const auto& neigh_face = curvol.m_zfaces[a_curfac.m_volume_index];
+          getFaceDetails<ZFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
+        }
+        else
+        {
+          Chombo4::pout() << "getFaceInfo: bogus neigh_dir = " << neigh_dir << endl;
+          ch_mayday::Error("Doh!");
+        }
+
+        double distlo, weiglo;
+        double disthi, weighi;
+        getDistanceAndWeight(distlo, weiglo,  m_facelo, neigh_lo, a_weightPower);
+        getDistanceAndWeight(disthi, weighi,  m_facehi, neigh_hi, a_weightPower);
+        a_neigh_dist  = 0.5*(distlo + disthi);
+        m_neigh_weig  = 0.5*(weiglo + weighi);
+        a_neigh_xbar  = neigh_centroid -  m_startloc;
+
+      }
       
       ///
       inline void
@@ -677,9 +747,12 @@ namespace EBCM
         m_dist_cut_faces.resize(m_cut_faces->size());
         for(int ivec = 0; ivec < m_dom_faces->size(); ivec++)
         {
+          const auto& curfac = (*m_dom_faces)[ivec];
+          pr_pt neigh_lo, neigh_hi;
+          int   neigh_dir;
+          getFaceInfo(neigh_lo, neigh_hi, neigh_dir, curfac);
           /**
              THIS IS BROKEN 
-          const auto& curfac = (*m_dom_faces)[ivec];
           pr_pt faceind;
           pr_rv facecent;
           getFaceInfo(faceind, facecent, curfac);
@@ -688,6 +761,25 @@ namespace EBCM
           m_xbar_dom_faces[ivec] = facecent - m_startloc;
           m_dist_dom_faces[ivec] = dist;
           m_wght_dom_faces[ivec] = weig;
+
+
+
+
+
+
+
+
+          const auto& curVol = (*m_volumes)[ivec];
+          m_xbar_volumes[ivec] = curVol.m_centroid - m_startloc;
+          double distlo, weiglo;
+          double disthi, weighi;
+          getDistanceAndWeight(distlo, weiglo,  m_facelo, curVol.m_pt, a_weightPower);
+          getDistanceAndWeight(disthi, weighi,  m_facehi, curVol.m_pt, a_weightPower);
+          m_dist_volumes[ivec] = 0.5*(distlo + disthi);
+          m_wght_volumes[ivec] = 0.5*(weiglo + weighi);
+
+
+
           **/
         }
 
