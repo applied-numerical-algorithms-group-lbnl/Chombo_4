@@ -32,9 +32,9 @@ namespace EBCM
   typedef Chombo4::IntVect                               ch_iv;
   typedef Chombo4::MayDay                                ch_mayday;
   typedef Proto::RealVect                                pr_rv;
-  typedef Proto::IndexTM<Real, DIM>                      pr_itm_r_dim;
+  typedef Proto::IndexTM<double, DIM>                      pr_itm_r_dim;
   typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-  typedef Proto::IndexTM<Real, DIM-1>                    pr_itm_r_dmo;
+  typedef Proto::IndexTM<double, DIM-1>                    pr_itm_r_dmo;
   typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
   typedef Proto::BaseIF                                  pr_baseif;
   typedef Proto::Point                                   pr_pt;
@@ -49,7 +49,7 @@ namespace EBCM
   class Algorithm_Framework
   {
   public:
-    typedef EBCM::HostLevelData<Real, 1, ebcm_order >      ebcm_leveldata;
+    typedef EBCM::HostLevelData<double, 1, ebcm_order >      ebcm_leveldata;
     typedef    EBCM::MetaDataLevel<         ebcm_order >   ebcm_meta;
     typedef    EBCM::SubVolumeVector  <     ebcm_order >   ebcm_subvol_vec;
     typedef    EBCM::EBCM_Volu<             ebcm_order >   ebcm_volu;
@@ -101,7 +101,9 @@ namespace EBCM
     static inline void
     getConditionNumberData(shared_ptr<ebcm_leveldata>      & a_data,
                            shared_ptr<condition_t>         & a_worst,
-                           const shared_ptr< ebcm_meta  >  & a_ebcm)
+                           const shared_ptr< ebcm_meta  >  & a_ebcm,
+                           const string                    & a_dom_bc,
+                           const string                    & a_eb_bc)
     {
     
       CH_TIME("EBCM_Framework::getConditionNumberData");
@@ -132,7 +134,7 @@ namespace EBCM
           int worst_face_dir, worst_face_index;
           getWorstConditionNumberInfo(invCondNum, maxEig, minEig,
                                       worst_face_dir, worst_face_index,
-                                      volu, graph, printedOne);
+                                      volu, graph, a_dom_bc, a_eb_bc, printedOne);
           printedOne = true;
           if(invCondNum < minInvCond)
           {
@@ -160,9 +162,11 @@ namespace EBCM
                                 int    & a_vec_index,
                                 const ebcm_volu     &  a_volu,
                                 const ebcm_graph    &  a_graph,
+                                const string        &  a_dom_bc,
+                                const string        &  a_eb_bc,
                                 bool a_print)
     {
-      CH_TIME("EBCM::Algorithm_Framework::getConditionNumberInfo");
+      CH_TIME("EBCM::Algorithm_Framework::getWorstConditionNumberInfo");
 
 
       //this stuff is probably more general than just this function
@@ -178,7 +182,8 @@ namespace EBCM
         int vecIndex;
           
         getWorstConditionNumberInfo<XFACE>(worstCond, maxEigen, minEigen, vecIndex,
-                                           a_volu.m_xfaces, a_graph, stenrad, weightpower, a_print);
+                                           a_volu.m_xfaces, a_graph, stenrad, weightpower,
+                                           a_dom_bc, a_eb_bc, a_print);
         a_face_dir       = 0;
         a_invCondNumber = worstCond;
         a_maxEigenvalue = maxEigen;
@@ -190,7 +195,8 @@ namespace EBCM
         double worstCond, maxEigen, minEigen;
         int vecIndex;
         getWorstConditionNumberInfo<YFACE>(worstCond, maxEigen, minEigen, vecIndex,
-                                           a_volu.m_yfaces, a_graph, stenrad, weightpower, a_print);
+                                           a_volu.m_yfaces, a_graph, stenrad, weightpower,
+                                           a_dom_bc, a_eb_bc, a_print);
         if(worstCond < a_invCondNumber)
         {
           a_face_dir       = 1;
@@ -208,7 +214,8 @@ namespace EBCM
         double worstCond, maxEigen, minEigen;
         int    vecIndex;
         getWorstConditionNumberInfo<ZFACE>(worstCond, maxEigen, minEigen, vecIndex,
-                                           a_volu.m_zfaces, a_graph, stenrad, weightpower, a_print);
+                                           a_volu.m_zfaces, a_graph, stenrad, weightpower, 
+                                           a_dom_bc, a_eb_bc, a_print);
         if(worstCond < a_invCondNumber)
         {
           a_face_dir      = 2;
@@ -226,6 +233,7 @@ namespace EBCM
     getSystemMatrix(const EBCM_Face<cent, ebcm_order>  &  a_face,
                     const ebcm_graph                   &  a_graph,
                     int a_nghost, int a_weight_power,
+                    const string& a_dom_bc, const string& a_eb_bc,
                     bool a_print)
     {
       CH_TIME("EBCM_Framework::getSystemMatrix");
@@ -236,7 +244,7 @@ namespace EBCM
                                     a_nghost, a_weight_power, a_print));
   
       shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -275,7 +283,8 @@ namespace EBCM
                                 int    & a_vec_index,
                                 const vector<EBCM_Face<cent, ebcm_order> >  &  a_faces,
                                 const ebcm_graph                            &  a_graph,
-                                int a_stenrad, int a_weightpower, bool a_print)
+                                int a_stenrad, int a_weightpower,
+                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
     {
       a_invCondNumber = 4586;
       a_maxEigenvalue = 4586;
@@ -284,7 +293,8 @@ namespace EBCM
       for(int ivec = 0; ivec < a_faces.size(); ivec++)
       {
         double localCond, localMax, localMin;
-        shared_ptr<eigen_mat> Amat = getSystemMatrix(a_faces[ivec], a_graph, a_stenrad, a_weightpower, a_print);
+        shared_ptr<eigen_mat> Amat = getSystemMatrix(a_faces[ivec], a_graph, a_stenrad, a_weightpower,
+                                                     a_dom_bc, a_eb_bc, a_print);
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
         localCond = a_minEigenvalue/a_maxEigenvalue;
         if(localCond < a_invCondNumber)
@@ -345,7 +355,7 @@ namespace EBCM
       ch_probdom               domain;
       makeMergedGeometry(ebcm, grids, dx, domain, true, true);
 
-      Real maxKapp, minKapp;
+      double maxKapp, minKapp;
       //this tries out iteration and checks kappa
       checkKappa(maxKapp, minKapp, ebcm, grids);
 
@@ -353,7 +363,9 @@ namespace EBCM
       shared_ptr<ebcm_leveldata> invCondition;
       
       shared_ptr<condition_t>    worst;
-      getConditionNumberData(invCondition, worst, ebcm);
+      string dom_bc("all_neumann");
+      string  eb_bc("all_neumann");
+      getConditionNumberData(invCondition, worst, ebcm, dom_bc, eb_bc);
 
       worst->poutLatexTable();
       Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
@@ -380,9 +392,9 @@ namespace EBCM
     if(which_geom == string("sphere"))
     {
       RealVect center = 0.5*RealVect::Unit();
-      Real radius = 0.1;
+      double radius = 0.1;
       bool inside = false;
-      std::vector<Real> centvec;
+      std::vector<double> centvec;
       pp.get("radius", radius);
       pp.get("inside", inside);
       pp.getarr("center", centvec, 0, DIM);
@@ -472,7 +484,7 @@ namespace EBCM
       int geomGhost = 6;
       shared_ptr<BaseIF>    impfunc = getImplicitFunction();
       Chombo4::pout() << "defining geometry in EB land" << endl;
-      Real dx = 1.0/(Real(nx));
+      double dx = 1.0/(double(nx));
       pr_rv origin = pr_rv::Zero();
       shared_ptr< ch_geoserv > geoserv
         (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
@@ -796,11 +808,6 @@ namespace EBCM
       getVolumeDerived(const ebcm_graph    & a_graph,
                        int a_nghost, int a_weight_power, bool a_print)
       {
-        //begin debug
-        //Chombo4::pout() << "first volmom in the neighborhood" << endl;
-        //(*m_volumes)[0].m_volmom.print();
-        //end debug        int n_equations =  m_volumes->size();
-        
         m_xbar_volumes.resize(    m_volumes->size());
         m_dist_volumes.resize(m_volumes->size());
         m_weig_volumes.resize(m_volumes->size());
@@ -849,7 +856,7 @@ namespace EBCM
         return xbar;
       }
 
-    };
+    }; //end neighborhood_t
 
 
 
@@ -918,7 +925,7 @@ namespace EBCM
         shiftedMom.print();
       }
 
-      Real volume = shiftedMom[pr_itm_i_dim::Zero];
+      double volume = shiftedMom[pr_itm_i_dim::Zero];
       bool divide = (volume > 1.0e-16);
       if(!divide)
       {
@@ -945,8 +952,77 @@ namespace EBCM
     }
 
     ///
+    static inline void
+    fillNeumannDomBCRow(eigen_mat         & a_mat,
+                        const pr_mom_dim  & a_moment,
+                        const pr_rv       & a_distance,
+                        const int         & a_face_dir,
+                        const int         & a_currentRow,
+                        bool a_print)
+    {
+      CH_TIME("EBCM::Algorithm_Framework::fillNeumannDomBCRow");
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannDomBCRow: a_currentRow = " << a_currentRow << endl;
+        Chombo4::pout() << "fillNeumannDomBCRow: a_distance   = " <<   a_distance << endl;
+        Chombo4::pout() << "fillNeumannDomBCRow: input mat row: " << endl;
+        a_mat.poutRow(a_currentRow);
+        Chombo4::pout() << "fillNeumannDomBCRow:  a_moment =" << endl;
+        a_moment.print();
+      }
+
+      pr_itm_r_dim itm_dist;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        itm_dist[idir] = a_distance[idir];
+      }
+
+      pr_mom_dim shiftedMom = a_moment;
+      shiftedMom.shift(itm_dist);
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
+        shiftedMom.print();
+      }
+
+      double volume = shiftedMom[pr_itm_i_dim::Zero];
+      bool divide = (volume > 1.0e-16);
+      if(!divide)
+      {
+        if(a_print)
+        {
+          Chombo4::pout() << "fillNeumannDomBCRow: smallCellRow with volume = " << volume << endl;
+        }
+        a_mat.setSmallCellRow(a_currentRow);
+      }
+      else
+      {
+        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+        {
+          auto momind = momit();
+          auto pd = momind[a_face_dir];
+          double matval = 0;
+          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          if(pd > 0)
+          {
+            auto derivind  = momind;
+            derivind[a_face_dir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
+            matval = pd*shiftedMom[derivind];
+          }
+          a_mat(a_currentRow, currentCol) = matval;
+        }
+      }
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannDomainBCRow: amat leaving = "  << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+    } //end function fillNeuamnnDomBCRow
+    
+    ///
     static shared_ptr<eigen_mat>
     getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
+                    const string& a_dom_bc, const string& a_eb_bc,
                     bool a_print)
     {
       CH_TIME("Algorithm_Framework::getMomentMatrix");
@@ -974,38 +1050,68 @@ namespace EBCM
         shiftMomentAndFillRow(*Mmat_p, volmom, xbar, irow_global, a_print);
         irow_global++;
       }
-      ///HERE
-      /**
-      for(int irow = 0; irow < nrows_dom_faces; irow++)
+      /**/
+      if(a_dom_bc == string("all_neumann"))
       {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_dom_faces[irow];
-        irow_global++;
-      }
-      for(int irow = 0; irow < nrows_cut_faces; irow++)
-      {
-        (*weight_p)(irow_global, irow_global) = a_locality->m_weig_cut_faces[irow];
-        irow_global++;
-      }
-
-      return weight_p;
-      //number of equations
-      int n_equations = a_locality->m_volumes->size();
-      int n_unknowns  = pr_mom_dim::size();
-    
-      for(int irow = 0; irow < n_rows; irow++)
-      {
-        const auto& volmom   =   (*(a_locality->m_volumes ))[irow].m_volmom;
-        if(a_print)
+        const auto& allfac = (*a_locality->m_dom_faces);
+        const auto& allvol = (*a_locality->m_volumes);
+        for(int irow = 0; irow < nrows_dom_faces; irow++)
         {
-          volmom.print();
+          const auto& curfac = allfac[irow]; //indexing info for domain boundary face
+
+          pr_mom_dmo facmom;
+          if(     curfac.m_direction == 0)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_xfaces[curfac.m_volume_index].m_facmom;
+          }
+          else if(curfac.m_direction == 1)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_yfaces[curfac.m_volume_index].m_facmom;
+          }
+          else if(curfac.m_direction == 2)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_zfaces[curfac.m_volume_index].m_facmom;
+          }
+          else
+          {
+            Chombo4::pout() << "getMomentMatrix: invalid curfac.m_direction" << endl;
+            ch_mayday::Error("Doh!");
+          }
+          
+          ///This is the face mom with all derivatives in a_neigh_dir set to zero.
+          pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
+          auto xbar = a_locality->m_xbar_dom_faces[irow];   //need to know xbar to do x-xbar^p
+          //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
+          //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
+
+          fillNeumannDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, a_print);
+
+          irow_global++;
         }
       }
-      **/
+      else
+      {
+        Chombo4::pout() << "getMomentMatrix: invalid dom_bc" << endl;
+        ch_mayday::Error("Doh!");
+      }
+      if(a_eb_bc == string("all_neumann"))
+      {
+      
+          //HERE!!
+        ch_mayday::Error("cut cell equations not implemented");
+        for(int irow = 0; irow < nrows_cut_faces; irow++)
+        {
+          irow_global++;
+        }
+
+      }
+
       return Mmat_p;
-    }
+    }//end function getMomentMatrix
 
 
   }; //end class Algorithm_Framnework 
 
-} //end namespace ebcm  
+} //end namespace ebcm
+
 #endif
