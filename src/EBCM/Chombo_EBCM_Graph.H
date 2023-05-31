@@ -221,6 +221,9 @@ namespace EBCM
 
     pr_pt m_pt;
     IndexedMoments<DIM, order> m_ebfmom;
+    IndexedMoments<DIM, order> m_norm_mom_x;
+    IndexedMoments<DIM, order> m_norm_mom_y;
+    IndexedMoments<DIM, order> m_norm_mom_z;
     void defineAsRegular(pr_vof a_vof)
     {
       m_pt =  a_vof.m_pt;
@@ -238,6 +241,9 @@ namespace EBCM
       size_t charsiz = 0;
       charsiz +=     m_pt.charsize();
       charsiz += m_ebfmom.charsize();
+      charsiz += m_norm_mom_x.charsize();
+      charsiz += m_norm_mom_y.charsize();
+      charsiz += m_norm_mom_z.charsize();
       return charsiz;
     }
     void energize(char* a_outbuf, size_t a_expected_size) const
@@ -255,6 +261,18 @@ namespace EBCM
       charbuf += m_ebfmom.charsize();
       charsiz += m_ebfmom.charsize();
 
+      m_norm_mom_x.energize(charbuf);
+      charbuf += m_norm_mom_x.charsize();
+      charsiz += m_norm_mom_x.charsize();
+
+      m_norm_mom_y.energize(charbuf);
+      charbuf += m_norm_mom_y.charsize();
+      charsiz += m_norm_mom_y.charsize();
+      
+      m_norm_mom_z.energize(charbuf);
+      charbuf += m_norm_mom_z.charsize();
+      charsiz += m_norm_mom_z.charsize();
+      
       if(charsiz != a_expected_size)
       {
         ch_mayday::Error("EBCM::IrregFace::energize: size check error");
@@ -275,6 +293,18 @@ namespace EBCM
       m_ebfmom.linearIn(charbuf);
       charbuf += m_ebfmom.charsize();
       charsiz += m_ebfmom.charsize();
+
+      m_norm_mom_x.linearIn(charbuf);
+      charbuf += m_norm_mom_x.charsize();
+      charsiz += m_norm_mom_x.charsize();
+
+      m_norm_mom_y.linearIn(charbuf);
+      charbuf += m_norm_mom_y.charsize();
+      charsiz += m_norm_mom_y.charsize();
+
+      m_ebfmom.linearIn(charbuf);
+      charbuf += m_norm_mom_z.charsize();
+      charsiz += m_norm_mom_z.charsize();
 
       if(charsiz != a_expected_size)
       {
@@ -612,14 +642,28 @@ namespace EBCM
       m_pt = a_vof.m_pt;
       m_cells.resize(1, m_pt);
       EBIndex<BOUNDARY> ebf = a_vof.getCutFace();
-      auto levvol_ptr = a_geoserv->getVoluData(  a_domain);
-      auto levebf_ptr = a_geoserv->getEBFaceData(a_domain);
-      const auto& voldat = (*levvol_ptr)[a_dit];
-      const auto& ebfdat = (*levebf_ptr)[a_dit];
+      auto lev_vol_ptr = a_geoserv->getVoluData(  a_domain);
+      auto lev_ebf_ptr = a_geoserv->getEBFaceData(a_domain);
+      auto lev_norm_x_ptr = a_geoserv->getEBNormalData_x(a_domain);
+      auto lev_norm_y_ptr = a_geoserv->getEBNormalData_y(a_domain);
+      
+      const auto& vol_dat = (*lev_vol_ptr)[a_dit];
+      const auto& ebf_dat = (*lev_ebf_ptr)[a_dit];
+      const auto& norm_x_dat = (*lev_norm_x_ptr)[a_dit];
+      const auto& norm_y_dat = (*lev_norm_y_ptr)[a_dit];
 
-      m_volmom = voldat(a_vof, 0);
+
+      m_volmom = vol_dat(a_vof, 0);
       m_ifaces.resize(1);
-      m_ifaces[0].m_ebfmom = ebfdat(ebf, 0);
+      m_ifaces[0].m_ebfmom     =    ebf_dat(ebf  , 0);
+      m_ifaces[0].m_norm_mom_x = norm_x_dat(a_vof, 0);  //eb normal moments indexed by vof 
+      m_ifaces[0].m_norm_mom_y = norm_y_dat(a_vof, 0);  //eb normal moments indexed by vof 
+      m_ifaces[0].m_norm_mom_z.setToZero();
+#if DIM==3      
+      auto lev_norm_z_ptr = a_geoserv->getEBNormalData_z(a_domain);
+      const auto& norm_z_dat = (*lev_norm_z_ptr)[a_dit];
+      m_ifaces[0].m_norm_mom_z = norm_z_dat(a_vof, 0);  //eb normal moments indexed by vof 
+#endif      
       m_ifaces[0].m_pt = m_pt;
       
       defineDerivedMeasures(a_dx);
