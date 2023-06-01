@@ -134,7 +134,7 @@ namespace EBCM
           int worst_face_dir, worst_face_index;
           getWorstConditionNumberInfo(invCondNum, maxEig, minEig,
                                       worst_face_dir, worst_face_index,
-                                      volu, graph, a_dom_bc, a_eb_bc, printedOne);
+                                      volu, graph, a_dom_bc, a_eb_bc, !printedOne);
           printedOne = true;
           if(invCondNum < minInvCond)
           {
@@ -1164,7 +1164,7 @@ namespace EBCM
     }//end function getMomentMatrix
 
 
-  }; //end class Algorithm_Framnework 
+  }; //end class Algorithm_Framework 
 
 } //end namespace ebcm
 
