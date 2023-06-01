@@ -304,7 +304,14 @@ namespace EBCM
           a_minEigenvalue = localMin;
           a_vec_index     = ivec;
         }
-      }  
+      }
+      if(a_print)
+      {
+        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
+        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
+        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
+        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
+      }
     }
     ///
     /**
@@ -1095,7 +1102,7 @@ namespace EBCM
       {
         const auto& volmom   =   (*(a_locality->m_volumes ))[irow].m_volmom;
         pr_rv & xbar =      ( (a_locality->m_xbar_volumes ))[irow];
-        shiftMomentAndFillRow(*Mmat_p, volmom, xbar, irow_global, a_print);
+        shiftMomentAndFillRow(*Mmat_p, volmom, xbar, irow_global, false);
         irow_global++;
       }
       /**/
@@ -1132,7 +1139,7 @@ namespace EBCM
           //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
           //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
 
-          fillNeumannDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, a_print);
+          fillNeumannDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, false);
 
           irow_global++;
         }
@@ -1151,7 +1158,7 @@ namespace EBCM
           const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
           auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
           
-          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
+          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, false);
           irow_global++;
         }
       }
