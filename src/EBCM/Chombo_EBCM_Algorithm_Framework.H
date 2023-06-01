@@ -871,7 +871,7 @@ namespace EBCM
       int nrows = nrows_volumes + nrows_dom_faces + nrows_cut_faces;
       
       shared_ptr<eigen_mat> weight_p(new eigen_mat(nrows, nrows));
-      weight_p->setVal(4586.);
+      weight_p->setVal(0.);//this has to be zero because we are only filling in the diagonal.
       int irow_global = 0;
       for(int irow = 0; irow < nrows_volumes; irow++)
       {
