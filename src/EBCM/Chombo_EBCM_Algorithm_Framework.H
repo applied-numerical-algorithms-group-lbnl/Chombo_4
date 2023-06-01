@@ -985,40 +985,88 @@ namespace EBCM
         shiftedMom.print();
       }
 
-      double volume = shiftedMom[pr_itm_i_dim::Zero];
-      bool divide = (volume > 1.0e-16);
-      if(!divide)
+      //because this is homogeneous, do not need to divde by area 
+      //(so we do not have to check for it being too small)
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
       {
-        if(a_print)
+        auto momind = momit();
+        auto pd = momind[a_face_dir];
+        double matval = 0;
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        if(pd > 0)
         {
-          Chombo4::pout() << "fillNeumannDomBCRow: smallCellRow with volume = " << volume << endl;
+          auto derivind  = momind;
+          derivind[a_face_dir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
+          matval = pd*shiftedMom[derivind];
         }
-        a_mat.setSmallCellRow(a_currentRow);
+        a_mat(a_currentRow, currentCol) = matval;
       }
-      else
-      {
-        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
-        {
-          auto momind = momit();
-          auto pd = momind[a_face_dir];
-          double matval = 0;
-          unsigned int currentCol = pr_mom_dim::indexOf(momind);
-          if(pd > 0)
-          {
-            auto derivind  = momind;
-            derivind[a_face_dir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
-            matval = pd*shiftedMom[derivind];
-          }
-          a_mat(a_currentRow, currentCol) = matval;
-        }
-      }
+
       if(a_print)
       {
-        Chombo4::pout() << "fillNeumannDomainBCRow: amat leaving = "  << endl;
+        Chombo4::pout() << "fillNeumannDomBCRow: amat leaving = "  << endl;
         a_mat.poutRow(a_currentRow);
       }
     } //end function fillNeuamnnDomBCRow
     
+    ///
+    static inline void
+    fillNeumannEBBCRow(eigen_mat                      &  a_mat,
+                       const IrregFace<ebcm_order>    &  a_cut_face,
+                       const pr_rv                    &  a_distance,
+                       const int                      &  a_currentRow,
+                       bool a_print)
+    {
+      CH_TIME("EBCM::Algorithm_Framework::fillNeumannDomBCRow");
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannEBBCRow: a_currentRow = " << a_currentRow << endl;
+        Chombo4::pout() << "fillNeumannEBBCRow: a_distance   = " <<   a_distance << endl;
+        Chombo4::pout() << "fillNeumannEBBCRow: input mat row: " << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+
+      pr_itm_r_dim itm_dist;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        itm_dist[idir] = a_distance[idir];
+      }
+
+      pr_mom_dim shifted_normal_moments[DIM];
+      for(int idir = 0;  idir < DIM; idir++)
+      {
+        shifted_normal_moments[idir] = a_cut_face.getNormalMoment(idir);
+        shifted_normal_moments[idir].shift(itm_dist);
+      }
+
+      //because this is homogeneous, do not need to divde by area 
+      //(so we do not have to check for it being too small)
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+
+        double momsum = 0;
+        for(int idir = 0; idir < DIM; idir ++)
+        {
+          auto pd        = momind[idir];
+          auto derivind  = momind;
+          if(pd > 0)
+          {
+            derivind[idir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
+            momsum += pd*shifted_normal_moments[idir][derivind];
+          }
+        }
+        a_mat(a_currentRow, currentCol) = momsum;
+      }
+
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannEBBCRow: amat leaving = "  << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+    } //end function fillNeuamnnEBBCRow
+
     ///
     static shared_ptr<eigen_mat>
     getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
@@ -1096,16 +1144,22 @@ namespace EBCM
       }
       if(a_eb_bc == string("all_neumann"))
       {
-      
-          //HERE!!
-        ch_mayday::Error("cut cell equations not implemented");
         for(int irow = 0; irow < nrows_cut_faces; irow++)
         {
+          //indexing information to get to the cut face volumes
+          const auto &  face_loc = (*(a_locality->m_cut_faces))[irow];  
+          const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
+          auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
+          
+          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
           irow_global++;
         }
-
       }
-
+      else
+      {
+        Chombo4::pout() << "getMomentEquaations: unknown EBBC" << endl;
+        ch_mayday::Error("Doh!");
+      }
       return Mmat_p;
     }//end function getMomentMatrix
 

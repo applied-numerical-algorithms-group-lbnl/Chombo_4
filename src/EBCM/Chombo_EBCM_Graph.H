@@ -224,6 +224,31 @@ namespace EBCM
     IndexedMoments<DIM, order> m_norm_mom_x;
     IndexedMoments<DIM, order> m_norm_mom_y;
     IndexedMoments<DIM, order> m_norm_mom_z;
+
+    inline
+    IndexedMoments<DIM, order> getNormalMoment(const int a_dir) const
+    {
+      IndexedMoments<DIM, order> retval;
+      if(a_dir == 0)
+      {
+        retval = m_norm_mom_x;
+      }
+      else if(a_dir == 1)
+      {
+        retval = m_norm_mom_y;
+      }
+      else if(a_dir == 2)
+      {
+        retval = m_norm_mom_z;
+      }
+      else
+      {
+        Chombo4::pout() << "IrregFace::getNormalMoment: bogus input direction = " << a_dir << endl;
+        ch_mayday::Error("Doh!");
+      }
+      
+      return retval;
+    }
     void defineAsRegular(pr_vof a_vof)
     {
       m_pt =  a_vof.m_pt;
