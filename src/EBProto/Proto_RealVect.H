@@ -5,12 +5,12 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <vector>
+//#include <vector>
 
 #include "base/Proto_Point.H"
 #include "Chombo_IntVect.H"
 #include "implem/Proto_IndexTM.H"
-using std::vector;
+//using std::vector;
 namespace Proto
 {
 //template<typename T, int n>
