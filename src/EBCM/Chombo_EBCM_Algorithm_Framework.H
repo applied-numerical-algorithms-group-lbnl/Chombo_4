@@ -296,7 +296,7 @@ namespace EBCM
         shared_ptr<eigen_mat> Amat = getSystemMatrix(a_faces[ivec], a_graph, a_stenrad, a_weightpower,
                                                      a_dom_bc, a_eb_bc, a_print);
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
-        localCond = a_minEigenvalue/a_maxEigenvalue;
+        localCond = localMin/localMax;
         if(localCond < a_invCondNumber)
         {
           a_invCondNumber = localCond;
