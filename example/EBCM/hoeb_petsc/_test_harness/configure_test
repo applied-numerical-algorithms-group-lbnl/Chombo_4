@@ -15,8 +15,8 @@ parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default
 parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
 parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/all_regular.inputs")
 parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
-parser.add_argument('--prefix', type=str, help='name of test["test"]',default="all_regular_2d")
-parser.add_argument('--executable', type=str, help='executable file'   ,default="_exe/main.2d.opt.exe")
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default="all_regular_3d")
+parser.add_argument('--executable', type=str, help='executable file'   ,default="_exe/main.3d.opt.exe")
 
 args = parser.parse_args()
 print(args)
