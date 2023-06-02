@@ -196,7 +196,7 @@ namespace EBCM
         int vecIndex;
         getWorstConditionNumberInfo<YFACE>(worstCond, maxEigen, minEigen, vecIndex,
                                            a_volu.m_yfaces, a_graph, stenrad, weightpower,
-                                           a_dom_bc, a_eb_bc, a_print);
+                                           a_dom_bc, a_eb_bc, false);
         if(worstCond < a_invCondNumber)
         {
           a_face_dir       = 1;
@@ -215,7 +215,7 @@ namespace EBCM
         int    vecIndex;
         getWorstConditionNumberInfo<ZFACE>(worstCond, maxEigen, minEigen, vecIndex,
                                            a_volu.m_zfaces, a_graph, stenrad, weightpower, 
-                                           a_dom_bc, a_eb_bc, a_print);
+                                           a_dom_bc, a_eb_bc, false);
         if(worstCond < a_invCondNumber)
         {
           a_face_dir      = 2;
