@@ -13,9 +13,10 @@ parser = ArgumentParser()
 
 parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default='4')
 parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
-parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/merged.inputs")
+parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/all_regular.inputs")
 parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
-parser.add_argument('--prefix', type=str, help='name of test["test"]',default="merged_3d")
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default="all_regular_2d")
+parser.add_argument('--executable', type=str, help='executable file'   ,default="_exe/main.2d.opt.exe")
 
 args = parser.parse_args()
 print(args)
@@ -28,18 +29,21 @@ strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
 
 topstr = neartopstr +"_" + strtoday
 print ("topstr = " + topstr)
-
+execstr = args.executable
 if not os.path.exists(topstr):
     printstr = "making directory " + topstr
     print (printstr)
     os.mkdir(topstr)
+    commstr = "cp " + execstr + " " + topstr;
+    print(commstr);
+    os.system(commstr);
 
 print ("changing directory to " + topstr)
 os.chdir(topstr);
 
 submitstr = "submit."  + args.prefix + ".jobs"
 r = open(submitstr,'w')
-r.write('#/usr/bin/csh\n')
+r.write('#!/usr/bin/csh\n')
 
 max_taylor = args.max_taylor_order
 max_weight = args.max_weight_power
@@ -47,11 +51,10 @@ taylor_P = 1
 
 submitstr = "submit."  + args.prefix + ".jobs"
 subfile = open(submitstr,'w')
-subfile.write('#/usr/bin/csh\n')
+subfile.write('#!/usr/bin/csh \n \n')
 inputfilebase = os.path.basename(args.input)
 batchfilebase = os.path.basename(args.batch)
-executablename  = "../../../main.exe"
-
+execfilebase = os.path.basename(args.executable)
 inputtemplatename = homestr + "/" + args.input
 batchtemplatename = homestr + "/" + args.batch
 while taylor_P <= max_taylor:
@@ -73,10 +76,11 @@ while taylor_P <= max_taylor:
         dir_str = configstr
         
         batchfilename = batchfilebase + str(weight_P) + str(taylor_P)
-        commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. \n"
-        echostr = "echo \" " + commstr + " \" "
+        commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. "
+        echostr = "echo \" " + commstr + " \" \n"
         subfile.write(echostr)
-        subfile.write(commstr)
+        subfile.write(commstr + "\n")
+
 
         if not os.path.exists(dir_str):
             printstr = "making directory " + dir_str
@@ -103,7 +107,8 @@ while taylor_P <= max_taylor:
         for batchstr in f_batchtemplate:
             t1str = batchstr
             t2str = t1str.replace("INPUT_FILE", inputfilename)
-            t3str = t2str.replace("EXECUTABLE_FILE", executablename)
+            exec_name = "../"+ execfilebase
+            t3str = t2str.replace("EXECUTABLE_FILE", exec_name)
             f_bat.write(t3str)
 
         f_bat.close()
