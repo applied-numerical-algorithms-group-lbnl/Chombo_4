@@ -256,18 +256,18 @@ namespace EBCM
     
       if(a_print)
       {
-        Chombo4::pout() << "Weight matrix: " << endl;
-        Wmat_p->poutAll();
-        Chombo4::pout() << "Moment matrix: " << endl;
+        Chombo4::pout() << "Weight matrix:" << endl;
+        Wmat_p->poutDiag();
+        Chombo4::pout() << "Moment matrix:" << endl;
         Mmat_p->poutAll();
       
-        Chombo4::pout() << "WM   matrix: " << endl;
+        Chombo4::pout() << "WM   matrix: :" << endl;
         WMmat.poutAll();
       
-        Chombo4::pout() << "WM^T matrix: " << endl;
+        Chombo4::pout() << "WM^T matrix: :" << endl;
         WMTmat.poutAll();
 
-        Chombo4::pout() << "System matrix: " << endl;
+        Chombo4::pout() << "System matrix:" << endl;
         Amat_p->poutAll();
       }
 
@@ -1084,9 +1084,18 @@ namespace EBCM
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       int nrows_dom_faces = a_locality->m_weig_dom_faces.size();
       int nrows_cut_faces = a_locality->m_weig_cut_faces.size();
-      int nrows = nrows_volumes + nrows_dom_faces + nrows_cut_faces;
-      int n_equations = nrows;
-      int n_unknowns  = pr_mom_dim::size();
+      int nrows           = nrows_volumes + nrows_dom_faces + nrows_cut_faces;
+      int n_equations     = nrows;
+      int n_unknowns      = pr_mom_dim::size();
+      if(a_print)
+      {
+        Chombo4::pout() << "getMomentMatrix: nrows_volumes   = "  << nrows_volumes   << endl;
+        Chombo4::pout() << "getMomentMatrix: nrows_dom_faces = "  << nrows_dom_faces << endl;
+        Chombo4::pout() << "getMomentMatrix: nrows_cut_faces = "  << nrows_cut_faces << endl;
+        Chombo4::pout() << "getMomentMatrix: nrows           = "  << nrows           << endl;
+        Chombo4::pout() << "getMomentMatrix: n_equations     = "  << n_equations     << endl;
+        Chombo4::pout() << "getMomentMatrix: n_unknowns      = "  << n_unknowns      << endl;
+      }
       if(n_unknowns > n_equations)
       {
         Chombo4::pout() << "getMomentMatrix::isufficient equations to solve system" << endl;
@@ -1139,7 +1148,7 @@ namespace EBCM
           //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
           //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
 
-          fillNeumannDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, false);
+          fillNeumannDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, a_print);
 
           irow_global++;
         }
@@ -1158,7 +1167,7 @@ namespace EBCM
           const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
           auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
           
-          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, false);
+          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
           irow_global++;
         }
       }

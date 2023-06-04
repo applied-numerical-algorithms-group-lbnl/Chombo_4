@@ -237,6 +237,7 @@ namespace ch_eigen
       Chombo4::pout() << "matrix size = " << nrow << " x " << ncol << endl;
       for(int irow = 0; irow < nrow; irow++)
       {
+        Chombo4::pout() << "row " << irow << "=  ";
         for(int icol = 0; icol < ncol; icol++)
         {
           double val = (*this)(irow, icol);

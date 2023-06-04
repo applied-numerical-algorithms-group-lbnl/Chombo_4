@@ -1,8 +1,8 @@
 
-#configuration: dim=2,opt=TRUE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
+#configuration: dim=3,opt=TRUE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
 
 CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/example/..
-DIM := 2
+DIM := 3
 VARS_OLD := $(.VARIABLES)
 
 CHOMBO_DEPFLAGS = 
