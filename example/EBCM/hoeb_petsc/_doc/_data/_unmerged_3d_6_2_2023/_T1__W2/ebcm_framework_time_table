@@ -1,0 +1,876 @@
+-----------
+Timer report 0 (199 timers)
+--------------
+[0] root 80.10270 100.0% 1 0    0.0 MFlops 
+   [1] EBCM_Framework::runTests 80.10246 100.0% 1 0    0.0 MFlops 
+      [2] EBCM_Framework::getConditionNumberData 71.99917 89.9% 1 0    0.0 MFlops 
+         [3] EBCM::Algorithm_Framework::getWorstConditionNumberInfo 71.96551 89.8% 14592 0    0.0 MFlops 
+            [4] EBCM_Framework::getSystemMatrix 71.81681 89.7% 83256 0    0.0 MFlops 
+               [5] Algorithm_Framework::getMomentMatrix 34.24379 42.7% 83256 0    0.0 MFlops 
+                  [6] Algorithm_Framework::shiftMomentAndFillRow 22.69700 28.3% 27610512 0    0.0 MFlops 
+                     [8] IndexedMoment::shift 13.79619 17.2% 27610512 0    0.0 MFlops 
+                  [9] EBCM::Algorithm_Framework::fillNeumannDomBCRow 10.09910 12.6% 4818624 0    0.0 MFlops 
+                     [14] IndexedMoment::shift 7.25878  9.1% 14455872 0    0.0 MFlops 
+               [7] Algorithm_Framework::neigborhood_t constructor 17.12689 21.4% 83256 0    0.0 MFlops 
+         [121] HostBoxData::define(Box) (memory allocation) 0.00002  0.0% 1 0    0.0 MFlops 
+         [153] DistributedData constructor 0.00000  0.0% 1 0    0.0 MFlops 
+      [10] EBCM_Framework::makeMergedGeometry 8.08423 10.1% 1 0    0.0 MFlops 
+         [11] LevelGeometryService::LevelGeometryService 7.78686  9.7% 1 0    0.0 MFlops 
+            [12] LevelGeometryService::defineFinestLevel 7.78680  9.7% 1 0    0.0 MFlops 
+               [13] LevelGeometryService::fillGraph 7.67524  9.6% 1 0    0.0 MFlops 
+                  [15] fillGraph::endOfirregularCellLoop 4.69148  5.9% 3944 0    0.0 MFlops 
+                     [16] LevelGeometryService::ComputeVofInternals 4.67735  5.8% 3944 0    0.0 MFlops 
+                        [18] computemoments 2.08517  2.6% 3944 0    0.0 MFlops 
+                           [19] computemomentsRecursively 1.65544  2.1% 3944 0    0.0 MFlops 
+                              [22] computemoments 1.09390  1.4% 23664 0    0.0 MFlops 
+                                 [25] computemomentsRecursively 0.72461  0.9% 23664 0    0.0 MFlops 
+                                    [27] computemomentsRecursively 0.51716  0.6% 23664 0    0.0 MFlops 
+                                       [29] computemomentsRecursively 0.37852  0.5% 23664 0    0.0 MFlops 
+                                          [32] computemomentsRecursively 0.23548  0.3% 23664 0    0.0 MFlops 
+                                             [37] computemomentsRecursively 0.09923  0.1% 23664 0    0.0 MFlops 
+                                                [48] computeRHS 0.04199  0.1% 15768 0    0.0 MFlops 
+                                             [44] computeRHS 0.05792  0.1% 15768 0    0.0 MFlops 
+                                          [45] computeRHS 0.05568  0.1% 15768 0    0.0 MFlops 
+                                       [50] computeRHS 0.03622  0.0% 15768 0    0.0 MFlops 
+                                    [65] computeRHS 0.01617  0.0% 15768 0    0.0 MFlops 
+                              [35] computemomentsRecursively 0.17068  0.2% 3944 0    0.0 MFlops 
+                                 [39] computemomentsRecursively 0.09542  0.1% 3944 0    0.0 MFlops 
+                                    [46] computeRHS 0.04388  0.1% 3944 0    0.0 MFlops 
+                                    [52] computemomentsRecursively 0.03612  0.0% 3944 0    0.0 MFlops 
+                                       [54] computeRHS 0.03046  0.0% 3944 0    0.0 MFlops 
+                                 [49] computeRHS 0.03878  0.0% 3944 0    0.0 MFlops 
+                              [59] CoordinateSystem::ConstructorReduceInfo 0.01898  0.0% 567936 0    0.0 MFlops 
+                              [60] computeRHS 0.01890  0.0% 3944 0    0.0 MFlops 
+                        [23] ifdata constructor 4 1.01902  1.3% 47328 0    0.0 MFlops 
+                           [24] ifdata::setNormalDerivatives 0.96481  1.2% 31536 0    0.0 MFlops 
+                           [78] CoordinateSystem::ConstructorReduceInfo 0.00491  0.0% 141984 0    0.0 MFlops 
+                           [88] ifdata::defineLocalCoords 0.00143  0.0% 47328 0    0.0 MFlops 
+                        [31] ifdata constructor 2 0.28954  0.4% 3944 0    0.0 MFlops 
+                           [33] ifdata::setNormalDerivatives 0.21736  0.3% 3944 0    0.0 MFlops 
+                           [43] ifdata::findIntersectionPoints 0.06409  0.1% 3944 0    0.0 MFlops 
+                              [53] ifdata::makeedgekey 0.03449  0.0% 94656 0    0.0 MFlops 
+                                 [67] ifdata::rootfinder 0.01447  0.0% 31536 0    0.0 MFlops 
+                                    [71] ifdata::brentrootfinder 0.01033  0.0% 31536 0    0.0 MFlops 
+                              [69] ifdata::isConnected 0.01113  0.0% 252416 0    0.0 MFlops 
+                           [73] ifdata::makeCornerSigns 0.00593  0.0% 3944 0    0.0 MFlops 
+                           [105] ifdata::defineLocalCoords 0.00014  0.0% 3944 0    0.0 MFlops 
+                        [62] CoordinateSystem::ConstructorReduceInfo 0.01857  0.0% 567936 0    0.0 MFlops 
+                  [17] boxiterator loop 2.93767  3.7% 1 0    0.0 MFlops 
+                     [20] ifdata constructor 2 1.46886  1.8% 30571 0    0.0 MFlops 
+                        [21] ifdata::setNormalDerivatives 1.13380  1.4% 30571 0    0.0 MFlops 
+                        [30] ifdata::findIntersectionPoints 0.29938  0.4% 30571 0    0.0 MFlops 
+                           [38] ifdata::makeedgekey 0.09895  0.1% 733704 0    0.0 MFlops 
+                              [68] ifdata::rootfinder 0.01261  0.0% 31536 0    0.0 MFlops 
+                                 [72] ifdata::brentrootfinder 0.00910  0.0% 31536 0    0.0 MFlops 
+                           [41] ifdata::isConnected 0.07615  0.1% 1956544 0    0.0 MFlops 
+                        [55] ifdata::makeCornerSigns 0.02563  0.0% 30571 0    0.0 MFlops 
+                        [90] ifdata::defineLocalCoords 0.00112  0.0% 30571 0    0.0 MFlops 
+                     [26] ifdata constructor 4 0.59870  0.7% 183426 0    0.0 MFlops 
+                        [28] ifdata::setNormalDerivatives 0.46468  0.6% 15768 0    0.0 MFlops 
+                        [61] CoordinateSystem::ConstructorReduceInfo 0.01859  0.0% 550278 0    0.0 MFlops 
+                        [74] ifdata::defineLocalCoords 0.00539  0.0% 183426 0    0.0 MFlops 
+                     [42] CoordinateSystem::ConstructorReduceInfo 0.07061  0.1% 2201112 0    0.0 MFlops 
+                  [47] LevelGeometryService::fixregularnextToCovered 0.04352  0.1% 18176 0    0.0 MFlops 
+                  [142] HostBoxData::define(Box) (memory allocation) 0.00000  0.0% 1 0    0.0 MFlops 
+               [70] EBGraph::getIrregFaces 0.01092  0.0% 3 0    0.0 MFlops 
+                  [83] EBGraph::getIrregCells 0.00264  0.0% 3 0    0.0 MFlops 
+               [79] EBGraph::getIrregVoFs 0.00473  0.0% 4 0    0.0 MFlops 
+                  [82] EBGraph::getIrregCells 0.00339  0.0% 4 0    0.0 MFlops 
+               [80] EBGraph::buildGraph 0.00391  0.0% 1 0    0.0 MFlops 
+                  [111] HostBoxData::define(Box) (memory allocation) 0.00008  0.0% 1 0    0.0 MFlops 
+               [84] ~LayoutData 0.00156  0.0% 1 0    0.0 MFlops 
+               [94] EBGraph::getIrregCells 0.00072  0.0% 1 0    0.0 MFlops 
+               [114] LevelGeometryService::exchange 0.00004  0.0% 1 0    0.0 MFlops 
+                  [116] DistributedData::exchange 0.00004  0.0% 8 0    0.0 MFlops 
+                     [146] BoxPattern::exchange constructor 0.00000  0.0% 5 0    0.0 MFlops 
+                     [149] DistributedData::communicate 0.00000  0.0% 8 0    0.0 MFlops 
+                        [158] DistributedData::doLocalCopies 0.00000  0.0% 8 0    0.0 MFlops 
+                           [180] DistributedData::doLocalCopiesWithCopy 0.00000  0.0% 8 0    0.0 MFlops 
+                     [181] CommunicationMetaData constructor 0.00000  0.0% 5 0    0.0 MFlops 
+               [119] DistributedData::exchange 0.00003  0.0% 1 0    0.0 MFlops 
+                  [126] DistributedData::communicate 0.00002  0.0% 1 0    0.0 MFlops 
+                     [127] DistributedData::doLocalCopies 0.00002  0.0% 1 0    0.0 MFlops 
+                        [187] DistributedData::doLocalCopiesWithCopy 0.00000  0.0% 1 0    0.0 MFlops 
+                  [161] BoxPattern::exchange constructor 0.00000  0.0% 1 0    0.0 MFlops 
+                  [196] CommunicationMetaData constructor 0.00000  0.0% 1 0    0.0 MFlops 
+            [115] LevelGeometryService::defineData 0.00004  0.0% 1 0    0.0 MFlops 
+               [128] DistributedData constructor 0.00002  0.0% 9 0    0.0 MFlops 
+         [34] LevelGeometryService::defineFromFinerLevel 0.18884  0.2% 4 0    0.0 MFlops 
+            [36] LevelGeometryService::coarsenData 0.15255  0.2% 4 0    0.0 MFlops 
+               [40] LevelGeometryService::coarsenVoFData 0.07726  0.1% 1256 0    0.0 MFlops 
+                  [63] IndexedMoment::shift 0.01828  0.0% 36920 0    0.0 MFlops 
+               [56] LevelGeometryService::coarsenZFaceData 0.02218  0.0% 2512 0    0.0 MFlops 
+                  [76] EBGraph::isConnected 0.00500  0.0% 83696 0    0.0 MFlops 
+                  [87] IndexedMoment::shift 0.00147  0.0% 6256 0    0.0 MFlops 
+               [57] LevelGeometryService::coarsenXFaceData 0.02157  0.0% 2512 0    0.0 MFlops 
+                  [75] EBGraph::isConnected 0.00501  0.0% 83696 0    0.0 MFlops 
+                  [85] IndexedMoment::shift 0.00149  0.0% 6256 0    0.0 MFlops 
+               [58] LevelGeometryService::coarsenYFaceData 0.02153  0.0% 2512 0    0.0 MFlops 
+                  [77] EBGraph::isConnected 0.00499  0.0% 83696 0    0.0 MFlops 
+                  [86] IndexedMoment::shift 0.00147  0.0% 6256 0    0.0 MFlops 
+               [81] EBGraph::getIrregFaces 0.00351  0.0% 12 0    0.0 MFlops 
+                  [95] EBGraph::getIrregCells 0.00061  0.0% 12 0    0.0 MFlops 
+               [89] EBGraph::getIrregVoFs 0.00126  0.0% 16 0    0.0 MFlops 
+                  [93] EBGraph::getIrregCells 0.00082  0.0% 16 0    0.0 MFlops 
+               [102] EBGraph::getIrregCells 0.00021  0.0% 4 0    0.0 MFlops 
+            [51] LevelGeometryService::coarsenGraph 0.03618  0.0% 4 0    0.0 MFlops 
+               [64] EBGraph::isConnected 0.01708  0.0% 269012 0    0.0 MFlops 
+               [91] HostBoxData::define(Box) (memory allocation) 0.00100  0.0% 4 0    0.0 MFlops 
+            [112] LevelGeometryService::exchange 0.00005  0.0% 4 0    0.0 MFlops 
+               [113] DistributedData::exchange 0.00005  0.0% 32 0    0.0 MFlops 
+                  [134] DistributedData::communicate 0.00001  0.0% 32 0    0.0 MFlops 
+                     [143] DistributedData::doLocalCopies 0.00000  0.0% 32 0    0.0 MFlops 
+                        [162] DistributedData::doLocalCopiesWithCopy 0.00000  0.0% 32 0    0.0 MFlops 
+                  [139] BoxPattern::exchange constructor 0.00001  0.0% 20 0    0.0 MFlops 
+                  [168] CommunicationMetaData constructor 0.00000  0.0% 20 0    0.0 MFlops 
+            [117] LevelGeometryService::defineData 0.00004  0.0% 4 0    0.0 MFlops 
+               [129] DistributedData constructor 0.00002  0.0% 36 0    0.0 MFlops 
+            [130] DistributedData::exchange 0.00001  0.0% 4 0    0.0 MFlops 
+               [152] BoxPattern::exchange constructor 0.00000  0.0% 4 0    0.0 MFlops 
+               [160] DistributedData::communicate 0.00000  0.0% 4 0    0.0 MFlops 
+                  [166] DistributedData::doLocalCopies 0.00000  0.0% 4 0    0.0 MFlops 
+                     [183] DistributedData::doLocalCopiesWithCopy 0.00000  0.0% 4 0    0.0 MFlops 
+               [184] CommunicationMetaData constructor 0.00000  0.0% 4 0    0.0 MFlops 
+         [92] HostBoxData::setval 0.00100  0.0% 1 0    0.0 MFlops 
+         [96] Write Level 0.00054  0.0% 1 0    0.0 MFlops 
+            [98] write_Level 0.00048  0.0% 1 0    0.0 MFlops 
+               [100] linearize_H5Dwrite 0.00029  0.0% 1 0    0.0 MFlops 
+                  [103] H5Dwrite 0.00018  0.0% 1 0    0.0 MFlops 
+                  [106] linearize 0.00011  0.0% 1 0    0.0 MFlops 
+               [108] WriteAttributes 0.00010  0.0% 1 0    0.0 MFlops 
+               [118] H5S_H5D_offsets_create 0.00003  0.0% 1 0    0.0 MFlops 
+               [124] H5Dcreate 0.00002  0.0% 1 0    0.0 MFlops 
+               [131] WriteOffsets 0.00001  0.0% 1 0    0.0 MFlops 
+               [133] H5S_H5D_offsets_close 0.00001  0.0% 1 0    0.0 MFlops 
+               [147] H5Dclose 0.00000  0.0% 1 0    0.0 MFlops 
+               [148] getOffsets 0.00000  0.0% 1 0    0.0 MFlops 
+                  [170] offsets.resize 0.00000  0.0% 1 0    0.0 MFlops 
+                  [192] dataSize 0.00000  0.0% 1 0    0.0 MFlops 
+                  [197] offsets calc 0.00000  0.0% 1 0    0.0 MFlops 
+               [151] free 0.00000  0.0% 1 0    0.0 MFlops 
+               [165] H5Screate 0.00000  0.0% 1 0    0.0 MFlops 
+               [171] H5Sclose 0.00000  0.0% 1 0    0.0 MFlops 
+               [174] mallocMT_buffers 0.00000  0.0% 1 0    0.0 MFlops 
+               [175] ComputeBufferCapacity 0.00000  0.0% 1 0    0.0 MFlops 
+            [123] writeToFile 0.00002  0.0% 1 0    0.0 MFlops 
+            [137] setGroup 0.00001  0.0% 1 0    0.0 MFlops 
+            [189] calc minimum in outputGhost 0.00000  0.0% 1 0    0.0 MFlops 
+         [109] EBCM_Framework::getImplicitFunction 0.00009  0.0% 1 0    0.0 MFlops 
+         [136] LoadBalance:std::vectorBoxEntry 0.00001  0.0% 1 0    0.0 MFlops 
+            [140] LoadBalance:std::vectorBoxSimple 0.00001  0.0% 1 0    0.0 MFlops 
+         [141] DistributedData::exchange 0.00000  0.0% 1 0    0.0 MFlops 
+            [157] BoxPattern::exchange constructor 0.00000  0.0% 1 0    0.0 MFlops 
+            [176] DistributedData::communicate 0.00000  0.0% 1 0    0.0 MFlops 
+               [182] DistributedData::doLocalCopies 0.00000  0.0% 1 0    0.0 MFlops 
+                  [191] DistributedData::doLocalCopiesWithCopy 0.00000  0.0% 1 0    0.0 MFlops 
+            [190] CommunicationMetaData constructor 0.00000  0.0% 1 0    0.0 MFlops 
+         [144] DisjointBoxLayout::computeNeighbors 0.00000  0.0% 1 0    0.0 MFlops 
+         [155] HostBoxData::define(Box) (memory allocation) 0.00000  0.0% 1 0    0.0 MFlops 
+         [156] ~LayoutData 0.00000  0.0% 1 0    0.0 MFlops 
+         [159] BRMeshRefine::domainSplit 0.00000  0.0% 1 0    0.0 MFlops 
+         [172] DistributedData constructor 0.00000  0.0% 1 0    0.0 MFlops 
+         [179] ~Copier 0.00000  0.0% 1 0    0.0 MFlops 
+         [186] ~LevelData 0.00000  0.0% 1 0    0.0 MFlops 
+         [193] ~BoxLayoutData 0.00000  0.0% 1 0    0.0 MFlops 
+      [66] EBCM_Framework::checkKappa 0.01504  0.0% 1 0    0.0 MFlops 
+      [97] Write Level 0.00049  0.0% 1 0    0.0 MFlops 
+         [99] write_Level 0.00043  0.0% 1 0    0.0 MFlops 
+            [101] linearize_H5Dwrite 0.00027  0.0% 1 0    0.0 MFlops 
+               [104] H5Dwrite 0.00016  0.0% 1 0    0.0 MFlops 
+               [107] linearize 0.00011  0.0% 1 0    0.0 MFlops 
+            [110] WriteAttributes 0.00009  0.0% 1 0    0.0 MFlops 
+            [120] H5S_H5D_offsets_create 0.00003  0.0% 1 0    0.0 MFlops 
+            [125] H5Dcreate 0.00002  0.0% 1 0    0.0 MFlops 
+            [132] WriteOffsets 0.00001  0.0% 1 0    0.0 MFlops 
+            [135] H5S_H5D_offsets_close 0.00001  0.0% 1 0    0.0 MFlops 
+            [145] getOffsets 0.00000  0.0% 1 0    0.0 MFlops 
+               [163] offsets.resize 0.00000  0.0% 1 0    0.0 MFlops 
+               [194] dataSize 0.00000  0.0% 1 0    0.0 MFlops 
+               [198] offsets calc 0.00000  0.0% 1 0    0.0 MFlops 
+            [150] H5Dclose 0.00000  0.0% 1 0    0.0 MFlops 
+            [167] H5Screate 0.00000  0.0% 1 0    0.0 MFlops 
+            [169] ComputeBufferCapacity 0.00000  0.0% 1 0    0.0 MFlops 
+            [173] H5Sclose 0.00000  0.0% 1 0    0.0 MFlops 
+            [177] free 0.00000  0.0% 1 0    0.0 MFlops 
+            [178] mallocMT_buffers 0.00000  0.0% 1 0    0.0 MFlops 
+         [122] writeToFile 0.00002  0.0% 1 0    0.0 MFlops 
+         [138] setGroup 0.00001  0.0% 1 0    0.0 MFlops 
+         [188] calc minimum in outputGhost 0.00000  0.0% 1 0    0.0 MFlops 
+      [154] ~LayoutData 0.00000  0.0% 1 0    0.0 MFlops 
+      [164] ~Copier 0.00000  0.0% 1 0    0.0 MFlops 
+      [185] ~LevelData 0.00000  0.0% 1 0    0.0 MFlops 
+      [195] ~BoxLayoutData 0.00000  0.0% 1 0    0.0 MFlops 
+---------------------------------------------------------
+[0]root 80.10270 1
+    100.0% 80.1025        1 EBCM_Framework::runTests [1]
+    100.0%                  Total 
+---------------------------------------------------------
+[1]EBCM_Framework::runTests 80.10246 1
+    89.9% 71.9992        1 EBCM_Framework::getConditionNumberData [2]
+    10.1%  8.0842        1 EBCM_Framework::makeMergedGeometry [10]
+     0.0%  0.0150        1 EBCM_Framework::checkKappa [66]
+     0.0%  0.0005        1 Write Level [97]
+     0.0%  0.0000        1 ~LayoutData [154]
+     0.0%  0.0000        1 ~Copier [164]
+     0.0%  0.0000        1 ~LevelData [185]
+     0.0%  0.0000        1 ~BoxLayoutData [195]
+    100.0%                  Total 
+---------------------------------------------------------
+[2]EBCM_Framework::getConditionNumberData 71.99917 1
+    100.0% 71.9655    14592 EBCM::Algorithm_Framework::getWorstConditionNumberInfo [3]
+     0.0%  0.0000        1 HostBoxData::define(Box) (memory allocation) [121]
+     0.0%  0.0000        1 DistributedData constructor [153]
+    100.0%                  Total 
+---------------------------------------------------------
+[3]EBCM::Algorithm_Framework::getWorstConditionNumberInfo 71.96551 14592
+    99.8% 71.8168    83256 EBCM_Framework::getSystemMatrix [4]
+    99.8%                  Total 
+---------------------------------------------------------
+[4]EBCM_Framework::getSystemMatrix 71.81681 83256
+    47.7% 34.2438    83256 Algorithm_Framework::getMomentMatrix [5]
+    23.8% 17.1269    83256 Algorithm_Framework::neigborhood_t constructor [7]
+    71.5%                  Total 
+---------------------------------------------------------
+[5]Algorithm_Framework::getMomentMatrix 34.24379 83256
+    66.3% 22.6970 27610512 Algorithm_Framework::shiftMomentAndFillRow [6]
+    29.5% 10.0991  4818624 EBCM::Algorithm_Framework::fillNeumannDomBCRow [9]
+    95.8%                  Total 
+---------------------------------------------------------
+[6]Algorithm_Framework::shiftMomentAndFillRow 22.69700 27610512
+    60.8% 13.7962 27610512 IndexedMoment::shift [8]
+    60.8%                  Total 
+---------------------------------------------------------
+[7]Algorithm_Framework::neigborhood_t constructor 17.12689 83256
+---------------------------------------------------------
+[8]IndexedMoment::shift 13.79619 27610512
+---------------------------------------------------------
+[9]EBCM::Algorithm_Framework::fillNeumannDomBCRow 10.09910 4818624
+    71.9%  7.2588 14455872 IndexedMoment::shift [14]
+    71.9%                  Total 
+---------------------------------------------------------
+[10]EBCM_Framework::makeMergedGeometry 8.08423 1
+    96.3%  7.7869        1 LevelGeometryService::LevelGeometryService [11]
+     2.3%  0.1888        4 LevelGeometryService::defineFromFinerLevel [34]
+     0.0%  0.0010        1 HostBoxData::setval [92]
+     0.0%  0.0005        1 Write Level [96]
+     0.0%  0.0001        1 EBCM_Framework::getImplicitFunction [109]
+     0.0%  0.0000        1 LoadBalance:std::vectorBoxEntry [136]
+     0.0%  0.0000        1 DistributedData::exchange [141]
+     0.0%  0.0000        1 DisjointBoxLayout::computeNeighbors [144]
+     0.0%  0.0000        1 HostBoxData::define(Box) (memory allocation) [155]
+     0.0%  0.0000        1 ~LayoutData [156]
+     0.0%  0.0000        1 BRMeshRefine::domainSplit [159]
+     0.0%  0.0000        1 DistributedData constructor [172]
+     0.0%  0.0000        1 ~Copier [179]
+     0.0%  0.0000        1 ~LevelData [186]
+     0.0%  0.0000        1 ~BoxLayoutData [193]
+    98.7%                  Total 
+---------------------------------------------------------
+[11]LevelGeometryService::LevelGeometryService 7.78686 1
+    100.0%  7.7868        1 LevelGeometryService::defineFinestLevel [12]
+     0.0%  0.0000        1 LevelGeometryService::defineData [115]
+    100.0%                  Total 
+---------------------------------------------------------
+[12]LevelGeometryService::defineFinestLevel 7.78680 1
+    98.6%  7.6752        1 LevelGeometryService::fillGraph [13]
+     0.1%  0.0109        3 EBGraph::getIrregFaces [70]
+     0.1%  0.0047        4 EBGraph::getIrregVoFs [79]
+     0.1%  0.0039        1 EBGraph::buildGraph [80]
+     0.0%  0.0016        1 ~LayoutData [84]
+     0.0%  0.0007        1 EBGraph::getIrregCells [94]
+     0.0%  0.0000        1 LevelGeometryService::exchange [114]
+     0.0%  0.0000        1 DistributedData::exchange [119]
+    98.8%                  Total 
+---------------------------------------------------------
+[13]LevelGeometryService::fillGraph 7.67524 1
+    61.1%  4.6915     3944 fillGraph::endOfirregularCellLoop [15]
+    38.3%  2.9377        1 boxiterator loop [17]
+     0.6%  0.0435    18176 LevelGeometryService::fixregularnextToCovered [47]
+     0.0%  0.0000        1 HostBoxData::define(Box) (memory allocation) [142]
+    100.0%                  Total 
+---------------------------------------------------------
+[14]IndexedMoment::shift 7.25878 14455872
+---------------------------------------------------------
+[15]fillGraph::endOfirregularCellLoop 4.69148 3944
+    99.7%  4.6773     3944 LevelGeometryService::ComputeVofInternals [16]
+    99.7%                  Total 
+---------------------------------------------------------
+[16]LevelGeometryService::ComputeVofInternals 4.67735 3944
+    44.6%  2.0852     3944 computemoments [18]
+    21.8%  1.0190    47328 ifdata constructor 4 [23]
+     6.2%  0.2895     3944 ifdata constructor 2 [31]
+     0.4%  0.0186   567936 CoordinateSystem::ConstructorReduceInfo [62]
+    73.0%                  Total 
+---------------------------------------------------------
+[17]boxiterator loop 2.93767 1
+    50.0%  1.4689    30571 ifdata constructor 2 [20]
+    20.4%  0.5987   183426 ifdata constructor 4 [26]
+     2.4%  0.0706  2201112 CoordinateSystem::ConstructorReduceInfo [42]
+    72.8%                  Total 
+---------------------------------------------------------
+[18]computemoments 2.08517 3944
+    79.4%  1.6554     3944 computemomentsRecursively [19]
+    79.4%                  Total 
+---------------------------------------------------------
+[19]computemomentsRecursively 1.65544 3944
+    66.1%  1.0939    23664 computemoments [22]
+    10.3%  0.1707     3944 computemomentsRecursively [35]
+     1.1%  0.0190   567936 CoordinateSystem::ConstructorReduceInfo [59]
+     1.1%  0.0189     3944 computeRHS [60]
+    78.7%                  Total 
+---------------------------------------------------------
+[20]ifdata constructor 2 1.46886 30571
+    77.2%  1.1338    30571 ifdata::setNormalDerivatives [21]
+    20.4%  0.2994    30571 ifdata::findIntersectionPoints [30]
+     1.7%  0.0256    30571 ifdata::makeCornerSigns [55]
+     0.1%  0.0011    30571 ifdata::defineLocalCoords [90]
+    99.4%                  Total 
+---------------------------------------------------------
+[21]ifdata::setNormalDerivatives 1.13380 30571
+---------------------------------------------------------
+[22]computemoments 1.09390 23664
+    66.2%  0.7246    23664 computemomentsRecursively [25]
+    66.2%                  Total 
+---------------------------------------------------------
+[23]ifdata constructor 4 1.01902 47328
+    94.7%  0.9648    31536 ifdata::setNormalDerivatives [24]
+     0.5%  0.0049   141984 CoordinateSystem::ConstructorReduceInfo [78]
+     0.1%  0.0014    47328 ifdata::defineLocalCoords [88]
+    95.3%                  Total 
+---------------------------------------------------------
+[24]ifdata::setNormalDerivatives 0.96481 31536
+---------------------------------------------------------
+[25]computemomentsRecursively 0.72461 23664
+    71.4%  0.5172    23664 computemomentsRecursively [27]
+     2.2%  0.0162    15768 computeRHS [65]
+    73.6%                  Total 
+---------------------------------------------------------
+[26]ifdata constructor 4 0.59870 183426
+    77.6%  0.4647    15768 ifdata::setNormalDerivatives [28]
+     3.1%  0.0186   550278 CoordinateSystem::ConstructorReduceInfo [61]
+     0.9%  0.0054   183426 ifdata::defineLocalCoords [74]
+    81.6%                  Total 
+---------------------------------------------------------
+[27]computemomentsRecursively 0.51716 23664
+    73.2%  0.3785    23664 computemomentsRecursively [29]
+     7.0%  0.0362    15768 computeRHS [50]
+    80.2%                  Total 
+---------------------------------------------------------
+[28]ifdata::setNormalDerivatives 0.46468 15768
+---------------------------------------------------------
+[29]computemomentsRecursively 0.37852 23664
+    62.2%  0.2355    23664 computemomentsRecursively [32]
+    14.7%  0.0557    15768 computeRHS [45]
+    76.9%                  Total 
+---------------------------------------------------------
+[30]ifdata::findIntersectionPoints 0.29938 30571
+    33.0%  0.0989   733704 ifdata::makeedgekey [38]
+    25.4%  0.0761  1956544 ifdata::isConnected [41]
+    58.5%                  Total 
+---------------------------------------------------------
+[31]ifdata constructor 2 0.28954 3944
+    75.1%  0.2174     3944 ifdata::setNormalDerivatives [33]
+    22.1%  0.0641     3944 ifdata::findIntersectionPoints [43]
+     2.0%  0.0059     3944 ifdata::makeCornerSigns [73]
+     0.0%  0.0001     3944 ifdata::defineLocalCoords [105]
+    99.3%                  Total 
+---------------------------------------------------------
+[32]computemomentsRecursively 0.23548 23664
+    42.1%  0.0992    23664 computemomentsRecursively [37]
+    24.6%  0.0579    15768 computeRHS [44]
+    66.7%                  Total 
+---------------------------------------------------------
+[33]ifdata::setNormalDerivatives 0.21736 3944
+---------------------------------------------------------
+[34]LevelGeometryService::defineFromFinerLevel 0.18884 4
+    80.8%  0.1526        4 LevelGeometryService::coarsenData [36]
+    19.2%  0.0362        4 LevelGeometryService::coarsenGraph [51]
+     0.0%  0.0001        4 LevelGeometryService::exchange [112]
+     0.0%  0.0000        4 LevelGeometryService::defineData [117]
+     0.0%  0.0000        4 DistributedData::exchange [130]
+    100.0%                  Total 
+---------------------------------------------------------
+[35]computemomentsRecursively 0.17068 3944
+    55.9%  0.0954     3944 computemomentsRecursively [39]
+    22.7%  0.0388     3944 computeRHS [49]
+    78.6%                  Total 
+---------------------------------------------------------
+[36]LevelGeometryService::coarsenData 0.15255 4
+    50.6%  0.0773     1256 LevelGeometryService::coarsenVoFData [40]
+    14.5%  0.0222     2512 LevelGeometryService::coarsenZFaceData [56]
+    14.1%  0.0216     2512 LevelGeometryService::coarsenXFaceData [57]
+    14.1%  0.0215     2512 LevelGeometryService::coarsenYFaceData [58]
+     2.3%  0.0035       12 EBGraph::getIrregFaces [81]
+     0.8%  0.0013       16 EBGraph::getIrregVoFs [89]
+     0.1%  0.0002        4 EBGraph::getIrregCells [102]
+    96.7%                  Total 
+---------------------------------------------------------
+[37]computemomentsRecursively 0.09923 23664
+    42.3%  0.0420    15768 computeRHS [48]
+    42.3%                  Total 
+---------------------------------------------------------
+[38]ifdata::makeedgekey 0.09895 733704
+    12.7%  0.0126    31536 ifdata::rootfinder [68]
+    12.7%                  Total 
+---------------------------------------------------------
+[39]computemomentsRecursively 0.09542 3944
+    46.0%  0.0439     3944 computeRHS [46]
+    37.9%  0.0361     3944 computemomentsRecursively [52]
+    83.8%                  Total 
+---------------------------------------------------------
+[40]LevelGeometryService::coarsenVoFData 0.07726 1256
+    23.7%  0.0183    36920 IndexedMoment::shift [63]
+    23.7%                  Total 
+---------------------------------------------------------
+[41]ifdata::isConnected 0.07615 1956544
+---------------------------------------------------------
+[42]CoordinateSystem::ConstructorReduceInfo 0.07061 2201112
+---------------------------------------------------------
+[43]ifdata::findIntersectionPoints 0.06409 3944
+    53.8%  0.0345    94656 ifdata::makeedgekey [53]
+    17.4%  0.0111   252416 ifdata::isConnected [69]
+    71.2%                  Total 
+---------------------------------------------------------
+[44]computeRHS 0.05792 15768
+---------------------------------------------------------
+[45]computeRHS 0.05568 15768
+---------------------------------------------------------
+[46]computeRHS 0.04388 3944
+---------------------------------------------------------
+[47]LevelGeometryService::fixregularnextToCovered 0.04352 18176
+---------------------------------------------------------
+[48]computeRHS 0.04199 15768
+---------------------------------------------------------
+[49]computeRHS 0.03878 3944
+---------------------------------------------------------
+[50]computeRHS 0.03622 15768
+---------------------------------------------------------
+[51]LevelGeometryService::coarsenGraph 0.03618 4
+    47.2%  0.0171   269012 EBGraph::isConnected [64]
+     2.8%  0.0010        4 HostBoxData::define(Box) (memory allocation) [91]
+    50.0%                  Total 
+---------------------------------------------------------
+[52]computemomentsRecursively 0.03612 3944
+    84.3%  0.0305     3944 computeRHS [54]
+    84.3%                  Total 
+---------------------------------------------------------
+[53]ifdata::makeedgekey 0.03449 94656
+    42.0%  0.0145    31536 ifdata::rootfinder [67]
+    42.0%                  Total 
+---------------------------------------------------------
+[54]computeRHS 0.03046 3944
+---------------------------------------------------------
+[55]ifdata::makeCornerSigns 0.02563 30571
+---------------------------------------------------------
+[56]LevelGeometryService::coarsenZFaceData 0.02218 2512
+    22.5%  0.0050    83696 EBGraph::isConnected [76]
+     6.6%  0.0015     6256 IndexedMoment::shift [87]
+    29.2%                  Total 
+---------------------------------------------------------
+[57]LevelGeometryService::coarsenXFaceData 0.02157 2512
+    23.2%  0.0050    83696 EBGraph::isConnected [75]
+     6.9%  0.0015     6256 IndexedMoment::shift [85]
+    30.1%                  Total 
+---------------------------------------------------------
+[58]LevelGeometryService::coarsenYFaceData 0.02153 2512
+    23.2%  0.0050    83696 EBGraph::isConnected [77]
+     6.8%  0.0015     6256 IndexedMoment::shift [86]
+    30.0%                  Total 
+---------------------------------------------------------
+[59]CoordinateSystem::ConstructorReduceInfo 0.01898 567936
+---------------------------------------------------------
+[60]computeRHS 0.01890 3944
+---------------------------------------------------------
+[61]CoordinateSystem::ConstructorReduceInfo 0.01859 550278
+---------------------------------------------------------
+[62]CoordinateSystem::ConstructorReduceInfo 0.01857 567936
+---------------------------------------------------------
+[63]IndexedMoment::shift 0.01828 36920
+---------------------------------------------------------
+[64]EBGraph::isConnected 0.01708 269012
+---------------------------------------------------------
+[65]computeRHS 0.01617 15768
+---------------------------------------------------------
+[66]EBCM_Framework::checkKappa 0.01504 1
+---------------------------------------------------------
+[67]ifdata::rootfinder 0.01447 31536
+    71.4%  0.0103    31536 ifdata::brentrootfinder [71]
+    71.4%                  Total 
+---------------------------------------------------------
+[68]ifdata::rootfinder 0.01261 31536
+    72.2%  0.0091    31536 ifdata::brentrootfinder [72]
+    72.2%                  Total 
+---------------------------------------------------------
+[69]ifdata::isConnected 0.01113 252416
+---------------------------------------------------------
+[70]EBGraph::getIrregFaces 0.01092 3
+    24.1%  0.0026        3 EBGraph::getIrregCells [83]
+    24.1%                  Total 
+---------------------------------------------------------
+[71]ifdata::brentrootfinder 0.01033 31536
+---------------------------------------------------------
+[72]ifdata::brentrootfinder 0.00910 31536
+---------------------------------------------------------
+[73]ifdata::makeCornerSigns 0.00593 3944
+---------------------------------------------------------
+[74]ifdata::defineLocalCoords 0.00539 183426
+---------------------------------------------------------
+[75]EBGraph::isConnected 0.00501 83696
+---------------------------------------------------------
+[76]EBGraph::isConnected 0.00500 83696
+---------------------------------------------------------
+[77]EBGraph::isConnected 0.00499 83696
+---------------------------------------------------------
+[78]CoordinateSystem::ConstructorReduceInfo 0.00491 141984
+---------------------------------------------------------
+[79]EBGraph::getIrregVoFs 0.00473 4
+    71.7%  0.0034        4 EBGraph::getIrregCells [82]
+    71.7%                  Total 
+---------------------------------------------------------
+[80]EBGraph::buildGraph 0.00391 1
+     2.0%  0.0001        1 HostBoxData::define(Box) (memory allocation) [111]
+     2.0%                  Total 
+---------------------------------------------------------
+[81]EBGraph::getIrregFaces 0.00351 12
+    17.4%  0.0006       12 EBGraph::getIrregCells [95]
+    17.4%                  Total 
+---------------------------------------------------------
+[82]EBGraph::getIrregCells 0.00339 4
+---------------------------------------------------------
+[83]EBGraph::getIrregCells 0.00264 3
+---------------------------------------------------------
+[84]~LayoutData 0.00156 1
+---------------------------------------------------------
+[85]IndexedMoment::shift 0.00149 6256
+---------------------------------------------------------
+[86]IndexedMoment::shift 0.00147 6256
+---------------------------------------------------------
+[87]IndexedMoment::shift 0.00147 6256
+---------------------------------------------------------
+[88]ifdata::defineLocalCoords 0.00143 47328
+---------------------------------------------------------
+[89]EBGraph::getIrregVoFs 0.00126 16
+    64.6%  0.0008       16 EBGraph::getIrregCells [93]
+    64.6%                  Total 
+---------------------------------------------------------
+[90]ifdata::defineLocalCoords 0.00112 30571
+---------------------------------------------------------
+[91]HostBoxData::define(Box) (memory allocation) 0.00100 4
+---------------------------------------------------------
+[92]HostBoxData::setval 0.00100 1
+---------------------------------------------------------
+[93]EBGraph::getIrregCells 0.00082 16
+---------------------------------------------------------
+[94]EBGraph::getIrregCells 0.00072 1
+---------------------------------------------------------
+[95]EBGraph::getIrregCells 0.00061 12
+---------------------------------------------------------
+[96]Write Level 0.00054 1
+    88.6%  0.0005        1 write_Level [98]
+     3.6%  0.0000        1 writeToFile [123]
+     1.0%  0.0000        1 setGroup [137]
+     0.0%  0.0000        1 calc minimum in outputGhost [189]
+    93.3%                  Total 
+---------------------------------------------------------
+[97]Write Level 0.00049 1
+    88.1%  0.0004        1 write_Level [99]
+     4.0%  0.0000        1 writeToFile [122]
+     1.1%  0.0000        1 setGroup [138]
+     0.0%  0.0000        1 calc minimum in outputGhost [188]
+    93.2%                  Total 
+---------------------------------------------------------
+[98]write_Level 0.00048 1
+    61.4%  0.0003        1 linearize_H5Dwrite [100]
+    20.2%  0.0001        1 WriteAttributes [108]
+     7.2%  0.0000        1 H5S_H5D_offsets_create [118]
+     3.9%  0.0000        1 H5Dcreate [124]
+     2.0%  0.0000        1 WriteOffsets [131]
+     1.6%  0.0000        1 H5S_H5D_offsets_close [133]
+     0.5%  0.0000        1 H5Dclose [147]
+     0.5%  0.0000        1 getOffsets [148]
+     0.5%  0.0000        1 free [151]
+     0.2%  0.0000        1 H5Screate [165]
+     0.1%  0.0000        1 H5Sclose [171]
+     0.1%  0.0000        1 mallocMT_buffers [174]
+     0.1%  0.0000        1 ComputeBufferCapacity [175]
+    98.2%                  Total 
+---------------------------------------------------------
+[99]write_Level 0.00043 1
+    62.7%  0.0003        1 linearize_H5Dwrite [101]
+    19.9%  0.0001        1 WriteAttributes [110]
+     5.9%  0.0000        1 H5S_H5D_offsets_create [120]
+     4.3%  0.0000        1 H5Dcreate [125]
+     1.7%  0.0000        1 WriteOffsets [132]
+     1.7%  0.0000        1 H5S_H5D_offsets_close [135]
+     0.6%  0.0000        1 getOffsets [145]
+     0.5%  0.0000        1 H5Dclose [150]
+     0.2%  0.0000        1 H5Screate [167]
+     0.2%  0.0000        1 ComputeBufferCapacity [169]
+     0.1%  0.0000        1 H5Sclose [173]
+     0.1%  0.0000        1 free [177]
+     0.1%  0.0000        1 mallocMT_buffers [178]
+    98.0%                  Total 
+---------------------------------------------------------
+[100]linearize_H5Dwrite 0.00029 1
+    60.4%  0.0002        1 H5Dwrite [103]
+    37.3%  0.0001        1 linearize [106]
+    97.7%                  Total 
+---------------------------------------------------------
+[101]linearize_H5Dwrite 0.00027 1
+    58.2%  0.0002        1 H5Dwrite [104]
+    40.0%  0.0001        1 linearize [107]
+    98.2%                  Total 
+---------------------------------------------------------
+[102]EBGraph::getIrregCells 0.00021 4
+---------------------------------------------------------
+[103]H5Dwrite 0.00018 1
+---------------------------------------------------------
+[104]H5Dwrite 0.00016 1
+---------------------------------------------------------
+[105]ifdata::defineLocalCoords 0.00014 3944
+---------------------------------------------------------
+[106]linearize 0.00011 1
+---------------------------------------------------------
+[107]linearize 0.00011 1
+---------------------------------------------------------
+[108]WriteAttributes 0.00010 1
+---------------------------------------------------------
+[109]EBCM_Framework::getImplicitFunction 0.00009 1
+---------------------------------------------------------
+[110]WriteAttributes 0.00009 1
+---------------------------------------------------------
+[111]HostBoxData::define(Box) (memory allocation) 0.00008 1
+---------------------------------------------------------
+[112]LevelGeometryService::exchange 0.00005 4
+    92.5%  0.0000       32 DistributedData::exchange [113]
+    92.5%                  Total 
+---------------------------------------------------------
+[113]DistributedData::exchange 0.00005 32
+    15.6%  0.0000       32 DistributedData::communicate [134]
+    10.7%  0.0000       20 BoxPattern::exchange constructor [139]
+     1.5%  0.0000       20 CommunicationMetaData constructor [168]
+    27.8%                  Total 
+---------------------------------------------------------
+[114]LevelGeometryService::exchange 0.00004 1
+    96.0%  0.0000        8 DistributedData::exchange [116]
+    96.0%                  Total 
+---------------------------------------------------------
+[115]LevelGeometryService::defineData 0.00004 1
+    38.7%  0.0000        9 DistributedData constructor [128]
+    38.7%                  Total 
+---------------------------------------------------------
+[116]DistributedData::exchange 0.00004 8
+     6.8%  0.0000        5 BoxPattern::exchange constructor [146]
+     5.9%  0.0000        8 DistributedData::communicate [149]
+     0.7%  0.0000        5 CommunicationMetaData constructor [181]
+    13.5%                  Total 
+---------------------------------------------------------
+[117]LevelGeometryService::defineData 0.00004 4
+    41.7%  0.0000       36 DistributedData constructor [129]
+    41.7%                  Total 
+---------------------------------------------------------
+[118]H5S_H5D_offsets_create 0.00003 1
+---------------------------------------------------------
+[119]DistributedData::exchange 0.00003 1
+    63.4%  0.0000        1 DistributedData::communicate [126]
+     4.5%  0.0000        1 BoxPattern::exchange constructor [161]
+     0.1%  0.0000        1 CommunicationMetaData constructor [196]
+    68.0%                  Total 
+---------------------------------------------------------
+[120]H5S_H5D_offsets_create 0.00003 1
+---------------------------------------------------------
+[121]HostBoxData::define(Box) (memory allocation) 0.00002 1
+---------------------------------------------------------
+[122]writeToFile 0.00002 1
+---------------------------------------------------------
+[123]writeToFile 0.00002 1
+---------------------------------------------------------
+[124]H5Dcreate 0.00002 1
+---------------------------------------------------------
+[125]H5Dcreate 0.00002 1
+---------------------------------------------------------
+[126]DistributedData::communicate 0.00002 1
+    99.2%  0.0000        1 DistributedData::doLocalCopies [127]
+    99.2%                  Total 
+---------------------------------------------------------
+[127]DistributedData::doLocalCopies 0.00002 1
+     0.3%  0.0000        1 DistributedData::doLocalCopiesWithCopy [187]
+     0.3%                  Total 
+---------------------------------------------------------
+[128]DistributedData constructor 0.00002 9
+---------------------------------------------------------
+[129]DistributedData constructor 0.00002 36
+---------------------------------------------------------
+[130]DistributedData::exchange 0.00001 4
+    16.4%  0.0000        4 BoxPattern::exchange constructor [152]
+    10.6%  0.0000        4 DistributedData::communicate [160]
+     1.0%  0.0000        4 CommunicationMetaData constructor [184]
+    28.0%                  Total 
+---------------------------------------------------------
+[131]WriteOffsets 0.00001 1
+---------------------------------------------------------
+[132]WriteOffsets 0.00001 1
+---------------------------------------------------------
+[133]H5S_H5D_offsets_close 0.00001 1
+---------------------------------------------------------
+[134]DistributedData::communicate 0.00001 32
+    57.3%  0.0000       32 DistributedData::doLocalCopies [143]
+    57.3%                  Total 
+---------------------------------------------------------
+[135]H5S_H5D_offsets_close 0.00001 1
+---------------------------------------------------------
+[136]LoadBalance:std::vectorBoxEntry 0.00001 1
+    79.0%  0.0000        1 LoadBalance:std::vectorBoxSimple [140]
+    79.0%                  Total 
+---------------------------------------------------------
+[137]setGroup 0.00001 1
+---------------------------------------------------------
+[138]setGroup 0.00001 1
+---------------------------------------------------------
+[139]BoxPattern::exchange constructor 0.00001 20
+---------------------------------------------------------
+[140]LoadBalance:std::vectorBoxSimple 0.00001 1
+---------------------------------------------------------
+[141]DistributedData::exchange 0.00000 1
+    32.2%  0.0000        1 BoxPattern::exchange constructor [157]
+     9.2%  0.0000        1 DistributedData::communicate [176]
+     0.9%  0.0000        1 CommunicationMetaData constructor [190]
+    42.2%                  Total 
+---------------------------------------------------------
+[142]HostBoxData::define(Box) (memory allocation) 0.00000 1
+---------------------------------------------------------
+[143]DistributedData::doLocalCopies 0.00000 32
+    26.2%  0.0000       32 DistributedData::doLocalCopiesWithCopy [162]
+    26.2%                  Total 
+---------------------------------------------------------
+[144]DisjointBoxLayout::computeNeighbors 0.00000 1
+---------------------------------------------------------
+[145]getOffsets 0.00000 1
+    31.9%  0.0000        1 offsets.resize [163]
+     1.4%  0.0000        1 dataSize [194]
+     0.7%  0.0000        1 offsets calc [198]
+    34.1%                  Total 
+---------------------------------------------------------
+[146]BoxPattern::exchange constructor 0.00000 5
+---------------------------------------------------------
+[147]H5Dclose 0.00000 1
+---------------------------------------------------------
+[148]getOffsets 0.00000 1
+    28.3%  0.0000        1 offsets.resize [170]
+     1.6%  0.0000        1 dataSize [192]
+     1.2%  0.0000        1 offsets calc [197]
+    31.2%                  Total 
+---------------------------------------------------------
+[149]DistributedData::communicate 0.00000 8
+    58.0%  0.0000        8 DistributedData::doLocalCopies [158]
+    58.0%                  Total 
+---------------------------------------------------------
+[150]H5Dclose 0.00000 1
+---------------------------------------------------------
+[151]free 0.00000 1
+---------------------------------------------------------
+[152]BoxPattern::exchange constructor 0.00000 4
+---------------------------------------------------------
+[153]DistributedData constructor 0.00000 1
+---------------------------------------------------------
+[154]~LayoutData 0.00000 1
+---------------------------------------------------------
+[155]HostBoxData::define(Box) (memory allocation) 0.00000 1
+---------------------------------------------------------
+[156]~LayoutData 0.00000 1
+---------------------------------------------------------
+[157]BoxPattern::exchange constructor 0.00000 1
+---------------------------------------------------------
+[158]DistributedData::doLocalCopies 0.00000 8
+    24.6%  0.0000        8 DistributedData::doLocalCopiesWithCopy [180]
+    24.6%                  Total 
+---------------------------------------------------------
+[159]BRMeshRefine::domainSplit 0.00000 1
+---------------------------------------------------------
+[160]DistributedData::communicate 0.00000 4
+    54.9%  0.0000        4 DistributedData::doLocalCopies [166]
+    54.9%                  Total 
+---------------------------------------------------------
+[161]BoxPattern::exchange constructor 0.00000 1
+---------------------------------------------------------
+[162]DistributedData::doLocalCopiesWithCopy 0.00000 32
+---------------------------------------------------------
+[163]offsets.resize 0.00000 1
+---------------------------------------------------------
+[164]~Copier 0.00000 1
+---------------------------------------------------------
+[165]H5Screate 0.00000 1
+---------------------------------------------------------
+[166]DistributedData::doLocalCopies 0.00000 4
+    21.9%  0.0000        4 DistributedData::doLocalCopiesWithCopy [183]
+    21.9%                  Total 
+---------------------------------------------------------
+[167]H5Screate 0.00000 1
+---------------------------------------------------------
+[168]CommunicationMetaData constructor 0.00000 20
+---------------------------------------------------------
+[169]ComputeBufferCapacity 0.00000 1
+---------------------------------------------------------
+[170]offsets.resize 0.00000 1
+---------------------------------------------------------
+[171]H5Sclose 0.00000 1
+---------------------------------------------------------
+[172]DistributedData constructor 0.00000 1
+---------------------------------------------------------
+[173]H5Sclose 0.00000 1
+---------------------------------------------------------
+[174]mallocMT_buffers 0.00000 1
+---------------------------------------------------------
+[175]ComputeBufferCapacity 0.00000 1
+---------------------------------------------------------
+[176]DistributedData::communicate 0.00000 1
+    52.4%  0.0000        1 DistributedData::doLocalCopies [182]
+    52.4%                  Total 
+---------------------------------------------------------
+[177]free 0.00000 1
+---------------------------------------------------------
+[178]mallocMT_buffers 0.00000 1
+---------------------------------------------------------
+[179]~Copier 0.00000 1
+---------------------------------------------------------
+[180]DistributedData::doLocalCopiesWithCopy 0.00000 8
+---------------------------------------------------------
+[181]CommunicationMetaData constructor 0.00000 5
+---------------------------------------------------------
+[182]DistributedData::doLocalCopies 0.00000 1
+    18.2%  0.0000        1 DistributedData::doLocalCopiesWithCopy [191]
+    18.2%                  Total 
+---------------------------------------------------------
+[183]DistributedData::doLocalCopiesWithCopy 0.00000 4
+---------------------------------------------------------
+[184]CommunicationMetaData constructor 0.00000 4
+---------------------------------------------------------
+[185]~LevelData 0.00000 1
+---------------------------------------------------------
+[186]~LevelData 0.00000 1
+---------------------------------------------------------
+[187]DistributedData::doLocalCopiesWithCopy 0.00000 1
+---------------------------------------------------------
+[188]calc minimum in outputGhost 0.00000 1
+---------------------------------------------------------
+[189]calc minimum in outputGhost 0.00000 1
+---------------------------------------------------------
+[190]CommunicationMetaData constructor 0.00000 1
+---------------------------------------------------------
+[191]DistributedData::doLocalCopiesWithCopy 0.00000 1
+---------------------------------------------------------
+[192]dataSize 0.00000 1
+---------------------------------------------------------
+[193]~BoxLayoutData 0.00000 1
+---------------------------------------------------------
+[194]dataSize 0.00000 1
+---------------------------------------------------------
+[195]~BoxLayoutData 0.00000 1
+---------------------------------------------------------
+[196]CommunicationMetaData constructor 0.00000 1
+---------------------------------------------------------
+[197]offsets calc 0.00000 1
+---------------------------------------------------------
+[198]offsets calc 0.00000 1
+=======================================================
+=======================================================
