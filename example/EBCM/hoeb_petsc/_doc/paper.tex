@@ -145,7 +145,7 @@ describe the algorithm, we need only describe how to compute
 $<\nabla\psi \cdot \nhat>$ on open faces.
 
 \section{Open face Poisson flux computation with Neumann boundary conditions}
-
+\label{sec::openface}
 An open face is one that connects two volumes in the solution.  These
 faces are aligned with a coordinate direction.   Consider an open face
 $\fbold$ aligned with coordinate direction $d$.   We define $\ncal_\fbold$
@@ -542,7 +542,62 @@ credibly solved without very high precision numerical arithmetic.
 \end{table}
 \end{small}
 
- 
+
+\section{Domain face Poisson flux computation with Dirichlet boundary
+  conditions}
+
+Neumann boundary conditions are a proscribed flux when solving
+Poisson's equation.     When we have Dirichlet boundary conditions
+either at the domain box boundary or at a cut face, we must calculate
+the flux through that face.
+
+For context, allow us to recap a relevant bit of finite volume formalism.
+Consider a volume $\ibold$ bounded by the set of faces
+$\{f\}  = \partial \ibold$, where the outward-facing normal $\nhat$ of
+each face is known, as is its  $V_\ibold$.
+Given a flux function $F$, the average divergence $< \nabla \cdot F >$
+is given by the divergence theorem:
+\begin{equation}
+\begin{array}{l l}
+< \nabla \cdot F > &= \frac{1}{V_\ibold} \int_\ibold \nabla \cdot F dV \\
+           &= \frac{1}{V_\ibold} \int_{\partial \ibold} F\cdot \nhat dA \\
+           &= \frac{1}{V_\ibold} \sum_{f \in \partial
+  \ibold}\int_{\partial \ibold} F\cdot \nhat dA.
+\end{array}
+\label{eqn::discreteDivergence}
+\end{equation}
+For all coordinate-alligned faces, the section above's description for how to
+compute the flux is adequate.   What remains are fluxes through cut
+faces.
+
+We start with a smooth function $\psi$ which we we expand using Taylor
+(equation \ref{eqn::taylor}).  At each cut face $f$ with area $A_f$,
+we wish to compute the average flux $< \nabla \psi \cdot \nhat >_f$
+through that face.
+\begin{equation}
+\begin{array}{l l }
+  < \nabla \psi \cdot \nhat >_f
+  &= \frac{1}{A_f} \int_f \nabla \psi \cdot \nhat dA \\
+  &= \frac{1}{A_f} \int_f \sum_{p \in P} \sum_{0 <= d <D}  (p-e^d) C_p
+  \ecal^{p-e^d} n^d dA
+\end{array}
+\end{equation}
+where the normal moments
+\begin{equation}
+$$
+\ecal^{\pbold, d}_\cbold  =  \int\limits_{A(\cbold)} \xminxbar n^d  dA
+$$
+are natural products of the \cite{Schwartz2015} grid generation
+algorithm.   Except in that we are using the normal moments, this is
+semantically the same dance we used to calculate open face fluxes.
+
+\subsection{The effect of Dirichlet boundary conditions on
+  solvability}
+In section \label{sec::openface}, we discuss how  adding Neumann
+boundary condition equations can improve the conditioning of the
+system matrix.    
+
+
 \section{Stability and Conditioning of the entire system}
 
 The matrix $L_{P_T, P_W}$ for a particular polynomial order $P_T$ and
