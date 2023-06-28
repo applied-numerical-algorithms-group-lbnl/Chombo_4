@@ -31,5 +31,5 @@ main.inv_cond_filename               = "all_regular_inv_cond.hdf5"
 
 main.polynomial_order  = TAYLOR_MAX
 stencil.weight_power   = WGT_POWER
-
-
+main.dom_bc            = "DOMAIN_FACE_BC"
+main.eb_bc             = "CUT_FACE_BC"

@@ -13,10 +13,12 @@ parser = ArgumentParser()
 
 parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default='4')
 parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
-parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/merged.inputs")
 parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
-parser.add_argument('--prefix', type=str, help='name of test["test"]',default="merged_debug_compilation_3d")
-parser.add_argument('--executable', type=str, help='executable file'   ,default="_exe/main.3d.debug.exe")
+parser.add_argument('--domain_bc', type=str, help='domain boundary condition',default="dirichlet")
+parser.add_argument('--eb_bc', type=str, help='cut face   boundary condition',default="dirichlet")
+parser.add_argument('--executable', type=str, help='executable file'   ,default=                        "_exe/main.2d.debug.exe")
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default=                  "all_regular_debug_2d")
+parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/all_regular.inputs")
 
 args = parser.parse_args()
 print(args)
@@ -26,7 +28,8 @@ print ("homedir = " + homestr)
 neartopstr = homestr + "/_" +args.prefix
 strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
 
-
+domain_bc= args.domain_bc
+eb_bc    = args.eb_bc
 topstr = neartopstr +"_" + strtoday
 print ("topstr = " + topstr)
 execstr = args.executable
@@ -98,7 +101,9 @@ while taylor_P <= max_taylor:
             t1str = inputstr;
             t2str = t1str.replace("TAYLOR_MAX", str(taylor_P))
             t3str = t2str.replace("WGT_POWER",  str(weight_P))
-            f_inp.write(t3str)
+            t4str = t3str.replace("DOMAIN_FACE_BC",  domain_bc)
+            t5str = t4str.replace("CUT_FACE_BC",  eb_bc)
+            f_inp.write(t5str)
         
         f_inp.close()
         
