@@ -1409,7 +1409,7 @@ namespace EBCM
         Chombo4::pout() << "getMomentMatrix: invalid dom_bc" << endl;
         ch_mayday::Error("Doh!");
       }
-      if(a_eb_bc == string("all_neumann"))
+      if(a_eb_bc == string("neumann"))
       {
         for(int irow = 0; irow < nrows_cut_faces; irow++)
         {
@@ -1419,6 +1419,19 @@ namespace EBCM
           auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
           
           fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
+          irow_global++;
+        }
+      }
+      else if(a_eb_bc == string("dirichlet"))
+      {
+        for(int irow = 0; irow < nrows_cut_faces; irow++)
+        {
+          //indexing information to get to the cut face volumes
+          const auto &  face_loc = (*(a_locality->m_cut_faces))[irow];  
+          const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
+          auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
+          
+          fillDirichletEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
           irow_global++;
         }
       }
