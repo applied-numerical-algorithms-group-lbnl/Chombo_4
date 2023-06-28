@@ -32,5 +32,7 @@ getImplicitFunction.which_geom       = "sphere"
 main.inv_cond_filename               = "sphere_inv_cond.hdf5"
 main.polynomial_order  = 1
 stencil.weight_power   = 1
+main.dom_bc = "dirichlet"
+main.eb_bc  = "dirichlet"
 
 

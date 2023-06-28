@@ -226,6 +226,35 @@ namespace EBCM
         }
 
       }
+
+      bool ebFluxKnownAProri = (a_eb_bc == string("neumann"));
+      if(  ebFluxKnownAProri)
+      {
+        static bool printedMessage = false;
+        if(!printedMessage)
+        {
+          Chombo4::pout() << "getWorstConditionNumberInfo: Neumann EB flux needs no system matrix" << endl;
+          printedMessage = true;
+        }
+      }
+      else if(a_volu.m_ifaces.size() > 0)
+      {
+        double worstCond, maxEigen, minEigen;
+        int    vecIndex;
+        getWorstEBConditionNumberInfo(worstCond, maxEigen, minEigen, vecIndex,
+                                      a_volu.m_ifaces, a_graph, stenrad, weightpower, 
+                                      a_dom_bc, a_eb_bc, false);
+        if(worstCond < a_invCondNumber)
+        {
+          a_face_dir      = -1;
+          a_invCondNumber = worstCond;
+          a_maxEigenvalue = maxEigen;
+          a_minEigenvalue = minEigen;
+          a_vec_index     = vecIndex;
+        }
+
+      }
+
     } //end function vof function
     
     template <CENTERING cent>
@@ -256,18 +285,67 @@ namespace EBCM
     
       if(a_print)
       {
-        Chombo4::pout() << "Weight matrix:" << endl;
+        int icent = cent;
+        Chombo4::pout() << "getSystemMatrix: icent = " << icent << endl;
+        Chombo4::pout() << "getSystemMatrix: Weight matrix:" << endl;
         Wmat_p->poutDiag();
-        Chombo4::pout() << "Moment matrix:" << endl;
+        Chombo4::pout() << "getSystemMatrix: Moment matrix:" << endl;
         Mmat_p->poutAll();
       
-        Chombo4::pout() << "WM   matrix: :" << endl;
+        Chombo4::pout() << "getSystemMatrix: WM   matrix: :" << endl;
         WMmat.poutAll();
       
-        Chombo4::pout() << "WM^T matrix: :" << endl;
+        Chombo4::pout() << "getSystemMatrix: WM^T matrix: :" << endl;
         WMTmat.poutAll();
 
         Chombo4::pout() << "System matrix:" << endl;
+        Amat_p->poutAll();
+      }
+
+      return Amat_p;
+
+    }
+
+    ///I could probably have gotten  some code reuse from above if I had made better choices in life.
+    static inline shared_ptr<eigen_mat>
+    getEBSystemMatrix(const IrregFace< ebcm_order>       &  a_face,
+                    const ebcm_graph                     &  a_graph,
+                    int a_nghost, int a_weight_power,
+                    const string& a_dom_bc, const string & a_eb_bc,
+                    bool a_print)
+    {
+      CH_TIME("EBCM_Framework::getEBSystemMatrix");
+      shared_ptr<neighborhood_t>
+        locality(new neighborhood_t(a_graph,
+                                    a_face.m_pt,
+                                    a_face.m_pt,
+                                    a_nghost, a_weight_power, a_print));
+
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      shared_ptr<eigen_mat> Amat_p(new eigen_mat());
+      multiply(*Amat_p, WMTmat, WMmat);
+    
+      if(a_print)
+      {
+        Chombo4::pout() << "getEBSystemMatrix:Weight matrix:" << endl;
+        Wmat_p->poutDiag();
+        Chombo4::pout() << "getEBSystemMatrix:Moment matrix:" << endl;
+        Mmat_p->poutAll();
+      
+        Chombo4::pout() << "getEBSystemMatrix:WM   matrix: :" << endl;
+        WMmat.poutAll();
+      
+        Chombo4::pout() << "getEBSystemMatrix:WM^T matrix: :" << endl;
+        WMTmat.poutAll();
+
+        Chombo4::pout() << "getEBSystemMatrix:System matrix:" << endl;
         Amat_p->poutAll();
       }
 
@@ -295,6 +373,47 @@ namespace EBCM
         double localCond, localMax, localMin;
         shared_ptr<eigen_mat> Amat = getSystemMatrix(a_faces[ivec], a_graph, a_stenrad, a_weightpower,
                                                      a_dom_bc, a_eb_bc, a_print);
+        Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
+        localCond = localMin/localMax;
+        if(localCond < a_invCondNumber)
+        {
+          a_invCondNumber = localCond;
+          a_maxEigenvalue = localMax;
+          a_minEigenvalue = localMin;
+          a_vec_index     = ivec;
+        }
+      }
+      if(a_print)
+      {
+        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
+        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
+        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
+        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
+      }
+    }
+    ///same thing but for the cut face.  once again, code reuse eludes me.
+    static inline void
+    getWorstEBConditionNumberInfo(double & a_invCondNumber,
+                                double & a_maxEigenvalue,
+                                double & a_minEigenvalue,
+                                int    & a_vec_index,
+                                const vector<IrregFace< ebcm_order > >   &  a_faces,
+                                const ebcm_graph                         &  a_graph,
+                                int a_stenrad, int a_weightpower,
+                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
+    {
+      a_invCondNumber = 4586;
+      a_maxEigenvalue = 4586;
+      a_minEigenvalue = 4586;
+      a_vec_index     = 4586;
+      for(int ivec = 0; ivec < a_faces.size(); ivec++)
+      {
+        double localCond, localMax, localMin;
+
+        shared_ptr<eigen_mat> Amat = getEBSystemMatrix(a_faces[ivec],
+                                                       a_graph, a_stenrad,
+                                                       a_weightpower,
+                                                       a_dom_bc, a_eb_bc, a_print);
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
         localCond = localMin/localMax;
         if(localCond < a_invCondNumber)
@@ -372,13 +491,15 @@ namespace EBCM
       shared_ptr<condition_t>    worst;
       string dom_bc("all_neumann");
       string  eb_bc("all_neumann");
+      ParmParse ppmain("main");  //this function is a templated standin for main.
+      ppmain.get("dom_bc", dom_bc);
+      ppmain.get( "eb_bc",  eb_bc);
       getConditionNumberData(invCondition, worst, ebcm, dom_bc, eb_bc);
 
       worst->poutLatexTable();
       Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
     
       string plot_filename;
-      ParmParse ppmain("main");  //kinda pendantic to use anything else
       ppmain.get("inv_cond_filename",   plot_filename);
       invCondition->writeToHDF5(plot_filename);
     
@@ -1015,6 +1136,55 @@ namespace EBCM
         a_mat.poutRow(a_currentRow);
       }
     } //end function fillNeuamnnDomBCRow
+
+
+    ///
+    static inline void
+    fillDirichletDomBCRow(eigen_mat         & a_mat,
+                          const pr_mom_dim  & a_moment,
+                          const pr_rv       & a_distance,
+                          const int         & a_face_dir,
+                          const int         & a_currentRow,
+                          bool a_print)
+    {
+      CH_TIME("EBCM::Algorithm_Framework::fillDirichletDomBCRow");
+      if(a_print)
+      {
+        Chombo4::pout() << "fillDirichletDomBCRow: a_currentRow = " << a_currentRow << endl;
+        Chombo4::pout() << "fillDirichletDomBCRow: a_distance   = " <<   a_distance << endl;
+        Chombo4::pout() << "fillDirichletDomBCRow: input mat row: " << endl;
+        a_mat.poutRow(a_currentRow);
+        Chombo4::pout() << "fillDirichletDomBCRow:  a_moment =" << endl;
+        a_moment.print();
+      }
+
+      pr_itm_r_dim itm_dist;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        itm_dist[idir] = a_distance[idir];
+      }
+
+      pr_mom_dim shiftedMom = a_moment;
+      shiftedMom.shift(itm_dist);
+      if(a_print)
+      {
+        Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
+        shiftedMom.print();
+      }
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        double matval = shiftedMom[momind];
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        a_mat(a_currentRow, currentCol) = matval;
+      }
+
+      if(a_print)
+      {
+        Chombo4::pout() << "fillDirichletDomBCRow: amat leaving = "  << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+    } //end function fillNeuamnnDomBCRow
     
     ///
     static inline void
@@ -1024,7 +1194,7 @@ namespace EBCM
                        const int                      &  a_currentRow,
                        bool a_print)
     {
-      CH_TIME("EBCM::Algorithm_Framework::fillNeumannDomBCRow");
+      CH_TIME("EBCM::Algorithm_Framework::fillNeumannEBBCRow");
       if(a_print)
       {
         Chombo4::pout() << "fillNeumannEBBCRow: a_currentRow = " << a_currentRow << endl;
@@ -1074,6 +1244,48 @@ namespace EBCM
       }
     } //end function fillNeuamnnEBBCRow
 
+    static inline void
+    fillDirichletEBBCRow(eigen_mat                      &  a_mat,
+                       const IrregFace<ebcm_order>    &  a_cut_face,
+                       const pr_rv                    &  a_distance,
+                       const int                      &  a_currentRow,
+                       bool a_print)
+    {
+      CH_TIME("EBCM::Algorithm_Framework::fillDirichletEBCRow");
+      if(a_print)
+      {
+        Chombo4::pout() << "fillDirichletEBBCRow: a_currentRow = " << a_currentRow << endl;
+        Chombo4::pout() << "fillDirichletEBBCRow: a_distance   = " <<   a_distance << endl;
+        Chombo4::pout() << "fillDirichletEBBCRow: input mat row: " << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+
+      pr_itm_r_dim itm_dist;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        itm_dist[idir] = a_distance[idir];
+      }
+
+      pr_mom_dim shifted_moments = a_cut_face.m_ebfmom;
+      shifted_moments.shift(itm_dist);
+
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+
+        double momval =  shifted_moments[momind];
+
+        a_mat(a_currentRow, currentCol) = momval;
+      }
+
+      if(a_print)
+      {
+        Chombo4::pout() << "fillDirichletEBBCRow: amat leaving = "  << endl;
+        a_mat.poutRow(a_currentRow);
+      }
+    } //end function fillDirichletEBBCRow
+    
     ///
     static shared_ptr<eigen_mat>
     getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
@@ -1115,7 +1327,7 @@ namespace EBCM
         irow_global++;
       }
       /**/
-      if(a_dom_bc == string("all_neumann"))
+      if(a_dom_bc == string("neumann"))
       {
         const auto& allfac = (*a_locality->m_dom_faces);
         const auto& allvol = (*a_locality->m_volumes);
@@ -1153,6 +1365,45 @@ namespace EBCM
           irow_global++;
         }
       }
+      else if(a_dom_bc == string("dirichlet"))
+      {
+        const auto& allfac = (*a_locality->m_dom_faces);
+        const auto& allvol = (*a_locality->m_volumes);
+        for(int irow = 0; irow < nrows_dom_faces; irow++)
+        {
+          const auto& curfac = allfac[irow]; //indexing info for domain boundary face
+
+          pr_mom_dmo facmom;
+          if(     curfac.m_direction == 0)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_xfaces[curfac.m_volume_index].m_facmom;
+          }
+          else if(curfac.m_direction == 1)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_yfaces[curfac.m_volume_index].m_facmom;
+          }
+          else if(curfac.m_direction == 2)
+          {
+            facmom = allvol[curfac.m_subvol_index].m_zfaces[curfac.m_volume_index].m_facmom;
+          }
+          else
+          {
+            Chombo4::pout() << "getMomentMatrix: invalid curfac.m_direction" << endl;
+            ch_mayday::Error("Doh!");
+          }
+          
+          ///This is the face mom with all derivatives in a_neigh_dir set to zero.
+          pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
+          auto xbar = a_locality->m_xbar_dom_faces[irow];   //need to know xbar to do x-xbar^p
+          //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
+          //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
+
+          fillDirichletDomBCRow(*Mmat_p, volmomfromfac, xbar, curfac.m_direction, irow_global, a_print);
+
+          irow_global++;
+        }
+        
+      }   
       else
       {
         Chombo4::pout() << "getMomentMatrix: invalid dom_bc" << endl;

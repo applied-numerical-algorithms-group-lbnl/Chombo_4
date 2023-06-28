@@ -27,6 +27,8 @@ getImplicitFunction.which_geom       = "all_regular"
 
 main.inv_cond_filename = "all_regular_inv_cond.hdf5"
 main.polynomial_order  = 2
+main.dom_bc = "dirichlet"
+main.eb_bc  = "dirichlet"
 stencil.weight_power   = 2
 stencil.radius         = 2
 
