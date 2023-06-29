@@ -129,13 +129,11 @@ namespace EBCM
           auto allpts= volu.m_cells;
           double invCondNum, maxEig, minEig;
 
-          static bool printedOne = false;
           ///info about where the worst one was
           int worst_face_dir, worst_face_index;
           getWorstConditionNumberInfo(invCondNum, maxEig, minEig,
                                       worst_face_dir, worst_face_index,
-                                      volu, graph, a_dom_bc, a_eb_bc, !printedOne);
-          printedOne = true;
+                                      volu, graph, a_dom_bc, a_eb_bc, false);
           if(invCondNum < minInvCond)
           {
             minInvCond = invCondNum;
