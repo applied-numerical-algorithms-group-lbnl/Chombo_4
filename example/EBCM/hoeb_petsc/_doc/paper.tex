@@ -790,6 +790,18 @@ more  a property of the mathematical framework used to generate the stencil.
 \end{table}
 \end{small}
 
+\section{Truncation error convergence rates}
+
+For this family of operators, $P_T$ should be entirely determinative
+of the truncation error convergence rate.   For completeness, we
+intend to verify this.    But as has been shown,
+for aggressive choices of $P_T$ and $P_W$ the system matrix can be
+poorly conditioned, leading to some degree of uncertainty about the
+stencil coefficients.
+In this section, we also explore how these conditioning issues affect the
+measured truncation error of the operator.
+
+
 \section{Stability and Conditioning of the entire system}
 
 The matrix $L_{P_T, P_W}$ for a particular polynomial order $P_T$ and
@@ -798,6 +810,7 @@ measure both while varying $P_T, P_W$ in both two and three
 dimensions.    All these calculations are done using SLEPc and PETc
 \cite{petsc-user-ref, petsc-efficient, slepc}.
 
+\section{Solution error convergence rates}
 
 
 
