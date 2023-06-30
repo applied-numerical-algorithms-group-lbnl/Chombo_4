@@ -88,7 +88,7 @@ namespace EBCM
         pout() << " $D$ & $P^T$  & $P^W$ & $R_s$ & \\lambda_{max} & \\lambda_{min}   & $I$ \\\\"<< endl;
         pout() << "\\hline " << endl;
         int dim = DIM;
-        pout() <<  "-GREP_HOOK-" << dim << " & " << taymax << " & " << wgtpow << " & " <<  stnrad << " & "<< m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
+        pout() <<  "-GREP_HOOK-" << dim << " & " << taymax << " & " << wgtpow << " & " << m_max_eigenvalue << " & " << m_min_eigenvalue << " & "  << m_inv_condition;
         pout() << " \\\\ " << endl;
 
         pout() << "\\hline " << endl;
