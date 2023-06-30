@@ -8,6 +8,7 @@
 using std::vector;
 using std::set;
 
+///okay, maybe not the greatest choice of namespace name
 namespace EBCM
 {
   using std::set;

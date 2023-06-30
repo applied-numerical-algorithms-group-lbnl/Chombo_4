@@ -17,6 +17,7 @@
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EBCM_Algorithm_Framework.H"
+#include "Chombo_EBCM_PETSc_Framework.H"
 #include "Chombo_EigenMatrix.H"
 
 #include <iomanip>
@@ -50,29 +51,47 @@ int main(int a_argc, char* a_argv[])
     ParmParse pp("main");
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running hoeb_petsc_test for polynomial order = " << order << endl;
+
     if(order == 6)
     {
-      EBCM::Algorithm_Framework<6>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 6 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<6>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    6>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else if(order == 5)
     {
-      EBCM::Algorithm_Framework<5>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 5 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<5>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    5>::run_hoeb_petsc_tests(ebcm_meta);
+
     }
     if(order == 4)
     {
-      EBCM::Algorithm_Framework<4>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 4 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<4>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    4>::run_hoeb_petsc_tests(ebcm_meta);
+
     }
     else if(order == 3)
     {
-      EBCM::Algorithm_Framework<3>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 3 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<3>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    3>::run_hoeb_petsc_tests(ebcm_meta);
+
     }
     else if(order == 2)
     {
-      EBCM::Algorithm_Framework<2>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 2 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<2>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    2>::run_hoeb_petsc_tests(ebcm_meta);
+
     }
     else if(order == 1)
     {
-      EBCM::Algorithm_Framework<1>::run_hoeb_petsc_tests();
+      shared_ptr< EBCM::MetaDataLevel< 1 > >             ebcm_meta;      
+      EBCM::Algorithm_Framework<1>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::PETSc_Framework<    1>::run_hoeb_petsc_tests(ebcm_meta);
+
     }
     else
     {

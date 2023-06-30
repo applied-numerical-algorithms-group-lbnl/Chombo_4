@@ -21,7 +21,6 @@
 #include "Chombo_EigenMatrix.H"
 #include "Chombo_EBCM_Basics.H"
 
-
 #include <iomanip>
 
 namespace EBCM
@@ -49,15 +48,14 @@ namespace EBCM
   class Algorithm_Framework
   {
   public:
-    typedef EBCM::HostLevelData<double, 1, ebcm_order >      ebcm_leveldata;
-    typedef    EBCM::MetaDataLevel<         ebcm_order >   ebcm_meta;
-    typedef    EBCM::SubVolumeVector  <     ebcm_order >   ebcm_subvol_vec;
-    typedef    EBCM::EBCM_Volu<             ebcm_order >   ebcm_volu;
-    typedef    EBCM::EBCM_Graph<            ebcm_order >   ebcm_graph;
-    typedef Chombo4::GeometryService<       ebcm_order >   ch_geoserv;
-    typedef   Proto::IndexedMoments<DIM  ,  ebcm_order >   pr_mom_dim;
-    typedef   Proto::IndexedMoments<DIM-1,  ebcm_order >   pr_mom_dmo;
-
+    typedef    EBCM::HostLevelData<double, 1,    ebcm_order >   ebcm_leveldata;
+    typedef    EBCM::MetaDataLevel<              ebcm_order >   ebcm_meta;
+    typedef    EBCM::SubVolumeVector  <          ebcm_order >   ebcm_subvol_vec;
+    typedef    EBCM::EBCM_Volu<                  ebcm_order >   ebcm_volu;
+    typedef    EBCM::EBCM_Graph<                 ebcm_order >   ebcm_graph;
+    typedef Chombo4::GeometryService<            ebcm_order >   ch_geoserv;
+    typedef   Proto::IndexedMoments<DIM  ,       ebcm_order >   pr_mom_dim;
+    typedef   Proto::IndexedMoments<DIM-1,       ebcm_order >   pr_mom_dmo;
     class condition_t
     {
     public:
@@ -469,7 +467,7 @@ namespace EBCM
       Chombo4::pout() << "minimum volume fraction overall = " << minKappa << endl;
     }
     ///test function for example/EBCM/hoeb_petsc_test
-    static  void run_hoeb_petsc_tests()
+    static  void run_hoeb_petsc_tests(shared_ptr< ebcm_meta  >&  a_ebcm)
     {
       CH_TIME("EBCM_Framework::runTests");
 
@@ -500,7 +498,9 @@ namespace EBCM
       string plot_filename;
       ppmain.get("inv_cond_filename",   plot_filename);
       invCondition->writeToHDF5(plot_filename);
-    
+
+      ///getting meta data out for reuse
+      a_ebcm = ebcm;      
     }
     Algorithm_Framework()
     {}    
