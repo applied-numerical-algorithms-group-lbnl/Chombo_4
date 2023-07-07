@@ -1,0 +1,50 @@
+\documentclass{article}
+
+%\include{macros}
+
+\bibliographystyle{plain}
+
+\usepackage{epsfig}
+\usepackage{xcolor}
+%%\usepackage{amssymb}
+\usepackage{amsmath}
+
+\input{abbrev.tex}
+
+\begin{document}
+
+\title{High order finite volume operators in a cut cell context,
+  part 2: truncation error measurements}
+\author{
+   \and D. Devendran    \footnotemark[2]
+   \and D. T. Graves    \footnotemark[1]
+        }
+
+\maketitle
+
+\begin{abstract}
+
+Devendran, et al. \cite{Devendran2017} present an algorithm that
+solves Poisson's equation to fourth-order accuracy using an EB grid.
+Generalizing somewhat  the framework they present, we can define a
+family of elliptic operators.   That algorithm is a special case of a
+family of finite volume elliptic operators.   In part 1
+\cite{Devendran2023}, we present the formal 
+process to generate these operators and present system matrix
+conditioning data.      Here we present how truncation error varies
+within the family of operators.
+
+
+
+
+
+\footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
+  CA. Research at LBNL was supported financially by the Office of
+  Advanced Scientific Computing Research of the US Department of
+  Energy under contract number DE-AC02-05CH11231.}
+\footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}\
+\bibliography{references}
+
+\end{document}
