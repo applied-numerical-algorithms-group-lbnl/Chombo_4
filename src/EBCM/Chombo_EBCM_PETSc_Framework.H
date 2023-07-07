@@ -9,7 +9,7 @@
 #include "petscviewer.h"
 #include "petscmat.h"
 /**
-   This is where MetaDataLevel lives.  It made sense at the time.
+   Chombo_EBCM_Graph.H where MetaDataLevel lives.  It made sense at the time.
    I should use this opportunity to apologize to the world for the many 
    awful choices I have made in this life in relation to file names and organization.  
    I regret all the consternation I have caused.
@@ -44,6 +44,7 @@ namespace EBCM
     typedef EBCM::EBCM_Graph<ebcm_order>            ebcm_graph;
     typedef EBCM::HostLevelData<int, 1, ebcm_order> ebcm_data;
     typedef EBCM::SubVolumeVector<      ebcm_order> ebcm_subvol_vec;
+    typedef EBCM::Algorithm_Framework<  ebcm_order> ebcm_framework;
 
     struct local_stencil_t
     {
@@ -272,12 +273,19 @@ namespace EBCM
       }
     };
     
-    ///test function for example/EBCM/hoeb_petsc_test
-    static  void run_hoeb_petsc_tests(shared_ptr< ebcm_meta > & a_meta)
+    ///test function for example/EBCM/hoeb_truncation
+    static  void run_hoeb_truncation_tests()
     {
+      
       int nghost = 4;
+      shared_ptr< ebcm_meta  > ebcm;
+      ch_dbl                   grids;
+      double                   dx;
+      ch_probdom               domain;
+      ebcm_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+    
       typedef DummyDerivedOp   ebcm_petsc_op;
-      ebcm_petsc_op   testOperator(a_meta, nghost, false);
+      ebcm_petsc_op   testOperator(ebcm, nghost, false);
 
     }
   }; //end petsc_framwork class
