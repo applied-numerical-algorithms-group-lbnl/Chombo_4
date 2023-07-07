@@ -13,8 +13,8 @@
 
 \begin{document}
 
-\title{Accuracy and stability for elliptic operators
-  in a finite volume context}
+\title{High order finite volume operators in a cut cell context,
+  Part 1: system  matrix conditioning for finite volume elliptic operators}
 \author{
    \and D. Devendran    \footnotemark[2]
    \and D. T. Graves    \footnotemark[1]
@@ -27,9 +27,17 @@
 Devendran, et al. \cite{Devendran2017} present an algorithm that
 solves Poisson's equation to fourth-order accuracy using an EB grid.
 Generalizing somewhat  the framework they present, we can define a
-family of elliptic operators.
-Here we investigate how the accuracy and stability of this family
-of operators varies within its parameter space.
+family of elliptic operators.   That algorithm is a special case of a
+family of finite volume elliptic operators.   We present the formal
+process to generate these operators which includes inverting a system
+matrix.    Overton-Katz, et al. \cite{Katz2023}, show that the system
+matrix can have solvability problems in the absence of boundary
+condition equations in the system matrix  but Devendran uses
+boundary condition equations.   We present data that shows these extra
+equations can improve the system matrix condition number.
+We also show that, for certain parameters of operator,
+this system matrix is still quite poorly conditioned.
+
 
 \end{abstract}
 
@@ -37,8 +45,8 @@ of operators varies within its parameter space.
 \section{Underlying mathematics}
 
 Embedded boundary (EB) grids are formed when one passes an  surface
-through a Cartesian mesh.    For sufficiently complex geomtries, these methods
-are very attactive because grid generation is a solved problem
+through a Cartesian mesh.    For sufficiently complex geometries, these methods
+are very attractive because grid generation is a solved problem
 even for moving grids \cite{MillerTrebotich2012}.
 In the current context, we form the cutting surface as the zero
 surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
@@ -166,7 +174,7 @@ where $C^p$ this appropriate Taylor coefficient.  In three dimensions,
       \frac{\partial^{p_1}}{\partial x_1}
       \frac{\partial^{p_2}}{\partial x_2}  (\psi).
 \end{equation}
-If we know the local Taylor coeffiencts,
+If we know the local Taylor coefficients,
 the gradient of the field  in direction $d$ is given by
 \begin{equation}
   \frac{\partial \psi}{\partial x^d}  =
@@ -226,7 +234,7 @@ For each $\cbold$ within the $\ncal_\fbold$, we get an equation of the form
 \sum\limits_{d < D} \sum_{p < P}  p_d C_p \ecal^{p-e^d,d}_\cbold = 0.
 \end{equation}
 We force there to be enough neighbors so that this system is
-overdetermined.  Let's say $\ncal_\fbold$ contains $N_B$ boundary faces and
+over-determined.  Let's say $\ncal_\fbold$ contains $N_B$ boundary faces and
 $N_V$ volumes.   To solve for Taylor coefficients, we have a system 
 of the form
 \begin{equation*}
@@ -256,7 +264,7 @@ and
 \end{equation}
 for every volume $\jbold$, cut face $\cbold$ and domain face $\bbold$
 in $\ncal_\fbold$.
-Since the system is overdetermined, we can introduce a 
+Since the system is over-determined, we can introduce a 
 meaningful weighting matrix $W$ \footnotemark[4]. 
  Choice of $W$
 is crucial to the stability of these algorithms
@@ -280,7 +288,7 @@ All volumes and faces  start with an  index $\ibold \in Z^D$.
 We start from face $\fbold$.   Say we want to get
 the distance from $\fbold$ with index $\ibold$ to a volume $V_1$
 with index $\vbold$.  The distance $D_\fbold(V_1)$ is given by
-the Manhattan disance:
+the Manhattan distance:
 \begin{equation}
   D_\fbold(V_1) = \sum\limits_{0 <= d < D} |\vbold^d - \ibold_0^d|.
 \label{eqn::uptownFunk}
@@ -334,10 +342,10 @@ Overton-Katz, et al. \cite{Katz2023} present the above procedure in
 the absence of boundary condition equations.   They show that, for
 certain values of $P_T$ and $P_N$, the resulting $A$ matrix can have a
 severe mismatch between its largest and smallest eigenvalues,
-signalling that $A$ is poorly conditioned.    Their data show the
+signaling that $A$ is poorly conditioned.    Their data show the
 worst solvability issues occur near the domain boundary.    It stands to
 reason that including boundary condition equations could improve the
-conditioning of the resultant matricies. To test this, we present the
+conditioning of the resultant matrices. To test this, we present the
 same measurement of condition number for  several values of $P_T$ and
 $P_N$ where boundary condition equations are included when they are
 part of the neighborhood.    We present the results for the same three
@@ -351,7 +359,7 @@ volumes have been merged with neighbors.
 
 The data paint a very consistent picture,   Though adding boundary
 condition equations does improve the solvability of $A$, aggressive
-choices of $P_W$ and $P_T$ can lead to system matricies that cannot be
+choices of $P_W$ and $P_T$ can lead to system matrices that cannot be
 credibly solved without very high precision numerical arithmetic.
 \begin{small}
 \begin{table}
@@ -571,7 +579,7 @@ is given by the divergence theorem:
 \end{array}
 \label{eqn::discreteDivergence}
 \end{equation}
-For all coordinate-alligned faces, the section above's description for how to
+For all coordinate-aligned faces, the section above's description for how to
 compute the flux is adequate.   What remains are fluxes through cut
 faces.
 
@@ -602,11 +610,13 @@ the conditioning of the system matrix.  When the boundary conditions
 are set to Dirichlet, we get similar results.  See tables
 \ref{fig::mergedDiri}, \ref{fig::unmergedDiri}, and
 \ref{fig::allRegDiri} for details.  Again, boundary conditions help
-stabilize the system but it is still the case that agressive choices
+stabilize the system but it is still the case that aggressive choices
 of $P_T$ or $P_W$ can result in system matrices that cannot be
 credibly inverted without very high precision numerical arithmetic.
 Again, this seems less a matter of a particular grid configuration and
-more  a property of the mathematical framework used to generate the stencil.
+more  a property of the mathematical framework used to generate the
+stencil.
+
 \begin{small}
 \begin{table}
 \begin{center}
@@ -792,36 +802,19 @@ more  a property of the mathematical framework used to generate the stencil.
       We vary Taylor power $P^T$, weighting
       function exponents $P^W$, and dimensionality $D$.    This grid
       includes very small volumes.
-%%(as of 6-28-2023, some 3d results still pending).      
     }
 \end{table}
 \end{small}
 
-\section{Truncation error convergence rates}
-
-For this family of operators, $P_T$ should be entirely determinative
-of the truncation error convergence rate.   For completeness, we
-intend to verify this.    But as has been shown,
-for aggressive choices of $P_T$ and $P_W$ the system matrix can be
-poorly conditioned, leading to some degree of uncertainty about the
-stencil coefficients.
-In this section, we also explore how these conditioning issues affect the
-measured truncation error of the operator.
-
-
-\section{Stability and Conditioning of the entire system}
-
-The matrix $L_{P_T, P_W}$ for a particular polynomial order $P_T$ and
-weighting exponent  $P_W$ may be unstable or poorly conditioned.   We
-measure both while varying $P_T, P_W$ in both two and three
-dimensions.    All these calculations are done using SLEPc and PETc
-\cite{petsc-user-ref, petsc-efficient, slepc}.
-
-\section{Solution error convergence rates}
-
-
 
 \section{Conclusions}
+
+We present a family of elliptic operators and we investigate the
+solvability of the system matrix used in generating these operators.
+We find that using boundary condition equations in the system matrix
+helps its solvability.   For aggressive choices of weighting power and
+Taylor power, however, the system matrix that results is not credibly
+solvable without high precision arithmetic.
 
 
 
@@ -832,8 +825,8 @@ dimensions.    All these calculations are done using SLEPc and PETc
 \footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
 \footnotetext[3]{This includes corner volumes.   The neighborhood is
   formed by taking all the volumes within a grown box. The grown box
-  is formed by growning the box made from the low and high cells of
-  the target face, growing it by $N_G$ and itersecting with the
+  is formed by growing the box made from the low and high cells of
+  the target face, growing it by $N_G$ and intersecting with the
   domain.  We use the   Chombo
   (\cite{ChomboDesign,ChomboDesignEB,ChomboDesign3})
   box growth semantic. }
@@ -842,7 +835,7 @@ dimensions.    All these calculations are done using SLEPc and PETc
   $M^{-1}$.}
 \footnotetext[5]{The 
   equations for volumes $\jbold$ where $\xbar_\jbold$ is large
-  receive  higher weights.  Diagonal weighting matricies are common.
+  receive  higher weights.  Diagonal weighting matrices are common.
   Usually these algorithms define a distance metric $D(\ibold, \jbold)$ for
   two volumes $\ibold$ and $\jbold$ and make
   $W_{\jbold,\jbold}$ decrease strongly with increasing 
