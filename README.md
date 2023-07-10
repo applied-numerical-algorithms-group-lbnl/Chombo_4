@@ -1,8 +1,10 @@
-# Chombo
+# Chombo_4
+# A lightweight algorithm development framework for finite volume algorithms.
 ## Courtesy of the Applied Numerical Algorithms Group
 ## Lawrence Berkeley National Laboratory
 
 ## Introduction
+# Chombo_4 is a lightweight algorithm development framework used for finite volume calculations.
 This version of Chombo is fortran-free and depends on the Proto infrasturcture
 for performance portability.   Eigen is used for linear algebra.   MPI is used for
 off-node communication.  HDF5 is used for data output.
@@ -20,3 +22,4 @@ off-node communication.  HDF5 is used for data output.
 * documents has a few documents created using this software
 * mk  is where compiler and machine specific flags are set
 * util has a few random tools that I kept around.
+
