@@ -13,3 +13,10 @@ off-node communication.  HDF5 is used for data output.
 * Use the configure.example python script to create makefiles. It is simple and well-documented.
 * Go to the example in which you are most interested.
 * Type make.
+
+##Directories
+* example has many established algorithms and some in progress
+* src is where the common code lives
+* documents has a few documents created using this software
+* mk  is where compiler and machine specific flags are set
+* util has a few random tools that I kept around.
