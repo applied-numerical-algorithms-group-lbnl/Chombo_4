@@ -14,10 +14,10 @@
 * HDF5 is used for data.
 
 ## Build instructions:
-* Put machine and compiler specifics into Chombo4/mk/Make.defs.local
-* Go to the example directory.
+* Put machine and compiler specifics into the file Chombo_4/mk/Make.defs.local.  The process is well-documented.
+* Go to the Chombo_4/example directory.
 * Use the configure.example python script to create makefiles. It is simple and well-documented.
-* Go to the example in which you are most interested.
+* Go to the example directory in which you are most interested.
 * Type make.
 
 ## Directories
@@ -26,4 +26,5 @@
 * documents has a few documents created using this software
 * mk  is where compiler and machine specific flags are set
 * util has a few random tools that I kept around.
+* hooks is purely aspirational
 
