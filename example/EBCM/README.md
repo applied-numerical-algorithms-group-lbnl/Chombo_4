@@ -16,7 +16,7 @@
 ## hoeb_spmd
 * This tests the communications infrastructure for Chombo_4/src/EBCM.
 * These are the bits of Chombo that handle calculations within the context of  cut cell geometries where merger is an option.
-*The associated document is complete but minimal.
+* The associated document is complete but minimal.
 
 ## hoeb_petsc
 * This test investigates the solvability of the system matrix when boundary condition equations are included in the system.
