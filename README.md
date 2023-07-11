@@ -1,11 +1,14 @@
 # Chombo_4
-## Courtesy of the Applied Numerical Algorithms Group
-## Lawrence Berkeley National Laboratory
+* Free software courtesy of the Applied Numerical Algorithms Group
+* Lawrence Berkeley National Laboratory
+* Berkeley, California, USA.
 
 ## Introduction
 * Chombo_4 is a lightweight algorithm development framework used for finite volume calculations.
-* Chombo_4 is a blessedly fortran-free.
-
+* Chombo_4 is free software (see Chombo_4/Copyright.txt).
+* Chombo_4 is also blessedly  fortran-free.    
+* All caclulations are in C++.
+* File management and build configuration tools are in Python.
 
 ## Dependencies
 * proto is used for performance portability.
@@ -21,10 +24,10 @@
 * Type make.
 
 ## Directories
-* example has many established algorithms and some in progress
-* src is where the common code lives
-* documents has a few documents created using this software
-* mk  is where compiler and machine specific flags are set
-* util has a few random tools that I kept around.
-* hooks is purely aspirational
+* Chombo_4/example has many established algorithms and some in progress.
+* Chombo_4/src is where the common code lives.
+* Chombo_4/documents has a few documents created using this software.
+* Chombo_4/mk  is where compiler and machine specific flags are set.
+* Chombo_4/util has a few random tools that I kept around.
+* Chombo_4/hooks is purely aspirational.
 
