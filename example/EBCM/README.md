@@ -1,7 +1,7 @@
 
 
 ## Chombo_4/example/EBCM Rules of Engagement
-*  I am trying to make examples more coherant and well documented so I am trying this new protocol.
+*  I am trying to make examples more coherent and well documented so I am trying this new protocol.
 *  Each example will run a particular test in the source directory.
 *  The test will be run for a specific simulation campaign.
 *  The test will have an _doc directory that explains the test and the campaign's results.
