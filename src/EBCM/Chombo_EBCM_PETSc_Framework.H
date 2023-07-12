@@ -9,7 +9,7 @@
 #include "petscviewer.h"
 #include "petscmat.h"
 /**
-   Chombo_EBCM_Graph.H where MetaDataLevel lives.  It made sense at the time.
+   Chombo_EBCM_Graph.H is where MetaDataLevel lives.  It made sense at the time.
    I should use this opportunity to apologize to the world for the many 
    awful choices I have made in this life in relation to file names and organization.  
    I regret all the consternation I have caused.
@@ -17,7 +17,7 @@
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBLevelBoxData.H"
 
-/// An EBCM interface to the magical world of PETSc,  where the evil bits of linear algebra are done for us.
+/// An EBCM interface to the magical world of PETSc,  where the evil bits of distributed linear algebra are done for us.
 /**
    I plan to use this for everything.  Geometric multigrid requires
    more infrastructure than I am willing to write so I will use PETSc
@@ -48,8 +48,8 @@ namespace EBCM
 
     struct local_stencil_t
     {
-      pr_pt                         m_start;
-      vector< pair<pr_pt, double > > m_stencil;
+      pr_pt                           m_start;
+      vector< pair< pr_pt, double > > m_stencil;
     };
     ///
     /**
@@ -197,15 +197,12 @@ namespace EBCM
 #else
         MPI_Comm wcomm = PETSC_COMM_SELF;
 #endif
-//    int nc = 1;
         PetscInt ierr;
         ierr = MatCreate(wcomm, & (*m_mat_ptr));CHKERRQ(ierr);
         ierr = MatSetOptionsPrefix(*m_mat_ptr,"");CHKERRQ(ierr);
 
-        //Chombo4::Chombo4::pout() << "debug:: matsetsize m_numPtsThisProc = " << m_numPtsThisProc << std::endl;
         ierr = MatSetSizes(*m_mat_ptr,m_numPtsThisProc,m_numPtsThisProc,m_numPtsAllProcs,m_numPtsAllProcs);CHKERRQ(ierr);
-//    ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
-        ierr = MatSetType(*m_mat_ptr,MATDENSE);CHKERRQ(ierr);
+        ierr = MatSetType( *m_mat_ptr,MATDENSE);CHKERRQ(ierr);
 #ifdef CH_MPI
         ierr = MatMPIDenseSetPreallocation(*m_mat_ptr, NULL);CHKERRQ(ierr);
 #else
@@ -216,11 +213,12 @@ namespace EBCM
 
         ierr = MatSetFromOptions( *m_mat_ptr ); CHKERRQ(ierr);
 
-
+        //sets the actual values in *m_mat_ptr
         ierr = formMatrix(a_print); CHKERRQ(ierr);
         return 0;
       }
 
+      ///sets the actual values in *m_mat_ptr
       PetscInt formMatrix(bool a_print = false)
       {
     
@@ -242,7 +240,7 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t> local = getLocalStencil(volu.m_pt, graph);
-            //HERE
+
           }
         }
         return 0;
@@ -250,15 +248,19 @@ namespace EBCM
 
     }; //end class Base_Petsc_Op
 
+    ///
+    /**
+      Class to force compilation of all this lovely code.
+      It is useful but unusable. 
+      If a class could be a zen koan, this might be it.
+    **/
     class DummyDerivedOp: public Base_PETSc_Op
     {
     public:
       DummyDerivedOp(const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                      const int                                    & a_ghost,
                      bool                                           a_print = false)
-        :Base_PETSc_Op(a_meta_ptr,
-                       a_ghost,
-                       a_print)
+        :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print)
       {
       }
 

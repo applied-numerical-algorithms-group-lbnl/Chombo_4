@@ -21,7 +21,7 @@
 ## hoeb_petsc
 * This test investigates the solvability of the system matrix when boundary condition equations are included in the system.
 * The associated document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537) is complete to the point of being downright chatty.
-* This test does not use petsc so the test name needs work.
+* This test does not use petsc so the test name is counter-intuitive.
 
 ## hoeb_truncation
 * We intend to continue the story by investigating the truncation error of a family of finite volume elliptic operators.

@@ -2144,21 +2144,59 @@ namespace EBCM
   /**
      Subvolume is a a vector<ebcm_volumes> that corresponds with all the volumes in region defined by a box.
      This can be used to find the volumes within the neighborhood of a particular cell.
-  */
+     I am putting a fast indexing mask over it so I can get to which volume is at a point more quickly 
+     than constantly searching through the vector.    
+
+     This complicates the design.  Now this is not just a vector but also has this other (not independent!) data.
+     I have reasons for this particular deviation from keeping this stuff as simple as possible.
+     For the record, here are the reasons.
+       (1) These vectors are not necessarily small, so a naive linear search could be slow.
+         (a) A typical neighborhood is  O(10^2) points in 3d (343 for the Devendran stencil away from boundaries).
+         (b) This will also be used over an entire grid, so the vector could be as long as 32^3.
+       (2) Apparently this is the only graph walking tool I am making.
+       (3) Making graph walking too slow will make this stuff unusable.
+       (4) The memory cost here is negligble compared to the moment data.
+       (5) The information was just lying there and it seemed a shame to throw it away.
+     **/
   template <int order>
   class SubVolumeVector: public std::vector<EBCM_Volu<order> >
   {
 
-  public:    
+    
+  public:
+    
     virtual ~SubVolumeVector()
     {
     }
+    typedef Proto::HostBoxData<int, 1> pr_hbd;
+    typedef Proto::Point               pr_pt;
+    typedef Proto::Box                 pr_bx;
+    typedef Chombo4::MayDay            ch_mayday;
     
+
+    /// not using square bracket because that is confusing with vector
+    const EBCM_Volu<order>& operator()(const pr_pt& a_index)
+    {
+      int indexValue = (*m_indexMap)(a_index, 0);
+      if(indexValue < 0)
+      {
+        Chombo4::pout() << "SubVolumeVector::operator(Point): point " << a_index << " appears to be unset in the map.   " << endl;
+        ch_mayday::Error("Doh!");
+      }
+      return (*this)[indexValue];
+    }
+    
+    ///
     SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region, bool a_printStuff)
+      :std::vector<EBCM_Volu<order> >()
     {
       vector<pr_pt>   regularPoints(0);
       vector<int>     irregIndicies(0);
-      Proto::Box prregion = ProtoCh::getProtoBox(a_region);
+      pr_bx prregion = ProtoCh::getProtoBox(a_region);
+      m_inputBx  = prregion;
+      m_indexMap = shared_ptr<pr_hbd>(new pr_hbd(m_inputBx));
+      m_indexMap->setVal(-1);
+      
       for (auto it = prregion.begin(); it != prregion.end(); ++it)
       {
         if(a_graph.isRegular(*it))
@@ -2204,12 +2242,20 @@ namespace EBCM
           }
             
         }
+
+        (*m_indexMap)(curVolu.m_pt, 0) = ientry;
       }
     }
 
     
   private:
     SubVolumeVector();
+
+    
+    ///maps points to vector indices
+    shared_ptr<pr_hbd> m_indexMap;
+    //input region translated to protoland
+    pr_bx  m_inputBx;
 
   }; //end class subvolumevector
 
