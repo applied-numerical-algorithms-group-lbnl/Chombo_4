@@ -33,7 +33,7 @@ int main(int a_argc, char* a_argv[])
 #endif
 
   using Chombo4::pout;
-  CH_TIMER_SETFILE("ebcm_framework_time_table");
+  CH_TIMER_SETFILE("ebcm_framework.time_table");
   {
     
     if (a_argc < 2)

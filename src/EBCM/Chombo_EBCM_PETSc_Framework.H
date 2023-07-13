@@ -239,8 +239,17 @@ namespace EBCM
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
-            shared_ptr<local_stencil_t> local = getLocalStencil(volu.m_pt, graph);
-
+            shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
+            PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
+            for(int isten = 0; isten < sten.size(); isten++)
+            {
+              const auto& stenpair = local->m_stencil[isten];
+              PetscInt icol = (*m_row_map_ptr)(stenpair.first, 0);
+              double weight = stenpair.second;
+              /// This is PETSc for
+              /// (*m_mat)(irow, icol) = weight;
+              MatSetValues(this->m_mat,1,&irow,1,&icol,&weight,INSERT_VALUES);
+            }
           }
         }
         return 0;
