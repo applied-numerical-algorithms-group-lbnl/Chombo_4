@@ -2031,7 +2031,7 @@ namespace EBCM
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
-    ///For stencil stuff, you should really use SubVolumeVector.   This is meant to be just for diagonostics.
+    ///
     ebcm_volu getVolumeCoveringPoint(const pr_pt& a_pt) const
     {
       ebcm_volu retval;

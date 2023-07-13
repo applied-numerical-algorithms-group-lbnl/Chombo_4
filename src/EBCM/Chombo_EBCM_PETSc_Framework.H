@@ -46,11 +46,64 @@ namespace EBCM
     typedef EBCM::SubVolumeVector<      ebcm_order> ebcm_subvol_vec;
     typedef EBCM::Algorithm_Framework<  ebcm_order> ebcm_framework;
 
-    struct local_stencil_t
+    ///
+    struct local_stencil_t: public std::vector< pair< pr_pt, double > >
     {
-      pr_pt                           m_start;
-      vector< pair< pr_pt, double > > m_stencil;
-    };
+    public:
+ 
+      ///
+      /**
+         adds each member of input
+       */
+      void
+      operator+= (const local_stencil_t& a_input)
+      {
+        for(int ivec = 0; ivec < a_input.size(); ivec++)
+        {
+          add(a_input[ivec]);
+        }
+      }
+      
+      ///
+      void clear()
+      {
+        m_stencil.resize(0);
+      }
+
+      /// 
+      /**
+         Add to the vector if the point is not already in the vector.
+         Otherwise, just increment the weight.
+       */
+      void add(const pair<pr_pt, double>& a_entry)
+      {
+        bool alreadyhere = false;
+        for (int ivof = 0; ivof < this->size(); ivof++)
+        {
+          const pr_pt& curpt (*this)[ivec].first;
+          if(curpt == a_entry.first)
+          {
+            alreadyhere = true;
+            curpt.second += a_entry.second;
+          }
+        }
+        if (!alreadyhere)
+        {
+          this->push_back(a_entry);
+        }
+      }
+
+      ///scale the stencil by a constant
+      void operator*= (const double& a_scale)
+      {
+        for (int ivof = 0; ivof < this->size(); ivof++)
+        {
+          (*this)[ivec].second *= a_scale;
+        }
+      }
+        
+    }; //end struct local_stencil_t
+    
     ///
     /**
        This is a wrapper around PETSc's  ::Mat object.  The specfics of the stencil 
@@ -284,6 +337,62 @@ namespace EBCM
       }
     };
     
+
+    ///
+    template<CENTERING cent>
+    local_stencil_t
+    getHelmholtzFlux()
+    {
+    }
+    
+    ///
+    /**
+      Class which forms a helmholtz operator.
+      This creates an operator of the form
+      L(phi) = alpha phi + beta * div(F(phi))
+    **/
+    class HelmholtzOp: public Base_PETSc_Op
+    {
+    public:
+
+      typedef Proto::Side         pr_sd;
+      typedef Proto::Box          pr_box;
+      
+      double                                 m_alpha;
+      double                                 m_beta;
+      int                                    m_weight_power;
+      
+      HelmholtzOp(const double                                 & a_alpha,
+                  const double                                 & a_beta,
+                  const int                                    & a_weight_power,
+                  const shared_ptr< ebcm_meta  >               & a_meta_ptr,
+                  const int                                    & a_ghost,
+                  bool                                           a_print = false)
+        :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print)
+      {
+        m_alpha        = a_alpha;       
+        m_beta         = a_beta;        
+        m_weight_power = a_weight_power;        
+      }
+
+      virtual ~HelmholtzOp()
+      {
+      }
+      
+      virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
+      {
+        shared_ptr<local_stencil_t> retval(new local_stencil_t());
+        pr_bx pointbx(a_pt, a_pt);
+        pr_bx grbx = pointbox.grow(pr_pt::Ones(m_nghost));
+        
+        ebcm_volu volume = a_graph.getVolumeCoveringPoint(a_pt);
+        for(
+        
+        return retval;
+      }
+
+    };
+    
     ///test function for example/EBCM/hoeb_truncation
     static  void run_hoeb_truncation_tests()
     {
@@ -294,10 +403,23 @@ namespace EBCM
       double                   dx;
       ch_probdom               domain;
       ebcm_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
-    
-      typedef DummyDerivedOp   ebcm_petsc_op;
-      ebcm_petsc_op   testOperator(ebcm, nghost, false);
+      
+      ///testing compilation of the base framework
+      typedef DummyDerivedOp   ebcm_zen_koan;
+      ebcm_zen_koan  number4586(ebcm, nghost, false);
 
+      ///Helmholtz operator declaration
+      double alpha     = 4586;
+      double beta      = 4586;
+      int weight_power = 4586;
+      ParmParse pp("trunc_test");
+      pp.get("alpha", alpha);
+      pp.get("beta" , beta);
+      pp.get("weight_power", weight_power);
+      
+      typedef HelmholtzOp   ebcm_helm_op;
+      ebcm_helm_op   helmholtzOperator(alpha, beta, weight_power, ebcm, nghost, false);
+      
     }
   }; //end petsc_framwork class
 }
