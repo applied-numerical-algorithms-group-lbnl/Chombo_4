@@ -1,10 +1,13 @@
 
 
-## Chombo_4/example/EBCM Rules of Engagement
-*  I am trying to make examples more coherent and well documented so I am trying this new protocol.
+## Chombo_4/example/EBCM
+*  Chombo examples have been the primary way people get started with Chombo.
+*  Going forward, I will use this process to make the examples more focused and well-documented.
+
+## EBCM example process
 *  Each example will run a particular test in the source directory.
 *  The test will be run for a specific simulation campaign.
-*  The test will have an _doc directory that explains the test and the campaign's results.
+*  The test will have a documents directory that explains the test and the campaign's results.
 *  If there is enough data to merit a report, an LBNL technical report will result from the campaign.
 *  If necessary, the test harness will be included and well-documented.
 
@@ -21,7 +24,7 @@
 ## hoeb_petsc
 * This test investigates the solvability of the system matrix when boundary condition equations are included in the system.
 * The associated document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537) is complete to the point of being downright chatty.
-* This test does not use petsc so the test name is counter-intuitive.
+* This test does not use petsc so the test name is admittedly counter-intuitive.
 
 ## hoeb_truncation
 * We intend to continue the story by investigating the truncation error of a family of finite volume elliptic operators.
