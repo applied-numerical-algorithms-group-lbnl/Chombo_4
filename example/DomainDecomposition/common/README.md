@@ -1,18 +1,17 @@
 # Chombo_4/example/DomainDecomposition/common:
 * Herein lie the common code for Chombo_4 examples.
+* The cut cell tools  here do not include cell merger.
 * For more detailed documentation, all header files are designed to work with doxygen.
 
-## Basic organization:
-* As these are older examples developed in the service of larger things, each example has its own flavor.
-* The important directories have  README files  which provide some guidance.
-* Anything with the hoeb_ prefix should be considered experimental.
-* The cut cell examples here do not include cell merger.
-
-## The important directories:
-* Chombo_4/example/DomainDecomposition/common has the shared example code.
-* Chombo_4/example/DomainDecomposition/EBAdvection advects scalar given a fixed velocity in a cut cell context.
-* Chombo_4/example/DomainDecomposition/EBHelmholz solves Poisson/Helmholtz equations in a cut cell context.
-* Chombo_4/example/DomainDecomposition/EBMenagerie is a pedagogical example which shows how to make cut cell grids.
-* Chombo_4/example/DomainDecomposition/EBINS solves the incompressible Navier Stokes equations in a cut cell context.
+## Notable tools herein:
+* BiCGStabSolver is used a bottom solver in multigrid.
+* EBParabolicIntegrators implements several parabolic algoritms, including backward Euler, Crank Nicolson, and TGA,
+* DebugFunctions are some useful things you can call from gdb.  Mostly this prints out Chombo data in useful and concise ways.
+* DumpArea is another debugging tool that allows you  print small areas of the domain in gdb.
+* EBAdvection is the class that does second order advection in a cut cell context.
+* EBCCProjector implements an cell-centered projection operator in a cut cell context.
+* EBMACProjector implements a MAC projection operator in a cut cell context.
+* EBMultigrid implements geometric multigrid in cut cell context.
+* EBPetscSolver is an interface to the PETSc infrastructure for cut cell calculations.
 
 
