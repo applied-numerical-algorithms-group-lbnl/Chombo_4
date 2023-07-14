@@ -67,12 +67,12 @@ namespace EBCM
       ///
       void clear()
       {
-        m_stencil.resize(0);
+        this->resize(0);
       }
 
       /// 
       /**
-         Add to the vector if the point is not already in the vector.
+         Append the entry to the vector if the point is not already in the vector.
          Otherwise, just increment the weight.
        */
       void add(const pair<pr_pt, double>& a_entry)
@@ -80,11 +80,11 @@ namespace EBCM
         bool alreadyhere = false;
         for (int ivof = 0; ivof < this->size(); ivof++)
         {
-          const pr_pt& curpt (*this)[ivec].first;
+          const pr_pt& curpt = (*this)[ivof].first;
           if(curpt == a_entry.first)
           {
             alreadyhere = true;
-            curpt.second += a_entry.second;
+            (*this)[ivof].second += a_entry.second;
           }
         }
         if (!alreadyhere)
@@ -98,7 +98,7 @@ namespace EBCM
       {
         for (int ivof = 0; ivof < this->size(); ivof++)
         {
-          (*this)[ivec].second *= a_scale;
+          (*this)[ivof].second *= a_scale;
         }
       }
         
@@ -293,15 +293,17 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
-            PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
-            for(int isten = 0; isten < sten.size(); isten++)
+            const auto    & maplev = *(m_row_map_ptr->m_data);
+            const auto    & mapfab = maplev[dit[ibox]];
+            PetscInt irow = mapfab(volu.m_pt, 0);
+            for(int isten = 0; isten < local->size(); isten++)
             {
-              const auto& stenpair = local->m_stencil[isten];
-              PetscInt icol = (*m_row_map_ptr)(stenpair.first, 0);
+              const auto& stenpair = (*local)[isten];
+              PetscInt icol = mapfab(stenpair.first, 0);
               double weight = stenpair.second;
               /// This is PETSc for
               /// (*m_mat)(irow, icol) = weight;
-              MatSetValues(this->m_mat,1,&irow,1,&icol,&weight,INSERT_VALUES);
+              MatSetValues(*(this->m_mat_ptr),1,&irow,1,&icol,&weight,INSERT_VALUES);
             }
           }
         }
@@ -310,11 +312,10 @@ namespace EBCM
 
     }; //end class Base_Petsc_Op
 
-    ///
+    /// 
     /**
-      Class to force compilation of all this lovely code.
-      It is useful but unusable. 
-      If a class could be a zen koan, this might be it.
+      Class to force compilation of all this lovely code. It is useful but unusable.  
+      If a class can be a zen koan, this may qualify.
     **/
     class DummyDerivedOp: public Base_PETSc_Op
     {
@@ -340,9 +341,12 @@ namespace EBCM
 
     ///
     template<CENTERING cent>
-    local_stencil_t
-    getHelmholtzFlux()
+    static local_stencil_t
+    getHelmholtzFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
+                            const int                         & a_facedir)
     {
+      local_stencil_t retval;
+      return retval;
     }
     
     ///
@@ -381,12 +385,43 @@ namespace EBCM
       
       virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
       {
+        typedef Proto::Box pr_bx;
+        
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         pr_bx pointbx(a_pt, a_pt);
-        pr_bx grbx = pointbox.grow(pr_pt::Ones(m_nghost));
+        pr_bx grbx = pointbx.grow(pr_pt::Ones(this->m_ghost));
         
-        ebcm_volu volume = a_graph.getVolumeCoveringPoint(a_pt);
-        for(
+        auto volume = a_graph.getVolumeCoveringPoint(a_pt);
+        {
+          for(int iface = 0; iface < volume.m_xfaces.size(); iface++)
+          {
+            const auto& face = volume.m_xfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_yfaces.size(); iface++)
+          {
+            const auto& face = volume.m_yfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_zfaces.size(); iface++)
+          {
+            const auto& face = volume.m_zfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
         
         return retval;
       }

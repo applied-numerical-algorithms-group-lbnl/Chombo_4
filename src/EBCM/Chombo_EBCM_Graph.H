@@ -341,6 +341,8 @@ namespace EBCM
     }
   };
 
+
+    
   template<int order>
   class EBCM_Volu
   {
@@ -385,7 +387,7 @@ namespace EBCM
       char*  charbuf = a_outbuf;
       size_t charsiz = 0;
       //flag for regular or not
-      int iflag = -486;
+      int iflag = -4586;
       if(m_regular)
       {
         iflag = 1;
@@ -456,7 +458,7 @@ namespace EBCM
       char*  charbuf = (char*)a_inbuf;
       size_t charsiz = 0;
       //flag for regular or not
-      int iflag = -486;
+      int iflag = -4586;
       if(m_regular)
       {
         iflag = 1;
@@ -754,6 +756,33 @@ namespace EBCM
   };// end class EBCM_volu
 
 
+  /// Get the sign that will be used on the flux F when computing Div(F)
+  /**
+     return +1 if face is on the high side of the volume,
+     return -1 if face is on the low  side of the volume,
+     Hit's our evil lair's well-labelled self-destruct button 
+     if the face is not related to the volume.
+  **/
+  template<CENTERING cent, int order>
+  double faceSign(const EBCM_Volu<      order> & a_volume,
+                  const EBCM_Face<cent, order>& a_face)
+  {
+    double retval = -4586.;
+    if(a_volume.m_pt == a_face.m_lo.m_pt)
+    {
+      retval = 1.;
+    }
+    else if(a_volume.m_pt == a_face.m_hi.m_pt)
+    {
+      retval = -1.;
+    }
+    else
+    {
+      Chombo4::pout() << "Chombo_EBCM_Graph.H: faceSign cannot match volume and face" << endl;
+      ch_mayday::Error("Doh!");
+    }
+    return retval;
+  }
   ///
   /**
      Class holds a optionally-merged sparse embedded boundary description. 
