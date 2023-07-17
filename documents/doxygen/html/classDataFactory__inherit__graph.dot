@@ -1,0 +1,41 @@
+digraph "DataFactory&lt; T &gt;"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="DataFactory\< T \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="AliasDataFactory\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classAliasDataFactory.html"];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="DefaultDataFactory\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDefaultDataFactory.html",tooltip="Factory object to data members of a BoxLayoutData container. "];
+  Node0 -> Node3 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< DataHolder \>" ,fontname="Helvetica"];
+  Node3 [label="DataFactory\< DataHolder \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node3 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="GraphConstructorFactory\l\< DataHolder \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classGraphConstructorFactory.html",tooltip="Factory object to data members of a BoxLayoutData container where objects need a graph in the constru..."];
+  Node3 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="NullConstructorDataFactory\l\< DataHolder \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classNullConstructorDataFactory.html",tooltip="factory where constructor called is the null constructor "];
+  Node0 -> Node6 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< EBBoxData\< CELL,\l Real, dstComp \> \>" ,fontname="Helvetica"];
+  Node6 [label="DataFactory\< EBBoxData\l\< CELL, Real, dstComp \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node6 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="ScalarAliasFactory\l\< srcComp, dstComp \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classScalarAliasFactory.html"];
+  Node0 -> Node8 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< BoxData\< Real, NUMCOMPS \> \>" ,fontname="Helvetica"];
+  Node8 [label="DataFactory\< BoxData\l\< Real, NUMCOMPS \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node8 -> Node9 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="DefaultBoxDataFactory\l\< NUMCOMPS \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDefaultBoxDataFactory.html"];
+  Node0 -> Node10 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< EBHostData\< cent,\l data_t, ncomp \> \>" ,fontname="Helvetica"];
+  Node10 [label="DataFactory\< EBHostData\l\< cent, data_t, ncomp \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node10 -> Node11 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="DeviToHostAliasFactory\l\< cent, data_t, ncomp \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDeviToHostAliasFactory.html",tooltip="Factory object to data members of a BoxLayoutData container where objects need a graph in the constru..."];
+  Node0 -> Node12 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FArrayBox \>" ,fontname="Helvetica"];
+  Node12 [label="DataFactory\< FArrayBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node12 -> Node13 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="FABAliasDataFactory",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFABAliasDataFactory.html"];
+  Node12 -> Node14 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="FABAliasFlBxDataFactory",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFABAliasFlBxDataFactory.html"];
+  Node12 -> Node15 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="FaceFabDataFactory",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classFaceFabDataFactory.html"];
+  Node0 -> Node16 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< EBFluxData\< Real,\l dstComp \> \>" ,fontname="Helvetica"];
+  Node16 [label="DataFactory\< EBFluxData\l\< Real, dstComp \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classDataFactory.html"];
+  Node16 -> Node17 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node17 [label="ScalarFluxAliasFactory\l\< srcComp, dstComp \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classScalarFluxAliasFactory.html"];
+}

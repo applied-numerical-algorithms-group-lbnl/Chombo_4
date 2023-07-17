@@ -26,7 +26,7 @@
 ## Directories
 * Chombo_4/example has many established algorithms and some in progress.
 * Chombo_4/src is where the common code lives.
-* Chombo_4/documents has a few documents created using this software.
+* Chombo_4/documents has a few documents created using this software.  It is also where doxygen output lives.
 * Chombo_4/mk  is where compiler and machine specific flags are set.
 * Chombo_4/util has a few random tools that I kept around.
 * Chombo_4/hooks is purely aspirational.

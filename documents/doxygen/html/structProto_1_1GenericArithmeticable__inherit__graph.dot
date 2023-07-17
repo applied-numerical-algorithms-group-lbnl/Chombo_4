@@ -1,0 +1,21 @@
+digraph "Proto::GenericArithmeticable&lt; ScalarT, SelfT &gt;"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Proto::GenericArithmeticable\l\< ScalarT, SelfT \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node0 -> Node1 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< T, IndexTM\< T, N \> \>" ,fontname="Helvetica"];
+  Node1 [label="Proto::GenericArithmeticable\l\< T, IndexTM\< T, N \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structProto_1_1GenericArithmeticable.html"];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="IndexTM\< T, N \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classIndexTM.html"];
+  Node1 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="Proto::IndexTM\< T, N \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1IndexTM.html"];
+  Node3 -> Node4 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double, dim \>" ,fontname="Helvetica"];
+  Node4 [label="Proto::IndexTM\< double,\l dim \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1IndexTM.html"];
+  Node3 -> Node5 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double, N \>" ,fontname="Helvetica"];
+  Node5 [label="Proto::IndexTM\< double, N \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1IndexTM.html"];
+  Node0 -> Node6 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< double, IndexTM\<\l double, N \> \>" ,fontname="Helvetica"];
+  Node6 [label="Proto::GenericArithmeticable\l\< double, IndexTM\< double, N \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structProto_1_1GenericArithmeticable.html"];
+  Node6 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

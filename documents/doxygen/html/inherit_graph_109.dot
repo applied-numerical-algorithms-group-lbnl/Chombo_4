@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Proto::Base2ndOrderFlux\l\< facecent, order \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1Base2ndOrderFlux.html"];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="Proto::Poisson2ndOrder\l\< facecent, order \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1Poisson2ndOrder.html",tooltip="second order Poisson flux "];
+}

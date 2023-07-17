@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Proto::NormalDerivativeNew\l\< dim \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1NormalDerivativeNew.html",tooltip="This computes the derivatives of the normal of a sliced implicit function. "];
+}

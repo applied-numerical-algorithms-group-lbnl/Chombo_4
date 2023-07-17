@@ -1,0 +1,11 @@
+digraph "LinearAlgebra" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_68267d1309a1af8e8297ef4c3efbcdba {
+    graph [ bgcolor="#ddddee", pencolor="black", label="src" fontname="Helvetica", fontsize="10", URL="dir_68267d1309a1af8e8297ef4c3efbcdba.html"]
+  dir_c94985346abed7ff4a0fc6d539290e1f [shape=box, label="LinearAlgebra", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_c94985346abed7ff4a0fc6d539290e1f.html"];
+  }
+  dir_8770f64541b318d49b694ffa097d90bc [shape=box label="BaseTools" URL="dir_8770f64541b318d49b694ffa097d90bc.html"];
+  dir_c94985346abed7ff4a0fc6d539290e1f->dir_8770f64541b318d49b694ffa097d90bc [headlabel="6", labeldistance=1.5 headhref="dir_000006_000003.html"];
+}
