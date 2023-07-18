@@ -8,17 +8,19 @@
 #include "petscksp.h"
 #include "petscviewer.h"
 #include "petscmat.h"
-/**
-   Chombo_EBCM_Graph.H is where MetaDataLevel lives.  It made sense at the time.
-   I should use this opportunity to apologize to the world for the many 
-   awful choices I have made in this life in relation to file names and organization.  
-   I regret all the consternation I have caused.
-**/
+/*
+  Chombo_EBCM_Graph.H is where MetaDataLevel lives.  It made sense at the time.
+  I should use this opportunity to apologize to the world for the many 
+  awful choices I have made in this life in relation to file names and organization.  
+  I regret all the consternation I have caused.
+*/
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBLevelBoxData.H"
 
-/// An EBCM interface to the magical world of PETSc,  where the evil bits of distributed linear algebra are done for us.
+/// 
 /**
+   An EBCM interface to the magical world of PETSc, 
+   wherein the evil bits of distributed linear algebra are done for us.
    I plan to use this for everything.  Geometric multigrid requires
    more infrastructure than I am willing to write so I will use PETSc
    for solves and truncation error tests and I will be hooking in
@@ -32,19 +34,21 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
-    typedef Chombo4::Box                            ch_box;
-    typedef Chombo4::DisjointBoxLayout              ch_dbl;
-    typedef Chombo4::BoxIterator                    ch_bit;
-    typedef Chombo4::IntVect                        ch_iv;
-    typedef Chombo4::DataIterator                   ch_dit;
+    typedef Chombo4::Box                                             ch_box;
+    typedef Chombo4::DisjointBoxLayout                               ch_dbl;
+    typedef Chombo4::BoxIterator                                     ch_bit;
+    typedef Chombo4::IntVect                                         ch_iv;
+    typedef Chombo4::DataIterator                                    ch_dit;
+                                                                     
+    typedef ::Mat                                                    petsc_mat;
+    typedef Proto::Point                                             pr_pt;
     
-    typedef ::Mat                                   petsc_mat;
-    typedef Proto::Point                            pr_pt;
-    typedef EBCM::MetaDataLevel<ebcm_order>         ebcm_meta;
-    typedef EBCM::EBCM_Graph<ebcm_order>            ebcm_graph;
-    typedef EBCM::HostLevelData<int, 1, ebcm_order> ebcm_data;
-    typedef EBCM::SubVolumeVector<      ebcm_order> ebcm_subvol_vec;
-    typedef EBCM::Algorithm_Framework<  ebcm_order> ebcm_framework;
+    typedef  EBCM::MetaDataLevel<        ebcm_order>                  ebcm_meta;
+    typedef  EBCM::EBCM_Graph<           ebcm_order>                  ebcm_graph;
+    typedef  EBCM::HostLevelData<int, 1, ebcm_order>                  ebcm_data;
+    typedef  EBCM::SubVolumeVector<      ebcm_order>                  ebcm_subvol_vec;
+    typedef  EBCM::Algorithm_Framework<  ebcm_order>                  algo_framework;
+    typename EBCM::neighborhood       <  ebcm_order>                  ebcm_neighborhood;
 
     ///
     struct local_stencil_t: public std::vector< pair< pr_pt, double > >
@@ -54,7 +58,7 @@ namespace EBCM
       ///
       /**
          adds each member of input
-       */
+      */
       void
       operator+= (const local_stencil_t& a_input)
       {
@@ -74,7 +78,7 @@ namespace EBCM
       /**
          Append the entry to the vector if the point is not already in the vector.
          Otherwise, just increment the weight.
-       */
+      */
       void add(const pair<pr_pt, double>& a_entry)
       {
         bool alreadyhere = false;
@@ -314,8 +318,8 @@ namespace EBCM
 
     /// 
     /**
-      Class to force compilation of all this lovely code. It is useful but unusable.  
-      If a class can be a zen koan, this may qualify.
+       Class to force compilation of all this lovely code. It is useful but unusable.  
+       If a class can be a zen koan, this may qualify.
     **/
     class DummyDerivedOp: public Base_PETSc_Op
     {
@@ -344,13 +348,25 @@ namespace EBCM
        Get stencil for integrated gradient in a  coordinate direction. 
        This is the same as the average gradient * face area.
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
-     */
+    */
     template<CENTERING cent>
     static local_stencil_t
-    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order> & a_face,
-                                const int                         & a_facedir)
+    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
+                                const int                          & a_stenrad,
+                                const int                          & a_weightpower,
+                                const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                const string                       & a_dom_bc,
+                                const string                       & a_eb_bc,
+                                const int                          & a_facedir,
+                                bool a_print = false)
     {
       local_stencil_t retval;
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat =
+        EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemMatrix(locality, a_face, a_graph,
+                        a_stenrad, a_weightpower,
+                        a_dom_bc, a_eb_bc, a_print);
       return retval;
     }
 
@@ -359,19 +375,31 @@ namespace EBCM
        Get stencil for integrated gradient in a  coordinate direction. 
        This is the same as the average gradient * face area.
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
-     */
+    */
     static local_stencil_t
-    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order> & a_face)
+    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order> & a_face,
+                                  const int                          & a_stenrad,
+                                  const int                          & a_weightpower,
+                                  const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                  const string                       & a_dom_bc,
+                                  const string                       & a_eb_bc,
+                                  bool a_print = false)
     {
       local_stencil_t retval;
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat =
+        EBCM::Algorithm_Framework<ebcm_order>::
+        getEBSystemMatrix(locality, a_face, a_graph,
+                          a_stenrad, a_weightpower,
+                          a_dom_bc, a_eb_bc, a_print);
       return retval;
     }
     
     ///
     /**
-      Class which forms a helmholtz operator.
-      This creates an operator of the form
-      L(phi) = alpha phi + beta * div(F(phi))
+       Class which forms a helmholtz operator.
+       This creates an operator of the form
+       L(phi) = alpha phi + beta * div(F(phi))
     **/
     class HelmholtzOp: public Base_PETSc_Op
     {
@@ -383,8 +411,9 @@ namespace EBCM
       double                                 m_alpha;
       double                                 m_beta;
       int                                    m_weight_power;
-      int                                    m_ghost;
-      
+      int                                    m_sten_rad;
+      string m_dom_bc;
+      string m_eb_bc;
       /// 
       /**
          alpha        = identity coeff
@@ -392,26 +421,50 @@ namespace EBCM
          ghost        = neighbor ghost size (grow the face box by this much)
          weight_power = goes to neighborhood to weight vofs.
          meta         = ebcm's very data intensive meta data
-       **/
+      **/
       HelmholtzOp(const double                                 & a_alpha,
                   const double                                 & a_beta,
-                  const int                                    & a_ghost,
+                  const int                                    & a_sten_rad,
                   const int                                    & a_weight_power,
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
+                  string a_dom_bc, string a_eb_bc, 
                   bool                                           a_print = false)
-        :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print)
+      :Base_PETSc_Op(a_meta_ptr, a_sten_rad, a_print)
       {
         m_alpha        = a_alpha;       
         m_beta         = a_beta;
-        m_ghost        = a_ghost;
-        m_weight_power = a_weight_power;        
+        m_sten_rad     = a_sten_rad;
+        m_weight_power = a_weight_power;
+        m_dom_bc       = a_dom_bc;
+        m_eb_bc        = a_eb_bc;
       }
 
       virtual ~HelmholtzOp()
       {
       }
-      
+
+      ///this is the function that the driver cod calls
       virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
+      {
+        shared_ptr<local_stencil_t> retval =
+          privateStencil(a_pt,          
+                         m_sten_rad,     
+                         m_weight_power, 
+                         a_graph,       
+                         m_dom_bc,      
+                         m_eb_bc,       
+                         a_print);        
+        return retval;
+      }
+    private:
+      ///this is where the canal locks are dug in the basement
+      virtual shared_ptr<local_stencil_t> privateStencil(const pr_pt                         & a_pt, 
+                                                         const int                          & a_stenrad,
+                                                         const int                          & a_weightpower,
+                                                         const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                                         const string                       & a_dom_bc,
+                                                         const string                       & a_eb_bc,
+                                                         bool                                 a_print        = false)
       {
         typedef Proto::Box pr_bx;
         
@@ -425,7 +478,13 @@ namespace EBCM
           {
             const auto& face = volume.m_xfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 0);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               0, a_print);        
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -435,7 +494,15 @@ namespace EBCM
           {
             const auto& face = volume.m_yfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 1);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               1, a_print);        
+
+                                                               
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -445,7 +512,14 @@ namespace EBCM
           {
             const auto& face = volume.m_zfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 2);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               2, a_print);        
+                                                               
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -454,7 +528,14 @@ namespace EBCM
           for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
           {
             const auto& face = volume.m_ifaces[iface];
-            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face);
+            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face,
+                                                                 a_stenrad,     
+                                                                 a_weightpower, 
+                                                                 a_graph,       
+                                                                 a_dom_bc,      
+                                                                 a_eb_bc,
+                                                                 a_print);
+                                                                 
             (*retval) += flux;
           }
         }
@@ -477,23 +558,23 @@ namespace EBCM
       double beta      = 4586;
       int weight_power = 4586;
       int nghost       = 4586;
+      string dom_bc;
+      string eb_bc;
       ParmParse pp("trunc_test");
       pp.get("alpha", alpha);
       pp.get("beta" , beta);
       pp.get("nghost" , beta);
       pp.get("weight_power", weight_power);
-      
-      ebcm_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+      pp.get("dom_bc", dom_bc);
+      pp.get("eb_bc",   eb_bc);
+      algo_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
       
       ///testing compilation of the base framework
       typedef DummyDerivedOp   ebcm_zen_koan;
       ebcm_zen_koan  number4586(ebcm, nghost, false);
 
-      ///Helmholtz operator declaration
-      
-      typedef HelmholtzOp   ebcm_helm_op;
-
-      ebcm_helm_op   helmholtzOperator(alpha, beta, nghost, weight_power, ebcm, false);
+      ///now for an operator that is conceivably useful
+      HelmholtzOp helmholtzOperator(alpha, beta, nghost, weight_power, ebcm, dom_bc, eb_bc, false);
       
     }
   }; //end petsc_framwork class

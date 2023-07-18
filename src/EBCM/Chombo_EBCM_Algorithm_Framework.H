@@ -20,7 +20,7 @@
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EigenMatrix.H"
 #include "Chombo_EBCM_Basics.H"
-
+#include "Chombo_EBCM_Neighborhood.H"
 #include <iomanip>
 
 namespace EBCM
@@ -31,9 +31,9 @@ namespace EBCM
   typedef Chombo4::IntVect                               ch_iv;
   typedef Chombo4::MayDay                                ch_mayday;
   typedef Proto::RealVect                                pr_rv;
-  typedef Proto::IndexTM<double, DIM>                      pr_itm_r_dim;
+  typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
   typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-  typedef Proto::IndexTM<double, DIM-1>                    pr_itm_r_dmo;
+  typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
   typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
   typedef Proto::BaseIF                                  pr_baseif;
   typedef Proto::Point                                   pr_pt;
@@ -53,9 +53,11 @@ namespace EBCM
     typedef    EBCM::SubVolumeVector  <          ebcm_order >   ebcm_subvol_vec;
     typedef    EBCM::EBCM_Volu<                  ebcm_order >   ebcm_volu;
     typedef    EBCM::EBCM_Graph<                 ebcm_order >   ebcm_graph;
+    typedef    EBCM::neighborhood<               ebcm_order >   ebcm_neighborhood;
     typedef Chombo4::GeometryService<            ebcm_order >   ch_geoserv;
     typedef   Proto::IndexedMoments<DIM  ,       ebcm_order >   pr_mom_dim;
     typedef   Proto::IndexedMoments<DIM-1,       ebcm_order >   pr_mom_dmo;
+
     class condition_t
     {
     public:
@@ -253,359 +255,6 @@ namespace EBCM
 
     } //end function vof function
 
-    ///
-    /**
-     **/
-    struct  neighborhood_t
-    {
-
-      ///structure to remember where there are domain faces.
-      struct dom_face_t
-      {
-
-        dom_face_t()
-        {
-          m_direction    = 4586;
-          m_subvol_index = 4586;
-          m_volume_index = 4586;
-        }
-        
-        dom_face_t(int a_direction, int a_subvol_index, int a_volume_index)
-        {
-          m_direction    = a_direction    ;
-          m_subvol_index = a_subvol_index ;
-          m_volume_index = a_volume_index ;
-        }
-        
-
-        ///face direction (0=>x, 1=>y, 2=>z)
-        int m_direction;
-        ///index into SubVolumeVector for this neighborhood
-        int m_subvol_index;
-        ///index into the volume's  face vector
-        /**
-           if m_direction == 0, index into m_volumes[m_subvol_index].m_xfaces
-           if m_direction == 1, index into m_volumes[m_subvol_index].m_yfaces
-           if m_direction == 2, index into m_volumes[m_subvol_index].m_zfaces
-         */
-        int m_volume_index;
-      };
-      ///
-      /**
-         Structre to remember where there are cut faces.   We could do this with dom_face_t 
-         with a magic flag but that would be silly since they have to be kept separate anyway because
-         they have different equations.   This is also a way more self-documenting choice.
-       **/
-      struct cut_face_t
-      {
-        ///index into SubVolumeVector for this neighborhood
-        int m_subvol_index;
-        ///index into the volume's  m_ifaces vector
-        int m_iface_index;
-
-        cut_face_t(const int& a_ivec, const int& a_iface)
-        {
-          m_subvol_index = a_ivec;
-          m_iface_index  = a_iface;
-        }
-
-        cut_face_t()
-        {
-          m_subvol_index = 4586;
-          m_iface_index  = 4586;
-        }
-      };
-      
-      
-      ch_iv                                  m_facelo;
-      ch_iv                                  m_facehi;
-      int                                    m_nghost;
-      pr_rv                                  m_startloc;
-      shared_ptr<ebcm_subvol_vec>            m_volumes;
-      shared_ptr< vector< dom_face_t > >     m_dom_faces;
-      shared_ptr< vector< cut_face_t > >     m_cut_faces;
-      //this is the actual distance stuff gets shifted
-      vector<pr_rv>                    m_xbar_volumes;
-      vector<pr_rv>                    m_xbar_dom_faces;
-      vector<pr_rv>                    m_xbar_cut_faces;
-      
-      ///this is the distance used in  calculating weights
-      vector<double>                     m_dist_volumes;
-      vector<double>                     m_dist_dom_faces;
-      vector<double>                     m_dist_cut_faces;
-      
-      ///this is the weight of each equation (the diagonal of the weight matrix)
-      vector<double>                     m_weig_volumes;
-      vector<double>                     m_weig_dom_faces;
-      vector<double>                     m_weig_cut_faces;
-
-      ///
-      neighborhood_t(const ebcm_graph    & a_graph,
-                     const ch_iv         & a_facelo,
-                     const ch_iv         & a_facehi,
-                     int a_nghost, int a_weight_power, bool a_print)
-      {
-        CH_TIME("Algorithm_Framework::neigborhood_t constructor");
-
-        m_facelo  = a_facelo;
-        m_facehi  = a_facehi;
-        m_nghost  = a_nghost;
-        pr_rv loloc, hiloc;
-        loloc.setToCCLocation(m_facelo, a_graph.m_dx);
-        hiloc.setToCCLocation(m_facehi, a_graph.m_dx);
-        m_startloc = 0.5*(loloc + hiloc);
-
-        ch_box region(m_facelo, m_facehi);
-        region.grow(a_nghost);
-        region &= a_graph.m_domain;
-
-        m_volumes = shared_ptr<ebcm_subvol_vec>(new ebcm_subvol_vec(a_graph, region, a_print));
-
-        fillDerived(a_graph,  a_nghost,  a_weight_power,  a_print);
-      }
-
-    protected:
-
-      //This is really part of the constructor so I do not want this called twice for the same object.
-      inline void
-      fillDerived(const ebcm_graph    & a_graph,
-                  int a_nghost, int a_weight_power, bool a_print)
-      {
-        ///first get the addresses of domain and cut faces around each volume
- 
-        getVolumeDerived(a_graph,   a_nghost,  a_weight_power,  a_print);
-
-        getBoundaryDerived(a_graph, a_nghost,  a_weight_power,  a_print);
-
-        int n_equations  = m_volumes->size() + m_dom_faces->size() + m_cut_faces->size();
-        int  n_unknowns  = pr_mom_dim::size();
-        if(n_unknowns > n_equations)
-        {
-          Chombo4::pout() << "fillDerived: For loiv = " << m_facelo
-                          << " and nghost = " << a_nghost 
-                          <<  ", we have too few equations to solve the system." << endl;
-          ch_mayday::Error("Doh!");
-        }
-      }
-
-
-      template <CENTERING cent>
-      inline void
-      getFaceDetails(pr_pt                              & a_neigh_lo,                    
-                     pr_pt                              & a_neigh_hi,
-                     pr_rv                              & a_neigh_centroid,
-                     const int                          & a_neigh_dir,         
-                     const EBCM_Face<cent, ebcm_order>  & a_neigh_face,
-                     const double                       & a_dx)
-      {
-        a_neigh_lo = a_neigh_face.m_lo.m_pt;
-        a_neigh_hi = a_neigh_face.m_hi.m_pt;
-        const pr_mom_dmo& facmom = a_neigh_face.m_facmom;
-        ///This is the face mom with all derivatives in a_neigh_dir set to zero.
-        pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, a_neigh_dir);
-        
-        for(int idir = 0; idir < DIM; idir ++)
-        {
-          double centerloc = 4586;
-          if(idir == a_neigh_dir)
-          {
-            centerloc = a_dx*(a_neigh_hi[idir]);
-          }
-          else
-          {
-            centerloc = a_dx*(a_neigh_hi[idir] + 0.5);
-          }
-          double scaledCent = volmomfromfac[1+idir];
-          a_neigh_centroid[idir]  = centerloc + scaledCent;
-        }
-      }
-
-      inline void getFaceInfo(pr_rv            & a_neigh_xbar,   // R^D distance to shift moments
-                              double           & a_neigh_dist,   // manhattan distance used in  calculating weights
-                              double           & a_neigh_weig,   // weight of neighbor equation
-                              const dom_face_t & a_curfac, 
-                              const ebcm_graph & a_graph,
-                              const int        & a_weight_power)
-      {
-        double     dx = a_graph.m_dx;
-        pr_pt neigh_lo, neigh_hi;
-        int neigh_dir = a_curfac.m_direction;
-        const auto& curvol = (*a_graph.m_volumes)[a_curfac.m_subvol_index];
-        pr_rv neigh_centroid;
-        if(neigh_dir == 0)
-        {
-          const auto& neigh_face = curvol.m_xfaces[a_curfac.m_volume_index];
-          getFaceDetails<XFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
-        }
-        else if(neigh_dir == 1)
-        {
-          const auto& neigh_face = curvol.m_yfaces[a_curfac.m_volume_index];
-          getFaceDetails<YFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
-        }
-        else if(neigh_dir == 2)
-        {
-          const auto& neigh_face = curvol.m_zfaces[a_curfac.m_volume_index];
-          getFaceDetails<ZFACE>(neigh_lo, neigh_hi, neigh_centroid, neigh_dir, neigh_face, dx);
-        }
-        else
-        {
-          Chombo4::pout() << "getFaceInfo: bogus neigh_dir = " << neigh_dir << endl;
-          ch_mayday::Error("Doh!");
-        }
-
-        double distlo, weiglo;
-        double disthi, weighi;
-        getDistanceAndWeight(distlo, weiglo,  m_facelo, neigh_lo, a_weight_power);
-        getDistanceAndWeight(disthi, weighi,  m_facehi, neigh_hi, a_weight_power);
-        a_neigh_dist  = 0.5*(distlo + disthi);
-        a_neigh_weig  = 0.5*(weiglo + weighi);
-        a_neigh_xbar  = neigh_centroid -  m_startloc;
-
-      }
-      
-      ///
-      inline void
-      getBoundaryDerived(const ebcm_graph    & a_graph,
-                         int a_nghost, int a_weight_power, bool a_print)
-      {
-        double dx = a_graph.m_dx;
-        m_dom_faces = shared_ptr< vector< dom_face_t > >(new vector<dom_face_t>());
-        m_cut_faces = shared_ptr< vector< cut_face_t > >(new vector<cut_face_t>());
-        ///this fills in the hooks to boundary condition informaiton
-        for(int ivec = 0; ivec < m_volumes->size(); ivec++)
-        {
-          const auto& curVol = (*m_volumes)[ivec];
-
-          for(int iface = 0; iface < curVol.m_xfaces.size(); iface++)
-          {
-            if(curVol.m_xfaces[iface].domainBoundary())
-            {
-              m_dom_faces->push_back(dom_face_t(0, ivec, iface));
-            }
-          }
-            
-          for(int iface = 0; iface < curVol.m_yfaces.size(); iface++)
-          {
-            if(curVol.m_yfaces[iface].domainBoundary())
-            {
-              m_dom_faces->push_back(dom_face_t(1, ivec, iface));
-            }
-          }
-            
-          for(int iface = 0; iface < curVol.m_zfaces.size(); iface++)
-          {
-            if(curVol.m_zfaces[iface].domainBoundary())
-            {
-              m_dom_faces->push_back(dom_face_t(2, ivec, iface));
-            }
-          }
-          
-          for(int iface = 0; iface < curVol.m_ifaces.size(); iface++)
-          {
-            m_cut_faces->push_back(cut_face_t(ivec, iface));
-          }
-        }
-        m_xbar_dom_faces.resize(m_dom_faces->size());   
-        m_weig_dom_faces.resize(m_dom_faces->size());
-        m_dist_dom_faces.resize(m_dom_faces->size());
-        m_xbar_cut_faces.resize(m_cut_faces->size());
-        m_weig_cut_faces.resize(m_cut_faces->size());
-        m_dist_cut_faces.resize(m_cut_faces->size());
-        for(int ivec = 0; ivec < m_dom_faces->size(); ivec++)
-        {
-          const dom_face_t& curfac = (*m_dom_faces)[ivec]; //indexing info for domain boundary face
-          pr_rv    neigh_xbar;   // R^D distance to shift moments
-          double   neigh_dist;   // manhattan distance used in  calculating weights
-          double   neigh_weig;   // weight of neighbor equation
-          getFaceInfo( neigh_xbar,   
-                       neigh_dist,   
-                       neigh_weig,   
-                       curfac, a_graph, a_weight_power);
-
-          m_xbar_dom_faces[ivec] = neigh_xbar;
-          m_dist_dom_faces[ivec] = neigh_dist;
-          m_weig_dom_faces[ivec] = neigh_weig;
-        }
-
-        for(int ivec = 0; ivec < m_cut_faces->size(); ivec++)
-        {
-
-          const auto& curfac = (*m_cut_faces)[ivec];
-          const auto& cur_vol = (*m_volumes)    [curfac.m_subvol_index] ;
-          const auto& cut_fac = cur_vol.m_ifaces[curfac.m_iface_index ] ;
-          const auto& ebf_mom = cut_fac.m_ebfmom;
-          
-          pr_pt faceind  = cut_fac.m_pt;
-          pr_rv facecent;
-          for(int idir = 0; idir < DIM; idir++)
-          {
-            double scaledCent = ebf_mom[1+idir];
-            double centerloc  = dx*(faceind[idir] + 0.5);
-            facecent[idir]  = centerloc + scaledCent;
-          }
-          double dist, weig;
-          getDistanceAndWeight(dist,   weig,    faceind, cur_vol.m_pt, a_weight_power);
-          m_xbar_cut_faces[ivec] = facecent - m_startloc;
-          m_dist_cut_faces[ivec] = dist;
-          m_weig_cut_faces[ivec] = weig;
-        }
-      }//end function getBoundaryDerived
-
-      
-      ///
-      inline void
-      getVolumeDerived(const ebcm_graph    & a_graph,
-                       int a_nghost, int a_weight_power, bool a_print)
-      {
-        m_xbar_volumes.resize(    m_volumes->size());
-        m_dist_volumes.resize(m_volumes->size());
-        m_weig_volumes.resize(m_volumes->size());
-    
-        for(int ivec = 0; ivec < m_volumes->size(); ivec++)
-        {
-          const auto& curVol = (*m_volumes)[ivec];
-          m_xbar_volumes[ivec] = curVol.m_centroid - m_startloc;
-          double distlo, weiglo;
-          double disthi, weighi;
-          getDistanceAndWeight(distlo, weiglo,  m_facelo, curVol.m_pt, a_weight_power);
-          getDistanceAndWeight(disthi, weighi,  m_facehi, curVol.m_pt, a_weight_power);
-          m_dist_volumes[ivec] = 0.5*(distlo + disthi);
-          m_weig_volumes[ivec] = 0.5*(weiglo + weighi);
-        }
-      }
-
-
-      inline void
-      getDistanceAndWeight(double      & a_distance,
-                           double      & a_weight,
-                           const ch_iv & a_start,
-                           const ch_iv & a_end,
-                           int           a_weight_power)
-      {
-        a_distance = getManhattanDistance(a_start, a_end);
-        a_weight = 1;
-
-        for(int iweight = 0; iweight < a_weight_power; iweight++)
-        {
-          a_weight /= a_distance;
-        }
-
-      }
-
-      inline 
-      double getManhattanDistance(const ch_iv& a_start, const ch_iv& a_end)
-      {
-        double xbar = 1; //important that it not go to zero.
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          int idiff = a_end[idir] - a_start[idir];
-          double rdiff = std::abs(double(idiff));
-          xbar += rdiff;
-        }
-        return xbar;
-      }
-
-    }; //end neighborhood_t
 
 
     ///
@@ -614,7 +263,7 @@ namespace EBCM
      */
     template <CENTERING cent>
     static inline shared_ptr<eigen_mat>
-    getSystemMatrix(shared_ptr<neighborhood_t>         &  a_locality,
+    getSystemMatrix(shared_ptr<ebcm_neighborhood>         &  a_locality,
                     const EBCM_Face<cent, ebcm_order>  &  a_face,
                     const ebcm_graph                   &  a_graph,
                     int a_nghost, int a_weight_power,
@@ -623,8 +272,8 @@ namespace EBCM
     {
       CH_TIME("EBCM_Framework::getSystemMatrix");
       
-      a_locality = shared_ptr<neighborhood_t>
-        (new neighborhood_t(a_graph,
+      a_locality = shared_ptr<ebcm_neighborhood>
+        (new ebcm_neighborhood(a_graph,
                             a_face.m_lo.m_pt,
                             a_face.m_hi.m_pt,
                             a_nghost, a_weight_power, a_print));
@@ -666,21 +315,23 @@ namespace EBCM
 
     ///I could probably have gotten  some code reuse from above if I had made better choices in life.
     static inline shared_ptr<eigen_mat>
-    getEBSystemMatrix(const IrregFace< ebcm_order>       &  a_face,
-                    const ebcm_graph                     &  a_graph,
-                    int a_nghost, int a_weight_power,
-                    const string& a_dom_bc, const string & a_eb_bc,
-                    bool a_print)
+    getEBSystemMatrix( shared_ptr<ebcm_neighborhood>           & a_locality,
+                       const IrregFace< ebcm_order>         &  a_face,
+                       const ebcm_graph                     &  a_graph,
+                       int a_nghost, int a_weight_power,
+                       const string& a_dom_bc, const string & a_eb_bc,
+                       bool a_print)
     {
       CH_TIME("EBCM_Framework::getEBSystemMatrix");
-      shared_ptr<neighborhood_t>
-        locality(new neighborhood_t(a_graph,
-                                    a_face.m_pt,
-                                    a_face.m_pt,
-                                    a_nghost, a_weight_power, a_print));
 
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+      a_locality = shared_ptr<ebcm_neighborhood>
+        (new ebcm_neighborhood(a_graph,
+                            a_face.m_pt,
+                            a_face.m_pt,
+                            a_nghost, a_weight_power, a_print));
+
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(a_locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -729,7 +380,7 @@ namespace EBCM
       for(int ivec = 0; ivec < a_faces.size(); ivec++)
       {
         double localCond, localMax, localMin;
-        shared_ptr<neighborhood_t> locality; //putting this into the interface for reuse
+        shared_ptr<ebcm_neighborhood> locality; //putting this into the interface for reuse
         shared_ptr<eigen_mat> Amat = getSystemMatrix(locality, a_faces[ivec], a_graph, a_stenrad, a_weightpower,
                                                      a_dom_bc, a_eb_bc, a_print);
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
@@ -753,13 +404,13 @@ namespace EBCM
     ///same thing but for the cut face.  once again, code reuse eludes me.
     static inline void
     getWorstEBConditionNumberInfo(double & a_invCondNumber,
-                                double & a_maxEigenvalue,
-                                double & a_minEigenvalue,
-                                int    & a_vec_index,
-                                const vector<IrregFace< ebcm_order > >   &  a_faces,
-                                const ebcm_graph                         &  a_graph,
-                                int a_stenrad, int a_weightpower,
-                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
+                                  double & a_maxEigenvalue,
+                                  double & a_minEigenvalue,
+                                  int    & a_vec_index,
+                                  const vector<IrregFace< ebcm_order > >   &  a_faces,
+                                  const ebcm_graph                         &  a_graph,
+                                  int a_stenrad, int a_weightpower,
+                                  const string& a_dom_bc, const string& a_eb_bc, bool a_print)
     {
       a_invCondNumber = 4586;
       a_maxEigenvalue = 4586;
@@ -768,11 +419,12 @@ namespace EBCM
       for(int ivec = 0; ivec < a_faces.size(); ivec++)
       {
         double localCond, localMax, localMin;
-
-        shared_ptr<eigen_mat> Amat = getEBSystemMatrix(a_faces[ivec],
-                                                       a_graph, a_stenrad,
-                                                       a_weightpower,
-                                                       a_dom_bc, a_eb_bc, a_print);
+        shared_ptr<ebcm_neighborhood>  locality; 
+        shared_ptr<eigen_mat> Amat =
+          getEBSystemMatrix(locality, a_faces[ivec],
+                            a_graph, a_stenrad, a_weightpower,
+                            a_dom_bc, a_eb_bc, a_print);
+        
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
         localCond = localMin/localMax;
         if(localCond < a_invCondNumber)
@@ -997,7 +649,7 @@ namespace EBCM
     ///
     static inline
     shared_ptr<eigen_mat>
-    getWeightMatrix(shared_ptr<neighborhood_t> a_locality, bool a_print)
+    getWeightMatrix(shared_ptr<ebcm_neighborhood> a_locality, bool a_print)
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       int nrows_dom_faces = a_locality->m_weig_dom_faces.size();
@@ -1294,7 +946,7 @@ namespace EBCM
     
     ///
     static shared_ptr<eigen_mat>
-    getMomentMatrix(shared_ptr<neighborhood_t> a_locality,
+    getMomentMatrix(shared_ptr<ebcm_neighborhood> a_locality,
                     const string& a_dom_bc, const string& a_eb_bc,
                     bool a_print)
     {
