@@ -383,17 +383,27 @@ namespace EBCM
       double                                 m_alpha;
       double                                 m_beta;
       int                                    m_weight_power;
+      int                                    m_ghost;
       
+      /// 
+      /**
+         alpha        = identity coeff
+         beta         = coeff of laplcian
+         ghost        = neighbor ghost size (grow the face box by this much)
+         weight_power = goes to neighborhood to weight vofs.
+         meta         = ebcm's very data intensive meta data
+       **/
       HelmholtzOp(const double                                 & a_alpha,
                   const double                                 & a_beta,
+                  const int                                    & a_ghost,
                   const int                                    & a_weight_power,
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                  const int                                    & a_ghost,
                   bool                                           a_print = false)
         :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print)
       {
         m_alpha        = a_alpha;       
-        m_beta         = a_beta;        
+        m_beta         = a_beta;
+        m_ghost        = a_ghost;
         m_weight_power = a_weight_power;        
       }
 
@@ -458,11 +468,21 @@ namespace EBCM
     static  void run_hoeb_truncation_tests()
     {
       
-      int nghost = 4;
       shared_ptr< ebcm_meta  > ebcm;
       ch_dbl                   grids;
       double                   dx;
       ch_probdom               domain;
+      ///stuff to parmparse.
+      double alpha     = 4586;
+      double beta      = 4586;
+      int weight_power = 4586;
+      int nghost       = 4586;
+      ParmParse pp("trunc_test");
+      pp.get("alpha", alpha);
+      pp.get("beta" , beta);
+      pp.get("nghost" , beta);
+      pp.get("weight_power", weight_power);
+      
       ebcm_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
       
       ///testing compilation of the base framework
@@ -470,16 +490,10 @@ namespace EBCM
       ebcm_zen_koan  number4586(ebcm, nghost, false);
 
       ///Helmholtz operator declaration
-      double alpha     = 4586;
-      double beta      = 4586;
-      int weight_power = 4586;
-      ParmParse pp("trunc_test");
-      pp.get("alpha", alpha);
-      pp.get("beta" , beta);
-      pp.get("weight_power", weight_power);
       
       typedef HelmholtzOp   ebcm_helm_op;
-      ebcm_helm_op   helmholtzOperator(alpha, beta, weight_power, ebcm, nghost, false);
+
+      ebcm_helm_op   helmholtzOperator(alpha, beta, nghost, weight_power, ebcm, false);
       
     }
   }; //end petsc_framwork class

@@ -252,383 +252,6 @@ namespace EBCM
       }
 
     } //end function vof function
-    
-    template <CENTERING cent>
-    static inline shared_ptr<eigen_mat>
-    getSystemMatrix(const EBCM_Face<cent, ebcm_order>  &  a_face,
-                    const ebcm_graph                   &  a_graph,
-                    int a_nghost, int a_weight_power,
-                    const string& a_dom_bc, const string& a_eb_bc,
-                    bool a_print)
-    {
-      CH_TIME("EBCM_Framework::getSystemMatrix");
-      shared_ptr<neighborhood_t>
-        locality(new neighborhood_t(a_graph,
-                                    a_face.m_lo.m_pt,
-                                    a_face.m_hi.m_pt,
-                                    a_nghost, a_weight_power, a_print));
-  
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
-
-      eigen_mat WMmat;
-      multiply(WMmat, *Wmat_p, *Mmat_p);
-      eigen_mat WMTmat = WMmat;
-      WMTmat.transpose();
-
-      shared_ptr<eigen_mat> Amat_p(new eigen_mat());
-      multiply(*Amat_p, WMTmat, WMmat);
-    
-      if(a_print)
-      {
-        int icent = cent;
-        Chombo4::pout() << "getSystemMatrix: icent = " << icent << endl;
-        Chombo4::pout() << "getSystemMatrix: Weight matrix:" << endl;
-        Wmat_p->poutDiag();
-        Chombo4::pout() << "getSystemMatrix: Moment matrix:" << endl;
-        Mmat_p->poutAll();
-      
-        Chombo4::pout() << "getSystemMatrix: WM   matrix: :" << endl;
-        WMmat.poutAll();
-      
-        Chombo4::pout() << "getSystemMatrix: WM^T matrix: :" << endl;
-        WMTmat.poutAll();
-
-        Chombo4::pout() << "System matrix:" << endl;
-        Amat_p->poutAll();
-      }
-
-      return Amat_p;
-
-    }
-
-    ///I could probably have gotten  some code reuse from above if I had made better choices in life.
-    static inline shared_ptr<eigen_mat>
-    getEBSystemMatrix(const IrregFace< ebcm_order>       &  a_face,
-                    const ebcm_graph                     &  a_graph,
-                    int a_nghost, int a_weight_power,
-                    const string& a_dom_bc, const string & a_eb_bc,
-                    bool a_print)
-    {
-      CH_TIME("EBCM_Framework::getEBSystemMatrix");
-      shared_ptr<neighborhood_t>
-        locality(new neighborhood_t(a_graph,
-                                    a_face.m_pt,
-                                    a_face.m_pt,
-                                    a_nghost, a_weight_power, a_print));
-
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
-
-      eigen_mat WMmat;
-      multiply(WMmat, *Wmat_p, *Mmat_p);
-      eigen_mat WMTmat = WMmat;
-      WMTmat.transpose();
-
-      shared_ptr<eigen_mat> Amat_p(new eigen_mat());
-      multiply(*Amat_p, WMTmat, WMmat);
-    
-      if(a_print)
-      {
-        Chombo4::pout() << "getEBSystemMatrix:Weight matrix:" << endl;
-        Wmat_p->poutDiag();
-        Chombo4::pout() << "getEBSystemMatrix:Moment matrix:" << endl;
-        Mmat_p->poutAll();
-      
-        Chombo4::pout() << "getEBSystemMatrix:WM   matrix: :" << endl;
-        WMmat.poutAll();
-      
-        Chombo4::pout() << "getEBSystemMatrix:WM^T matrix: :" << endl;
-        WMTmat.poutAll();
-
-        Chombo4::pout() << "getEBSystemMatrix:System matrix:" << endl;
-        Amat_p->poutAll();
-      }
-
-      return Amat_p;
-
-    }
-    ///gets the worst condition number info for any face in the vector
-    template <CENTERING cent>
-    static inline void
-    getWorstConditionNumberInfo(double & a_invCondNumber,
-                                double & a_maxEigenvalue,
-                                double & a_minEigenvalue,
-                                int    & a_vec_index,
-                                const vector<EBCM_Face<cent, ebcm_order> >  &  a_faces,
-                                const ebcm_graph                            &  a_graph,
-                                int a_stenrad, int a_weightpower,
-                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
-    {
-      a_invCondNumber = 4586;
-      a_maxEigenvalue = 4586;
-      a_minEigenvalue = 4586;
-      a_vec_index     = 4586;
-      for(int ivec = 0; ivec < a_faces.size(); ivec++)
-      {
-        double localCond, localMax, localMin;
-        shared_ptr<eigen_mat> Amat = getSystemMatrix(a_faces[ivec], a_graph, a_stenrad, a_weightpower,
-                                                     a_dom_bc, a_eb_bc, a_print);
-        Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
-        localCond = localMin/localMax;
-        if(localCond < a_invCondNumber)
-        {
-          a_invCondNumber = localCond;
-          a_maxEigenvalue = localMax;
-          a_minEigenvalue = localMin;
-          a_vec_index     = ivec;
-        }
-      }
-      if(a_print)
-      {
-        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
-        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
-        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
-        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
-      }
-    }
-    ///same thing but for the cut face.  once again, code reuse eludes me.
-    static inline void
-    getWorstEBConditionNumberInfo(double & a_invCondNumber,
-                                double & a_maxEigenvalue,
-                                double & a_minEigenvalue,
-                                int    & a_vec_index,
-                                const vector<IrregFace< ebcm_order > >   &  a_faces,
-                                const ebcm_graph                         &  a_graph,
-                                int a_stenrad, int a_weightpower,
-                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
-    {
-      a_invCondNumber = 4586;
-      a_maxEigenvalue = 4586;
-      a_minEigenvalue = 4586;
-      a_vec_index     = 4586;
-      for(int ivec = 0; ivec < a_faces.size(); ivec++)
-      {
-        double localCond, localMax, localMin;
-
-        shared_ptr<eigen_mat> Amat = getEBSystemMatrix(a_faces[ivec],
-                                                       a_graph, a_stenrad,
-                                                       a_weightpower,
-                                                       a_dom_bc, a_eb_bc, a_print);
-        Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
-        localCond = localMin/localMax;
-        if(localCond < a_invCondNumber)
-        {
-          a_invCondNumber = localCond;
-          a_maxEigenvalue = localMax;
-          a_minEigenvalue = localMin;
-          a_vec_index     = ivec;
-        }
-      }
-      if(a_print)
-      {
-        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
-        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
-        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
-        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
-      }
-    }
-    ///
-    /**
-       Print out max and min volume fraction in a meta.
-    **/
-    static void
-    checkKappa(double                  & a_maxKappa,
-               double                  & a_minKappa,
-               shared_ptr< ebcm_meta  >  a_meta,
-               const ch_dbl            & a_grids)
-    {
-
-      CH_TIME("EBCM_Framework::checkKappa");
-      double maxKappa = -1.0e10;
-      double minKappa =  1.0e10;
-      using Chombo4::pout;
-      ch_dit dit = a_grids.dataIterator();
-      for(int ibox = 0; ibox < dit.size(); ibox++)
-      {
-        const auto& valid = a_grids[dit[ibox]];
-        const auto& graph = (*(a_meta->m_graphs))[dit[ibox]];
-        double maxKappaBox = -1.0e10;
-        double minKappaBox =  1.0e10;
-        ebcm_subvol_vec volumes(graph, valid, false);
-        for(int ivec = 0; ivec < volumes.size(); ivec++)
-        {
-          const auto& volu = volumes[ivec];
-          maxKappaBox = std::max(volu.m_kappa, maxKappaBox);
-          minKappaBox = std::min(volu.m_kappa, minKappaBox);
-        }
-        Chombo4::pout() << "maximum (non covered) volume fraction for grids[" << ibox << "] = " << maxKappaBox << endl;
-        Chombo4::pout() << "minimum (non covered) volume fraction for grids[" << ibox << "] = " << minKappaBox << endl;
-
-        maxKappa = std::max(maxKappaBox, maxKappa);
-        minKappa = std::min(minKappaBox, minKappa);
-      }
-      Chombo4::pout() << "maximum volume fraction overall = " << maxKappa << endl;
-      Chombo4::pout() << "minimum volume fraction overall = " << minKappa << endl;
-    }
-    ///test function for example/EBCM/hoeb_petsc_test
-    static  void run_hoeb_petsc_tests(shared_ptr< ebcm_meta  >&  a_ebcm)
-    {
-      CH_TIME("EBCM_Framework::runTests");
-
-      shared_ptr< ebcm_meta  > ebcm;
-      ch_dbl                   grids;
-      double                   dx;
-      ch_probdom               domain;
-      makeMergedGeometry(ebcm, grids, dx, domain, true, true);
-
-      double maxKapp, minKapp;
-      //this tries out iteration and checks kappa
-      checkKappa(maxKapp, minKapp, ebcm, grids);
-
-      //makes data of inv condition number info and plots it out
-      shared_ptr<ebcm_leveldata> invCondition;
-      
-      shared_ptr<condition_t>    worst;
-      string dom_bc("all_neumann");
-      string  eb_bc("all_neumann");
-      ParmParse ppmain("main");  //this function is a templated standin for main.
-      ppmain.get("dom_bc", dom_bc);
-      ppmain.get( "eb_bc",  eb_bc);
-      getConditionNumberData(invCondition, worst, ebcm, dom_bc, eb_bc);
-
-      worst->poutLatexTable();
-      Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
-    
-      string plot_filename;
-      ppmain.get("inv_cond_filename",   plot_filename);
-      invCondition->writeToHDF5(plot_filename);
-
-      ///getting meta data out for reuse
-      a_ebcm = ebcm;      
-    }
-    Algorithm_Framework()
-    {}    
-  
-
-  
-  static shared_ptr<pr_baseif> getImplicitFunction()
-  {
-    CH_TIME("EBCM_Framework::getImplicitFunction");
-    shared_ptr<pr_baseif>  retval;
-    ParmParse pp("getImplicitFunction");
-    string which_geom;
-    pp.get("which_geom", which_geom);
-    using Chombo4::pout;
-    if(which_geom == string("sphere"))
-    {
-      RealVect center = 0.5*RealVect::Unit();
-      double radius = 0.1;
-      bool inside = false;
-      std::vector<double> centvec;
-      pp.get("radius", radius);
-      pp.get("inside", inside);
-      pp.getarr("center", centvec, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        center[idir] = centvec[idir];
-      }
-      Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
-      Chombo4::pout() << "sphere implicit function with radius = " << radius << ", center = " << center << ", and inside = " << inside << endl;
-      retval = shared_ptr<BaseIF>(static_cast<BaseIF*>(sphereptr));
-    }
-    else if(which_geom == string("all_regular"))
-    {
-      Chombo4::pout() << "all regular geometry" << endl;
-      retval = shared_ptr<BaseIF>(new Proto::AllRegularIF());
-    }
-    else if(which_geom == string("plane"))
-    {
-      using Proto::PlaneIF;
-      Chombo4::pout() << "plane implicit function" << endl;
-      RealVect normal, startPt;
-      vector<double> v_norm, v_start;
-      pp.getarr("geom_normal", v_norm, 0, DIM);
-      pp.getarr("geom_start_pt", v_start, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        normal[ idir] = v_norm[ idir];
-        startPt[idir] = v_start[idir];
-        Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-        Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
-      }
-      retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
-    }
-    else
-    {
-      Chombo4::pout() << "bogus geometry" << endl;
-      Chombo4::MayDay::Error("Doh!");
-    }
-    return retval;
-  }
-  
-
-/****/
-    static inline void
-    makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
-                          ch_dbl                    & a_grids,
-                          double                    & a_dx,
-                          ch_probdom                & a_domain,
-                          bool a_outputGraph,
-                          bool a_print)
-    {
-      CH_TIME("EBCM_Framework::makeMergedGeometry");
-      using Chombo4::pout;
-
-      int nx               = 32;
-      int maxGrid          = 32;
-      bool mergeSmallCells = true;
-    
-      ParmParse pp("makeMergedGeometry");
-
-      pp.get("nx"             , nx);
-      pp.get("maxGrid"        , maxGrid);
-      pp.get("mergeSmallCells", mergeSmallCells);
-
-
-      Chombo4::pout() << "nx"        << " = " <<  nx         << endl;
-      Chombo4::pout() << "max_grid"  << " = " <<  maxGrid    << endl;
-      if(mergeSmallCells)
-      {
-        Chombo4::pout() << "Cell merging is turned ON."  << endl;
-      }
-      else
-      {
-        Chombo4::pout() << "Cell merging is turned OFF."  << endl;
-      }
-  
-
-      ch_iv domLo = ch_iv::Zero;
-      ch_iv domHi  = (nx - 1)*ch_iv::Unit;
-
-      ch_probdom domain(domLo, domHi);
-
-      vector<ch_dbl> vecgrids;
-      Chombo4::pout() << "making grids" << endl;
-      GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
-
-      int geomGhost = 6;
-      shared_ptr<BaseIF>    impfunc = getImplicitFunction();
-      Chombo4::pout() << "defining geometry in EB land" << endl;
-      double dx = 1.0/(double(nx));
-      pr_rv origin = pr_rv::Zero();
-      shared_ptr< ch_geoserv > geoserv
-        (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
-
-      int ghost = 0;
-      shared_ptr< ebcm_meta  >
-        metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, ghost,
-                                  mergeSmallCells, a_print));
-
-      string graph_filename;
-      pp.get("graph_filename"         , graph_filename);
-      metaDataPtr->outputGraphMapAsHDF5(graph_filename);
-    
-      a_ebcm   = metaDataPtr;
-      a_grids  = vecgrids[0];
-      a_dx     = dx;
-      a_domain = domain;
-    }
 
     ///
     /**
@@ -984,6 +607,391 @@ namespace EBCM
 
     }; //end neighborhood_t
 
+
+    ///
+    /**
+       The neighborhood was shoehorned into the interface here for reuse.
+     */
+    template <CENTERING cent>
+    static inline shared_ptr<eigen_mat>
+    getSystemMatrix(shared_ptr<neighborhood_t>         &  a_locality,
+                    const EBCM_Face<cent, ebcm_order>  &  a_face,
+                    const ebcm_graph                   &  a_graph,
+                    int a_nghost, int a_weight_power,
+                    const string& a_dom_bc, const string& a_eb_bc,
+                    bool a_print)
+    {
+      CH_TIME("EBCM_Framework::getSystemMatrix");
+      
+      a_locality = shared_ptr<neighborhood_t>
+        (new neighborhood_t(a_graph,
+                            a_face.m_lo.m_pt,
+                            a_face.m_hi.m_pt,
+                            a_nghost, a_weight_power, a_print));
+
+      
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(a_locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      shared_ptr<eigen_mat> Amat_p(new eigen_mat());
+      multiply(*Amat_p, WMTmat, WMmat);
+    
+      if(a_print)
+      {
+        int icent = cent;
+        Chombo4::pout() << "getSystemMatrix: icent = " << icent << endl;
+        Chombo4::pout() << "getSystemMatrix: Weight matrix:" << endl;
+        Wmat_p->poutDiag();
+        Chombo4::pout() << "getSystemMatrix: Moment matrix:" << endl;
+        Mmat_p->poutAll();
+      
+        Chombo4::pout() << "getSystemMatrix: WM   matrix: :" << endl;
+        WMmat.poutAll();
+      
+        Chombo4::pout() << "getSystemMatrix: WM^T matrix: :" << endl;
+        WMTmat.poutAll();
+
+        Chombo4::pout() << "System matrix:" << endl;
+        Amat_p->poutAll();
+      }
+
+      return Amat_p;
+
+    }
+
+    ///I could probably have gotten  some code reuse from above if I had made better choices in life.
+    static inline shared_ptr<eigen_mat>
+    getEBSystemMatrix(const IrregFace< ebcm_order>       &  a_face,
+                    const ebcm_graph                     &  a_graph,
+                    int a_nghost, int a_weight_power,
+                    const string& a_dom_bc, const string & a_eb_bc,
+                    bool a_print)
+    {
+      CH_TIME("EBCM_Framework::getEBSystemMatrix");
+      shared_ptr<neighborhood_t>
+        locality(new neighborhood_t(a_graph,
+                                    a_face.m_pt,
+                                    a_face.m_pt,
+                                    a_nghost, a_weight_power, a_print));
+
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      shared_ptr<eigen_mat> Amat_p(new eigen_mat());
+      multiply(*Amat_p, WMTmat, WMmat);
+    
+      if(a_print)
+      {
+        Chombo4::pout() << "getEBSystemMatrix:Weight matrix:" << endl;
+        Wmat_p->poutDiag();
+        Chombo4::pout() << "getEBSystemMatrix:Moment matrix:" << endl;
+        Mmat_p->poutAll();
+      
+        Chombo4::pout() << "getEBSystemMatrix:WM   matrix: :" << endl;
+        WMmat.poutAll();
+      
+        Chombo4::pout() << "getEBSystemMatrix:WM^T matrix: :" << endl;
+        WMTmat.poutAll();
+
+        Chombo4::pout() << "getEBSystemMatrix:System matrix:" << endl;
+        Amat_p->poutAll();
+      }
+
+      return Amat_p;
+
+    }
+    ///gets the worst condition number info for any face in the vector
+    template <CENTERING cent>
+    static inline void
+    getWorstConditionNumberInfo(double & a_invCondNumber,
+                                double & a_maxEigenvalue,
+                                double & a_minEigenvalue,
+                                int    & a_vec_index,
+                                const vector<EBCM_Face<cent, ebcm_order> >  &  a_faces,
+                                const ebcm_graph                            &  a_graph,
+                                int a_stenrad, int a_weightpower,
+                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
+    {
+      a_invCondNumber = 4586;
+      a_maxEigenvalue = 4586;
+      a_minEigenvalue = 4586;
+      a_vec_index     = 4586;
+      for(int ivec = 0; ivec < a_faces.size(); ivec++)
+      {
+        double localCond, localMax, localMin;
+        shared_ptr<neighborhood_t> locality; //putting this into the interface for reuse
+        shared_ptr<eigen_mat> Amat = getSystemMatrix(locality, a_faces[ivec], a_graph, a_stenrad, a_weightpower,
+                                                     a_dom_bc, a_eb_bc, a_print);
+        Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
+        localCond = localMin/localMax;
+        if(localCond < a_invCondNumber)
+        {
+          a_invCondNumber = localCond;
+          a_maxEigenvalue = localMax;
+          a_minEigenvalue = localMin;
+          a_vec_index     = ivec;
+        }
+      }
+      if(a_print)
+      {
+        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
+        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
+        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
+        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
+      }
+    }
+    ///same thing but for the cut face.  once again, code reuse eludes me.
+    static inline void
+    getWorstEBConditionNumberInfo(double & a_invCondNumber,
+                                double & a_maxEigenvalue,
+                                double & a_minEigenvalue,
+                                int    & a_vec_index,
+                                const vector<IrregFace< ebcm_order > >   &  a_faces,
+                                const ebcm_graph                         &  a_graph,
+                                int a_stenrad, int a_weightpower,
+                                const string& a_dom_bc, const string& a_eb_bc, bool a_print)
+    {
+      a_invCondNumber = 4586;
+      a_maxEigenvalue = 4586;
+      a_minEigenvalue = 4586;
+      a_vec_index     = 4586;
+      for(int ivec = 0; ivec < a_faces.size(); ivec++)
+      {
+        double localCond, localMax, localMin;
+
+        shared_ptr<eigen_mat> Amat = getEBSystemMatrix(a_faces[ivec],
+                                                       a_graph, a_stenrad,
+                                                       a_weightpower,
+                                                       a_dom_bc, a_eb_bc, a_print);
+        Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
+        localCond = localMin/localMax;
+        if(localCond < a_invCondNumber)
+        {
+          a_invCondNumber = localCond;
+          a_maxEigenvalue = localMax;
+          a_minEigenvalue = localMin;
+          a_vec_index     = ivec;
+        }
+      }
+      if(a_print)
+      {
+        Chombo4::pout() << "getWorstCondtionNumberInfo:"<< endl;
+        Chombo4::pout() << "a_invCondNumber = " << a_invCondNumber << endl;
+        Chombo4::pout() << "a_maxEigenvalue = " << a_maxEigenvalue << endl;
+        Chombo4::pout() << "a_minEigenvalue = " << a_minEigenvalue << endl;
+      }
+    }
+    ///
+    /**
+       Print out max and min volume fraction in a meta.
+    **/
+    static void
+    checkKappa(double                  & a_maxKappa,
+               double                  & a_minKappa,
+               shared_ptr< ebcm_meta  >  a_meta,
+               const ch_dbl            & a_grids)
+    {
+
+      CH_TIME("EBCM_Framework::checkKappa");
+      double maxKappa = -1.0e10;
+      double minKappa =  1.0e10;
+      using Chombo4::pout;
+      ch_dit dit = a_grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& valid = a_grids[dit[ibox]];
+        const auto& graph = (*(a_meta->m_graphs))[dit[ibox]];
+        double maxKappaBox = -1.0e10;
+        double minKappaBox =  1.0e10;
+        ebcm_subvol_vec volumes(graph, valid, false);
+        for(int ivec = 0; ivec < volumes.size(); ivec++)
+        {
+          const auto& volu = volumes[ivec];
+          maxKappaBox = std::max(volu.m_kappa, maxKappaBox);
+          minKappaBox = std::min(volu.m_kappa, minKappaBox);
+        }
+        Chombo4::pout() << "maximum (non covered) volume fraction for grids[" << ibox << "] = " << maxKappaBox << endl;
+        Chombo4::pout() << "minimum (non covered) volume fraction for grids[" << ibox << "] = " << minKappaBox << endl;
+
+        maxKappa = std::max(maxKappaBox, maxKappa);
+        minKappa = std::min(minKappaBox, minKappa);
+      }
+      Chombo4::pout() << "maximum volume fraction overall = " << maxKappa << endl;
+      Chombo4::pout() << "minimum volume fraction overall = " << minKappa << endl;
+    }
+    ///test function for example/EBCM/hoeb_petsc_test
+    static  void run_hoeb_petsc_tests(shared_ptr< ebcm_meta  >&  a_ebcm)
+    {
+      CH_TIME("EBCM_Framework::runTests");
+
+      shared_ptr< ebcm_meta  > ebcm;
+      ch_dbl                   grids;
+      double                   dx;
+      ch_probdom               domain;
+      makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+
+      double maxKapp, minKapp;
+      //this tries out iteration and checks kappa
+      checkKappa(maxKapp, minKapp, ebcm, grids);
+
+      //makes data of inv condition number info and plots it out
+      shared_ptr<ebcm_leveldata> invCondition;
+      
+      shared_ptr<condition_t>    worst;
+      string dom_bc("all_neumann");
+      string  eb_bc("all_neumann");
+      ParmParse ppmain("main");  //this function is a templated standin for main.
+      ppmain.get("dom_bc", dom_bc);
+      ppmain.get( "eb_bc",  eb_bc);
+      getConditionNumberData(invCondition, worst, ebcm, dom_bc, eb_bc);
+
+      worst->poutLatexTable();
+      Chombo4::pout() << "worst condition number at point " << worst->m_pt << endl;
+    
+      string plot_filename;
+      ppmain.get("inv_cond_filename",   plot_filename);
+      invCondition->writeToHDF5(plot_filename);
+
+      ///getting meta data out for reuse
+      a_ebcm = ebcm;      
+    }
+    Algorithm_Framework()
+    {}    
+  
+
+  
+  static shared_ptr<pr_baseif> getImplicitFunction()
+  {
+    CH_TIME("EBCM_Framework::getImplicitFunction");
+    shared_ptr<pr_baseif>  retval;
+    ParmParse pp("getImplicitFunction");
+    string which_geom;
+    pp.get("which_geom", which_geom);
+    using Chombo4::pout;
+    if(which_geom == string("sphere"))
+    {
+      RealVect center = 0.5*RealVect::Unit();
+      double radius = 0.1;
+      bool inside = false;
+      std::vector<double> centvec;
+      pp.get("radius", radius);
+      pp.get("inside", inside);
+      pp.getarr("center", centvec, 0, DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        center[idir] = centvec[idir];
+      }
+      Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
+      Chombo4::pout() << "sphere implicit function with radius = " << radius << ", center = " << center << ", and inside = " << inside << endl;
+      retval = shared_ptr<BaseIF>(static_cast<BaseIF*>(sphereptr));
+    }
+    else if(which_geom == string("all_regular"))
+    {
+      Chombo4::pout() << "all regular geometry" << endl;
+      retval = shared_ptr<BaseIF>(new Proto::AllRegularIF());
+    }
+    else if(which_geom == string("plane"))
+    {
+      using Proto::PlaneIF;
+      Chombo4::pout() << "plane implicit function" << endl;
+      RealVect normal, startPt;
+      vector<double> v_norm, v_start;
+      pp.getarr("geom_normal", v_norm, 0, DIM);
+      pp.getarr("geom_start_pt", v_start, 0, DIM);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        normal[ idir] = v_norm[ idir];
+        startPt[idir] = v_start[idir];
+        Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+        Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+      }
+      retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
+    }
+    else
+    {
+      Chombo4::pout() << "bogus geometry" << endl;
+      Chombo4::MayDay::Error("Doh!");
+    }
+    return retval;
+  }
+  
+
+/****/
+    static inline void
+    makeMergedGeometry(   shared_ptr< ebcm_meta  >  & a_ebcm,
+                          ch_dbl                    & a_grids,
+                          double                    & a_dx,
+                          ch_probdom                & a_domain,
+                          bool a_outputGraph,
+                          bool a_print)
+    {
+      CH_TIME("EBCM_Framework::makeMergedGeometry");
+      using Chombo4::pout;
+
+      int nx               = 32;
+      int maxGrid          = 32;
+      bool mergeSmallCells = true;
+    
+      ParmParse pp("makeMergedGeometry");
+
+      pp.get("nx"             , nx);
+      pp.get("maxGrid"        , maxGrid);
+      pp.get("mergeSmallCells", mergeSmallCells);
+
+
+      Chombo4::pout() << "nx"        << " = " <<  nx         << endl;
+      Chombo4::pout() << "max_grid"  << " = " <<  maxGrid    << endl;
+      if(mergeSmallCells)
+      {
+        Chombo4::pout() << "Cell merging is turned ON."  << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "Cell merging is turned OFF."  << endl;
+      }
+  
+
+      ch_iv domLo = ch_iv::Zero;
+      ch_iv domHi  = (nx - 1)*ch_iv::Unit;
+
+      ch_probdom domain(domLo, domHi);
+
+      vector<ch_dbl> vecgrids;
+      Chombo4::pout() << "making grids" << endl;
+      GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
+
+      int geomGhost = 6;
+      shared_ptr<BaseIF>    impfunc = getImplicitFunction();
+      Chombo4::pout() << "defining geometry in EB land" << endl;
+      double dx = 1.0/(double(nx));
+      pr_rv origin = pr_rv::Zero();
+      shared_ptr< ch_geoserv > geoserv
+        (new ch_geoserv(impfunc, origin, dx, domain.domainBox(), vecgrids, geomGhost));
+
+      int ghost = 0;
+      shared_ptr< ebcm_meta  >
+        metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, ghost,
+                                  mergeSmallCells, a_print));
+
+      string graph_filename;
+      pp.get("graph_filename"         , graph_filename);
+      metaDataPtr->outputGraphMapAsHDF5(graph_filename);
+    
+      a_ebcm   = metaDataPtr;
+      a_grids  = vecgrids[0];
+      a_dx     = dx;
+      a_domain = domain;
+    }
 
 
     ///
