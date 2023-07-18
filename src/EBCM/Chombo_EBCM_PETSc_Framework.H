@@ -339,11 +339,29 @@ namespace EBCM
     };
     
 
-    ///
+    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
+    /**
+       Get stencil for integrated gradient in a  coordinate direction. 
+       This is the same as the average gradient * face area.
+       \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
+     */
     template<CENTERING cent>
     static local_stencil_t
-    getHelmholtzFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
-                            const int                         & a_facedir)
+    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order> & a_face,
+                                const int                         & a_facedir)
+    {
+      local_stencil_t retval;
+      return retval;
+    }
+
+    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
+    /**
+       Get stencil for integrated gradient in a  coordinate direction. 
+       This is the same as the average gradient * face area.
+       \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
+     */
+    static local_stencil_t
+    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order> & a_face)
     {
       local_stencil_t retval;
       return retval;
@@ -397,7 +415,7 @@ namespace EBCM
           {
             const auto& face = volume.m_xfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 0);
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -407,7 +425,7 @@ namespace EBCM
           {
             const auto& face = volume.m_yfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 1);
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -417,8 +435,16 @@ namespace EBCM
           {
             const auto& face = volume.m_zfaces[iface];
             double fluxsign = faceSign(volume, face);
-            local_stencil_t flux = getHelmholtzFluxStencil(face, 0);
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face, 2);
             flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
+          {
+            const auto& face = volume.m_ifaces[iface];
+            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face);
             (*retval) += flux;
           }
         }
