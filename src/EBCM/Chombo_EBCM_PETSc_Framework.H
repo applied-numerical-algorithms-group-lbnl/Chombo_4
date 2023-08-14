@@ -343,12 +343,41 @@ namespace EBCM
     };
     
 
+    ///
+    static inline
+    shared_ptr<eigen_mat>
+    getHelmholtzQMatrix(shared_ptr<ebcm_neighborhood> a_locality,
+                        const EBCM_Face<cent, ebcm_order>  & a_face,
+                        bool a_print)
+    {
+      shared_ptr<eigen_mat> retval;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
        This is the same as the average gradient * face area.
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
+    static local_stencil_t
+    getStencilFromMatrix(const eigen_mat                                & a_matrix,
+                         shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality)
+    {
+      int nrows_volumes   = a_locality->m_weig_volumes.size();
+      local_stencil_t retval;
+      const auto& volvec = *a_locality->m_volumes;
+      for( int irow = 0; irow < nrows_volumes; irow++)
+      {
+        pair<pr_pt, double> entry;
+        const ebcm_volu& volume = volvec[irow];
+        entry.first = volume.m_pt;
+        entry.second = a_matrix(irow, 0);
+        retval.add(entry);
+      }
+      return retval;
+    }
+
     template<CENTERING cent>
     static local_stencil_t
     getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
@@ -363,7 +392,7 @@ namespace EBCM
       /**
          From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
          Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-               It is the one that converts  Taylor coefficients to fluxes).
+               It is the one that converts  Taylor coefficients to fluxes).   
          S : stencil matrix.  
          P : phi vector.  
          W : weighting matrix.
@@ -374,11 +403,28 @@ namespace EBCM
       **/
       local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat =
+      shared_ptr< eigen_mat > Amat_p =
         EBCM::Algorithm_Framework<ebcm_order>::
         getSystemMatrix(locality, a_face, a_graph,
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, a_print);
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      eigen_mat Ainvmat = *Amat_p;
+      Ainv.invert();
+      
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(locality, a_print);
+      eigen_mat AinvWMTmat;
+      multiply( AinvWMTmat, Ainvmat, WMTmat);
+      eigne_mat Smat;
+      multiply( Smat, Qmat, AinvWMTmat);
+      local_stencil_t retval = getStencilFromMat(Smat, locality);
       return retval;
     }
 
