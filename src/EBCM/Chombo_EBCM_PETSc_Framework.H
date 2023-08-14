@@ -360,6 +360,18 @@ namespace EBCM
                                 const int                          & a_facedir,
                                 bool a_print = false)
     {
+      /**
+         From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
+         Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
+               It is the one that converts  Taylor coefficients to fluxes).
+         S : stencil matrix.  
+         P : phi vector.  
+         W : weighting matrix.
+         M : moment matrix.
+         A: system matrix =  ((WM)^T(WM))
+         (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
+         S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+      **/
       local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
       shared_ptr< eigen_mat > Amat =
