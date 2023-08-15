@@ -30,6 +30,10 @@ namespace EBCM
   typedef Chombo4::DataIterator                    ch_dit;
   typedef Chombo4::DataIndex                       ch_datind;
   typedef Chombo4::MayDay                          ch_mayday;
+  typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
+  typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
+  typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
+  typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
 
   ///get the serialization size of this vector
   template<typename entry_t>

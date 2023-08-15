@@ -34,23 +34,33 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
-    typedef Chombo4::Box                                             ch_box;
-    typedef Chombo4::DisjointBoxLayout                               ch_dbl;
-    typedef Chombo4::BoxIterator                                     ch_bit;
-    typedef Chombo4::IntVect                                         ch_iv;
-    typedef Chombo4::DataIterator                                    ch_dit;
-                                                                     
-    typedef ::Mat                                                    petsc_mat;
-    typedef Proto::Point                                             pr_pt;
+    typedef Chombo4::Box                                   ch_box;
+    typedef Chombo4::DisjointBoxLayout                     ch_dbl;
+    typedef Chombo4::BoxIterator                           ch_bit;
+    typedef Chombo4::IntVect                               ch_iv;
+    typedef Chombo4::DataIterator                          ch_dit;
+                                                           
+    typedef ::Mat                                          petsc_mat;
+    typedef Proto::Point                                   pr_pt;
     
-    typedef  EBCM::MetaDataLevel<        ebcm_order>                  ebcm_meta;
-    typedef  EBCM::EBCM_Graph<           ebcm_order>                  ebcm_graph;
-    typedef  EBCM::HostLevelData<int, 1, ebcm_order>                  ebcm_data;
-    typedef  EBCM::SubVolumeVector<      ebcm_order>                  ebcm_subvol_vec;
-    typedef  EBCM::Algorithm_Framework<  ebcm_order>                  algo_framework;
-    typename EBCM::neighborhood       <  ebcm_order>                  ebcm_neighborhood;
+    typedef  EBCM::MetaDataLevel<        ebcm_order>       ebcm_meta;
+    typedef  EBCM::EBCM_Graph<           ebcm_order>       ebcm_graph;
+    typedef  EBCM::HostLevelData<int, 1, ebcm_order>       ebcm_data;
+    typedef  EBCM::SubVolumeVector<      ebcm_order>       ebcm_subvol_vec;
+    typedef  EBCM::Algorithm_Framework<  ebcm_order>       algo_framework;
+    typedef Proto::IndexedMoments<DIM  , ebcm_order >      pr_mom_dim;
+    typedef Proto::IndexedMoments<DIM-1, ebcm_order >      pr_mom_dmo;
+    typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
+    typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
+    typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
+    typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
+    
+    typename EBCM::neighborhood       <  ebcm_order>       ebcm_neighborhood;
 
-    ///
+    /// Class to replace old vofstencil.  
+    /**
+       This will have to be generalized for multiple vofs per cell.
+     **/
     struct local_stencil_t: public std::vector< pair< pr_pt, double > >
     {
     public:
@@ -142,8 +152,6 @@ namespace EBCM
         {
           Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
         }
-        ///this would be convenient to keep around but it must be temporary as it contains all kinds of moment data that
-        ///will no longer be necessary  once the matrix is defined.
         createMatrixRowMap(a_print);
 
         if(a_print)
@@ -344,14 +352,43 @@ namespace EBCM
     
 
     ///
-    static inline
+    template <CENTERING cent>
     shared_ptr<eigen_mat>
-    getHelmholtzQMatrix(shared_ptr<ebcm_neighborhood> a_locality,
-                        const EBCM_Face<cent, ebcm_order>  & a_face,
-                        bool a_print)
+    getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
+                         shared_ptr<ebcm_neighborhood>        a_locality,
+                         const EBCM_Face<cent, ebcm_order>  & a_face,
+                         const int                          & a_facedir,
+                         const double                       & a_dx;
+                         bool a_print)
     {
-      shared_ptr<eigen_mat> retval;
-      ch_mayday::Error("not implemented");
+      const auto & volmom = ebcm_basics::getVolMomFromFacMom<DIM>(a_face.m_facmom, a_facedir);
+      Real momzero = a_face.m_facmom[pr_itm_i_dim::Zero];
+
+      prm_itm_r_dim xbar = a_locality->getXBar(a_face);
+      volmom.shift(xbar);
+
+      unsigned int Pcols = pr_mom_dim::size();
+      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+
+
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        double matval = 0;
+        if(momind[a_facedir] > 0)
+        {
+          int pd = momind[a_facedir];
+          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+          Real derval = volmom[derind];
+          if(std::abs(momzero) > 1.0e-10)
+          {
+            matval = pd*derval/momzero;
+          }
+        }
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        (*retval)(0,currentCol) = matval;
+      }
+    
       return retval;
     }
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
