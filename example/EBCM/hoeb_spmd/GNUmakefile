@@ -1,7 +1,7 @@
 
 #configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=TRUE,OpenMP=FALSE
 
-CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/example/..
+CHOMBO_HOME := /global/u1/s/szhang9/Chombo_4/example/..
 DIM := 2
 VARS_OLD := $(.VARIABLES)
 
@@ -37,26 +37,21 @@ VPATH +=  ../../hoeb_common/
 
 CHOMBO_CPPFLAGS = -std=c++14
 
-PROTO_HOME = $(HOME)/_proto/proto
-CHOMBO_DEPXX=g++
-CHOMBO_CXX=g++
+PROTO_HOME =$(HOME)/proto
+CHOMBO_DEPXX=nvcc
+CHOMBO_CXX=nvcc
+export OMPI_CXX=nvcc
 
-CHOMBO_CXXALLFLAGS := -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic 
-CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
+CHOMBO_CXXALLFLAGS := #-std=c++11
+CHOMBO_DEPFLAGS += -I${CRAY_MPICH_PREFIX}/include
 
-#CHOMBO_LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-#CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-CHOMBO_HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
-CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
-CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
+CHOMOBO_LIBS +=-L$(MVAPICH2_DIR)/lib -lmpi 
 
-CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)
-CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
+
+CHOMBO_HDFINCFLAGS=-I$(HDF5_ROOT)/include/ ${CHOMBO_DEPFLAGS} 
+CHOMBO_HDFLIBFLAGS=-L$(HDF5_ROOT)/lib/ -lhdf5 
+
 #end mach dependent
-
-
-
 
 
 CHOMBO_CPPFLAGS += -DCH_USE_HDF5 

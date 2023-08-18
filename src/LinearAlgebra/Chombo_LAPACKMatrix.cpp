@@ -1,3 +1,4 @@
+/*
 #ifdef CH_LANG_CC
 /*
  *      _______              __
@@ -1306,3 +1307,4 @@ int solveReducedRankLS(LAPACKMatrix& A, LAPACKMatrix& b)
   return INFO;
 }
 #include "Chombo_NamespaceFooter.H"
+*/
