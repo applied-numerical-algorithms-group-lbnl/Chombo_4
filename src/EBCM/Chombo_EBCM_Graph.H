@@ -131,12 +131,47 @@ namespace EBCM
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
+
+  ///sometimes it is convenient to have the integer facedir
+    int  getFaceDir() const
+    {
+      int retval = -4586;
+      if(cent == XFACE)
+      {
+        retval = 0;
+      }
+      else if(cent == YFACE)
+      {
+        retval = 1;
+      }
+      else if(cent == ZFACE)
+      {
+        retval = 2;
+      }
+      return retval;
+    }
+    
     void defineAsRegular(pr_vof a_lo, pr_vof a_hi, double a_dx)
     {                                                  
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
     }
+    ///
+    pr_itm_r_dim location(double  a_dx)
+    {
+      pr_itm_r_dim retval;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //We add in the 0,5 to be clear we are talking about cell-centered locations.
+        double lo_loc =  a_dx*(double(m_lo.m_pt[idir]) + 0.5);
+        double hi_loc =  a_dx*(double(m_hi.m_pt[idir]) + 0.5);
+        retval[idir]  =   0.5*(lo_loc + hi_loc);
+      }
+      return retval;
+    }
+
+      
 
     bool operator==(const EBCM_Face& a_input) const
     {
@@ -219,6 +254,8 @@ namespace EBCM
     }
   };
 
+             
+  ///structure for cut cells
   template<int order>
   class IrregFace
   {

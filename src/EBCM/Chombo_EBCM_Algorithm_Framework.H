@@ -313,7 +313,10 @@ namespace EBCM
 
     }
 
-    ///I could probably have gotten  some code reuse from above if I had made better choices in life.
+    ///
+    /**
+       The locality gets defined within is passed out for reuse.
+     **/
     static inline shared_ptr<eigen_mat>
     getEBSystemMatrix( shared_ptr<ebcm_neighborhood>           & a_locality,
                        const IrregFace< ebcm_order>         &  a_face,

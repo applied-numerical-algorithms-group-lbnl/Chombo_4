@@ -47,6 +47,7 @@ namespace EBCM
     typedef  EBCM::EBCM_Graph<           ebcm_order>       ebcm_graph;
     typedef  EBCM::HostLevelData<int, 1, ebcm_order>       ebcm_data;
     typedef  EBCM::SubVolumeVector<      ebcm_order>       ebcm_subvol_vec;
+    typedef  EBCM::EBCM_Volu<            ebcm_order>       ebcm_volu;
     typedef  EBCM::Algorithm_Framework<  ebcm_order>       algo_framework;
     typedef Proto::IndexedMoments<DIM  , ebcm_order >      pr_mom_dim;
     typedef Proto::IndexedMoments<DIM-1, ebcm_order >      pr_mom_dmo;
@@ -55,7 +56,7 @@ namespace EBCM
     typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
     typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
     
-    typename EBCM::neighborhood       <  ebcm_order>       ebcm_neighborhood;
+    typedef EBCM::neighborhood       <  ebcm_order>       ebcm_neighborhood;
 
     /// Class to replace old vofstencil.  
     /**
@@ -353,18 +354,18 @@ namespace EBCM
 
     ///
     template <CENTERING cent>
-    shared_ptr<eigen_mat>
+    static shared_ptr<eigen_mat>
     getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
                          shared_ptr<ebcm_neighborhood>        a_locality,
-                         const EBCM_Face<cent, ebcm_order>  & a_face,
                          const int                          & a_facedir,
-                         const double                       & a_dx;
+                         const double                       & a_dx,
                          bool a_print)
     {
-      const auto & volmom = ebcm_basics::getVolMomFromFacMom<DIM>(a_face.m_facmom, a_facedir);
-      Real momzero = a_face.m_facmom[pr_itm_i_dim::Zero];
+      pr_mom_dmo facmom =  a_face.m_facmom;
+      pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
+      double momzero    = facmom[pr_itm_i_dmo::Zero];
 
-      prm_itm_r_dim xbar = a_locality->getXBar(a_face);
+      pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
       volmom.shift(xbar);
 
       unsigned int Pcols = pr_mom_dim::size();
@@ -398,8 +399,8 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    getStencilFromMatrix(const eigen_mat                                & a_matrix,
-                         shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality)
+    getStencilFromMat(const eigen_mat                                & a_matrix,
+                      shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality)
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       local_stencil_t retval;
@@ -415,6 +416,25 @@ namespace EBCM
       return retval;
     }
 
+    ///
+    static shared_ptr<eigen_mat>
+    getWeightMatrix(shared_ptr< EBCM::neighborhood< ebcm_order > >  a_locality,
+                    bool a_print = false)
+    {
+      shared_ptr<eigen_mat> retval;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+    ///
+    static shared_ptr<eigen_mat>
+    getMomentMatrix(shared_ptr< EBCM::neighborhood< ebcm_order > >  a_locality,
+                    bool a_print = false)
+    {
+      shared_ptr<eigen_mat> retval;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+    ///
     template<CENTERING cent>
     static local_stencil_t
     getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
@@ -424,6 +444,7 @@ namespace EBCM
                                 const string                       & a_dom_bc,
                                 const string                       & a_eb_bc,
                                 const int                          & a_facedir,
+                                const double                       & a_dx,
                                 bool a_print = false)
     {
       /**
@@ -438,7 +459,6 @@ namespace EBCM
          (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
          S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
       **/
-      local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
       shared_ptr< eigen_mat > Amat_p =
         EBCM::Algorithm_Framework<ebcm_order>::
@@ -446,7 +466,7 @@ namespace EBCM
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, a_print);
       shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -454,17 +474,30 @@ namespace EBCM
       WMTmat.transpose();
 
       eigen_mat Ainvmat = *Amat_p;
-      Ainv.invert();
+      Ainvmat.invert();
       
-      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx, a_print);
       eigen_mat AinvWMTmat;
       multiply( AinvWMTmat, Ainvmat, WMTmat);
-      eigne_mat Smat;
-      multiply( Smat, Qmat, AinvWMTmat);
+      eigen_mat Smat;
+      multiply( Smat, *Qmat_p, AinvWMTmat);
       local_stencil_t retval = getStencilFromMat(Smat, locality);
       return retval;
     }
 
+    ///
+    static shared_ptr<eigen_mat>
+    getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
+                           shared_ptr<ebcm_neighborhood>        a_locality,
+                           const double                       & a_dx,
+                           bool a_print)
+    {
+      
+      shared_ptr<eigen_mat> retval;
+
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
@@ -478,15 +511,34 @@ namespace EBCM
                                   const EBCM::EBCM_Graph<ebcm_order> & a_graph,
                                   const string                       & a_dom_bc,
                                   const string                       & a_eb_bc,
+                                  const double                       & a_dx,
                                   bool a_print = false)
     {
-      local_stencil_t retval;
+
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat =
+      shared_ptr< eigen_mat > Amat_p =
         EBCM::Algorithm_Framework<ebcm_order>::
         getEBSystemMatrix(locality, a_face, a_graph,
                           a_stenrad, a_weightpower,
                           a_dom_bc, a_eb_bc, a_print);
+
+      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      eigen_mat Ainvmat = *Amat_p;
+      Ainvmat.invert();
+      
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx, a_print);
+      eigen_mat AinvWMTmat;
+      multiply( AinvWMTmat, Ainvmat, WMTmat);
+      eigen_mat Smat;
+      multiply( Smat, *Qmat_p, AinvWMTmat);
+      local_stencil_t retval = getStencilFromMat(Smat, locality);
       return retval;
     }
     
@@ -568,6 +620,7 @@ namespace EBCM
         pr_bx grbx = pointbx.grow(pr_pt::Ones(this->m_ghost));
         
         auto volume = a_graph.getVolumeCoveringPoint(a_pt);
+        auto dx = volume.m_dx;
         {
           for(int iface = 0; iface < volume.m_xfaces.size(); iface++)
           {
@@ -579,7 +632,7 @@ namespace EBCM
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               0, a_print);        
+                                                               dx, 0, a_print);        
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -595,7 +648,7 @@ namespace EBCM
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               1, a_print);        
+                                                               dx, 1, a_print);        
 
                                                                
             flux *= fluxsign;
@@ -613,7 +666,7 @@ namespace EBCM
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               2, a_print);        
+                                                               dx, 2, a_print);        
                                                                
             flux *= fluxsign;
             (*retval) += flux;
@@ -629,7 +682,7 @@ namespace EBCM
                                                                  a_graph,       
                                                                  a_dom_bc,      
                                                                  a_eb_bc,
-                                                                 a_print);
+                                                                 dx, a_print);
                                                                  
             (*retval) += flux;
           }
