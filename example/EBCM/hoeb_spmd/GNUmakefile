@@ -1,8 +1,8 @@
 
-#configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=TRUE,cuda=FALSE,hip=FALSE,PETSc=TRUE,OpenMP=FALSE
+#configuration: dim=3,opt=FALSE,MPI=FALSE,HDF5=FALSE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
 
-CHOMBO_HOME := /global/u1/s/szhang9/Chombo_4/example/..
-DIM := 2
+CHOMBO_HOME := /pscratch/sd/d/dtgraves/Chombo_4/example/..
+DIM := 3
 VARS_OLD := $(.VARIABLES)
 
 CHOMBO_DEPFLAGS = 
@@ -37,35 +37,26 @@ VPATH +=  ../../hoeb_common/
 
 CHOMBO_CPPFLAGS = -std=c++14
 
-PROTO_HOME =$(HOME)/proto
-CHOMBO_DEPXX=nvcc
-CHOMBO_CXX=nvcc
-export OMPI_CXX=nvcc
+PROTO_HOME = $(SCRATCH)/proto
+CHOMBO_DEPXX=CC
+CHOMBO_CXX=CC
 
-CHOMBO_CXXALLFLAGS := #-std=c++11
-CHOMBO_DEPFLAGS += -I${CRAY_MPICH_PREFIX}/include
+CHOMBO_CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic -Wall
+CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
 
-CHOMOBO_LIBS +=-L$(MVAPICH2_DIR)/lib -lmpi 
+#CHOMBO_LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
+#CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+CHOMBO_HDFINCFLAGS=-I$(HDF5_DIR)/include 
+CHOMBO_HDFLIBFLAGS=-L$(HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
+CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
 
-
-CHOMBO_HDFINCFLAGS=-I$(HDF5_ROOT)/include/ ${CHOMBO_DEPFLAGS} 
-CHOMBO_HDFLIBFLAGS=-L$(HDF5_ROOT)/lib/ -lhdf5 
-
+CHOMBO_PETSC_DIR   = $(PETSC_DIR)
 #end mach dependent
 
 
-CHOMBO_CPPFLAGS += -DCH_USE_HDF5 
 
-CHOMBO_CPPFLAGS += $(CHOMBO_HDFINCFLAGS)
 
-CHOMBO_LIBS     += $(CHOMBO_HDFLIBFLAGS)
- include $(CHOMBO_PETSC_DIR)/lib/petsc/conf/variables
-
-CHOMBO_CPPFLAGS += -DCH_USE_PETSC 
-
-CHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES) 
-
-CHOMBO_LIBS     += $(PETSC_KSP_LIB)
 
 CHOMBO_CXXFLAGS += $(CHOMBO_CXXALLFLAGS) -DCH_USE_DOUBLE
 
