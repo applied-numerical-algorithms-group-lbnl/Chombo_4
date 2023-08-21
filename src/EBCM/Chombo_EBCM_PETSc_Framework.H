@@ -57,7 +57,6 @@ namespace EBCM
     typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
     
     typedef EBCM::neighborhood       <  ebcm_order>       ebcm_neighborhood;
-
     /// Class to replace old vofstencil.  
     /**
        This will have to be generalized for multiple vofs per cell.
@@ -426,15 +425,6 @@ namespace EBCM
       return retval;
     }
     ///
-    static shared_ptr<eigen_mat>
-    getMomentMatrix(shared_ptr< EBCM::neighborhood< ebcm_order > >  a_locality,
-                    bool a_print = false)
-    {
-      shared_ptr<eigen_mat> retval;
-      ch_mayday::Error("not implemented");
-      return retval;
-    }
-    ///
     template<CENTERING cent>
     static local_stencil_t
     getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
@@ -465,8 +455,8 @@ namespace EBCM
         getSystemMatrix(locality, a_face, a_graph,
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, a_print);
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -522,8 +512,8 @@ namespace EBCM
                           a_stenrad, a_weightpower,
                           a_dom_bc, a_eb_bc, a_print);
 
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
