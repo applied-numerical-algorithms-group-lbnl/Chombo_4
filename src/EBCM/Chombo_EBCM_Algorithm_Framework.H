@@ -493,7 +493,8 @@ namespace EBCM
       ch_dbl                   grids;
       double                   dx;
       ch_probdom               domain;
-      makeMergedGeometry(ebcm, grids, dx, domain, true, true);
+      int coarseningFactor = 1; //do not coarsen
+      makeMergedGeometry(ebcm, grids, dx, domain, coarseningFactor, true, true);
 
       double maxKapp, minKapp;
       //this tries out iteration and checks kappa
@@ -587,7 +588,7 @@ namespace EBCM
                           ch_dbl                    & a_grids,
                           double                    & a_dx,
                           ch_probdom                & a_domain,
-                          bool a_outputGraph,
+                          int  a_coarseningFactor,
                           bool a_print)
     {
       CH_TIME("EBCM_Framework::makeMergedGeometry");
@@ -603,16 +604,17 @@ namespace EBCM
       pp.get("maxGrid"        , maxGrid);
       pp.get("mergeSmallCells", mergeSmallCells);
 
+      nx /= a_coarseningFactor;
 
-      Chombo4::pout() << "nx"        << " = " <<  nx         << endl;
-      Chombo4::pout() << "max_grid"  << " = " <<  maxGrid    << endl;
+      Chombo4::pout() << "makeMergedGeometry: nx"        << " = " <<  nx         << endl;
+      Chombo4::pout() << "makeMergedGeometry: max_grid"  << " = " <<  maxGrid    << endl;
       if(mergeSmallCells)
       {
-        Chombo4::pout() << "Cell merging is turned ON."  << endl;
+        Chombo4::pout() << "makeMergedGeometry: Cell merging is turned ON."  << endl;
       }
       else
       {
-        Chombo4::pout() << "Cell merging is turned OFF."  << endl;
+        Chombo4::pout() << "makeMergedGeometry: Cell merging is turned OFF."  << endl;
       }
   
 
@@ -622,12 +624,12 @@ namespace EBCM
       ch_probdom domain(domLo, domHi);
 
       vector<ch_dbl> vecgrids;
-      Chombo4::pout() << "making grids" << endl;
+      Chombo4::pout() << "makeMergedGeometry: making grids" << endl;
       GeometryService<2>::generateGrids(vecgrids, domain.domainBox(), maxGrid);
 
       int geomGhost = 6;
       shared_ptr<BaseIF>    impfunc = getImplicitFunction();
-      Chombo4::pout() << "defining geometry in EB land" << endl;
+      Chombo4::pout() << "makeMergedGeometry: defining geometry in EB land" << endl;
       double dx = 1.0/(double(nx));
       pr_rv origin = pr_rv::Zero();
       shared_ptr< ch_geoserv > geoserv
@@ -638,10 +640,6 @@ namespace EBCM
         metaDataPtr(new ebcm_meta(geoserv, domain.domainBox(), dx, ghost,
                                   mergeSmallCells, a_print));
 
-      string graph_filename;
-      pp.get("graph_filename"         , graph_filename);
-      metaDataPtr->outputGraphMapAsHDF5(graph_filename);
-    
       a_ebcm   = metaDataPtr;
       a_grids  = vecgrids[0];
       a_dx     = dx;

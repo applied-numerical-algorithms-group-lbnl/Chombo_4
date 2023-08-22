@@ -43,14 +43,17 @@ namespace EBCM
     typedef ::Mat                                          petsc_mat;
     typedef Proto::Point                                   pr_pt;
     
-    typedef  EBCM::MetaDataLevel<        ebcm_order>       ebcm_meta;
-    typedef  EBCM::EBCM_Graph<           ebcm_order>       ebcm_graph;
-    typedef  EBCM::HostLevelData<int, 1, ebcm_order>       ebcm_data;
-    typedef  EBCM::SubVolumeVector<      ebcm_order>       ebcm_subvol_vec;
-    typedef  EBCM::EBCM_Volu<            ebcm_order>       ebcm_volu;
-    typedef  EBCM::Algorithm_Framework<  ebcm_order>       algo_framework;
-    typedef Proto::IndexedMoments<DIM  , ebcm_order >      pr_mom_dim;
-    typedef Proto::IndexedMoments<DIM-1, ebcm_order >      pr_mom_dmo;
+    typedef  EBCM::MetaDataLevel<             ebcm_order>  ebcm_meta;
+    typedef  EBCM::EBCM_Graph<                ebcm_order>  ebcm_graph;
+    typedef  EBCM::HostLevelData<int,    1,   ebcm_order>  ebcm_int_sca_data;
+    typedef  EBCM::HostLevelData<double, 1,   ebcm_order>  ebcm_dou_sca_data;
+    typedef  EBCM::HostLevelData<int,    DIM, ebcm_order>  ebcm_int_vec_data;
+    typedef  EBCM::HostLevelData<double, DIM, ebcm_order>  ebcm_dou_vec_data;
+    typedef  EBCM::SubVolumeVector<           ebcm_order>  ebcm_subvol_vec;
+    typedef  EBCM::EBCM_Volu<                 ebcm_order>  ebcm_volu;
+    typedef  EBCM::Algorithm_Framework<       ebcm_order>  algo_framework;
+    typedef Proto::IndexedMoments<DIM  ,      ebcm_order > pr_mom_dim;
+    typedef Proto::IndexedMoments<DIM-1,      ebcm_order > pr_mom_dmo;
     typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
     typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
     typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
@@ -128,7 +131,7 @@ namespace EBCM
     {
     public:
       shared_ptr<petsc_mat> m_mat_ptr;
-      shared_ptr<ebcm_data> m_row_map_ptr; 
+      shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
       shared_ptr<ebcm_meta> m_meta_ptr;
       int                   m_ghost;
       //each box in data iterator we get total points
@@ -174,7 +177,7 @@ namespace EBCM
       ///makes m_row_map_ptr (operator uses this to map between volumes and petsc matrix rows)
       PetscInt createMatrixRowMap(bool a_print = false)
       {
-        m_row_map_ptr = shared_ptr<ebcm_data>(new ebcm_data(m_meta_ptr, m_ghost));
+        m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
         auto dit = grids.dataIterator();
@@ -593,6 +596,12 @@ namespace EBCM
                          a_print);        
         return retval;
       }
+
+      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
+                   shared_ptr<ebcm_dou_sca_data> a_phi) const
+      {
+        ch_mayday::Error("not implemented");
+      }
     private:
       ///this is where the canal locks are dug in the basement
       virtual shared_ptr<local_stencil_t> privateStencil(const pr_pt                         & a_pt, 
@@ -682,12 +691,33 @@ namespace EBCM
       }
 
     };
-    
-    ///test function for example/EBCM/hoeb_truncation
-    static  void run_hoeb_truncation_tests()
+    ///
+    static void
+    setPhiExact(shared_ptr<ebcm_dou_sca_data>       a_phi_exac_p,
+                const ch_dbl                 &      a_grids,
+                const ch_probdom             &      a_domain,
+                const double                 &      a_dx,
+                shared_ptr< ebcm_meta  >     &      a_meta_data)
+    {
+      ch_mayday::Error("not implemented");
+    }
+    ///
+    static void
+    setLphExact(shared_ptr<ebcm_dou_sca_data>       a_lph_exac_p,
+                const ch_dbl                 &      a_grids,
+                const ch_probdom             &      a_domain,
+                const double                 &      a_dx,
+                shared_ptr< ebcm_meta  >     &      a_meta_data)
+    {
+      ch_mayday::Error("not implemented");
+    }
+
+
+    static void
+    getHelmholtzError(int a_coarseningFactor)
     {
       
-      shared_ptr< ebcm_meta  > ebcm;
+      shared_ptr< ebcm_meta  > meta_data;
       ch_dbl                   grids;
       double                   dx;
       ch_probdom               domain;
@@ -705,16 +735,36 @@ namespace EBCM
       pp.get("weight_power", weight_power);
       pp.get("dom_bc", dom_bc);
       pp.get("eb_bc",   eb_bc);
-      algo_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
-      
-      ///testing compilation of the base framework
-      typedef DummyDerivedOp   ebcm_zen_koan;
-      ebcm_zen_koan  number4586(ebcm, nghost, false);
+      algo_framework::makeMergedGeometry(meta_data, grids, dx, domain, a_coarseningFactor, true, true);
 
-      ///now for an operator that is conceivably useful
-      HelmholtzOp helmholtzOperator(alpha, beta, nghost, weight_power, ebcm, dom_bc, eb_bc, false);
       
+      HelmholtzOp helmholtzOperator(alpha, beta, nghost, weight_power, meta_data, dom_bc, eb_bc, false);
+      shared_ptr<ebcm_dou_sca_data> phiExac(new ebcm_dou_sca_data(meta_data, nghost));
+      shared_ptr<ebcm_dou_sca_data> lphExac(new ebcm_dou_sca_data(meta_data, nghost));
+      shared_ptr<ebcm_dou_sca_data> lphCalc(new ebcm_dou_sca_data(meta_data, nghost));
+      shared_ptr<ebcm_dou_sca_data> truncat(new ebcm_dou_sca_data(meta_data, nghost));
+      setPhiExact(phiExac, grids, domain, dx, meta_data);
+      setLphExact(lphExac, grids, domain, dx, meta_data);
+
+      helmholtzOperator.applyOp(lphCalc, phiExac);
+      truncat->setVal(0,);
+      (*truncat) += (*lphExac);
+      (*truncat) -= (*lphCalc);
+      double retval = truncat->maxNorm();
+      return retval;
     }
+    //this is the function called by Chombo_4/example/EBCM/hoeb_truncation
+    static  void run_hoeb_truncation_tests()
+    {
+
+      
+      ///apply the helmholtz operator and compute Error
+      double fineErrorNorm = getHelmholtzError(1);
+      double coarErrorNorm = getHelmholtzError(2);
+      double order = (coarErrorNorm/fineErrorNorm)/std::log(2);
+      Chombo4::pout() << "Helmholtz truncation error order = " << order << endl;
+    }
+
   }; //end petsc_framwork class
 }
 #endif

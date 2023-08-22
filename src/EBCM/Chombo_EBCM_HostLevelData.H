@@ -44,8 +44,105 @@ namespace EBCM
     typedef Chombo4::FArrayBox                                   ch_fab;
     typedef Chombo4::BoxIterator                                 ch_bit;
     typedef Chombo4::LevelData<ch_fab>                           ch_ldfab;
+    typedef Chombo4::MayDay                                      ch_mayday;
 
+    void operator+=(const HostLevelData<data_t, ncomp, order>& a_input)
+    {
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& inpdata         = a_input[dit[ibox]];
+        auto&       outdata         = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            outdata(pt, icomp) += indata(pt, icomp);
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+    }
+
+    void operator-=(const HostLevelData<data_t, ncomp, order>& a_input)
+    {
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& inpdata         = a_input[dit[ibox]];
+        auto&       outdata         = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            outdata(pt, icomp) -= indata(pt, icomp);
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+
+    }
+
+    void setVal(data_t a_value)
+    {
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& data  = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            data(pt, icomp) = a_value;
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+      
+    }
     
+    double maxNorm() const
+    {
+      double maxval = -4586;
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& data  = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            double locvalue = data(pt, icomp);
+            maxval = std::max(maxval, std::abs(locvalue));
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+      
+#ifdef CH_MPI    
+      double sendBuf = maxval;
+      int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
+
+      if (result != MPI_SUCCESS)
+      {
+        MayDay::Error("Communication error in EBCM_HostLevelData::maxNorm");
+      }
+    
+#endif
+      return maxval;
+    }
     HostLevelData(const shared_ptr<ebcm_meta_t>& a_meta,
                   const int                    & a_ghost)
     {

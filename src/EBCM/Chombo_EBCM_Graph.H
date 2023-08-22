@@ -2169,6 +2169,11 @@ namespace EBCM
       m_graphs->exchange();
     }
 
+    ///define as a coarsening  (always by a ref_rat == 2) of a finer level
+    MetaDataLevel(const shared_ptr<MetaDataLevel>  & a_finerLevel)
+    {
+      ch_mayday::Error("not implemented");
+    }
     void outputGraphMapAsHDF5(const string & a_filename) const
     {
       LevelData<FArrayBox>  ldfabs(m_grids, 1, IntVect::Zero);
