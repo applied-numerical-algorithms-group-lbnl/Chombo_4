@@ -173,18 +173,18 @@ namespace CH4_Data_Choreography
 
     void printStuff(string a_prefix) const
     {
-      Chombo4::pout() << a_prefix << " BoxPattern constructor:"
-                      << " m_localPattern.size() = " << m_localPattern.size()
-                      << endl;
-
-      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
-      {
-        Chombo4::pout() << a_prefix << " BoxPattern constructor:"
-                        << " proc = " << iproc 
-                        << " m_recvPattern[iproc].size() = " << m_recvPattern[iproc].size()
-                        << " m_sendPattern[iproc].size() = " << m_sendPattern[iproc].size() << endl;
-                
-      }
+//      Chombo4::pout() << a_prefix << " BoxPattern constructor:"
+//                      << " m_localPattern.size() = " << m_localPattern.size()
+//                      << endl;
+//
+//      for(int iproc = 0; iproc < CH4_SPMD::numProc(); iproc++)
+//      {
+//        Chombo4::pout() << a_prefix << " BoxPattern constructor:"
+//                        << " proc = " << iproc 
+//                        << " m_recvPattern[iproc].size() = " << m_recvPattern[iproc].size()
+//                        << " m_sendPattern[iproc].size() = " << m_sendPattern[iproc].size() << endl;
+//                
+//      }
     }
       
     ///Define for copyTo --- does NOT include ghost cells.
