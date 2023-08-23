@@ -525,7 +525,7 @@ protected:
     {
       Chombo4::pout() << "EBPetscSolver::defineGids: calling exchange on gids" << endl;
     }
-    m_gids.exchange(a_printStuff);
+    m_gids.exchange();
     if(a_printStuff)
     {
       Chombo4::pout() << "EBPetscSolver::defineGids: leaving" << endl;

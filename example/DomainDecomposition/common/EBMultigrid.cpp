@@ -196,9 +196,8 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     a_phi.setVal(0.);
   }
 
-  bool printStuff = false;
   bool doExchange = true;
-  residual(m_res, a_phi, a_rhs, doExchange, printStuff);
+  residual(m_res, a_phi, a_rhs, doExchange, false);
   EBIndex<CELL> vofmax;
   Real initres = m_res.maxNorm(vofmax, 0);
   int iter = 0;
@@ -226,7 +225,7 @@ solve(EBLevelBoxData<CELL, 1>       & a_phi,
     vCycle(m_cor, m_res, a_printStuff);
     
     a_phi += m_cor;
-    residual(m_res, a_phi, a_rhs, doExchange, printStuff);
+    residual(m_res, a_phi, a_rhs, doExchange, false);
     
     resnormold = resnorm;
     resnorm = m_res.maxNorm(vofmax, 0);

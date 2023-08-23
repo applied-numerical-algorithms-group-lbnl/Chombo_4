@@ -329,7 +329,7 @@ kappaDivU(EBLevelBoxData<CELL, 1> & a_divu,
   {
     pout() << "ebmacproj::kappaDivU: exchanging velocity input" << endl;
   }
-  a_velo.exchange(a_printStuff);
+  a_velo.exchange();
 
   if(a_printStuff)
   {
