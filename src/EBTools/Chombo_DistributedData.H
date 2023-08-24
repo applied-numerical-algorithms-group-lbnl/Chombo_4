@@ -326,7 +326,7 @@ namespace CH4_Data_Choreography
       else
         {
           if (a_printStuff) {Chombo4::pout() << "DistributedData::copyTo: eschewing cache!" << endl;}
-          BoxPattern pattern(m_grids, a_dst.m_grids, true);
+          BoxPattern pattern(m_grids, a_dst.m_grids, a_printStuff);
           CommunicationMetaData<fabtype_t> metadataco(pattern,
                                                       m_data, a_printStuff);
           if (a_printStuff)
