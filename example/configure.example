@@ -57,6 +57,7 @@ targets=['DomainDecomposition/EBApply/exec',
 
 top = os.getcwd()
 chombo_home = top + '/..'
+proto_home = top + '/../src/proto'
 os.chdir(chombo_home+'/mk')
 f_mach_dep = open('Make.defs.local','r')
 mach_dep = f_mach_dep.read()
@@ -78,6 +79,7 @@ for t in targets:
     f.write("\n#configuration: " + configstr + "\n");
 
     f.write('\nCHOMBO_HOME := ' + chombo_home)
+    f.write('\nPROTO_HOME  := ' + proto_home)
     f.write('\nDIM := ' + str(args.dim)+"\n")
     f.write(makefile_pref);
     hoebs = 'hoeb_'

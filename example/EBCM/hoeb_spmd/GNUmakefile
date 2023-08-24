@@ -1,7 +1,8 @@
 
 #configuration: dim=3,opt=FALSE,MPI=FALSE,HDF5=FALSE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
 
-CHOMBO_HOME := /pscratch/sd/d/dtgraves/Chombo_4/example/..
+CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/example/..
+PROTO_HOME  := /home/graves/_chombo4/Chombo_4/example/../src/proto
 DIM := 3
 VARS_OLD := $(.VARIABLES)
 
@@ -37,21 +38,21 @@ VPATH +=  ../../hoeb_common/
 
 CHOMBO_CPPFLAGS = -std=c++14
 
-PROTO_HOME = $(SCRATCH)/proto
-CHOMBO_DEPXX=CC
-CHOMBO_CXX=CC
+CHOMBO_DEPXX=g++
+CHOMBO_CXX=g++
 
-CHOMBO_CXXALLFLAGS := -Wall  -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic -Wall
+CHOMBO_CXXALLFLAGS := -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic 
 CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
 
 #CHOMBO_LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
 #CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
-CHOMBO_HDFINCFLAGS=-I$(HDF5_DIR)/include 
-CHOMBO_HDFLIBFLAGS=-L$(HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
+CHOMBO_HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
+CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
 CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
 
-CHOMBO_PETSC_DIR   = $(PETSC_DIR)
+CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)
+CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
 #end mach dependent
 
 

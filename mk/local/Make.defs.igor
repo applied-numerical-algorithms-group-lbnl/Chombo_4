@@ -1,4 +1,4 @@
-PROTO_HOME =$(HOME)/_proto/proto
+
 EFENCEFLAGS = -L/usr/lib -lefence
 CHOMBO_PETSC_DIR   = $(HOME)
 
