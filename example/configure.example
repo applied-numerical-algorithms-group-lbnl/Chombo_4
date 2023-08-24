@@ -6,7 +6,7 @@ import platform
 
 parser = ArgumentParser()
 
-parser.add_argument('--dim', type=int, help='dimensionality to build executables [3]',default='3')
+parser.add_argument('--dim', type=int, help='dimensionality to build executables [3]',default='2')
 parser.add_argument('--opt',  choices=['TRUE', 'FALSE'],help='compiler optimization [FALSE]',default='FALSE')
 parser.add_argument('--debug',  choices=['TRUE', 'FALSE'],help='turn on symbol table[TRUE]',default='TRUE')
 parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
