@@ -936,7 +936,7 @@ EBPoissonOp::
 solve_petsc(EBLevelBoxData<CELL, 1>         & a_phi,
             const EBLevelBoxData<CELL, 1>   & a_rhs)
 {
-  m_petscSolver->solve(a_phi, a_rhs);
+  m_petscSolver->solve(a_phi, a_rhs, true);
 }
 #endif
 #include "Chombo_NamespaceFooter.H"
