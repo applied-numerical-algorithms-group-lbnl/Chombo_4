@@ -651,7 +651,7 @@ fillFaceAlpha(EBHostData<ZFACE, Real, 1>        & a_alpha,
   const auto & irrdat = (*dataptr)[a_dit];
   const auto & graph  =  (*graphs)[a_dit];
   HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
-  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  HostIrregData<ZFACE, Real, 1>& irrhost = a_alpha.getIrrData();
   for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
   { 
     Point pt  = ProtoCh::getPoint(bit());
