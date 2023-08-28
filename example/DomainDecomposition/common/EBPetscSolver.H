@@ -25,8 +25,9 @@
 /**
 */
 template <int order>
-class BaseEBPetscSolver
+class EBPetscSolver
 {
+
 public:
   typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
   typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
@@ -38,11 +39,48 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
   typedef CH4_Data_Choreography::DistributedData<EBGraph>                    graph_distrib_t;
 
-  virtual ~BaseEBPetscSolver()
+
+  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
+                const shared_ptr<dictionary_t           >  & a_ebdictionary,
+                const shared_ptr<graph_distrib_t>          & a_graphs,
+                const Chombo4::DisjointBoxLayout           & a_grids,
+                const Chombo4::Box                         & a_domain,
+                string                                       a_stencilName,
+                string                                       a_domainBCName[2*DIM],
+                string                                       a_ebbcName,
+                Real                                         a_dx,
+                Real                                         a_alpha,
+                Real                                         a_beta,
+                Point                                        a_ghost,
+                bool                                         a_printStuff = false)
+
+  {
+    m_stencilName = a_stencilName;
+    for(int iface = 0; iface < 2*DIM; iface++)
+    {
+      m_domainBCName[iface] = a_domainBCName[iface];
+    }
+    m_ebbcName = a_ebbcName;
+  
+    baseDefine(a_geoserv,           
+               a_ebdictionary,      
+               a_graphs,            
+               a_grids,             
+               a_domain,            
+               a_dx,                
+               a_alpha,             
+               a_beta,              
+               a_ghost,             
+               a_printStuff);
+  
+
+  }
+  virtual ~EBPetscSolver()
   {
   }
-  
-  BaseEBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
+
+  void 
+  baseDefine(const shared_ptr<GeometryService<order> >  & a_geoserv,
                     const shared_ptr<dictionary_t           >  & a_ebdictionary,
                     const shared_ptr<graph_distrib_t>          & a_graphs,
                     const Chombo4::DisjointBoxLayout           & a_grids,
@@ -50,7 +88,7 @@ public:
                     Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
                     bool a_printStuff = false)
   {
-    CH_TIME("EBPetscSolver::EBPetscSolver");
+    CH_TIME("EBPetscSolver::baseDefine");
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
     m_graphs       =    a_graphs;
@@ -84,6 +122,7 @@ public:
     }
     //
 
+    ///this is where the problem-dependent stuff lives
     if(a_printStuff)
     {
       Chombo4::pout() << "BaseEBPetscsolver:calling setupSolver" << endl;
@@ -91,6 +130,7 @@ public:
     setupSolver(a_printStuff);
 
   }
+
 
   ///apply the operator to get Y = A X
   virtual
@@ -281,11 +321,14 @@ protected:
     Chombo4::pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
     return 0;
   }
-  virtual PetscInt setupSolver(bool a_printStuff = false)
+  
+  PetscInt setupSolver(bool a_printStuff = false)
   {
     CH_TIME("BaseEBPetscSolver::setupSolver");
     // create solvers
     PetscInt ierr = 4586;
+    ierr = this->formMatrix(a_printStuff); CHKERRQ(ierr);
+    
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
 #else
@@ -298,11 +341,6 @@ protected:
     ierr = KSPSetOperators(m_ksp,m_mat,m_mat);CHKERRQ(ierr);
 
     return 0;
-  }
-  
-  virtual int getNNZPerRow() const
-  {
-    return 1000;
   }
   
   PetscInt createMatrixAndVectors(bool a_printStuff = false)
@@ -469,59 +507,6 @@ protected:
   PetscInt m_defined;
   char m_prestring[32];
   Real m_alpha, m_beta;
-};
-
-
-template <int order>
-class EBPetscSolver: public BaseEBPetscSolver<order>
-{
-public:
-  typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
-  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> >  host_fact_real_t;
-  typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
-
-  virtual ~EBPetscSolver()
-  {
-  }
-  
-  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
-                const shared_ptr<dictionary_t           >  & a_ebdictionary,
-                const shared_ptr<graph_distrib_t>          & a_graphs,
-                const Chombo4::DisjointBoxLayout           & a_grids,
-                const Chombo4::Box                         & a_domain,
-                string                                       a_stencilName,
-                string                                       a_domainBCName[2*DIM],
-                string                                       a_ebbcName,
-                Real                                         a_dx,
-                Real                                         a_alpha,
-                Real                                         a_beta,
-                Point                                        a_ghost,
-                bool                                         a_printStuff = false)
-  :BaseEBPetscSolver<order>(a_geoserv,           
-                            a_ebdictionary,      
-                            a_graphs,            
-                            a_grids,             
-                            a_domain,            
-                            a_dx,                
-                            a_alpha,             
-                            a_beta,              
-                            a_ghost,             
-                            a_printStuff)
-  {
-    this->m_stencilName = a_stencilName;
-    for(int iface = 0; iface < 2*DIM; iface++)
-    {
-      this->m_domainBCName[iface] = a_domainBCName[iface];
-    }
-    this->m_ebbcName = a_ebbcName;
-    this->formMatrix(a_printStuff);
-  }
 
 
   ///
