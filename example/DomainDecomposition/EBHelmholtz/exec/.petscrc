@@ -5,5 +5,4 @@
 -ksp_max_it 100
 -ksp_rtol 1.0e-16
 
-#-pc_gamg_sym_graph true
 

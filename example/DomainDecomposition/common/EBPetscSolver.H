@@ -356,11 +356,19 @@ protected:
 #endif
 //    int nc = 1;
     PetscInt ierr;
+    int nnzperrow = 1000;
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
     ierr = MatSetSizes(m_mat,m_numPtsThisProc,m_numPtsThisProc,m_numPtsAllProcs,m_numPtsAllProcs);CHKERRQ(ierr);
-
-    // create vectors
-    ierr = MatCreateVecs(m_mat,&m_bb, NULL);
+    MatSetFromOptions(m_mat);
+#ifdef CH_MPI    
+    MatMPIAIJSetPreallocation(m_mat, nnzperrow, NULL, nnzperrow,     NULL);
+#else
+    MatSeqAIJSetPreallocation(m_mat, nnzperrow, NULL);
+#endif
+                              
+    VecCreate(wcomm, &m_bb);
+    VecSetSizes(m_bb, PETSC_DECIDE, m_numPtsAllProcs);
+    VecSetFromOptions(m_bb);
     ierr = VecDuplicate( m_bb, &m_xx);CHKERRQ(ierr);
     ierr = VecDuplicate( m_bb, &m_rr ); CHKERRQ(ierr);
 
@@ -651,6 +659,13 @@ protected:
             wstencil.push_back(regSten);
           }
         }
+        if(a_printStuff)
+        {
+          int nrow = 4586;
+          int ncol = 4586;
+          MatGetSize(this->m_mat, &nrow, &ncol);
+          Chombo4::pout() << "EBPetcSolver::formMatrix: matrix size = ( " << nrow << " . " << ncol << ")" << endl;
+        }
         //now create the matrix
         for(int idst = 0; idst < dstVoFs.size(); idst++)
         {
@@ -669,13 +684,6 @@ protected:
             int icol = (this->m_gids)[dit[ibox]](stenvof, 0);  
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
-            if(a_printStuff)
-            {
-              int nrow = 4586;
-              int ncol = 4586;
-              MatGetSize(this->m_mat, &nrow, &ncol);
-              Chombo4::pout() << "EBPetcSolver::formMatrix: matrix size = ( " << nrow << " . " << ncol << ")" << endl;
-            }
             ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
             CHKERRQ(ierr);
           } 
