@@ -1,0 +1,17 @@
+# Chombo4/DomainDecomposition/EBCellMerge/spmd_geometry_test inputs:
+# nx                : domain is sized nx^D
+# maxGrid           : maximum box size in domain decomposition
+# mergeSmallCells   : true turns on cell merging (disallowing small cells)
+# polynomial_order  : Order of moments (P)
+# which_geom        : Magic string that tells code which implicit function to use.
+#                     For now, this may be only "all_regular", "plane", or "sphere".
+#  The prefix usually names the function which is using ParmParse unless I expect
+#  to use the parameter elsewhere, in which case it gets something general, like "stencil".
+
+makeMergedGeometry.nx                = 32
+makeMergedGeometry.maxGrid           = 16
+makeMergedGeometry.mergeSmallCells   = true
+getImplicitFunction.which_geom       = "all_regular"
+
+main.polynomial_order  = 2
+

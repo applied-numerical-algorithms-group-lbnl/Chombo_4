@@ -1,0 +1,3759 @@
+Running hoeb_petsc_test for polynomial order = 1
+nx = 32
+max_grid = 32
+Cell merging is turned ON.
+making grids
+sphere implicit function with radius = 0.45, center = (0.5,0.5,0.5), and inside = 1
+defining geometry in EB land
+makeTheBlobs: before merger, number of small cells = 224, min kappa = 0.00358386
+maximum (non covered) volume fraction for grids[0] = 8.09649
+minimum (non covered) volume fraction for grids[0] = 1
+maximum volume fraction overall = 8.09649
+minimum volume fraction overall = 1
+SubVolVec: ientry = 0
+volume :((14,14,2 )), volmom = 
+index 	  moment  
+(0,0,0)	3.05175781e-05
+(1,0,0)	0.00000000e+00
+(0,1,0)	0.00000000e+00
+(0,0,1)	0.00000000e+00
+getMomentMatrix: nrows_volumes   = 162
+getMomentMatrix: nrows_dom_faces = 0
+getMomentMatrix: nrows_cut_faces = 130
+getMomentMatrix: nrows           = 292
+getMomentMatrix: n_equations     = 292
+getMomentMatrix: n_unknowns      = 4
+fillNeumannEBBCRow: a_currentRow = 162
+fillNeumannEBBCRow: a_distance   = (1.55351242e-02,-6.25777237e-02,-3.12579897e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -5.242e-06 -1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 163
+fillNeumannEBBCRow: a_distance   = (4.657e-02,-6.277e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.027e-05 -7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 164
+fillNeumannEBBCRow: a_distance   = (1.517e-02,-3.164e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -9.588e-05 -1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 165
+fillNeumannEBBCRow: a_distance   = (4.687e-02,-3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.448e-05 -1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 166
+fillNeumannEBBCRow: a_distance   = (1.422e-02,-1.404e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 167
+fillNeumannEBBCRow: a_distance   = (4.595e-02,-9.522e-04,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 168
+fillNeumannEBBCRow: a_distance   = (1.515e-02,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 169
+fillNeumannEBBCRow: a_distance   = (4.687e-02,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 170
+fillNeumannEBBCRow: a_distance   = (7.761e-02,-6.289e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.027e-05 -7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 171
+fillNeumannEBBCRow: a_distance   = (1.093e-01,-6.255e-02,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  5.242e-06 -1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 172
+fillNeumannEBBCRow: a_distance   = (7.758e-02,-3.167e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.448e-05 -1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 173
+fillNeumannEBBCRow: a_distance   = (1.094e-01,-3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  9.588e-05 -1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 174
+fillNeumannEBBCRow: a_distance   = (7.654e-02,-1.398e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 175
+fillNeumannEBBCRow: a_distance   = (1.083e-01,-9.569e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 176
+fillNeumannEBBCRow: a_distance   = (7.759e-02,3.078e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 177
+fillNeumannEBBCRow: a_distance   = (1.094e-01,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 178
+fillNeumannEBBCRow: a_distance   = (-1.562e-02,-3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.375e-05 -4.375e-05 -2.731e-04 
+fillNeumannEBBCRow: a_currentRow = 179
+fillNeumannEBBCRow: a_distance   = (-4.985e-02,-6.548e-02,-6.996e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.530e-04 -2.530e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 180
+fillNeumannEBBCRow: a_distance   = (-1.812e-02,-6.503e-02,-6.154e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.778e-04 -2.489e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 181
+fillNeumannEBBCRow: a_distance   = (-4.897e-02,-3.335e-02,-5.354e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.489e-04 -1.778e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 182
+fillNeumannEBBCRow: a_distance   = (-1.681e-02,-3.243e-02,-3.279e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.313e-04 -1.313e-04 -7.035e-04 
+fillNeumannEBBCRow: a_currentRow = 183
+fillNeumannEBBCRow: a_distance   = (-4.695e-02,-8.988e-05,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.360e-05 -5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 184
+fillNeumannEBBCRow: a_distance   = (-1.638e-02,-9.049e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.606e-04 -9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 185
+fillNeumannEBBCRow: a_distance   = (-4.701e-02,3.109e-02,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -7.050e-05 -1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 186
+fillNeumannEBBCRow: a_distance   = (-1.563e-02,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.724e-04 -3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 187
+fillNeumannEBBCRow: a_distance   = (1.422e-02,-1.404e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 188
+fillNeumannEBBCRow: a_distance   = (4.595e-02,-9.522e-04,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 189
+fillNeumannEBBCRow: a_distance   = (1.515e-02,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 190
+fillNeumannEBBCRow: a_distance   = (4.687e-02,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 191
+fillNeumannEBBCRow: a_distance   = (1.389e-01,-1.328e-03,-3.137e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.606e-04 -9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 192
+fillNeumannEBBCRow: a_distance   = (1.718e-01,-6.103e-05,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.360e-05 -5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 193
+fillNeumannEBBCRow: a_distance   = (1.400e-01,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.724e-04 -3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 194
+fillNeumannEBBCRow: a_distance   = (1.719e-01,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  7.050e-05 -1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 195
+fillNeumannEBBCRow: a_distance   = (7.654e-02,-1.398e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 196
+fillNeumannEBBCRow: a_distance   = (1.083e-01,-9.569e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 197
+fillNeumannEBBCRow: a_distance   = (7.759e-02,3.078e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 198
+fillNeumannEBBCRow: a_distance   = (1.094e-01,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 199
+fillNeumannEBBCRow: a_distance   = (-4.727e-02,6.198e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -7.050e-05  1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 200
+fillNeumannEBBCRow: a_distance   = (-1.643e-02,6.141e-02,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.724e-04  3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 201
+fillNeumannEBBCRow: a_distance   = (-4.690e-02,9.371e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.360e-05  5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 202
+fillNeumannEBBCRow: a_distance   = (-1.562e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.606e-04  9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 203
+fillNeumannEBBCRow: a_distance   = (1.423e-02,6.092e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 204
+fillNeumannEBBCRow: a_distance   = (4.596e-02,6.143e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 205
+fillNeumannEBBCRow: a_distance   = (1.515e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 206
+fillNeumannEBBCRow: a_distance   = (4.687e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 207
+fillNeumannEBBCRow: a_distance   = (1.388e-01,6.090e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.724e-04  3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 208
+fillNeumannEBBCRow: a_distance   = (1.715e-01,6.215e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  7.050e-05  1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 209
+fillNeumannEBBCRow: a_distance   = (1.401e-01,9.324e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.606e-04  9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 210
+fillNeumannEBBCRow: a_distance   = (1.719e-01,9.375e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.360e-05  5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 211
+fillNeumannEBBCRow: a_distance   = (7.655e-02,6.093e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 212
+fillNeumannEBBCRow: a_distance   = (1.083e-01,6.142e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 213
+fillNeumannEBBCRow: a_distance   = (7.759e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 214
+fillNeumannEBBCRow: a_distance   = (1.094e-01,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 215
+fillNeumannEBBCRow: a_distance   = (1.430e-02,1.233e-01,-3.137e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -9.588e-05  1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 216
+fillNeumannEBBCRow: a_distance   = (4.594e-02,1.238e-01,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.448e-05  1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 217
+fillNeumannEBBCRow: a_distance   = (1.559e-02,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -5.242e-06  1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 218
+fillNeumannEBBCRow: a_distance   = (4.688e-02,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.027e-05  7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 219
+fillNeumannEBBCRow: a_distance   = (1.423e-02,6.092e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 220
+fillNeumannEBBCRow: a_distance   = (4.596e-02,6.143e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 221
+fillNeumannEBBCRow: a_distance   = (1.515e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 222
+fillNeumannEBBCRow: a_distance   = (4.687e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 223
+fillNeumannEBBCRow: a_distance   = (7.653e-02,1.232e-01,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.448e-05  1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 224
+fillNeumannEBBCRow: a_distance   = (1.084e-01,1.239e-01,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  9.588e-05  1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 225
+fillNeumannEBBCRow: a_distance   = (7.795e-02,1.561e-01,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.027e-05  7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 226
+fillNeumannEBBCRow: a_distance   = (1.094e-01,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  5.242e-06  1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 227
+fillNeumannEBBCRow: a_distance   = (7.655e-02,6.093e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 228
+fillNeumannEBBCRow: a_distance   = (1.083e-01,6.142e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 229
+fillNeumannEBBCRow: a_distance   = (7.759e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 230
+fillNeumannEBBCRow: a_distance   = (1.094e-01,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 231
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,-1.563e-01,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -9.317e-06 -1.113e-05 -2.208e-05 
+fillNeumannEBBCRow: a_currentRow = 232
+fillNeumannEBBCRow: a_distance   = (-7.812e-02,-1.562e-01,3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.965e-04 -2.821e-04 -5.434e-04 
+fillNeumannEBBCRow: a_currentRow = 233
+fillNeumannEBBCRow: a_distance   = (-7.854e-02,-9.416e-02,-1.278e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -8.889e-05 -8.889e-05 -2.736e-04 
+fillNeumannEBBCRow: a_currentRow = 234
+fillNeumannEBBCRow: a_distance   = (-7.893e-02,-9.455e-02,3.098e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.517e-04 -2.517e-04 -7.029e-04 
+fillNeumannEBBCRow: a_currentRow = 235
+fillNeumannEBBCRow: a_distance   = (-7.886e-02,-1.258e-01,3.100e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.513e-04 -4.294e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 236
+fillNeumannEBBCRow: a_distance   = (-1.096e-01,-1.253e-01,3.117e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.104e-04 -3.104e-04 -7.008e-04 
+fillNeumannEBBCRow: a_currentRow = 237
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,-9.375e-02,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 238
+fillNeumannEBBCRow: a_distance   = (-1.406e-01,-1.250e-01,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.113e-05 -9.317e-06 -2.208e-05 
+fillNeumannEBBCRow: a_currentRow = 239
+fillNeumannEBBCRow: a_distance   = (-1.406e-01,-9.375e-02,3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.821e-04 -1.965e-04 -5.434e-04 
+fillNeumannEBBCRow: a_currentRow = 240
+fillNeumannEBBCRow: a_distance   = (-7.854e-02,-9.416e-02,-1.278e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -8.889e-05 -8.889e-05 -2.736e-04 
+fillNeumannEBBCRow: a_currentRow = 241
+fillNeumannEBBCRow: a_distance   = (-7.893e-02,-9.455e-02,3.098e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.517e-04 -2.517e-04 -7.029e-04 
+fillNeumannEBBCRow: a_currentRow = 242
+fillNeumannEBBCRow: a_distance   = (-7.886e-02,-1.258e-01,3.100e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.513e-04 -4.294e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 243
+fillNeumannEBBCRow: a_distance   = (-1.096e-01,-1.253e-01,3.117e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.104e-04 -3.104e-04 -7.008e-04 
+fillNeumannEBBCRow: a_currentRow = 244
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,-9.375e-02,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 245
+fillNeumannEBBCRow: a_distance   = (-4.732e-02,-1.254e-01,-1.016e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.458e-05 -5.516e-05 -1.400e-04 
+fillNeumannEBBCRow: a_currentRow = 246
+fillNeumannEBBCRow: a_distance   = (-1.734e-02,-1.265e-01,-4.100e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.195e-04 -2.611e-04 -6.423e-04 
+fillNeumannEBBCRow: a_currentRow = 247
+fillNeumannEBBCRow: a_distance   = (-4.895e-02,-9.551e-02,-5.145e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.454e-04 -3.158e-04 -9.320e-04 
+fillNeumannEBBCRow: a_currentRow = 248
+fillNeumannEBBCRow: a_distance   = (-1.733e-02,-9.519e-02,-4.558e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.817e-04 -3.271e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 249
+fillNeumannEBBCRow: a_distance   = (-4.804e-02,-1.260e-01,3.093e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.319e-04 -3.637e-04 -8.365e-04 
+fillNeumannEBBCRow: a_currentRow = 250
+fillNeumannEBBCRow: a_distance   = (-1.593e-02,-1.253e-01,3.116e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -6.750e-05 -1.502e-04 -3.342e-04 
+fillNeumannEBBCRow: a_currentRow = 251
+fillNeumannEBBCRow: a_distance   = (-4.690e-02,-9.377e-02,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.336e-05 -1.689e-05 -4.458e-05 
+fillNeumannEBBCRow: a_currentRow = 252
+fillNeumannEBBCRow: a_distance   = (1.223e-02,-1.275e-01,-6.838e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.066e-04 -3.929e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 253
+fillNeumannEBBCRow: a_distance   = (4.390e-02,-1.272e-01,-6.213e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.676e-05 -4.043e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 254
+fillNeumannEBBCRow: a_distance   = (1.318e-02,-9.554e-02,-5.365e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.078e-04 -3.235e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 255
+fillNeumannEBBCRow: a_distance   = (4.495e-02,-9.517e-02,-4.555e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.575e-05 -3.218e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 256
+fillNeumannEBBCRow: a_distance   = (1.558e-02,-1.250e-01,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.249e-06 -1.368e-05 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 257
+fillNeumannEBBCRow: a_distance   = (7.417e-02,-1.276e-01,-7.040e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.676e-05 -4.043e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 258
+fillNeumannEBBCRow: a_distance   = (1.061e-01,-1.272e-01,-6.032e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.066e-04 -3.929e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 259
+fillNeumannEBBCRow: a_distance   = (7.537e-02,-9.554e-02,-5.359e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  3.575e-05 -3.218e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 260
+fillNeumannEBBCRow: a_distance   = (1.072e-01,-9.517e-02,-4.556e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.078e-04 -3.235e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 261
+fillNeumannEBBCRow: a_distance   = (1.093e-01,-1.250e-01,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  4.249e-06 -1.368e-05 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 262
+fillNeumannEBBCRow: a_distance   = (-1.097e-01,-6.294e-02,-1.016e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -5.516e-05 -3.458e-05 -1.400e-04 
+fillNeumannEBBCRow: a_currentRow = 263
+fillNeumannEBBCRow: a_distance   = (-8.022e-02,-6.500e-02,-5.938e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.158e-04 -2.454e-04 -9.320e-04 
+fillNeumannEBBCRow: a_currentRow = 264
+fillNeumannEBBCRow: a_distance   = (-1.106e-01,-3.269e-02,-3.550e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.611e-04 -1.195e-04 -6.423e-04 
+fillNeumannEBBCRow: a_currentRow = 265
+fillNeumannEBBCRow: a_distance   = (-7.956e-02,-3.295e-02,-4.558e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.271e-04 -1.817e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 266
+fillNeumannEBBCRow: a_distance   = (-1.104e-01,-6.366e-02,3.093e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.637e-04 -2.319e-04 -8.365e-04 
+fillNeumannEBBCRow: a_currentRow = 267
+fillNeumannEBBCRow: a_distance   = (-7.816e-02,-6.254e-02,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.689e-05 -1.336e-05 -4.458e-05 
+fillNeumannEBBCRow: a_currentRow = 268
+fillNeumannEBBCRow: a_distance   = (-1.095e-01,-3.141e-02,3.120e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.502e-04 -6.750e-05 -3.342e-04 
+fillNeumannEBBCRow: a_currentRow = 269
+fillNeumannEBBCRow: a_distance   = (1.249e-02,-6.522e-02,-6.489e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.003e-04 -2.327e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 270
+fillNeumannEBBCRow: a_distance   = (4.494e-02,-6.420e-02,-4.167e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.474e-05 -1.746e-04 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 271
+fillNeumannEBBCRow: a_distance   = (1.548e-02,-3.138e-02,-3.338e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -8.084e-06 -1.270e-05 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 272
+fillNeumannEBBCRow: a_distance   = (7.556e-02,-6.447e-02,-4.704e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  2.474e-05 -1.746e-04 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 273
+fillNeumannEBBCRow: a_distance   = (1.063e-01,-6.484e-02,-5.748e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  1.003e-04 -2.327e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 274
+fillNeumannEBBCRow: a_distance   = (1.092e-01,-3.135e-02,-2.846e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00  8.084e-06 -1.270e-05 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 275
+fillNeumannEBBCRow: a_distance   = (-1.119e-01,-3.399e-03,-6.838e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.929e-04 -1.066e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 276
+fillNeumannEBBCRow: a_distance   = (-8.026e-02,-2.943e-03,-6.173e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.235e-04 -1.078e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 277
+fillNeumannEBBCRow: a_distance   = (-1.112e-01,2.875e-02,-5.386e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.043e-04 -3.676e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 278
+fillNeumannEBBCRow: a_distance   = (-7.954e-02,2.932e-02,-4.555e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.218e-04 -3.575e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 279
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,-4.740e-05,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.368e-05 -4.249e-06 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 280
+fillNeumannEBBCRow: a_distance   = (-4.959e-02,-3.131e-03,-6.489e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.327e-04 -1.003e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 281
+fillNeumannEBBCRow: a_distance   = (-1.578e-02,-1.796e-04,-3.829e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.270e-05 -8.084e-06 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 282
+fillNeumannEBBCRow: a_distance   = (-4.828e-02,2.963e-02,-3.631e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.746e-04 -2.474e-05 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 283
+fillNeumannEBBCRow: a_distance   = (-1.119e-01,5.855e-02,-7.040e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -4.043e-04  3.676e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 284
+fillNeumannEBBCRow: a_distance   = (-8.025e-02,5.919e-02,-6.164e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.218e-04  3.575e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 285
+fillNeumannEBBCRow: a_distance   = (-1.112e-01,9.099e-02,-5.227e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.929e-04  1.066e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 286
+fillNeumannEBBCRow: a_distance   = (-7.955e-02,9.155e-02,-4.556e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -3.235e-04  1.078e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 287
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,9.373e-02,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.368e-05  4.249e-06 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 288
+fillNeumannEBBCRow: a_distance   = (-4.884e-02,5.994e-02,-4.704e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.746e-04  2.474e-05 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 289
+fillNeumannEBBCRow: a_distance   = (-4.882e-02,9.121e-02,-5.006e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -2.327e-04  1.003e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 290
+fillNeumannEBBCRow: a_distance   = (-1.573e-02,9.362e-02,-2.846e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.270e-05  8.084e-06 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 291
+fillNeumannEBBCRow: a_distance   = (-1.102e-01,-1.258e-01,6.213e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 292 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 292 x 4
+ 0.000e+00 -1.335e-04 -1.335e-04 -2.758e-04 
+Weight matrix:
+M(0,0) = 5.625000000000000e-01
+M(1,1) = 8.101851851851852e-02
+M(2,2) = 2.633101851851852e-02
+M(3,3) = 1.181250000000000e-02
+M(4,4) = 8.101851851851852e-02
+M(5,5) = 2.633101851851852e-02
+M(6,6) = 1.181250000000000e-02
+M(7,7) = 6.314814814814815e-03
+M(8,8) = 2.633101851851852e-02
+M(9,9) = 1.181250000000000e-02
+M(10,10) = 6.314814814814815e-03
+M(11,11) = 3.772540762336680e-03
+M(12,12) = 1.181250000000000e-02
+M(13,13) = 6.314814814814815e-03
+M(14,14) = 3.772540762336680e-03
+M(15,15) = 2.434288447521866e-03
+M(16,16) = 8.101851851851852e-02
+M(17,17) = 2.633101851851852e-02
+M(18,18) = 1.181250000000000e-02
+M(19,19) = 6.314814814814815e-03
+M(20,20) = 2.633101851851852e-02
+M(21,21) = 1.181250000000000e-02
+M(22,22) = 6.314814814814815e-03
+M(23,23) = 3.772540762336680e-03
+M(24,24) = 1.181250000000000e-02
+M(25,25) = 6.314814814814815e-03
+M(26,26) = 3.772540762336680e-03
+M(27,27) = 2.434288447521866e-03
+M(28,28) = 6.314814814814815e-03
+M(29,29) = 3.772540762336680e-03
+M(30,30) = 2.434288447521866e-03
+M(31,31) = 1.662433556241427e-03
+M(32,32) = 2.434288447521866e-03
+M(33,33) = 3.772540762336680e-03
+M(34,34) = 3.772540762336680e-03
+M(35,35) = 2.434288447521866e-03
+M(36,36) = 1.662433556241427e-03
+M(37,37) = 1.185871056241427e-03
+M(38,38) = 1.662433556241427e-03
+M(39,39) = 2.434288447521866e-03
+M(40,40) = 3.772540762336680e-03
+M(41,41) = 6.314814814814815e-03
+M(42,42) = 6.314814814814815e-03
+M(43,43) = 3.772540762336680e-03
+M(44,44) = 2.434288447521866e-03
+M(45,45) = 1.662433556241427e-03
+M(46,46) = 2.434288447521866e-03
+M(47,47) = 3.772540762336680e-03
+M(48,48) = 6.314814814814815e-03
+M(49,49) = 1.181250000000000e-02
+M(50,50) = 1.181250000000000e-02
+M(51,51) = 6.314814814814815e-03
+M(52,52) = 3.772540762336680e-03
+M(53,53) = 2.434288447521866e-03
+M(54,54) = 3.772540762336680e-03
+M(55,55) = 6.314814814814815e-03
+M(56,56) = 1.181250000000000e-02
+M(57,57) = 2.633101851851852e-02
+M(58,58) = 2.633101851851852e-02
+M(59,59) = 1.181250000000000e-02
+M(60,60) = 6.314814814814815e-03
+M(61,61) = 3.772540762336680e-03
+M(62,62) = 2.434288447521866e-03
+M(63,63) = 3.772540762336680e-03
+M(64,64) = 6.314814814814815e-03
+M(65,65) = 1.181250000000000e-02
+M(66,66) = 1.181250000000000e-02
+M(67,67) = 6.314814814814815e-03
+M(68,68) = 3.772540762336680e-03
+M(69,69) = 2.434288447521866e-03
+M(70,70) = 1.662433556241427e-03
+M(71,71) = 2.434288447521866e-03
+M(72,72) = 3.772540762336680e-03
+M(73,73) = 6.314814814814815e-03
+M(74,74) = 6.314814814814815e-03
+M(75,75) = 3.772540762336680e-03
+M(76,76) = 2.434288447521866e-03
+M(77,77) = 1.662433556241427e-03
+M(78,78) = 1.185871056241427e-03
+M(79,79) = 1.662433556241427e-03
+M(80,80) = 2.434288447521866e-03
+M(81,81) = 3.772540762336680e-03
+M(82,82) = 3.772540762336680e-03
+M(83,83) = 2.434288447521866e-03
+M(84,84) = 1.662433556241427e-03
+M(85,85) = 1.185871056241427e-03
+M(86,86) = 1.662433556241427e-03
+M(87,87) = 2.434288447521866e-03
+M(88,88) = 2.434288447521866e-03
+M(89,89) = 1.662433556241427e-03
+M(90,90) = 1.185871056241427e-03
+M(91,91) = 8.756574004507889e-04
+M(92,92) = 1.185871056241427e-03
+M(93,93) = 1.662433556241427e-03
+M(94,94) = 2.434288447521866e-03
+M(95,95) = 3.772540762336680e-03
+M(96,96) = 3.772540762336680e-03
+M(97,97) = 2.434288447521866e-03
+M(98,98) = 1.662433556241427e-03
+M(99,99) = 1.185871056241427e-03
+M(100,100) = 1.662433556241427e-03
+M(101,101) = 2.434288447521866e-03
+M(102,102) = 3.772540762336680e-03
+M(103,103) = 6.314814814814815e-03
+M(104,104) = 6.314814814814815e-03
+M(105,105) = 3.772540762336680e-03
+M(106,106) = 2.434288447521866e-03
+M(107,107) = 1.662433556241427e-03
+M(108,108) = 2.434288447521866e-03
+M(109,109) = 3.772540762336680e-03
+M(110,110) = 6.314814814814815e-03
+M(111,111) = 1.181250000000000e-02
+M(112,112) = 1.181250000000000e-02
+M(113,113) = 6.314814814814815e-03
+M(114,114) = 3.772540762336680e-03
+M(115,115) = 2.434288447521866e-03
+M(116,116) = 1.662433556241427e-03
+M(117,117) = 2.434288447521866e-03
+M(118,118) = 3.772540762336680e-03
+M(119,119) = 6.314814814814815e-03
+M(120,120) = 6.314814814814815e-03
+M(121,121) = 3.772540762336680e-03
+M(122,122) = 2.434288447521866e-03
+M(123,123) = 1.662433556241427e-03
+M(124,124) = 1.185871056241427e-03
+M(125,125) = 1.662433556241427e-03
+M(126,126) = 2.434288447521866e-03
+M(127,127) = 3.772540762336680e-03
+M(128,128) = 3.772540762336680e-03
+M(129,129) = 2.434288447521866e-03
+M(130,130) = 1.662433556241427e-03
+M(131,131) = 1.185871056241427e-03
+M(132,132) = 8.756574004507889e-04
+M(133,133) = 1.185871056241427e-03
+M(134,134) = 1.662433556241427e-03
+M(135,135) = 2.434288447521866e-03
+M(136,136) = 2.434288447521866e-03
+M(137,137) = 1.662433556241427e-03
+M(138,138) = 1.185871056241427e-03
+M(139,139) = 8.756574004507889e-04
+M(140,140) = 1.181250000000000e-02
+M(141,141) = 3.772540762336680e-03
+M(142,142) = 2.633101851851852e-02
+M(143,143) = 1.181250000000000e-02
+M(144,144) = 3.772540762336680e-03
+M(145,145) = 3.772540762336680e-03
+M(146,146) = 1.662433556241427e-03
+M(147,147) = 3.772540762336680e-03
+M(148,148) = 1.662433556241427e-03
+M(149,149) = 1.662433556241427e-03
+M(150,150) = 1.662433556241427e-03
+M(151,151) = 6.314814814814815e-03
+M(152,152) = 3.772540762336680e-03
+M(153,153) = 1.662433556241427e-03
+M(154,154) = 6.314814814814815e-03
+M(155,155) = 1.181250000000000e-02
+M(156,156) = 3.772540762336680e-03
+M(157,157) = 6.314814814814815e-03
+M(158,158) = 2.633101851851852e-02
+M(159,159) = 2.434288447521866e-03
+M(160,160) = 6.314814814814815e-03
+M(161,161) = 1.185871056241427e-03
+M(162,162) = 8.000000000000000e-03
+M(163,163) = 1.562500000000000e-02
+M(164,164) = 1.562500000000000e-02
+M(165,165) = 3.703703703703703e-02
+M(166,166) = 3.703703703703703e-02
+M(167,167) = 1.250000000000000e-01
+M(168,168) = 1.250000000000000e-01
+M(169,169) = 1.000000000000000e+00
+M(170,170) = 8.000000000000000e-03
+M(171,171) = 1.562500000000000e-02
+M(172,172) = 1.562500000000000e-02
+M(173,173) = 3.703703703703703e-02
+M(174,174) = 3.703703703703703e-02
+M(175,175) = 1.250000000000000e-01
+M(176,176) = 1.250000000000000e-01
+M(177,177) = 1.000000000000000e+00
+M(178,178) = 3.703703703703703e-02
+M(179,179) = 1.562500000000000e-02
+M(180,180) = 3.703703703703703e-02
+M(181,181) = 3.703703703703703e-02
+M(182,182) = 1.250000000000000e-01
+M(183,183) = 8.000000000000000e-03
+M(184,184) = 1.562500000000000e-02
+M(185,185) = 1.562500000000000e-02
+M(186,186) = 3.703703703703703e-02
+M(187,187) = 3.703703703703703e-02
+M(188,188) = 1.250000000000000e-01
+M(189,189) = 1.250000000000000e-01
+M(190,190) = 1.000000000000000e+00
+M(191,191) = 3.703703703703703e-02
+M(192,192) = 1.562500000000000e-02
+M(193,193) = 1.250000000000000e-01
+M(194,194) = 3.703703703703703e-02
+M(195,195) = 3.703703703703703e-02
+M(196,196) = 1.250000000000000e-01
+M(197,197) = 1.250000000000000e-01
+M(198,198) = 1.000000000000000e+00
+M(199,199) = 8.000000000000000e-03
+M(200,200) = 1.562500000000000e-02
+M(201,201) = 1.562500000000000e-02
+M(202,202) = 3.703703703703703e-02
+M(203,203) = 3.703703703703703e-02
+M(204,204) = 1.250000000000000e-01
+M(205,205) = 1.250000000000000e-01
+M(206,206) = 1.000000000000000e+00
+M(207,207) = 3.703703703703703e-02
+M(208,208) = 1.562500000000000e-02
+M(209,209) = 1.250000000000000e-01
+M(210,210) = 3.703703703703703e-02
+M(211,211) = 3.703703703703703e-02
+M(212,212) = 1.250000000000000e-01
+M(213,213) = 1.250000000000000e-01
+M(214,214) = 1.000000000000000e+00
+M(215,215) = 3.703703703703703e-02
+M(216,216) = 1.250000000000000e-01
+M(217,217) = 1.562500000000000e-02
+M(218,218) = 3.703703703703703e-02
+M(219,219) = 3.703703703703703e-02
+M(220,220) = 1.250000000000000e-01
+M(221,221) = 1.250000000000000e-01
+M(222,222) = 1.000000000000000e+00
+M(223,223) = 3.703703703703703e-02
+M(224,224) = 1.250000000000000e-01
+M(225,225) = 1.562500000000000e-02
+M(226,226) = 3.703703703703703e-02
+M(227,227) = 3.703703703703703e-02
+M(228,228) = 1.250000000000000e-01
+M(229,229) = 1.250000000000000e-01
+M(230,230) = 1.000000000000000e+00
+M(231,231) = 3.703703703703703e-02
+M(232,232) = 1.562500000000000e-02
+M(233,233) = 3.703703703703703e-02
+M(234,234) = 1.250000000000000e-01
+M(235,235) = 3.703703703703703e-02
+M(236,236) = 1.250000000000000e-01
+M(237,237) = 1.000000000000000e+00
+M(238,238) = 3.703703703703703e-02
+M(239,239) = 1.250000000000000e-01
+M(240,240) = 3.703703703703703e-02
+M(241,241) = 1.250000000000000e-01
+M(242,242) = 3.703703703703703e-02
+M(243,243) = 1.250000000000000e-01
+M(244,244) = 1.000000000000000e+00
+M(245,245) = 1.562500000000000e-02
+M(246,246) = 3.703703703703703e-02
+M(247,247) = 3.703703703703703e-02
+M(248,248) = 1.250000000000000e-01
+M(249,249) = 3.703703703703703e-02
+M(250,250) = 1.250000000000000e-01
+M(251,251) = 1.250000000000000e-01
+M(252,252) = 1.562500000000000e-02
+M(253,253) = 3.703703703703703e-02
+M(254,254) = 3.703703703703703e-02
+M(255,255) = 1.250000000000000e-01
+M(256,256) = 3.703703703703703e-02
+M(257,257) = 1.562500000000000e-02
+M(258,258) = 3.703703703703703e-02
+M(259,259) = 3.703703703703703e-02
+M(260,260) = 1.250000000000000e-01
+M(261,261) = 1.250000000000000e-01
+M(262,262) = 1.562500000000000e-02
+M(263,263) = 3.703703703703703e-02
+M(264,264) = 3.703703703703703e-02
+M(265,265) = 1.250000000000000e-01
+M(266,266) = 3.703703703703703e-02
+M(267,267) = 1.250000000000000e-01
+M(268,268) = 1.250000000000000e-01
+M(269,269) = 1.562500000000000e-02
+M(270,270) = 3.703703703703703e-02
+M(271,271) = 3.703703703703703e-02
+M(272,272) = 1.562500000000000e-02
+M(273,273) = 3.703703703703703e-02
+M(274,274) = 1.250000000000000e-01
+M(275,275) = 1.562500000000000e-02
+M(276,276) = 3.703703703703703e-02
+M(277,277) = 3.703703703703703e-02
+M(278,278) = 1.250000000000000e-01
+M(279,279) = 3.703703703703703e-02
+M(280,280) = 1.562500000000000e-02
+M(281,281) = 3.703703703703703e-02
+M(282,282) = 3.703703703703703e-02
+M(283,283) = 1.562500000000000e-02
+M(284,284) = 3.703703703703703e-02
+M(285,285) = 3.703703703703703e-02
+M(286,286) = 1.250000000000000e-01
+M(287,287) = 1.250000000000000e-01
+M(288,288) = 1.562500000000000e-02
+M(289,289) = 3.703703703703703e-02
+M(290,290) = 1.250000000000000e-01
+M(291,291) = 1.562500000000000e-02
+Moment matrix:
+matrix size = 292 x 4
+row 0=   1.000e+00  1.562e-02  0.000e+00  0.000e+00 
+row 1=   1.000e+00  4.688e-02  0.000e+00  0.000e+00 
+row 2=   1.000e+00  7.812e-02  0.000e+00  0.000e+00 
+row 3=   1.000e+00  1.094e-01  0.000e+00  0.000e+00 
+row 4=   1.000e+00  1.562e-02  3.125e-02  0.000e+00 
+row 5=   1.000e+00  4.688e-02  3.125e-02  0.000e+00 
+row 6=   1.000e+00  7.812e-02  3.125e-02  0.000e+00 
+row 7=   1.000e+00  1.094e-01  3.125e-02  0.000e+00 
+row 8=   1.000e+00  1.562e-02  6.250e-02  0.000e+00 
+row 9=   1.000e+00  4.688e-02  6.250e-02  0.000e+00 
+row 10=   1.000e+00  7.812e-02  6.250e-02  0.000e+00 
+row 11=   1.000e+00  1.094e-01  6.250e-02  0.000e+00 
+row 12=   1.000e+00  1.562e-02  9.375e-02  0.000e+00 
+row 13=   1.000e+00  4.688e-02  9.375e-02  0.000e+00 
+row 14=   1.000e+00  7.812e-02  9.375e-02  0.000e+00 
+row 15=   1.000e+00  1.094e-01  9.375e-02  0.000e+00 
+row 16=   1.000e+00  1.562e-02  0.000e+00  3.125e-02 
+row 17=   1.000e+00  4.688e-02  0.000e+00  3.125e-02 
+row 18=   1.000e+00  7.812e-02  0.000e+00  3.125e-02 
+row 19=   1.000e+00  1.094e-01  0.000e+00  3.125e-02 
+row 20=   1.000e+00  1.562e-02  3.125e-02  3.125e-02 
+row 21=   1.000e+00  4.688e-02  3.125e-02  3.125e-02 
+row 22=   1.000e+00  7.812e-02  3.125e-02  3.125e-02 
+row 23=   1.000e+00  1.094e-01  3.125e-02  3.125e-02 
+row 24=   1.000e+00  1.562e-02  6.250e-02  3.125e-02 
+row 25=   1.000e+00  4.688e-02  6.250e-02  3.125e-02 
+row 26=   1.000e+00  7.812e-02  6.250e-02  3.125e-02 
+row 27=   1.000e+00  1.094e-01  6.250e-02  3.125e-02 
+row 28=   1.000e+00  1.562e-02  9.375e-02  3.125e-02 
+row 29=   1.000e+00  4.688e-02  9.375e-02  3.125e-02 
+row 30=   1.000e+00  7.812e-02  9.375e-02  3.125e-02 
+row 31=   1.000e+00  1.094e-01  9.375e-02  3.125e-02 
+row 32=   1.000e+00 -4.688e-02 -9.375e-02  6.250e-02 
+row 33=   1.000e+00 -1.562e-02 -9.375e-02  6.250e-02 
+row 34=   1.000e+00  1.562e-02 -9.375e-02  6.250e-02 
+row 35=   1.000e+00  4.688e-02 -9.375e-02  6.250e-02 
+row 36=   1.000e+00  7.812e-02 -9.375e-02  6.250e-02 
+row 37=   1.000e+00  1.094e-01 -9.375e-02  6.250e-02 
+row 38=   1.000e+00 -1.094e-01 -6.250e-02  6.250e-02 
+row 39=   1.000e+00 -7.812e-02 -6.250e-02  6.250e-02 
+row 40=   1.000e+00 -4.688e-02 -6.250e-02  6.250e-02 
+row 41=   1.000e+00 -1.562e-02 -6.250e-02  6.250e-02 
+row 42=   1.000e+00  1.562e-02 -6.250e-02  6.250e-02 
+row 43=   1.000e+00  4.688e-02 -6.250e-02  6.250e-02 
+row 44=   1.000e+00  7.812e-02 -6.250e-02  6.250e-02 
+row 45=   1.000e+00  1.094e-01 -6.250e-02  6.250e-02 
+row 46=   1.000e+00 -1.094e-01 -3.125e-02  6.250e-02 
+row 47=   1.000e+00 -7.812e-02 -3.125e-02  6.250e-02 
+row 48=   1.000e+00 -4.688e-02 -3.125e-02  6.250e-02 
+row 49=   1.000e+00 -1.562e-02 -3.125e-02  6.250e-02 
+row 50=   1.000e+00  1.562e-02 -3.125e-02  6.250e-02 
+row 51=   1.000e+00  4.688e-02 -3.125e-02  6.250e-02 
+row 52=   1.000e+00  7.812e-02 -3.125e-02  6.250e-02 
+row 53=   1.000e+00  1.094e-01 -3.125e-02  6.250e-02 
+row 54=   1.000e+00 -1.094e-01  0.000e+00  6.250e-02 
+row 55=   1.000e+00 -7.812e-02  0.000e+00  6.250e-02 
+row 56=   1.000e+00 -4.688e-02  0.000e+00  6.250e-02 
+row 57=   1.000e+00 -1.562e-02  0.000e+00  6.250e-02 
+row 58=   1.000e+00  1.562e-02  0.000e+00  6.250e-02 
+row 59=   1.000e+00  4.688e-02  0.000e+00  6.250e-02 
+row 60=   1.000e+00  7.812e-02  0.000e+00  6.250e-02 
+row 61=   1.000e+00  1.094e-01  0.000e+00  6.250e-02 
+row 62=   1.000e+00 -1.094e-01  3.125e-02  6.250e-02 
+row 63=   1.000e+00 -7.812e-02  3.125e-02  6.250e-02 
+row 64=   1.000e+00 -4.688e-02  3.125e-02  6.250e-02 
+row 65=   1.000e+00 -1.562e-02  3.125e-02  6.250e-02 
+row 66=   1.000e+00  1.562e-02  3.125e-02  6.250e-02 
+row 67=   1.000e+00  4.688e-02  3.125e-02  6.250e-02 
+row 68=   1.000e+00  7.812e-02  3.125e-02  6.250e-02 
+row 69=   1.000e+00  1.094e-01  3.125e-02  6.250e-02 
+row 70=   1.000e+00 -1.094e-01  6.250e-02  6.250e-02 
+row 71=   1.000e+00 -7.812e-02  6.250e-02  6.250e-02 
+row 72=   1.000e+00 -4.688e-02  6.250e-02  6.250e-02 
+row 73=   1.000e+00 -1.562e-02  6.250e-02  6.250e-02 
+row 74=   1.000e+00  1.562e-02  6.250e-02  6.250e-02 
+row 75=   1.000e+00  4.688e-02  6.250e-02  6.250e-02 
+row 76=   1.000e+00  7.812e-02  6.250e-02  6.250e-02 
+row 77=   1.000e+00  1.094e-01  6.250e-02  6.250e-02 
+row 78=   1.000e+00 -1.094e-01  9.375e-02  6.250e-02 
+row 79=   1.000e+00 -7.812e-02  9.375e-02  6.250e-02 
+row 80=   1.000e+00 -4.688e-02  9.375e-02  6.250e-02 
+row 81=   1.000e+00 -1.562e-02  9.375e-02  6.250e-02 
+row 82=   1.000e+00  1.562e-02  9.375e-02  6.250e-02 
+row 83=   1.000e+00  4.688e-02  9.375e-02  6.250e-02 
+row 84=   1.000e+00  7.812e-02  9.375e-02  6.250e-02 
+row 85=   1.000e+00  1.094e-01  9.375e-02  6.250e-02 
+row 86=   1.000e+00 -4.688e-02 -9.375e-02  9.375e-02 
+row 87=   1.000e+00 -1.562e-02 -9.375e-02  9.375e-02 
+row 88=   1.000e+00  1.562e-02 -9.375e-02  9.375e-02 
+row 89=   1.000e+00  4.688e-02 -9.375e-02  9.375e-02 
+row 90=   1.000e+00  7.812e-02 -9.375e-02  9.375e-02 
+row 91=   1.000e+00  1.094e-01 -9.375e-02  9.375e-02 
+row 92=   1.000e+00 -1.094e-01 -6.250e-02  9.375e-02 
+row 93=   1.000e+00 -7.812e-02 -6.250e-02  9.375e-02 
+row 94=   1.000e+00 -4.688e-02 -6.250e-02  9.375e-02 
+row 95=   1.000e+00 -1.562e-02 -6.250e-02  9.375e-02 
+row 96=   1.000e+00  1.562e-02 -6.250e-02  9.375e-02 
+row 97=   1.000e+00  4.688e-02 -6.250e-02  9.375e-02 
+row 98=   1.000e+00  7.812e-02 -6.250e-02  9.375e-02 
+row 99=   1.000e+00  1.094e-01 -6.250e-02  9.375e-02 
+row 100=   1.000e+00 -1.094e-01 -3.125e-02  9.375e-02 
+row 101=   1.000e+00 -7.812e-02 -3.125e-02  9.375e-02 
+row 102=   1.000e+00 -4.688e-02 -3.125e-02  9.375e-02 
+row 103=   1.000e+00 -1.562e-02 -3.125e-02  9.375e-02 
+row 104=   1.000e+00  1.562e-02 -3.125e-02  9.375e-02 
+row 105=   1.000e+00  4.688e-02 -3.125e-02  9.375e-02 
+row 106=   1.000e+00  7.812e-02 -3.125e-02  9.375e-02 
+row 107=   1.000e+00  1.094e-01 -3.125e-02  9.375e-02 
+row 108=   1.000e+00 -1.094e-01  0.000e+00  9.375e-02 
+row 109=   1.000e+00 -7.812e-02  0.000e+00  9.375e-02 
+row 110=   1.000e+00 -4.688e-02  0.000e+00  9.375e-02 
+row 111=   1.000e+00 -1.562e-02  0.000e+00  9.375e-02 
+row 112=   1.000e+00  1.562e-02  0.000e+00  9.375e-02 
+row 113=   1.000e+00  4.688e-02  0.000e+00  9.375e-02 
+row 114=   1.000e+00  7.812e-02  0.000e+00  9.375e-02 
+row 115=   1.000e+00  1.094e-01  0.000e+00  9.375e-02 
+row 116=   1.000e+00 -1.094e-01  3.125e-02  9.375e-02 
+row 117=   1.000e+00 -7.812e-02  3.125e-02  9.375e-02 
+row 118=   1.000e+00 -4.688e-02  3.125e-02  9.375e-02 
+row 119=   1.000e+00 -1.562e-02  3.125e-02  9.375e-02 
+row 120=   1.000e+00  1.562e-02  3.125e-02  9.375e-02 
+row 121=   1.000e+00  4.688e-02  3.125e-02  9.375e-02 
+row 122=   1.000e+00  7.812e-02  3.125e-02  9.375e-02 
+row 123=   1.000e+00  1.094e-01  3.125e-02  9.375e-02 
+row 124=   1.000e+00 -1.094e-01  6.250e-02  9.375e-02 
+row 125=   1.000e+00 -7.812e-02  6.250e-02  9.375e-02 
+row 126=   1.000e+00 -4.688e-02  6.250e-02  9.375e-02 
+row 127=   1.000e+00 -1.562e-02  6.250e-02  9.375e-02 
+row 128=   1.000e+00  1.562e-02  6.250e-02  9.375e-02 
+row 129=   1.000e+00  4.688e-02  6.250e-02  9.375e-02 
+row 130=   1.000e+00  7.812e-02  6.250e-02  9.375e-02 
+row 131=   1.000e+00  1.094e-01  6.250e-02  9.375e-02 
+row 132=   1.000e+00 -1.094e-01  9.375e-02  9.375e-02 
+row 133=   1.000e+00 -7.812e-02  9.375e-02  9.375e-02 
+row 134=   1.000e+00 -4.688e-02  9.375e-02  9.375e-02 
+row 135=   1.000e+00 -1.562e-02  9.375e-02  9.375e-02 
+row 136=   1.000e+00  1.562e-02  9.375e-02  9.375e-02 
+row 137=   1.000e+00  4.688e-02  9.375e-02  9.375e-02 
+row 138=   1.000e+00  7.812e-02  9.375e-02  9.375e-02 
+row 139=   1.000e+00  1.094e-01  9.375e-02  9.375e-02 
+row 140=   1.000e+00 -4.234e-01 -4.289e-01 -6.702e-02 
+row 141=   1.000e+00 -4.204e-01 -4.289e-01 -6.702e-02 
+row 142=   1.000e+00 -4.226e-01 -4.382e-01 -6.333e-02 
+row 143=   1.000e+00 -4.133e-01 -4.391e-01 -6.702e-02 
+row 144=   1.000e+00 -4.305e-01 -4.391e-01 -6.702e-02 
+row 145=   1.000e+00 -4.133e-01 -4.360e-01 -6.702e-02 
+row 146=   1.000e+00 -4.305e-01 -4.360e-01 -6.702e-02 
+row 147=   1.000e+00 -4.234e-01 -4.462e-01 -6.702e-02 
+row 148=   1.000e+00 -4.204e-01 -4.462e-01 -6.702e-02 
+row 149=   1.000e+00 -4.573e-01 -4.389e-01 -7.258e-02 
+row 150=   1.000e+00 -4.545e-01 -4.417e-01 -7.258e-02 
+row 151=   1.000e+00 -4.230e-01 -4.393e-01 -7.076e-02 
+row 152=   1.000e+00 -4.222e-01 -4.389e-01 -6.643e-02 
+row 153=   1.000e+00 -4.217e-01 -4.389e-01 -6.643e-02 
+row 154=   1.000e+00 -4.237e-01 -4.386e-01 -7.076e-02 
+row 155=   1.000e+00 -4.221e-01 -4.378e-01 -6.258e-02 
+row 156=   1.000e+00 -4.219e-01 -4.378e-01 -6.258e-02 
+row 157=   1.000e+00 -4.233e-01 -4.379e-01 -6.643e-02 
+row 158=   1.000e+00 -4.222e-01 -4.377e-01 -6.258e-02 
+row 159=   1.000e+00 -4.233e-01 -4.373e-01 -6.643e-02 
+row 160=   1.000e+00 -4.222e-01 -4.375e-01 -6.258e-02 
+row 161=   1.000e+00 -4.220e-01 -4.376e-01 -6.255e-02 
+row 162=   0.000e+00 -5.242e-06 -1.360e-05 -6.196e-05 
+row 163=   0.000e+00 -1.027e-05 -7.050e-05 -3.128e-04 
+row 164=   0.000e+00 -9.588e-05 -1.606e-04 -9.155e-04 
+row 165=   0.000e+00 -3.448e-05 -1.724e-04 -9.766e-04 
+row 166=   0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+row 167=   0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+row 168=   0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+row 169=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 170=   0.000e+00  1.027e-05 -7.050e-05 -3.128e-04 
+row 171=   0.000e+00  5.242e-06 -1.360e-05 -6.196e-05 
+row 172=   0.000e+00  3.448e-05 -1.724e-04 -9.766e-04 
+row 173=   0.000e+00  9.588e-05 -1.606e-04 -9.155e-04 
+row 174=   0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+row 175=   0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+row 176=   0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+row 177=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 178=   0.000e+00 -4.375e-05 -4.375e-05 -2.731e-04 
+row 179=   0.000e+00 -2.530e-04 -2.530e-04 -9.766e-04 
+row 180=   0.000e+00 -1.778e-04 -2.489e-04 -9.766e-04 
+row 181=   0.000e+00 -2.489e-04 -1.778e-04 -9.766e-04 
+row 182=   0.000e+00 -1.313e-04 -1.313e-04 -7.035e-04 
+row 183=   0.000e+00 -1.360e-05 -5.242e-06 -6.196e-05 
+row 184=   0.000e+00 -1.606e-04 -9.588e-05 -9.155e-04 
+row 185=   0.000e+00 -7.050e-05 -1.027e-05 -3.128e-04 
+row 186=   0.000e+00 -1.724e-04 -3.448e-05 -9.766e-04 
+row 187=   0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+row 188=   0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+row 189=   0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+row 190=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 191=   0.000e+00  1.606e-04 -9.588e-05 -9.155e-04 
+row 192=   0.000e+00  1.360e-05 -5.242e-06 -6.196e-05 
+row 193=   0.000e+00  1.724e-04 -3.448e-05 -9.766e-04 
+row 194=   0.000e+00  7.050e-05 -1.027e-05 -3.128e-04 
+row 195=   0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+row 196=   0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+row 197=   0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+row 198=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 199=   0.000e+00 -7.050e-05  1.027e-05 -3.128e-04 
+row 200=   0.000e+00 -1.724e-04  3.448e-05 -9.766e-04 
+row 201=   0.000e+00 -1.360e-05  5.242e-06 -6.196e-05 
+row 202=   0.000e+00 -1.606e-04  9.588e-05 -9.155e-04 
+row 203=   0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+row 204=   0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+row 205=   0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+row 206=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 207=   0.000e+00  1.724e-04  3.448e-05 -9.766e-04 
+row 208=   0.000e+00  7.050e-05  1.027e-05 -3.128e-04 
+row 209=   0.000e+00  1.606e-04  9.588e-05 -9.155e-04 
+row 210=   0.000e+00  1.360e-05  5.242e-06 -6.196e-05 
+row 211=   0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+row 212=   0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+row 213=   0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+row 214=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 215=   0.000e+00 -9.588e-05  1.606e-04 -9.155e-04 
+row 216=   0.000e+00 -3.448e-05  1.724e-04 -9.766e-04 
+row 217=   0.000e+00 -5.242e-06  1.360e-05 -6.196e-05 
+row 218=   0.000e+00 -1.027e-05  7.050e-05 -3.128e-04 
+row 219=   0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+row 220=   0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+row 221=   0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+row 222=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 223=   0.000e+00  3.448e-05  1.724e-04 -9.766e-04 
+row 224=   0.000e+00  9.588e-05  1.606e-04 -9.155e-04 
+row 225=   0.000e+00  1.027e-05  7.050e-05 -3.128e-04 
+row 226=   0.000e+00  5.242e-06  1.360e-05 -6.196e-05 
+row 227=   0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+row 228=   0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+row 229=   0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+row 230=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 231=   0.000e+00 -9.317e-06 -1.113e-05 -2.208e-05 
+row 232=   0.000e+00 -1.965e-04 -2.821e-04 -5.434e-04 
+row 233=   0.000e+00 -8.889e-05 -8.889e-05 -2.736e-04 
+row 234=   0.000e+00 -2.517e-04 -2.517e-04 -7.029e-04 
+row 235=   0.000e+00 -3.513e-04 -4.294e-04 -9.766e-04 
+row 236=   0.000e+00 -3.104e-04 -3.104e-04 -7.008e-04 
+row 237=   0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+row 238=   0.000e+00 -1.113e-05 -9.317e-06 -2.208e-05 
+row 239=   0.000e+00 -2.821e-04 -1.965e-04 -5.434e-04 
+row 240=   0.000e+00 -8.889e-05 -8.889e-05 -2.736e-04 
+row 241=   0.000e+00 -2.517e-04 -2.517e-04 -7.029e-04 
+row 242=   0.000e+00 -3.513e-04 -4.294e-04 -9.766e-04 
+row 243=   0.000e+00 -3.104e-04 -3.104e-04 -7.008e-04 
+row 244=   0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+row 245=   0.000e+00 -3.458e-05 -5.516e-05 -1.400e-04 
+row 246=   0.000e+00 -1.195e-04 -2.611e-04 -6.423e-04 
+row 247=   0.000e+00 -2.454e-04 -3.158e-04 -9.320e-04 
+row 248=   0.000e+00 -1.817e-04 -3.271e-04 -9.766e-04 
+row 249=   0.000e+00 -2.319e-04 -3.637e-04 -8.365e-04 
+row 250=   0.000e+00 -6.750e-05 -1.502e-04 -3.342e-04 
+row 251=   0.000e+00 -1.336e-05 -1.689e-05 -4.458e-05 
+row 252=   0.000e+00 -1.066e-04 -3.929e-04 -9.467e-04 
+row 253=   0.000e+00 -3.676e-05 -4.043e-04 -9.766e-04 
+row 254=   0.000e+00 -1.078e-04 -3.235e-04 -9.766e-04 
+row 255=   0.000e+00 -3.575e-05 -3.218e-04 -9.766e-04 
+row 256=   0.000e+00 -4.249e-06 -1.368e-05 -2.982e-05 
+row 257=   0.000e+00  3.676e-05 -4.043e-04 -9.766e-04 
+row 258=   0.000e+00  1.066e-04 -3.929e-04 -9.467e-04 
+row 259=   0.000e+00  3.575e-05 -3.218e-04 -9.766e-04 
+row 260=   0.000e+00  1.078e-04 -3.235e-04 -9.766e-04 
+row 261=   0.000e+00  4.249e-06 -1.368e-05 -2.982e-05 
+row 262=   0.000e+00 -5.516e-05 -3.458e-05 -1.400e-04 
+row 263=   0.000e+00 -3.158e-04 -2.454e-04 -9.320e-04 
+row 264=   0.000e+00 -2.611e-04 -1.195e-04 -6.423e-04 
+row 265=   0.000e+00 -3.271e-04 -1.817e-04 -9.766e-04 
+row 266=   0.000e+00 -3.637e-04 -2.319e-04 -8.365e-04 
+row 267=   0.000e+00 -1.689e-05 -1.336e-05 -4.458e-05 
+row 268=   0.000e+00 -1.502e-04 -6.750e-05 -3.342e-04 
+row 269=   0.000e+00 -1.003e-04 -2.327e-04 -9.146e-04 
+row 270=   0.000e+00 -2.474e-05 -1.746e-04 -6.637e-04 
+row 271=   0.000e+00 -8.084e-06 -1.270e-05 -6.107e-05 
+row 272=   0.000e+00  2.474e-05 -1.746e-04 -6.637e-04 
+row 273=   0.000e+00  1.003e-04 -2.327e-04 -9.146e-04 
+row 274=   0.000e+00  8.084e-06 -1.270e-05 -6.107e-05 
+row 275=   0.000e+00 -3.929e-04 -1.066e-04 -9.467e-04 
+row 276=   0.000e+00 -3.235e-04 -1.078e-04 -9.766e-04 
+row 277=   0.000e+00 -4.043e-04 -3.676e-05 -9.766e-04 
+row 278=   0.000e+00 -3.218e-04 -3.575e-05 -9.766e-04 
+row 279=   0.000e+00 -1.368e-05 -4.249e-06 -2.982e-05 
+row 280=   0.000e+00 -2.327e-04 -1.003e-04 -9.146e-04 
+row 281=   0.000e+00 -1.270e-05 -8.084e-06 -6.107e-05 
+row 282=   0.000e+00 -1.746e-04 -2.474e-05 -6.637e-04 
+row 283=   0.000e+00 -4.043e-04  3.676e-05 -9.766e-04 
+row 284=   0.000e+00 -3.218e-04  3.575e-05 -9.766e-04 
+row 285=   0.000e+00 -3.929e-04  1.066e-04 -9.467e-04 
+row 286=   0.000e+00 -3.235e-04  1.078e-04 -9.766e-04 
+row 287=   0.000e+00 -1.368e-05  4.249e-06 -2.982e-05 
+row 288=   0.000e+00 -1.746e-04  2.474e-05 -6.637e-04 
+row 289=   0.000e+00 -2.327e-04  1.003e-04 -9.146e-04 
+row 290=   0.000e+00 -1.270e-05  8.084e-06 -6.107e-05 
+row 291=   0.000e+00 -1.335e-04 -1.335e-04 -2.758e-04 
+WM   matrix: :
+matrix size = 292 x 4
+row 0=   5.625e-01  8.789e-03  0.000e+00  0.000e+00 
+row 1=   8.102e-02  3.798e-03  0.000e+00  0.000e+00 
+row 2=   2.633e-02  2.057e-03  0.000e+00  0.000e+00 
+row 3=   1.181e-02  1.292e-03  0.000e+00  0.000e+00 
+row 4=   8.102e-02  1.266e-03  2.532e-03  0.000e+00 
+row 5=   2.633e-02  1.234e-03  8.228e-04  0.000e+00 
+row 6=   1.181e-02  9.229e-04  3.691e-04  0.000e+00 
+row 7=   6.315e-03  6.907e-04  1.973e-04  0.000e+00 
+row 8=   2.633e-02  4.114e-04  1.646e-03  0.000e+00 
+row 9=   1.181e-02  5.537e-04  7.383e-04  0.000e+00 
+row 10=   6.315e-03  4.933e-04  3.947e-04  0.000e+00 
+row 11=   3.773e-03  4.126e-04  2.358e-04  0.000e+00 
+row 12=   1.181e-02  1.846e-04  1.107e-03  0.000e+00 
+row 13=   6.315e-03  2.960e-04  5.920e-04  0.000e+00 
+row 14=   3.773e-03  2.947e-04  3.537e-04  0.000e+00 
+row 15=   2.434e-03  2.663e-04  2.282e-04  0.000e+00 
+row 16=   8.102e-02  1.266e-03  0.000e+00  2.532e-03 
+row 17=   2.633e-02  1.234e-03  0.000e+00  8.228e-04 
+row 18=   1.181e-02  9.229e-04  0.000e+00  3.691e-04 
+row 19=   6.315e-03  6.907e-04  0.000e+00  1.973e-04 
+row 20=   2.633e-02  4.114e-04  8.228e-04  8.228e-04 
+row 21=   1.181e-02  5.537e-04  3.691e-04  3.691e-04 
+row 22=   6.315e-03  4.933e-04  1.973e-04  1.973e-04 
+row 23=   3.773e-03  4.126e-04  1.179e-04  1.179e-04 
+row 24=   1.181e-02  1.846e-04  7.383e-04  3.691e-04 
+row 25=   6.315e-03  2.960e-04  3.947e-04  1.973e-04 
+row 26=   3.773e-03  2.947e-04  2.358e-04  1.179e-04 
+row 27=   2.434e-03  2.663e-04  1.521e-04  7.607e-05 
+row 28=   6.315e-03  9.867e-05  5.920e-04  1.973e-04 
+row 29=   3.773e-03  1.768e-04  3.537e-04  1.179e-04 
+row 30=   2.434e-03  1.902e-04  2.282e-04  7.607e-05 
+row 31=   1.662e-03  1.818e-04  1.559e-04  5.195e-05 
+row 32=   2.434e-03 -1.141e-04 -2.282e-04  1.521e-04 
+row 33=   3.773e-03 -5.895e-05 -3.537e-04  2.358e-04 
+row 34=   3.773e-03  5.895e-05 -3.537e-04  2.358e-04 
+row 35=   2.434e-03  1.141e-04 -2.282e-04  1.521e-04 
+row 36=   1.662e-03  1.299e-04 -1.559e-04  1.039e-04 
+row 37=   1.186e-03  1.297e-04 -1.112e-04  7.412e-05 
+row 38=   1.662e-03 -1.818e-04 -1.039e-04  1.039e-04 
+row 39=   2.434e-03 -1.902e-04 -1.521e-04  1.521e-04 
+row 40=   3.773e-03 -1.768e-04 -2.358e-04  2.358e-04 
+row 41=   6.315e-03 -9.867e-05 -3.947e-04  3.947e-04 
+row 42=   6.315e-03  9.867e-05 -3.947e-04  3.947e-04 
+row 43=   3.773e-03  1.768e-04 -2.358e-04  2.358e-04 
+row 44=   2.434e-03  1.902e-04 -1.521e-04  1.521e-04 
+row 45=   1.662e-03  1.818e-04 -1.039e-04  1.039e-04 
+row 46=   2.434e-03 -2.663e-04 -7.607e-05  1.521e-04 
+row 47=   3.773e-03 -2.947e-04 -1.179e-04  2.358e-04 
+row 48=   6.315e-03 -2.960e-04 -1.973e-04  3.947e-04 
+row 49=   1.181e-02 -1.846e-04 -3.691e-04  7.383e-04 
+row 50=   1.181e-02  1.846e-04 -3.691e-04  7.383e-04 
+row 51=   6.315e-03  2.960e-04 -1.973e-04  3.947e-04 
+row 52=   3.773e-03  2.947e-04 -1.179e-04  2.358e-04 
+row 53=   2.434e-03  2.663e-04 -7.607e-05  1.521e-04 
+row 54=   3.773e-03 -4.126e-04  0.000e+00  2.358e-04 
+row 55=   6.315e-03 -4.933e-04  0.000e+00  3.947e-04 
+row 56=   1.181e-02 -5.537e-04  0.000e+00  7.383e-04 
+row 57=   2.633e-02 -4.114e-04  0.000e+00  1.646e-03 
+row 58=   2.633e-02  4.114e-04  0.000e+00  1.646e-03 
+row 59=   1.181e-02  5.537e-04  0.000e+00  7.383e-04 
+row 60=   6.315e-03  4.933e-04  0.000e+00  3.947e-04 
+row 61=   3.773e-03  4.126e-04  0.000e+00  2.358e-04 
+row 62=   2.434e-03 -2.663e-04  7.607e-05  1.521e-04 
+row 63=   3.773e-03 -2.947e-04  1.179e-04  2.358e-04 
+row 64=   6.315e-03 -2.960e-04  1.973e-04  3.947e-04 
+row 65=   1.181e-02 -1.846e-04  3.691e-04  7.383e-04 
+row 66=   1.181e-02  1.846e-04  3.691e-04  7.383e-04 
+row 67=   6.315e-03  2.960e-04  1.973e-04  3.947e-04 
+row 68=   3.773e-03  2.947e-04  1.179e-04  2.358e-04 
+row 69=   2.434e-03  2.663e-04  7.607e-05  1.521e-04 
+row 70=   1.662e-03 -1.818e-04  1.039e-04  1.039e-04 
+row 71=   2.434e-03 -1.902e-04  1.521e-04  1.521e-04 
+row 72=   3.773e-03 -1.768e-04  2.358e-04  2.358e-04 
+row 73=   6.315e-03 -9.867e-05  3.947e-04  3.947e-04 
+row 74=   6.315e-03  9.867e-05  3.947e-04  3.947e-04 
+row 75=   3.773e-03  1.768e-04  2.358e-04  2.358e-04 
+row 76=   2.434e-03  1.902e-04  1.521e-04  1.521e-04 
+row 77=   1.662e-03  1.818e-04  1.039e-04  1.039e-04 
+row 78=   1.186e-03 -1.297e-04  1.112e-04  7.412e-05 
+row 79=   1.662e-03 -1.299e-04  1.559e-04  1.039e-04 
+row 80=   2.434e-03 -1.141e-04  2.282e-04  1.521e-04 
+row 81=   3.773e-03 -5.895e-05  3.537e-04  2.358e-04 
+row 82=   3.773e-03  5.895e-05  3.537e-04  2.358e-04 
+row 83=   2.434e-03  1.141e-04  2.282e-04  1.521e-04 
+row 84=   1.662e-03  1.299e-04  1.559e-04  1.039e-04 
+row 85=   1.186e-03  1.297e-04  1.112e-04  7.412e-05 
+row 86=   1.662e-03 -7.793e-05 -1.559e-04  1.559e-04 
+row 87=   2.434e-03 -3.804e-05 -2.282e-04  2.282e-04 
+row 88=   2.434e-03  3.804e-05 -2.282e-04  2.282e-04 
+row 89=   1.662e-03  7.793e-05 -1.559e-04  1.559e-04 
+row 90=   1.186e-03  9.265e-05 -1.112e-04  1.112e-04 
+row 91=   8.757e-04  9.578e-05 -8.209e-05  8.209e-05 
+row 92=   1.186e-03 -1.297e-04 -7.412e-05  1.112e-04 
+row 93=   1.662e-03 -1.299e-04 -1.039e-04  1.559e-04 
+row 94=   2.434e-03 -1.141e-04 -1.521e-04  2.282e-04 
+row 95=   3.773e-03 -5.895e-05 -2.358e-04  3.537e-04 
+row 96=   3.773e-03  5.895e-05 -2.358e-04  3.537e-04 
+row 97=   2.434e-03  1.141e-04 -1.521e-04  2.282e-04 
+row 98=   1.662e-03  1.299e-04 -1.039e-04  1.559e-04 
+row 99=   1.186e-03  1.297e-04 -7.412e-05  1.112e-04 
+row 100=   1.662e-03 -1.818e-04 -5.195e-05  1.559e-04 
+row 101=   2.434e-03 -1.902e-04 -7.607e-05  2.282e-04 
+row 102=   3.773e-03 -1.768e-04 -1.179e-04  3.537e-04 
+row 103=   6.315e-03 -9.867e-05 -1.973e-04  5.920e-04 
+row 104=   6.315e-03  9.867e-05 -1.973e-04  5.920e-04 
+row 105=   3.773e-03  1.768e-04 -1.179e-04  3.537e-04 
+row 106=   2.434e-03  1.902e-04 -7.607e-05  2.282e-04 
+row 107=   1.662e-03  1.818e-04 -5.195e-05  1.559e-04 
+row 108=   2.434e-03 -2.663e-04  0.000e+00  2.282e-04 
+row 109=   3.773e-03 -2.947e-04  0.000e+00  3.537e-04 
+row 110=   6.315e-03 -2.960e-04  0.000e+00  5.920e-04 
+row 111=   1.181e-02 -1.846e-04  0.000e+00  1.107e-03 
+row 112=   1.181e-02  1.846e-04  0.000e+00  1.107e-03 
+row 113=   6.315e-03  2.960e-04  0.000e+00  5.920e-04 
+row 114=   3.773e-03  2.947e-04  0.000e+00  3.537e-04 
+row 115=   2.434e-03  2.663e-04  0.000e+00  2.282e-04 
+row 116=   1.662e-03 -1.818e-04  5.195e-05  1.559e-04 
+row 117=   2.434e-03 -1.902e-04  7.607e-05  2.282e-04 
+row 118=   3.773e-03 -1.768e-04  1.179e-04  3.537e-04 
+row 119=   6.315e-03 -9.867e-05  1.973e-04  5.920e-04 
+row 120=   6.315e-03  9.867e-05  1.973e-04  5.920e-04 
+row 121=   3.773e-03  1.768e-04  1.179e-04  3.537e-04 
+row 122=   2.434e-03  1.902e-04  7.607e-05  2.282e-04 
+row 123=   1.662e-03  1.818e-04  5.195e-05  1.559e-04 
+row 124=   1.186e-03 -1.297e-04  7.412e-05  1.112e-04 
+row 125=   1.662e-03 -1.299e-04  1.039e-04  1.559e-04 
+row 126=   2.434e-03 -1.141e-04  1.521e-04  2.282e-04 
+row 127=   3.773e-03 -5.895e-05  2.358e-04  3.537e-04 
+row 128=   3.773e-03  5.895e-05  2.358e-04  3.537e-04 
+row 129=   2.434e-03  1.141e-04  1.521e-04  2.282e-04 
+row 130=   1.662e-03  1.299e-04  1.039e-04  1.559e-04 
+row 131=   1.186e-03  1.297e-04  7.412e-05  1.112e-04 
+row 132=   8.757e-04 -9.578e-05  8.209e-05  8.209e-05 
+row 133=   1.186e-03 -9.265e-05  1.112e-04  1.112e-04 
+row 134=   1.662e-03 -7.793e-05  1.559e-04  1.559e-04 
+row 135=   2.434e-03 -3.804e-05  2.282e-04  2.282e-04 
+row 136=   2.434e-03  3.804e-05  2.282e-04  2.282e-04 
+row 137=   1.662e-03  7.793e-05  1.559e-04  1.559e-04 
+row 138=   1.186e-03  9.265e-05  1.112e-04  1.112e-04 
+row 139=   8.757e-04  9.578e-05  8.209e-05  8.209e-05 
+row 140=   1.181e-02 -5.002e-03 -5.066e-03 -7.916e-04 
+row 141=   3.773e-03 -1.586e-03 -1.618e-03 -2.528e-04 
+row 142=   2.633e-02 -1.113e-02 -1.154e-02 -1.668e-03 
+row 143=   1.181e-02 -4.882e-03 -5.186e-03 -7.916e-04 
+row 144=   3.773e-03 -1.624e-03 -1.656e-03 -2.528e-04 
+row 145=   3.773e-03 -1.559e-03 -1.645e-03 -2.528e-04 
+row 146=   1.662e-03 -7.157e-04 -7.248e-04 -1.114e-04 
+row 147=   3.773e-03 -1.597e-03 -1.683e-03 -2.528e-04 
+row 148=   1.662e-03 -6.988e-04 -7.417e-04 -1.114e-04 
+row 149=   1.662e-03 -7.602e-04 -7.296e-04 -1.207e-04 
+row 150=   1.662e-03 -7.556e-04 -7.342e-04 -1.207e-04 
+row 151=   6.315e-03 -2.671e-03 -2.774e-03 -4.468e-04 
+row 152=   3.773e-03 -1.593e-03 -1.656e-03 -2.506e-04 
+row 153=   1.662e-03 -7.010e-04 -7.297e-04 -1.104e-04 
+row 154=   6.315e-03 -2.675e-03 -2.770e-03 -4.468e-04 
+row 155=   1.181e-02 -4.986e-03 -5.172e-03 -7.392e-04 
+row 156=   3.773e-03 -1.592e-03 -1.652e-03 -2.361e-04 
+row 157=   6.315e-03 -2.673e-03 -2.765e-03 -4.195e-04 
+row 158=   2.633e-02 -1.112e-02 -1.152e-02 -1.648e-03 
+row 159=   2.434e-03 -1.030e-03 -1.065e-03 -1.617e-04 
+row 160=   6.315e-03 -2.666e-03 -2.763e-03 -3.952e-04 
+row 161=   1.186e-03 -5.004e-04 -5.189e-04 -7.418e-05 
+row 162=   0.000e+00 -4.193e-08 -1.088e-07 -4.956e-07 
+row 163=   0.000e+00 -1.605e-07 -1.102e-06 -4.888e-06 
+row 164=   0.000e+00 -1.498e-06 -2.509e-06 -1.430e-05 
+row 165=   0.000e+00 -1.277e-06 -6.386e-06 -3.617e-05 
+row 166=   0.000e+00 -3.812e-06 -3.812e-06 -3.617e-05 
+row 167=   0.000e+00 -4.268e-06 -1.280e-05 -1.221e-04 
+row 168=   0.000e+00 -1.280e-05 -4.268e-06 -1.221e-04 
+row 169=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 170=   0.000e+00  8.215e-08 -5.640e-07 -2.503e-06 
+row 171=   0.000e+00  8.190e-08 -2.125e-07 -9.681e-07 
+row 172=   0.000e+00  5.388e-07 -2.694e-06 -1.526e-05 
+row 173=   0.000e+00  3.551e-06 -5.947e-06 -3.391e-05 
+row 174=   0.000e+00  1.265e-06 -3.794e-06 -3.617e-05 
+row 175=   0.000e+00  1.287e-05 -1.287e-05 -1.221e-04 
+row 176=   0.000e+00  4.247e-06 -4.247e-06 -1.221e-04 
+row 177=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 178=   0.000e+00 -1.620e-06 -1.620e-06 -1.012e-05 
+row 179=   0.000e+00 -3.953e-06 -3.953e-06 -1.526e-05 
+row 180=   0.000e+00 -6.586e-06 -9.220e-06 -3.617e-05 
+row 181=   0.000e+00 -9.220e-06 -6.586e-06 -3.617e-05 
+row 182=   0.000e+00 -1.641e-05 -1.641e-05 -8.793e-05 
+row 183=   0.000e+00 -1.088e-07 -4.193e-08 -4.956e-07 
+row 184=   0.000e+00 -2.509e-06 -1.498e-06 -1.430e-05 
+row 185=   0.000e+00 -1.102e-06 -1.605e-07 -4.888e-06 
+row 186=   0.000e+00 -6.386e-06 -1.277e-06 -3.617e-05 
+row 187=   0.000e+00 -3.812e-06 -3.812e-06 -3.617e-05 
+row 188=   0.000e+00 -4.268e-06 -1.280e-05 -1.221e-04 
+row 189=   0.000e+00 -1.280e-05 -4.268e-06 -1.221e-04 
+row 190=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 191=   0.000e+00  5.947e-06 -3.551e-06 -3.391e-05 
+row 192=   0.000e+00  2.125e-07 -8.190e-08 -9.681e-07 
+row 193=   0.000e+00  2.155e-05 -4.310e-06 -1.221e-04 
+row 194=   0.000e+00  2.611e-06 -3.803e-07 -1.159e-05 
+row 195=   0.000e+00  1.265e-06 -3.794e-06 -3.617e-05 
+row 196=   0.000e+00  1.287e-05 -1.287e-05 -1.221e-04 
+row 197=   0.000e+00  4.247e-06 -4.247e-06 -1.221e-04 
+row 198=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 199=   0.000e+00 -5.640e-07  8.215e-08 -2.503e-06 
+row 200=   0.000e+00 -2.694e-06  5.388e-07 -1.526e-05 
+row 201=   0.000e+00 -2.125e-07  8.190e-08 -9.681e-07 
+row 202=   0.000e+00 -5.947e-06  3.551e-06 -3.391e-05 
+row 203=   0.000e+00 -3.794e-06  1.265e-06 -3.617e-05 
+row 204=   0.000e+00 -4.247e-06  4.247e-06 -1.221e-04 
+row 205=   0.000e+00 -1.287e-05  1.287e-05 -1.221e-04 
+row 206=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 207=   0.000e+00  6.386e-06  1.277e-06 -3.617e-05 
+row 208=   0.000e+00  1.102e-06  1.605e-07 -4.888e-06 
+row 209=   0.000e+00  2.007e-05  1.199e-05 -1.144e-04 
+row 210=   0.000e+00  5.036e-07  1.941e-07 -2.295e-06 
+row 211=   0.000e+00  1.258e-06  1.258e-06 -3.617e-05 
+row 212=   0.000e+00  1.280e-05  4.268e-06 -1.221e-04 
+row 213=   0.000e+00  4.268e-06  1.280e-05 -1.221e-04 
+row 214=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 215=   0.000e+00 -3.551e-06  5.947e-06 -3.391e-05 
+row 216=   0.000e+00 -4.310e-06  2.155e-05 -1.221e-04 
+row 217=   0.000e+00 -8.190e-08  2.125e-07 -9.681e-07 
+row 218=   0.000e+00 -3.803e-07  2.611e-06 -1.159e-05 
+row 219=   0.000e+00 -3.794e-06  1.265e-06 -3.617e-05 
+row 220=   0.000e+00 -4.247e-06  4.247e-06 -1.221e-04 
+row 221=   0.000e+00 -1.287e-05  1.287e-05 -1.221e-04 
+row 222=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 223=   0.000e+00  1.277e-06  6.386e-06 -3.617e-05 
+row 224=   0.000e+00  1.199e-05  2.007e-05 -1.144e-04 
+row 225=   0.000e+00  1.605e-07  1.102e-06 -4.888e-06 
+row 226=   0.000e+00  1.941e-07  5.036e-07 -2.295e-06 
+row 227=   0.000e+00  1.258e-06  1.258e-06 -3.617e-05 
+row 228=   0.000e+00  1.280e-05  4.268e-06 -1.221e-04 
+row 229=   0.000e+00  4.268e-06  1.280e-05 -1.221e-04 
+row 230=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 231=   0.000e+00 -3.451e-07 -4.122e-07 -8.177e-07 
+row 232=   0.000e+00 -3.070e-06 -4.407e-06 -8.491e-06 
+row 233=   0.000e+00 -3.292e-06 -3.292e-06 -1.013e-05 
+row 234=   0.000e+00 -3.146e-05 -3.146e-05 -8.787e-05 
+row 235=   0.000e+00 -1.301e-05 -1.590e-05 -3.617e-05 
+row 236=   0.000e+00 -3.880e-05 -3.880e-05 -8.759e-05 
+row 237=   0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+row 238=   0.000e+00 -4.122e-07 -3.451e-07 -8.177e-07 
+row 239=   0.000e+00 -3.526e-05 -2.456e-05 -6.793e-05 
+row 240=   0.000e+00 -3.292e-06 -3.292e-06 -1.013e-05 
+row 241=   0.000e+00 -3.146e-05 -3.146e-05 -8.787e-05 
+row 242=   0.000e+00 -1.301e-05 -1.590e-05 -3.617e-05 
+row 243=   0.000e+00 -3.880e-05 -3.880e-05 -8.759e-05 
+row 244=   0.000e+00 -4.294e-04 -3.513e-04 -9.766e-04 
+row 245=   0.000e+00 -5.403e-07 -8.619e-07 -2.188e-06 
+row 246=   0.000e+00 -4.425e-06 -9.671e-06 -2.379e-05 
+row 247=   0.000e+00 -9.089e-06 -1.170e-05 -3.452e-05 
+row 248=   0.000e+00 -2.272e-05 -4.089e-05 -1.221e-04 
+row 249=   0.000e+00 -8.591e-06 -1.347e-05 -3.098e-05 
+row 250=   0.000e+00 -8.438e-06 -1.878e-05 -4.178e-05 
+row 251=   0.000e+00 -1.670e-06 -2.111e-06 -5.573e-06 
+row 252=   0.000e+00 -1.666e-06 -6.140e-06 -1.479e-05 
+row 253=   0.000e+00 -1.361e-06 -1.497e-05 -3.617e-05 
+row 254=   0.000e+00 -3.994e-06 -1.198e-05 -3.617e-05 
+row 255=   0.000e+00 -4.469e-06 -4.022e-05 -1.221e-04 
+row 256=   0.000e+00 -1.574e-07 -5.067e-07 -1.104e-06 
+row 257=   0.000e+00  5.743e-07 -6.317e-06 -1.526e-05 
+row 258=   0.000e+00  3.950e-06 -1.455e-05 -3.506e-05 
+row 259=   0.000e+00  1.324e-06 -1.192e-05 -3.617e-05 
+row 260=   0.000e+00  1.348e-05 -4.044e-05 -1.221e-04 
+row 261=   0.000e+00  5.311e-07 -1.710e-06 -3.727e-06 
+row 262=   0.000e+00 -8.619e-07 -5.403e-07 -2.188e-06 
+row 263=   0.000e+00 -1.170e-05 -9.089e-06 -3.452e-05 
+row 264=   0.000e+00 -9.671e-06 -4.425e-06 -2.379e-05 
+row 265=   0.000e+00 -4.089e-05 -2.272e-05 -1.221e-04 
+row 266=   0.000e+00 -1.347e-05 -8.591e-06 -3.098e-05 
+row 267=   0.000e+00 -2.111e-06 -1.670e-06 -5.573e-06 
+row 268=   0.000e+00 -1.878e-05 -8.438e-06 -4.178e-05 
+row 269=   0.000e+00 -1.568e-06 -3.637e-06 -1.429e-05 
+row 270=   0.000e+00 -9.163e-07 -6.466e-06 -2.458e-05 
+row 271=   0.000e+00 -2.994e-07 -4.704e-07 -2.262e-06 
+row 272=   0.000e+00  3.866e-07 -2.728e-06 -1.037e-05 
+row 273=   0.000e+00  3.716e-06 -8.620e-06 -3.387e-05 
+row 274=   0.000e+00  1.011e-06 -1.588e-06 -7.634e-06 
+row 275=   0.000e+00 -6.140e-06 -1.666e-06 -1.479e-05 
+row 276=   0.000e+00 -1.198e-05 -3.994e-06 -3.617e-05 
+row 277=   0.000e+00 -1.497e-05 -1.361e-06 -3.617e-05 
+row 278=   0.000e+00 -4.022e-05 -4.469e-06 -1.221e-04 
+row 279=   0.000e+00 -5.067e-07 -1.574e-07 -1.104e-06 
+row 280=   0.000e+00 -3.637e-06 -1.568e-06 -1.429e-05 
+row 281=   0.000e+00 -4.704e-07 -2.994e-07 -2.262e-06 
+row 282=   0.000e+00 -6.466e-06 -9.163e-07 -2.458e-05 
+row 283=   0.000e+00 -6.317e-06  5.743e-07 -1.526e-05 
+row 284=   0.000e+00 -1.192e-05  1.324e-06 -3.617e-05 
+row 285=   0.000e+00 -1.455e-05  3.950e-06 -3.506e-05 
+row 286=   0.000e+00 -4.044e-05  1.348e-05 -1.221e-04 
+row 287=   0.000e+00 -1.710e-06  5.311e-07 -3.727e-06 
+row 288=   0.000e+00 -2.728e-06  3.866e-07 -1.037e-05 
+row 289=   0.000e+00 -8.620e-06  3.716e-06 -3.387e-05 
+row 290=   0.000e+00 -1.588e-06  1.011e-06 -7.634e-06 
+row 291=   0.000e+00 -2.086e-06 -2.086e-06 -4.309e-06 
+WM^T matrix: :
+matrix size = 4 x 292
+row 0=   5.625e-01  8.102e-02  2.633e-02  1.181e-02  8.102e-02  2.633e-02  1.181e-02  6.315e-03  2.633e-02  1.181e-02  6.315e-03  3.773e-03  1.181e-02  6.315e-03  3.773e-03  2.434e-03  8.102e-02  2.633e-02  1.181e-02  6.315e-03  2.633e-02  1.181e-02  6.315e-03  3.773e-03  1.181e-02  6.315e-03  3.773e-03  2.434e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  2.633e-02  2.633e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  1.186e-03  1.662e-03  2.434e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  1.181e-02  3.773e-03  2.633e-02  1.181e-02  3.773e-03  3.773e-03  1.662e-03  3.773e-03  1.662e-03  1.662e-03  1.662e-03  6.315e-03  3.773e-03  1.662e-03  6.315e-03  1.181e-02  3.773e-03  6.315e-03  2.633e-02  2.434e-03  6.315e-03  1.186e-03  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00 
+row 1=   8.789e-03  3.798e-03  2.057e-03  1.292e-03  1.266e-03  1.234e-03  9.229e-04  6.907e-04  4.114e-04  5.537e-04  4.933e-04  4.126e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04  1.266e-03  1.234e-03  9.229e-04  6.907e-04  4.114e-04  5.537e-04  4.933e-04  4.126e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -4.126e-04 -4.933e-04 -5.537e-04 -4.114e-04  4.114e-04  5.537e-04  4.933e-04  4.126e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -7.793e-05 -3.804e-05  3.804e-05  7.793e-05  9.265e-05  9.578e-05 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -9.578e-05 -9.265e-05 -7.793e-05 -3.804e-05  3.804e-05  7.793e-05  9.265e-05  9.578e-05 -5.002e-03 -1.586e-03 -1.113e-02 -4.882e-03 -1.624e-03 -1.559e-03 -7.157e-04 -1.597e-03 -6.988e-04 -7.602e-04 -7.556e-04 -2.671e-03 -1.593e-03 -7.010e-04 -2.675e-03 -4.986e-03 -1.592e-03 -2.673e-03 -1.112e-02 -1.030e-03 -2.666e-03 -5.004e-04 -4.193e-08 -1.605e-07 -1.498e-06 -1.277e-06 -3.812e-06 -4.268e-06 -1.280e-05 -3.398e-05  8.215e-08  8.190e-08  5.388e-07  3.551e-06  1.265e-06  1.287e-05  4.247e-06  1.024e-04 -1.620e-06 -3.953e-06 -6.586e-06 -9.220e-06 -1.641e-05 -1.088e-07 -2.509e-06 -1.102e-06 -6.386e-06 -3.812e-06 -4.268e-06 -1.280e-05 -3.398e-05  5.947e-06  2.125e-07  2.155e-05  2.611e-06  1.265e-06  1.287e-05  4.247e-06  1.024e-04 -5.640e-07 -2.694e-06 -2.125e-07 -5.947e-06 -3.794e-06 -4.247e-06 -1.287e-05 -3.414e-05  6.386e-06  1.102e-06  2.007e-05  5.036e-07  1.258e-06  1.280e-05  4.268e-06  1.029e-04 -3.551e-06 -4.310e-06 -8.190e-08 -3.803e-07 -3.794e-06 -4.247e-06 -1.287e-05 -3.414e-05  1.277e-06  1.199e-05  1.605e-07  1.941e-07  1.258e-06  1.280e-05  4.268e-06  1.029e-04 -3.451e-07 -3.070e-06 -3.292e-06 -3.146e-05 -1.301e-05 -3.880e-05 -4.294e-04 -4.122e-07 -3.526e-05 -3.292e-06 -3.146e-05 -1.301e-05 -3.880e-05 -4.294e-04 -5.403e-07 -4.425e-06 -9.089e-06 -2.272e-05 -8.591e-06 -8.438e-06 -1.670e-06 -1.666e-06 -1.361e-06 -3.994e-06 -4.469e-06 -1.574e-07  5.743e-07  3.950e-06  1.324e-06  1.348e-05  5.311e-07 -8.619e-07 -1.170e-05 -9.671e-06 -4.089e-05 -1.347e-05 -2.111e-06 -1.878e-05 -1.568e-06 -9.163e-07 -2.994e-07  3.866e-07  3.716e-06  1.011e-06 -6.140e-06 -1.198e-05 -1.497e-05 -4.022e-05 -5.067e-07 -3.637e-06 -4.704e-07 -6.466e-06 -6.317e-06 -1.192e-05 -1.455e-05 -4.044e-05 -1.710e-06 -2.728e-06 -8.620e-06 -1.588e-06 -2.086e-06 
+row 2=   0.000e+00  0.000e+00  0.000e+00  0.000e+00  2.532e-03  8.228e-04  3.691e-04  1.973e-04  1.646e-03  7.383e-04  3.947e-04  2.358e-04  1.107e-03  5.920e-04  3.537e-04  2.282e-04  0.000e+00  0.000e+00  0.000e+00  0.000e+00  8.228e-04  3.691e-04  1.973e-04  1.179e-04  7.383e-04  3.947e-04  2.358e-04  1.521e-04  5.920e-04  3.537e-04  2.282e-04  1.559e-04 -2.282e-04 -3.537e-04 -3.537e-04 -2.282e-04 -1.559e-04 -1.112e-04 -1.039e-04 -1.521e-04 -2.358e-04 -3.947e-04 -3.947e-04 -2.358e-04 -1.521e-04 -1.039e-04 -7.607e-05 -1.179e-04 -1.973e-04 -3.691e-04 -3.691e-04 -1.973e-04 -1.179e-04 -7.607e-05  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  7.607e-05  1.179e-04  1.973e-04  3.691e-04  3.691e-04  1.973e-04  1.179e-04  7.607e-05  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04 -1.559e-04 -2.282e-04 -2.282e-04 -1.559e-04 -1.112e-04 -8.209e-05 -7.412e-05 -1.039e-04 -1.521e-04 -2.358e-04 -2.358e-04 -1.521e-04 -1.039e-04 -7.412e-05 -5.195e-05 -7.607e-05 -1.179e-04 -1.973e-04 -1.973e-04 -1.179e-04 -7.607e-05 -5.195e-05  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  5.195e-05  7.607e-05  1.179e-04  1.973e-04  1.973e-04  1.179e-04  7.607e-05  5.195e-05  7.412e-05  1.039e-04  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  8.209e-05  1.112e-04  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05 -5.066e-03 -1.618e-03 -1.154e-02 -5.186e-03 -1.656e-03 -1.645e-03 -7.248e-04 -1.683e-03 -7.417e-04 -7.296e-04 -7.342e-04 -2.774e-03 -1.656e-03 -7.297e-04 -2.770e-03 -5.172e-03 -1.652e-03 -2.765e-03 -1.152e-02 -1.065e-03 -2.763e-03 -5.189e-04 -1.088e-07 -1.102e-06 -2.509e-06 -6.386e-06 -3.812e-06 -1.280e-05 -4.268e-06 -3.398e-05 -5.640e-07 -2.125e-07 -2.694e-06 -5.947e-06 -3.794e-06 -1.287e-05 -4.247e-06 -3.414e-05 -1.620e-06 -3.953e-06 -9.220e-06 -6.586e-06 -1.641e-05 -4.193e-08 -1.498e-06 -1.605e-07 -1.277e-06 -3.812e-06 -1.280e-05 -4.268e-06 -3.398e-05 -3.551e-06 -8.190e-08 -4.310e-06 -3.803e-07 -3.794e-06 -1.287e-05 -4.247e-06 -3.414e-05  8.215e-08  5.388e-07  8.190e-08  3.551e-06  1.265e-06  4.247e-06  1.287e-05  1.024e-04  1.277e-06  1.605e-07  1.199e-05  1.941e-07  1.258e-06  4.268e-06  1.280e-05  1.029e-04  5.947e-06  2.155e-05  2.125e-07  2.611e-06  1.265e-06  4.247e-06  1.287e-05  1.024e-04  6.386e-06  2.007e-05  1.102e-06  5.036e-07  1.258e-06  4.268e-06  1.280e-05  1.029e-04 -4.122e-07 -4.407e-06 -3.292e-06 -3.146e-05 -1.590e-05 -3.880e-05 -3.513e-04 -3.451e-07 -2.456e-05 -3.292e-06 -3.146e-05 -1.590e-05 -3.880e-05 -3.513e-04 -8.619e-07 -9.671e-06 -1.170e-05 -4.089e-05 -1.347e-05 -1.878e-05 -2.111e-06 -6.140e-06 -1.497e-05 -1.198e-05 -4.022e-05 -5.067e-07 -6.317e-06 -1.455e-05 -1.192e-05 -4.044e-05 -1.710e-06 -5.403e-07 -9.089e-06 -4.425e-06 -2.272e-05 -8.591e-06 -1.670e-06 -8.438e-06 -3.637e-06 -6.466e-06 -4.704e-07 -2.728e-06 -8.620e-06 -1.588e-06 -1.666e-06 -3.994e-06 -1.361e-06 -4.469e-06 -1.574e-07 -1.568e-06 -2.994e-07 -9.163e-07  5.743e-07  1.324e-06  3.950e-06  1.348e-05  5.311e-07  3.866e-07  3.716e-06  1.011e-06 -2.086e-06 
+row 3=   0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  2.532e-03  8.228e-04  3.691e-04  1.973e-04  8.228e-04  3.691e-04  1.973e-04  1.179e-04  3.691e-04  1.973e-04  1.179e-04  7.607e-05  1.973e-04  1.179e-04  7.607e-05  5.195e-05  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  7.383e-04  3.947e-04  2.358e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  1.646e-03  1.646e-03  7.383e-04  3.947e-04  2.358e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  7.383e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.039e-04  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  5.920e-04  3.537e-04  2.282e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  1.107e-03  1.107e-03  5.920e-04  3.537e-04  2.282e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  5.920e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05  1.112e-04  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05 -7.916e-04 -2.528e-04 -1.668e-03 -7.916e-04 -2.528e-04 -2.528e-04 -1.114e-04 -2.528e-04 -1.114e-04 -1.207e-04 -1.207e-04 -4.468e-04 -2.506e-04 -1.104e-04 -4.468e-04 -7.392e-04 -2.361e-04 -4.195e-04 -1.648e-03 -1.617e-04 -3.952e-04 -7.418e-05 -4.956e-07 -4.888e-06 -1.430e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -2.503e-06 -9.681e-07 -1.526e-05 -3.391e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -1.012e-05 -1.526e-05 -3.617e-05 -3.617e-05 -8.793e-05 -4.956e-07 -1.430e-05 -4.888e-06 -3.617e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.391e-05 -9.681e-07 -1.221e-04 -1.159e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -2.503e-06 -1.526e-05 -9.681e-07 -3.391e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.617e-05 -4.888e-06 -1.144e-04 -2.295e-06 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.391e-05 -1.221e-04 -9.681e-07 -1.159e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.617e-05 -1.144e-04 -4.888e-06 -2.295e-06 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -8.177e-07 -8.491e-06 -1.013e-05 -8.787e-05 -3.617e-05 -8.759e-05 -9.766e-04 -8.177e-07 -6.793e-05 -1.013e-05 -8.787e-05 -3.617e-05 -8.759e-05 -9.766e-04 -2.188e-06 -2.379e-05 -3.452e-05 -1.221e-04 -3.098e-05 -4.178e-05 -5.573e-06 -1.479e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.104e-06 -1.526e-05 -3.506e-05 -3.617e-05 -1.221e-04 -3.727e-06 -2.188e-06 -3.452e-05 -2.379e-05 -1.221e-04 -3.098e-05 -5.573e-06 -4.178e-05 -1.429e-05 -2.458e-05 -2.262e-06 -1.037e-05 -3.387e-05 -7.634e-06 -1.479e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.104e-06 -1.429e-05 -2.262e-06 -2.458e-05 -1.526e-05 -3.617e-05 -3.506e-05 -1.221e-04 -3.727e-06 -1.037e-05 -3.387e-05 -7.634e-06 -4.309e-06 
+System matrix:
+matrix size = 4 x 4
+row 0=   3.467e-01  4.806e-03 -5.529e-04  3.920e-04 
+row 1=   4.806e-03  4.830e-04  3.905e-04  6.223e-05 
+row 2=  -5.529e-04  3.905e-04  4.149e-04  5.994e-05 
+row 3=   3.920e-04  6.223e-05  5.994e-05  4.523e-05 
+getMomentMatrix: nrows_volumes   = 162
+getMomentMatrix: nrows_dom_faces = 0
+getMomentMatrix: nrows_cut_faces = 116
+getMomentMatrix: nrows           = 278
+getMomentMatrix: n_equations     = 278
+getMomentMatrix: n_unknowns      = 4
+fillNeumannEBBCRow: a_currentRow = 162
+fillNeumannEBBCRow: a_distance   = (-1.571e-02,-6.258e-02,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -5.242e-06 -1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 163
+fillNeumannEBBCRow: a_distance   = (1.532e-02,-6.277e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.027e-05 -7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 164
+fillNeumannEBBCRow: a_distance   = (-1.608e-02,-3.164e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -9.588e-05 -1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 165
+fillNeumannEBBCRow: a_distance   = (1.562e-02,-3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.448e-05 -1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 166
+fillNeumannEBBCRow: a_distance   = (-1.703e-02,-1.404e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 167
+fillNeumannEBBCRow: a_distance   = (1.470e-02,-9.522e-04,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 168
+fillNeumannEBBCRow: a_distance   = (-1.610e-02,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 169
+fillNeumannEBBCRow: a_distance   = (1.562e-02,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 170
+fillNeumannEBBCRow: a_distance   = (4.636e-02,-6.289e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.027e-05 -7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 171
+fillNeumannEBBCRow: a_distance   = (7.806e-02,-6.255e-02,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  5.242e-06 -1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 172
+fillNeumannEBBCRow: a_distance   = (4.633e-02,-3.167e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.448e-05 -1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 173
+fillNeumannEBBCRow: a_distance   = (7.812e-02,-3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  9.588e-05 -1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 174
+fillNeumannEBBCRow: a_distance   = (4.529e-02,-1.398e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 175
+fillNeumannEBBCRow: a_distance   = (7.708e-02,-9.569e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 176
+fillNeumannEBBCRow: a_distance   = (4.634e-02,3.078e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 177
+fillNeumannEBBCRow: a_distance   = (7.813e-02,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 178
+fillNeumannEBBCRow: a_distance   = (-4.687e-02,-3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -4.375e-05 -4.375e-05 -2.731e-04 
+fillNeumannEBBCRow: a_currentRow = 179
+fillNeumannEBBCRow: a_distance   = (-8.110e-02,-6.548e-02,-6.996e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.530e-04 -2.530e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 180
+fillNeumannEBBCRow: a_distance   = (-4.937e-02,-6.503e-02,-6.154e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.778e-04 -2.489e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 181
+fillNeumannEBBCRow: a_distance   = (-8.022e-02,-3.335e-02,-5.354e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.489e-04 -1.778e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 182
+fillNeumannEBBCRow: a_distance   = (-4.806e-02,-3.243e-02,-3.279e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.313e-04 -1.313e-04 -7.035e-04 
+fillNeumannEBBCRow: a_currentRow = 183
+fillNeumannEBBCRow: a_distance   = (-7.820e-02,-8.988e-05,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.360e-05 -5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 184
+fillNeumannEBBCRow: a_distance   = (-4.763e-02,-9.049e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.606e-04 -9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 185
+fillNeumannEBBCRow: a_distance   = (-7.826e-02,3.109e-02,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -7.050e-05 -1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 186
+fillNeumannEBBCRow: a_distance   = (-4.688e-02,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.724e-04 -3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 187
+fillNeumannEBBCRow: a_distance   = (-1.703e-02,-1.404e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 188
+fillNeumannEBBCRow: a_distance   = (1.470e-02,-9.522e-04,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 189
+fillNeumannEBBCRow: a_distance   = (-1.610e-02,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 190
+fillNeumannEBBCRow: a_distance   = (1.562e-02,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 191
+fillNeumannEBBCRow: a_distance   = (1.077e-01,-1.328e-03,-3.137e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.606e-04 -9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 192
+fillNeumannEBBCRow: a_distance   = (1.405e-01,-6.103e-05,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.360e-05 -5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 193
+fillNeumannEBBCRow: a_distance   = (1.088e-01,3.077e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.724e-04 -3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 194
+fillNeumannEBBCRow: a_distance   = (1.406e-01,3.125e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  7.050e-05 -1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 195
+fillNeumannEBBCRow: a_distance   = (4.529e-02,-1.398e-03,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 196
+fillNeumannEBBCRow: a_distance   = (7.708e-02,-9.569e-04,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 197
+fillNeumannEBBCRow: a_distance   = (4.634e-02,3.078e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 198
+fillNeumannEBBCRow: a_distance   = (7.813e-02,3.125e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 199
+fillNeumannEBBCRow: a_distance   = (-7.852e-02,6.198e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -7.050e-05  1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 200
+fillNeumannEBBCRow: a_distance   = (-4.768e-02,6.141e-02,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.724e-04  3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 201
+fillNeumannEBBCRow: a_distance   = (-7.815e-02,9.371e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.360e-05  5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 202
+fillNeumannEBBCRow: a_distance   = (-4.687e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.606e-04  9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 203
+fillNeumannEBBCRow: a_distance   = (-1.702e-02,6.092e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 204
+fillNeumannEBBCRow: a_distance   = (1.471e-02,6.143e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 205
+fillNeumannEBBCRow: a_distance   = (-1.610e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 206
+fillNeumannEBBCRow: a_distance   = (1.562e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 207
+fillNeumannEBBCRow: a_distance   = (1.076e-01,6.090e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.724e-04  3.448e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 208
+fillNeumannEBBCRow: a_distance   = (1.402e-01,6.215e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  7.050e-05  1.027e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 209
+fillNeumannEBBCRow: a_distance   = (1.088e-01,9.324e-02,-3.128e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.606e-04  9.588e-05 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 210
+fillNeumannEBBCRow: a_distance   = (1.406e-01,9.375e-02,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.360e-05  5.242e-06 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 211
+fillNeumannEBBCRow: a_distance   = (4.530e-02,6.093e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 212
+fillNeumannEBBCRow: a_distance   = (7.708e-02,6.142e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 213
+fillNeumannEBBCRow: a_distance   = (4.634e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 214
+fillNeumannEBBCRow: a_distance   = (7.813e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 215
+fillNeumannEBBCRow: a_distance   = (-1.695e-02,1.233e-01,-3.137e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -9.588e-05  1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 216
+fillNeumannEBBCRow: a_distance   = (1.469e-02,1.238e-01,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.448e-05  1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 217
+fillNeumannEBBCRow: a_distance   = (-1.566e-02,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -5.242e-06  1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 218
+fillNeumannEBBCRow: a_distance   = (1.563e-02,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.027e-05  7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 219
+fillNeumannEBBCRow: a_distance   = (-1.702e-02,6.092e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 220
+fillNeumannEBBCRow: a_distance   = (1.471e-02,6.143e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 221
+fillNeumannEBBCRow: a_distance   = (-1.610e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 222
+fillNeumannEBBCRow: a_distance   = (1.562e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 223
+fillNeumannEBBCRow: a_distance   = (4.528e-02,1.232e-01,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.448e-05  1.724e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 224
+fillNeumannEBBCRow: a_distance   = (7.713e-02,1.239e-01,-3.133e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  9.588e-05  1.606e-04 -9.155e-04 
+fillNeumannEBBCRow: a_currentRow = 225
+fillNeumannEBBCRow: a_distance   = (4.670e-02,1.561e-01,-3.126e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.027e-05  7.050e-05 -3.128e-04 
+fillNeumannEBBCRow: a_currentRow = 226
+fillNeumannEBBCRow: a_distance   = (7.812e-02,1.562e-01,-3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  5.242e-06  1.360e-05 -6.196e-05 
+fillNeumannEBBCRow: a_currentRow = 227
+fillNeumannEBBCRow: a_distance   = (4.530e-02,6.093e-02,-3.138e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 228
+fillNeumannEBBCRow: a_distance   = (7.708e-02,6.142e-02,-3.134e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 229
+fillNeumannEBBCRow: a_distance   = (4.634e-02,9.321e-02,-3.129e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 230
+fillNeumannEBBCRow: a_distance   = (7.813e-02,9.375e-02,-3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 231
+fillNeumannEBBCRow: a_distance   = (-7.857e-02,-1.254e-01,-1.016e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.458e-05 -5.516e-05 -1.400e-04 
+fillNeumannEBBCRow: a_currentRow = 232
+fillNeumannEBBCRow: a_distance   = (-4.859e-02,-1.265e-01,-4.100e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.195e-04 -2.611e-04 -6.423e-04 
+fillNeumannEBBCRow: a_currentRow = 233
+fillNeumannEBBCRow: a_distance   = (-8.020e-02,-9.551e-02,-5.145e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.454e-04 -3.158e-04 -9.320e-04 
+fillNeumannEBBCRow: a_currentRow = 234
+fillNeumannEBBCRow: a_distance   = (-4.858e-02,-9.519e-02,-4.558e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.817e-04 -3.271e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 235
+fillNeumannEBBCRow: a_distance   = (-7.929e-02,-1.260e-01,3.093e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.319e-04 -3.637e-04 -8.365e-04 
+fillNeumannEBBCRow: a_currentRow = 236
+fillNeumannEBBCRow: a_distance   = (-4.718e-02,-1.253e-01,3.116e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -6.750e-05 -1.502e-04 -3.342e-04 
+fillNeumannEBBCRow: a_currentRow = 237
+fillNeumannEBBCRow: a_distance   = (-7.815e-02,-9.377e-02,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.336e-05 -1.689e-05 -4.458e-05 
+fillNeumannEBBCRow: a_currentRow = 238
+fillNeumannEBBCRow: a_distance   = (-1.902e-02,-1.275e-01,-6.838e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.066e-04 -3.929e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 239
+fillNeumannEBBCRow: a_distance   = (1.265e-02,-1.272e-01,-6.213e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.676e-05 -4.043e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 240
+fillNeumannEBBCRow: a_distance   = (-1.807e-02,-9.554e-02,-5.365e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.078e-04 -3.235e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 241
+fillNeumannEBBCRow: a_distance   = (1.370e-02,-9.517e-02,-4.555e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.575e-05 -3.218e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 242
+fillNeumannEBBCRow: a_distance   = (-1.567e-02,-1.250e-01,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -4.249e-06 -1.368e-05 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 243
+fillNeumannEBBCRow: a_distance   = (4.292e-02,-1.276e-01,-7.040e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.676e-05 -4.043e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 244
+fillNeumannEBBCRow: a_distance   = (7.484e-02,-1.272e-01,-6.032e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.066e-04 -3.929e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 245
+fillNeumannEBBCRow: a_distance   = (4.412e-02,-9.554e-02,-5.359e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  3.575e-05 -3.218e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 246
+fillNeumannEBBCRow: a_distance   = (7.593e-02,-9.517e-02,-4.556e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.078e-04 -3.235e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 247
+fillNeumannEBBCRow: a_distance   = (7.809e-02,-1.250e-01,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  4.249e-06 -1.368e-05 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 248
+fillNeumannEBBCRow: a_distance   = (-1.410e-01,-6.294e-02,-1.016e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -5.516e-05 -3.458e-05 -1.400e-04 
+fillNeumannEBBCRow: a_currentRow = 249
+fillNeumannEBBCRow: a_distance   = (-1.115e-01,-6.500e-02,-5.938e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.158e-04 -2.454e-04 -9.320e-04 
+fillNeumannEBBCRow: a_currentRow = 250
+fillNeumannEBBCRow: a_distance   = (-1.418e-01,-3.269e-02,-3.550e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.611e-04 -1.195e-04 -6.423e-04 
+fillNeumannEBBCRow: a_currentRow = 251
+fillNeumannEBBCRow: a_distance   = (-1.108e-01,-3.295e-02,-4.558e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.271e-04 -1.817e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 252
+fillNeumannEBBCRow: a_distance   = (-1.416e-01,-6.366e-02,3.093e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.637e-04 -2.319e-04 -8.365e-04 
+fillNeumannEBBCRow: a_currentRow = 253
+fillNeumannEBBCRow: a_distance   = (-1.094e-01,-6.254e-02,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.689e-05 -1.336e-05 -4.458e-05 
+fillNeumannEBBCRow: a_currentRow = 254
+fillNeumannEBBCRow: a_distance   = (-1.408e-01,-3.141e-02,3.120e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.502e-04 -6.750e-05 -3.342e-04 
+fillNeumannEBBCRow: a_currentRow = 255
+fillNeumannEBBCRow: a_distance   = (-1.876e-02,-6.522e-02,-6.489e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.003e-04 -2.327e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 256
+fillNeumannEBBCRow: a_distance   = (1.369e-02,-6.420e-02,-4.167e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.474e-05 -1.746e-04 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 257
+fillNeumannEBBCRow: a_distance   = (-1.577e-02,-3.138e-02,-3.338e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -8.084e-06 -1.270e-05 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 258
+fillNeumannEBBCRow: a_distance   = (4.431e-02,-6.447e-02,-4.704e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  2.474e-05 -1.746e-04 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 259
+fillNeumannEBBCRow: a_distance   = (7.510e-02,-6.484e-02,-5.748e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  1.003e-04 -2.327e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 260
+fillNeumannEBBCRow: a_distance   = (7.799e-02,-3.135e-02,-2.846e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00  8.084e-06 -1.270e-05 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 261
+fillNeumannEBBCRow: a_distance   = (-1.431e-01,-3.399e-03,-6.838e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.929e-04 -1.066e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 262
+fillNeumannEBBCRow: a_distance   = (-1.115e-01,-2.943e-03,-6.173e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.235e-04 -1.078e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 263
+fillNeumannEBBCRow: a_distance   = (-1.425e-01,2.875e-02,-5.386e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -4.043e-04 -3.676e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 264
+fillNeumannEBBCRow: a_distance   = (-1.108e-01,2.932e-02,-4.555e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.218e-04 -3.575e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 265
+fillNeumannEBBCRow: a_distance   = (-1.407e-01,-4.740e-05,3.124e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.368e-05 -4.249e-06 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 266
+fillNeumannEBBCRow: a_distance   = (-8.084e-02,-3.131e-03,-6.489e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.327e-04 -1.003e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 267
+fillNeumannEBBCRow: a_distance   = (-4.703e-02,-1.796e-04,-3.829e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.270e-05 -8.084e-06 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 268
+fillNeumannEBBCRow: a_distance   = (-7.953e-02,2.963e-02,-3.631e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.746e-04 -2.474e-05 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 269
+fillNeumannEBBCRow: a_distance   = (-1.432e-01,5.855e-02,-7.040e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -4.043e-04  3.676e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 270
+fillNeumannEBBCRow: a_distance   = (-1.115e-01,5.919e-02,-6.164e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.218e-04  3.575e-05 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 271
+fillNeumannEBBCRow: a_distance   = (-1.424e-01,9.099e-02,-5.227e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.929e-04  1.066e-04 -9.467e-04 
+fillNeumannEBBCRow: a_currentRow = 272
+fillNeumannEBBCRow: a_distance   = (-1.108e-01,9.155e-02,-4.556e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -3.235e-04  1.078e-04 -9.766e-04 
+fillNeumannEBBCRow: a_currentRow = 273
+fillNeumannEBBCRow: a_distance   = (-1.406e-01,9.373e-02,3.125e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.368e-05  4.249e-06 -2.982e-05 
+fillNeumannEBBCRow: a_currentRow = 274
+fillNeumannEBBCRow: a_distance   = (-8.009e-02,5.994e-02,-4.704e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.746e-04  2.474e-05 -6.637e-04 
+fillNeumannEBBCRow: a_currentRow = 275
+fillNeumannEBBCRow: a_distance   = (-8.007e-02,9.121e-02,-5.006e-04)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -2.327e-04  1.003e-04 -9.146e-04 
+fillNeumannEBBCRow: a_currentRow = 276
+fillNeumannEBBCRow: a_distance   = (-4.698e-02,9.362e-02,-2.846e-05)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.270e-05  8.084e-06 -6.107e-05 
+fillNeumannEBBCRow: a_currentRow = 277
+fillNeumannEBBCRow: a_distance   = (-1.414e-01,-1.258e-01,6.213e-02)
+fillNeumannEBBCRow: input mat row: 
+matrix size = 278 x 4
+ 4.586e+03  4.586e+03  4.586e+03  4.586e+03 
+fillNeumannEBBCRow: amat leaving = 
+matrix size = 278 x 4
+ 0.000e+00 -1.335e-04 -1.335e-04 -2.758e-04 
+Weight matrix:
+M(0,0) = 5.625000000000000e-01
+M(1,1) = 5.625000000000000e-01
+M(2,2) = 8.101851851851852e-02
+M(3,3) = 2.633101851851852e-02
+M(4,4) = 8.101851851851852e-02
+M(5,5) = 8.101851851851852e-02
+M(6,6) = 2.633101851851852e-02
+M(7,7) = 1.181250000000000e-02
+M(8,8) = 2.633101851851852e-02
+M(9,9) = 2.633101851851852e-02
+M(10,10) = 1.181250000000000e-02
+M(11,11) = 6.314814814814815e-03
+M(12,12) = 1.181250000000000e-02
+M(13,13) = 1.181250000000000e-02
+M(14,14) = 6.314814814814815e-03
+M(15,15) = 3.772540762336680e-03
+M(16,16) = 8.101851851851852e-02
+M(17,17) = 8.101851851851852e-02
+M(18,18) = 2.633101851851852e-02
+M(19,19) = 1.181250000000000e-02
+M(20,20) = 2.633101851851852e-02
+M(21,21) = 2.633101851851852e-02
+M(22,22) = 1.181250000000000e-02
+M(23,23) = 6.314814814814815e-03
+M(24,24) = 1.181250000000000e-02
+M(25,25) = 1.181250000000000e-02
+M(26,26) = 6.314814814814815e-03
+M(27,27) = 3.772540762336680e-03
+M(28,28) = 6.314814814814815e-03
+M(29,29) = 6.314814814814815e-03
+M(30,30) = 3.772540762336680e-03
+M(31,31) = 2.434288447521866e-03
+M(32,32) = 1.662433556241427e-03
+M(33,33) = 2.434288447521866e-03
+M(34,34) = 3.772540762336680e-03
+M(35,35) = 3.772540762336680e-03
+M(36,36) = 2.434288447521866e-03
+M(37,37) = 1.662433556241427e-03
+M(38,38) = 1.185871056241427e-03
+M(39,39) = 1.662433556241427e-03
+M(40,40) = 2.434288447521866e-03
+M(41,41) = 3.772540762336680e-03
+M(42,42) = 6.314814814814815e-03
+M(43,43) = 6.314814814814815e-03
+M(44,44) = 3.772540762336680e-03
+M(45,45) = 2.434288447521866e-03
+M(46,46) = 1.662433556241427e-03
+M(47,47) = 2.434288447521866e-03
+M(48,48) = 3.772540762336680e-03
+M(49,49) = 6.314814814814815e-03
+M(50,50) = 1.181250000000000e-02
+M(51,51) = 1.181250000000000e-02
+M(52,52) = 6.314814814814815e-03
+M(53,53) = 3.772540762336680e-03
+M(54,54) = 2.434288447521866e-03
+M(55,55) = 3.772540762336680e-03
+M(56,56) = 6.314814814814815e-03
+M(57,57) = 1.181250000000000e-02
+M(58,58) = 2.633101851851852e-02
+M(59,59) = 2.633101851851852e-02
+M(60,60) = 1.181250000000000e-02
+M(61,61) = 6.314814814814815e-03
+M(62,62) = 3.772540762336680e-03
+M(63,63) = 2.434288447521866e-03
+M(64,64) = 3.772540762336680e-03
+M(65,65) = 6.314814814814815e-03
+M(66,66) = 1.181250000000000e-02
+M(67,67) = 1.181250000000000e-02
+M(68,68) = 6.314814814814815e-03
+M(69,69) = 3.772540762336680e-03
+M(70,70) = 2.434288447521866e-03
+M(71,71) = 1.662433556241427e-03
+M(72,72) = 2.434288447521866e-03
+M(73,73) = 3.772540762336680e-03
+M(74,74) = 6.314814814814815e-03
+M(75,75) = 6.314814814814815e-03
+M(76,76) = 3.772540762336680e-03
+M(77,77) = 2.434288447521866e-03
+M(78,78) = 1.662433556241427e-03
+M(79,79) = 1.185871056241427e-03
+M(80,80) = 1.662433556241427e-03
+M(81,81) = 2.434288447521866e-03
+M(82,82) = 3.772540762336680e-03
+M(83,83) = 3.772540762336680e-03
+M(84,84) = 2.434288447521866e-03
+M(85,85) = 1.662433556241427e-03
+M(86,86) = 1.185871056241427e-03
+M(87,87) = 1.185871056241427e-03
+M(88,88) = 1.662433556241427e-03
+M(89,89) = 2.434288447521866e-03
+M(90,90) = 2.434288447521866e-03
+M(91,91) = 1.662433556241427e-03
+M(92,92) = 1.185871056241427e-03
+M(93,93) = 8.756574004507889e-04
+M(94,94) = 1.185871056241427e-03
+M(95,95) = 1.662433556241427e-03
+M(96,96) = 2.434288447521866e-03
+M(97,97) = 3.772540762336680e-03
+M(98,98) = 3.772540762336680e-03
+M(99,99) = 2.434288447521866e-03
+M(100,100) = 1.662433556241427e-03
+M(101,101) = 1.185871056241427e-03
+M(102,102) = 1.662433556241427e-03
+M(103,103) = 2.434288447521866e-03
+M(104,104) = 3.772540762336680e-03
+M(105,105) = 6.314814814814815e-03
+M(106,106) = 6.314814814814815e-03
+M(107,107) = 3.772540762336680e-03
+M(108,108) = 2.434288447521866e-03
+M(109,109) = 1.662433556241427e-03
+M(110,110) = 2.434288447521866e-03
+M(111,111) = 3.772540762336680e-03
+M(112,112) = 6.314814814814815e-03
+M(113,113) = 1.181250000000000e-02
+M(114,114) = 1.181250000000000e-02
+M(115,115) = 6.314814814814815e-03
+M(116,116) = 3.772540762336680e-03
+M(117,117) = 2.434288447521866e-03
+M(118,118) = 1.662433556241427e-03
+M(119,119) = 2.434288447521866e-03
+M(120,120) = 3.772540762336680e-03
+M(121,121) = 6.314814814814815e-03
+M(122,122) = 6.314814814814815e-03
+M(123,123) = 3.772540762336680e-03
+M(124,124) = 2.434288447521866e-03
+M(125,125) = 1.662433556241427e-03
+M(126,126) = 1.185871056241427e-03
+M(127,127) = 1.662433556241427e-03
+M(128,128) = 2.434288447521866e-03
+M(129,129) = 3.772540762336680e-03
+M(130,130) = 3.772540762336680e-03
+M(131,131) = 2.434288447521866e-03
+M(132,132) = 1.662433556241427e-03
+M(133,133) = 1.185871056241427e-03
+M(134,134) = 8.756574004507889e-04
+M(135,135) = 1.185871056241427e-03
+M(136,136) = 1.662433556241427e-03
+M(137,137) = 2.434288447521866e-03
+M(138,138) = 2.434288447521866e-03
+M(139,139) = 1.662433556241427e-03
+M(140,140) = 1.185871056241427e-03
+M(141,141) = 8.756574004507889e-04
+M(142,142) = 2.633101851851852e-02
+M(143,143) = 6.314814814814815e-03
+M(144,144) = 1.181250000000000e-02
+M(145,145) = 2.633101851851852e-02
+M(146,146) = 6.314814814814815e-03
+M(147,147) = 6.314814814814815e-03
+M(148,148) = 2.434288447521866e-03
+M(149,149) = 6.314814814814815e-03
+M(150,150) = 2.434288447521866e-03
+M(151,151) = 3.772540762336680e-03
+M(152,152) = 6.314814814814815e-03
+M(153,153) = 2.434288447521866e-03
+M(154,154) = 3.772540762336680e-03
+M(155,155) = 2.633101851851852e-02
+M(156,156) = 6.314814814814815e-03
+M(157,157) = 3.772540762336680e-03
+M(158,158) = 1.181250000000000e-02
+M(159,159) = 1.662433556241427e-03
+M(160,160) = 3.772540762336680e-03
+M(161,161) = 8.756574004507889e-04
+M(162,162) = 8.000000000000000e-03
+M(163,163) = 1.562500000000000e-02
+M(164,164) = 1.562500000000000e-02
+M(165,165) = 3.703703703703703e-02
+M(166,166) = 3.703703703703703e-02
+M(167,167) = 1.250000000000000e-01
+M(168,168) = 1.250000000000000e-01
+M(169,169) = 1.000000000000000e+00
+M(170,170) = 8.000000000000000e-03
+M(171,171) = 1.562500000000000e-02
+M(172,172) = 1.562500000000000e-02
+M(173,173) = 3.703703703703703e-02
+M(174,174) = 3.703703703703703e-02
+M(175,175) = 1.250000000000000e-01
+M(176,176) = 1.250000000000000e-01
+M(177,177) = 1.000000000000000e+00
+M(178,178) = 3.703703703703703e-02
+M(179,179) = 1.562500000000000e-02
+M(180,180) = 3.703703703703703e-02
+M(181,181) = 3.703703703703703e-02
+M(182,182) = 1.250000000000000e-01
+M(183,183) = 8.000000000000000e-03
+M(184,184) = 1.562500000000000e-02
+M(185,185) = 1.562500000000000e-02
+M(186,186) = 3.703703703703703e-02
+M(187,187) = 3.703703703703703e-02
+M(188,188) = 1.250000000000000e-01
+M(189,189) = 1.250000000000000e-01
+M(190,190) = 1.000000000000000e+00
+M(191,191) = 3.703703703703703e-02
+M(192,192) = 1.562500000000000e-02
+M(193,193) = 1.250000000000000e-01
+M(194,194) = 3.703703703703703e-02
+M(195,195) = 3.703703703703703e-02
+M(196,196) = 1.250000000000000e-01
+M(197,197) = 1.250000000000000e-01
+M(198,198) = 1.000000000000000e+00
+M(199,199) = 8.000000000000000e-03
+M(200,200) = 1.562500000000000e-02
+M(201,201) = 1.562500000000000e-02
+M(202,202) = 3.703703703703703e-02
+M(203,203) = 3.703703703703703e-02
+M(204,204) = 1.250000000000000e-01
+M(205,205) = 1.250000000000000e-01
+M(206,206) = 1.000000000000000e+00
+M(207,207) = 3.703703703703703e-02
+M(208,208) = 1.562500000000000e-02
+M(209,209) = 1.250000000000000e-01
+M(210,210) = 3.703703703703703e-02
+M(211,211) = 3.703703703703703e-02
+M(212,212) = 1.250000000000000e-01
+M(213,213) = 1.250000000000000e-01
+M(214,214) = 1.000000000000000e+00
+M(215,215) = 3.703703703703703e-02
+M(216,216) = 1.250000000000000e-01
+M(217,217) = 1.562500000000000e-02
+M(218,218) = 3.703703703703703e-02
+M(219,219) = 3.703703703703703e-02
+M(220,220) = 1.250000000000000e-01
+M(221,221) = 1.250000000000000e-01
+M(222,222) = 1.000000000000000e+00
+M(223,223) = 3.703703703703703e-02
+M(224,224) = 1.250000000000000e-01
+M(225,225) = 1.562500000000000e-02
+M(226,226) = 3.703703703703703e-02
+M(227,227) = 3.703703703703703e-02
+M(228,228) = 1.250000000000000e-01
+M(229,229) = 1.250000000000000e-01
+M(230,230) = 1.000000000000000e+00
+M(231,231) = 1.562500000000000e-02
+M(232,232) = 3.703703703703703e-02
+M(233,233) = 3.703703703703703e-02
+M(234,234) = 1.250000000000000e-01
+M(235,235) = 3.703703703703703e-02
+M(236,236) = 1.250000000000000e-01
+M(237,237) = 1.250000000000000e-01
+M(238,238) = 1.562500000000000e-02
+M(239,239) = 3.703703703703703e-02
+M(240,240) = 3.703703703703703e-02
+M(241,241) = 1.250000000000000e-01
+M(242,242) = 3.703703703703703e-02
+M(243,243) = 1.562500000000000e-02
+M(244,244) = 3.703703703703703e-02
+M(245,245) = 3.703703703703703e-02
+M(246,246) = 1.250000000000000e-01
+M(247,247) = 1.250000000000000e-01
+M(248,248) = 1.562500000000000e-02
+M(249,249) = 3.703703703703703e-02
+M(250,250) = 3.703703703703703e-02
+M(251,251) = 1.250000000000000e-01
+M(252,252) = 3.703703703703703e-02
+M(253,253) = 1.250000000000000e-01
+M(254,254) = 1.250000000000000e-01
+M(255,255) = 1.562500000000000e-02
+M(256,256) = 3.703703703703703e-02
+M(257,257) = 3.703703703703703e-02
+M(258,258) = 1.562500000000000e-02
+M(259,259) = 3.703703703703703e-02
+M(260,260) = 1.250000000000000e-01
+M(261,261) = 1.562500000000000e-02
+M(262,262) = 3.703703703703703e-02
+M(263,263) = 3.703703703703703e-02
+M(264,264) = 1.250000000000000e-01
+M(265,265) = 3.703703703703703e-02
+M(266,266) = 1.562500000000000e-02
+M(267,267) = 3.703703703703703e-02
+M(268,268) = 3.703703703703703e-02
+M(269,269) = 1.562500000000000e-02
+M(270,270) = 3.703703703703703e-02
+M(271,271) = 3.703703703703703e-02
+M(272,272) = 1.250000000000000e-01
+M(273,273) = 1.250000000000000e-01
+M(274,274) = 1.562500000000000e-02
+M(275,275) = 3.703703703703703e-02
+M(276,276) = 1.250000000000000e-01
+M(277,277) = 1.562500000000000e-02
+Moment matrix:
+matrix size = 278 x 4
+row 0=   1.000e+00 -1.562e-02  0.000e+00  0.000e+00 
+row 1=   1.000e+00  1.562e-02  0.000e+00  0.000e+00 
+row 2=   1.000e+00  4.688e-02  0.000e+00  0.000e+00 
+row 3=   1.000e+00  7.812e-02  0.000e+00  0.000e+00 
+row 4=   1.000e+00 -1.562e-02  3.125e-02  0.000e+00 
+row 5=   1.000e+00  1.562e-02  3.125e-02  0.000e+00 
+row 6=   1.000e+00  4.688e-02  3.125e-02  0.000e+00 
+row 7=   1.000e+00  7.812e-02  3.125e-02  0.000e+00 
+row 8=   1.000e+00 -1.562e-02  6.250e-02  0.000e+00 
+row 9=   1.000e+00  1.562e-02  6.250e-02  0.000e+00 
+row 10=   1.000e+00  4.688e-02  6.250e-02  0.000e+00 
+row 11=   1.000e+00  7.812e-02  6.250e-02  0.000e+00 
+row 12=   1.000e+00 -1.562e-02  9.375e-02  0.000e+00 
+row 13=   1.000e+00  1.562e-02  9.375e-02  0.000e+00 
+row 14=   1.000e+00  4.688e-02  9.375e-02  0.000e+00 
+row 15=   1.000e+00  7.812e-02  9.375e-02  0.000e+00 
+row 16=   1.000e+00 -1.562e-02  0.000e+00  3.125e-02 
+row 17=   1.000e+00  1.562e-02  0.000e+00  3.125e-02 
+row 18=   1.000e+00  4.688e-02  0.000e+00  3.125e-02 
+row 19=   1.000e+00  7.812e-02  0.000e+00  3.125e-02 
+row 20=   1.000e+00 -1.562e-02  3.125e-02  3.125e-02 
+row 21=   1.000e+00  1.562e-02  3.125e-02  3.125e-02 
+row 22=   1.000e+00  4.688e-02  3.125e-02  3.125e-02 
+row 23=   1.000e+00  7.812e-02  3.125e-02  3.125e-02 
+row 24=   1.000e+00 -1.562e-02  6.250e-02  3.125e-02 
+row 25=   1.000e+00  1.562e-02  6.250e-02  3.125e-02 
+row 26=   1.000e+00  4.688e-02  6.250e-02  3.125e-02 
+row 27=   1.000e+00  7.812e-02  6.250e-02  3.125e-02 
+row 28=   1.000e+00 -1.562e-02  9.375e-02  3.125e-02 
+row 29=   1.000e+00  1.562e-02  9.375e-02  3.125e-02 
+row 30=   1.000e+00  4.688e-02  9.375e-02  3.125e-02 
+row 31=   1.000e+00  7.812e-02  9.375e-02  3.125e-02 
+row 32=   1.000e+00 -7.812e-02 -9.375e-02  6.250e-02 
+row 33=   1.000e+00 -4.688e-02 -9.375e-02  6.250e-02 
+row 34=   1.000e+00 -1.562e-02 -9.375e-02  6.250e-02 
+row 35=   1.000e+00  1.562e-02 -9.375e-02  6.250e-02 
+row 36=   1.000e+00  4.688e-02 -9.375e-02  6.250e-02 
+row 37=   1.000e+00  7.812e-02 -9.375e-02  6.250e-02 
+row 38=   1.000e+00  1.094e-01 -9.375e-02  6.250e-02 
+row 39=   1.000e+00 -1.094e-01 -6.250e-02  6.250e-02 
+row 40=   1.000e+00 -7.812e-02 -6.250e-02  6.250e-02 
+row 41=   1.000e+00 -4.688e-02 -6.250e-02  6.250e-02 
+row 42=   1.000e+00 -1.562e-02 -6.250e-02  6.250e-02 
+row 43=   1.000e+00  1.562e-02 -6.250e-02  6.250e-02 
+row 44=   1.000e+00  4.688e-02 -6.250e-02  6.250e-02 
+row 45=   1.000e+00  7.812e-02 -6.250e-02  6.250e-02 
+row 46=   1.000e+00  1.094e-01 -6.250e-02  6.250e-02 
+row 47=   1.000e+00 -1.094e-01 -3.125e-02  6.250e-02 
+row 48=   1.000e+00 -7.812e-02 -3.125e-02  6.250e-02 
+row 49=   1.000e+00 -4.688e-02 -3.125e-02  6.250e-02 
+row 50=   1.000e+00 -1.562e-02 -3.125e-02  6.250e-02 
+row 51=   1.000e+00  1.562e-02 -3.125e-02  6.250e-02 
+row 52=   1.000e+00  4.688e-02 -3.125e-02  6.250e-02 
+row 53=   1.000e+00  7.812e-02 -3.125e-02  6.250e-02 
+row 54=   1.000e+00  1.094e-01 -3.125e-02  6.250e-02 
+row 55=   1.000e+00 -1.094e-01  0.000e+00  6.250e-02 
+row 56=   1.000e+00 -7.812e-02  0.000e+00  6.250e-02 
+row 57=   1.000e+00 -4.688e-02  0.000e+00  6.250e-02 
+row 58=   1.000e+00 -1.562e-02  0.000e+00  6.250e-02 
+row 59=   1.000e+00  1.562e-02  0.000e+00  6.250e-02 
+row 60=   1.000e+00  4.688e-02  0.000e+00  6.250e-02 
+row 61=   1.000e+00  7.812e-02  0.000e+00  6.250e-02 
+row 62=   1.000e+00  1.094e-01  0.000e+00  6.250e-02 
+row 63=   1.000e+00 -1.094e-01  3.125e-02  6.250e-02 
+row 64=   1.000e+00 -7.812e-02  3.125e-02  6.250e-02 
+row 65=   1.000e+00 -4.688e-02  3.125e-02  6.250e-02 
+row 66=   1.000e+00 -1.562e-02  3.125e-02  6.250e-02 
+row 67=   1.000e+00  1.562e-02  3.125e-02  6.250e-02 
+row 68=   1.000e+00  4.688e-02  3.125e-02  6.250e-02 
+row 69=   1.000e+00  7.812e-02  3.125e-02  6.250e-02 
+row 70=   1.000e+00  1.094e-01  3.125e-02  6.250e-02 
+row 71=   1.000e+00 -1.094e-01  6.250e-02  6.250e-02 
+row 72=   1.000e+00 -7.812e-02  6.250e-02  6.250e-02 
+row 73=   1.000e+00 -4.688e-02  6.250e-02  6.250e-02 
+row 74=   1.000e+00 -1.562e-02  6.250e-02  6.250e-02 
+row 75=   1.000e+00  1.562e-02  6.250e-02  6.250e-02 
+row 76=   1.000e+00  4.688e-02  6.250e-02  6.250e-02 
+row 77=   1.000e+00  7.812e-02  6.250e-02  6.250e-02 
+row 78=   1.000e+00  1.094e-01  6.250e-02  6.250e-02 
+row 79=   1.000e+00 -1.094e-01  9.375e-02  6.250e-02 
+row 80=   1.000e+00 -7.812e-02  9.375e-02  6.250e-02 
+row 81=   1.000e+00 -4.688e-02  9.375e-02  6.250e-02 
+row 82=   1.000e+00 -1.562e-02  9.375e-02  6.250e-02 
+row 83=   1.000e+00  1.562e-02  9.375e-02  6.250e-02 
+row 84=   1.000e+00  4.688e-02  9.375e-02  6.250e-02 
+row 85=   1.000e+00  7.812e-02  9.375e-02  6.250e-02 
+row 86=   1.000e+00  1.094e-01  9.375e-02  6.250e-02 
+row 87=   1.000e+00 -7.812e-02 -9.375e-02  9.375e-02 
+row 88=   1.000e+00 -4.688e-02 -9.375e-02  9.375e-02 
+row 89=   1.000e+00 -1.562e-02 -9.375e-02  9.375e-02 
+row 90=   1.000e+00  1.562e-02 -9.375e-02  9.375e-02 
+row 91=   1.000e+00  4.688e-02 -9.375e-02  9.375e-02 
+row 92=   1.000e+00  7.812e-02 -9.375e-02  9.375e-02 
+row 93=   1.000e+00  1.094e-01 -9.375e-02  9.375e-02 
+row 94=   1.000e+00 -1.094e-01 -6.250e-02  9.375e-02 
+row 95=   1.000e+00 -7.812e-02 -6.250e-02  9.375e-02 
+row 96=   1.000e+00 -4.688e-02 -6.250e-02  9.375e-02 
+row 97=   1.000e+00 -1.562e-02 -6.250e-02  9.375e-02 
+row 98=   1.000e+00  1.562e-02 -6.250e-02  9.375e-02 
+row 99=   1.000e+00  4.688e-02 -6.250e-02  9.375e-02 
+row 100=   1.000e+00  7.812e-02 -6.250e-02  9.375e-02 
+row 101=   1.000e+00  1.094e-01 -6.250e-02  9.375e-02 
+row 102=   1.000e+00 -1.094e-01 -3.125e-02  9.375e-02 
+row 103=   1.000e+00 -7.812e-02 -3.125e-02  9.375e-02 
+row 104=   1.000e+00 -4.688e-02 -3.125e-02  9.375e-02 
+row 105=   1.000e+00 -1.562e-02 -3.125e-02  9.375e-02 
+row 106=   1.000e+00  1.562e-02 -3.125e-02  9.375e-02 
+row 107=   1.000e+00  4.688e-02 -3.125e-02  9.375e-02 
+row 108=   1.000e+00  7.812e-02 -3.125e-02  9.375e-02 
+row 109=   1.000e+00  1.094e-01 -3.125e-02  9.375e-02 
+row 110=   1.000e+00 -1.094e-01  0.000e+00  9.375e-02 
+row 111=   1.000e+00 -7.812e-02  0.000e+00  9.375e-02 
+row 112=   1.000e+00 -4.688e-02  0.000e+00  9.375e-02 
+row 113=   1.000e+00 -1.562e-02  0.000e+00  9.375e-02 
+row 114=   1.000e+00  1.562e-02  0.000e+00  9.375e-02 
+row 115=   1.000e+00  4.688e-02  0.000e+00  9.375e-02 
+row 116=   1.000e+00  7.812e-02  0.000e+00  9.375e-02 
+row 117=   1.000e+00  1.094e-01  0.000e+00  9.375e-02 
+row 118=   1.000e+00 -1.094e-01  3.125e-02  9.375e-02 
+row 119=   1.000e+00 -7.812e-02  3.125e-02  9.375e-02 
+row 120=   1.000e+00 -4.688e-02  3.125e-02  9.375e-02 
+row 121=   1.000e+00 -1.562e-02  3.125e-02  9.375e-02 
+row 122=   1.000e+00  1.562e-02  3.125e-02  9.375e-02 
+row 123=   1.000e+00  4.688e-02  3.125e-02  9.375e-02 
+row 124=   1.000e+00  7.812e-02  3.125e-02  9.375e-02 
+row 125=   1.000e+00  1.094e-01  3.125e-02  9.375e-02 
+row 126=   1.000e+00 -1.094e-01  6.250e-02  9.375e-02 
+row 127=   1.000e+00 -7.812e-02  6.250e-02  9.375e-02 
+row 128=   1.000e+00 -4.688e-02  6.250e-02  9.375e-02 
+row 129=   1.000e+00 -1.562e-02  6.250e-02  9.375e-02 
+row 130=   1.000e+00  1.562e-02  6.250e-02  9.375e-02 
+row 131=   1.000e+00  4.688e-02  6.250e-02  9.375e-02 
+row 132=   1.000e+00  7.812e-02  6.250e-02  9.375e-02 
+row 133=   1.000e+00  1.094e-01  6.250e-02  9.375e-02 
+row 134=   1.000e+00 -1.094e-01  9.375e-02  9.375e-02 
+row 135=   1.000e+00 -7.812e-02  9.375e-02  9.375e-02 
+row 136=   1.000e+00 -4.688e-02  9.375e-02  9.375e-02 
+row 137=   1.000e+00 -1.562e-02  9.375e-02  9.375e-02 
+row 138=   1.000e+00  1.562e-02  9.375e-02  9.375e-02 
+row 139=   1.000e+00  4.688e-02  9.375e-02  9.375e-02 
+row 140=   1.000e+00  7.812e-02  9.375e-02  9.375e-02 
+row 141=   1.000e+00  1.094e-01  9.375e-02  9.375e-02 
+row 142=   1.000e+00 -4.547e-01 -4.289e-01 -6.702e-02 
+row 143=   1.000e+00 -4.516e-01 -4.289e-01 -6.702e-02 
+row 144=   1.000e+00 -4.539e-01 -4.382e-01 -6.333e-02 
+row 145=   1.000e+00 -4.445e-01 -4.391e-01 -6.702e-02 
+row 146=   1.000e+00 -4.618e-01 -4.391e-01 -6.702e-02 
+row 147=   1.000e+00 -4.445e-01 -4.360e-01 -6.702e-02 
+row 148=   1.000e+00 -4.618e-01 -4.360e-01 -6.702e-02 
+row 149=   1.000e+00 -4.547e-01 -4.462e-01 -6.702e-02 
+row 150=   1.000e+00 -4.516e-01 -4.462e-01 -6.702e-02 
+row 151=   1.000e+00 -4.542e-01 -4.393e-01 -7.076e-02 
+row 152=   1.000e+00 -4.535e-01 -4.389e-01 -6.643e-02 
+row 153=   1.000e+00 -4.529e-01 -4.389e-01 -6.643e-02 
+row 154=   1.000e+00 -4.549e-01 -4.386e-01 -7.076e-02 
+row 155=   1.000e+00 -4.533e-01 -4.378e-01 -6.258e-02 
+row 156=   1.000e+00 -4.532e-01 -4.378e-01 -6.258e-02 
+row 157=   1.000e+00 -4.545e-01 -4.379e-01 -6.643e-02 
+row 158=   1.000e+00 -4.534e-01 -4.377e-01 -6.258e-02 
+row 159=   1.000e+00 -4.545e-01 -4.373e-01 -6.643e-02 
+row 160=   1.000e+00 -4.534e-01 -4.375e-01 -6.258e-02 
+row 161=   1.000e+00 -4.532e-01 -4.376e-01 -6.255e-02 
+row 162=   0.000e+00 -5.242e-06 -1.360e-05 -6.196e-05 
+row 163=   0.000e+00 -1.027e-05 -7.050e-05 -3.128e-04 
+row 164=   0.000e+00 -9.588e-05 -1.606e-04 -9.155e-04 
+row 165=   0.000e+00 -3.448e-05 -1.724e-04 -9.766e-04 
+row 166=   0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+row 167=   0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+row 168=   0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+row 169=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 170=   0.000e+00  1.027e-05 -7.050e-05 -3.128e-04 
+row 171=   0.000e+00  5.242e-06 -1.360e-05 -6.196e-05 
+row 172=   0.000e+00  3.448e-05 -1.724e-04 -9.766e-04 
+row 173=   0.000e+00  9.588e-05 -1.606e-04 -9.155e-04 
+row 174=   0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+row 175=   0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+row 176=   0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+row 177=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 178=   0.000e+00 -4.375e-05 -4.375e-05 -2.731e-04 
+row 179=   0.000e+00 -2.530e-04 -2.530e-04 -9.766e-04 
+row 180=   0.000e+00 -1.778e-04 -2.489e-04 -9.766e-04 
+row 181=   0.000e+00 -2.489e-04 -1.778e-04 -9.766e-04 
+row 182=   0.000e+00 -1.313e-04 -1.313e-04 -7.035e-04 
+row 183=   0.000e+00 -1.360e-05 -5.242e-06 -6.196e-05 
+row 184=   0.000e+00 -1.606e-04 -9.588e-05 -9.155e-04 
+row 185=   0.000e+00 -7.050e-05 -1.027e-05 -3.128e-04 
+row 186=   0.000e+00 -1.724e-04 -3.448e-05 -9.766e-04 
+row 187=   0.000e+00 -1.029e-04 -1.029e-04 -9.766e-04 
+row 188=   0.000e+00 -3.414e-05 -1.024e-04 -9.766e-04 
+row 189=   0.000e+00 -1.024e-04 -3.414e-05 -9.766e-04 
+row 190=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 191=   0.000e+00  1.606e-04 -9.588e-05 -9.155e-04 
+row 192=   0.000e+00  1.360e-05 -5.242e-06 -6.196e-05 
+row 193=   0.000e+00  1.724e-04 -3.448e-05 -9.766e-04 
+row 194=   0.000e+00  7.050e-05 -1.027e-05 -3.128e-04 
+row 195=   0.000e+00  3.414e-05 -1.024e-04 -9.766e-04 
+row 196=   0.000e+00  1.029e-04 -1.029e-04 -9.766e-04 
+row 197=   0.000e+00  3.398e-05 -3.398e-05 -9.766e-04 
+row 198=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 199=   0.000e+00 -7.050e-05  1.027e-05 -3.128e-04 
+row 200=   0.000e+00 -1.724e-04  3.448e-05 -9.766e-04 
+row 201=   0.000e+00 -1.360e-05  5.242e-06 -6.196e-05 
+row 202=   0.000e+00 -1.606e-04  9.588e-05 -9.155e-04 
+row 203=   0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+row 204=   0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+row 205=   0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+row 206=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 207=   0.000e+00  1.724e-04  3.448e-05 -9.766e-04 
+row 208=   0.000e+00  7.050e-05  1.027e-05 -3.128e-04 
+row 209=   0.000e+00  1.606e-04  9.588e-05 -9.155e-04 
+row 210=   0.000e+00  1.360e-05  5.242e-06 -6.196e-05 
+row 211=   0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+row 212=   0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+row 213=   0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+row 214=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 215=   0.000e+00 -9.588e-05  1.606e-04 -9.155e-04 
+row 216=   0.000e+00 -3.448e-05  1.724e-04 -9.766e-04 
+row 217=   0.000e+00 -5.242e-06  1.360e-05 -6.196e-05 
+row 218=   0.000e+00 -1.027e-05  7.050e-05 -3.128e-04 
+row 219=   0.000e+00 -1.024e-04  3.414e-05 -9.766e-04 
+row 220=   0.000e+00 -3.398e-05  3.398e-05 -9.766e-04 
+row 221=   0.000e+00 -1.029e-04  1.029e-04 -9.766e-04 
+row 222=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 223=   0.000e+00  3.448e-05  1.724e-04 -9.766e-04 
+row 224=   0.000e+00  9.588e-05  1.606e-04 -9.155e-04 
+row 225=   0.000e+00  1.027e-05  7.050e-05 -3.128e-04 
+row 226=   0.000e+00  5.242e-06  1.360e-05 -6.196e-05 
+row 227=   0.000e+00  3.398e-05  3.398e-05 -9.766e-04 
+row 228=   0.000e+00  1.024e-04  3.414e-05 -9.766e-04 
+row 229=   0.000e+00  3.414e-05  1.024e-04 -9.766e-04 
+row 230=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 231=   0.000e+00 -3.458e-05 -5.516e-05 -1.400e-04 
+row 232=   0.000e+00 -1.195e-04 -2.611e-04 -6.423e-04 
+row 233=   0.000e+00 -2.454e-04 -3.158e-04 -9.320e-04 
+row 234=   0.000e+00 -1.817e-04 -3.271e-04 -9.766e-04 
+row 235=   0.000e+00 -2.319e-04 -3.637e-04 -8.365e-04 
+row 236=   0.000e+00 -6.750e-05 -1.502e-04 -3.342e-04 
+row 237=   0.000e+00 -1.336e-05 -1.689e-05 -4.458e-05 
+row 238=   0.000e+00 -1.066e-04 -3.929e-04 -9.467e-04 
+row 239=   0.000e+00 -3.676e-05 -4.043e-04 -9.766e-04 
+row 240=   0.000e+00 -1.078e-04 -3.235e-04 -9.766e-04 
+row 241=   0.000e+00 -3.575e-05 -3.218e-04 -9.766e-04 
+row 242=   0.000e+00 -4.249e-06 -1.368e-05 -2.982e-05 
+row 243=   0.000e+00  3.676e-05 -4.043e-04 -9.766e-04 
+row 244=   0.000e+00  1.066e-04 -3.929e-04 -9.467e-04 
+row 245=   0.000e+00  3.575e-05 -3.218e-04 -9.766e-04 
+row 246=   0.000e+00  1.078e-04 -3.235e-04 -9.766e-04 
+row 247=   0.000e+00  4.249e-06 -1.368e-05 -2.982e-05 
+row 248=   0.000e+00 -5.516e-05 -3.458e-05 -1.400e-04 
+row 249=   0.000e+00 -3.158e-04 -2.454e-04 -9.320e-04 
+row 250=   0.000e+00 -2.611e-04 -1.195e-04 -6.423e-04 
+row 251=   0.000e+00 -3.271e-04 -1.817e-04 -9.766e-04 
+row 252=   0.000e+00 -3.637e-04 -2.319e-04 -8.365e-04 
+row 253=   0.000e+00 -1.689e-05 -1.336e-05 -4.458e-05 
+row 254=   0.000e+00 -1.502e-04 -6.750e-05 -3.342e-04 
+row 255=   0.000e+00 -1.003e-04 -2.327e-04 -9.146e-04 
+row 256=   0.000e+00 -2.474e-05 -1.746e-04 -6.637e-04 
+row 257=   0.000e+00 -8.084e-06 -1.270e-05 -6.107e-05 
+row 258=   0.000e+00  2.474e-05 -1.746e-04 -6.637e-04 
+row 259=   0.000e+00  1.003e-04 -2.327e-04 -9.146e-04 
+row 260=   0.000e+00  8.084e-06 -1.270e-05 -6.107e-05 
+row 261=   0.000e+00 -3.929e-04 -1.066e-04 -9.467e-04 
+row 262=   0.000e+00 -3.235e-04 -1.078e-04 -9.766e-04 
+row 263=   0.000e+00 -4.043e-04 -3.676e-05 -9.766e-04 
+row 264=   0.000e+00 -3.218e-04 -3.575e-05 -9.766e-04 
+row 265=   0.000e+00 -1.368e-05 -4.249e-06 -2.982e-05 
+row 266=   0.000e+00 -2.327e-04 -1.003e-04 -9.146e-04 
+row 267=   0.000e+00 -1.270e-05 -8.084e-06 -6.107e-05 
+row 268=   0.000e+00 -1.746e-04 -2.474e-05 -6.637e-04 
+row 269=   0.000e+00 -4.043e-04  3.676e-05 -9.766e-04 
+row 270=   0.000e+00 -3.218e-04  3.575e-05 -9.766e-04 
+row 271=   0.000e+00 -3.929e-04  1.066e-04 -9.467e-04 
+row 272=   0.000e+00 -3.235e-04  1.078e-04 -9.766e-04 
+row 273=   0.000e+00 -1.368e-05  4.249e-06 -2.982e-05 
+row 274=   0.000e+00 -1.746e-04  2.474e-05 -6.637e-04 
+row 275=   0.000e+00 -2.327e-04  1.003e-04 -9.146e-04 
+row 276=   0.000e+00 -1.270e-05  8.084e-06 -6.107e-05 
+row 277=   0.000e+00 -1.335e-04 -1.335e-04 -2.758e-04 
+WM   matrix: :
+matrix size = 278 x 4
+row 0=   5.625e-01 -8.789e-03  0.000e+00  0.000e+00 
+row 1=   5.625e-01  8.789e-03  0.000e+00  0.000e+00 
+row 2=   8.102e-02  3.798e-03  0.000e+00  0.000e+00 
+row 3=   2.633e-02  2.057e-03  0.000e+00  0.000e+00 
+row 4=   8.102e-02 -1.266e-03  2.532e-03  0.000e+00 
+row 5=   8.102e-02  1.266e-03  2.532e-03  0.000e+00 
+row 6=   2.633e-02  1.234e-03  8.228e-04  0.000e+00 
+row 7=   1.181e-02  9.229e-04  3.691e-04  0.000e+00 
+row 8=   2.633e-02 -4.114e-04  1.646e-03  0.000e+00 
+row 9=   2.633e-02  4.114e-04  1.646e-03  0.000e+00 
+row 10=   1.181e-02  5.537e-04  7.383e-04  0.000e+00 
+row 11=   6.315e-03  4.933e-04  3.947e-04  0.000e+00 
+row 12=   1.181e-02 -1.846e-04  1.107e-03  0.000e+00 
+row 13=   1.181e-02  1.846e-04  1.107e-03  0.000e+00 
+row 14=   6.315e-03  2.960e-04  5.920e-04  0.000e+00 
+row 15=   3.773e-03  2.947e-04  3.537e-04  0.000e+00 
+row 16=   8.102e-02 -1.266e-03  0.000e+00  2.532e-03 
+row 17=   8.102e-02  1.266e-03  0.000e+00  2.532e-03 
+row 18=   2.633e-02  1.234e-03  0.000e+00  8.228e-04 
+row 19=   1.181e-02  9.229e-04  0.000e+00  3.691e-04 
+row 20=   2.633e-02 -4.114e-04  8.228e-04  8.228e-04 
+row 21=   2.633e-02  4.114e-04  8.228e-04  8.228e-04 
+row 22=   1.181e-02  5.537e-04  3.691e-04  3.691e-04 
+row 23=   6.315e-03  4.933e-04  1.973e-04  1.973e-04 
+row 24=   1.181e-02 -1.846e-04  7.383e-04  3.691e-04 
+row 25=   1.181e-02  1.846e-04  7.383e-04  3.691e-04 
+row 26=   6.315e-03  2.960e-04  3.947e-04  1.973e-04 
+row 27=   3.773e-03  2.947e-04  2.358e-04  1.179e-04 
+row 28=   6.315e-03 -9.867e-05  5.920e-04  1.973e-04 
+row 29=   6.315e-03  9.867e-05  5.920e-04  1.973e-04 
+row 30=   3.773e-03  1.768e-04  3.537e-04  1.179e-04 
+row 31=   2.434e-03  1.902e-04  2.282e-04  7.607e-05 
+row 32=   1.662e-03 -1.299e-04 -1.559e-04  1.039e-04 
+row 33=   2.434e-03 -1.141e-04 -2.282e-04  1.521e-04 
+row 34=   3.773e-03 -5.895e-05 -3.537e-04  2.358e-04 
+row 35=   3.773e-03  5.895e-05 -3.537e-04  2.358e-04 
+row 36=   2.434e-03  1.141e-04 -2.282e-04  1.521e-04 
+row 37=   1.662e-03  1.299e-04 -1.559e-04  1.039e-04 
+row 38=   1.186e-03  1.297e-04 -1.112e-04  7.412e-05 
+row 39=   1.662e-03 -1.818e-04 -1.039e-04  1.039e-04 
+row 40=   2.434e-03 -1.902e-04 -1.521e-04  1.521e-04 
+row 41=   3.773e-03 -1.768e-04 -2.358e-04  2.358e-04 
+row 42=   6.315e-03 -9.867e-05 -3.947e-04  3.947e-04 
+row 43=   6.315e-03  9.867e-05 -3.947e-04  3.947e-04 
+row 44=   3.773e-03  1.768e-04 -2.358e-04  2.358e-04 
+row 45=   2.434e-03  1.902e-04 -1.521e-04  1.521e-04 
+row 46=   1.662e-03  1.818e-04 -1.039e-04  1.039e-04 
+row 47=   2.434e-03 -2.663e-04 -7.607e-05  1.521e-04 
+row 48=   3.773e-03 -2.947e-04 -1.179e-04  2.358e-04 
+row 49=   6.315e-03 -2.960e-04 -1.973e-04  3.947e-04 
+row 50=   1.181e-02 -1.846e-04 -3.691e-04  7.383e-04 
+row 51=   1.181e-02  1.846e-04 -3.691e-04  7.383e-04 
+row 52=   6.315e-03  2.960e-04 -1.973e-04  3.947e-04 
+row 53=   3.773e-03  2.947e-04 -1.179e-04  2.358e-04 
+row 54=   2.434e-03  2.663e-04 -7.607e-05  1.521e-04 
+row 55=   3.773e-03 -4.126e-04  0.000e+00  2.358e-04 
+row 56=   6.315e-03 -4.933e-04  0.000e+00  3.947e-04 
+row 57=   1.181e-02 -5.537e-04  0.000e+00  7.383e-04 
+row 58=   2.633e-02 -4.114e-04  0.000e+00  1.646e-03 
+row 59=   2.633e-02  4.114e-04  0.000e+00  1.646e-03 
+row 60=   1.181e-02  5.537e-04  0.000e+00  7.383e-04 
+row 61=   6.315e-03  4.933e-04  0.000e+00  3.947e-04 
+row 62=   3.773e-03  4.126e-04  0.000e+00  2.358e-04 
+row 63=   2.434e-03 -2.663e-04  7.607e-05  1.521e-04 
+row 64=   3.773e-03 -2.947e-04  1.179e-04  2.358e-04 
+row 65=   6.315e-03 -2.960e-04  1.973e-04  3.947e-04 
+row 66=   1.181e-02 -1.846e-04  3.691e-04  7.383e-04 
+row 67=   1.181e-02  1.846e-04  3.691e-04  7.383e-04 
+row 68=   6.315e-03  2.960e-04  1.973e-04  3.947e-04 
+row 69=   3.773e-03  2.947e-04  1.179e-04  2.358e-04 
+row 70=   2.434e-03  2.663e-04  7.607e-05  1.521e-04 
+row 71=   1.662e-03 -1.818e-04  1.039e-04  1.039e-04 
+row 72=   2.434e-03 -1.902e-04  1.521e-04  1.521e-04 
+row 73=   3.773e-03 -1.768e-04  2.358e-04  2.358e-04 
+row 74=   6.315e-03 -9.867e-05  3.947e-04  3.947e-04 
+row 75=   6.315e-03  9.867e-05  3.947e-04  3.947e-04 
+row 76=   3.773e-03  1.768e-04  2.358e-04  2.358e-04 
+row 77=   2.434e-03  1.902e-04  1.521e-04  1.521e-04 
+row 78=   1.662e-03  1.818e-04  1.039e-04  1.039e-04 
+row 79=   1.186e-03 -1.297e-04  1.112e-04  7.412e-05 
+row 80=   1.662e-03 -1.299e-04  1.559e-04  1.039e-04 
+row 81=   2.434e-03 -1.141e-04  2.282e-04  1.521e-04 
+row 82=   3.773e-03 -5.895e-05  3.537e-04  2.358e-04 
+row 83=   3.773e-03  5.895e-05  3.537e-04  2.358e-04 
+row 84=   2.434e-03  1.141e-04  2.282e-04  1.521e-04 
+row 85=   1.662e-03  1.299e-04  1.559e-04  1.039e-04 
+row 86=   1.186e-03  1.297e-04  1.112e-04  7.412e-05 
+row 87=   1.186e-03 -9.265e-05 -1.112e-04  1.112e-04 
+row 88=   1.662e-03 -7.793e-05 -1.559e-04  1.559e-04 
+row 89=   2.434e-03 -3.804e-05 -2.282e-04  2.282e-04 
+row 90=   2.434e-03  3.804e-05 -2.282e-04  2.282e-04 
+row 91=   1.662e-03  7.793e-05 -1.559e-04  1.559e-04 
+row 92=   1.186e-03  9.265e-05 -1.112e-04  1.112e-04 
+row 93=   8.757e-04  9.578e-05 -8.209e-05  8.209e-05 
+row 94=   1.186e-03 -1.297e-04 -7.412e-05  1.112e-04 
+row 95=   1.662e-03 -1.299e-04 -1.039e-04  1.559e-04 
+row 96=   2.434e-03 -1.141e-04 -1.521e-04  2.282e-04 
+row 97=   3.773e-03 -5.895e-05 -2.358e-04  3.537e-04 
+row 98=   3.773e-03  5.895e-05 -2.358e-04  3.537e-04 
+row 99=   2.434e-03  1.141e-04 -1.521e-04  2.282e-04 
+row 100=   1.662e-03  1.299e-04 -1.039e-04  1.559e-04 
+row 101=   1.186e-03  1.297e-04 -7.412e-05  1.112e-04 
+row 102=   1.662e-03 -1.818e-04 -5.195e-05  1.559e-04 
+row 103=   2.434e-03 -1.902e-04 -7.607e-05  2.282e-04 
+row 104=   3.773e-03 -1.768e-04 -1.179e-04  3.537e-04 
+row 105=   6.315e-03 -9.867e-05 -1.973e-04  5.920e-04 
+row 106=   6.315e-03  9.867e-05 -1.973e-04  5.920e-04 
+row 107=   3.773e-03  1.768e-04 -1.179e-04  3.537e-04 
+row 108=   2.434e-03  1.902e-04 -7.607e-05  2.282e-04 
+row 109=   1.662e-03  1.818e-04 -5.195e-05  1.559e-04 
+row 110=   2.434e-03 -2.663e-04  0.000e+00  2.282e-04 
+row 111=   3.773e-03 -2.947e-04  0.000e+00  3.537e-04 
+row 112=   6.315e-03 -2.960e-04  0.000e+00  5.920e-04 
+row 113=   1.181e-02 -1.846e-04  0.000e+00  1.107e-03 
+row 114=   1.181e-02  1.846e-04  0.000e+00  1.107e-03 
+row 115=   6.315e-03  2.960e-04  0.000e+00  5.920e-04 
+row 116=   3.773e-03  2.947e-04  0.000e+00  3.537e-04 
+row 117=   2.434e-03  2.663e-04  0.000e+00  2.282e-04 
+row 118=   1.662e-03 -1.818e-04  5.195e-05  1.559e-04 
+row 119=   2.434e-03 -1.902e-04  7.607e-05  2.282e-04 
+row 120=   3.773e-03 -1.768e-04  1.179e-04  3.537e-04 
+row 121=   6.315e-03 -9.867e-05  1.973e-04  5.920e-04 
+row 122=   6.315e-03  9.867e-05  1.973e-04  5.920e-04 
+row 123=   3.773e-03  1.768e-04  1.179e-04  3.537e-04 
+row 124=   2.434e-03  1.902e-04  7.607e-05  2.282e-04 
+row 125=   1.662e-03  1.818e-04  5.195e-05  1.559e-04 
+row 126=   1.186e-03 -1.297e-04  7.412e-05  1.112e-04 
+row 127=   1.662e-03 -1.299e-04  1.039e-04  1.559e-04 
+row 128=   2.434e-03 -1.141e-04  1.521e-04  2.282e-04 
+row 129=   3.773e-03 -5.895e-05  2.358e-04  3.537e-04 
+row 130=   3.773e-03  5.895e-05  2.358e-04  3.537e-04 
+row 131=   2.434e-03  1.141e-04  1.521e-04  2.282e-04 
+row 132=   1.662e-03  1.299e-04  1.039e-04  1.559e-04 
+row 133=   1.186e-03  1.297e-04  7.412e-05  1.112e-04 
+row 134=   8.757e-04 -9.578e-05  8.209e-05  8.209e-05 
+row 135=   1.186e-03 -9.265e-05  1.112e-04  1.112e-04 
+row 136=   1.662e-03 -7.793e-05  1.559e-04  1.559e-04 
+row 137=   2.434e-03 -3.804e-05  2.282e-04  2.282e-04 
+row 138=   2.434e-03  3.804e-05  2.282e-04  2.282e-04 
+row 139=   1.662e-03  7.793e-05  1.559e-04  1.559e-04 
+row 140=   1.186e-03  9.265e-05  1.112e-04  1.112e-04 
+row 141=   8.757e-04  9.578e-05  8.209e-05  8.209e-05 
+row 142=   2.633e-02 -1.197e-02 -1.129e-02 -1.765e-03 
+row 143=   6.315e-03 -2.852e-03 -2.708e-03 -4.232e-04 
+row 144=   1.181e-02 -5.361e-03 -5.177e-03 -7.481e-04 
+row 145=   2.633e-02 -1.170e-02 -1.156e-02 -1.765e-03 
+row 146=   6.315e-03 -2.916e-03 -2.773e-03 -4.232e-04 
+row 147=   6.315e-03 -2.807e-03 -2.753e-03 -4.232e-04 
+row 148=   2.434e-03 -1.124e-03 -1.061e-03 -1.631e-04 
+row 149=   6.315e-03 -2.871e-03 -2.817e-03 -4.232e-04 
+row 150=   2.434e-03 -1.099e-03 -1.086e-03 -1.631e-04 
+row 151=   3.773e-03 -1.714e-03 -1.657e-03 -2.670e-04 
+row 152=   6.315e-03 -2.864e-03 -2.772e-03 -4.195e-04 
+row 153=   2.434e-03 -1.103e-03 -1.068e-03 -1.617e-04 
+row 154=   3.773e-03 -1.716e-03 -1.655e-03 -2.670e-04 
+row 155=   2.633e-02 -1.194e-02 -1.153e-02 -1.648e-03 
+row 156=   6.315e-03 -2.862e-03 -2.765e-03 -3.952e-04 
+row 157=   3.773e-03 -1.715e-03 -1.652e-03 -2.506e-04 
+row 158=   1.181e-02 -5.356e-03 -5.170e-03 -7.392e-04 
+row 159=   1.662e-03 -7.556e-04 -7.270e-04 -1.104e-04 
+row 160=   3.773e-03 -1.711e-03 -1.651e-03 -2.361e-04 
+row 161=   8.757e-04 -3.969e-04 -3.832e-04 -5.477e-05 
+row 162=   0.000e+00 -4.193e-08 -1.088e-07 -4.956e-07 
+row 163=   0.000e+00 -1.605e-07 -1.102e-06 -4.888e-06 
+row 164=   0.000e+00 -1.498e-06 -2.509e-06 -1.430e-05 
+row 165=   0.000e+00 -1.277e-06 -6.386e-06 -3.617e-05 
+row 166=   0.000e+00 -3.812e-06 -3.812e-06 -3.617e-05 
+row 167=   0.000e+00 -4.268e-06 -1.280e-05 -1.221e-04 
+row 168=   0.000e+00 -1.280e-05 -4.268e-06 -1.221e-04 
+row 169=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 170=   0.000e+00  8.215e-08 -5.640e-07 -2.503e-06 
+row 171=   0.000e+00  8.190e-08 -2.125e-07 -9.681e-07 
+row 172=   0.000e+00  5.388e-07 -2.694e-06 -1.526e-05 
+row 173=   0.000e+00  3.551e-06 -5.947e-06 -3.391e-05 
+row 174=   0.000e+00  1.265e-06 -3.794e-06 -3.617e-05 
+row 175=   0.000e+00  1.287e-05 -1.287e-05 -1.221e-04 
+row 176=   0.000e+00  4.247e-06 -4.247e-06 -1.221e-04 
+row 177=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 178=   0.000e+00 -1.620e-06 -1.620e-06 -1.012e-05 
+row 179=   0.000e+00 -3.953e-06 -3.953e-06 -1.526e-05 
+row 180=   0.000e+00 -6.586e-06 -9.220e-06 -3.617e-05 
+row 181=   0.000e+00 -9.220e-06 -6.586e-06 -3.617e-05 
+row 182=   0.000e+00 -1.641e-05 -1.641e-05 -8.793e-05 
+row 183=   0.000e+00 -1.088e-07 -4.193e-08 -4.956e-07 
+row 184=   0.000e+00 -2.509e-06 -1.498e-06 -1.430e-05 
+row 185=   0.000e+00 -1.102e-06 -1.605e-07 -4.888e-06 
+row 186=   0.000e+00 -6.386e-06 -1.277e-06 -3.617e-05 
+row 187=   0.000e+00 -3.812e-06 -3.812e-06 -3.617e-05 
+row 188=   0.000e+00 -4.268e-06 -1.280e-05 -1.221e-04 
+row 189=   0.000e+00 -1.280e-05 -4.268e-06 -1.221e-04 
+row 190=   0.000e+00 -3.398e-05 -3.398e-05 -9.766e-04 
+row 191=   0.000e+00  5.947e-06 -3.551e-06 -3.391e-05 
+row 192=   0.000e+00  2.125e-07 -8.190e-08 -9.681e-07 
+row 193=   0.000e+00  2.155e-05 -4.310e-06 -1.221e-04 
+row 194=   0.000e+00  2.611e-06 -3.803e-07 -1.159e-05 
+row 195=   0.000e+00  1.265e-06 -3.794e-06 -3.617e-05 
+row 196=   0.000e+00  1.287e-05 -1.287e-05 -1.221e-04 
+row 197=   0.000e+00  4.247e-06 -4.247e-06 -1.221e-04 
+row 198=   0.000e+00  1.024e-04 -3.414e-05 -9.766e-04 
+row 199=   0.000e+00 -5.640e-07  8.215e-08 -2.503e-06 
+row 200=   0.000e+00 -2.694e-06  5.388e-07 -1.526e-05 
+row 201=   0.000e+00 -2.125e-07  8.190e-08 -9.681e-07 
+row 202=   0.000e+00 -5.947e-06  3.551e-06 -3.391e-05 
+row 203=   0.000e+00 -3.794e-06  1.265e-06 -3.617e-05 
+row 204=   0.000e+00 -4.247e-06  4.247e-06 -1.221e-04 
+row 205=   0.000e+00 -1.287e-05  1.287e-05 -1.221e-04 
+row 206=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 207=   0.000e+00  6.386e-06  1.277e-06 -3.617e-05 
+row 208=   0.000e+00  1.102e-06  1.605e-07 -4.888e-06 
+row 209=   0.000e+00  2.007e-05  1.199e-05 -1.144e-04 
+row 210=   0.000e+00  5.036e-07  1.941e-07 -2.295e-06 
+row 211=   0.000e+00  1.258e-06  1.258e-06 -3.617e-05 
+row 212=   0.000e+00  1.280e-05  4.268e-06 -1.221e-04 
+row 213=   0.000e+00  4.268e-06  1.280e-05 -1.221e-04 
+row 214=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 215=   0.000e+00 -3.551e-06  5.947e-06 -3.391e-05 
+row 216=   0.000e+00 -4.310e-06  2.155e-05 -1.221e-04 
+row 217=   0.000e+00 -8.190e-08  2.125e-07 -9.681e-07 
+row 218=   0.000e+00 -3.803e-07  2.611e-06 -1.159e-05 
+row 219=   0.000e+00 -3.794e-06  1.265e-06 -3.617e-05 
+row 220=   0.000e+00 -4.247e-06  4.247e-06 -1.221e-04 
+row 221=   0.000e+00 -1.287e-05  1.287e-05 -1.221e-04 
+row 222=   0.000e+00 -3.414e-05  1.024e-04 -9.766e-04 
+row 223=   0.000e+00  1.277e-06  6.386e-06 -3.617e-05 
+row 224=   0.000e+00  1.199e-05  2.007e-05 -1.144e-04 
+row 225=   0.000e+00  1.605e-07  1.102e-06 -4.888e-06 
+row 226=   0.000e+00  1.941e-07  5.036e-07 -2.295e-06 
+row 227=   0.000e+00  1.258e-06  1.258e-06 -3.617e-05 
+row 228=   0.000e+00  1.280e-05  4.268e-06 -1.221e-04 
+row 229=   0.000e+00  4.268e-06  1.280e-05 -1.221e-04 
+row 230=   0.000e+00  1.029e-04  1.029e-04 -9.766e-04 
+row 231=   0.000e+00 -5.403e-07 -8.619e-07 -2.188e-06 
+row 232=   0.000e+00 -4.425e-06 -9.671e-06 -2.379e-05 
+row 233=   0.000e+00 -9.089e-06 -1.170e-05 -3.452e-05 
+row 234=   0.000e+00 -2.272e-05 -4.089e-05 -1.221e-04 
+row 235=   0.000e+00 -8.591e-06 -1.347e-05 -3.098e-05 
+row 236=   0.000e+00 -8.438e-06 -1.878e-05 -4.178e-05 
+row 237=   0.000e+00 -1.670e-06 -2.111e-06 -5.573e-06 
+row 238=   0.000e+00 -1.666e-06 -6.140e-06 -1.479e-05 
+row 239=   0.000e+00 -1.361e-06 -1.497e-05 -3.617e-05 
+row 240=   0.000e+00 -3.994e-06 -1.198e-05 -3.617e-05 
+row 241=   0.000e+00 -4.469e-06 -4.022e-05 -1.221e-04 
+row 242=   0.000e+00 -1.574e-07 -5.067e-07 -1.104e-06 
+row 243=   0.000e+00  5.743e-07 -6.317e-06 -1.526e-05 
+row 244=   0.000e+00  3.950e-06 -1.455e-05 -3.506e-05 
+row 245=   0.000e+00  1.324e-06 -1.192e-05 -3.617e-05 
+row 246=   0.000e+00  1.348e-05 -4.044e-05 -1.221e-04 
+row 247=   0.000e+00  5.311e-07 -1.710e-06 -3.727e-06 
+row 248=   0.000e+00 -8.619e-07 -5.403e-07 -2.188e-06 
+row 249=   0.000e+00 -1.170e-05 -9.089e-06 -3.452e-05 
+row 250=   0.000e+00 -9.671e-06 -4.425e-06 -2.379e-05 
+row 251=   0.000e+00 -4.089e-05 -2.272e-05 -1.221e-04 
+row 252=   0.000e+00 -1.347e-05 -8.591e-06 -3.098e-05 
+row 253=   0.000e+00 -2.111e-06 -1.670e-06 -5.573e-06 
+row 254=   0.000e+00 -1.878e-05 -8.438e-06 -4.178e-05 
+row 255=   0.000e+00 -1.568e-06 -3.637e-06 -1.429e-05 
+row 256=   0.000e+00 -9.163e-07 -6.466e-06 -2.458e-05 
+row 257=   0.000e+00 -2.994e-07 -4.704e-07 -2.262e-06 
+row 258=   0.000e+00  3.866e-07 -2.728e-06 -1.037e-05 
+row 259=   0.000e+00  3.716e-06 -8.620e-06 -3.387e-05 
+row 260=   0.000e+00  1.011e-06 -1.588e-06 -7.634e-06 
+row 261=   0.000e+00 -6.140e-06 -1.666e-06 -1.479e-05 
+row 262=   0.000e+00 -1.198e-05 -3.994e-06 -3.617e-05 
+row 263=   0.000e+00 -1.497e-05 -1.361e-06 -3.617e-05 
+row 264=   0.000e+00 -4.022e-05 -4.469e-06 -1.221e-04 
+row 265=   0.000e+00 -5.067e-07 -1.574e-07 -1.104e-06 
+row 266=   0.000e+00 -3.637e-06 -1.568e-06 -1.429e-05 
+row 267=   0.000e+00 -4.704e-07 -2.994e-07 -2.262e-06 
+row 268=   0.000e+00 -6.466e-06 -9.163e-07 -2.458e-05 
+row 269=   0.000e+00 -6.317e-06  5.743e-07 -1.526e-05 
+row 270=   0.000e+00 -1.192e-05  1.324e-06 -3.617e-05 
+row 271=   0.000e+00 -1.455e-05  3.950e-06 -3.506e-05 
+row 272=   0.000e+00 -4.044e-05  1.348e-05 -1.221e-04 
+row 273=   0.000e+00 -1.710e-06  5.311e-07 -3.727e-06 
+row 274=   0.000e+00 -2.728e-06  3.866e-07 -1.037e-05 
+row 275=   0.000e+00 -8.620e-06  3.716e-06 -3.387e-05 
+row 276=   0.000e+00 -1.588e-06  1.011e-06 -7.634e-06 
+row 277=   0.000e+00 -2.086e-06 -2.086e-06 -4.309e-06 
+WM^T matrix: :
+matrix size = 4 x 278
+row 0=   5.625e-01  5.625e-01  8.102e-02  2.633e-02  8.102e-02  8.102e-02  2.633e-02  1.181e-02  2.633e-02  2.633e-02  1.181e-02  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  8.102e-02  8.102e-02  2.633e-02  1.181e-02  2.633e-02  2.633e-02  1.181e-02  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  2.633e-02  2.633e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.186e-03  1.662e-03  2.434e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  1.181e-02  1.181e-02  6.315e-03  3.773e-03  2.434e-03  1.662e-03  2.434e-03  3.773e-03  6.315e-03  6.315e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  1.662e-03  2.434e-03  3.773e-03  3.773e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  1.186e-03  1.662e-03  2.434e-03  2.434e-03  1.662e-03  1.186e-03  8.757e-04  2.633e-02  6.315e-03  1.181e-02  2.633e-02  6.315e-03  6.315e-03  2.434e-03  6.315e-03  2.434e-03  3.773e-03  6.315e-03  2.434e-03  3.773e-03  2.633e-02  6.315e-03  3.773e-03  1.181e-02  1.662e-03  3.773e-03  8.757e-04  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00 
+row 1=  -8.789e-03  8.789e-03  3.798e-03  2.057e-03 -1.266e-03  1.266e-03  1.234e-03  9.229e-04 -4.114e-04  4.114e-04  5.537e-04  4.933e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04 -1.266e-03  1.266e-03  1.234e-03  9.229e-04 -4.114e-04  4.114e-04  5.537e-04  4.933e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -4.126e-04 -4.933e-04 -5.537e-04 -4.114e-04  4.114e-04  5.537e-04  4.933e-04  4.126e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -9.265e-05 -7.793e-05 -3.804e-05  3.804e-05  7.793e-05  9.265e-05  9.578e-05 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -2.663e-04 -2.947e-04 -2.960e-04 -1.846e-04  1.846e-04  2.960e-04  2.947e-04  2.663e-04 -1.818e-04 -1.902e-04 -1.768e-04 -9.867e-05  9.867e-05  1.768e-04  1.902e-04  1.818e-04 -1.297e-04 -1.299e-04 -1.141e-04 -5.895e-05  5.895e-05  1.141e-04  1.299e-04  1.297e-04 -9.578e-05 -9.265e-05 -7.793e-05 -3.804e-05  3.804e-05  7.793e-05  9.265e-05  9.578e-05 -1.197e-02 -2.852e-03 -5.361e-03 -1.170e-02 -2.916e-03 -2.807e-03 -1.124e-03 -2.871e-03 -1.099e-03 -1.714e-03 -2.864e-03 -1.103e-03 -1.716e-03 -1.194e-02 -2.862e-03 -1.715e-03 -5.356e-03 -7.556e-04 -1.711e-03 -3.969e-04 -4.193e-08 -1.605e-07 -1.498e-06 -1.277e-06 -3.812e-06 -4.268e-06 -1.280e-05 -3.398e-05  8.215e-08  8.190e-08  5.388e-07  3.551e-06  1.265e-06  1.287e-05  4.247e-06  1.024e-04 -1.620e-06 -3.953e-06 -6.586e-06 -9.220e-06 -1.641e-05 -1.088e-07 -2.509e-06 -1.102e-06 -6.386e-06 -3.812e-06 -4.268e-06 -1.280e-05 -3.398e-05  5.947e-06  2.125e-07  2.155e-05  2.611e-06  1.265e-06  1.287e-05  4.247e-06  1.024e-04 -5.640e-07 -2.694e-06 -2.125e-07 -5.947e-06 -3.794e-06 -4.247e-06 -1.287e-05 -3.414e-05  6.386e-06  1.102e-06  2.007e-05  5.036e-07  1.258e-06  1.280e-05  4.268e-06  1.029e-04 -3.551e-06 -4.310e-06 -8.190e-08 -3.803e-07 -3.794e-06 -4.247e-06 -1.287e-05 -3.414e-05  1.277e-06  1.199e-05  1.605e-07  1.941e-07  1.258e-06  1.280e-05  4.268e-06  1.029e-04 -5.403e-07 -4.425e-06 -9.089e-06 -2.272e-05 -8.591e-06 -8.438e-06 -1.670e-06 -1.666e-06 -1.361e-06 -3.994e-06 -4.469e-06 -1.574e-07  5.743e-07  3.950e-06  1.324e-06  1.348e-05  5.311e-07 -8.619e-07 -1.170e-05 -9.671e-06 -4.089e-05 -1.347e-05 -2.111e-06 -1.878e-05 -1.568e-06 -9.163e-07 -2.994e-07  3.866e-07  3.716e-06  1.011e-06 -6.140e-06 -1.198e-05 -1.497e-05 -4.022e-05 -5.067e-07 -3.637e-06 -4.704e-07 -6.466e-06 -6.317e-06 -1.192e-05 -1.455e-05 -4.044e-05 -1.710e-06 -2.728e-06 -8.620e-06 -1.588e-06 -2.086e-06 
+row 2=   0.000e+00  0.000e+00  0.000e+00  0.000e+00  2.532e-03  2.532e-03  8.228e-04  3.691e-04  1.646e-03  1.646e-03  7.383e-04  3.947e-04  1.107e-03  1.107e-03  5.920e-04  3.537e-04  0.000e+00  0.000e+00  0.000e+00  0.000e+00  8.228e-04  8.228e-04  3.691e-04  1.973e-04  7.383e-04  7.383e-04  3.947e-04  2.358e-04  5.920e-04  5.920e-04  3.537e-04  2.282e-04 -1.559e-04 -2.282e-04 -3.537e-04 -3.537e-04 -2.282e-04 -1.559e-04 -1.112e-04 -1.039e-04 -1.521e-04 -2.358e-04 -3.947e-04 -3.947e-04 -2.358e-04 -1.521e-04 -1.039e-04 -7.607e-05 -1.179e-04 -1.973e-04 -3.691e-04 -3.691e-04 -1.973e-04 -1.179e-04 -7.607e-05  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  7.607e-05  1.179e-04  1.973e-04  3.691e-04  3.691e-04  1.973e-04  1.179e-04  7.607e-05  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04 -1.112e-04 -1.559e-04 -2.282e-04 -2.282e-04 -1.559e-04 -1.112e-04 -8.209e-05 -7.412e-05 -1.039e-04 -1.521e-04 -2.358e-04 -2.358e-04 -1.521e-04 -1.039e-04 -7.412e-05 -5.195e-05 -7.607e-05 -1.179e-04 -1.973e-04 -1.973e-04 -1.179e-04 -7.607e-05 -5.195e-05  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  5.195e-05  7.607e-05  1.179e-04  1.973e-04  1.973e-04  1.179e-04  7.607e-05  5.195e-05  7.412e-05  1.039e-04  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  8.209e-05  1.112e-04  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05 -1.129e-02 -2.708e-03 -5.177e-03 -1.156e-02 -2.773e-03 -2.753e-03 -1.061e-03 -2.817e-03 -1.086e-03 -1.657e-03 -2.772e-03 -1.068e-03 -1.655e-03 -1.153e-02 -2.765e-03 -1.652e-03 -5.170e-03 -7.270e-04 -1.651e-03 -3.832e-04 -1.088e-07 -1.102e-06 -2.509e-06 -6.386e-06 -3.812e-06 -1.280e-05 -4.268e-06 -3.398e-05 -5.640e-07 -2.125e-07 -2.694e-06 -5.947e-06 -3.794e-06 -1.287e-05 -4.247e-06 -3.414e-05 -1.620e-06 -3.953e-06 -9.220e-06 -6.586e-06 -1.641e-05 -4.193e-08 -1.498e-06 -1.605e-07 -1.277e-06 -3.812e-06 -1.280e-05 -4.268e-06 -3.398e-05 -3.551e-06 -8.190e-08 -4.310e-06 -3.803e-07 -3.794e-06 -1.287e-05 -4.247e-06 -3.414e-05  8.215e-08  5.388e-07  8.190e-08  3.551e-06  1.265e-06  4.247e-06  1.287e-05  1.024e-04  1.277e-06  1.605e-07  1.199e-05  1.941e-07  1.258e-06  4.268e-06  1.280e-05  1.029e-04  5.947e-06  2.155e-05  2.125e-07  2.611e-06  1.265e-06  4.247e-06  1.287e-05  1.024e-04  6.386e-06  2.007e-05  1.102e-06  5.036e-07  1.258e-06  4.268e-06  1.280e-05  1.029e-04 -8.619e-07 -9.671e-06 -1.170e-05 -4.089e-05 -1.347e-05 -1.878e-05 -2.111e-06 -6.140e-06 -1.497e-05 -1.198e-05 -4.022e-05 -5.067e-07 -6.317e-06 -1.455e-05 -1.192e-05 -4.044e-05 -1.710e-06 -5.403e-07 -9.089e-06 -4.425e-06 -2.272e-05 -8.591e-06 -1.670e-06 -8.438e-06 -3.637e-06 -6.466e-06 -4.704e-07 -2.728e-06 -8.620e-06 -1.588e-06 -1.666e-06 -3.994e-06 -1.361e-06 -4.469e-06 -1.574e-07 -1.568e-06 -2.994e-07 -9.163e-07  5.743e-07  1.324e-06  3.950e-06  1.348e-05  5.311e-07  3.866e-07  3.716e-06  1.011e-06 -2.086e-06 
+row 3=   0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  0.000e+00  2.532e-03  2.532e-03  8.228e-04  3.691e-04  8.228e-04  8.228e-04  3.691e-04  1.973e-04  3.691e-04  3.691e-04  1.973e-04  1.179e-04  1.973e-04  1.973e-04  1.179e-04  7.607e-05  1.039e-04  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  7.383e-04  3.947e-04  2.358e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  1.646e-03  1.646e-03  7.383e-04  3.947e-04  2.358e-04  1.521e-04  2.358e-04  3.947e-04  7.383e-04  7.383e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  1.521e-04  2.358e-04  3.947e-04  3.947e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.039e-04  1.521e-04  2.358e-04  2.358e-04  1.521e-04  1.039e-04  7.412e-05  1.112e-04  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  5.920e-04  3.537e-04  2.282e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  1.107e-03  1.107e-03  5.920e-04  3.537e-04  2.282e-04  1.559e-04  2.282e-04  3.537e-04  5.920e-04  5.920e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  1.559e-04  2.282e-04  3.537e-04  3.537e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05  1.112e-04  1.559e-04  2.282e-04  2.282e-04  1.559e-04  1.112e-04  8.209e-05 -1.765e-03 -4.232e-04 -7.481e-04 -1.765e-03 -4.232e-04 -4.232e-04 -1.631e-04 -4.232e-04 -1.631e-04 -2.670e-04 -4.195e-04 -1.617e-04 -2.670e-04 -1.648e-03 -3.952e-04 -2.506e-04 -7.392e-04 -1.104e-04 -2.361e-04 -5.477e-05 -4.956e-07 -4.888e-06 -1.430e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -2.503e-06 -9.681e-07 -1.526e-05 -3.391e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -1.012e-05 -1.526e-05 -3.617e-05 -3.617e-05 -8.793e-05 -4.956e-07 -1.430e-05 -4.888e-06 -3.617e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.391e-05 -9.681e-07 -1.221e-04 -1.159e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -2.503e-06 -1.526e-05 -9.681e-07 -3.391e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.617e-05 -4.888e-06 -1.144e-04 -2.295e-06 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.391e-05 -1.221e-04 -9.681e-07 -1.159e-05 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -3.617e-05 -1.144e-04 -4.888e-06 -2.295e-06 -3.617e-05 -1.221e-04 -1.221e-04 -9.766e-04 -2.188e-06 -2.379e-05 -3.452e-05 -1.221e-04 -3.098e-05 -4.178e-05 -5.573e-06 -1.479e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.104e-06 -1.526e-05 -3.506e-05 -3.617e-05 -1.221e-04 -3.727e-06 -2.188e-06 -3.452e-05 -2.379e-05 -1.221e-04 -3.098e-05 -5.573e-06 -4.178e-05 -1.429e-05 -2.458e-05 -2.262e-06 -1.037e-05 -3.387e-05 -7.634e-06 -1.479e-05 -3.617e-05 -3.617e-05 -1.221e-04 -1.104e-06 -1.429e-05 -2.262e-06 -2.458e-05 -1.526e-05 -3.617e-05 -3.506e-05 -1.221e-04 -3.727e-06 -1.037e-05 -3.387e-05 -7.634e-06 -4.309e-06 
+System matrix:
+matrix size = 4 x 4
+row 0=   6.783e-01 -7.330e-04 -5.219e-04  5.803e-04 
+row 1=  -7.330e-04  7.371e-04  5.295e-04  8.055e-05 
+row 2=  -5.219e-04  5.295e-04  5.386e-04  7.850e-05 
+row 3=   5.803e-04  8.055e-05  7.850e-05  5.346e-05 
+getWorstCondtionNumberInfo:
+a_invCondNumber = 4.808e-05
+a_maxEigenvalue = 3.468e-01
+a_minEigenvalue = 1.667e-05
+\begin{table}
+\begin{center}
+\begin{tabular}{|ccc|ccc|} \hline
+ $D$ & $P^T$  & $P^W$ & $R_s$ & \lambda_{max} & \lambda_{min}   & $I$ \\
+\hline 
+-GREP_HOOK-3 & 1 & 3 & 3 & 1.663929e+00 & 8.355671e-07 & 5.021651e-07 \\ 
+\hline 
+\end{tabular}
+\end{center}
+\end{table}
+worst condition number at point (18,25,27)
+Printing time table 

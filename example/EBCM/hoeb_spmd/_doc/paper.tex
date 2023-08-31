@@ -1,0 +1,100 @@
+\documentclass{article}
+
+\bibliographystyle{plain}
+
+\usepackage{epsfig}
+\usepackage{xcolor}
+\usepackage{amsmath}
+
+\input{abbrev.tex}
+
+\begin{document}
+
+\title{Communication test for EBCM framework}
+\author{
+    D. Devendran   \footnotemark[2] \and
+    D. T. Graves    \footnotemark[1]
+        }
+\date{May 4, 2023 ce.}
+\maketitle
+
+\section{Introduction}
+
+We are testing the communications infrastructure for {\tt
+Chombo4/src/EBCM}, the bits of Chombo that handle calculations
+within the context merged and
+unmerged cut cell geometries.   
+
+See Katz, et al (\cite{Katz2023}) for a basic idea of the mathematical
+framework in which higher order cut cell algorithms live.
+
+\subsection{The blessed Shortcut (TBS)}
+
+Important note: we are not dealing multivalued cells (cells in which
+more than one computational volume lives in a Cartesian grid cell) for
+EBCM calculations yet.  They are a difficult case that we can easily
+avoid.  For EB aficionados, here are the technical reasons we are
+taking this blessed shortcut:
+\begin{itemize}
+  \item Multivalued cells create enormous complications in data
+    structures and require special graph-based data holders instead of
+    much simpler box-based data holders.
+ \item That means they require a whole new set of serialization
+   routines that are difficult to debug.   
+ \item Because we have cell merging, we are never forced to use
+   multivalued cells.
+ \item In fact, cell merging makes even some of the
+   regular grid redundant (which is a complication we already manage
+   when it comes to covered cells).
+ \item Chombo does not produces multivalued cells at the finest EB
+   level (which is all the EBCM infrastructure uses).
+ \item Premature generalization is bad and can lead to all kinds of
+   problems.   
+\end{itemize}
+Here is the downside of the blessed shortcut: cell merging makes
+geometric multigrid (GMG) more difficult.  With cell merging, managing
+coarse and fine graph connections becomes more complicated. A volume's
+possible graph connections to finer and coarser volumes can no longer
+be inferred by its Cartesian cell. On the other hand, for the class of
+algorithms in which we are interested, reliable GMG is an ongoing
+research problem.  Devendran, et al. \cite{Devendran2014}
+provide some insight into the difficulties geometric multigrid in a
+higher order EB context.  The current effort will only use PETSc
+\cite{petsc-user-ref, petsc-efficient} algebraic multigrid (AMG)
+solvers.
+
+\section{The bit we are testing}
+
+We need to test two bits of infrastructure, both of them related to
+SPMD communication.  
+\begin{itemize}
+  \item We need ghost cells for the geometric data which lives in {\tt
+    EBCM::MetaDataLevel }.
+  \item We need ghost cells for the simulation data which lives in {\tt
+    EBCM::HostLevelData}.
+\end{itemize}
+In both cases, we do the obvious test.
+For $T \in \{\mbox{MetaDataLevel, HostLevelData} \}$:
+\begin{itemize}
+  \item We make $T_{dom}$, where one box covers the whole domain, and
+    $T_{dist}$, which covers the domain with many boxes.
+  \item The test passes if $T_{dom} == T_{dist}$ everywhere in the domain.
+\end{itemize}
+
+\section{Unreasonable expectations}
+
+When the infrastructure is working the code should simply return that
+all tests have passed.   As of May 18, 2023, that is true.   Single
+grid and distributed versions of both meta data and data data match
+for all three (regular, unmerged, merged) cases.   TBS made that easier.
+
+
+\footnotetext[1]{Lawrence Berkeley National Laboratory, Berkeley,
+  CA. Research at LBNL was supported financially by the Office of
+  Advanced Scientific Computing Research of the US Department of
+  Energy under contract number DE-AC02-05CH11231.}
+\footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}\
+\bibliography{references}
+
+\end{document}

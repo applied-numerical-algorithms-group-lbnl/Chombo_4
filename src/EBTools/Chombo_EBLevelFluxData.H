@@ -45,7 +45,7 @@ public:
   /// factory function.  creates a new 'T' object
   /** creates a new 'T' object and returns a pointer to it.
    */
-  virtual EBFluxData<Real, dstComp> * create(const Box& a_box, int ncomps, const DataIndex& a_datInd) const
+  virtual EBFluxData<Real, dstComp> * create(const Chombo4::Box& a_box, int ncomps, const DataIndex& a_datInd) const
   {
     EBFluxData<Real, srcComp>& vecholder = (*m_source)[a_datInd];
     EBFluxData<Real, dstComp>* retval = new EBFluxData<Real, dstComp>();
@@ -130,6 +130,31 @@ public:
     }
   }
 
+  ///
+  EBLevelFluxData&
+  operator+=(const EBLevelFluxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]] += a_input[dit[ibox]];
+    }
+    return *this;
+  }
+
+  ///
+  EBLevelFluxData&
+  operator-=(const EBLevelFluxData& a_input)
+  {
+    DisjointBoxLayout dbl = this->disjointBoxLayout();
+    DataIterator dit = dbl.dataIterator();
+    for(int ibox = 0;  ibox < dit.size(); ibox++)
+    {
+      (*this)[dit[ibox]] -= a_input[dit[ibox]];
+    }
+    return *this;
+  }
   ///
   Real maxNorm(int a_icomp) const
   {

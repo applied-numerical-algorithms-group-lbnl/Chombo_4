@@ -9,8 +9,8 @@
 #endif
 
 
-#ifndef _EBChombo_GeometryService_H_
-#define _EBChombo_GeometryService_H_
+#ifndef _Chombo_EBChombo_H_
+#define _Chombo_EBChombo_H_
 
 
 #include "Proto.H"
@@ -32,6 +32,7 @@
 //#include "Proto_LevelData.H"
 #include "Proto_EBGraph.H"
 #include "Proto_EBStencil.H"
+#include "Proto_EBBoxData.H"
 #include "implem/Proto_MinimalCCCM.H"
 
 

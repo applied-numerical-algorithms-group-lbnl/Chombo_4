@@ -27,6 +27,19 @@ namespace Proto
     //! Destructor
     ~IndexedMoments() {};
 
+    ///not semantically sensible but makes for easier diagnostics
+    double maxAbs() const
+    {
+      double retval = 0;
+      for(int imom = 0; imom < size(); imom++)
+      {
+        double momval = (*this)[imom];
+        retval = std::max(retval, momval);
+      }
+
+      return retval;
+    }
+
 
     //! Retrieve the moment from the index 
     //! \params a_index The lexigraphical index to the data
@@ -59,6 +72,16 @@ namespace Proto
     ///add compoenentwise
     IndexedMoments<Dim, P>&  operator+=(const IndexedMoments<Dim, P>& increment);
 
+    inline
+    IndexedMoments<Dim, P>&  operator-=(const IndexedMoments<Dim, P>& increment)
+    {
+      auto decrement = increment;
+      decrement *= -1.;
+      *this += decrement;
+      return *this;
+    }
+      
+    
     ///multiply each component by constant
     IndexedMoments<Dim, P>&  operator*=(const double& a_factor);
 
@@ -86,13 +109,21 @@ namespace Proto
       return retval;
     }
 
+    ///seeking out strange new APIs
+    void energize(char* a_outbuf) const
+    {
+      linearOut(a_outbuf);
+    }
+
+    ///another new name for an old thing
+    static size_t charsize()
+    {
+      return linearSize();
+    }
+    
     void linearOut(void* const a_outbuf) const
     {
       double* realbuf = (double*) a_outbuf;
-//      using std::cout;
-//      using std::endl;
-//      int isize = m_moms.size();
-//      cout  << "indexedmoments::linearout with moms size " << isize << endl;
       for(int ivec = 0; ivec < size(); ivec++)
       {
         *realbuf = m_moms[ivec];
@@ -104,10 +135,6 @@ namespace Proto
 
     void linearIn(const void* const a_inbuf)
     {
-//      int isize = m_moms.size();
-//      using std::cout;
-//      using std::endl;
-//      cout  << "indexedmoments::linearin  with moms size " << isize << endl;
       double* realbuf = (double*) a_inbuf;
       for(int ivec = 0; ivec < size(); ivec++)
       {
@@ -246,9 +273,9 @@ namespace Proto
   private:
 
     // Indicator that we contain only "full" moments
-    int m_isRegular; 
+    int m_isRegular;
 
-    // Our moments to store    
+    // Our moments to store
     vector<double> m_moms;
 
 //    static const int s_max_sizes[][CH_IM_MAX_POWER+1];

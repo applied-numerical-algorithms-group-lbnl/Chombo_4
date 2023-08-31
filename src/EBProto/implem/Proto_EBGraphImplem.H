@@ -420,39 +420,50 @@ namespace Proto
     else
     {
       //from here we know it it is a boundary face
+      int idir = 0;
+      if(cent == YFACE)
+      {
+        idir = 1;
+      }
+      else if(cent == ZFACE)
+      {
+        idir = 2;
+      }
       if(m_domain.contains(voflo.m_pt))
       {
+        // This is hi boundary, so hi face is boundary
         vector<EBIndex<CELL> > vofslo = refine(voflo);
-        int idir = 0;
-        if(cent == YFACE)
-        {
-          idir = 1;
-        }
-        else if(cent == ZFACE)
-        {
-          idir = 2;
-        }
+        auto pEdge = Point::Basis(idir);
+        auto bFine = m_domain.refine(2).edge(pEdge);
         for(int ilo = 0; ilo < vofslo.size(); ilo++)
         {
-          EBIndex<cent> face;
-          face.m_pt      = vofslo[ilo].m_pt + Point::Basis(idir);
-          face.m_vofIDMe = -1;
-          face.m_vofIDLo = vofslo[ilo].m_vofIDMe;
-          face.m_isBoundary = true;
-          retval.push_back(face);
+          if (bFine.contains(vofslo[ilo].m_pt))
+          {
+            EBIndex<cent> face;
+            face.m_pt      = vofslo[ilo].m_pt + Point::Basis(idir);
+            face.m_vofIDMe = -1;
+            face.m_vofIDLo = vofslo[ilo].m_vofIDMe;
+            face.m_isBoundary = true;
+            retval.push_back(face);
+          }
         }
       }
-      else
+      else // This is lo boundary, so lo face is boundary
       {
         vector<EBIndex<CELL> > vofshi = refine(vofhi);
+        auto pEdge = -Point::Basis(idir);
+        auto bFine = m_domain.refine(2).edge(pEdge);
         for(int ihi = 0; ihi < vofshi.size(); ihi++)
         {
-          EBIndex<cent> face;
-          face.m_pt      = vofshi[ihi].m_pt;
-          face.m_vofIDLo = -1;
-          face.m_vofIDMe = vofshi[ihi].m_vofIDMe;
-          face.m_isBoundary = true;
-          retval.push_back(face);
+          if (bFine.contains(vofshi[ihi].m_pt))
+          {
+            EBIndex<cent> face;
+            face.m_pt      = vofshi[ihi].m_pt;
+            face.m_vofIDLo = -1;
+            face.m_vofIDMe = vofshi[ihi].m_vofIDMe;
+            face.m_isBoundary = true;
+            retval.push_back(face);
+          }
         }
       }
     }

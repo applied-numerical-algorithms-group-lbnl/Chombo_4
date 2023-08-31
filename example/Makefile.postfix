@@ -1,0 +1,68 @@
+
+CHOMBO_CPPFLAGS +=-DDIM=$(DIM) -I$(PROTO_HOME)/include   -I. -I../src 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/BaseTools
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/LinearAlgebra
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/BoxTools
+CHOMBO_CPPFLAGS += -DCH_SPACEDIM=$(DIM) -DCH_USE_64 
+CHOMBO_CPPFLAGS += -I../../common
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBProto 
+CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBCM
+
+
+#need to use depxx because petsc links with g++
+CHOMBO_LINK=$(CHOMBO_CXX)
+CHOMBO_OBJDIR = o
+CHOMBO_DEPDIR = d
+CHOMBO_TARGET = main.exe
+
+$(CHOMBO_TARGET): $(CHOMBO_OBJ)
+	$(CHOMBO_LINK)  $(CHOMBO_OBJ) $(CHOMBO_LIBS) -o $(CHOMBO_TARGET)
+
+$(CHOMBO_OBJDIR): ; mkdir -p $@
+
+
+$(CHOMBO_DEPDIR): ; mkdir  -p $@
+
+CHOMBO_DEPFILES := $(CHOMBO_NODIRSRC:%.cpp=$(CHOMBO_DEPDIR)/%.d)
+
+$(CHOMBO_DEPFILES):
+
+CHOMBO_DEPFLAGS += -MT $@ -MF $(CHOMBO_DEPDIR)/$*.d 
+
+ifeq ($(CHOMBO_CXX),nvcc)
+#broke the build
+#LIBS+= -lnvToolsExt
+endif
+
+ifeq ($(CHOMBO_DEPXX),nvcc)
+CHOMBO_DEPFLAGS += --generate-dependencies
+else
+CHOMBO_DEPFLAGS += -MM
+endif
+
+$(CHOMBO_OBJDIR)/%.o : %.cpp  $(CHOMBO_DEPDIR)/%.d | $(CHOMBO_DEPDIR) 
+	@mkdir -p $(CHOMBO_OBJDIR)
+	$(CHOMBO_DEPXX) $(CHOMBO_DEPFLAGS) $(CHOMBO_CPPFLAGS) $< 
+	$(CHOMBO_CXX) -c -o $@ $< $(CHOMBO_CXXFLAGS) $(CHOMBO_CPPFLAGS) 
+
+all: $(CHOMBO_TARGET)
+
+-include $(CHOMBO_DEPFILES)
+
+.PHONY: clean realclean print dirs
+
+print-%: ; @echo $* = $($*)
+
+
+vars:
+	$(foreach v,$(filter-out $(VARS_OLD) VARS_OLD,$(.VARIABLES)), $(info $(v) = $($(v))))
+
+clean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+realclean:
+	rm -rf d o *.o *.exe *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d
+
+pristine:
+	rm -rf d o *.o *.exe *.table *.d ../../common/*.o ../src/*.o ../../common/*.d ../src/*.d pout.* *.time.table.* *.hdf5

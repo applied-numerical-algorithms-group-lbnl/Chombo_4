@@ -710,8 +710,16 @@ protected:
 };
 #include "Chombo_NamespaceFooter.H"
 //using Chombo4::IntVect;
-//namespace std { template <> inline bool less<IntVect>::operator()(const IntVect& a, const IntVect& b) const { return a.lexLT(b);}
-//}
+//namespace std { template <> inline constexpr bool less<IntVect>::operator()(const IntVect& a, const IntVect& b) const { return a.lexLT(b);}
+// We overload the std::less functional to use lexographic ordering of IntVects, allowing for use in things such as maps. Be carefull with this code, and this is something we should have tests for
+namespace std {
+  template <>
+  struct less<IntVect>
+  {
+    bool operator()(const IntVect& a, const IntVect& b) const
+      { return a.lexLT(b);}
+  };
+}
 //#include "Chombo_NamespaceVar.H"
 
 ///functions for linearization

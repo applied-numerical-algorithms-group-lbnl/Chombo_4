@@ -6,8 +6,6 @@
 
 namespace Proto
 {
-  
-
   ///this deep down in the bowels, everything is a template specialization
   ///returns whether there are domain boundary conditions
   template <int order>
@@ -441,7 +439,8 @@ namespace Proto
           else if(a_voludata.contains(fineVoFs[ifine]))
           {
             RealVect centroid;
-            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx);
+            // Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx);
+            Normalizor<order>::normalizedVoluMoments(kappa, centroid, a_voludata, fineVoFs[ifine], a_srcGraph, a_dx/2.);
           }
           sumvol += kappa;
           a_stencil[ivof].add(fineVoFs[ifine], kappa);
@@ -760,8 +759,10 @@ namespace Proto
     }
     for(int ivof = 0; ivof < a_dstVoFs.size(); ivof++)
     {
+     
 //      cout << "should not get here with no irregular cells" << endl;
       Point pt = a_dstVoFs[ivof].m_pt;
+      //cout<<" irreg points in stencil "<<pt<<endl;
       SecondOrderStencil<order>::
         get2ndOrderDivFStencil(a_stencil[ivof],
                                a_dstVoFs[ivof],

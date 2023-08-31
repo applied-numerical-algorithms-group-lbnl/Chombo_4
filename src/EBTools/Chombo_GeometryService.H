@@ -12,28 +12,37 @@
 #ifndef _Chombo_GeometryService_H_
 #define _Chombo_GeometryService_H_
 
-
-#include "Proto.H"
-#include "EBProto.H"
+// #include "Proto.H"
+// #include "EBProto.H"
+#include "Chombo_EBChombo.H"
+#include "Proto_MomentHolder.H"
+#include "Chombo_LevelData.H"
 #include "Chombo_EBDataChoreography.H"
 #include "Chombo_AMRIO.H"
 #include "Chombo_ProtoInterface.H"
-#include "Chombo_EBChombo.H"
 #include "Chombo_BRMeshRefine.H"
 #include "Chombo_LoadBalance.H"
 #include "Chombo_ParmParse.H"
 #include <memory>
 #include "Chombo_NamespaceHeader.H"
+
+// Used in a hack to allow indexing dimensional components again. This save a lot of code duplication higher up
+// This shouldn't be needed, but the fix needs to go really low
+template<CENTERING>
+struct typenameTag {};
+
+
 ///
 /**
    makes geometric description from an implicit function.
 */
+
 template <int order>
 class LevelGeometryService
 {
 
 public:
-
+  typedef Proto::IndexTM<int,2>      Iv2;
   typedef IndexedMoments<DIM  , order> IndMomDIM;
   typedef IndexedMoments<DIM-1, order> IndMomSDMinOne;
   typedef MomentIterator<DIM  , order> MomItDIM;
@@ -60,7 +69,7 @@ public:
   */
   LevelGeometryService(const shared_ptr<BaseIF>     &      a_baseIF,
                        const RealVect               &      a_origin,
-                       const double                 &      a_dx,
+                      const double                 &      a_dx,
                        const Box                    &      a_domain,
                        const DisjointBoxLayout      &      a_grids,
                        const int                    &      a_ghost,
@@ -91,7 +100,13 @@ public:
   typedef CH4_Data_Choreography::DistributedData<YFacData> yfac_distrib_t;
   typedef CH4_Data_Choreography::DistributedData<ZFacData> zfac_distrib_t;
   typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
-    
+
+  ///
+  inline Real dx() const
+  {
+    return m_dx;
+  }
+  
   ///
   inline DisjointBoxLayout const
   getDBL()
@@ -142,6 +157,24 @@ public:
     return m_zfacdata;
   }
 
+  const shared_ptr<LevelData<HostIrregData<XFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<XFACE>) const;
+
+  const shared_ptr<LevelData<HostIrregData<YFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<YFACE>) const;
+
+  const shared_ptr<LevelData<HostIrregData<ZFACE, IndMomSDMinOne, 1> > >
+  getFaceData_dispatch(typenameTag<ZFACE>) const;
+
+  /// ONE ACCESSOR TO RULE THEM ALL
+  template<CENTERING cent>
+  const shared_ptr<LevelData<HostIrregData<cent, IndMomSDMinOne, 1> > >
+  getFaceData() const
+  {
+    return getFaceData_dispatch(typenameTag<cent>{});
+    //MayDay::Error("invalid face centering");
+  }
+
   ///Get eb moment in the x direction 
   inline const shared_ptr<ebnorm_distrib_t >
   getEBNormalData_x() const
@@ -162,6 +195,32 @@ public:
   {
     return m_ebnormaldata[2];
   }
+
+  ///Get eb moment in the
+  inline const shared_ptr<LevelData<EBNormalData> >
+  getEBNormalData(const int a_dir) const
+  {
+    CH_assert((a_dir >= 0) && (a_dir < SpaceDim));
+    return m_ebnormaldata[a_dir];
+  }
+
+  // A struct for holding all the moments,
+  // now we can pass just 1 struct instead of 10 arguments and hide the problem dimensionality
+  // This only has proto dependencies, so usable in stencils
+  const
+  Proto::MomentHolder<order>
+  getAllMomentData(const DataIndex a_dit) const
+    {
+      Proto::MomentHolder<order> holder((*(getVoluData()))[a_dit],
+                                        (*(getEBFaceData()))[a_dit],
+                                        (*(getXFaceData()))[a_dit],
+                                        (*(getYFaceData()))[a_dit],
+                                        (*(getZFaceData()))[a_dit],
+                                        (*(getEBNormalData_x()))[a_dit],
+                                        (*(getEBNormalData_y()))[a_dit],
+                                        (*(getEBNormalData_z()))[a_dit]);
+      return holder;
+    }
 
   /// fill data holder with values of the volume fraction.
   inline void fillKappa(EBHostData<CELL,Real, 1> & a_kappa,
@@ -199,21 +258,24 @@ public:
     }
   }
 
-  /// fill data holder with values of the EBFaceData.
-  inline void fillEBFaceData(EBHostData<CELL,Real, 1> & a_ebfacedata,
-                             const Box                & a_grbx ,
-                             const DataIndex          & a_dit) const
+
+  /// better name---fills with area fraction
+  inline void fillEBFaceAlpha(EBHostData<CELL,Real, 1> & a_ebfacedata,
+                              const Box                & a_grbx ,
+                              const DataIndex          & a_dit) const
   { 
     const EBFaData & ebfmo = (*m_ebfadata)[a_dit];
     const EBGraph  & graph = (*m_graphs)[a_dit];
     HostBoxData<        Real, 1>& reghost = a_ebfacedata.getRegData();
     HostIrregData<CELL, Real, 1>& irrhost = a_ebfacedata.getIrrData();
+    Real fullCellArea = D_TERM(1., *m_dx, *m_dx);
+
     for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
-    { 
+     { 
       Point pt  = ProtoCh::getPoint(bit());
       if(graph.isRegular(pt))
       {
-        reghost(pt, 0) = 0.0;
+        reghost(pt, 0) = 1.0;
       }
       else if(graph.isCovered(pt))
       {
@@ -226,16 +288,19 @@ public:
         {
           const EBIndex<CELL>& vof = vofs[ivec];
           const EBIndex<BOUNDARY> ebf = vof.getCutFace();
-          const IndMomDIM&  momspt = ebfmo(ebf, 0);
-          double ebfacevof = momspt[0]/m_dx;
-
-          reghost(pt  , 0) = ebfacevof;
-          irrhost(vof , 0) = ebfacevof;
+          const IndMomSDMinOne&  momspt = ebfmo(ebf, 0);
+          double ebalpha = momspt[0]/fullCellArea;
+          reghost(vof.m_pt, 0) = ebalpha;
+          irrhost(vof     , 0) = ebalpha;
         }
       }
     }
   }
-  
+
+  IntVect ghostVect() const
+  {
+    return m_geomgrow;
+  }
 protected:
   //for coarsening volume moment data
   template <CENTERING cent>
@@ -434,8 +499,195 @@ private:
 
 };
 
+///
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<XFACE, Real, 1>            & a_alpha,
+              const Box                             & a_grbx ,
+              const DataIndex                       & a_dit,
+              const LevelGeometryService<order>     & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getXFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<XFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
 
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getXFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
 
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
+
+template<int order>
+const shared_ptr<LevelData<HostIrregData<XFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<XFACE>) const
+{
+  return this->getXFaceData();
+}
+
+template<int order>
+const shared_ptr<LevelData<HostIrregData<YFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<YFACE>) const
+{
+  return this->getYFaceData();
+}
+
+template<int order>
+const shared_ptr<LevelData<HostIrregData<ZFACE, IndexedMoments<DIM-1, order>, 1> > >
+LevelGeometryService<order>::getFaceData_dispatch(typenameTag<ZFACE>) const
+{
+  return this->getZFaceData();
+}
+
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<YFACE, Real, 1>        & a_alpha,
+              const Box                         & a_grbx ,
+              const DataIndex                   & a_dit,
+              const LevelGeometryService<order> & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getYFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<YFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
+
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getYFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
+
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
+
+#if DIM==3
+
+template <int order >
+inline void
+fillFaceAlpha(EBHostData<ZFACE, Real, 1>        & a_alpha,
+              const Box                         & a_grbx ,
+              const DataIndex                   & a_dit,
+              const LevelGeometryService<order> & a_geo)
+{
+  typedef IndexedMoments<DIM  , order> IndMomDIM;
+  typedef IndexedMoments<DIM-1, order> IndMomDMO;
+  typedef MomentIterator<DIM  , order> MomItDIM;
+  typedef MomentIterator<DIM-1, order> MomItSDMinOne;
+  Real dx = a_geo.dx();
+  Real fullCellArea = D_TERM(1., *dx, *dx);
+  auto dataptr = a_geo.getZFaceData();
+  auto graphs  = a_geo.getGraphs();
+  const auto & irrdat = (*dataptr)[a_dit];
+  const auto & graph  =  (*graphs)[a_dit];
+  HostBoxData<         Real, 1>& reghost = a_alpha.getRegData();
+  HostIrregData<ZFACE, Real, 1>& irrhost = a_alpha.getIrrData();
+  for(BoxIterator bit(a_grbx); bit.ok(); ++bit)
+  { 
+    Point pt  = ProtoCh::getPoint(bit());
+
+    if(graph.isRegular(pt))
+    {
+      reghost(pt, 0) = 1.0;
+    }
+    else if(graph.isCovered(pt))
+    {
+      reghost(pt, 0) = 0.0;
+    }
+    else
+    { 
+      vector<EBIndex<CELL> > vofs = graph.getVoFs(pt);
+      for(int ivec = 0; ivec < vofs.size(); ivec++)
+      {
+        const EBIndex<CELL>& vof = vofs[ivec];
+        for(SideIterator sit; sit.ok(); ++sit)
+        {
+          auto vec_faces = graph.getZFaces(vof, sit());
+          for(int iface  = 0; iface < vec_faces.size(); iface++)
+          {
+            const auto & face = vec_faces[iface];
+            const IndMomDMO&  momspt = irrdat(face, 0);
+            double facealpha = momspt[0]/fullCellArea;
+
+            reghost(face.m_pt, 0) = facealpha;
+            irrhost(face     , 0) = facealpha;
+          }
+        }
+      }
+    }
+  }
+}
+#endif
 
 ///
 /**
@@ -537,7 +789,8 @@ public:
     bool doAgglom = true;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
-    
+
+    //while((currDBL.coarsenable(4)) && ((a_grids.size()-1)!=a_maxCoarsen))
     if(doAgglom)
     {
       int ilev = 0;
@@ -632,7 +885,7 @@ public:
     (*this)[a_domain]->fillKappa(a_kappa, a_grid, a_dit);
   }
 
-  /// fill a data holder in with eb face data
+  /// fill a data holder in with eb face data  
   inline void
   fillEBFaceData(EBHostData<CELL,Real, 1>& a_ebfdata,
                  const Box                & a_grid ,
@@ -642,7 +895,19 @@ public:
 
     (*this)[a_domain]->fillEBFaceData(a_ebfdata, a_grid, a_dit);
   }
-      
+
+  /// fill a data holder in with eb face area fractions
+  inline void
+  fillEBFaceAlpha(EBHostData<CELL,Real, 1>& a_ebfdata,
+                  const Box                & a_grid ,
+                  const DataIndex          & a_dit,
+                  const Box                & a_domain) const
+  { 
+
+    (*this)[a_domain]->fillEBFaceData(a_ebfdata, a_grid, a_dit);
+  }
+
+
   ///
   inline shared_ptr<ebfa_distrib_t >
   getEBFaceData(const Box& a_domain)
@@ -684,17 +949,17 @@ public:
   {
     return (*this)[a_domain]->getEBNormalData_y();
   }
-
-  inline DisjointBoxLayout getDBL(const Box& a_domain)
-  {
-    return (*this)[a_domain]->getDBL();
-  }
   
   ///Get eb moment in the z direction
   inline shared_ptr<ebnorm_distrib_t >
   getEBNormalData_z(const Box& a_domain)
   {
     return (*this)[a_domain]->getEBNormalData_z();
+  }
+
+  inline DisjointBoxLayout getDBL(const Box& a_domain)
+  {
+    return (*this)[a_domain]->getDBL();
   }
 
   ///
@@ -711,6 +976,7 @@ public:
     return m_levels[ilev];
   }
 
+
   bool hasLevel(const Box & a_domain) const
   {
     bool found = false;
@@ -726,6 +992,7 @@ public:
     return found;
 
   }
+
 protected:
 
   vector<Box>                               m_domains;
@@ -766,6 +1033,45 @@ private:
 
 
 };
+
+template <CENTERING cent, int order>
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> > & a_geoserv,
+            const Box& a_domain, const EBIndex<cent>& a_dummy)
+{
+  shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<cent, IndexedMoments<DIM-1, order> , 1> > >   retval;
+  Chombo4::MayDay::Error("did not find template specialization");
+  return retval;
+}
+
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<XFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<XFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getXFaceData(a_domain);;
+  return retval;
+}
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<YFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<YFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getYFaceData(a_domain);;
+  return retval;
+}
+
+#if DIM==3
+template <int order  >
+inline shared_ptr<CH4_Data_Choreography::DistributedData<HostIrregData<ZFACE, IndexedMoments<DIM-1, order> , 1> > >
+getFaceData(const shared_ptr< GeometryService<order> >  & a_geoserv,
+            const Box& a_domain, const EBIndex<ZFACE>& a_dummy)
+{
+  auto  retval = a_geoserv->getZFaceData(a_domain);;
+  return retval;
+}
+
+#endif
 #include "Chombo_GeometryServiceImplem.H"
 #include "Chombo_NamespaceFooter.H"
 #endif

@@ -1,0 +1,131 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+from datetime import date
+
+today = date.today()
+
+print("Today's date:", today)
+
+parser = ArgumentParser()
+
+parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default='4')
+parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
+parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
+parser.add_argument('--domain_bc', type=str, help='domain boundary condition',default="dirichlet")
+parser.add_argument('--eb_bc', type=str, help='cut face   boundary condition',default="dirichlet")
+parser.add_argument('--executable', type=str, help='executable file'   ,default=                        "_exe/main.2d.debug.exe")
+parser.add_argument('--prefix', type=str, help='name of test["test"]',default=                  "all_regular_debug_2d")
+parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/all_regular.inputs")
+
+args = parser.parse_args()
+print(args)
+
+homestr = os.getcwd();
+print ("homedir = " + homestr)
+neartopstr = homestr + "/_" +args.prefix
+strtoday =str(today.month) + "_" + str(today.day) + "_" + str(today.year)
+
+domain_bc= args.domain_bc
+eb_bc    = args.eb_bc
+topstr = neartopstr +"_" + strtoday
+print ("topstr = " + topstr)
+execstr = args.executable
+if not os.path.exists(topstr):
+    printstr = "making directory " + topstr
+    print (printstr)
+    os.mkdir(topstr)
+    commstr = "cp " + execstr + " " + topstr;
+    print(commstr);
+    os.system(commstr);
+
+print ("changing directory to " + topstr)
+os.chdir(topstr);
+
+submitstr = "submit."  + args.prefix + ".jobs"
+r = open(submitstr,'w')
+r.write('#!/usr/bin/csh\n')
+
+max_taylor = args.max_taylor_order
+max_weight = args.max_weight_power
+taylor_P = 1
+
+submitstr = "submit."  + args.prefix + ".jobs"
+subfile = open(submitstr,'w')
+subfile.write('#!/usr/bin/csh \n \n')
+inputfilebase = os.path.basename(args.input)
+batchfilebase = os.path.basename(args.batch)
+execfilebase = os.path.basename(args.executable)
+inputtemplatename = homestr + "/" + args.input
+batchtemplatename = homestr + "/" + args.batch
+while taylor_P <= max_taylor:
+    weight_P = 1
+    while weight_P <= max_weight:
+
+        f_inputtemplate = open(inputtemplatename,'r')
+        f_batchtemplate = open(batchtemplatename,'r')
+        
+        configstr = "_T" + str(taylor_P) + "__W" + str(weight_P)
+        print (configstr);
+
+        print ("changing directory to " + homestr)
+        os.chdir(homestr);
+
+        print ("changing directory to " + topstr)
+        os.chdir(topstr);
+
+        dir_str = configstr
+        
+        batchfilename = batchfilebase + str(weight_P) + str(taylor_P)
+        commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. "
+        echostr = "echo \" " + commstr + " \" \n"
+        subfile.write(echostr)
+        subfile.write(commstr + "\n")
+
+
+        if not os.path.exists(dir_str):
+            printstr = "making directory " + dir_str
+            print (printstr)
+            os.mkdir(dir_str)
+        
+        print ("changing directory to " + dir_str)
+        os.chdir(dir_str)
+
+        inputfilename = inputfilebase + str(weight_P) + str(taylor_P)
+        print ("processing input file " + inputfilename)
+        f_inp = open(inputfilename,'w')
+        
+        for inputstr in f_inputtemplate:
+            t1str = inputstr;
+            t2str = t1str.replace("TAYLOR_MAX", str(taylor_P))
+            t3str = t2str.replace("WGT_POWER",  str(weight_P))
+            t4str = t3str.replace("DOMAIN_FACE_BC",  domain_bc)
+            t5str = t4str.replace("CUT_FACE_BC",  eb_bc)
+            f_inp.write(t5str)
+        
+        f_inp.close()
+        
+        print ("processing batch file " + batchfilename)
+        f_bat = open(batchfilename,'w')
+        for batchstr in f_batchtemplate:
+            t1str = batchstr
+            t2str = t1str.replace("INPUT_FILE", inputfilename)
+            exec_name = "../"+ execfilebase
+            t3str = t2str.replace("EXECUTABLE_FILE", exec_name)
+            f_bat.write(t3str)
+
+        f_bat.close()
+        f_inputtemplate.close()
+        f_batchtemplate.close()
+        
+        weight_P +=  1
+#       end inner scope        
+    taylor_P += 1
+#   end outer scope
+
+print("out of loop")
+subfile.close();
+
+    

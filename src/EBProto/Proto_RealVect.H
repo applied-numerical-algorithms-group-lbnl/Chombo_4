@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/Proto_Point.H"
+#include "Chombo_IntVect.H"
 #include "implem/Proto_IndexTM.H"
 using std::vector;
 namespace Proto
@@ -27,7 +28,7 @@ namespace Proto
   class RealVect
   {
   public:
-
+    typedef Chombo4::IntVect ch_iv;
     /**
        \name Constructors and Accessors
     */
@@ -413,6 +414,15 @@ namespace Proto
       return retval;
     }
 
+    /// set to location of a cell center
+    void setToCCLocation(const ch_iv& a_iv, const Real& a_dx)
+    {
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        (*this)[idir] = a_dx*(Real(a_iv[idir]) + 0.5);
+      }
+    }
+    
     ///
     /**
        Component with the maximum value of this RealVect (returns 0 if they are all the same).

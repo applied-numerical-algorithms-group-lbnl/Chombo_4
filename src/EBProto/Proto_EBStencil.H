@@ -18,6 +18,7 @@
 #include "implem/Proto_EBStencilArchive.H"
 #include "base/Proto_Stencil.H"
 
+
 using std::shared_ptr;
 using std::vector;
 
@@ -45,6 +46,7 @@ namespace Proto
     typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
     typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
     typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+    typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
 
     /// Constructor for algorithm developers
     /** 
@@ -101,6 +103,35 @@ namespace Proto
               bool                a_periodiconly,
               bool                a_needDiagonalWeights,
               Point               a_dstGrown);
+
+    /// internal constructor
+   /** 
+       This constructor is specifically for Weighted Least Squares stencils 
+   */
+    EBStencil(string              a_stencilName,
+              string              a_domainBCName[2*DIM],
+              string              a_ebbcName,
+              const Box         & a_srcValid,
+              const Box         & a_dstValid,
+              const Box         & a_srcDomain,
+              const Box         & a_dstDomain,
+              const Point       & a_srcGhost,
+              const Point       & a_dstGhost,
+              const EBGraph     & a_srcGraph,
+              const EBGraph     & a_dstGraph,
+              const VoluData    & a_voludata,
+              const EBFaData    & a_ebfadata,
+              const XFacData    & a_xfacdata,
+              const YFacData    & a_yfacdata,
+              const ZFacData    & a_zfacdata,
+	      const EBNorData   & a_ebnorxdata,
+	      const EBNorData   & a_ebnorydata,
+	      const EBNorData   & a_ebnorzdata,
+              double              a_dx,
+              bool periodic_domain_bcs_only,
+              bool a_needDiagonalWeights = false,
+              Point a_growDst = Point::Zeros());
+
     ~EBStencil()
     {
 //      using std::cout;
@@ -120,9 +151,9 @@ namespace Proto
     inline
     void apply(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
                const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-               bool   a_initToZero,
-               double a_scale     ,
-               bool a_printStuff= false)  const;
+               bool a_initToZero = true,
+               double a_scale = 1.0,
+               bool a_printStuff = false)  const;
                
 
     
@@ -130,8 +161,8 @@ namespace Proto
     inline
     void applyITZ(EBBoxData<       dstCenter, data_t, 1>  &   a_dst,
                   const EBBoxData< srcCenter, data_t, 1>  &   a_src,
-                  double a_scale      ,
-                  bool a_printStuff   = false)  const;
+                  double a_scale = 1.0,
+                  bool a_printStuff = false)  const;
                
 
     /// get the diagonal weights of the stencil

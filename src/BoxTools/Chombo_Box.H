@@ -452,7 +452,48 @@ class Box
 {
 public:
 
-  ///
+  ///sick of this so I am redoing this
+  inline size_t charsize() const
+  {
+    size_t retval = 2*DIM*sizeof(int);
+    return retval;
+  }
+
+  ///sick of this so I am redoing this
+  inline void linearIn(char* charbuf) 
+  {
+    int* intbuf = (int*) charbuf;
+    IntVect lo, hi;
+    for(int idir = 0; idir < DIM; idir++)
+    {
+      lo[idir] = *intbuf;
+      intbuf++;
+      hi[idir] = *intbuf;
+      intbuf++;
+    }
+
+    *this = Box(lo, hi);
+  }
+  
+  ///sick of this so I am redoing this
+  inline void energize(char* charbuf) const
+  {
+    int* intbuf = (int*) charbuf;
+    IntVect lo = smallEnd();
+    IntVect hi = bigEnd();
+    for(int idir = 0; idir < DIM; idir ++)
+    {
+      *intbuf = lo[idir];
+      intbuf++;
+      *intbuf = hi[idir];
+      intbuf++;
+    }
+  }
+
+  inline void linearOut(char* charbuf) const
+  {
+    energize(charbuf);
+  }
 
   ///
   /**
@@ -1615,37 +1656,6 @@ protected:
 };
 
 #include "Chombo_NamespaceFooter.H"
-namespace CH4_SPMD
-{
-
-//#include "Chombo_NamespaceVar.H"
-
-////Box specialization of linearSize
-//  template < >
-//  size_t linearSize(const Chombo4::Box& a_input);
-//
-////Chombo4::Box specialization of linearIn
-//  template < >
-//  void linearIn(Chombo4::Box& a_outputT, const void* const a_inBuf);
-//
-////Chombo4::Box specialization of linearOut
-//  template < >
-//  void linearOut(void* const a_outBuf, const Chombo4::Box& a_inputT);
-//
-////vector<Box> specialization of linearSize
-//  template < >
-//  size_t linearSize(const std::vector<Chombo4::Box>& a_input);
-//
-////vector<Box> specialization of linearIn
-//  template < >
-//  void linearIn(std::vector<Chombo4::Box>& a_outputT, const void* const a_inBuf);
-//
-////vector<Chombo4::Box> specialization of linearOut
-//  template < >
-//  void linearOut(void* const a_outBuf, const std::vector<Chombo4::Box>& a_inputT);
-  
-
-}
 #include "Chombo_NamespaceHeader.H"
 
 // global function prototypes

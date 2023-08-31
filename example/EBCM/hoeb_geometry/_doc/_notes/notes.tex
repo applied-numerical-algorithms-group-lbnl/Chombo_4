@@ -1,0 +1,40 @@
+\begin{itemize}
+\item BlobFaceIndex is a collection of EBIndexes
+\item BlobVoluIndex is a merged bunch of EBIndex<CELL>
+\item Merging and putting into the unstructured format should be
+  separate things.
+\item Working theory on how the usage pattern for this stuff will work:
+  \begin{itemize}
+  \item Build EB as normal.
+  \item Put EB into irregular description.
+    \item while still in irregular description, merge small cells ON
+      BOX.
+    \item  If we find we cannot merge on box, for now throw an error.
+    \item  Later we can figure out Box to Box communication.
+  \end{itemize}
+\item Notes on memory overhead:
+  \begin{itemize}
+    \item This could mean  a large increase in the memory load for the
+      geometric meta data but this can be managed by doing stuff in a
+      carefully ordered manner:
+      \begin{itemize}
+      \item Build EBIS.
+      \item Build BlobSpace using EBIS.  The irregular graph is a
+        temporary here that gets deleted.
+      \item Delete EBIS.
+      \item Now if you build data and operators after this process is
+        complete, the meta data overhead should be no worse than EBIS.
+      \end{itemize}
+      
+  \end{itemize}
+
+\end{itemize}
+
+
+\begin{itemize}
+\item \xbar needs to be nondimensionalized and floored in the weighting function or
+  insane (10^35) weights result.
+\item Even so, Cartesian distance seems to make wildly varying
+  eigenvalues even in the all regular case.
+  
+\end{itemize}  

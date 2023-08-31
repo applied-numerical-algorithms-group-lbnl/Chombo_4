@@ -186,6 +186,7 @@ PointSet(const Box& a_box)
   {
     std::set<Point>::iterator it = m_stdSet.find(a_iv);
     return (it != m_stdSet.end());
+
   }
 
 ///

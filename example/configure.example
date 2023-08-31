@@ -1,0 +1,153 @@
+#!/usr/bin/python
+from argparse import *
+import os
+import glob
+import platform
+
+parser = ArgumentParser()
+
+parser.add_argument('--dim', type=int, help='dimensionality to build executables [3]',default='2')
+parser.add_argument('--opt',  choices=['TRUE', 'FALSE'],help='compiler optimization [FALSE]',default='FALSE')
+parser.add_argument('--debug',  choices=['TRUE', 'FALSE'],help='turn on symbol table[TRUE]',default='TRUE')
+parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
+parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [FALSE]',default='FALSE')
+parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
+parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
+parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--openmp', choices=['TRUE', 'FALSE'],help='OpenMP on or off [FALSE]',default='FALSE')
+
+args = parser.parse_args()
+configstr = "dim=" + str(args.dim) + ",opt="+args.opt + ",MPI="+ args.mpi + ",HDF5=" + args.hdf5 + ",cuda="+ args.cuda + ",hip=" + args.hip + ",PETSc=" + args.petsc + ",OpenMP=" + args.openmp
+
+f_pref = open('Makefile.prefix','r')
+f_post = open('Makefile.postfix','r')
+
+makefile_pref = f_pref.read()
+makefile_post = f_post.read()
+f_pref.close()
+f_post.close()
+
+targets=['DomainDecomposition/EBApply/exec',
+         'DomainDecomposition/EBApply/noebsten',
+         'DomainDecomposition/EBApply/ebforall',
+         'DomainDecomposition/EBApply/exchange',
+         'DomainDecomposition/EBApply/serialization',
+         'DomainDecomposition/EBHelmholtz/exec',
+         'DomainDecomposition/EBHelmholtz/truncation',
+         'DomainDecomposition/EBHelmholtz/applyOnly',
+         'DomainDecomposition/EBHelmholtz/macProjExec',
+         'DomainDecomposition/EBHelmholtz/ccProjExec',
+         'DomainDecomposition/EBHeat/exec',
+         'DomainDecomposition/EBAdvection/exec',
+         'DomainDecomposition/EBSmallTest/exec',
+         'DomainDecomposition/EBPETSc/exec',
+         'DomainDecomposition/EBINS/exec',
+         'DomainDecomposition/EBDarcyAdvectDiffuseReact/exec',
+         'DomainDecomposition/EBMenagerie/exec',
+         'DomainDecomposition/EBSmallTest/spmd',
+         'DomainDecomposition/EBHelmholtz/hoeb_devendran_stencil',
+         'DomainDecomposition/EBHelmholtz/hoeb_truncation',
+         'DomainDecomposition/EBHelmholtz/petsc_example',
+         'DomainDecomposition/EBAdvection/hoeb_exec',
+         'DomainDecomposition/EBHelmholtz/hoeb_mac_proj_exec' ,
+         'EBCM/hoeb_geometry' ,
+         'EBCM/hoeb_petsc' ,
+         'EBCM/hoeb_spmd',
+         'EBCM/hoeb_truncation',
+         'DomainDecomposition/EBHelmholtz/hoeb_exec']
+
+top = os.getcwd()
+chombo_home = top + '/..'
+proto_home = top + '/../src/proto'
+os.chdir(chombo_home+'/mk')
+f_mach_dep = open('Make.defs.local','r')
+mach_dep = f_mach_dep.read()
+f_mach_dep.close()
+os.chdir(top)
+r = open('compile.example','w')
+r.write('#/usr/bin/csh\n')
+
+for t in targets:
+    d= t
+    print(d)
+    comstr = " cd " + d + "; make pristine; make -j10; cd " + top 
+    echostr =  "\necho \" " + comstr + "\" \n"
+    runstr =  "\n" + comstr + "\n"
+    r.write(echostr)
+    r.write(runstr)
+    os.chdir(d)
+    f = open('GNUmakefile','w')
+    f.write("\n#configuration: " + configstr + "\n");
+
+    f.write('\nCHOMBO_HOME := ' + chombo_home)
+    f.write('\nPROTO_HOME  := ' + proto_home)
+    f.write('\nDIM := ' + str(args.dim)+"\n")
+    f.write(makefile_pref);
+    hoebs = 'hoeb_'
+    if hoebs in t:
+        f.write('\nCHOMBO_SRC += $(wildcard ../../hoeb_common/*.cpp) \n')
+        f.write('\nVPATH +=  ../../hoeb_common/\n')              
+
+    f.write('\nCHOMBO_CPPFLAGS = -std=c++14\n')
+    f.write(mach_dep);
+
+    if args.mpi == 'TRUE':
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_MPI -DPR_MPI -DMPICH_SKIP_MPICXX -ULAM_WANT_MPI2CPP -DMPI_NO_CPPBIND')
+        f.write('\nCHOMBO_LIBS     += $(MPILIBS)\n')
+
+    if(args.hdf5 == 'TRUE'):
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_USE_HDF5 \n')
+        f.write('\nCHOMBO_CPPFLAGS += $(CHOMBO_HDFINCFLAGS)\n')
+        f.write('\nCHOMBO_LIBS     += $(CHOMBO_HDFLIBFLAGS)\n ')
+        if(args.mpi == 'TRUE'):
+            f.write('\nCHOMBO_CPPFLAGS += -DH5_HAVE_PARALLEL\n')
+
+    if(args.petsc == 'TRUE'):
+        f.write("include $(CHOMBO_PETSC_DIR)/lib/petsc/conf/variables\n")
+        f.write('\nCHOMBO_CPPFLAGS += -DCH_USE_PETSC \n')
+        f.write('\nCHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES) \n')
+        f.write('\nCHOMBO_LIBS     += $(PETSC_KSP_LIB)\n')
+
+    f.write('\nCHOMBO_CXXFLAGS += $(CHOMBO_CXXALLFLAGS) -DCH_USE_DOUBLE\n')
+        
+    if(args.openmp == 'TRUE'):
+        f.write('\nCHOMBO_CXXFLAGS += -fopenmp\n')
+        f.write('\nCHOMBO_LIBS     += -fopenmp\n')
+
+    if(args.debug) == 'TRUE':
+        if(args.cuda == 'TRUE'):
+            f.write("\nCHOMBO_CXXGPUFLAGS:= -G -DTHRUST_DEBUG -Xcompiler '$(CHOMBO_CXXDBGFLAGS)'\n")
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXGPUFLAGS) \n')
+        else:
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXDBGFLAGS) \n')
+
+    if(args.opt) == 'TRUE':
+        f.write('\nCHOMBO_CXXOPTFLAGS:= -O2 $(CHOMBO_CXXALLFLAGS) -DNDEBUG\n')
+        if(args.cuda == 'TRUE'):
+            f.write("\nCHOMBO_CXXGPUFLAGS:= -Xcompiler '$(CHOMBO_CXXOPTFLAGS)'\n")
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXGPUFLAGS) \n')
+        else:
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXOPTFLAGS) \n')
+        if(args.hip == 'TRUE'):
+            f.write('# insert secret hip optimization flags here\n')
+        else:
+            f.write('\nCHOMBO_CXXFLAGS+=$(CHOMBO_CXXOPTFLAGS) \n')
+
+    if(args.cuda == 'TRUE'):
+        f.write('\nCHOMBO_LIBS+= -lnvToolsExt -lgomp\n')
+        f.write('\nCHOMBO_CXXFLAGS+=-DPROTO_CUDA=1 -x cu --expt-extended-lambda -arch=compute_70\n')
+   
+    if(args.hip == 'TRUE'):
+          f.write('\nCHOMBO_CXXFLAGS+=-DPROTO_CUDA=1 -DPROTO_HIP\n')
+    
+
+    f.write(makefile_post)
+    if hoebs in t:
+        f.write('\nCHOMBO_CPPFLAGS += -I../../hoeb_common \n')
+ 
+    os.chdir(top)
+    f.close()
+    
+
+r.close()
+os.system('chmod +x compile.example')
