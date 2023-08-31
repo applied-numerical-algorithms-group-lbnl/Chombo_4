@@ -44,6 +44,7 @@ runTest(int a_argc, char* a_argv[])
   int numSmooth  = 2;
   int dombc = 1;
   int ebbc  = 1;
+
   ParmParse pp;
     
   pp.get("domainBC"  , dombc);
@@ -172,7 +173,6 @@ runTest(int a_argc, char* a_argv[])
   string prefix;
   string bottom_solver;
   pp.get("direct_to_bottom", direct_to_bottom);
-  pp.get("solver_prefix", prefix);
   pp.get("bottom_solver", bottom_solver);
   pp.get("useWCycle", useWCycle);
   EBMultigrid solver(dictionary, geoserv, alpha, beta, dx, grids,
@@ -194,8 +194,8 @@ runTest(int a_argc, char* a_argv[])
       EBBoxData<CELL, Real, 1>& phibd = phi[dit[ibox]];
       EBBoxData<CELL, Real, 1>& rhsbd = rhs[dit[ibox]];
       EBBoxData<CELL, Real, 1>& corbd = cor[dit[ibox]];
-      phibd.setVal(1.0);
-      rhsbd.setVal(0.0);
+      phibd.setVal(0.0);
+      rhsbd.setVal(1.0);
       corbd.setVal(0.0);
     }
 

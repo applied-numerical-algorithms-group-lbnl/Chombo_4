@@ -1,5 +1,6 @@
+#should just use the default install
+#PROTO_HOME = $(SCRATCH)/proto
 
-PROTO_HOME = $(SCRATCH)/proto
 CHOMBO_DEPXX=g++
 CHOMBO_CXX=g++
 
