@@ -1,5 +1,5 @@
 
-#configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=FALSE,cuda=FALSE,hip=FALSE,PETSc=FALSE,OpenMP=FALSE
+#configuration: dim=2,opt=FALSE,MPI=FALSE,HDF5=FALSE,cuda=FALSE,hip=FALSE,PETSc=TRUE,OpenMP=FALSE
 
 CHOMBO_HOME := /home/graves/_chombo4/Chombo_4/example/..
 PROTO_HOME  := /home/graves/_chombo4/Chombo_4/example/../src/proto
@@ -58,6 +58,13 @@ CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
 
 
 
+include $(CHOMBO_PETSC_DIR)/lib/petsc/conf/variables
+
+CHOMBO_CPPFLAGS += -DCH_USE_PETSC 
+
+CHOMBO_CPPFLAGS += $(PETSC_CC_INCLUDES) 
+
+CHOMBO_LIBS     += $(PETSC_KSP_LIB)
 
 CHOMBO_CXXFLAGS += $(CHOMBO_CXXALLFLAGS) -DCH_USE_DOUBLE
 
