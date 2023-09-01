@@ -1,0 +1,44 @@
+#domain size
+
+direct_to_bottom = true
+solver_prefix = "helmholtz"
+bottom_solver = "petsc"
+useWCycle     = false
+nx=       64
+#number of applies
+maxIter=    7
+#number of cuda streams (if used)
+nStream=  8
+alpha = .0
+beta = 1.
+tolerance = 1.0e-10
+#max grid size in domain decomposition
+maxGrid=  32
+
+
+
+# center coordinates
+
+x0=       0.5
+y0=       0.5
+z0=       0.5
+#x0=       50.
+#y0=       50.
+#z0=       50.
+# ellipsoid denominators
+A=        1.0
+B=        1.0
+C=        1.0
+# radius of ellipsoid
+R=        0.1
+inside_regular = false
+#R=        0.1
+#inside_regular = false
+#value in hdf5 file of  covered data
+coveredval = -0.001
+# 0 neumann, 1 dirichlet
+domainBC     = 1
+EBBC         = 1
+
+numSmooth  = 4
+do_lazy_relax = true

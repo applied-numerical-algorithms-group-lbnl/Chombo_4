@@ -1,5 +1,9 @@
 initial_velo = "zero"
 initial_scal = "blob_scal_0"
+mac_proj.direct_to_bottom = false
+mac_proj.bottom_solver = "relax"
+mac_proj.useWCycle  = false
+mac_proj.numSmooth = 4
 velocity_inflow_value = 1.
 #also available: slip_wall, inflow, outflow
 domain_bc_lo_0 = "inflow"

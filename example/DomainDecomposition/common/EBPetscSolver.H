@@ -25,8 +25,9 @@
 /**
 */
 template <int order>
-class BaseEBPetscSolver
+class EBPetscSolver
 {
+
 public:
   typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
   typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
@@ -38,11 +39,48 @@ public:
   typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
   typedef CH4_Data_Choreography::DistributedData<EBGraph>                    graph_distrib_t;
 
-  virtual ~BaseEBPetscSolver()
+
+  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
+                const shared_ptr<dictionary_t           >  & a_ebdictionary,
+                const shared_ptr<graph_distrib_t>          & a_graphs,
+                const Chombo4::DisjointBoxLayout           & a_grids,
+                const Chombo4::Box                         & a_domain,
+                string                                       a_stencilName,
+                string                                       a_domainBCName[2*DIM],
+                string                                       a_ebbcName,
+                Real                                         a_dx,
+                Real                                         a_alpha,
+                Real                                         a_beta,
+                Point                                        a_ghost,
+                bool                                         a_printStuff = false)
+
+  {
+    m_stencilName = a_stencilName;
+    for(int iface = 0; iface < 2*DIM; iface++)
+    {
+      m_domainBCName[iface] = a_domainBCName[iface];
+    }
+    m_ebbcName = a_ebbcName;
+  
+    baseDefine(a_geoserv,           
+               a_ebdictionary,      
+               a_graphs,            
+               a_grids,             
+               a_domain,            
+               a_dx,                
+               a_alpha,             
+               a_beta,              
+               a_ghost,             
+               a_printStuff);
+  
+
+  }
+  virtual ~EBPetscSolver()
   {
   }
-  
-  BaseEBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
+
+  void 
+  baseDefine(const shared_ptr<GeometryService<order> >  & a_geoserv,
                     const shared_ptr<dictionary_t           >  & a_ebdictionary,
                     const shared_ptr<graph_distrib_t>          & a_graphs,
                     const Chombo4::DisjointBoxLayout           & a_grids,
@@ -50,7 +88,7 @@ public:
                     Real a_dx,   Real a_alpha, Real a_beta, Point a_ghost,
                     bool a_printStuff = false)
   {
-    CH_TIME("EBPetscSolver::EBPetscSolver");
+    CH_TIME("EBPetscSolver::baseDefine");
     m_geoserv      =    a_geoserv;
     m_ebdictionary =    a_ebdictionary;
     m_graphs       =    a_graphs;
@@ -84,6 +122,7 @@ public:
     }
     //
 
+    ///this is where the problem-dependent stuff lives
     if(a_printStuff)
     {
       Chombo4::pout() << "BaseEBPetscsolver:calling setupSolver" << endl;
@@ -91,6 +130,7 @@ public:
     setupSolver(a_printStuff);
 
   }
+
 
   ///apply the operator to get Y = A X
   virtual
@@ -160,6 +200,20 @@ public:
 
     {
       CH_TIME("actual ksp solve");
+      if(a_printStuff)
+      {
+        PetscInt nRows = 4586;
+        PetscInt nCols = 4586;
+        MatGetSize(m_mat, &nRows, &nCols);
+        Chombo4::pout() << "EBPetscSolver::solve: matrix size = ( " << nRows << " , " << nCols << " )" << endl;
+        PetscInt bbSize = 4586;
+        PetscInt xxSize = 4586;
+        VecGetSize(m_bb, &bbSize);
+        VecGetSize(m_xx, &xxSize);
+        Chombo4::pout() << "EBPetscSolver::solve: bb size = " << bbSize << endl;
+        Chombo4::pout() << "EBPetscSolver::solve: xx size = " << xxSize << endl;
+        
+      }
       ierr = KSPSolve( m_ksp, m_bb, m_xx );CHKERRQ(ierr);
     }
 
@@ -267,85 +321,26 @@ protected:
     Chombo4::pout() << "      KSP:: iteration = " << it << " residual norm = " <<  rnorm << std::endl;
     return 0;
   }
-  virtual PetscInt setupSolver(bool a_printStuff = false)
+  
+  PetscInt setupSolver(bool a_printStuff = false)
   {
     CH_TIME("BaseEBPetscSolver::setupSolver");
     // create solvers
-    PetscBool ism = PETSC_FALSE;
-#if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsGetBool(PETSC_NULL,m_prestring,"-ksp_monitor",&ism,PETSC_NULL);
-#else 
-    PetscOptionsGetBool(m_prestring,"-ksp_monitor",&ism,PETSC_NULL);
-#endif
+    PetscInt ierr = 4586;
+    ierr = this->formMatrix(a_printStuff); CHKERRQ(ierr);
+    
 #ifdef CH_MPI
     MPI_Comm wcomm = Chombo_MPI::comm;
 #else
     MPI_Comm wcomm = PETSC_COMM_SELF;
 #endif
+    PetscInt irr = 4586;
     // create the KSP so that we can set KSP parameters
-    KSPCreate( wcomm, &m_ksp );
-    PetscInt  ierr;
-    if ( strlen(m_prestring) > 0 )
-    {
-      ierr = KSPSetOptionsPrefix( m_ksp, m_prestring );    CHKERRQ(ierr);
-    }
-    ierr = KSPSetFromOptions(m_ksp);CHKERRQ(ierr);
-    if (ism)
-    {
-      ierr = KSPMonitorSet(m_ksp,ksp_monitor_pout,PETSC_NULL,PETSC_NULL); CHKERRQ(ierr);
-    }
-#if PETSC_VERSION_GE(3,5,0)
+    ierr = KSPCreate( wcomm, &m_ksp );;CHKERRQ(ierr);
+
     ierr = KSPSetOperators(m_ksp,m_mat,m_mat);CHKERRQ(ierr);
-#else
-    ierr = KSPSetOperators(m_ksp,m_mat,m_mat,SAME_NONZERO_PATTERN);CHKERRQ(ierr);
-#endif
-    //ierr = KSPSetInitialGuessNonzero(m_ksp, m_nz_init_guess ? PETSC_TRUE : PETSC_FALSE );CHKERRQ(ierr);
 
-    { // coordinates
-      PC pc; 
-      PetscInt sz,ind,bs,n,m;
-#if PETSC_VERSION_LT(3,4,0) & PETSC_VERSION_RELEASE
-      const PCType type;
-#else
-      PCType type;
-#endif  
-      ierr = KSPGetPC( m_ksp, &pc );     CHKERRQ(ierr);
-      ierr = PCGetType( pc, &type );    CHKERRQ(ierr);
-      ierr = MatGetBlockSize( m_mat, &bs );               CHKERRQ( ierr );
-      if ( strcmp(type,PCGAMG) == 0 && bs > 1 )
-      {
-        PetscReal    *coords;
-        ierr = MatGetLocalSize( m_mat, &m, &n );  CHKERRQ(ierr);
-        sz = CH_SPACEDIM*(m/bs);
-        ierr = PetscMalloc( (sz+1)*sizeof(PetscReal), &coords ); CHKERRQ(ierr);
-        ind  = 0;//just for parity check with sz
-        for (Chombo4::DataIterator  dit = m_grids.dataIterator(); dit.ok() ; ++dit )
-        {
-          Chombo4::Box grid = m_grids[dit()];
-          for (Chombo4::BoxIterator bit(grid); bit.ok(); bit.next())
-          {
-            IntVect iv = bit(); // coordinate in any scaled, shifted, rotated frame.
-            for (PetscInt k=0; k< DIM; k++)
-            {
-              ind = ind + 1;
-              coords[ind] = (PetscReal)iv[k];
-            }
-          }
-        }
-        CH_assert(ind==sz);
-        ierr = PCSetCoordinates( pc, CH_SPACEDIM, sz/CH_SPACEDIM, coords ); CHKERRQ(ierr);
-        ierr = PetscFree( coords );  CHKERRQ(ierr);
-      }
-    }
-
-    // print_memory_line("After AMG set up");
-    //there is some stuff here about blocksize but it appears to be optional.
     return 0;
-  }
-  
-  virtual int getNNZPerRow() const
-  {
-    return 1000;
   }
   
   PetscInt createMatrixAndVectors(bool a_printStuff = false)
@@ -361,61 +356,19 @@ protected:
 #endif
 //    int nc = 1;
     PetscInt ierr;
+    int nnzperrow = 1000;
     ierr = MatCreate(wcomm,&m_mat);CHKERRQ(ierr);
-    ierr = MatSetOptionsPrefix(m_mat,"");CHKERRQ(ierr);
-
-    //Chombo4::Chombo4::pout() << "debug:: matsetsize m_numPtsThisProc = " << m_numPtsThisProc << std::endl;
     ierr = MatSetSizes(m_mat,m_numPtsThisProc,m_numPtsThisProc,m_numPtsAllProcs,m_numPtsAllProcs);CHKERRQ(ierr);
-//    ierr = MatSetBlockSize(m_mat,nc);CHKERRQ(ierr);
-    ierr = MatSetType(m_mat,MATDENSE);CHKERRQ(ierr);
-#ifdef CH_MPI
-    ierr = MatMPIDenseSetPreallocation(m_mat, NULL);CHKERRQ(ierr);
+    MatSetFromOptions(m_mat);
+#ifdef CH_MPI    
+    MatMPIAIJSetPreallocation(m_mat, nnzperrow, NULL, nnzperrow,     NULL);
 #else
-    PetscInt matsize = m_numPtsThisProc*m_numPtsThisProc;
-    PetscScalar* matspace = new PetscScalar[matsize];
-    ierr = MatSeqDenseSetPreallocation(m_mat, matspace);CHKERRQ(ierr);
-#endif    
-
-    ierr = MatSetFromOptions( m_mat ); CHKERRQ(ierr);
-    PetscInt *d_nnz=PETSC_NULL, *o_nnz=PETSC_NULL;
-
-    PetscInt nglobal;
-    PetscInt NN = m_numPtsThisProc;
-#ifdef CH_MPI
-    PetscInt nn = NN;
-    MPI_Datatype mtype;
-    PetscDataTypeToMPIDataType(PETSC_INT,&mtype);
-    MPI_Allreduce(&nn,&nglobal,1,mtype,MPI_SUM,wcomm);
-#else
-    nglobal = NN;
-#endif    
-
-    ierr = PetscMalloc( (m_numPtsThisProc+1)*sizeof(PetscInt), &d_nnz ); CHKERRQ(ierr);
-    ierr = PetscMalloc( (m_numPtsThisProc+1)*sizeof(PetscInt), &o_nnz ); CHKERRQ(ierr);
-    for (PetscInt kk=0;kk<NN;kk++) d_nnz[kk] = o_nnz[kk] = 0;
-
-    // fix bounds
-    for (PetscInt kk=0;kk<NN;kk++) 
-    {
-      if (d_nnz[kk] > NN) d_nnz[kk] = NN;
-      if (o_nnz[kk] > nglobal-NN) o_nnz[kk] = nglobal-NN;
-    }
-    nnzrow = 0;
-
-    //Chombo4::pout() << "debug:: matmpiaijsetpreallocation nnzrow = "  << nnzrow << ", d_nnz = " << d_nnz << ", o_nnz = " << o_nnz << endl;
-    ierr = MatSeqAIJSetPreallocation(m_mat,nnzrow, d_nnz);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(m_mat,nnzrow, d_nnz, nnzrow/2, o_nnz);CHKERRQ(ierr);
-    ierr = MatSetOption(m_mat,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE) ;CHKERRQ(ierr);
-
-      
-    if ( d_nnz )
-    {
-      ierr = PetscFree( d_nnz );  CHKERRQ(ierr);
-      ierr = PetscFree( o_nnz );  CHKERRQ(ierr);
-    }
-
-    // create vectors
-    ierr = MatCreateVecs(m_mat,&m_bb, NULL);
+    MatSeqAIJSetPreallocation(m_mat, nnzperrow, NULL);
+#endif
+                              
+    VecCreate(wcomm, &m_bb);
+    VecSetSizes(m_bb, PETSC_DECIDE, m_numPtsAllProcs);
+    VecSetFromOptions(m_bb);
     ierr = VecDuplicate( m_bb, &m_xx);CHKERRQ(ierr);
     ierr = VecDuplicate( m_bb, &m_rr ); CHKERRQ(ierr);
 
@@ -525,7 +478,7 @@ protected:
     {
       Chombo4::pout() << "EBPetscSolver::defineGids: calling exchange on gids" << endl;
     }
-    m_gids.exchange(a_printStuff);
+    m_gids.exchange();
     if(a_printStuff)
     {
       Chombo4::pout() << "EBPetscSolver::defineGids: leaving" << endl;
@@ -562,59 +515,6 @@ protected:
   PetscInt m_defined;
   char m_prestring[32];
   Real m_alpha, m_beta;
-};
-
-
-template <int order>
-class EBPetscSolver: public BaseEBPetscSolver<order>
-{
-public:
-  typedef GraphConstructorFactory< EBBoxData<CELL, int, 1> >  devifactint_t;
-  typedef GraphConstructorFactory<EBHostData<CELL, int, 1> >  host_fact_int_t;
-  typedef GraphConstructorFactory<EBHostData<CELL,Real, 1> >  host_fact_real_t;
-  typedef EBDictionary<order, Real, CELL, CELL>                dictionary_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, Real, 1> > devi_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, Real, 1> > host_distrib_real_t;
-  typedef CH4_Data_Choreography::DistributedData<EBBoxData< CELL, int , 1> > devi_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBHostData<CELL, int , 1> > host_distrib_int_t;
-  typedef CH4_Data_Choreography::DistributedData<EBGraph>                   graph_distrib_t;
-
-  virtual ~EBPetscSolver()
-  {
-  }
-  
-  EBPetscSolver(const shared_ptr<GeometryService<order> >  & a_geoserv,
-                const shared_ptr<dictionary_t           >  & a_ebdictionary,
-                const shared_ptr<graph_distrib_t>          & a_graphs,
-                const Chombo4::DisjointBoxLayout           & a_grids,
-                const Chombo4::Box                         & a_domain,
-                string                                       a_stencilName,
-                string                                       a_domainBCName[2*DIM],
-                string                                       a_ebbcName,
-                Real                                         a_dx,
-                Real                                         a_alpha,
-                Real                                         a_beta,
-                Point                                        a_ghost,
-                bool                                         a_printStuff = false)
-  :BaseEBPetscSolver<order>(a_geoserv,           
-                            a_ebdictionary,      
-                            a_graphs,            
-                            a_grids,             
-                            a_domain,            
-                            a_dx,                
-                            a_alpha,             
-                            a_beta,              
-                            a_ghost,             
-                            a_printStuff)
-  {
-    this->m_stencilName = a_stencilName;
-    for(int iface = 0; iface < 2*DIM; iface++)
-    {
-      this->m_domainBCName[iface] = a_domainBCName[iface];
-    }
-    this->m_ebbcName = a_ebbcName;
-    this->formMatrix(a_printStuff);
-  }
 
 
   ///
@@ -724,24 +624,10 @@ public:
   virtual PetscInt formMatrix(bool a_printStuff = false)
   {
     
+    PetscInt ierr = 4586;
     CH_TIME("EBPetscSolver::formMatrix");
     {
-      using Chombo4::DataIterator;
-      char str[256];
-      strcpy (str,"-");
-      strcat (str,this->m_prestring);
-#if PETSC_VERSION_GE(3,6,0)
-      strcat (str,"pc_gamg_square_graph 20");
-#else
-      strcat (str,"pc_gamg_square_graph true");
-#endif
-      PetscInt  ierr;
-#if PETSC_VERSION_GE(3,7,0)
-      ierr = PetscOptionsInsertString(PETSC_NULL,str);CHKERRQ(ierr);
-#else
-      ierr = PetscOptionsInsertString(str);CHKERRQ(ierr);
-#endif
-      DataIterator dit = this->m_grids.dataIterator();
+      Chombo4::DataIterator dit = this->m_grids.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         vector< EBIndex<CELL> >            dstVoFs;
@@ -773,6 +659,13 @@ public:
             wstencil.push_back(regSten);
           }
         }
+        if(a_printStuff)
+        {
+          int nrow = 4586;
+          int ncol = 4586;
+          MatGetSize(this->m_mat, &nrow, &ncol);
+          Chombo4::pout() << "EBPetcSolver::formMatrix: matrix size = ( " << nrow << " . " << ncol << ")" << endl;
+        }
         //now create the matrix
         for(int idst = 0; idst < dstVoFs.size(); idst++)
         {
@@ -792,14 +685,12 @@ public:
             PetscInt irowpet = irow;
             PetscInt icolpet = icol;
             ierr = MatSetValues(this->m_mat,1,&irowpet,1,&icolpet,&weight,INSERT_VALUES);
+            CHKERRQ(ierr);
           } 
         }
       }
-
       ierr = MatAssemblyBegin(this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(  this->m_mat,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-      
     }
     return 0;
   }

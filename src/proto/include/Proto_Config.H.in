@@ -1,0 +1,7 @@
+// the configured options and setting for Proto
+#define Proto_VERSION_MAJOR @Proto_VERSION_MAJOR@
+#define Proto_VERSION_MINOR @Proto_VERSION_MINOR@
+#cmakedefine PROTO_MEM_CHECK
+#cmakedefine PROTO_OMP_FINE
+#cmakedefine PROTO_CUDA
+#define DIM @DIM@

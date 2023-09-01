@@ -1,5 +1,7 @@
 
-PROTO_HOME = $(HOME)/_proto/proto
+#should just use the default installation
+#PROTO_HOME = $(HOME)/_proto/proto
+
 CHOMBO_DEPXX=g++
 CHOMBO_CXX=g++
 
