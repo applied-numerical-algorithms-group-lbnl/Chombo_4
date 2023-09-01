@@ -1,6 +1,7 @@
 #ifndef _PROTO_EULERSTEP_H_
 #define _PROTO_EULERSTEP_H_
 
+
 namespace Proto {
 
 ///  Generic Euler Algorithm
