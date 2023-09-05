@@ -32,20 +32,25 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
-    typedef Chombo4::Box                            ch_box;
-    typedef Chombo4::DisjointBoxLayout              ch_dbl;
-    typedef Chombo4::BoxIterator                    ch_bit;
-    typedef Chombo4::IntVect                        ch_iv;
-    typedef Chombo4::DataIterator                   ch_dit;
-    
-    typedef ::Mat                                   petsc_mat;
-    typedef Proto::Point                            pr_pt;
-    typedef EBCM::MetaDataLevel<ebcm_order>         ebcm_meta;
-    typedef EBCM::EBCM_Graph<ebcm_order>            ebcm_graph;
-    typedef EBCM::HostLevelData<int, 1, ebcm_order> ebcm_data;
-    typedef EBCM::SubVolumeVector<      ebcm_order> ebcm_subvol_vec;
-    typedef EBCM::Algorithm_Framework<  ebcm_order> ebcm_framework;
+    typedef Chombo4::Box                             ch_box;
+    typedef Chombo4::DisjointBoxLayout               ch_dbl;
+    typedef Chombo4::BoxIterator                     ch_bit;
+    typedef Chombo4::IntVect                         ch_iv;
+    typedef Chombo4::DataIterator                    ch_dit;
+                                                   
+    typedef ::Mat                                    petsc_mat;
+    typedef Proto::Point                             pr_pt;
+    typedef EBCM::MetaDataLevel<ebcm_order>          ebcm_meta;
+    typedef EBCM::EBCM_Graph<ebcm_order>             ebcm_graph;
+    typedef EBCM::HostLevelData<int, 1, ebcm_order > ebcm_data;
+    typedef EBCM::SubVolumeVector<      ebcm_order > ebcm_subvol_vec;
+    typedef EBCM::Algorithm_Framework<  ebcm_order > ebcm_framework;
+    typedef Chombo4::GeometryService<   ebcm_order > ch_geoserv;
 
+    static int dummy_func()
+    {
+      return 0;
+    }
     struct local_stencil_t
     {
       pr_pt                           m_start;
@@ -241,7 +246,7 @@ namespace EBCM
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
             PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
-            for(int isten = 0; isten < sten.size(); isten++)
+            for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = local->m_stencil[isten];
               PetscInt icol = (*m_row_map_ptr)(stenpair.first, 0);
@@ -284,20 +289,89 @@ namespace EBCM
       }
     };
     
-    ///test function for example/EBCM/hoeb_truncation
+    /**
+       just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
+     **/ 
+    static void parseFineGridParams(int            & a_nx,
+                                    double         & a_dx,
+                                    ch_probdom     & a_domain,
+                                    int            & a_maxGrid,
+                                    bool           & a_mergeSmallCells)
+    {
+      ParmParse pp("parseFineGridParams");
+
+      pp.get("nx"             , a_nx);
+      pp.get("maxGrid"        , a_maxGrid);
+      pp.get("mergeSmallCells", a_mergeSmallCells);
+
+      ch_iv domLo = ch_iv::Zero;
+      ch_iv domHi  = (a_nx - 1)*ch_iv::Unit;
+      a_domain = ch_probdom(domLo, domHi);
+      a_dx = 1./(double(a_nx));
+      
+    }
+    /**
+       Make geometry at specified refinment.
+       This decouples geometry generation with parmparse, allowing me to make varying refinements.
+     **/ 
+    static
+    shared_ptr< ebcm_meta  >
+    makeGeometryAtSpecificNX( const int            & a_nx,
+                              const double         & a_dx,
+                              const ch_probdom     & a_domain,
+                              const int            & a_maxGrid,
+                              const bool           & a_mergeSmallCells,
+                              const bool           & a_print)
+    {
+      vector<ch_dbl> vecgrids;
+      Chombo4::pout() << "making grids" << endl;
+      GeometryService<2>::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
+
+      int geomGhost = 6;
+      shared_ptr<BaseIF>    impfunc = ebcm_framework::getImplicitFunction();
+      Chombo4::pout() << "defining geometry in EB land" << endl;
+
+      pr_rv origin = pr_rv::Zero();
+      shared_ptr< ch_geoserv > geoserv
+        (new ch_geoserv(impfunc, origin, a_dx, a_domain.domainBox(), vecgrids, geomGhost));
+
+      int ghost = 0;
+      shared_ptr< ebcm_meta  >
+        metaDataPtr(new ebcm_meta(geoserv, a_domain.domainBox(), a_dx, ghost,
+                                  a_mergeSmallCells, a_print));
+      return metaDataPtr;
+    }
+
+    /**
+       test function for example/EBCM/hoeb_truncation
+     **/ 
     static  void run_hoeb_truncation_tests()
     {
-      
-      int nghost = 4;
-      shared_ptr< ebcm_meta  > ebcm;
-      ch_dbl                   grids;
-      double                   dx;
-      ch_probdom               domain;
-      ebcm_framework::makeMergedGeometry(ebcm, grids, dx, domain, true, true);
-    
-      typedef DummyDerivedOp   ebcm_petsc_op;
-      ebcm_petsc_op   testOperator(ebcm, nghost, false);
 
+#ifdef CH_USE_PETSC
+      static const int num_ghost = 4;  
+      int           nx_fine = 4586;
+      double        dx_fine = 4586.;
+      ch_probdom domain_fine;
+      ///these two have to be the same for fine and coar      
+      int maxGrid = 4586;      bool mergeSmallCells = true;   
+      parseFineGridParams(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      int    nx_coar = nx_fine/2;
+      double dx_coar = dx_fine*2.;
+      ch_probdom domain_coar = domain_fine;
+      domain_coar.coarsen(2);
+      bool print = false;
+      shared_ptr< ebcm_meta  > ebcm_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > ebcm_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+
+      /**
+      typedef DummyDerivedOp   ebcm_petsc_op;
+      ebcm_petsc_op   testOperator(ebcm, num_ghost, false);
+      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      **/
+#endif
     }
   }; //end petsc_framwork class
 }
