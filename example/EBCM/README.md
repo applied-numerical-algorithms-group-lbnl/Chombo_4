@@ -7,9 +7,9 @@
 ## EBCM example process
 *  Each example will run a particular test in the source directory.
 *  The test will be run for a specific simulation campaign.
-*  The test will have a documents directory that explains the test and the campaign's results.
+*  The test will have a document that explains the test and the campaign's results.
 *  If there is enough data to merit a report, an LBNL technical report will result from the campaign.
-*  If necessary, the test harness will be included and well-documented.
+*  Any test harness will be included and well-documented.
 
 ## hoeb_geometry_test
 * This test makes a single-box EBCM::MetaDataLevel.

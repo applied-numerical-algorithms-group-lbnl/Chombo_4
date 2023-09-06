@@ -34,6 +34,7 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
+<<<<<<< HEAD
     typedef Chombo4::Box                                   ch_box;
     typedef Chombo4::DisjointBoxLayout                     ch_dbl;
     typedef Chombo4::BoxIterator                           ch_bit;
@@ -65,6 +66,28 @@ namespace EBCM
        This will have to be generalized for multiple vofs per cell.
      **/
     struct local_stencil_t: public std::vector< pair< pr_pt, double > >
+=======
+    typedef Chombo4::Box                             ch_box;
+    typedef Chombo4::DisjointBoxLayout               ch_dbl;
+    typedef Chombo4::BoxIterator                     ch_bit;
+    typedef Chombo4::IntVect                         ch_iv;
+    typedef Chombo4::DataIterator                    ch_dit;
+                                                   
+    typedef ::Mat                                    petsc_mat;
+    typedef Proto::Point                             pr_pt;
+    typedef EBCM::MetaDataLevel<ebcm_order>          ebcm_meta;
+    typedef EBCM::EBCM_Graph<ebcm_order>             ebcm_graph;
+    typedef EBCM::HostLevelData<int, 1, ebcm_order > ebcm_data;
+    typedef EBCM::SubVolumeVector<      ebcm_order > ebcm_subvol_vec;
+    typedef EBCM::Algorithm_Framework<  ebcm_order > ebcm_framework;
+    typedef Chombo4::GeometryService<   ebcm_order > ch_geoserv;
+
+    static int dummy_func()
+    {
+      return 0;
+    }
+    struct local_stencil_t
+>>>>>>> dtg_dev
     {
     public:
  
@@ -308,9 +331,13 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
+<<<<<<< HEAD
             const auto    & maplev = *(m_row_map_ptr->m_data);
             const auto    & mapfab = maplev[dit[ibox]];
             PetscInt irow = mapfab(volu.m_pt, 0);
+=======
+            PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
+>>>>>>> dtg_dev
             for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = (*local)[isten];
@@ -353,6 +380,7 @@ namespace EBCM
       }
     };
     
+<<<<<<< HEAD
 
     ///
     template <CENTERING cent>
@@ -690,79 +718,120 @@ namespace EBCM
         return retval;
       }
 
-    };
-    ///
-    static void
-    setPhiExact(shared_ptr<ebcm_dou_sca_data>       a_phi_exac_p,
-                const ch_dbl                 &      a_grids,
-                const ch_probdom             &      a_domain,
-                const double                 &      a_dx,
-                shared_ptr< ebcm_meta  >     &      a_meta_data)
+    }; //end class HelmholtzOp
+    /**
+       just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
+     **/ 
+    static void parseFineGridParams(int            & a_nx,
+                                    double         & a_dx,
+                                    ch_probdom     & a_domain,
+                                    int            & a_maxGrid,
+                                    bool           & a_mergeSmallCells)
     {
-      ch_mayday::Error("not implemented");
-    }
-    ///
-    static void
-    setLphExact(shared_ptr<ebcm_dou_sca_data>       a_lph_exac_p,
-                const ch_dbl                 &      a_grids,
-                const ch_probdom             &      a_domain,
-                const double                 &      a_dx,
-                shared_ptr< ebcm_meta  >     &      a_meta_data)
-    {
-      ch_mayday::Error("not implemented");
-    }
+      ParmParse pp("parseFineGridParams");
 
+      pp.get("nx"             , a_nx);
+      pp.get("maxGrid"        , a_maxGrid);
+      pp.get("mergeSmallCells", a_mergeSmallCells);
 
-    static void
-    getHelmholtzError(int a_coarseningFactor)
-    {
+      ch_iv domLo = ch_iv::Zero;
+      ch_iv domHi  = (a_nx - 1)*ch_iv::Unit;
+      a_domain = ch_probdom(domLo, domHi);
+      a_dx = 1./(double(a_nx));
       
-      shared_ptr< ebcm_meta  > meta_data;
-      ch_dbl                   grids;
-      double                   dx;
-      ch_probdom               domain;
-      ///stuff to parmparse.
-      double alpha     = 4586;
-      double beta      = 4586;
-      int weight_power = 4586;
-      int nghost       = 4586;
-      string dom_bc;
-      string eb_bc;
-      ParmParse pp("trunc_test");
-      pp.get("alpha", alpha);
-      pp.get("beta" , beta);
-      pp.get("nghost" , beta);
-      pp.get("weight_power", weight_power);
-      pp.get("dom_bc", dom_bc);
-      pp.get("eb_bc",   eb_bc);
-      algo_framework::makeMergedGeometry(meta_data, grids, dx, domain, a_coarseningFactor, true, true);
+    }
+    /**
+       Make geometry at specified refinment.
+       This decouples geometry generation with parmparse, allowing me to make varying refinements.
+    **/ 
+    static
+    shared_ptr< ebcm_meta  >
+    makeGeometryAtSpecificNX( const int            & a_nx,
+                              const double         & a_dx,
+                              const ch_probdom     & a_domain,
+                              const int            & a_maxGrid,
+                              const bool           & a_mergeSmallCells,
+                              const bool           & a_print)
+    {
+      vector<ch_dbl> vecgrids;
+      Chombo4::pout() << "making grids" << endl;
+      GeometryService<2>::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
 
-      
-      HelmholtzOp helmholtzOperator(alpha, beta, nghost, weight_power, meta_data, dom_bc, eb_bc, false);
-      shared_ptr<ebcm_dou_sca_data> phiExac(new ebcm_dou_sca_data(meta_data, nghost));
-      shared_ptr<ebcm_dou_sca_data> lphExac(new ebcm_dou_sca_data(meta_data, nghost));
-      shared_ptr<ebcm_dou_sca_data> lphCalc(new ebcm_dou_sca_data(meta_data, nghost));
-      shared_ptr<ebcm_dou_sca_data> truncat(new ebcm_dou_sca_data(meta_data, nghost));
-      setPhiExact(phiExac, grids, domain, dx, meta_data);
-      setLphExact(lphExac, grids, domain, dx, meta_data);
+      int geomGhost = 6;
+      shared_ptr<BaseIF>    impfunc = ebcm_framework::getImplicitFunction();
+      Chombo4::pout() << "defining geometry in EB land" << endl;
 
-      helmholtzOperator.applyOp(lphCalc, phiExac);
-      truncat->setVal(0,);
-      (*truncat) += (*lphExac);
-      (*truncat) -= (*lphCalc);
-      double retval = truncat->maxNorm();
+      pr_rv origin = pr_rv::Zero();
+      shared_ptr< ch_geoserv > geoserv
+        (new ch_geoserv(impfunc, origin, a_dx, a_domain.domainBox(), vecgrids, geomGhost));
+
+      int ghost = 0;
+      shared_ptr< ebcm_meta  >
+        metaDataPtr(new ebcm_meta(geoserv, a_domain.domainBox(), a_dx, ghost,
+                                  a_mergeSmallCells, a_print));
+      return metaDataPtr;
+    }
+
+    ///
+    static double
+    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
+    {
+      int num_ghost = 4;
+      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> err_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta);
+      ebcm_petsc_op discreteOp(a_meta, num_ghost, false);
+
+      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
+
+      //settting  error to lph_calc - lph_exac
+      double acoef =  1;
+      double bcoef = -1;
+      err_calc_ptr->setToAxBy(acoef, lph_calc_ptr, bcoef, lph_exac_ptr);
+      double retval = err_calc_ptr->maxNorm();
       return retval;
     }
-    //this is the function called by Chombo_4/example/EBCM/hoeb_truncation
+    
+    /**
+       test function for example/EBCM/hoeb_truncation
+    **/ 
     static  void run_hoeb_truncation_tests()
     {
 
-      
-      ///apply the helmholtz operator and compute Error
-      double fineErrorNorm = getHelmholtzError(1);
-      double coarErrorNorm = getHelmholtzError(2);
-      double order = (coarErrorNorm/fineErrorNorm)/std::log(2);
-      Chombo4::pout() << "Helmholtz truncation error order = " << order << endl;
+#ifdef CH_USE_PETSC
+      static const int num_ghost = 4;  
+      int           nx_fine = 4586;
+      double        dx_fine = 4586.;
+      ch_probdom domain_fine;
+      ///these two have to be the same for fine and coar      
+      int maxGrid = 4586;      bool mergeSmallCells = true;   
+      parseFineGridParams(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      int    nx_coar = nx_fine/2;
+      double dx_coar = dx_fine*2.;
+      ch_probdom domain_coar = domain_fine;
+      domain_coar.coarsen(2);
+      bool print = false;
+      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+
+      double max_err_fine = getMaxAbsTruncation(meta_fine); 
+      double max_err_coar = getMaxAbsTruncation(meta_coar);
+      ///always positive
+      Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
+      Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
+      if(max_err_fine > 1,0e-12)
+      {
+        double order = (log(max_err_coar/max_err_fine))/log(2.0);
+        Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+      }
+#endif
     }
 
   }; //end petsc_framwork class

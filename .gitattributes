@@ -1,0 +1,14 @@
+# Sources
+*.cpp   text 
+*.H     text 
+*.c     text 
+*.c++   text 
+*.hpp   text 
+*.h     text 
+*.H     text 
+*.hh    text 
+*.py    text 
+*.example    text 
+configure,*  text 
+*.pdf   binary
+

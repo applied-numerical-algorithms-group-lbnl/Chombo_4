@@ -10,10 +10,10 @@ parser.add_argument('--dim', type=int, help='dimensionality to build executables
 parser.add_argument('--opt',  choices=['TRUE', 'FALSE'],help='compiler optimization [FALSE]',default='FALSE')
 parser.add_argument('--debug',  choices=['TRUE', 'FALSE'],help='turn on symbol table[TRUE]',default='TRUE')
 parser.add_argument('--mpi',  choices=['TRUE', 'FALSE'],help='MPI  on or off [FALSE]',default='FALSE')
-parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [FALSE]',default='FALSE')
+parser.add_argument('--hdf5',  choices=['TRUE', 'FALSE'],help='HDF5  on or off [FALSE]',default='TRUE')
 parser.add_argument('--cuda', choices=['TRUE', 'FALSE'],help='CUDA on or off [FALSE]',default='FALSE')
 parser.add_argument('--hip', choices=['TRUE', 'FALSE'],help='HIP on or off [FALSE]',default='FALSE')
-parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='FALSE')
+parser.add_argument('--petsc', choices=['TRUE', 'FALSE'],help='PETSc on or off [FALSE]',default='TRUE')
 parser.add_argument('--openmp', choices=['TRUE', 'FALSE'],help='OpenMP on or off [FALSE]',default='FALSE')
 
 args = parser.parse_args()

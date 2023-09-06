@@ -5,7 +5,7 @@
 
 ## Introduction
 * Chombo_4 is a lightweight algorithm development framework used for finite volume calculations.
-* Chombo_4 is free software (see Chombo_4/Copyright.txt).
+* Chombo_4 is free software (see the BSD-style license in Chombo_4/Copyright.txt).
 * Chombo_4 is also blessedly  fortran-free.    
 * All calculations are in C++.
 * File management and build configuration tools are in Python.
@@ -28,6 +28,5 @@
 * Chombo_4/src is where the common code lives.
 * Chombo_4/documents has a few documents created using this software.  It is also where doxygen output lives.
 * Chombo_4/mk  is where compiler and machine specific flags are set.
-* Chombo_4/util has a few random tools that I kept around.
-* Chombo_4/hooks is purely aspirational.
+* Chombo_4/util has a few random tools that I keep around.
 
