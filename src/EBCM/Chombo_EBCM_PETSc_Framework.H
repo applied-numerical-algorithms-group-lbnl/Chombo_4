@@ -380,7 +380,6 @@ namespace EBCM
       }
     };
     
-<<<<<<< HEAD
 
     ///
     template <CENTERING cent>
