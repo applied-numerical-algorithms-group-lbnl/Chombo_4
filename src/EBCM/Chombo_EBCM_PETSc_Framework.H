@@ -34,7 +34,7 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
-<<<<<<< HEAD
+
     typedef Chombo4::Box                                   ch_box;
     typedef Chombo4::DisjointBoxLayout                     ch_dbl;
     typedef Chombo4::BoxIterator                           ch_bit;
@@ -66,28 +66,6 @@ namespace EBCM
        This will have to be generalized for multiple vofs per cell.
      **/
     struct local_stencil_t: public std::vector< pair< pr_pt, double > >
-=======
-    typedef Chombo4::Box                             ch_box;
-    typedef Chombo4::DisjointBoxLayout               ch_dbl;
-    typedef Chombo4::BoxIterator                     ch_bit;
-    typedef Chombo4::IntVect                         ch_iv;
-    typedef Chombo4::DataIterator                    ch_dit;
-                                                   
-    typedef ::Mat                                    petsc_mat;
-    typedef Proto::Point                             pr_pt;
-    typedef EBCM::MetaDataLevel<ebcm_order>          ebcm_meta;
-    typedef EBCM::EBCM_Graph<ebcm_order>             ebcm_graph;
-    typedef EBCM::HostLevelData<int, 1, ebcm_order > ebcm_data;
-    typedef EBCM::SubVolumeVector<      ebcm_order > ebcm_subvol_vec;
-    typedef EBCM::Algorithm_Framework<  ebcm_order > ebcm_framework;
-    typedef Chombo4::GeometryService<   ebcm_order > ch_geoserv;
-
-    static int dummy_func()
-    {
-      return 0;
-    }
-    struct local_stencil_t
->>>>>>> dtg_dev
     {
     public:
  
@@ -331,13 +309,8 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
-<<<<<<< HEAD
-            const auto    & maplev = *(m_row_map_ptr->m_data);
-            const auto    & mapfab = maplev[dit[ibox]];
-            PetscInt irow = mapfab(volu.m_pt, 0);
-=======
             PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
->>>>>>> dtg_dev
+
             for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = (*local)[isten];
