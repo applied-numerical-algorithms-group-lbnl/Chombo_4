@@ -313,7 +313,7 @@ namespace EBCM
     /**
        Make geometry at specified refinment.
        This decouples geometry generation with parmparse, allowing me to make varying refinements.
-     **/ 
+    **/ 
     static
     shared_ptr< ebcm_meta  >
     makeGeometryAtSpecificNX( const int            & a_nx,
@@ -342,9 +342,32 @@ namespace EBCM
       return metaDataPtr;
     }
 
+    ///
+    static double
+    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
+    {
+      int num_ghost = 4;
+      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_data> err_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta);
+      ebcm_petsc_op discreteOp(a_meta, num_ghost, false);
+
+      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
+
+      //settting  error to lph_calc - lph_exac
+      double acoef =  1;
+      double bcoef = -1;
+      err_calc_ptr->setToAxBy(acoef, lph_calc_ptr, bcoef, lph_exac_ptr);
+      double retval = err_calc_ptr->maxNorm();
+      return retval;
+    }
+    
     /**
        test function for example/EBCM/hoeb_truncation
-     **/ 
+    **/ 
     static  void run_hoeb_truncation_tests()
     {
 
@@ -361,16 +384,23 @@ namespace EBCM
       ch_probdom domain_coar = domain_fine;
       domain_coar.coarsen(2);
       bool print = false;
-      shared_ptr< ebcm_meta  > ebcm_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
-      shared_ptr< ebcm_meta  > ebcm_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
 
-      /**
-      typedef DummyDerivedOp   ebcm_petsc_op;
-      ebcm_petsc_op   testOperator(ebcm, num_ghost, false);
-      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      **/
+      double max_err_fine = getMaxAbsTruncation(meta_fine); 
+      double max_err_coar = getMaxAbsTruncation(meta_coar);
+      ///always positive
+      Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
+      Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
+      if(max_err_fine > 1,0e-12)
+      {
+        double order = (log(max_err_coar/max_err_fine))/log(2.0);
+        Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+      }
 #endif
     }
   }; //end petsc_framwork class
