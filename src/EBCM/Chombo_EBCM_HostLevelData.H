@@ -45,14 +45,19 @@ namespace EBCM
     typedef Chombo4::BoxIterator                                 ch_bit;
     typedef Chombo4::LevelData<ch_fab>                           ch_ldfab;
     typedef Chombo4::MayDay                                      ch_mayday;
+    typedef HostLevelData<data_t, ncomp, order>                  ebcm_data;
 
-    void operator+=(const HostLevelData<data_t, ncomp, order>& a_input)
+    void setToAxBy(const double   & a_Acoef,
+                   const ebcm_data& a_xdata,
+                   const double   & a_Bcoef,                   
+                   const ebcm_data& a_ydata,
     {
       ch_dit dit =     m_meta->m_grids.dataIterator();
       const auto& mpibit = (*m_data);
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        const auto& inpdata         = a_input[dit[ibox]];
+        const auto& Xdata           = a_xdata[dit[ibox]];
+        const auto& Ydata           = a_ydata[dit[ibox]];
         auto&       outdata         = (*this)[dit[ibox]];
         const auto& grid  = (m_meta->m_grids)[dit[ibox]];
         for(ch_bit bit(grid); bit.ok(); ++bit)
@@ -61,33 +66,14 @@ namespace EBCM
           pr_pt pt = ProtoCh::getPoint(iv);
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            outdata(pt, icomp) += indata(pt, icomp);
+            outdata(pt, icomp) =
+              a_Acoef * Xdata(pt, icomp) + 
+              a_Bcoef * Ydata(pt, icomp);
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
     }
 
-    void operator-=(const HostLevelData<data_t, ncomp, order>& a_input)
-    {
-      ch_dit dit =     m_meta->m_grids.dataIterator();
-      const auto& mpibit = (*m_data);
-      for(int ibox = 0; ibox < dit.size(); ibox++)
-      {
-        const auto& inpdata         = a_input[dit[ibox]];
-        auto&       outdata         = (*this)[dit[ibox]];
-        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
-        for(ch_bit bit(grid); bit.ok(); ++bit)
-        {
-          auto  iv = bit();
-          pr_pt pt = ProtoCh::getPoint(iv);
-          for(int icomp = 0; icomp < ncomp; icomp++)
-          {
-            outdata(pt, icomp) -= indata(pt, icomp);
-          } //end loop over components
-        }   //end loop over cells in box
-      }     //end loop over boxes
-
-    }
 
     void setVal(data_t a_value)
     {

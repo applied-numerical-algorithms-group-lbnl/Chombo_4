@@ -600,7 +600,7 @@ namespace EBCM
       void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
                    shared_ptr<ebcm_dou_sca_data> a_phi) const
       {
-        ch_mayday::Error("not implemented");
+        
       }
     private:
       ///this is where the canal locks are dug in the basement
