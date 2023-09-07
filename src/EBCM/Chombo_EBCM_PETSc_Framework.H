@@ -305,17 +305,19 @@ namespace EBCM
           const auto& valid =  grids[dit[ibox]];
           const auto& graph = graphs[dit[ibox]];
           ebcm_subvol_vec volvec(graph, valid, a_print);
+          const auto& mapfab = (*m_row_map_ptr)[dit[ibox]];
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
-            PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
+            PetscInt                     irow  =          mapfab(volu.m_pt, 0);
 
             for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = (*local)[isten];
               PetscInt icol = mapfab(stenpair.first, 0);
-              double weight = stenpair.second;
+              double weight =        stenpair.second;
+
               /// This is PETSc for
               /// (*m_mat)(irow, icol) = weight;
               MatSetValues(*(this->m_mat_ptr),1,&irow,1,&icol,&weight,INSERT_VALUES);
@@ -698,13 +700,26 @@ namespace EBCM
                                     double         & a_dx,
                                     ch_probdom     & a_domain,
                                     int            & a_maxGrid,
-                                    bool           & a_mergeSmallCells)
+                                    bool           & a_mergeSmallCells,
+                                    double         & a_alpha,
+                                    double         & a_beta,
+                                    int            & a_sten_rad,
+                                    int            & a_weight_power,
+                                    string         & a_dom_bc,
+                                    string         & a_eb_bc, 
+                                    bool           a_print = false)
     {
       ParmParse pp("parseFineGridParams");
 
       pp.get("nx"             , a_nx);
       pp.get("maxGrid"        , a_maxGrid);
       pp.get("mergeSmallCells", a_mergeSmallCells);
+      pp.get("alpha"          , a_alpha);
+      pp.get("beta"           , a_beta );
+      pp.get("sten_rad"       , a_sten_rad);
+      pp.get("weight_power"   , a_weight_power);
+      pp.get("dom_bc"         , a_dom_bc);
+      pp.get("eb_bc"          , a_eb_bc);
 
       ch_iv domLo = ch_iv::Zero;
       ch_iv domHi  = (a_nx - 1)*ch_iv::Unit;
@@ -725,12 +740,14 @@ namespace EBCM
                               const bool           & a_mergeSmallCells,
                               const bool           & a_print)
     {
+      typedef Chombo4::GeometryService<ebcm_order> ch_geoserv;
+      
       vector<ch_dbl> vecgrids;
       Chombo4::pout() << "making grids" << endl;
-      GeometryService<2>::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
+      ch_geoserv::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
 
       int geomGhost = 6;
-      shared_ptr<BaseIF>    impfunc = ebcm_framework::getImplicitFunction();
+      shared_ptr<BaseIF>    impfunc = algo_framework::getImplicitFunction();
       Chombo4::pout() << "defining geometry in EB land" << endl;
 
       pr_rv origin = pr_rv::Zero();
@@ -744,25 +761,44 @@ namespace EBCM
       return metaDataPtr;
     }
 
+    static void
+    setExact(shared_ptr<ebcm_dou_sca_data> a_phi_exact_ptr,
+             shared_ptr<ebcm_dou_sca_data> a_lph_exact_ptr,
+             shared_ptr< ebcm_meta  >      a_meta_ptr)
+    {
+      ch_mayday::Error("not implemented");
+    }
     ///
     static double
-    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
+    getMaxAbsTruncation(double                     a_alpha,
+                        double                     a_beta,
+                        int                        a_sten_rad,
+                        int                        a_weight_power,
+                        shared_ptr< ebcm_meta  >   a_meta_ptr,
+                        string                     a_dom_bc,
+                        string                     a_eb_bc, 
+                        bool                       a_print = false)
+
     {
       int num_ghost = 4;
-      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> err_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
 
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta);
-      ebcm_petsc_op discreteOp(a_meta, num_ghost, false);
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr);
+
+      HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
+                             a_weight_power, a_meta_ptr,
+                             a_dom_bc, a_eb_bc, a_print);
 
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
 
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
-      err_calc_ptr->setToAxBy(acoef, lph_calc_ptr, bcoef, lph_exac_ptr);
+      err_calc_ptr->setVal(0.);
+//      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
@@ -774,27 +810,40 @@ namespace EBCM
     {
 
 #ifdef CH_USE_PETSC
-      static const int num_ghost = 4;  
-      int           nx_fine = 4586;
-      double        dx_fine = 4586.;
+      static const int num_ghost = 4;
+      
+      int    nx_fine      = 4586;
+      int    maxGrid      = 4586;    
+      int    sten_rad     = 4586; 
+      int    weight_power = 4586; 
+      double dx_fine      = 4586.;
+      double alpha        = 4586.;
+      double beta         = 4586.;
+      string dom_bc(       "4586");
+      string  eb_bc(       "4586");
+      bool mergeSmallCells;
       ch_probdom domain_fine;
-      ///these two have to be the same for fine and coar      
-      int maxGrid = 4586;      bool mergeSmallCells = true;   
-      parseFineGridParams(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      bool print = false;
+
+      parseFineGridParams(nx_fine, dx_fine, domain_fine,
+                          maxGrid, mergeSmallCells,
+                          alpha, beta, sten_rad, weight_power,
+                          dom_bc, eb_bc, print);
+      
       int    nx_coar = nx_fine/2;
       double dx_coar = dx_fine*2.;
       ch_probdom domain_coar = domain_fine;
       domain_coar.coarsen(2);
-      bool print = false;
+
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
 
-      double max_err_fine = getMaxAbsTruncation(meta_fine); 
-      double max_err_coar = getMaxAbsTruncation(meta_coar);
-      ///always positive
+      double max_err_fine = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, print); 
+      double max_err_coar = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, print);
+
       Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
       Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
-      if(max_err_fine > 1,0e-12)
+      if(max_err_fine > 1,0e-12)      ///always positive
       {
         double order = (log(max_err_coar/max_err_fine))/log(2.0);
         Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
