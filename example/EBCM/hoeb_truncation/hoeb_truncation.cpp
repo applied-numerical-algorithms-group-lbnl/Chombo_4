@@ -18,6 +18,7 @@
 #include "Chombo_EBCM_HostLevelData.H"
 #include "Chombo_EBCM_Algorithm_Framework.H"
 #include "Chombo_EBCM_PETSc_Framework.H"
+#include "Chombo_EBCM_Helmholtz.H"
 #include "Chombo_EigenMatrix.H"
 
 #include <iomanip>
@@ -54,27 +55,33 @@ int main(int a_argc, char* a_argv[])
 
     if(order == 6)
     {
-      EBCM::PETSc_Framework<6>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   6>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<6>::run_hoeb_truncation_tests();
     }
     else if(order == 5)
     {
-      EBCM::PETSc_Framework<5>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   5>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<5>::run_hoeb_truncation_tests();
     }
-    if(order == 4)
+    else if(order == 4)
     {
-      EBCM::PETSc_Framework<4>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   4>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<4>::run_hoeb_truncation_tests();
     }
     else if(order == 3)
     {
-      EBCM::PETSc_Framework<3>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   3>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<3>::run_hoeb_truncation_tests();
     }
     else if(order == 2)
     {
-      EBCM::PETSc_Framework<2>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   2>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<2>::run_hoeb_truncation_tests();
     }
     else if(order == 1)
     {
-      EBCM::PETSc_Framework<1>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<   1>::dummy_petsc_test();   
+      EBCM::Elliptic_Framework<1>::run_hoeb_truncation_tests();
     }
     else
     {

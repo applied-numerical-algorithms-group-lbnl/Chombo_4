@@ -1,0 +1,534 @@
+#ifndef __Chombo_EBCM_Elliptic_Framework_
+#define __Chombo_EBCM_Elliptic_Framework_
+
+#ifdef CH_USE_PETSC
+#include "petsc.h"
+#include "petscmat.h"
+#include "petscvec.h"
+#include "petscksp.h"
+#include "petscviewer.h"
+#include "petscmat.h"
+
+///  Chombo_EBCM_Graph.H is where MetaDataLevel lives.  It made sense at the time.
+#include "Chombo_EBCM_Graph.H"
+#include "Chombo_EBCM_PETSc_Framework.H"
+#include "Chombo_EBLevelBoxData.H"
+
+/// 
+/**
+   This is for elliptic PDEs.   This contains HelmholtzOp a constant coefficient Helmholtz operator that conforms to the 
+   PETScFramework::BasePETScOp.
+**/
+namespace EBCM
+{
+
+  
+  template <int ebcm_order>
+  class Elliptic_Framework
+  {
+  public:
+
+    typedef Chombo4::Box                                                    ch_box;
+    typedef Chombo4::DisjointBoxLayout                                      ch_dbl;
+    typedef Chombo4::BoxIterator                                            ch_bit;
+    typedef Chombo4::IntVect                                                ch_iv;
+    typedef Chombo4::DataIterator                                           ch_dit;
+                                                                            
+    typedef ::Mat                                                           petsc_mat;
+    typedef Proto::Point                                                    pr_pt;
+                                                                            
+    typedef Proto::IndexTM<double, DIM>                                     pr_itm_r_dim;
+    typedef Proto::IndexTM<int ,   DIM>                                     pr_itm_i_dim;
+    typedef Proto::IndexTM<double, DIM-1>                                   pr_itm_r_dmo;
+    typedef Proto::IndexTM<int ,   DIM-1>                                   pr_itm_i_dmo;
+                                                                            
+    typedef Proto::IndexedMoments<DIM  ,      ebcm_order >                  pr_mom_dim;
+    typedef Proto::IndexedMoments<DIM-1,      ebcm_order >                  pr_mom_dmo;
+    typedef EBCM::neighborhood   <            ebcm_order >                  ebcm_neighborhood;
+    typedef EBCM::MetaDataLevel<              ebcm_order >                  ebcm_meta;
+    typedef EBCM::EBCM_Graph<                 ebcm_order >                  ebcm_graph;
+    typedef EBCM::HostLevelData<int,    1,    ebcm_order >                  ebcm_int_sca_data;
+    typedef EBCM::HostLevelData<double, 1,    ebcm_order >                  ebcm_dou_sca_data;
+    typedef EBCM::HostLevelData<int,    DIM,  ebcm_order >                  ebcm_int_vec_data;
+    typedef EBCM::HostLevelData<double, DIM,  ebcm_order >                  ebcm_dou_vec_data;
+    typedef EBCM::SubVolumeVector<            ebcm_order >                  ebcm_subvol_vec;
+    typedef EBCM::EBCM_Volu<                  ebcm_order >                  ebcm_volu;
+    typedef EBCM::Algorithm_Framework<        ebcm_order >                  algo_framework;
+    typedef EBCM::PETSc_Framework<            ebcm_order >                  petsc_framework;
+    typedef typename EBCM::PETSc_Framework<   ebcm_order >::local_stencil_t ebcm_local_stencil;
+    typedef typename EBCM::PETSc_Framework<   ebcm_order >::Base_PETSc_Op   ebcm_base_op;
+    
+
+    ///
+    template <CENTERING cent>
+    static shared_ptr<eigen_mat>
+    getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
+                         shared_ptr<ebcm_neighborhood>        a_locality,
+                         const int                          & a_facedir,
+                         const double                       & a_dx,
+                         bool a_print)
+    {
+      pr_mom_dmo facmom =  a_face.m_facmom;
+      pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
+      double momzero    = facmom[pr_itm_i_dmo::Zero];
+
+      pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
+      volmom.shift(xbar);
+
+      unsigned int Pcols = pr_mom_dim::size();
+      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+
+
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        double matval = 0;
+        if(momind[a_facedir] > 0)
+        {
+          int pd = momind[a_facedir];
+          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+          Real derval = volmom[derind];
+          if(std::abs(momzero) > 1.0e-10)
+          {
+            matval = pd*derval/momzero;
+          }
+        }
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        (*retval)(0,currentCol) = matval;
+      }
+    
+      return retval;
+    }
+
+    ///
+    template<CENTERING cent>
+    static ebcm_local_stencil
+    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
+                                const int                          & a_stenrad,
+                                const int                          & a_weightpower,
+                                const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                const string                       & a_dom_bc,
+                                const string                       & a_eb_bc,
+                                const int                          & a_facedir,
+                                const double                       & a_dx,
+                                bool a_print = false)
+    {
+      /**
+         From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
+         Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
+               It is the one that converts  Taylor coefficients to fluxes).   
+         S : stencil matrix.  
+         P : phi vector.  
+         W : weighting matrix.
+         M : moment matrix.
+         A: system matrix =  ((WM)^T(WM))
+         (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
+         S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+      **/
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat_p =
+        EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemMatrix(locality, a_face, a_graph,
+                        a_stenrad, a_weightpower,
+                        a_dom_bc, a_eb_bc, a_print);
+      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      eigen_mat Ainvmat = *Amat_p;
+      Ainvmat.invert();
+      
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx, a_print);
+      eigen_mat AinvWMTmat;
+      multiply( AinvWMTmat, Ainvmat, WMTmat);
+      eigen_mat Smat;
+      multiply( Smat, *Qmat_p, AinvWMTmat);
+      ebcm_local_stencil retval = petsc_framework::getStencilFromMat(Smat, locality);
+      return retval;
+    }
+
+    ///
+    static shared_ptr<eigen_mat>
+    getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
+                           shared_ptr<ebcm_neighborhood>        a_locality,
+                           const double                       & a_dx,
+                           bool a_print)
+    {
+      
+      shared_ptr<eigen_mat> retval;
+
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
+    /**
+       Get stencil for integrated gradient in a  coordinate direction. 
+       This is the same as the average gradient * face area.
+       \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
+    */
+    static ebcm_local_stencil
+    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order> & a_face,
+                                  const int                          & a_stenrad,
+                                  const int                          & a_weightpower,
+                                  const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                  const string                       & a_dom_bc,
+                                  const string                       & a_eb_bc,
+                                  const double                       & a_dx,
+                                  bool a_print = false)
+    {
+
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat_p =
+        EBCM::Algorithm_Framework<ebcm_order>::
+        getEBSystemMatrix(locality, a_face, a_graph,
+                          a_stenrad, a_weightpower,
+                          a_dom_bc, a_eb_bc, a_print);
+
+      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
+      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+
+      eigen_mat WMmat;
+      multiply(WMmat, *Wmat_p, *Mmat_p);
+      eigen_mat WMTmat = WMmat;
+      WMTmat.transpose();
+
+      eigen_mat Ainvmat = *Amat_p;
+      Ainvmat.invert();
+      
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx, a_print);
+      eigen_mat AinvWMTmat;
+      multiply( AinvWMTmat, Ainvmat, WMTmat);
+      eigen_mat Smat;
+      multiply( Smat, *Qmat_p, AinvWMTmat);
+      ebcm_local_stencil retval = petsc_framework::getStencilFromMat(Smat, locality);
+      return retval;
+    }
+    
+    ///
+    /**
+       Class which forms a helmholtz operator.
+       This creates an operator of the form
+       L(phi) = alpha phi + beta * div(F(phi))
+    **/
+    class HelmholtzOp: public ebcm_base_op
+    {
+    public:
+
+      typedef Proto::Side         pr_sd;
+      typedef Proto::Box          pr_box;
+      
+      double                                 m_alpha;
+      double                                 m_beta;
+      int                                    m_weight_power;
+      int                                    m_sten_rad;
+      static const bool s_leaveUndefined = false;
+      string m_dom_bc;
+      string m_eb_bc;
+      /// 
+      /**
+         alpha        = identity coeff
+         beta         = coeff of laplcian
+         ghost        = neighbor ghost size (grow the face box by this much)
+         weight_power = goes to neighborhood to weight vofs.
+         meta         = ebcm's very data intensive meta data
+      **/
+      HelmholtzOp(const double                                 & a_alpha,
+                  const double                                 & a_beta,
+                  const int                                    & a_sten_rad,
+                  const int                                    & a_weight_power,
+                  const shared_ptr< ebcm_meta  >               & a_meta_ptr,
+                  string a_dom_bc, string a_eb_bc, 
+                  bool                                           a_print = false)
+      :ebcm_base_op(a_meta_ptr, a_sten_rad, s_leaveUndefined, a_print)// s_leaveUndefined = false  to assure that basepetscop gets defined
+      {
+        m_alpha        = a_alpha;       
+        m_beta         = a_beta;
+        m_sten_rad     = a_sten_rad;
+        m_weight_power = a_weight_power;
+        m_dom_bc       = a_dom_bc;
+        m_eb_bc        = a_eb_bc;
+      }
+
+      virtual ~HelmholtzOp()
+      {
+      }
+
+      ///this is the function that the driver cod calls
+      virtual shared_ptr<ebcm_local_stencil> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
+      {
+        shared_ptr<ebcm_local_stencil> retval =
+          privateStencil(a_pt,          
+                         m_sten_rad,     
+                         m_weight_power, 
+                         a_graph,       
+                         m_dom_bc,      
+                         m_eb_bc,       
+                         a_print);        
+        return retval;
+      }
+
+      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
+                   shared_ptr<ebcm_dou_sca_data> a_phi) const
+      {
+        
+      }
+    private:
+      ///this is where the canal locks are dug in the basement
+      virtual shared_ptr<ebcm_local_stencil> privateStencil(const pr_pt                         & a_pt, 
+                                                         const int                          & a_stenrad,
+                                                         const int                          & a_weightpower,
+                                                         const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                                         const string                       & a_dom_bc,
+                                                         const string                       & a_eb_bc,
+                                                         bool                                 a_print        = false)
+      {
+        typedef Proto::Box pr_bx;
+        
+        shared_ptr<ebcm_local_stencil> retval(new ebcm_local_stencil());
+        pr_bx pointbx(a_pt, a_pt);
+        pr_bx grbx = pointbx.grow(pr_pt::Ones(this->m_ghost));
+        
+        auto volume = a_graph.getVolumeCoveringPoint(a_pt);
+        auto dx = volume.m_dx;
+        {
+          for(int iface = 0; iface < volume.m_xfaces.size(); iface++)
+          {
+            const auto& face = volume.m_xfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               dx, 0, a_print);        
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_yfaces.size(); iface++)
+          {
+            const auto& face = volume.m_yfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               dx, 1, a_print);        
+
+                                                               
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_zfaces.size(); iface++)
+          {
+            const auto& face = volume.m_zfaces[iface];
+            double fluxsign = faceSign(volume, face);
+            ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
+                                                               a_stenrad,     
+                                                               a_weightpower, 
+                                                               a_graph,       
+                                                               a_dom_bc,      
+                                                               a_eb_bc,       
+                                                               dx, 2, a_print);        
+                                                               
+            flux *= fluxsign;
+            (*retval) += flux;
+          }
+        }
+        {
+          for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
+          {
+            const auto& face = volume.m_ifaces[iface];
+            ebcm_local_stencil flux = getIrregHelmholtzFDotNStencil(face,
+                                                                 a_stenrad,     
+                                                                 a_weightpower, 
+                                                                 a_graph,       
+                                                                 a_dom_bc,      
+                                                                 a_eb_bc,
+                                                                 dx, a_print);
+                                                                 
+            (*retval) += flux;
+          }
+        }
+        
+        return retval;
+      }
+
+    }; //end class HelmholtzOp
+    /**
+       just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
+     **/ 
+    static void parseFineGridParams(int            & a_nx,
+                                    double         & a_dx,
+                                    ch_probdom     & a_domain,
+                                    int            & a_maxGrid,
+                                    bool           & a_mergeSmallCells,
+                                    double         & a_alpha,
+                                    double         & a_beta,
+                                    int            & a_sten_rad,
+                                    int            & a_weight_power,
+                                    string         & a_dom_bc,
+                                    string         & a_eb_bc, 
+                                    bool           a_print = false)
+    {
+      ParmParse pp("parseFineGridParams");
+
+      pp.get("nx"             , a_nx);
+      pp.get("maxGrid"        , a_maxGrid);
+      pp.get("mergeSmallCells", a_mergeSmallCells);
+      pp.get("alpha"          , a_alpha);
+      pp.get("beta"           , a_beta );
+      pp.get("sten_rad"       , a_sten_rad);
+      pp.get("weight_power"   , a_weight_power);
+      pp.get("dom_bc"         , a_dom_bc);
+      pp.get("eb_bc"          , a_eb_bc);
+
+      ch_iv domLo = ch_iv::Zero;
+      ch_iv domHi  = (a_nx - 1)*ch_iv::Unit;
+      a_domain = ch_probdom(domLo, domHi);
+      a_dx = 1./(double(a_nx));
+      
+    }
+    /**
+       Make geometry at specified refinment.
+       This decouples geometry generation with parmparse, allowing me to make varying refinements.
+    **/ 
+    static
+    shared_ptr< ebcm_meta  >
+    makeGeometryAtSpecificNX( const int            & a_nx,
+                              const double         & a_dx,
+                              const ch_probdom     & a_domain,
+                              const int            & a_maxGrid,
+                              const bool           & a_mergeSmallCells,
+                              const bool           & a_print)
+    {
+      typedef Chombo4::GeometryService<ebcm_order> ch_geoserv;
+      
+      vector<ch_dbl> vecgrids;
+      Chombo4::pout() << "making grids" << endl;
+      ch_geoserv::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
+
+      int geomGhost = 6;
+      shared_ptr<BaseIF>    impfunc = algo_framework::getImplicitFunction();
+      Chombo4::pout() << "defining geometry in EB land" << endl;
+
+      pr_rv origin = pr_rv::Zero();
+      shared_ptr< ch_geoserv > geoserv
+        (new ch_geoserv(impfunc, origin, a_dx, a_domain.domainBox(), vecgrids, geomGhost));
+
+      int ghost = 0;
+      shared_ptr< ebcm_meta  >
+        metaDataPtr(new ebcm_meta(geoserv, a_domain.domainBox(), a_dx, ghost,
+                                  a_mergeSmallCells, a_print));
+      return metaDataPtr;
+    }
+
+    static void
+    setExact(shared_ptr<ebcm_dou_sca_data> a_phi_exact_ptr,
+             shared_ptr<ebcm_dou_sca_data> a_lph_exact_ptr,
+             shared_ptr< ebcm_meta  >      a_meta_ptr)
+    {
+      ch_mayday::Error("not implemented");
+    }
+    ///
+    static double
+    getMaxAbsTruncation(double                     a_alpha,
+                        double                     a_beta,
+                        int                        a_sten_rad,
+                        int                        a_weight_power,
+                        shared_ptr< ebcm_meta  >   a_meta_ptr,
+                        string                     a_dom_bc,
+                        string                     a_eb_bc, 
+                        bool                       a_print = false)
+
+    {
+      int num_ghost = 4;
+      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr);
+
+      HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
+                             a_weight_power, a_meta_ptr,
+                             a_dom_bc, a_eb_bc, a_print);
+
+      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
+
+      //settting  error to lph_calc - lph_exac
+      double acoef =  1;
+      double bcoef = -1;
+      err_calc_ptr->setVal(0.);
+//      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+      double retval = err_calc_ptr->maxNorm();
+      return retval;
+    }
+    
+    /**
+       test function for example/EBCM/hoeb_truncation
+    **/ 
+    static  void run_hoeb_truncation_tests()
+    {
+
+#ifdef CH_USE_PETSC
+      static const int num_ghost = 4;
+      
+      int    nx_fine      = 4586;
+      int    maxGrid      = 4586;    
+      int    sten_rad     = 4586; 
+      int    weight_power = 4586; 
+      double dx_fine      = 4586.;
+      double alpha        = 4586.;
+      double beta         = 4586.;
+      string dom_bc(       "4586");
+      string  eb_bc(       "4586");
+      bool mergeSmallCells;
+      ch_probdom domain_fine;
+      bool print = false;
+
+      parseFineGridParams(nx_fine, dx_fine, domain_fine,
+                          maxGrid, mergeSmallCells,
+                          alpha, beta, sten_rad, weight_power,
+                          dom_bc, eb_bc, print);
+      
+      int    nx_coar = nx_fine/2;
+      double dx_coar = dx_fine*2.;
+      ch_probdom domain_coar = domain_fine;
+      domain_coar.coarsen(2);
+
+      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+
+      double max_err_fine = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, print); 
+      double max_err_coar = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, print);
+
+      Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
+      Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
+      if(max_err_fine > 1,0e-12)      ///always positive
+      {
+        double order = (log(max_err_coar/max_err_fine))/log(2.0);
+        Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+      }
+#endif
+    }
+
+  }; //end petsc_framwork class
+}
+#endif
+
+#endif 
