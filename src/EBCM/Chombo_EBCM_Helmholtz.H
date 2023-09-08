@@ -116,7 +116,7 @@ namespace EBCM
       /**
          From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
          Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-               It is the one that converts  Taylor coefficients to fluxes).   
+         It is the one that converts  Taylor coefficients to fluxes).   
          S : stencil matrix.  
          P : phi vector.  
          W : weighting matrix.
@@ -151,6 +151,23 @@ namespace EBCM
       return retval;
     }
 
+    template <CENTERING cent>
+    static double
+    getEBQMatrixIncrement(pr_itm_i_dim  a_momind,
+                          int           a_direction,
+                          double        a_momzerofactor,
+                          pr_mom_dim    a_norm_mom)
+    {
+      double increment = 0;
+      if(a_momind[a_direction] > 0)
+      {
+        int pd = momind[a_direction];
+        pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(xdir);
+        double ndda  = a_norm_mom[derind];
+        increment = momzerofactor*pd*derval/momzero;
+      }
+      return increment;
+    }
     ///
     static shared_ptr<eigen_mat>
     getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
@@ -159,10 +176,46 @@ namespace EBCM
                            bool a_print)
     {
       
-      shared_ptr<eigen_mat> retval;
+      static const xdir = 0;
+      static const ydir = 1;
+      static const zdir = 2;
 
-      ch_mayday::Error("not implemented");
+      pr_mom_dim ebf_mom    =  a_face.m_ebfmom;
+      pr_mom_dim norm_mom_x =  a_face.m_norm_mom_x;
+      pr_mom_dim norm_mom_y =  a_face.m_norm_mom_y;
+      pr_mom_dim norm_mom_z =  a_face.m_norm_mom_y;
+
+      double momzero    = ebfmom[pr_itm_i_dmo::Zero];
+      double momzerofactor = 0;
+      if(std::abs(momzero) > 1.0e-10) 
+      {
+        momzerofactor = 1./momzero;
+      }
+
+      pr_itm_r_dim xbar = a_locality->getEBXBar(a_face, a_dx);
+      ebfmom.shift(    xbar);
+      norm_mom_x.shift(xbar);
+      norm_mom_y.shift(xbar);
+      norm_mom_z.shift(xbar);
+      unsigned int Pcols = pr_mom_dim::size();
+      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      {
+        auto momind = momit();
+        double xincr = getEBQMatrixIncrement(momind, xdir, momzerofactor, norm_mom_x);
+        double yincr = getEBQMatrixIncrement(momind, ydir, momzerofactor, norm_mom_y);
+#if DIM== 3      
+        double zincr = getEBQMatrixIncrement(momind, zdir, momzerofactor, norm_mom_z);
+#else       
+        double zincr = 0;
+#endif      
+        double matval =  xincr + yincr + zincr;
+        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        (*retval)(0,currentCol) = matval;
+      }
+    
       return retval;
+
     }
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
@@ -274,17 +327,17 @@ namespace EBCM
       void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
                    shared_ptr<ebcm_dou_sca_data> a_phi) const
       {
-        
+        ch_mayday::Error("not implemented");
       }
     private:
       ///this is where the canal locks are dug in the basement
       virtual shared_ptr<ebcm_local_stencil> privateStencil(const pr_pt                         & a_pt, 
-                                                         const int                          & a_stenrad,
-                                                         const int                          & a_weightpower,
-                                                         const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-                                                         const string                       & a_dom_bc,
-                                                         const string                       & a_eb_bc,
-                                                         bool                                 a_print        = false)
+                                                            const int                          & a_stenrad,
+                                                            const int                          & a_weightpower,
+                                                            const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                                            const string                       & a_dom_bc,
+                                                            const string                       & a_eb_bc,
+                                                            bool                                 a_print        = false)
       {
         typedef Proto::Box pr_bx;
         
@@ -300,12 +353,12 @@ namespace EBCM
             const auto& face = volume.m_xfaces[iface];
             double fluxsign = faceSign(volume, face);
             ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               dx, 0, a_print);        
+                                                                  a_stenrad,     
+                                                                  a_weightpower, 
+                                                                  a_graph,       
+                                                                  a_dom_bc,      
+                                                                  a_eb_bc,       
+                                                                  dx, 0, a_print);        
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -316,12 +369,12 @@ namespace EBCM
             const auto& face = volume.m_yfaces[iface];
             double fluxsign = faceSign(volume, face);
             ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               dx, 1, a_print);        
+                                                                  a_stenrad,     
+                                                                  a_weightpower, 
+                                                                  a_graph,       
+                                                                  a_dom_bc,      
+                                                                  a_eb_bc,       
+                                                                  dx, 1, a_print);        
 
                                                                
             flux *= fluxsign;
@@ -334,12 +387,12 @@ namespace EBCM
             const auto& face = volume.m_zfaces[iface];
             double fluxsign = faceSign(volume, face);
             ebcm_local_stencil flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               dx, 2, a_print);        
+                                                                  a_stenrad,     
+                                                                  a_weightpower, 
+                                                                  a_graph,       
+                                                                  a_dom_bc,      
+                                                                  a_eb_bc,       
+                                                                  dx, 2, a_print);        
                                                                
             flux *= fluxsign;
             (*retval) += flux;
@@ -350,12 +403,12 @@ namespace EBCM
           {
             const auto& face = volume.m_ifaces[iface];
             ebcm_local_stencil flux = getIrregHelmholtzFDotNStencil(face,
-                                                                 a_stenrad,     
-                                                                 a_weightpower, 
-                                                                 a_graph,       
-                                                                 a_dom_bc,      
-                                                                 a_eb_bc,
-                                                                 dx, a_print);
+                                                                    a_stenrad,     
+                                                                    a_weightpower, 
+                                                                    a_graph,       
+                                                                    a_dom_bc,      
+                                                                    a_eb_bc,
+                                                                    dx, a_print);
                                                                  
             (*retval) += flux;
           }
@@ -367,7 +420,7 @@ namespace EBCM
     }; //end class HelmholtzOp
     /**
        just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
-     **/ 
+    **/ 
     static void parseFineGridParams(int            & a_nx,
                                     double         & a_dx,
                                     ch_probdom     & a_domain,

@@ -385,15 +385,6 @@ namespace EBCM
       return retval;
     }
 
-    ///
-    static shared_ptr<eigen_mat>
-    getWeightMatrix(shared_ptr< EBCM::neighborhood< ebcm_order > >  a_locality,
-                    bool a_print = false)
-    {
-      shared_ptr<eigen_mat> retval;
-      ch_mayday::Error("not implemented");
-      return retval;
-    }
 
     /**
        quick test to get this stuff to compile
