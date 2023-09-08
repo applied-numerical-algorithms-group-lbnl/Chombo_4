@@ -151,7 +151,6 @@ namespace EBCM
       return retval;
     }
 
-    template <CENTERING cent>
     static double
     getEBQMatrixIncrement(pr_itm_i_dim  a_momind,
                           int           a_direction,
@@ -161,10 +160,10 @@ namespace EBCM
       double increment = 0;
       if(a_momind[a_direction] > 0)
       {
-        int pd = momind[a_direction];
-        pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(xdir);
+        int pd = a_momind[a_direction];
+        pr_itm_i_dim derind = a_momind - pr_itm_i_dim::BASISV(a_direction);
         double ndda  = a_norm_mom[derind];
-        increment = momzerofactor*pd*derval/momzero;
+        increment = a_momzerofactor*pd*ndda;
       }
       return increment;
     }
@@ -176,36 +175,34 @@ namespace EBCM
                            bool a_print)
     {
       
-      static const xdir = 0;
-      static const ydir = 1;
-      static const zdir = 2;
-
       pr_mom_dim ebf_mom    =  a_face.m_ebfmom;
       pr_mom_dim norm_mom_x =  a_face.m_norm_mom_x;
       pr_mom_dim norm_mom_y =  a_face.m_norm_mom_y;
       pr_mom_dim norm_mom_z =  a_face.m_norm_mom_y;
 
-      double momzero    = ebfmom[pr_itm_i_dmo::Zero];
+      double momzero    = ebf_mom[pr_itm_i_dim::Zero];
       double momzerofactor = 0;
       if(std::abs(momzero) > 1.0e-10) 
       {
         momzerofactor = 1./momzero;
       }
 
-      pr_itm_r_dim xbar = a_locality->getEBXBar(a_face, a_dx);
-      ebfmom.shift(    xbar);
+      pr_itm_r_dim xbar = a_locality->getXBarEB(a_face, a_dx);
+      //only needed for zeroth moment (which is not altered by shifts)
+      //ebf_mom.shift(xbar); 
       norm_mom_x.shift(xbar);
       norm_mom_y.shift(xbar);
       norm_mom_z.shift(xbar);
       unsigned int Pcols = pr_mom_dim::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+
       for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
       {
-        auto momind = momit();
-        double xincr = getEBQMatrixIncrement(momind, xdir, momzerofactor, norm_mom_x);
-        double yincr = getEBQMatrixIncrement(momind, ydir, momzerofactor, norm_mom_y);
+        pr_itm_i_dim momind = momit();
+        double xincr = getEBQMatrixIncrement(momind, 0, momzerofactor, norm_mom_x);
+        double yincr = getEBQMatrixIncrement(momind, 1, momzerofactor, norm_mom_y);
 #if DIM== 3      
-        double zincr = getEBQMatrixIncrement(momind, zdir, momzerofactor, norm_mom_z);
+        double zincr = getEBQMatrixIncrement(momind, 2, momzerofactor, norm_mom_z);
 #else       
         double zincr = 0;
 #endif      
