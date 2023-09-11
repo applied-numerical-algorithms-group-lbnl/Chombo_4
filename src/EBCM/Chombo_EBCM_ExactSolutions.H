@@ -1,0 +1,1096 @@
+
+#include <iostream>
+#include "Chombo_ProtoInterface.H"
+#include "Chombo_EBCM_Graph.H"
+#include "Chombo_EBCM_PETSc_Framework.H"
+
+
+#ifndef __EBCM_Exact_Solutions__
+#define __EBCM_Exact_Solutions__
+
+/// 
+/**
+   This is a tool to facilitate solver testing by providing 
+   some exact solutions with which to compare.    This was adapted 
+   from the one in EBProto but this one is much simpler.
+**/
+namespace EBCM
+{
+  template <int ebcm_order>
+  class Analytic_Framework
+  {
+    ///
+    class BaseExactSolution
+    {
+    public:
+      typedef Proto::IndexTM<int,   DIM>                        pr_int_dim;
+      typedef Proto::IndexTM<double,DIM>                        pr_dou_dim;
+      typedef Proto::RealVect                                   pr_realvect;
+      typedef Proto::IndexedMomentsTM<DIM, ebcm_order>          pr_mom_dim;
+      typedef Proto::MomentIterator<  DIM, ebcm_order>          pr_momit_dim;
+
+      virtual ~BaseExactSolution()
+      {
+      }
+  
+      BaseExactSolution()
+      {
+      }
+
+      ///
+      /**
+      **/
+      double
+      getPhi(const pr_mom_dim    & a_moments,
+             const pr_dou_dim    & a_location)
+      {
+        double retval = 0;
+  
+        double volu = a_moments[IvDIM::Zero];
+        for(pr_momit_dim momit; momit.ok(); ++momit)
+        {
+          pr_int_dim  power = momit();
+          int   idenom = (power.factorial());
+          double deriv = getDerivative(power, centloc);
+          double denom = (double)(idenom);
+          double momen = moments[power];
+          double incre = deriv*momen/denom;
+          retval += incre;
+        }
+        double minvol = 1.0e-16;
+        if(volu > minvol)
+        {
+          retval /= volu;
+        }
+        return retval;
+      }
+      
+      ///
+      /**
+      **/
+      virtual double getLaplacian(const pr_mom_dim    & a_moments,
+                                  const pr_realvect   & a_loc) const
+      {
+        double retval = 0;
+  
+        double volu = a_moments[IvDIM::Zero];
+
+        for(pr_momit_dim momit; momit.ok(); ++momit)
+        {
+          pr_int_dim  power = momit();
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            if(power[idir] > 1)
+            {
+              //(1/2!)(p-1)(p)
+              double factor = 0.5*(power[idir])*(power[idir]-1);
+              pr_int_dim  derivdecr  = 2*pr_int_dim::BASISV(idir);
+              pr_int_dim  laplpower = power - derivdecr;
+              double deriv = getDerivative(laplpower, loc);
+              retval += factor*deriv;
+            }
+          }
+        }
+      }
+
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const = 0;
+
+    }; //end class base exact
+
+/// Build a composite function of the form a*f(x)+b*g(x)+c*h(x)+...
+    class FunctionSumSolution: public BaseExactSolution
+    {
+    public:
+      typedef IndexTM<int, DIM> IvDIM;
+
+      FunctionSumSolution(const vector<double>& a_coef,
+                          const vector<shared_ptr<BaseExactSolution> >& a_funcs)
+      {
+        m_coef = a_coef;
+        m_funcs = a_funcs;
+        CH_assert(m_coef.size() == m_funcs.size());
+      }
+
+      virtual ~FunctionSumSolution()
+      {
+      }
+
+      o  virtual double getDerivative(const pr_int_dim   & a_power,
+                                      const pr_realvect  & a_loc) const
+      {
+        // simple derivative sum rule
+        double deriv = 0;
+        for(int i=0; i!=m_funcs.size(); i++)
+        {
+          deriv += m_coef[i]*m_funcs[i]->getDerivative(a_power, a_loc);
+        }
+        return deriv;
+      }
+
+    private:
+      vector<double> m_coef;
+      vector<shared_ptr<BaseExactSolution> > m_funcs;
+    };
+
+
+///class for always returning zero (for bcs as opposed to being for testing convergence rates)
+// template <unsigned int order>
+    class ZeroSolution: public BaseExactSolution
+    {
+    public:
+  
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+  
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        return 0.;
+      }
+
+      virtual ~ZeroSolution()
+      {
+      }
+  
+      ZeroSolution()
+      {
+      }
+
+    };
+
+///class for always returning a constant (for bcs as opposed to being for testing convergence rates)
+// template <unsigned int order>
+    class UniformSolution: public BaseExactSolution
+    {
+    public:
+
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        if (a_power.sum() == 0)
+          return m_val;
+        else
+          return 0.;
+      }
+
+      virtual double getPhiPoint(const pr_realvect   & a_x) const
+      {
+        return m_val;
+      }
+
+      virtual ~UniformSolution()
+      {
+      }
+
+      UniformSolution(const double a_val = 0)
+      {
+        m_val = a_val;
+      }
+
+      double m_val;
+    };
+
+    /**
+    This one is useful for confvergence tests in spheres
+    phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
+    **/
+    class SineSphereEF: public BaseExactSolution
+    {
+    public:
+  
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+  
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        double x = a_loc[0] - m_center;
+        double y = a_loc[1] - m_center;
+        double x2 = x*x;
+        double x3 = x*x*x;
+        double x4 = x*x*x*x;
+        double y2 = y*y;
+        double y3 = y*y*y;
+        double y4 = y*y*y*y;
+
+        double pi = 4.*atan(1.0);
+        double pi2 = pi*pi;
+        double pi3 = pi*pi*pi;
+        double pi4 = pi*pi*pi*pi;
+        double r02 = m_radius*m_radius;
+        double z2 = 0;
+#if DIM==3
+        double z = a_loc[2] - m_center;
+        z2 = z*z;
+        double z3 = z*z*z;
+        double z4 = z*z*z*z;
+#endif
+        double r2 = x2 + y2 + z2;
+
+        int sum = a_deriv.sum();
+        double retval =0;
+        if(sum == 0)
+        {
+          //(%i2) display2d:false
+          //(%o2) false
+          //(%i3) r:x^2+y^2+z^2
+          //(%o3) z^2+y^2+x^2
+          //(%i4) phi:sin(pi*(r-R0))
+          //(%o4) sin(pi*(z^2+y^2+x^2-R0))
+          retval = sin(pi*(r2 - r02));
+        }
+        else if(sum == 1)
+        {
+          if(a_deriv[0]== 1)
+          {
+            //(%i5) der_x:diff(phi,x)
+            //(%o5) 2*pi*x*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 2*pi*x*cos(pi*(r2 - r02));
+          }
+          else if (a_deriv[1]== 1)
+          {
+            //(%i6) der_y:diff(phi,y)
+            //(%o6) 2*pi*y*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 2*pi*y*cos(pi*(r2 - r02));
+          }
+#if DIM==3      
+          else if(a_deriv[2] == 1)
+          {
+            //(%i7) der_z:diff(phi,z)
+            //(%o7) 2*pi*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 2*pi*z*cos(pi*(r2 - r02));
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 2");
+          }
+        }
+        else if(sum == 2)
+        {
+          if((a_deriv[0]== 1) && (a_deriv[1]== 1))
+          {
+            //(%i8) der_xy:diff(der_x,y)
+            //(%o8) -4*pi^2*x*y*sin(pi*(z^2+y^2+x^2-R0))
+            retval = -4.*pi2*x*y*sin(pi*(r2 -r02));
+          }
+#if DIM==3      
+          else if((a_deriv[0]== 1) && (a_deriv[2]== 1))
+          {
+            //(%i9) der_xz:diff(der_x,z)
+            //(%o9) -4*pi^2*x*z*sin(pi*(z^2+y^2+x^2-R0))
+            retval = -4.*pi2*x*z*sin(pi*(r2 -r02));
+        
+          }
+          else if((a_deriv[1]== 1) && (a_deriv[2]== 1))
+          {
+            //(%i10) der_yz:diff(der_y,z)
+            //(%o10) -4*pi^2*y*z*sin(pi*(z^2+y^2+x^2-R0))
+            retval = -4.*pi2*y*z*sin(pi*(r2 -r02));
+          }
+          else if(a_deriv[2]== 2)
+          {
+            //(%i13) der_zz:diff(der_z,z)
+            //(%o13) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*z^2*sin(pi*(z^2+y^2+x^2-R0))
+            retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*z2*sin(pi*(r2 - r02));
+
+          }
+#endif
+          else if(a_deriv[0]== 2)
+          {
+            //(%i11) der_xx:diff(der_x,x)
+            //(%o11)  2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*x^2*sin(pi*(z^2+y^2+x^2-R0))
+            retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*x2*sin(pi*(r2 - r02));
+          }
+          else if(a_deriv[1]== 2)
+          {
+            //(%i12) der_yy:diff(der_y,y)
+            //(%o12) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*y^2*sin(pi*(z^2+y^2+x^2-R0))
+            retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*y2*sin(pi*(r2 - r02));
+
+          }
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 2");
+          }
+        }
+        else if(sum == 3)
+        {
+          if(a_deriv[0] == 3)
+          {
+            //(%i14) der_xxx:diff(der_xx,x)
+            //(%o14) (-12*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))      -8*pi^3*x^3*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-12.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x3*cos(pi*(r2 - r02));
+          }
+          else if(a_deriv[1] == 3)
+          {
+            //(%i15) der_yyy:diff(der_yy,y)
+            //(%o15) (-12*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^3*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-12.*pi2*y*sin(pi*(r2 -r02))) -    8.*pi3*y3*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[1]==1))
+          {
+            //(%i19) der_yxx:diff(der_xy,x)
+            //(%o19) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*y*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*x2*y*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[0] == 1) && (a_deriv[1]==2))
+          {
+            //(%i18) der_xyy:diff(der_xy,y)
+            //(%o18) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*y^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x*y2*cos(pi*(r2 - r02));
+
+          }
+#if DIM==3
+          else if(a_deriv[2] == 3)
+          {
+            //(%i17) der_zzz:diff(der_zz,z)
+            //(%o17) (-12*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*z^3*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-12.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*z3*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[2] == 2) && (a_deriv[1]==1))
+          {
+            //(%i20) der_yzz:diff(der_yz,z)
+            //(%o20) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y*z^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*y*z2*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[2] == 2) && (a_deriv[0]==1))
+          {
+            //(%i21) der_xzz:diff(der_xz,z)
+            //(%o21) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*z^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -    8.*pi3*x*z2*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[2]==1))
+          {
+            //  (%i23) der_xxz:diff(der_xx, z);
+            //  (%o23) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*x2*z*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[1] == 2) && (a_deriv[2]==1))
+          {
+            //(%i24) der_yyz:diff(der_yy, z);
+            //(%o24) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^2*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*y2*z*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[0]==1) && (a_deriv[1] == 1) && (a_deriv[2]==1))
+          {
+            //(%i21) der_xyz:diff(der_xy,z)
+            //(%o21)    -8*pi^3*x*y*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval  =  (-8.*pi3*x*y*z*cos(pi*(r2 -r02)));
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 3");
+            retval = 0;
+          }
+        }
+        else if(sum==4)
+        {
+          if(a_deriv[0] == 4)
+          {
+            //(%i22) der_xxxx:diff(der_xxx,x)
+            //(%o22) 16*pi^4*x^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*x2*cos(pi*(r2 - r02));
+          }
+          else if(a_deriv[1] == 4)
+          {
+            //(%i23) der_yyyy:diff(der_yyy,y)
+            //(%o23) 16*pi^4*y^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*y4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*y2*cos(pi*(r2 - r02));
+          }
+          else if( (a_deriv[0] == 3) && (a_deriv[1] == 1))
+          {
+            //(%i25) der_xxxy:diff(der_xxx,y)
+            //(%o25) 16*pi^4*x^3*y*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x3*y*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
+          }
+          else if( (a_deriv[0] == 1) && (a_deriv[1] == 3))
+          {
+            //(%i27) der_yyyx:diff(der_yyy,x)
+            //(%o27) 16*pi^4*x*y^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*y3*x*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[1] == 2))
+          {
+            //(%i33) der_xxyy:diff(der_xyy,x)
+            //(%o33) 16*pi^4*x^2*y^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x2*y2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*y2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
+          }
+#if DIM==3
+          else if(a_deriv[2] == 4)
+          {
+            //(%i24) der_zzzz:diff(der_zzz,z)
+            //(%o24) 16*pi^4*z^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*z4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*z2*cos(pi*(r2 - r02));
+          }
+          else if((a_deriv[2] == 3) && (a_deriv[0] == 1))
+          {
+            //(%i29) der_zzzx:diff(der_zzz,x)
+            //(%o29) 16*pi^4*x*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
+          }
+          else if((a_deriv[2] == 3) && (a_deriv[1] == 1))
+          {
+            //(%i30) der_zzzy:diff(der_zzz,y)
+            //(%o30) 16*pi^4*y*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*y*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
+
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[0] == 2))
+          {
+            //(%i32) der_zzxx:diff(der_xzz,x)
+            //(%o32) 16*pi^4*x^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[1] == 2))
+          {
+            //(%i31) der_zzyy:diff(der_yzz,y)
+            //(%o31) 16*pi^4*y^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*y2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*y2*cos(pi*(r2 - r02));
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 3))
+          {
+            //(%i26) der_xxxz:diff(der_xxx,z)
+            //(%o26) 16*pi^4*x^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x3*z*sin(pi*(r2-r02))          -24.*pi3*x*z*sin(pi*(r2 -r02))      ;
+        
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[1] == 3))
+          {
+            //(%i28) der_yyyz:diff(der_yyy,z)
+            //(%o28) 16*pi^4*y^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*y3*z*sin(pi*(r2-r02))          -24.*pi3*y*z*sin(pi*(r2 -r02))      ;
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[0] == 1)&& (a_deriv[1] == 1))
+          {
+            //(%i34) der_xyzz:diff(der_xyz,z)
+            //(%o34) 16*pi^4*x*y*z^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x*y*z2*sin(pi*(r2-r02))         -8.*pi3*x*y*cos(pi*(r2 -r02))      ;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 1)&& (a_deriv[1] == 2))
+          {
+            //(%i35) der_xyyz:diff(der_xyz,y)
+            //(%o35) 16*pi^4*x*y^2*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x*y2*z*sin(pi*(r2-r02))         -8.*pi3*x*z*cos(pi*(r2 -r02))      ;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 2)&& (a_deriv[1] == 1))
+          {
+            //(%i36) der_xxyz:diff(der_xyz,x)
+            //(%o36) 16*pi^4*x^2*y*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
+            retval = 16.*pi4*x2*y*z*sin(pi*(r2-r02))         -8.*pi3*y*z*cos(pi*(r2 -r02))      ;
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 4");
+            retval = 0;
+          }
+        }
+        else
+        {
+          Chombo4::MayDay::Error("sinesphere ran out of deriv cases");
+          retval = 0;
+        }
+        
+        return retval;
+      }
+
+      virtual ~SineSphereEF()
+      {
+      }
+
+      SineSphereEF(double a_radius,
+                   double a_center)
+      {
+        m_radius = a_radius;
+        m_center = a_center;
+      }
+
+    private:
+      double  m_radius;
+      double  m_center;
+  
+      SineSphereEF()
+      {
+      }
+
+    };
+
+
+///phi = cp x^p  
+// template <unsigned int order>
+    class MonomialEF: public BaseExactSolution
+    {
+    public:
+  
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        double  C     = m_entry.second;  //coefficient
+        Point expon = m_entry.first; //exponent
+    
+        //first deal with the zeros.  If the deriv in a particular direction is higher
+        //than the original exponent, the derivative is zero
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          PROTO_ASSERT((a_deriv[idir] >= 0), "invalid derivative");
+          PROTO_ASSERT((  expon[idir] >= 0), "invalid exponenent");
+          if(a_deriv[idir] > expon[idir])
+          {
+            return 0;
+          }
+        }
+
+        //Past this point, we can assume by construction that the exponent is bigger than the derivative
+        // (exp >= deriv),  in all directions.   We can also assume that both >= 0.
+        int px = expon[0];
+        int py = expon[1];
+        using std::pow;
+#if DIM==3
+        int pz = expon[2];
+#endif
+        int sum = a_deriv.sum();
+        //all the return vals are constants multiplied by this stuff
+        double ppowbit = 1;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          ppowbit *= (pow(a_loc[idir], expon[idir]-a_deriv[idir]));
+        }
+        //this is to denote the cascading derivative factors ...(expon-3)*(expon-2)(expon)
+        double retval_simp = C*ppowbit;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          int curDeriv = a_deriv[idir];
+          int curExpon =   expon[idir];
+          double factor = 1;
+          while(curDeriv > 0)
+          {
+            factor *= double(curExpon);
+            curDeriv--;
+            curExpon--;
+          }
+          retval_simp *= factor;
+        }
+
+        double retval = 0;
+        if(sum == 0)
+        {
+          //(%i2) display2d:false
+          //(%o2) false
+          //(%i3) phi:C*x^px*y^py*z^pz
+          //(%o3)    C*x^px*y^py*z^pz
+          //retval = C*(pow(x, px))*(pow(y, py))*(pow(z, pz));
+          retval =   C*ppowbit;
+        }
+        else if(sum == 1)
+        {
+          if(a_deriv[0]== 1)
+          {
+            //(%i4) der_x:diff(phi,x)
+            //(%o4)    C*px*x^(px-1)*y^py*z^pz
+            //retval = C*px*(pow(x, px-1))*(pow(y, py))*(pow(z, pz));
+            retval  =   C*px*ppowbit;
+        
+        
+          }
+          else if (a_deriv[1]== 1)
+          {
+            //(%i5) der_y:diff(phi,y)
+            //(%o5)    C*py*x^px*y^(py-1)*z^pz
+            //retval = C*py*(pow(x, px))*(pow(y, py-1))*(pow(z, pz));
+            retval  =  C*py*ppowbit;
+          }
+#if DIM==3      
+          else if(a_deriv[2] == 1)
+          {
+            //(%i6) der_z:diff(phi,z)
+            //(%o6)    C*pz*x^px*y^py*z^(pz-1)
+            //retval = C*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-1));
+            retval  =  C*pz*ppowbit;
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 2");
+          }
+        }
+        else if(sum == 2)
+        {
+          if((a_deriv[0]== 1) && (a_deriv[1]== 1))
+          {
+            //(%i7) der_xy:diff(der_x,y)
+            //(%o7)    C*px*py*x^(px-1)*y^(py-1)*z^pz
+            //retval = C*px*py*(pow(x, px-1))*(pow(y, py-1))*(pow(z, pz));
+            retval  =  C*px*py*ppowbit;
+          }
+#if DIM==3      
+          else if((a_deriv[0]== 1) && (a_deriv[2]== 1))
+          {
+            //(%i8) der_xz:diff(der_x,z)
+            //(%o8)    C*px*pz*x^(px-1)*y^py*z^(pz-1)
+            //retval = C*px*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-1));
+            retval  =  C*px*pz*ppowbit;
+          }
+          else if((a_deriv[1]== 1) && (a_deriv[2]== 1))
+          {
+            //(%i9) der_yz:diff(der_y,z)
+            //(%o9)    C*py*pz*x^px*y^(py-1)*z^(pz-1)
+            //retval = C*py*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-1));
+            retval  =  C*py*pz*ppowbit;
+          }
+          else if(a_deriv[2]== 2)
+          {
+            //(%i12) der_zz:diff(der_z,z)
+            //(%o12)   C*(pz-1)*pz*x^px*y^py*z^(pz-2)
+            //retval = C*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-2));
+            retval  =  C*(pz-1)*pz*ppowbit;
+          }
+#endif
+          else if(a_deriv[0]== 2)
+          {
+            //(%i10) der_xx:diff(der_x,x)
+            //(%o10)   C*(px-1)*px*x^(px-2)*y^py*z^pz
+            //retval = C*(px-1)*px*(pow(x, px-2))*(pow(y, py))*(pow(z, pz));
+            retval  =  C*(px-1)*px*ppowbit;
+          }
+          else if(a_deriv[1]== 2)
+          {
+            //(%i11) der_yy:diff(der_y,y)
+            //(%o11)   C*(py-1)*py*x^px*y^(py-2)*z^pz
+            //retval = C*(py-1)*py*(pow(x, px))*(pow(y, py-2))*(pow(z, pz));
+            retval  =  C*(py-1)*py*ppowbit;
+          }
+          else
+          {
+            Chombo4::MayDay::Error("sinesphere ran out of cases 2");
+          }
+        }
+        else if(sum == 3)
+        {
+          if(a_deriv[0] == 3)
+          {
+            //(%i13) der_xxx:diff(der_xx,x)
+            //(%o13)   C*(px-2)*(px-1)*px*x^(px-3)*y^py*z^pz
+            //retval =   C*(px-2)*(px-1)*px*(pow(x, px-3))*(pow(y, py))*(pow(z, pz));
+            //retval  =  C*(px-2)*(px-1)*px*ppowbit;
+            retval  =    C*(px-2)*(px-1)*px*ppowbit;
+          }
+          else if(a_deriv[1] == 3)
+          {
+            //(%i14) der_yyy:diff(der_yy,y)
+            //(%o14) C*(py-2)*(py-1)*py*x^px*y^(py-3)*z^pz
+            //retval = C*(py-2)*(py-1)*py*(pow(x, px))*(pow(y, py-3))*(pow(z, pz));
+            retval  =  C*(py-2)*(py-1)*py*ppowbit;
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[1]==1))
+          {
+            //(%i17) der_yxx:diff(der_xy,x)
+            //(%o17)   C*(px-1)*px*py*x^(px-2)*y^(py-1)*z^pz
+            //retval = C*(px-1)*px*py*(pow(x, px-2))*(pow(y, py-1))*(pow(z, pz));
+            retval  =  C*(px-1)*px*py*ppowbit;
+          }
+          else if( (a_deriv[0] == 1) && (a_deriv[1]==2))
+          {
+            //(%i16) der_xyy:diff(der_xy,y)
+            //(%o16)   C*px*(py-1)*py*x^(px-1)*y^(py-2)*z^pz
+            //retval = C*px*(py-1)*py*(pow(x, px-1))*(pow(y, py-2))*(pow(z, pz));
+            retval  =  C*px*(py-1)*py*ppowbit;
+          }
+#if DIM==3
+          else if(a_deriv[2] == 3)
+          {
+            //(%i15) der_zzz:diff(der_zz,z)
+            //(%o15)   C*(pz-2)*(pz-1)*pz*x^px*y^py*z^(pz-3)
+            //retval = C*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-3));
+            retval  =  C*(pz-2)*(pz-1)*pz*ppowbit;
+          }
+          else if( (a_deriv[2] == 2) && (a_deriv[1]==1))
+          {
+            //(%i18) der_yzz:diff(der_yz,z)
+            ////(%o18) C*py*(pz-1)*pz*x^px*y^(py-1)*z^(pz-2)
+            //retval = C*py*(pz-1)*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-2));
+            retval  =  C*py*(pz-1)*pz*ppowbit;
+          }
+          else if( (a_deriv[2] == 2) && (a_deriv[0]==1))
+          {
+            //(%i19) der_xzz:diff(der_xz,z)
+            ////(%o19) C*px*(pz-1)*pz*x^(px-1)*y^py*z^(pz-2)
+            //retval = C*px*(pz-1)*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-2));
+            retval  =  C*px*(pz-1)*pz*ppowbit;
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[2]==1))
+          {
+            //(%i33) der_xxz: diff(der_xx, z);
+            ////(%o33) C*(px-1)*px*pz*x^(px-2)*y^py*z^(pz-1)
+            //retval = C*(px-1)*px*pz*(pow(x, px-2))*(pow(y, py))*(pow(z, pz-1));
+            retval  =  C*(px-1)*px*pz*ppowbit;
+          }
+          else if( (a_deriv[1] == 2) && (a_deriv[2]==1))
+          {
+            //(%i34) der_yyz: diff(der_yy, z);
+            ////(%o34) C*(py-1)*py*pz*x^px*y^(py-2)*z^(pz-1)
+            //retval = C*(py-1)*py*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-1));
+            retval  =  C*(py-1)*py*pz*ppowbit;
+          }
+          else if( (a_deriv[0]==1) && (a_deriv[1] == 1) && (a_deriv[2]==1))
+          {
+            //(%i20) der_xyz:diff(der_xy,z)
+            //(%o20)   C*px*py*pz*x^(px-1)*y^(py-1)*z^(pz-1)
+            retval  =  C*px*py*pz*ppowbit;
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Warning("monomial ran out of cases 3");
+            retval = 0;
+          }
+        }
+        else if(sum==4)
+        {
+          if(a_deriv[0] == 4)
+          {
+            //(%i21) der_xxxx:diff(der_xxx,x)
+            ////(%o21) C*(px-3)*(px-2)*(px-1)*px*x^(px-4)*y^py*z^pz
+            //retval = C*(px-3)*(px-2)*(px-1)*px*(pow(x, px-4))*(pow(y, py))*(pow(z, pz));
+            retval  =  C*(px-3)*(px-2)*(px-1)*px*ppowbit;
+          }
+          else if(a_deriv[1] == 4)
+          {
+            //(%i22) der_yyyy:diff(der_yyy,y)
+            ////(%o22) C*(py-3)*(py-2)*(py-1)*py*x^px*y^(py-4)*z^pz
+            //retval = C*(py-3)*(py-2)*(py-1)*py*(pow(x, px))*(pow(y, py-4))*(pow(z, pz));
+            retval  =  C*(py-3)*(py-2)*(py-1)*py*ppowbit;
+          }
+          else if( (a_deriv[0] == 3) && (a_deriv[1] == 1))
+          {
+            //(%i24) der_xxxy:diff(der_xxx,y)
+            //(%o24)   C*(px-2)*(px-1)*px*py*x^(px-3)*y^(py-1)*z^pz
+            //retval = C*(px-2)*(px-1)*px*py(pow(x, px-3))*(pow(y, py-1))*(pow(z, pz));
+            retval  =  C*(px-2)*(px-1)*px*py*ppowbit;
+          }
+          else if( (a_deriv[0] == 1) && (a_deriv[1] == 3))
+          {
+            //(%i26) der_yyyx:diff(der_yyy,x)
+            ////(%o26) C*px*(py-2)*(py-1)*py*x^(px-1)*y^(py-3)*z^pz
+            //retval = C*px*(py-2)*(py-1)*py(pow(x, px-1))*(pow(y, py-3))*(pow(z, pz));
+            retval  =  C*px*(py-2)*(py-1)*py*ppowbit;
+          }
+          else if( (a_deriv[0] == 2) && (a_deriv[1] == 2))
+          {
+            //(%i32) der_xxyy:diff(der_xyy,x)
+            ////(%o32) C*(px-1)*px*(py-1)*py*x^(px-2)*y^(py-2)*z^pz
+            //retval = C*(px-1)*px*(py-1)*py*(pow(x, px-2))*(pow(y, py-2))*(pow(z, pz));
+            retval  =  C*(px-1)*px*(py-1)*py*ppowbit;
+          }
+#if DIM==3
+          else if(a_deriv[2] == 4)
+          {
+            //(%i23) der_zzzz:diff(der_zzz,z)
+            ////(%o23) C*(pz-3)*(pz-2)*(pz-1)*pz*x^px*y^py*z^(pz-4)
+            //retval = C*(pz-3)*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py))*(pow(z, pz-4));
+            retval  =  C*(pz-3)*(pz-2)*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 3) && (a_deriv[0] == 1))
+          {
+            //(%i28) der_zzzx:diff(der_zzz,x)
+            ////(%o28) C*px*(pz-2)*(pz-1)*pz*x^(px-1)*y^py*z^(pz-3)
+            //retval = C*px*(pz-2)*(pz-1)*pz*(pow(x, px-1))*(pow(y, py))*(pow(z, pz-3));
+            retval  =  C*px*(pz-2)*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 3) && (a_deriv[1] == 1))
+          {
+            //(%i29) der_zzzy:diff(der_zzz,y)
+            ////(%o29) C*py*(pz-2)*(pz-1)*pz*x^px*y^(py-1)*z^(pz-3)
+            //retval = C*py*(pz-2)*(pz-1)*pz*(pow(x, px))*(pow(y, py-1))*(pow(z, pz-3));
+            retval  =  C*py*(pz-2)*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[0] == 2))
+          {
+            //(%i31) der_zzxx:diff(der_xzz,x)
+            ////(%o31) C*(px-1)*px*(pz-1)*pz*x^(px-2)*y^py*z^(pz-2)
+            //retval = C*(px-1)*px*(pz-1)*pz*(pow(x, px-2))*(pow(y, py))*(pow(z, pz-2));
+            retval  =  C*(px-1)*px*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[1] == 2))
+          {
+            //(%i30) der_zzyy:diff(der_yzz,y)
+            ////(%o30) C*(py-1)*py*(pz-1)*pz*x^px*y^(py-2)*z^(pz-2)
+            //retval = C*(py-1)*py*(pz-1)*pz*(pow(x, px))*(pow(y, py-2))*(pow(z, pz-2));
+            retval  =  C*(py-1)*py*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 3))
+          {
+            //(%i25) der_xxxz:diff(der_xxx,z)
+            ////(%o25) C*(px-2)*(px-1)*px*pz*x^(px-3)*y^py*z^(pz-1)
+            //retval = C*(px-2)*(px-1)*px*pz(pow(x, px-3))*(pow(y, py))*(pow(z, pz-1));
+            retval  =  C*(px-2)*(px-1)*px*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[1] == 3))
+          {
+            //(%i27) der_yyyz:diff(der_yyy,z)
+            ////(%o27) C*(py-2)*(py-1)*py*pz*x^px*y^(py-3)*z^(pz-1)
+            //retval = C*(py-2)*(py-1)*py*pz(pow(x, px))*(pow(y, py-3))*(pow(z, pz-1));
+            retval  =  C*(py-2)*(py-1)*py*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 2) && (a_deriv[0] == 1)&& (a_deriv[1] == 1))
+          {
+            //(%i34) der_xyzz:diff(der_xyz,z)
+            //(%o34)   C*px*py*(pz-1)*pz*x^(px-1)*y^(py-1)*z^(pz-2)
+            retval  =  C*px*py*(pz-1)*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 1)&& (a_deriv[1] == 2))
+          {
+            //(%i35) der_xyyz:diff(der_xyz,y)
+            //(%o35)   C*px*(py-1)*py*pz*x^(px-1)*y^(py-2)*z^(pz-1)
+            retval  =  C*px*(py-1)*py*pz*ppowbit;
+          }
+          else if((a_deriv[2] == 1) && (a_deriv[0] == 2)&& (a_deriv[1] == 1))
+          {
+            //(%i36) der_xxyz:diff(der_xyz,x)
+            //(%o36)   C*(px-1)*px*py*pz*x^(px-2)*y^(py-1)*z^(pz-1)
+            retval  =  C*(px-1)*px*py*pz*ppowbit;
+          }
+#endif      
+          else
+          {
+            Chombo4::MayDay::Warning("monomial ran out of cases 4");
+            retval = 0;
+          }
+        }
+        else
+        {
+          //Chombo4::MayDay::Warning("monomial ran out of deriv cases");
+          retval = 0;
+        }
+
+        double tol = 1.0e-13;
+        double diff = std::abs(retval - retval_simp);
+        if ((diff > tol))
+        {
+          //pout() << diff << std::endl;
+          Chombo4::MayDay::Error("broken elegance");
+        }
+        return retval_simp;
+      }
+      virtual ~MonomialEF()
+      {
+      }
+
+      MonomialEF(std::pair<Point, double>  a_entry)
+      {
+        m_entry = a_entry;
+      }
+
+    private:
+      std::pair<Point, double>  m_entry;
+
+  
+      MonomialEF()
+      {
+      }
+    };
+
+///phi = sum cp x^p  
+// template <unsigned int order>
+    class PolynomialEF: public BaseExactSolution
+    {
+    public:
+  
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+  
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        double retval = 0;
+        for(int ient = 0; ient < m_entries.size(); ient++)
+        {
+          MonomialEF mono(m_entries[ient]);
+          double monoval = mono.getDerivative(a_deriv, a_loc);
+          retval += monoval;
+        }
+        return retval;
+      }
+
+      virtual ~PolynomialEF()
+      {
+      }
+
+      PolynomialEF(std::vector<std::pair<Point, double> > a_entries)
+      {
+        m_entries = a_entries;
+      }
+
+    private:
+      std::vector<std::pair<Point, double> > m_entries;
+
+  
+      PolynomialEF()
+      {
+      }
+    };
+
+///class where phi is a product of one dimensional cosines
+// template <unsigned int order>
+    class OneDimCosProduct: public BaseExactSolution
+    {
+    public:
+
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+      ///
+      /** phi = A*cos(pi*m1*(x-x0))*cos(pi*m2*(y-y0))*cos(pi*m3*(z-z0))
+          a_amp = A
+          a_freq = (m1,m2,m3)
+          a_center = (x0,y0,z0)
+      */
+      ///
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        double retval = m_amp;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          double prefix = 1.0;
+          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          {
+            prefix *= m_PI*m_freq[idir];
+          }          
+          if(a_p[idir]%2 == 0)
+          {
+            retval *= pow(-1.,a_p[idir]/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+          } 
+          else
+          {
+            retval *= pow(-1.,(a_p[idir]+1)/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+          } 
+        }
+  
+        return retval;
+      }
+
+      virtual double getPhiPoint(const pr_realvect   & a_x) const
+      {
+        double retval = 1.;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          double xdiff = a_x[idir] - m_center[idir];
+
+          double arg = xdiff*m_PI*m_freq[idir];
+          double factor = cos(arg);
+          retval *= factor;
+        }
+        return retval;
+      }
+
+      virtual ~OneDimCosProduct()
+      {
+      }
+
+      OneDimCosProduct(double     a_amp,
+                       pr_realvect a_freq,
+                       pr_realvect a_center)
+      {   
+        m_amp = a_amp;
+        m_freq = a_freq;
+        m_center = a_center;
+      } 
+
+    private:
+      double      m_amp;
+      pr_realvect  m_freq;
+      pr_realvect  m_center;
+      double      m_PI=3.141592653589793238462643383279502884197;
+
+      OneDimCosProduct()
+      {
+      }
+    };
+
+///class where phi is a product of one dimensional sines
+// template <unsigned int order>
+    class OneDimSinProduct: public BaseExactSolution
+    {
+    public:
+
+      typedef       IndexTM<int, DIM>            IvDIM;
+
+      ///
+      /** phi = A*sin(pi*m1*(x-x0))*sin(pi*m2*(y-y0))*sin(pi*m3*(z-z0))
+          a_amp = A
+          a_freq = (m1,m2,m3)
+          a_center = (x0,y0,z0)
+      */
+      ///
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const 
+      {
+        double retval = m_amp;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          double prefix = 1.0;
+          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          {
+            prefix *= m_PI*m_freq[idir];
+          }
+          if(a_p[idir]%2 == 0)
+          {
+            retval *= pow(-1.,a_p[idir]/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+          }
+          else
+          {
+            retval *= pow(-1.,(a_p[idir]-1)/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+          }
+        }
+  
+        return retval;
+      }
+
+      virtual double getPhiPoint(const pr_realvect   & a_x) const
+      {
+        double retval = m_amp;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          double xdiff = a_x[idir] - m_center[idir];
+
+          double arg = xdiff*m_PI*m_freq[idir];
+          double factor= sin(arg);
+          retval *= factor;
+        }
+        return retval;
+      }
+
+      virtual ~OneDimSinProduct()
+      {
+      }
+
+      OneDimSinProduct(double     a_amp,
+                       pr_realvect a_freq,
+                       pr_realvect a_center)
+      {   
+        m_amp = a_amp;
+        m_freq = a_freq;
+        m_center = a_center;
+      } 
+
+    private:
+      double      m_amp;
+      pr_realvect  m_freq;
+      pr_realvect  m_center;
+      double      m_PI=3.141592653589793238462643383279502884197;
+
+      OneDimSinProduct()
+      {
+      }
+    };
+
+  }; //end class Analytic_Framework
+} //end namespace EBCM
+#endif

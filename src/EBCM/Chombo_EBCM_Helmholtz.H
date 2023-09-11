@@ -57,6 +57,8 @@ namespace EBCM
     typedef EBCM::PETSc_Framework<            ebcm_order >                  petsc_framework;
     typedef typename EBCM::PETSc_Framework<   ebcm_order >::local_stencil_t ebcm_local_stencil;
     typedef typename EBCM::PETSc_Framework<   ebcm_order >::Base_PETSc_Op   ebcm_base_op;
+    typedef EBCM::Analytic_Framework<ebcm_order>                 ebcm_analytic;
+    typedef ebcm_analytic::BaseExactSolution<ebcm_order>         ebcm_base_exact;
     
 
     ///
@@ -484,11 +486,41 @@ namespace EBCM
     }
 
     static void
-    setExact(shared_ptr<ebcm_dou_sca_data> a_phi_exact_ptr,
-             shared_ptr<ebcm_dou_sca_data> a_lph_exact_ptr,
-             shared_ptr< ebcm_meta  >      a_meta_ptr)
+    setExact(shared_ptr<ebcm_dou_sca_data>    a_phi_exact_ptr,
+             shared_ptr<ebcm_dou_sca_data>    a_lph_exact_ptr,
+             const shared_ptr< ebcm_meta  > & a_meta_ptr,
+             const ebcm_base_exact          & a_exact)
     {
-      ch_mayday::Error("not implemented");
+      const auto& grids = a_meta_ptr->m_grids;
+      const auto&    dx = a_meta_ptr->m_dx;
+      auto     dit = grids.dataIterator();
+      for(int ibox = 0; ibox < dataIter.size(); ibox++)
+      {
+        const auto& phifab = (*a_phi_exact_ptr)[dit[ibox]];
+        const auto& lphfab = (*a_lph_exact_ptr)[dit[ibox]];
+        const auto& valid =  grids[dit[ibox]];
+        const auto& graph = graphs[dit[ibox]];
+        ebcm_subvol_vec volvec(graph, valid, a_print);
+//      operator()(const pr_mom_dim    & a_moments,
+//                 const pr_dou_dim    & a_location)
+        for(int ivec = 0; ivec < volvec.size(); ivec++)
+        {
+          const auto& volume = volvec[ivec];
+          for(int icell = 0; icell < volume.m_cells.size(); icell++)
+          {
+            const auto& cell = volume.m_cells[icell];
+            const pr_mom_dim& volmom = volume.m_volmom;
+            pr_mom_dim    moments = volmom;
+            pr_realvect   location = volume.m_centroid;
+
+            double phivalue = a_exact.getPhi(      moments, location);
+            double lphvalue = a_exact.getLaplacian(moments, location);
+            
+            phifab(cell, 0) = phiValue;
+            lphfab(cell, 0) = phiValue;
+          }
+        }
+      }
     }
     ///
     static double
@@ -508,7 +540,8 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
 
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr);
+      exact_solution exactly;
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr, exactly);
 
       HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
                              a_weight_power, a_meta_ptr,
