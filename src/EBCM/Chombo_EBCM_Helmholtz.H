@@ -12,6 +12,7 @@
 ///  Chombo_EBCM_Graph.H is where MetaDataLevel lives.  It made sense at the time.
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBCM_PETSc_Framework.H"
+#include "Chombo_EBCM_ExactSolutions.H"
 #include "Chombo_EBLevelBoxData.H"
 
 /// 
@@ -33,17 +34,20 @@ namespace EBCM
     typedef Chombo4::BoxIterator                                            ch_bit;
     typedef Chombo4::IntVect                                                ch_iv;
     typedef Chombo4::DataIterator                                           ch_dit;
+    typedef Chombo4::ParmParse                                              ch_parmparse;
                                                                             
-    typedef ::Mat                                                           petsc_mat;
     typedef Proto::Point                                                    pr_pt;
-                                                                            
+    typedef Proto::RealVect                                                 pr_realvect;
     typedef Proto::IndexTM<double, DIM>                                     pr_itm_r_dim;
     typedef Proto::IndexTM<int ,   DIM>                                     pr_itm_i_dim;
     typedef Proto::IndexTM<double, DIM-1>                                   pr_itm_r_dmo;
     typedef Proto::IndexTM<int ,   DIM-1>                                   pr_itm_i_dmo;
-                                                                            
     typedef Proto::IndexedMoments<DIM  ,      ebcm_order >                  pr_mom_dim;
     typedef Proto::IndexedMoments<DIM-1,      ebcm_order >                  pr_mom_dmo;
+                                                                            
+    typedef EBCM::Algorithm_Framework<        ebcm_order >                  algo_framework;
+    typedef EBCM::PETSc_Framework<            ebcm_order >                  petsc_framework;
+    
     typedef EBCM::neighborhood   <            ebcm_order >                  ebcm_neighborhood;
     typedef EBCM::MetaDataLevel<              ebcm_order >                  ebcm_meta;
     typedef EBCM::EBCM_Graph<                 ebcm_order >                  ebcm_graph;
@@ -53,12 +57,11 @@ namespace EBCM
     typedef EBCM::HostLevelData<double, DIM,  ebcm_order >                  ebcm_dou_vec_data;
     typedef EBCM::SubVolumeVector<            ebcm_order >                  ebcm_subvol_vec;
     typedef EBCM::EBCM_Volu<                  ebcm_order >                  ebcm_volu;
-    typedef EBCM::Algorithm_Framework<        ebcm_order >                  algo_framework;
-    typedef EBCM::PETSc_Framework<            ebcm_order >                  petsc_framework;
     typedef typename EBCM::PETSc_Framework<   ebcm_order >::local_stencil_t ebcm_local_stencil;
     typedef typename EBCM::PETSc_Framework<   ebcm_order >::Base_PETSc_Op   ebcm_base_op;
-    typedef EBCM::Analytic_Framework<ebcm_order>                 ebcm_analytic;
-    typedef ebcm_analytic::BaseExactSolution<ebcm_order>         ebcm_base_exact;
+    typedef typename EBCM::Analytic_Framework<ebcm_order >                  ebcm_analytic;
+    typedef typename ebcm_analytic::BaseExactSolution                       ebcm_base_exact;
+
     
 
     ///
@@ -485,24 +488,26 @@ namespace EBCM
       return metaDataPtr;
     }
 
+    ///
     static void
-    setExact(shared_ptr<ebcm_dou_sca_data>    a_phi_exact_ptr,
-             shared_ptr<ebcm_dou_sca_data>    a_lph_exact_ptr,
-             const shared_ptr< ebcm_meta  > & a_meta_ptr,
-             const ebcm_base_exact          & a_exact)
+    setExact(shared_ptr<ebcm_dou_sca_data>     a_phi_exact_ptr,
+             shared_ptr<ebcm_dou_sca_data>     a_lph_exact_ptr,
+             shared_ptr< ebcm_meta       >     a_meta_ptr,
+             shared_ptr<ebcm_base_exact  >     a_exact_ptr,
+             bool a_print = false)
     {
-      const auto& grids = a_meta_ptr->m_grids;
-      const auto&    dx = a_meta_ptr->m_dx;
+      const auto& grids  = a_meta_ptr->m_grids;
+      const auto& graphs = *(a_meta_ptr->m_graphs);
+      const auto&    dx  = a_meta_ptr->m_dx;
       auto     dit = grids.dataIterator();
-      for(int ibox = 0; ibox < dataIter.size(); ibox++)
+      for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        const auto& phifab = (*a_phi_exact_ptr)[dit[ibox]];
-        const auto& lphfab = (*a_lph_exact_ptr)[dit[ibox]];
+        auto      & phifab = (*a_phi_exact_ptr)[dit[ibox]];
+        auto      & lphfab = (*a_lph_exact_ptr)[dit[ibox]];
         const auto& valid =  grids[dit[ibox]];
         const auto& graph = graphs[dit[ibox]];
         ebcm_subvol_vec volvec(graph, valid, a_print);
-//      operator()(const pr_mom_dim    & a_moments,
-//                 const pr_dou_dim    & a_location)
+
         for(int ivec = 0; ivec < volvec.size(); ivec++)
         {
           const auto& volume = volvec[ivec];
@@ -513,14 +518,78 @@ namespace EBCM
             pr_mom_dim    moments = volmom;
             pr_realvect   location = volume.m_centroid;
 
-            double phivalue = a_exact.getPhi(      moments, location);
-            double lphvalue = a_exact.getLaplacian(moments, location);
+            double phi_value = a_exact_ptr->getPhi(      moments, location);
+            double lph_value = a_exact_ptr->getLaplacian(moments, location);
             
-            phifab(cell, 0) = phiValue;
-            lphfab(cell, 0) = phiValue;
+            phifab(cell, 0) = phi_value;
+            lphfab(cell, 0) = lph_value;
           }
         }
       }
+    }
+    ///most of this is pilfered from Chombo_4/example/DomainDecomposition/hoeb_common
+    static shared_ptr<ebcm_base_exact>
+    getExactSolution()
+    {
+      string whichphi;
+      //print out the diagnostics only once
+      static bool printedonce = false;
+      ch_parmparse  pp("getExactSolution");
+      pp.get("which_phi", whichphi);
+      shared_ptr<ebcm_base_exact>  retval;
+      if(whichphi == string("SineSphere"))
+      {
+        typedef typename ebcm_analytic::SineSphereEF analytic_sine;
+
+        bool   inside = false;
+        double radius = 4586;
+        double center = 4586;
+        pp.get("radius", radius);
+        pp.get("inside", inside);
+        pp.get("center", center);
+
+        if(!printedonce)
+          Chombo4::pout() << "getExactSolution: exact solution = sinesphere with radius = " << radius << ", center = " << center << endl;
+        ebcm_base_exact*  raw_ptr = static_cast<ebcm_base_exact*>(new analytic_sine(radius, center));
+        retval =  shared_ptr<ebcm_base_exact>(raw_ptr);
+      }
+      else if(whichphi == string("Polynomial"))
+      {
+        typedef typename ebcm_analytic::PolynomialEF analytic_poly;
+        vector<pair<pr_pt, double> > entries;
+        int num_terms;
+        pp.get("polynomial_num_terms", num_terms);
+        entries.resize(num_terms);
+        if(!printedonce)
+          Chombo4::pout() << "getExactSolution: polynomial chosen" << endl;
+        for(int iterm = 0; iterm < num_terms; iterm++)
+        {
+          string coef_str   = string("polynomial_coefficient_") + to_string(iterm);
+          string powers_str = string("polynomial_powers_")      + to_string(iterm);
+          vector<int> entry_powers;
+          Real        entry_coef;
+          pp.getarr(powers_str.c_str(), entry_powers, 0, DIM);
+          pp.get(     coef_str.c_str(), entry_coef);
+          pair<Point, Real> entry;
+          entry.second = entry_coef;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            entry.first[idir] = entry_powers[idir];
+          }
+          entries.push_back(entry);
+          if(!printedonce)
+            Chombo4::pout() << "getExactSolution: iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
+        }
+        ebcm_base_exact *  raw_ptr = static_cast< ebcm_base_exact * >(new analytic_poly(entries));
+        retval = shared_ptr<ebcm_base_exact>(raw_ptr);
+      }
+      else
+      {
+        Chombo4::MayDay::Error("getExactSolution: Doh! (string for whichphi unrecognized)");
+      }
+
+      printedonce = true;
+      return retval;
     }
     ///
     static double
@@ -540,8 +609,9 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
 
-      exact_solution exactly;
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr, exactly);
+      shared_ptr<ebcm_base_exact> exactly_ptr = getExactSolution();
+      
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr, exactly_ptr, a_print);
 
       HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
                              a_weight_power, a_meta_ptr,
@@ -553,7 +623,7 @@ namespace EBCM
       double acoef =  1;
       double bcoef = -1;
       err_calc_ptr->setVal(0.);
-//      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }

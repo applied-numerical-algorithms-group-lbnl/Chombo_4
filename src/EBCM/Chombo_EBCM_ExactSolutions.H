@@ -19,15 +19,17 @@ namespace EBCM
   template <int ebcm_order>
   class Analytic_Framework
   {
+  public:  
+    
+    typedef Proto::IndexTM<  int,    DIM             >          pr_int_dim;
+    typedef Proto::IndexTM< double , DIM             >          pr_dou_dim;
+    typedef Proto::IndexedMoments<   DIM, ebcm_order >          pr_mom_dim;
+    typedef Proto::MomentIterator<   DIM, ebcm_order >          pr_momit_dim;
+    typedef Proto::RealVect                                     pr_realvect;
     ///
     class BaseExactSolution
     {
     public:
-      typedef Proto::IndexTM<int,   DIM>                        pr_int_dim;
-      typedef Proto::IndexTM<double,DIM>                        pr_dou_dim;
-      typedef Proto::RealVect                                   pr_realvect;
-      typedef Proto::IndexedMomentsTM<DIM, ebcm_order>          pr_mom_dim;
-      typedef Proto::MomentIterator<  DIM, ebcm_order>          pr_momit_dim;
 
       virtual ~BaseExactSolution()
       {
@@ -41,19 +43,19 @@ namespace EBCM
       /**
       **/
       double
-      getPhi(const pr_mom_dim    & a_moments,
-             const pr_dou_dim    & a_location)
+      getPhi(const pr_mom_dim     & a_moments,
+             const pr_realvect    & a_location)
       {
         double retval = 0;
   
-        double volu = a_moments[IvDIM::Zero];
+        double volu = a_moments[pr_int_dim::Zero];
         for(pr_momit_dim momit; momit.ok(); ++momit)
         {
           pr_int_dim  power = momit();
           int   idenom = (power.factorial());
-          double deriv = getDerivative(power, centloc);
+          double deriv = getDerivative(power, a_location);
           double denom = (double)(idenom);
-          double momen = moments[power];
+          double momen = a_moments[power];
           double incre = deriv*momen/denom;
           retval += incre;
         }
@@ -69,11 +71,11 @@ namespace EBCM
       /**
       **/
       virtual double getLaplacian(const pr_mom_dim    & a_moments,
-                                  const pr_realvect   & a_loc) const
+                                  const pr_realvect   & a_location) const
       {
         double retval = 0;
   
-        double volu = a_moments[IvDIM::Zero];
+        double volu = a_moments[pr_int_dim::Zero];
 
         for(pr_momit_dim momit; momit.ok(); ++momit)
         {
@@ -86,11 +88,12 @@ namespace EBCM
               double factor = 0.5*(power[idir])*(power[idir]-1);
               pr_int_dim  derivdecr  = 2*pr_int_dim::BASISV(idir);
               pr_int_dim  laplpower = power - derivdecr;
-              double deriv = getDerivative(laplpower, loc);
+              double deriv = getDerivative(laplpower, a_location);
               retval += factor*deriv;
             }
           }
         }
+        return retval;
       }
 
       virtual double getDerivative(const pr_int_dim   & a_power,
@@ -98,7 +101,7 @@ namespace EBCM
 
     }; //end class base exact
 
-/// Build a composite function of the form a*f(x)+b*g(x)+c*h(x)+...
+    /// Build a composite function of the form a*f(x)+b*g(x)+c*h(x)+...
     class FunctionSumSolution: public BaseExactSolution
     {
     public:
@@ -116,8 +119,8 @@ namespace EBCM
       {
       }
 
-      o  virtual double getDerivative(const pr_int_dim   & a_power,
-                                      const pr_realvect  & a_loc) const
+      virtual double getDerivative(const pr_int_dim   & a_power,
+                                   const pr_realvect  & a_loc) const
       {
         // simple derivative sum rule
         double deriv = 0;
@@ -205,7 +208,7 @@ namespace EBCM
       typedef       IndexTM<int, DIM>            IvDIM;
 
   
-      virtual double getDerivative(const pr_int_dim   & a_power,
+      virtual double getDerivative(const pr_int_dim   & a_deriv,
                                    const pr_realvect  & a_loc) const 
       {
         double x = a_loc[0] - m_center;
@@ -530,7 +533,7 @@ namespace EBCM
   
       typedef       IndexTM<int, DIM>            IvDIM;
 
-      virtual double getDerivative(const pr_int_dim   & a_power,
+      virtual double getDerivative(const pr_int_dim   & a_deriv,
                                    const pr_realvect  & a_loc) const 
       {
         double  C     = m_entry.second;  //coefficient
@@ -906,7 +909,7 @@ namespace EBCM
       typedef       IndexTM<int, DIM>            IvDIM;
 
   
-      virtual double getDerivative(const pr_int_dim   & a_power,
+      virtual double getDerivative(const pr_int_dim   & a_deriv,
                                    const pr_realvect  & a_loc) const 
       {
         double retval = 0;
@@ -952,24 +955,24 @@ namespace EBCM
           a_center = (x0,y0,z0)
       */
       ///
-      virtual double getDerivative(const pr_int_dim   & a_power,
-                                   const pr_realvect  & a_loc) const 
+      virtual double getDerivative(const pr_int_dim   & a_deriv,
+                                   const pr_realvect  & a_x0) const 
       {
         double retval = m_amp;
         for(int idir = 0; idir < DIM; idir++)
         {
           double prefix = 1.0;
-          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          for(int ipre = 0; ipre < a_deriv[idir]; ipre++)
           {
             prefix *= m_PI*m_freq[idir];
           }          
-          if(a_p[idir]%2 == 0)
+          if(a_deriv[idir]%2 == 0)
           {
-            retval *= pow(-1.,a_p[idir]/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+            retval *= pow(-1.,a_deriv[idir]/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
           } 
           else
           {
-            retval *= pow(-1.,(a_p[idir]+1)/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+            retval *= pow(-1.,(a_deriv[idir]+1)/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
           } 
         }
   
@@ -1029,24 +1032,24 @@ namespace EBCM
           a_center = (x0,y0,z0)
       */
       ///
-      virtual double getDerivative(const pr_int_dim   & a_power,
-                                   const pr_realvect  & a_loc) const 
+      virtual double getDerivative(const pr_int_dim   & a_deriv,
+                                   const pr_realvect  & a_x0) const 
       {
         double retval = m_amp;
         for(int idir = 0; idir < DIM; idir++)
         {
           double prefix = 1.0;
-          for(int ipre = 0; ipre < a_p[idir]; ipre++)
+          for(int ipre = 0; ipre < a_deriv[idir]; ipre++)
           {
             prefix *= m_PI*m_freq[idir];
           }
-          if(a_p[idir]%2 == 0)
+          if(a_deriv[idir]%2 == 0)
           {
-            retval *= pow(-1.,a_p[idir]/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+            retval *= pow(-1.,a_deriv[idir]/2)*prefix*sin(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
           }
           else
           {
-            retval *= pow(-1.,(a_p[idir]-1)/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
+            retval *= pow(-1.,(a_deriv[idir]-1)/2)*prefix*cos(m_PI*m_freq[idir]*(a_x0[idir]-m_center[idir]));
           }
         }
   

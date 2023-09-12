@@ -26,3 +26,16 @@ main.eb_bc  = "dirichlet"
 stencil.weight_power   = 2
 stencil.radius         = 2
 
+getExactSolution.which_phi = "Polynomial"
+getExactSolution.polynomial_num_terms    = 4
+getExactSolution.polynomial_coeffcient_0 = 4.0
+getExactSolution.polynomial_coeffcient_2 = 5.0
+getExactSolution.polynomial_coeffcient_3 = 8.0
+getExactSolution.polynomial_coeffcient_4 = 6.0
+
+getExactSolution.polynomial_powers_0 = 4
+getExactSolution.polynomial_powers_2 = 5
+getExactSolution.polynomial_powers_3 = 8
+getExactSolution.polynomial_powers_4 = 6
+
+

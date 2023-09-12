@@ -36,3 +36,9 @@ main.dom_bc = "dirichlet"
 main.eb_bc  = "dirichlet"
 
 
+getExactSolution.which_phi = "SineSphere"
+#should match the radius and centedr above but does not have to
+getExactSolution.radius    = 0.45 
+getExactSolution.inside    = true
+getExactSolution.center    = 0.5 
+

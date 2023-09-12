@@ -83,8 +83,7 @@ namespace EBCM
             double by = a_Bcoef * Ydata(pt, icomp);
             
             outdata(pt, icomp) = ax + by;
-//              a_Acoef * Xdata(pt, icomp) + 
-//              a_Bcoef * Ydata(pt, icomp);
+
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
