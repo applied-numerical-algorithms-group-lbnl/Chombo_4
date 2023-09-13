@@ -42,7 +42,7 @@ namespace EBCM
     typedef Chombo4::DataIterator                          ch_dit;
                                                            
     typedef ::Mat                                          petsc_mat;
-    typedef Proto::Point                                   pr_pt;
+    typedef ::Vec                                          petsc_vec;
     
     typedef  EBCM::MetaDataLevel<             ebcm_order>  ebcm_meta;
     typedef  EBCM::EBCM_Graph<                ebcm_order>  ebcm_graph;
@@ -53,6 +53,8 @@ namespace EBCM
     typedef  EBCM::SubVolumeVector<           ebcm_order>  ebcm_subvol_vec;
     typedef  EBCM::EBCM_Volu<                 ebcm_order>  ebcm_volu;
     typedef  EBCM::Algorithm_Framework<       ebcm_order>  algo_framework;
+    
+    typedef Proto::Point                                   pr_pt;
     typedef Proto::IndexedMoments<DIM  ,      ebcm_order > pr_mom_dim;
     typedef Proto::IndexedMoments<DIM-1,      ebcm_order > pr_mom_dmo;
     typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
@@ -132,6 +134,7 @@ namespace EBCM
     {
     public:
       shared_ptr<petsc_mat> m_mat_ptr;
+      shared_ptr<petsc_vec> m_xx_ptr, m_rr_ptr, m_bb_ptr;
       shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
       shared_ptr<ebcm_meta> m_meta_ptr;
       int                   m_ghost;
@@ -167,10 +170,60 @@ namespace EBCM
             Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
           }
 
-          createOperatorPetscMatrix(a_print);
+          defineMatrixAndVectors(a_print);
         }
       }
 
+      ///copy chombo data to petsc vector
+      void chomboToPetsc(shared_ptr<petsc_vec>         a_phi_petsc,
+                         shared_ptr<ebcm_dou_sca_data> a_phi_chombo,
+                         bool a_print= false) const
+      {
+
+      }
+
+      ///copy petsc vector to chombo data
+      void petscTochombo(shared_ptr<ebcm_dou_sca_data> a_phi_chombo,
+                         shared_ptr<petsc_vec>         a_phi_petsc,
+                         bool a_print= false) const
+      {
+
+      }
+      
+      /// compute a_lph = L(phi)
+      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
+                   shared_ptr<ebcm_dou_sca_data> a_phi,
+                   bool a_print= false) const
+      {
+
+        CH_TIME("BaseEBPetscSolver::applyOp");
+
+        VecZeroEntries(*m_xx_ptr);
+        VecZeroEntries(*m_bb_ptr);
+
+        chomboToPetsc(m_xx_ptr, a_phi);
+
+        if(a_print)
+        {
+          Chombo4::pout() << "Base_Petsc_Op::applyOp before mult: m_xx = " << endl;
+          VecView(*m_xx_ptr , PETSC_VIEWER_STDOUT_WORLD);
+          //this one is kinda crazy
+          //Chombo4::pout() << "Base_Petsc_op::applyOp before mult : m_mat = " << endl;
+          //MatView(*m_mat_ptr, PETSC_VIEWER_STDOUT_WORLD);
+        }
+
+        PetscErrorCode err = MatMult(m_mat, m_xx, m_bb);
+
+        if(a_print)
+        {
+          Chombo4::pout() << "Base_Petsc_Op::applyOp after mult: m_bb = " << endl;
+          VecView(*m_bb_ptr, PETSC_VIEWER_STDOUT_WORLD);
+        }
+    
+        petscToChombo(a_lph, m_bb_ptr);
+        return err;
+
+      }
       ///this gets done by the derived class
       virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false) = 0;
 
@@ -260,12 +313,16 @@ namespace EBCM
         return 0;
       }//end function createMatrixRowMap
 
-      ///makes m_mat_ptr (operator uses this to map between volumes and petsc matrix rows)
-      PetscInt createOperatorPetscMatrix(bool a_print = false)
+      ///makes m_mat_ptr and some compatible vectors.   The matrix gets its valued filled.
+      PetscInt defineMatrixAndVectors(bool a_print = false)
       {
-        CH_TIME("Base_Petsc_Op::createOperatorPetscMatrix");
-        // create matrix
-        PetscInt nnzrow = 0;
+        CH_TIME("Base_Petsc_Op::defineMatrixAndVectors");
+        // create matrix and vectors
+        m_mat_ptr = shared_ptr<petsc_mat>(new petsc_mat());
+        m_bb_ptr  = shared_ptr<petsc_vec>(new petsc_vec());
+        m_xx_ptr  = shared_ptr<petsc_vec>(new petsc_vec());
+        m_rr_ptr  = shared_ptr<petsc_vec>(new petsc_vec());
+        PetscInt nnz_per_row = 1000;
 #ifdef CH_MPI
         MPI_Comm wcomm = Chombo_MPI::comm;
 #else
@@ -273,19 +330,20 @@ namespace EBCM
 #endif
         PetscInt ierr;
         ierr = MatCreate(wcomm, & (*m_mat_ptr));CHKERRQ(ierr);
-        ierr = MatSetOptionsPrefix(*m_mat_ptr,"");CHKERRQ(ierr);
-
         ierr = MatSetSizes(*m_mat_ptr,m_numPtsThisProc,m_numPtsThisProc,m_numPtsAllProcs,m_numPtsAllProcs);CHKERRQ(ierr);
-        ierr = MatSetType( *m_mat_ptr,MATDENSE);CHKERRQ(ierr);
+        ierr = MatFromOptions(*m_mat_ptr);
+
 #ifdef CH_MPI
-        ierr = MatMPIDenseSetPreallocation(*m_mat_ptr, NULL);CHKERRQ(ierr);
+        ierr = MatMPIAIJSetPreallocation(*m_mat_ptr, nnz_per_row, NULL, nnz_per_row, NULL);CHKERRQ(ierr);
 #else
-        PetscInt matsize = m_numPtsThisProc*m_numPtsThisProc;
-        PetscScalar* matspace = new PetscScalar[matsize];
-        ierr = MatSeqDenseSetPreallocation(*m_mat_ptr, matspace);CHKERRQ(ierr);
+        ierr = MatSeqSetPreallocation(*m_mat_ptr, nnz_per_rrow, NULL); CHKERRQ(ierr);
 #endif    
 
-        ierr = MatSetFromOptions( *m_mat_ptr ); CHKERRQ(ierr);
+        VecCreate(wcomm, &(*m_bb_ptr));
+        VecSetSizes(*m_bb_ptr, PETSC_DECIDE, m_numPtsAllProcs);
+        VecSetFromOptions(  *m_bb_ptr);
+        ierr = VecDuplicate(*m_bb_ptr, &(*m_xx_ptr)); CHKERRQ(ierr);
+        ierr = VecDuplicate(*m_bb_ptr, &(*m_rr_ptr)); CHKERRQ(ierr);
 
         //sets the actual values in *m_mat_ptr
         ierr = formMatrix(a_print); CHKERRQ(ierr);
