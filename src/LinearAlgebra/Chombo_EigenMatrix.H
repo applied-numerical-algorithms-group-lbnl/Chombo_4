@@ -339,6 +339,7 @@ namespace ch_eigen
    (i.e. if a_left.m_mat_p->cols() != a_right.m_mat_p->rows()).
    Eigen may do something smarter but I find a lot of bugs this way.
 */
+  inline 
   void multiply(Matrix      & a_prod, 
                 const Matrix& a_left,
                 const Matrix& a_righ)

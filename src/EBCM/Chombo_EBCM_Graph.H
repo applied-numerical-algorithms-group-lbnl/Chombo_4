@@ -5,6 +5,9 @@
 #include "EBProto.H"
 #include "Proto_RealVect.H"
 #include "Chombo_ProtoInterface.H"
+#include "Chombo_DisjointBoxLayout.H"
+#include "Chombo_DataIterator.H"
+#include "Chombo_GeometryService.H"
 using std::vector;
 using std::set;
 

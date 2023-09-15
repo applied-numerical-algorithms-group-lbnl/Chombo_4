@@ -8,7 +8,7 @@ namespace ebcm_basics
 {
 
   ///
-  IndexTM<int, DIM>
+  inline IndexTM<int, DIM>
   getVolIndexFromFace(const  IndexTM<int, DIM-1>& a_facind, int a_facedir)
   {
     IndexTM<int, DIM> retval;
@@ -27,7 +27,7 @@ namespace ebcm_basics
     }
     return retval;
   }
-  IndexTM<int, DIM-1>
+  inline IndexTM<int, DIM-1>
   getFaceIndexFromVolIndex(const  IndexTM<int, DIM>& a_volind,
                            int                       a_facedir)
   {

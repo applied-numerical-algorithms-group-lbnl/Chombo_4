@@ -20,7 +20,7 @@
 #include "Chombo_EBCM_PETSc_Framework.H"
 #include "Chombo_EBCM_Helmholtz.H"
 #include "Chombo_EigenMatrix.H"
-
+#include "Chombo_EBCM_GDB_Utilities.H"
 #include <iomanip>
 
 
@@ -29,12 +29,17 @@
 
 int main(int a_argc, char* a_argv[])
 {
+#ifdef CH_USE_PETSC  
+  //because of some kind of solipsistic madness, PetscInitialize calls MPI_INIT
+  PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+  Chombo4::pout() << "PetscInitialized called" << std::endl;
+#else  
 #ifdef CH_MPI
   MPI_Init(&a_argc, &a_argv);
-  Chombo4::pout() << "MPI INIT called" << std::endl;
+  Chombo4::pout() << "MPI_Init called" << std::endl;
+#endif
 #endif
 
-  using Chombo4::pout;
   CH_TIMER_SETFILE("ebcm_framework_time_table");
   {
     
@@ -51,7 +56,7 @@ int main(int a_argc, char* a_argv[])
     int order;
     ParmParse pp("main");
     pp.get("polynomial_order", order);
-    Chombo4::pout() <<  "Running hoeb_petsc_test for polynomial order = " << order << endl;
+    Chombo4::pout() <<  "main: running tests for polynomial order = " << order << endl;
 
     if(order == 6)
     {
@@ -90,11 +95,18 @@ int main(int a_argc, char* a_argv[])
     }
   }
 
-  Chombo4::pout() << "Printing time table " << endl;
+  Chombo4::pout() << "main: printing time table " << endl;
   CH_TIMER_REPORT();
+
 #ifdef CH_MPI
-  Chombo4::pout() << "Woo hoo! \n About to call MPI Finalize" << std::endl;
+#ifdef CH_USE_PETSC
+  Chombo4::pout() << "main: Woo hoo! (about to call PetscFinalize)" << std::endl;
+  PetscFinalize();
+#else  
+  Chombo4::pout() << "main: Woo hoo! (about to call MPI_Finalize" << std::endl;
   MPI_Finalize();
 #endif
+#endif
+  
   return 0;
 }

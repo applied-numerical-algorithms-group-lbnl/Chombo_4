@@ -15,8 +15,8 @@
   I regret all the consternation I have caused.
 */
 #include "Chombo_EBCM_Graph.H"
-#include "Chombo_EBLevelBoxData.H"
-
+#include "Chombo_EBCM_HostLevelData.H"
+#include "Chombo_EBCM_Algorithm_Framework.H"
 /// 
 /**
    An EBCM interface to the magical world of PETSc, 
@@ -146,32 +146,35 @@ namespace EBCM
       bool                  m_defined;
       virtual ~Base_PETSc_Op()
       {;}
-  
+
+      void define(bool a_print)
+      {
+    
+        CH_TIME("Base_PETSc_Op::define");
+        if(a_print)
+        {
+          Chombo4::pout() << "Base_PETSc_Op: creating map of locations in space to matrix row." << endl;
+        }
+        createMatrixRowMap(a_print);
+
+        if(a_print)
+        {
+          Chombo4::pout() << "Base_PETSc_Op:: creating the matrix" << endl;
+        }
+
+        defineMatrixAndVectors(a_print);
+        m_defined = true;
+      }
+      ///define has to be separate because there is virtual stuff involved
       Base_PETSc_Op(const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                     const int                                    & a_ghost,
-                    bool                                           a_leaveUndefined = false,  //for testing
                     bool                                           a_print          = false)  //for testing
       {
-        CH_TIME("EBPETScSolver::EBPETScSolver");
+        CH_TIME("Base_PETSc_Op::Base_PETSc_Op");
+
         m_meta_ptr     =    a_meta_ptr;
         m_ghost        =    a_ghost;
-        m_defined = !a_leaveUndefined;
-        if(!a_leaveUndefined)
-        {
-    
-          if(a_print)
-          {
-            Chombo4::pout() << "Base_PETSc_Op: creating map of locations in space to matrix row." << endl;
-          }
-          createMatrixRowMap(a_print);
-
-          if(a_print)
-          {
-            Chombo4::pout() << "Base_PETSc_Op:: creating the matrix" << endl;
-          }
-
-          defineMatrixAndVectors(a_print);
-        }
+        m_defined = false;
       }
 
       ///copy chombo data to PETSc vector
@@ -179,6 +182,18 @@ namespace EBCM
                          shared_ptr<ebcm_dou_sca_data> a_phi_chombo,
                          bool a_print= false) const
       {
+        CH_TIME("Base_PETSc_Op::chomboToPETSc");
+        
+        if(!m_defined)
+        {
+          /**
+             c++ does not allow virtual functions in contstructors so this
+             kind of dance is prudent
+          **/
+          Base_PETSc_Op* castThis = (Base_PETSc_Op*)this;
+          castThis->define(a_print);
+        }
+        
         const auto& grids   =   m_meta_ptr->m_grids;
         const auto& graphs  = *(m_meta_ptr->m_graphs);
         const auto& mapdata = *(m_row_map_ptr->m_data);
@@ -214,6 +229,16 @@ namespace EBCM
                          shared_ptr<PETSc_vec>         a_phi_PETSc,
                          bool a_print= false) const
       {
+        CH_TIME("Base_PETSc_Op::PETScToChombo");
+        if(!m_defined)
+        {
+          /**
+             c++ does not allow virtual functions in contstructors so this
+             kind of dance is prudent
+          **/
+          Base_PETSc_Op* castThis = (Base_PETSc_Op*)this;
+          castThis->define(a_print);
+        }
 
         const auto& grids   =   m_meta_ptr->m_grids;
         const auto& graphs  = *(m_meta_ptr->m_graphs);
@@ -250,8 +275,17 @@ namespace EBCM
                    shared_ptr<ebcm_dou_sca_data> a_phi,
                    bool a_print= false) const
       {
+        CH_TIME("Base_PETSc_Op::applyOp");
+        if(!m_defined)
+        {
+          /**
+             c++ does not allow virtual functions in contstructors so this
+             kind of dance is prudent
+          **/
+          Base_PETSc_Op* castThis = (Base_PETSc_Op*)this;
+          castThis->define(a_print);
+        }
 
-        CH_TIME("BaseEBPETScSolver::applyOp");
 
         VecZeroEntries(*m_xx_ptr);
         VecZeroEntries(*m_bb_ptr);
@@ -474,7 +508,7 @@ namespace EBCM
       DummyDerivedOp(const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                      const int                                    & a_ghost,
                      bool                                           a_print = false)
-        :Base_PETSc_Op(a_meta_ptr, a_ghost, true, a_print) //the true is to leave the basePETScop undefinde
+        :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print) //the true is to leave the basePETScop undefinde
       {
       }
 
@@ -503,12 +537,12 @@ namespace EBCM
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       local_stencil_t retval;
       const auto& volvec = *a_locality->m_volumes;
-      for( int irow = 0; irow < nrows_volumes; irow++)
+      for( int ivol = 0; ivol < nrows_volumes; ivol++)
       {
         pair<pr_pt, double> entry;
-        const ebcm_volu& volume = volvec[irow];
+        const ebcm_volu& volume = volvec[ivol];
         entry.first = volume.m_pt;
-        entry.second = a_matrix(irow, 0);
+        entry.second = a_matrix(0, ivol);
         retval.add(entry);
       }
       return retval;

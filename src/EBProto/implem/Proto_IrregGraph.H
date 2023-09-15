@@ -4,7 +4,7 @@
 
 
 #include "base/Proto_Point.H"
-
+#include <vector>
 using std::vector;
 namespace Proto
 {

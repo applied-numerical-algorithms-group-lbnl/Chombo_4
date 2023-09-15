@@ -11,6 +11,9 @@
 *  If there is enough data to merit a report, an LBNL technical report will result from the campaign.
 *  Any test harness will be included and well-documented.
 
+## src
+* This contains some simple debugging functions that can be called from GDB.
+
 ## hoeb_geometry_test
 * This test makes a single-box EBCM::MetaDataLevel.
 * It then makes a ton of data on matrix conditioning in an hoeb/ebcm context.

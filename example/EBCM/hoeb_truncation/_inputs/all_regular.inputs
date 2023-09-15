@@ -15,27 +15,27 @@
 #  The prefix usually names the function which is using ParmParse unless I expect
 #  to use the parameter elsewhere, in which case it gets something general, like "stencil".
 
-parseFineGridParams.nx                = 32
-parseFineGridParams.maxGrid           = 32
-parseFineGridParams.mergeSmallCells   = true
-getImplicitFunction.which_geom       = "all_regular"
+parseFineGridParams.nx                   = 32
+parseFineGridParams.maxGrid              = 32
+parseFineGridParams.mergeSmallCells      = true
+parseFineGridParams.alpha                = 1.0
+parseFineGridParams.beta                 = -0.1
+parseFineGridParams.stencil_rad          = 2
+parseFineGridParams.weight_power         = 2
+parseFineGridParams.dom_bc               = "dirichlet"
+parseFineGridParams.eb_bc                = "dirichlet"
 
-main.polynomial_order  = 2
-main.dom_bc = "dirichlet"
-main.eb_bc  = "dirichlet"
-stencil.weight_power   = 2
-stencil.radius         = 2
+getImplicitFunction.which_geom           = "all_regular"
 
-getExactSolution.which_phi = "Polynomial"
-getExactSolution.polynomial_num_terms    = 4
-getExactSolution.polynomial_coeffcient_0 = 4.0
-getExactSolution.polynomial_coeffcient_2 = 5.0
-getExactSolution.polynomial_coeffcient_3 = 8.0
-getExactSolution.polynomial_coeffcient_4 = 6.0
+main.polynomial_order  = 2	         
 
-getExactSolution.polynomial_powers_0 = 4
-getExactSolution.polynomial_powers_2 = 5
-getExactSolution.polynomial_powers_3 = 8
-getExactSolution.polynomial_powers_4 = 6
+getExactSolution.which_phi               = "Polynomial"
+getExactSolution.polynomial_num_terms    = 3
+getExactSolution.polynomial_coefficient_0 = 0.0
+getExactSolution.polynomial_coefficient_1 = 1.0
+getExactSolution.polynomial_coefficient_2 = 2.0
+getExactSolution.polynomial_powers_0     = 0 0 0
+getExactSolution.polynomial_powers_1     = 1 1 1
+getExactSolution.polynomial_powers_2     = 2 2 2
 
 

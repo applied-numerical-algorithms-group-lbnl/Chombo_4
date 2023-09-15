@@ -29,6 +29,8 @@ namespace EBCM
   {
   public:
 
+    typedef ch_eigen::Matrix                                                eigen_mat;
+    
     typedef Chombo4::Box                                                    ch_box;
     typedef Chombo4::DisjointBoxLayout                                      ch_dbl;
     typedef Chombo4::BoxIterator                                            ch_bit;
@@ -280,7 +282,7 @@ namespace EBCM
       double                                 m_beta;
       int                                    m_weight_power;
       int                                    m_sten_rad;
-      static const bool s_leaveUndefined = false;
+
       string m_dom_bc;
       string m_eb_bc;
       /// 
@@ -298,7 +300,7 @@ namespace EBCM
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                   string a_dom_bc, string a_eb_bc, 
                   bool                                           a_print = false)
-      :ebcm_base_op(a_meta_ptr, a_sten_rad, s_leaveUndefined, a_print)// s_leaveUndefined = false  to assure that basepetscop gets defined
+      :ebcm_base_op(a_meta_ptr, a_sten_rad,  a_print)
       {
         m_alpha        = a_alpha;       
         m_beta         = a_beta;
@@ -438,7 +440,7 @@ namespace EBCM
       pp.get("mergeSmallCells", a_mergeSmallCells);
       pp.get("alpha"          , a_alpha);
       pp.get("beta"           , a_beta );
-      pp.get("sten_rad"       , a_sten_rad);
+      pp.get("stencil_rad"    , a_sten_rad);
       pp.get("weight_power"   , a_weight_power);
       pp.get("dom_bc"         , a_dom_bc);
       pp.get("eb_bc"          , a_eb_bc);
