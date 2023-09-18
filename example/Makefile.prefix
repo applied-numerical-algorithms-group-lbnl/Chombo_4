@@ -23,5 +23,3 @@ CHOMBO_NODIROBJ = $(subst .cpp,.o,$(CHOMBO_NODIRSRC))
 CHOMBO_OBJ=$(patsubst %.o,o/%.o,  $(CHOMBO_NODIROBJ))
 
 
-CHOMBO_LIBS = $(CHOMBO_LAPACKLIBS)
-
