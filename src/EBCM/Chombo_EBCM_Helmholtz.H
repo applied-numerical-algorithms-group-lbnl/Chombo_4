@@ -267,13 +267,13 @@ namespace EBCM
     
     ///
     /**
-       Class which forms a helmholtz operator.
-       This creates an operator of the form
-       L(phi) = alpha phi + beta * div(F(phi))
+       This class is  a Helmholtz operator.
+       For a volume-averaged field phi, 
+       this creates a volume-averaged operator of the form
+       L(phi) = alpha phi + beta * div(G(phi))
        I am jettisoning the kappa-weighting trick for this operator at least.
        This should only be used with cell merging.  Without it, we have other operators.
-       <div(F(phi))> = (1/vol) (int (div F) dV)  = (1./vol)(int (F dot n dA)).
-      **/
+       <div(G(phi))> = (1/vol) (int (div G(phi) ) dV)  = (1./vol)(int (grad phi dot n dA)).
     **/
     class HelmholtzOp: public ebcm_base_op
     {
@@ -295,7 +295,7 @@ namespace EBCM
          beta         = coeff of laplcian
          ghost        = neighbor ghost size (grow the face box by this much)
          weight_power = goes to neighborhood to weight vofs.
-         meta         = ebcm's very data intensive meta data
+         meta         = ebcm's very data-intensive meta data
       **/
       HelmholtzOp(const double                                 & a_alpha,
                   const double                                 & a_beta,
