@@ -272,8 +272,9 @@ namespace EBCM
        this creates a volume-averaged operator of the form
        L(phi) = alpha phi + beta * div(G(phi))
        I am jettisoning the kappa-weighting trick for this operator at least.
-       This should only be used with cell merging.  Without it, we have other operators.
-       <div(G(phi))> = (1/vol) (int (div G(phi) ) dV)  = (1./vol)(int (grad phi dot n dA)).
+       Ergo, this should only be used with cell merging.  
+       Without it, we have other operators.
+       <Div(Grad(phi))> = (1/vol) (int (Div Grad(phi) ) dV)  = (1./vol)(int (Grad(phi) \cdot \nhat dA)).
     **/
     class HelmholtzOp: public ebcm_base_op
     {
@@ -337,7 +338,7 @@ namespace EBCM
       /**
          This is where the canal locks are dug in the basement.
          I am jettisoning the kappa-weighting trick for this operator at least.
-         L(phi) = (1/vol) (int (div F) dV)  = (1./vol)(int (F dot n dA)).
+         Div(Grad(phi)) = (1/vol) (int (div F) dV)  = (1./vol)(int (F dot n dA)).
          This means that the RHS for a projection will have to be div v not kappa div v.
       **/
       virtual shared_ptr<ebcm_local_stencil> privateStencil(const pr_pt                         & a_pt, 
@@ -510,13 +511,13 @@ namespace EBCM
       const auto& grids  = a_meta_ptr->m_grids;
       const auto& graphs = *(a_meta_ptr->m_graphs);
       const auto&    dx  = a_meta_ptr->m_dx;
-      auto     dit = grids.dataIterator();
+      auto           dit = grids.dataIterator();
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         auto      & phifab = (*a_phi_exact_ptr)[dit[ibox]];
         auto      & lphfab = (*a_lph_exact_ptr)[dit[ibox]];
-        const auto& valid =  grids[dit[ibox]];
-        const auto& graph = graphs[dit[ibox]];
+        const auto&  valid =  grids[dit[ibox]];
+        const auto&  graph = graphs[dit[ibox]];
         ebcm_subvol_vec volvec(graph, valid, a_print);
 
         for(int ivec = 0; ivec < volvec.size(); ivec++)
@@ -538,7 +539,17 @@ namespace EBCM
         }
       }
     }
-    ///most of this is pilfered from Chombo_4/example/DomainDecomposition/hoeb_common
+    ///
+    /**
+       Define exact solution data from input file.  I tried to this
+       make this self-documenting.  I came up with this so I could use
+       maxima to have nice smooth solutions that meet the boundary
+       conditions.  Inhomogeneous boundary conditions are messy.
+       Since EBCM_INS (Remember Alice? This is a song about Alice)
+       will not need inhomogeneous boundary conditions
+       I would like to avoid dealing with that complexity just for
+       testing purposes.  
+     **/
     static shared_ptr<ebcm_base_exact>
     getExactSolution()
     {
@@ -642,7 +653,7 @@ namespace EBCM
         
         if(!printedonce)
         {
-          Chombo4::pout() << "getExactSolution: OneDimCosineProduct  chosen."                  << endl;
+          Chombo4::pout() << "getExactSolution: OneDimCosineProduct chosen."                  << endl;
           Chombo4::pout() << "getExactSolution: OneDimCosineProduct frequency = " << freq      << endl;
           Chombo4::pout() << "getExactSolution: OneDimCosineProduct center    = " << cent      << endl;
           Chombo4::pout() << "getExactSolution: OneDimCosineProduct amplitude = " << amplitude << endl;
@@ -709,9 +720,11 @@ namespace EBCM
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
+
     
+    ///
     /**
-       test function for example/EBCM/hoeb_truncation
+       One of the tests called by  example/EBCM/hoeb_truncation.
     **/ 
     static  void run_hoeb_truncation_tests()
     {
@@ -765,7 +778,144 @@ namespace EBCM
 #endif
     }
 
-  }; //end petsc_framwork class
+    ///
+    template <CENTERING cent>
+    static double
+    getMaxAbsFluxError(EBIndex<cent>            & a_worst, 
+                       double                     a_alpha,
+                       double                     a_beta,
+                       int                        a_sten_rad,
+                       int                        a_weight_power,
+                       shared_ptr< ebcm_meta  >   a_meta_ptr,
+                       string                     a_dom_bc,
+                       string                     a_eb_bc,
+                       bool                       a_printToFile,
+                       string                     a_file_prefix,
+                       bool                       a_print)
+
+    {
+      int num_ghost = 4;
+      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+
+      shared_ptr<ebcm_base_exact> exactly_ptr = getExactSolution();
+      
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr, exactly_ptr, a_print);
+
+      HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
+                             a_weight_power, a_meta_ptr,
+                             a_dom_bc, a_eb_bc, a_print);
+
+      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
+      //settting  error to lph_calc - lph_exac
+      double acoef =  1;
+      double bcoef = -1;
+      err_calc_ptr->setVal(0.);
+      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+
+      if(a_printToFile)
+      {
+        string phi_exac_file = a_file_prefix +  string("phi_exac.hdf5");
+        string lph_exac_file = a_file_prefix +  string("lph_exac.hdf5");
+        string lph_calc_file = a_file_prefix +  string("lph_calc.hdf5");
+        string err_calc_file = a_file_prefix +  string("err_calc.hdf5");
+      
+        phi_exac_ptr->writeToHDF5(phi_exac_file);
+        lph_exac_ptr->writeToHDF5(lph_exac_file);
+        lph_calc_ptr->writeToHDF5(lph_calc_file);
+        err_calc_ptr->writeToHDF5(err_calc_file);
+      }
+
+      double retval = err_calc_ptr->maxNorm();
+      return retval;
+    }
+    ///
+    /**
+       Another one of the tests called by  example/EBCM/hoeb_truncation.
+    **/ 
+    static  void run_open_flux_tests(int a_face_dir)
+    {
+
+#ifdef CH_USE_PETSC
+      static const int num_ghost = 4;
+      
+      int    nx_fine      = 4586;
+      int    maxGrid      = 4586;    
+      int    sten_rad     = 4586; 
+      int    weight_power = 4586; 
+      double dx_fine      = 4586.;
+      double alpha        = 4586.;
+      double beta         = 4586.;
+      string dom_bc(       "4586");
+      string  eb_bc(       "4586");
+      bool mergeSmallCells;
+      ch_probdom domain_fine;
+      bool print = false;
+
+      parseFineGridParams(nx_fine, dx_fine, domain_fine,
+                          maxGrid, mergeSmallCells,
+                          alpha, beta, sten_rad, weight_power,
+                          dom_bc, eb_bc, print);
+      
+      int    nx_coar = nx_fine/2;
+      double dx_coar = dx_fine*2.;
+      ch_probdom domain_coar = domain_fine;
+      domain_coar.coarsen(2);
+
+      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+
+      double max_err_fine = 4586.; 
+      double max_err_coar = 4586.;
+
+      if(a_face_dir == 0)
+      {
+        EBIndex<XFACE> worst;
+        max_err_fine = getMaxAbsFluxError<XFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("xface_fine_"), print); 
+        max_err_coar = getMaxAbsFluxError<XFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("xface_coar_"), print);
+        Chombo4::pout() << "flux_truncation: x_face worst face  =  " << worst.m_pt << endl;
+      }
+      else if(a_face_dir == 1)
+      {
+        EBIndex<YFACE> worst;
+        max_err_fine = getMaxAbsFluxError<YFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("yface_fine_"), print); 
+        max_err_coar = getMaxAbsFluxError<YFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("yface_coar_"), print);
+        Chombo4::pout() << "flux_truncation: y_face worst face  =  " << worst.m_pt << endl;
+      }
+      else if(a_face_dir == 2)
+      {
+        EBIndex<ZFACE> worst;
+        max_err_fine = getMaxAbsFluxError<ZFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("zface_fine_"), print); 
+        max_err_coar = getMaxAbsFluxError<ZFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("zface_coar_"), print);
+        Chombo4::pout() << "flux_truncation: z_face worst face  =  " << worst.m_pt << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "flux_truncation: unknown face_dir =  " << a_face_dir << endl;
+        ch_mayday::Error("Doh!");
+      }
+      
+      Chombo4::pout() << "flux_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
+      Chombo4::pout() << "flux_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
+      double tol = 1.0e-12;
+      double err = std::abs(max_err_fine); 
+      if(err > tol)
+      {
+        double order = (log(max_err_coar/max_err_fine))/log(2.0);
+        Chombo4::pout() << "flux_truncation: order of accuracy = " <<  order  << endl;
+      }
+      else
+      {
+        Chombo4::pout() << "flux_truncation: Fine error is too small for safe order computation." << endl;
+        
+      }
+#endif
+    }
+
+    
+  }; //end elliptic_framwork class
 }
 #endif
 

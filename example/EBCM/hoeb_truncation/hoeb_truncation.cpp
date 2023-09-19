@@ -25,7 +25,17 @@
 
 
 /****/
-
+template <int ORDER>
+void
+runAllTheTests()
+{
+  EBCM::PETSc_Framework<   ORDER>::dummy_petsc_test();
+  for(int idir = 0; idir < DIM; idir++)
+  {
+    EBCM::Elliptic_Framework<ORDER>::run_open_flux_tests(idir);
+  }
+  EBCM::Elliptic_Framework<ORDER>::run_hoeb_truncation_tests();
+}
 
 int main(int a_argc, char* a_argv[])
 {
@@ -58,35 +68,29 @@ int main(int a_argc, char* a_argv[])
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "main: running tests for polynomial order = " << order << endl;
 
-    if(order == 6)
+    if(order      == 6)
     {
-      EBCM::PETSc_Framework<   6>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<6>::run_hoeb_truncation_tests();
+      runAllTheTests<6>();
     }
     else if(order == 5)
     {
-      EBCM::PETSc_Framework<   5>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<5>::run_hoeb_truncation_tests();
+      runAllTheTests<5>();
     }
     else if(order == 4)
     {
-      EBCM::PETSc_Framework<   4>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<4>::run_hoeb_truncation_tests();
+      runAllTheTests<4>();
     }
     else if(order == 3)
     {
-      EBCM::PETSc_Framework<   3>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<3>::run_hoeb_truncation_tests();
+      runAllTheTests<3>();
     }
     else if(order == 2)
     {
-      EBCM::PETSc_Framework<   2>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<2>::run_hoeb_truncation_tests();
+      runAllTheTests<2>();
     }
     else if(order == 1)
     {
-      EBCM::PETSc_Framework<   1>::dummy_petsc_test();   
-      EBCM::Elliptic_Framework<1>::run_hoeb_truncation_tests();
+      runAllTheTests<1>();
     }
     else
     {
