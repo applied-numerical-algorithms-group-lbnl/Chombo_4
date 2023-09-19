@@ -29,13 +29,26 @@ getImplicitFunction.which_geom           = "all_regular"
 
 main.polynomial_order  = 2	         
 
-getExactSolution.which_phi               = "Polynomial"
-getExactSolution.polynomial_num_terms    = 3
-getExactSolution.polynomial_coefficient_0 = 0.0
-getExactSolution.polynomial_coefficient_1 = 1.0
-getExactSolution.polynomial_coefficient_2 = 2.0
-getExactSolution.polynomial_powers_0     = 0 0 0
-getExactSolution.polynomial_powers_1     = 1 1 1
-getExactSolution.polynomial_powers_2     = 2 2 2
+#just to get something working
+#getExactSolution.which_phi               = "Polynomial"
+#getExactSolution.polynomial_num_terms    = 3
+#getExactSolution.polynomial_coefficient_0 = 0.0
+#getExactSolution.polynomial_coefficient_1 = 1.0
+#getExactSolution.polynomial_coefficient_2 = 2.0
+#getExactSolution.polynomial_powers_0     = 0 0 0
+#getExactSolution.polynomial_powers_1     = 1 1 1
+#getExactSolution.polynomial_powers_2     = 2 2 2
+
+#neumann bcs
+#getExactSolution.which_phi           = "OneDimCosSineProduct"
+#getExactSolution.sine_product_freq   = 1.0 1.0 1.0
+#getExactSolution.sine_product_cent   = 0.0 0.0 0.0
+#getExactSolution.sine_product_amp    = 1.0
+
+#dirichlet bcs
+getExactSolution.which_phi           = "OneDimSineProduct"
+getExactSolution.sine_product_freq   = 1.0 1.0 1.0
+getExactSolution.sine_product_cent   = 0.0 0.0 0.0
+getExactSolution.sine_product_amp    = 1.0
 
 

@@ -940,9 +940,9 @@ namespace EBCM
       }
     };
 
-///class where phi is a product of one dimensional cosines
-// template <unsigned int order>
-    class OneDimCosProduct: public BaseExactSolution
+
+    ///
+    class OneDimCosineProduct: public BaseExactSolution
     {
     public:
 
@@ -993,11 +993,11 @@ namespace EBCM
         return retval;
       }
 
-      virtual ~OneDimCosProduct()
+      virtual ~OneDimCosineProduct()
       {
       }
 
-      OneDimCosProduct(double     a_amp,
+      OneDimCosineProduct(double     a_amp,
                        pr_realvect a_freq,
                        pr_realvect a_center)
       {   
@@ -1012,14 +1012,14 @@ namespace EBCM
       pr_realvect  m_center;
       double      m_PI=3.141592653589793238462643383279502884197;
 
-      OneDimCosProduct()
+      OneDimCosineProduct()
       {
       }
     };
 
-///class where phi is a product of one dimensional sines
-// template <unsigned int order>
-    class OneDimSinProduct: public BaseExactSolution
+
+    ///
+    class OneDimSineProduct: public BaseExactSolution
     {
     public:
 
@@ -1070,11 +1070,11 @@ namespace EBCM
         return retval;
       }
 
-      virtual ~OneDimSinProduct()
+      virtual ~OneDimSineProduct()
       {
       }
 
-      OneDimSinProduct(double     a_amp,
+      OneDimSineProduct(double     a_amp,
                        pr_realvect a_freq,
                        pr_realvect a_center)
       {   
@@ -1089,7 +1089,7 @@ namespace EBCM
       pr_realvect  m_center;
       double      m_PI=3.141592653589793238462643383279502884197;
 
-      OneDimSinProduct()
+      OneDimSineProduct()
       {
       }
     };

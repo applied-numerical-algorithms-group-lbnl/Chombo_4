@@ -29,8 +29,6 @@ CHOMBO_NODIROBJ = $(subst .cpp,.o,$(CHOMBO_NODIRSRC))
 CHOMBO_OBJ=$(patsubst %.o,o/%.o,  $(CHOMBO_NODIROBJ))
 
 
-CHOMBO_LIBS = $(CHOMBO_LAPACKLIBS)
-
 
 CHOMBO_SRC += $(wildcard ../../hoeb_common/*.cpp) 
 
@@ -45,10 +43,8 @@ CHOMBO_CXXALLFLAGS := -std=c++11 -march=native -Wno-unused-but-set-variable -Wno
 CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic 
 CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
 
-#CHOMBO_LAPACKLIBS =  -lz -llapack_atlas -lblas -llapack 
-#CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 CHOMBO_HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
-CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 -lz -llapack -lblas
+CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 
 CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
 
 CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)

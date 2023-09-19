@@ -270,14 +270,18 @@ namespace EBCM
        Class which forms a helmholtz operator.
        This creates an operator of the form
        L(phi) = alpha phi + beta * div(F(phi))
+       I am jettisoning the kappa-weighting trick for this operator at least.
+       This should only be used with cell merging.  Without it, we have other operators.
+       <div(F(phi))> = (1/vol) (int (div F) dV)  = (1./vol)(int (F dot n dA)).
+      **/
     **/
     class HelmholtzOp: public ebcm_base_op
     {
     public:
 
-      typedef Proto::Side         pr_sd;
-      typedef Proto::Box          pr_box;
-      
+      typedef Proto::Side              pr_sd;
+      typedef Proto::Box               pr_box;
+      typedef Proto::IndexTM<int, DIM> pr_int_dim;
       double                                 m_alpha;
       double                                 m_beta;
       int                                    m_weight_power;
@@ -329,7 +333,13 @@ namespace EBCM
       }
 
     private:
-      ///this is where the canal locks are dug in the basement
+      ///
+      /**
+         This is where the canal locks are dug in the basement.
+         I am jettisoning the kappa-weighting trick for this operator at least.
+         L(phi) = (1/vol) (int (div F) dV)  = (1./vol)(int (F dot n dA)).
+         This means that the RHS for a projection will have to be div v not kappa div v.
+      **/
       virtual shared_ptr<ebcm_local_stencil> privateStencil(const pr_pt                         & a_pt, 
                                                             const int                          & a_stenrad,
                                                             const int                          & a_weightpower,
@@ -345,7 +355,9 @@ namespace EBCM
         pr_bx grbx = pointbx.grow(pr_pt::Ones(this->m_ghost));
         
         auto volume = a_graph.getVolumeCoveringPoint(a_pt);
+        auto volmag = volume.m_volmom[pr_int_dim::Zero];
         auto dx = volume.m_dx;
+        
         {
           for(int iface = 0; iface < volume.m_xfaces.size(); iface++)
           {
@@ -412,7 +424,9 @@ namespace EBCM
             (*retval) += flux;
           }
         }
-        
+
+        ///I think this should be dividing by dx^d
+        (*retval) *= (1.0/volmag);
         return retval;
       }
 
@@ -580,6 +594,62 @@ namespace EBCM
         ebcm_base_exact *  raw_ptr = static_cast< ebcm_base_exact * >(new analytic_poly(entries));
         retval = shared_ptr<ebcm_base_exact>(raw_ptr);
       }
+      else if(whichphi == string("OneDimSineProduct"))
+      {
+        typedef Proto::RealVect                            pr_realvect;
+        typedef typename  ebcm_analytic::OneDimSineProduct analytic_poly;
+        vector<double> vec_freq(DIM, 4586.);
+        vector<double> vec_cent(DIM, 4586.);
+        double amplitude;
+        pp.getarr("sine_product_freq", vec_freq, 0, DIM);
+        pp.getarr("sine_product_cent", vec_cent, 0, DIM);
+        pp.get(   "sine_product_amp", amplitude);
+        pr_realvect  freq;
+        pr_realvect  cent;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          freq[idir] = vec_freq[idir] ;
+          cent[idir] = vec_cent[idir] ;
+        }
+        
+        if(!printedonce)
+        {
+          Chombo4::pout() << "getExactSolution: OneDimSineProduct  chosen."                  << endl;
+          Chombo4::pout() << "getExactSolution: OneDimSineProduct frequency = " << freq      << endl;
+          Chombo4::pout() << "getExactSolution: OneDimSineProduct center    = " << cent      << endl;
+          Chombo4::pout() << "getExactSolution: OneDimSineProduct amplitude = " << amplitude << endl;
+        }
+        ebcm_base_exact *  raw_ptr = static_cast< ebcm_base_exact * >(new analytic_poly(amplitude, freq, cent));
+        retval = shared_ptr<ebcm_base_exact>(raw_ptr);
+      }
+      else if(whichphi == string("OneDimCosineProduct"))
+      {
+        typedef Proto::RealVect                              pr_realvect;
+        typedef typename  ebcm_analytic::OneDimCosineProduct analytic_poly;
+        vector<double> vec_freq(DIM, 4586.);
+        vector<double> vec_cent(DIM, 4586.);
+        double amplitude;
+        pp.getarr("cosine_product_freq", vec_freq, 0, DIM);
+        pp.getarr("cosine_product_cent", vec_cent, 0, DIM);
+        pp.get(   "cosine_product_amp", amplitude);
+        pr_realvect freq;
+        pr_realvect cent;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          freq[idir] = vec_freq[idir] ;
+          cent[idir] = vec_cent[idir] ;
+        }
+        
+        if(!printedonce)
+        {
+          Chombo4::pout() << "getExactSolution: OneDimCosineProduct  chosen."                  << endl;
+          Chombo4::pout() << "getExactSolution: OneDimCosineProduct frequency = " << freq      << endl;
+          Chombo4::pout() << "getExactSolution: OneDimCosineProduct center    = " << cent      << endl;
+          Chombo4::pout() << "getExactSolution: OneDimCosineProduct amplitude = " << amplitude << endl;
+        }
+        ebcm_base_exact *  raw_ptr = static_cast< ebcm_base_exact * >(new analytic_poly(amplitude, freq, cent));
+        retval = shared_ptr<ebcm_base_exact>(raw_ptr);
+      }
       else
       {
         Chombo4::MayDay::Error("getExactSolution: Doh! (string for whichphi unrecognized)");
@@ -596,8 +666,10 @@ namespace EBCM
                         int                        a_weight_power,
                         shared_ptr< ebcm_meta  >   a_meta_ptr,
                         string                     a_dom_bc,
-                        string                     a_eb_bc, 
-                        bool                       a_print = false)
+                        string                     a_eb_bc,
+                        bool                       a_printToFile,
+                        string                     a_file_prefix,
+                        bool                       a_print)
 
     {
       int num_ghost = 4;
@@ -615,12 +687,25 @@ namespace EBCM
                              a_dom_bc, a_eb_bc, a_print);
 
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
-
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
       err_calc_ptr->setVal(0.);
       err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+
+      if(a_printToFile)
+      {
+        string phi_exac_file = a_file_prefix +  string("phi_exac.hdf5");
+        string lph_exac_file = a_file_prefix +  string("lph_exac.hdf5");
+        string lph_calc_file = a_file_prefix +  string("lph_calc.hdf5");
+        string err_calc_file = a_file_prefix +  string("err_calc.hdf5");
+      
+        phi_exac_ptr->writeToHDF5(phi_exac_file);
+        lph_exac_ptr->writeToHDF5(lph_exac_file);
+        lph_calc_ptr->writeToHDF5(lph_calc_file);
+        err_calc_ptr->writeToHDF5(err_calc_file);
+      }
+
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
@@ -660,12 +745,14 @@ namespace EBCM
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
 
-      double max_err_fine = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, print); 
-      double max_err_coar = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, print);
+      double max_err_fine = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("fine_"), print); 
+      double max_err_coar = getMaxAbsTruncation(alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("coar_"), print);
 
       Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
       Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
-      if(max_err_fine > 1,0e-12)      ///always positive
+      double tol = 1.0e-12;
+      double err = std::abs(max_err_fine); 
+      if(err > tol)
       {
         double order = (log(max_err_coar/max_err_fine))/log(2.0);
         Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
@@ -673,6 +760,7 @@ namespace EBCM
       else
       {
         Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+        
       }
 #endif
     }
