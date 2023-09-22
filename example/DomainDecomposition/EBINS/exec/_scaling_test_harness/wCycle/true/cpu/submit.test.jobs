@@ -1,0 +1,5 @@
+#/usr/bin/csh
+cd _27_proc_2_num_smooth; sbatch simon.batch_2num_smooth; cd .. 
+cd _27_proc_4_num_smooth; sbatch simon.batch_4num_smooth; cd .. 
+cd _27_proc_8_num_smooth; sbatch simon.batch_8num_smooth; cd .. 
+cd _27_proc_16_num_smooth; sbatch simon.batch_16num_smooth; cd .. 

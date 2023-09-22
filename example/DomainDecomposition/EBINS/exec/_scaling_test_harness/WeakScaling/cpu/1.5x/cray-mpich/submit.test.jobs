@@ -1,0 +1,6 @@
+#/usr/bin/csh
+cd _1_node_1_proc; sbatch simon.batch_1proc; cd .. 
+cd _1_node_3.375_proc; sbatch simon.batch_3.375proc; cd .. 
+cd _1_node_11.390625_proc; sbatch simon.batch_11.390625proc; cd .. 
+cd _1_node_38.443359375_proc; sbatch simon.batch_38.443359375proc; cd .. 
+cd _3.02728652954_node_129.746337891_proc; sbatch simon.batch_129.746337891proc; cd .. 

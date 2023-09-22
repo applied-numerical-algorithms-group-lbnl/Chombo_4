@@ -65,20 +65,88 @@ We find that using $num$\_$smooth$ = 16 without w Cycle scales the best (Figure 
         \label{fig:GPU nodes with and without w cycle}
 \end{figure}
 
-We find that different processors/GPUs have different optimal $num$\_$smooth$ in terms of runtimes (Figure \ref{fig:Performance on CPU Nodes}, \ref{fig:Performance on GPU Nodes}).
+We find that different processors/GPUs have different optimal $num$\_$smooth$ in terms of runtimes. Once the optimal $num$\_$smooth$ is exceeded, the runtimes increase monotonically.
+
+For CPU runs without $use$\_$w$\_$cycle$, the optimal $num$\_$smooth$ is 8 for 1 processor (Figure \ref{fig:1 Proc without w Cycle}) and 16 for 8 (Figure \ref{fig:8 Procs without w Cycle}) and 27 processors (Figure \ref{fig:27 Procs without w Cycle}). 
 
 \begin{figure}[H]
-    \begin{subfigure}{0.92\textwidth}
-        \includegraphics[width=\textwidth]{Performance on CPU Nodes.png}
-        \caption{CPU Processors}
-        \label{fig:Performance on CPU Nodes}
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{1 Proc without w Cycle.png}
+        \caption{1 CPU Processor}
+        \label{fig:1 Proc without w Cycle}
     \end{subfigure}
-    \begin{subfigure}[b]{0.92\textwidth}
-        \includegraphics[width=\textwidth]{Performance on GPU Nodes.png}
-        \caption{GPUs}
-        \label{fig:Performance on GPU Nodes}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{8 Proc without w Cycle.png}
+        \caption{8 CPU Processors}
+        \label{fig:8 Procs without w Cycle}
     \end{subfigure}
-    \caption{Performance of CPU Processors and GPUs under various $num$\_$smooth$}
+    
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{27 Proc without w Cycle.png}
+        \caption{27 CPU Processors}
+        \label{fig:27 Procs without w Cycle}
+    \end{subfigure}
+    
+    \caption{Performance of 1, 8 and 27 CPU Processors without $use$\_$w$\_$cycle$ under various $num$\_$smooth$}
+\end{figure}
+
+For CPU runs with $use$\_$w$\_$cycle$, the optimal $num$\_$smooth$ is 4 for 1 (Figure \ref{fig:1 Proc with w Cycle}) and 8 processors (Figure \ref{fig:8 Procs with w Cycle}) and 8 for 27 processors (Figure \ref{fig:27 Procs with w Cycle}).
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{1 Proc with w Cycle.png}
+        \caption{1 CPU Processor}
+        \label{fig:1 Proc with w Cycle}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{8 Proc with w Cycle.png}
+        \caption{8 CPU Processors}
+        \label{fig:8 Procs with w Cycle}
+    \end{subfigure}
+    
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{27 Proc with w Cycle.png}
+        \caption{27 CPU Processors}
+        \label{fig:27 Procs with w Cycle}
+    \end{subfigure}
+    
+    \caption{Performance of 1, 8 and 27 CPU Processors with $use$\_$w$\_$cycle$ under various $num$\_$smooth$}
+\end{figure}
+
+For GPU runs without $use$\_$w$\_$cycle$, the optimal $num$\_$smooth$ is 16 for 1 GPU (Figure \ref{fig:1 GPU without w Cycle}) and 8 for 8 GPUs (Figure \ref{fig:8 GPUs without w Cycle}).
+
+\begin{figure}[H]
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{1 GPU without w Cycle.png}
+        \caption{1 GPU}
+        \label{fig:1 GPU without w Cycle}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{8 GPUs without w Cycle.png}
+        \caption{8 GPUs}
+        \label{fig:8 GPUs without w Cycle}
+    \end{subfigure}
+    \caption{Performance of 1, 8 GPUs without $use$\_$w$\_$cycle$ under various $num$\_$smooth$}
+\end{figure}
+
+For GPU runs with $use$\_$w$\_$cycle$, the optimal $num$\_$smooth$ is 16 for 1 GPU (Figure \ref{fig:1 GPU with w Cycle}) and 16 for 8 GPUs (Figure \ref{fig:8 GPUs with w Cycle}).
+
+\begin{figure}[H]
+    \begin{subfigure}{0.48\textwidth}
+        \includegraphics[width=\textwidth]{1 GPU with w Cycle.png}
+        \caption{1 GPU}
+        \label{fig:1 GPU with w Cycle}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{8 GPUs with w Cycle.png}
+        \caption{8 GPUs}
+        \label{fig:8 GPUs with w Cycle}
+    \end{subfigure}
+    \caption{Performance of 1, 8 GPUs with $use$\_$w$\_$cycle$ under various $num$\_$smooth$}
 \end{figure}
 
 \end{document}
