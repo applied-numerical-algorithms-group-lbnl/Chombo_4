@@ -1,7 +1,9 @@
 #ifndef __Chombo_EBCM_Elliptic_Framework_
 #define __Chombo_EBCM_Elliptic_Framework_
 
-#ifdef CH_USE_PETSC
+///Nothing in this file is usable without PETSc.
+
+#ifdef CH_USE_PETSC 
 #include "petsc.h"
 #include "petscmat.h"
 #include "petscvec.h"
@@ -18,7 +20,7 @@
 /// 
 /**
    This is for elliptic PDEs.   This contains HelmholtzOp a constant coefficient Helmholtz operator that conforms to the 
-   PETScFramework::BasePETScOp.
+   PETScFramework::BasePETScOp.    
 **/
 namespace EBCM
 {
@@ -36,6 +38,7 @@ namespace EBCM
     typedef Chombo4::BoxIterator                                            ch_bit;
     typedef Chombo4::IntVect                                                ch_iv;
     typedef Chombo4::DataIterator                                           ch_dit;
+    typedef Chombo4::DataIndex                                              ch_dat_ind;
     typedef Chombo4::ParmParse                                              ch_parmparse;
                                                                             
     typedef Proto::Point                                                    pr_pt;
@@ -275,6 +278,7 @@ namespace EBCM
        Ergo, this should only be used with cell merging.  
        Without it, we have other operators.
        <Div(Grad(phi))> = (1/vol) (int (Div Grad(phi) ) dV)  = (1./vol)(int (Grad(phi) \cdot \nhat dA)).
+       This means that the RHS for a projection will have to be Div(v) not kappa(Div(v)).
     **/
     class HelmholtzOp: public ebcm_base_op
     {
@@ -283,11 +287,12 @@ namespace EBCM
       typedef Proto::Side              pr_sd;
       typedef Proto::Box               pr_box;
       typedef Proto::IndexTM<int, DIM> pr_int_dim;
+
+      ///member data is in the clear.
       double                                 m_alpha;
       double                                 m_beta;
       int                                    m_weight_power;
       int                                    m_sten_rad;
-
       string m_dom_bc;
       string m_eb_bc;
       /// 
@@ -334,6 +339,9 @@ namespace EBCM
       }
 
     private:
+      ///Weak construction makes everything harder in the end (and not in a good way).
+      HelmholtzOp(); 
+      
       ///
       /**
          This is where the canal locks are dug in the basement.
@@ -549,7 +557,7 @@ namespace EBCM
        will not need inhomogeneous boundary conditions
        I would like to avoid dealing with that complexity just for
        testing purposes.  
-     **/
+    **/
     static shared_ptr<ebcm_base_exact>
     getExactSolution()
     {
@@ -729,7 +737,7 @@ namespace EBCM
     static  void run_hoeb_truncation_tests()
     {
 
-#ifdef CH_USE_PETSC
+
       static const int num_ghost = 4;
       
       int    nx_fine      = 4586;
@@ -775,70 +783,126 @@ namespace EBCM
         Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
         
       }
-#endif
-    }
 
-    ///
+    }
+   ///
+   /**      
+       get the worst flux in the given direction
+    **/
     template <CENTERING cent>
     static double
-    getMaxAbsFluxError(EBIndex<cent>            & a_worst, 
+    getFaceError(const vector<EBCM_Face<cent, ebcm_order> >  & a_faces,
+                 shared_ptr<ebcm_dou_sca_data>  &              a_phi_exac_ptr,
+                 ch_dat_ind                                    a_dit,
+                 double                                        a_alpha,
+                 double                                        a_beta,
+                 int                                           a_sten_rad,
+                 int                                           a_weight_power,
+                 shared_ptr< ebcm_meta  >                      a_meta_ptr,
+                 string                                        a_dom_bc,
+                 string                                        a_eb_bc,
+                 int                                           a_face_dir,
+                 bool                                          a_print)
+    {
+      double retval = -4586;
+      ch_mayday::Error("Doh! not implemented");
+      
+
+      return retval;
+    }
+    ///
+    /**
+       The points returned are the cells where the bad face happened.
+       These will be different on every MPI process.   The max errors returned
+       (xface, yface, zface and overall) are  properly computed with MPI scatter and gather.
+    **/
+    static double
+    getMaxAbsFluxError(pr_pt                     & a_worst_xface_pt,
+                       pr_pt                     & a_worst_yface_pt,
+                       pr_pt                     & a_worst_zface_pt,
+                       double                    & a_error_xface, 
+                       double                    & a_error_yface, 
+                       double                    & a_error_zface, 
                        double                     a_alpha,
                        double                     a_beta,
                        int                        a_sten_rad,
                        int                        a_weight_power,
                        shared_ptr< ebcm_meta  >   a_meta_ptr,
                        string                     a_dom_bc,
-                       string                     a_eb_bc,
-                       bool                       a_printToFile,
-                       string                     a_file_prefix,
-                       bool                       a_print)
+                       string                     a_eb_bc,                    
+                       bool                       a_print) 
 
     {
-      int num_ghost = 4;
-      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
-      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
-      shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
-      shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
 
-      shared_ptr<ebcm_base_exact> exactly_ptr = getExactSolution();
+      int num_ghost = 4;
       
+      /// For this test, do not need lph_exac is necessary but this reuses code.
+      shared_ptr<ebcm_dou_sca_data>  phi_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data>  lph_exac_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> xface_err_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> yface_err_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> zface_err_ptr(new ebcm_dou_sca_data(a_meta_ptr, num_ghost));
+      shared_ptr<ebcm_base_exact> exactly_ptr = getExactSolution();
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta_ptr, exactly_ptr, a_print);
 
-      HelmholtzOp discreteOp(a_alpha, a_beta, a_sten_rad,
-                             a_weight_power, a_meta_ptr,
-                             a_dom_bc, a_eb_bc, a_print);
-
-      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
-      //settting  error to lph_calc - lph_exac
-      double acoef =  1;
-      double bcoef = -1;
-      err_calc_ptr->setVal(0.);
-      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
-
-      if(a_printToFile)
+      const auto& grids  = a_meta_ptr->m_grids;
+      const auto& graphs = *(a_meta_ptr->m_graphs);
+      const auto&    dx  = a_meta_ptr->m_dx;
+      auto           dit = grids.dataIterator();
+      for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        string phi_exac_file = a_file_prefix +  string("phi_exac.hdf5");
-        string lph_exac_file = a_file_prefix +  string("lph_exac.hdf5");
-        string lph_calc_file = a_file_prefix +  string("lph_calc.hdf5");
-        string err_calc_file = a_file_prefix +  string("err_calc.hdf5");
-      
-        phi_exac_ptr->writeToHDF5(phi_exac_file);
-        lph_exac_ptr->writeToHDF5(lph_exac_file);
-        lph_calc_ptr->writeToHDF5(lph_calc_file);
-        err_calc_ptr->writeToHDF5(err_calc_file);
+        const auto&  valid =  grids[dit[ibox]];
+        const auto&  graph = graphs[dit[ibox]];
+        ebcm_subvol_vec volvec(graph, valid, a_print);
+        
+        for(int ivec = 0; ivec < volvec.size(); ivec++)
+        {
+          const auto& volume = volvec[ivec];
+          double xface_err = -4586;
+          double yface_err = -4586;
+          double zface_err = -4586;
+          xface_err = getFaceError<XFACE>
+            (volume.m_xfaces, phi_exac_ptr, dit[ibox],
+             a_alpha,a_beta, a_sten_rad, a_weight_power,
+             a_meta_ptr, a_dom_bc, a_eb_bc, 0, a_print);
+          yface_err = getFaceError<YFACE>
+            (volume.m_yfaces,phi_exac_ptr, dit[ibox],
+             a_alpha,a_beta, a_sten_rad, a_weight_power,
+             a_meta_ptr, a_dom_bc, a_eb_bc, 1, a_print);
+                                                 
+#if DIM==3
+          zface_err = getFaceError<ZFACE>
+            (volume.m_zfaces, phi_exac_ptr, dit[ibox],
+             a_alpha,a_beta, a_sten_rad, a_weight_power,
+             a_meta_ptr, a_dom_bc, a_eb_bc, 2, a_print);
+                                                 
+#endif
+          for(int icell = 0; icell < volume.m_cells.size(); icell++)
+          {
+            auto pt = volume.m_cells[icell];
+            (*xface_err_ptr)[dit[ibox]](pt, 0) = xface_err;
+            (*yface_err_ptr)[dit[ibox]](pt, 0) = yface_err;
+            (*yface_err_ptr)[dit[ibox]](pt, 0) = zface_err;
+          }
+        }
       }
+      double max_xface_err =  xface_err_ptr->maxNorm();
+      double max_yface_err =  yface_err_ptr->maxNorm();
 
-      double retval = err_calc_ptr->maxNorm();
-      return retval;
+      double max_err_all_dirs = std::max(max_xface_err, max_yface_err);
+#if DIM==3
+      double max_zface_err =  zface_err_ptr->maxNorm();
+      max_err_all_dirs = std::max(max_zface_err, max_err_all_dirs);
+#endif       
+      return max_err_all_dirs;
     }
     ///
     /**
        Another one of the tests called by  example/EBCM/hoeb_truncation.
     **/ 
-    static  void run_open_flux_tests(int a_face_dir)
+    static  void run_open_flux_tests()
     {
 
-#ifdef CH_USE_PETSC
       static const int num_ghost = 4;
       
       int    nx_fine      = 4586;
@@ -869,54 +933,61 @@ namespace EBCM
 
       double max_err_fine = 4586.; 
       double max_err_coar = 4586.;
-
-      if(a_face_dir == 0)
-      {
-        EBIndex<XFACE> worst;
-        max_err_fine = getMaxAbsFluxError<XFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("xface_fine_"), print); 
-        max_err_coar = getMaxAbsFluxError<XFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("xface_coar_"), print);
-        Chombo4::pout() << "flux_truncation: x_face worst face  =  " << worst.m_pt << endl;
-      }
-      else if(a_face_dir == 1)
-      {
-        EBIndex<YFACE> worst;
-        max_err_fine = getMaxAbsFluxError<YFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("yface_fine_"), print); 
-        max_err_coar = getMaxAbsFluxError<YFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("yface_coar_"), print);
-        Chombo4::pout() << "flux_truncation: y_face worst face  =  " << worst.m_pt << endl;
-      }
-      else if(a_face_dir == 2)
-      {
-        EBIndex<ZFACE> worst;
-        max_err_fine = getMaxAbsFluxError<ZFACE>(worst, alpha, beta, sten_rad, weight_power, meta_fine, dom_bc, eb_bc, true, string("zface_fine_"), print); 
-        max_err_coar = getMaxAbsFluxError<ZFACE>(worst, alpha, beta, sten_rad, weight_power, meta_coar, dom_bc, eb_bc, true, string("zface_coar_"), print);
-        Chombo4::pout() << "flux_truncation: z_face worst face  =  " << worst.m_pt << endl;
-      }
-      else
-      {
-        Chombo4::pout() << "flux_truncation: unknown face_dir =  " << a_face_dir << endl;
-        ch_mayday::Error("Doh!");
-      }
+      /**
+         The points returned are the cells where the bad face happened.
+         These will be different on every MPI process.   The max errors returned
+         (xface, yface, zface and overall) are  properly computed with MPI scatter and gather.
+       **/
+      pr_pt          worst_xface_fine, worst_xface_coar;
+      pr_pt          worst_yface_fine, worst_yface_coar;
+      pr_pt          worst_zface_fine, worst_zface_coar;
+      double         error_xface_fine, error_xface_coar;
+      double         error_yface_fine, error_yface_coar;
+      double         error_zface_fine, error_zface_coar;
       
-      Chombo4::pout() << "flux_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
-      Chombo4::pout() << "flux_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
+      max_err_fine = getMaxAbsFluxError(worst_xface_fine, worst_yface_fine, worst_zface_fine,
+                                        error_xface_fine, error_yface_fine, error_zface_fine,
+                                        alpha, beta, sten_rad, weight_power,
+                                        meta_fine, dom_bc, eb_bc, print);
+
+      max_err_coar = getMaxAbsFluxError(worst_xface_coar, worst_yface_coar, worst_zface_coar,
+                                        error_xface_coar, error_yface_coar, error_zface_coar,
+                                        alpha, beta, sten_rad, weight_power,
+                                        meta_coar, dom_bc, eb_bc, print);
+      
+      
+      Chombo4::pout() << "flux_truncation: Lmax(X flux coarse error) =  " << error_xface_coar << endl;
+      Chombo4::pout() << "flux_truncation: Lmax(X flux fine   error) =  " << error_xface_fine << endl;
+
+      Chombo4::pout() << "flux_truncation: Lmax(Y flux coarse error) =  " << error_yface_coar << endl;
+      Chombo4::pout() << "flux_truncation: Lmax(Y flux fine   error) =  " << error_yface_fine << endl;
+      
+#if DIM==3
+      Chombo4::pout() << "flux_truncation: Lmax(Z flux coarse error) =  " << error_zface_coar << endl;
+      Chombo4::pout() << "flux_truncation: Lmax(Z flux fine   error) =  " << error_zface_fine << endl;
+#endif
+
       double tol = 1.0e-12;
       double err = std::abs(max_err_fine); 
       if(err > tol)
       {
+        
+        Chombo4::pout() << "max_err_fine =  =  " << max_err_fine << endl;
+        Chombo4::pout() << "max_err_coar =  =  " << max_err_coar << endl;
         double order = (log(max_err_coar/max_err_fine))/log(2.0);
-        Chombo4::pout() << "flux_truncation: order of accuracy = " <<  order  << endl;
+        Chombo4::pout() << "flux_truncation: overall order of accuracy = " <<  order  << endl;
       }
       else
       {
-        Chombo4::pout() << "flux_truncation: Fine error is too small for safe order computation." << endl;
+        Chombo4::pout() << "flux_truncation: Fine error is too small for any meaningful order computation." << endl;
         
       }
-#endif
+
     }
 
     
   }; //end elliptic_framwork class
 }
-#endif
+#endif //end ifdef ch_use_petsc(none of this stuff makes sense without petsc).
 
 #endif 

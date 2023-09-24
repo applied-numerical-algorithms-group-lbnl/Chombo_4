@@ -30,10 +30,7 @@ void
 runAllTheTests()
 {
   EBCM::PETSc_Framework<   ORDER>::dummy_petsc_test();
-  for(int idir = 0; idir < DIM; idir++)
-  {
-    EBCM::Elliptic_Framework<ORDER>::run_open_flux_tests(idir);
-  }
+  EBCM::Elliptic_Framework<ORDER>::run_open_flux_tests();
   EBCM::Elliptic_Framework<ORDER>::run_hoeb_truncation_tests();
 }
 

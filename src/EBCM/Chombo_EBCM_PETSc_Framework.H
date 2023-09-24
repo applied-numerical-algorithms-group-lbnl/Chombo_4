@@ -1,7 +1,9 @@
 #ifndef __Chombo_EBCM_PETSC_Framework_
 #define __Chombo_EBCM_PETSC_Framework_
 
+///Nothing in this file is usable without PETSc
 #ifdef CH_USE_PETSC
+
 #include "petsc.h"
 #include "petscmat.h"
 #include "petscvec.h"
@@ -66,7 +68,7 @@ namespace EBCM
     /// Class to replace old vofstencil.  
     /**
        This will have to be generalized for multiple vofs per cell.
-     **/
+    **/
     struct local_stencil_t: public std::vector< pair< pr_pt, double > >
     {
     public:
@@ -302,8 +304,8 @@ namespace EBCM
              route stdout to  a log file. 
           **/
           /**
-          Chombo4::pout() << "Base_PETSc_op::applyOp before mult : m_mat = " << endl;
-          MatView(*m_mat_ptr, PETSC_VIEWER_STDOUT_WORLD);
+             Chombo4::pout() << "Base_PETSc_op::applyOp before mult : m_mat = " << endl;
+             MatView(*m_mat_ptr, PETSC_VIEWER_STDOUT_WORLD);
           **/
         }
 
@@ -488,14 +490,14 @@ namespace EBCM
            PETSc apparently requires this step.
            The documentation just says it assembles the matrix, making sure 
            it has the right values on the right processors.
-         **/
+        **/
         MatAssemblyBegin(stencil_matrix,MAT_FINAL_ASSEMBLY);
         MatAssemblyEnd(  stencil_matrix,MAT_FINAL_ASSEMBLY);
         
         return 0;
       }
 
-      }; //end class Base_PETSc_Op
+    }; //end class Base_PETSc_Op
 
     /// 
     /**
@@ -555,16 +557,14 @@ namespace EBCM
     static  void dummy_petsc_test()
     {
 
-#ifdef CH_USE_PETSC
       shared_ptr< ebcm_meta  >  meta_ptr;
       int  nghost = 4586;    
       bool print  = false;
       DummyDerivedOp(meta_ptr, nghost, print);
-#endif      
     }
 
   }; //end PETSc_framwork class
 }
-#endif
+#endif  ///end if ch_use_petsc
 
 #endif 
