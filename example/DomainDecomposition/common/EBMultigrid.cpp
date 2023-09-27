@@ -693,15 +693,15 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
-  bool do_lazy_relax = false;
-  bool one_exchange_per_relax = false;
-  bool noFunnyBusiness = EBMultigrid::lazyRelaxationForbidden();
-  if(!noFunnyBusiness)
-  {
-    ParmParse pp(m_prefix.c_str());
-    pp.query("do_lazy_relax", do_lazy_relax);
-    pp.query("one_exchange_per_relax", one_exchange_per_relax);
-  }
+//  bool do_lazy_relax = false;
+//  bool one_exchange_per_relax = false;
+//  bool noFunnyBusiness = EBMultigrid::lazyRelaxationForbidden();
+//  if(!noFunnyBusiness)
+//  {
+//    ParmParse pp(m_prefix.c_str());
+//    pp.query("do_lazy_relax", do_lazy_relax);
+//    pp.query("one_exchange_per_relax", one_exchange_per_relax);
+//  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   
@@ -711,17 +711,7 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
     {
       auto & resid = const_cast<EBLevelBoxData<CELL, 1> & >(m_resid);
       resid.setVal(0.);
-      bool doExchange = true;
-      bool printStuff = false;
-      if(do_lazy_relax)
-      {
-        doExchange = (iredblack==0);
-        if(doExchange && one_exchange_per_relax)
-        {
-          doExchange = (iter==0);
-        }
-      }
-
+      bool doExchange = true; bool printStuff = false;
       residual(resid, a_phi, a_rhs, doExchange, printStuff);
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
