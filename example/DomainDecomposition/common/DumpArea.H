@@ -74,8 +74,10 @@ public:
       int nyfrac = (8*ny)/32;
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
-        IntVect ivlo(D_DECL(nxfrac-3, nyfrac-5, 0));
-        IntVect ivhi(D_DECL(nxfrac+3, nyfrac+5, 0));
+        IntVect ivlo(D_DECL(0, 0, 0));
+        IntVect ivhi(D_DECL(7, 7, 7));
+//        IntVect ivlo(D_DECL(nxfrac-3, nyfrac-5, 0));
+//        IntVect ivhi(D_DECL(nxfrac+3, nyfrac+5, 0));
 //        ivlo = IntVect::Zero;
 //        ivhi = 9*IntVect::Unit;
 //        ivhi[0] = 6;

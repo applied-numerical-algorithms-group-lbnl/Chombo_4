@@ -6,19 +6,14 @@
 ///will not work on device--debugging use only
 
 
-//around point (4, 8)
 //Area functions
 //cell centered and please keep them in the domain
-////upper left corner of 64^2
-Point areaLo(0, 0);
-Point areaHi(3, 3);
-//the bit underneath the circle rad=0.1, center = 0.5
-//Point areaLo(28, 24);
-//Point areaHi(30, 26);                                    
+static const Point areaLo(0, 0);
+static const Point areaHi(3, 7);
 //which side of cell gets printed in face dumps
-Side::LoHiSide faceSideX = Side::Lo;
-Side::LoHiSide faceSideY = Side::Lo;
-Bx areaBx(areaLo, areaHi);
+static const Side::LoHiSide faceSideX = Side::Lo;
+static const Side::LoHiSide faceSideY = Side::Lo;
+static const Bx areaBx(areaLo, areaHi);
 
 #ifdef CH_USE_HDF5
 void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)

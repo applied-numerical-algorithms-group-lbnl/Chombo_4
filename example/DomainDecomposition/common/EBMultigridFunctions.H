@@ -75,15 +75,16 @@ PROTO_KERNEL_END(copyDiagF, copyDiag)
 /****/
 /****/
 PROTO_KERNEL_START 
-unsigned int  gsrbResidF(int     a_pt[DIM],
+unsigned int  gsrbResidF(int              a_pt[DIM],
                          Var<Real, 1>     a_phi,
                          Var<Real, 1>     a_res,
                          Var<Real, 1>     a_diag,
                          Var<Real, 1>     a_kappa,
-                         Real    a_alpha,
-                         Real    a_beta,
-                         Real    a_dx,
-                         int     a_iredBlack)
+                         Real             a_alpha,
+                         Real             a_beta,
+                         Real             a_dx,
+                         int              a_iredBlack,
+                         int              a_iprint)
 {
   int sumpt = 0;
   for(int idir = 0; idir < DIM; idir++)
@@ -97,12 +98,10 @@ unsigned int  gsrbResidF(int     a_pt[DIM],
     Real kappval = a_kappa(0);
     
     Real realdiag = kappval*a_alpha + a_beta*diagval;
-//    Real regudiag = a_alpha - 2*DIM*a_beta/(a_dx*a_dx);
     Real lambda = safety/realdiag;
-//    Real reglam = safety/regudiag;
     Real phival = a_phi(0);
     Real resval = a_res(0);
-//    if(std::abs(lambda) > std::abs(reglam)) lambda= reglam;
+
     a_phi(0) = phival + lambda*resval;
   }
   return 0;

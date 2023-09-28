@@ -1,0 +1,3877 @@
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+creating implicit function
+all regular geometry
+creating geometry service
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+inititializing data
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+done with creating geometry service
+making dictionary
+inititializing data
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+creating implicit function
+all regular geometry
+creating geometry service
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating implicit function
+all regular geometry
+creating geometry service
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+done with creating geometry service
+making dictionary
+inititializing data
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+done with creating geometry service
+making dictionary
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+initializing solver 
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+creating implicit function
+all regular geometry
+creating geometry service
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+max_step        = 10
+max_time        = 10
+checkpoint interval = -1
+plotfile   interval = -1
+defining geometry
+nx       = 96
+defining geometry
+maxGrid  = 32
+creating grid hierarchy
+creating implicit function
+all regular geometry
+creating geometry service
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+done with creating geometry service
+making dictionary
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+done with creating geometry service
+making dictionary
+inititializing data
+using backward Euler for parabolic solver
+==============================================
+tolerance       = 1e-12
+maxIter         = 27
+blob cen        = 0.3
+geom cen        = 0
+max vel mag     = 1
+max vel rad     = 0.25
+max_step        = 10
+max_time        = 10
+viscosity       = 0.01
+==============================================
+initializing solver 
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining parabolic solvers
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for velocity
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining Helmoltz solver for species
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining advection operator
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining advection operator
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for velo
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining EBBackwrdEuler solver for spec
+EBINS::defineInternals defining advection operator
+EBINS::defineInternals defining advection operator
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : about to exchange
+EBAdvection::fillkappa : done with
+EBAdvection::fillkappa : done with
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+EBAdvection::constructor leaving
+EBINS::defineInternals defining projection operators
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+proto_malloc | Error: out of memory
+protoGetLastError() failed at /global/u1/s/szhang9/Chombo_4/example/../src/EBTools/Chombo_EBLevelBoxData.H:860 : invalid argument
+srun: error: nid002605: task 16: Aborted
+srun: Terminating StepId=15164282.0
+protoGetLastError() failed at /global/u1/s/szhang9/Chombo_4/example/../src/EBTools/Chombo_EBLevelBoxData.H:860 : invalid argument
+slurmstepd: error: *** STEP 15164282.0 ON nid001957 CANCELLED AT 2023-09-08T17:29:14 ***
+srun: error: nid002605: task 18: Terminated
+srun: error: nid004065: task 26: Terminated
+srun: error: nid002232: task 4: Terminated
+srun: error: nid003244: task 20: Terminated
+srun: error: nid002512: task 11: Aborted
+srun: error: nid001957: task 1: Terminated
+srun: error: nid002592: task 15: Terminated
+srun: error: nid002512: task 8: Terminated
+srun: error: nid003244: task 22: Terminated
+srun: error: nid002232: tasks 5-6: Terminated
+srun: error: nid001957: task 3: Terminated
+srun: error: nid002592: tasks 13-14: Terminated
+srun: error: nid002605: task 17: Terminated
+srun: error: nid004065: task 24: Terminated
+srun: error: nid003244: task 23: Terminated
+srun: error: nid001957: task 2: Terminated
+srun: error: nid002512: task 10: Terminated
+srun: error: nid004065: task 25: Terminated
+srun: error: nid002605: task 19: Terminated
+srun: error: nid002232: task 7: Terminated
+srun: error: nid003244: task 21: Terminated
+srun: error: nid002512: task 9: Terminated
+srun: error: nid002592: task 12: Terminated
+srun: error: nid001957: task 0: Terminated
+srun: Force Terminated StepId=15164282.0

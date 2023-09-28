@@ -1,0 +1,3 @@
+We're multiplying nx by 2, starting at nx = 32 and the number of gpus by 8.
+This is built without PETSc
+The runs fail at nx = 96 with 27 gpus

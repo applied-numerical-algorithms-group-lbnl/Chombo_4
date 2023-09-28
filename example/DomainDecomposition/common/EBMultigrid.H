@@ -67,13 +67,13 @@ public:
     }
 
     if(a_printStuff)
-    {//begin debug
+    {
       Chombo4::pout() << "entering vcycle domain resolution = " << nxdom << endl;
       Chombo4::pout() << "rhs:" << endl;
       DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
       Chombo4::pout() << "phi:" << endl;
       DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-    }//end debug
+    }
     
     if(m_direct_to_bottom)
     {
@@ -82,10 +82,11 @@ public:
     }
     else
     {
-      relax(a_phi,a_rhs, m_numSmooth);
+      ///The usual dance, step 1: relax
+      relax(a_phi,a_rhs, m_numSmooth, a_printStuff);
       
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "out of relax with nxdom =  " << nxdom << endl;
         Chombo4::pout() << "a_phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
@@ -96,52 +97,55 @@ public:
 
         bool doExchange = true;
         bool printStuff = false;
+        ///the usual dance 1) relax
+        //(stencils for multilevel objects live with the coarser)
         residual(m_resid,a_phi,a_rhs, doExchange, printStuff);
         m_residC.setVal(0.);
-        //stencils for multilevel objects live with the coarser
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "going into restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_resid:" << endl;
           DumpArea::dumpAsOneBox(&m_resid, m_geoserv);
-        }//end debug
+        }
 
+        ///The usual dance, step 2: restrict
         m_coarser->restrictResidual(m_residC,m_resid);
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "coming out of  restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_residC:" << endl;
           DumpArea::dumpAsOneBox(&m_residC, m_geoserv);
-        }//end debug
-
+        }
+        ///
         m_deltaC.setVal(0.);
         
-        m_coarser->vCycle(m_deltaC,m_residC);
-        
+        ///The usual dance, step 3: recurse
+        m_coarser->vCycle(m_deltaC,m_residC, a_printStuff);
         if(m_useWCycle)
-        {
-          m_coarser->vCycle(m_deltaC,m_residC);
+        {/// two v cycle calls  make a wcycle pattern
+          m_coarser->vCycle(m_deltaC,m_residC, a_printStuff);
         }
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "out of recursive call with nxdom = " << nxdom <<  endl;
           Chombo4::pout() << "phi:" << endl;
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
           Chombo4::pout() << "deC:" << endl;
           DumpArea::dumpAsOneBox(&m_deltaC, m_geoserv);
-        }//end debug
+        }
         
+        ///The usual dance, step 4: prolong.
         m_coarser->prolongIncrement(a_phi,m_deltaC);
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "post-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-        }//end debug        
+        }
 
       }
       else
@@ -151,21 +155,21 @@ public:
 
 
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-      }//end debug 
+      }
 
-
-      relax(a_phi,a_rhs, m_numSmooth);
+      //Step 4.5: Relaxing after prolongation is supposed to be optional but never is.
+      relax(a_phi,a_rhs, m_numSmooth, a_printStuff);
 
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-      }//end debug
+      }
 
 
     }
@@ -232,7 +236,7 @@ public:
   virtual void
   relax(EBLevelBoxData<CELL, 1>      & a_phi,
         const EBLevelBoxData<CELL, 1>& a_rhs,
-        int a_niter) const =0;
+        int a_niter, bool a_printStuff) const =0;
 
 
   /// average down residual to next coarser level.
@@ -395,7 +399,7 @@ public:
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
              const EBLevelBoxData<CELL, 1>& a_rhs,
-             int a_niter) const;
+             int a_niter, bool a_printStuff) const;
 
 
   /// average down residual to next coarser level.
@@ -748,7 +752,7 @@ private:
               bool a_printStuff = false)
   {
     PR_TIME("sgmg::vcycle");
-    return m_finest->vCycle(a_phi, a_rhs);
+    return m_finest->vCycle(a_phi, a_rhs, a_printStuff);
   }
 
   /// average down residual to next coarser level.
@@ -768,9 +772,9 @@ private:
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
              const EBLevelBoxData<CELL, 1>& a_rhs,
-             int a_niter) const
+             int a_niter, bool a_printStuff) const
   {
-    m_finest->relax(a_phi, a_rhs, a_niter);
+    m_finest->relax(a_phi, a_rhs, a_niter, a_printStuff);
   }
 
 

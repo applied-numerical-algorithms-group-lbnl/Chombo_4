@@ -1,0 +1,77 @@
+----------------------------------------
+Petsc Release Version 3.19.3, unknown  Tue Sep  5 13:15:02 2023
+/global/homes/s/szhang9/Chombo_4/example/DomainDecomposition/EBINS/exec/main.exe on a , 4 proc. with options:
+----------------------------------------
+Options for all PETSc programs:
+ -version: prints PETSc version
+ -help intro: prints example description and PETSc version, and exits
+ -help: prints example description, PETSc version, and available options for used routines
+ -on_error_abort: cause an abort when an error is detected. Useful 
+        only when run in the debugger
+ -on_error_attach_debugger [gdb,dbx,xxgdb,ups,noxterm]
+       start the debugger in new xterm
+       unless noxterm is given
+ -start_in_debugger [gdb,dbx,xxgdb,ups,noxterm]
+       start all processes in the debugger
+ -on_error_emacs <machinename>
+    emacs jumps to error file
+ -debugger_ranks [n1,n2,..] Ranks to start in debugger
+ -debugger_pause [m] : delay (in seconds) to attach debugger
+ -stop_for_debugger : prints message on how to attach debugger manually
+                      waits the delay for you to attach
+ -display display: Location where X window graphics and debuggers are displayed
+ -no_signal_handler: do not trap error signals
+ -mpi_return_on_error: MPI returns error code, rather than abort on internal error
+ -fp_trap: stop on floating point exceptions
+           note on IBM RS6000 this slows run greatly
+ -malloc_dump <optional filename>: dump list of unfreed memory at conclusion
+ -malloc: use PETSc error checking malloc (deprecated, use -malloc_debug)
+ -malloc no: don't use PETSc error checking malloc (deprecated, use -malloc_debug no)
+ -malloc_info: prints total memory usage
+ -malloc_view <optional filename>: keeps log of all memory allocations, displays in PetscFinalize()
+ -malloc_debug <true or false>: enables or disables extended checking for memory corruption
+ -options_view: dump list of options inputted
+ -options_left: dump list of unused options
+ -options_left no: don't dump list of unused options
+ -tmp tmpdir: alternative /tmp directory
+ -shared_tmp: tmp directory is shared by all processors
+ -not_shared_tmp: each processor has separate tmp directory
+ -memory_view: print memory usage at end of run
+ -get_total_flops: total flops over all processors
+ -log_view [:filename:[format]]: logging objects and events
+ -log_trace [filename]: prints trace of all PETSc calls
+ -log_exclude <list,of,classnames>: exclude given classes from logging
+ -info [filename][:[~]<list,of,classnames>[:[~]self]]: print verbose information
+ -options_file <file>: reads options from file
+ -options_monitor: monitor options to standard output, including that set previously e.g. in option files
+ -options_monitor_cancel: cancels all hardwired option monitors
+ -petsc_sleep n: sleeps n seconds before running program
+----------------------------------------
+PetscDevice Options:
+  -device_enable <now lazy : formerly lazy> How (or whether) to initialize PetscDevices (choose one of) none lazy eager (PetscDeviceInitialize())
+  -default_device_type <now host : formerly host> Set the PetscDeviceType returned by PETSC_DEVICE_DEFAULT() (choose one of) host cuda hip sycl (PetscDeviceSetDefaultDeviceType())
+  -device_select <now -1 : formerly -1>: Which device to use. Pass (-1) to have PETSc decide or (given they exist) [0-128) for a specific device (PetscDeviceCreate())
+  -device_view: <FALSE : FALSE> Display device information and assignments (forces eager initialization) (PetscDeviceView())
+[0] <sys> PetscDeviceInitializeTypeFromOptions_Private(): PetscDeviceType host available, initializing
+PetscDeviceType host available, initializing
+----------------------------------------
+PetscDevice host Options:
+  -device_view_host: <FALSE : FALSE> Display device information and assignments (forces eager initialization) (PetscDeviceView())
+[0] <sys> PetscDeviceInitializeTypeFromOptions_Private(): PetscDevice host initialized, default device id 0, view FALSE, init type lazy
+PetscDevice host initialized, default device id 0, view FALSE, init type lazy
+[0] <sys> PetscDeviceInitializeTypeFromOptions_Private(): PetscDeviceType cuda not available
+PetscDeviceType cuda not available
+[0] <sys> PetscDeviceInitializeTypeFromOptions_Private(): PetscDeviceType hip not available
+PetscDeviceType hip not available
+[0] <sys> PetscDeviceInitializeTypeFromOptions_Private(): PetscDeviceType sycl not available
+PetscDeviceType sycl not available
+----------------------------------------
+Root PetscDeviceContext Options:
+  -root_device_context_device_type <now host : formerly host> Underlying PetscDevice (choose one of) host cuda hip sycl (PetscDeviceContextSetDevice)
+  -root_device_context_stream_type <now global_blocking : formerly global_blocking> PetscDeviceContext PetscStreamType (choose one of) global_blocking default_blocking global_nonblocking (PetscDeviceContextSetStreamType)
+[0] <sys> PetscInitialize_Common(): PETSc successfully started: number of processors = 4
+PETSc successfully started: number of processors = 4
+[0] <sys> PetscGetHostName(): Rejecting domainname, likely is NIS nid007122.
+Rejecting domainname, likely is NIS nid007122.
+[0] <sys> PetscInitialize_Common(): Running on machine: nid007122
+Running on machine: nid007122
