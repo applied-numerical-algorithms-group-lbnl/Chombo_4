@@ -41,7 +41,7 @@ CHOMBO_CPPFLAGS = -std=c++14
 CHOMBO_DEPXX=g++
 CHOMBO_CXX=g++
 
-CHOMBO_CXXALLFLAGS := -std=c++11 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
+CHOMBO_CXXALLFLAGS := -std=c++14 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
 CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic 
 CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
 

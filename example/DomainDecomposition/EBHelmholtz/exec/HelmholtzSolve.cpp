@@ -199,8 +199,8 @@ runTest(int a_argc, char* a_argv[])
       corbd.setVal(0.0);
     }
 
-    bool initToZero = false;
-    solver.solve(phi, rhs, tol, maxIter, initToZero, printStuff);
+    bool initToZero = true;
+    solver.solve(phi, rhs, tol, maxIter, initToZero, true);
   }
   Chombo4::pout() << "done with solves " << endl;
   

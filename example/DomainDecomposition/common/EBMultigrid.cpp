@@ -320,7 +320,7 @@ preCond(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_TIME("EBMultigrid::preCond");
   int maxiter = 27;
 
-  relax(a_phi,a_rhs, maxiter); 
+  relax(a_phi,a_rhs, maxiter, false); 
 }
 /****/
 //for tga
@@ -685,7 +685,7 @@ void
 EBPoissonOp::
 relax(EBLevelBoxData<CELL, 1>       & a_phi,
       const EBLevelBoxData<CELL, 1> & a_rhs,
-      int a_maxiter) const
+      int a_maxiter, bool a_printStuff) const
 {
   CH_TIME("EBPoissonOp::relax");
   CH_assert(a_phi.ghostVect() ==   a_rhs.ghostVect());
@@ -693,15 +693,6 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   CH_assert(a_phi.ghostVect() == m_diagW.ghostVect());
   CH_assert(a_phi.ghostVect() == m_resid.ghostVect());
   //
-//  bool do_lazy_relax = false;
-//  bool one_exchange_per_relax = false;
-//  bool noFunnyBusiness = EBMultigrid::lazyRelaxationForbidden();
-//  if(!noFunnyBusiness)
-//  {
-//    ParmParse pp(m_prefix.c_str());
-//    pp.query("do_lazy_relax", do_lazy_relax);
-//    pp.query("one_exchange_per_relax", one_exchange_per_relax);
-//  }
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
   
@@ -711,8 +702,19 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
     {
       auto & resid = const_cast<EBLevelBoxData<CELL, 1> & >(m_resid);
       resid.setVal(0.);
-      bool doExchange = true; bool printStuff = false;
-      residual(resid, a_phi, a_rhs, doExchange, printStuff);
+
+      bool        doExchange       = true;
+      bool        localPrint       = false;
+      static bool printedOnce      = false;
+      if( a_printStuff && (!printedOnce) )
+      {
+        localPrint  = ((!printedOnce) && a_printStuff && (iredblack == 1));
+        if(localPrint)
+        {
+          printedOnce = true;
+        }
+      }
+      residual(resid, a_phi, a_rhs, doExchange, localPrint);
 
       for(int ibox = 0; ibox < dit.size(); ++ibox)
       {
@@ -728,9 +730,12 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
         auto& stendiag = m_diagW[dit[ibox]];
         auto& kappa    = m_kappa[dit[ibox]];
         Bx  inputBox = phifab.inputBox();
+        int iprint = 0;
+        if(a_printStuff) iprint = 1;
         ebforall_i(inputBox, gsrbResid,  grbx, 
                    phifab, resfab, stendiag,
-                   kappa, m_alpha, m_beta, m_dx, iredblack);
+                   kappa, m_alpha, m_beta, m_dx,
+                   iredblack, iprint);
       
         ideb++;
       } //end loop over boxes
