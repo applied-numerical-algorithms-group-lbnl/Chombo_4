@@ -86,6 +86,12 @@ unsigned int  gsrbResidF(int              a_pt[DIM],
                          int              a_iredBlack,
                          int              a_iprint)
 {
+  bool breakHere = false;
+  int ibreak = 0, jbreak = 4;
+  if((a_pt[0] == ibreak) && (a_pt[1] == jbreak))
+  {
+    breakHere = true;
+  }
   int sumpt = 0;
   for(int idir = 0; idir < DIM; idir++)
   {

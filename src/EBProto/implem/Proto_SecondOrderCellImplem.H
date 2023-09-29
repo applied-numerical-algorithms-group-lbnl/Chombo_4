@@ -161,34 +161,10 @@ namespace Proto
       a_facesten.add(vofhi,  1./a_dx);
       a_facesten.add(voflo, -1./a_dx);
     }
-    else if(a_dombc == string("Neumann"))
-    {
-      //zero flux here
-      ideb++;
-    }
-    else if(a_dombc == string("Dirichlet"))
-    {
-      //figure out low or high side
-      if(a_face.m_vofIDLo < 0)
-      {
-        a_facesten.add(vofhi,  2./a_dx);
-      }
-      else if(a_face.m_vofIDMe < 0)
-      {
-        a_facesten.add(voflo,  -2./a_dx);
-      }
-      else
-      {
-        PROTO_ASSERT(false, "logic error in getfacecenteredfluxstencil");
-      }
-      
-    }
     else
     {
-      PROTO_ASSERT(false, "bc not found in getfacecenteredfluxstencil");
+      //boundary condition handles this.
     }
-    
-            
   }
 
   template < int order>
@@ -212,15 +188,16 @@ namespace Proto
     PR_TIME("get2ndOrderDivFStencil");
     a_vofStencil.clear();
 #if DIM==2
-//    int ideb = 0;
-//    Box domain = a_graph.getDomain();
-//    Point ivdeb(2, 9);
-//    if((a_vof.m_pt == ivdeb) && (domain.size(0) == 32))
-//    {
-//      ideb = 1;
-//    }
+    int ideb = 0;
+    Box domain = a_graph.getDomain();
+    Point ivdeb(0, 4);
+    if(a_vof.m_pt == ivdeb)
+    {
+      ideb = 1;
+    }
 #endif
-
+    Real domBndryBetaChanges= 0;//this is to do the curBetaWeight stuff in EBAMRPoissonOp
+    int ibreak  = 0;
     for (SideIterator sit; sit.ok(); ++sit)
     {
       vector< EBIndex<XFACE> > xfaces = a_graph.getXFaces(a_vof, sit());
@@ -233,14 +210,24 @@ namespace Proto
         Normalizor<order>::normalizedFaceMoments(areaFrac, centroid, a_xfacdata, xfaces[iface], a_graph, a_dx);
 
         int iindex = ebp_index(0, sit());
+        if(ideb == 1)
+        {
+          ibreak = 1;
+        }
         a_xfaceflux.getCentroidStencil(fluxStencil, xfaces[iface],
                                        a_graph,    
                                        a_xfacdata,
                                        a_dombc[iindex],
-                                       a_dx);       
+                                       a_dx);
         double factor = double(isign)*areaFrac/a_dx;
         fluxStencil *= factor;
         a_vofStencil += fluxStencil;
+        //bc stuff from EBAMRPoissonOp
+        if( xfaces[iface].m_isBoundary)
+        {
+          domBndryBetaChanges += -(areaFrac/a_dx/a_dx);
+        }
+
       }
     }
 
@@ -261,8 +248,21 @@ namespace Proto
                                        a_dombc[iindex],
                                        a_dx);       
 
+        if(ideb == 1)
+        {
+          ibreak = 1;
+        }
         fluxStencil *= double(isign)*areaFrac/a_dx;
         a_vofStencil += fluxStencil;
+        //bc stuff from EBAMRPoissonOp
+        if(ideb == 1)
+        {
+          ibreak = 1;
+        }
+        if( yfaces[iface].m_isBoundary)
+        {
+          domBndryBetaChanges += -(areaFrac/a_dx/a_dx);
+        }
       }
     }
 #if DIM==3
@@ -287,16 +287,21 @@ namespace Proto
 
         fluxStencil *= double(isign)*areaFrac/a_dx;
         a_vofStencil += fluxStencil;
+        //bc stuff from EBAMRPoissonOp
+        if( zfaces[iface].m_isBoundary)
+        {
+          domBndryBetaChanges += -(areaFrac/a_dx/a_dx);
+        }
       }
     }
 #endif      
 
-//    if(ideb == 1)
-//    {
-//      cout << "before ebflux, ";
-//      cout << "stencil for " << a_vof.m_pt << ":" << endl;
-//      a_vofStencil.print();
-//    }
+    if(ideb == 1)
+    {
+      cout << "before ebflux, ";
+      cout << "stencil for " << a_vof.m_pt << ":" << endl;
+      a_vofStencil.print();
+    }
 
     LocalStencil<CELL, double> ebflux;
     EBIndex<BOUNDARY> face = a_vof.getCutFace();
@@ -326,11 +331,11 @@ namespace Proto
                          a_yfacdata,
                          a_zfacdata,
                          a_dx);
-//      if(ideb==1)
-//      {
-//        cout << "ebflux stencil before multiply =" << endl;
-//        ebflux.print();
-//      }
+      if(ideb==1)
+      {
+        cout << "ebflux stencil before multiply =" << endl;
+        ebflux.print();
+      }
     }
     else
     {
@@ -352,11 +357,11 @@ namespace Proto
     alpha = bndryArea;
     ebflux *= alpha/a_dx;
 
-//    if(ideb == 1)
-//    {
-//      cout << "ebflux after multiply " << endl;
-//      ebflux.print();
-//    }
+    if(ideb == 1)
+    {
+      cout << "ebflux after multiply " << endl;
+      ebflux.print();
+    }
 
     //for some reason, EBAMRPoissonOp calculates beta weight without the EB flux
     double diagweight;
@@ -364,19 +369,25 @@ namespace Proto
     PR_assert(foundVoF); //if this fails, the stencil has no diagonal value
     a_vofStencil.setBetaWeight(diagweight);
 
-//    if(ideb == 1)
-//    {
-//      cout << "betaweight = " << diagweight << endl;
-//    }
+    if(ideb == 1)
+    {
+      cout << "before EBAMRPoissonOp domain stuff betaweight = " << diagweight << endl;
+    }
+
+    diagweight += domBndryBetaChanges;
     
+    if(ideb == 1)
+    {
+      cout << "after EBAMRPoissonOp domain stuff betaweight = " << diagweight << endl;
+    }
     a_vofStencil += ebflux;
 
-//    if(ideb == 1)
-//    {
-//      cout << "after ebflux, ";
-//      cout << "stencil for " << a_vof.m_pt << ":" << endl;
-//      a_vofStencil.print();
-//    }
+    if(ideb == 1)
+    {
+      cout << "after ebflux, ";
+      cout << "stencil for " << a_vof.m_pt << ":" << endl;
+      a_vofStencil.print();
+    }
 
   }
 
