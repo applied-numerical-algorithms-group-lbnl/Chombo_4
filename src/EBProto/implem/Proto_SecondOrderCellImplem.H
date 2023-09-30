@@ -195,6 +195,7 @@ namespace Proto
     {
       ideb = 1;
     }
+    ideb = 0; //
 #endif
     Real domBndryBetaChanges= 0;//this is to do the curBetaWeight stuff in EBAMRPoissonOp
     int ibreak  = 0;
