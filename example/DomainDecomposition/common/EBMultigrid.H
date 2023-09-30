@@ -18,6 +18,31 @@
 using std::array;
 class EBMultigrid;
 class EBRelaxSolver;
+
+template <CENTERING srcCenter, CENTERING dstCenter>
+class stencil_elements_t
+{
+public:
+  typedef Proto::Box                              pr_box;
+  typedef Proto::Point                            pr_pt;
+  typedef Proto::EBIndex<    dstCenter>           pr_vof;
+  typedef Proto::EBIndex<    srcCenter>           pr_src;
+  typedef Proto::LocalStencil<srcCenter, double>  pr_sten;
+
+  string                                     m_stencilName;
+  string                                     m_ebbcName;
+  string                                     m_domBCName[2*DIM];
+  pr_box                                     m_srcValid;
+  pr_box                                     m_dstValid;
+  pr_box                                     m_srcDomain;
+  pr_box                                     m_dstDomain;
+  pr_pt                                      m_srcGhost;
+  pr_pt                                      m_dstGhost;
+  bool                                       m_needDiagonalWeights;
+  vector<pr_vof>                             m_dstVoFs;
+  vector<pr_sten>                            m_stencil;
+};
+
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
 /** This not a design that conforms to any pattern I know.. 
     This is not designed with anything but code reuse in mind.   
@@ -31,7 +56,6 @@ public:
   int  m_numSmooth;
   bool m_useWCycle     ;
   typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
-  
   Real                              m_alpha;   
   Real                              m_beta;    
   std::shared_ptr<EBMultigridLevel> m_coarser;
@@ -193,8 +217,7 @@ public:
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
   
   virtual void
-  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv, bool a_printStuff) = 0;
-  
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv, bool a_printStuff) = 0;  
   
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -347,9 +370,16 @@ class EBPoissonOp: public EBMultigridLevel
 public:
   friend class EBMultigrid;
 
-  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
+  typedef stencil_elements_t<CELL,  CELL>                 elements_t;        
+  typedef EBStencil<2, Real,  CELL, CELL>                 ebstencil_t;
+  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> >  dictionary_t;
   typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+
+  shared_ptr<elements_t> getStencilElements(string a_stencilName,
+                                            string a_domainBCName[2*DIM],
+                                            string a_ebbcName,
+                                            int ibox);
+
   
   ///
   EBPoissonOp(dictionary_t                      & a_dictionary,
@@ -370,6 +400,7 @@ public:
               int  a_numSmooth,
               bool a_printStuff = false);
 
+  
   ///make coarse from fine 
   void
   define(const EBMultigridLevel            & a_finerLevel,
@@ -446,6 +477,10 @@ private:
   void prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phiFine,
                               const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
 
+  void
+  registerPoissonStencil(string a_stencilName,
+                         bool a_neumannOnly);
+
   /**
      For aggregation we sometimes (but not often)  need refined coarse data.
      This data is expensive to create in both memory and time so we have 
@@ -501,6 +536,7 @@ private:
   string                            m_dombcname[2*DIM];
   string                            m_ebbcname;
   dictionary_t                      m_dictionary;
+
 #if DIM==2
   static const unsigned int s_ncolors = 4;  
 #else

@@ -378,6 +378,7 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
             bool a_printStuff):EBMultigridLevel()
 {
   CH_TIME("EBPoissonOp::define");
+
   m_prefix = a_prefix;
   m_bottom_solver    = a_bottom_solver    ;
   m_direct_to_bottom = a_direct_to_bottom ;
@@ -424,9 +425,12 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   //register stencil for apply op
   //true is for need the diagonal wweight
   Point pghost = ProtoCh::getPoint(m_nghost);
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true, pghost);
 
-  m_dictionary->registerStencil(m_neumname, StencilNames::Neumann, StencilNames::Neumann, m_domain, m_domain, true, pghost);
+
+  m_neumname = string("Schwartz_NeumannOnlyBCs");
+  m_stenname = string("Schwartz_Helmholtz");
+  registerPoissonStencil(m_stenname,  false);
+  registerPoissonStencil(m_neumname,  true);
 
   if(a_printStuff)
   {
@@ -460,6 +464,123 @@ EBPoissonOp(dictionary_t                            & a_dictionary,
   {
     pout() << "EBPoissonOp constructor: leaving" << endl;
   }
+}
+/***/
+void
+EBPoissonOp::
+registerPoissonStencil(string a_stencilName,
+                       bool a_neumannOnly)
+{
+  string stencilName = a_stencilName;
+  string ebbcName;
+  string domainBCName[2*DIM];
+  if(a_neumannOnly)
+  {
+    ebbcName = StencilNames::Neumann;
+    for(int iside = 0; iside < 2*DIM; iside++)
+    {
+      domainBCName[iside] = StencilNames::Neumann;
+    }
+  }
+  else
+  {
+    ebbcName = m_ebbcname;
+    for(int iside = 0; iside < 2*DIM; iside++)
+    {
+      domainBCName[iside] = m_dombcname[iside];
+    }
+  }
+  DataIterator dit = m_grids.dataIterator();
+  int ideb = 0;
+  for(int ibox = 0; ibox < dit.size(); ++ibox)
+  {
+    bool needDiag = true;
+    shared_ptr<elements_t> elem = getStencilElements(a_stencilName, domainBCName, ebbcName, ibox);
+    m_dictionary->registerStencil(a_stencilName,
+                                  ebbcName,
+                                  elem->m_dstVoFs,
+                                  elem->m_stencil,
+                                  elem->m_srcValid,
+                                  elem->m_dstValid,
+                                  elem->m_srcDomain,
+                                  elem->m_dstDomain,
+                                  elem->m_srcGhost,
+                                  elem->m_dstGhost,
+                                  needDiag, ibox);
+  }
+}
+                         
+shared_ptr< stencil_elements_t<CELL,  CELL> >
+EBPoissonOp::
+getStencilElements(string a_stencilName,
+                   string a_domainBCName[2*DIM],
+                   string a_ebbcName,
+                   int ibox)
+{
+
+  typedef IndexedMoments<DIM  , 2>         IndMomDIM;
+  typedef IndexedMoments<DIM-1, 2>         IndMomSDMinOne;
+  typedef HostIrregData<CELL    ,  IndMomDIM , 1>  VoluData;
+  typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
+  typedef HostIrregData<XFACE, IndMomSDMinOne, 1>  XFacData;
+  typedef HostIrregData<YFACE, IndMomSDMinOne, 1>  YFacData;
+  typedef HostIrregData<ZFACE, IndMomSDMinOne, 1>  ZFacData;
+  typedef HostIrregData<CELL    ,  IndMomDIM , 1>  EBNorData;
+
+  DataIterator dit = m_grids.dataIterator();
+  const auto& datind = dit[ibox];
+  const auto& graph = (*m_graphs)[datind];
+  const auto& valid =     m_grids[datind];
+  
+  auto voldat = m_geoserv->getVoluData(  m_domain);
+  auto ebfdat = m_geoserv->getEBFaceData(m_domain);
+  auto xfadat = m_geoserv->getXFaceData( m_domain);
+  auto yfadat = m_geoserv->getYFaceData( m_domain);
+  auto zfadat = m_geoserv->getZFaceData( m_domain);
+
+  const auto& voludata = (*voldat)[datind];
+  const auto& ebfadata = (*ebfdat)[datind];
+  const auto& xfacdata = (*xfadat)[datind];
+  const auto& yfacdata = (*yfadat)[datind];
+  const auto& zfacdata = (*zfadat)[datind];
+  
+  shared_ptr<elements_t> retval(new elements_t());
+
+  retval->m_stencilName = a_stencilName;
+  retval->m_ebbcName    = a_ebbcName;
+  for(int iside =0; iside < 2*DIM; iside++)
+  {
+    retval->m_domBCName[iside] = a_domainBCName[iside];
+  }
+  retval->m_srcValid            = valid;
+  retval->m_dstValid            = valid;
+  retval->m_srcDomain           = m_domain;
+  retval->m_dstDomain           = m_domain;
+  retval->m_srcGhost            = m_nghost;
+  retval->m_dstGhost            = m_nghost;
+  retval->m_needDiagonalWeights = true;
+  retval->m_dstVoFs = graph.getAllVoFs(valid);
+  int numvofs = retval->m_dstVoFs.size();
+  retval->m_stencil.resize(numvofs);
+  Poisson2ndOrder<XFACE, 2> xflux;
+  Poisson2ndOrder<YFACE, 2> yflux;
+  Poisson2ndOrder<ZFACE, 2> zflux;
+  Poisson2ndOrder<BOUNDARY, 2> ebflux;
+  for(int ivof = 0; ivof < numvofs ; ivof++)
+  {
+    Point pt = retval->m_dstVoFs[ivof].m_pt;
+    SecondOrderStencil<2>::
+      get2ndOrderDivFStencil(retval->m_stencil[ivof],
+                             retval->m_dstVoFs[ivof],
+                             graph,
+                             voludata,
+                             ebfadata,
+                             xfacdata, yfacdata, zfacdata,
+                             xflux, yflux, zflux,
+                             a_domainBCName, a_ebbcName, 
+                             m_dx);
+  }
+  return retval;
 }
 /***/
 void
@@ -526,8 +647,10 @@ define(const EBMultigridLevel            & a_finerLevel,
   m_diagW.define(m_grids, m_nghost, m_graphs);
 
   //register stencil for apply op
-  //true is for need the diagonal wweight
-  m_dictionary->registerStencil(m_stenname, m_dombcname, m_ebbcname, m_domain, m_domain, true);
+  m_neumname = string("Schwartz_NeumannOnlyBCs");
+  m_stenname = string("Schwartz_Helmholtz");
+  registerPoissonStencil(m_stenname, false);
+  registerPoissonStencil(m_neumname, true );
 
   createAndStoreRestrictionStencil();
   createAndStoreProlongationStencils();
@@ -606,7 +729,7 @@ fillKappa(const shared_ptr<GeometryService<2> >   & a_geoserv,
     auto& stendiag = *diagptr;
     Bx inputBox = diagGhost.inputBox();
 
-    ebforall(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
+    ebforall_i(inputBox, copyDiag,  inputBox, diagGhost, stendiag);
     ideb++;
   }
   if(a_printStuff)

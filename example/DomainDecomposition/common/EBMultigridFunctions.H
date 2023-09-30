@@ -63,12 +63,22 @@ unsigned int  subtractRHSF(Var<Real, 1>     a_res,
   return 0;
 }
 PROTO_KERNEL_END(subtractRHSF, subtractRHS)
-//res comes in holding lphi.   leaves holding res= rhs-lphi
+//
 PROTO_KERNEL_START 
-unsigned int  copyDiagF(Var<Real, 1>     a_dst,
+unsigned int  copyDiagF(int              a_pt[DIM],
+                        Var<Real, 1>     a_dst,
                         Var<Real, 1>     a_src)
 {
-  a_dst(0) = a_src(0);
+  int ibreak = 0; int jbreak = 4;
+  bool breakHere = false;
+  if((a_pt[0] == ibreak) && (a_pt[1] == jbreak))
+  {
+    breakHere = true;
+  }
+  const double& src =  a_src(0);
+  double      & dst  = a_dst(0);
+  dst = src;
+    
   return 0;
 }
 PROTO_KERNEL_END(copyDiagF, copyDiag)
