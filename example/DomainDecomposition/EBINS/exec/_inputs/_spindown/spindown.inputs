@@ -1,28 +1,32 @@
+mac_proj.direct_to_bottom = false
+mac_proj.bottom_solver = "bicgstab"
+mac_proj.useWCycle     = true
+mac_proj.numSmooth = 8
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
-
+#checkpoint_restart = "check.step_5.hdf5"
 initial_velo = "vortex_0"
 initial_scal = "blob_scal_0"
 #also available: slip_wall, inflow, outflow
-domain_bc_lo_0 = "no_slip_wall"
+domain_bc_lo_0 = "inflow"
+domain_bc_hi_0 = "outflow"
 domain_bc_lo_1 = "no_slip_wall"
 domain_bc_lo_2 = "no_slip_wall"
-domain_bc_hi_0 = "no_slip_wall"
 domain_bc_hi_1 = "no_slip_wall"
 domain_bc_hi_2 = "no_slip_wall"
-pressure_iterations = 1
+pressure_iterations = 0
 #domain size
 nx=       64
-
+use_stokes_dt = true
 #max number of time steps
-max_step =    200
+max_step =    10
 #maximum time
 max_time =    10.0
 #number of cuda streams (if used)
 nstream=  8
 #max grid size in domain decomposition
 maxGrid=  32
-maxIter = 27
+maxIter = 100
 tolerance = 1.0e-8
 cfl = 0.5
 # center of the blob
@@ -32,32 +36,34 @@ blob_rad = 0.2
 
 #mag of biggest velo
 max_vel_mag = 1.0
-#radial locaiton of biggest velo
+#radial location of biggest velo
 max_vel_rad = 0.25
 
 #negative to turn off output
-plotfile_interval = 1
-checkpoint_interval = 1
+checkpoint_interval = -1
+plotfile_interval = -1
+use_conservative_gradient = false
 
 #value in hdf5 file of  covered data
 covered_value = 0.0
 
 # 0 euler, 1 CN, 2 TGA	
-parabolic_solver = 2
-viscosity = 0.00
-## -1 all reg, 1 regular, 2 sphere
-#all regular geometry
-#which_geom = -1
+parabolic_solver = 0
+viscosity = 0.01
 
-num_smooth = 4
-use_w_cycle = false
+#0 is sphere
+which_geom = 0
+
+num_smooth = 8
+use_w_cycle = true
 #
 ##sphere
-which_geom = 0 
+#which_geom = 0 
 #radius of the sphere
-geom_rad = 0.455
+geom_rad = 0.45
 # center of the sphere
 geom_cen = 0.5
+inside_regular = true
 #
 ##plane 
 ##which_geom = 1 
@@ -67,14 +73,15 @@ geom_cen = 0.5
 #geom_cen = 0.0 0.1 0.0
 
 
-do_lazy_relax =  false
+do_lazy_relax =  true
 
 one_exchange_per_relax = false
-inside_regular = true
+scalar_inflow_value = 0.
+velocity_inflow_value = 1.
 
 bicgstab.tol      = 1.0e-6
 bicgstab.hang     = 1.0e-8
 bicgstab.small    = 1.0e-16
-bicgstab.imax     = 40
+bicgstab.imax     = 0
 bicgstab.nrestart = 27
 bicgstab.verbosity = 1

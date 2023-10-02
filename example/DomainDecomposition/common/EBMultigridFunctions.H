@@ -110,11 +110,29 @@ unsigned int  gsrbResidF(int              a_pt[DIM],
   if(sumpt%2 == a_iredBlack)
   {
     static const Real safety = 1.0;
-    Real diagval = a_diag(0);
-    Real kappval = a_kappa(0);
+    Real     diag_val = a_diag(0);
+    Real reg_diag_val = -2*DIM/a_dx/a_dx;
+    Real    kappa_val = a_kappa(0);
+
+    /**
+       We have to check to see if the lambda is too big.
+       We do not want to out-relax regular cells.
+       This really can break multigrid in horrible ways.
+    **/
+    Real realdiag     = kappa_val*a_alpha + a_beta*diag_val;
+    Real reg_realdiag = a_alpha     + a_beta*reg_diag_val;
+    Real lambda       = safety/realdiag;
+    Real reg_lambda   = safety/reg_realdiag;
+
+    //I am squaring stuff because of signs (lambda can be negative).
+    //Someone decided that std::abs is too complicated for gpus.
+    Real reg_lam_sq = reg_lambda*reg_lambda;
+    Real  lambda_sq =     lambda*lambda;
+    if(lambda_sq > reg_lam_sq)
+    {
+      lambda = reg_lambda;
+    }
     
-    Real realdiag = kappval*a_alpha + a_beta*diagval;
-    Real lambda = safety/realdiag;
     Real phival = a_phi(0);
     Real resval = a_res(0);
 

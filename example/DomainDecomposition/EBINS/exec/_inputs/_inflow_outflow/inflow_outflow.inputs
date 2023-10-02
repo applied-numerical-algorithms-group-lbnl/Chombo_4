@@ -1,3 +1,8 @@
+mac_proj.direct_to_bottom = false
+mac_proj.bottom_solver = "bicgstab"
+mac_proj.useWCycle     = true
+mac_proj.numSmooth = 4
+
 #true to set  initial pressure = nu*lapl(u)
 stokes_flow_initialization = false
 
@@ -20,7 +25,7 @@ species_inflow_value_0 = 0
 species_inflow_value_1 = 0
 species_inflow_value_2 = 0
 #domain size
-nx=       64
+nx=      32
 use_stokes_dt = true
 #max number of time steps
 max_step =    100
