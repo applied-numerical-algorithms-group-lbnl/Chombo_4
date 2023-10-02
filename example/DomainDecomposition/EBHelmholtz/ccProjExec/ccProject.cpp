@@ -100,7 +100,8 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
   {
     using Proto::SimpleEllipsoidIF;
     Chombo4::pout() << "sphere" << endl;
-
+    bool inside;
+    pp.get("inside_regular", inside);
     pp.get("geom_cen", a_geomCen);
     pp.get("geom_rad", a_geomRad);
     Chombo4::pout() << "geom_cen = " << a_geomCen       << endl;
@@ -110,7 +111,7 @@ shared_ptr<BaseIF>  getImplicitFunction(Real  & a_geomCen,
     RealVect  X0 = RealVect::Unit();
     X0 *= a_geomCen;
 
-    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, true));//true is for inside regular
+    retval = shared_ptr<BaseIF>(new SimpleEllipsoidIF(ABC, X0, a_geomRad, inside));//true is for inside regular
   }
   else if(a_whichGeom ==  1)
   {
