@@ -64,6 +64,36 @@ unsigned int setFluxValF(Var<Real, 1>    a_flux,
   return 0;
 }
 PROTO_KERNEL_END(setFluxValF, setFluxVal)
+///sets a single line of data.  ebforall goes everywhere.
+PROTO_KERNEL_START 
+unsigned int setFluxValLineF(int a_pt[DIM],
+                             Var<Real, 1>    a_flux,
+                             int usei, int usej, int usek,
+                             int idom, int jdom, int zdom,
+                             Real            a_value)
+{
+  bool setThisVal = false;
+  if(usei == 1)
+  {
+    setThisVal = (idom == a_pt[0]);
+  }
+  else if(usej == 1)
+  {
+    setThisVal = (jdom == a_pt[1]);
+  }
+#if DIM==3
+  else if(usej == 1)
+  {
+    setThisVal = (kdom == a_pt[2]);
+  }
+#endif  
+  if(setThisVal)
+  {
+    a_flux(0) = a_value;
+  }
+  return 0;
+}
+PROTO_KERNEL_END(setFluxValLineF, setFluxValLine)
 ////
 PROTO_KERNEL_START 
 unsigned int copyExtrapF(Var<Real, 1>    a_fluxval,

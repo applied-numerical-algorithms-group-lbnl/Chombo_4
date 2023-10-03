@@ -80,7 +80,13 @@ public:
     return m_rhs;
   }
 
-  static void setFaceStuff(int idir, Side::LoHiSide sit, EBFluxData<Real, 1>& a_flux, Bx valbx, Real fluxval);
+  ///sets the edges of data to a flux value.   useful for inflow.
+  static void setFluxAtDomainBoundary(int                  a_idir,
+                                      Side::LoHiSide       a_sit,
+                                      EBFluxData<Real, 1>& a_flux,
+                                      Bx                   a_validBox,
+                                      Real                 a_fluxval,
+                                      Bx                   a_domain); 
 
 private:
   

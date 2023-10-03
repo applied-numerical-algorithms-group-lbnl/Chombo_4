@@ -70,7 +70,7 @@ which_geom = 0
 #radius of the sphere
 geom_rad = 0.1
 # center of the sphere
-geom_cen = 0.5
+geom_cen = 0.0
 #
 ##plane 
 ##which_geom = 1 
