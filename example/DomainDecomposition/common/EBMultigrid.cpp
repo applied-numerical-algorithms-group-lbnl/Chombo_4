@@ -818,9 +818,11 @@ relax(EBLevelBoxData<CELL, 1>       & a_phi,
   //
   DataIterator dit = m_grids.dataIterator();
   int ideb = 0;
-//begin debug
-  Chombo4::pout() << "relax domain = " << m_domain << endl;
-//end debug
+  if(a_printStuff)
+  {
+    Chombo4::pout() << "relax domain = " << m_domain << endl;
+  }
+
   for(int iter = 0; iter < a_maxiter; iter++)
   {
     for(int iredblack = 0; iredblack < 2; iredblack++)

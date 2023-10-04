@@ -15,7 +15,7 @@ static const Side::LoHiSide faceSideX = Side::Lo;
 static const Side::LoHiSide faceSideY = Side::Lo;
 static const Bx areaBx(areaLo, areaHi);
 //this one is for the newer functions (dumplolo dumphihi)
-static IntVect s_areaSize = 7*Point::Ones();
+static IntVect s_areaSize(D_DECL(4, 7, 1));
 
 #ifdef CH_USE_HDF5
 void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)
