@@ -55,16 +55,7 @@ inline Real cpySign(Real vala, Real signval)
   return retval;
 }
 
-////
-PROTO_KERNEL_START 
-unsigned int setFluxValF(Var<Real, 1>    a_flux,
-                         Real            a_value)
-{
-  a_flux(0) = a_value;
-  return 0;
-}
-PROTO_KERNEL_END(setFluxValF, setFluxVal)
-///sets a single line of data.  ebforall goes everywhere.
+///sets a single line (or plane in 3D) of data.  ebforall goes everywhere.
 PROTO_KERNEL_START 
 unsigned int setFluxValLineF(int a_pt[DIM],
                              Var<Real, 1>    a_flux,

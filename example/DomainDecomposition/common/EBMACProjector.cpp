@@ -187,7 +187,7 @@ setFluxAtDomainBoundary(int                  a_idir,
   }
   else
   {
-    dompt = a_domain.low() + a_domain.size();
+    dompt = a_domain.high() + Point::Ones();
   }
   idom = dompt[0];
   jdom = dompt[1];
@@ -294,55 +294,29 @@ applyGradBoundaryConditions(EBFluxData<Real, 1> & a_flux,
   Bx dombx = ProtoCh::getProtoBox(m_domain);
   Bx valbx = ProtoCh::getProtoBox(validBox);
   for(SideIterator sit; sit.ok(); ++sit)
+  {
+    Point dombnd = dombx.boundary(sit());
+    Point valbnd = valbx.boundary(sit());
+    for(int idir = 0; idir < DIM; idir++)
     {
-      Point dombnd = dombx.boundary(sit());
-      Point valbnd = valbx.boundary(sit());
-      for(int idir = 0; idir < DIM; idir++)
-        {
-          if(dombnd[idir] == valbnd[idir])
-            {
-              int index = ebp_index(idir, sit());
-              string bcstr = m_ebibc.m_domainBC[index];
-              Real fluxval = 0;
+      if(dombnd[idir] == valbnd[idir])
+      {
+        int index = ebp_index(idir, sit());
+        string bcstr = m_ebibc.m_domainBC[index];
+        Real fluxval = 0;
 
-              if(bcstr != string("outflow"))
-                {
-                  Bx faceBx = valbx.faceBox(idir, sit());
-                  //unsigned long long int numflopspt = 0;
-                  if(idir == 0)
-                    {
-                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_xflux, fluxval);
-                      //using non-eb forall because box restriction in eb land is broken right now.   This will
-                      //work if there nare no cut cells near the domain boundary
-                      auto& regdata = a_flux.m_xflux->getRegData();
-                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
-                    }
-                  else if(idir == 1)
-                    {
-                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_yflux, fluxval);
-                      //using non-eb forall because box restriction in eb land is broken right now.   This will
-                      //work if there nare no cut cells near the domain boundary
-                      auto& regdata = a_flux.m_yflux->getRegData();
-                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
-                    }
-#if DIM==3          
-                  else if(idir == 2)
-                    {
-                      //ebforallInPlace(numflopspt, "setFluxVal", setFluxVal,  faceBx,  *a_flux.m_zflux, fluxval);
-                      //using non-eb forall because box restriction in eb land is broken right now.   This will
-                      //work if there nare no cut cells near the domain boundary
-                      auto& regdata = a_flux.m_zflux->getRegData();
-                      forallInPlaceBase(setFluxVal, faceBx, regdata, fluxval);
-                    }
-#endif
-                  else
-                    {
-                      MayDay::Error("bogus idir");
-                    }
-                }
-            }
+        if(bcstr != string("outflow"))
+        {
+          setFluxAtDomainBoundary(idir,
+                                  sit(),
+                                  a_flux,
+                                  valbx,  
+                                  fluxval,
+                                  dombx); //this funciton is static
         }
+      }
     }
+  }
 }   
 ///
 void 
