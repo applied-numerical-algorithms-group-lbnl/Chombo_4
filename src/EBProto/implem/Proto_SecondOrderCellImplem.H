@@ -155,15 +155,34 @@ namespace Proto
     EBIndex<CELL> vofhi = a_face.getVoF(Side::Hi);
     a_facesten.clear();
     int ideb = 0;
-    //if(true)
+
     if(!a_face.m_isBoundary)
     {
       a_facesten.add(vofhi,  1./a_dx);
       a_facesten.add(voflo, -1./a_dx);
     }
+    else if(a_dombc == string("Neumann"))
+    {
+      //no flux here
+    }
+    else if(a_dombc == string("Dirichlet"))
+    {
+      //have to figure out which one is still in the domain
+      EBIndex<CELL> insideVoF;
+      if(a_face.m_vofIDMe >= 0)
+      {
+        insideVoF = vofhi;
+      }
+      else
+      {
+        insideVoF = voflo;
+      }
+      a_facesten.add(insideVoF,  -2./a_dx);
+    }
     else
     {
-      //boundary condition handles this.
+      Chombo4::pout() << "Poisson2ndOrder: bogus domain bc" << endl;
+      Chombo4::MayDay::Error("Doh!");
     }
   }
 
