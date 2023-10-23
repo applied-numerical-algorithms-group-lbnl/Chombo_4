@@ -6,19 +6,16 @@
 ///will not work on device--debugging use only
 
 
-//around point (4, 8)
 //Area functions
 //cell centered and please keep them in the domain
-////upper left corner of 64^2
-Point areaLo(0, 0);
-Point areaHi(3, 3);
-//the bit underneath the circle rad=0.1, center = 0.5
-//Point areaLo(28, 24);
-//Point areaHi(30, 26);                                    
+static const Point areaLo(D_DECL(0, 0, 0));
+static const Point areaHi(D_DECL(7, 7, 7));
 //which side of cell gets printed in face dumps
-Side::LoHiSide faceSideX = Side::Lo;
-Side::LoHiSide faceSideY = Side::Lo;
-Bx areaBx(areaLo, areaHi);
+static const Side::LoHiSide faceSideX = Side::Lo;
+static const Side::LoHiSide faceSideY = Side::Lo;
+static const Bx areaBx(areaLo, areaHi);
+//this one is for the newer functions (dumplolo dumphihi)
+static IntVect s_areaSize(D_DECL(4, 7, 1));
 
 #ifdef CH_USE_HDF5
 void writeLDCell1(EBLevelBoxData<CELL, 1>* a_data)
@@ -878,6 +875,7 @@ dumpLDCellDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
     }
   }
 }
+
 void 
 dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
 {
@@ -900,6 +898,7 @@ dumpLDCell1Area(EBLevelBoxData<CELL, 1>* dataPtr)
     }
   }
 }
+
 void 
 dumpLDDIMArea(EBLevelBoxData<CELL, DIM>* dataPtr)
 {
@@ -986,6 +985,60 @@ dumpLDFlux1Area(EBLevelFluxData<1>*  dataPtr)
     }
   }
 }
+///dump upper right of domain 
+void 
+dumpLDCell1HiHi(EBLevelBoxData<CELL, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, 1>& data = *dataPtr;
+    DisjointBoxLayout grids = data.disjointBoxLayout();
+    Box domBox = grids.physDomain().domainBox();
+    IntVect ivhi = domBox.bigEnd();
+    IntVect ivlo = ivhi - s_areaSize;
+    Box area(ivlo,  ivhi);
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Box valid = data.disjointBoxLayout()[dit[ibox]];
+      valid &= area;
+      if(!valid.isEmpty())
+      {
+        Point lovalid = ProtoCh::getPoint(valid.smallEnd());
+        Point hivalid = ProtoCh::getPoint(valid.bigEnd());
+        cout << "ibox = " << ibox << ":" << endl;
+        genDumpCell1(&data[dit[ibox]], lovalid, hivalid);
+      }
+    }
+  }
+}
+///area here is the lower left corner of the domain
+void 
+dumpLDCell1LoLo(EBLevelBoxData<CELL, 1>* dataPtr)
+{
+  if(dataPtr != NULL)
+  {
+    EBLevelBoxData<CELL, 1>& data = *dataPtr;
+    DisjointBoxLayout grids = data.disjointBoxLayout();
+    Box domBox = grids.physDomain().domainBox();
+    IntVect ivlo = domBox.smallEnd();
+    IntVect ivhi = ivhi + s_areaSize;
+    Box area(ivlo,  ivhi);
+    DataIterator dit = data.dataIterator();
+    for(int ibox = 0; ibox < dit.size(); ibox++)
+    {
+      Box valid = data.disjointBoxLayout()[dit[ibox]];
+      valid &= area;
+      if(!valid.isEmpty())
+      {
+        Point lovalid = ProtoCh::getPoint(valid.smallEnd());
+        Point hivalid = ProtoCh::getPoint(valid.bigEnd());
+        cout << "ibox = " << ibox << ":" << endl;
+        genDumpCell1(&data[dit[ibox]], lovalid, hivalid);
+      }
+    }
+  }
+}
 
 void dummyfunc_too()
 {
@@ -1002,6 +1055,10 @@ void dummyfunc_too()
   dumpCellDIMArea(NULL);
   dumpBD1(NULL);
   dumpBDDIM(NULL);
+
+  //newer ones
+  dumpLDCell1LoLo(NULL);
+  dumpLDCell1HiHi(NULL);
 #ifdef CH_USE_HDF5
   writeLDCell1(NULL);
 #endif  

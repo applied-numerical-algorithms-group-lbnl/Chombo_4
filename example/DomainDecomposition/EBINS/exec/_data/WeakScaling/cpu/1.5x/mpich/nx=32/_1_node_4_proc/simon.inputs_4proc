@@ -1,0 +1,91 @@
+nx=       48
+mac_proj.bottom_solver = "relax"
+mac_proj.direct_to_bottom = false
+
+maxGrid=  64
+
+
+mac_proj.useWCycle     = false
+mac_proj.numSmooth = 4
+#true to set  initial pressure = nu*lapl(u)
+stokes_flow_initialization = false
+#checkpoint_restart = "check.step_5.hdf5"
+initial_velo = "zero"
+initial_scal = "blob_scal_0"
+#also available: slip_wall, inflow, outflow
+domain_bc_lo_0 = "inflow"
+domain_bc_hi_0 = "outflow"
+domain_bc_lo_1 = "no_slip_wall"
+domain_bc_lo_2 = "no_slip_wall"
+domain_bc_hi_1 = "no_slip_wall"
+domain_bc_hi_2 = "no_slip_wall"
+pressure_iterations = 0
+#domain size
+
+use_stokes_dt = true
+#max number of time steps
+max_step =    10
+#maximum time
+max_time =    10.0
+#number of cuda streams (if used)
+nstream=  8
+#max grid size in domain decomposition
+maxIter = 27
+tolerance = 1.0e-12
+cfl = 0.5
+# center of the blob
+blob_cen = 0.3
+# radius of the blob
+blob_rad = 0.2
+
+#mag of biggest velo
+max_vel_mag = 1.0
+#radial location of biggest velo
+max_vel_rad = 0.25
+
+#negative to turn off output
+checkpoint_interval = -1
+plotfile_interval = -1
+use_conservative_gradient = false
+
+#value in hdf5 file of  covered data
+covered_value = 0.0
+
+# 0 euler, 1 CN, 2 TGA	
+parabolic_solver = 0
+viscosity = 0.01
+## -1 all reg, 1 regular, 2 sphere
+#all regular geometry
+which_geom = -1
+
+num_smooth = 8
+use_w_cycle = true
+#
+##sphere
+#which_geom = 0 
+#radius of the sphere
+geom_rad = 0.1
+# center of the sphere
+geom_cen = 0.5
+#
+##plane 
+##which_geom = 1 
+## normal to plane
+#geom_normal =  0 1 0
+## starting point of plane
+#geom_cen = 0.0 0.1 0.0
+
+
+do_lazy_relax =  true
+
+one_exchange_per_relax = false
+inside_regular = false
+scalar_inflow_value = 0.
+velocity_inflow_value = 1.
+
+bicgstab.tol      = 1.0e-6
+bicgstab.hang     = 1.0e-8
+bicgstab.small    = 1.0e-16
+bicgstab.imax     = 0
+bicgstab.nrestart = 27
+bicgstab.verbosity = 1

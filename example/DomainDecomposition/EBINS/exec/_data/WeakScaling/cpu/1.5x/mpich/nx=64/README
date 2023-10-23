@@ -1,0 +1,4 @@
+2_node_64_proc failed due to out of memory error
+	Tried 1_node_64_proc first but it failed due to out of memory error so we decided to try using 2 nodes to see if the error can be resolved
+Since both failed, we decided to try multiplying nx by 1.5 and the number of processors by 3.375 (approximately) to see we can produce more runs with less processors while maintaining the same pattern
+This is built with no PETSc

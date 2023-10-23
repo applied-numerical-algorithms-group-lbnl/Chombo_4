@@ -1,0 +1,5 @@
+#/usr/bin/csh
+cd _1_gpu_2_num_smooth; sbatch simon.batch_1gpu; cd .. 
+cd _1_gpu_4_num_smooth; sbatch simon.batch_1gpu; cd .. 
+cd _1_gpu_8_num_smooth; sbatch simon.batch_1gpu; cd .. 
+cd _1_gpu_16_num_smooth; sbatch simon.batch_1gpu; cd .. 

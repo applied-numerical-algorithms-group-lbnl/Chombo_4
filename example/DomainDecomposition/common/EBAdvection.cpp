@@ -388,7 +388,7 @@ applyScalarFluxBCs(EBFluxData<Real, 1> & a_flux,
         }
         if(setstuff)
         {
-          EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
+          EBMACProjector::setFluxAtDomainBoundary(idir, sit(), a_flux, valbx, fluxval, m_domain);
         }
       }
     }

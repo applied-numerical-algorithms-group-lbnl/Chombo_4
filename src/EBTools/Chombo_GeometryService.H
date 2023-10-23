@@ -789,7 +789,7 @@ public:
     bool doAgglom = true;
     ParmParse pp("geometry_service");
     pp.query("do_agglomeration", doAgglom);
-
+    
     //while((currDBL.coarsenable(4)) && ((a_grids.size()-1)!=a_maxCoarsen))
     if(doAgglom)
     {

@@ -1,0 +1,3 @@
+We're multiplying nx by 2, starting at nx = 32 and the number of procssors by 8.
+This is built with PETSc
+The runs fail at nx = 128 with 64 processors

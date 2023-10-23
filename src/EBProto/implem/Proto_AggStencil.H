@@ -154,7 +154,12 @@ namespace Proto
               << std::setiosflags(ios::scientific);
       for(int ivec =  0; ivec < m_entries.size(); ivec++)
       {
-        pout() << "(" << m_entries[ivec].m_vof.m_pt << "," << m_entries[ivec].m_weight << endl;
+        pout() << "( " << m_entries[ivec].m_vof.m_pt << "," ;
+        if(m_entries[ivec].m_weight  >= 0)
+        {
+          pout() << " " ;
+        }
+        pout() << m_entries[ivec].m_weight << " )" << endl;
       }
     }
 

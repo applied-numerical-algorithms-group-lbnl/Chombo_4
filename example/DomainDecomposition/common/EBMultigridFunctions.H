@@ -63,28 +63,45 @@ unsigned int  subtractRHSF(Var<Real, 1>     a_res,
   return 0;
 }
 PROTO_KERNEL_END(subtractRHSF, subtractRHS)
-//res comes in holding lphi.   leaves holding res= rhs-lphi
+//
 PROTO_KERNEL_START 
-unsigned int  copyDiagF(Var<Real, 1>     a_dst,
+unsigned int  copyDiagF(int              a_pt[DIM],
+                        Var<Real, 1>     a_dst,
                         Var<Real, 1>     a_src)
 {
-  a_dst(0) = a_src(0);
+  int ibreak = 0; int jbreak = 4;
+  bool breakHere = false;
+  if((a_pt[0] == ibreak) && (a_pt[1] == jbreak))
+  {
+    breakHere = true;
+  }
+  const double& src =  a_src(0);
+  double      & dst  = a_dst(0);
+  dst = src;
+    
   return 0;
 }
 PROTO_KERNEL_END(copyDiagF, copyDiag)
 /****/
 /****/
 PROTO_KERNEL_START 
-unsigned int  gsrbResidF(int     a_pt[DIM],
+unsigned int  gsrbResidF(int              a_pt[DIM],
                          Var<Real, 1>     a_phi,
                          Var<Real, 1>     a_res,
                          Var<Real, 1>     a_diag,
                          Var<Real, 1>     a_kappa,
-                         Real    a_alpha,
-                         Real    a_beta,
-                         Real    a_dx,
-                         int     a_iredBlack)
+                         Real             a_alpha,
+                         Real             a_beta,
+                         Real             a_dx,
+                         int              a_iredBlack,
+                         int              a_iprint)
 {
+  bool breakHere = false;
+  int ibreak = 0, jbreak = 4;
+  if((a_pt[0] == ibreak) && (a_pt[1] == jbreak))
+  {
+    breakHere = true;
+  }
   int sumpt = 0;
   for(int idir = 0; idir < DIM; idir++)
   {
@@ -93,16 +110,32 @@ unsigned int  gsrbResidF(int     a_pt[DIM],
   if(sumpt%2 == a_iredBlack)
   {
     static const Real safety = 1.0;
-    Real diagval = a_diag(0);
-    Real kappval = a_kappa(0);
+    Real     diag_val = a_diag(0);
+    Real reg_diag_val = -2*DIM/a_dx/a_dx;
+    Real    kappa_val = a_kappa(0);
+
+    /**
+       We have to check to see if the lambda is too big.
+       We do not want to out-relax regular cells.
+       This really can break multigrid in horrible ways.
+    **/
+    Real realdiag     = kappa_val*a_alpha + a_beta*diag_val;
+    Real reg_realdiag = a_alpha     + a_beta*reg_diag_val;
+    Real lambda       = safety/realdiag;
+    Real reg_lambda   = safety/reg_realdiag;
+
+    //I am squaring stuff because of signs (lambda can be negative).
+    //Someone decided that std::abs is too complicated for gpus.
+    Real reg_lam_sq = reg_lambda*reg_lambda;
+    Real  lambda_sq =     lambda*lambda;
+    if(lambda_sq > reg_lam_sq)
+    {
+      lambda = reg_lambda;
+    }
     
-    Real realdiag = kappval*a_alpha + a_beta*diagval;
-//    Real regudiag = a_alpha - 2*DIM*a_beta/(a_dx*a_dx);
-    Real lambda = safety/realdiag;
-//    Real reglam = safety/regudiag;
     Real phival = a_phi(0);
     Real resval = a_res(0);
-//    if(std::abs(lambda) > std::abs(reglam)) lambda= reglam;
+
     a_phi(0) = phival + lambda*resval;
   }
   return 0;

@@ -38,7 +38,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
             Real fluxval = 0;
             ParmParse pp;
             pp.get("velocity_inflow_value", fluxval);
-            EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
+            EBMACProjector::setFluxAtDomainBoundary(idir, sit(), a_flux, valbx, fluxval, m_domain);
           }
           else
           {
@@ -51,7 +51,7 @@ applyVeloFluxBCs(EBFluxData<Real, 1> & a_flux,
           if(a_velcomp== idir)
           {
             Real fluxval = 0;
-            EBMACProjector::setFaceStuff(idir, sit(), a_flux, valbx, fluxval);
+            EBMACProjector::setFluxAtDomainBoundary(idir, sit(), a_flux, valbx, fluxval, m_domain);
           }
           else
           {

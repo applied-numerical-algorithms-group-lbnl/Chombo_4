@@ -18,6 +18,31 @@
 using std::array;
 class EBMultigrid;
 class EBRelaxSolver;
+
+template <CENTERING srcCenter, CENTERING dstCenter>
+class stencil_elements_t
+{
+public:
+  typedef Proto::Box                              pr_box;
+  typedef Proto::Point                            pr_pt;
+  typedef Proto::EBIndex<    dstCenter>           pr_vof;
+  typedef Proto::EBIndex<    srcCenter>           pr_src;
+  typedef Proto::LocalStencil<srcCenter, double>  pr_sten;
+
+  string                                     m_stencilName;
+  string                                     m_ebbcName;
+  string                                     m_domBCName[2*DIM];
+  pr_box                                     m_srcValid;
+  pr_box                                     m_dstValid;
+  pr_box                                     m_srcDomain;
+  pr_box                                     m_dstDomain;
+  pr_pt                                      m_srcGhost;
+  pr_pt                                      m_dstGhost;
+  bool                                       m_needDiagonalWeights;
+  vector<pr_vof>                             m_dstVoFs;
+  vector<pr_sten>                            m_stencil;
+};
+
 /// Multigrid: solve a FV discretization of Poisson's equation on a rectangle.  periodic boundary conditions.
 /** This not a design that conforms to any pattern I know.. 
     This is not designed with anything but code reuse in mind.   
@@ -31,7 +56,6 @@ public:
   int  m_numSmooth;
   bool m_useWCycle     ;
   typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
-  
   Real                              m_alpha;   
   Real                              m_beta;    
   std::shared_ptr<EBMultigridLevel> m_coarser;
@@ -67,13 +91,13 @@ public:
     }
 
     if(a_printStuff)
-    {//begin debug
+    {
       Chombo4::pout() << "entering vcycle domain resolution = " << nxdom << endl;
       Chombo4::pout() << "rhs:" << endl;
       DumpArea::dumpAsOneBox(&a_rhs, m_geoserv);
       Chombo4::pout() << "phi:" << endl;
       DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-    }//end debug
+    }
     
     if(m_direct_to_bottom)
     {
@@ -82,10 +106,11 @@ public:
     }
     else
     {
-      relax(a_phi,a_rhs, m_numSmooth);
+      ///The usual dance, step 1: relax
+      relax(a_phi,a_rhs, m_numSmooth, a_printStuff);
       
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "out of relax with nxdom =  " << nxdom << endl;
         Chombo4::pout() << "a_phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
@@ -96,52 +121,55 @@ public:
 
         bool doExchange = true;
         bool printStuff = false;
+        ///the usual dance 1) relax
+        //(stencils for multilevel objects live with the coarser)
         residual(m_resid,a_phi,a_rhs, doExchange, printStuff);
         m_residC.setVal(0.);
-        //stencils for multilevel objects live with the coarser
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "going into restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_resid:" << endl;
           DumpArea::dumpAsOneBox(&m_resid, m_geoserv);
-        }//end debug
+        }
 
+        ///The usual dance, step 2: restrict
         m_coarser->restrictResidual(m_residC,m_resid);
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "coming out of  restriction with nxdom =  " << nxdom << endl;
           Chombo4::pout() << "m_residC:" << endl;
           DumpArea::dumpAsOneBox(&m_residC, m_geoserv);
-        }//end debug
-
+        }
+        ///
         m_deltaC.setVal(0.);
         
-        m_coarser->vCycle(m_deltaC,m_residC);
-        
+        ///The usual dance, step 3: recurse
+        m_coarser->vCycle(m_deltaC,m_residC, a_printStuff);
         if(m_useWCycle)
-        {
-          m_coarser->vCycle(m_deltaC,m_residC);
+        {/// two v cycle calls  make a wcycle pattern
+          m_coarser->vCycle(m_deltaC,m_residC, a_printStuff);
         }
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "out of recursive call with nxdom = " << nxdom <<  endl;
           Chombo4::pout() << "phi:" << endl;
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
           Chombo4::pout() << "deC:" << endl;
           DumpArea::dumpAsOneBox(&m_deltaC, m_geoserv);
-        }//end debug
+        }
         
+        ///The usual dance, step 4: prolong.
         m_coarser->prolongIncrement(a_phi,m_deltaC);
 
         if(a_printStuff)
-        {//begin debug
+        {
           Chombo4::pout() << "post-PI domain resolution = " << nxdom << endl;
           Chombo4::pout() << "phi:" << endl;
           DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-        }//end debug        
+        }
 
       }
       else
@@ -151,21 +179,21 @@ public:
 
 
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "pre  relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-      }//end debug 
+      }
 
-
-      relax(a_phi,a_rhs, m_numSmooth);
+      //Step 4.5: Relaxing after prolongation is supposed to be optional but never is.
+      relax(a_phi,a_rhs, m_numSmooth, a_printStuff);
 
       if(a_printStuff)
-      {//begin debug
+      {
         Chombo4::pout() << "post relax domain resolution = " << nxdom << endl;
         Chombo4::pout() << "phi:" << endl;
         DumpArea::dumpAsOneBox(&a_phi, m_geoserv);
-      }//end debug
+      }
 
 
     }
@@ -189,8 +217,7 @@ public:
           const EBLevelBoxData<CELL, 1> & a_rhs) const =0;
   
   virtual void
-  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv, bool a_printStuff) = 0;
-  
+  defineBottomSolvers(shared_ptr<GeometryService<2> >   & a_geoserv, bool a_printStuff) = 0;  
   
   EBLevelBoxData<CELL, 1> & getKappa()
   {
@@ -232,7 +259,7 @@ public:
   virtual void
   relax(EBLevelBoxData<CELL, 1>      & a_phi,
         const EBLevelBoxData<CELL, 1>& a_rhs,
-        int a_niter) const =0;
+        int a_niter, bool a_printStuff) const =0;
 
 
   /// average down residual to next coarser level.
@@ -343,9 +370,16 @@ class EBPoissonOp: public EBMultigridLevel
 public:
   friend class EBMultigrid;
 
-  typedef EBStencil<2, Real, CELL, CELL> ebstencil_t;
-  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> > dictionary_t;
+  typedef stencil_elements_t<CELL,  CELL>                 elements_t;        
+  typedef EBStencil<2, Real,  CELL, CELL>                 ebstencil_t;
+  typedef shared_ptr<EBDictionary<2, Real, CELL, CELL> >  dictionary_t;
   typedef CH4_Data_Choreography::DistributedData<EBGraph> graph_distrib_t;
+
+  shared_ptr<elements_t> getStencilElements(string a_stencilName,
+                                            string a_domainBCName[2*DIM],
+                                            string a_ebbcName,
+                                            int ibox);
+
   
   ///
   EBPoissonOp(dictionary_t                      & a_dictionary,
@@ -366,6 +400,7 @@ public:
               int  a_numSmooth,
               bool a_printStuff = false);
 
+  
   ///make coarse from fine 
   void
   define(const EBMultigridLevel            & a_finerLevel,
@@ -395,7 +430,7 @@ public:
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
              const EBLevelBoxData<CELL, 1>& a_rhs,
-             int a_niter) const;
+             int a_niter, bool a_printStuff) const;
 
 
   /// average down residual to next coarser level.
@@ -441,6 +476,10 @@ private:
                               const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
   void prolongIncrementAgglom(EBLevelBoxData<CELL, 1>      & a_phiFine,
                               const EBLevelBoxData<CELL, 1>& a_deltaCoarse);
+
+  void
+  registerPoissonStencil(string a_stencilName,
+                         bool a_neumannOnly);
 
   /**
      For aggregation we sometimes (but not often)  need refined coarse data.
@@ -497,6 +536,7 @@ private:
   string                            m_dombcname[2*DIM];
   string                            m_ebbcname;
   dictionary_t                      m_dictionary;
+
 #if DIM==2
   static const unsigned int s_ncolors = 4;  
 #else
@@ -748,7 +788,7 @@ private:
               bool a_printStuff = false)
   {
     PR_TIME("sgmg::vcycle");
-    return m_finest->vCycle(a_phi, a_rhs);
+    return m_finest->vCycle(a_phi, a_rhs, a_printStuff);
   }
 
   /// average down residual to next coarser level.
@@ -768,9 +808,9 @@ private:
   /// 
   void relax(EBLevelBoxData<CELL, 1>      & a_phi,
              const EBLevelBoxData<CELL, 1>& a_rhs,
-             int a_niter) const
+             int a_niter, bool a_printStuff) const
   {
-    m_finest->relax(a_phi, a_rhs, a_niter);
+    m_finest->relax(a_phi, a_rhs, a_niter, a_printStuff);
   }
 
 

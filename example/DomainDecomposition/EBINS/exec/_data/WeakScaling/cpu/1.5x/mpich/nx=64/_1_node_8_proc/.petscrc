@@ -1,0 +1,38 @@
+-help
+-mat_type hypre
+-pc_type hypre
+-pc_hypre_type boomeramg
+-pc_hypre_boomeramg_no_CF
+-pc_hypre_boomeramg_agg_nl 0
+-pc_hypre_boomeramg_coarsen_type PMIS
+-pc_hypre_boomeramg_interp_type ext+i
+-pc_hypre_boomeramg_print_statistics
+-pc_hypre_boomeramg_relax_type_all l1scaled-Jacobi
+-pc_hypre_SetSpGemmUseCusparse 0
+
+-ksp_type gmres
+-ksp_max_it 50
+-ksp_rtol 1.e-12
+-ksp_atol 1.e-30
+
+-use_gpu_aware_mpi 0
+
+-info
+-log_view
+-history PETSc.history
+-options_left
+
+
+-diff_pc_type jacobi
+#-diff_pc_type hypre
+#-diff_pc_hypre_type euclid
+-diff_pc_hypre_type boomeramg
+-diff_ksp_type gmres
+-diff_ksp_max_it 50
+-diff_ksp_rtol 1.e-6
+
+-ksp_converged_reason
+-diff_ksp_converged_reason
+-ksp_norm_type unpreconditioned
+-diff_ksp_norm_type unpreconditioned
+
