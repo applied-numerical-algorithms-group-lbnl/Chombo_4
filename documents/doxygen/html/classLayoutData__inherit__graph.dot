@@ -1,0 +1,36 @@
+digraph "LayoutData&lt; T &gt;"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="LayoutData\< T \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="BoxLayoutData\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBoxLayoutData.html",tooltip="Data on a BoxLayout. "];
+  Node1 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="LevelData\< T \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLevelData.html",tooltip="new code "];
+  Node2 -> Node3 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< BoxData\< Real, NUMCOMPS \> \>" ,fontname="Helvetica"];
+  Node3 [label="LevelData\< BoxData\l\< Real, NUMCOMPS \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLevelData.html"];
+  Node3 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="LevelBoxData\< NUMCOMPS \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLevelBoxData.html"];
+  Node2 -> Node5 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FArrayBox \>" ,fontname="Helvetica"];
+  Node5 [label="LevelData\< FArrayBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLevelData.html"];
+  Node1 -> Node6 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FluxBox \>" ,fontname="Helvetica"];
+  Node6 [label="BoxLayoutData\< FluxBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBoxLayoutData.html"];
+  Node1 -> Node7 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< BoxData\< Real, NUMCOMPS \> \>" ,fontname="Helvetica"];
+  Node7 [label="BoxLayoutData\< BoxData\l\< Real, NUMCOMPS \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBoxLayoutData.html"];
+  Node7 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 -> Node8 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FArrayBox \>" ,fontname="Helvetica"];
+  Node8 [label="BoxLayoutData\< FArrayBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classBoxLayoutData.html"];
+  Node8 -> Node5 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 -> Node9 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FluxBox \>" ,fontname="Helvetica"];
+  Node9 [label="LayoutData\< FluxBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLayoutData.html"];
+  Node9 -> Node6 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 -> Node10 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< BoxData\< Real, NUMCOMPS \> \>" ,fontname="Helvetica"];
+  Node10 [label="LayoutData\< BoxData\l\< Real, NUMCOMPS \> \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLayoutData.html"];
+  Node10 -> Node7 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node0 -> Node11 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< Real *\>" ,fontname="Helvetica"];
+  Node11 [label="LayoutData\< Real *\>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLayoutData.html"];
+  Node0 -> Node12 [dir="back",color="orange",fontsize="10",style="dashed",label=" \< FArrayBox \>" ,fontname="Helvetica"];
+  Node12 [label="LayoutData\< FArrayBox \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classLayoutData.html"];
+  Node12 -> Node8 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

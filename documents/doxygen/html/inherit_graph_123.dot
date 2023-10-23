@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Proto::EBDictionary\l\< order, data_t, srcCenter,\l dstCenter \>::stencilKey",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structProto_1_1EBDictionary_1_1stencilKey.html"];
+}

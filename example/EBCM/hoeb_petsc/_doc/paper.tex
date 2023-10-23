@@ -139,8 +139,8 @@ volume.
 \end{equation}
 Using equations \ref{eqn::faceavg} and \ref{eqn::volavg}, this becomes 
 \begin{equation}
-\sum_{f: f \in \partial V_\ibold} \avg{\nabla \psi \cdot \nhat}_f A_f
-= \avg{\rho}_\ibold V_\ibold
+\sum_{f: f \in \partial V_\ibold} <\nabla \psi \cdot \nhat>_f A_f
+= <\rho>_\ibold V_\ibold
 \label{eqn::discretePoisson}
 \end{equation}
 A finite volume operator is defined by the algorithm to compute the
@@ -332,7 +332,7 @@ linear operator $S$ such that
 Since this equivalence has to hold for all $\psi$, the stencil $S$ must be
 given by:
 \begin{equation}
- S_\fbold = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  )_\fbold = Q A^{-1} WM^T.
+ S_\fbold = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  )_\fbold = Q A^{-1} (WM)^T.
 \end{equation}
 
  

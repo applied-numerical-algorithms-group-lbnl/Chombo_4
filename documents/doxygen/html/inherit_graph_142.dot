@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Proto::EBStencilArchive\l\< YFACE, XFACE, order,\l double \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classProto_1_1EBStencilArchive_3_01YFACE_00_01XFACE_00_01order_00_01double_01_4.html"];
+}

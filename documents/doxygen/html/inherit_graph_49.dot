@@ -1,0 +1,11 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="EBCM::PETSc_Framework\l\< ebcm_order \>::Base\l_PETSc_Op",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classEBCM_1_1PETSc__Framework_1_1Base__PETSc__Op.html"];
+  Node0 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node1 [label="EBCM::PETSc_Framework\l\< ebcm_order \>::DummyDerivedOp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classEBCM_1_1PETSc__Framework_1_1DummyDerivedOp.html"];
+  Node0 -> Node2 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="EBCM::PETSc_Framework\l\< ebcm_order \>::HelmholtzOp",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classEBCM_1_1PETSc__Framework_1_1HelmholtzOp.html"];
+}

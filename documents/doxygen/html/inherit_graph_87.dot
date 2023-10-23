@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="Metaprograms::InnerProduct\l\< 1, T, RT, PlusT, TimesT \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structMetaprograms_1_1InnerProduct_3_011_00_01T_00_01RT_00_01PlusT_00_01TimesT_01_4.html"];
+}

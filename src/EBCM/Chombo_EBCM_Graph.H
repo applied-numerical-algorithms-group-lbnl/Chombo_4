@@ -30,6 +30,10 @@ namespace EBCM
   typedef Chombo4::DataIterator                    ch_dit;
   typedef Chombo4::DataIndex                       ch_datind;
   typedef Chombo4::MayDay                          ch_mayday;
+  typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
+  typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
+  typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
+  typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
 
   ///get the serialization size of this vector
   template<typename entry_t>
@@ -127,12 +131,47 @@ namespace EBCM
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
+
+  ///sometimes it is convenient to have the integer facedir
+    int  getFaceDir() const
+    {
+      int retval = -4586;
+      if(cent == XFACE)
+      {
+        retval = 0;
+      }
+      else if(cent == YFACE)
+      {
+        retval = 1;
+      }
+      else if(cent == ZFACE)
+      {
+        retval = 2;
+      }
+      return retval;
+    }
+    
     void defineAsRegular(pr_vof a_lo, pr_vof a_hi, double a_dx)
     {                                                  
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
     }
+    ///
+    pr_itm_r_dim location(double  a_dx)
+    {
+      pr_itm_r_dim retval;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //We add in the 0,5 to be clear we are talking about cell-centered locations.
+        double lo_loc =  a_dx*(double(m_lo.m_pt[idir]) + 0.5);
+        double hi_loc =  a_dx*(double(m_hi.m_pt[idir]) + 0.5);
+        retval[idir]  =   0.5*(lo_loc + hi_loc);
+      }
+      return retval;
+    }
+
+      
 
     bool operator==(const EBCM_Face& a_input) const
     {
@@ -215,6 +254,8 @@ namespace EBCM
     }
   };
 
+             
+  ///structure for cut cells
   template<int order>
   class IrregFace
   {
@@ -341,6 +382,8 @@ namespace EBCM
     }
   };
 
+
+    
   template<int order>
   class EBCM_Volu
   {
@@ -385,7 +428,7 @@ namespace EBCM
       char*  charbuf = a_outbuf;
       size_t charsiz = 0;
       //flag for regular or not
-      int iflag = -486;
+      int iflag = -4586;
       if(m_regular)
       {
         iflag = 1;
@@ -456,7 +499,7 @@ namespace EBCM
       char*  charbuf = (char*)a_inbuf;
       size_t charsiz = 0;
       //flag for regular or not
-      int iflag = -486;
+      int iflag = -4586;
       if(m_regular)
       {
         iflag = 1;
@@ -754,6 +797,33 @@ namespace EBCM
   };// end class EBCM_volu
 
 
+  /// Get the sign that will be used on the flux F when computing Div(F)
+  /**
+     return +1 if face is on the high side of the volume,
+     return -1 if face is on the low  side of the volume,
+     Hit's our evil lair's well-labelled self-destruct button 
+     if the face is not related to the volume.
+  **/
+  template<CENTERING cent, int order>
+  double faceSign(const EBCM_Volu<      order> & a_volume,
+                  const EBCM_Face<cent, order>& a_face)
+  {
+    double retval = -4586.;
+    if(a_volume.m_pt == a_face.m_lo.m_pt)
+    {
+      retval = 1.;
+    }
+    else if(a_volume.m_pt == a_face.m_hi.m_pt)
+    {
+      retval = -1.;
+    }
+    else
+    {
+      Chombo4::pout() << "Chombo_EBCM_Graph.H: faceSign cannot match volume and face" << endl;
+      ch_mayday::Error("Doh!");
+    }
+    return retval;
+  }
   ///
   /**
      Class holds a optionally-merged sparse embedded boundary description. 
@@ -2031,7 +2101,7 @@ namespace EBCM
     //-1 regular, -2 covered, >= 0 is the index into m_volumes.  merged cells both hold the same index.
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
-    ///For stencil stuff, you should really use SubVolumeVector.   This is meant to be just for diagonostics.
+    ///
     ebcm_volu getVolumeCoveringPoint(const pr_pt& a_pt) const
     {
       ebcm_volu retval;
@@ -2099,8 +2169,15 @@ namespace EBCM
       m_graphs->exchange();
     }
 
+    ///define as a coarsening  (always by a ref_rat == 2) of a finer level
+    MetaDataLevel(const shared_ptr<MetaDataLevel>  & a_finerLevel)
+    {
+      ch_mayday::Error("not implemented");
+    }
     void outputGraphMapAsHDF5(const string & a_filename) const
     {
+#ifdef CH_USE_PETSC      
+
       LevelData<FArrayBox>  ldfabs(m_grids, 1, IntVect::Zero);
       Chombo4::DataIterator dit = m_grids.dataIterator();
 
@@ -2132,6 +2209,8 @@ namespace EBCM
       } //end loop over boxes
 
       writeLevelname(&ldfabs, a_filename.c_str());
+      
+#endif
     }
     shared_ptr<cmgraph_distrib_t>  m_graphs;
     ch_dbl                         m_grids;

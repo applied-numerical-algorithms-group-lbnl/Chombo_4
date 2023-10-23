@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node0 [label="CH4_Data_Choreography\l::CommunicationMetaData\l\< fabtype_t \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classCH4__Data__Choreography_1_1CommunicationMetaData.html",tooltip="class to manage meta data for communication between processors (reduces to a bunch of proc_interactio..."];
+}
