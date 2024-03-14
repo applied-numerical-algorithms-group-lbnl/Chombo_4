@@ -61,7 +61,7 @@ namespace EBCM
           pr_pt pt = ProtoCh::getPoint(iv);
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            outdata(pt, icomp) += indata(pt, icomp);
+            outdata(pt, icomp) += inpdata(pt, icomp);
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
@@ -82,7 +82,7 @@ namespace EBCM
           pr_pt pt = ProtoCh::getPoint(iv);
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            outdata(pt, icomp) -= indata(pt, icomp);
+            outdata(pt, icomp) -= inpdata(pt, icomp);
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
@@ -162,6 +162,7 @@ namespace EBCM
 
     void    writeToHDF5(string a_filename) const
     {
+#ifdef CH_USE_HDF5      
       ch_ldfab levelfabs(m_meta->m_grids, ncomp, ch_iv::Zero);
       ch_dit dit =     m_meta->m_grids.dataIterator();
       const auto& mpibit = (*m_data);
@@ -181,6 +182,7 @@ namespace EBCM
         }   //end loop over cells in box
       }     //end loop over boxes
       writeLevelname(&levelfabs, a_filename.c_str());
+#endif      
     }
     
     shared_ptr< ebcm_meta_t >  m_meta;

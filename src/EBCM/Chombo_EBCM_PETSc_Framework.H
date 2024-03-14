@@ -28,13 +28,12 @@
 **/
 namespace EBCM
 {
-
   
   template <int ebcm_order>
   class PETSc_Framework
   {
   public:
-<<<<<<< HEAD
+
     typedef Chombo4::Box                                   ch_box;
     typedef Chombo4::DisjointBoxLayout                     ch_dbl;
     typedef Chombo4::BoxIterator                           ch_bit;
@@ -87,7 +86,7 @@ namespace EBCM
       return 0;
     }
     struct local_stencil_t
->>>>>>> dtg_dev
+
     {
     public:
  
@@ -331,13 +330,10 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
-<<<<<<< HEAD
             const auto    & maplev = *(m_row_map_ptr->m_data);
             const auto    & mapfab = maplev[dit[ibox]];
             PetscInt irow = mapfab(volu.m_pt, 0);
-=======
             PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
->>>>>>> dtg_dev
             for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = (*local)[isten];
@@ -380,7 +376,7 @@ namespace EBCM
       }
     };
     
-<<<<<<< HEAD
+
 
     ///
     template <CENTERING cent>

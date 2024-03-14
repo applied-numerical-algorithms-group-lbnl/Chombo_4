@@ -9,8 +9,8 @@
 #endif
 
 
-#ifndef _Chombo_AMRIO_H_
-#define _Chombo_AMRIO_H_
+#ifndef _Chombo_AMRIO_H____
+#define _Chombo_AMRIO_H____
 
 #include "Chombo_REAL.H"
 

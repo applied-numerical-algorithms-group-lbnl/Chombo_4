@@ -52,6 +52,7 @@ int main(int a_argc, char* a_argv[])
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running hoeb_petsc_test for polynomial order = " << order << endl;
 
+#ifdef CH_USE_PETSC
     if(order == 6)
     {
       EBCM::PETSc_Framework<6>::run_hoeb_truncation_tests();
@@ -81,6 +82,7 @@ int main(int a_argc, char* a_argv[])
       Chombo4::pout() << "main: Doh! unknown order = " << order << endl;
       return -1;
     }
+#endif    
   }
 
   Chombo4::pout() << "Printing time table " << endl;
