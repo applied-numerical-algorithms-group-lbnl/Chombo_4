@@ -46,6 +46,16 @@ namespace EBCM
     typedef Chombo4::LevelData<ch_fab>                           ch_ldfab;
     typedef Chombo4::MayDay                                      ch_mayday;
 
+    pr_fab_t& operator[](const Chombo4::DataIndex& a_dit)
+    {
+      return (*m_data)[a_dit];
+    }
+
+    const pr_fab_t& operator[](const Chombo4::DataIndex& a_dit) const
+    {
+      return (*m_data)[a_dit];
+    }
+    
     void operator+=(const HostLevelData<data_t, ncomp, order>& a_input)
     {
       ch_dit dit =     m_meta->m_grids.dataIterator();
@@ -87,6 +97,33 @@ namespace EBCM
         }   //end loop over cells in box
       }     //end loop over boxes
 
+    }
+    /// sets *this = a * x + b * y
+    void setToAxBy(double a_acoef,
+                   const HostLevelData<data_t, ncomp, order>& a_x,
+                   double a_bcoef,
+                   const HostLevelData<data_t, ncomp, order>& a_y)
+    {
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto&  x_data         = a_x[dit[ibox]];
+        const auto&  y_data         = a_y[dit[ibox]];
+        auto&       outdata         = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            double x_pt_val = x_data(pt, icomp);
+            double y_pt_val = y_data(pt, icomp);
+            outdata(pt, icomp) = a_acoef*x_pt_val + a_bcoef*y_pt_val;
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
     }
 
     void setVal(data_t a_value)

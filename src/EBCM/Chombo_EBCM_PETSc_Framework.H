@@ -34,79 +34,76 @@ namespace EBCM
   {
   public:
 
-    typedef Chombo4::Box                                   ch_box;
-    typedef Chombo4::DisjointBoxLayout                     ch_dbl;
-    typedef Chombo4::BoxIterator                           ch_bit;
-    typedef Chombo4::IntVect                               ch_iv;
-    typedef Chombo4::DataIterator                          ch_dit;
-                                                           
-    typedef ::Mat                                          petsc_mat;
-    typedef Proto::Point                                   pr_pt;
+                                                            
+    typedef ::Mat                                           petsc_mat;
+    typedef Proto::Point                                    pr_pt;
+    typedef Proto::Box                                      pr_bx;
+    typedef Chombo4::Box                                    ch_box;
+    typedef Chombo4::DisjointBoxLayout                      ch_dbl;
+    typedef Chombo4::BoxIterator                            ch_bit;
+    typedef Chombo4::IntVect                                ch_iv;
+    typedef Chombo4::DataIterator                           ch_dit;
+
+    typedef Chombo4::GeometryService<         ebcm_order >  ch_geoserv;
+    typedef  EBCM::Algorithm_Framework<       ebcm_order >  algo_framework;
+    typedef  EBCM::neighborhood       <       ebcm_order >  ebcm_neighborhood;
     
-    typedef  EBCM::MetaDataLevel<             ebcm_order>  ebcm_meta;
-    typedef  EBCM::EBCM_Graph<                ebcm_order>  ebcm_graph;
-    typedef  EBCM::HostLevelData<int,    1,   ebcm_order>  ebcm_int_sca_data;
-    typedef  EBCM::HostLevelData<double, 1,   ebcm_order>  ebcm_dou_sca_data;
-    typedef  EBCM::HostLevelData<int,    DIM, ebcm_order>  ebcm_int_vec_data;
-    typedef  EBCM::HostLevelData<double, DIM, ebcm_order>  ebcm_dou_vec_data;
-    typedef  EBCM::SubVolumeVector<           ebcm_order>  ebcm_subvol_vec;
-    typedef  EBCM::EBCM_Volu<                 ebcm_order>  ebcm_volu;
-    typedef  EBCM::Algorithm_Framework<       ebcm_order>  algo_framework;
-    typedef Proto::IndexedMoments<DIM  ,      ebcm_order > pr_mom_dim;
-    typedef Proto::IndexedMoments<DIM-1,      ebcm_order > pr_mom_dmo;
-    typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
-    typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-    typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
-    typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
+    typedef  EBCM::MetaDataLevel<             ebcm_order >  ebcm_meta;
+    typedef  EBCM::Algorithm_Framework<       ebcm_order >  ebcm_framework;
+    typedef  EBCM::EBCM_Graph<                ebcm_order >  ebcm_graph;
+    typedef  EBCM::HostLevelData<int,    1,   ebcm_order >  ebcm_int_sca_data;
+    typedef  EBCM::HostLevelData<double, 1,   ebcm_order >  ebcm_dou_sca_data;
+    typedef  EBCM::HostLevelData<int,    DIM, ebcm_order >  ebcm_int_vec_data;
+    typedef  EBCM::HostLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_data;
+    typedef  EBCM::SubVolumeVector<           ebcm_order >  ebcm_subvol_vec;
+    typedef  EBCM::EBCM_Volu<                 ebcm_order >  ebcm_volu;
     
-    typedef EBCM::neighborhood       <  ebcm_order>       ebcm_neighborhood;
-    /// Class to replace old vofstencil.  
-    /**
-       This will have to be generalized for multiple vofs per cell.
-     **/
-    struct local_stencil_t: public std::vector< pair< pr_pt, double > >
-=======
-    typedef Chombo4::Box                             ch_box;
-    typedef Chombo4::DisjointBoxLayout               ch_dbl;
-    typedef Chombo4::BoxIterator                     ch_bit;
-    typedef Chombo4::IntVect                         ch_iv;
-    typedef Chombo4::DataIterator                    ch_dit;
-                                                   
-    typedef ::Mat                                    petsc_mat;
-    typedef Proto::Point                             pr_pt;
-    typedef EBCM::MetaDataLevel<ebcm_order>          ebcm_meta;
-    typedef EBCM::EBCM_Graph<ebcm_order>             ebcm_graph;
-    typedef EBCM::HostLevelData<int, 1, ebcm_order > ebcm_data;
-    typedef EBCM::SubVolumeVector<      ebcm_order > ebcm_subvol_vec;
-    typedef EBCM::Algorithm_Framework<  ebcm_order > ebcm_framework;
-    typedef Chombo4::GeometryService<   ebcm_order > ch_geoserv;
+    typedef Proto::IndexedMoments<DIM  ,      ebcm_order >  pr_mom_dim;
+    typedef Proto::IndexedMoments<DIM-1,      ebcm_order >  pr_mom_dmo;
+    typedef Proto::IndexTM<double,DIM                    >  pr_itm_r_dim;
+    typedef Proto::IndexTM<int   ,DIM                    >  pr_itm_i_dim;
+    typedef Proto::IndexTM<double,DIM-1                  >  pr_itm_r_dmo;
+    typedef Proto::IndexTM<int   ,DIM-1                  >  pr_itm_i_dmo;
+    
+
 
     static int dummy_func()
     {
       return 0;
     }
-    struct local_stencil_t
 
+    /// think vofstencil
+    class local_stencil_t
     {
     public:
- 
+      std::vector< std::pair<pr_pt, double> > m_entries;
+
       ///
-      /**
-         adds each member of input
-      */
+      const std::pair<pr_pt, double> & operator[](int a_ivec) const
+      {
+        return m_entries[a_ivec];
+      }
+
+      ///
+      std::pair<pr_pt, double> &      operator[](int a_ivec) 
+      {
+        return m_entries[a_ivec];
+      }
+      
+      ///
       void
       operator+= (const local_stencil_t& a_input)
       {
-        for(int ivec = 0; ivec < a_input.size(); ivec++)
+        for(int ivec = 0; ivec < a_input.m_entries.size(); ivec++)
         {
-          add(a_input[ivec]);
+          add(a_input.m_entries[ivec]);
         }
       }
       
       ///
       void clear()
       {
-        this->resize(0);
+        m_entries.resize(0);
       }
 
       /// 
@@ -114,7 +111,7 @@ namespace EBCM
          Append the entry to the vector if the point is not already in the vector.
          Otherwise, just increment the weight.
       */
-      void add(const pair<pr_pt, double>& a_entry)
+      void add(const std::pair<pr_pt, double>& a_entry)
       {
         bool alreadyhere = false;
         for (int ivof = 0; ivof < this->size(); ivof++)
@@ -128,10 +125,16 @@ namespace EBCM
         }
         if (!alreadyhere)
         {
-          this->push_back(a_entry);
+          this->m_entries.push_back(a_entry);
         }
       }
 
+      ///
+      int size() const
+      {
+        return m_entries.size();
+      }
+      
       ///scale the stencil by a constant
       void operator*= (const double& a_scale)
       {
@@ -140,6 +143,7 @@ namespace EBCM
           (*this)[ivof].second *= a_scale;
         }
       }
+      
         
     }; //end struct local_stencil_t
     
@@ -330,10 +334,10 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
+            int local_size = local->size();
             const auto    & maplev = *(m_row_map_ptr->m_data);
             const auto    & mapfab = maplev[dit[ibox]];
             PetscInt irow = mapfab(volu.m_pt, 0);
-            PetscInt irow = (*m_row_map_ptr)(local->m_pt, 0);
             for(int isten = 0; isten < local->size(); isten++)
             {
               const auto& stenpair = (*local)[isten];
@@ -569,8 +573,6 @@ namespace EBCM
     {
     public:
 
-      typedef Proto::Side         pr_sd;
-      typedef Proto::Box          pr_box;
       
       double                                 m_alpha;
       double                                 m_beta;
@@ -636,7 +638,6 @@ namespace EBCM
                                                          const string                       & a_eb_bc,
                                                          bool                                 a_print        = false)
       {
-        typedef Proto::Box pr_bx;
         
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         pr_bx pointbx(a_pt, a_pt);
@@ -769,24 +770,51 @@ namespace EBCM
     }
 
     ///
+    static void
+    setExact( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
+              shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
+              shared_ptr< ebcm_meta  >      a_meta,
+              double a_alpha, double a_beta, string dom_bc, string eb_bc)
+    {
+      ch_mayday::Error("not implemented");
+    }
+    ///
     static double
     getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
     {
+      double alpha     = 4586.;
+      double  beta     = 4586.;
+      int sten_rad     = 4586 ;
+      int weight_power = 4586;
+      string dom_bc("4586");
+      string  eb_bc("4586");
+      ParmParse pp("getMaxAbsTrunaction");
+      pp.get("alpha"       , alpha   );
+      pp.get("beta"        , beta    );
+      pp.get("sten_rad"    , sten_rad);
+      pp.get("weight_power", weight_power);
+      pp.get("domain_bc"   , dom_bc);
+      pp.get("eb_bc"       , eb_bc);
       int num_ghost = 4;
-      shared_ptr<ebcm_data> phi_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_exac_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> lph_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
-      shared_ptr<ebcm_data> err_calc_ptr(new ebcm_data(m_meta_ptr, num_ghost));
+      
+      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
 
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta);
-      ebcm_petsc_op discreteOp(a_meta, num_ghost, false);
 
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta,
+               alpha, beta, dom_bc, eb_bc);
+      
+      HelmholtzOp discreteOp(alpha, beta, sten_rad,
+                             weight_power, a_meta, dom_bc, eb_bc);
+      
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
 
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
-      err_calc_ptr->setToAxBy(acoef, lph_calc_ptr, bcoef, lph_exac_ptr);
+      err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
