@@ -50,7 +50,7 @@ int main(int a_argc, char* a_argv[])
     int order;
     ParmParse pp("main");
     pp.get("polynomial_order", order);
-    Chombo4::pout() <<  "Running hoeb_petsc_test for polynomial order = " << order << endl;
+    Chombo4::pout() <<  "Running hoeb_truncation for polynomial order = " << order << endl;
 
 #ifdef CH_USE_PETSC
     if(order == 6)

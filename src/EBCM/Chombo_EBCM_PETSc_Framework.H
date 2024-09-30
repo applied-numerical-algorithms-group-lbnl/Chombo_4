@@ -447,15 +447,6 @@ namespace EBCM
     }
 
     ///
-    static shared_ptr<eigen_mat>
-    getWeightMatrix(shared_ptr< EBCM::neighborhood< ebcm_order > >  a_locality,
-                    bool a_print = false)
-    {
-      shared_ptr<eigen_mat> retval;
-      ch_mayday::Error("not implemented");
-      return retval;
-    }
-    ///
     template<CENTERING cent>
     static local_stencil_t
     getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
@@ -514,10 +505,38 @@ namespace EBCM
                            bool a_print)
     {
       
-      shared_ptr<eigen_mat> retval;
-
-      ch_mayday::Error("not implemented");
+//      shared_ptr<eigen_mat> retval; !!HERE!!
+//      pr_mom_dmo facmom =  a_face.m_facmom;
+//      pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
+//      double momzero    = facmom[pr_itm_i_dmo::Zero];
+//
+//      pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
+//      volmom.shift(xbar);
+//
+//      unsigned int Pcols = pr_mom_dim::size();
+//      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+//
+//
+//      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+//      {
+//        auto momind = momit();
+//        double matval = 0;
+//        if(momind[a_facedir] > 0)
+//        {
+//          int pd = momind[a_facedir];
+//          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+//          Real derval = volmom[derind];
+//          if(std::abs(momzero) > 1.0e-10)
+//          {
+//            matval = pd*derval/momzero;
+//          }
+//        }
+//        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        (*retval)(0,currentCol) = matval;
+      }
+    
       return retval;
+
     }
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
