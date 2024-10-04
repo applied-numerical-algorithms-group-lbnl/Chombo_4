@@ -36,6 +36,9 @@ namespace EBCM
 
                                                             
     typedef ::Mat                                           petsc_mat;
+    typedef ::Vec                                           petsc_vec;
+    typedef ::PetscInt                                      petsc_int;
+    typedef ::PetscScalar                                   petsc_sca;
     typedef Proto::Point                                    pr_pt;
     typedef Proto::Box                                      pr_bx;
     typedef Chombo4::Box                                    ch_box;
@@ -157,6 +160,8 @@ namespace EBCM
     {
     public:
       shared_ptr<petsc_mat> m_mat_ptr;
+      shared_ptr<petsc_vec> m_lph_ptr;
+      shared_ptr<petsc_vec> m_phi_ptr;
       shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
       shared_ptr<ebcm_meta> m_meta_ptr;
       int                   m_ghost;
@@ -190,6 +195,91 @@ namespace EBCM
 
         createOperatorPetscMatrix(a_print);
       }
+      ///
+      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
+                   shared_ptr<ebcm_dou_sca_data> a_phi) 
+      {
+        VecZeroEntries(*m_phi_ptr);
+        VecZeroEntries(*m_lph_ptr);
+
+        chomboToPetsc(*m_phi_ptr,  a_phi                );
+        MatMult(      *m_mat_ptr, *m_phi_ptr, *m_lph_ptr);
+        petscToChombo( a_lph,     *m_lph_ptr            );
+      }
+
+      ///
+      /** 
+          These two functions translate between the PETSc data holder (Vec)
+          and the Chombo data holder, ebcm_dou_sca_data for short.
+      **/
+
+
+      ///
+      void chomboToPetsc(petsc_vec                          & a_petsc_data,
+                         const ebcm_dou_sca_data            & a_chomb_data)
+      {
+        CH_TIME("BasePetsc::chomboToPetsc");
+        
+        const auto& graphs = *(m_meta_ptr->m_graphs);
+        const auto& grids  =  (m_meta_ptr->m_grids);
+        auto dit = grids.dataIterator();
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const auto& valid     =           grids[dit[ibox]];
+          const auto& graph     =          graphs[dit[ibox]];
+          const auto& chomb_fab =    a_chomb_data[dit[ibox]];
+          const auto& row_map   =(*m_row_map_ptr)[dit[ibox]];
+
+          /// this gets all volumes in valid
+          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
+          int ivar = 0; //scalar
+          for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+          {
+            const auto& volu    = subvol_vec[ivec];
+            double    data_val  = chomb_fab(volu, 0);
+            petsc_int petsc_loc =   row_map(volu, 0);
+
+            VecSetValues(a_petsc_data, 1, &petsc_loc, &data_val, INSERT_VALUES);
+          } // end loop over volumes in valid
+        }//    end loop over boxes
+        ///Not sure what they do but the HOEB version had them.   Petsc can be inscrutable.
+        VecAssemblyBegin(a_petsc_data);
+        VecAssemblyEnd(  a_petsc_data);
+      }
+
+      ///
+      void petscToChombo(ebcm_dou_sca_data                  & a_chomb_data,
+                         const petsc_vec                    & a_petsc_data)
+                         
+      {
+        CH_TIME("BasePetsc::petscToChombo");
+        
+        const petsc_sca * raw_array;
+        VecGetArrayRead(a_petsc_data, &raw_array);
+
+        petsc_int local_start,  local_end, local_size;
+        VecGetOwnershipRange( a_petsc_data ,&local_start,&local_end);
+        VecGetLocalSize(a_src , &localSize);
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const auto& valid     =           grids[dit[ibox]];
+          const auto& graph     =          graphs[dit[ibox]];
+          const auto& chomb_fab =    a_chomb_data[dit[ibox]];
+          const auto& row_map   =(*m_row_map_ptr)[dit[ibox]];
+
+          /// this gets all volumes in valid
+          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
+          int ivar = 0; //scalar
+          for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+          {
+
+            petsc_int global_petsc_loc =   row_map(volu, 0);
+            petsc_int      local_index = global_petsc_loc - local_start;
+            double data_val            = arr[local_index];
+            chomb_fab(volu, 0) =  data_val ;
+          } //end loop over volumes in box.
+        }   //loop over boxes in grid
+      } //end function petscToChombo
 
       ///this gets done by the derived class
       virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false) = 0;
@@ -200,7 +290,10 @@ namespace EBCM
       Base_PETSc_Op();
       
     protected:
-      ///makes m_row_map_ptr (operator uses this to map between volumes and petsc matrix rows)
+      /**
+          This makes m_row_map_ptr 
+          (operator uses this to map between volumes and petsc matrix rows)
+      **/
       PetscInt createMatrixRowMap(bool a_print = false)
       {
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
@@ -280,7 +373,12 @@ namespace EBCM
         return 0;
       }//end function createMatrixRowMap
 
-      ///makes m_mat_ptr (operator uses this to map between volumes and petsc matrix rows)
+      ///
+      /**
+         Makes m_mat_ptr (operator matrix) 
+         and 
+         m_phi_ptr, m_lph_ptr, vectors to hold petsc copies of solution, rhs.
+      **/
       PetscInt createOperatorPetscMatrix(bool a_print = false)
       {
         CH_TIME("Base_Petsc_Op::createOperatorPetscMatrix");
@@ -292,6 +390,10 @@ namespace EBCM
         MPI_Comm wcomm = PETSC_COMM_SELF;
 #endif
         PetscInt ierr;
+        m_mat_ptr = shared_ptr<petsc_mat>(new petsc_mat());
+        m_phi_ptr = shared_ptr<petsc_mat>(new petsc_vec());
+        m_lph_ptr = shared_ptr<petsc_mat>(new petsc_vec());
+        
         ierr = MatCreate(wcomm, & (*m_mat_ptr));CHKERRQ(ierr);
         ierr = MatSetOptionsPrefix(*m_mat_ptr,"");CHKERRQ(ierr);
 
@@ -349,6 +451,11 @@ namespace EBCM
             }
           }
         }
+        ///now for the vectors
+        VecCreate(   wcomm, &(*m_phi_ptr)                  );
+        VecSetSizes(        &(*m_phi_ptr), m_numPtsAllProcs);
+        VecSetFromOptions(   (*m_phi_ptr)                  );
+        VecDuplicate(        (*m_phi_ptr), &(*m_lph_ptr)   );
         return 0;
       }
 
@@ -500,7 +607,7 @@ namespace EBCM
     ///
     static shared_ptr<eigen_mat>
     getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
-                           shared_ptr<ebcm_neighborhood>        a_locality,
+                          shared_ptr<ebcm_neighborhood>        a_locality,
                            const double                       & a_dx,
                            bool a_print)
     {
@@ -538,6 +645,7 @@ namespace EBCM
       return retval;
 
     }
+    
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
@@ -599,6 +707,7 @@ namespace EBCM
       int                                    m_sten_rad;
       string m_dom_bc;
       string m_eb_bc;
+
       /// 
       /**
          alpha        = identity coeff
@@ -628,7 +737,7 @@ namespace EBCM
       {
       }
 
-      ///this is the function that the driver cod calls
+      ///this is the function that the driver code calls
       virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
       {
         shared_ptr<local_stencil_t> retval =
@@ -642,11 +751,6 @@ namespace EBCM
         return retval;
       }
 
-      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
-                   shared_ptr<ebcm_dou_sca_data> a_phi) const
-      {
-        ch_mayday::Error("not implemented");
-      }
     private:
       ///this is where the canal locks are dug in the basement
       virtual shared_ptr<local_stencil_t> privateStencil(const pr_pt                         & a_pt, 
