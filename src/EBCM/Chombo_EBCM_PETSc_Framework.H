@@ -688,8 +688,9 @@ namespace EBCM
             }
           }
           unsigned int currentCol = pr_mom_dim::indexOf(momind);
-          (*retval)(0,currentCol) = matval;
-        }
+          (*retval)(0,currentCol) += matval;//note: increments
+        } //end loop over moments
+      }   //end loop over directions
       return retval;
 
     }
