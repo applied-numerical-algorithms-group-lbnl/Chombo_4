@@ -489,7 +489,24 @@ namespace EBCM
     
 
 
-    ///
+    /**
+       sets d = facedir.
+       (1) Takes face moments (in d) and translates to volume moments.
+       (2) It shifts these moments to xbar from locality
+       (3) resizes output matrix to (1, pr_mom_dim::size())
+       (4) matrix_value(0, currentCol) = pd*derval/momzero
+
+       momzero == the face area. 
+       pd      ==  
+       matval = 0; 
+       if( momzero > eps)
+       {
+          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+          Real derval = volmom[derind];
+          matval = pd*derval/momzero;
+       }
+       retval(0, curCol) = matval
+    **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
     getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
@@ -605,43 +622,74 @@ namespace EBCM
     }
 
     ///
+    /**
+       loops through d
+       (2) It shifts these moments to xbar from locality
+       (3) resizes output matrix to (1, pr_mom_dim::size())
+       (4) matrix_value(0, currentCol) = pd*derval/momzero
+
+       momzero == the face area. 
+       pd      ==  
+       matval = 0; 
+       if( momzero > eps)
+       {
+          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+          Real derval = volmom[derind];
+          matval = pd*derval/momzero;
+       }
+       retval(0, curCol) = matval
+    **/
     static shared_ptr<eigen_mat>
     getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
-                          shared_ptr<ebcm_neighborhood>        a_locality,
+                           shared_ptr<ebcm_neighborhood>        a_locality,
                            const double                       & a_dx,
                            bool a_print)
     {
       
-//      shared_ptr<eigen_mat> retval; !!HERE!!
-//      pr_mom_dmo facmom =  a_face.m_facmom;
-//      pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
-//      double momzero    = facmom[pr_itm_i_dmo::Zero];
-//
-//      pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
-//      volmom.shift(xbar);
-//
-//      unsigned int Pcols = pr_mom_dim::size();
-//      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
-//
-//
-//      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
-//      {
-//        auto momind = momit();
-//        double matval = 0;
-//        if(momind[a_facedir] > 0)
-//        {
-//          int pd = momind[a_facedir];
-//          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
-//          Real derval = volmom[derind];
-//          if(std::abs(momzero) > 1.0e-10)
-//          {
-//            matval = pd*derval/momzero;
-//          }
-//        }
-//        unsigned int currentCol = pr_mom_dim::indexOf(momind);
-        (*retval)(0,currentCol) = matval;
-      }
-    
+      double momzero    = a_face.m_ebfmom[pr_itm_i_dmo::Zero];
+      unsigned int Pcols = pr_mom_dim::size();
+      
+      shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+      const pr_itm_r_dim xbar_face = a_locality->getXBar(a_face, a_dx);
+      retval.setVal(0.); // needed
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        pr_mom_dim normal_moment;
+        if(idir == 0)
+        {
+          normal_moment = a_faces.m_norm_mom_x;
+        }
+        else if(idir == 1)
+        {
+          normal_moment = a_faces.m_norm_mom_y;
+        }
+        else (idir == 2)
+        {
+          normal_moment = a_faces.m_norm_mom_z;
+        }
+        else
+        { //can only be wetware error.
+          ch_mayday::Error("logic error 4586");
+        }
+        normal_moment.shift(xbar);
+
+        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+        {
+          auto momind = momit();
+          double matval = 0;
+          if(momind[idir] > 0)
+          {
+            int pd = momind[idir];
+            pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(idir);
+            Real derval = normal_moment[derind];
+            if(std::abs(momzero) > 1.0e-10)
+            {
+              matval = pd*derval/momzero;
+            }
+          }
+          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          (*retval)(0,currentCol) = matval;
+        }
       return retval;
 
     }
