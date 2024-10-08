@@ -1,38 +1,36 @@
-# Chombo4/DomainDecomposition/EBCellMerge/hoeb_geometry_test inputs:
-# nx                : domain is sized nx^D
-# maxGrid           : maximum box size in domain decomposition
-# mergeSmallCells   : true turns on cell merging (disallowing small cells)
-# polynomial_order  : Order of moments (P)
-# 		    
-# weight_power      : exponent of distance in weight function 
-#                     weight_power >= 0
-#                     W = 1/D^5 (if weightpower = 5)
-# stencil_radius    : number of points to grow a cell to get a neighborhood
-#                     This one may be automatically grown by one in places.
-# which_geom        : Magic string that tells code which implicit function to use.
-#                     For now, this may be only "all_regular", "plane", or "sphere".
-# graph_filename    : File in which to put an HDF5 plot of the graph map  coordinates.
-#                     Useful for handy pictures of merged/unmerged configurations
-# inv_cond_filename : File in  which to put hdf5 plot of the inverse of the condition number
-#                     of the weighted moment matrix.  This is the important data of this
-#                     particular test.
-#  The prefix usually names the function which is using ParmParse unless I expect
-#  to use the parameter elsewhere, in which case it gets something general, like "stencil".
+# Chombo4/example/EBCM/hoeb_truncation/_inputs/sphere.inputs
+#hoeb_truncation.cpp
+main.polynomial_order  = 1
+#0 is 0,  1 is polynomial
+main.exact_flag        = 1
+#identity coefficient
+main.alpha = 1.0
+#laplacian coefficient
+main.beta =   -1.0
+#boundary conditions
+main.dom_bc = "dirichlet"
+main.eb_bc  = "dirichlet"
+main.weight_power = 1
+main.sten_rad     = 3
+#Chombo_EBCM_PETSc_Framework.H
+parseFineGridParams.nx                = 32
+parseFineGridParams.maxGrid           = 32
+parseFineGridParams.mergeSmallCells   = true
 
-makeMergedGeometry.nx                = 32
-makeMergedGeometry.maxGrid           = 32
-makeMergedGeometry.mergeSmallCells   = true
-stencil.radius                       = 3
+# phi = x + y
+#Chombo_EBCM_PETSc_Framework.H
+polynomial_exact.num_terms = 2
+polynomial_exact.power_0 = 1 0 0
+polynomial_exact.coeff_0 = 1.0
+polynomial_exact.power_1 = 0 1 0
+polynomial_exact.coeff_2 = 1.0
 
+#Chombo_EBCM_Algorithm_Framework.H
 getImplicitFunction.center           = 0.5 0.5 0.5
 getImplicitFunction.radius           = 0.45
 getImplicitFunction.inside           = true
-makeMergedGeometry.graph_filename    = "sphere_graph.hdf5"
 getImplicitFunction.which_geom       = "sphere"
-main.inv_cond_filename               = "sphere_inv_cond.hdf5"
-main.polynomial_order  = 1
-stencil.weight_power   = 1
-main.dom_bc = "dirichlet"
-main.eb_bc  = "dirichlet"
+
+
 
 

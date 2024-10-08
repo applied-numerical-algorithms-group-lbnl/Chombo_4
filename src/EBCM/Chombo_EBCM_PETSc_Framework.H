@@ -16,6 +16,7 @@
 */
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBLevelBoxData.H"
+#include "Chombo_EBCM_ExactSolutions.H"
 
 /// 
 /**
@@ -68,6 +69,7 @@ namespace EBCM
     typedef Proto::IndexTM<double,DIM-1                  >  pr_itm_r_dmo;
     typedef Proto::IndexTM<int   ,DIM-1                  >  pr_itm_i_dmo;
     
+    typedef EBCM_Exact::BaseExactSolution<    ebcm_order >  ebcm_exac;
 
 
     static int dummy_func()
@@ -713,14 +715,9 @@ namespace EBCM
     {
 
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p =
-        EBCM::Algorithm_Framework<ebcm_order>::
-        getEBSystemMatrix(locality, a_face, a_graph,
-                          a_stenrad, a_weightpower,
-                          a_dom_bc, a_eb_bc, a_print);
-
-      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+      shared_ptr< eigen_mat > Amat_p = algo_framework::getEBSystemMatrix(locality, a_face, a_graph, a_stenrad, a_weightpower, a_dom_bc, a_eb_bc, a_print);
+      shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, a_print);
+      shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -945,28 +942,106 @@ namespace EBCM
     static void
     setExact( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
               shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
-              shared_ptr< ebcm_meta  >      a_meta,
-              double a_alpha, double a_beta, string dom_bc, string eb_bc)
+              shared_ptr< ebcm_meta  >      a_meta_ptr,
+              shared_ptr< ebcm_exac  >      a_exac_ptr,
+              double a_alpha, double a_beta)
     {
-      ch_mayday::Error("not implemented");
+        const auto& graphs = *(a_meta_ptr->m_graphs);
+        const auto& grids  =  (a_meta_ptr->m_grids);
+        auto dit = grids.dataIterator();
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const auto& valid     =             grids[dit[ibox]];
+          const auto& graph     =            graphs[dit[ibox]];
+          const auto& phi_fab   = (*a_phi_exac_ptr)[dit[ibox]];
+
+          /// this gets all volumes in valid
+          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
+          int ivar = 0; //scalar
+          for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+          {
+            const auto& volu = subvol_vec[ivec];
+            double phi_val   = a_exac_ptr->getCellAveSolution( volu);
+            double lap_val   = a_exac_ptr->getCellAveLaplacian(volu);
+            double lph_val   = a_alpha*phi_val + a_beta*lap_val;
+            phi_fab(volu, 0) = phi_val;
+            lph_fab(volu, 0) = lph_val;
+          }
+        }
+    } // end function setExact
+          
+    static shared_ptr<ebcm_exac>
+    getExactSolution(int a_exact_flag)
+    {
+      shared_ptr<ebcm_exac> retval;
+      ParmParse pp("polynomial_exact");
+      static bool printed_once = false;
+      if(a_exact_flag == 0)
+      {
+        if(!printed_once)
+          pout() << "exact solution = Zero" << endl;
+        retval = shared_ptr<ebc_exac>( new EBCM_Exact::ZeroSolution());
+      }
+      else if(a_exact_flag==1)
+      {
+        using std::vector;
+        using std::pair;
+        vector<pair<Point, Real> > entries;
+        int num_terms = -4586;
+
+        pp.get("num_terms", num_terms);
+        entries.resize(num_terms);
+        if(!printed_once)
+          pout() << "exact solution = polynomial" << endl;
+        for(int iterm = 0; iterm < num_terms; iterm++)
+        {
+          string coef_str   = string("coeff_") + to_string(iterm);
+          string powers_str = string("power_") + to_string(iterm);
+          vector<int> entry_powers;
+          Real        entry_coef;
+          pp.getarr(powers_str.c_str(), entry_powers, 0, DIM);
+          pp.get(     coef_str.c_str(), entry_coef);
+          pair<Point, Real> entry;
+          entry.second = entry_coef;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            entry.first[idir] = entry_powers[idir];
+          }
+          entries.push_back(entry);
+          if(!printedonce)
+            pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
+        }//end loop over terms
+        retval = shared_ptr<ebc_exac>( new EBCM_Exact::PolynomialEF(entries));
+      }
+      else
+      {
+        ch_mayday::Error("getExactSolution: bogus exact flag");
+      }
+
+      printed_once = true;
+      return retval;
     }
     ///
     static double
-    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
+    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta,
+                        shared_ptr< ebcm_exac  >   a_exac)
     {
+      ParmParse pp("main");
       double alpha     = 4586.;
       double  beta     = 4586.;
       int sten_rad     = 4586 ;
       int weight_power = 4586;
+      int exact_flag   = 4586;
       string dom_bc("4586");
       string  eb_bc("4586");
-      ParmParse pp("getMaxAbsTrunaction");
+
       pp.get("alpha"       , alpha   );
       pp.get("beta"        , beta    );
       pp.get("sten_rad"    , sten_rad);
       pp.get("weight_power", weight_power);
-      pp.get("domain_bc"   , dom_bc);
+      pp.get("dom_bc"      , dom_bc);
       pp.get("eb_bc"       , eb_bc);
+      pp.get("exact_flag"  , exact_flag);
       int num_ghost = 4;
       
       shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
@@ -974,7 +1049,7 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
 
-
+      shared_ptr<ebcm_exac_ptr> exact_solution = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta,
                alpha, beta, dom_bc, eb_bc);
       

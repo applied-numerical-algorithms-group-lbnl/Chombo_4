@@ -5,18 +5,13 @@ using std::cerr;
 #ifndef __EBCM_ExactSolutions__
 #define __EBCM_ExactSolutions__
 #include "Chombo_EBCM_Basics.H"
-namespace ebcm_exact
+namespace EBCM_Exact
 {
   template <unsigned int order>
   class BaseExactSolution
   {
   public:
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef IndexedMoments<DIM-1, order> IndMomDMO;
-    
-    typedef       IndexTM<int, DIM>            IvDIM;
-    typedef       IndexTM<int, DIM-1>          IvDMO;
-    typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
+    typedef  EBCM::EBCM_Volu< order >  ebcm_volu;
 
   
     virtual ~BaseExactSolution()
@@ -27,55 +22,68 @@ namespace ebcm_exact
     {
     }
 
-    ///shortcut for cell data
-    Real operator()(const EBGraph & a_graph,
-                    const Real    & a_dx,
-                    const VoluData& a_voldat,
-                    const EBIndex<CELL>   & a_vof,
-                    bool a_divideByArea)
+    double getCellAveSolution(const ebcm_volu&  a_volu) const
     {
-      Real retval = 0;
-      RealVect centloc;
-      Point cell = a_vof.m_pt;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
-      }
-      IndexedMoments<DIM, order> moments;
-      if(a_graph.isRegular(cell))
-      {
-        moments.setToRegular(a_dx);
-      }
-      else if(a_graph.isCovered(cell))
-      {
-        return 0;
-      }
-      else
-      {
-        moments = a_voldat(a_vof, 0);
-      }
+      double retval = 4586;
+      return retval;
       
-      Real volu = moments[IvDIM::Zero];
-      for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
-      {
-        IvDIM  power = momit();
-        Real   deriv = getDerivative(power, centloc);
-        int   idenom = (power.factorial());
-        Real   denom = (Real)(idenom);
-        Real   momen = moments[power];
-        Real   incre = deriv*momen/denom;
-        retval += incre;
-      }
-      if(a_divideByArea)
-      {
-        Real minvol = 1.0e-16;
-        if(volu > minvol)
-        {
-          retval /= volu;
-        }
-      }
-      return retval;   
     }
+    double getCellAveLaplacian(const ebcm_volu&  a_volu) const
+    {
+      double retval = 4586;
+      return retval;
+      
+    }
+
+//    ///shortcut for cell data
+//    Real operator()(const EBGraph & a_graph,
+//                    const Real    & a_dx,
+//                    const VoluData& a_voldat,
+//                    const EBIndex<CELL>   & a_vof,
+//                    bool a_divideByArea)
+//    {
+//      Real retval = 0;
+//      RealVect centloc;
+//      Point cell = a_vof.m_pt;
+//      for(int idir = 0; idir < DIM; idir++)
+//      {
+//        centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
+//      }
+//      IndexedMoments<DIM, order> moments;
+//      if(a_graph.isRegular(cell))
+//      {
+//        moments.setToRegular(a_dx);
+//      }
+//      else if(a_graph.isCovered(cell))
+//      {
+//        return 0;
+//      }
+//      else
+//      {
+//        moments = a_voldat(a_vof, 0);
+//      }
+//      
+//      Real volu = moments[IvDIM::Zero];
+//      for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
+//      {
+//        IvDIM  power = momit();
+//        Real   deriv = getDerivative(power, centloc);
+//        int   idenom = (power.factorial());
+//        Real   denom = (Real)(idenom);
+//        Real   momen = moments[power];
+//        Real   incre = deriv*momen/denom;
+//        retval += incre;
+//      }
+//      if(a_divideByArea)
+//      {
+//        Real minvol = 1.0e-16;
+//        if(volu > minvol)
+//        {
+//          retval /= volu;
+//        }
+//      }
+//      return retval;   
+//    }
 
     virtual Real getDerivative(IndexTM<int, DIM>  a_power,
                                RealVect a_loc) const
@@ -135,212 +143,7 @@ namespace ebcm_exact
       return retval;   
     }
 
-    typedef HostIrregData<CELL,      IndMomDIM , 1>  EBNormalData;
-    typedef HostIrregData<BOUNDARY,  IndMomDIM , 1>  EBFaData;
-    typedef CH4_Data_Choreography::DistributedData<EBNormalData> ebnorm_distrib_t;
-    typedef CH4_Data_Choreography::DistributedData<EBFaData    > ebfa_distrib_t;
-
-    ///get integral (grad phi dot n dA)
-    inline 
-    Real evaluateGradDIM(const EBGraph                          & a_graph,
-                         const Real                             & a_dx,
-                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_x, 
-                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_y, 
-                         const shared_ptr< ebnorm_distrib_t   > & a_ebnormmom_z,
-                         const shared_ptr<   ebfa_distrib_t   > & a_ebmom,
-                         const Chombo4::DataIndex               & a_dit,
-                         const EBIndex<CELL>                    & a_vof,
-                         bool a_divideByArea) const
-    {
-      Real retval = 0;
-      Point cell = a_vof.m_pt;
-      if(a_graph.isRegular(cell))
-      {
-        return 0;
-      }
-      else if(a_graph.isCovered(cell))
-      {
-        return 0;
-      }
-      else
-      {
-        RealVect centloc;
-        IndexedMoments<DIM, order> momentsx, momentsy, momentsz;
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
-        }
-        
-        momentsx = (*a_ebnormmom_x)[a_dit](a_vof, 0);
-        momentsy = (*a_ebnormmom_y)[a_dit](a_vof, 0);
-#if DIM==3        
-        momentsz = (*a_ebnormmom_z)[a_dit](a_vof, 0);
-#endif        
-        EBIndex<BOUNDARY> ebfac = a_vof.getCutFace();
-        const auto& ebmom = (*a_ebmom)[a_dit](ebfac, 0);
-        Real area   = ebmom[IvDIM::Zero];
-        IvDIM unitx = Proto::BASISV_TM<int, DIM>(0);
-        IvDIM unity = Proto::BASISV_TM<int, DIM>(1);
-#if DIM==3        
-        IvDIM unitz = Proto::BASISV_TM<int, DIM>(2);
-#endif
-      
-        for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
-        {
-          IvDIM  power = momit();
-
-          Real incre = 0;
-
-          Real   deriv = getDerivative(power, centloc);
-          int   idenom = (power.factorial());
-          Real   denom = (Real)(idenom);
-          Real Cp = deriv/denom;
-
-          if(power[0] > 0)
-          {
-            int px  = power[0];
-            Real   momenx = momentsx[power- unitx];
-            incre += Cp*px*momenx;
-          }
-          if(power[1] > 0)
-          {
-            int py  = power[1];
-            Real   momeny = momentsy[power- unity];
-            incre += Cp*py*momeny;
-          }
-#if DIM==3        
-          if(power[2] > 0)
-          {
-            int pz  = power[2];
-            Real   momenz = momentsz[power- unitz];
-            incre += Cp*pz*momenz;
-          }
-#endif
-          retval += incre;
-          
-        }
-        if(a_divideByArea)
-        {
-          Real minarea = 1.0e-16;
-          if(area > minarea)
-          {
-            retval /= area;
-          }
-        }
-      }
-      return retval;   
-    }
-    
-    ///
-    template <CENTERING cent>
-    Real evaluateDMO(const EBGraph & a_graph,
-                     const Real    & a_dx,
-                     const HostIrregData<cent,IndMomDMO, 1>& a_facdat,
-                     const EBIndex<cent>   & a_face,
-                     int a_facedir, bool a_dividebyarea) const
-    {
-      Real retval = 0;
-      RealVect centloc = hoeb_basics::getFaceLocation(a_face, a_dx, a_facedir);
-      IndexedMoments<DIM-1, order> moments;
-      Point cell = a_face.m_pt;
-      if(a_face.m_vofIDMe < 0) cell -= Point::Basis(a_facedir);
-
-
-      if(a_graph.isRegular(cell))
-      {
-        moments.setToRegular(a_dx);
-      }
-      else if(a_graph.isCovered(cell))
-      {
-        return 0;
-      }
-      else
-      {
-        moments = a_facdat(a_face, 0);
-      }
-      
-      Real area = moments[IvDMO::Zero];
-      for(MomentIterator<DIM-1, order> momit; momit.ok(); ++momit)
-      {
-        IvDMO  powerdmo = momit();
-        IvDIM  powerdim = hoeb_basics::getVolIndexFromFace<DIM>(powerdmo, a_facedir);
-        Real   deriv = getDerivative(powerdim, centloc);
-        int   idenom = (powerdim.factorial());
-        Real   denom = (Real)(idenom);
-        Real   momen = moments[powerdmo];
-        Real   incre = deriv*momen/denom;
-        retval += incre;
-      }
-      if(a_dividebyarea)
-      {
-        Real minarea = 1.0e-16;
-        if(area > minarea)
-        {
-          retval /= area;
-        }
-      }
-      return retval;   
-    }
-
-    ///
-    template <CENTERING cent>
-    Real evaluateGradDMO(const EBGraph & a_graph,
-                         const Real    & a_dx,
-                         const HostIrregData<cent,IndMomDMO, 1>& a_facdat,
-                         const EBIndex<cent>   & a_face,
-                         int a_facedir, bool a_dividebyarea) const
-    {
-      Real retval = 0;
-      RealVect centloc = hoeb_basics::getFaceLocation(a_face, a_dx, a_facedir);
-      IndexedMoments<DIM-1, order> moments;
-      Point cell = a_face.m_pt;
-      if(a_face.m_vofIDMe < 0) cell -= Point::Basis(a_facedir);
-
-
-      if(a_graph.isRegular(cell))
-      {
-        moments.setToRegular(a_dx);
-      }
-      else if(a_graph.isCovered(cell))
-      {
-        return 0;
-      }
-      else
-      {
-        moments = a_facdat(a_face, 0);
-      }
-      
-      Real area = moments[IvDMO::Zero];
-      for(MomentIterator<DIM-1, order> momit; momit.ok(); ++momit)
-      {
-        IvDMO  powerdmo = momit();
-
-        IvDMO  powerdmed = powerdmo - Proto::BASISV_TM<int, DIM-1>(a_facedir);
-        IvDIM  powerdim = hoeb_basics::getVolIndexFromFace<DIM>(powerdmo, a_facedir);
-        if(powerdim[a_facedir] > 0)
-        {
-          Real   deriv = getDerivative(powerdim, centloc);
-          int   idenom = (powerdim.factorial());
-          Real   denom = (Real)(idenom);
-          Real   momen = moments[powerdmed];
-          Real   incre = powerdim[a_facedir]*deriv*momen/denom;
-          retval += incre;
-        }
-      }
-
-      if(a_dividebyarea)
-      {
-        Real minarea = 1.0e-16;
-        if(area > minarea)
-        {
-          retval /= area;
-        }
-      }
-      return retval;   
-    }
-    
-  };
-  
+  }; //end class baseExactSolution  
   ///class for always returning zero (for bcs as opposed to being for testing convergence rates)
   template <unsigned int order>
   class ZeroSolution: public BaseExactSolution<order>
@@ -368,331 +171,6 @@ namespace ebcm_exact
   };
 
 
-  ///phi = sin(pi(r^2 - R0^2)), where r is the distance from a center (c, c, c) and R0 is a radius
-  template <unsigned int order>
-  class SineSphereEF: public BaseExactSolution<order>
-  {
-  public:
-  
-    typedef       IndexTM<int, DIM>            IvDIM;
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
-  
-    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
-                               RealVect a_loc) const
-    {
-      Real x = a_loc[0] - m_center[0];
-      Real y = a_loc[1] - m_center[1];
-      Real x2 = x*x;
-      Real x3 = x*x*x;
-      Real x4 = x*x*x*x;
-      Real y2 = y*y;
-      Real y3 = y*y*y;
-      Real y4 = y*y*y*y;
-
-      Real pi = 4.*atan(1.0);
-      Real pi2 = pi*pi;
-      Real pi3 = pi*pi*pi;
-      Real pi4 = pi*pi*pi*pi;
-      Real r02 = m_radius*m_radius;
-      Real z2 = 0;
-#if DIM==3
-      Real z = a_loc[2] - m_center[2];
-      z2 = z*z;
-      Real z3 = z*z*z;
-      Real z4 = z*z*z*z;
-#endif
-      Real r2 = x2 + y2 + z2;
-
-      int sum = a_deriv.sum();
-      Real retval =0;
-      if(sum == 0)
-      {
-        //(%i2) display2d:false
-        //(%o2) false
-        //(%i3) r:x^2+y^2+z^2
-        //(%o3) z^2+y^2+x^2
-        //(%i4) phi:sin(pi*(r-R0))
-        //(%o4) sin(pi*(z^2+y^2+x^2-R0))
-        retval = sin(pi*(r2 - r02));
-      }
-      else if(sum == 1)
-      {
-        if(a_deriv[0]== 1)
-        {
-          //(%i5) der_x:diff(phi,x)
-          //(%o5) 2*pi*x*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 2*pi*x*cos(pi*(r2 - r02));
-        }
-        else if (a_deriv[1]== 1)
-        {
-          //(%i6) der_y:diff(phi,y)
-          //(%o6) 2*pi*y*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 2*pi*y*cos(pi*(r2 - r02));
-        }
-#if DIM==3      
-        else if(a_deriv[2] == 1)
-        {
-          //(%i7) der_z:diff(phi,z)
-          //(%o7) 2*pi*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 2*pi*z*cos(pi*(r2 - r02));
-        }
-#endif      
-        else
-        {
-          Chombo4::MayDay::Error("sinesphere ran out of cases 2");
-        }
-      }
-      else if(sum == 2)
-      {
-        if((a_deriv[0]== 1) && (a_deriv[1]== 1))
-        {
-          //(%i8) der_xy:diff(der_x,y)
-          //(%o8) -4*pi^2*x*y*sin(pi*(z^2+y^2+x^2-R0))
-          retval = -4.*pi2*x*y*sin(pi*(r2 -r02));
-        }
-#if DIM==3      
-        else if((a_deriv[0]== 1) && (a_deriv[2]== 1))
-        {
-          //(%i9) der_xz:diff(der_x,z)
-          //(%o9) -4*pi^2*x*z*sin(pi*(z^2+y^2+x^2-R0))
-          retval = -4.*pi2*x*z*sin(pi*(r2 -r02));
-        
-        }
-        else if((a_deriv[1]== 1) && (a_deriv[2]== 1))
-        {
-          //(%i10) der_yz:diff(der_y,z)
-          //(%o10) -4*pi^2*y*z*sin(pi*(z^2+y^2+x^2-R0))
-          retval = -4.*pi2*y*z*sin(pi*(r2 -r02));
-        }
-        else if(a_deriv[2]== 2)
-        {
-          //(%i13) der_zz:diff(der_z,z)
-          //(%o13) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*z^2*sin(pi*(z^2+y^2+x^2-R0))
-          retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*z2*sin(pi*(r2 - r02));
-
-        }
-#endif
-        else if(a_deriv[0]== 2)
-        {
-          //(%i11) der_xx:diff(der_x,x)
-          //(%o11)  2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*x^2*sin(pi*(z^2+y^2+x^2-R0))
-          retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*x2*sin(pi*(r2 - r02));
-        }
-        else if(a_deriv[1]== 2)
-        {
-          //(%i12) der_yy:diff(der_y,y)
-          //(%o12) 2*pi*cos(pi*(z^2+y^2+x^2-R0))-4*pi^2*y^2*sin(pi*(z^2+y^2+x^2-R0))
-          retval = 2.*pi*cos(pi*(r2 -r02))      -4.*pi2*y2*sin(pi*(r2 - r02));
-
-        }
-        else
-        {
-          Chombo4::MayDay::Error("sinesphere ran out of cases 2");
-        }
-      }
-      else if(sum == 3)
-      {
-        if(a_deriv[0] == 3)
-        {
-          //(%i14) der_xxx:diff(der_xx,x)
-          //(%o14) (-12*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))      -8*pi^3*x^3*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-12.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x3*cos(pi*(r2 - r02));
-        }
-        else if(a_deriv[1] == 3)
-        {
-          //(%i15) der_yyy:diff(der_yy,y)
-          //(%o15) (-12*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^3*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-12.*pi2*y*sin(pi*(r2 -r02))) -    8.*pi3*y3*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[0] == 2) && (a_deriv[1]==1))
-        {
-          //(%i19) der_yxx:diff(der_xy,x)
-          //(%o19) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*y*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*x2*y*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[0] == 1) && (a_deriv[1]==2))
-        {
-          //(%i18) der_xyy:diff(der_xy,y)
-          //(%o18) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*y^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -   8.*pi3*x*y2*cos(pi*(r2 - r02));
-
-        }
-#if DIM==3
-        else if(a_deriv[2] == 3)
-        {
-          //(%i17) der_zzz:diff(der_zz,z)
-          //(%o17) (-12*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*z^3*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-12.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*z3*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[2] == 2) && (a_deriv[1]==1))
-        {
-          //(%i20) der_yzz:diff(der_yz,z)
-          //(%o20) (-4*pi^2*y*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y*z^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*y*sin(pi*(r2 -r02))) -   8.*pi3*y*z2*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[2] == 2) && (a_deriv[0]==1))
-        {
-          //(%i21) der_xzz:diff(der_xz,z)
-          //(%o21) (-4*pi^2*x*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x*z^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*x*sin(pi*(r2 -r02))) -    8.*pi3*x*z2*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[0] == 2) && (a_deriv[2]==1))
-        {
-          //  (%i23) der_xxz:diff(der_xx, z);
-          //  (%o23) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*x^2*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*x2*z*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[1] == 2) && (a_deriv[2]==1))
-        {
-          //(%i24) der_yyz:diff(der_yy, z);
-          //(%o24) (-4*pi^2*z*sin(pi*(z^2+y^2+x^2-R0)))-8*pi^3*y^2*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = (-4.*pi2*z*sin(pi*(r2 -r02))) -    8.*pi3*y2*z*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[0]==1) && (a_deriv[1] == 1) && (a_deriv[2]==1))
-        {
-          //(%i21) der_xyz:diff(der_xy,z)
-          //(%o21)    -8*pi^3*x*y*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval  =  (-8.*pi3*x*y*z*cos(pi*(r2 -r02)));
-        }
-#endif      
-        else
-        {
-          Chombo4::MayDay::Error("sinesphere ran out of cases 3");
-          retval = 0;
-        }
-      }
-      else if(sum==4)
-      {
-        if(a_deriv[0] == 4)
-        {
-          //(%i22) der_xxxx:diff(der_xxx,x)
-          //(%o22) 16*pi^4*x^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*x2*cos(pi*(r2 - r02));
-        }
-        else if(a_deriv[1] == 4)
-        {
-          //(%i23) der_yyyy:diff(der_yyy,y)
-          //(%o23) 16*pi^4*y^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*y4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*y2*cos(pi*(r2 - r02));
-        }
-        else if( (a_deriv[0] == 3) && (a_deriv[1] == 1))
-        {
-          //(%i25) der_xxxy:diff(der_xxx,y)
-          //(%o25) 16*pi^4*x^3*y*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x3*y*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
-        }
-        else if( (a_deriv[0] == 1) && (a_deriv[1] == 3))
-        {
-          //(%i27) der_yyyx:diff(der_yyy,x)
-          //(%o27) 16*pi^4*x*y^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*y3*x*sin(pi*(r2-r02))          -24.*pi3*x*y*cos(pi*(r2 -r02))     ;
-        }
-        else if( (a_deriv[0] == 2) && (a_deriv[1] == 2))
-        {
-          //(%i33) der_xxyy:diff(der_xyy,x)
-          //(%o33) 16*pi^4*x^2*y^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x2*y2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*y2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
-        }
-#if DIM==3
-        else if(a_deriv[2] == 4)
-        {
-          //(%i24) der_zzzz:diff(der_zzz,z)
-          //(%o24) 16*pi^4*z^4*sin(pi*(z^2+y^2+x^2-R0))   -12*pi^2*sin(pi*(z^2+y^2+x^2-R0))-48*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*z4*sin(pi*(r2-r02)) -12.*pi2*sin(pi*(r2 -r02))     -48.*pi3*z2*cos(pi*(r2 - r02));
-        }
-        else if((a_deriv[2] == 3) && (a_deriv[0] == 1))
-        {
-          //(%i29) der_zzzx:diff(der_zzz,x)
-          //(%o29) 16*pi^4*x*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
-        }
-        else if((a_deriv[2] == 3) && (a_deriv[1] == 1))
-        {
-          //(%i30) der_zzzy:diff(der_zzz,y)
-          //(%o30) 16*pi^4*y*z^3*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*y*z3*sin(pi*(r2-r02))  -24.*pi3*x*z*cos(pi*(r2 -r02));
-
-        }
-        else if((a_deriv[2] == 2) && (a_deriv[0] == 2))
-        {
-          //(%i32) der_zzxx:diff(der_xzz,x)
-          //(%o32) 16*pi^4*x^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*x^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*x2*cos(pi*(r2 - r02));
-        }
-        else if((a_deriv[2] == 2) && (a_deriv[1] == 2))
-        {
-          //(%i31) der_zzyy:diff(der_yzz,y)
-          //(%o31) 16*pi^4*y^2*z^2*sin(pi*(z^2+y^2+x^2-R0))-4*pi^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*z^2*cos(pi*(z^2+y^2+x^2-R0))-8*pi^3*y^2*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*y2*z2*sin(pi*(r2-r02))           -4.*pi2*sin(pi*(r2 -r02))       -8.*pi3*z2*cos(pi*(r2 - r02))       -8.*pi3*y2*cos(pi*(r2 - r02));
-        }
-        else if((a_deriv[2] == 1) && (a_deriv[0] == 3))
-        {
-          //(%i26) der_xxxz:diff(der_xxx,z)
-          //(%o26) 16*pi^4*x^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x3*z*sin(pi*(r2-r02))          -24.*pi3*x*z*sin(pi*(r2 -r02))      ;
-        
-        }
-        else if((a_deriv[2] == 1) && (a_deriv[1] == 3))
-        {
-          //(%i28) der_yyyz:diff(der_yyy,z)
-          //(%o28) 16*pi^4*y^3*z*sin(pi*(z^2+y^2+x^2-R0))-24*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*y3*z*sin(pi*(r2-r02))          -24.*pi3*y*z*sin(pi*(r2 -r02))      ;
-        }
-        else if((a_deriv[2] == 2) && (a_deriv[0] == 1)&& (a_deriv[1] == 1))
-        {
-          //(%i34) der_xyzz:diff(der_xyz,z)
-          //(%o34) 16*pi^4*x*y*z^2*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*y*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x*y*z2*sin(pi*(r2-r02))         -8.*pi3*x*y*cos(pi*(r2 -r02))      ;
-        }
-        else if((a_deriv[2] == 1) && (a_deriv[0] == 1)&& (a_deriv[1] == 2))
-        {
-          //(%i35) der_xyyz:diff(der_xyz,y)
-          //(%o35) 16*pi^4*x*y^2*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*x*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x*y2*z*sin(pi*(r2-r02))         -8.*pi3*x*z*cos(pi*(r2 -r02))      ;
-        }
-        else if((a_deriv[2] == 1) && (a_deriv[0] == 2)&& (a_deriv[1] == 1))
-        {
-          //(%i36) der_xxyz:diff(der_xyz,x)
-          //(%o36) 16*pi^4*x^2*y*z*sin(pi*(z^2+y^2+x^2-R0))-8*pi^3*y*z*cos(pi*(z^2+y^2+x^2-R0))
-          retval = 16.*pi4*x2*y*z*sin(pi*(r2-r02))         -8.*pi3*y*z*cos(pi*(r2 -r02))      ;
-        }
-#endif      
-        else
-        {
-          Chombo4::MayDay::Error("sinesphere ran out of cases 4");
-          retval = 0;
-        }
-      }
-      else
-      {
-        Chombo4::MayDay::Error("sinesphere ran out of deriv cases");
-        retval = 0;
-      }
-        
-      return retval;
-    }
-
-    virtual ~SineSphereEF()
-    {
-    }
-
-    SineSphereEF(Real     a_radius,
-                 RealVect a_center)
-    {
-      m_radius = a_radius;
-      m_center = a_center;
-    }
-
-  private:
-    Real      m_radius;
-    RealVect  m_center;
-  
-    SineSphereEF()
-    {
-    }
-
-  };
 
 
   ///phi = cp x^p  
