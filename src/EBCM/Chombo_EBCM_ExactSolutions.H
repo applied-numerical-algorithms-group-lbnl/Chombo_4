@@ -88,60 +88,9 @@ namespace EBCM_Exact
     virtual Real getDerivative(IndexTM<int, DIM>  a_power,
                                RealVect a_loc) const
     {
-      Chombo4::MayDay::Error("bogus dude");
+      Chombo4::MayDay::Error("EBCM::BaseExact:: not implemented");
     }
 
-    ///
-    template <CENTERING cent>
-    Real evaluateDIM(const EBGraph & a_graph,
-                     const Real    & a_dx,
-                     const HostIrregData<cent,IndMomDIM , 1>& a_voldat,
-                     const EBIndex<cent>   & a_vof,
-                     bool a_divideByArea) const
-    {
-      Real retval = 0;
-      RealVect centloc;
-      Point cell = a_vof.m_pt;
-      IndexedMoments<DIM, order> moments;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
-      }
-        
-      if(a_graph.isRegular(cell))
-      {
-        moments.setToRegular(a_dx);
-      }
-      else if(a_graph.isCovered(cell))
-      {
-        return 0;
-      }
-      else
-      {
-        moments = a_voldat(a_vof, 0);
-      }
-      
-      Real volu = moments[IvDIM::Zero];
-      for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
-      {
-        IvDIM  power = momit();
-        Real   deriv = getDerivative(power, centloc);
-        int   idenom = (power.factorial());
-        Real   denom = (Real)(idenom);
-        Real   momen = moments[power];
-        Real   incre = deriv*momen/denom;
-        retval += incre;
-      }
-      if(a_divideByArea)
-      {
-        Real minvol = 1.0e-16;
-        if(volu > minvol)
-        {
-          retval /= volu;
-        }
-      }
-      return retval;   
-    }
 
   }; //end class baseExactSolution  
   ///class for always returning zero (for bcs as opposed to being for testing convergence rates)

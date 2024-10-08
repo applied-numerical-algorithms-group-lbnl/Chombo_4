@@ -198,15 +198,15 @@ namespace EBCM
         createOperatorPetscMatrix(a_print);
       }
       ///
-      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph,
-                   shared_ptr<ebcm_dou_sca_data> a_phi) 
+      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
+                   shared_ptr<ebcm_dou_sca_data> a_phi_ptr) 
       {
         VecZeroEntries(*m_phi_ptr);
         VecZeroEntries(*m_lph_ptr);
 
-        chomboToPetsc(*m_phi_ptr,  a_phi                );
+        chomboToPetsc(*m_phi_ptr, *a_phi_ptr            );
         MatMult(      *m_mat_ptr, *m_phi_ptr, *m_lph_ptr);
-        petscToChombo( a_lph,     *m_lph_ptr            );
+        petscToChombo(*a_lph_ptr, *m_lph_ptr            );
       }
 
       ///
@@ -233,13 +233,13 @@ namespace EBCM
           const auto& row_map   =(*m_row_map_ptr)[dit[ibox]];
 
           /// this gets all volumes in valid
-          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
+          ebcm_subvol_vec subvol_vec(graph, valid, false);
           int ivar = 0; //scalar
           for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
           {
             const auto& volu    = subvol_vec[ivec];
-            double    data_val  = chomb_fab(volu, 0);
-            petsc_int petsc_loc =   row_map(volu, 0);
+            double    data_val  = chomb_fab(volu.m_pt, 0);
+            petsc_int petsc_loc =   row_map(volu.m_pt, 0);
 
             VecSetValues(a_petsc_data, 1, &petsc_loc, &data_val, INSERT_VALUES);
           } // end loop over volumes in valid
@@ -256,29 +256,36 @@ namespace EBCM
       {
         CH_TIME("BasePetsc::petscToChombo");
         
+        const auto& graphs = *(m_meta_ptr->m_graphs);
+        const auto& grids  =  (m_meta_ptr->m_grids);
         const petsc_sca * raw_array;
         VecGetArrayRead(a_petsc_data, &raw_array);
 
         petsc_int local_start,  local_end, local_size;
         VecGetOwnershipRange( a_petsc_data ,&local_start,&local_end);
-        VecGetLocalSize(a_src , &localSize);
+        VecGetLocalSize(      a_petsc_data ,&local_size);
+
+        auto dit = grids.dataIterator();
         for(int ibox =0; ibox < dit.size(); ibox++)
         {
           const auto& valid     =           grids[dit[ibox]];
           const auto& graph     =          graphs[dit[ibox]];
-          const auto& chomb_fab =    a_chomb_data[dit[ibox]];
           const auto& row_map   =(*m_row_map_ptr)[dit[ibox]];
+          auto      & chomb_fab =    a_chomb_data[dit[ibox]];
 
           /// this gets all volumes in valid
-          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
+          ebcm_subvol_vec subvol_vec(graph, valid, false);
           int ivar = 0; //scalar
           for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
           {
-
-            petsc_int global_petsc_loc =   row_map(volu, 0);
+            const auto& volu = subvol_vec[ivec];
+            petsc_int global_petsc_loc =   row_map(volu.m_pt, 0);
             petsc_int      local_index = global_petsc_loc - local_start;
-            double data_val            = arr[local_index];
-            chomb_fab(volu, 0) =  data_val ;
+            double data_val            = raw_array[local_index];
+            for(int ivec = 0; ivec < volu.m_cells.size(); ivec++)
+            {
+              chomb_fab(volu.m_cells[ivec], ivar)      =  data_val ;
+            }
           } //end loop over volumes in box.
         }   //loop over boxes in grid
       } //end function petscToChombo
@@ -293,8 +300,8 @@ namespace EBCM
       
     protected:
       /**
-          This makes m_row_map_ptr 
-          (operator uses this to map between volumes and petsc matrix rows)
+         This makes m_row_map_ptr 
+         (operator uses this to map between volumes and petsc matrix rows)
       **/
       PetscInt createMatrixRowMap(bool a_print = false)
       {
@@ -393,8 +400,8 @@ namespace EBCM
 #endif
         PetscInt ierr;
         m_mat_ptr = shared_ptr<petsc_mat>(new petsc_mat());
-        m_phi_ptr = shared_ptr<petsc_mat>(new petsc_vec());
-        m_lph_ptr = shared_ptr<petsc_mat>(new petsc_vec());
+        m_phi_ptr = shared_ptr<petsc_vec>(new petsc_vec());
+        m_lph_ptr = shared_ptr<petsc_vec>(new petsc_vec());
         
         ierr = MatCreate(wcomm, & (*m_mat_ptr));CHKERRQ(ierr);
         ierr = MatSetOptionsPrefix(*m_mat_ptr,"");CHKERRQ(ierr);
@@ -454,10 +461,17 @@ namespace EBCM
           }
         }
         ///now for the vectors
-        VecCreate(   wcomm, &(*m_phi_ptr)                  );
-        VecSetSizes(        &(*m_phi_ptr), m_numPtsAllProcs);
-        VecSetFromOptions(   (*m_phi_ptr)                  );
-        VecDuplicate(        (*m_phi_ptr), &(*m_lph_ptr)   );
+#ifdef CH_MPI
+        MPI_Comm wcomm = Chombo_MPI::comm;
+#else
+        MPI_Comm wcomm = PETSC_COMM_SELF;
+#endif
+        Vec& phiVec = *m_phi_ptr;
+        Vec& lphVec = *m_lph_ptr;
+        VecCreate(   wcomm, &phiVec                  );
+        VecSetSizes(         phiVec, m_numPtsThisProc, m_numPtsAllProcs);
+        VecSetFromOptions(   phiVec                  );
+        VecDuplicate(        phiVec, &lphVec         );
         return 0;
       }
 
@@ -503,9 +517,9 @@ namespace EBCM
        matval = 0; 
        if( momzero > eps)
        {
-          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
-          Real derval = volmom[derind];
-          matval = pd*derval/momzero;
+       pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+       Real derval = volmom[derind];
+       matval = pd*derval/momzero;
        }
        retval(0, curCol) = matval
     **/
@@ -588,7 +602,7 @@ namespace EBCM
       /**
          From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
          Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-               It is the one that converts  Taylor coefficients to fluxes).   
+         It is the one that converts  Taylor coefficients to fluxes).   
          S : stencil matrix.  
          P : phi vector.  
          W : weighting matrix.
@@ -635,9 +649,9 @@ namespace EBCM
        matval = 0; 
        if( momzero > eps)
        {
-          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
-          Real derval = volmom[derind];
-          matval = pd*derval/momzero;
+       pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+       Real derval = volmom[derind];
+       matval = pd*derval/momzero;
        }
        retval(0, curCol) = matval
     **/
@@ -648,32 +662,32 @@ namespace EBCM
                            bool a_print)
     {
       
-      double momzero    = a_face.m_ebfmom[pr_itm_i_dmo::Zero];
+      double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
       unsigned int Pcols = pr_mom_dim::size();
       
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
-      const pr_itm_r_dim xbar_face = a_locality->getXBar(a_face, a_dx);
-      retval.setVal(0.); // needed
+      const pr_itm_r_dim xbar_face = a_locality->getXBarEB(a_face, a_dx);
+      retval->setVal(0.); // needed
       for(int idir = 0; idir < DIM; idir++)
       {
         pr_mom_dim normal_moment;
         if(idir == 0)
         {
-          normal_moment = a_faces.m_norm_mom_x;
+          normal_moment = a_face.m_norm_mom_x;
         }
         else if(idir == 1)
         {
-          normal_moment = a_faces.m_norm_mom_y;
+          normal_moment = a_face.m_norm_mom_y;
         }
-        else (idir == 2)
+        else if(idir == 2)
         {
-          normal_moment = a_faces.m_norm_mom_z;
+          normal_moment = a_face.m_norm_mom_z;
         }
         else
         { //can only be wetware error.
           ch_mayday::Error("logic error 4586");
         }
-        normal_moment.shift(xbar);
+        normal_moment.shift(xbar_face);
 
         for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
         {
@@ -887,7 +901,7 @@ namespace EBCM
     }; //end class HelmholtzOp
     /**
        just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
-     **/ 
+    **/ 
     static void parseFineGridParams(int            & a_nx,
                                     double         & a_dx,
                                     ch_probdom     & a_domain,
@@ -946,28 +960,32 @@ namespace EBCM
               shared_ptr< ebcm_exac  >      a_exac_ptr,
               double a_alpha, double a_beta)
     {
-        const auto& graphs = *(a_meta_ptr->m_graphs);
-        const auto& grids  =  (a_meta_ptr->m_grids);
-        auto dit = grids.dataIterator();
-        for(int ibox =0; ibox < dit.size(); ibox++)
-        {
-          const auto& valid     =             grids[dit[ibox]];
-          const auto& graph     =            graphs[dit[ibox]];
-          const auto& phi_fab   = (*a_phi_exac_ptr)[dit[ibox]];
+      const auto& graphs = *(a_meta_ptr->m_graphs);
+      const auto& grids  =  (a_meta_ptr->m_grids);
+      auto dit = grids.dataIterator();
+      for(int ibox =0; ibox < dit.size(); ibox++)
+      {
+        const auto& valid  =             grids[dit[ibox]];
+        const auto& graph  =            graphs[dit[ibox]];
+        auto& phi_fab      = (*a_phi_exac_ptr)[dit[ibox]];
+        auto& lph_fab      = (*a_lph_exac_ptr)[dit[ibox]];
 
-          /// this gets all volumes in valid
-          ebcm_subvol_vec subvol_vec(graph, valid, a_print);
-          int ivar = 0; //scalar
-          for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+        /// this gets all volumes in valid
+        ebcm_subvol_vec subvol_vec(graph, valid, false);
+        int ivar = 0; //scalar
+        for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+        {
+          const auto& volu = subvol_vec[ivec];
+          double phi_val   = a_exac_ptr->getCellAveSolution( volu);
+          double lap_val   = a_exac_ptr->getCellAveLaplacian(volu);
+          double lph_val   = a_alpha*phi_val + a_beta*lap_val;
+          for(int ivec = 0; ivec < volu.m_cells.size(); ivec++)
           {
-            const auto& volu = subvol_vec[ivec];
-            double phi_val   = a_exac_ptr->getCellAveSolution( volu);
-            double lap_val   = a_exac_ptr->getCellAveLaplacian(volu);
-            double lph_val   = a_alpha*phi_val + a_beta*lap_val;
-            phi_fab(volu, 0) = phi_val;
-            lph_fab(volu, 0) = lph_val;
+            phi_fab(volu.m_cells[ivec], 0) = phi_val;
+            lph_fab(volu.m_cells[ivec], 0) = lph_val;
           }
         }
+      }
     } // end function setExact
           
     static shared_ptr<ebcm_exac>
@@ -978,9 +996,8 @@ namespace EBCM
       static bool printed_once = false;
       if(a_exact_flag == 0)
       {
-        if(!printed_once)
-          pout() << "exact solution = Zero" << endl;
-        retval = shared_ptr<ebc_exac>( new EBCM_Exact::ZeroSolution());
+        if(!printed_once) pout() << "exact solution = Zero" << endl;
+        retval = shared_ptr<ebcm_exac>(new EBCM_Exact::ZeroSolution<ebcm_order>() );
       }
       else if(a_exact_flag==1)
       {
@@ -991,8 +1008,7 @@ namespace EBCM
 
         pp.get("num_terms", num_terms);
         entries.resize(num_terms);
-        if(!printed_once)
-          pout() << "exact solution = polynomial" << endl;
+        if(!printed_once)  pout() << "exact solution = polynomial" << endl;
         for(int iterm = 0; iterm < num_terms; iterm++)
         {
           string coef_str   = string("coeff_") + to_string(iterm);
@@ -1008,10 +1024,9 @@ namespace EBCM
             entry.first[idir] = entry_powers[idir];
           }
           entries.push_back(entry);
-          if(!printedonce)
-            pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
+          if(!printed_once) pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
         }//end loop over terms
-        retval = shared_ptr<ebc_exac>( new EBCM_Exact::PolynomialEF(entries));
+        retval = shared_ptr<ebcm_exac>( new EBCM_Exact::PolynomialEF<ebcm_order>(entries));
       }
       else
       {
@@ -1023,8 +1038,7 @@ namespace EBCM
     }
     ///
     static double
-    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta,
-                        shared_ptr< ebcm_exac  >   a_exac)
+    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
     {
       ParmParse pp("main");
       double alpha     = 4586.;
@@ -1049,9 +1063,8 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
 
-      shared_ptr<ebcm_exac_ptr> exact_solution = getExactSolution(exact_flag);
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta,
-               alpha, beta, dom_bc, eb_bc);
+      shared_ptr<ebcm_exac> exact = getExactSolution(exact_flag);
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact, alpha, beta);
       
       HelmholtzOp discreteOp(alpha, beta, sten_rad,
                              weight_power, a_meta, dom_bc, eb_bc);
@@ -1090,10 +1103,10 @@ namespace EBCM
 
       double max_err_fine = getMaxAbsTruncation(meta_fine); 
       double max_err_coar = getMaxAbsTruncation(meta_coar);
-      ///always positive
+
       Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
       Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
-      if(max_err_fine > 1,0e-12)
+      if(max_err_fine > 1.0e-12) //err >= 0  by construction
       {
         double order = (log(max_err_coar/max_err_fine))/log(2.0);
         Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;

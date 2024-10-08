@@ -28,5 +28,5 @@
 
 ## hoeb_truncation
 * We intend to continue the story by investigating the truncation error of a family of finite volume elliptic operators.
-* This one will use quite a bit of petsc and includes yet another user interface to the petsc infrastructure.
-* The document and most of the code are vaporware as of July 7 2023.
+* This one does use quite a bit of petsc.
+* In progress as of Oct 8, 2024.
