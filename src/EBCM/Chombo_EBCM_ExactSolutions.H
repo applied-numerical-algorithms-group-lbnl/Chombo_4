@@ -11,7 +11,13 @@ namespace EBCM_Exact
   class BaseExactSolution
   {
   public:
-    typedef  EBCM::EBCM_Volu< order >  ebcm_volu;
+    typedef             EBCM::EBCM_Volu< order >  ebcm_volu;
+    typedef Proto::IndexedMoments<DIM-1, order>   pr_indmom_dmo;
+    typedef Proto::IndexedMoments<DIM  , order>   pr_indmom_dim;
+    typedef Proto::MomentIterator<DIM  , order>   pr_momit_dim;
+    typedef Proto::MomentIterator<DIM-1, order>   pr_momit_dmo;
+    typedef Proto::IndexTM< int,  DIM         >   pr_ind_int_dim;
+    typedef Proto::IndexTM< int,  DIM-1       >   pr_ind_int_dmo;
 
   
     virtual ~BaseExactSolution()
@@ -22,68 +28,62 @@ namespace EBCM_Exact
     {
     }
 
+    ///
+    /**
+    Returns taylor series of phi integrated over the volume
+    **/
     double getCellAveSolution(const ebcm_volu&  a_volu) const
     {
       double retval = 4586;
-      return retval;
-      
-    }
-    double getCellAveLaplacian(const ebcm_volu&  a_volu) const
-    {
-      double retval = 4586;
+      const pr_indmom_dim & volmom = a_volu.m_volmom;
+      retval = 0;
+      auto centloc = a_volu.m_centroid;
+      for(pr_momit_dim momit; momit.ok(); ++momit)
+      {
+        pr_ind_int_dim power = momit();
+        int   idenom = (power.factorial());
+        double denom = (Real)(idenom);
+        
+        double deriv = getDerivative(power, centloc);
+        double momen = volmom[power];
+        double incre = deriv*momen/denom;
+        retval += incre;
+      }
       return retval;
       
     }
 
-//    ///shortcut for cell data
-//    Real operator()(const EBGraph & a_graph,
-//                    const Real    & a_dx,
-//                    const VoluData& a_voldat,
-//                    const EBIndex<CELL>   & a_vof,
-//                    bool a_divideByArea)
-//    {
-//      Real retval = 0;
-//      RealVect centloc;
-//      Point cell = a_vof.m_pt;
-//      for(int idir = 0; idir < DIM; idir++)
-//      {
-//        centloc[idir] = a_dx*(Real(cell[idir]) + 0.5);
-//      }
-//      IndexedMoments<DIM, order> moments;
-//      if(a_graph.isRegular(cell))
-//      {
-//        moments.setToRegular(a_dx);
-//      }
-//      else if(a_graph.isCovered(cell))
-//      {
-//        return 0;
-//      }
-//      else
-//      {
-//        moments = a_voldat(a_vof, 0);
-//      }
-//      
-//      Real volu = moments[IvDIM::Zero];
-//      for(MomentIterator<DIM, order> momit; momit.ok(); ++momit)
-//      {
-//        IvDIM  power = momit();
-//        Real   deriv = getDerivative(power, centloc);
-//        int   idenom = (power.factorial());
-//        Real   denom = (Real)(idenom);
-//        Real   momen = moments[power];
-//        Real   incre = deriv*momen/denom;
-//        retval += incre;
-//      }
-//      if(a_divideByArea)
-//      {
-//        Real minvol = 1.0e-16;
-//        if(volu > minvol)
-//        {
-//          retval /= volu;
-//        }
-//      }
-//      return retval;   
-//    }
+    ///
+    /**
+    Returns taylor series of laplacian_phi integrated over the volume
+    **/
+    double getCellAveLaplacian(const ebcm_volu&  a_volu) const
+    {
+      double retval = 4586;
+      const pr_indmom_dim & volmom = a_volu.m_volmom;
+      retval = 0;
+      auto centloc = a_volu.m_centroid;
+      for(pr_momit_dim momit; momit.ok(); ++momit)
+      {
+        pr_ind_int_dim power = momit();
+        int   idenom = (power.factorial());
+        double denom = (Real)(idenom);
+        double deriv = getDerivative(power, centloc);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          if(power[idir] > 1)
+          {
+            ///this is power - 2ed
+            pr_ind_int_dim lap_power = power;
+            lap_power[idir] -= 2;
+            double lap_moment  = volmom[lap_power];
+            double increment   = deriv*lap_moment/denom;
+            retval += increment;
+          } //end if this power is high enough
+        } //end loop over directions
+      } //end loop over moments
+      return retval;
+    } //end function getCellAveLaplacian
 
     virtual Real getDerivative(IndexTM<int, DIM>  a_power,
                                RealVect a_loc) const
