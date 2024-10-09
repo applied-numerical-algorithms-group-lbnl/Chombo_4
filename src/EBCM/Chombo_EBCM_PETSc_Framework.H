@@ -162,10 +162,11 @@ namespace EBCM
     {
     public:
       shared_ptr<petsc_mat> m_mat_ptr;
+      shared_ptr<ebcm_meta> m_meta_ptr;
       shared_ptr<petsc_vec> m_lph_ptr;
       shared_ptr<petsc_vec> m_phi_ptr;
       shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
-      shared_ptr<ebcm_meta> m_meta_ptr;
+      shared_ptr<ebcm_dou_sca_data> m_inhomog_bit;
       int                   m_ghost;
       //each box in data iterator we get total points
       std::vector<int>      m_numPtsPerBox;
@@ -189,17 +190,40 @@ namespace EBCM
           Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
         }
         createMatrixRowMap(a_print);
-
+        
         if(a_print)
         {
           Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
         }
 
         createOperatorPetscMatrix(a_print);
+        fillInhomogeneousHolder();
       }
+
+      ///
+      /**
+         Fill m_inhomogeneousBit, the amount the operator will be incremented with 
+         due to inhomogeneous boundary condtions.
+         What goes here is up to the operator.   
+         Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
+         If you do that, to test the software, you need lots of functions that exactly 
+         conform to your homogeneous boundary conditions.    Maxima hell awaits.   
+         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
+         dtg 
+         10-9-2024
+      **/
+      virtual void fillInhomogeneousBitMemberData() = 0;
+
+      ///
+      void  addInhomogeneousBit(shared_ptr<ebcm_dou_sca_data> a_lph_ptr)
+      {
+        (*a_lph_ptr) += (*m_inhomog_bit);
+      }
+      
       ///
       void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
-                   shared_ptr<ebcm_dou_sca_data> a_phi_ptr) 
+                   shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                   bool                          a_homogeneousOnly) 
       {
         VecZeroEntries(*m_phi_ptr);
         VecZeroEntries(*m_lph_ptr);
@@ -207,6 +231,10 @@ namespace EBCM
         chomboToPetsc(*m_phi_ptr, *a_phi_ptr            );
         MatMult(      *m_mat_ptr, *m_phi_ptr, *m_lph_ptr);
         petscToChombo(*a_lph_ptr, *m_lph_ptr            );
+        if(!a_homogeneousOnly)
+        {
+          addInhomogeneousBit(a_lph_ptr);
+        }
       }
 
       ///
@@ -306,6 +334,7 @@ namespace EBCM
       PetscInt createMatrixRowMap(bool a_print = false)
       {
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
+        m_inhomog_bit = shared_ptr<ebcm_dou_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
         auto dit = grids.dataIterator();
@@ -492,6 +521,20 @@ namespace EBCM
       {
       }
 
+      ///
+      /**
+         Fill m_inhomogeneousBit, the amount the operator will be incremented with 
+         due to inhomogeneous boundary condtions.
+         What goes here is up to the operator.   
+         Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
+         If you do that, to test the software, you need lots of functions that exactly 
+         conform to your homogeneous boundary conditions.    Maxima hell awaits.   
+         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
+         dtg 
+         10-9-2024
+      **/
+      virtual void fillInhomogeneousBitMemberData()
+      {;}
       virtual ~DummyDerivedOp()
       {
       }
@@ -760,14 +803,24 @@ namespace EBCM
     {
     public:
 
-      
-      double                                 m_alpha;
-      double                                 m_beta;
-      int                                    m_weight_power;
-      int                                    m_sten_rad;
-      string m_dom_bc;
-      string m_eb_bc;
+      double    m_alpha;
+      double    m_beta;
+      int       m_weight_power;
+      int       m_sten_rad;
+      string    m_dom_bc;
+      string    m_eb_bc;
 
+      ///
+      /**
+         Fill m_inhomogeneousBit (lives in the base class), 
+         the amount the operator will be incremented with 
+         due to inhomogeneous boundary condtions.
+      **/
+      virtual void fillInhomogeneousBitMemberData()
+      {
+      }
+        
+      {;}
       /// 
       /**
          alpha        = identity coeff
@@ -879,6 +932,11 @@ namespace EBCM
             (*retval) += flux;
           }
         }
+        if(a_ebbc == string("Neumann"))
+        {
+          //no stencil for Neumann
+        }
+        else if(a_ebbc == string("Dirichlet"))
         {
           for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
           {
@@ -893,8 +951,14 @@ namespace EBCM
                                                                  
             (*retval) += flux;
           }
+          else
+          {
+            ch_mayday::Error("HelmholtzOp::privateStencil knows not this ebbc");
+          }
         }
-        
+        //now that we have int( f dot n) dA so we have to divide by volume magnitude
+        double volmag = volume.m_volume[pr_indmom_dim::Zero()];
+        retval /= volmag;
         return retval;
       }
 

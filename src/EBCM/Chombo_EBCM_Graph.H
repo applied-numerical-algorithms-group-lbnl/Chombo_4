@@ -391,13 +391,13 @@ namespace EBCM
 
     ///Data:
     ///this is another one of those classes with its data just hanging out in the breeze
-    typedef Chombo4::GeometryService<order> ch_geoserv;
-    typedef Proto::IndexedMoments<DIM-1, order> IndMomSDMinOne;
-    typedef Proto::IndexedMoments<DIM  , order> IndMomSpaceDim;
-    typedef EBCM::EBCM_Face<XFACE, order> ebcm_xface;
-    typedef EBCM::EBCM_Face<YFACE, order> ebcm_yface;
-    typedef EBCM::EBCM_Face<ZFACE, order> ebcm_zface;
-    typedef EBCM::IrregFace<       order> ebcm_iface;
+    typedef Chombo4::GeometryService<    order> ch_geoserv;
+    typedef Proto::IndexedMoments<DIM-1, order> pr_indmom_dmo;
+    typedef Proto::IndexedMoments<DIM  , order> pr_indmom_dim;
+    typedef EBCM::EBCM_Face<XFACE      , order> ebcm_xface;
+    typedef EBCM::EBCM_Face<YFACE      , order> ebcm_yface;
+    typedef EBCM::EBCM_Face<ZFACE      , order> ebcm_zface;
+    typedef EBCM::IrregFace<             order> ebcm_iface;
     
     bool                          m_regular;
     //centroid location in global space (not relative to cell center)
@@ -658,7 +658,7 @@ namespace EBCM
     template <CENTERING cent>
     void fillFaceData(      vector< EBCM_Face< cent, order> >           & a_facedata,
                       const vector< EBIndex<   cent > >                 & a_ebfaces,
-                      const HostIrregData<     cent, IndMomSDMinOne, 1> & a_facedat)
+                      const HostIrregData<     cent, pr_indmom_dmo, 1> & a_facedat)
     {
 
       a_facedata.resize(a_ebfaces.size());
