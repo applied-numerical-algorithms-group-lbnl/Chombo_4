@@ -51,6 +51,9 @@ namespace EBCM
     typedef Chombo4::GeometryService<         ebcm_order >  ch_geoserv;
     typedef  EBCM::Algorithm_Framework<       ebcm_order >  algo_framework;
     typedef  EBCM::neighborhood       <       ebcm_order >  ebcm_neighborhood;
+
+    typedef  EBCM::neig_dom_face                            ebcm_dom_face;
+    typedef  EBCM::neig_cut_face                            ebcm_cut_face;
     
     typedef  EBCM::MetaDataLevel<             ebcm_order >  ebcm_meta;
     typedef  EBCM::Algorithm_Framework<       ebcm_order >  ebcm_framework;
@@ -61,6 +64,7 @@ namespace EBCM
     typedef  EBCM::HostLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_data;
     typedef  EBCM::SubVolumeVector<           ebcm_order >  ebcm_subvol_vec;
     typedef  EBCM::EBCM_Volu<                 ebcm_order >  ebcm_volu;
+
     
     typedef Proto::IndexedMoments<DIM  ,      ebcm_order >  pr_mom_dim;
     typedef Proto::IndexedMoments<DIM-1,      ebcm_order >  pr_mom_dmo;
@@ -72,6 +76,7 @@ namespace EBCM
     typedef EBCM_Exact::BaseExactSolution<    ebcm_order >  ebcm_exac;
 
 
+
     static int dummy_func()
     {
       return 0;
@@ -81,8 +86,12 @@ namespace EBCM
     class local_stencil_t
     {
     public:
+      local_stencil_t()
+      {
+        clear();
+      }
       std::vector< std::pair<pr_pt, double> > m_entries;
-
+      double m_inhomogeneous_bit;
       ///
       const std::pair<pr_pt, double> & operator[](int a_ivec) const
       {
@@ -99,6 +108,7 @@ namespace EBCM
       void
       operator+= (const local_stencil_t& a_input)
       {
+        this->m_inhomogeneous_bit += a_input.m_inhomogeneous_bit;
         for(int ivec = 0; ivec < a_input.m_entries.size(); ivec++)
         {
           add(a_input.m_entries[ivec]);
@@ -109,6 +119,7 @@ namespace EBCM
       void clear()
       {
         m_entries.resize(0);
+        m_inhomogeneous_bit = 0;//needs to be zero
       }
 
       /// 
@@ -143,6 +154,7 @@ namespace EBCM
       ///scale the stencil by a constant
       void operator*= (const double& a_scale)
       {
+        this->m_inhomogeneous_bit *= a_scale;
         for (int ivof = 0; ivof < this->size(); ivof++)
         {
           (*this)[ivof].second *= a_scale;
@@ -161,12 +173,24 @@ namespace EBCM
     class Base_PETSc_Op
     {
     public:
+      ///
+      /**
+         This is m_inhomog_bit, the amount the operator will be incremented with 
+         due to inhomogeneous boundary condtions.
+         What goes here is up to the operator.   
+         Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
+         If you do that, to test the software, you need lots of functions that exactly 
+         conform to your homogeneous boundary conditions.    Maxima hell awaits.   
+         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
+         dtg 
+         10-9-2024
+      **/
+      shared_ptr<ebcm_dou_sca_data> m_inhomog_bit;
       shared_ptr<petsc_mat> m_mat_ptr;
       shared_ptr<ebcm_meta> m_meta_ptr;
       shared_ptr<petsc_vec> m_lph_ptr;
       shared_ptr<petsc_vec> m_phi_ptr;
       shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
-      shared_ptr<ebcm_dou_sca_data> m_inhomog_bit;
       int                   m_ghost;
       //each box in data iterator we get total points
       std::vector<int>      m_numPtsPerBox;
@@ -197,22 +221,8 @@ namespace EBCM
         }
 
         createOperatorPetscMatrix(a_print);
-        fillInhomogeneousHolder();
       }
 
-      ///
-      /**
-         Fill m_inhomogeneousBit, the amount the operator will be incremented with 
-         due to inhomogeneous boundary condtions.
-         What goes here is up to the operator.   
-         Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
-         If you do that, to test the software, you need lots of functions that exactly 
-         conform to your homogeneous boundary conditions.    Maxima hell awaits.   
-         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
-         dtg 
-         10-9-2024
-      **/
-      virtual void fillInhomogeneousBitMemberData() = 0;
 
       ///
       void  addInhomogeneousBit(shared_ptr<ebcm_dou_sca_data> a_lph_ptr)
@@ -225,6 +235,7 @@ namespace EBCM
                    shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
                    bool                          a_homogeneousOnly) 
       {
+        //this stuff makes lph = laplacian
         VecZeroEntries(*m_phi_ptr);
         VecZeroEntries(*m_lph_ptr);
 
@@ -334,7 +345,7 @@ namespace EBCM
       PetscInt createMatrixRowMap(bool a_print = false)
       {
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
-        m_inhomog_bit = shared_ptr<ebcm_dou_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
+        m_inhomog_bit = shared_ptr<ebcm_dou_sca_data>(new ebcm_dou_sca_data(m_meta_ptr, m_ghost));
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
         auto dit = grids.dataIterator();
@@ -467,13 +478,16 @@ namespace EBCM
         vector<int> numPtsPerBox(dit.size(), 0);
         for(int ibox =0; ibox < dit.size(); ibox++)
         {
-          const auto& valid =  grids[dit[ibox]];
-          const auto& graph = graphs[dit[ibox]];
+          const auto& valid           =            grids[dit[ibox]];
+          const auto& graph           =           graphs[dit[ibox]];
+          auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
           ebcm_subvol_vec volvec(graph, valid, a_print);
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
+            double inhombit = local->m_inhomogeneous_bit;
+            inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
             int local_size = local->size();
             const auto    & maplev = *(m_row_map_ptr->m_data);
             const auto    & mapfab = maplev[dit[ibox]];
@@ -521,18 +535,6 @@ namespace EBCM
       {
       }
 
-      ///
-      /**
-         Fill m_inhomogeneousBit, the amount the operator will be incremented with 
-         due to inhomogeneous boundary condtions.
-         What goes here is up to the operator.   
-         Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
-         If you do that, to test the software, you need lots of functions that exactly 
-         conform to your homogeneous boundary conditions.    Maxima hell awaits.   
-         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
-         dtg 
-         10-9-2024
-      **/
       virtual void fillInhomogeneousBitMemberData()
       {;}
       virtual ~DummyDerivedOp()
@@ -605,6 +607,29 @@ namespace EBCM
     
       return retval;
     }
+
+    ///
+    static double
+    getDomainBCValue(const ebcm_dom_face  & a_domain_face,
+                     const string         & a_dom_bc,
+                     const ebcm_exac      & a_bc_exact)
+    {
+      double retval = 4586;
+      ch_mayday::Error("getDomainBCValue not implemented");
+      return retval;
+    }
+
+    ///
+    static double
+    getEBBCValue(const ebcm_cut_face  & a_cut_face,
+                 const string         & a_eb_bc,
+                 const ebcm_exac      & a_bc_exact)
+    {
+      double retval = 4586;
+      ch_mayday::Error("getEBBCValue not implemented");
+      return retval;
+    }
+    
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
@@ -613,7 +638,11 @@ namespace EBCM
     */
     static local_stencil_t
     getStencilFromMat(const eigen_mat                                & a_matrix,
-                      shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality)
+                      shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality,
+                      const string                                   & a_dom_bc,
+                      const string                                   & a_eb_bc,
+                      const ebcm_exac                                & a_bc_exact)
+                      
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       local_stencil_t retval;
@@ -626,6 +655,28 @@ namespace EBCM
         entry.second = a_matrix(irow, 0);
         retval.add(entry);
       }
+      //Inhomogeneous bit
+      ///we have m_bc_exact to get values or derivatives. 
+      retval.m_inhomogeneous_bit = 0;
+      const auto &  dom_face_vec =*(a_locality->m_dom_faces);
+      const auto &  dom_weig_vec = (a_locality->m_weig_dom_faces);
+      for(int idom = 0; idom < dom_face_vec.size(); idom++)
+      {
+        double      dom_weig     = dom_weig_vec[idom];
+        const auto& dom_face     = dom_face_vec[idom];
+        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact);
+        retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
+      }
+      const auto &  cut_face_vec = *(a_locality->m_cut_faces);
+      const auto &  cut_weig_vec =   a_locality->m_weig_cut_faces;
+      for(int icut = 0; icut < cut_face_vec.size(); icut++)
+      {
+        double      cut_weig     = cut_weig_vec[icut];
+        const auto& cut_face     = cut_face_vec[icut];
+        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact);
+        retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
+      }
+
       return retval;
     }
 
@@ -640,6 +691,7 @@ namespace EBCM
                                 const string                       & a_eb_bc,
                                 const int                          & a_facedir,
                                 const double                       & a_dx,
+                                const ebcm_exac                    & a_bc_exact,
                                 bool a_print = false)
     {
       /**
@@ -661,7 +713,7 @@ namespace EBCM
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, a_print);
       shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,a_print);
+      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -676,7 +728,7 @@ namespace EBCM
       multiply( AinvWMTmat, Ainvmat, WMTmat);
       eigen_mat Smat;
       multiply( Smat, *Qmat_p, AinvWMTmat);
-      local_stencil_t retval = getStencilFromMat(Smat, locality);
+      local_stencil_t retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
       return retval;
     }
 
@@ -761,13 +813,14 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order> & a_face,
+    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order>        & a_face,
                                   const int                          & a_stenrad,
                                   const int                          & a_weightpower,
                                   const EBCM::EBCM_Graph<ebcm_order> & a_graph,
                                   const string                       & a_dom_bc,
                                   const string                       & a_eb_bc,
                                   const double                       & a_dx,
+                                  const ebcm_exac                    & a_bc_exact,
                                   bool a_print = false)
     {
 
@@ -789,7 +842,7 @@ namespace EBCM
       multiply( AinvWMTmat, Ainvmat, WMTmat);
       eigen_mat Smat;
       multiply( Smat, *Qmat_p, AinvWMTmat);
-      local_stencil_t retval = getStencilFromMat(Smat, locality);
+      local_stencil_t retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
       return retval;
     }
     
@@ -803,24 +856,15 @@ namespace EBCM
     {
     public:
 
-      double    m_alpha;
-      double    m_beta;
-      int       m_weight_power;
-      int       m_sten_rad;
-      string    m_dom_bc;
-      string    m_eb_bc;
-
-      ///
-      /**
-         Fill m_inhomogeneousBit (lives in the base class), 
-         the amount the operator will be incremented with 
-         due to inhomogeneous boundary condtions.
-      **/
-      virtual void fillInhomogeneousBitMemberData()
-      {
-      }
+      double                m_alpha;
+      double                m_beta;
+      int                   m_weight_power;
+      int                   m_sten_rad;
+      string                m_dom_bc;
+      string                m_eb_bc;
+      ///for inhomog
+      shared_ptr<ebcm_exac> m_bc_exact;
         
-      {;}
       /// 
       /**
          alpha        = identity coeff
@@ -834,8 +878,7 @@ namespace EBCM
                   const int                                    & a_sten_rad,
                   const int                                    & a_weight_power,
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                  string a_dom_bc, string a_eb_bc, 
-                  bool                                           a_print = false)
+                  string a_dom_bc, string a_eb_bc, shared_ptr<ebcm_exac> a_bc_exact, bool a_print)
       :Base_PETSc_Op(a_meta_ptr, a_sten_rad, a_print)
       {
         m_alpha        = a_alpha;       
@@ -844,6 +887,7 @@ namespace EBCM
         m_weight_power = a_weight_power;
         m_dom_bc       = a_dom_bc;
         m_eb_bc        = a_eb_bc;
+        m_bc_exact     = a_bc_exact;
       }
 
       virtual ~HelmholtzOp()
@@ -886,13 +930,16 @@ namespace EBCM
           {
             const auto& face = volume.m_xfaces[iface];
             double fluxsign = faceSign(volume, face);
+
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               dx, 0, a_print);        
+                                                               0, dx,
+                                                               *m_bc_exact,
+                                                               a_print);        
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -908,7 +955,9 @@ namespace EBCM
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               dx, 1, a_print);        
+                                                               1, dx,
+                                                               *m_bc_exact,
+                                                               a_print);        
 
                                                                
             flux *= fluxsign;
@@ -925,18 +974,20 @@ namespace EBCM
                                                                a_weightpower, 
                                                                a_graph,       
                                                                a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               dx, 2, a_print);        
+                                                               a_eb_bc,
+                                                               2, dx,
+                                                               *m_bc_exact,
+                                                               a_print);        
                                                                
             flux *= fluxsign;
             (*retval) += flux;
           }
         }
-        if(a_ebbc == string("Neumann"))
+        if(a_eb_bc == string("Neumann"))
         {
           //no stencil for Neumann
         }
-        else if(a_ebbc == string("Dirichlet"))
+        else if(a_eb_bc == string("Dirichlet"))
         {
           for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
           {
@@ -947,18 +998,31 @@ namespace EBCM
                                                                  a_graph,       
                                                                  a_dom_bc,      
                                                                  a_eb_bc,
-                                                                 dx, a_print);
+                                                                 dx,
+                                                                 *m_bc_exact,
+                                                                 a_print);
                                                                  
             (*retval) += flux;
           }
-          else
-          {
-            ch_mayday::Error("HelmholtzOp::privateStencil knows not this ebbc");
-          }
+        }
+        else
+        {
+          ch_mayday::Error("HelmholtzOp::privateStencil knows not this ebbc");
         }
         //now that we have int( f dot n) dA so we have to divide by volume magnitude
-        double volmag = volume.m_volume[pr_indmom_dim::Zero()];
-        retval /= volmag;
+        double volmag = volume.m_volmom[pr_itm_i_dim::Zero];
+
+        (*retval) *= (1./volmag);
+        //now retval = laplacian  so we multiply by beta and add alpha I
+        (*retval) *= m_beta;
+        local_stencil_t ident_term;
+        ident_term.clear();
+        ident_term.m_inhomogeneous_bit = 0;
+        ident_term.m_entries.resize(1);
+        ident_term.m_entries[0].first  = a_pt;
+        ident_term.m_entries[0].second = m_alpha;
+
+        (*retval) += ident_term;
         return retval;
       }
 
@@ -1127,13 +1191,16 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
 
-      shared_ptr<ebcm_exac> exact = getExactSolution(exact_flag);
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact, alpha, beta);
-      
+      shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
+
+      bool print = false;
       HelmholtzOp discreteOp(alpha, beta, sten_rad,
-                             weight_power, a_meta, dom_bc, eb_bc);
-      
-      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr);
+                             weight_power, a_meta, dom_bc, eb_bc,
+                             exact_sol, print);
+
+      bool homogeneous_only = false;
+      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
