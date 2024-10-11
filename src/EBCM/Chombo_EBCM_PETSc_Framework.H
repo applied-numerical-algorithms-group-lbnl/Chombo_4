@@ -608,28 +608,58 @@ namespace EBCM
       return retval;
     }
 
-    ///
+
     static double
-    getDomainBCValue(const ebcm_dom_face  & a_domain_face,
-                     const string         & a_dom_bc,
-                     const ebcm_exac      & a_bc_exact)
+    getDomainBCValue(const ebcm_dom_face     & a_domain_face,
+                     const string            & a_dom_bc,
+                     const ebcm_exac         & a_bc_exact,
+                     const ebcm_neighborhood & a_neigh)
     {
       double retval = 4586;
-      ch_mayday::Error("getDomainBCValue not implemented");
+      
+      if(     a_dom_bc == string("Dirichlet"))
+      {
+        retval = a_bc_exact.getIntPhiDA(a_domain_face, a_neigh);
+      }
+      else if(a_dom_bc == string("Neumann"))
+      {
+        retval = a_bc_exact.getIntGradPhiDotNDA(a_domain_face, a_neigh);
+      }
+      else
+      {
+        pout() << "getDomainBCValue knows not of this dom_bc = " << a_dom_bc << endl;
+        ch_mayday::Error();
+      }
+      
       return retval;
     }
 
     ///
     static double
-    getEBBCValue(const ebcm_cut_face  & a_cut_face,
-                 const string         & a_eb_bc,
-                 const ebcm_exac      & a_bc_exact)
+    getEBBCValue(const ebcm_cut_face     & a_cut_face,
+                 const string            & a_eb_bc,
+                 const ebcm_exac         & a_bc_exact,
+                 const ebcm_neighborhood & a_neigh)
     {
       double retval = 4586;
-      ch_mayday::Error("getEBBCValue not implemented");
+
+      if(     a_eb_bc == string("Dirichlet"))
+      {
+        retval = a_bc_exact.getIntPhiDA(a_cut_face, a_neigh);
+      }
+      else if(a_eb_bc == string("Neumann"))
+      {
+        retval = a_bc_exact.getIntGradPhiDotNDA(a_cut_face, a_neigh);
+      }
+      else
+      {
+        pout() << "getEBBCValue knows not of this eb_bc = " << a_eb_bc << endl;
+        ch_mayday::Error();
+      }
+      
       return retval;
     }
-    
+
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
@@ -664,7 +694,7 @@ namespace EBCM
       {
         double      dom_weig     = dom_weig_vec[idom];
         const auto& dom_face     = dom_face_vec[idom];
-        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact);
+        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, a_locality);
         retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
       }
       const auto &  cut_face_vec = *(a_locality->m_cut_faces);
@@ -673,7 +703,7 @@ namespace EBCM
       {
         double      cut_weig     = cut_weig_vec[icut];
         const auto& cut_face     = cut_face_vec[icut];
-        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact);
+        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, a_locality);
         retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
       }
 
@@ -694,44 +724,60 @@ namespace EBCM
                                 const ebcm_exac                    & a_bc_exact,
                                 bool a_print = false)
     {
-      /**
-         From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
-         Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-         It is the one that converts  Taylor coefficients to fluxes).   
-         S : stencil matrix.  
-         P : phi vector.  
-         W : weighting matrix.
-         M : moment matrix.
-         A: system matrix =  ((WM)^T(WM))
-         (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
-         S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+      /** 
+          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
+      local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
       shared_ptr< eigen_mat > Amat_p =
         EBCM::Algorithm_Framework<ebcm_order>::
         getSystemMatrix(locality, a_face, a_graph,
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, a_print);
-      shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+      if((a_dom_bc == string("Neumann")) && (a_face.domainBoundary()))
+      {
+        retval = local_stencil_t();
+        retval.clear();
+        retval.m_inhomogeneous_bit = 0;
 
-      eigen_mat WMmat;
-      multiply(WMmat, *Wmat_p, *Mmat_p);
-      eigen_mat WMTmat = WMmat;
-      WMTmat.transpose();
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, locality);
+        retval.m_inhomogeneous_bit += flux_val;
+      }
+      else
+      {    
+        /**
+           From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
+           Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
+           It is the one that converts  Taylor coefficients to fluxes).   
+           S : stencil matrix.  
+           P : phi vector.  
+           W : weighting matrix.
+           M : moment matrix.
+           A: system matrix =  ((WM)^T(WM))
+           (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
+           S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+        **/
 
-      eigen_mat Ainvmat = *Amat_p;
-      Ainvmat.invert();
+        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
+        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+
+        eigen_mat WMmat;
+        multiply(WMmat, *Wmat_p, *Mmat_p);
+        eigen_mat WMTmat = WMmat;
+        WMTmat.transpose();
+
+        eigen_mat Ainvmat = *Amat_p;
+        Ainvmat.invert();
       
-      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx, a_print);
-      eigen_mat AinvWMTmat;
-      multiply( AinvWMTmat, Ainvmat, WMTmat);
-      eigen_mat Smat;
-      multiply( Smat, *Qmat_p, AinvWMTmat);
-      local_stencil_t retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx, a_print);
+        eigen_mat AinvWMTmat;
+        multiply( AinvWMTmat, Ainvmat, WMTmat);
+        eigen_mat Smat;
+        multiply( Smat, *Qmat_p, AinvWMTmat);
+        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+      }
       return retval;
     }
-
     ///
     /**
        loops through d
@@ -823,26 +869,40 @@ namespace EBCM
                                   const ebcm_exac                    & a_bc_exact,
                                   bool a_print = false)
     {
+        /**
+           There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
+        **/
+      local_stencil_t retval;
+      if(a_eb_bc == string("Neumann")) ///Irreg faces are always boundary faces (so do not have to check)
+      {
+        retval = local_stencil_t();
+        retval.clear();
+        retval.m_inhomogeneous_bit = 0;
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face);
+        retval.m_inhomogeneous_bit += flux_val;
+      }
+      else
+      {
+        shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+        shared_ptr< eigen_mat > Amat_p = algo_framework::getEBSystemMatrix(locality, a_face, a_graph, a_stenrad, a_weightpower, a_dom_bc, a_eb_bc, a_print);
+        shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, a_print);
+        shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, a_print);
 
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p = algo_framework::getEBSystemMatrix(locality, a_face, a_graph, a_stenrad, a_weightpower, a_dom_bc, a_eb_bc, a_print);
-      shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, a_print);
-      shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, a_print);
+        eigen_mat WMmat;
+        multiply(WMmat, *Wmat_p, *Mmat_p);
+        eigen_mat WMTmat = WMmat;
+        WMTmat.transpose();
 
-      eigen_mat WMmat;
-      multiply(WMmat, *Wmat_p, *Mmat_p);
-      eigen_mat WMTmat = WMmat;
-      WMTmat.transpose();
-
-      eigen_mat Ainvmat = *Amat_p;
-      Ainvmat.invert();
+        eigen_mat Ainvmat = *Amat_p;
+        Ainvmat.invert();
       
-      shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx, a_print);
-      eigen_mat AinvWMTmat;
-      multiply( AinvWMTmat, Ainvmat, WMTmat);
-      eigen_mat Smat;
-      multiply( Smat, *Qmat_p, AinvWMTmat);
-      local_stencil_t retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+        shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx, a_print);
+        eigen_mat AinvWMTmat;
+        multiply( AinvWMTmat, Ainvmat, WMTmat);
+        eigen_mat Smat;
+        multiply( Smat, *Qmat_p, AinvWMTmat);
+        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+      }
       return retval;
     }
     
@@ -983,11 +1043,6 @@ namespace EBCM
             (*retval) += flux;
           }
         }
-        if(a_eb_bc == string("Neumann"))
-        {
-          //no stencil for Neumann
-        }
-        else if(a_eb_bc == string("Dirichlet"))
         {
           for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
           {
@@ -1005,10 +1060,7 @@ namespace EBCM
             (*retval) += flux;
           }
         }
-        else
-        {
-          ch_mayday::Error("HelmholtzOp::privateStencil knows not this ebbc");
-        }
+
         //now that we have int( f dot n) dA so we have to divide by volume magnitude
         double volmag = volume.m_volmom[pr_itm_i_dim::Zero];
 

@@ -11,15 +11,21 @@ namespace EBCM_Exact
   class BaseExactSolution
   {
   public:
-    typedef             EBCM::EBCM_Volu< order >  ebcm_volu;
-    typedef Proto::IndexedMoments<DIM-1, order>   pr_indmom_dmo;
-    typedef Proto::IndexedMoments<DIM  , order>   pr_indmom_dim;
-    typedef Proto::MomentIterator<DIM  , order>   pr_momit_dim;
-    typedef Proto::MomentIterator<DIM-1, order>   pr_momit_dmo;
-    typedef Proto::IndexTM< int,  DIM         >   pr_ind_int_dim;
-    typedef Proto::IndexTM< int,  DIM-1       >   pr_ind_int_dmo;
-
-  
+    typedef             EBCM::neighborhood< order >       ebcm_neighborhood;
+    typedef             EBCM::EBCM_Volu< order >          ebcm_volu;
+    typedef             EBCM::IrregFace< order >          ebcm_irreg_face;
+    typedef             EBCM::neig_dom_face               ebcm_dom_face;
+    typedef             EBCM::neig_cut_face               ebcm_cut_face;
+    typedef Proto::IndexedMoments<DIM-1, order>           pr_indmom_dmo;
+    typedef Proto::IndexedMoments<DIM  , order>           pr_indmom_dim;
+    typedef Proto::MomentIterator<DIM  , order>           pr_momit_dim;
+    typedef Proto::MomentIterator<DIM-1, order>           pr_momit_dmo;
+    typedef Proto::IndexTM< int   ,  DIM      >           pr_ind_int_dim;
+    typedef Proto::IndexTM< int   ,  DIM-1    >           pr_ind_int_dmo;
+    typedef Proto::IndexTM< double,  DIM      >           pr_ind_dou_dim;
+    typedef Proto::IndexTM< double,  DIM-1    >           pr_ind_dou_dmo;
+    typedef Proto::RealVect                               pr_rv;
+    typedef Chombo4::MayDay                               ch_mayday;
     virtual ~BaseExactSolution()
     {
     }
@@ -28,31 +34,8 @@ namespace EBCM_Exact
     {
     }
 
-    ///
-    /**
-    Returns taylor series of phi integrated over the volume
-    **/
-    double getCellAveSolution(const ebcm_volu&  a_volu) const
-    {
-      double retval = 4586;
-      const pr_indmom_dim & volmom = a_volu.m_volmom;
-      retval = 0;
-      auto centloc = a_volu.m_centroid;
-      for(pr_momit_dim momit; momit.ok(); ++momit)
-      {
-        pr_ind_int_dim power = momit();
-        int   idenom = (power.factorial());
-        double denom = (Real)(idenom);
-        
-        double deriv = getDerivative(power, centloc);
-        double momen = volmom[power];
-        double incre = deriv*momen/denom;
-        retval += incre;
-      }
-      return retval;
-      
-    }
-
+    /// These functions are necessary for convergence tests
+    
     ///
     /**
     Returns taylor series of laplacian_phi integrated over the volume
@@ -62,6 +45,7 @@ namespace EBCM_Exact
       double retval = 4586;
       const pr_indmom_dim & volmom = a_volu.m_volmom;
       retval = 0;
+      ///this gets int(laplacian) dV
       auto centloc = a_volu.m_centroid;
       for(pr_momit_dim momit; momit.ok(); ++momit)
       {
@@ -82,11 +66,162 @@ namespace EBCM_Exact
           } //end if this power is high enough
         } //end loop over directions
       } //end loop over moments
+      //need to divide out volume
+      double momzero    = volmom[pr_ind_int_dim::Zero];
+      retval /= momzero; //Is cell merging grand or what?
       return retval;
     } //end function getCellAveLaplacian
+    
+    ///
+    /**
+       Returns |phi|
+    **/
+    double getCellAveSolution(const ebcm_volu&  a_volu) const
+    {
+      double retval = 4586;
+      const pr_indmom_dim & volmom = a_volu.m_volmom;
+      ///this gets int(phi) dV
+      retval = getIntPhiDV(a_volu);
 
-    virtual Real getDerivative(IndexTM<int, DIM>  a_power,
-                               RealVect a_loc) const
+      ///need to div
+      double momzero    = volmom[pr_ind_int_dim::Zero];
+      retval /= momzero; //Is cell merging grand or what?
+      return retval;
+    }
+
+    ///
+    /**
+       Returns int( phi dV) 
+    **/
+    double getIntPhiDV(const ebcm_volu&  a_volu) const
+    {
+      double retval = 0; //needs to be zero
+      const pr_indmom_dim & volmom = a_volu.m_volmom;
+      auto centloc                 = a_volu.m_centroid;
+      for(pr_momit_dim momit; momit.ok(); ++momit)
+      {
+        pr_ind_int_dim power = momit();
+        int   idenom = (power.factorial());
+        double denom = (Real)(idenom);
+        
+        double deriv = getDerivative(power, centloc);
+        double momen = volmom[power];
+        double incre = deriv*momen/denom;
+        retval += incre;
+      }
+      return retval;
+      
+    }
+
+    /// These functions are necessary for inhomogeneous bcs
+
+    ///
+    double getIntPhiDA_Common_Bit(const pr_indmom_dmo  & a_fac_mom,
+                                  const pr_ind_dou_dim & a_cent_loc) const
+    {
+      double retval = 0;  //incremental
+      
+      ///this might be wrong for a starting centroid.   need to revisit
+      auto centloc                 = a_cent_loc;
+      for(pr_momit_dmo momit; momit.ok(); ++momit)
+      {
+        pr_ind_int_dmo power = momit();
+        int   idenom = (power.factorial());
+        double denom = (Real)(idenom);
+        
+        double deriv = getDerivative(power, centloc);
+        double momen = a_fac_mom[power];
+        double incre = deriv*momen/denom;
+        retval += incre;
+      }
+      return retval;
+      
+    }
+    
+    ///  The next two functions should reduce to one
+    double getIntPhiDA(const ebcm_dom_face     & a_dom_face,
+                       const ebcm_neighborhood & a_neigh) const
+    {
+
+      pr_indmom_dmo   fac_mom;
+      pr_ind_dou_dim  cent_loc;
+      const ebcm_volu & cur_vol = a_neigh.m_volumes[a_dom_face.m_subvol_index];
+      if(a_dom_face.m_direction == 0)
+      {
+        fac_mom  = cur_vol.m_xfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_xfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+      else if(a_dom_face.m_direction == 1)
+      {
+        fac_mom  = cur_vol.m_yfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_yfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+#if DIM==3      
+      else if(a_dom_face.m_direction == 2)
+      {
+        fac_mom  = cur_vol.m_zfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_zfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+#endif
+      else
+      {
+        ch_mayday::Error("getIntPhiDA: bogus data found");
+      }
+      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
+    }
+
+    ///
+    template <CENTERING  cent>
+    double getIntPhiDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                       const ebcm_neighborhood             & a_neigh,
+                       double                                a_dx) const
+    {
+      pr_indmom_dmo   fac_mom = a_ebcm_face.m_facmom;
+      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
+      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
+      return retval;
+    }
+    ///
+    double getIntPhiDA(const EBCM::IrregFace<order>  & a_irreg_face,
+                       const ebcm_neighborhood       & a_neigh,
+                       double                          a_dx) const
+    {
+//      pr_indmom_dmo   fac_mom = a_ebcm_face.m_facmom;
+//      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
+//      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
+      return 4586;
+    }
+    ///
+    double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
+                       const ebcm_neighborhood & a_neigh) const
+    {
+      double retval = 4586;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+    
+    ///
+    double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
+                               const ebcm_neighborhood & a_neigh) const
+    {
+      double retval = 4586;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+    
+    ///
+    double getIntGradPhiDotNDA(const ebcm_cut_face     & a_cut_face,
+                               const ebcm_neighborhood & a_neigh) const
+    {
+      double retval = 4586;
+      ch_mayday::Error("not implemented");
+      return retval;
+    }
+
+
+    ///Where all the real work gets done (in the derived class)
+    virtual Real getDerivative(pr_ind_int_dim  a_power,
+                               pr_rv           a_loc) const
     {
       Chombo4::MayDay::Error("EBCM::BaseExact:: not implemented");
     }
@@ -99,12 +234,10 @@ namespace EBCM_Exact
   {
   public:
   
-    typedef       IndexTM<int, DIM>            IvDIM;
-    typedef IndexedMoments<DIM  , order> IndMomDIM;
-    typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
-  
-    virtual Real getDerivative(IndexTM<int, DIM> a_power,
-                               RealVect a_loc) const
+    typedef       Proto::IndexTM<int, DIM>            pr_ind_int_dim;
+    typedef       Proto::RealVect                     pr_rv;
+    virtual Real getDerivative(pr_ind_int_dim  a_power,
+                               pr_rv           a_loc) const
     {
       return 0.;
     }
