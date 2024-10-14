@@ -116,27 +116,28 @@ namespace EBCM_Exact
     /// These functions are necessary for inhomogeneous bcs
 
     ///
-    double getIntPhiDA_Common_Bit(const pr_indmom_dmo  & a_fac_mom,
-                                  const pr_ind_dou_dim & a_cent_loc) const
+    double getIntPhiDACommonBit(const pr_indmom_dmo  & a_fac_mom,
+                                const pr_ind_dou_dim & a_cent_loc) const
     {
       double retval = 0;  //incremental
-      
-      ///this might be wrong for a starting centroid.   need to revisit
       auto centloc                 = a_cent_loc;
       for(pr_momit_dmo momit; momit.ok(); ++momit)
       {
-        pr_ind_int_dmo power = momit();
-        int   idenom = (power.factorial());
+        /// this is p 
+        pr_ind_int_dmo  taylor_power = momit();
+        int   idenom = (taylor_power.factorial());
         double denom = (Real)(idenom);
-        
-        double deriv = getDerivative(power, centloc);
-        double momen = a_fac_mom[power];
+        // this is phi^(p)
+        double deriv = getDerivative(taylor_power, centloc);
+        double momen = a_fac_mom[taylor_power];
+        ///increment = phi^(p) m^p/p!
         double incre = deriv*momen/denom;
         retval += incre;
       }
       return retval;
       
     }
+
     
     ///  The next two functions should reduce to one
     double getIntPhiDA(const ebcm_dom_face     & a_dom_face,
@@ -171,12 +172,76 @@ namespace EBCM_Exact
     }
 
     ///
+    double getIntGradPhiDotNDACommonBit(const pr_indmom_dmo  & a_fac_mom,
+                                        const pr_ind_dou_dim & a_cent_loc,
+                                        const int            & a_face_dir) const
+    {
+      double retval = 0;  //incremental
+      auto centloc                 = a_cent_loc;
+      for(pr_momit_dmo momit; momit.ok(); ++momit)
+      {
+        ///taylor_power =  p
+        pr_ind_int_dmo  taylor_power_dmo = momit();
+        pr_ind_int_dim  taylor_power_dim;
+        int idmo = 0;
+        for(int idim =0; idim < DIM; idim++)
+        {
+          if(idir == a_face_dir)
+          {
+            taylor_power_dim[idim] = 0;
+          }
+          else
+          {
+            taylor_power_dim[idim] = taylor_power_dmo[idmo];
+            idmo++;
+          }
+        }
+        double momen = a_fac_mom[taylor_power];
+        int pd = taylor_power[a_face_dir];
+        if( pd > 0 )
+        {
+          int   idenom = (taylor_power.factorial());
+          double denom = (Real)(idenom);
+          ///deriv_power = p-e^d
+          deriv_power_dmo[a_face_dir] -= 1;
+          // deiv =  phi^(p-e^d)
+          pr_indmom_dim deriv_power_dim;
+          for(int idir =0; idir < DIM; idir++)
+          {
+            if(idir == a_face_dir)
+            {
+              deriv_power_dim = 0;
+            }
+            
+          }
+
+          double deriv = getDerivative(deriv_power, centloc);
+          ///increment = pd  phi^(p-ed) m^p/p!
+          double incre = pd*deriv*momen/denom;
+          retval += incre;
+        } // end if pd > 0
+      }// end loop over moments
+      return retval;
+    } //end function getGradPhiDotNDACommonBit
+    ///
+    template <CENTERING  cent>
+    double getIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                               const ebcm_neighborhood             & a_neigh,
+                               const int                           & a_grad_dir,
+                               double                                a_dx) const
+    {
+      pr_indmom_dmo   fac_mom  = a_ebcm_face.m_facmom;
+      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
+      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_grad_dir);
+      return retval;
+    }
+    ///
     template <CENTERING  cent>
     double getIntPhiDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                        const ebcm_neighborhood             & a_neigh,
                        double                                a_dx) const
     {
-      pr_indmom_dmo   fac_mom = a_ebcm_face.m_facmom;
+      pr_indmom_dmo   fac_mom  = a_ebcm_face.m_facmom;
       pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
       double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
       return retval;
@@ -185,6 +250,17 @@ namespace EBCM_Exact
     double getIntPhiDA(const EBCM::IrregFace<order>  & a_irreg_face,
                        const ebcm_neighborhood       & a_neigh,
                        double                          a_dx) const
+    {
+//      pr_indmom_dmo   fac_mom = a_ebcm_face.m_facmom;
+//      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
+//      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
+      return 4586;
+    }
+
+    ///
+    double getIntGradPhiDotNDA(const EBCM::IrregFace<order>  & a_irreg_face,
+                               const ebcm_neighborhood       & a_neigh,
+                               double                          a_dx) const
     {
 //      pr_indmom_dmo   fac_mom = a_ebcm_face.m_facmom;
 //      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);

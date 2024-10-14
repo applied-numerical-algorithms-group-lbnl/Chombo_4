@@ -158,7 +158,7 @@ namespace EBCM
       m_facmom.setRegular(a_dx);
     }
     ///
-    pr_itm_r_dim location(double  a_dx)
+    pr_itm_r_dim location(double  a_dx) const
     {
       pr_itm_r_dim retval;
       for(int idir = 0; idir < DIM; idir++)

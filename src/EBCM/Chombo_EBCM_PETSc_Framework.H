@@ -694,7 +694,7 @@ namespace EBCM
       {
         double      dom_weig     = dom_weig_vec[idom];
         const auto& dom_face     = dom_face_vec[idom];
-        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, a_locality);
+        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, *a_locality);
         retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
       }
       const auto &  cut_face_vec = *(a_locality->m_cut_faces);
@@ -703,7 +703,7 @@ namespace EBCM
       {
         double      cut_weig     = cut_weig_vec[icut];
         const auto& cut_face     = cut_face_vec[icut];
-        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, a_locality);
+        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, *a_locality);
         retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
       }
 
@@ -740,7 +740,7 @@ namespace EBCM
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
 
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, locality);
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, *locality, a_facedir, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }
       else
@@ -873,18 +873,22 @@ namespace EBCM
            There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
         **/
       local_stencil_t retval;
-      if(a_eb_bc == string("Neumann")) ///Irreg faces are always boundary faces (so do not have to check)
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat_p =
+        algo_framework::getEBSystemMatrix(locality, a_face, a_graph,
+                                          a_stenrad, a_weightpower,
+                                          a_dom_bc, a_eb_bc, a_print);
+      ///Irreg faces are always boundary faces (so do not have to check)
+      if(a_eb_bc == string("Neumann")) 
       {
         retval = local_stencil_t();
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face);
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, *locality, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }
       else
       {
-        shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-        shared_ptr< eigen_mat > Amat_p = algo_framework::getEBSystemMatrix(locality, a_face, a_graph, a_stenrad, a_weightpower, a_dom_bc, a_eb_bc, a_print);
         shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, a_print);
         shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, a_print);
 
