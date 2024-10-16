@@ -267,6 +267,17 @@ namespace EBCM
     IndexedMoments<DIM, order> m_norm_mom_y;
     IndexedMoments<DIM, order> m_norm_mom_z;
 
+    pr_itm_r_dim location(double a_dx) const
+    {
+      pr_itm_r_dim retval;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        //for Taylor expansions, this should be correct because the moments start here.
+        retval[idir] = a_dx*(double(m_pt[idir]) + 0.5);
+      }
+      return retval;
+    }
+    ///
     inline
     IndexedMoments<DIM, order> getNormalMoment(const int a_dir) const
     {

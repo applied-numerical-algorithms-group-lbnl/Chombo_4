@@ -11,21 +11,24 @@ namespace EBCM_Exact
   class BaseExactSolution
   {
   public:
-    typedef             EBCM::neighborhood< order >       ebcm_neighborhood;
-    typedef             EBCM::EBCM_Volu< order >          ebcm_volu;
-    typedef             EBCM::IrregFace< order >          ebcm_irreg_face;
-    typedef             EBCM::neig_dom_face               ebcm_dom_face;
-    typedef             EBCM::neig_cut_face               ebcm_cut_face;
-    typedef Proto::IndexedMoments<DIM-1, order>           pr_ind_mom_dmo;
-    typedef Proto::IndexedMoments<DIM  , order>           pr_ind_mom_dim;
-    typedef Proto::MomentIterator<DIM  , order>           pr_momit_dim;
-    typedef Proto::MomentIterator<DIM-1, order>           pr_momit_dmo;
-    typedef Proto::IndexTM< int   ,  DIM      >           pr_ind_int_dim;
-    typedef Proto::IndexTM< int   ,  DIM-1    >           pr_ind_int_dmo;
-    typedef Proto::IndexTM< double,  DIM      >           pr_ind_dou_dim;
-    typedef Proto::IndexTM< double,  DIM-1    >           pr_ind_dou_dmo;
-    typedef Proto::RealVect                               pr_rv;
-    typedef Chombo4::MayDay                               ch_mayday;
+    typedef    EBCM::neig_dom_face                                ebcm_dom_face;
+    typedef    EBCM::neig_cut_face                                ebcm_cut_face;
+    typedef    EBCM::neighborhood<                        order > ebcm_neighborhood;
+    typedef    EBCM::EBCM_Volu<                           order > ebcm_volu;
+    typedef    EBCM::EBCM_Face<              XFACE      , order > ebcm_xface;
+    typedef    EBCM::EBCM_Face<              YFACE      , order > ebcm_yface;
+    typedef    EBCM::EBCM_Face<              ZFACE      , order > ebcm_zface;
+    typedef    EBCM::IrregFace<                           order > ebcm_irreg_face;
+    typedef   Proto::IndexedMoments<         DIM-1,       order > pr_ind_mom_dmo;
+    typedef   Proto::IndexedMoments<         DIM  ,       order > pr_ind_mom_dim;
+    typedef   Proto::MomentIterator<         DIM  ,       order > pr_momit_dim;
+    typedef   Proto::MomentIterator<         DIM-1,       order > pr_momit_dmo;
+    typedef   Proto::IndexTM<       int   ,  DIM                > pr_ind_int_dim;
+    typedef   Proto::IndexTM<       int   ,  DIM-1              > pr_ind_int_dmo;
+    typedef   Proto::IndexTM<       double,  DIM                > pr_ind_dou_dim;
+    typedef   Proto::IndexTM<       double,  DIM-1              > pr_ind_dou_dmo;
+    typedef   Proto::RealVect                                     pr_rv;
+    typedef Chombo4::MayDay                                       ch_mayday;
     virtual ~BaseExactSolution()
     {
     }
@@ -232,62 +235,171 @@ namespace EBCM_Exact
       return retval;
     }
     ///
+    double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
+                               const ebcm_neighborhood & a_neigh) const
+    {
+      pr_ind_mom_dmo   fac_mom;
+      pr_ind_dou_dim  cent_loc;
+      const ebcm_volu & cur_vol = (*a_neigh.m_volumes)[a_dom_face.m_subvol_index];
+      if(a_dom_face.m_direction == 0)
+      {
+        fac_mom  = cur_vol.m_xfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_xfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+      else if(a_dom_face.m_direction == 1)
+      {
+        fac_mom  = cur_vol.m_yfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_yfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+#if DIM==3      
+      else if(a_dom_face.m_direction == 2)
+      {
+        fac_mom  = cur_vol.m_zfaces[a_dom_face.m_subvol_index].m_facmom;
+        cent_loc = cur_vol.m_zfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+      }
+#endif
+      else
+      {
+        ch_mayday::Error("getIntPhiDA: bogus data found");
+      }
+      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
+      return retval;
+
+    }
+    ///
     template <CENTERING  cent>
     double getIntPhiDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                        const ebcm_neighborhood             & a_neigh,
                        double                                a_dx) const
     {
       pr_ind_mom_dmo   fac_mom  = a_ebcm_face.m_facmom;
-      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
-      int face_dir = a_ebcm_face.getFaceDir();
+      pr_ind_dou_dim  cent_loc  = a_ebcm_face.location(a_dx);
+      int  face_dir = a_ebcm_face.getFaceDir();
       double retval = getIntPhiDACommonBit(fac_mom, cent_loc, face_dir);
       return retval;
     }
+    ///
+    double getIrregIntPhiDACommonBit(const pr_ind_mom_dim & a_ebf_mom,
+                                     const pr_ind_dou_dim & a_cent_loc) const
+    {
+      double retval = 0;  //incremental
+      for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+      {
+        ///taylor_power =  p
+        pr_ind_int_dim  taylor_power_dim = momit_dim();
+        
+        double momen = a_ebf_mom[taylor_power_dim];
+        pr_ind_int_dim deriv_power_dim = taylor_power_dim;
+        double deriv = getDerivative(deriv_power_dim, a_cent_loc);
+        int   idenom = (taylor_power_dim.factorial());
+        double denom = (Real)(idenom);
+          
+        ///increment =  phi^(p) m^p/p!
+        double incre =  deriv*momen/denom;
+        retval += incre;
+      }// end loop over moments
+      return retval;
+    } //end function getGradPhiDotNDACommonBit
     ///
     double getIntPhiDA(const EBCM::IrregFace<order>  & a_irreg_face,
                        const ebcm_neighborhood       & a_neigh,
                        double                          a_dx) const
     {
-//      pr_ind_mom_dmo   fac_mom = a_ebcm_face.m_facmom;
-//      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
-//      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
-      return 4586;
+      pr_ind_mom_dim ebf_mom  = a_irreg_face.m_ebfmom;
+      pr_ind_dou_dim cent_loc = a_irreg_face.location(a_dx);
+      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      return retval;
     }
+
+    ///
+    double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
+                       const ebcm_neighborhood & a_neigh) const
+    {
+      const ebcm_volu & cur_vol   = (*a_neigh.m_volumes)[a_cut_face.m_subvol_index];
+      pr_ind_mom_dim    ebf_mom   =    cur_vol.m_ifaces [a_cut_face.m_iface_index ].m_ebfmom;
+      pr_ind_dou_dim    cent_loc  = cur_vol.m_xfaces[a_cut_face.m_subvol_index].location(cur_vol.m_dx);
+      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      return retval;
+    }
+    
+    ///
+    double getIrregIntGradPhiDotNDACommonBit(const pr_ind_mom_dim & a_ebf_norm_mom_x,
+                                             const pr_ind_mom_dim & a_ebf_norm_mom_y,
+                                             const pr_ind_mom_dim & a_ebf_norm_mom_z,
+                                             const pr_ind_dou_dim & a_cent_loc) const
+    {
+      double retval = 0;  //incremental
+      for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+      {
+        ///taylor_power =  p
+        pr_ind_int_dim  taylor_power_dim = momit_dim();
+        for(int grad_dir = 0; grad_dir < DIM; grad_dir++)
+        {
+          int pd = taylor_power_dim[grad_dir];
+          if(pd > 0)
+          {
+            
+            ///remember
+            pr_ind_mom_dim ebf_norm_mom;
+            if(grad_dir == 0)
+            {
+              ebf_norm_mom = a_ebf_norm_mom_y;
+            }
+            else if(grad_dir == 1)
+            {
+              ebf_norm_mom = a_ebf_norm_mom_y;
+            }
+            else
+            {
+              ebf_norm_mom = a_ebf_norm_mom_z;
+            }
+
+            // int((x-xbar)^P n_xd dA)
+            double norm_mom = ebf_norm_mom[taylor_power_dim];
+            //p - e^d
+            pr_ind_int_dim deriv_power_dim = taylor_power_dim;
+            deriv_power_dim[grad_dir] -= 1;
+            double deriv = getDerivative(deriv_power_dim, a_cent_loc);
+            int   idenom = (taylor_power_dim.factorial());
+            double denom = (Real)(idenom);
+          
+            ///increment =  phi^(p) m^p/p!
+            double incre =  pd*deriv*norm_mom/denom;
+            retval += incre;
+          } //end if pd>0 (if this power has a non-zero gradient in this direction)
+        } //end loop over gradient directions
+      } //end loop over moments
+
+      return retval;
+    }// end function getIrregIntGradPhiDotNDACommonBit
 
     ///
     double getIntGradPhiDotNDA(const EBCM::IrregFace<order>  & a_irreg_face,
                                const ebcm_neighborhood       & a_neigh,
                                double                          a_dx) const
     {
-//      pr_ind_mom_dmo   fac_mom = a_ebcm_face.m_facmom;
-//      pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
-//      double retval = getIntPhiDACommonBit(fac_mom, cent_loc);
-      return 4586;
-    }
-    ///
-    double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
-                       const ebcm_neighborhood & a_neigh) const
-    {
-      double retval = 4586;
-      ch_mayday::Error("not implemented");
+      pr_ind_dou_dim  cent_loc = a_irreg_face.location(a_dx);
+      double retval = getIrregIntGradPhiDotNDACommonBit(a_irreg_face.m_norm_mom_x,
+                                                        a_irreg_face.m_norm_mom_y,
+                                                        a_irreg_face.m_norm_mom_z,
+                                                        cent_loc);
       return retval;
     }
     
-    ///
-    double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
-                               const ebcm_neighborhood & a_neigh) const
-    {
-      double retval = 4586;
-      ch_mayday::Error("not implemented");
-      return retval;
-    }
     
     ///
     double getIntGradPhiDotNDA(const ebcm_cut_face     & a_cut_face,
-                               const ebcm_neighborhood & a_neigh) const
+                               const ebcm_neighborhood & a_neigh,
+                               double                    a_dx) const
     {
-      double retval = 4586;
-      ch_mayday::Error("not implemented");
+      const auto & cur_volu    = (*a_neigh.m_volumes)[a_cut_face.m_subvol_index];
+      const auto & irreg_face  =  cur_volu.m_ifaces[  a_cut_face.m_iface_index ];
+      pr_ind_dou_dim  cent_loc = irreg_face.location(a_dx);
+      double retval = getIrregIntGradPhiDotNDACommonBit(irreg_face.m_norm_mom_x,
+                                                        irreg_face.m_norm_mom_y,
+                                                        irreg_face.m_norm_mom_z,
+                                                        cent_loc);
+
       return retval;
     }
 

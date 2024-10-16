@@ -639,7 +639,8 @@ namespace EBCM
     getEBBCValue(const ebcm_cut_face     & a_cut_face,
                  const string            & a_eb_bc,
                  const ebcm_exac         & a_bc_exact,
-                 const ebcm_neighborhood & a_neigh)
+                 const ebcm_neighborhood & a_neigh,
+                 const double            & a_dx)
     {
       double retval = 4586;
 
@@ -649,7 +650,7 @@ namespace EBCM
       }
       else if(a_eb_bc == string("Neumann"))
       {
-        retval = a_bc_exact.getIntGradPhiDotNDA(a_cut_face, a_neigh);
+        retval = a_bc_exact.getIntGradPhiDotNDA(a_cut_face, a_neigh, a_dx);
       }
       else
       {
@@ -671,7 +672,8 @@ namespace EBCM
                       shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality,
                       const string                                   & a_dom_bc,
                       const string                                   & a_eb_bc,
-                      const ebcm_exac                                & a_bc_exact)
+                      const ebcm_exac                                & a_bc_exact,
+                      const double                                   & a_dx)
                       
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
@@ -703,7 +705,7 @@ namespace EBCM
       {
         double      cut_weig     = cut_weig_vec[icut];
         const auto& cut_face     = cut_face_vec[icut];
-        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, *a_locality);
+        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, *a_locality, a_dx);
         retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
       }
 
@@ -774,7 +776,7 @@ namespace EBCM
         multiply( AinvWMTmat, Ainvmat, WMTmat);
         eigen_mat Smat;
         multiply( Smat, *Qmat_p, AinvWMTmat);
-        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       }
       return retval;
     }
@@ -905,7 +907,7 @@ namespace EBCM
         multiply( AinvWMTmat, Ainvmat, WMTmat);
         eigen_mat Smat;
         multiply( Smat, *Qmat_p, AinvWMTmat);
-        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact);
+        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       }
       return retval;
     }
