@@ -23,7 +23,7 @@ polynomial_exact.num_terms = 2
 polynomial_exact.power_0 = 1 0 0
 polynomial_exact.coeff_0 = 1.0
 polynomial_exact.power_1 = 0 1 0
-polynomial_exact.coeff_2 = 1.0
+polynomial_exact.coeff_1 = 1.0
 
 #Chombo_EBCM_Algorithm_Framework.H
 getImplicitFunction.center           = 0.5 0.5 0.5
