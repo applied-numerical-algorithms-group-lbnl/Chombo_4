@@ -28,13 +28,17 @@
 
 int main(int a_argc, char* a_argv[])
 {
-#ifdef CH_MPI
-  MPI_Init(&a_argc, &a_argv);
-  Chombo4::pout() << "MPI INIT called" << std::endl;
-#endif
+#ifndef CH_USE_PETSC
+  Chombo4::pout() << "This example only works with PETSc" << endl;
+  return 0;
+#else
+  ///petsc is assumed true from here
+  Chombo4::pout() << "About to call PetscFinalize" << std::endl;
+  //this calls MPI_Init if necssary
+  PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
 
   using Chombo4::pout;
-  CH_TIMER_SETFILE("ebcm_framework_time_table");
+  CH_TIMER_SETFILE("hoeb_truncation_time_table");
   {
     
     if (a_argc < 2)
@@ -52,7 +56,6 @@ int main(int a_argc, char* a_argv[])
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running hoeb_truncation for polynomial order = " << order << endl;
 
-#ifdef CH_USE_PETSC
     if(order == 6)
     {
       EBCM::PETSc_Framework<6>::run_hoeb_truncation_tests();
@@ -82,14 +85,14 @@ int main(int a_argc, char* a_argv[])
       Chombo4::pout() << "main: Doh! unknown order = " << order << endl;
       return -1;
     }
-#endif    
   }
 
   Chombo4::pout() << "Printing time table " << endl;
   CH_TIMER_REPORT();
-#ifdef CH_MPI
-  Chombo4::pout() << "Woo hoo! \n About to call MPI Finalize" << std::endl;
-  MPI_Finalize();
-#endif
+  
+  Chombo4::pout() << "About to call PetscFinalize" << std::endl;
+  ///this calls mpi_finalize
+  PetscFinalize();
   return 0;
+#endif  
 }
