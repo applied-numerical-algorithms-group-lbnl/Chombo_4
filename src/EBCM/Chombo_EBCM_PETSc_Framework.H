@@ -170,7 +170,8 @@ namespace EBCM
        are computed in the derived class.   All data is public because
        this design is cleaner than hiding behind access functions.
     **/
-    class Base_PETSc_Op
+    template <class linear_operator_t>
+    class PETSc_Interface
     {
     public:
       ///
@@ -186,6 +187,7 @@ namespace EBCM
          10-9-2024
       **/
       shared_ptr<ebcm_dou_sca_data> m_inhomog_bit;
+      shared_ptr<linear_operator_t> m_oper_ptr;
       shared_ptr<petsc_mat> m_mat_ptr;
       shared_ptr<ebcm_meta> m_meta_ptr;
       shared_ptr<petsc_vec> m_lph_ptr;
@@ -198,29 +200,24 @@ namespace EBCM
       int                   m_numPtsAllProcs;
       int                   m_startPtThisProc;
       
-      virtual ~Base_PETSc_Op()
+      virtual ~PETSc_Interface()
       {;}
   
-      Base_PETSc_Op(const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                    const int                                    & a_ghost,
-                    bool                                           a_print = false)
+      PETSc_Interface(const shared_ptr< linear_operator_t  >       & a_oper_ptr,
+                      const shared_ptr< ebcm_meta  >               & a_meta_ptr,
+                      const int                                    & a_ghost)
       {
         CH_TIME("EBPetscSolver::EBPetscSolver");
+        m_oper_ptr     =    a_oper_ptr;
         m_meta_ptr     =    a_meta_ptr;
         m_ghost        =    a_ghost;
     
-        if(a_print)
-        {
-          Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
-        }
-        createMatrixRowMap(a_print);
+        Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
+        createMatrixRowMap();
         
-        if(a_print)
-        {
-          Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
-        }
+        Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
 
-        createOperatorPetscMatrix(a_print);
+        createOperatorPetscMatrix();
       }
 
 
@@ -329,20 +326,16 @@ namespace EBCM
         }   //loop over boxes in grid
       } //end function petscToChombo
 
-      ///this gets done by the derived class
-      virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false) = 0;
-
-
     private:
       /// banning weak construction but assignment and copy constructors should work fine.
-      Base_PETSc_Op();
+      PETSc_Interface();
       
     protected:
       /**
          This makes m_row_map_ptr 
          (operator uses this to map between volumes and petsc matrix rows)
       **/
-      PetscInt createMatrixRowMap(bool a_print = false)
+      PetscInt createMatrixRowMap()
       {
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
         m_inhomog_bit = shared_ptr<ebcm_dou_sca_data>(new ebcm_dou_sca_data(m_meta_ptr, m_ghost));
@@ -359,7 +352,7 @@ namespace EBCM
           const auto& graph = graphs[dit[ibox]];
           //valid is correct here.  ghost is handled via exchange.
 
-          ebcm_subvol_vec subvollocal(graph, valid, a_print);
+          ebcm_subvol_vec subvollocal(graph, valid, false);
           numPtsThisProc     += subvollocal.size();
           numPtsPerBox[ibox]  = subvollocal.size();
         }
@@ -400,7 +393,7 @@ namespace EBCM
         {
           const auto& valid =  grids[dit[ibox]];
           const auto& graph = graphs[dit[ibox]];
-          ebcm_subvol_vec volvec(graph, valid, a_print);
+          ebcm_subvol_vec volvec(graph, valid, false);
           auto      & mapfab =      mapdata[dit[ibox]];
           for(int ivec = 0; ivec < volvec.size(); ivec++)
           {
@@ -417,7 +410,7 @@ namespace EBCM
 
         Chombo4::pout() << "Base_Petsc_Op::getMap calling exchange" << endl;
 
-        m_row_map_ptr->exchange(a_print);
+        m_row_map_ptr->exchange(false);
         
         return 0;
       }//end function createMatrixRowMap
@@ -428,7 +421,7 @@ namespace EBCM
          and 
          m_phi_ptr, m_lph_ptr, vectors to hold petsc copies of solution, rhs.
       **/
-      PetscInt createOperatorPetscMatrix(bool a_print = false)
+      PetscInt createOperatorPetscMatrix()
       {
         CH_TIME("Base_Petsc_Op::createOperatorPetscMatrix");
         // create matrix
@@ -459,12 +452,12 @@ namespace EBCM
         ierr = MatSetFromOptions( *m_mat_ptr ); CHKERRQ(ierr);
 
         //sets the actual values in *m_mat_ptr
-        ierr = formMatrix(a_print); CHKERRQ(ierr);
+        ierr = formMatrix();CHKERRQ(ierr);
         return 0;
       }
 
       ///sets the actual values in *m_mat_ptr
-      PetscInt formMatrix(bool a_print = false)
+      PetscInt formMatrix()
       {
     
         CH_TIME("Base_Petsc_Op::formMatrix");
@@ -481,11 +474,12 @@ namespace EBCM
           const auto& valid           =            grids[dit[ibox]];
           const auto& graph           =           graphs[dit[ibox]];
           auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
-          ebcm_subvol_vec volvec(graph, valid, a_print);
+          ebcm_subvol_vec volvec(graph, valid, false);
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
-            shared_ptr<local_stencil_t>  local = getLocalStencil(volu.m_pt, graph);
+            shared_ptr<local_stencil_t>  local =
+              m_oper_ptr->getLocalStencil(volu.m_pt, graph);
             double inhombit = local->m_inhomogeneous_bit;
             inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
             int local_size = local->size();
@@ -516,38 +510,9 @@ namespace EBCM
         VecSetFromOptions(   phiVec                  );
         VecDuplicate(        phiVec, &lphVec         );
         return 0;
-      }
+      } //end function formMatrix
 
-    }; //end class Base_Petsc_Op
-
-    /// 
-    /**
-       Class to force compilation of all this lovely code. It is useful but unusable.  
-       If a class can be a zen koan, this may qualify.
-    **/
-    class DummyDerivedOp: public Base_PETSc_Op
-    {
-    public:
-      DummyDerivedOp(const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                     const int                                    & a_ghost,
-                     bool                                           a_print = false)
-        :Base_PETSc_Op(a_meta_ptr, a_ghost, a_print)
-      {
-      }
-
-      virtual void fillInhomogeneousBitMemberData()
-      {;}
-      virtual ~DummyDerivedOp()
-      {
-      }
-      
-      virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
-      {
-        shared_ptr<local_stencil_t> retval(new local_stencil_t());
-        return retval;
-      }
-    };
-    
+    }; //end class petscinterface
 
 
     /**
@@ -573,8 +538,7 @@ namespace EBCM
     getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
                          shared_ptr<ebcm_neighborhood>        a_locality,
                          const int                          & a_facedir,
-                         const double                       & a_dx,
-                         bool a_print)
+                         const double                       & a_dx)
     {
       pr_mom_dmo facmom =  a_face.m_facmom;
       pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
@@ -606,9 +570,10 @@ namespace EBCM
       }
     
       return retval;
-    }
+    }///end function getHelmholtzQMatrix
 
 
+    ///
     static double
     getDomainBCValue(const ebcm_dom_face     & a_domain_face,
                      const string            & a_dom_bc,
@@ -632,7 +597,7 @@ namespace EBCM
       }
       
       return retval;
-    }
+    }//end function getDomBCValue
 
     ///
     static double
@@ -659,7 +624,7 @@ namespace EBCM
       }
       
       return retval;
-    }
+    } //end function getEBBCValue
 
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
@@ -710,7 +675,7 @@ namespace EBCM
       }
 
       return retval;
-    }
+    } //end function getStencilFromMat
 
     ///
     template<CENTERING cent>
@@ -723,8 +688,7 @@ namespace EBCM
                                 const string                       & a_eb_bc,
                                 const int                          & a_facedir,
                                 const double                       & a_dx,
-                                const ebcm_exac                    & a_bc_exact,
-                                bool a_print = false)
+                                const ebcm_exac                    & a_bc_exact)
     {
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
@@ -735,7 +699,7 @@ namespace EBCM
         EBCM::Algorithm_Framework<ebcm_order>::
         getSystemMatrix(locality, a_face, a_graph,
                         a_stenrad, a_weightpower,
-                        a_dom_bc, a_eb_bc, a_print);
+                        a_dom_bc, a_eb_bc, false);
       if((a_dom_bc == string("Neumann")) && (a_face.domainBoundary()))
       {
         retval = local_stencil_t();
@@ -760,8 +724,8 @@ namespace EBCM
            S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
         **/
 
-        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality, a_print);
-        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc, a_print);
+        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality,                   false);
+        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,false);
 
         eigen_mat WMmat;
         multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -771,7 +735,7 @@ namespace EBCM
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
-        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx, a_print);
+        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
         eigen_mat AinvWMTmat;
         multiply( AinvWMTmat, Ainvmat, WMTmat);
         eigen_mat Smat;
@@ -779,7 +743,7 @@ namespace EBCM
         retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       }
       return retval;
-    }
+    } //end function getHelmholtzFDotEhatStencil
     ///
     /**
        loops through d
@@ -801,8 +765,7 @@ namespace EBCM
     static shared_ptr<eigen_mat>
     getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
                            shared_ptr<ebcm_neighborhood>        a_locality,
-                           const double                       & a_dx,
-                           bool a_print)
+                           const double                       & a_dx)
     {
       
       double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
@@ -852,7 +815,7 @@ namespace EBCM
       }   //end loop over directions
       return retval;
 
-    }
+    } // end function getHelmholtzEBQMatrix
     
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
@@ -868,8 +831,7 @@ namespace EBCM
                                   const string                       & a_dom_bc,
                                   const string                       & a_eb_bc,
                                   const double                       & a_dx,
-                                  const ebcm_exac                    & a_bc_exact,
-                                  bool a_print = false)
+                                  const ebcm_exac                    & a_bc_exact)
     {
         /**
            There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
@@ -879,7 +841,7 @@ namespace EBCM
       shared_ptr< eigen_mat > Amat_p =
         algo_framework::getEBSystemMatrix(locality, a_face, a_graph,
                                           a_stenrad, a_weightpower,
-                                          a_dom_bc, a_eb_bc, a_print);
+                                          a_dom_bc, a_eb_bc, false);
       ///Irreg faces are always boundary faces (so do not have to check)
       if(a_eb_bc == string("Neumann")) 
       {
@@ -891,8 +853,8 @@ namespace EBCM
       }
       else
       {
-        shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, a_print);
-        shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, a_print);
+        shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, false);
+        shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, false);
 
         eigen_mat WMmat;
         multiply(WMmat, *Wmat_p, *Mmat_p);
@@ -902,7 +864,7 @@ namespace EBCM
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
-        shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx, a_print);
+        shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx);
         eigen_mat AinvWMTmat;
         multiply( AinvWMTmat, Ainvmat, WMTmat);
         eigen_mat Smat;
@@ -910,7 +872,7 @@ namespace EBCM
         retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       }
       return retval;
-    }
+    }// end function getIrregHelmholtzFDotNStencil
     
     ///
     /**
@@ -918,7 +880,7 @@ namespace EBCM
        This creates an operator of the form
        L(phi) = alpha phi + beta * div(F(phi))
     **/
-    class HelmholtzOp: public Base_PETSc_Op
+    class HelmholtzOp
     {
     public:
 
@@ -926,10 +888,12 @@ namespace EBCM
       double                m_beta;
       int                   m_weight_power;
       int                   m_sten_rad;
+      int                   m_ghost;
       string                m_dom_bc;
       string                m_eb_bc;
       ///for inhomog
       shared_ptr<ebcm_exac> m_bc_exact;
+      shared_ptr<ebcm_meta> m_meta_ptr;
         
       /// 
       /**
@@ -944,16 +908,19 @@ namespace EBCM
                   const int                                    & a_sten_rad,
                   const int                                    & a_weight_power,
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                  string a_dom_bc, string a_eb_bc, shared_ptr<ebcm_exac> a_bc_exact, bool a_print)
-      :Base_PETSc_Op(a_meta_ptr, a_sten_rad, a_print)
+                  shared_ptr<ebcm_exac> a_bc_exact,
+                  string a_dom_bc, string a_eb_bc, int a_ghost)
       {
+        
         m_alpha        = a_alpha;       
         m_beta         = a_beta;
         m_sten_rad     = a_sten_rad;
         m_weight_power = a_weight_power;
+        m_meta_ptr     = a_meta_ptr;
+        m_bc_exact     = a_bc_exact;
         m_dom_bc       = a_dom_bc;
         m_eb_bc        = a_eb_bc;
-        m_bc_exact     = a_bc_exact;
+        m_ghost        = a_ghost;
       }
 
       virtual ~HelmholtzOp()
@@ -961,7 +928,7 @@ namespace EBCM
       }
 
       ///this is the function that the driver code calls
-      virtual shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph, bool a_print = false)
+      shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph)
       {
         shared_ptr<local_stencil_t> retval =
           privateStencil(a_pt,          
@@ -969,8 +936,7 @@ namespace EBCM
                          m_weight_power, 
                          a_graph,       
                          m_dom_bc,      
-                         m_eb_bc,       
-                         a_print);        
+                         m_eb_bc);
         return retval;
       }
 
@@ -981,13 +947,12 @@ namespace EBCM
                                                          const int                          & a_weightpower,
                                                          const EBCM::EBCM_Graph<ebcm_order> & a_graph,
                                                          const string                       & a_dom_bc,
-                                                         const string                       & a_eb_bc,
-                                                         bool                                 a_print        = false)
+                                                         const string                       & a_eb_bc)
       {
         
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         pr_bx pointbx(a_pt, a_pt);
-        pr_bx grbx = pointbx.grow(pr_pt::Ones(this->m_ghost));
+        pr_bx grbx = pointbx.grow(pr_pt::Ones(m_ghost));
         
         auto volume = a_graph.getVolumeCoveringPoint(a_pt);
         auto dx = volume.m_dx;
@@ -1004,8 +969,7 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,       
                                                                0, dx,
-                                                               *m_bc_exact,
-                                                               a_print);        
+                                                               *m_bc_exact);
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -1022,8 +986,7 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,       
                                                                1, dx,
-                                                               *m_bc_exact,
-                                                               a_print);        
+                                                               *m_bc_exact);
 
                                                                
             flux *= fluxsign;
@@ -1042,8 +1005,7 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,
                                                                2, dx,
-                                                               *m_bc_exact,
-                                                               a_print);        
+                                                               *m_bc_exact);
                                                                
             flux *= fluxsign;
             (*retval) += flux;
@@ -1060,8 +1022,7 @@ namespace EBCM
                                                                  a_dom_bc,      
                                                                  a_eb_bc,
                                                                  dx,
-                                                                 *m_bc_exact,
-                                                                 a_print);
+                                                                 *m_bc_exact);
                                                                  
             (*retval) += flux;
           }
@@ -1116,8 +1077,7 @@ namespace EBCM
                               const double         & a_dx,
                               const ch_probdom     & a_domain,
                               const int            & a_maxGrid,
-                              const bool           & a_mergeSmallCells,
-                              const bool           & a_print)
+                              const bool           & a_mergeSmallCells)
     {
       vector<ch_dbl> vecgrids;
       Chombo4::pout() << "making grids" << endl;
@@ -1134,7 +1094,7 @@ namespace EBCM
       int ghost = 0;
       shared_ptr< ebcm_meta  >
         metaDataPtr(new ebcm_meta(geoserv, a_domain.domainBox(), a_dx, ghost,
-                                  a_mergeSmallCells, a_print));
+                                  a_mergeSmallCells, false));
       return metaDataPtr;
     }
 
@@ -1252,10 +1212,14 @@ namespace EBCM
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
 
-      bool print = false;
-      HelmholtzOp discreteOp(alpha, beta, sten_rad,
-                             weight_power, a_meta, dom_bc, eb_bc,
-                             exact_sol, print);
+      shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
+                                                       weight_power, 
+                                                       a_meta, 
+                                                       exact_sol,
+                                                       dom_bc, eb_bc, num_ghost));
+                                                          
+      
+      PETSc_Interface<HelmholtzOp> discreteOp(helm_ptr, a_meta, num_ghost);
 
       bool homogeneous_only = false;
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
@@ -1267,7 +1231,8 @@ namespace EBCM
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
-    
+
+    ///
     /**
        test function for example/EBCM/hoeb_truncation
     **/ 
@@ -1286,9 +1251,8 @@ namespace EBCM
       double dx_coar = dx_fine*2.;
       ch_probdom domain_coar = domain_fine;
       domain_coar.coarsen(2);
-      bool print = false;
-      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells, print);
-      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells, print);
+      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
 
       double max_err_fine = getMaxAbsTruncation(meta_fine); 
       double max_err_coar = getMaxAbsTruncation(meta_coar);
