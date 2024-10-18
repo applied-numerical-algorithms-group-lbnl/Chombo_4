@@ -582,11 +582,11 @@ namespace EBCM
     {
       double retval = 4586;
       
-      if(     a_dom_bc == string("Dirichlet"))
+      if(     a_dom_bc == string("dirichlet"))
       {
         retval = a_bc_exact.getIntPhiDA(a_domain_face, a_neigh);
       }
-      else if(a_dom_bc == string("Neumann"))
+      else if(a_dom_bc == string("neumann"))
       {
         retval = a_bc_exact.getIntGradPhiDotNDA(a_domain_face, a_neigh);
       }
@@ -609,11 +609,11 @@ namespace EBCM
     {
       double retval = 4586;
 
-      if(     a_eb_bc == string("Dirichlet"))
+      if(     a_eb_bc == string("dirichlet"))
       {
         retval = a_bc_exact.getIntPhiDA(a_cut_face, a_neigh);
       }
-      else if(a_eb_bc == string("Neumann"))
+      else if(a_eb_bc == string("neumann"))
       {
         retval = a_bc_exact.getIntGradPhiDotNDA(a_cut_face, a_neigh, a_dx);
       }
@@ -644,12 +644,13 @@ namespace EBCM
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       local_stencil_t retval;
       const auto& volvec = *a_locality->m_volumes;
+      // why is this irow again?
       for( int irow = 0; irow < nrows_volumes; irow++)
       {
         pair<pr_pt, double> entry;
         const ebcm_volu& volume = volvec[irow];
         entry.first = volume.m_pt;
-        entry.second = a_matrix(irow, 0);
+        entry.second = a_matrix(0, irow);
         retval.add(entry);
       }
       //Inhomogeneous bit

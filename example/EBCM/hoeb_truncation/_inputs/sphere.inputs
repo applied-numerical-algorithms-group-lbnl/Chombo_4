@@ -7,7 +7,7 @@ main.exact_flag        = 1
 main.alpha = 1.0
 #laplacian coefficient
 main.beta =   -1.0
-#boundary conditions
+#boundary conditions ("dirichlet" or "neumann" for now.  Case matters.)
 main.dom_bc = "dirichlet"
 main.eb_bc  = "dirichlet"
 main.weight_power = 1
