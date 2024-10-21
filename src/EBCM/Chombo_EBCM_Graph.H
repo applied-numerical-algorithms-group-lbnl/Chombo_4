@@ -30,10 +30,10 @@ namespace EBCM
   typedef Chombo4::DataIterator                    ch_dit;
   typedef Chombo4::DataIndex                       ch_datind;
   typedef Chombo4::MayDay                          ch_mayday;
-  typedef Proto::IndexTM<double, DIM>                    pr_itm_r_dim;
-  typedef Proto::IndexTM<int , DIM>                      pr_itm_i_dim;
-  typedef Proto::IndexTM<double, DIM-1>                  pr_itm_r_dmo;
-  typedef Proto::IndexTM<int , DIM-1>                    pr_itm_i_dmo;
+  typedef Proto::IndexTM<double, DIM>              pr_itm_r_dim;
+  typedef Proto::IndexTM<int , DIM>                pr_itm_i_dim;
+  typedef Proto::IndexTM<double, DIM-1>            pr_itm_r_dmo;
+  typedef Proto::IndexTM<int , DIM-1>              pr_itm_i_dmo;
 
   ///get the serialization size of this vector
   template<typename entry_t>
@@ -400,6 +400,8 @@ namespace EBCM
   {
   public:
 
+
+    
     ///Data:
     ///this is another one of those classes with its data just hanging out in the breeze
     typedef Chombo4::GeometryService<    order> ch_geoserv;
@@ -747,6 +749,7 @@ namespace EBCM
       m_ifaces[0].m_pt = m_pt;
       
       defineDerivedMeasures(a_dx);
+      consistencyChecks();
     }
 
     void defineDerivedMeasures(double a_dx)
@@ -804,6 +807,33 @@ namespace EBCM
       }
 #endif      
       defineDerivedMeasures(a_dx);
+      consistencyChecks();
+    }
+
+    /**
+       For now, I am relying on the checks inside faceSign which 
+       happen to be playing up elsewhere.
+     **/
+    int consistencyChecks() const
+    {
+      int retval = 0;
+      double sumflux = 0;//to make the compiler think this is not a waste
+      for(int iface = 0; iface < m_xfaces.size(); iface++)
+      {
+        double fluxsign = faceSign(*this, m_xfaces[iface]);
+        sumflux += fluxsign;
+      }
+      for(int iface = 0; iface < m_yfaces.size(); iface++)
+      {
+        double fluxsign = faceSign(*this, m_yfaces[iface]);
+        sumflux += fluxsign;
+      }
+      for(int iface = 0; iface < m_zfaces.size(); iface++)
+      {
+        double fluxsign = faceSign(*this, m_zfaces[iface]);
+        sumflux += fluxsign;
+      }
+      return retval;
     }
   };// end class EBCM_volu
 
@@ -2269,6 +2299,10 @@ namespace EBCM
     
   public:
     
+
+    /// This is just to hold killing_me_smalls index -- a debugging hook.
+    int m_kms_index = 4586;
+    
     virtual ~SubVolumeVector()
     {
     }
@@ -2289,13 +2323,13 @@ namespace EBCM
       }
       return (*this)[indexValue];
     }
-    
+
     ///
-    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region, bool a_printStuff)
+    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region, bool a_killing_me_smalls)
       :std::vector<EBCM_Volu<order> >()
     {
-      vector<pr_pt>   regularPoints(0);
-      vector<int>     irregIndicies(0);
+      vector<pr_pt>   regular_points(0);
+      vector<int>     irreg_indicies(0);
       pr_bx prregion = ProtoCh::getProtoBox(a_region);
       m_inputBx  = prregion;
       m_indexMap = shared_ptr<pr_hbd>(new pr_hbd(m_inputBx));
@@ -2305,7 +2339,7 @@ namespace EBCM
       {
         if(a_graph.isRegular(*it))
         {
-          regularPoints.push_back(*it);
+          regular_points.push_back(*it);
         }
       }
       if(a_graph.hasIrregular())
@@ -2315,27 +2349,27 @@ namespace EBCM
           const auto& volu = (*(a_graph.m_volumes))[ivec];
           if(a_region.contains(volu.m_pt))
           {
-            irregIndicies.push_back(ivec);
+            irreg_indicies.push_back(ivec);
           }
         }
       }
-      int totalSize = irregIndicies.size() + regularPoints.size();
+      int totalSize = irreg_indicies.size() + regular_points.size();
       this->resize(totalSize);
       for(int ientry = 0; ientry < totalSize; ientry++)
       {
         auto& curVolu =  (*this)[ientry];
 
-        if(ientry < regularPoints.size())
+        if(ientry < regular_points.size())
         {
-          curVolu.defineAsRegular(regularPoints[ientry], a_graph.m_dx);
+          curVolu.defineAsRegular(regular_points[ientry], a_graph.m_dx);
         }
         else 
         {
-          unsigned int irregInd = ientry - regularPoints.size();
-          unsigned int graphind = irregIndicies[irregInd];
+          unsigned int irregInd = ientry - regular_points.size();
+          unsigned int graphind = irreg_indicies[irregInd];
           curVolu = (*a_graph.m_volumes)[graphind];
         }
-        if(a_printStuff)
+        if(a_killing_me_smalls)
         {
           static bool printedFirstOne = false;
           if(!printedFirstOne) //turn this off if you want way too much info
