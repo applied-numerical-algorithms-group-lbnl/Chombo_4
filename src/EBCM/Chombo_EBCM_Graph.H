@@ -2113,8 +2113,14 @@ namespace EBCM
     shared_ptr< HostBoxData<int, 1> >      m_map;
 
     ///
-    ebcm_volu getVolumeCoveringPoint(const pr_pt& a_pt) const
+    ebcm_volu getVolumeCoveringPoint(const pr_pt& a_pt,
+                                     bool a_killing_me_smalls = false) const
     {
+      if(a_killing_me_smalls)
+      {
+        pout() << "EBCMGraph::getVolumeCoveringPoint verbosity on for ";
+        pout() <<  a_pt  << endl;
+      }
       ebcm_volu retval;
       if(m_allCovered)
       {
@@ -2123,10 +2129,18 @@ namespace EBCM
       else if(m_allRegular)
       {
         retval.defineAsRegular(a_pt, m_dx);
+        if(a_killing_me_smalls)
+        {
+          pout() << "EBCM::GVCP: defining " << a_pt << " as regular " << endl;
+        }
       }
       else
       {
         int mapval = (*m_map)(a_pt, 0);
+        if(a_killing_me_smalls)
+        {
+          pout() << "EBCM::GVCP: mapval for " << a_pt << " = " << mapval << endl;
+        }
         if(mapval == -2)
         {
           ch_mayday::Error("EBCMGraph:: covered points do not have volumes");

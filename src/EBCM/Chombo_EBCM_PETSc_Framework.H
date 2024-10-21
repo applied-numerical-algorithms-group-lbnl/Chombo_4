@@ -182,7 +182,9 @@ namespace EBCM
          Go ahead and setVal(0.) because you think you will never need inhomogeneous BCs.   
          If you do that, to test the software, you need lots of functions that exactly 
          conform to your homogeneous boundary conditions.    Maxima hell awaits.   
-         Having visited that circle already,  I am going to just allow inhomogenous BCs for my operators this time.
+         Rather than revisit my condo in that circle of hell,  
+         I am going to just allow inhomogenous BCs for my operators this time around the 
+         development spiral.
          dtg 
          10-9-2024
       **/
@@ -200,9 +202,6 @@ namespace EBCM
       int                   m_numPtsAllProcs;
       int                   m_startPtThisProc;
       
-      virtual ~PETSc_Interface()
-      {;}
-  
       PETSc_Interface(const shared_ptr< linear_operator_t  >       & a_oper_ptr,
                       const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                       const int                                    & a_ghost)
@@ -479,7 +478,7 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local =
-              m_oper_ptr->getLocalStencil(volu.m_pt, graph);
+              m_oper_ptr->getLocalStencil(volu, graph);
             double inhombit = local->m_inhomogeneous_bit;
             inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
             int local_size = local->size();
@@ -924,15 +923,13 @@ namespace EBCM
         m_ghost        = a_ghost;
       }
 
-      virtual ~HelmholtzOp()
-      {
-      }
-
       ///this is the function that the driver code calls
-      shared_ptr<local_stencil_t> getLocalStencil(const pr_pt& a_pt, const ebcm_graph& a_graph)
+      shared_ptr<local_stencil_t>
+      getLocalStencil(const ebcm_volu & a_volu,
+                      const ebcm_graph& a_graph)
       {
         shared_ptr<local_stencil_t> retval =
-          privateStencil(a_pt,          
+          privateStencil(a_volu,          
                          m_sten_rad,     
                          m_weight_power, 
                          a_graph,       
@@ -943,25 +940,23 @@ namespace EBCM
 
     private:
       ///this is where the canal locks are dug in the basement
-      virtual shared_ptr<local_stencil_t> privateStencil(const pr_pt                         & a_pt, 
-                                                         const int                          & a_stenrad,
-                                                         const int                          & a_weightpower,
-                                                         const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-                                                         const string                       & a_dom_bc,
-                                                         const string                       & a_eb_bc)
+      shared_ptr<local_stencil_t>
+      privateStencil(const ebcm_volu                    & a_volu, 
+                     const int                          & a_stenrad,
+                     const int                          & a_weightpower,
+                     const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                     const string                       & a_dom_bc,
+                     const string                       & a_eb_bc)
       {
         
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
-        pr_bx pointbx(a_pt, a_pt);
-        pr_bx grbx = pointbx.grow(pr_pt::Ones(m_ghost));
-        
-        auto volume = a_graph.getVolumeCoveringPoint(a_pt);
-        auto dx = volume.m_dx;
+        bool killing_me_smalls = false;
+
         {
-          for(int iface = 0; iface < volume.m_xfaces.size(); iface++)
+          for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
-            const auto& face = volume.m_xfaces[iface];
-            double fluxsign = faceSign(volume, face);
+            const auto& face =         a_volu.m_xfaces[iface];
+            double fluxsign = faceSign(a_volu, face);
 
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
@@ -969,24 +964,24 @@ namespace EBCM
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               0, dx,
+                                                               0, a_volu.m_dx,
                                                                *m_bc_exact);
             flux *= fluxsign;
             (*retval) += flux;
           }
         }
         {
-          for(int iface = 0; iface < volume.m_yfaces.size(); iface++)
+          for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
           {
-            const auto& face = volume.m_yfaces[iface];
-            double fluxsign = faceSign(volume, face);
+            const auto& face =          a_volu.m_yfaces[iface];
+            double fluxsign  = faceSign(a_volu, face);
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,       
-                                                               1, dx,
+                                                               1, a_volu.m_dx,
                                                                *m_bc_exact);
 
                                                                
@@ -995,17 +990,17 @@ namespace EBCM
           }
         }
         {
-          for(int iface = 0; iface < volume.m_zfaces.size(); iface++)
+          for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
           {
-            const auto& face = volume.m_zfaces[iface];
-            double fluxsign = faceSign(volume, face);
+            const auto& face =         a_volu.m_zfaces[iface];
+            double fluxsign = faceSign(a_volu, face);
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
                                                                a_graph,       
                                                                a_dom_bc,      
                                                                a_eb_bc,
-                                                               2, dx,
+                                                               2, a_volu.m_dx,
                                                                *m_bc_exact);
                                                                
             flux *= fluxsign;
@@ -1013,16 +1008,16 @@ namespace EBCM
           }
         }
         {
-          for(int iface = 0; iface < volume.m_ifaces.size(); iface++)
+          for(int iface = 0; iface < a_volu.m_ifaces.size(); iface++)
           {
-            const auto& face = volume.m_ifaces[iface];
+            const auto& face     = a_volu.m_ifaces[iface];
             local_stencil_t flux = getIrregHelmholtzFDotNStencil(face,
                                                                  a_stenrad,     
                                                                  a_weightpower, 
                                                                  a_graph,       
                                                                  a_dom_bc,      
                                                                  a_eb_bc,
-                                                                 dx,
+                                                                 a_volu.m_dx,
                                                                  *m_bc_exact);
                                                                  
             (*retval) += flux;
@@ -1030,7 +1025,7 @@ namespace EBCM
         }
 
         //now that we have int( f dot n) dA so we have to divide by volume magnitude
-        double volmag = volume.m_volmom[pr_itm_i_dim::Zero];
+        double volmag = a_volu.m_volmom[pr_itm_i_dim::Zero];
 
         (*retval) *= (1./volmag);
         //now retval = laplacian  so we multiply by beta and add alpha I
@@ -1039,7 +1034,7 @@ namespace EBCM
         ident_term.clear();
         ident_term.m_inhomogeneous_bit = 0;
         ident_term.m_entries.resize(1);
-        ident_term.m_entries[0].first  = a_pt;
+        ident_term.m_entries[0].first  = a_volu.m_pt;
         ident_term.m_entries[0].second = m_alpha;
 
         (*retval) += ident_term;
