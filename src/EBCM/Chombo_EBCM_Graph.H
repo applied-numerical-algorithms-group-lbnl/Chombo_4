@@ -1452,6 +1452,7 @@ namespace EBCM
             auto map_pt=  merged.m_cells[icell];
             (*a_map)(map_pt, 0) = curIndex;
           }
+          merged.consistencyChecks();
           a_volumes->push_back(merged);
         }
 
@@ -1463,6 +1464,7 @@ namespace EBCM
         {
           if(alreadyUsed.find(ivol) == alreadyUsed.end())
           {
+            inputVols[ivol].consistencyChecks();
             a_volumes->push_back(inputVols[ivol]);
           }
         }
@@ -1476,7 +1478,7 @@ namespace EBCM
        Translate all this mixed stuff into sparse  representation that we actually store
     */
     static inline  int
-    makeTheBlobs(shared_ptr<vector<ebcm_volu > >     & a_volumes,
+    makeTheBlobs(shared_ptr<vector<ebcm_volu > >           & a_volumes,
                  shared_ptr<pr_hbd_int >                   & a_map,
                  shared_ptr<set<pr_vof   > >               & a_inputVoFs, 
                  const shared_ptr<ch_geoserv>              & a_geoserv,
@@ -2014,26 +2016,12 @@ namespace EBCM
         unsparsify();
       }
       pr_box region = ProtoCh::getProtoBox(a_region);
-      //begin debug
-//      pr_pt debpt; debpt[0] = 17; debpt[1]=1;
-//      bool gettinWarma = region.contains(debpt);
-//      if(gettinWarma)
-//      {
-//        Chombo4::pout() << "getting warmer" << endl;
-//      }
-      //end debug
 
       std::set<pr_pt> alreadyCopied; //have to do this because of merging
       for(auto bit = region.begin(); bit != region.end(); ++bit)
       {
         auto pt = *bit;
-//      //begin debug
-//        Chombo4::pout() << "pt = " << pt << endl;
-//        if(pt== debpt)
-//        {
-//          Chombo4::pout() << "pretty close" << endl;
-//        }
-//      //end debug  
+
         bool notFound = (alreadyCopied.find(pt) == alreadyCopied.end());
         if(notFound) //only go in if we have not already been there
         {
@@ -2058,12 +2046,6 @@ namespace EBCM
             {
               auto inputpt = inputVol.m_cells[ivec];
               (*m_map)(inputpt, 0) = myindex;
-              //begin debug
-//              if(inputpt == debpt)
-//              {
-//                Chombo4::pout() << "red hot?"  << endl;
-//              }
-              ///end debug
               alreadyCopied.insert(inputpt);
 
             }
@@ -2187,7 +2169,13 @@ namespace EBCM
         }
         else
         {
-          retval = (*m_volumes)[mapval];
+          const auto& internal_vol = (*m_volumes)[mapval];
+          retval = internal_vol;
+          if(a_killing_me_smalls)
+          {
+            internal_vol.consistencyChecks();
+            retval.consistencyChecks();
+          }
         }
       }
       return retval;
@@ -2350,15 +2338,23 @@ namespace EBCM
       for (auto boxit = prregion.begin(); boxit != prregion.end(); ++boxit)
       {
         pr_pt  cur_pt  = *boxit;
-        EBCM_Volu<order> curVolu =a_graph.getVolumeCoveringPoint(cur_pt, a_killing_me_smalls);
-        if(a_killing_me_smalls)
+        if(!a_graph.isCovered(cur_pt))
         {
-          curVolu.consistencyChecks();
+          EBCM_Volu<order> curVolu =a_graph.getVolumeCoveringPoint(cur_pt, a_killing_me_smalls);
+// begin debug          
+          if(a_killing_me_smalls)
+          {
+            curVolu.consistencyChecks();
+          }
+// end debug          
+          volume_set.insert(curVolu);
         }
-        volume_set.insert(curVolu);
       }//end loop  over input box
       
-      /// now do the old switcharoo to a vector
+      /**
+         Now do the old switcharoo to a vector
+         and fill in the index map.
+      **/
       int total_size = volume_set.size();
       if(a_killing_me_smalls)
       {

@@ -473,7 +473,12 @@ namespace EBCM
           const auto& valid           =            grids[dit[ibox]];
           const auto& graph           =           graphs[dit[ibox]];
           auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
-          ebcm_subvol_vec volvec(graph, valid, false);
+          bool killing_me_smalls = false;
+          //begin debug
+          killing_me_smalls = true;
+          
+          //end debug
+          ebcm_subvol_vec volvec(graph, valid, killing_me_smalls);
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
