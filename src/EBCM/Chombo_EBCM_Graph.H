@@ -837,6 +837,12 @@ namespace EBCM
     }
   };// end class EBCM_volu
 
+  ///
+  template<int order>
+  bool operator<( const EBCM_Volu<order>& a_v1, const EBCM_Volu<order>& a_v2 )
+  {
+    return a_v1.m_pt  < a_v2.m_pt;
+  }
 
   /// Get the sign that will be used on the flux F when computing Div(F)
   /**
@@ -2310,7 +2316,7 @@ namespace EBCM
     typedef Proto::Point               pr_pt;
     typedef Proto::Box                 pr_bx;
     typedef Chombo4::MayDay            ch_mayday;
-    
+    typedef EBCM_Volu<order>           ebcm_volu;
 
     /// not using square bracket because that is confusing with vector
     const EBCM_Volu<order>& operator()(const pr_pt& a_index)
@@ -2325,65 +2331,53 @@ namespace EBCM
     }
 
     ///
-    SubVolumeVector(const EBCM_Graph<order> & a_graph, const ch_box& a_region, bool a_killing_me_smalls)
+    SubVolumeVector(const EBCM_Graph<order> & a_graph,
+                    const ch_box& a_region,
+                    bool a_killing_me_smalls)
       :std::vector<EBCM_Volu<order> >()
     {
-      vector<pr_pt>   regular_points(0);
-      vector<int>     irreg_indicies(0);
+      /**
+         First put everything in a set to avoid repeating entries due to merging.
+         Then convert to a vector for fast iteration.
+      **/
+      std::set<ebcm_volu>  volume_set;
       pr_bx prregion = ProtoCh::getProtoBox(a_region);
       m_inputBx  = prregion;
       m_indexMap = shared_ptr<pr_hbd>(new pr_hbd(m_inputBx));
       m_indexMap->setVal(-1);
-      
-      for (auto it = prregion.begin(); it != prregion.end(); ++it)
-      {
-        if(a_graph.isRegular(*it))
-        {
-          regular_points.push_back(*it);
-        }
-      }
-      if(a_graph.hasIrregular())
-      {
-        for(int ivec = 0; ivec < a_graph.m_volumes->size(); ivec++)
-        {
-          const auto& volu = (*(a_graph.m_volumes))[ivec];
-          if(a_region.contains(volu.m_pt))
-          {
-            irreg_indicies.push_back(ivec);
-          }
-        }
-      }
-      int totalSize = irreg_indicies.size() + regular_points.size();
-      this->resize(totalSize);
-      for(int ientry = 0; ientry < totalSize; ientry++)
-      {
-        auto& curVolu =  (*this)[ientry];
 
-        if(ientry < regular_points.size())
-        {
-          curVolu.defineAsRegular(regular_points[ientry], a_graph.m_dx);
-        }
-        else 
-        {
-          unsigned int irregInd = ientry - regular_points.size();
-          unsigned int graphind = irreg_indicies[irregInd];
-          curVolu = (*a_graph.m_volumes)[graphind];
-        }
+      ///toss everything into the set 
+      for (auto boxit = prregion.begin(); boxit != prregion.end(); ++boxit)
+      {
+        pr_pt  cur_pt  = *boxit;
+        EBCM_Volu<order> curVolu =a_graph.getVolumeCoveringPoint(cur_pt, a_killing_me_smalls);
         if(a_killing_me_smalls)
         {
-          static bool printedFirstOne = false;
-          if(!printedFirstOne) //turn this off if you want way too much info
-          {
-            Chombo4::pout() << "SubVolVec: ientry = " << ientry << endl;
-            curVolu.print();
-            printedFirstOne = true;
-          }
-            
+          curVolu.consistencyChecks();
         }
-
-        (*m_indexMap)(curVolu.m_pt, 0) = ientry;
+        volume_set.insert(curVolu);
+      }//end loop  over input box
+      
+      /// now do the old switcharoo to a vector
+      int total_size = volume_set.size();
+      if(a_killing_me_smalls)
+      {
+        pout() << "SubVolVec constructor: totalSize = " << total_size << endl;
       }
-    }
+      this->resize(total_size);
+      int ientry = 0;
+      for(auto setit = volume_set.begin(); setit != volume_set.end(); ++setit)
+      {
+        const auto& cur_vol_set = *setit;
+        (*this)[ientry] = cur_vol_set;
+        for(int ivec = 0; ivec < cur_vol_set.m_cells.size(); ivec++)
+        {
+          (*m_indexMap)(cur_vol_set.m_cells[ivec], 0) = ientry;
+        } //end loop over merged cells
+        ientry++;
+      } //end loop over volume_set
+        
+    } //end SubVolumeVector constructor
 
     
   private:
