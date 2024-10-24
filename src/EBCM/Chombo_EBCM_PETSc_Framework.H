@@ -961,8 +961,12 @@ namespace EBCM
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
             const auto& face =         a_volu.m_xfaces[iface];
-            double fluxsign = faceSign(a_volu, face);
-
+            bool on_volu_exterior = false;
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateStencil: bogus face in x");
+            }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
@@ -979,7 +983,12 @@ namespace EBCM
           for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
           {
             const auto& face =          a_volu.m_yfaces[iface];
-            double fluxsign  = faceSign(a_volu, face);
+            bool on_volu_exterior = false;
+            double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateStencil: bogus face in y");
+            }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
@@ -998,7 +1007,12 @@ namespace EBCM
           for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
           {
             const auto& face =         a_volu.m_zfaces[iface];
-            double fluxsign = faceSign(a_volu, face);
+            bool on_volu_exterior = false;
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateStencil: bogus face in y");
+            }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
                                                                a_weightpower, 
