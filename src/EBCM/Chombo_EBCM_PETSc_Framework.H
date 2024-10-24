@@ -1011,7 +1011,7 @@ namespace EBCM
             double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2);
             if(!on_volu_exterior)
             {
-              ch_mayday::Error("privateStencil: bogus face in y");
+              ch_mayday::Error("privateStencil: bogus face in z");
             }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     

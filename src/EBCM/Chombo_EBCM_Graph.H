@@ -811,8 +811,8 @@ namespace EBCM
     }
 
     /**
-       For now, I am relying on the checks inside faceSign which 
-       happen to be playing up elsewhere.
+       Checks that all faces on the boundary of the volume are 
+       actually on the boundary of the volume.
      **/
     int consistencyChecks() const
     {
@@ -820,17 +820,32 @@ namespace EBCM
       double sumflux = 0;//to make the compiler think this is not a waste
       for(int iface = 0; iface < m_xfaces.size(); iface++)
       {
-        double fluxsign = faceSign(*this, m_xfaces[iface]);
+        bool on_vol_exterior = false;
+        double fluxsign = faceSign(on_vol_exterior, *this, m_xfaces[iface],  0);
+        if(! on_vol_exterior)
+        {
+          ch_mayday::Error("volume not consistent in x");
+        }
         sumflux += fluxsign;
       }
       for(int iface = 0; iface < m_yfaces.size(); iface++)
       {
-        double fluxsign = faceSign(*this, m_yfaces[iface]);
+        bool on_vol_exterior = false;
+        double fluxsign = faceSign(on_vol_exterior, *this, m_yfaces[iface], 1);
+        if(! on_vol_exterior)
+        {
+          ch_mayday::Error("volume not consistent in y");
+        }
         sumflux += fluxsign;
       }
       for(int iface = 0; iface < m_zfaces.size(); iface++)
       {
-        double fluxsign = faceSign(*this, m_zfaces[iface]);
+        bool on_vol_exterior = false;
+        double fluxsign = faceSign(on_vol_exterior, *this, m_zfaces[iface], 2);
+        if(! on_vol_exterior)
+        {
+          ch_mayday::Error("volume not consistent in z");
+        }
         sumflux += fluxsign;
       }
       return retval;
@@ -844,6 +859,12 @@ namespace EBCM
     return a_v1.m_pt  < a_v2.m_pt;
   }
 
+  ///
+  template<CENTERING cent, int order>
+  bool operator<( const EBCM_Face<cent, order>& a_f1, const EBCM_Face<cent, order>& a_f2 )
+  {
+    return a_f1.m_lo.m_pt  < a_f2.m_lo.m_pt;
+  }
   /// Get the sign that will be used on the flux F when computing Div(F)
   /**
      return +1 if face is on the high side of the volume,
@@ -852,24 +873,41 @@ namespace EBCM
      if the face is not related to the volume.
   **/
   template<CENTERING cent, int order>
-  double faceSign(const EBCM_Volu<      order> & a_volume,
-                  const EBCM_Face<cent, order>& a_face)
+  double faceSign(bool                         & a_on_vol_exterior,
+                  const EBCM_Volu<      order> & a_volume,
+                  const EBCM_Face<cent, order> & a_face,
+                  int a_face_dir)
   {
-    double retval = -4586.;
-    if(a_volume.m_pt == a_face.m_lo.m_pt)
+    double face_sign = -4586.;
+    bool  lo_inside = false;
+    bool  hi_inside = false;
+    for(int ivec = 0; ivec < a_volume.m_cells.size(); ivec++)
     {
-      retval = 1.;
+      const auto& merge_pt = a_volume.m_cells[ivec];
+      if(a_face.m_lo.m_pt[a_face_dir] == merge_pt[a_face_dir])
+      {
+        lo_inside = true;
+      }
+      if(a_face.m_hi.m_pt[a_face_dir] == merge_pt[a_face_dir])
+      {
+        hi_inside = true;
+      }
     }
-    else if(a_volume.m_pt == a_face.m_hi.m_pt)
+    if(lo_inside && !hi_inside)
     {
-      retval = -1.;
+      face_sign         = 1.0;
+      a_on_vol_exterior = true;
+    }
+    else if(lo_inside && !hi_inside)
+    {
+      face_sign         = -1.0;
+      a_on_vol_exterior = true;
     }
     else
     {
-      Chombo4::pout() << "Chombo_EBCM_Graph.H: faceSign cannot match volume and face" << endl;
-      ch_mayday::Error("Doh!");
+      a_on_vol_exterior = false;
     }
-    return retval;
+    return face_sign;
   }
   ///
   /**
@@ -1028,34 +1066,6 @@ namespace EBCM
       }
     }
 
-
-    //the vectors should be very short 
-    template <CENTERING cent>
-    static inline void
-    addAllOfFirstNotInSecondToThird(vector<      EBCM_Face<cent, order> >  & a_merged,
-                                    const vector<EBCM_Face<cent, order> >  & a_vecOne,
-                                    const vector<EBCM_Face<cent, order> >  & a_vecTwo)
-    {
-      for(int ione= 0; ione < a_vecOne.size(); ione++)
-      {
-        const auto& oneval = a_vecOne[ione];
-
-        bool matchFound = false;
-        for(int itwo= 0; itwo < a_vecTwo.size(); itwo++)
-        {
-          const auto& twoval = a_vecTwo[itwo];
-          if(oneval == twoval) //the old one -two
-          {
-            matchFound = true;
-          }
-        }
-        if(!matchFound)
-        {
-          a_merged.push_back(oneval);
-        }
-      }
-    }
-
       
     ///
     /**
@@ -1065,25 +1075,41 @@ namespace EBCM
     */
     template <CENTERING cent>
     static inline void
-    consolidateFaces(vector<      EBCM_Face<cent, order> >  & a_merged,
-                     const vector<EBCM_Face<cent, order> >  & a_vecOne,
-                     const vector<EBCM_Face<cent, order> >  & a_vecTwo,
-                     bool a_printStuff)
+    consolidateFaces(vector<      EBCM_Face<cent, order> >  & a_merged_vec,
+                     const vector<EBCM_Face<cent, order> >  & a_vector_one,
+                     const vector<EBCM_Face<cent, order> >  & a_vector_two,
+                     const vector<pr_pt                  >  & a_merged_cells,
+                     bool a_killing_me_smalls)
     {
-      a_merged.resize(0);
-      //add all faces from vecOne that have no match in vecTwo
-      addAllOfFirstNotInSecondToThird(a_merged, a_vecOne, a_vecTwo);
-      
-      //add all faces from vecTwo that have no match in vecOne
-      addAllOfFirstNotInSecondToThird(a_merged, a_vecTwo, a_vecOne);
+      typedef EBCM_Face<cent, order> face_t;
 
-      if(a_printStuff)
+      //there can be repeats
+      std::set<face_t> merged_set;
+      for(int ivec = 0; ivec < a_vector_one.size(); ivec++)
+      {
+        
+        merged_set.insert(     a_vector_one[ivec]);
+      }
+      for(int ivec = 0; ivec < a_vector_two.size(); ivec++)
+      {
+        merged_set.insert(     a_vector_two[ivec]);
+      }
+
+      a_merged_vec.resize(merged_set.size());
+      int i_vec = 0; 
+      for(auto set_it = merged_set.begin(); set_it != merged_set.end(); ++set_it)
+      {
+        a_merged_vec[i_vec] = *set_it;
+        i_vec++;
+      }
+
+      if(a_killing_me_smalls)
       {
         int icent = cent;
-        pout() << icent << "-side face sizes" 
-               << ": merged = "  << a_merged.size() 
-               << ", vecone = "  << a_vecOne.size() 
-               << ", vectwo = "  << a_vecTwo.size() << endl;
+        pout() << "consolidateFaces< "<< icent << ">:"  << endl;
+        pout() << "a_merged_vec size = "  << a_merged_vec.size() << endl;
+        pout() << "a_vector_one size = "  << a_vector_one.size() << endl;
+        pout() << "a_vector_one size = "  << a_vector_two.size() << endl;
       }
     }
     
@@ -1094,11 +1120,11 @@ namespace EBCM
                                   const ebcm_volu        & a_volTwo,
                                   bool a_printStuff)
     {
-
-      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces,a_printStuff); 
-      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces,a_printStuff);
+      //use m_cells to make decisions about who stays, who goes who is high, who is low
+      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces, a_volMer.m_cells, a_printStuff); 
+      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces, a_volMer.m_cells, a_printStuff);
 #if DIM==3                                                                    
-      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces,a_printStuff);
+      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces, a_volMer.m_cells, a_printStuff);
 #endif      
     }
 
@@ -1291,7 +1317,7 @@ namespace EBCM
     */
     static
     inline ebcm_volu
-    createEBCM_Volume(vector<pr_vof>                        & a_vofsEaten,
+    create_ebcm_volume(vector<pr_vof>                        & a_vofsEaten,
                       const pr_vof                          & a_startvof,
                       const shared_ptr<ch_geoserv>          & a_geoserv,
                       const ch_box                          & a_domain,
@@ -1315,7 +1341,7 @@ namespace EBCM
       {
         startvol.defineAsIrregular(a_startvof, a_geoserv, a_domain, a_dit, a_dx);
       }
-      
+      startvol.consistencyChecks();
       if( (startvol.m_kappa == 1.) || (!a_mergeSmallCells))
       {
         retval = startvol;
@@ -1444,7 +1470,10 @@ namespace EBCM
             alreadyUsed.insert(ineigh);
           }
 
+          smallvol.consistencyChecks();
+          bigvol.consistencyChecks();
           mergeTwoVolumesIntoThird(merged, smallvol, bigvol, a_dx, a_printStuff);
+          merged.consistencyChecks();
           int curIndex = a_volumes->size();
           //fix map to match merger
           for(int icell = 0; icell < merged.m_cells.size(); icell++)
@@ -1452,7 +1481,6 @@ namespace EBCM
             auto map_pt=  merged.m_cells[icell];
             (*a_map)(map_pt, 0) = curIndex;
           }
-          merged.consistencyChecks();
           a_volumes->push_back(merged);
         }
 
@@ -1524,10 +1552,10 @@ namespace EBCM
             //end debug
             vector<pr_vof> mergevec;
             ebcm_volu volume =
-              createEBCM_Volume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
+              create_ebcm_volume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
                                 vofsLeft, a_graph, a_mergeSmallCells, printStuff);
             
-      
+            volume.consistencyChecks();
             for(int ivec = 0; ivec < mergevec.size(); ivec++)
             {
               vofsLeft->erase(mergevec[ivec]);
