@@ -865,6 +865,42 @@ namespace EBCM
   {
     return a_f1.m_lo.m_pt  < a_f2.m_lo.m_pt;
   }
+
+  inline void
+  getFaceOrientation(bool                      & a_lo_inside,
+                     bool                      & a_hi_inside,
+                     bool                      & a_on_vol_exterior,
+                     const pr_pt               & a_face_cell_lo,
+                     const pr_pt               & a_face_cell_hi,
+                     const vector<pr_pt>       & a_volume_cells,
+                     int a_face_dir)
+  {
+    a_lo_inside       = false;
+    a_hi_inside       = false;
+    a_on_vol_exterior = false;
+    for(int ivec = 0; ivec < a_volume_cells.size(); ivec++)
+    {
+      const auto& merge_pt = a_volume_cells[ivec];
+      if(a_face_cell_lo[a_face_dir] == merge_pt[a_face_dir])
+      {
+        a_lo_inside = true;
+      }
+      if(a_face_cell_hi[a_face_dir] == merge_pt[a_face_dir])
+      {
+        a_hi_inside = true;
+      }
+    }//end loop through volume cells
+    if(     a_lo_inside && !a_hi_inside)
+    {
+      a_on_vol_exterior = true;
+    }
+    else if(!a_lo_inside && a_hi_inside)
+    {
+      a_on_vol_exterior = true;
+    }
+  }
+
+    
   /// Get the sign that will be used on the flux F when computing Div(F)
   /**
      return +1 if face is on the high side of the volume,
@@ -879,34 +915,27 @@ namespace EBCM
                   int a_face_dir)
   {
     double face_sign = -4586.;
-    bool  lo_inside = false;
-    bool  hi_inside = false;
-    for(int ivec = 0; ivec < a_volume.m_cells.size(); ivec++)
+    bool  lo_inside        = false;
+    bool  hi_inside        = false;
+    getFaceOrientation(lo_inside,
+                       hi_inside,
+                       a_on_vol_exterior,
+                       a_face.m_lo.m_pt,
+                       a_face.m_hi.m_pt,
+                       a_volume.m_cells,
+                       a_face_dir);
+    if(a_on_vol_exterior)
     {
-      const auto& merge_pt = a_volume.m_cells[ivec];
-      if(a_face.m_lo.m_pt[a_face_dir] == merge_pt[a_face_dir])
+      if(lo_inside)
       {
-        lo_inside = true;
+        face_sign = 1.;
       }
-      if(a_face.m_hi.m_pt[a_face_dir] == merge_pt[a_face_dir])
+      if(hi_inside)
       {
-        hi_inside = true;
+        face_sign =-1.;
       }
     }
-    if(lo_inside && !hi_inside)
-    {
-      face_sign         = 1.0;
-      a_on_vol_exterior = true;
-    }
-    else if(lo_inside && !hi_inside)
-    {
-      face_sign         = -1.0;
-      a_on_vol_exterior = true;
-    }
-    else
-    {
-      a_on_vol_exterior = false;
-    }
+    
     return face_sign;
   }
   ///
@@ -1079,6 +1108,7 @@ namespace EBCM
                      const vector<EBCM_Face<cent, order> >  & a_vector_one,
                      const vector<EBCM_Face<cent, order> >  & a_vector_two,
                      const vector<pr_pt                  >  & a_merged_cells,
+                     const int                              & a_face_dir,
                      bool a_killing_me_smalls)
     {
       typedef EBCM_Face<cent, order> face_t;
@@ -1087,12 +1117,42 @@ namespace EBCM
       std::set<face_t> merged_set;
       for(int ivec = 0; ivec < a_vector_one.size(); ivec++)
       {
-        
-        merged_set.insert(     a_vector_one[ivec]);
+
+        const auto& face = a_vector_one[ivec];
+        bool  lo_inside        = false;
+        bool  hi_inside        = false;
+        bool  on_vol_exterior  = false;
+        getFaceOrientation(lo_inside,
+                           hi_inside,
+                           on_vol_exterior,
+                           face.m_lo.m_pt,
+                           face.m_hi.m_pt,
+                           a_merged_cells,
+                           a_face_dir);
+        ///ignore interior faces
+        if(on_vol_exterior)
+        {
+          merged_set.insert(     a_vector_one[ivec]);
+        }
       }
       for(int ivec = 0; ivec < a_vector_two.size(); ivec++)
       {
-        merged_set.insert(     a_vector_two[ivec]);
+        const auto& face = a_vector_two[ivec];
+        bool  lo_inside        = false;
+        bool  hi_inside        = false;
+        bool  on_vol_exterior  = false;
+        getFaceOrientation(lo_inside,
+                           hi_inside,
+                           on_vol_exterior,
+                           face.m_lo.m_pt,
+                           face.m_hi.m_pt,
+                           a_merged_cells,
+                           a_face_dir);
+        ///ignore interior faces
+        if(on_vol_exterior)
+        {
+          merged_set.insert(     a_vector_two[ivec]);
+        }
       }
 
       a_merged_vec.resize(merged_set.size());
@@ -1121,10 +1181,10 @@ namespace EBCM
                                   bool a_printStuff)
     {
       //use m_cells to make decisions about who stays, who goes who is high, who is low
-      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces, a_volMer.m_cells, a_printStuff); 
-      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces, a_volMer.m_cells, a_printStuff);
+      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces, a_volMer.m_cells, 0, a_printStuff); 
+      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces, a_volMer.m_cells, 1, a_printStuff);
 #if DIM==3                                                                    
-      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces, a_volMer.m_cells, a_printStuff);
+      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces, a_volMer.m_cells, 2, a_printStuff);
 #endif      
     }
 
