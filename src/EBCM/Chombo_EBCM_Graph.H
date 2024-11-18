@@ -1130,7 +1130,7 @@ namespace EBCM
                            a_merged_cells,
                            a_face_dir);
         ///ignore interior faces
-        if(on_vol_exterior)
+       if(on_vol_exterior)
         {
           merged_set.insert(     a_vector_one[ivec]);
         }
@@ -1378,15 +1378,15 @@ namespace EBCM
     static
     inline ebcm_volu
     create_ebcm_volume(vector<pr_vof>                        & a_vofsEaten,
-                      const pr_vof                          & a_startvof,
-                      const shared_ptr<ch_geoserv>          & a_geoserv,
-                      const ch_box                          & a_domain,
-                      const ch_datind                       & a_dit,
-                      const double                          & a_dx,
-                      const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
-                      const pr_ebgrap                       & a_graph,
-                      bool                                    a_mergeSmallCells,
-                      bool                                    a_printStuff)
+                       const pr_vof                          & a_startvof,
+                       const shared_ptr<ch_geoserv>          & a_geoserv,
+                       const ch_box                          & a_domain,
+                       const ch_datind                       & a_dit,
+                       const double                          & a_dx,
+                       const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
+                       const pr_ebgrap                       & a_graph,
+                       bool                                    a_mergeSmallCells,
+                       bool                                    a_printStuff)
     {
       ebcm_volu startvol, retval;
       if(a_graph.isCovered(a_startvof.m_pt))
@@ -1608,7 +1608,7 @@ namespace EBCM
           if(vofsLeft->find(vof) != vofsLeft->end())
           {
             //begin debug
-            printStuff = ((vof.m_pt[0]==25) && (vof.m_pt[1]== 27));
+            printStuff = ((vof.m_pt[0]==10) && (vof.m_pt[1]== 2));
             //end debug
             vector<pr_vof> mergevec;
             ebcm_volu volume =
