@@ -962,7 +962,7 @@ namespace EBCM
           {
             const auto& face =         a_volu.m_xfaces[iface];
             bool on_volu_exterior = false;
-            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0);
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0, killing_me_smalls);
             if(!on_volu_exterior)
             {
               ch_mayday::Error("privateStencil: bogus face in x");
@@ -984,7 +984,7 @@ namespace EBCM
           {
             const auto& face =          a_volu.m_yfaces[iface];
             bool on_volu_exterior = false;
-            double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1);
+            double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1, killing_me_smalls);
             if(!on_volu_exterior)
             {
               ch_mayday::Error("privateStencil: bogus face in y");
@@ -1008,7 +1008,7 @@ namespace EBCM
           {
             const auto& face =         a_volu.m_zfaces[iface];
             bool on_volu_exterior = false;
-            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2);
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2, killing_me_smalls);
             if(!on_volu_exterior)
             {
               ch_mayday::Error("privateStencil: bogus face in z");

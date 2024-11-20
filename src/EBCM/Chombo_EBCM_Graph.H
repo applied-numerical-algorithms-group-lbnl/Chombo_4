@@ -821,7 +821,7 @@ namespace EBCM
       for(int iface = 0; iface < m_xfaces.size(); iface++)
       {
         bool on_vol_exterior = false;
-        double fluxsign = faceSign(on_vol_exterior, *this, m_xfaces[iface],  0);
+        double fluxsign = faceSign(on_vol_exterior, *this, m_xfaces[iface],  0, false);
         if(! on_vol_exterior)
         {
           ch_mayday::Error("volume not consistent in x");
@@ -831,7 +831,7 @@ namespace EBCM
       for(int iface = 0; iface < m_yfaces.size(); iface++)
       {
         bool on_vol_exterior = false;
-        double fluxsign = faceSign(on_vol_exterior, *this, m_yfaces[iface], 1);
+        double fluxsign = faceSign(on_vol_exterior, *this, m_yfaces[iface], 1, false);
         if(! on_vol_exterior)
         {
           ch_mayday::Error("volume not consistent in y");
@@ -841,7 +841,7 @@ namespace EBCM
       for(int iface = 0; iface < m_zfaces.size(); iface++)
       {
         bool on_vol_exterior = false;
-        double fluxsign = faceSign(on_vol_exterior, *this, m_zfaces[iface], 2);
+        double fluxsign = faceSign(on_vol_exterior, *this, m_zfaces[iface], 2, false);
         if(! on_vol_exterior)
         {
           ch_mayday::Error("volume not consistent in z");
@@ -873,7 +873,8 @@ namespace EBCM
                      const pr_pt               & a_face_cell_lo,
                      const pr_pt               & a_face_cell_hi,
                      const vector<pr_pt>       & a_volume_cells,
-                     int a_face_dir)
+                     int a_face_dir,
+                     bool killing_me_smalls)
   {
     a_lo_inside       = false;
     a_hi_inside       = false;
@@ -881,11 +882,11 @@ namespace EBCM
     for(int ivec = 0; ivec < a_volume_cells.size(); ivec++)
     {
       const auto& merge_pt = a_volume_cells[ivec];
-      if(a_face_cell_lo[a_face_dir] == merge_pt[a_face_dir])
+      if(a_face_cell_lo == merge_pt)
       {
         a_lo_inside = true;
       }
-      if(a_face_cell_hi[a_face_dir] == merge_pt[a_face_dir])
+      if(a_face_cell_hi == merge_pt)
       {
         a_hi_inside = true;
       }
@@ -912,7 +913,7 @@ namespace EBCM
   double faceSign(bool                         & a_on_vol_exterior,
                   const EBCM_Volu<      order> & a_volume,
                   const EBCM_Face<cent, order> & a_face,
-                  int a_face_dir)
+                  int a_face_dir, bool a_killing_me_smalls)
   {
     double face_sign = -4586.;
     bool  lo_inside        = false;
@@ -923,7 +924,8 @@ namespace EBCM
                        a_face.m_lo.m_pt,
                        a_face.m_hi.m_pt,
                        a_volume.m_cells,
-                       a_face_dir);
+                       a_face_dir,
+                       a_killing_me_smalls);
     if(a_on_vol_exterior)
     {
       if(lo_inside)
@@ -1128,7 +1130,8 @@ namespace EBCM
                            face.m_lo.m_pt,
                            face.m_hi.m_pt,
                            a_merged_cells,
-                           a_face_dir);
+                           a_face_dir,
+                           a_killing_me_smalls);
         ///ignore interior faces
        if(on_vol_exterior)
         {
@@ -1147,7 +1150,8 @@ namespace EBCM
                            face.m_lo.m_pt,
                            face.m_hi.m_pt,
                            a_merged_cells,
-                           a_face_dir);
+                           a_face_dir,
+                           a_killing_me_smalls);
         ///ignore interior faces
         if(on_vol_exterior)
         {
@@ -1178,13 +1182,13 @@ namespace EBCM
     consolidateFacesAllDirections(      ebcm_volu        & a_volMer,
                                   const ebcm_volu        & a_volOne,
                                   const ebcm_volu        & a_volTwo,
-                                  bool a_printStuff)
+                                  bool a_killing_me_smalls)
     {
       //use m_cells to make decisions about who stays, who goes who is high, who is low
-      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces, a_volMer.m_cells, 0, a_printStuff); 
-      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces, a_volMer.m_cells, 1, a_printStuff);
+      consolidateFaces(a_volMer.m_xfaces, a_volOne.m_xfaces, a_volTwo.m_xfaces, a_volMer.m_cells, 0, a_killing_me_smalls); 
+      consolidateFaces(a_volMer.m_yfaces, a_volOne.m_yfaces, a_volTwo.m_yfaces, a_volMer.m_cells, 1, a_killing_me_smalls);
 #if DIM==3                                                                    
-      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces, a_volMer.m_cells, 2, a_printStuff);
+      consolidateFaces(a_volMer.m_zfaces, a_volOne.m_zfaces, a_volTwo.m_zfaces, a_volMer.m_cells, 2, a_killing_me_smalls);
 #endif      
     }
 
@@ -1194,8 +1198,17 @@ namespace EBCM
     mergeTwoVolumesIntoThird(      ebcm_volu                      & a_volMer,
                              const ebcm_volu                      & a_volOne,
                              const ebcm_volu                      & a_volTwo,
-                             double a_dx, bool a_printStuff)
+                             double a_dx, bool a_killing_me_smalls)
     {
+      //begin debug (gdb hook)
+      {
+        int ideb = -4586;
+        if(a_killing_me_smalls)
+        {
+          ideb = 1;
+        }
+      }
+      //end debug
       a_volMer.m_regular = false;
       a_volMer.m_pt = a_volTwo.m_pt; //just having   the bigger one have the point
       a_volMer.m_cells = a_volOne.m_cells;
@@ -1203,7 +1216,7 @@ namespace EBCM
       shiftAndMergeVolumeData(a_volMer, a_volOne, a_volTwo);
       shiftAndMergeIrregData( a_volMer, a_volOne, a_volTwo);
 
-      consolidateFacesAllDirections( a_volMer, a_volOne, a_volTwo, a_printStuff);
+      consolidateFacesAllDirections( a_volMer, a_volOne, a_volTwo, a_killing_me_smalls);
       
       a_volMer.defineDerivedMeasures(a_dx);
       return 0;
@@ -1223,7 +1236,7 @@ namespace EBCM
     static
     inline ebcm_volu      
     mergeManyIntoOne(const vector<ebcm_volu>& a_many,
-                     double a_dx, bool a_printStuff)
+                     double a_dx, bool a_killing_me_smalls)
     {
       ebcm_volu retval;
       if(a_many.size() == 1)
@@ -1232,6 +1245,16 @@ namespace EBCM
       }
       else
       {
+        //begin debug (gdb hook)
+        {
+          int ideb = -4586;
+          if(a_killing_me_smalls)
+          {
+            ideb = 1;
+          }
+        }
+        //end debug
+        
         //find a vof connected to first vof
         int vofind0 = 0;
         const auto & volu0 = a_many[0];
@@ -1250,10 +1273,23 @@ namespace EBCM
         {
           Chombo4::MayDay::Error("mergeManyIntoOne error: could not find connected volume");
         }
+        //begin debug (gdb hook)
+        {
+          int ideb = -4586;
+          auto ind0 =  a_many[vofind0].m_pt;
+          auto ind1 =  a_many[vofind1].m_pt;
+          bool one_pt_three = (ind1[0]==10) && (ind1[1]==3);
+          bool zero_pt_two  = (ind0[0]==11) && (ind0[1]==2);
+          if(a_killing_me_smalls && one_pt_three && zero_pt_two)
+          {
+            ideb = 1;
+          }
+        }
+        //end debug
         ebcm_volu   third; 
         int errflag =
           mergeTwoVolumesIntoThird(third, a_many[vofind0], a_many[vofind1],
-                                   a_dx, a_printStuff);
+                                   a_dx, a_killing_me_smalls);
         if(errflag != 0)
         {
           MayDay::Error("mergeManyIntoOne error: function mergeTwoVolumesIntoOne failed");
@@ -1272,7 +1308,7 @@ namespace EBCM
           }
         }
         //the rare instance where recusion is just way easier.
-        retval = mergeManyIntoOne(volsLeft, a_dx, a_printStuff);
+        retval = mergeManyIntoOne(volsLeft, a_dx, a_killing_me_smalls);
       
       }
       return retval;
@@ -1298,7 +1334,7 @@ namespace EBCM
                            const double                          & a_dx,
                            const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                            const pr_ebgrap                       & a_graph,
-                           bool a_printStuff)
+                           bool a_killing_me_smalls)
     {
       ebcm_volu retval;
       pr_pt finept = a_startvof.m_pt;
@@ -1308,7 +1344,7 @@ namespace EBCM
       pr_box grownbox = finebox;
       grownbox &= a_graph.getRegion();
       a_vofsEaten.resize(0);
-      if(a_printStuff)
+      if(a_killing_me_smalls)
       {
         pout() << "grownbox = " << grownbox << endl;
       }
@@ -1324,14 +1360,14 @@ namespace EBCM
           if(stillhere)
           {
             a_vofsEaten.push_back(vofs[ivof]);
-            if(a_printStuff)
+            if(a_killing_me_smalls)
             {
               pout() << "adding   " << vofs[ivof].m_pt << endl;
             }
           }
           else
           {
-            if(a_printStuff)
+            if(a_killing_me_smalls)
             {
               pout() << "skipping " << vofs[ivof].m_pt << endl;
             }
@@ -1340,7 +1376,7 @@ namespace EBCM
         }
       } // end loop over cells in grown box      
 
-      if(a_printStuff)
+      if(a_killing_me_smalls)
       {
         pout() << "getGhostedVolume: a_vofsEaten.size() == " << a_vofsEaten.size() << endl;
       }
@@ -1363,8 +1399,17 @@ namespace EBCM
 
       } // end loop over input vofs in the ghosted region
 
+      //begin debug (gdb hook)
+      {
+        int ideb = -4586;
+        if(a_killing_me_smalls)
+        {
+          ideb = 1;
+        }
+      }
+      //end debug
       //make two into one until there are no more
-      retval = mergeManyIntoOne(allvols, a_dx, a_printStuff);
+      retval = mergeManyIntoOne(allvols, a_dx, a_killing_me_smalls);
 
       return retval;
     }
@@ -1386,9 +1431,16 @@ namespace EBCM
                        const shared_ptr<set<pr_vof   > >     & a_vofsLeft,
                        const pr_ebgrap                       & a_graph,
                        bool                                    a_mergeSmallCells,
-                       bool                                    a_printStuff)
+                       bool                                    a_killing_me_smalls)
     {
       ebcm_volu startvol, retval;
+      //begin debug (just getting a hook in for gdb)
+      int ideb = -4586;
+      if(a_killing_me_smalls)
+      {
+        ideb = 1;
+      }
+      //end debug
       if(a_graph.isCovered(a_startvof.m_pt))
       {
         Chombo4::MayDay::Error("cannot create EBCM_Volume from a covered cell");
@@ -1413,7 +1465,7 @@ namespace EBCM
 
         retval =
           getRefinedCoarseVolume(a_vofsEaten,  a_startvof, a_geoserv, a_domain,
-                                 a_dit, a_dx, a_vofsLeft, a_graph, a_printStuff);
+                                 a_dit, a_dx, a_vofsLeft, a_graph, a_killing_me_smalls);
       }
       return retval;
     }
@@ -1481,7 +1533,7 @@ namespace EBCM
                                    const double                              & a_dx,
                                    const shared_ptr<set<pr_vof   > >         & a_vofsLeft,
                                    const pr_ebgrap                           & a_graph,
-                                   bool a_printStuff)
+                                   bool a_killing_me_smalls)
     {
       if(a_tooSmall->size() > 0)
       {
@@ -1532,7 +1584,7 @@ namespace EBCM
 
           smallvol.consistencyChecks();
           bigvol.consistencyChecks();
-          mergeTwoVolumesIntoThird(merged, smallvol, bigvol, a_dx, a_printStuff);
+          mergeTwoVolumesIntoThird(merged, smallvol, bigvol, a_dx, a_killing_me_smalls);
           merged.consistencyChecks();
           int curIndex = a_volumes->size();
           //fix map to match merger
@@ -1575,9 +1627,9 @@ namespace EBCM
                  const double                              & a_dx,
                  const pr_ebgrap                           & a_graph,
                  bool                                        a_mergeSmallCells,
-                 bool a_printStuff)
+                 bool a_killing_me_smalls)
     {
-      bool  printStuff = false;
+      bool  killing_me_smalls = false;
       a_volumes = shared_ptr<vector<ebcm_volu > >(new vector<ebcm_volu > ());
       a_map    =  shared_ptr<pr_hbd_int>(new pr_hbd_int());
       //define the map and set it all to covered.   the input set contains only regular and irregular
@@ -1608,12 +1660,12 @@ namespace EBCM
           if(vofsLeft->find(vof) != vofsLeft->end())
           {
             //begin debug
-            printStuff = ((vof.m_pt[0]==10) && (vof.m_pt[1]== 2));
+            killing_me_smalls = ((vof.m_pt[0]==10) && (vof.m_pt[1]== 2));
             //end debug
             vector<pr_vof> mergevec;
             ebcm_volu volume =
               create_ebcm_volume(mergevec, vof, a_geoserv, a_domain, a_dit, a_dx,
-                                vofsLeft, a_graph, a_mergeSmallCells, printStuff);
+                                vofsLeft, a_graph, a_mergeSmallCells, killing_me_smalls);
             
             volume.consistencyChecks();
             for(int ivec = 0; ivec < mergevec.size(); ivec++)
@@ -1635,17 +1687,17 @@ namespace EBCM
 
       fixVolumeEntriesInMap(a_map, a_volumes);
 
-      if(a_printStuff)
+      if(a_killing_me_smalls)
       {
         pout() << "makeTheBlobs: before merger, number of small cells = " << tooSmalls->size() <<", min kappa = " << kappamin << endl;
       }
       
       if(tooSmalls->size() > 0)
       {
-        printStuff= false;
+        killing_me_smalls= false;
         mergeSmallVolumesWithNeighbors(a_volumes, a_map,  tooSmalls,
                                        a_geoserv, a_domain, a_dit, a_dx,
-                                       vofsLeft, a_graph, printStuff);
+                                       vofsLeft, a_graph, killing_me_smalls);
       }
       return 0;
     }//end  function makeTheBlobs
@@ -1663,7 +1715,7 @@ namespace EBCM
            const double                          & a_dx,
            int                                     a_ghost,
            bool                                    a_mergeSmallCells,
-           bool                                    a_printStuff) 
+           bool                                    a_killing_me_smalls) 
     {
       m_defined = true;
       m_dx         = a_dx;
@@ -1700,7 +1752,7 @@ namespace EBCM
         
         //translate all this mixed stuff into sparse  representation that we actually store
         makeTheBlobs(m_volumes, m_map, allEBInd, a_geoserv, a_domain, a_dit, a_dx, ebgrap,
-                     a_mergeSmallCells, a_printStuff);
+                     a_mergeSmallCells, a_killing_me_smalls);
       }
     }
 
@@ -1757,7 +1809,7 @@ namespace EBCM
     inline void
     energize(char*                a_buf,
              size_t               a_expected_size,
-             bool                 a_printStuff = false) const
+             bool                 a_killing_me_smalls = false) const
     {
       size_t charsiz = 0;
       char* charbuf = (char *) a_buf;
@@ -1830,7 +1882,7 @@ namespace EBCM
         charbuf += fabbox.charsize();
         charsiz += fabbox.charsize();
         
-        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_printStuff);;
+        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_killing_me_smalls);;
         {
           size_t* sizbuf = (size_t*)charbuf;
           *sizbuf = fabsize; 
@@ -1838,7 +1890,7 @@ namespace EBCM
           charsiz += sizeof(size_t);
         }
         
-        m_map->linearOut( charbuf, fabsize, fabbox, 0, 1, a_printStuff);;
+        m_map->linearOut( charbuf, fabsize, fabbox, 0, 1, a_killing_me_smalls);;
         charbuf += fabsize;
         charsiz += fabsize;
       }
@@ -1855,7 +1907,7 @@ namespace EBCM
     charsize(const ch_box&   a_bx,
              unsigned int a_startcomp,
              unsigned int a_numcomps,
-             bool a_printStuff = false) const
+             bool a_killing_me_smalls = false) const
     {
       using ProtoSer::linearCharBufSize;
       size_t charsiz = 0;
@@ -1903,7 +1955,7 @@ namespace EBCM
         //space  for fabsize
         charsiz += sizeof(size_t);
         
-        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_printStuff);
+        size_t fabsize = m_map->charsize(fabbox, 0, 1, a_killing_me_smalls);
         //space for data
         charsiz += fabsize;
       }
@@ -1924,7 +1976,7 @@ namespace EBCM
     */
     EBCM_Graph(void * a_buf,
                size_t a_expectedSize,
-               bool a_printStuff = false)
+               bool a_killing_me_smalls = false)
     {
 
       m_defined = true;
@@ -2019,7 +2071,7 @@ namespace EBCM
           charbuf += sizeof(size_t);
           charsiz += sizeof(size_t);
         }
-        m_map->linearIn( charbuf, fabsize, fabbox, 0, 1, a_printStuff);
+        m_map->linearIn( charbuf, fabsize, fabbox, 0, 1, a_killing_me_smalls);
         charbuf += fabsize;
         charsiz += fabsize;
       }
@@ -2049,17 +2101,17 @@ namespace EBCM
              const ch_box    &      a_bx,
              unsigned int           a_startcomp,
              unsigned int           a_numcomps,
-             bool a_printStuff = false)
+             bool a_killing_me_smalls = false)
     {
-      if(a_printStuff)
+      if(a_killing_me_smalls)
       {
         Chombo4::pout() << "EBCM_Graph::linearIn: entering " << endl;
       }
 
-      EBCM_Graph srcGraph(a_buf, a_expectedSize, a_printStuff);
+      EBCM_Graph srcGraph(a_buf, a_expectedSize, a_killing_me_smalls);
       copy(srcGraph, a_bx);
 
-      if(a_printStuff)
+      if(a_killing_me_smalls)
       {
         Chombo4::pout() << "EBCM_Graph::linearIn: leaving " << endl;
       }
@@ -2072,9 +2124,9 @@ namespace EBCM
               const ch_box    &   a_bx,
               unsigned int        a_startcomp,
               unsigned int        a_numcomps,
-              bool a_printStuff = false) const
+              bool a_killing_me_smalls = false) const
     {
-      energize(a_buf, a_expectedSize, a_printStuff);
+      energize(a_buf, a_expectedSize, a_killing_me_smalls);
     }
 
       
@@ -2288,7 +2340,7 @@ namespace EBCM
                   const double                & a_dx,
                   int                           a_ghost,
                   bool                          a_mergeSmallCells,
-                  bool                          a_printStuff)
+                  bool                          a_killing_me_smalls)
     {
       shared_ptr<ch_levelgeo> eb_description = (*a_geoserv)[a_domain];
       m_grids  = eb_description->getDBL();
@@ -2301,7 +2353,7 @@ namespace EBCM
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         (*m_graphs)[dit[ibox]].define(a_geoserv, a_domain, dit[ibox], a_dx, a_ghost,
-                                      a_mergeSmallCells, a_printStuff);
+                                      a_mergeSmallCells, a_killing_me_smalls);
       }
       m_graphs->exchange();
     }
