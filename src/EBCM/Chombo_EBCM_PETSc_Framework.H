@@ -500,6 +500,9 @@ namespace EBCM
             }
           }
         }
+        PetscInt ierr;
+        ierr = MatAssemblyBegin(*(this->m_mat_ptr),MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+        ierr = MatAssemblyEnd(  *(this->m_mat_ptr),MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
         ///now for the vectors
 #ifdef CH_MPI
         MPI_Comm wcomm = Chombo_MPI::comm;
@@ -512,6 +515,12 @@ namespace EBCM
         VecSetSizes(         phiVec, m_numPtsThisProc, m_numPtsAllProcs);
         VecSetFromOptions(   phiVec                  );
         VecDuplicate(        phiVec, &lphVec         );
+
+        ierr = VecAssemblyBegin(phiVec );  CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(  phiVec );  CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(lphVec );  CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(  lphVec );  CHKERRQ(ierr);
+        
         return 0;
       } //end function formMatrix
 
