@@ -475,8 +475,7 @@ namespace EBCM
           auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
           bool killing_me_smalls = false;
           //begin debug
-          killing_me_smalls = true;
-          
+          //killing_me_smalls = true;
           //end debug
           ebcm_subvol_vec volvec(graph, valid, killing_me_smalls);
           for(int ivol = 0; ivol < volvec.size(); ivol++)
@@ -1106,7 +1105,7 @@ namespace EBCM
       shared_ptr< ch_geoserv > geoserv
         (new ch_geoserv(impfunc, origin, a_dx, a_domain.domainBox(), vecgrids, geomGhost));
 
-      int ghost = 0;
+      int ghost = 4;
       shared_ptr< ebcm_meta  >
         metaDataPtr(new ebcm_meta(geoserv, a_domain.domainBox(), a_dx, ghost,
                                   a_mergeSmallCells, false));

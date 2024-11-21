@@ -1660,7 +1660,7 @@ namespace EBCM
           if(vofsLeft->find(vof) != vofsLeft->end())
           {
             //begin debug
-            killing_me_smalls = ((vof.m_pt[0]==10) && (vof.m_pt[1]== 2));
+            //killing_me_smalls = ((vof.m_pt[0]==10) && (vof.m_pt[1]== 2));
             //end debug
             vector<pr_vof> mergevec;
             ebcm_volu volume =
@@ -2469,24 +2469,25 @@ namespace EBCM
          Then convert to a vector for fast iteration.
       **/
       std::set<ebcm_volu>  volume_set;
-      pr_bx prregion = ProtoCh::getProtoBox(a_region);
-      m_inputBx  = prregion;
-      m_indexMap = shared_ptr<pr_hbd>(new pr_hbd(m_inputBx));
+      ch_box index_map_region(a_region);
+      //there are cases where this can be bigger than you think
+      int ghost = 2;
+      index_map_region.grow(ghost);
+      index_map_region &= a_graph.m_domain;
+      pr_bx pr_index_map_region = ProtoCh::getProtoBox(index_map_region);
+      m_inputBx  = ProtoCh::getProtoBox(a_region);
+
+      m_indexMap = shared_ptr<pr_hbd>(new pr_hbd(pr_index_map_region));
       m_indexMap->setVal(-1);
 
       ///toss everything into the set 
-      for (auto boxit = prregion.begin(); boxit != prregion.end(); ++boxit)
+      for (auto boxit = m_inputBx.begin(); boxit != m_inputBx.end(); ++boxit)
       {
         pr_pt  cur_pt  = *boxit;
         if(!a_graph.isCovered(cur_pt))
         {
           EBCM_Volu<order> curVolu =a_graph.getVolumeCoveringPoint(cur_pt, a_killing_me_smalls);
-// begin debug          
-          if(a_killing_me_smalls)
-          {
-            curVolu.consistencyChecks();
-          }
-// end debug          
+          curVolu.consistencyChecks();
           volume_set.insert(curVolu);
         }
       }//end loop  over input box
