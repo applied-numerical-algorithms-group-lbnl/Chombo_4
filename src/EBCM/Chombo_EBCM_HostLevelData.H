@@ -218,7 +218,15 @@ namespace EBCM
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
+      std::cout <<
+        "writeToHDF5 is writing to "
+                << a_filename
+                << std::endl;
       writeLevelname(&levelfabs, a_filename.c_str());
+#else
+      std::cout <<
+        "Confusion reigns. \n The function writeToHDF5 was called but CH_USE_HDF5 is false.  \n This message is to let you know that happened."
+                << std::endl;
 #endif      
     }
     

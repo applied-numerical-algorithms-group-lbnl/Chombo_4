@@ -1207,16 +1207,18 @@ namespace EBCM
     }
     ///
     static double
-    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta)
+    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta,
+                        string                     a_file_prefix)
     {
       ParmParse pp("main");
       double alpha     = 4586.;
       double  beta     = 4586.;
       int sten_rad     = 4586 ;
-      int weight_power = 4586;
-      int exact_flag   = 4586;
-      string dom_bc("4586");
-      string  eb_bc("4586");
+      int weight_power = 4586 ;
+      int exact_flag   = 4586 ;
+      int output_hdf5  = 4586;
+      string     dom_bc("4586");
+      string      eb_bc("4586");
 
       pp.get("alpha"       , alpha   );
       pp.get("beta"        , beta    );
@@ -1225,6 +1227,7 @@ namespace EBCM
       pp.get("dom_bc"      , dom_bc);
       pp.get("eb_bc"       , eb_bc);
       pp.get("exact_flag"  , exact_flag);
+      pp.get("output_hdf5" , output_hdf5);
       int num_ghost = 4;
       
       shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
@@ -1251,6 +1254,20 @@ namespace EBCM
       double acoef =  1;
       double bcoef = -1;
       err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+
+      if(output_hdf5 != 0)
+      {
+        string phi_exac_file_name = a_file_prefix + string("_phi_exac.hdf5");
+        string lph_exac_file_name = a_file_prefix + string("_lph_exac.hdf5");
+        string lph_calc_file_name = a_file_prefix + string("_lph_calc.hdf5");
+        string err_calc_file_name = a_file_prefix + string("_err_calc.hdf5");
+
+
+        phi_exac_ptr->writeToHDF5(phi_exac_file_name);
+        lph_exac_ptr->writeToHDF5(lph_exac_file_name);
+        lph_calc_ptr->writeToHDF5(lph_calc_file_name);
+        err_calc_ptr->writeToHDF5(err_calc_file_name);
+      }      
       double retval = err_calc_ptr->maxNorm();
       return retval;
     }
@@ -1277,8 +1294,8 @@ namespace EBCM
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
 
-      double max_err_fine = getMaxAbsTruncation(meta_fine); 
-      double max_err_coar = getMaxAbsTruncation(meta_coar);
+      double max_err_fine = getMaxAbsTruncation(meta_fine, string("fine")); 
+      double max_err_coar = getMaxAbsTruncation(meta_coar, string("coar"));
 
       Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
       Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
