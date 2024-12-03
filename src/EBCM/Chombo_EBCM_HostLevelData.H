@@ -149,7 +149,27 @@ namespace EBCM
     
     double maxNorm() const
     {
-      double maxval = -4586;
+      pr_pt  loc;
+      int    ico = 4586;
+      double val = 4586;
+      getAbsMaxLocationAndValue(loc, val, ico);
+      double maxval = val; //on this proc.
+
+#ifdef CH_MPI
+      double sendBuf = maxval;
+      int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
+      if (result != MPI_SUCCESS)
+      {
+        MayDay::Error("Communication error in EBCM_HostLevelData::maxNorm");
+      }
+#endif
+      return maxval;
+    }
+    void getAbsMaxLocationAndValue(pr_pt  & a_loc,
+                                   double & a_val,
+                                   int    & a_ico) const
+    {
+      a_val = -4586;
       ch_dit dit =     m_meta->m_grids.dataIterator();
       const auto& mpibit = (*m_data);
       for(int ibox = 0; ibox < dit.size(); ibox++)
@@ -163,22 +183,13 @@ namespace EBCM
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
             double locvalue = data(pt, icomp);
-            maxval = std::max(maxval, std::abs(locvalue));
+            a_loc = pt;
+            a_ico = icomp;
+            a_val = std::max(a_val, std::abs(locvalue));
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
       
-#ifdef CH_MPI    
-      double sendBuf = maxval;
-      int result = MPI_Allreduce(&sendBuf, &maxval, 1, MPI_CH_REAL, MPI_MAX, Chombo_MPI::comm);
-
-      if (result != MPI_SUCCESS)
-      {
-        MayDay::Error("Communication error in EBCM_HostLevelData::maxNorm");
-      }
-    
-#endif
-      return maxval;
     }
     HostLevelData(const shared_ptr<ebcm_meta_t>& a_meta,
                   const int                    & a_ghost)

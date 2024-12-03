@@ -4,9 +4,9 @@ main.polynomial_order  = 2
 #0 is 0,  1 is polynomial
 main.exact_flag        = 1
 #identity coefficient
-main.alpha = 1.0
+main.alpha =  0.0
 #laplacian coefficient
-main.beta =   0.0
+main.beta =   1.0
 #boundary conditions ("dirichlet" or "neumann" for now.  Case matters.)
 main.dom_bc = "dirichlet"
 main.eb_bc  = "dirichlet"

@@ -1,7 +1,7 @@
 #ifndef __Chombo_EBCM_PETSC_Framework_
 #define __Chombo_EBCM_PETSC_Framework_
-
 #ifdef CH_USE_PETSC
+
 #include "petsc.h"
 #include "petscmat.h"
 #include "petscvec.h"
@@ -240,7 +240,7 @@ namespace EBCM
         petscToChombo(*a_lph_ptr, *m_lph_ptr            );
         if(!a_homogeneousOnly)
         {
-          addInhomogeneousBit(a_lph_ptr);
+//          addInhomogeneousBit(a_lph_ptr);
         }
       }
 
@@ -1205,9 +1205,19 @@ namespace EBCM
       printed_once = true;
       return retval;
     }
+
+    ///
+    template <int face_dir>
+    static double 
+    getMaxAbsFluxError( shared_ptr< ebcm_meta  >   a_meta,
+                        string                     a_file_prefix,
+                        int                        a_face_dir) 
+    {
+      return 4586.;
+    }
     ///
     static double
-    getMaxAbsTruncation(shared_ptr< ebcm_meta  >   a_meta,
+    getMaxAbsLphiError( shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
       ParmParse pp("main");
@@ -1268,8 +1278,31 @@ namespace EBCM
         lph_calc_ptr->writeToHDF5(lph_calc_file_name);
         err_calc_ptr->writeToHDF5(err_calc_file_name);
       }      
+      pr_pt  loc;
+      int    ico = 4586;
+      double val = 4586;
+      err_calc_ptr->getAbsMaxLocationAndValue(loc, val, ico);
+
+      Chombo4::pout() << "getMaxAbsTruncation for " << a_file_prefix  << " : " ;
+      Chombo4::pout() << "loc = " << loc  << ", ico = " << ico << ", val = " << val << endl;
+
       double retval = err_calc_ptr->maxNorm();
       return retval;
+    }
+    ///
+    static void
+    getMaxAbsTruncation(double                   & a_lphi_err_max,
+                        double                     a_flux_err_max[DIM],
+                        shared_ptr< ebcm_meta  >   a_meta,
+                        string                     a_file_prefix)
+    {
+      a_lphi_err_max    = getMaxAbsLphiError(   a_meta, a_file_prefix);
+
+      a_flux_err_max[0] = getMaxAbsFluxError<0>(a_meta, a_file_prefix, 0);
+      a_flux_err_max[1] = getMaxAbsFluxError<1>(a_meta, a_file_prefix, 1);
+#if DIM==3
+      a_flux_err_max[2] = getMaxAbsFluxError<2>(a_meta, a_file_prefix, 2);
+#endif
     }
 
     ///
@@ -1279,7 +1312,6 @@ namespace EBCM
     static  void run_hoeb_truncation_tests()
     {
 
-#ifdef CH_USE_PETSC
       static const int num_ghost = 4;  
       int           nx_fine = 4586;
       double        dx_fine = 4586.;
@@ -1293,26 +1325,48 @@ namespace EBCM
       domain_coar.coarsen(2);
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
+      double max_lphi_err_fine = -4586;
+      double max_lphi_err_coar = -4586;
+      double max_flux_err_fine[DIM];
+      double max_flux_err_coar[DIM];
+      
+      getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine")); 
+      getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
 
-      double max_err_fine = getMaxAbsTruncation(meta_fine, string("fine")); 
-      double max_err_coar = getMaxAbsTruncation(meta_coar, string("coar"));
-
-      Chombo4::pout() << "hoeb_truncation: Lmax(coarse error) =  " << max_err_coar << endl;
-      Chombo4::pout() << "hoeb_truncation: Lmax(fine   error) =  " << max_err_fine << endl;
-      if(max_err_fine > 1.0e-12) //err >= 0  by construction
+      for(int itest = 0; itest < (DIM+1); itest++)
       {
-        double order = (log(max_err_coar/max_err_fine))/log(2.0);
-        Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
-      }
-      else
-      {
-        Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
-      }
-#endif
-    }
+        string which_test("4586");
+        double max_err_coar = -4586;
+        double max_err_fine = -4586;
+        if(itest == DIM)
+        {
+          which_test = string("full oper L phi = (alpha I + beta Lap)phi");
+          max_err_coar = max_lphi_err_coar;
+          max_err_fine = max_lphi_err_fine;
+        }
+        else
+        {
+          which_test = string("flux = Grad_phi [")  + to_string(itest) + string("]");
+          max_err_coar = max_flux_err_coar[itest];
+          max_err_fine = max_flux_err_fine[itest];
+        }
+        Chombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
+        Chombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
+        Chombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
+        if(max_err_fine > 1.0e-12) //err >= 0  by construction
+        {
+          double order = (log(max_err_coar/max_err_fine))/log(2.0);
+          Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
+        }
+        else
+        {
+          Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+        }
 
-  }; //end petsc_framwork class
-}
-#endif
+      } //end loop over tests
+    } //  end function run_truncation_error_tests
+  }; //   end petsc_framwork class
+} //       end namespace EBCM
 
-#endif 
+#endif //petsc
+#endif  //include guard
