@@ -41,6 +41,7 @@ namespace EBCM
     typedef ::PetscInt                                      petsc_int;
     typedef ::PetscScalar                                   petsc_sca;
     typedef Proto::Point                                    pr_pt;
+    typedef Proto::HostBoxData<double, 1>                   pr_fab_t;
     typedef Proto::Box                                      pr_bx;
     typedef Chombo4::Box                                    ch_box;
     typedef Chombo4::DisjointBoxLayout                      ch_dbl;
@@ -701,7 +702,8 @@ namespace EBCM
                                 const string                       & a_eb_bc,
                                 const int                          & a_facedir,
                                 const double                       & a_dx,
-                                const ebcm_exac                    & a_bc_exact)
+                                const ebcm_exac                    & a_bc_exact,
+                                bool a_killing_me_smalls)
     {
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
@@ -844,11 +846,12 @@ namespace EBCM
                                   const string                       & a_dom_bc,
                                   const string                       & a_eb_bc,
                                   const double                       & a_dx,
-                                  const ebcm_exac                    & a_bc_exact)
+                                  const ebcm_exac                    & a_bc_exact,
+                                  bool                                 a_killing_me_smalls)
     {
-        /**
-           There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
-        **/
+      /**
+         There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
+      **/
       local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
       shared_ptr< eigen_mat > Amat_p =
@@ -942,24 +945,24 @@ namespace EBCM
                       const ebcm_graph& a_graph)
       {
         shared_ptr<local_stencil_t> retval =
-          privateStencil(a_volu,          
-                         m_sten_rad,     
-                         m_weight_power, 
-                         a_graph,       
-                         m_dom_bc,      
-                         m_eb_bc);
+          privateVolumeStencil(a_volu,          
+                               m_sten_rad,     
+                               m_weight_power, 
+                               a_graph,       
+                               m_dom_bc,      
+                               m_eb_bc);
         return retval;
       }
 
     private:
       ///this is where the canal locks are dug in the basement
       shared_ptr<local_stencil_t>
-      privateStencil(const ebcm_volu                    & a_volu, 
-                     const int                          & a_stenrad,
-                     const int                          & a_weightpower,
-                     const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-                     const string                       & a_dom_bc,
-                     const string                       & a_eb_bc)
+      privateVolumeStencil(const ebcm_volu                    & a_volu, 
+                           const int                          & a_stenrad,
+                           const int                          & a_weightpower,
+                           const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                           const string                       & a_dom_bc,
+                           const string                       & a_eb_bc)
       {
         
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
@@ -973,7 +976,7 @@ namespace EBCM
             double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0, killing_me_smalls);
             if(!on_volu_exterior)
             {
-              ch_mayday::Error("privateStencil: bogus face in x");
+              ch_mayday::Error("privateVolumeStencil: bogus face in x");
             }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
@@ -982,7 +985,8 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,       
                                                                0, a_volu.m_dx,
-                                                               *m_bc_exact);
+                                                               *m_bc_exact,
+                                                               killing_me_smalls);
             flux *= fluxsign;
             (*retval) += flux;
           }
@@ -995,7 +999,7 @@ namespace EBCM
             double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1, killing_me_smalls);
             if(!on_volu_exterior)
             {
-              ch_mayday::Error("privateStencil: bogus face in y");
+              ch_mayday::Error("privateVolumeStencil: bogus face in y");
             }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
@@ -1004,7 +1008,8 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,       
                                                                1, a_volu.m_dx,
-                                                               *m_bc_exact);
+                                                               *m_bc_exact,
+                                                               killing_me_smalls);
 
                                                                
             flux *= fluxsign;
@@ -1019,7 +1024,7 @@ namespace EBCM
             double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2, killing_me_smalls);
             if(!on_volu_exterior)
             {
-              ch_mayday::Error("privateStencil: bogus face in z");
+              ch_mayday::Error("privateVolumeStencil: bogus face in z");
             }
             local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
                                                                a_stenrad,     
@@ -1028,7 +1033,8 @@ namespace EBCM
                                                                a_dom_bc,      
                                                                a_eb_bc,
                                                                2, a_volu.m_dx,
-                                                               *m_bc_exact);
+                                                               *m_bc_exact,
+                                                               killing_me_smalls);
                                                                
             flux *= fluxsign;
             (*retval) += flux;
@@ -1045,7 +1051,8 @@ namespace EBCM
                                                                  a_dom_bc,      
                                                                  a_eb_bc,
                                                                  a_volu.m_dx,
-                                                                 *m_bc_exact);
+                                                                 *m_bc_exact,
+                                                                 killing_me_smalls);
                                                                  
             (*retval) += flux;
           }
@@ -1206,18 +1213,87 @@ namespace EBCM
       return retval;
     }
 
-    ///
-    template <int face_dir>
-    static double 
-    getMaxAbsFluxError( shared_ptr< ebcm_meta  >   a_meta,
-                        string                     a_file_prefix,
-                        int                        a_face_dir) 
+    static void      
+    getFluxErrorVolume(double                                     a_flux_error[DIM],
+                       const ebcm_volu                        &   a_volu,
+                       const shared_ptr<HelmholtzOp>          &   a_helm_ptr,
+                       const pr_fab_t                         &   a_phi_exac)
     {
-      return 4586.;
+        ch_mayday::Error("not implemented");
+      
     }
     ///
-    static double
-    getMaxAbsLphiError( shared_ptr< ebcm_meta  >   a_meta,
+    static void
+    getMaxAbsFluxError( double                     a_max_flux_error[DIM],
+                        shared_ptr< ebcm_meta  >   a_meta,
+                        string                     a_file_prefix)
+    {
+      ParmParse pp("main");
+      double alpha     = 4586.;
+      double  beta     = 4586.;
+      int sten_rad     = 4586 ;
+      int weight_power = 4586 ;
+      int exact_flag   = 4586 ;
+      int output_hdf5  = 4586;
+      string     dom_bc("4586");
+      string      eb_bc("4586");
+
+      pp.get("alpha"       , alpha   );
+      pp.get("beta"        , beta    );
+      pp.get("sten_rad"    , sten_rad);
+      pp.get("weight_power", weight_power);
+      pp.get("dom_bc"      , dom_bc);
+      pp.get("eb_bc"       , eb_bc);
+      pp.get("exact_flag"  , exact_flag);
+      pp.get("output_hdf5" , output_hdf5);
+      int num_ghost = 4;
+      
+      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
+      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
+
+      shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
+                                                       weight_power, 
+                                                       a_meta, 
+                                                       exact_sol,
+                                                       dom_bc, eb_bc, num_ghost));
+      const auto& graphs = *(a_meta->m_graphs);
+      const auto& grids  =  (a_meta->m_grids);
+      auto dit = grids.dataIterator();
+      bool killing_me_smalls = false;
+      for(int ibox =0; ibox < dit.size(); ibox++)
+      {
+        const auto& valid  =             grids[dit[ibox]];
+        const auto& graph  =            graphs[dit[ibox]];
+        auto& phi_fab      =   (*phi_exac_ptr)[dit[ibox]];
+
+        /// this gets all volumes in valid
+        ebcm_subvol_vec subvol_vec(graph, valid, false);
+        int ivar = 0; //scalar
+
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          a_max_flux_error[idir] = -4586.;
+        }
+        
+        for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
+        {
+          const auto& volu = subvol_vec[ivec];
+          double             flux_error[DIM];
+          getFluxErrorVolume(flux_error, volu, helm_ptr, phi_fab);
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            a_max_flux_error[idir] = std::max(a_max_flux_error[idir], std::abs(flux_error[idir]));
+          }
+        } //end loop over volumes
+      } //end loop over boxes
+    }
+    ///
+    static
+    void
+    getMaxAbsLphiError( double                   & a_max_error,
+                        shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
       ParmParse pp("main");
@@ -1286,8 +1362,7 @@ namespace EBCM
       Chombo4::pout() << "getMaxAbsTruncation for " << a_file_prefix  << " : " ;
       Chombo4::pout() << "loc = " << loc  << ", ico = " << ico << ", val = " << val << endl;
 
-      double retval = err_calc_ptr->maxNorm();
-      return retval;
+      a_max_error =  err_calc_ptr->maxNorm();
     }
     ///
     static void
@@ -1296,13 +1371,8 @@ namespace EBCM
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
-      a_lphi_err_max    = getMaxAbsLphiError(   a_meta, a_file_prefix);
-
-      a_flux_err_max[0] = getMaxAbsFluxError<0>(a_meta, a_file_prefix, 0);
-      a_flux_err_max[1] = getMaxAbsFluxError<1>(a_meta, a_file_prefix, 1);
-#if DIM==3
-      a_flux_err_max[2] = getMaxAbsFluxError<2>(a_meta, a_file_prefix, 2);
-#endif
+      getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
+      getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
     }
 
     ///
