@@ -105,6 +105,20 @@ namespace EBCM
         return m_entries[a_ivec];
       }
       
+      double apply(const pr_fab_t&   a_phi_exac) const
+                  
+      {
+        double retval = 0;
+        for(int ivec = 0; ivec < m_entries.size(); ivec++)
+        {
+          const pr_pt &  loc = m_entries[ivec].first;
+          const double&  wgt = m_entries[ivec].second;
+          const double&  phi = a_phi_exac(loc, 0);
+          retval += wgt*phi;
+        }
+        return retval;
+      }
+      
       ///
       void
       operator+= (const local_stencil_t& a_input)
@@ -721,7 +735,7 @@ namespace EBCM
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
 
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, *locality, a_facedir, a_dx);
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }
       else
@@ -864,7 +878,7 @@ namespace EBCM
         retval = local_stencil_t();
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, *locality, a_dx);
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }
       else
@@ -954,6 +968,26 @@ namespace EBCM
         return retval;
       }
 
+      template <CENTERING cent>
+      local_stencil_t
+      getFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
+                     const ebcm_graph                  & a_graph,
+                     const double                      & a_dx, 
+                     bool a_killing_me_smalls) const
+    {
+      int face_dir = a_face.getFaceDir();
+      local_stencil_t flux = getHelmholtzFDotEhatStencil(a_face,
+                                                         m_sten_rad,     
+                                                         m_weight_power, 
+                                                         a_graph,       
+                                                         m_dom_bc,      
+                                                         m_eb_bc,       
+                                                         face_dir, a_dx,
+                                                         *m_bc_exact,
+                                                         a_killing_me_smalls);
+      return flux;
+      
+    }
     private:
       ///this is where the canal locks are dug in the basement
       shared_ptr<local_stencil_t>
@@ -1213,13 +1247,55 @@ namespace EBCM
       return retval;
     }
 
+    ///
+    template<CENTERING cent>
+    static double
+    getFluxError(const EBCM_Face<cent, ebcm_order>      &   a_face,
+                 const ebcm_graph                       &   a_graph,
+                 const ebcm_volu                        &   a_volu,
+                 const shared_ptr<HelmholtzOp>          &   a_helm_ptr,
+                 const pr_fab_t                         &   a_phi_exac,
+                 bool                                       a_killing_me_smalls)
+    {
+      local_stencil_t flux_stencil =
+        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, a_killing_me_smalls);
+
+      double calc_val = flux_stencil.apply(a_phi_exac);
+      double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
+      return std::abs(calc_val - exac_val);
+    }
+    ///
     static void      
     getFluxErrorVolume(double                                     a_flux_error[DIM],
+                       const ebcm_graph                       &   a_graph,
                        const ebcm_volu                        &   a_volu,
                        const shared_ptr<HelmholtzOp>          &   a_helm_ptr,
-                       const pr_fab_t                         &   a_phi_exac)
+                       const pr_fab_t                         &   a_phi_exac,
+                       bool a_killing_me_smalls)
     {
-        ch_mayday::Error("not implemented");
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        a_flux_error[idir] = -4586;
+      }
+      for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
+      {
+        double face_error = getFluxError<XFACE>(a_volu.m_xfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        a_flux_error[0] = std::max(a_flux_error[0], std::abs(face_error));
+      }
+      for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
+      {
+
+        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        a_flux_error[1] = std::max(a_flux_error[1], std::abs(face_error));
+      }
+
+#if DIM==3
+      for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
+      {
+        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        a_flux_error[2] = std::max(a_flux_error[2], std::abs(face_error));
+      }
+#endif      
       
     }
     ///
@@ -1281,7 +1357,8 @@ namespace EBCM
         {
           const auto& volu = subvol_vec[ivec];
           double             flux_error[DIM];
-          getFluxErrorVolume(flux_error, volu, helm_ptr, phi_fab);
+          bool killing_me_smalls = false;
+          getFluxErrorVolume(flux_error, graph, volu, helm_ptr, phi_fab, killing_me_smalls);
           for(int idir = 0; idir < DIM; idir++)
           {
             a_max_flux_error[idir] = std::max(a_max_flux_error[idir], std::abs(flux_error[idir]));

@@ -225,13 +225,12 @@ namespace EBCM_Exact
     ///
     template <CENTERING  cent>
     double getIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
-                               const ebcm_neighborhood             & a_neigh,
-                               const int                           & a_grad_dir,
                                double                                a_dx) const
     {
       pr_ind_mom_dmo   fac_mom  = a_ebcm_face.m_facmom;
       pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
-      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_grad_dir);
+      int grad_dir = a_ebcm_face.getFaceDir();
+      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, grad_dir);
       return retval;
     }
     ///
@@ -375,7 +374,6 @@ namespace EBCM_Exact
 
     ///
     double getIntGradPhiDotNDA(const EBCM::IrregFace<order>  & a_irreg_face,
-                               const ebcm_neighborhood       & a_neigh,
                                double                          a_dx) const
     {
       pr_ind_dou_dim  cent_loc = a_irreg_face.location(a_dx);
