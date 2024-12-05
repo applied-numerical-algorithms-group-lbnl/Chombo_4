@@ -202,19 +202,19 @@ namespace EBCM_Exact
       {
         ///taylor_power =  p
         pr_ind_int_dim  taylor_power_dim = momit_dim();
-        pr_ind_int_dmo  taylor_power_dmo = getDMOPower(taylor_power_dim, a_face_dir);
         
         int pd       =           taylor_power_dim[a_face_dir];
-        double momen = a_fac_mom[taylor_power_dmo];
         if( pd > 0 )
         {
           int   idenom = (taylor_power_dim.factorial());
           double denom = (Real)(idenom);
-          
           ///deriv_power = p-e^d
           pr_ind_int_dim deriv_power_dim = taylor_power_dim;
+          pr_ind_int_dmo deriv_power_dmo = getDMOPower(deriv_power_dim, a_face_dir);
+          
+          double momen = a_fac_mom[deriv_power_dmo];
           deriv_power_dim[a_face_dir] -= 1;
-          double deriv = getDerivative(deriv_power_dim, a_cent_loc);
+          double deriv = getDerivative(taylor_power_dim, a_cent_loc);
           ///increment = pd  phi^(p-ed) m^p/p!
           double incre = pd*deriv*momen/denom;
           retval += incre;

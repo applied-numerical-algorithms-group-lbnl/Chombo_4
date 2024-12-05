@@ -1262,6 +1262,12 @@ namespace EBCM
 
       double calc_val = flux_stencil.apply(a_phi_exac);
       double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
+      double face_area = a_face.m_facmom[0];
+      if(face_area > 1.0e-10)
+      {
+        calc_val /= face_area;
+        exac_val /= face_area;
+      }
       return std::abs(calc_val - exac_val);
     }
     ///
