@@ -765,7 +765,7 @@ namespace EBCM
         m_centroid[idir]= centerloc + scaledCent;
       }
     }
-    void defineAsRegular(pr_pt a_pt, double a_dx)
+    void defineAsRegular(pr_pt a_pt, double a_dx, pr_box a_domain)
     {
       m_regular = true;
       m_pt = a_pt;
@@ -773,6 +773,7 @@ namespace EBCM
       m_cells.resize(1, m_pt);
       m_ifaces.resize(0);
       m_volmom.setRegular(a_dx);
+      /**
       {
         m_xfaces.resize(2);
         pr_pt lopt = m_pt - Point::Basis(0);
@@ -805,6 +806,38 @@ namespace EBCM
         m_zfaces[0].defineAsRegular(lovof, ptvof, a_dx);
         m_zfaces[1].defineAsRegular(ptvof, hivof, a_dx);
       }
+#endif      
+      **/
+      pr_vof pt_vof(m_pt, 0);
+      pr_vof lo_vof[DIM], hi_vof[DIM];
+      bool is_boundary_lo[DIM];
+      bool is_boundary_hi[DIM];
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        pr_pt lo_pt = m_pt - pr_pt::Basis(idir);
+        pr_pt hi_pt = m_pt + pr_pt::Basis(idir);
+        int lo_vi = 0; 
+        int hi_vi = 0;
+        lo_vof[idir] = pr_vof(lo_pt, lo_vi);
+        hi_vof[idir] = pr_vof(hi_pt, hi_vi);
+        is_boundary_hi[idir] = false;
+        is_boundary_lo[idir] = false;
+        if(!a_domain.contains(lo_pt)) { is_boundary_lo[idir] = true; }
+        if(!a_domain.contains(hi_pt)) { is_boundary_hi[idir] = true; }
+        lo_vof[idir].m_isBoundary = is_boundary_lo[idir];
+        hi_vof[idir].m_isBoundary = is_boundary_hi[idir];
+      }
+      m_xfaces.resize(2);
+      m_xfaces[0].defineAsRegular(lo_vof[0], pt_vof   , a_dx);
+      m_xfaces[1].defineAsRegular(pt_vof   , hi_vof[0], a_dx);
+      
+      m_yfaces.resize(2);
+      m_yfaces[0].defineAsRegular(lo_vof[1], pt_vof   , a_dx);
+      m_yfaces[1].defineAsRegular(pt_vof   , hi_vof[1], a_dx);
+#if DIM==3
+      m_zfaces.resize(2);
+      m_zfaces[0].defineAsRegular(lo_vof[2], pt_vof   , a_dx);
+      m_zfaces[1].defineAsRegular(pt_vof   , hi_vof[2], a_dx);
 #endif      
       defineDerivedMeasures(a_dx);
       consistencyChecks();
@@ -964,7 +997,9 @@ namespace EBCM
     static
     inline int
     unpackEBDescription(shared_ptr <set<pr_vof > >        & a_soluVolumes,
-                        const pr_ebgrap                   & a_graph)
+                        const pr_ebgrap                   & a_graph,
+                        const ch_box                      & a_domain,
+                        const double                      & a_dx)
 
     {
 
@@ -980,8 +1015,8 @@ namespace EBCM
         else if( a_graph.isRegular(pt))
         {
           
-          pr_vof regvol;
-          regvol.defineAsRegular(pt);
+          pr_vof regvol(pt, 0);
+          //regvol.defineAsRegular(pt);
           a_soluVolumes->insert(regvol);
         }
         else
@@ -1390,7 +1425,7 @@ namespace EBCM
         }
         else if(a_graph.isRegular(curpt))
         {
-          allvols[ivol].defineAsRegular(curpt, a_dx);
+          allvols[ivol].defineAsRegular(curpt, a_dx, a_domain);
         }
         else
         {
@@ -1447,7 +1482,7 @@ namespace EBCM
       }
       else if(a_graph.isRegular(a_startvof.m_pt))
       {
-        startvol.defineAsRegular(a_startvof.m_pt, a_dx);
+        startvol.defineAsRegular(a_startvof.m_pt, a_dx, a_domain);
       }
       else
       {
@@ -1555,7 +1590,7 @@ namespace EBCM
           bool hasRegularNeighbor = getRegularNeighborPoint(regPt, smallvol,  *a_map);
           if(hasRegularNeighbor)
           {
-            bigvol.defineAsRegular(regPt, a_dx);
+            bigvol.defineAsRegular(regPt, a_dx, a_domain);
             //set map to fake non-negative number so it will no longer get tagged as regular
             //map gets fixed up at the end of this function.
             (*a_map)(regPt, 0) = 4586;
@@ -1748,7 +1783,7 @@ namespace EBCM
 
         ///take all EB stuff and make it into an irregular grid without prejudice about regular or irregular
         //(those distinctions will change here because of merger making regulars into irregulars)
-        unpackEBDescription(allEBInd, ebgrap);
+        unpackEBDescription(allEBInd, ebgrap, a_domain, a_dx);
         
         //translate all this mixed stuff into sparse  representation that we actually store
         makeTheBlobs(m_volumes, m_map, allEBInd, a_geoserv, a_domain, a_dit, a_dx, ebgrap,
@@ -2286,7 +2321,7 @@ namespace EBCM
       }
       else if(m_allRegular)
       {
-        retval.defineAsRegular(a_pt, m_dx);
+        retval.defineAsRegular(a_pt,  m_dx, m_domain);
         if(a_killing_me_smalls)
         {
           pout() << "EBCM::GVCP: defining " << a_pt << " as regular " << endl;
@@ -2305,7 +2340,7 @@ namespace EBCM
         }
         else if(mapval == -1)
         {
-          retval.defineAsRegular(a_pt, m_dx);
+          retval.defineAsRegular(a_pt, m_dx, m_domain);
         }
         else
         {

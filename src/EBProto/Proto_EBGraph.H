@@ -24,7 +24,7 @@ namespace Proto
     //for faces, the low cell. for cells, undefined
     int   m_vofIDLo;
 
-    ///
+    ///only really a thing if XFACE YFACE ZFACE
     bool m_isBoundary;
 
   public:
