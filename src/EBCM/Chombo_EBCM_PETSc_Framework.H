@@ -116,6 +116,7 @@ namespace EBCM
           const double&  phi = a_phi_exac(loc, 0);
           retval += wgt*phi;
         }
+        retval += m_inhomogeneous_bit;
         return retval;
       }
       
@@ -569,7 +570,7 @@ namespace EBCM
     {
       pr_mom_dmo facmom =  a_face.m_facmom;
       pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
-      double momzero    = facmom[pr_itm_i_dmo::Zero];
+      //double momzero    = facmom[pr_itm_i_dmo::Zero];
 
       pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
       volmom.shift(xbar);
@@ -580,19 +581,16 @@ namespace EBCM
 
       for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
       {
-        auto momind = momit();
+        auto p_mom = momit();
         double matval = 0;
-        if(momind[a_facedir] > 0)
+        int pd = p_mom[a_facedir];
+        if(pd > 0)
         {
-          int pd = momind[a_facedir];
-          pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
-          Real derval = volmom[derind];
-          if(std::abs(momzero) > 1.0e-10)
-          {
-            matval = pd*derval/momzero;
-          }
+          pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
+          double  m_p_min_ed = volmom[p_minu_ed];
+          matval = pd*m_p_min_ed;
         }
-        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        unsigned int currentCol = pr_mom_dim::indexOf(p_mom);
         (*retval)(0,currentCol) = matval;
       }
     
