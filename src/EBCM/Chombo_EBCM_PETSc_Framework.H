@@ -703,6 +703,76 @@ namespace EBCM
       return retval;
     } //end function getStencilFromMat
 
+    /// Same function as above with data sent in so I can evaluate sub stencils.
+    template<CENTERING cent>
+    static local_stencil_t
+    getHelmholtzFDotEhatStencilDB(const EBCM_Face<cent, ebcm_order>  & a_face,
+                                  const int                          & a_stenrad,
+                                  const int                          & a_weightpower,
+                                  const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                  const string                       & a_dom_bc,
+                                  const string                       & a_eb_bc,
+                                  const int                          & a_facedir,
+                                  const double                       & a_dx,
+                                  const ebcm_exac                    & a_bc_exact,
+                                  const pr_fab_t                     & a_phi_exac,
+                                  bool a_killing_me_smalls)
+    {
+      /** 
+          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
+      **/
+      local_stencil_t retval;
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat_p =
+        EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemMatrix(locality, a_face, a_graph,
+                        a_stenrad, a_weightpower,
+                        a_dom_bc, a_eb_bc, false);
+      if((a_dom_bc == string("Neumann")) && (a_face.domainBoundary()))
+      {
+        retval = local_stencil_t();
+        retval.clear();
+        retval.m_inhomogeneous_bit = 0;
+
+        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
+        retval.m_inhomogeneous_bit += flux_val;
+      }
+      else
+      {    
+        /**
+           From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
+           Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
+           It is the one that converts  Taylor coefficients to fluxes).   
+           S : stencil matrix.  
+           P : phi vector.  
+           W : weighting matrix.
+           M : moment matrix.
+           A: system matrix =  ((WM)^T(WM))
+           (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
+           S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+        **/
+
+        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality,                   false);
+        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,false);
+
+        eigen_mat WMmat;
+        multiply(WMmat, *Wmat_p, *Mmat_p);
+        eigen_mat WMTmat = WMmat;
+        WMTmat.transpose();
+
+        eigen_mat Ainvmat = *Amat_p;
+        Ainvmat.invert();
+      
+        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
+        eigen_mat AinvWMTmat;
+        multiply( AinvWMTmat, Ainvmat, WMTmat);
+        eigen_mat Smat;
+        multiply( Smat, *Qmat_p, AinvWMTmat);
+        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+      }
+      return retval;
+    } //end function getHelmholtzFDotEhatStencil
+
     ///
     template<CENTERING cent>
     static local_stencil_t
@@ -972,20 +1042,43 @@ namespace EBCM
                      const ebcm_graph                  & a_graph,
                      const double                      & a_dx, 
                      bool a_killing_me_smalls) const
-    {
-      int face_dir = a_face.getFaceDir();
-      local_stencil_t flux = getHelmholtzFDotEhatStencil(a_face,
-                                                         m_sten_rad,     
-                                                         m_weight_power, 
-                                                         a_graph,       
-                                                         m_dom_bc,      
-                                                         m_eb_bc,       
-                                                         face_dir, a_dx,
-                                                         *m_bc_exact,
-                                                         a_killing_me_smalls);
-      return flux;
+      {
+        int face_dir = a_face.getFaceDir();
+        local_stencil_t flux = getHelmholtzFDotEhatStencil(a_face,
+                                                           m_sten_rad,     
+                                                           m_weight_power, 
+                                                           a_graph,       
+                                                           m_dom_bc,      
+                                                           m_eb_bc,       
+                                                           face_dir, a_dx,
+                                                           *m_bc_exact,
+                                                           a_killing_me_smalls);
+        return flux;
       
-    }
+      }
+
+      template <CENTERING cent>
+      local_stencil_t
+      getFluxStencilDB(const EBCM_Face<cent, ebcm_order> & a_face,
+                       const ebcm_graph                  & a_graph,
+                       const double                      & a_dx, 
+                       const pr_fab_t                    & a_phi_exac,
+                       bool a_killing_me_smalls) const
+      {
+        int face_dir = a_face.getFaceDir();
+        local_stencil_t flux = getHelmholtzFDotEhatStencilDB(a_face,
+                                                             m_sten_rad,     
+                                                             m_weight_power, 
+                                                             a_graph,       
+                                                             m_dom_bc,      
+                                                             m_eb_bc,       
+                                                             face_dir, a_dx,
+                                                             *m_bc_exact,
+                                                             a_phi_exac,
+                                                             a_killing_me_smalls);
+        return flux;
+      
+      }
     private:
       ///this is where the canal locks are dug in the basement
       shared_ptr<local_stencil_t>
@@ -1256,7 +1349,7 @@ namespace EBCM
                  bool                                       a_killing_me_smalls)
     {
       local_stencil_t flux_stencil =
-        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, a_killing_me_smalls);
+        a_helm_ptr->getFluxStencilDB(a_face, a_graph, a_volu.m_dx, a_phi_exac, a_killing_me_smalls);
 
       double calc_val = flux_stencil.apply(a_phi_exac);
       double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
