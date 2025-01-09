@@ -131,7 +131,7 @@ namespace EBCM
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
-
+    int m_on_domain;
   ///sometimes it is convenient to have the integer facedir
     int  getFaceDir() const
     {
@@ -151,11 +151,20 @@ namespace EBCM
       return retval;
     }
     
-    void defineAsRegular(pr_vof a_lo, pr_vof a_hi, double a_dx)
+    void defineAsRegular(pr_vof a_lo, pr_vof a_hi, double a_dx, pr_box a_domain)
     {                                                  
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
+      if(a_domain.contains(a_lo.m_pt) && a_domain.contains(a_hi.m_pt))
+      {
+        m_on_domain = 0;
+      }
+      else
+      {
+        m_on_domain = 1;
+      }
+        
     }
     ///
     pr_itm_r_dim location(double  a_dx) const
@@ -187,8 +196,7 @@ namespace EBCM
 
     bool domainBoundary() const
     {
-      bool retval = ((m_lo.m_vofIDMe < 0) ||
-                     (m_hi.m_vofIDMe < 0));
+      bool  retval = (m_on_domain == 1);
       return retval;
     }
     
@@ -198,6 +206,7 @@ namespace EBCM
       charsiz += m_lo.charsize();
       charsiz += m_hi.charsize();
       charsiz += m_facmom.charsize();
+      charsiz += sizeof(int);
       return charsiz;
     }
     size_t energize(char* a_outbuf, size_t a_expected_size) const
@@ -217,7 +226,11 @@ namespace EBCM
       charbuf += m_facmom.charsize();
       charsiz += m_facmom.charsize();
 
-
+      int* intbuf = (int*) charbuf;
+      *intbuf = m_on_domain;
+      charbuf += sizeof(int);
+      charsiz += sizeof(int);
+      
       if(charsiz != a_expected_size)
       {
         ch_mayday::Error("EBCMFace::energize: size check error");
@@ -244,7 +257,10 @@ namespace EBCM
       charbuf += m_facmom.charsize();
       charsiz += m_facmom.charsize();
 
-
+      int* intbuf = (int*) charbuf;
+      m_on_domain = *intbuf;
+      charbuf += sizeof(int);
+      charsiz += sizeof(int);
       if(charsiz != a_expected_size)
       {
         ch_mayday::Error("EBCMFace::linearIn: size check error");
@@ -669,16 +685,27 @@ namespace EBCM
       return connected;
     }
     template <CENTERING cent>
-    void fillFaceData(      vector< EBCM_Face< cent, order> >           & a_facedata,
-                      const vector< EBIndex<   cent > >                 & a_ebfaces,
-                      const HostIrregData<     cent, pr_indmom_dmo, 1> & a_facedat)
+    void fillFaceData(      vector< EBCM_Face< cent, order> >                 & a_facedata,
+                            const vector< EBIndex<   cent > >                 & a_ebfaces,
+                            const HostIrregData<     cent, pr_indmom_dmo, 1>  & a_facedat,
+                            const ch_box                                      & a_domain)
     {
-
+      pr_box pr_dom = ProtoCh::getProtoBox(a_domain);
       a_facedata.resize(a_ebfaces.size());
       for(int iface = 0; iface < a_ebfaces.size(); ++iface)
       {
-        a_facedata[iface].m_lo = a_ebfaces[iface].getVoF(Side::Lo);
-        a_facedata[iface].m_hi = a_ebfaces[iface].getVoF(Side::Hi);
+        pr_vof lo_vof = a_ebfaces[iface].getVoF(Side::Lo);
+        pr_vof hi_vof = a_ebfaces[iface].getVoF(Side::Hi);
+        int on_domain = 0;
+        if((!pr_dom.contains(lo_vof.m_pt)) || (!pr_dom.contains(hi_vof.m_pt)))
+        {
+          on_domain = 1;
+        }
+        a_facedata[iface].m_lo = lo_vof;
+        a_facedata[iface].m_hi = hi_vof;
+        a_facedata[iface].m_on_domain = on_domain;
+        
+
         a_facedata[iface].m_facmom = a_facedat(a_ebfaces[iface], 0);
       }
     }
@@ -707,8 +734,8 @@ namespace EBCM
       xebfac.insert(xebfac.end(), xebfachi.begin(), xebfachi.end());
       yebfac.insert(yebfac.end(), yebfachi.begin(), yebfachi.end());
       
-      fillFaceData<XFACE>(m_xfaces, xebfac, xfacdat);
-      fillFaceData<YFACE>(m_yfaces, yebfac, yfacdat);
+      fillFaceData<XFACE>(m_xfaces, xebfac, xfacdat, a_domain);
+      fillFaceData<YFACE>(m_yfaces, yebfac, yfacdat, a_domain);
 
 #if DIM==3                     
       auto zebfaclo= graph.getZFaces(a_vof, Side::Lo);
@@ -717,7 +744,7 @@ namespace EBCM
       auto zebfac = zebfaclo;
       zebfac.insert(zebfac.end(), zebfachi.begin(), zebfachi.end());
       const auto & zfacdat = (*(a_geoserv->getZFaceData(a_domain)))[a_dit];
-      fillFaceData<ZFACE>(m_zfaces, zebfac, zfacdat);
+      fillFaceData<ZFACE>(m_zfaces, zebfac, zfacdat, a_domain);
 #endif
       
       m_regular = false;
@@ -773,41 +800,6 @@ namespace EBCM
       m_cells.resize(1, m_pt);
       m_ifaces.resize(0);
       m_volmom.setRegular(a_dx);
-      /**
-      {
-        m_xfaces.resize(2);
-        pr_pt lopt = m_pt - Point::Basis(0);
-        pr_pt hipt = m_pt + Point::Basis(0);
-        pr_vof lovof(lopt, 0);
-        pr_vof hivof(hipt, 0);
-        pr_vof ptvof(m_pt, 0);
-        m_xfaces[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_xfaces[1].defineAsRegular(ptvof, hivof, a_dx);
-      }
-      {
-        m_yfaces.resize(2);
-        pr_pt lopt = m_pt - Point::Basis(1);
-        pr_pt hipt = m_pt + Point::Basis(1);
-        pr_vof lovof(lopt, 0);
-        pr_vof hivof(hipt, 0);
-        pr_vof ptvof(m_pt, 0);
-
-        m_yfaces[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_yfaces[1].defineAsRegular(ptvof, hivof, a_dx);
-      }
-#if DIM==3
-      {
-        m_zfaces.resize(2);
-        pr_pt lopt = m_pt - Point::Basis(2);
-        pr_pt hipt = m_pt + Point::Basis(2);
-        pr_vof lovof(lopt, 0);
-        pr_vof hivof(hipt, 0);
-        pr_vof ptvof(m_pt, 0);
-        m_zfaces[0].defineAsRegular(lovof, ptvof, a_dx);
-        m_zfaces[1].defineAsRegular(ptvof, hivof, a_dx);
-      }
-#endif      
-      **/
       pr_vof pt_vof(m_pt, 0);
       pr_vof lo_vof[DIM], hi_vof[DIM];
       bool is_boundary_lo[DIM];
@@ -818,6 +810,7 @@ namespace EBCM
         pr_pt hi_pt = m_pt + pr_pt::Basis(idir);
         int lo_vi = 0; 
         int hi_vi = 0;
+
         lo_vof[idir] = pr_vof(lo_pt, lo_vi);
         hi_vof[idir] = pr_vof(hi_pt, hi_vi);
         is_boundary_hi[idir] = false;
@@ -828,16 +821,16 @@ namespace EBCM
         hi_vof[idir].m_isBoundary = is_boundary_hi[idir];
       }
       m_xfaces.resize(2);
-      m_xfaces[0].defineAsRegular(lo_vof[0], pt_vof   , a_dx);
-      m_xfaces[1].defineAsRegular(pt_vof   , hi_vof[0], a_dx);
+      m_xfaces[0].defineAsRegular(lo_vof[0], pt_vof   , a_dx, a_domain);
+      m_xfaces[1].defineAsRegular(pt_vof   , hi_vof[0], a_dx, a_domain);
       
       m_yfaces.resize(2);
-      m_yfaces[0].defineAsRegular(lo_vof[1], pt_vof   , a_dx);
-      m_yfaces[1].defineAsRegular(pt_vof   , hi_vof[1], a_dx);
+      m_yfaces[0].defineAsRegular(lo_vof[1], pt_vof   , a_dx, a_domain);
+      m_yfaces[1].defineAsRegular(pt_vof   , hi_vof[1], a_dx, a_domain);
 #if DIM==3
       m_zfaces.resize(2);
-      m_zfaces[0].defineAsRegular(lo_vof[2], pt_vof   , a_dx);
-      m_zfaces[1].defineAsRegular(pt_vof   , hi_vof[2], a_dx);
+      m_zfaces[0].defineAsRegular(lo_vof[2], pt_vof   , a_dx, a_domain);
+      m_zfaces[1].defineAsRegular(pt_vof   , hi_vof[2], a_dx, a_domain);
 #endif      
       defineDerivedMeasures(a_dx);
       consistencyChecks();

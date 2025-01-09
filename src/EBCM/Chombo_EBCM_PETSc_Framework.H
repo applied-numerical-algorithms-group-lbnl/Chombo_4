@@ -703,7 +703,14 @@ namespace EBCM
       return retval;
     } //end function getStencilFromMat
 
-    /// Same function as above with data sent in so I can evaluate sub stencils.
+    /** 
+        Same function as above with data sent in so I can evaluate sub
+        stencils.  The DB call chain is for debugging.  I need to send
+        in data to evaluate which part of this stencil process is
+        breaking.  To avoid code replication, the DB call chain should
+        be removed once I figure out what is going on.  It might be
+        there a while.  dtg 01-09-2025
+     **/
     template<CENTERING cent>
     static local_stencil_t
     getHelmholtzFDotEhatStencilDB(const EBCM_Face<cent, ebcm_order>  & a_face,
