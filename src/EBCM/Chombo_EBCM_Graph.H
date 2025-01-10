@@ -131,7 +131,7 @@ namespace EBCM
     pr_vof  m_lo;
     pr_vof  m_hi;
     IndexedMoments<DIM-1, order> m_facmom;
-    int m_on_domain;
+
   ///sometimes it is convenient to have the integer facedir
     int  getFaceDir() const
     {
@@ -156,14 +156,6 @@ namespace EBCM
       m_lo = a_lo;
       m_hi = a_hi;
       m_facmom.setRegular(a_dx);
-      if(a_domain.contains(a_lo.m_pt) && a_domain.contains(a_hi.m_pt))
-      {
-        m_on_domain = 0;
-      }
-      else
-      {
-        m_on_domain = 1;
-      }
         
     }
     ///
@@ -196,8 +188,10 @@ namespace EBCM
 
     bool domainBoundary() const
     {
-      bool  retval = (m_on_domain == 1);
-      return retval;
+      
+      bool lo_neg = m_lo.m_vofIDMe < 0;
+      bool hi_neg = m_hi.m_vofIDMe < 0;
+      return (lo_neg || hi_neg);
     }
     
     size_t charsize() const
@@ -226,11 +220,6 @@ namespace EBCM
       charbuf += m_facmom.charsize();
       charsiz += m_facmom.charsize();
 
-      int* intbuf = (int*) charbuf;
-      *intbuf = m_on_domain;
-      charbuf += sizeof(int);
-      charsiz += sizeof(int);
-      
       if(charsiz != a_expected_size)
       {
         ch_mayday::Error("EBCMFace::energize: size check error");
@@ -257,10 +246,6 @@ namespace EBCM
       charbuf += m_facmom.charsize();
       charsiz += m_facmom.charsize();
 
-      int* intbuf = (int*) charbuf;
-      m_on_domain = *intbuf;
-      charbuf += sizeof(int);
-      charsiz += sizeof(int);
       if(charsiz != a_expected_size)
       {
         ch_mayday::Error("EBCMFace::linearIn: size check error");
@@ -696,15 +681,9 @@ namespace EBCM
       {
         pr_vof lo_vof = a_ebfaces[iface].getVoF(Side::Lo);
         pr_vof hi_vof = a_ebfaces[iface].getVoF(Side::Hi);
-        int on_domain = 0;
-        if((!pr_dom.contains(lo_vof.m_pt)) || (!pr_dom.contains(hi_vof.m_pt)))
-        {
-          on_domain = 1;
-        }
+
         a_facedata[iface].m_lo = lo_vof;
         a_facedata[iface].m_hi = hi_vof;
-        a_facedata[iface].m_on_domain = on_domain;
-        
 
         a_facedata[iface].m_facmom = a_facedat(a_ebfaces[iface], 0);
       }
@@ -808,15 +787,16 @@ namespace EBCM
       {
         pr_pt lo_pt = m_pt - pr_pt::Basis(idir);
         pr_pt hi_pt = m_pt + pr_pt::Basis(idir);
-        int lo_vi = 0; 
+        int lo_vi = 0;  
         int hi_vi = 0;
+        is_boundary_lo[idir] = (!a_domain.contains(lo_pt));
+        is_boundary_hi[idir] = (!a_domain.contains(hi_pt));
+        if(is_boundary_lo[idir]){  lo_vi = -1;};
+        if(is_boundary_hi[idir]){  hi_vi = -1;};
 
         lo_vof[idir] = pr_vof(lo_pt, lo_vi);
         hi_vof[idir] = pr_vof(hi_pt, hi_vi);
-        is_boundary_hi[idir] = false;
-        is_boundary_lo[idir] = false;
-        if(!a_domain.contains(lo_pt)) { is_boundary_lo[idir] = true; }
-        if(!a_domain.contains(hi_pt)) { is_boundary_hi[idir] = true; }
+
         lo_vof[idir].m_isBoundary = is_boundary_lo[idir];
         hi_vof[idir].m_isBoundary = is_boundary_hi[idir];
       }
