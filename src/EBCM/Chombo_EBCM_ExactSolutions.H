@@ -150,22 +150,51 @@ namespace EBCM_Exact
 
       pr_ind_mom_dmo   fac_mom;
       pr_ind_dou_dim  cent_loc;
+      bool found_fac = false;
       const ebcm_volu & cur_vol = (*a_neigh.m_volumes)[a_dom_face.m_subvol_index];
+      int  vec_ind = a_dom_face.m_subvol_index;
       if(a_dom_face.m_direction == 0)
       {
-        fac_mom  = cur_vol.m_xfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_xfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+        const auto&  face_vec = cur_vol.m_xfaces;
+        if(vec_ind >= face_vec.size())
+        {
+          ch_mayday::Error("we have our indicies mixed up-- x edition");
+        }
+        else
+        {
+          const auto& cur_fac = face_vec[vec_ind];
+          fac_mom   =  cur_fac.m_facmom;
+          cent_loc  =  cur_fac.location(cur_vol.m_dx);
+        }
       }
       else if(a_dom_face.m_direction == 1)
       {
-        fac_mom  = cur_vol.m_yfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_yfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+        const auto&  face_vec = cur_vol.m_yfaces;
+        if(vec_ind >= face_vec.size())
+        {
+          ch_mayday::Error("we have our indicies mixed up-- y edition");
+        }
+        else
+        {
+          const auto& cur_fac = face_vec[vec_ind];
+          fac_mom   =  cur_fac.m_facmom;
+          cent_loc  =  cur_fac.location(cur_vol.m_dx);
+        }
       }
 #if DIM==3      
       else if(a_dom_face.m_direction == 2)
       {
-        fac_mom  = cur_vol.m_zfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_zfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
+        const auto&  face_vec = cur_vol.m_zfaces;
+        if(vec_ind >= face_vec.size())
+        {
+          ch_mayday::Error("we have our indicies mixed up-- z edition");
+        }
+        else
+        {
+          const auto& cur_fac = face_vec[vec_ind];
+          fac_mom   =  cur_fac.m_facmom;
+          cent_loc  =  cur_fac.location(cur_vol.m_dx);
+        }
       }
 #endif
       else
