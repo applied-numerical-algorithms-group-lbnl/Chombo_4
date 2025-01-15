@@ -57,6 +57,8 @@ namespace EBCM
     typedef Chombo4::GeometryService<            ebcm_order >   ch_geoserv;
     typedef   Proto::IndexedMoments<DIM  ,       ebcm_order >   pr_mom_dim;
     typedef   Proto::IndexedMoments<DIM-1,       ebcm_order >   pr_mom_dmo;
+    typedef    EBCM::neig_dom_face<              ebcm_order >   ebcm_dom_face;
+    typedef    EBCM::neig_cut_face<              ebcm_order >   ebcm_cut_face;
 
     class condition_t
     {
@@ -848,7 +850,7 @@ namespace EBCM
     ///
     static inline void
     fillNeumannEBBCRow(eigen_mat                      &  a_mat,
-                       const IrregFace<ebcm_order>    &  a_cut_face,
+                       const ebcm_cut_face            &  a_cut_face,
                        const pr_rv                    &  a_distance,
                        const int                      &  a_currentRow,
                        bool a_print)
@@ -905,10 +907,10 @@ namespace EBCM
 
     static inline void
     fillDirichletEBBCRow(eigen_mat                      &  a_mat,
-                       const IrregFace<ebcm_order>    &  a_cut_face,
-                       const pr_rv                    &  a_distance,
-                       const int                      &  a_currentRow,
-                       bool a_print)
+                         const ebcm_cut_face            &  a_cut_face,
+                         const pr_rv                    &  a_distance,
+                         const int                      &  a_currentRow,
+                         bool a_print)
     {
       CH_TIME("EBCM::Algorithm_Framework::fillDirichletEBCRow");
       if(a_print)
@@ -994,24 +996,7 @@ namespace EBCM
         {
           const auto& curfac = allfac[irow]; //indexing info for domain boundary face
 
-          pr_mom_dmo facmom;
-          if(     curfac.m_direction == 0)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_xfaces[curfac.m_volume_index].m_facmom;
-          }
-          else if(curfac.m_direction == 1)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_yfaces[curfac.m_volume_index].m_facmom;
-          }
-          else if(curfac.m_direction == 2)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_zfaces[curfac.m_volume_index].m_facmom;
-          }
-          else
-          {
-            Chombo4::pout() << "getMomentMatrix: invalid curfac.m_direction" << endl;
-            ch_mayday::Error("Doh!");
-          }
+          const pr_mom_dmo& facmom = curfac.m_facmom;
           
           ///This is the face mom with all derivatives in a_neigh_dir set to zero.
           pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
@@ -1032,24 +1017,7 @@ namespace EBCM
         {
           const auto& curfac = allfac[irow]; //indexing info for domain boundary face
 
-          pr_mom_dmo facmom;
-          if(     curfac.m_direction == 0)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_xfaces[curfac.m_volume_index].m_facmom;
-          }
-          else if(curfac.m_direction == 1)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_yfaces[curfac.m_volume_index].m_facmom;
-          }
-          else if(curfac.m_direction == 2)
-          {
-            facmom = allvol[curfac.m_subvol_index].m_zfaces[curfac.m_volume_index].m_facmom;
-          }
-          else
-          {
-            Chombo4::pout() << "getMomentMatrix: invalid curfac.m_direction" << endl;
-            ch_mayday::Error("Doh!");
-          }
+          const pr_mom_dmo& facmom = curfac.m_facmom;
           
           ///This is the face mom with all derivatives in a_neigh_dir set to zero.
           pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
@@ -1073,11 +1041,10 @@ namespace EBCM
         for(int irow = 0; irow < nrows_cut_faces; irow++)
         {
           //indexing information to get to the cut face volumes
-          const auto &  face_loc = (*(a_locality->m_cut_faces))[irow];  
-          const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
+          const auto &  fac_loc = (*(a_locality->m_cut_faces))[irow];  
           auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
           
-          fillNeumannEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
+          fillNeumannEBBCRow(*Mmat_p, fac_loc, xbar, irow_global, a_print);
           irow_global++;
         }
       }
@@ -1087,10 +1054,9 @@ namespace EBCM
         {
           //indexing information to get to the cut face volumes
           const auto &  face_loc = (*(a_locality->m_cut_faces))[irow];  
-          const auto &  cut_face = (*(a_locality->m_volumes))[face_loc.m_subvol_index].m_ifaces[face_loc.m_iface_index];
           auto xbar = a_locality->m_xbar_cut_faces[irow];   //need to know xbar to do x-xbar^p
           
-          fillDirichletEBBCRow(*Mmat_p, cut_face, xbar, irow_global, a_print);
+          fillDirichletEBBCRow(*Mmat_p, face_loc, xbar, irow_global, a_print);
           irow_global++;
         }
       }

@@ -51,11 +51,9 @@ namespace EBCM
 
     typedef Chombo4::GeometryService<         ebcm_order >  ch_geoserv;
     typedef  EBCM::Algorithm_Framework<       ebcm_order >  algo_framework;
-    typedef  EBCM::neighborhood       <       ebcm_order >  ebcm_neighborhood;
-
-    typedef  EBCM::neig_dom_face                            ebcm_dom_face;
-    typedef  EBCM::neig_cut_face                            ebcm_cut_face;
-    
+    typedef  EBCM::neighborhood<              ebcm_order >  ebcm_neighborhood;
+    typedef  EBCM::neig_dom_face<             ebcm_order >  ebcm_dom_face;
+    typedef  EBCM::neig_cut_face<             ebcm_order >  ebcm_cut_face;
     typedef  EBCM::MetaDataLevel<             ebcm_order >  ebcm_meta;
     typedef  EBCM::Algorithm_Framework<       ebcm_order >  ebcm_framework;
     typedef  EBCM::EBCM_Graph<                ebcm_order >  ebcm_graph;

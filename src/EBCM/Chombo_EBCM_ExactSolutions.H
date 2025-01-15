@@ -11,8 +11,8 @@ namespace EBCM_Exact
   class BaseExactSolution
   {
   public:
-    typedef    EBCM::neig_dom_face                                ebcm_dom_face;
-    typedef    EBCM::neig_cut_face                                ebcm_cut_face;
+    typedef    EBCM::neig_dom_face<                       order > ebcm_dom_face;
+    typedef    EBCM::neig_cut_face<                       order > ebcm_cut_face;
     typedef    EBCM::neighborhood<                        order > ebcm_neighborhood;
     typedef    EBCM::EBCM_Volu<                           order > ebcm_volu;
     typedef    EBCM::EBCM_Face<              XFACE      , order > ebcm_xface;
@@ -143,64 +143,13 @@ namespace EBCM_Exact
     }
 
     
-    ///  The next two functions should reduce to one
+    ///  
     double getIntPhiDA(const ebcm_dom_face     & a_dom_face,
                        const ebcm_neighborhood & a_neigh) const
     {
 
-      pr_ind_mom_dmo   fac_mom;
-      pr_ind_dou_dim  cent_loc;
-      bool found_fac = false;
-      const ebcm_volu & cur_vol = (*a_neigh.m_volumes)[a_dom_face.m_subvol_index];
-      int  vec_ind = a_dom_face.m_subvol_index;
-      if(a_dom_face.m_direction == 0)
-      {
-        const auto&  face_vec = cur_vol.m_xfaces;
-        if(vec_ind >= face_vec.size())
-        {
-          ch_mayday::Error("we have our indicies mixed up-- x edition");
-        }
-        else
-        {
-          const auto& cur_fac = face_vec[vec_ind];
-          fac_mom   =  cur_fac.m_facmom;
-          cent_loc  =  cur_fac.location(cur_vol.m_dx);
-        }
-      }
-      else if(a_dom_face.m_direction == 1)
-      {
-        const auto&  face_vec = cur_vol.m_yfaces;
-        if(vec_ind >= face_vec.size())
-        {
-          ch_mayday::Error("we have our indicies mixed up-- y edition");
-        }
-        else
-        {
-          const auto& cur_fac = face_vec[vec_ind];
-          fac_mom   =  cur_fac.m_facmom;
-          cent_loc  =  cur_fac.location(cur_vol.m_dx);
-        }
-      }
-#if DIM==3      
-      else if(a_dom_face.m_direction == 2)
-      {
-        const auto&  face_vec = cur_vol.m_zfaces;
-        if(vec_ind >= face_vec.size())
-        {
-          ch_mayday::Error("we have our indicies mixed up-- z edition");
-        }
-        else
-        {
-          const auto& cur_fac = face_vec[vec_ind];
-          fac_mom   =  cur_fac.m_facmom;
-          cent_loc  =  cur_fac.location(cur_vol.m_dx);
-        }
-      }
-#endif
-      else
-      {
-        ch_mayday::Error("getIntPhiDA: bogus data found");
-      }
+      const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
+      const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
       double retval = getIntPhiDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
       return retval;
     }
@@ -266,30 +215,9 @@ namespace EBCM_Exact
     double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
                                const ebcm_neighborhood & a_neigh) const
     {
-      pr_ind_mom_dmo   fac_mom;
-      pr_ind_dou_dim  cent_loc;
-      const ebcm_volu & cur_vol = (*a_neigh.m_volumes)[a_dom_face.m_subvol_index];
-      if(a_dom_face.m_direction == 0)
-      {
-        fac_mom  = cur_vol.m_xfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_xfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
-      }
-      else if(a_dom_face.m_direction == 1)
-      {
-        fac_mom  = cur_vol.m_yfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_yfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
-      }
-#if DIM==3      
-      else if(a_dom_face.m_direction == 2)
-      {
-        fac_mom  = cur_vol.m_zfaces[a_dom_face.m_subvol_index].m_facmom;
-        cent_loc = cur_vol.m_zfaces[a_dom_face.m_subvol_index].location(cur_vol.m_dx);
-      }
-#endif
-      else
-      {
-        ch_mayday::Error("getIntPhiDA: bogus data found");
-      }
+      const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
+      const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
+
       double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
       return retval;
 
@@ -343,9 +271,8 @@ namespace EBCM_Exact
     double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
                        const ebcm_neighborhood & a_neigh) const
     {
-      const ebcm_volu & cur_vol   = (*a_neigh.m_volumes)[a_cut_face.m_subvol_index];
-      pr_ind_mom_dim    ebf_mom   =    cur_vol.m_ifaces [a_cut_face.m_iface_index ].m_ebfmom;
-      pr_ind_dou_dim    cent_loc  = cur_vol.m_xfaces[a_cut_face.m_subvol_index].location(cur_vol.m_dx);
+      pr_ind_mom_dim    ebf_mom   =    a_cut_face.m_ebfmom;
+      pr_ind_dou_dim    cent_loc  =    a_cut_face.m_location;
       double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
       return retval;
     }
@@ -419,13 +346,10 @@ namespace EBCM_Exact
                                const ebcm_neighborhood & a_neigh,
                                double                    a_dx) const
     {
-      const auto & cur_volu    = (*a_neigh.m_volumes)[a_cut_face.m_subvol_index];
-      const auto & irreg_face  =  cur_volu.m_ifaces[  a_cut_face.m_iface_index ];
-      pr_ind_dou_dim  cent_loc = irreg_face.location(a_dx);
-      double retval = getIrregIntGradPhiDotNDACommonBit(irreg_face.m_norm_mom_x,
-                                                        irreg_face.m_norm_mom_y,
-                                                        irreg_face.m_norm_mom_z,
-                                                        cent_loc);
+      double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
+                                                        a_cut_face.m_norm_mom_y,
+                                                        a_cut_face.m_norm_mom_z,
+                                                        a_cut_face.m_location);
 
       return retval;
     }
