@@ -752,7 +752,7 @@ namespace EBCM
         {
           phi_val = a_bc_exact.getIntGradPhiDotNDADomainFace(face, *a_locality);
         }
-        else if(a_dom_bc == string("dirchlet"))
+        else if(a_dom_bc == string("dirichlet"))
         {
           phi_val = a_bc_exact.getIntPhiDADomainFace(face, *a_locality);
         }
