@@ -237,6 +237,7 @@ namespace EBCM
       ///
       void  addInhomogeneousBit(shared_ptr<ebcm_dou_sca_data> a_lph_ptr)
       {
+        CH_TIME("PETSc_Framework::addInhomogeneousBit");
         (*a_lph_ptr) += (*m_inhomog_bit);
       }
       
@@ -245,6 +246,7 @@ namespace EBCM
                    shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
                    bool                          a_homogeneousOnly) 
       {
+        CH_TIME("PETSc_Framework::applyOp");
         //this stuff makes lph = laplacian
         VecZeroEntries(*m_phi_ptr);
         VecZeroEntries(*m_lph_ptr);
@@ -350,6 +352,7 @@ namespace EBCM
       **/
       PetscInt createMatrixRowMap()
       {
+        CH_TIME("BasePetsc::createMatrixRowMap");
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
         m_inhomog_bit = shared_ptr<ebcm_dou_sca_data>(new ebcm_dou_sca_data(m_meta_ptr, m_ghost));
         const auto& graphs = *(m_meta_ptr->m_graphs);
@@ -701,82 +704,91 @@ namespace EBCM
       return retval;
     } //end function getStencilFromMat
 
-    /** 
-        Same function as above with data sent in so I can evaluate sub
-        stencils.  The DB call chain is for debugging.  I need to send
-        in data to evaluate which part of this stencil process is
-        breaking.  To avoid code replication, the DB call chain should
-        be removed once I figure out what is going on.  It might be
-        there a while.  dtg 01-09-2025
+    ///
+    /**
+       Fill a row vector with exact values of the solution and bc values.
+       This is the Phi that we usually factor out.
+       
+       Used to evaluate intermediate values for debugging purposes.
+       Phi = {phi_v, phi_db, phi_eb}^T
+       phi_v = Taylor series over volumes: phi_v = M C
+       phi_db = Taylor series over domain faces: phi_db = M C 
+       (if bcs are Neumann, phi_db is the gradient compoenent in the face normal direction).
+       phi_eb = Taylor series over cut faces: phi_eb = M C 
+       (if bcs are Neumann, phi_db = grad phi dot n_eb).
+
      **/
-    template<CENTERING cent>
-    static local_stencil_t
-    getHelmholtzFDotEhatStencilDB(const EBCM_Face<cent, ebcm_order>  & a_face,
-                                  const int                          & a_stenrad,
-                                  const int                          & a_weightpower,
-                                  const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-                                  const string                       & a_dom_bc,
-                                  const string                       & a_eb_bc,
-                                  const int                          & a_facedir,
-                                  const double                       & a_dx,
-                                  const ebcm_exac                    & a_bc_exact,
-                                  const pr_fab_t                     & a_phi_exac,
-                                  bool a_killing_me_smalls)
+    static shared_ptr<eigen_mat>
+    getSolutionRowVector(const shared_ptr<ebcm_neighborhood> & a_locality,
+                         const string                        & a_dom_bc,
+                         const string                        & a_eb_bc,
+                         const ebcm_exac                     & a_bc_exact,
+                         const double                        & a_dx,
+                         bool a_killing_me_smalls)
     {
-      /** 
-          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
-      **/
-      local_stencil_t retval;
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p =
-        EBCM::Algorithm_Framework<ebcm_order>::
-        getSystemMatrix(locality, a_face, a_graph,
-                        a_stenrad, a_weightpower,
-                        a_dom_bc, a_eb_bc, false);
-      if((a_dom_bc == string("Neumann")) && (a_face.domainBoundary()))
-      {
-        retval = local_stencil_t();
-        retval.clear();
-        retval.m_inhomogeneous_bit = 0;
-
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
-        retval.m_inhomogeneous_bit += flux_val;
-      }
-      else
-      {    
-        /**
-           From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
-           Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-           It is the one that converts  Taylor coefficients to fluxes).   
-           S : stencil matrix.  
-           P : phi vector.  
-           W : weighting matrix.
-           M : moment matrix.
-           A: system matrix =  ((WM)^T(WM))
-           (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
-           S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
-        **/
-
-        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality,                   false);
-        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,false);
-
-        eigen_mat WMmat;
-        multiply(WMmat, *Wmat_p, *Mmat_p);
-        eigen_mat WMTmat = WMmat;
-        WMTmat.transpose();
-
-        eigen_mat Ainvmat = *Amat_p;
-        Ainvmat.invert();
+      CH_TIME("PETSc_Framework::getSolutionRowVector");
+      int n_rows_volumes   = a_locality->m_weig_volumes.size();
+      int n_rows_dom_faces = a_locality->m_weig_dom_faces.size();
+      int n_rows_cut_faces = a_locality->m_weig_cut_faces.size();
+      int n_rows           = n_rows_volumes + n_rows_dom_faces + n_rows_cut_faces;
       
-        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
-        eigen_mat AinvWMTmat;
-        multiply( AinvWMTmat, Ainvmat, WMTmat);
-        eigen_mat Smat;
-        multiply( Smat, *Qmat_p, AinvWMTmat);
-        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+      shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
+      soln_vec_p->setVal(4586.);
+      int irow_global = 0;
+      for(int irow = 0; irow < n_rows_volumes; irow++)
+      {
+        const ebcm_volu& volu  =   (*(a_locality->m_volumes ))[irow];
+        double phi_val = a_bc_exact.getCellAveSolution(volu);
+        (*soln_vec_p)(irow_global,0) = phi_val;
+        irow_global++;
       }
-      return retval;
-    } //end function getHelmholtzFDotEhatStencil
+
+      for(int irow = 0; irow < n_rows_dom_faces; irow++)
+      {
+        const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
+        double phi_val  = 4586.;
+        double area = face.m_facmom[pr_itm_i_dmo::Zero];
+        if(a_dom_bc == string("neumann"))
+        {
+          phi_val = a_bc_exact.getIntGradPhiDotNDADomainFace(face, *a_locality);
+        }
+        else if(a_dom_bc == string("dirchlet"))
+        {
+          phi_val = a_bc_exact.getIntPhiDADomainFace(face, *a_locality);
+        }
+        else
+        {
+          ch_mayday::Error("PETScFramework::getSolutionVector::bogus a_dom_bc");
+        }
+        phi_val /= area;
+        (*soln_vec_p)(irow_global,0) = phi_val;
+        irow_global++;
+      }
+
+      for(int irow = 0; irow < n_rows_cut_faces; irow++)
+      {
+        const ebcm_cut_face& face = (*(a_locality->m_cut_faces ))[irow];
+        double phi_val  = 4586.;
+        double area = face.m_ebfmom[pr_itm_i_dim::Zero];
+        if(a_eb_bc == string("neumann"))
+        {
+          phi_val = a_bc_exact.getIntGradPhiDotNDACutFace(face, *a_locality, a_dx);
+        }
+        else if(a_eb_bc == string("dirchlet"))
+        {
+          phi_val = a_bc_exact.getIntPhiDACutFace(face, *a_locality);
+        }
+        else
+        {
+          ch_mayday::Error("PETScFramework::getSolutionVector::bogus a_dom_bc");
+        }
+        phi_val /= area;
+        (*soln_vec_p)(irow_global,0) = phi_val;
+        irow_global++;
+      }
+      return soln_vec_p;
+   }
+    
 
     ///
     template<CENTERING cent>
@@ -792,6 +804,7 @@ namespace EBCM
                                 const ebcm_exac                    & a_bc_exact,
                                 bool a_killing_me_smalls)
     {
+      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
@@ -802,7 +815,7 @@ namespace EBCM
         getSystemMatrix(locality, a_face, a_graph,
                         a_stenrad, a_weightpower,
                         a_dom_bc, a_eb_bc, false);
-      if((a_dom_bc == string("Neumann")) && (a_face.domainBoundary()))
+      if((a_dom_bc == string("neumann")) && (a_face.domainBoundary()))
       {
         retval = local_stencil_t();
         retval.clear();
@@ -829,6 +842,10 @@ namespace EBCM
         shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality,                   false);
         shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,false);
 
+        ///begin debug -- create a matrix with the solution in it so I can check some of the intermediate stages.
+        shared_ptr<eigen_mat> phi_exact = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+        /// end  debug
+        
         eigen_mat WMmat;
         multiply(WMmat, *Wmat_p, *Mmat_p);
         eigen_mat WMTmat = WMmat;
@@ -869,6 +886,7 @@ namespace EBCM
                            shared_ptr<ebcm_neighborhood>        a_locality,
                            const double                       & a_dx)
     {
+      CH_TIME("PETSc_Framework::getHelmholtzEBQMatrix");
       
       double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
       unsigned int Pcols = pr_mom_dim::size();
@@ -936,6 +954,7 @@ namespace EBCM
                                   const ebcm_exac                    & a_bc_exact,
                                   bool                                 a_killing_me_smalls)
     {
+      CH_TIME("PETSc_Framework::getIrregHelmholtzFDotNStencil");
       /**
          There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
       **/
@@ -946,7 +965,7 @@ namespace EBCM
                                           a_stenrad, a_weightpower,
                                           a_dom_bc, a_eb_bc, false);
       ///Irreg faces are always boundary faces (so do not have to check)
-      if(a_eb_bc == string("Neumann")) 
+      if(a_eb_bc == string("neumann")) 
       {
         retval = local_stencil_t();
         retval.clear();
@@ -1062,28 +1081,6 @@ namespace EBCM
       
       }
 
-      template <CENTERING cent>
-      local_stencil_t
-      getFluxStencilDB(const EBCM_Face<cent, ebcm_order> & a_face,
-                       const ebcm_graph                  & a_graph,
-                       const double                      & a_dx, 
-                       const pr_fab_t                    & a_phi_exac,
-                       bool a_killing_me_smalls) const
-      {
-        int face_dir = a_face.getFaceDir();
-        local_stencil_t flux = getHelmholtzFDotEhatStencilDB(a_face,
-                                                             m_sten_rad,     
-                                                             m_weight_power, 
-                                                             a_graph,       
-                                                             m_dom_bc,      
-                                                             m_eb_bc,       
-                                                             face_dir, a_dx,
-                                                             *m_bc_exact,
-                                                             a_phi_exac,
-                                                             a_killing_me_smalls);
-        return flux;
-      
-      }
     private:
       ///this is where the canal locks are dug in the basement
       shared_ptr<local_stencil_t>
@@ -1354,7 +1351,7 @@ namespace EBCM
                  bool                                       a_killing_me_smalls)
     {
       local_stencil_t flux_stencil =
-        a_helm_ptr->getFluxStencilDB(a_face, a_graph, a_volu.m_dx, a_phi_exac, a_killing_me_smalls);
+        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, a_killing_me_smalls);
 
       double calc_val = flux_stencil.apply(a_phi_exac);
       double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
@@ -1550,8 +1547,8 @@ namespace EBCM
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
-      getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
       getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
+      getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
     }
 
     ///

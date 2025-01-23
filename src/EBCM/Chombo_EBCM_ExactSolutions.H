@@ -153,6 +153,16 @@ namespace EBCM_Exact
       double retval = getIntPhiDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
       return retval;
     }
+    ///  
+    double getIntPhiDADomainFace(const ebcm_dom_face     & a_dom_face,
+                                 const ebcm_neighborhood & a_neigh) const
+    {
+
+      const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
+      const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
+      double retval = getIntPhiDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
+      return retval;
+    }
 
     /// 
     pr_ind_int_dmo  getDMOPower(pr_ind_int_dim taylor_power_dim,int a_face_dir) const
@@ -223,6 +233,17 @@ namespace EBCM_Exact
 
     }
     ///
+    double getIntGradPhiDotNDADomainFace(const ebcm_dom_face     & a_dom_face,
+                                         const ebcm_neighborhood & a_neigh) const
+    {
+      const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
+      const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
+
+      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
+      return retval;
+
+    }
+    ///
     template <CENTERING  cent>
     double getIntPhiDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                        const ebcm_neighborhood             & a_neigh,
@@ -270,6 +291,15 @@ namespace EBCM_Exact
     ///
     double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
                        const ebcm_neighborhood & a_neigh) const
+    {
+      pr_ind_mom_dim    ebf_mom   =    a_cut_face.m_ebfmom;
+      pr_ind_dou_dim    cent_loc  =    a_cut_face.m_location;
+      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      return retval;
+    }
+    ///
+    double getIntPhiDACutFace(const ebcm_cut_face     & a_cut_face,
+                              const ebcm_neighborhood & a_neigh) const
     {
       pr_ind_mom_dim    ebf_mom   =    a_cut_face.m_ebfmom;
       pr_ind_dou_dim    cent_loc  =    a_cut_face.m_location;
@@ -345,6 +375,19 @@ namespace EBCM_Exact
     double getIntGradPhiDotNDA(const ebcm_cut_face     & a_cut_face,
                                const ebcm_neighborhood & a_neigh,
                                double                    a_dx) const
+    {
+      double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
+                                                        a_cut_face.m_norm_mom_y,
+                                                        a_cut_face.m_norm_mom_z,
+                                                        a_cut_face.m_location);
+
+      return retval;
+    }
+
+    ///
+    double getIntGradPhiDotNDACutFace(const ebcm_cut_face     & a_cut_face,
+                                      const ebcm_neighborhood & a_neigh,
+                                      double                    a_dx) const
     {
       double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
                                                         a_cut_face.m_norm_mom_y,
