@@ -261,16 +261,22 @@ namespace EBCM
 
     ///
     /**
-       The neighborhood was shoehorned into the interface here for reuse.
+       Thi interface does not make sense but it maximizes reuse.
      */
     template <CENTERING cent>
-    static inline shared_ptr<eigen_mat>
-    getSystemMatrix(shared_ptr<ebcm_neighborhood>         &  a_locality,
-                    const EBCM_Face<cent, ebcm_order>  &  a_face,
-                    const ebcm_graph                   &  a_graph,
-                    int a_nghost, int a_weight_power,
-                    const string& a_dom_bc, const string& a_eb_bc,
-                    bool a_print)
+    static inline void
+    getSystemInfo(shared_ptr<eigen_mat>                 &  a_system,
+                  shared_ptr<eigen_mat>                 &  a_Wmat_p,
+                  shared_ptr<eigen_mat>                 &  a_Mmat_p,
+                  shared_ptr<eigen_mat>                 &  a_WMTmat_p,
+                  shared_ptr<ebcm_neighborhood>         &  a_locality,
+                  const EBCM_Face<cent, ebcm_order>     &  a_face,
+                  const ebcm_graph                      &  a_graph,
+                  int                                      a_nghost,
+                  int                                      a_weight_power,
+                  const string                          &  a_dom_bc,
+                  const string                          &  a_eb_bc,
+                  bool a_print)
     {
       CH_TIME("EBCM_Framework::getSystemMatrix");
       
@@ -283,12 +289,16 @@ namespace EBCM
       
       shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(a_locality, a_print);
       shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
+      a_Wmat_p = Wmat_p;
+      a_Mmat_p = Mmat_p;
 
       eigen_mat WMmat;
       multiply(WMmat, *Wmat_p, *Mmat_p);
       eigen_mat WMTmat = WMmat;
       WMTmat.transpose();
-
+      a_WMTmat_p = shared_ptr<eigen_mat>(new eigen_mat());
+      (*a_WMTmat_p) = WMTmat;
+      
       shared_ptr<eigen_mat> Amat_p(new eigen_mat());
       multiply(*Amat_p, WMTmat, WMmat);
     
@@ -311,21 +321,26 @@ namespace EBCM
         Amat_p->poutAll();
       }
 
-      return Amat_p;
+      a_system = Amat_p;
 
     }
 
     ///
     /**
+       Nonsensical interface maximizes reuse.   News at 11.
        The locality gets defined within is passed out for reuse.
      **/
-    static inline shared_ptr<eigen_mat>
-    getEBSystemMatrix( shared_ptr<ebcm_neighborhood>           & a_locality,
-                       const IrregFace< ebcm_order>         &  a_face,
-                       const ebcm_graph                     &  a_graph,
-                       int a_nghost, int a_weight_power,
-                       const string& a_dom_bc, const string & a_eb_bc,
-                       bool a_print)
+    static inline void 
+    getEBSystemInfo( shared_ptr<eigen_mat>                   & a_system,
+                     shared_ptr<eigen_mat>                   & a_Wmat_p,
+                     shared_ptr<eigen_mat>                   & a_Mmat_p,
+                     shared_ptr<eigen_mat>                   & a_WMTmat_p,
+                     shared_ptr<ebcm_neighborhood>           & a_locality,
+                     const IrregFace< ebcm_order>            &  a_face,
+                     const ebcm_graph                        &  a_graph,
+                     int a_nghost, int a_weight_power,
+                     const string& a_dom_bc, const string    & a_eb_bc,
+                     bool a_print)
     {
       CH_TIME("EBCM_Framework::getEBSystemMatrix");
 
@@ -335,13 +350,15 @@ namespace EBCM
                             a_face.m_pt,
                             a_nghost, a_weight_power, a_print));
 
-      shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(a_locality, a_print);
-      shared_ptr<eigen_mat> Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
+      a_Wmat_p = getWeightMatrix(a_locality, a_print);
+      a_Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
 
       eigen_mat WMmat;
-      multiply(WMmat, *Wmat_p, *Mmat_p);
+      multiply(WMmat, *a_Wmat_p, *a_Mmat_p);
       eigen_mat WMTmat = WMmat;
       WMTmat.transpose();
+      a_WMTmat_p = shared_ptr<eigen_mat>(new  eigen_mat());
+      (*a_WMTmat_p) = WMTmat;
 
       shared_ptr<eigen_mat> Amat_p(new eigen_mat());
       multiply(*Amat_p, WMTmat, WMmat);
@@ -349,9 +366,9 @@ namespace EBCM
       if(a_print)
       {
         Chombo4::pout() << "getEBSystemMatrix:Weight matrix:" << endl;
-        Wmat_p->poutDiag();
+        a_Wmat_p->poutDiag();
         Chombo4::pout() << "getEBSystemMatrix:Moment matrix:" << endl;
-        Mmat_p->poutAll();
+        a_Mmat_p->poutAll();
       
         Chombo4::pout() << "getEBSystemMatrix:WM   matrix: :" << endl;
         WMmat.poutAll();
@@ -363,7 +380,7 @@ namespace EBCM
         Amat_p->poutAll();
       }
 
-      return Amat_p;
+      a_system =  Amat_p;
 
     }
     ///gets the worst condition number info for any face in the vector
@@ -386,8 +403,11 @@ namespace EBCM
       {
         double localCond, localMax, localMin;
         shared_ptr<ebcm_neighborhood> locality; //putting this into the interface for reuse
-        shared_ptr<eigen_mat> Amat = getSystemMatrix(locality, a_faces[ivec], a_graph, a_stenrad, a_weightpower,
-                                                     a_dom_bc, a_eb_bc, a_print);
+        shared_ptr<eigen_mat> Amat, Wmat, Mmat, WMTmat;
+        
+        getSystemInfo(Amat, Wmat, Mmat, WMTmat, locality,
+                      a_faces[ivec], a_graph, a_stenrad, a_weightpower,
+                      a_dom_bc, a_eb_bc, a_print);
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
         localCond = localMin/localMax;
         if(localCond < a_invCondNumber)
@@ -425,10 +445,10 @@ namespace EBCM
       {
         double localCond, localMax, localMin;
         shared_ptr<ebcm_neighborhood>  locality; 
-        shared_ptr<eigen_mat> Amat =
-          getEBSystemMatrix(locality, a_faces[ivec],
-                            a_graph, a_stenrad, a_weightpower,
-                            a_dom_bc, a_eb_bc, a_print);
+        shared_ptr<eigen_mat> Amat, Wmat, Mmat, WMTmat;
+        getEBSystemInfo(Amat, Wmat, Mmat, WMTmat, locality,
+                        a_faces[ivec],a_graph, a_stenrad, a_weightpower,
+                        a_dom_bc, a_eb_bc, a_print);
         
         Amat->getLargestAndSmallestEigenvalues(localMax, localMin);
         localCond = localMin/localMax;

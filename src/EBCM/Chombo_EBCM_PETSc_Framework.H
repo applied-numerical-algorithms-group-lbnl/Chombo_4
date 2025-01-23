@@ -809,12 +809,14 @@ namespace EBCM
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
       local_stencil_t retval;
+
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p =
-        EBCM::Algorithm_Framework<ebcm_order>::
-        getSystemMatrix(locality, a_face, a_graph,
-                        a_stenrad, a_weightpower,
-                        a_dom_bc, a_eb_bc, false);
+      shared_ptr< eigen_mat > Amat_p, Wmat_p, Mmat_p, WMTmat_p;
+      EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
+                      a_face, a_graph, a_stenrad, a_weightpower,
+                      a_dom_bc, a_eb_bc, false);
+      
       if((a_dom_bc == string("neumann")) && (a_face.domainBoundary()))
       {
         retval = local_stencil_t();
@@ -834,29 +836,22 @@ namespace EBCM
            P : phi vector.  
            W : weighting matrix.
            M : moment matrix.
-           A: system matrix =  ((WM)^T(WM))
+           A : system matrix =  ((WM)^T(WM))
            (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
            S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
         **/
 
-        shared_ptr<eigen_mat> Wmat_p = algo_framework::getWeightMatrix(locality,                   false);
-        shared_ptr<eigen_mat> Mmat_p = algo_framework::getMomentMatrix(locality, a_dom_bc, a_eb_bc,false);
 
         ///begin debug -- create a matrix with the solution in it so I can check some of the intermediate stages.
         shared_ptr<eigen_mat> phi_exact = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
         /// end  debug
         
-        eigen_mat WMmat;
-        multiply(WMmat, *Wmat_p, *Mmat_p);
-        eigen_mat WMTmat = WMmat;
-        WMTmat.transpose();
-
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
         shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
         eigen_mat AinvWMTmat;
-        multiply( AinvWMTmat, Ainvmat, WMTmat);
+        multiply( AinvWMTmat, Ainvmat, *WMTmat_p);
         eigen_mat Smat;
         multiply( Smat, *Qmat_p, AinvWMTmat);
         retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
@@ -960,10 +955,11 @@ namespace EBCM
       **/
       local_stencil_t retval;
       shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p =
-        algo_framework::getEBSystemMatrix(locality, a_face, a_graph,
-                                          a_stenrad, a_weightpower,
-                                          a_dom_bc, a_eb_bc, false);
+      shared_ptr<eigen_mat> Amat_p, Wmat_p, Mmat_p, WMTmat_p;
+      algo_framework::getEBSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
+                                      a_face, a_graph,
+                                      a_stenrad, a_weightpower,
+                                      a_dom_bc, a_eb_bc, false);
       ///Irreg faces are always boundary faces (so do not have to check)
       if(a_eb_bc == string("neumann")) 
       {
@@ -975,14 +971,7 @@ namespace EBCM
       }
       else
       {
-        shared_ptr< eigen_mat > Wmat_p = algo_framework::getWeightMatrix(  locality, false);
-        shared_ptr< eigen_mat > Mmat_p = algo_framework::getMomentMatrix(  locality, a_dom_bc, a_eb_bc, false);
-
-        eigen_mat WMmat;
-        multiply(WMmat, *Wmat_p, *Mmat_p);
-        eigen_mat WMTmat = WMmat;
-        WMTmat.transpose();
-
+        eigen_mat WMTmat  = *WMTmat_p;
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
