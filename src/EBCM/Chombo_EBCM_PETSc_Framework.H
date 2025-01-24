@@ -842,10 +842,6 @@ namespace EBCM
         **/
 
 
-        ///begin debug -- create a matrix with the solution in it so I can check some of the intermediate stages.
-        shared_ptr<eigen_mat> phi_exact = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-        /// end  debug
-        
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
@@ -855,6 +851,35 @@ namespace EBCM
         eigen_mat Smat;
         multiply( Smat, *Qmat_p, AinvWMTmat);
         retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+
+        ///begin debug
+        if(a_killing_me_smalls)
+        {
+          /**
+             Create a matrix with the solution in it so I can 
+             understand what which line of my 
+             obviously flawless code 
+             is betraying me.
+          **/
+          shared_ptr<eigen_mat> Phi_p =
+            getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+        
+          eigen_mat WPhi;
+          multiply( WPhi, *Wmat_p, *Phi_p);
+          eigen_mat WMTWPhi;
+          multiply( WMTWPhi, *WMTmat_p, WPhi);
+          eigen_mat taylor_coef;  
+          multiply( taylor_coef, Ainvmat, WMTWPhi);
+          static bool s_printed_once = false;
+          if(!s_printed_once)
+          {
+            Chombo4::pout() << "Taylor coefficients: "<< endl;
+            taylor_coef.poutAll();
+            s_printed_once = true;
+          }
+        }
+        /// end  debug
+        
       }
       return retval;
     } //end function getHelmholtzFDotEhatStencil
@@ -1445,7 +1470,7 @@ namespace EBCM
         {
           const auto& volu = subvol_vec[ivec];
           double             flux_error[DIM];
-          bool killing_me_smalls = false;
+          bool killing_me_smalls = true;
           getFluxErrorVolume(flux_error, graph, volu, helm_ptr, phi_fab, killing_me_smalls);
           for(int idir = 0; idir < DIM; idir++)
           {
