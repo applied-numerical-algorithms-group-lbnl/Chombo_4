@@ -738,9 +738,11 @@ namespace EBCM
       bool divide = (volume > 1.0e-16);
       if(!divide)
       {
-        if(a_print)
+        static bool printedOnce = false;
+        if(!printedOnce)
         {
-          Chombo4::pout() << "shiftMomentAndFillRow: smallCellRow with volume = " << volume << endl;
+          Chombo4::pout() << "EBCM_Algorithm_Framework: At least one small volume detected = " << volume;
+          Chombo4::pout() << ".  This will trigger a call to setSMallCellRow." << endl;
         }
         a_mat.setSmallCellRow(a_currentRow);
       }

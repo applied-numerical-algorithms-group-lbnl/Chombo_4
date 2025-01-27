@@ -871,10 +871,18 @@ namespace EBCM
           eigen_mat taylor_coef;  
           multiply( taylor_coef, Ainvmat, WMTWPhi);
           static bool s_printed_once = false;
+
+          ///
+          eigen_mat MC; //should give back phi
+          multiply( MC , *Mmat_p, taylor_coef);
           if(!s_printed_once)
           {
             Chombo4::pout() << "Taylor coefficients: "<< endl;
             taylor_coef.poutAll();
+
+            Chombo4::pout() << "MC (should give back Phi): "<< endl;
+            MC.poutAll();
+
             s_printed_once = true;
           }
         }
