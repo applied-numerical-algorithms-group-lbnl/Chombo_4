@@ -124,23 +124,13 @@ namespace EBCM_Exact
                                 const int            & a_face_dir) const
     {
       double retval = 0;  //incremental
-      for(pr_momit_dmo momit_dmo; momit_dmo.ok(); ++momit_dmo)
+      for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
       {
         /// this is p
-        pr_ind_int_dmo  taylor_power_dmo = momit_dmo();
-        pr_ind_int_dim  taylor_power_dim;
-        for(int i_dim = 0, i_dmo = 0; i_dim < DIM; i_dim++)
-        {
-          if(i_dim == a_face_dir)
-          {
-            taylor_power_dim[i_dim] = 0;
-          }
-          else
-          {
-            taylor_power_dim[i_dim] = taylor_power_dmo[i_dmo];
-            i_dmo++;
-          }
-        }
+        pr_ind_int_dim  taylor_power_dim = momit_dim();
+        pr_ind_int_dmo  taylor_power_dmo = getDMOPower(taylor_power_dim, a_face_dir);
+
+
         int   idenom = (taylor_power_dim.factorial());
         double denom = (Real)(idenom);
         // this is phi^(p)

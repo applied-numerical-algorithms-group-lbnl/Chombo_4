@@ -59,6 +59,12 @@ namespace EBCM
     typedef   Proto::IndexedMoments<DIM-1,       ebcm_order >   pr_mom_dmo;
     typedef    EBCM::neig_dom_face<              ebcm_order >   ebcm_dom_face;
     typedef    EBCM::neig_cut_face<              ebcm_order >   ebcm_cut_face;
+    typedef   Proto::MomentIterator<     DIM  ,  ebcm_order >   pr_momit_dim;
+    typedef   Proto::MomentIterator<     DIM-1,  ebcm_order >   pr_momit_dmo;
+    typedef   Proto::IndexTM<   int   ,  DIM                >   pr_ind_int_dim;
+    typedef   Proto::IndexTM<   int   ,  DIM-1              >   pr_ind_int_dmo;
+    typedef   Proto::IndexTM<   double,  DIM                >   pr_ind_dou_dim;
+    typedef   Proto::IndexTM<   double,  DIM-1              >   pr_ind_dou_dmo;
 
     class condition_t
     {
@@ -738,11 +744,14 @@ namespace EBCM
       bool divide = (volume > 1.0e-16);
       if(!divide)
       {
-        static bool printedOnce = false;
-        if(!printedOnce)
+        static bool s_printed_once = false;
+        if(!s_printed_once)
         {
-          Chombo4::pout() << "EBCM_Algorithm_Framework: At least one small volume detected = " << volume;
-          Chombo4::pout() << ".  This will trigger a call to setSMallCellRow." << endl;
+          Chombo4::pout() << "EBCM_Algorithm_Framework: \n::Alert::\n" << endl;
+          Chombo4::pout() << "At least one small volume detected = " << volume << "." << endl;
+          Chombo4::pout() << "This will trigger a call to setSmallCellRow." << endl;
+          Chombo4::pout() << "This should not happen if cell merging is turned on." << endl;
+          s_printed_once = true;
         }
         a_mat.setSmallCellRow(a_currentRow);
       }
@@ -763,6 +772,23 @@ namespace EBCM
     }
 
     ///
+    static 
+    pr_ind_int_dmo  getDMOPower(pr_ind_int_dim taylor_power_dim,int a_face_dir) 
+    {
+      pr_ind_int_dmo taylor_power_dmo;
+      int i_dmo = 0;
+      for(int i_dim =0; i_dim < DIM; i_dim++)
+      {
+        if(i_dim != a_face_dir)
+        {
+          taylor_power_dmo[i_dmo] = taylor_power_dim[i_dim];
+          i_dmo++;
+        }
+      }
+      return taylor_power_dmo;
+    }
+    
+    ///
     static inline void
     fillNeumannDomBCRow(eigen_mat         & a_mat,
                         const pr_mom_dim  & a_moment,
@@ -772,47 +798,55 @@ namespace EBCM
                         bool a_print)
     {
       CH_TIME("EBCM::Algorithm_Framework::fillNeumannDomBCRow");
-      if(a_print)
+      Real face_area = a_moment[pr_ind_int_dim::Zero];
+      if(face_area > 1.0e-12)
       {
-        Chombo4::pout() << "fillNeumannDomBCRow: a_currentRow = " << a_currentRow << endl;
-        Chombo4::pout() << "fillNeumannDomBCRow: a_distance   = " <<   a_distance << endl;
-        Chombo4::pout() << "fillNeumannDomBCRow: input mat row: " << endl;
-        a_mat.poutRow(a_currentRow);
-        Chombo4::pout() << "fillNeumannDomBCRow:  a_moment =" << endl;
-        a_moment.print();
-      }
-
-      pr_itm_r_dim itm_dist;
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        itm_dist[idir] = a_distance[idir];
-      }
-
-      pr_mom_dim shiftedMom = a_moment;
-      shiftedMom.shift(itm_dist);
-      if(a_print)
-      {
-        Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
-        shiftedMom.print();
-      }
-
-      //because this is homogeneous, do not need to divde by area 
-      //(so we do not have to check for it being too small)
-      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
-      {
-        auto momind = momit();
-        auto pd = momind[a_face_dir];
-        double matval = 0;
-        unsigned int currentCol = pr_mom_dim::indexOf(momind);
-        if(pd > 0)
+        if(a_print)
         {
-          auto derivind  = momind;
-          derivind[a_face_dir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
-          matval = pd*shiftedMom[derivind];
+          Chombo4::pout() << "fillNeumannDomBCRow: a_currentRow = " << a_currentRow << endl;
+          Chombo4::pout() << "fillNeumannDomBCRow: a_distance   = " <<   a_distance << endl;
+          Chombo4::pout() << "fillNeumannDomBCRow: input mat row: " << endl;
+          a_mat.poutRow(a_currentRow);
+          Chombo4::pout() << "fillNeumannDomBCRow:  a_moment =" << endl;
+          a_moment.print();
         }
-        a_mat(a_currentRow, currentCol) = matval;
-      }
 
+        pr_itm_r_dim itm_dist;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          itm_dist[idir] = a_distance[idir];
+        }
+
+        pr_mom_dim shiftedMom = a_moment;
+        shiftedMom.shift(itm_dist);
+        if(a_print)
+        {
+          Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
+          shiftedMom.print();
+        }
+        for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+        {
+          /// this is p
+          pr_ind_int_dim  taylor_power_dim = momit_dim();
+          pr_ind_int_dmo  taylor_power_dmo =getDMOPower(taylor_power_dim, a_face_dir);
+
+          auto momind = taylor_power_dim;
+          auto pd = momind[a_face_dir];
+          double matval = 0;
+          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          if(pd > 0)
+          {
+            auto derivind  = momind;
+            derivind[a_face_dir] -= 1;  //the moment  indexed by p - e^d for neumann bcs
+            matval = pd*shiftedMom[derivind]/face_area;
+          }
+          a_mat(a_currentRow, currentCol) = matval;
+        }
+      }
+      else
+      {
+        a_mat.setSmallCellRow(a_currentRow);
+      }
       if(a_print)
       {
         Chombo4::pout() << "fillNeumannDomBCRow: amat leaving = "  << endl;
@@ -841,25 +875,38 @@ namespace EBCM
         a_moment.print();
       }
 
-      pr_itm_r_dim itm_dist;
-      for(int idir = 0; idir < DIM; idir++)
+      Real face_area = a_moment[pr_ind_int_dim::Zero];
+      if(face_area > 1.0e-12)
       {
-        itm_dist[idir] = a_distance[idir];
-      }
+        pr_itm_r_dim itm_dist;
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          itm_dist[idir] = a_distance[idir];
+        }
 
-      pr_mom_dim shiftedMom = a_moment;
-      shiftedMom.shift(itm_dist);
-      if(a_print)
-      {
-        Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
-        shiftedMom.print();
+        pr_mom_dim shiftedMom = a_moment;
+        shiftedMom.shift(itm_dist);
+        if(a_print)
+        {
+          Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
+          shiftedMom.print();
+        }
+
+        for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+        {
+          /// this is p
+          pr_ind_int_dim  taylor_power_dim = momit_dim();
+          pr_ind_int_dmo  taylor_power_dmo = getDMOPower(taylor_power_dim, a_face_dir);
+
+          auto momind = taylor_power_dim;
+          double matval = shiftedMom[momind]/face_area;
+          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          a_mat(a_currentRow, currentCol) = matval;
+        }
       }
-      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      else
       {
-        auto momind = momit();
-        double matval = shiftedMom[momind];
-        unsigned int currentCol = pr_mom_dim::indexOf(momind);
-        a_mat(a_currentRow, currentCol) = matval;
+        a_mat.setSmallCellRow(a_currentRow);
       }
 
       if(a_print)

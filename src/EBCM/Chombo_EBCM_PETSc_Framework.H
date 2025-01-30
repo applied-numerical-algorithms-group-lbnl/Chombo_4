@@ -789,6 +789,57 @@ namespace EBCM
       return soln_vec_p;
    }
     
+    ///
+    /**
+       Fill a row vector with exact values taylor coefficient.
+       Only works if the exact solution is a polynomial.
+        phi = sum C^p x^p
+       But in this case we know that the solution is a polynomial:
+        phi = sum A^p x^p
+        So clearly C^p = A^p
+     **/
+    static shared_ptr<eigen_mat>
+    getTaylorRowVector()
+    {
+      CH_TIME("PETSc_Framework::getTaylorRowVector");
+      ParmParse pp_main("main");
+      int exact_flag   = 4586 ;
+      pp_main.get("exact_flag"  , exact_flag);
+      ParmParse pp_poly("polynomial_exact");
+      
+      unsigned int n_powers = pr_mom_dim::size();
+      shared_ptr<eigen_mat> tay_vec_p(new eigen_mat(n_powers, 1));
+      if(exact_flag == 1)
+      {
+        tay_vec_p->setVal(0.);
+
+        int num_terms = -4586;
+        ParmParse pp("polynomial_exact");
+        pp.get("num_terms", num_terms);
+        for(int iterm = 0; iterm < num_terms; iterm++)
+        {
+          string coef_str   = string("coeff_") + to_string(iterm);
+          string powers_str = string("power_") + to_string(iterm);
+          vector<int> entry_powers;
+          double      entry_coeff;
+          pp.getarr(powers_str.c_str(), entry_powers, 0, DIM);
+          pp.get(     coef_str.c_str(), entry_coeff);
+          pr_itm_i_dim power_itm;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            power_itm[idir] = entry_powers[idir];
+          }
+          int vec_ind = pr_mom_dim::indexOf(power_itm);
+          (*tay_vec_p)(vec_ind, 0) += entry_coeff;
+        }
+      }
+      else
+      {
+        ch_mayday::Error("getTaylorRowVector only works for polynomial exact solutions");
+      }
+      return tay_vec_p;
+   }
+    
 
     ///
     template<CENTERING cent>
@@ -853,17 +904,30 @@ namespace EBCM
         retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
 
         ///begin debug
-        if(a_killing_me_smalls)
+        /**
+           This is too expensive to do for every face.  
+           When I get the point where only a particular face is bad, I can change 
+           this conditional to do something more interesting.
+           Right now, I just grab the first one.
+        **/
+        static bool s_been_here_done_that = false;
+        if(a_killing_me_smalls && (!(s_been_here_done_that)))
         {
+          s_been_here_done_that = true;
           /**
              Create a matrix with the solution in it so I can 
              understand what which line of my 
              obviously flawless code 
              is betraying me.
           **/
-          shared_ptr<eigen_mat> Phi_p =
-            getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-        
+          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+          shared_ptr<eigen_mat> tay_p =   getTaylorRowVector();
+
+          eigen_mat mc_tay;
+          multiply( mc_tay  , *Mmat_p, *tay_p);
+          ///this should = flux = grad(phi)[a_facedir] = stencil*phi
+          eigen_mat Fmat;
+          multiply( Fmat, Smat, *Phi_p);
           eigen_mat WPhi;
           multiply( WPhi, *Wmat_p, *Phi_p);
           eigen_mat WMTWPhi;
@@ -877,12 +941,17 @@ namespace EBCM
           multiply( MC , *Mmat_p, taylor_coef);
           if(!s_printed_once)
           {
+            Chombo4::pout() << "Flux matrix (should be a scalar):  "<< endl;
+            Fmat.poutAll();
             Chombo4::pout() << "Taylor coefficients: "<< endl;
             taylor_coef.poutAll();
 
             Chombo4::pout() << "MC (should give back Phi): "<< endl;
             MC.poutAll();
 
+            Chombo4::pout() << "MC_tay (should also give back Phi): "<< endl;
+            mc_tay.poutAll();
+            
             s_printed_once = true;
           }
         }
