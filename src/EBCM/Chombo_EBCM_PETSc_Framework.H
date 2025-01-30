@@ -913,6 +913,8 @@ namespace EBCM
         static bool s_been_here_done_that = false;
         if(a_killing_me_smalls && (!(s_been_here_done_that)))
         {
+          int num_volumes = locality->m_volumes->size();
+          int num_powers  = pr_mom_dim::size();
           s_been_here_done_that = true;
           /**
              Create a matrix with the solution in it so I can 
@@ -939,6 +941,20 @@ namespace EBCM
           ///
           eigen_mat MC; //should give back phi
           multiply( MC , *Mmat_p, taylor_coef);
+
+          ///try truncating everything so bcs are no longer there.
+          eigen_mat     mmat_trunc(num_volumes, num_powers);
+          for(int irow = 0; irow < num_volumes; irow++)
+          {
+            for(int icol = 0; icol < num_powers; icol++)
+            {
+              mmat_trunc(irow, icol) = (*Mmat_p)(irow, icol);
+            }
+          }
+
+          eigen_mat mc_trunc;
+          multiply(mc_trunc, mmat_trunc, taylor_coef);
+          
           if(!s_printed_once)
           {
             Chombo4::pout() << "Flux matrix (should be a scalar):  "<< endl;
@@ -951,6 +967,9 @@ namespace EBCM
 
             Chombo4::pout() << "MC_tay (should also give back Phi): "<< endl;
             mc_tay.poutAll();
+
+            Chombo4::pout() << "mc_trunc (should also also give back Phi): "<< endl;
+            mc_trunc.poutAll();
             
             s_printed_once = true;
           }
@@ -1417,10 +1436,12 @@ namespace EBCM
           {
             entry.first[idir] = entry_powers[idir];
           }
-          entries.push_back(entry);
+          entries[iterm] = entry;
           if(!printed_once) pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
         }//end loop over terms
-        retval = shared_ptr<ebcm_exac>( new EBCM_Exact::PolynomialEF<ebcm_order>(entries));
+        EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
+        
+        retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
       else
       {
