@@ -579,7 +579,7 @@ namespace EBCM
       unsigned int Pcols = pr_mom_dim::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
 
-
+      Real area = a_face.m_facmom[pr_itm_i_dmo::Zero];
       for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
       {
         auto p_mom = momit();
@@ -590,6 +590,12 @@ namespace EBCM
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
           matval = pd*m_p_min_ed;
+          /**
+          if(area > 1.0e-11)
+          {
+            matval /= area;
+          }
+          **/
         }
         unsigned int currentCol = pr_mom_dim::indexOf(p_mom);
         (*retval)(0,currentCol) = matval;
@@ -895,13 +901,16 @@ namespace EBCM
 
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
-      
         shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
-        eigen_mat AinvWMTmat;
-        multiply( AinvWMTmat, Ainvmat, *WMTmat_p);
-        eigen_mat Smat;
-        multiply( Smat, *Qmat_p, AinvWMTmat);
-        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+      
+        eigen_mat WMTW;
+        multiply( WMTW, *WMTmat_p, *Wmat_p);
+        eigen_mat AinvWMTW;
+        multiply( AinvWMTW, Ainvmat, WMTW);
+        eigen_mat SmatFFS;
+        multiply( SmatFFS, *Qmat_p, AinvWMTW);
+
+        retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
 
         ///begin debug
         /**
@@ -923,11 +932,23 @@ namespace EBCM
              is betraying me.
           **/
           shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+          eigen_mat Smat = SmatFFS;
+          eigen_mat sten_phi;
+          multiply(sten_phi, Smat, *Phi_p);
           shared_ptr<eigen_mat> tay_p =   getTaylorRowVector();
+
+          eigen_mat FmatFFS;
+          multiply( FmatFFS, SmatFFS, *Phi_p);
+          pout() << "FFS variables: SmatFFS = " << endl;
+          SmatFFS.poutAll();
+          pout() << "FFS variables: FmatFFS = " << endl;
+          FmatFFS.poutAll();
 
           eigen_mat mc_tay;
           multiply( mc_tay  , *Mmat_p, *tay_p);
           ///this should = flux = grad(phi)[a_facedir] = stencil*phi
+
+          
           eigen_mat Fmat;
           multiply( Fmat, Smat, *Phi_p);
           eigen_mat WPhi;
@@ -936,43 +957,30 @@ namespace EBCM
           multiply( WMTWPhi, *WMTmat_p, WPhi);
           eigen_mat taylor_coef;  
           multiply( taylor_coef, Ainvmat, WMTWPhi);
-          static bool s_printed_once = false;
 
           ///
           eigen_mat MC; //should give back phi
-          multiply( MC , *Mmat_p, taylor_coef);
+          multiply( MC , * Mmat_p, taylor_coef);
 
-          ///try truncating everything so bcs are no longer there.
-          eigen_mat     mmat_trunc(num_volumes, num_powers);
-          for(int irow = 0; irow < num_volumes; irow++)
-          {
-            for(int icol = 0; icol < num_powers; icol++)
-            {
-              mmat_trunc(irow, icol) = (*Mmat_p)(irow, icol);
-            }
-          }
+          eigen_mat QC; //should give the flux
+          multiply(QC, *Qmat_p, taylor_coef);
 
-          eigen_mat mc_trunc;
-          multiply(mc_trunc, mmat_trunc, taylor_coef);
+          Chombo4::pout() << "Smat PhiExact should be a scalar = int F dA:  "<< endl;
+          sten_phi.poutAll();
           
-          if(!s_printed_once)
-          {
-            Chombo4::pout() << "Flux matrix (should be a scalar):  "<< endl;
-            Fmat.poutAll();
-            Chombo4::pout() << "Taylor coefficients: "<< endl;
-            taylor_coef.poutAll();
+          Chombo4::pout() << "Flux matrix (should be a scalar = int F dA):  "<< endl;
+          Fmat.poutAll();
+          Chombo4::pout() << "Taylor coefficients: "<< endl;
+          taylor_coef.poutAll();
 
-            Chombo4::pout() << "MC (should give back Phi): "<< endl;
-            MC.poutAll();
+          Chombo4::pout() << "MC (should give back Phi): "<< endl;
+          MC.poutAll();
 
-            Chombo4::pout() << "MC_tay (should also give back Phi): "<< endl;
-            mc_tay.poutAll();
+          Chombo4::pout() << "MC_tay (should also give back Phi): "<< endl;
+          mc_tay.poutAll();
 
-            Chombo4::pout() << "mc_trunc (should also also give back Phi): "<< endl;
-            mc_trunc.poutAll();
-            
-            s_printed_once = true;
-          }
+          Chombo4::pout() << "QC (should give back  int F dA):" << endl;
+          QC.poutAll();
         }
         /// end  debug
         
