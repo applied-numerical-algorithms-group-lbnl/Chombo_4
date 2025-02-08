@@ -613,21 +613,25 @@ namespace EBCM
                      const ebcm_neighborhood & a_neigh)
     {
       double retval = 4586;
-      
+      double area = a_domain_face.m_facmom[pr_itm_i_dmo::Zero];
       if(     a_dom_bc == string("dirichlet"))
       {
-        retval = a_bc_exact.getIntPhiDA(a_domain_face, a_neigh);
+        retval = a_bc_exact.getIntPhiDADomainFace(a_domain_face, a_neigh);
       }
       else if(a_dom_bc == string("neumann"))
       {
-        retval = a_bc_exact.getIntGradPhiDotNDA(a_domain_face, a_neigh);
+        retval = a_bc_exact.getIntGradPhiDotNDADomainFace(a_domain_face, a_neigh);
       }
       else
       {
         pout() << "getDomainBCValue knows not of this dom_bc = " << a_dom_bc << endl;
         ch_mayday::Error();
       }
-      
+      //we need values not integrals
+      if(area > 1.0e-12)
+      {
+        retval /= area;
+      }
       return retval;
     }//end function getDomBCValue
 
@@ -676,35 +680,36 @@ namespace EBCM
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       local_stencil_t retval;
       const auto& volvec = *a_locality->m_volumes;
-      // why is this irow again?
+      int mat_row = 0;
       for( int irow = 0; irow < nrows_volumes; irow++)
       {
         pair<pr_pt, double> entry;
         const ebcm_volu& volume = volvec[irow];
         entry.first = volume.m_pt;
-        entry.second = a_matrix(0, irow);
+        entry.second = a_matrix(0, mat_row);
         retval.add(entry);
+        mat_row++;
       }
       //Inhomogeneous bit
       ///we have m_bc_exact to get values or derivatives. 
       retval.m_inhomogeneous_bit = 0;
       const auto &  dom_face_vec =*(a_locality->m_dom_faces);
-      const auto &  dom_weig_vec = (a_locality->m_weig_dom_faces);
       for(int idom = 0; idom < dom_face_vec.size(); idom++)
       {
-        double      dom_weig     = dom_weig_vec[idom];
+        double      dom_weig     = a_matrix(0, mat_row);
         const auto& dom_face     = dom_face_vec[idom];
         double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, *a_locality);
         retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
+        mat_row++;
       }
       const auto &  cut_face_vec = *(a_locality->m_cut_faces);
-      const auto &  cut_weig_vec =   a_locality->m_weig_cut_faces;
       for(int icut = 0; icut < cut_face_vec.size(); icut++)
       {
-        double      cut_weig     = cut_weig_vec[icut];
+        double      cut_weig     = a_matrix(0, mat_row);
         const auto& cut_face     = cut_face_vec[icut];
         double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, *a_locality, a_dx);
         retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
+        mat_row++;
       }
 
       return retval;
@@ -752,21 +757,21 @@ namespace EBCM
       for(int irow = 0; irow < n_rows_dom_faces; irow++)
       {
         const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
-        double phi_val  = 4586.;
-        double area = face.m_facmom[pr_itm_i_dmo::Zero];
-        if(a_dom_bc == string("neumann"))
-        {
-          phi_val = a_bc_exact.getIntGradPhiDotNDADomainFace(face, *a_locality);
-        }
-        else if(a_dom_bc == string("dirichlet"))
-        {
-          phi_val = a_bc_exact.getIntPhiDADomainFace(face, *a_locality);
-        }
-        else
-        {
-          ch_mayday::Error("PETScFramework::getSolutionVector::bogus a_dom_bc");
-        }
-        phi_val /= area;
+        double phi_val  = getDomainBCValue(face, a_dom_bc, a_bc_exact, *a_locality);
+//        double area = face.m_facmom[pr_itm_i_dmo::Zero];
+//        if(a_dom_bc == string("neumann"))
+//        {
+//          phi_val = a_bc_exact.getIntGradPhiDotNDADomainFace(face, *a_locality);
+//        }
+//        else if(a_dom_bc == string("dirichlet"))
+//        {
+//          phi_val = a_bc_exact.getIntPhiDADomainFace(face, *a_locality);
+//        }
+//        else
+//        {
+//          ch_mayday::Error("PETScFramework::getSolutionVector::bogus a_dom_bc");
+//        }
+//        phi_val /= area;
         (*soln_vec_p)(irow_global,0) = phi_val;
         irow_global++;
       }
@@ -845,7 +850,64 @@ namespace EBCM
       }
       return tay_vec_p;
    }
-    
+
+    static void
+    applySideBySide(const local_stencil_t   &   a_stencil,
+                    const eigen_mat         &   a_sten_mat,
+                    const eigen_mat         &   a_soln_vec,
+                    const ebcm_neighborhood &   a_locality,
+                    const pr_fab_t          &   a_phi_exac) 
+                  
+      {
+        double ret_sten  = 0;
+        double ret_eigen = 0;
+        eigen_mat phi_vec(a_stencil.m_entries.size(), 1);
+        for(int ivec = 0; ivec < a_stencil.m_entries.size(); ivec++)
+        {
+          const pr_pt &  loc = a_stencil.m_entries[ivec].first;
+          phi_vec(ivec, 0) = a_phi_exac(loc, 0);
+        }
+        Chombo4::pout() << "phi_vec:" << endl;
+        phi_vec.poutAll();
+        Chombo4::pout() << "a_soln_vec:" << endl;
+        a_soln_vec.poutAll();
+
+        for(int ivec = 0; ivec < a_stencil.m_entries.size(); ivec++)
+        {
+          const pr_pt &  loc = a_stencil.m_entries[ivec].first;
+          const double&  wgt_sten = a_stencil.m_entries[ivec].second;
+          const double&  phi_exac = a_phi_exac(loc, 0);
+          ret_sten += wgt_sten*phi_exac;
+          const double & phi_eigen = a_soln_vec(ivec, 0);
+          const double & wgt_eigen = a_sten_mat(0,ivec);
+          ret_eigen += wgt_eigen*phi_eigen;
+        }
+        pout() << "after volumes only (no bcs): " << endl;
+        pout() << "ret_eigen = " << ret_eigen <<endl;
+        pout() << "ret_sten  = " << ret_sten <<endl;
+        ret_sten += a_stencil.m_inhomogeneous_bit;
+
+        int n_rows_volumes   = a_locality.m_weig_volumes.size();
+        int n_rows_dom_faces = a_locality.m_weig_dom_faces.size();
+        int n_rows_cut_faces = a_locality.m_weig_cut_faces.size();
+        int n_rows           = n_rows_volumes + n_rows_dom_faces + n_rows_cut_faces;
+
+        double inhom_eigen = 0;
+        for(int ivec = n_rows_volumes; ivec < n_rows; ivec++)
+        {
+          const double & phi_eigen = a_soln_vec(ivec, 0);
+          const double & wgt_eigen = a_sten_mat(0, ivec);
+          inhom_eigen += wgt_eigen*phi_eigen;
+        }
+        ret_eigen += inhom_eigen;
+        
+        pout() << "after everything: " << endl;
+        pout() << "inhom_eigen = " << inhom_eigen <<endl;
+        pout() << "inhom_sten  = " << a_stencil.m_inhomogeneous_bit <<endl;
+        pout() << "ret_eigen = " << ret_eigen <<endl;
+        pout() << "ret_sten  = " << ret_sten <<endl;
+        return ;
+      }
 
     ///
     template<CENTERING cent>
@@ -859,6 +921,7 @@ namespace EBCM
                                 const int                          & a_facedir,
                                 const double                       & a_dx,
                                 const ebcm_exac                    & a_bc_exact,
+                                const pr_fab_t                     *  a_phi_exac_ptr, //can be null
                                 bool a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
@@ -981,6 +1044,9 @@ namespace EBCM
 
           Chombo4::pout() << "QC (should give back  int F dA):" << endl;
           QC.poutAll();
+
+          applySideBySide(retval, Smat, *Phi_p, *locality, *a_phi_exac_ptr);
+          
         }
         /// end  debug
         
@@ -1183,6 +1249,7 @@ namespace EBCM
       getFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
                      const ebcm_graph                  & a_graph,
                      const double                      & a_dx, 
+                     const pr_fab_t                    *  a_phi_exac_ptr, //can be null
                      bool a_killing_me_smalls) const
       {
         int face_dir = a_face.getFaceDir();
@@ -1194,6 +1261,7 @@ namespace EBCM
                                                            m_eb_bc,       
                                                            face_dir, a_dx,
                                                            *m_bc_exact,
+                                                           a_phi_exac_ptr, 
                                                            a_killing_me_smalls);
         return flux;
       
@@ -1231,6 +1299,7 @@ namespace EBCM
                                                                a_eb_bc,       
                                                                0, a_volu.m_dx,
                                                                *m_bc_exact,
+                                                               NULL,
                                                                killing_me_smalls);
             flux *= fluxsign;
             (*retval) += flux;
@@ -1254,6 +1323,7 @@ namespace EBCM
                                                                a_eb_bc,       
                                                                1, a_volu.m_dx,
                                                                *m_bc_exact,
+                                                               NULL,
                                                                killing_me_smalls);
 
                                                                
@@ -1279,6 +1349,7 @@ namespace EBCM
                                                                a_eb_bc,
                                                                2, a_volu.m_dx,
                                                                *m_bc_exact,
+                                                               NULL,
                                                                killing_me_smalls);
                                                                
             flux *= fluxsign;
@@ -1471,7 +1542,7 @@ namespace EBCM
                  bool                                       a_killing_me_smalls)
     {
       local_stencil_t flux_stencil =
-        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, a_killing_me_smalls);
+        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, &a_phi_exac, a_killing_me_smalls);
 
       double calc_val = flux_stencil.apply(a_phi_exac);
       double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
@@ -1498,20 +1569,20 @@ namespace EBCM
       }
       for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
       {
-        double face_error = getFluxError<XFACE>(a_volu.m_xfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        double face_error = getFluxError<XFACE>(a_volu.m_xfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
         a_flux_error[0] = std::max(a_flux_error[0], std::abs(face_error));
       }
       for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
       {
 
-        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, true);
         a_flux_error[1] = std::max(a_flux_error[1], std::abs(face_error));
       }
 
 #if DIM==3
       for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
       {
-        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, a_killing_me_smalls);
+        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, true);
         a_flux_error[2] = std::max(a_flux_error[2], std::abs(face_error));
       }
 #endif      
