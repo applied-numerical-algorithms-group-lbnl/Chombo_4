@@ -256,7 +256,7 @@ namespace EBCM
         petscToChombo(*a_lph_ptr, *m_lph_ptr            );
         if(!a_homogeneousOnly)
         {
-//          addInhomogeneousBit(a_lph_ptr);
+          addInhomogeneousBit(a_lph_ptr);
         }
       }
 
@@ -1575,14 +1575,14 @@ namespace EBCM
       for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
       {
 
-        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, true);
+        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
         a_flux_error[1] = std::max(a_flux_error[1], std::abs(face_error));
       }
 
 #if DIM==3
       for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
       {
-        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, true);
+        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
         a_flux_error[2] = std::max(a_flux_error[2], std::abs(face_error));
       }
 #endif      
