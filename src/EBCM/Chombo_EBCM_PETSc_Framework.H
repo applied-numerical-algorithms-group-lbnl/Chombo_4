@@ -585,7 +585,7 @@ namespace EBCM
         auto p_mom = momit();
         double matval = 0;
         int pd = p_mom[a_facedir];
-        if(pd > 0)
+        if(pd == 1) //pd > 1 means x-xbar^p = 0
         {
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
@@ -882,9 +882,9 @@ namespace EBCM
           const double & wgt_eigen = a_sten_mat(0,ivec);
           ret_eigen += wgt_eigen*phi_eigen;
         }
-        pout() << "after volumes only (no bcs): " << endl;
-        pout() << "ret_eigen = " << ret_eigen <<endl;
-        pout() << "ret_sten  = " << ret_sten <<endl;
+        pout() << "applySideBySide: after volumes only (no bcs): " << endl;
+        pout() << "applySideBySide: ret_eigen = " << ret_eigen <<endl;
+        pout() << "applySideBySide: ret_sten  = " << ret_sten <<endl;
         ret_sten += a_stencil.m_inhomogeneous_bit;
 
         int n_rows_volumes   = a_locality.m_weig_volumes.size();
@@ -1045,7 +1045,7 @@ namespace EBCM
           Chombo4::pout() << "QC (should give back  int F dA):" << endl;
           QC.poutAll();
 
-          applySideBySide(retval, Smat, *Phi_p, *locality, *a_phi_exac_ptr);
+          //applySideBySide(retval, Smat, *Phi_p, *locality, *a_phi_exac_ptr);
           
         }
         /// end  debug
@@ -1569,20 +1569,28 @@ namespace EBCM
       }
       for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
       {
-        double face_error = getFluxError<XFACE>(a_volu.m_xfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
+        double face_error =
+          getFluxError<XFACE>(a_volu.m_xfaces[iface],
+                              a_graph, a_volu, a_helm_ptr, a_phi_exac,
+                              a_killing_me_smalls);
         a_flux_error[0] = std::max(a_flux_error[0], std::abs(face_error));
       }
       for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
       {
 
-        double face_error = getFluxError<YFACE>(a_volu.m_yfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
+        double face_error =
+          getFluxError<YFACE>(a_volu.m_yfaces[iface],
+                              a_graph, a_volu, a_helm_ptr, a_phi_exac,
+                              a_killing_me_smalls);
         a_flux_error[1] = std::max(a_flux_error[1], std::abs(face_error));
       }
 
 #if DIM==3
       for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
       {
-        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface], a_graph, a_volu, a_helm_ptr, a_phi_exac, false);
+        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface],
+                                                a_graph, a_volu, a_helm_ptr, a_phi_exac,
+                                                a_killing_me_smalls);
         a_flux_error[2] = std::max(a_flux_error[2], std::abs(face_error));
       }
 #endif      

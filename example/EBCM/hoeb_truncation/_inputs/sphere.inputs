@@ -19,13 +19,36 @@ parseFineGridParams.nx                = 32
 parseFineGridParams.maxGrid           = 32
 parseFineGridParams.mergeSmallCells   = true
 
-# phi = x + y
 #Chombo_EBCM_PETSc_Framework.H
-polynomial_exact.num_terms = 1
-polynomial_exact.power_0 = 1 0 0
+# 1 + x^2
+polynomial_exact.num_terms = 2
+
+polynomial_exact.power_0 = 0 0 0
 polynomial_exact.coeff_0 = 1.0
-polynomial_exact.power_1 = 0 1 0
+
+polynomial_exact.power_1 = 2 0 0
 polynomial_exact.coeff_1 = 1.0
+
+
+#polynomial_exact.num_terms = 6
+#
+#polynomial_exact.power_0 = 1 0 0
+#polynomial_exact.coeff_0 = 1.0
+#
+#polynomial_exact.power_1 = 0 1 0
+#polynomial_exact.coeff_1 = 1.0
+#
+#polynomial_exact.power_2 = 2 0 0
+#polynomial_exact.coeff_2 = 1.0
+#
+#polynomial_exact.power_3 = 0 2 0
+#polynomial_exact.coeff_3 = 1.0
+#
+#polynomial_exact.power_4 = 3 0 0
+#polynomial_exact.coeff_4 = 1.0
+#
+#polynomial_exact.power_5 = 0 3 0
+#polynomial_exact.coeff_5 = 1.0
 
 #Chombo_EBCM_Algorithm_Framework.H
 getImplicitFunction.center           = 0.5 0.5 0.5

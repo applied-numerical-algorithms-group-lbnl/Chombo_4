@@ -205,13 +205,16 @@ namespace EBCM_Exact
           ///deriv_power = p-e^d
           pr_ind_int_dim moment_power_dim = taylor_power_dim;
           moment_power_dim[a_face_dir] -= 1;
-          pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
+          if(moment_power_dim[a_face_dir] == 0) //any higher power x-x0^p = 0
+          {
+            pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
           
-          double momen = a_fac_mom[moment_power_dmo];
-          double deriv = getDerivative(taylor_power_dim, a_cent_loc);
-          ///increment = pd  phi^(p-ed) m^p/p!
-          double incre = pd*deriv*momen/denom;
-          retval += incre;
+            double momen = a_fac_mom[moment_power_dmo];
+            double deriv = getDerivative(taylor_power_dim, a_cent_loc);
+            ///increment = pd  phi^(p-ed) m^p/p!
+            double incre = pd*deriv*momen/denom;
+            retval += incre;
+          }
         } // end if pd > 0
       }// end loop over moments
       return retval;
