@@ -52,19 +52,21 @@ namespace EBCM_Exact
       auto centloc = a_volu.m_centroid;
       for(pr_momit_dim momit; momit.ok(); ++momit)
       {
-        pr_ind_int_dim power = momit();
-        int   idenom = (power.factorial());
-        double denom = (Real)(idenom);
-        double deriv = getDerivative(power, centloc);
-        for(int idir = 0; idir < DIM; idir++)
+        pr_ind_int_dim mom_power = momit();
+        double rfactorial  = (double)(mom_power.factorial());
+         for(int idir = 0; idir < DIM; idir++)
         {
-          if(power[idir] > 1)
+          if(mom_power[idir] > 1)
           {
-            ///this is power - 2ed
-            pr_ind_int_dim lap_power = power;
+            pr_ind_int_dim lap_power = mom_power;
             lap_power[idir] -= 2;
+            double deriv       = getDerivative(mom_power, centloc);
+            double cp          = deriv/rfactorial;
+            double factor      = cp*(mom_power[idir])*(mom_power[idir]-1);
+
             double lap_moment  = volmom[lap_power];
-            double increment   = deriv*lap_moment/denom;
+            double increment   = factor*lap_moment;
+            
             retval += increment;
           } //end if this power is high enough
         } //end loop over directions

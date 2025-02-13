@@ -1655,7 +1655,7 @@ namespace EBCM
         {
           const auto& volu = subvol_vec[ivec];
           double             flux_error[DIM];
-          bool killing_me_smalls = true;
+          bool killing_me_smalls = false;
           getFluxErrorVolume(flux_error, graph, volu, helm_ptr, phi_fab, killing_me_smalls);
           for(int idir = 0; idir < DIM; idir++)
           {
@@ -1734,7 +1734,7 @@ namespace EBCM
       double val = 4586;
       err_calc_ptr->getAbsMaxLocationAndValue(loc, val, ico);
 
-      Chombo4::pout() << "getMaxAbsTruncation for " << a_file_prefix  << " : " ;
+      Chombo4::pout() << "getMaxAbsLphiError for " << a_file_prefix  << " : " ;
       Chombo4::pout() << "loc = " << loc  << ", ico = " << ico << ", val = " << val << endl;
 
       a_max_error =  err_calc_ptr->maxNorm();
