@@ -758,20 +758,6 @@ namespace EBCM
       {
         const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
         double phi_val  = getDomainBCValue(face, a_dom_bc, a_bc_exact, *a_locality);
-//        double area = face.m_facmom[pr_itm_i_dmo::Zero];
-//        if(a_dom_bc == string("neumann"))
-//        {
-//          phi_val = a_bc_exact.getIntGradPhiDotNDADomainFace(face, *a_locality);
-//        }
-//        else if(a_dom_bc == string("dirichlet"))
-//        {
-//          phi_val = a_bc_exact.getIntPhiDADomainFace(face, *a_locality);
-//        }
-//        else
-//        {
-//          ch_mayday::Error("PETScFramework::getSolutionVector::bogus a_dom_bc");
-//        }
-//        phi_val /= area;
         (*soln_vec_p)(irow_global,0) = phi_val;
         irow_global++;
       }
@@ -800,114 +786,6 @@ namespace EBCM
       return soln_vec_p;
    }
     
-    ///
-    /**
-       Fill a row vector with exact values taylor coefficient.
-       Only works if the exact solution is a polynomial.
-        phi = sum C^p x^p
-       But in this case we know that the solution is a polynomial:
-        phi = sum A^p x^p
-        So clearly C^p = A^p
-     **/
-    static shared_ptr<eigen_mat>
-    getTaylorRowVector()
-    {
-      CH_TIME("PETSc_Framework::getTaylorRowVector");
-      ParmParse pp_main("main");
-      int exact_flag   = 4586 ;
-      pp_main.get("exact_flag"  , exact_flag);
-      ParmParse pp_poly("polynomial_exact");
-      
-      unsigned int n_powers = pr_mom_dim::size();
-      shared_ptr<eigen_mat> tay_vec_p(new eigen_mat(n_powers, 1));
-      if(exact_flag == 1)
-      {
-        tay_vec_p->setVal(0.);
-
-        int num_terms = -4586;
-        ParmParse pp("polynomial_exact");
-        pp.get("num_terms", num_terms);
-        for(int iterm = 0; iterm < num_terms; iterm++)
-        {
-          string coef_str   = string("coeff_") + to_string(iterm);
-          string powers_str = string("power_") + to_string(iterm);
-          vector<int> entry_powers;
-          double      entry_coeff;
-          pp.getarr(powers_str.c_str(), entry_powers, 0, DIM);
-          pp.get(     coef_str.c_str(), entry_coeff);
-          pr_itm_i_dim power_itm;
-          for(int idir = 0; idir < DIM; idir++)
-          {
-            power_itm[idir] = entry_powers[idir];
-          }
-          int vec_ind = pr_mom_dim::indexOf(power_itm);
-          (*tay_vec_p)(vec_ind, 0) += entry_coeff;
-        }
-      }
-      else
-      {
-        ch_mayday::Error("getTaylorRowVector only works for polynomial exact solutions");
-      }
-      return tay_vec_p;
-   }
-
-    static void
-    applySideBySide(const local_stencil_t   &   a_stencil,
-                    const eigen_mat         &   a_sten_mat,
-                    const eigen_mat         &   a_soln_vec,
-                    const ebcm_neighborhood &   a_locality,
-                    const pr_fab_t          &   a_phi_exac) 
-                  
-      {
-        double ret_sten  = 0;
-        double ret_eigen = 0;
-        eigen_mat phi_vec(a_stencil.m_entries.size(), 1);
-        for(int ivec = 0; ivec < a_stencil.m_entries.size(); ivec++)
-        {
-          const pr_pt &  loc = a_stencil.m_entries[ivec].first;
-          phi_vec(ivec, 0) = a_phi_exac(loc, 0);
-        }
-        Chombo4::pout() << "phi_vec:" << endl;
-        phi_vec.poutAll();
-        Chombo4::pout() << "a_soln_vec:" << endl;
-        a_soln_vec.poutAll();
-
-        for(int ivec = 0; ivec < a_stencil.m_entries.size(); ivec++)
-        {
-          const pr_pt &  loc = a_stencil.m_entries[ivec].first;
-          const double&  wgt_sten = a_stencil.m_entries[ivec].second;
-          const double&  phi_exac = a_phi_exac(loc, 0);
-          ret_sten += wgt_sten*phi_exac;
-          const double & phi_eigen = a_soln_vec(ivec, 0);
-          const double & wgt_eigen = a_sten_mat(0,ivec);
-          ret_eigen += wgt_eigen*phi_eigen;
-        }
-        pout() << "applySideBySide: after volumes only (no bcs): " << endl;
-        pout() << "applySideBySide: ret_eigen = " << ret_eigen <<endl;
-        pout() << "applySideBySide: ret_sten  = " << ret_sten <<endl;
-        ret_sten += a_stencil.m_inhomogeneous_bit;
-
-        int n_rows_volumes   = a_locality.m_weig_volumes.size();
-        int n_rows_dom_faces = a_locality.m_weig_dom_faces.size();
-        int n_rows_cut_faces = a_locality.m_weig_cut_faces.size();
-        int n_rows           = n_rows_volumes + n_rows_dom_faces + n_rows_cut_faces;
-
-        double inhom_eigen = 0;
-        for(int ivec = n_rows_volumes; ivec < n_rows; ivec++)
-        {
-          const double & phi_eigen = a_soln_vec(ivec, 0);
-          const double & wgt_eigen = a_sten_mat(0, ivec);
-          inhom_eigen += wgt_eigen*phi_eigen;
-        }
-        ret_eigen += inhom_eigen;
-        
-        pout() << "after everything: " << endl;
-        pout() << "inhom_eigen = " << inhom_eigen <<endl;
-        pout() << "inhom_sten  = " << a_stencil.m_inhomogeneous_bit <<endl;
-        pout() << "ret_eigen = " << ret_eigen <<endl;
-        pout() << "ret_sten  = " << ret_sten <<endl;
-        return ;
-      }
 
     ///
     template<CENTERING cent>
@@ -998,7 +876,6 @@ namespace EBCM
           eigen_mat Smat = SmatFFS;
           eigen_mat sten_phi;
           multiply(sten_phi, Smat, *Phi_p);
-          shared_ptr<eigen_mat> tay_p =   getTaylorRowVector();
 
           eigen_mat FmatFFS;
           multiply( FmatFFS, SmatFFS, *Phi_p);
@@ -1007,11 +884,6 @@ namespace EBCM
           pout() << "FFS variables: FmatFFS = " << endl;
           FmatFFS.poutAll();
 
-          eigen_mat mc_tay;
-          multiply( mc_tay  , *Mmat_p, *tay_p);
-          ///this should = flux = grad(phi)[a_facedir] = stencil*phi
-
-          
           eigen_mat Fmat;
           multiply( Fmat, Smat, *Phi_p);
           eigen_mat WPhi;
@@ -1045,8 +917,6 @@ namespace EBCM
           Chombo4::pout() << "QC (should give back  int F dA):" << endl;
           QC.poutAll();
 
-          //applySideBySide(retval, Smat, *Phi_p, *locality, *a_phi_exac_ptr);
-          
         }
         /// end  debug
         
