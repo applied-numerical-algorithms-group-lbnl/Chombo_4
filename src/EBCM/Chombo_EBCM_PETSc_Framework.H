@@ -911,9 +911,6 @@ namespace EBCM
           Chombo4::pout() << "MC (should give back Phi): "<< endl;
           MC.poutAll();
 
-          Chombo4::pout() << "MC_tay (should also give back Phi): "<< endl;
-          mc_tay.poutAll();
-
           Chombo4::pout() << "QC (should give back  int F dA):" << endl;
           QC.poutAll();
 
@@ -1388,6 +1385,46 @@ namespace EBCM
           entries[iterm] = entry;
           if(!printed_once) pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
         }//end loop over terms
+        EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
+        
+        retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
+      }
+      else if(a_exact_flag==2)
+      {
+        using std::vector;
+        using std::pair;
+        vector<pair<Point, Real> > entries;
+
+        if(!printed_once)
+        {
+          pout() << "Exact solution is a polynomial of all the powers with unity coefficients." << endl;
+          pout() << " (cp = 1/p! for all p <= (max_polynomial_order+1))." << endl;
+        }
+        ///Land-ho but for moments.
+        typedef  Proto::MomentIterator<DIM ,ebcm_order+1> pr_momit_ho;
+        typedef  Proto::IndexedMoments<DIM ,ebcm_order+1> pr_indmom_ho;
+        int num_terms = pr_indmom_ho::size();
+        entries.resize(num_terms);
+        for(pr_momit_ho momit_ho; momit_ho.ok(); ++momit_ho)
+        {
+          pr_itm_i_dim power_itm = momit_ho();
+          pr_pt power_pt;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            power_pt[idir]  = power_itm[idir];
+          }
+          double  d_fact = double(power_itm.factorial());
+          double  coeff = 1./d_fact;  
+          int vec_ind = pr_indmom_ho::indexOf(power_itm);
+          entries[vec_ind].first  = power_pt;
+          entries[vec_ind].second = coeff;
+          if(!printed_once)
+          {
+            pout() << "   power[" << vec_ind << "] = " << power_pt
+                   << ", weight[" << vec_ind << "] = " << coeff  << endl;
+          }
+        }
+
         EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);

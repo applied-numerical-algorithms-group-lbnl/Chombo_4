@@ -1,9 +1,8 @@
 # Chombo4/example/EBCM/hoeb_truncation/_inputs/sphere.inputs
 #hoeb_truncation.cpp
 main.polynomial_order  = 2
-#0 is 0
-# 1 is polynomial you spell out the coeffs, powers
-# 2 is the full polynomial where all cps are 1.
+#0 is 0,  1 is polynomial
+main.exact_flag        = 1
 #identity coefficient
 main.alpha =  0.0
 #laplacian coefficient
@@ -20,18 +19,36 @@ parseFineGridParams.nx                = 32
 parseFineGridParams.maxGrid           = 32
 parseFineGridParams.mergeSmallCells   = true
 
-# exact flag== 2 => cp = 1/p! for all p <= max_poly+1, = 0 o.w.
-#main.exact_flag        = 2
-#this stuff is if exact_flag == 1
-# exact flag== 1 => pick and choose polynomial 
-main.exact_flag        =  1
 #Chombo_EBCM_PETSc_Framework.H
 # 1 + x^2
 polynomial_exact.num_terms = 2
+
 polynomial_exact.power_0 = 0 0 0
 polynomial_exact.coeff_0 = 1.0
+
 polynomial_exact.power_1 = 2 0 0
 polynomial_exact.coeff_1 = 1.0
+
+
+#polynomial_exact.num_terms = 6
+#
+#polynomial_exact.power_0 = 1 0 0
+#polynomial_exact.coeff_0 = 1.0
+#
+#polynomial_exact.power_1 = 0 1 0
+#polynomial_exact.coeff_1 = 1.0
+#
+#polynomial_exact.power_2 = 2 0 0
+#polynomial_exact.coeff_2 = 1.0
+#
+#polynomial_exact.power_3 = 0 2 0
+#polynomial_exact.coeff_3 = 1.0
+#
+#polynomial_exact.power_4 = 3 0 0
+#polynomial_exact.coeff_4 = 1.0
+#
+#polynomial_exact.power_5 = 0 3 0
+#polynomial_exact.coeff_5 = 1.0
 
 #Chombo_EBCM_Algorithm_Framework.H
 getImplicitFunction.center           = 0.5 0.5 0.5
