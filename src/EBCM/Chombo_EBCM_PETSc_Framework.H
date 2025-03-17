@@ -17,6 +17,7 @@
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBCM_ExactSolutions.H"
+#include "Chombo_EBCM_Debug.H"
 
 /// 
 /**
@@ -1645,6 +1646,12 @@ namespace EBCM
       Chombo4::pout() << "loc = " << loc  << ", ico = " << ico << ", val = " << val << endl;
 
       a_max_error =  err_calc_ptr->maxNorm();
+      //begin debug
+      pr_pt lo_pt(D_DECL(3, 0, 3));
+      pr_pt hi_pt(D_DECL(6, 7, 7));
+      string print_prefix = string("Error_") + a_file_prefix;
+      EBCM_Debug::DataWindow<double, 1, ebcm_order>::writeWindowLevel(&(*err_calc_ptr), lo_pt, hi_pt, print_prefix);
+      //end debug
     }
     ///
     static void
