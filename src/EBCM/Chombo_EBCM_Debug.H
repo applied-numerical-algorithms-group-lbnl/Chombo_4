@@ -104,7 +104,7 @@ namespace EBCM_Debug
                 else 
                 {
                   const double& data_val = data(cur_pt, icomp);
-                  if(data_val != data_val)
+                  if(std::isnan(data_val))
                   {
                     cout  << "=-=-=NaN=-=-=-=" << "  ";
                   }

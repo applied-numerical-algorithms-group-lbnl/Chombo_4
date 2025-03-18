@@ -532,10 +532,13 @@ namespace EBCM
         VecCreate(   wcomm, &phiVec                  );
         VecSetSizes(         phiVec, m_numPtsThisProc, m_numPtsAllProcs);
         VecSetFromOptions(   phiVec                  );
-        VecDuplicate(        phiVec, &lphVec         );
 
         ierr = VecAssemblyBegin(phiVec );  CHKERRQ(ierr);
         ierr = VecAssemblyEnd(  phiVec );  CHKERRQ(ierr);
+        //valgrind did not like VecDuplicate
+        //VecDuplicate(        phiVec, &lphVec         );
+        VecCreate(   wcomm, &lphVec                  );
+        VecSetSizes(         lphVec, m_numPtsThisProc, m_numPtsAllProcs);
         ierr = VecAssemblyBegin(lphVec );  CHKERRQ(ierr);
         ierr = VecAssemblyEnd(  lphVec );  CHKERRQ(ierr);
         
@@ -1637,7 +1640,7 @@ namespace EBCM
         lph_calc_ptr->writeToHDF5(lph_calc_file_name);
         err_calc_ptr->writeToHDF5(err_calc_file_name);
       }      
-      pr_pt  loc;
+      pr_pt  loc(D_DECL(4586, 4586, 4586));
       int    ico = 4586;
       double val = 4586;
       err_calc_ptr->getAbsMaxLocationAndValue(loc, val, ico);
@@ -1647,10 +1650,28 @@ namespace EBCM
 
       a_max_error =  err_calc_ptr->maxNorm();
       //begin debug
-      pr_pt lo_pt(D_DECL(3, 0, 3));
-      pr_pt hi_pt(D_DECL(6, 7, 7));
-      string print_prefix = string("Error_") + a_file_prefix;
-      EBCM_Debug::DataWindow<double, 1, ebcm_order>::writeWindowLevel(&(*err_calc_ptr), lo_pt, hi_pt, print_prefix);
+      pr_pt  lo_coar(D_DECL(3, 0, 3));
+      pr_pt  hi_coar(D_DECL(6, 7, 7));
+      if(a_file_prefix == string("coar"))
+      {
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
+
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
+      }
+      else
+      {
+        pr_box bx_coar(lo_coar, hi_coar);
+        pr_box bx_fine = bx_coar.refine(2);
+        pr_pt lo_fine = bx_fine.low();
+        pr_pt hi_fine = bx_fine.high();
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
+      }
       //end debug
     }
     ///
@@ -1691,6 +1712,7 @@ namespace EBCM
       
       getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine")); 
       getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
+
 
       for(int itest = 0; itest < (DIM+1); itest++)
       {

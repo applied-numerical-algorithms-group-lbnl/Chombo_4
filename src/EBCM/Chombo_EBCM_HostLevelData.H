@@ -170,6 +170,7 @@ namespace EBCM
                                    int    & a_ico) const
     {
       a_val = -4586;
+      a_loc =  4586*pr_pt::Ones();
       ch_dit dit =     m_meta->m_grids.dataIterator();
       const auto& mpibit = (*m_data);
       for(int ibox = 0; ibox < dit.size(); ibox++)

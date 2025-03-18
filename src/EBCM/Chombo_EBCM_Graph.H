@@ -2373,6 +2373,8 @@ namespace EBCM
     }
     void outputGraphMapAsHDF5(const string & a_filename) const
     {
+#ifdef CH_USE_HDF5
+      
 #ifdef CH_USE_PETSC      
 
       LevelData<FArrayBox>  ldfabs(m_grids, 1, IntVect::Zero);
@@ -2407,6 +2409,7 @@ namespace EBCM
 
       writeLevelname(&ldfabs, a_filename.c_str());
       
+#endif
 #endif
     }
     shared_ptr<cmgraph_distrib_t>  m_graphs;
