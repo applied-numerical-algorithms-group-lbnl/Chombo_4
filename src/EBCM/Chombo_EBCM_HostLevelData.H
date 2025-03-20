@@ -169,7 +169,7 @@ namespace EBCM
                                    double & a_val,
                                    int    & a_ico) const
     {
-      a_val = -4586;
+      double max_val = -4586;
       a_loc =  4586*pr_pt::Ones();
       ch_dit dit =     m_meta->m_grids.dataIterator();
       const auto& mpibit = (*m_data);
@@ -180,16 +180,21 @@ namespace EBCM
         for(ch_bit bit(grid); bit.ok(); ++bit)
         {
           auto  iv = bit();
-          pr_pt pt = ProtoCh::getPoint(iv);
+          pr_pt pt(D_DECL(iv[0], iv[1], iv[2]));
           for(int icomp = 0; icomp < ncomp; icomp++)
           {
-            double locvalue = data(pt, icomp);
-            a_loc = pt;
-            a_ico = icomp;
-            a_val = std::max(a_val, std::abs(locvalue));
+            double loc_val = std::abs(data(pt, icomp));
+            bool new_max = (max_val < loc_val);
+            if(new_max) //anything to get valgrind to shut up
+            {
+              max_val = loc_val;
+              a_loc   = pt;
+              a_ico   = icomp;
+            }
           } //end loop over components
         }   //end loop over cells in box
       }     //end loop over boxes
+      a_val = max_val;
       
     }
     HostLevelData(const shared_ptr<ebcm_meta_t>& a_meta,

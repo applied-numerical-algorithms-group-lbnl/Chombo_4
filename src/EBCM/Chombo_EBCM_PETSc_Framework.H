@@ -535,10 +535,8 @@ namespace EBCM
 
         ierr = VecAssemblyBegin(phiVec );  CHKERRQ(ierr);
         ierr = VecAssemblyEnd(  phiVec );  CHKERRQ(ierr);
-        //valgrind did not like VecDuplicate
-        //VecDuplicate(        phiVec, &lphVec         );
-        VecCreate(   wcomm, &lphVec                  );
-        VecSetSizes(         lphVec, m_numPtsThisProc, m_numPtsAllProcs);
+        
+        VecDuplicate(        phiVec, &lphVec         );
         ierr = VecAssemblyBegin(lphVec );  CHKERRQ(ierr);
         ierr = VecAssemblyEnd(  lphVec );  CHKERRQ(ierr);
         
@@ -1645,33 +1643,36 @@ namespace EBCM
       double val = 4586;
       err_calc_ptr->getAbsMaxLocationAndValue(loc, val, ico);
 
+      pr_pt loc_p = loc;
+      int ico_p = ico;
+      double val_p = val;
       Chombo4::pout() << "getMaxAbsLphiError for " << a_file_prefix  << " : " ;
-      Chombo4::pout() << "loc = " << loc  << ", ico = " << ico << ", val = " << val << endl;
+      //val_g Chombo4::pout() << "loc = " << loc_p  << ", ico = " << ico_p << ", val = " << val_p << endl;
 
       a_max_error =  err_calc_ptr->maxNorm();
-      //begin debug
-      pr_pt  lo_coar(D_DECL(3, 0, 3));
-      pr_pt  hi_coar(D_DECL(6, 7, 7));
-      if(a_file_prefix == string("coar"))
-      {
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
-
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
-      }
-      else
-      {
-        pr_box bx_coar(lo_coar, hi_coar);
-        pr_box bx_fine = bx_coar.refine(2);
-        pr_pt lo_fine = bx_fine.low();
-        pr_pt hi_fine = bx_fine.high();
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
-      }
+//vg      //begin debug
+//vg      pr_pt  lo_coar(D_DECL(3, 0, 3));
+//vg      pr_pt  hi_coar(D_DECL(6, 7, 7));
+//vg      if(a_file_prefix == string("coar"))
+//vg      {
+//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+//vg          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
+//vg        
+//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+//vg          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
+//vg
+//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+//vg          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
+//vg      }
+//vg      else
+//vg      {
+//vg        pr_box bx_coar(lo_coar, hi_coar);
+//vg        pr_box bx_fine = bx_coar.refine(2);
+//vg        pr_pt lo_fine = bx_fine.low();
+//vg        pr_pt hi_fine = bx_fine.high();
+//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+//vg          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
+//vg      }
       //end debug
     }
     ///
@@ -1731,9 +1732,9 @@ namespace EBCM
           max_err_coar = max_flux_err_coar[itest];
           max_err_fine = max_flux_err_fine[itest];
         }
-        Chombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
-        Chombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
-        Chombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
+        //vgChombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
+        //vgChombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
+        //vgChombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
         if(max_err_fine > 1.0e-12) //err >= 0  by construction
         {
           double order = (log(max_err_coar/max_err_fine))/log(2.0);
