@@ -241,6 +241,47 @@ namespace EBCM
         CH_TIME("PETSc_Framework::addInhomogeneousBit");
         (*a_lph_ptr) += (*m_inhomog_bit);
       }
+      ///
+      void applyOpPrimitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
+                             shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                             string                        a_identifier)
+      {
+        CH_TIME("Base_Petsc_Op::formMatrix");
+        
+        const auto& graphs = *(m_meta_ptr->m_graphs);
+        const auto& grids  =  (m_meta_ptr->m_grids);
+        auto dit = grids.dataIterator();
+
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const auto& valid           =            grids[dit[ibox]];
+          const auto& graph           =           graphs[dit[ibox]];
+          const auto& phi_fab         =     (*a_phi_ptr)[dit[ibox]];
+          auto      & lph_fab         =     (*a_lph_ptr)[dit[ibox]];
+          auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
+          bool killing_me_smalls = false;
+          //begin debug
+          //killing_me_smalls = true;
+          //end debug
+          ebcm_subvol_vec volvec(graph, valid, killing_me_smalls);
+          for(int ivol = 0; ivol < volvec.size(); ivol++)
+          {
+            const auto& volu = volvec[ivol];
+            shared_ptr<local_stencil_t>  local =
+              m_oper_ptr->getLocalStencil(volu, graph);
+            double lph_val = local->m_inhomogeneous_bit;
+            for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
+            {
+              pr_pt      sten_iv  = (local->m_entries)[ivec].first;
+              double     wght     = (local->m_entries)[ivec].second;
+              double     phi_val  = phi_fab(sten_iv, 0);
+              double     lph_incr = phi_val*wght;
+              lph_val += lph_incr;
+            } //end loop over stencil
+            lph_fab(volu.m_pt, 0) = lph_val;
+          } //end loop voer volvec
+        } //end loop over boxes
+      } //end function applyOpPrimitives
       
       ///
       void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
@@ -1066,6 +1107,7 @@ namespace EBCM
       int                   m_ghost;
       string                m_dom_bc;
       string                m_eb_bc;
+      string                m_identifier; // debugging tool.
       ///for inhomog
       shared_ptr<ebcm_exac> m_bc_exact;
       shared_ptr<ebcm_meta> m_meta_ptr;
@@ -1084,7 +1126,7 @@ namespace EBCM
                   const int                                    & a_weight_power,
                   const shared_ptr< ebcm_meta  >               & a_meta_ptr,
                   shared_ptr<ebcm_exac> a_bc_exact,
-                  string a_dom_bc, string a_eb_bc, int a_ghost)
+                  string a_dom_bc, string a_eb_bc, int a_ghost, string a_identifier)
       {
         
         m_alpha        = a_alpha;       
@@ -1096,6 +1138,7 @@ namespace EBCM
         m_dom_bc       = a_dom_bc;
         m_eb_bc        = a_eb_bc;
         m_ghost        = a_ghost;
+        m_identifier   = a_identifier;
       }
 
       ///this is the function that the driver code calls
@@ -1540,7 +1583,7 @@ namespace EBCM
                                                        weight_power, 
                                                        a_meta, 
                                                        exact_sol,
-                                                       dom_bc, eb_bc, num_ghost));
+                                                       dom_bc, eb_bc, num_ghost, a_file_prefix));
       const auto& graphs = *(a_meta->m_graphs);
       const auto& grids  =  (a_meta->m_grids);
       auto dit = grids.dataIterator();
@@ -1612,14 +1655,20 @@ namespace EBCM
                                                        weight_power, 
                                                        a_meta, 
                                                        exact_sol,
-                                                       dom_bc, eb_bc, num_ghost));
+                                                       dom_bc, eb_bc, num_ghost, a_file_prefix));
                                                           
-      
+
+      ///using the proper petsc stuff
       PETSc_Interface<HelmholtzOp> discreteOp(helm_ptr, a_meta, num_ghost);
 
+#if 0
+      ///using the proper petsc stuff
       bool homogeneous_only = false;
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
-
+#else
+      ///using stuff I think I actually understand
+      discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, a_file_prefix);
+#endif        
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
@@ -1647,33 +1696,37 @@ namespace EBCM
       int ico_p = ico;
       double val_p = val;
       Chombo4::pout() << "getMaxAbsLphiError for " << a_file_prefix  << " : " ;
-      //val_g Chombo4::pout() << "loc = " << loc_p  << ", ico = " << ico_p << ", val = " << val_p << endl;
+      Chombo4::pout() << "loc = " << loc_p  << ", ico = " << ico_p << ", val = " << val_p << endl;
 
       a_max_error =  err_calc_ptr->maxNorm();
-//vg      //begin debug
-//vg      pr_pt  lo_coar(D_DECL(3, 0, 3));
-//vg      pr_pt  hi_coar(D_DECL(6, 7, 7));
-//vg      if(a_file_prefix == string("coar"))
-//vg      {
-//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-//vg          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
-//vg        
-//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-//vg          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
-//vg
-//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-//vg          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
-//vg      }
-//vg      else
-//vg      {
-//vg        pr_box bx_coar(lo_coar, hi_coar);
-//vg        pr_box bx_fine = bx_coar.refine(2);
-//vg        pr_pt lo_fine = bx_fine.low();
-//vg        pr_pt hi_fine = bx_fine.high();
-//vg        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-//vg          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
-//vg      }
+      //begin debug
+      pr_pt  lo_coar(D_DECL(4, 4, 0));
+      pr_pt  hi_coar(D_DECL(7, 7, 0));
+      if(a_file_prefix == string("coar"))
+      {
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*phi_exac_ptr), lo_coar, hi_coar, string("phi_exac Coar:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
+
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
+      }
+      else
+      {
+        pr_box bx_coar(lo_coar, hi_coar);
+        pr_box bx_fine = bx_coar.refine(2);
+        pr_pt  lo_fine = bx_fine.low();
+        pr_pt  hi_fine = bx_fine.high();
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
+      }
       //end debug
+      return;
     }
     ///
     static void
@@ -1732,9 +1785,9 @@ namespace EBCM
           max_err_coar = max_flux_err_coar[itest];
           max_err_fine = max_flux_err_fine[itest];
         }
-        //vgChombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
-        //vgChombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
-        //vgChombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
+        Chombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
+        Chombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
+        Chombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
         if(max_err_fine > 1.0e-12) //err >= 0  by construction
         {
           double order = (log(max_err_coar/max_err_fine))/log(2.0);
