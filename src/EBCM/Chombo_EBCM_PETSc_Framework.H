@@ -1396,7 +1396,6 @@ namespace EBCM
     getExactSolution(int a_exact_flag)
     {
       shared_ptr<ebcm_exac> retval;
-      ParmParse pp("polynomial_exact");
       static bool printed_once = false;
       if(a_exact_flag == 0)
       {
@@ -1410,6 +1409,7 @@ namespace EBCM
         vector<pair<Point, Real> > entries;
         int num_terms = -4586;
 
+        ParmParse pp("polynomial_exact");
         pp.get("num_terms", num_terms);
         entries.resize(num_terms);
         if(!printed_once)  pout() << "exact solution = polynomial" << endl;
@@ -1471,6 +1471,24 @@ namespace EBCM
         }
 
         EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
+        
+        retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
+      }
+      else if(a_exact_flag==3)
+      {
+        ParmParse pp("sine_exact");
+        pout() << "Exact solution = Sine." << endl;
+        int    frequency;
+        int    direction;
+        double amplitude;
+        pp.get("frequency",frequency);
+        pp.get("direction",direction);
+        pp.get("amplitude",amplitude);
+
+        EBCM_Exact::OneDimSineEF<ebcm_order>* ebcm_poly_ptr =
+          new EBCM_Exact::OneDimSineEF<ebcm_order>(frequency,
+                                                   direction,
+                                                   amplitude);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -1700,8 +1718,20 @@ namespace EBCM
 
       a_max_error =  err_calc_ptr->maxNorm();
       //begin debug
-      pr_pt  lo_coar(D_DECL(4, 4, 0));
-      pr_pt  hi_coar(D_DECL(7, 7, 0));
+// lower left
+//      pout() << "displaying LOWER LEFT" << endl;
+//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
+//      pr_pt  hi_coar(D_DECL(3,   3, 0));
+// 32x32            
+// middle 
+//      pout() << "displaying MIDDLE MIDDLE" << endl;
+//      pr_pt  lo_coar(D_DECL(6 ,  6, 0));
+//      pr_pt  hi_coar(D_DECL(9 ,  9, 0));
+// upper right
+      pout() << "displaying UPPER RIGHT" << endl;
+      pr_pt  lo_coar(D_DECL(12, 12, 0));
+      pr_pt  hi_coar(D_DECL(15, 15, 0));
+      
       if(a_file_prefix == string("coar"))
       {
         EBCM_Debug::DataWindow<double, 1, ebcm_order>::
@@ -1722,8 +1752,18 @@ namespace EBCM
         pr_box bx_fine = bx_coar.refine(2);
         pr_pt  lo_fine = bx_fine.low();
         pr_pt  hi_fine = bx_fine.high();
+
         EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*err_calc_ptr), bx_fine.low(),bx_fine.high(), string("err_calc Fine:"));
+          writeWindowLevel(&(*phi_exac_ptr), lo_fine, hi_fine, string("phi_exac Fine:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_exac_ptr), lo_fine, hi_fine, string("lph_exac Fine:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*lph_calc_ptr), lo_fine, hi_fine, string("lph_calc Fine:"));
+        
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeWindowLevel(&(*err_calc_ptr), lo_fine, hi_fine, string("err_calc Fine:"));
       }
       //end debug
       return;

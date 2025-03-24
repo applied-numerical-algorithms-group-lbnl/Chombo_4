@@ -54,7 +54,7 @@ namespace EBCM_Exact
       {
         pr_ind_int_dim mom_power = momit();
         double rfactorial  = (double)(mom_power.factorial());
-         for(int idir = 0; idir < DIM; idir++)
+        for(int idir = 0; idir < DIM; idir++)
         {
           if(mom_power[idir] > 1)
           {
@@ -523,7 +523,60 @@ namespace EBCM_Exact
     {
     }
   };
+  ///phi = amp* sin( pi*freq x)
+  template <unsigned int order>
+  class OneDimSineEF: public BaseExactSolution<order>
+  {
+  public:
+    int    m_direction;
+    double m_amplitude;
+    int    m_frequency;
+    OneDimSineEF(int    a_direction,
+                 double a_amplitude,
+                 int    a_frequency):
+      m_direction(a_direction),
+      m_amplitude(a_amplitude),
+      m_frequency(a_frequency)
+    {
+    }
 
+    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
+                               RealVect           a_loc) const
+    {
+      //any  derivatives in cross directions  = 0
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if((idir != m_direction) && (a_deriv[idir] != 0))
+        {
+          return 0;
+        }
+      }
+      int    deriv_mag = a_deriv[m_direction];
+      double x_loc     =   a_loc[m_direction];
+      static const double s_pi = 4.*atan(1.0);
+      double base_trig = cos(s_pi*x_loc*m_frequency);
+      if((deriv_mag % 2 ) == 0)
+      {
+        base_trig = sin(s_pi*x_loc*m_frequency);
+      }
+      double trig_sign   = 1;
+      double trig_factor = 1;
+      for(int i_der = 1; i_der <= deriv_mag; i_der)
+      {
+        trig_sign   *= -1;
+        trig_factor *= s_pi*m_frequency;
+      }
+
+      double retval = trig_sign*trig_factor*base_trig;
+      return retval;
+    }
+
+    virtual ~OneDimSineEF()
+    {
+    }
+    private:
+    OneDimSineEF();
+  };
   ///phi = sum cp x^p  
   template <unsigned int order>
   class PolynomialEF: public BaseExactSolution<order>
