@@ -1637,6 +1637,105 @@ namespace EBCM
     ///
     static
     void
+    getWindow( pr_pt& a_lo_coar,
+               pr_pt& a_hi_coar,
+               pr_pt& a_lo_fine,
+               pr_pt& a_hi_fine)
+    {
+// lower left
+//      pout() << "displaying LOWER LEFT" << endl;
+//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
+//      pr_pt  hi_coar(D_DECL(3,   3, 0));
+//      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
+//      pr_pt  hi_fine(D_DECL(3,   3, 0));
+// 32x32            
+// middle 
+//      pout() << "displaying MIDDLE MIDDLE" << endl;
+//      pr_pt  lo_coar(D_DECL(6 ,  6, 0));
+//      pr_pt  hi_coar(D_DECL(9 ,  9, 0));
+//      pr_pt  lo_fine(D_DECL(14, 14, 0));
+//      pr_pt  hi_fine(D_DECL(17, 17, 0));
+// upper right
+//      pout() << "displaying UPPER RIGHT" << endl;
+//      pr_pt  lo_coar(D_DECL(12, 12, 0));
+//      pr_pt  hi_coar(D_DECL(15, 15, 0));
+//      pr_pt  lo_fine(D_DECL(28, 28, 0));
+//      pr_pt  hi_fine(D_DECL(31, 31, 0));
+      
+//      pout() << "displaying BOTTOM MIDDLE" << endl;
+//      pr_pt  lo_coar(D_DECL( 6, 0, 0));
+//      pr_pt  hi_coar(D_DECL( 9, 3, 0));
+//      pr_pt  lo_fine(D_DECL(14, 0, 0));
+//      pr_pt  hi_fine(D_DECL(17, 3, 0));
+
+      static bool printed = false;
+      if(!printed)
+      {
+        pout() << "displaying TOP MIDDLE" << endl;
+        printed = true;
+      }
+      pr_pt  lo_coar(D_DECL( 6, 12, 0));
+      pr_pt  hi_coar(D_DECL( 9, 15, 0));
+      pr_pt  lo_fine(D_DECL(14, 28, 0));
+      pr_pt  hi_fine(D_DECL(17, 31, 0));
+
+      
+      a_lo_coar = lo_coar;
+      a_hi_coar = hi_coar;
+      a_lo_fine = lo_fine;
+      a_hi_fine = hi_fine;
+    }
+    ///
+    static
+    void
+    writeWindow (string                         a_file_prefix,
+                 string                         a_data_label,
+                 shared_ptr<ebcm_dou_sca_data>  a_data)
+    {
+
+      pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
+      getWindow(lo_coar, hi_coar, lo_fine, hi_fine);
+      pr_pt lo_disp = lo_fine;
+      pr_pt hi_disp = hi_fine;
+      if(a_file_prefix == string("coar"))
+      {
+        lo_disp = lo_coar;
+        hi_disp = hi_coar;
+      }
+      
+      string prefix = a_file_prefix + string("_") + a_data_label;
+      EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+        writeWindowLevel(&(*a_data), lo_disp, hi_disp, prefix);
+
+    }
+    static
+    void
+    writeStuffToFile(string                        a_file_prefix,
+                     shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
+                     shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
+                     shared_ptr<ebcm_dou_sca_data> a_lph_calc_ptr,
+                     shared_ptr<ebcm_dou_sca_data> a_err_calc_ptr)
+    {
+      ParmParse pp("main");
+      int     output_hdf5;
+      pp.get("output_hdf5" , output_hdf5);
+      if(output_hdf5 != 0)
+      {
+        string phi_exac_file_name = a_file_prefix + string("_phi_exac.hdf5");
+        string lph_exac_file_name = a_file_prefix + string("_lph_exac.hdf5");
+        string lph_calc_file_name = a_file_prefix + string("_lph_calc.hdf5");
+        string err_calc_file_name = a_file_prefix + string("_err_calc.hdf5");
+
+
+        a_phi_exac_ptr->writeToHDF5(phi_exac_file_name);
+        a_lph_exac_ptr->writeToHDF5(lph_exac_file_name);
+        a_lph_calc_ptr->writeToHDF5(lph_calc_file_name);
+        a_err_calc_ptr->writeToHDF5(err_calc_file_name);
+      }
+    }
+    ///
+    static
+    void
     getMaxAbsLphiError( double                   & a_max_error,
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
@@ -1647,7 +1746,6 @@ namespace EBCM
       int sten_rad     = 4586 ;
       int weight_power = 4586 ;
       int exact_flag   = 4586 ;
-      int output_hdf5  = 4586;
       string     dom_bc("4586");
       string      eb_bc("4586");
 
@@ -1658,7 +1756,6 @@ namespace EBCM
       pp.get("dom_bc"      , dom_bc);
       pp.get("eb_bc"       , eb_bc);
       pp.get("exact_flag"  , exact_flag);
-      pp.get("output_hdf5" , output_hdf5);
       int num_ghost = 4;
       
       shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
@@ -1686,86 +1783,20 @@ namespace EBCM
 #else
       ///using stuff I think I actually understand
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, a_file_prefix);
-#endif        
+#endif
+      writeWindow(a_file_prefix, string("phi_exac_1"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
       err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
 
-      if(output_hdf5 != 0)
-      {
-        string phi_exac_file_name = a_file_prefix + string("_phi_exac.hdf5");
-        string lph_exac_file_name = a_file_prefix + string("_lph_exac.hdf5");
-        string lph_calc_file_name = a_file_prefix + string("_lph_calc.hdf5");
-        string err_calc_file_name = a_file_prefix + string("_err_calc.hdf5");
-
-
-        phi_exac_ptr->writeToHDF5(phi_exac_file_name);
-        lph_exac_ptr->writeToHDF5(lph_exac_file_name);
-        lph_calc_ptr->writeToHDF5(lph_calc_file_name);
-        err_calc_ptr->writeToHDF5(err_calc_file_name);
-      }      
-      pr_pt  loc(D_DECL(4586, 4586, 4586));
-      int    ico = 4586;
-      double val = 4586;
-      err_calc_ptr->getAbsMaxLocationAndValue(loc, val, ico);
-
-      pr_pt loc_p = loc;
-      int ico_p = ico;
-      double val_p = val;
-      Chombo4::pout() << "getMaxAbsLphiError for " << a_file_prefix  << " : " ;
-      Chombo4::pout() << "loc = " << loc_p  << ", ico = " << ico_p << ", val = " << val_p << endl;
-
-      a_max_error =  err_calc_ptr->maxNorm();
-      //begin debug
-// lower left
-//      pout() << "displaying LOWER LEFT" << endl;
-//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
-//      pr_pt  hi_coar(D_DECL(3,   3, 0));
-// 32x32            
-// middle 
-//      pout() << "displaying MIDDLE MIDDLE" << endl;
-//      pr_pt  lo_coar(D_DECL(6 ,  6, 0));
-//      pr_pt  hi_coar(D_DECL(9 ,  9, 0));
-// upper right
-      pout() << "displaying UPPER RIGHT" << endl;
-      pr_pt  lo_coar(D_DECL(12, 12, 0));
-      pr_pt  hi_coar(D_DECL(15, 15, 0));
+      writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, err_calc_ptr);
       
-      if(a_file_prefix == string("coar"))
-      {
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*phi_exac_ptr), lo_coar, hi_coar, string("phi_exac Coar:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_exac_ptr), lo_coar, hi_coar, string("lph_exac Coar:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_calc_ptr), lo_coar, hi_coar, string("lph_calc Coar:"));
-
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*err_calc_ptr), lo_coar, hi_coar, string("err_calc Coar:"));
-      }
-      else
-      {
-        pr_box bx_coar(lo_coar, hi_coar);
-        pr_box bx_fine = bx_coar.refine(2);
-        pr_pt  lo_fine = bx_fine.low();
-        pr_pt  hi_fine = bx_fine.high();
-
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*phi_exac_ptr), lo_fine, hi_fine, string("phi_exac Fine:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_exac_ptr), lo_fine, hi_fine, string("lph_exac Fine:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*lph_calc_ptr), lo_fine, hi_fine, string("lph_calc Fine:"));
-        
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
-          writeWindowLevel(&(*err_calc_ptr), lo_fine, hi_fine, string("err_calc Fine:"));
-      }
-      //end debug
       return;
     }
     ///

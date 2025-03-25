@@ -24,7 +24,7 @@ parseFineGridParams.mergeSmallCells   = true
 #main.exact_flag        = 2
 #this stuff is if exact_flag == 1
 # exact flag== 1 => pick and choose polynomial 
-main.exact_flag        =  1
+#main.exact_flag        =  1
 #Chombo_EBCM_PETSc_Framework.H
 polynomial_exact.num_terms = 2
 polynomial_exact.power_0 = 0 0 0
@@ -37,6 +37,11 @@ polynomial_exact.power_3 = 3 0 0
 polynomial_exact.coeff_3 = -1.0
 polynomial_exact.power_4 = 4 0 0
 polynomial_exact.coeff_4 = 1.0
+# exact flag== 3 => Sine function
+main.exact_flag        =  3
+sine_exact.direction = 0
+sine_exact.frequency = 1
+sine_exact.amplitude = 1.
 
 #Chombo_EBCM_Algorithm_Framework.H
 getImplicitFunction.center           = 0.5 0.5 0.5

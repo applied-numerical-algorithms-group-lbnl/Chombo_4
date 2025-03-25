@@ -559,9 +559,9 @@ namespace EBCM_Exact
       {
         base_trig = sin(s_pi*x_loc*m_frequency);
       }
-      double trig_sign   = 1;
-      double trig_factor = 1;
-      for(int i_der = 1; i_der <= deriv_mag; i_der)
+      double trig_sign   = -1;
+      double trig_factor =  1;
+      for(int i_der = 1; i_der <= deriv_mag; i_der++)
       {
         trig_sign   *= -1;
         trig_factor *= s_pi*m_frequency;
