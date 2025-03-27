@@ -551,23 +551,39 @@ namespace EBCM_Exact
           return 0;
         }
       }
-      int    deriv_mag = a_deriv[m_direction];
       double x_loc     =   a_loc[m_direction];
+      //begin debug
+      double deb_loc_x = 0.5, deb_eps = 0.05;
+      int deb_stop = 0;
+      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
+      {
+        deb_stop = 1;
+      }
+      //end debug
+      int    deriv_mag = a_deriv[m_direction];
       static const double s_pi = 4.*atan(1.0);
       double base_trig = cos(s_pi*x_loc*m_frequency);
+      double trig_sign_change = -1.;
       if((deriv_mag % 2 ) == 0)
       {
         base_trig = sin(s_pi*x_loc*m_frequency);
+        trig_sign_change = 1.;
       }
-      double trig_sign   = -1;
-      double trig_factor =  1;
+      double trig_factor =   1;
       for(int i_der = 1; i_der <= deriv_mag; i_der++)
       {
-        trig_sign   *= -1;
         trig_factor *= s_pi*m_frequency;
       }
+      double final_sign  =   1;
+      for(int i_der = 1; i_der <= deriv_mag; i_der++)
+      {
+        if((i_der % 2 ) == 0)
+        {
+          final_sign *= -1;
+        }
+      }
 
-      double retval = trig_sign*trig_factor*base_trig;
+      double retval = m_amplitude*final_sign*trig_factor*base_trig;
       return retval;
     }
 

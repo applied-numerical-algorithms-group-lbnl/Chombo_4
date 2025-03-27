@@ -1380,6 +1380,21 @@ namespace EBCM
         for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
         {
           const auto& volu = subvol_vec[ivec];
+//begin debug
+      //begin debug
+      double deb_loc_x = 0.5, deb_eps = 0.05;
+      int deb_stop = 0;
+      int    i_loc = volu.m_pt[0];
+      double x_loc = volu.m_dx*(double(i_loc) + 0.5);
+      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
+      {
+        deb_stop = 1;
+      }
+      //end debug
+
+//end debug
+
+          
           double phi_val   = a_exac_ptr->getCellAveSolution( volu);
           double lap_val   = a_exac_ptr->getCellAveLaplacian(volu);
           double lph_val   = a_alpha*phi_val + a_beta*lap_val;
@@ -1477,7 +1492,10 @@ namespace EBCM
       else if(a_exact_flag==3)
       {
         ParmParse pp("sine_exact");
-        pout() << "Exact solution = Sine." << endl;
+        if(!printed_once)
+        {
+          pout() << "Exact solution = One dimensional sine." << endl;
+        }
         int    frequency;
         int    direction;
         double amplitude;
@@ -1486,9 +1504,9 @@ namespace EBCM
         pp.get("amplitude",amplitude);
 
         EBCM_Exact::OneDimSineEF<ebcm_order>* ebcm_poly_ptr =
-          new EBCM_Exact::OneDimSineEF<ebcm_order>(frequency,
-                                                   direction,
-                                                   amplitude);
+          new EBCM_Exact::OneDimSineEF<ebcm_order>(direction,
+                                                   amplitude,
+                                                   frequency);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -1765,6 +1783,8 @@ namespace EBCM
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
+      writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
 
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
@@ -1784,16 +1804,23 @@ namespace EBCM
       ///using stuff I think I actually understand
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, a_file_prefix);
 #endif
-      writeWindow(a_file_prefix, string("phi_exac_1"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
+//      writeWindow(a_file_prefix, string("phi_exac_1"), phi_exac_ptr);
+//      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
+//      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
       err_calc_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
-      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
+
+      pr_pt pt_loc;
+      double max_val;
+      int i_co;
+      err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
+      a_max_error = max_val;
+
+//      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
+//      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
+//      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
 
       writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, err_calc_ptr);
       
