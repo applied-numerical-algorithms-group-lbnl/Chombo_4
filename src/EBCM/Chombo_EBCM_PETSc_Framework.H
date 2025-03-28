@@ -1783,8 +1783,8 @@ namespace EBCM
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
-      writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
+      //writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
+      //writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
 
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
@@ -1873,33 +1873,33 @@ namespace EBCM
         double max_err_fine = -4586;
         if(itest == DIM)
         {
-          which_test = string("full oper L phi = (alpha I + beta Lap)phi");
+          which_test = string("L_phi");
           max_err_coar = max_lphi_err_coar;
           max_err_fine = max_lphi_err_fine;
         }
         else
         {
-          which_test = string("flux = Grad_phi [")  + to_string(itest) + string("]");
+          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
           max_err_coar = max_flux_err_coar[itest];
           max_err_fine = max_flux_err_fine[itest];
         }
-        Chombo4::pout() << "hoeb_truncation: testing convergence of " << which_test   << endl;
-        Chombo4::pout() << "hoeb_truncation: Lmax(coarse error)  =  " << max_err_coar << endl;
-        Chombo4::pout() << "hoeb_truncation: Lmax(fine   error)  =  " << max_err_fine << endl;
+
+        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
+        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
         if(max_err_fine > 1.0e-12) //err >= 0  by construction
         {
           double order = (log(max_err_coar/max_err_fine))/log(2.0);
-          Chombo4::pout() << "hoeb_truncation: order of accuracy = " <<  order  << endl;
+          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
         }
         else
         {
-          Chombo4::pout() << "hoeb_truncation: Fine error is too small for safe order computation." << endl;
+          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
         }
 
       } //end loop over tests
     } //  end function run_truncation_error_tests
   }; //   end petsc_framwork class
-} //       end namespace EBCM
+} //      end namespace EBCM
 
 #endif //petsc
 #endif  //include guard

@@ -1,35 +1,55 @@
-# Chombo4/DomainDecomposition/EBCellMerge/hoeb_geometry_test inputs:
-# nx                : domain is sized nx^D
-# maxGrid           : maximum box size in domain decomposition
-# mergeSmallCells   : true turns on cell merging (disallowing small cells)
-# polynomial_order  : Order of moments (P)
-# 		    
-# weight_power      : exponent of distance in weight function 
-#                     weight_power >= 0
-#                     W = 1/D^5 (if weightpower = 5)
-# stencil_radius    : number of points to grow a cell to get a neighborhood
-#                     This one may be automatically grown by one in places.
-# which_geom        : Magic string that tells code which implicit function to use.
-#                     For now, this may be only "all_regular", "plane", or "sphere".
-# graph_filename    : File in which to put an HDF5 plot of the graph map  coordinates.
-#                     Useful for handy pictures of merged/unmerged configurations
-# inv_cond_filename : File in  which to put hdf5 plot of the inverse of the condition number
-#                     of the weighted moment matrix.  This is the important data of this
-#                     particular test.
-#  The prefix usually names the function which is using ParmParse unless I expect
-#  to use the parameter elsewhere, in which case it gets something general, like "stencil".
-
-makeMergedGeometry.nx                = 32
-makeMergedGeometry.maxGrid           = 32
-makeMergedGeometry.mergeSmallCells   = true
-stencil.radius                       = 3
-
-makeMergedGeometry.graph_filename    = "all_regular_graph.hdf5"
-getImplicitFunction.which_geom       = "all_regular"
-main.inv_cond_filename               = "all_regular_inv_cond.hdf5"
-
-
+# Chombo4/example/EBCM/hoeb_truncation/_inputs/sphere.inputs
+#hoeb_truncation.cpp
 main.polynomial_order  = TAYLOR_MAX
-stencil.weight_power   = WGT_POWER
+main.weight_power      = WGT_POWER
 main.dom_bc            = "DOMAIN_FACE_BC"
 main.eb_bc             = "CUT_FACE_BC"
+#0 is 0
+# 1 is polynomial you spell out the coeffs, powers
+# 2 is the full polynomial where all cps are 1.
+#identity coefficient
+main.alpha =  0.0
+#laplacian coefficient
+main.beta =   1.0
+#boundary conditions ("dirichlet" or "neumann" for now.  Case matters.)
+
+main.sten_rad     = 3
+# whether to dump files or not (0 = false, anything else true)
+main.output_hdf5  = 1
+#Chombo_EBCM_PETSc_Framework.H
+parseFineGridParams.nx                = 32
+parseFineGridParams.maxGrid           = 32
+parseFineGridParams.mergeSmallCells   = true
+
+# exact flag== 2 => cp = 1/p! for all p <= max_poly+1, = 0 o.w.
+#main.exact_flag        = 2
+#this stuff is if exact_flag == 1
+# exact flag== 1 => pick and choose polynomial 
+#main.exact_flag        =  1
+#Chombo_EBCM_PETSc_Framework.H
+polynomial_exact.num_terms = 5
+polynomial_exact.power_0 = 0 0 0
+polynomial_exact.coeff_0 = 1.0
+polynomial_exact.power_1 = 1 0 0
+polynomial_exact.coeff_1 = -1.0
+polynomial_exact.power_2 = 2 0 0
+polynomial_exact.coeff_2 = 1.0
+polynomial_exact.power_3 = 3 0 0
+polynomial_exact.coeff_3 = -1.0
+polynomial_exact.power_4 = 4 0 0
+polynomial_exact.coeff_4 = 1.0
+# exact flag== 3 => Sine function
+main.exact_flag        =  3
+sine_exact.direction   = 0
+sine_exact.frequency   = 1
+sine_exact.amplitude   = 1.
+#Chombo_EBCM_Algorithm_Framework.H
+getImplicitFunction.center           = 0.5 0.5 0.5
+getImplicitFunction.radius           = 0.45
+getImplicitFunction.inside           = true
+#getImplicitFunction.which_geom       = "sphere"
+getImplicitFunction.which_geom       = "all_regular"
+
+
+
+
