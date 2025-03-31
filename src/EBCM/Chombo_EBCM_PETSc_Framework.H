@@ -258,7 +258,7 @@ namespace EBCM
           const auto& graph           =           graphs[dit[ibox]];
           const auto& phi_fab         =     (*a_phi_ptr)[dit[ibox]];
           auto      & lph_fab         =     (*a_lph_ptr)[dit[ibox]];
-          auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
+          //auto      & inhomog_bit_fab = (*m_inhomog_bit)[dit[ibox]];
           bool killing_me_smalls = false;
           //begin debug
           //killing_me_smalls = true;
@@ -430,11 +430,11 @@ namespace EBCM
         }
         //decide which location maps to the first one of this proc
         int startgid = 0;
-        for(int iproc = 0; iproc <  procID(); iproc++)
+        for(int iproc = 0; iproc <  CH4_SPMD::procID(); iproc++)
         {
           startgid += numPtsAllProcs[iproc];
         }
-        Chombo4::pout()  << "Base_Petsc_Op::getMap: procID = " << procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
+        Chombo4::pout()  << "Base_Petsc_Op::getMap: procID = " << CH4_SPMD::procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
         int startgid = 0;
         PetscInt totalNumPts = numPtsThisProc;
@@ -483,7 +483,7 @@ namespace EBCM
       {
         CH_TIME("Base_Petsc_Op::createOperatorPetscMatrix");
         // create matrix
-        PetscInt nnzrow = 0;
+//        PetscInt nnzrow = 0;
 #ifdef CH_MPI
         MPI_Comm wcomm = Chombo_MPI::comm;
 #else
@@ -525,7 +525,7 @@ namespace EBCM
         auto dit = grids.dataIterator();
 
         //get all the info on points on this proc.
-        int numPtsThisProc = 0;
+        //int numPtsThisProc = 0;
         vector<int> numPtsPerBox(dit.size(), 0);
         for(int ibox =0; ibox < dit.size(); ibox++)
         {
@@ -544,7 +544,7 @@ namespace EBCM
               m_oper_ptr->getLocalStencil(volu, graph);
             double inhombit = local->m_inhomogeneous_bit;
             inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
-            int local_size = local->size();
+            //int local_size = local->size();
             const auto    & maplev = *(m_row_map_ptr->m_data);
             const auto    & mapfab = maplev[dit[ibox]];
             PetscInt irow = mapfab(volu.m_pt, 0);
@@ -622,7 +622,7 @@ namespace EBCM
       unsigned int Pcols = pr_mom_dim::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
 
-      Real area = a_face.m_facmom[pr_itm_i_dmo::Zero];
+      //Real area = a_face.m_facmom[pr_itm_i_dmo::Zero];
       for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
       {
         auto p_mom = momit();
@@ -896,69 +896,69 @@ namespace EBCM
 
         retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
 
-        ///begin debug
-        /**
-           This is too expensive to do for every face.  
-           When I get the point where only a particular face is bad, I can change 
-           this conditional to do something more interesting.
-           Right now, I just grab the first one.
-        **/
-        static bool s_been_here_done_that = false;
-        if(a_killing_me_smalls && (!(s_been_here_done_that)))
-        {
-          int num_volumes = locality->m_volumes->size();
-          int num_powers  = pr_mom_dim::size();
-          s_been_here_done_that = true;
-          /**
-             Create a matrix with the solution in it so I can 
-             understand what which line of my 
-             obviously flawless code 
-             is betraying me.
-          **/
-          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-          eigen_mat Smat = SmatFFS;
-          eigen_mat sten_phi;
-          multiply(sten_phi, Smat, *Phi_p);
-
-          eigen_mat FmatFFS;
-          multiply( FmatFFS, SmatFFS, *Phi_p);
-          pout() << "FFS variables: SmatFFS = " << endl;
-          SmatFFS.poutAll();
-          pout() << "FFS variables: FmatFFS = " << endl;
-          FmatFFS.poutAll();
-
-          eigen_mat Fmat;
-          multiply( Fmat, Smat, *Phi_p);
-          eigen_mat WPhi;
-          multiply( WPhi, *Wmat_p, *Phi_p);
-          eigen_mat WMTWPhi;
-          multiply( WMTWPhi, *WMTmat_p, WPhi);
-          eigen_mat taylor_coef;  
-          multiply( taylor_coef, Ainvmat, WMTWPhi);
-
-          ///
-          eigen_mat MC; //should give back phi
-          multiply( MC , * Mmat_p, taylor_coef);
-
-          eigen_mat QC; //should give the flux
-          multiply(QC, *Qmat_p, taylor_coef);
-
-          Chombo4::pout() << "Smat PhiExact should be a scalar = int F dA:  "<< endl;
-          sten_phi.poutAll();
-          
-          Chombo4::pout() << "Flux matrix (should be a scalar = int F dA):  "<< endl;
-          Fmat.poutAll();
-          Chombo4::pout() << "Taylor coefficients: "<< endl;
-          taylor_coef.poutAll();
-
-          Chombo4::pout() << "MC (should give back Phi): "<< endl;
-          MC.poutAll();
-
-          Chombo4::pout() << "QC (should give back  int F dA):" << endl;
-          QC.poutAll();
-
-        }
-        /// end  debug
+//        ///begin debug
+//        /**
+//           This is too expensive to do for every face.  
+//           When I get the point where only a particular face is bad, I can change 
+//           this conditional to do something more interesting.
+//           Right now, I just grab the first one.
+//        **/
+//        static bool s_been_here_done_that = false;
+//        if(a_killing_me_smalls && (!(s_been_here_done_that)))
+//        {
+//          int num_volumes = locality->m_volumes->size();
+//          int num_powers  = pr_mom_dim::size();
+//          s_been_here_done_that = true;
+//          /**
+//             Create a matrix with the solution in it so I can 
+//             understand what which line of my 
+//             obviously flawless code 
+//             is betraying me.
+//          **/
+//          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+//          eigen_mat Smat = SmatFFS;
+//          eigen_mat sten_phi;
+//          multiply(sten_phi, Smat, *Phi_p);
+//
+//          eigen_mat FmatFFS;
+//          multiply( FmatFFS, SmatFFS, *Phi_p);
+//          pout() << "FFS variables: SmatFFS = " << endl;
+//          SmatFFS.poutAll();
+//          pout() << "FFS variables: FmatFFS = " << endl;
+//          FmatFFS.poutAll();
+//
+//          eigen_mat Fmat;
+//          multiply( Fmat, Smat, *Phi_p);
+//          eigen_mat WPhi;
+//          multiply( WPhi, *Wmat_p, *Phi_p);
+//          eigen_mat WMTWPhi;
+//          multiply( WMTWPhi, *WMTmat_p, WPhi);
+//          eigen_mat taylor_coef;  
+//          multiply( taylor_coef, Ainvmat, WMTWPhi);
+//
+//          ///
+//          eigen_mat MC; //should give back phi
+//          multiply( MC , * Mmat_p, taylor_coef);
+//
+//          eigen_mat QC; //should give the flux
+//          multiply(QC, *Qmat_p, taylor_coef);
+//
+//          Chombo4::pout() << "Smat PhiExact should be a scalar = int F dA:  "<< endl;
+//          sten_phi.poutAll();
+//          
+//          Chombo4::pout() << "Flux matrix (should be a scalar = int F dA):  "<< endl;
+//          Fmat.poutAll();
+//          Chombo4::pout() << "Taylor coefficients: "<< endl;
+//          taylor_coef.poutAll();
+//
+//          Chombo4::pout() << "MC (should give back Phi): "<< endl;
+//          MC.poutAll();
+//
+//          Chombo4::pout() << "QC (should give back  int F dA):" << endl;
+//          QC.poutAll();
+//
+//        }
+//        /// end  debug
         
       }
       return retval;
@@ -1376,22 +1376,19 @@ namespace EBCM
 
         /// this gets all volumes in valid
         ebcm_subvol_vec subvol_vec(graph, valid, false);
-        int ivar = 0; //scalar
+        //int ivar = 0; //scalar
         for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
         {
           const auto& volu = subvol_vec[ivec];
 //begin debug
-      //begin debug
-      double deb_loc_x = 0.5, deb_eps = 0.05;
-      int deb_stop = 0;
-      int    i_loc = volu.m_pt[0];
-      double x_loc = volu.m_dx*(double(i_loc) + 0.5);
-      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
-      {
-        deb_stop = 1;
-      }
-      //end debug
-
+//      double deb_loc_x = 0.5, deb_eps = 0.05;
+//      int deb_stop = 0;
+//      int    i_loc = volu.m_pt[0];
+//      double x_loc = volu.m_dx*(double(i_loc) + 0.5);
+//      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
+//      {
+//        deb_stop = 1;
+//      }
 //end debug
 
           
@@ -1623,7 +1620,7 @@ namespace EBCM
       const auto& graphs = *(a_meta->m_graphs);
       const auto& grids  =  (a_meta->m_grids);
       auto dit = grids.dataIterator();
-      bool killing_me_smalls = false;
+
       for(int ibox =0; ibox < dit.size(); ibox++)
       {
         const auto& valid  =             grids[dit[ibox]];
@@ -1632,7 +1629,6 @@ namespace EBCM
 
         /// this gets all volumes in valid
         ebcm_subvol_vec subvol_vec(graph, valid, false);
-        int ivar = 0; //scalar
 
         for(int idir = 0; idir < DIM; idir++)
         {
@@ -1844,7 +1840,6 @@ namespace EBCM
     static  void run_hoeb_truncation_tests()
     {
 
-      static const int num_ghost = 4;  
       int           nx_fine = 4586;
       double        dx_fine = 4586.;
       ch_probdom domain_fine;

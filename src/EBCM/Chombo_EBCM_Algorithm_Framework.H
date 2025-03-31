@@ -1060,7 +1060,7 @@ namespace EBCM
       if(a_dom_bc == string("neumann"))
       {
         const auto& allfac = (*a_locality->m_dom_faces);
-        const auto& allvol = (*a_locality->m_volumes);
+        //const auto& allvol = (*a_locality->m_volumes);
         for(int irow = 0; irow < nrows_dom_faces; irow++)
         {
           const auto& curfac = allfac[irow]; //indexing info for domain boundary face
@@ -1081,7 +1081,7 @@ namespace EBCM
       else if(a_dom_bc == string("dirichlet"))
       {
         const auto& allfac = (*a_locality->m_dom_faces);
-        const auto& allvol = (*a_locality->m_volumes);
+        //const auto& allvol = (*a_locality->m_volumes);
         for(int irow = 0; irow < nrows_dom_faces; irow++)
         {
           const auto& curfac = allfac[irow]; //indexing info for domain boundary face

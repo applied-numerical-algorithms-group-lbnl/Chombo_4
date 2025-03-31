@@ -35,7 +35,7 @@ int main(int a_argc, char* a_argv[])
   ///petsc is assumed true from here
   Chombo4::pout() << "About to call PetscInitialize" << std::endl;
   //this calls MPI_Init if necssary
-  PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULL); CHKERRQ(ierr);
+  PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULLPTR); CHKERRQ(ierr);
 
   using Chombo4::pout;
   CH_TIMER_SETFILE("hoeb_truncation_time_table");

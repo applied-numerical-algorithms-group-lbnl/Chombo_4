@@ -475,13 +475,13 @@ namespace EBCM_Exact
 
       //Past this point, we can assume by construction that the exponent is bigger than the derivative
       // (exp >= deriv),  in all directions.   We can also assume that both >= 0.
-      int px = expon[0];
-      int py = expon[1];
-      using std::pow;
+      //int px = expon[0];
+      //int py = expon[1];
+      //using std::pow;
 #if DIM==3
-      int pz = expon[2];
+      //int pz = expon[2];
 #endif
-      int sum = a_deriv.sum();
+      //int sum = a_deriv.sum();
       //all the return vals are constants multiplied by this stuff
       Real ppowbit = 1;
       for(int idir = 0; idir < DIM; idir++)

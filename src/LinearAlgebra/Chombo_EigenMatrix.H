@@ -183,8 +183,7 @@ namespace ch_eigen
       
       Eigen::JacobiSVD<Eigen::MatrixXd> svd(*m_mat_p);
       int neig = svd.singularValues().size();
-      int ifirs = 0;
-      int ilast =  neig - 1;
+
       Chombo4::pout() << neig << " matrix eigenvalues: " << endl;
       for(int ivec = 0; ivec < neig; ivec++)
       {

@@ -363,7 +363,7 @@ namespace EBCM
     {
       size_t charsiz = 0;
       char*  charbuf = (char*) a_inbuf;
-      size_t ptsize = m_pt.charsize();
+      //size_t ptsize = m_pt.charsize();
 
       m_pt.linearIn(charbuf);
       charbuf += m_pt.charsize();

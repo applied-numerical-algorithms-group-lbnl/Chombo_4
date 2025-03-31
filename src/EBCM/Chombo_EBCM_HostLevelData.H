@@ -105,7 +105,7 @@ namespace EBCM
                    const HostLevelData<data_t, ncomp, order>& a_y)
     {
       ch_dit dit =     m_meta->m_grids.dataIterator();
-      const auto& mpibit = (*m_data);
+      //const auto& mpibit = (*m_data);
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         const auto&  x_data         = a_x[dit[ibox]];
@@ -172,7 +172,7 @@ namespace EBCM
       double max_val = -4586;
       a_loc =  4586*pr_pt::Ones();
       ch_dit dit =     m_meta->m_grids.dataIterator();
-      const auto& mpibit = (*m_data);
+      //const auto& mpibit = (*m_data);
       for(int ibox = 0; ibox < dit.size(); ibox++)
       {
         const auto& data  = (*this)[dit[ibox]];
@@ -201,7 +201,7 @@ namespace EBCM
                   const int                    & a_ghost)
     {
       m_meta = a_meta;
-      const auto& graphs = (m_meta->m_graphs);
+      //const auto& graphs = (m_meta->m_graphs);
       const auto& grids  = (m_meta->m_grids);
       m_data = shared_ptr<mpi_frame_t>(new mpi_frame_t(grids, a_ghost*ch_iv::Unit, null_factory_t()));
       auto dit = grids.dataIterator();
