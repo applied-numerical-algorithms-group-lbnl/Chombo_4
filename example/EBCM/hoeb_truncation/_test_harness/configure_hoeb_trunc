@@ -11,13 +11,15 @@ print("Today's date:", today)
 
 parser = ArgumentParser()
 
-parser.add_argument('--max_taylor_order', type=int, help='highest [4]'  ,default='4')
-parser.add_argument('--max_weight_power', type=int, help='weight power [5]'   ,default='5')
-parser.add_argument('--batch', type=str, help='batch file template'   ,default="_batch_templates/serial.batch")
-parser.add_argument('--domain_bc', type=str, help='domain boundary condition',default="dirichlet")
-parser.add_argument('--eb_bc', type=str, help='cut face   boundary condition',default="dirichlet")
-parser.add_argument('--prefix', type=str, help='name of test["test"]',default=                  "all_regular_debug_2d")
-parser.add_argument('--input', type=str, help='input file template'   ,default="_input_templates/all_regular.inputs")
+parser.add_argument('--num_proc'        , type=int, help='N_p       ',default='4')
+parser.add_argument('--max_taylor_order', type=int, help='P_max     ',default='4')
+parser.add_argument('--max_weight_power', type=int, help='W_max     ',default='5')
+parser.add_argument('--domain_bc'       , type=str, help='dom BC    ',default="dirichlet")
+parser.add_argument('--eb_bc'           , type=str, help='EB BC     ',default="dirichlet")
+parser.add_argument('--prefix'          , type=str, help='test name ',default= "all_regular_2d")
+parser.add_argument('--input'           , type=str, help='input file',default="_input_templates/all_regular.inputs")
+parser.add_argument('--batch'           , type=str, help='batch file',default="_batch_templates/spencer.batch")
+parser.add_argument('--petsc'           , type=str, help='petsc file',default="_batch_templates/dot.petscrc")
 
 args = parser.parse_args()
 print(args)
@@ -68,16 +70,20 @@ r.write('#!/usr/bin/csh\n')
 
 max_taylor = args.max_taylor_order
 max_weight = args.max_weight_power
-taylor_P = 2
 
 submitstr = "submit."  + args.prefix + ".jobs"
 subfile = open(submitstr,'w')
 subfile.write('#!/usr/bin/csh \n \n')
 inputfilebase = os.path.basename(args.input)
 batchfilebase = os.path.basename(args.batch)
+petscfilebase = os.path.basename(args.petsc)
 execfilebase = exec_name_str
 inputtemplatename = homestr + "/" + args.input
 batchtemplatename = homestr + "/" + args.batch
+petsctemplatename = homestr + "/" + args.petsc
+
+num_proc = args.num_proc
+taylor_P = 2
 while taylor_P <= max_taylor:
     weight_P = 1
     while weight_P <= max_weight:
@@ -85,7 +91,7 @@ while taylor_P <= max_taylor:
         f_inputtemplate = open(inputtemplatename,'r')
         f_batchtemplate = open(batchtemplatename,'r')
         
-        configstr = "_T" + str(taylor_P) + "__W" + str(weight_P)
+        configstr = "_Taylor" + str(taylor_P) + "_Wgt_" + str(weight_P) + "_Np_" + str(num_proc)
         print (configstr);
 
         print ("changing directory to " + homestr)
@@ -96,7 +102,7 @@ while taylor_P <= max_taylor:
 
         dir_str = configstr
         
-        batchfilename = batchfilebase + str(weight_P) + str(taylor_P)
+        batchfilename = batchfilebase 
         commstr = "cd " + dir_str  + "; source " + batchfilename + "; cd .. "
         echostr = "echo \" " + commstr + " \" \n"
         subfile.write(echostr)
@@ -111,12 +117,12 @@ while taylor_P <= max_taylor:
         print ("changing directory to " + dir_str)
         os.chdir(dir_str)
         print ("copying petsc init file")
-        full_petsc = homestr + "/" + compile_dir + "/" + dot_petsc
-        commstr = " cp " + full_petsc + " . "
+        full_petsc = petsctemplatename
+        commstr = " cp " + full_petsc + " ./.petscrc "
         print (commstr)
         os.system(commstr)
 
-        inputfilename = inputfilebase + str(weight_P) + str(taylor_P)
+        inputfilename = inputfilebase 
         print ("processing input file " + inputfilename)
         f_inp = open(inputfilename,'w')
         
@@ -137,7 +143,8 @@ while taylor_P <= max_taylor:
             t2str = t1str.replace("INPUT_FILE", inputfilename)
             exec_name = "../"+ execfilebase
             t3str = t2str.replace("EXECUTABLE_FILE", exec_name)
-            f_bat.write(t3str)
+            t4str = t3str.replace("NUM_NODE", str(num_proc))
+            f_bat.write(t4str)
 
         f_bat.close()
         f_inputtemplate.close()
