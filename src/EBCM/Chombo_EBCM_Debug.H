@@ -22,16 +22,16 @@ namespace EBCM_Debug
     typedef  EBCM::HostLevelData<data_t, ncomp, order>             ebcm_level_data;
     typedef  EBCM::EBCM_Graph<order>                               ebcm_graph;
     typedef  Chombo4::DisjointBoxLayout                            ch_dbl;
-    
     static void writeWindowLevel(const ebcm_level_data* a_data_ptr, pr_pt a_lo, pr_pt a_hi, string a_prefix)
     {
       using std::cout;
       using std::endl;
-      cout << "writeWindow: prefix = " << a_prefix << endl;
+      using Chombo4::pout;
+      pout() << "writeWindow: prefix = " << a_prefix << endl;
       if(a_data_ptr != NULL)
       {
-        cout << "writeWindowLevel:  window from " << a_lo << " to " << a_hi << endl;
-        cout    << setprecision(8)
+        pout() << "writeWindowLevel:  window from " << a_lo << " to " << a_hi << endl;
+        pout()    << setprecision(8)
                 << setiosflags(ios::showpoint)
                 << setiosflags(ios::scientific);
         pr_box window(a_lo, a_hi);
@@ -49,7 +49,7 @@ namespace EBCM_Debug
             pr_pt lo = intersect.low();
             pr_pt hi = intersect.high();
             
-            cout << "writeWindowLevel:  intersection for ibox  "<< ibox  << " goes from " << a_lo << " to " << a_hi << endl;
+            pout() << "writeWindowLevel:  intersection for ibox  "<< ibox  << " goes from " << a_lo << " to " << a_hi << endl;
             writeWindowBox(&data, intersect, graph);
           } //end (has intersection on this box)
         } //end loop over boxes
@@ -62,6 +62,7 @@ namespace EBCM_Debug
     {
       using std::cout;
       using std::endl;
+      using Chombo4::pout;
       if(a_data_ptr != NULL)
       {
         pr_box intersect = a_data_ptr->box();
@@ -69,7 +70,7 @@ namespace EBCM_Debug
         const auto&  data =   (*a_data_ptr);
         for(int icomp = 0; icomp < ncomp; icomp++)
         {
-          cout<< "writeWindowBox: intersection = " << intersect << ", comp = " << icomp << endl;
+          pout()<< "writeWindowBox: intersection = " << intersect << ", comp = " << icomp << endl;
           pr_pt lo = intersect.low();
           pr_pt hi = intersect.high();
               
@@ -79,47 +80,47 @@ namespace EBCM_Debug
 #endif
             for(int y_co = hi[1]; y_co >= lo[1]; y_co--)
             {
-              for(int x_co = hi[0]; x_co >= lo[0]; x_co--)
+              for(int x_co = lo[0]; x_co <= hi[0]; x_co++)
               {
                 pr_pt cur_pt(D_DECL(x_co, y_co, z_co));
-                cout << "(";
+                pout() << "(";
                 for(int idir = 0; idir <DIM; idir++)
                 {
                   int ipt = cur_pt[idir];
                   //points should be positive and <= 100 for now
                   if(ipt < 10)
-                    cout << "  ";
+                    pout() << "  ";
                   else if (ipt < 100)
-                    cout << " ";
-                  cout << cur_pt[idir];
+                    pout() << " ";
+                  pout() << cur_pt[idir];
                   if(idir == (DIM-1))
-                    cout << "):";
+                    pout() << "):";
                   else
-                    cout << ",";
+                    pout() << ",";
                 }
                 if(a_graph.isCovered(cur_pt))
                 {
-                  cout  <<   "---------------" << "  ";
+                  pout()  <<   "---------------" << "  ";
                 }
                 else 
                 {
                   const double& data_val = data(cur_pt, icomp);
                   if(std::isnan(data_val))
                   {
-                    cout  << "=-=-=NaN=-=-=-=" << "  ";
+                    pout()  << "=-=-=NaN=-=-=-=" << "  ";
                   }
                   else
                   {
                     if(data_val >= 0)
                     {
                       //keeps positive and negative lined up 
-                      cout << " ";
+                      pout() << " ";
                     } 
-                    cout  << data_val << "  ";
+                    pout()  << data_val << "  ";
                   }
                 } //end if data is not covered
               } //end loop over x
-              cout  << endl;
+              pout()  << endl;
             } //end loop over y
 #if DIM==3
           } //end loop over z

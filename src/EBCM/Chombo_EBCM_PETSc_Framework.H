@@ -1656,43 +1656,40 @@ namespace EBCM
                pr_pt& a_lo_fine,
                pr_pt& a_hi_fine)
     {
+      static bool printed = false;
 // lower left
-//      pout() << "displaying LOWER LEFT" << endl;
+//      if(!printed)
+//      {
+//        pout() << "displaying LOWER LEFT" << endl;
+//        printed = true;
+//      }      
 //      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
 //      pr_pt  hi_coar(D_DECL(3,   3, 0));
 //      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
 //      pr_pt  hi_fine(D_DECL(3,   3, 0));
-// 32x32            
-// middle 
-//      pout() << "displaying MIDDLE MIDDLE" << endl;
-//      pr_pt  lo_coar(D_DECL(6 ,  6, 0));
-//      pr_pt  hi_coar(D_DECL(9 ,  9, 0));
-//      pr_pt  lo_fine(D_DECL(14, 14, 0));
-//      pr_pt  hi_fine(D_DECL(17, 17, 0));
-// upper right
-//      pout() << "displaying UPPER RIGHT" << endl;
-//      pr_pt  lo_coar(D_DECL(12, 12, 0));
-//      pr_pt  hi_coar(D_DECL(15, 15, 0));
-//      pr_pt  lo_fine(D_DECL(28, 28, 0));
-//      pr_pt  hi_fine(D_DECL(31, 31, 0));
-      
-//      pout() << "displaying BOTTOM MIDDLE" << endl;
-//      pr_pt  lo_coar(D_DECL( 6, 0, 0));
-//      pr_pt  hi_coar(D_DECL( 9, 3, 0));
-//      pr_pt  lo_fine(D_DECL(14, 0, 0));
-//      pr_pt  hi_fine(D_DECL(17, 3, 0));
 
-      static bool printed = false;
+//  upper middle      
+//      if(!printed)
+//      {
+//        pout() << "displaying TOP MIDDLE" << endl;
+//        printed = true;
+//      }
+//      pr_pt  lo_coar(D_DECL( 6, 12, 0));
+//      pr_pt  hi_coar(D_DECL( 9, 15, 0));
+//      pr_pt  lo_fine(D_DECL(14, 28, 0));
+//      pr_pt  hi_fine(D_DECL(17, 31, 0));
+
+//  upper left
       if(!printed)
       {
-        pout() << "displaying TOP MIDDLE" << endl;
+        pout() << "displaying TOP LEFT" << endl;
         printed = true;
       }
-      pr_pt  lo_coar(D_DECL( 6, 12, 0));
-      pr_pt  hi_coar(D_DECL( 9, 15, 0));
-      pr_pt  lo_fine(D_DECL(14, 28, 0));
-      pr_pt  hi_fine(D_DECL(17, 31, 0));
-
+      pr_pt  lo_coar(D_DECL( 0, 12, 0));
+      pr_pt  hi_coar(D_DECL( 3, 15, 0));
+      pr_pt  lo_fine(D_DECL( 0, 28, 0));
+      pr_pt  hi_fine(D_DECL( 3, 31, 0));
+      
       
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
@@ -1779,8 +1776,8 @@ namespace EBCM
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
-      //writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
-      //writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
 
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
@@ -1800,9 +1797,9 @@ namespace EBCM
       ///using stuff I think I actually understand
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, a_file_prefix);
 #endif
-//      writeWindow(a_file_prefix, string("phi_exac_1"), phi_exac_ptr);
-//      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
-//      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("phi_exac_1"), phi_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
@@ -1814,9 +1811,9 @@ namespace EBCM
       err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
       a_max_error = max_val;
 
-//      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
-//      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
-//      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
 
       writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, err_calc_ptr);
       
