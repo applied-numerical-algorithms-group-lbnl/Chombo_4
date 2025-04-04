@@ -919,7 +919,7 @@ namespace EBCM
   double faceSign(bool                         & a_on_vol_exterior,
                   const EBCM_Volu<      order> & a_volume,
                   const EBCM_Face<cent, order> & a_face,
-                  int a_face_dir, bool a_killing_me_smalls)
+                  int a_face_dir, bool a_killing_me_smalls) 
   {
     double face_sign = -4586.;
     bool  lo_inside        = false;

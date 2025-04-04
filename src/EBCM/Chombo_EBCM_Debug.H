@@ -2,6 +2,7 @@
 #define __EBCM_DBGFunctionss__
 
 #include "Chombo_EBCM_HostLevelData.H"
+#include "Chombo_EBCM_FluxLevelData.H"
 ///debugging use only.   
 
 
@@ -20,8 +21,10 @@ namespace EBCM_Debug
     typedef  Proto::Box                                            pr_box;
     typedef  Proto::HostBoxData< data_t, ncomp>                    pr_fab;
     typedef  EBCM::HostLevelData<data_t, ncomp, order>             ebcm_level_data;
+    typedef  EBCM::FluxLevelData<data_t, ncomp, order>             ebcm_level_flux;
     typedef  EBCM::EBCM_Graph<order>                               ebcm_graph;
     typedef  Chombo4::DisjointBoxLayout                            ch_dbl;
+    typedef  Chombo4::Box                                          ch_box;
     static void writeWindowLevel(const ebcm_level_data* a_data_ptr, pr_pt a_lo, pr_pt a_hi, string a_prefix)
     {
       using std::cout;
@@ -50,6 +53,48 @@ namespace EBCM_Debug
             pr_pt hi = intersect.high();
             
             pout() << "writeWindowLevel:  intersection for ibox  "<< ibox  << " goes from " << a_lo << " to " << a_hi << endl;
+            writeWindowBox(&data, intersect, graph);
+          } //end (has intersection on this box)
+        } //end loop over boxes
+      } //end if data_ptr real
+    } //end funtion writeWindowLevel
+
+    static void writeFluxWindowLevel(const ebcm_level_flux* a_data_ptr, pr_pt a_lo, pr_pt a_hi, int a_idir, string a_prefix)
+    {
+      using std::cout;
+      using std::endl;
+      using Chombo4::pout;
+      
+      pout() << "writeWindow: prefix = " << a_prefix << endl;
+      if(a_data_ptr != NULL)
+      {
+        pout() << "writeWindowLevel:  window from " << a_lo << " to " << a_hi << endl;
+        pout()    << setprecision(8)
+                << setiosflags(ios::showpoint)
+                << setiosflags(ios::scientific);
+        pr_box window(a_lo, a_hi);
+        pr_box window_face = window;
+        window_face.m_high[a_idir] += 1;
+        window_face.grow(a_idir, 1);
+        const auto& graphs   = *(a_data_ptr->m_meta->m_graphs);
+        const auto& grids    =  (a_data_ptr->m_meta->m_grids);
+        const auto& flux_lev =  (a_data_ptr->m_data)[a_idir];
+        auto dit = grids.dataIterator();
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const ch_box& valid = grids[dit[ibox]];
+          pr_box valid_face = getProtoBox(valid);
+          valid_face.m_high[a_idir] += 1;
+
+          pr_box intersect = window_face & valid_face;
+          if(!intersect.empty())
+          {
+            const auto& graph =        graphs[dit[ibox]];
+            const auto&  data =    (*flux_lev)[dit[ibox]];
+            pr_pt lo = intersect.low();
+            pr_pt hi = intersect.high();
+            
+            pout() << "writeWindowLevel: FLUX_DIR = "<< a_idir<< "\n intersection for ibox  "<< ibox  << " goes from " << a_lo << " to " << a_hi << endl;
             writeWindowBox(&data, intersect, graph);
           } //end (has intersection on this box)
         } //end loop over boxes

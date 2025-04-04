@@ -18,6 +18,8 @@
 #include "Chombo_EBLevelBoxData.H"
 #include "Chombo_EBCM_ExactSolutions.H"
 #include "Chombo_EBCM_Debug.H"
+#include "Chombo_EBCM_HostLevelData.H"
+#include "Chombo_EBCM_FluxLevelData.H"
 
 /// 
 /**
@@ -62,6 +64,11 @@ namespace EBCM
     typedef  EBCM::HostLevelData<double, 1,   ebcm_order >  ebcm_dou_sca_data;
     typedef  EBCM::HostLevelData<int,    DIM, ebcm_order >  ebcm_int_vec_data;
     typedef  EBCM::HostLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_data;
+    typedef  EBCM::FluxLevelData<int,    1,   ebcm_order >  ebcm_int_sca_flux;
+    typedef  EBCM::FluxLevelData<double, 1,   ebcm_order >  ebcm_dou_sca_flux;
+    typedef  EBCM::FluxLevelData<int,    DIM, ebcm_order >  ebcm_int_vec_flux;
+    typedef  EBCM::FluxLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_flux;
+
     typedef  EBCM::SubVolumeVector<           ebcm_order >  ebcm_subvol_vec;
     typedef  EBCM::EBCM_Volu<                 ebcm_order >  ebcm_volu;
 
@@ -244,14 +251,15 @@ namespace EBCM
       ///
       void applyOpPrimitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
                              shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                             shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
                              string                        a_identifier)
       {
         CH_TIME("Base_Petsc_Op::formMatrix");
-        
+
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
         auto dit = grids.dataIterator();
-
+        
         for(int ibox =0; ibox < dit.size(); ibox++)
         {
           const auto& valid           =            grids[dit[ibox]];
@@ -267,18 +275,40 @@ namespace EBCM
           for(int ivol = 0; ivol < volvec.size(); ivol++)
           {
             const auto& volu = volvec[ivol];
-            shared_ptr<local_stencil_t>  local =
-              m_oper_ptr->getLocalStencil(volu, graph);
-            double lph_val = local->m_inhomogeneous_bit;
-            for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
+            //full  operator
             {
-              pr_pt      sten_iv  = (local->m_entries)[ivec].first;
-              double     wght     = (local->m_entries)[ivec].second;
-              double     phi_val  = phi_fab(sten_iv, 0);
-              double     lph_incr = phi_val*wght;
-              lph_val += lph_incr;
-            } //end loop over stencil
-            lph_fab(volu.m_pt, 0) = lph_val;
+              shared_ptr<local_stencil_t>  local =
+                m_oper_ptr->getLocalStencil(volu, graph);
+              double lph_val = local->m_inhomogeneous_bit;
+              for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
+              {
+                pr_pt      sten_iv  = (local->m_entries)[ivec].first;
+                double     wght     = (local->m_entries)[ivec].second;
+                double     phi_val  = phi_fab(sten_iv, 0);
+                double     lph_incr = phi_val*wght;
+                lph_val += lph_incr;
+              } //end loop over stencil
+              lph_fab(volu.m_pt, 0) = lph_val;
+            }
+            //fluxes 
+            for(int idir = 0; idir < DIM; idir++)
+            {
+              auto      & flx_mpi        =     (*a_flx_ptr).m_data[idir];
+              auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
+              //gets stencil from first face in that direction
+              shared_ptr<local_stencil_t>  local =
+                m_oper_ptr->getFluxStencil(volu, graph, idir, Side::Hi);
+              double flux_val = local->m_inhomogeneous_bit;
+              for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
+              {
+                pr_pt      sten_iv  = (local->m_entries)[ivec].first;
+                double     wght     = (local->m_entries)[ivec].second;
+                double     phi_val  = phi_fab(sten_iv, 0);
+                double     flux_incr = phi_val*wght;
+                flux_val += flux_incr;
+              } //end loop over stencil
+              flx_fab(volu.m_pt, 0) = flux_val;
+            } //end loop over 
           } //end loop voer volvec
         } //end loop over boxes
       } //end function applyOpPrimitives
@@ -1156,6 +1186,72 @@ namespace EBCM
         return retval;
       }
 
+      ///in theory, just for debugging.  only grabs the last stencil on that side in the case of multiple faces.
+      shared_ptr<local_stencil_t>
+      getFluxStencil(const ebcm_volu  & a_volu,
+                     const ebcm_graph & a_graph,
+                     const int& a_idir,
+                     Side::LoHiSide a_side)
+      {
+        double  dx = a_volu.m_dx;
+        int isign  = sign(a_side);
+        
+        shared_ptr<local_stencil_t> retval(new local_stencil_t());
+        if(a_idir == 0)
+        {
+          for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
+          {
+            const auto& face = a_volu.m_xfaces[iface];
+            bool on_vol_exterior  = false;
+            double face_sign = EBCM::faceSign<XFACE, ebcm_order>(on_vol_exterior, a_volu, face, 0, false);
+            if(! on_vol_exterior)
+            {
+              ch_mayday::Error("volume not consistent in x");
+            }
+            if(face_sign*isign > 0)
+            {
+              *retval = getFluxStencil<XFACE>(face, a_graph, dx, NULL, false);
+            }
+          }
+        }
+        else if(a_idir == 1)
+        {
+          for(int iface = 0 ;iface < a_volu.m_yfaces.size(); iface++)
+          {
+            const auto& face = a_volu.m_yfaces[iface];
+            bool on_vol_exterior  = false;
+            double face_sign = EBCM::faceSign(on_vol_exterior, a_volu, face, 1, false);
+            if(! on_vol_exterior)
+            {
+              ch_mayday::Error("volume not consistent in y");
+            }
+            if(face_sign*isign > 0)
+            {
+              *retval = getFluxStencil<YFACE>(face, a_graph, dx, NULL, false);
+            }
+          }
+        }
+        else if (a_idir == 2)
+        {
+          for(int iface = 0 ; iface < a_volu.m_zfaces.size(); iface++)
+          {
+            const auto& face = a_volu.m_zfaces[iface];
+            bool on_vol_exterior  = false;
+            double face_sign = EBCM::faceSign(on_vol_exterior, a_volu, face, 2, false);
+            if(! on_vol_exterior)
+            {
+              ch_mayday::Error("volume not consistent in z");
+            }
+            if(face_sign*isign > 0)
+            {
+              *retval = getFluxStencil<ZFACE>(face, a_graph, dx, NULL, false);
+            }
+          }
+          MayDay::Warning("This diagnostic only written for x and y");
+        }
+        return retval;
+      }
+
       template <CENTERING cent>
       local_stencil_t
       getFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
@@ -1719,6 +1815,33 @@ namespace EBCM
         writeWindowLevel(&(*a_data), lo_disp, hi_disp, prefix);
 
     }
+
+    ///
+    static
+    void
+    writeWindow (string                         a_file_prefix,
+                 string                         a_data_label,
+                 shared_ptr<ebcm_dou_sca_flux>  a_data)
+    {
+
+      pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
+      getWindow(lo_coar, hi_coar, lo_fine, hi_fine);
+      pr_pt lo_disp = lo_fine;
+      pr_pt hi_disp = hi_fine;
+      if(a_file_prefix == string("coar"))
+      {
+        lo_disp = lo_coar;
+        hi_disp = hi_coar;
+      }
+
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        string prefix = a_file_prefix + string("_") + a_data_label;
+        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+          writeFluxWindowLevel(&(*a_data), lo_disp, hi_disp, idir, prefix);
+      }
+
+    }
     static
     void
     writeStuffToFile(string                        a_file_prefix,
@@ -1795,11 +1918,13 @@ namespace EBCM
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
       ///using stuff I think I actually understand
-      discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, a_file_prefix);
+      shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
+      discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
 #endif
       writeWindow(a_file_prefix, string("phi_exac_1"), phi_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
       writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("flx_calc_1"), flx_calc_ptr);
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
