@@ -233,10 +233,10 @@ namespace EBCM
         m_meta_ptr     =    a_meta_ptr;
         m_ghost        =    a_ghost;
     
-        Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
+        //Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
         createMatrixRowMap();
         
-        Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
+        //Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
 
         createOperatorPetscMatrix();
       }
@@ -248,13 +248,73 @@ namespace EBCM
         CH_TIME("PETSc_Framework::addInhomogeneousBit");
         (*a_lph_ptr) += (*m_inhomog_bit);
       }
+
+      
+      ///YADF
+      void writeDetails(shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                        string   a_identifier) const
+      {
+        bool killing_me_smalls = true; //this is a debugging routine
+        ch_iv lo_coar(D_DECL( 1, 14, 4586));
+        ch_iv hi_coar(D_DECL( 1, 15, 4586));
+        ch_iv lo_fine(D_DECL( 1, 30, 4586));
+        ch_iv hi_fine(D_DECL( 1, 31, 4586));
+        ch_iv lo_disp = lo_fine;
+        ch_iv hi_disp = hi_fine;
+        if(a_identifier == string("coar"))
+        {
+          lo_disp = lo_coar;
+          hi_disp = hi_coar;
+        }
+        ch_box disp_box(lo_disp, hi_disp);
+        int flux_dir = 0;
+        Side::LoHiSide flux_side = Side::Hi;
+        const auto& graphs = *(m_meta_ptr->m_graphs);
+        const auto& grids  =  (m_meta_ptr->m_grids);
+        auto dit = grids.dataIterator();
+        
+        for(int ibox =0; ibox < dit.size(); ibox++)
+        {
+          const auto& valid           =            grids[dit[ibox]];
+          ch_box intersection = valid & disp_box;
+          if(!intersection.isEmpty())
+          {
+            const auto& graph           =           graphs[dit[ibox]];
+            const auto& phi_fab         =     (*a_phi_ptr)[dit[ibox]];
+
+            ebcm_subvol_vec volvec(graph, intersection,  killing_me_smalls);
+            for(int ivol = 0; ivol < volvec.size(); ivol++)
+            {
+              const auto& volu = volvec[ivol];
+
+              //gets stencil from first face in that direction
+              shared_ptr<local_stencil_t>  local =
+                m_oper_ptr->getFluxStencil(volu, graph, flux_dir, flux_side, &phi_fab, killing_me_smalls);
+              double inhomog = local->m_inhomogeneous_bit;
+              double flux_val = inhomog;
+              for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
+              {
+                pr_pt      sten_iv  = (local->m_entries)[ivec].first;
+                double     wght     = (local->m_entries)[ivec].second;
+                double     phi_val  = phi_fab(sten_iv, 0);
+                double     flux_incr = phi_val*wght;
+                flux_val += flux_incr;
+              } //end loop over stencil
+              Chombo4::pout() << "writeDetails:" << volu.m_pt 
+                              << "inhomog = " << inhomog
+                              << ", flux  = " << flux_val
+                              << std::endl;
+            } //end loop over volumes
+          } //end if(intersection exists)
+        } //end loop over boxes
+      }//end function writeDetails
       ///
       void applyOpPrimitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
                              shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
                              shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
-                             string                        a_identifier)
+                             string                        a_identifier) const
       {
-        CH_TIME("Base_Petsc_Op::formMatrix");
+        CH_TIME("helmholtz::applyOpPrimitives");
 
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
@@ -297,7 +357,7 @@ namespace EBCM
               auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getFluxStencil(volu, graph, idir, Side::Hi);
+                m_oper_ptr->getFluxStencil(volu, graph, idir, Side::Hi, NULL, false);
               double flux_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -445,7 +505,7 @@ namespace EBCM
           numPtsPerBox[ibox]  = subvollocal.size();
         }
 
-        Chombo4::pout() << "Base_Petsc_Op::createMatrixRowMap: numptsThisProc = " << numPtsThisProc << endl;
+        //Chombo4::pout() << "Base_Petsc_Op::createMatrixRowMap: numptsThisProc = " << numPtsThisProc << endl;
 
 #ifdef CH_MPI
         std::vector<int> numPtsAllProcs(CH4_SPMD::numProc());
@@ -464,7 +524,7 @@ namespace EBCM
         {
           startgid += numPtsAllProcs[iproc];
         }
-        Chombo4::pout()  << "Base_Petsc_Op::getMap: procID = " << CH4_SPMD::procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
+        //Chombo4::pout()  << "Base_Petsc_Op::getMap: procID = " << CH4_SPMD::procID() << ", numPtsThisProc = " << numPtsThisProc << ", startgid = " << startgid <<", totalNumPts = " << totalNumPts <<  endl;
 #else
         int startgid = 0;
         PetscInt totalNumPts = numPtsThisProc;
@@ -496,7 +556,7 @@ namespace EBCM
           }
         }
 
-        Chombo4::pout() << "Base_Petsc_Op::getMap calling exchange" << endl;
+        //Chombo4::pout() << "Base_Petsc_Op::getMap calling exchange" << endl;
 
         m_row_map_ptr->exchange(false);
         
@@ -1190,8 +1250,10 @@ namespace EBCM
       shared_ptr<local_stencil_t>
       getFluxStencil(const ebcm_volu  & a_volu,
                      const ebcm_graph & a_graph,
-                     const int& a_idir,
-                     Side::LoHiSide a_side)
+                     const int        & a_idir,
+                     Side::LoHiSide     a_side,
+                     const pr_fab_t   * a_phi_exac_ptr, //can be null
+                     bool               a_killing_me_smalls)
       {
         double  dx = a_volu.m_dx;
         int isign  = sign(a_side);
@@ -1210,7 +1272,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<XFACE>(face, a_graph, dx, NULL, false);
+              *retval = getFluxStencil<XFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
         }
@@ -1227,7 +1289,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<YFACE>(face, a_graph, dx, NULL, false);
+              *retval = getFluxStencil<YFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
         }
@@ -1244,7 +1306,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<ZFACE>(face, a_graph, dx, NULL, false);
+              *retval = getFluxStencil<ZFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
           MayDay::Warning("This diagnostic only written for x and y");
@@ -1434,12 +1496,12 @@ namespace EBCM
                               const bool           & a_mergeSmallCells)
     {
       vector<ch_dbl> vecgrids;
-      Chombo4::pout() << "making grids" << endl;
+      //Chombo4::pout() << "making grids" << endl;
       GeometryService<2>::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
 
       int geomGhost = 6;
       shared_ptr<BaseIF>    impfunc = ebcm_framework::getImplicitFunction();
-      Chombo4::pout() << "defining geometry in EB land" << endl;
+      //Chombo4::pout() << "defining geometry in EB land" << endl;
 
       pr_rv origin = pr_rv::Zero();
       shared_ptr< ch_geoserv > geoserv
@@ -1899,9 +1961,6 @@ namespace EBCM
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
       setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
-      writeWindow(a_file_prefix, string("phi_exac_0"), phi_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_0"), lph_exac_ptr);
-
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
                                                        a_meta, 
@@ -1918,13 +1977,11 @@ namespace EBCM
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
       ///using stuff I think I actually understand
+      discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
+      return;
       shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
 #endif
-      writeWindow(a_file_prefix, string("phi_exac_1"), phi_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_1"), lph_exac_ptr);
-      writeWindow(a_file_prefix, string("lph_calc_1"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("flx_calc_1"), flx_calc_ptr);
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
       double bcoef = -1;
@@ -1936,9 +1993,11 @@ namespace EBCM
       err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
       a_max_error = max_val;
 
-      writeWindow(a_file_prefix, string("lph_calc_2"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("lph_exac_2"), lph_exac_ptr);
-      writeWindow(a_file_prefix, string("err_calc_2"), err_calc_ptr);
+      writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
+      writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
+      writeWindow(a_file_prefix, string("lph_calc"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
 
       writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, err_calc_ptr);
       
@@ -1983,37 +2042,37 @@ namespace EBCM
       getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
 
 
-      for(int itest = 0; itest < (DIM+1); itest++)
-      {
-        string which_test("4586");
-        double max_err_coar = -4586;
-        double max_err_fine = -4586;
-        if(itest == DIM)
-        {
-          which_test = string("L_phi");
-          max_err_coar = max_lphi_err_coar;
-          max_err_fine = max_lphi_err_fine;
-        }
-        else
-        {
-          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
-          max_err_coar = max_flux_err_coar[itest];
-          max_err_fine = max_flux_err_fine[itest];
-        }
-
-        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
-        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
-        if(max_err_fine > 1.0e-12) //err >= 0  by construction
-        {
-          double order = (log(max_err_coar/max_err_fine))/log(2.0);
-          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
-        }
-        else
-        {
-          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
-        }
-
-      } //end loop over tests
+//      for(int itest = 0; itest < (DIM+1); itest++)
+//      {
+//        string which_test("4586");
+//        double max_err_coar = -4586;
+//        double max_err_fine = -4586;
+//        if(itest == DIM)
+//        {
+//          which_test = string("L_phi");
+//          max_err_coar = max_lphi_err_coar;
+//          max_err_fine = max_lphi_err_fine;
+//        }
+//        else
+//        {
+//          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
+//          max_err_coar = max_flux_err_coar[itest];
+//          max_err_fine = max_flux_err_fine[itest];
+//        }
+//
+//        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
+//        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
+//        if(max_err_fine > 1.0e-12) //err >= 0  by construction
+//        {
+//          double order = (log(max_err_coar/max_err_fine))/log(2.0);
+//          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
+//        }
+//        else
+//        {
+//          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
+//        }
+//
+//      } //end loop over tests
     } //  end function run_truncation_error_tests
   }; //   end petsc_framwork class
 } //      end namespace EBCM
