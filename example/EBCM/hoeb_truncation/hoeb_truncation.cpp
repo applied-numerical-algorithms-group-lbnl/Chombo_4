@@ -32,8 +32,7 @@ int main(int a_argc, char* a_argv[])
   Chombo4::pout() << "This example only works with PETSc" << endl;
   return 0;
 #else
-  ///petsc is assumed true from here
-  Chombo4::pout() << "About to call PetscInitialize" << std::endl;
+
   //this calls MPI_Init if necssary
   PetscInt ierr = PetscInitialize(&a_argc, &a_argv, "./.petscrc",PETSC_NULLPTR); CHKERRQ(ierr);
 
