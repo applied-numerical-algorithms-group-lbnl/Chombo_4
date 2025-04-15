@@ -287,9 +287,9 @@ namespace EBCM
             {
               const auto& volu = volvec[ivol];
 
-              //gets stencil from first face in that direction
+              //gets stencil from first face in that direction yadf
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getFluxStencil(volu, graph, flux_dir, flux_side, &phi_fab, killing_me_smalls);
+                m_oper_ptr->getVoluSideFluxStencil(volu, graph, flux_dir, flux_side, &phi_fab, killing_me_smalls);
               double inhomog = local->m_inhomogeneous_bit;
               double flux_val = inhomog;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
@@ -300,9 +300,9 @@ namespace EBCM
                 double     flux_incr = phi_val*wght;
                 flux_val += flux_incr;
               } //end loop over stencil
-              Chombo4::pout() << "writeDetails:" << volu.m_pt 
-                              << "inhomog = " << inhomog
-                              << ", flux  = " << flux_val
+              Chombo4::pout() << "writeDetails for " << volu.m_pt 
+                              << ": inhomog = " << inhomog
+                              << ", flux    = " << flux_val
                               << std::endl;
             } //end loop over volumes
           } //end if(intersection exists)
@@ -357,7 +357,7 @@ namespace EBCM
               auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getFluxStencil(volu, graph, idir, Side::Hi, NULL, false);
+                m_oper_ptr->getVoluSideFluxStencil(volu, graph, idir, Side::Hi, NULL, false);
               double flux_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -743,13 +743,14 @@ namespace EBCM
     getDomainBCValue(const ebcm_dom_face     & a_domain_face,
                      const string            & a_dom_bc,
                      const ebcm_exac         & a_bc_exact,
-                     const ebcm_neighborhood & a_neigh)
+                     const ebcm_neighborhood & a_neigh,
+                     bool a_killing_me_smalls)
     {
       double retval = 4586;
       double area = a_domain_face.m_facmom[pr_itm_i_dmo::Zero];
       if(     a_dom_bc == string("dirichlet"))
       {
-        retval = a_bc_exact.getIntPhiDADomainFace(a_domain_face, a_neigh);
+        retval = a_bc_exact.getIntPhiDADomainFace(a_domain_face, a_neigh, a_killing_me_smalls);
       }
       else if(a_dom_bc == string("neumann"))
       {
@@ -764,6 +765,10 @@ namespace EBCM
       if(area > 1.0e-12)
       {
         retval /= area;
+      }
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getDomainBCValue: area = " << area << ", dom_bc = " << a_dom_bc << ", bcval = " << retval << endl;
       }
       return retval;
     }//end function getDomBCValue
@@ -831,7 +836,7 @@ namespace EBCM
       {
         double      dom_weig     = a_matrix(0, mat_row);
         const auto& dom_face     = dom_face_vec[idom];
-        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, *a_locality);
+        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, *a_locality, false);
         retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
         mat_row++;
       }
@@ -875,7 +880,15 @@ namespace EBCM
       int n_rows_dom_faces = a_locality->m_weig_dom_faces.size();
       int n_rows_cut_faces = a_locality->m_weig_cut_faces.size();
       int n_rows           = n_rows_volumes + n_rows_dom_faces + n_rows_cut_faces;
-      
+
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getSolnRowVec: "
+                        << " nvol = " << n_rows_volumes       
+                        << ",ndom = " << n_rows_dom_faces
+                        << ",ncut = " << n_rows_cut_faces
+                        << ",ntot = " << n_rows << endl;
+      }
       shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
       soln_vec_p->setVal(4586.);
       int irow_global = 0;
@@ -884,14 +897,22 @@ namespace EBCM
         const ebcm_volu& volu  =   (*(a_locality->m_volumes ))[irow];
         double phi_val = a_bc_exact.getCellAveSolution(volu);
         (*soln_vec_p)(irow_global,0) = phi_val;
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "getSolnRowVec: (vol) phi[" << irow_global << "]=" << phi_val << endl;
+        }
         irow_global++;
       }
 
       for(int irow = 0; irow < n_rows_dom_faces; irow++)
       {
         const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
-        double phi_val  = getDomainBCValue(face, a_dom_bc, a_bc_exact, *a_locality);
+        double phi_val  = getDomainBCValue(face, a_dom_bc, a_bc_exact, *a_locality, a_killing_me_smalls);
         (*soln_vec_p)(irow_global,0) = phi_val;
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "getSolnRowVec: (dom) phi[" << irow_global << "]=" << phi_val << endl;
+        }
         irow_global++;
       }
 
@@ -914,6 +935,10 @@ namespace EBCM
         }
         phi_val /= area;
         (*soln_vec_p)(irow_global,0) = phi_val;
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "getSolnRowVec: (cut) phi[" << irow_global << "]=" << phi_val << endl;
+        }
         irow_global++;
       }
       return soln_vec_p;
@@ -932,7 +957,7 @@ namespace EBCM
                                 const int                          & a_facedir,
                                 const double                       & a_dx,
                                 const ebcm_exac                    & a_bc_exact,
-                                const pr_fab_t                     *  a_phi_exac_ptr, //can be null
+                                const pr_fab_t                     * a_phi_exac_ptr, //can be null
                                 bool a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
@@ -950,6 +975,10 @@ namespace EBCM
       
       if((a_dom_bc == string("neumann")) && (a_face.domainBoundary()))
       {
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "getHelmFDEHStencil: neumann bc" << endl;
+        }
         retval = local_stencil_t();
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
@@ -971,6 +1000,10 @@ namespace EBCM
            (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
            S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
         **/
+        //if(a_killing_me_smalls)
+        //{
+        //  Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
+        //}
 
 
         eigen_mat Ainvmat = *Amat_p;
@@ -987,36 +1020,34 @@ namespace EBCM
         retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
 
 //        ///begin debug
-//        /**
-//           This is too expensive to do for every face.  
-//           When I get the point where only a particular face is bad, I can change 
-//           this conditional to do something more interesting.
-//           Right now, I just grab the first one.
-//        **/
-//        static bool s_been_here_done_that = false;
-//        if(a_killing_me_smalls && (!(s_been_here_done_that)))
-//        {
-//          int num_volumes = locality->m_volumes->size();
-//          int num_powers  = pr_mom_dim::size();
-//          s_been_here_done_that = true;
-//          /**
-//             Create a matrix with the solution in it so I can 
-//             understand what which line of my 
-//             obviously flawless code 
-//             is betraying me.
-//          **/
-//          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+        static int s_num_prints = 0;
+        static int s_max_prints = 4;
+        if(a_killing_me_smalls && (s_num_prints < s_max_prints))
+        {
+          s_num_prints++; 
+          int num_volumes = locality->m_volumes->size();
+          int num_powers  = pr_mom_dim::size();
+          pout() << "getHemmFDEHStencil: num_volumes = " << num_volumes << ", num_powers = " << num_powers << endl;
+
+          /**
+             Create a matrix with the solution in it so I can 
+             understand what which line of my 
+             obviously flawless code 
+             is betraying me.
+          **/
+          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
+//          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl;
+//          Phi_p->poutAll();
 //          eigen_mat Smat = SmatFFS;
-//          eigen_mat sten_phi;
-//          multiply(sten_phi, Smat, *Phi_p);
-//
+
+
 //          eigen_mat FmatFFS;
 //          multiply( FmatFFS, SmatFFS, *Phi_p);
-//          pout() << "FFS variables: SmatFFS = " << endl;
+//          pout() << "getHemmFDEHStencil: FFS SmatFFS = " << endl;
 //          SmatFFS.poutAll();
-//          pout() << "FFS variables: FmatFFS = " << endl;
+//          pout() << "getHemmFDEHStencil: FFS variables: FmatFFS = " << endl;
 //          FmatFFS.poutAll();
-//
+
 //          eigen_mat Fmat;
 //          multiply( Fmat, Smat, *Phi_p);
 //          eigen_mat WPhi;
@@ -1033,6 +1064,8 @@ namespace EBCM
 //          eigen_mat QC; //should give the flux
 //          multiply(QC, *Qmat_p, taylor_coef);
 //
+//          eigen_mat sten_phi;
+//          multiply(sten_phi, Smat, *Phi_p);
 //          Chombo4::pout() << "Smat PhiExact should be a scalar = int F dA:  "<< endl;
 //          sten_phi.poutAll();
 //          
@@ -1046,9 +1079,9 @@ namespace EBCM
 //
 //          Chombo4::pout() << "QC (should give back  int F dA):" << endl;
 //          QC.poutAll();
-//
-//        }
-//        /// end  debug
+
+        }
+        /// end  debug
         
       }
       return retval;
@@ -1248,12 +1281,12 @@ namespace EBCM
 
       ///in theory, just for debugging.  only grabs the last stencil on that side in the case of multiple faces.
       shared_ptr<local_stencil_t>
-      getFluxStencil(const ebcm_volu  & a_volu,
-                     const ebcm_graph & a_graph,
-                     const int        & a_idir,
-                     Side::LoHiSide     a_side,
-                     const pr_fab_t   * a_phi_exac_ptr, //can be null
-                     bool               a_killing_me_smalls)
+      getVoluSideFluxStencil(const ebcm_volu  & a_volu,
+                             const ebcm_graph & a_graph,
+                             const int        & a_idir,
+                             Side::LoHiSide     a_side,
+                             const pr_fab_t   * a_phi_exac_ptr, //can be null
+                             bool               a_killing_me_smalls)
       {
         double  dx = a_volu.m_dx;
         int isign  = sign(a_side);
@@ -1261,6 +1294,10 @@ namespace EBCM
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         if(a_idir == 0)
         {
+          if(a_killing_me_smalls)
+          {
+            Chombo4::pout() << "getVoluFluxStencil: getting x flux stencil " << endl;
+          }
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
             const auto& face = a_volu.m_xfaces[iface];
@@ -1278,6 +1315,10 @@ namespace EBCM
         }
         else if(a_idir == 1)
         {
+          if(a_killing_me_smalls)
+          {
+            Chombo4::pout() << "getVoluFluxStencil: getting y flux stencil " << endl;
+          }
           for(int iface = 0 ;iface < a_volu.m_yfaces.size(); iface++)
           {
             const auto& face = a_volu.m_yfaces[iface];
@@ -1295,6 +1336,10 @@ namespace EBCM
         }
         else if (a_idir == 2)
         {
+          if(a_killing_me_smalls)
+          {
+            Chombo4::pout() << "getVoluFluxStencil: getting z flux stencil " << endl;
+          }
           for(int iface = 0 ; iface < a_volu.m_zfaces.size(); iface++)
           {
             const auto& face = a_volu.m_zfaces[iface];
