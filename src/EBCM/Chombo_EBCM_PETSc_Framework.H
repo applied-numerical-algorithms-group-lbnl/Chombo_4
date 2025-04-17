@@ -854,6 +854,46 @@ namespace EBCM
     } //end function getStencilFromMat
 
     ///
+    class
+    neighbor_data_t
+    {
+    private:
+      
+      neighbor_data_t();
+    public:
+      int m_rows_dom_faces;
+      int m_rows_cut_faces;
+      int m_rows_volumes  ;
+      int m_rows          ;
+      shared_ptr<ebcm_neighborhood>  m_locality;
+      ///
+      void setVolumeValue( int a_irow, int a_irow_global, double a_phi_val)
+      {
+      }
+      ///
+      void setCutFaceValue(int a_irow, int a_irow_global, double a_phi_val)
+      {
+      }
+      ///
+      void setDomFaceValue(int a_irow, int a_irow_global, double a_phi_val)
+      {
+      }
+      ///
+      neighbor_data_t(const shared_ptr<ebcm_neighborhood> & a_locality)
+      {
+        m_locality       = a_locality;
+        m_rows_volumes   = a_locality->m_weig_volumes.size();
+        m_rows_dom_faces = a_locality->m_weig_dom_faces.size();
+        m_rows_cut_faces = a_locality->m_weig_cut_faces.size();
+        m_rows           = m_rows_volumes + m_rows_dom_faces + m_rows_cut_faces;
+      }
+
+      void displayPrettily() const
+      {
+        ///HERE
+      }
+    };
+    ///
     /**
        Fill a row vector with exact values of the solution and bc values.
        This is the Phi that we usually factor out.
@@ -866,7 +906,7 @@ namespace EBCM
        phi_eb = Taylor series over cut faces: phi_eb = M C 
        (if bcs are Neumann, phi_db = grad phi dot n_eb).
 
-     **/
+    **/
     static shared_ptr<eigen_mat>
     getSolutionRowVector(const shared_ptr<ebcm_neighborhood> & a_locality,
                          const string                        & a_dom_bc,
@@ -881,14 +921,17 @@ namespace EBCM
       int n_rows_cut_faces = a_locality->m_weig_cut_faces.size();
       int n_rows           = n_rows_volumes + n_rows_dom_faces + n_rows_cut_faces;
 
+      shared_ptr<neighbor_data_t> neig_disp_ptr;
       if(a_killing_me_smalls)
       {
+        neig_disp_ptr = shared_ptr<neighbor_data_t>(new neighbor_data_t(a_locality));
         Chombo4::pout() << "getSolnRowVec: "
                         << " nvol = " << n_rows_volumes       
                         << ",ndom = " << n_rows_dom_faces
                         << ",ncut = " << n_rows_cut_faces
                         << ",ntot = " << n_rows << endl;
       }
+      
       shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
       soln_vec_p->setVal(4586.);
       int irow_global = 0;
@@ -899,7 +942,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          Chombo4::pout() << "getSolnRowVec: (vol) phi[" << irow_global << "]=" << phi_val << endl;
+          neig_disp_ptr->setVolumeValue(irow, irow_global, phi_val);
         }
         irow_global++;
       }
@@ -911,7 +954,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          Chombo4::pout() << "getSolnRowVec: (dom) phi[" << irow_global << "]=" << phi_val << endl;
+          neig_disp_ptr->setDomFaceValue(irow, irow_global, phi_val);
         }
         irow_global++;
       }
@@ -937,9 +980,13 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          Chombo4::pout() << "getSolnRowVec: (cut) phi[" << irow_global << "]=" << phi_val << endl;
+          neig_disp_ptr->setCutFaceValue(irow, irow_global, phi_val);
         }
         irow_global++;
+      }
+      if(a_killing_me_smalls)
+      {
+        neig_disp_ptr->displayPrettily();
       }
       return soln_vec_p;
    }
