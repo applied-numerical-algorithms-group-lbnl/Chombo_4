@@ -1,4 +1,4 @@
-#-on_error_attach_debugger
+-on_error_attach_debugger
 #-ksp_monitor
 #-ksp_converged_reason
 #-mat_view :a.m:ascii_matlab

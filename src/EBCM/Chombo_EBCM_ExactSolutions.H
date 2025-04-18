@@ -156,7 +156,7 @@ namespace EBCM_Exact
       }
       if(a_killing_me_smalls)
       {
-        Chombo4::pout() << "getIntPhiDACB: retval = " << retval << endl;
+        //Chombo4::pout() << "getIntPhiDACB: retval = " << retval << endl;
       }
       return retval;
       

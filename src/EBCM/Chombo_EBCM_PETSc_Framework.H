@@ -768,7 +768,7 @@ namespace EBCM
       }
       if(a_killing_me_smalls)
       {
-        Chombo4::pout() << "getDomainBCValue: area = " << area << ", dom_bc = " << a_dom_bc << ", bcval = " << retval << endl;
+        //Chombo4::pout() << "getDomainBCValue: area = " << area << ", dom_bc = " << a_dom_bc << ", bcval = " << retval << endl;
       }
       return retval;
     }//end function getDomBCValue
@@ -853,44 +853,233 @@ namespace EBCM
       return retval;
     } //end function getStencilFromMat
 
+    ///diverse debugging display debauchery
+    class
+    row_data_t
+    {
+    private:
+      row_data_t();
+    public:
+      ///
+      void displayPrettyHeader() const 
+      {
+        Chombo4::pout() << m_befor << "Domain BC Lo  " <<  m_after;
+        for(int icol = m_lo_col ; icol < m_hi_col; icol++)
+        {
+          Chombo4::pout() << m_befor << "|-----" << icol << "------|" << m_after;
+        }
+        Chombo4::pout() << m_befor << "Domain BC Hi  " <<  m_after ;
+        Chombo4::pout() << endl;
+            
+      }
+
+      void printIfSet(pair<double, bool> a_data) const
+      {
+        bool value_set = a_data.second;
+        Chombo4::pout() << m_befor;
+        if(value_set)
+        {
+          Chombo4::pout() << a_data.first;
+        }
+        else
+        {
+          Chombo4::pout() << "-----unset----";
+        }
+        Chombo4::pout() << m_after;
+      }
+      ///
+      void displayPrettily() const
+      {
+        printIfSet(m_dom_bc_lo);
+        for(int icol = m_lo_col ; icol < m_hi_col; icol++)
+        {
+          int ivec = icol - m_lo_col;
+          printIfSet(m_vol_data[ivec]);
+        }
+        printIfSet(m_dom_bc_hi);
+        Chombo4::pout() << endl;
+        
+      }
+      string m_befor;
+      string m_after;
+      int m_lo_col;
+      int m_hi_col;
+      //bool says whether it has been set
+      vector<std::pair<double, bool> > m_vol_data;
+      std::pair<double, bool> m_dom_bc_lo;
+      std::pair<double, bool> m_dom_bc_hi;
+      ///
+      row_data_t(int a_lo_col, int a_hi_col)
+      {
+        CH_assert(a_hi_col >= a_lo_col);
+        m_befor = string("  ");
+        m_after = string("  ");
+        m_lo_col = a_lo_col;
+        m_hi_col = a_hi_col;
+        int num_col = m_hi_col - m_lo_col + 1;
+        m_vol_data.resize(num_col);
+        for(int icol = 0;  icol < num_col;  icol++)
+        {
+          m_vol_data[icol].first  = 4586.;
+          m_vol_data[icol].second = false;
+        }
+        m_dom_bc_lo.first  = 4586.;
+        m_dom_bc_lo.second = false;
+        m_dom_bc_hi.first  = 4586.;
+        m_dom_bc_hi.second = false;
+      }
+      ///
+      void setVolumeValue(int a_icol, double a_phi_val)
+      {
+        int ivec = a_icol - m_lo_col;
+        if((ivec < 0) || (ivec ==  m_vol_data.size()))
+        {
+          Chombo4::pout() << "a_icol = " << a_icol << ", voldata.size = " << m_vol_data.size() <<endl;
+          Chombo4::MayDay::Error("bounds violation 4586");
+        }
+        m_vol_data[ivec].first  = a_phi_val;
+        m_vol_data[ivec].second = true;
+      }
+      ///
+      void setDomFaceValue(bool a_on_lo_side, bool a_on_hi_side,  double a_phi_val)
+      {
+        if(a_on_lo_side)
+        {
+          m_dom_bc_lo.first  = a_phi_val;
+          m_dom_bc_lo.second = true;
+        }
+        if(a_on_hi_side)
+        {
+          m_dom_bc_hi.first  = a_phi_val;
+          m_dom_bc_hi.second = true;
+        }
+      }
+      ///
+      void setCutFaceValue(int a_icol, double a_phi_val)
+      {
+        //not currently at issue
+      }
+
+
+    };
     ///
+    /**
+       This debugging class exists to display a neighbor's worth of data.
+     **/
     class
     neighbor_data_t
     {
     private:
-      
       neighbor_data_t();
+      
     public:
-      int m_rows_dom_faces;
-      int m_rows_cut_faces;
-      int m_rows_volumes  ;
-      int m_rows          ;
+
+      vector<shared_ptr<row_data_t> > m_row_data;
+      int m_hori_dir, m_vert_dir;  //for display.  setting horizontal to be neigh face direction
+      ch_iv m_lo_iv, m_hi_iv;      //bounds of vof points in the neighborhood
+      void setNeighborhoodBounds()
+      {
+        m_lo_iv = 4586*IntVect::Unit;
+        m_hi_iv =-4586*IntVect::Unit;
+        const auto&  vol_vec = *(m_locality->m_volumes);
+        for(int ivec = 0; ivec < vol_vec.size(); ivec++)
+        {
+          const auto& volu_pt = vol_vec[ivec].m_pt;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            m_lo_iv[idir] = std::min<int>(m_lo_iv[idir], volu_pt[idir]);
+            m_hi_iv[idir] = std::max<int>(m_hi_iv[idir], volu_pt[idir]);
+          }
+        }
+      }
+      void defineData()
+      {
+        setNeighborhoodBounds();
+        m_hori_dir = m_locality->m_face_dir;
+        m_vert_dir = 1 - m_hori_dir;  //need something better for 3d but since this is just for debugging, GEFN
+        int num_rows = m_hi_iv[m_vert_dir]- m_lo_iv[m_vert_dir] + 1;
+        int lo_col   = m_lo_iv[m_hori_dir];
+        int hi_col   = m_hi_iv[m_hori_dir];
+        m_row_data.resize(num_rows);
+        for(int irow = 0; irow < num_rows; irow++)
+        {
+          m_row_data[irow] = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col));
+        }
+      }
+      
+
       shared_ptr<ebcm_neighborhood>  m_locality;
-      ///
-      void setVolumeValue( int a_irow, int a_irow_global, double a_phi_val)
+      /// index refers to m_locality->m_volumes
+      void setVolumeValue( int a_ivol,  double a_phi_val)
       {
+        const auto& volumes = *m_locality->m_volumes;
+        const auto& volu = volumes[a_ivol];
+        int icol = volu.m_pt[m_hori_dir] - m_lo_iv[m_hori_dir];
+        int irow = volu.m_pt[m_vert_dir] - m_lo_iv[m_vert_dir];
+        if((irow >= m_row_data.size()) || irow < 0)
+        {
+          Chombo4::MayDay::Error("not that many rows");
+        }
+        m_row_data[irow]->setVolumeValue(icol, a_phi_val);
       }
-      ///
-      void setCutFaceValue(int a_irow, int a_irow_global, double a_phi_val)
+
+      ///index refers to m_locality->m_cut_faces
+      void setCutFaceValue(int a_icut,  double a_phi_val)
       {
+        const auto& cut_faces = *m_locality->m_cut_faces;
+        const auto& cut_face  = cut_faces[a_icut];
+        int icol = cut_face.m_pt[m_hori_dir] - m_lo_iv[m_hori_dir];
+        int irow = cut_face.m_pt[m_vert_dir] - m_lo_iv[m_vert_dir];
+        m_row_data[irow]->setCutFaceValue(icol, a_phi_val);
+        ///not debugging this right now so I will dodge displaying these.
       }
-      ///
-      void setDomFaceValue(int a_irow, int a_irow_global, double a_phi_val)
+
+      ///index refers to m_locality->m_dom_faces
+      void setDomFaceValue(int a_idom,  double a_phi_val)
       {
+        const auto& dom_faces = *m_locality->m_dom_faces;
+        const auto& dom_face  = dom_faces[a_idom];
+        if(dom_face.m_direction != m_hori_dir)
+        {
+          Chombo4::pout() << "confusion reigns as setDomFaceValue directions do not match" << endl;
+        }
+
+        ch_iv lo_iv = dom_face.m_lo.m_pt;
+        ch_iv hi_iv = dom_face.m_hi.m_pt;
+        int irow        = lo_iv[m_vert_dir] - m_lo_iv[m_vert_dir];
+        bool on_lo_side = hi_iv[m_hori_dir] == m_lo_iv[m_hori_dir];
+        bool on_hi_side = lo_iv[m_hori_dir] == m_hi_iv[m_hori_dir];
+        if(!(on_lo_side || on_hi_side))
+        {
+          Chombo4::pout() << "confusion reigns as setDomFaceValue domains do not match" << endl;
+        }
+        m_row_data[irow]->setDomFaceValue(on_lo_side, on_hi_side, a_phi_val);
       }
       ///
       neighbor_data_t(const shared_ptr<ebcm_neighborhood> & a_locality)
       {
         m_locality       = a_locality;
-        m_rows_volumes   = a_locality->m_weig_volumes.size();
-        m_rows_dom_faces = a_locality->m_weig_dom_faces.size();
-        m_rows_cut_faces = a_locality->m_weig_cut_faces.size();
-        m_rows           = m_rows_volumes + m_rows_dom_faces + m_rows_cut_faces;
+        defineData();
       }
 
+      ///
       void displayPrettily() const
       {
-        ///HERE
+        Chombo4::pout()    << setprecision(8)
+                           << setiosflags(ios::showpoint)
+                           << setiosflags(ios::scientific);
+        ch_iv facelo = m_locality->m_facelo;
+        ch_iv facehi = m_locality->m_facehi;
+        Chombo4::pout()
+          << "Data over Neighborhood for face between "
+          << facelo << " and " << facehi << endl;
+        if(m_row_data.size() > 0)
+          m_row_data[0]->displayPrettyHeader();
+        int high_row = m_row_data.size() - 1;
+        for(int irow = high_row; irow >= 0; irow--)
+        {
+          m_row_data[irow]->displayPrettily();
+        }
       }
     };
     ///
@@ -935,6 +1124,7 @@ namespace EBCM
       shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
       soln_vec_p->setVal(4586.);
       int irow_global = 0;
+      //Chombo4::pout() << "getSolnRowVec: setting volumes " << endl;
       for(int irow = 0; irow < n_rows_volumes; irow++)
       {
         const ebcm_volu& volu  =   (*(a_locality->m_volumes ))[irow];
@@ -942,11 +1132,12 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setVolumeValue(irow, irow_global, phi_val);
+          neig_disp_ptr->setVolumeValue(irow,  phi_val);
         }
         irow_global++;
       }
 
+      //Chombo4::pout() << "getSolnRowVec: setting domain faces " << endl;
       for(int irow = 0; irow < n_rows_dom_faces; irow++)
       {
         const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
@@ -954,11 +1145,12 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setDomFaceValue(irow, irow_global, phi_val);
+          neig_disp_ptr->setDomFaceValue(irow,  phi_val);
         }
         irow_global++;
       }
 
+      //Chombo4::pout() << "getSolnRowVec: setting cut faces " << endl;
       for(int irow = 0; irow < n_rows_cut_faces; irow++)
       {
         const ebcm_cut_face& face = (*(a_locality->m_cut_faces ))[irow];
@@ -980,7 +1172,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setCutFaceValue(irow, irow_global, phi_val);
+          neig_disp_ptr->setCutFaceValue(irow, phi_val);
         }
         irow_global++;
       }
