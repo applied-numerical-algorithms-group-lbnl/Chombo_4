@@ -861,12 +861,13 @@ namespace EBCM
       row_data_t();
     public:
       ///
-      void displayPrettyHeader() const 
+      void printPrettyHeader() const 
       {
-        Chombo4::pout() << m_befor << "Domain BC Lo  " <<  m_after;
-        for(int icol = m_lo_col ; icol < m_hi_col; icol++)
+        Chombo4::pout() << m_befor<< string("Row Number  ") << m_after;
+        for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
         {
-          Chombo4::pout() << m_befor << "|-----" << icol << "------|" << m_after;
+          string col_str = string("|----") + m_col_str + string(" = ") +  to_string(icol)     + string("---|");
+          Chombo4::pout() << m_befor << col_str << m_after;
         }
         Chombo4::pout() << m_befor << "Domain BC Hi  " <<  m_after ;
         Chombo4::pout() << endl;
@@ -888,10 +889,12 @@ namespace EBCM
         Chombo4::pout() << m_after;
       }
       ///
-      void displayPrettily() const
+      void printPrettily() const
       {
+        string row_str = string("|--") + m_row_str + string(" = ") +  to_string(m_row_num)+ string("--|");
+        Chombo4::pout() << m_befor << row_str << m_after;
         printIfSet(m_dom_bc_lo);
-        for(int icol = m_lo_col ; icol < m_hi_col; icol++)
+        for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
         {
           int ivec = icol - m_lo_col;
           printIfSet(m_vol_data[ivec]);
@@ -904,18 +907,26 @@ namespace EBCM
       string m_after;
       int m_lo_col;
       int m_hi_col;
+      int m_row_num;
+      int m_row_dir;
+      int m_col_dir;
+      string m_row_str;
+      string m_col_str;
       //bool says whether it has been set
       vector<std::pair<double, bool> > m_vol_data;
       std::pair<double, bool> m_dom_bc_lo;
       std::pair<double, bool> m_dom_bc_hi;
       ///
-      row_data_t(int a_lo_col, int a_hi_col)
+      row_data_t(int a_lo_col, int a_hi_col, int a_row_num, int a_row_dir, int a_col_dir)
       {
         CH_assert(a_hi_col >= a_lo_col);
-        m_befor = string("  ");
-        m_after = string("  ");
-        m_lo_col = a_lo_col;
-        m_hi_col = a_hi_col;
+        m_befor   = string("  ");
+        m_after   = string("  ");
+        m_lo_col  = a_lo_col;
+        m_hi_col  = a_hi_col;
+        m_row_num = a_row_num;
+        m_row_dir = a_row_dir;
+        m_col_dir = a_col_dir;        
         int num_col = m_hi_col - m_lo_col + 1;
         m_vol_data.resize(num_col);
         for(int icol = 0;  icol < num_col;  icol++)
@@ -927,6 +938,20 @@ namespace EBCM
         m_dom_bc_lo.second = false;
         m_dom_bc_hi.first  = 4586.;
         m_dom_bc_hi.second = false;
+
+        if(m_col_dir == 0)
+          m_col_str = string("i");
+        else if(m_col_dir == 1)
+          m_col_str = string("j");
+        else if(m_col_dir == 2)
+          m_col_str = string("k");
+
+        if(m_row_dir == 0)
+          m_row_str = string("i");
+        else if(m_row_dir == 1)
+          m_row_str = string("j");
+        else if(m_row_dir == 2)
+          m_row_str = string("k");
       }
       ///
       void setVolumeValue(int a_icol, double a_phi_val)
@@ -1003,7 +1028,8 @@ namespace EBCM
         m_row_data.resize(num_rows);
         for(int irow = 0; irow < num_rows; irow++)
         {
-          m_row_data[irow] = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col));
+          int row_num = irow + m_lo_iv[m_vert_dir];
+          m_row_data[irow] = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col, row_num, m_vert_dir, m_hori_dir));
         }
       }
       
@@ -1063,7 +1089,7 @@ namespace EBCM
       }
 
       ///
-      void displayPrettily() const
+      void printPrettily() const
       {
         Chombo4::pout()    << setprecision(8)
                            << setiosflags(ios::showpoint)
@@ -1074,11 +1100,11 @@ namespace EBCM
           << "Data over Neighborhood for face between "
           << facelo << " and " << facehi << endl;
         if(m_row_data.size() > 0)
-          m_row_data[0]->displayPrettyHeader();
+          m_row_data[0]->printPrettyHeader();
         int high_row = m_row_data.size() - 1;
         for(int irow = high_row; irow >= 0; irow--)
         {
-          m_row_data[irow]->displayPrettily();
+          m_row_data[irow]->printPrettily();
         }
       }
     };
@@ -1178,7 +1204,7 @@ namespace EBCM
       }
       if(a_killing_me_smalls)
       {
-        neig_disp_ptr->displayPrettily();
+        neig_disp_ptr->printPrettily();
       }
       return soln_vec_p;
    }
@@ -2294,7 +2320,7 @@ namespace EBCM
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
-      getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
+      //getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
       getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
     }
 
