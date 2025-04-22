@@ -282,7 +282,8 @@ namespace EBCM
             const auto& graph           =           graphs[dit[ibox]];
             const auto& phi_fab         =     (*a_phi_ptr)[dit[ibox]];
 
-            ebcm_subvol_vec volvec(graph, intersection,  killing_me_smalls);
+            bool subvol_construction_verbosity = false;
+            ebcm_subvol_vec volvec(graph, intersection,  subvol_construction_verbosity);
             for(int ivol = 0; ivol < volvec.size(); ivol++)
             {
               const auto& volu = volvec[ivol];
@@ -863,13 +864,19 @@ namespace EBCM
       ///
       void printPrettyHeader() const 
       {
-        Chombo4::pout() << m_befor<< string("Row Number  ") << m_after;
+        Chombo4::pout() << m_befor<< string("Row Ind Number") << m_after;
+        Chombo4::pout() << m_befor<< string("DomBC Lo Value") << m_after;
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
         {
-          string col_str = string("|----") + m_col_str + string(" = ") +  to_string(icol)     + string("---|");
+          string col_num_str = to_string(icol);
+          if(icol < 100)
+            col_num_str += string(" ");
+          if(icol < 10)
+            col_num_str += string(" ");
+          string col_str = string("|---") + m_col_str + string(" = ") +  col_num_str + string("--|");
           Chombo4::pout() << m_befor << col_str << m_after;
         }
-        Chombo4::pout() << m_befor << "Domain BC Hi  " <<  m_after ;
+        Chombo4::pout() << m_befor << "DomBC Hi Value" <<  m_after ;
         Chombo4::pout() << endl;
             
       }
@@ -891,7 +898,12 @@ namespace EBCM
       ///
       void printPrettily() const
       {
-        string row_str = string("|--") + m_row_str + string(" = ") +  to_string(m_row_num)+ string("--|");
+        string row_num_str = to_string(m_row_num);
+        if(m_row_num < 100)
+          row_num_str += string(" ");
+        if(m_row_num < 10)
+          row_num_str += string(" ");
+        string row_str = string("|--") + m_row_str + string(" = ") +  row_num_str + string("---|");
         Chombo4::pout() << m_befor << row_str << m_after;
         printIfSet(m_dom_bc_lo);
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
@@ -1265,10 +1277,10 @@ namespace EBCM
            (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
            S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
         **/
-        //if(a_killing_me_smalls)
-        //{
-        //  Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
-        //}
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
+        }
 
 
         eigen_mat Ainvmat = *Amat_p;
@@ -1301,49 +1313,20 @@ namespace EBCM
              is betraying me.
           **/
           shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-//          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl;
+//          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl; //passed
 //          Phi_p->poutAll();
-//          eigen_mat Smat = SmatFFS;
+//          eigen_mat phi_tran = *Phi_p;
+//          phi_tran.transpose();
+//          pout() << "getHemmFDEHStencil: phi_tran = " << endl;  //passed
+//          phi_tran.poutAll();
+
+          pout() << "gethelmfdehsten: Qmat_p = " << endl;
+          Qmat_p->poutAll();
+          ///smatffs is the stencil matrix.  it does not pass.
+          pout() << "getHemmFDEHStencil: SmatFFS = " << endl; 
+          SmatFFS.poutAll();
 
 
-//          eigen_mat FmatFFS;
-//          multiply( FmatFFS, SmatFFS, *Phi_p);
-//          pout() << "getHemmFDEHStencil: FFS SmatFFS = " << endl;
-//          SmatFFS.poutAll();
-//          pout() << "getHemmFDEHStencil: FFS variables: FmatFFS = " << endl;
-//          FmatFFS.poutAll();
-
-//          eigen_mat Fmat;
-//          multiply( Fmat, Smat, *Phi_p);
-//          eigen_mat WPhi;
-//          multiply( WPhi, *Wmat_p, *Phi_p);
-//          eigen_mat WMTWPhi;
-//          multiply( WMTWPhi, *WMTmat_p, WPhi);
-//          eigen_mat taylor_coef;  
-//          multiply( taylor_coef, Ainvmat, WMTWPhi);
-//
-//          ///
-//          eigen_mat MC; //should give back phi
-//          multiply( MC , * Mmat_p, taylor_coef);
-//
-//          eigen_mat QC; //should give the flux
-//          multiply(QC, *Qmat_p, taylor_coef);
-//
-//          eigen_mat sten_phi;
-//          multiply(sten_phi, Smat, *Phi_p);
-//          Chombo4::pout() << "Smat PhiExact should be a scalar = int F dA:  "<< endl;
-//          sten_phi.poutAll();
-//          
-//          Chombo4::pout() << "Flux matrix (should be a scalar = int F dA):  "<< endl;
-//          Fmat.poutAll();
-//          Chombo4::pout() << "Taylor coefficients: "<< endl;
-//          taylor_coef.poutAll();
-//
-//          Chombo4::pout() << "MC (should give back Phi): "<< endl;
-//          MC.poutAll();
-//
-//          Chombo4::pout() << "QC (should give back  int F dA):" << endl;
-//          QC.poutAll();
 
         }
         /// end  debug
@@ -2288,6 +2271,7 @@ namespace EBCM
 #else
       ///using stuff I think I actually understand
       discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
+      Chombo4::pout() << "bailing after writeDetails because it is already wrong" << endl;
       return;
       shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
@@ -2320,8 +2304,10 @@ namespace EBCM
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
-      //getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
       getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
+      Chombo4::pout() << "bailing after getMaxLphiError because it is already wrong"  << endl;
+      return;
+      getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
     }
 
     ///
@@ -2348,7 +2334,9 @@ namespace EBCM
       double max_flux_err_fine[DIM];
       double max_flux_err_coar[DIM];
       
-      getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine")); 
+      getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine"));
+      Chombo4::pout() << "bailing after fine calc because it is already wrong" << endl;
+      return; 
       getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
 
 
