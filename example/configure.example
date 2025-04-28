@@ -6,14 +6,14 @@ import platform
 
 parser = ArgumentParser()
 
-parser.add_argument('--dim', type=int, help='DIM  [2]',default='2')
+parser.add_argument('--dim',    type=int                 ,help='DIM?   [2]    ',default='2')
+parser.add_argument('--debug',  choices=['TRUE', 'FALSE'],help='Debug? [TRUE] ',default='TRUE')
+parser.add_argument('--mpi',    choices=['TRUE', 'FALSE'],help='MPI?   [TRUE] ',default='TRUE')
+parser.add_argument('--hdf5',   choices=['TRUE', 'FALSE'],help='HDF5?  [TRUE] ',default='TRUE')
+parser.add_argument('--petsc',  choices=['TRUE', 'FALSE'],help='PETSc? [TRUE] ',default='TRUE')
 parser.add_argument('--opt',    choices=['TRUE', 'FALSE'],help='Opt?   [FALSE]',default='FALSE')
-parser.add_argument('--debug',  choices=['TRUE', 'FALSE'],help='Debug? [TRUE]',default='TRUE')
-parser.add_argument('--mpi',    choices=['TRUE', 'FALSE'],help='MPI?   [TRUE]',default='TRUE')
-parser.add_argument('--hdf5',   choices=['TRUE', 'FALSE'],help='HDF5?  [FALSE]',default='FALSE')
 parser.add_argument('--cuda',   choices=['TRUE', 'FALSE'],help='CUDA?  [FALSE]',default='FALSE')
 parser.add_argument('--hip',    choices=['TRUE', 'FALSE'],help='HIP?   [FALSE]',default='FALSE')
-parser.add_argument('--petsc',  choices=['TRUE', 'FALSE'],help='PETSc? [TRUE]',default='TRUE')
 parser.add_argument('--omp',    choices=['TRUE', 'FALSE'],help='OpenMP?[FALSE]',default='FALSE')
 
 args = parser.parse_args()

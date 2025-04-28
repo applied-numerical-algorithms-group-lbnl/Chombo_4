@@ -679,22 +679,6 @@ namespace EBCM
 
 
     /**
-       sets d = facedir.
-       (1) Takes face moments (in d) and translates to volume moments.
-       (2) It shifts these moments to xbar from locality
-       (3) resizes output matrix to (1, pr_mom_dim::size())
-       (4) matrix_value(0, currentCol) = pd*derval/momzero
-
-       momzero == the face area. 
-       pd      ==  
-       matval = 0; 
-       if( momzero > eps)
-       {
-       pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
-       Real derval = volmom[derind];
-       matval = pd*derval/momzero;
-       }
-       retval(0, curCol) = matval
     **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
@@ -864,6 +848,10 @@ namespace EBCM
       ///
       void printPrettyHeader() const 
       {
+        /**
+           First line is:
+           Row Ind Number    DomBC Lo Value    |---i = 0  --|  ...   DomBC Hi Value             
+         **/
         Chombo4::pout() << m_befor<< string("Row Ind Number") << m_after;
         Chombo4::pout() << m_befor<< string("DomBC Lo Value") << m_after;
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
@@ -878,7 +866,6 @@ namespace EBCM
         }
         Chombo4::pout() << m_befor << "DomBC Hi Value" <<  m_after ;
         Chombo4::pout() << endl;
-            
       }
 
       void printIfSet(pair<double, bool> a_data) const
@@ -919,6 +906,11 @@ namespace EBCM
       string m_after;
       int m_lo_col;
       int m_hi_col;
+      /**
+         HERE
+           use the rownum = -1 for low side dom bc
+           use the rownum = -2 for high side dom bc
+      **/
       int m_row_num;
       int m_row_dir;
       int m_col_dir;
@@ -1012,6 +1004,8 @@ namespace EBCM
     public:
 
       vector<shared_ptr<row_data_t> > m_row_data;
+      shared_ptr<       row_data_t>   m_dom_bc_lo_trans;
+      shared_ptr<       row_data_t>   m_dom_bc_hi_trans;
       int m_hori_dir, m_vert_dir;  //for display.  setting horizontal to be neigh face direction
       ch_iv m_lo_iv, m_hi_iv;      //bounds of vof points in the neighborhood
       void setNeighborhoodBounds()
@@ -1043,6 +1037,9 @@ namespace EBCM
           int row_num = irow + m_lo_iv[m_vert_dir];
           m_row_data[irow] = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col, row_num, m_vert_dir, m_hori_dir));
         }
+        
+        m_dom_bc_lo_trans = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col, -1, m_vert_dir, m_hori_dir));
+        m_dom_bc_hi_trans = shared_ptr<row_data_t>(new row_data_t(lo_col, hi_col, -2, m_vert_dir, m_hori_dir));
       }
       
 
@@ -1073,8 +1070,10 @@ namespace EBCM
       }
 
       ///index refers to m_locality->m_dom_faces
-      void setDomFaceValue(int a_idom,  double a_phi_val)
+      void setDomFaceValue(const ebcm_dom_face& a_face,  double a_phi_val)
       {
+        ///HERE need to rework this for for faces in all directions
+        /**
         const auto& dom_faces = *m_locality->m_dom_faces;
         const auto& dom_face  = dom_faces[a_idom];
         if(dom_face.m_direction != m_hori_dir)
@@ -1092,6 +1091,7 @@ namespace EBCM
           Chombo4::pout() << "confusion reigns as setDomFaceValue domains do not match" << endl;
         }
         m_row_data[irow]->setDomFaceValue(on_lo_side, on_hi_side, a_phi_val);
+        **/
       }
       ///
       neighbor_data_t(const shared_ptr<ebcm_neighborhood> & a_locality)
@@ -1112,14 +1112,20 @@ namespace EBCM
           << "Data over Neighborhood for face between "
           << facelo << " and " << facehi << endl;
         if(m_row_data.size() > 0)
+        {
           m_row_data[0]->printPrettyHeader();
+        }
+
+        m_dom_bc_hi_trans->printPrettily();
         int high_row = m_row_data.size() - 1;
         for(int irow = high_row; irow >= 0; irow--)
         {
           m_row_data[irow]->printPrettily();
         }
-      }
-    };
+        m_dom_bc_lo_trans->printPrettily();
+
+      }//end function printPrettily
+    }; //end class neighbor_data_t
     ///
     /**
        Fill a row vector with exact values of the solution and bc values.
@@ -1152,11 +1158,11 @@ namespace EBCM
       if(a_killing_me_smalls)
       {
         neig_disp_ptr = shared_ptr<neighbor_data_t>(new neighbor_data_t(a_locality));
-        Chombo4::pout() << "getSolnRowVec: "
-                        << " nvol = " << n_rows_volumes       
-                        << ",ndom = " << n_rows_dom_faces
-                        << ",ncut = " << n_rows_cut_faces
-                        << ",ntot = " << n_rows << endl;
+//        Chombo4::pout() << "getSolnRowVec: "
+//                        << " nvol = " << n_rows_volumes       
+//                        << ",ndom = " << n_rows_dom_faces
+//                        << ",ncut = " << n_rows_cut_faces
+//                        << ",ntot = " << n_rows << endl;
       }
       
       shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
@@ -1183,7 +1189,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setDomFaceValue(irow,  phi_val);
+          neig_disp_ptr->setDomFaceValue(face,  phi_val);
         }
         irow_global++;
       }
@@ -1216,7 +1222,7 @@ namespace EBCM
       }
       if(a_killing_me_smalls)
       {
-        neig_disp_ptr->printPrettily();
+        neig_disp_ptr->printPrettily();  //matches very well
       }
       return soln_vec_p;
    }
@@ -1305,27 +1311,35 @@ namespace EBCM
           int num_volumes = locality->m_volumes->size();
           int num_powers  = pr_mom_dim::size();
           pout() << "getHemmFDEHStencil: num_volumes = " << num_volumes << ", num_powers = " << num_powers << endl;
-
-          /**
-             Create a matrix with the solution in it so I can 
-             understand what which line of my 
-             obviously flawless code 
-             is betraying me.
-          **/
           shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-//          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl; //passed
-//          Phi_p->poutAll();
-//          eigen_mat phi_tran = *Phi_p;
-//          phi_tran.transpose();
-//          pout() << "getHemmFDEHStencil: phi_tran = " << endl;  //passed
-//          phi_tran.poutAll();
+          pout() << "WMTmat_p = " << endl;
+          WMTmat_p->poutAll();
+#if 0
+          pout() << "wmat_p = " << endl; //seems to match but hard to tell because numbers of rows diffs
+          Wmat_p->poutDiagOneRow();
+          //so many things to print out, so little wetware bandwidth.
+          
+          pout() << "gethelmfdehsten: Amat_p = " << endl; //kind of passed
+          Amat_p->poutAll();
 
+          pout() << "gethelmfdehsten: AinvWMTW = " << endl;
+          AinvWMTW.poutAll(); //does not pass
+          
+          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl; //passed
+          Phi_p->poutAll();
+          eigen_mat phi_tran = *Phi_p;
+          phi_tran.transpose();
+          pout() << "getHemmFDEHStencil: phi_tran = " << endl;  //passed
+          phi_tran.poutAll();
+
+          ///different in row 6 but  not by enough, I think.
           pout() << "gethelmfdehsten: Qmat_p = " << endl;
           Qmat_p->poutAll();
+
           ///smatffs is the stencil matrix.  it does not pass.
           pout() << "getHemmFDEHStencil: SmatFFS = " << endl; 
           SmatFFS.poutAll();
-
+#endif
 
 
         }
@@ -2271,8 +2285,8 @@ namespace EBCM
 #else
       ///using stuff I think I actually understand
       discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
-      Chombo4::pout() << "bailing after writeDetails because it is already wrong" << endl;
-      return;
+//      Chombo4::pout() << "bailing after writeDetails because it is already wrong" << endl;
+//      return;
       shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
 #endif
@@ -2305,8 +2319,8 @@ namespace EBCM
                         string                     a_file_prefix)
     {
       getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
-      Chombo4::pout() << "bailing after getMaxLphiError because it is already wrong"  << endl;
-      return;
+//      Chombo4::pout() << "bailing after getMaxLphiError because it is already wrong"  << endl;
+//      return;
       getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
     }
 
@@ -2335,42 +2349,42 @@ namespace EBCM
       double max_flux_err_coar[DIM];
       
       getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine"));
-      Chombo4::pout() << "bailing after fine calc because it is already wrong" << endl;
-      return; 
+//      Chombo4::pout() << "bailing after fine calc because it is already wrong" << endl;
+//      return; 
       getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
 
 
-//      for(int itest = 0; itest < (DIM+1); itest++)
-//      {
-//        string which_test("4586");
-//        double max_err_coar = -4586;
-//        double max_err_fine = -4586;
-//        if(itest == DIM)
-//        {
-//          which_test = string("L_phi");
-//          max_err_coar = max_lphi_err_coar;
-//          max_err_fine = max_lphi_err_fine;
-//        }
-//        else
-//        {
-//          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
-//          max_err_coar = max_flux_err_coar[itest];
-//          max_err_fine = max_flux_err_fine[itest];
-//        }
-//
-//        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
-//        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
-//        if(max_err_fine > 1.0e-12) //err >= 0  by construction
-//        {
-//          double order = (log(max_err_coar/max_err_fine))/log(2.0);
-//          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
-//        }
-//        else
-//        {
-//          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
-//        }
-//
-//      } //end loop over tests
+      for(int itest = 0; itest < (DIM+1); itest++)
+      {
+        string which_test("4586");
+        double max_err_coar = -4586;
+        double max_err_fine = -4586;
+        if(itest == DIM)
+        {
+          which_test = string("L_phi");
+          max_err_coar = max_lphi_err_coar;
+          max_err_fine = max_lphi_err_fine;
+        }
+        else
+        {
+          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
+          max_err_coar = max_flux_err_coar[itest];
+          max_err_fine = max_flux_err_fine[itest];
+        }
+
+        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
+        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
+        if(max_err_fine > 1.0e-12) //err >= 0  by construction
+        {
+          double order = (log(max_err_coar/max_err_fine))/log(2.0);
+          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
+        }
+        else
+        {
+          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
+        }
+
+      } //end loop over tests
     } //  end function run_truncation_error_tests
   }; //   end petsc_framwork class
 } //      end namespace EBCM

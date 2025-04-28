@@ -236,7 +236,12 @@ namespace ch_eigen
       Chombo4::pout() << "matrix size = " << nrow << " x " << ncol << endl;
       for(int irow = 0; irow < nrow; irow++)
       {
-        Chombo4::pout() << "row " << irow << "=  ";
+        string row_str = string("(") + to_string(irow) + string("):");
+        if(irow < 100)
+          row_str += string(" ");
+        if(irow < 10)
+          row_str += string(" ");
+        Chombo4::pout() << row_str ;
         for(int icol = 0; icol < ncol; icol++)
         {
           double val = (*this)(irow, icol);
@@ -292,6 +297,31 @@ namespace ch_eigen
         Chombo4::pout() << "M("<< irow << ","  << irow << ") = "
                         << (*this)(irow, irow) << endl;
       }
+    }
+    ///debugging aid
+    void poutDiagOneRow() const
+    {
+      Chombo4::pout() << setprecision(15)
+                      << setiosflags(ios::showpoint)
+                      << setiosflags(ios::scientific);
+      int nrow = m_mat_p->rows();
+      int ncol = m_mat_p->cols();
+      if(nrow != ncol)
+      {
+        ch_mayday::Error("ch_eigen::poutDiag written for square matricies");
+      }
+
+      Chombo4::pout()    << setprecision(8)
+                         << setiosflags(ios::showpoint)
+                         << setiosflags(ios::scientific);
+      Chombo4::pout() << "poutDiagOneRow: nrow = " << nrow << ", ncol = " << ncol <<  endl;
+      for(int irow = 0; irow < nrow; irow++)
+      {
+        double diag_val = (*this)(irow, irow);
+        string rowstr = string("(") + to_string(irow) + string(")");
+        Chombo4::pout() <<  diag_val  << rowstr << "  ";
+      }
+      Chombo4::pout() << endl;
     }
 
  
