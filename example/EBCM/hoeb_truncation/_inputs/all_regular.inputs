@@ -1,0 +1,37 @@
+# Chombo4/example/EBCM/hoeb_truncation/_inputs/sphere.inputs
+#hoeb_truncation.cpp
+main.polynomial_order  = 2
+main.weight_power      = 1
+main.dom_bc            = dirichlet
+main.eb_bc             = dirichlet
+#0 is 0
+# 1 is polynomial you spell out the coeffs, powers
+# 2 is the full polynomial where all cps are 1.
+#identity coefficient
+main.alpha =  0.0
+#laplacian coefficient
+main.beta =   1.0
+#boundary conditions ("dirichlet" or "neumann" for now.  Case matters.)
+
+main.sten_rad     = 3
+# whether to dump files or not (0 = false, anything else true)
+main.output_hdf5  = 1
+#Chombo_EBCM_PETSc_Framework.H
+parseFineGridParams.nx                = 32
+parseFineGridParams.maxGrid           = 32
+parseFineGridParams.mergeSmallCells   = true
+
+# exact flag== 2 => cp = 1/p! for all p <= max_poly+1, = 0 o.w.
+#main.exact_flag        = 2
+#this stuff is if exact_flag == 1
+# exact flag== 3 => Sine function
+main.exact_flag        =  3
+sine_exact.direction   = 0
+sine_exact.frequency   = 1
+sine_exact.amplitude   = 1.
+
+getImplicitFunction.which_geom       = "all_regular"
+
+
+
+

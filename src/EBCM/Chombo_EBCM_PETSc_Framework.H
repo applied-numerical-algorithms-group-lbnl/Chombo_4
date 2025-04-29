@@ -878,19 +878,14 @@ namespace EBCM
         }
         else
         {
-          Chombo4::pout() << "-----unset----";
+          Chombo4::pout() << "|------------|";
         }
         Chombo4::pout() << m_after;
       }
       ///
       void printPrettily() const
       {
-        string row_num_str = to_string(m_row_num);
-        if(m_row_num < 100)
-          row_num_str += string(" ");
-        if(m_row_num < 10)
-          row_num_str += string(" ");
-        string row_str = string("|--") + m_row_str + string(" = ") +  row_num_str + string("---|");
+        string row_str = m_row_str;
         Chombo4::pout() << m_befor << row_str << m_after;
         printIfSet(m_dom_bc_lo);
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
@@ -907,9 +902,8 @@ namespace EBCM
       int m_lo_col;
       int m_hi_col;
       /**
-         HERE
-           use the rownum = -1 for low side dom bc
-           use the rownum = -2 for high side dom bc
+           use rownum = -1 for lo side dom bc
+           use rownum = -2 for hi side dom bc
       **/
       int m_row_num;
       int m_row_dir;
@@ -950,12 +944,34 @@ namespace EBCM
         else if(m_col_dir == 2)
           m_col_str = string("k");
 
-        if(m_row_dir == 0)
-          m_row_str = string("i");
-        else if(m_row_dir == 1)
-          m_row_str = string("j");
-        else if(m_row_dir == 2)
-          m_row_str = string("k");
+        if(m_row_num >= 0)
+        {
+          string row_num_str = to_string(m_row_num);
+          if(m_row_num < 100)
+            row_num_str += string(" ");
+          if(m_row_num < 10)
+            row_num_str += string(" ");
+          string index_str("4586");
+          if(m_row_dir == 0)
+            index_str = string("i");
+          else if(m_row_dir == 1)
+            index_str = string("j");
+          else if(m_row_dir == 2)
+            index_str = string("k");
+          m_row_str = string("|--") + index_str + string(" = ") +  row_num_str + string("---|");
+        }
+        else if(m_row_num == -1)
+        {
+          m_row_str = string("|--do_bc_lo--|");
+        }
+        else if(m_row_num == -2)
+        {
+          m_row_str = string("|--do_bc_hi--|");
+        }
+        else
+        {
+          m_row_str = string("|-bad-row-num-|");
+        }
       }
       ///
       void setVolumeValue(int a_icol, double a_phi_val)
@@ -1072,26 +1088,32 @@ namespace EBCM
       ///index refers to m_locality->m_dom_faces
       void setDomFaceValue(const ebcm_dom_face& a_face,  double a_phi_val)
       {
-        ///HERE need to rework this for for faces in all directions
-        /**
-        const auto& dom_faces = *m_locality->m_dom_faces;
-        const auto& dom_face  = dom_faces[a_idom];
-        if(dom_face.m_direction != m_hori_dir)
+        ch_iv lo_iv = a_face.m_lo.m_pt;
+        ch_iv hi_iv = a_face.m_hi.m_pt;
+        if(a_face.m_direction == m_hori_dir)
         {
-          Chombo4::pout() << "confusion reigns as setDomFaceValue directions do not match" << endl;
+          int irow        = lo_iv[m_vert_dir] -  m_lo_iv[m_vert_dir];
+          
+          bool on_lo_side = (hi_iv[m_hori_dir] == m_lo_iv[m_hori_dir]);
+          bool on_hi_side = (lo_iv[m_hori_dir] == m_hi_iv[m_hori_dir]);
+          if(!(on_lo_side || on_hi_side))
+          {
+            Chombo4::pout() << "confusion reigns as setDomFaceValue domains do not match" << endl;
+          }
+          m_row_data[irow]->setDomFaceValue(on_lo_side, on_hi_side, a_phi_val);
         }
-
-        ch_iv lo_iv = dom_face.m_lo.m_pt;
-        ch_iv hi_iv = dom_face.m_hi.m_pt;
-        int irow        = lo_iv[m_vert_dir] - m_lo_iv[m_vert_dir];
-        bool on_lo_side = hi_iv[m_hori_dir] == m_lo_iv[m_hori_dir];
-        bool on_hi_side = lo_iv[m_hori_dir] == m_hi_iv[m_hori_dir];
-        if(!(on_lo_side || on_hi_side))
+        else if(a_face.m_direction == m_vert_dir)
         {
-          Chombo4::pout() << "confusion reigns as setDomFaceValue domains do not match" << endl;
+          bool on_lo_side = (hi_iv[m_vert_dir] == m_lo_iv[m_vert_dir]);
+          bool on_hi_side = (lo_iv[m_vert_dir] == m_hi_iv[m_vert_dir]);
+          int  icol = lo_iv[m_hori_dir] - m_lo_iv[m_hori_dir];
+          if(on_lo_side)
+            m_dom_bc_lo_trans->setVolumeValue(icol, a_phi_val);
+          if(on_hi_side)
+            m_dom_bc_hi_trans->setVolumeValue(icol, a_phi_val);
         }
-        m_row_data[irow]->setDomFaceValue(on_lo_side, on_hi_side, a_phi_val);
-        **/
+          ///there is a 3D case here that I do not want to try to figure out
+        /**/
       }
       ///
       neighbor_data_t(const shared_ptr<ebcm_neighborhood> & a_locality)
