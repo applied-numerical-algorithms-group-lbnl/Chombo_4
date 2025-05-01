@@ -37,6 +37,16 @@ namespace EBCM_Exact
     {
     }
 
+    virtual double
+    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    {
+      static bool printed_once = false;
+      if(!printed_once)
+      {
+        Chombo4::pout() << "no analytical laplacian available" << endl;
+      }
+      return 4586;
+    }
     /// These functions are necessary for convergence tests
     
     ///
@@ -49,7 +59,13 @@ namespace EBCM_Exact
       const pr_ind_mom_dim & volmom = a_volu.m_volmom;
       retval = 0;
       ///this gets int(laplacian) dV
-      auto centloc = a_volu.m_centroid;
+      pr_rv centloc;
+      auto pt = a_volu.m_pt;
+      auto dx = a_volu.m_dx;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        centloc[idir] = dx*(double(pt[idir]) + 0.5);
+      }
       for(pr_momit_dim momit; momit.ok(); ++momit)
       {
         pr_ind_int_dim mom_power = momit();
@@ -437,8 +453,14 @@ namespace EBCM_Exact
   {
   public:
   
+    typedef    EBCM::EBCM_Volu<                           order > ebcm_volu;
     typedef       Proto::IndexTM<int, DIM>            pr_ind_int_dim;
     typedef       Proto::RealVect                     pr_rv;
+    virtual double
+    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    {
+      return 0;
+    }
     virtual Real getDerivative(pr_ind_int_dim  a_power,
                                pr_rv           a_loc) const
     {
@@ -541,6 +563,7 @@ namespace EBCM_Exact
   class OneDimSineEF: public BaseExactSolution<order>
   {
   public:
+    typedef    EBCM::EBCM_Volu<                           order > ebcm_volu;
     int    m_direction;
     double m_amplitude;
     int    m_frequency;
@@ -565,41 +588,46 @@ namespace EBCM_Exact
         }
       }
       double x_loc     =   a_loc[m_direction];
-      //begin debug
-      double deb_loc_x = 0.5, deb_eps = 0.05;
-      int deb_stop = 0;
-      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
-      {
-        deb_stop = 1;
-      }
-      //end debug
+
       int    deriv_mag = a_deriv[m_direction];
+      bool   sin_now = true;
+      bool   cos_now = false;
       static const double s_pi = 4.*atan(1.0);
-      double base_trig = cos(s_pi*x_loc*m_frequency);
-      double trig_sign_change = -1.;
-      if((deriv_mag % 2 ) == 0)
-      {
-        base_trig = sin(s_pi*x_loc*m_frequency);
-        trig_sign_change = 1.;
-      }
       double trig_factor =   1;
       for(int i_der = 1; i_der <= deriv_mag; i_der++)
       {
-        trig_factor *= s_pi*m_frequency;
-      }
-      double final_sign  =   1;
-      for(int i_der = 1; i_der <= deriv_mag; i_der++)
-      {
-        if((i_der % 2 ) == 0)
+        if(sin_now)
         {
-          final_sign *= -1;
+          trig_factor *= s_pi*m_frequency;
         }
+        if(cos_now)
+        {
+          trig_factor *= -s_pi*m_frequency;
+        }
+        //swap stuff for next round
+        sin_now = !sin_now;
+        cos_now = !cos_now;
       }
+      double base_trig = 4586;
+      if(sin_now)
+         base_trig = sin(s_pi*x_loc*m_frequency);
+      else if(cos_now)
+         base_trig = cos(s_pi*x_loc*m_frequency);
+      double retval = m_amplitude*trig_factor*base_trig;
 
-      double retval = m_amplitude*final_sign*trig_factor*base_trig;
       return retval;
     }
 
+    virtual double
+    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    {
+      static const double pi = 4.*atan(1.0);
+      double dx = a_volu.m_dx;
+      double xhi = dx*(double(a_volu.m_pt[0]) + 0.5);
+      double xlo = dx*(double(a_volu.m_pt[0]) - 0.5);
+      double retval = pi*(cos(pi*xhi) - cos(pi*xlo))/dx;
+      return retval;
+    }
     virtual ~OneDimSineEF()
     {
     }

@@ -1847,6 +1847,7 @@ namespace EBCM
     static void
     setExact( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
               shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
+              shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
               shared_ptr< ebcm_meta  >      a_meta_ptr,
               shared_ptr< ebcm_exac  >      a_exac_ptr,
               double a_alpha, double a_beta)
@@ -1858,8 +1859,9 @@ namespace EBCM
       {
         const auto& valid  =             grids[dit[ibox]];
         const auto& graph  =            graphs[dit[ibox]];
-        auto& phi_fab      = (*a_phi_exac_ptr)[dit[ibox]];
-        auto& lph_fab      = (*a_lph_exac_ptr)[dit[ibox]];
+        auto& phi_fab_exac = (*a_phi_exac_ptr)[dit[ibox]];
+        auto& lph_fab_exac = (*a_lph_exac_ptr)[dit[ibox]];
+        auto& lph_fab_anal = (*a_lph_anal_ptr)[dit[ibox]];
 
         /// this gets all volumes in valid
         ebcm_subvol_vec subvol_vec(graph, valid, false);
@@ -1867,25 +1869,18 @@ namespace EBCM
         for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
         {
           const auto& volu = subvol_vec[ivec];
-//begin debug
-//      double deb_loc_x = 0.5, deb_eps = 0.05;
-//      int deb_stop = 0;
-//      int    i_loc = volu.m_pt[0];
-//      double x_loc = volu.m_dx*(double(i_loc) + 0.5);
-//      if((x_loc > (deb_loc_x - deb_eps)) && (x_loc < (deb_loc_x + deb_eps)))
-//      {
-//        deb_stop = 1;
-//      }
-//end debug
 
           
-          double phi_val   = a_exac_ptr->getCellAveSolution( volu);
-          double lap_val   = a_exac_ptr->getCellAveLaplacian(volu);
-          double lph_val   = a_alpha*phi_val + a_beta*lap_val;
+          double phi_exac   = a_exac_ptr->getCellAveSolution( volu);
+          double lap_exac   = a_exac_ptr->getCellAveLaplacian(volu);
+          double lap_anal   = a_exac_ptr->getAnalyticalLaplacian(volu);
+          double lph_exac  = a_alpha*phi_exac + a_beta*lap_exac;
+          double lph_anal  = a_alpha*phi_exac + a_beta*lap_anal;
           for(int ivec = 0; ivec < volu.m_cells.size(); ivec++)
           {
-            phi_fab(volu.m_cells[ivec], 0) = phi_val;
-            lph_fab(volu.m_cells[ivec], 0) = lph_val;
+            phi_fab_exac(volu.m_cells[ivec], 0) = phi_exac;
+            lph_fab_exac(volu.m_cells[ivec], 0) = lph_exac;
+            lph_fab_anal(volu.m_cells[ivec], 0) = lph_anal;
           }
         }
       }
@@ -2167,16 +2162,26 @@ namespace EBCM
 //      pr_pt  hi_fine(D_DECL(17, 31, 0));
 
 //  upper left
+//      if(!printed)
+//      {
+//        pout() << "displaying TOP LEFT" << endl;
+//        printed = true;
+//      }
+//      pr_pt  lo_coar(D_DECL( 0, 12, 0));
+//      pr_pt  hi_coar(D_DECL( 3, 15, 0));
+//      pr_pt  lo_fine(D_DECL( 0, 28, 0));
+//      pr_pt  hi_fine(D_DECL( 3, 31, 0));
+
+/// middle middle      
       if(!printed)
       {
-        pout() << "displaying TOP LEFT" << endl;
+        pout() << "displaying MIDDLE MIDDLE" << endl;
         printed = true;
       }
-      pr_pt  lo_coar(D_DECL( 0, 12, 0));
-      pr_pt  hi_coar(D_DECL( 3, 15, 0));
-      pr_pt  lo_fine(D_DECL( 0, 28, 0));
-      pr_pt  hi_fine(D_DECL( 3, 31, 0));
-      
+      pr_pt  lo_coar(D_DECL( 5, 5 , 0));
+      pr_pt  hi_coar(D_DECL( 8,  8, 0));
+      pr_pt  lo_fine(D_DECL(13, 13, 0));
+      pr_pt  hi_fine(D_DECL(16, 16, 0));
       
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
@@ -2239,6 +2244,7 @@ namespace EBCM
                      shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
                      shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
                      shared_ptr<ebcm_dou_sca_data> a_lph_calc_ptr,
+                     shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
                      shared_ptr<ebcm_dou_sca_data> a_err_calc_ptr)
     {
       ParmParse pp("main");
@@ -2249,12 +2255,14 @@ namespace EBCM
         string phi_exac_file_name = a_file_prefix + string("_phi_exac.hdf5");
         string lph_exac_file_name = a_file_prefix + string("_lph_exac.hdf5");
         string lph_calc_file_name = a_file_prefix + string("_lph_calc.hdf5");
+        string lph_anal_file_name = a_file_prefix + string("_lph_anal.hdf5");
         string err_calc_file_name = a_file_prefix + string("_err_calc.hdf5");
 
 
         a_phi_exac_ptr->writeToHDF5(phi_exac_file_name);
         a_lph_exac_ptr->writeToHDF5(lph_exac_file_name);
         a_lph_calc_ptr->writeToHDF5(lph_calc_file_name);
+        a_lph_anal_ptr->writeToHDF5(lph_anal_file_name);
         a_err_calc_ptr->writeToHDF5(err_calc_file_name);
       }
     }
@@ -2286,10 +2294,11 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_data> lph_anal_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
+      setExact(phi_exac_ptr, lph_exac_ptr, lph_anal_ptr, a_meta, exact_sol, alpha, beta);
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
                                                        a_meta, 
@@ -2306,8 +2315,7 @@ namespace EBCM
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
       ///using stuff I think I actually understand
-      discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
-//      Chombo4::pout() << "bailing after writeDetails because it is already wrong" << endl;
+//      discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
 //      return;
       shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
       discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
@@ -2323,27 +2331,26 @@ namespace EBCM
       err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
       a_max_error = max_val;
 
-      writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
-      writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
+      //writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
+      //writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
       writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
       writeWindow(a_file_prefix, string("lph_calc"), lph_calc_ptr);
+      writeWindow(a_file_prefix, string("lph_anal"), lph_anal_ptr);
       writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
 
-      writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, err_calc_ptr);
+      writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, lph_anal_ptr, err_calc_ptr);
       
       return;
     }
     ///
     static void
     getMaxAbsTruncation(double                   & a_lphi_err_max,
-                        double                     a_flux_err_max[DIM],
                         shared_ptr< ebcm_meta  >   a_meta,
                         string                     a_file_prefix)
     {
       getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
-//      Chombo4::pout() << "bailing after getMaxLphiError because it is already wrong"  << endl;
-//      return;
-      getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
+      //double                     flux_err_max[DIM];
+      //getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
     }
 
     ///
@@ -2365,48 +2372,23 @@ namespace EBCM
       domain_coar.coarsen(2);
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
-      double max_lphi_err_fine = -4586;
-      double max_lphi_err_coar = -4586;
-      double max_flux_err_fine[DIM];
-      double max_flux_err_coar[DIM];
-      
-      getMaxAbsTruncation(max_lphi_err_fine, max_flux_err_fine, meta_fine, string("fine"));
-//      Chombo4::pout() << "bailing after fine calc because it is already wrong" << endl;
-//      return; 
-      getMaxAbsTruncation(max_lphi_err_coar, max_flux_err_coar, meta_coar, string("coar"));
+      double max_err_fine = -4586;
+      double max_err_coar = -4586;
+      getMaxAbsTruncation(max_err_fine, meta_fine, string("fine"));
+      getMaxAbsTruncation(max_err_coar, meta_coar, string("coar"));
 
-
-      for(int itest = 0; itest < (DIM+1); itest++)
+      Chombo4::pout() << "run_hoeb_truncation_tests: max_err_coar =" << max_err_coar << endl;
+      Chombo4::pout() << "run_hoeb_truncation_tests: max_err_fine =" << max_err_fine << endl;
+      if(max_err_fine > 1.0e-12) //err >= 0  by construction
       {
-        string which_test("4586");
-        double max_err_coar = -4586;
-        double max_err_fine = -4586;
-        if(itest == DIM)
-        {
-          which_test = string("L_phi");
-          max_err_coar = max_lphi_err_coar;
-          max_err_fine = max_lphi_err_fine;
-        }
-        else
-        {
-          which_test = string("Grad_phi[")  + to_string(itest) + string("]");
-          max_err_coar = max_flux_err_coar[itest];
-          max_err_fine = max_flux_err_fine[itest];
-        }
+        double order = (log(max_err_coar/max_err_fine))/log(2.0);
+        Chombo4::pout() << "run_hoeb_truncation_tests: ebcm_hoeb_trunc_err_order=" << order << endl;
+      }
+      else
+      {
+        Chombo4::pout() <<  "run_hoeb_truncation_tests: max_err_fine too small to compute order." << endl;
+      }
 
-        Chombo4::pout() << which_test<< ":err_coar_max=" << max_err_coar << endl;
-        Chombo4::pout() << which_test<< ":err_fine_max=" << max_err_fine << endl;
-        if(max_err_fine > 1.0e-12) //err >= 0  by construction
-        {
-          double order = (log(max_err_coar/max_err_fine))/log(2.0);
-          Chombo4::pout() << which_test << ":trunc_order=" << order << endl;
-        }
-        else
-        {
-          Chombo4::pout() <<  which_test << ":Fine error is too small for safe order computation." << endl;
-        }
-
-      } //end loop over tests
     } //  end function run_truncation_error_tests
   }; //   end petsc_framwork class
 } //      end namespace EBCM

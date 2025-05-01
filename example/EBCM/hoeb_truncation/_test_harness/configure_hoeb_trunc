@@ -13,7 +13,7 @@ parser = ArgumentParser()
 
 parser.add_argument('--num_proc'        , type=int, help='N_p       ',default='4')
 parser.add_argument('--max_taylor_order', type=int, help='P_max     ',default='4')
-parser.add_argument('--max_weight_power', type=int, help='W_max     ',default='5')
+parser.add_argument('--max_weight_power', type=int, help='W_max     ',default='3')
 parser.add_argument('--domain_bc'       , type=str, help='dom BC    ',default="dirichlet")
 parser.add_argument('--eb_bc'           , type=str, help='EB BC     ',default="dirichlet")
 parser.add_argument('--prefix'          , type=str, help='test name ',default= "all_regular_2d")
