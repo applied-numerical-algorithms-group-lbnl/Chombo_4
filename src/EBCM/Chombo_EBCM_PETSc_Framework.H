@@ -1266,13 +1266,57 @@ namespace EBCM
       const pr_fab_t                     * a_phi_exac_ptr, //can be null
       bool a_killing_me_smalls)
     {
-      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
+      CH_TIME("PETSc_Framework::getHelmFDotEhatStencilUsingSVD");
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
       local_stencil_t retval;
 
-      ch_mayday::Error("svd version not implemented");
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > A_mat_p, W_mat_p, M_mat_p, WMT_mat_p;
+      EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemInfo(A_mat_p, W_mat_p, M_mat_p, WMT_mat_p, locality,
+                      a_face, a_graph, a_stenrad, a_weightpower,
+                      a_dom_bc, a_eb_bc, false);
+      
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getHelmFDEHStencilSVD: after getSystemInfo" << endl;
+      }
+      //not using A_mat_p here -- that is the thing to invert if you are inverting the normal equations.
+      // this is WM
+      eigen_mat WM_mat = *WMT_mat_p;
+      WM_mat.transpose();
+      double tol = 1.0e-3;
+      int max_iter = 3;
+      eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(max_iter, tol, a_killing_me_smalls);
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
+      }
+
+      shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
+      
+      eigen_mat WMinvW_mat;
+      multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
+      eigen_mat S_mat_FFS;
+      multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getHelmFDEHStencilSVD: after generating stencil matrix" << endl;
+      }
+
+      retval = getStencilFromMat(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+
+      //debug  stop after one.
+      Chombo4::pout() << "getHelmFDEHStencilSVD: Stopping the show after one." << endl;
+      exit(0);
+      //end debug
+      
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getHelmFDEHStencilSVD: returning." << endl;
+      }
 
       return retval;
     } //end function getHelmholtzFDotEhatStencil
@@ -1293,7 +1337,7 @@ namespace EBCM
       const pr_fab_t                     * a_phi_exac_ptr, //can be null
       bool a_killing_me_smalls)
     {
-      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencilUsingNormalEquations");
+      CH_TIME("PETSc_Framework::getHelmFDotEhatStencilUsingNormalEquations");
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
@@ -1376,14 +1420,13 @@ namespace EBCM
       }//end neumann bc
       else
       { //stencil based face
-        static bool s_use_svd = false;
+        static bool s_use_svd = true;;
         if(s_use_svd)
         {
           static bool s_printed_once = false;
           if(!s_printed_once)
           {
             Chombo4::pout() << "getHelmFDEHStencil: svd case " << endl;
-            s_printed_once = true;
           }
           
           retval = getHelmFDotEhatStencilUsingSVD
@@ -1397,7 +1440,9 @@ namespace EBCM
              a_dx,
              a_bc_exact,
              a_phi_exac_ptr, //can be null
-             a_killing_me_smalls);
+             s_printed_once);
+
+          s_printed_once = true;
         } //end use svd
         else
         { //use normal eqns
