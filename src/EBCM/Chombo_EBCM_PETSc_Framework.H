@@ -1253,6 +1253,96 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static local_stencil_t
+    getHelmFDotEhatStencilUsingSVD(
+      const EBCM_Face<cent, ebcm_order>  & a_face,
+      const int                          & a_stenrad,
+      const int                          & a_weightpower,
+      const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+      const string                       & a_dom_bc,
+      const string                       & a_eb_bc,
+      const int                          & a_facedir,
+      const double                       & a_dx,
+      const ebcm_exac                    & a_bc_exact,
+      const pr_fab_t                     * a_phi_exac_ptr, //can be null
+      bool a_killing_me_smalls)
+    {
+      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
+      /** 
+          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
+      **/
+      local_stencil_t retval;
+
+      ch_mayday::Error("svd version not implemented");
+
+      return retval;
+    } //end function getHelmholtzFDotEhatStencil
+
+    ///
+    template<CENTERING cent>
+    static local_stencil_t
+    getHelmFDotEhatStencilUsingNormalEquations(
+      const EBCM_Face<cent, ebcm_order>  & a_face,
+      const int                          & a_stenrad,
+      const int                          & a_weightpower,
+      const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+      const string                       & a_dom_bc,
+      const string                       & a_eb_bc,
+      const int                          & a_facedir,
+      const double                       & a_dx,
+      const ebcm_exac                    & a_bc_exact,
+      const pr_fab_t                     * a_phi_exac_ptr, //can be null
+      bool a_killing_me_smalls)
+    {
+      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencilUsingNormalEquations");
+      /** 
+          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
+      **/
+      local_stencil_t retval;
+
+      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< eigen_mat > Amat_p, Wmat_p, Mmat_p, WMTmat_p;
+      EBCM::Algorithm_Framework<ebcm_order>::
+        getSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
+                      a_face, a_graph, a_stenrad, a_weightpower,
+                      a_dom_bc, a_eb_bc, false);
+      
+      /**
+         From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
+         Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
+         It is the one that converts  Taylor coefficients to fluxes).   
+         S : stencil matrix.  
+         P : phi vector.  
+         W : weighting matrix.
+         M : moment matrix.
+         A : system matrix =  ((WM)^T(WM))
+         (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
+         S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
+      **/
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
+      }
+
+
+      eigen_mat Ainvmat = *Amat_p;
+      Ainvmat.invert();
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
+      
+      eigen_mat WMTW;
+      multiply( WMTW, *WMTmat_p, *Wmat_p);
+      eigen_mat AinvWMTW;
+      multiply( AinvWMTW, Ainvmat, WMTW);
+      eigen_mat SmatFFS;
+      multiply( SmatFFS, *Qmat_p, AinvWMTW);
+
+      retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+
+      return retval;
+    } //end function getHelmFDotEhatStencilUsingNormalEquations
+
+    ///
+    template<CENTERING cent>
+    static local_stencil_t
     getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
                                 const int                          & a_stenrad,
                                 const int                          & a_weightpower,
@@ -1271,15 +1361,8 @@ namespace EBCM
       **/
       local_stencil_t retval;
 
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p, Wmat_p, Mmat_p, WMTmat_p;
-      EBCM::Algorithm_Framework<ebcm_order>::
-        getSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
-                      a_face, a_graph, a_stenrad, a_weightpower,
-                      a_dom_bc, a_eb_bc, false);
-      
       if((a_dom_bc == string("neumann")) && (a_face.domainBoundary()))
-      {
+      { //neumann bc
         if(a_killing_me_smalls)
         {
           Chombo4::pout() << "getHelmFDEHStencil: neumann bc" << endl;
@@ -1290,84 +1373,54 @@ namespace EBCM
 
         double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
-      }
+      }//end neumann bc
       else
-      {    
-        /**
-           From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
-           Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-           It is the one that converts  Taylor coefficients to fluxes).   
-           S : stencil matrix.  
-           P : phi vector.  
-           W : weighting matrix.
-           M : moment matrix.
-           A : system matrix =  ((WM)^T(WM))
-           (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
-           S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
-        **/
-        if(a_killing_me_smalls)
+      { //stencil based face
+        static bool s_use_svd = false;
+        if(s_use_svd)
         {
-          Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
-        }
-
-
-        eigen_mat Ainvmat = *Amat_p;
-        Ainvmat.invert();
-        shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
-      
-        eigen_mat WMTW;
-        multiply( WMTW, *WMTmat_p, *Wmat_p);
-        eigen_mat AinvWMTW;
-        multiply( AinvWMTW, Ainvmat, WMTW);
-        eigen_mat SmatFFS;
-        multiply( SmatFFS, *Qmat_p, AinvWMTW);
-
-        retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
-
-//        ///begin debug
-        static int s_num_prints = 0;
-        static int s_max_prints = 4;
-        if(a_killing_me_smalls && (s_num_prints < s_max_prints))
-        {
-          s_num_prints++; 
-          int num_volumes = locality->m_volumes->size();
-          int num_powers  = pr_mom_dim::size();
-          pout() << "getHemmFDEHStencil: num_volumes = " << num_volumes << ", num_powers = " << num_powers << endl;
-          shared_ptr<eigen_mat> Phi_p = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx, a_killing_me_smalls);
-          pout() << "WMTmat_p = " << endl;
-          WMTmat_p->poutAll();
-#if 0
-          pout() << "wmat_p = " << endl; //seems to match but hard to tell because numbers of rows diffs
-          Wmat_p->poutDiagOneRow();
-          //so many things to print out, so little wetware bandwidth.
+          static bool s_printed_once = false;
+          if(!s_printed_once)
+          {
+            Chombo4::pout() << "getHelmFDEHStencil: svd case " << endl;
+            s_printed_once = true;
+          }
           
-          pout() << "gethelmfdehsten: Amat_p = " << endl; //kind of passed
-          Amat_p->poutAll();
-
-          pout() << "gethelmfdehsten: AinvWMTW = " << endl;
-          AinvWMTW.poutAll(); //does not pass
-          
-          pout() << "getHemmFDEHStencil: phi_p FFS = " << endl; //passed
-          Phi_p->poutAll();
-          eigen_mat phi_tran = *Phi_p;
-          phi_tran.transpose();
-          pout() << "getHemmFDEHStencil: phi_tran = " << endl;  //passed
-          phi_tran.poutAll();
-
-          ///different in row 6 but  not by enough, I think.
-          pout() << "gethelmfdehsten: Qmat_p = " << endl;
-          Qmat_p->poutAll();
-
-          ///smatffs is the stencil matrix.  it does not pass.
-          pout() << "getHemmFDEHStencil: SmatFFS = " << endl; 
-          SmatFFS.poutAll();
-#endif
-
-
-        }
-        /// end  debug
-        
-      }
+          retval = getHelmFDotEhatStencilUsingSVD
+            (a_face,
+             a_stenrad,
+             a_weightpower,
+             a_graph,
+             a_dom_bc,
+             a_eb_bc,
+             a_facedir,
+             a_dx,
+             a_bc_exact,
+             a_phi_exac_ptr, //can be null
+             a_killing_me_smalls);
+        } //end use svd
+        else
+        { //use normal eqns
+          static bool s_printed_once = false;
+          if(!s_printed_once)
+          {
+            Chombo4::pout() << "getHelmFDEHStencil: normal equation case " << endl;
+            s_printed_once = true;
+          }
+          retval = getHelmFDotEhatStencilUsingNormalEquations
+            (a_face,
+             a_stenrad,
+             a_weightpower,
+             a_graph,
+             a_dom_bc,
+             a_eb_bc,
+             a_facedir,
+             a_dx,
+             a_bc_exact,
+             a_phi_exac_ptr, //can be null
+             a_killing_me_smalls);
+        } //end use normal eqns
+      } //end stencil based face
       return retval;
     } //end function getHelmholtzFDotEhatStencil
     ///
