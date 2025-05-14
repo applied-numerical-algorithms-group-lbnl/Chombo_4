@@ -236,10 +236,14 @@ namespace EBCM
         }   //end loop over cells in box
       }     //end loop over boxes
       Chombo4::pout() <<
-        "writeToHDF5 is writing to "
+        "writeToHDF5 is about to write to "
                 << a_filename
                 << std::endl;
       writeLevelname(&levelfabs, a_filename.c_str());
+      Chombo4::pout() <<
+        "writeToHDF5 is done writing to "
+                << a_filename
+                << std::endl;
 #else
       Chombo4::pout() <<
         "Confusion reigns. \n The function writeToHDF5 was called but CH_USE_HDF5 is false.  \n This message is to let you know that happened."

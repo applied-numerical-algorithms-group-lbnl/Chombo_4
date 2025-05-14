@@ -1307,11 +1307,6 @@ namespace EBCM
       }
 
       retval = getStencilFromMat(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
-
-      //debug  stop after one.
-      Chombo4::pout() << "getHelmFDEHStencilSVD: Stopping the show after one." << endl;
-      exit(0);
-      //end debug
       
       if(a_killing_me_smalls)
       {
@@ -1423,8 +1418,8 @@ namespace EBCM
         static bool s_use_svd = true;;
         if(s_use_svd)
         {
-          static bool s_printed_once = false;
-          if(!s_printed_once)
+          static bool s_printed_once_svd = false;
+          if(!s_printed_once_svd)
           {
             Chombo4::pout() << "getHelmFDEHStencil: svd case " << endl;
           }
@@ -1440,9 +1435,9 @@ namespace EBCM
              a_dx,
              a_bc_exact,
              a_phi_exac_ptr, //can be null
-             s_printed_once);
+             false);
+          s_printed_once_svd = true;
 
-          s_printed_once = true;
         } //end use svd
         else
         { //use normal eqns
@@ -1463,7 +1458,7 @@ namespace EBCM
              a_dx,
              a_bc_exact,
              a_phi_exac_ptr, //can be null
-             a_killing_me_smalls);
+             false);
         } //end use normal eqns
       } //end stencil based face
       return retval;
@@ -2258,29 +2253,29 @@ namespace EBCM
 //      pr_pt  hi_coar(D_DECL( 9, 15, 0));
 //      pr_pt  lo_fine(D_DECL(14, 28, 0));
 //      pr_pt  hi_fine(D_DECL(17, 31, 0));
-
+//
 //  upper left
-//      if(!printed)
-//      {
-//        pout() << "displaying TOP LEFT" << endl;
-//        printed = true;
-//      }
-//      pr_pt  lo_coar(D_DECL( 0, 12, 0));
-//      pr_pt  hi_coar(D_DECL( 3, 15, 0));
-//      pr_pt  lo_fine(D_DECL( 0, 28, 0));
-//      pr_pt  hi_fine(D_DECL( 3, 31, 0));
-
-/// middle middle      
       if(!printed)
       {
-        pout() << "displaying MIDDLE MIDDLE" << endl;
+        pout() << "displaying TOP LEFT" << endl;
         printed = true;
       }
-      pr_pt  lo_coar(D_DECL( 5, 5 , 0));
-      pr_pt  hi_coar(D_DECL( 8,  8, 0));
-      pr_pt  lo_fine(D_DECL(13, 13, 0));
-      pr_pt  hi_fine(D_DECL(16, 16, 0));
-      
+      pr_pt  lo_coar(D_DECL( 0, 12, 0));
+      pr_pt  hi_coar(D_DECL( 3, 15, 0));
+      pr_pt  lo_fine(D_DECL( 0, 28, 0));
+      pr_pt  hi_fine(D_DECL( 3, 31, 0));
+
+/// middle middle      
+//      if(!printed)
+//      {
+//        pout() << "displaying MIDDLE MIDDLE" << endl;
+//        printed = true;
+//      }
+//      pr_pt  lo_coar(D_DECL( 5, 5 , 0));
+//      pr_pt  hi_coar(D_DECL( 8,  8, 0));
+//      pr_pt  lo_fine(D_DECL(13, 13, 0));
+//      pr_pt  hi_fine(D_DECL(16, 16, 0));
+//      
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
       a_lo_fine = lo_fine;
@@ -2429,6 +2424,7 @@ namespace EBCM
       err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
       a_max_error = max_val;
 
+      pout() << "calling writeWindow" << endl;
       //writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
       //writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
       writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
@@ -2436,8 +2432,10 @@ namespace EBCM
       writeWindow(a_file_prefix, string("lph_anal"), lph_anal_ptr);
       writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
 
+      pout() << "calling writeStuffToFile" << endl;
       writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, lph_anal_ptr, err_calc_ptr);
-      
+
+      pout() << "leaving getMaxAbsLphiError" << endl;
       return;
     }
     ///

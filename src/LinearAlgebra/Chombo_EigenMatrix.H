@@ -356,47 +356,19 @@ namespace ch_eigen
      **/
     inline Matrix getSVDPseudoInverse(int a_max_iter, double a_tol, bool a_killing_me_smalls) const
     {
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "getSVDPseudoInverse: entering " << endl;
+      }
       Matrix  A = *this;
+      ///perform SVD 
+      Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cd(*A.m_mat_p);
+      
       int n_row = A.m_mat_p->rows();
       int n_col = A.m_mat_p->cols();
-      ///this is the B matrix in AX = B
-      Matrix ident(n_col, n_col);
-      ident.setToIdentity();
-      //looks backward because this gets multiplied by A
-      Matrix incr(n_col, n_row); incr.setVal(0.);
-      Matrix    X(n_col, n_row);    X.setVal(0.);
-      int iter = 0;  double resid_norm = 1.;  //identity matrix
-      Matrix resid = incr;
-      resid.setToIdentity();
-      if(a_killing_me_smalls)
-      {
-        Chombo4::pout() << "getSVDPseudoInverse: starting iteration" << endl;
-      }
-      while((iter== 0)|| ((resid_norm >= a_tol) && (iter < a_max_iter) && (resid_norm > a_tol)))
-      {
-        incr = resid; // goes in as rhs, comes out as solution.    really hate this interface.
-        m_mat_p->template bdcSvd<Eigen::ComputeFullU | Eigen::ComputeFullV>().solve(*(incr.m_mat_p));
-        X += incr;
-        //recalculate residual = ax - B
-        resid.setVal(0.);
-        //multiply(resid, A, X);
-        (*resid.m_mat_p) = (*A.m_mat_p) * (*X.m_mat_p);
-        resid -= ident;
-        resid_norm = resid.norm();
-        if(a_killing_me_smalls)
-        {
-          Chombo4::pout() << "getSVDPseudoInverse:iter = " << iter  << ": resid_norm = " << resid_norm << ", iter = " << iter << ", a_tol = " << a_tol <<  ", residinit = 1" <<  endl;
-        }
-        
-        incr.setVal(0.);
-        iter++;
-      }
-      if(a_killing_me_smalls)
-      {
-        Chombo4::pout() << "getSVDPseudoInverse:ending iteration" << endl;
-      }
+      Matrix    X(n_col, n_row);
+      *(X.m_mat_p) = cd.pseudoInverse();
       return X;
-
     }
 
     
