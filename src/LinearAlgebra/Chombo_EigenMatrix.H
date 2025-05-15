@@ -22,6 +22,7 @@ namespace ch_eigen
 
     typedef Chombo4::MayDay  ch_mayday;
     typedef Eigen::MatrixXd  eigen_mat;
+
 ///
 /**
    Very simple wrapper around Eigen::matrix class designed to 
@@ -346,7 +347,7 @@ namespace ch_eigen
      **/
     inline void invertUsingSVD(int a_max_iter, double a_tol, bool a_killing_me_smalls)
     {
-      Matrix    X = this->getSVDPseudoInverse(a_max_iter, a_tol, a_killing_me_smalls);
+      Matrix    X = this->getSVDPseudoInverse(a_killing_me_smalls);
       //because this is where the answer goes.  Sometimes APIs are bad.
       *this = X;
     }
@@ -354,11 +355,11 @@ namespace ch_eigen
     /**
        This function allows for non-square matricies.
      **/
-    inline Matrix getSVDPseudoInverse(int a_max_iter, double a_tol, bool a_killing_me_smalls) const
+    inline Matrix getSVDPseudoInverse(bool a_killing_me_smalls) const
     {
       if(a_killing_me_smalls)
       {
-        Chombo4::pout() << "getSVDPseudoInverse: entering " << endl;
+        Chombo4::pout() << "entering getSVDPseudoInverse" << endl;
       }
       Matrix  A = *this;
       ///perform SVD 
@@ -368,6 +369,13 @@ namespace ch_eigen
       int n_col = A.m_mat_p->cols();
       Matrix    X(n_col, n_row);
       *(X.m_mat_p) = cd.pseudoInverse();
+
+
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "leaving getSVDPseudoInverse" << endl;
+      }
+
       return X;
     }
 
@@ -415,6 +423,36 @@ namespace ch_eigen
     a_prod.m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(leftrow, righcol));
     
     (*a_prod.m_mat_p) = (*a_left.m_mat_p) * (*a_righ.m_mat_p);
+  }
+///
+/**
+   
+*/
+  void testPseudoInverse(Matrix      & a_resid, 
+                         const Matrix& a_Amat,
+                         const Matrix& a_Ainv,
+                         bool a_killing_me_smalls)
+  {
+    ///We are multiply AinvA so Ainv is left and Amat is righ
+    int leftrow = a_Ainv.m_mat_p->rows();
+    int leftcol = a_Ainv.m_mat_p->cols();
+    int righrow = a_Amat.m_mat_p->rows();
+    int righcol = a_Amat.m_mat_p->cols();
+    if(leftcol != righrow)
+    {
+      Chombo4::MayDay::Error("ch_eigen::multiply needs left n_columns to match right n_rows");
+    }
+    Matrix AinvA;
+    multiply(AinvA, a_Ainv, a_Amat);  //includes allocation
+    Chombo4::pout() << "AinvA = "  << endl;
+    AinvA.poutAll();
+    a_resid.m_mat_p = shared_ptr<eigen_mat>(new eigen_mat(leftrow, righcol));
+    a_resid.setToIdentity();
+    a_resid -= AinvA;
+    Chombo4::pout() << "resid = "  << endl;
+    a_resid.poutAll();
+    a_resid.poutMaxMins();
+    return;
   }
 
 

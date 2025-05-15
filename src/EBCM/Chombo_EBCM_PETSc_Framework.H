@@ -1287,11 +1287,11 @@ namespace EBCM
       // this is WM
       eigen_mat WM_mat = *WMT_mat_p;
       WM_mat.transpose();
-      double tol = 1.0e-3;
-      int max_iter = 3;
-      eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(max_iter, tol, a_killing_me_smalls);
+      eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       if(a_killing_me_smalls)
       {
+        eigen_mat resid_mat;
+        testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  a_killing_me_smalls);
         Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
       }
 
@@ -1415,51 +1415,26 @@ namespace EBCM
       }//end neumann bc
       else
       { //stencil based face
-        static bool s_use_svd = true;;
-        if(s_use_svd)
-        {
-          static bool s_printed_once_svd = false;
-          if(!s_printed_once_svd)
-          {
-            Chombo4::pout() << "getHelmFDEHStencil: svd case " << endl;
-          }
+        //static bool s_use_svd = true;;
+        /**
+           Used to have an option to use svd or normal equations here.
+           svd gets better answers.
+         **/
           
-          retval = getHelmFDotEhatStencilUsingSVD
-            (a_face,
-             a_stenrad,
-             a_weightpower,
-             a_graph,
-             a_dom_bc,
-             a_eb_bc,
-             a_facedir,
-             a_dx,
-             a_bc_exact,
-             a_phi_exac_ptr, //can be null
-             false);
-          s_printed_once_svd = true;
+        retval = getHelmFDotEhatStencilUsingSVD
+          (a_face,
+           a_stenrad,
+           a_weightpower,
+           a_graph,
+           a_dom_bc,
+           a_eb_bc,
+           a_facedir,
+           a_dx,
+           a_bc_exact,
+           a_phi_exac_ptr, //can be null
+           false);
 
-        } //end use svd
-        else
-        { //use normal eqns
-          static bool s_printed_once = false;
-          if(!s_printed_once)
-          {
-            Chombo4::pout() << "getHelmFDEHStencil: normal equation case " << endl;
-            s_printed_once = true;
-          }
-          retval = getHelmFDotEhatStencilUsingNormalEquations
-            (a_face,
-             a_stenrad,
-             a_weightpower,
-             a_graph,
-             a_dom_bc,
-             a_eb_bc,
-             a_facedir,
-             a_dx,
-             a_bc_exact,
-             a_phi_exac_ptr, //can be null
-             false);
-        } //end use normal eqns
+
       } //end stencil based face
       return retval;
     } //end function getHelmholtzFDotEhatStencil
@@ -1937,10 +1912,28 @@ namespace EBCM
     }
 
     ///
+    template<CENTERING cent>
+    static void
+    setVectorIntGradPhiDA(pr_fab_t&                                           a_fab,
+                         const vector< EBCM_Face<cent, ebcm_order> >     &   a_vec_faces,
+                         int                                                 a_face_dir,
+                         double                                              a_dx,
+                         shared_ptr< ebcm_exac  >                            a_exac_ptr)
+
+    {
+      for(int iface = 0; iface < a_vec_faces.size();iface++)
+      {
+        const auto& face = a_vec_faces[iface];
+        double exac_val = a_exac_ptr->getIntGradPhiDotNDA(face, a_dx);              
+        a_fab(face.m_hi.m_pt, 0) = exac_val;
+      }
+    }
+    ///
     static void
     setExact( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
               shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
               shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
+              shared_ptr<ebcm_dou_sca_flux> a_flx_exac_ptr,
               shared_ptr< ebcm_meta  >      a_meta_ptr,
               shared_ptr< ebcm_exac  >      a_exac_ptr,
               double a_alpha, double a_beta)
@@ -1955,6 +1948,7 @@ namespace EBCM
         auto& phi_fab_exac = (*a_phi_exac_ptr)[dit[ibox]];
         auto& lph_fab_exac = (*a_lph_exac_ptr)[dit[ibox]];
         auto& lph_fab_anal = (*a_lph_anal_ptr)[dit[ibox]];
+
 
         /// this gets all volumes in valid
         ebcm_subvol_vec subvol_vec(graph, valid, false);
@@ -1974,6 +1968,25 @@ namespace EBCM
             phi_fab_exac(volu.m_cells[ivec], 0) = phi_exac;
             lph_fab_exac(volu.m_cells[ivec], 0) = lph_exac;
             lph_fab_anal(volu.m_cells[ivec], 0) = lph_anal;
+
+            {
+              auto& levx = *(a_flx_exac_ptr->m_data[0]);
+              auto& xfab = levx[dit[ibox]];
+              setVectorIntGradPhiDA<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
+            }
+            {
+              auto& levy = *(a_flx_exac_ptr->m_data[1]);
+              auto& yfab = levy[dit[ibox]];
+              setVectorIntGradPhiDA<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
+            }
+#if DIM==3            
+            {
+              auto& levz = *(a_flx_exac_ptr->m_data[2]);
+              auto& zfab = levz[dit[ibox]];
+              setVectorIntGradPhiDA<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
+            }
+#endif
+            
           }
         }
       }
@@ -2157,73 +2170,6 @@ namespace EBCM
       
     }
     ///
-    static void
-    getMaxAbsFluxError( double                     a_max_flux_error[DIM],
-                        shared_ptr< ebcm_meta  >   a_meta,
-                        string                     a_file_prefix)
-    {
-      ParmParse pp("main");
-      double alpha     = 4586.;
-      double  beta     = 4586.;
-      int sten_rad     = 4586 ;
-      int weight_power = 4586 ;
-      int exact_flag   = 4586 ;
-      int output_hdf5  = 4586;
-      string     dom_bc("4586");
-      string      eb_bc("4586");
-
-      pp.get("alpha"       , alpha   );
-      pp.get("beta"        , beta    );
-      pp.get("sten_rad"    , sten_rad);
-      pp.get("weight_power", weight_power);
-      pp.get("dom_bc"      , dom_bc);
-      pp.get("eb_bc"       , eb_bc);
-      pp.get("exact_flag"  , exact_flag);
-      pp.get("output_hdf5" , output_hdf5);
-      int num_ghost = 4;
-      
-      shared_ptr<ebcm_dou_sca_data> phi_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
-      shared_ptr<ebcm_dou_sca_data> lph_exac_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
-      shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
-      setExact(phi_exac_ptr, lph_exac_ptr, a_meta, exact_sol, alpha, beta);
-
-      shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
-                                                       weight_power, 
-                                                       a_meta, 
-                                                       exact_sol,
-                                                       dom_bc, eb_bc, num_ghost, a_file_prefix));
-      const auto& graphs = *(a_meta->m_graphs);
-      const auto& grids  =  (a_meta->m_grids);
-      auto dit = grids.dataIterator();
-
-      for(int ibox =0; ibox < dit.size(); ibox++)
-      {
-        const auto& valid  =             grids[dit[ibox]];
-        const auto& graph  =            graphs[dit[ibox]];
-        auto& phi_fab      =   (*phi_exac_ptr)[dit[ibox]];
-
-        /// this gets all volumes in valid
-        ebcm_subvol_vec subvol_vec(graph, valid, false);
-
-        for(int idir = 0; idir < DIM; idir++)
-        {
-          a_max_flux_error[idir] = -4586.;
-        }
-        
-        for(int ivec = 0; ivec < subvol_vec.size(); ivec++)
-        {
-          const auto& volu = subvol_vec[ivec];
-          double             flux_error[DIM];
-          bool killing_me_smalls = false;
-          getFluxErrorVolume(flux_error, graph, volu, helm_ptr, phi_fab, killing_me_smalls);
-          for(int idir = 0; idir < DIM; idir++)
-          {
-            a_max_flux_error[idir] = std::max(a_max_flux_error[idir], std::abs(flux_error[idir]));
-          }
-        } //end loop over volumes
-      } //end loop over boxes
-    }
-    ///
     static
     void
     getWindow( pr_pt& a_lo_coar,
@@ -2389,9 +2335,17 @@ namespace EBCM
       shared_ptr<ebcm_dou_sca_data> lph_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> lph_anal_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
       shared_ptr<ebcm_dou_sca_data> err_calc_ptr(new ebcm_dou_sca_data(a_meta, num_ghost));
+      shared_ptr<ebcm_dou_sca_flux> flx_exac_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));
+
 
       shared_ptr<ebcm_exac> exact_sol = getExactSolution(exact_flag);
-      setExact(phi_exac_ptr, lph_exac_ptr, lph_anal_ptr, a_meta, exact_sol, alpha, beta);
+      shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
+      setExact(phi_exac_ptr,
+               lph_exac_ptr,
+               lph_anal_ptr,
+               flx_exac_ptr,
+               a_meta, exact_sol, alpha, beta);
+      
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
                                                        a_meta, 
@@ -2410,8 +2364,10 @@ namespace EBCM
       ///using stuff I think I actually understand
 //      discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
 //      return;
-      shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
-      discreteOp.applyOpPrimitives(lph_calc_ptr, phi_exac_ptr, flx_calc_ptr, a_file_prefix);
+      discreteOp.applyOpPrimitives(lph_calc_ptr,
+                                   phi_exac_ptr,
+                                   flx_calc_ptr,
+                                   a_file_prefix);
 #endif
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
@@ -2426,10 +2382,10 @@ namespace EBCM
 
       pout() << "calling writeWindow" << endl;
       //writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
-      //writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
+      writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
+      writeWindow(a_file_prefix, string("flx_exac"), flx_calc_ptr);
       writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
       writeWindow(a_file_prefix, string("lph_calc"), lph_calc_ptr);
-      writeWindow(a_file_prefix, string("lph_anal"), lph_anal_ptr);
       writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
 
       pout() << "calling writeStuffToFile" << endl;
@@ -2445,8 +2401,6 @@ namespace EBCM
                         string                     a_file_prefix)
     {
       getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
-      //double                     flux_err_max[DIM];
-      //getMaxAbsFluxError(a_flux_err_max,   a_meta, a_file_prefix);
     }
 
     ///

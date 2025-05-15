@@ -623,9 +623,13 @@ namespace EBCM_Exact
     {
       static const double pi = 4.*atan(1.0);
       double dx = a_volu.m_dx;
-      double xhi = dx*(double(a_volu.m_pt[0]) + 0.5);
-      double xlo = dx*(double(a_volu.m_pt[0]) - 0.5);
-      double retval = pi*(cos(pi*xhi) - cos(pi*xlo))/dx;
+      double xhi = dx*(double(a_volu.m_pt[0]) +   1);
+      double xlo = dx*(double(a_volu.m_pt[0])      );
+      double fhi = pi*cos(pi*xhi);
+      double flo = pi*cos(pi*xlo);
+        
+      double retval = (fhi-flo)/dx;
+
       return retval;
     }
     virtual ~OneDimSineEF()

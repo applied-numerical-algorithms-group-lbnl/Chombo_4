@@ -65,7 +65,8 @@ namespace EBCM
         for(int ibox =0; ibox < dit.size(); ibox++)
         {
           auto valid = grids[dit[ibox]];
-          auto grown = valid.grow(a_ghost);
+          auto grown = valid.grow(a_ghost-1);
+          grown.grow(idir, 1);
           grown &= face_dom;
           (*(m_data[idir]))[dit[ibox]].define(grown);
         }
