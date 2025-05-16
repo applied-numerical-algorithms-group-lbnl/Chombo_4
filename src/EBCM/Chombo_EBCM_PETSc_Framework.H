@@ -1260,7 +1260,7 @@ namespace EBCM
       const EBCM::EBCM_Graph<ebcm_order> & a_graph,
       const string                       & a_dom_bc,
       const string                       & a_eb_bc,
-      const int                          & a_facedir,
+      const int                          & a_face_dir,
       const double                       & a_dx,
       const ebcm_exac                    & a_bc_exact,
       const pr_fab_t                     * a_phi_exac_ptr, //can be null
@@ -1283,6 +1283,17 @@ namespace EBCM
       {
         Chombo4::pout() << "getHelmFDEHStencilSVD: after getSystemInfo" << endl;
       }
+      /// begin debug
+      static bool s_found_y = false;
+      if((!s_found_y) && (a_face_dir == 1))
+      {
+        shared_ptr<eigen_mat> phi_exact_ptr =
+          getSolutionRowVector(locality,
+                               a_dom_bc, a_eb_bc, a_bc_exact,a_dx,
+                               a_killing_me_smalls);
+        s_found_y = true;
+      }
+      ///end debug
       //not using A_mat_p here -- that is the thing to invert if you are inverting the normal equations.
       // this is WM
       eigen_mat WM_mat = *WMT_mat_p;
@@ -1295,7 +1306,7 @@ namespace EBCM
         Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
       }
 
-      shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
+      shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
@@ -1326,7 +1337,7 @@ namespace EBCM
       const EBCM::EBCM_Graph<ebcm_order> & a_graph,
       const string                       & a_dom_bc,
       const string                       & a_eb_bc,
-      const int                          & a_facedir,
+      const int                          & a_face_dir,
       const double                       & a_dx,
       const ebcm_exac                    & a_bc_exact,
       const pr_fab_t                     * a_phi_exac_ptr, //can be null
@@ -1365,7 +1376,7 @@ namespace EBCM
 
       eigen_mat Ainvmat = *Amat_p;
       Ainvmat.invert();
-      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_facedir, a_dx);
+      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMTW;
       multiply( WMTW, *WMTmat_p, *Wmat_p);
@@ -1388,7 +1399,7 @@ namespace EBCM
                                 const EBCM::EBCM_Graph<ebcm_order> & a_graph,
                                 const string                       & a_dom_bc,
                                 const string                       & a_eb_bc,
-                                const int                          & a_facedir,
+                                const int                          & a_face_dir,
                                 const double                       & a_dx,
                                 const ebcm_exac                    & a_bc_exact,
                                 const pr_fab_t                     * a_phi_exac_ptr, //can be null
@@ -1428,7 +1439,7 @@ namespace EBCM
            a_graph,
            a_dom_bc,
            a_eb_bc,
-           a_facedir,
+           a_face_dir,
            a_dx,
            a_bc_exact,
            a_phi_exac_ptr, //can be null
@@ -1450,7 +1461,7 @@ namespace EBCM
        matval = 0; 
        if( momzero > eps)
        {
-       pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_facedir);
+       pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(a_face_dir);
        Real derval = volmom[derind];
        matval = pd*derval/momzero;
        }
@@ -1512,7 +1523,7 @@ namespace EBCM
 
     } // end function getHelmholtzEBQMatrix
     
-    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
+    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^face_dir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
        This is the same as the average gradient * face area.
@@ -1719,7 +1730,25 @@ namespace EBCM
                      const pr_fab_t                    *  a_phi_exac_ptr, //can be null
                      bool a_killing_me_smalls) const
       {
-        int face_dir = a_face.getFaceDir();
+        int face_dir_input = a_face.getFaceDir();
+        int face_dir_cent = 4586;
+        if(cent == XFACE)
+        {
+          face_dir_cent = 0;
+        }
+        else if(cent == YFACE)
+        {
+          face_dir_cent = 1;
+        }
+        else if(cent == ZFACE)
+        {
+          face_dir_cent = 2;
+        }
+        if(face_dir_input != face_dir_cent)
+        {
+          ch_mayday::Error("getFluxStencil: confusion reigns");
+        }
+        int face_dir = face_dir_input;
         local_stencil_t flux = getHelmholtzFDotEhatStencil(a_face,
                                                            m_sten_rad,     
                                                            m_weight_power, 
@@ -2105,71 +2134,6 @@ namespace EBCM
     }
 
     ///
-    template<CENTERING cent>
-    static double
-    getFluxError(const EBCM_Face<cent, ebcm_order>      &   a_face,
-                 const ebcm_graph                       &   a_graph,
-                 const ebcm_volu                        &   a_volu,
-                 const shared_ptr<HelmholtzOp>          &   a_helm_ptr,
-                 const pr_fab_t                         &   a_phi_exac,
-                 bool                                       a_killing_me_smalls)
-    {
-      local_stencil_t flux_stencil =
-        a_helm_ptr->getFluxStencil(a_face, a_graph, a_volu.m_dx, &a_phi_exac, a_killing_me_smalls);
-
-      double calc_val = flux_stencil.apply(a_phi_exac);
-      double exac_val = a_helm_ptr->m_bc_exact->getIntGradPhiDotNDA(a_face, a_volu.m_dx);
-      double face_area = a_face.m_facmom[0];
-      if(face_area > 1.0e-10)
-      {
-        calc_val /= face_area;
-        exac_val /= face_area;
-      }
-      return std::abs(calc_val - exac_val);
-    }
-    ///
-    static void      
-    getFluxErrorVolume(double                                     a_flux_error[DIM],
-                       const ebcm_graph                       &   a_graph,
-                       const ebcm_volu                        &   a_volu,
-                       const shared_ptr<HelmholtzOp>          &   a_helm_ptr,
-                       const pr_fab_t                         &   a_phi_exac,
-                       bool a_killing_me_smalls)
-    {
-      for(int idir = 0; idir < DIM; idir++)
-      {
-        a_flux_error[idir] = -4586;
-      }
-      for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
-      {
-        double face_error =
-          getFluxError<XFACE>(a_volu.m_xfaces[iface],
-                              a_graph, a_volu, a_helm_ptr, a_phi_exac,
-                              a_killing_me_smalls);
-        a_flux_error[0] = std::max(a_flux_error[0], std::abs(face_error));
-      }
-      for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
-      {
-
-        double face_error =
-          getFluxError<YFACE>(a_volu.m_yfaces[iface],
-                              a_graph, a_volu, a_helm_ptr, a_phi_exac,
-                              a_killing_me_smalls);
-        a_flux_error[1] = std::max(a_flux_error[1], std::abs(face_error));
-      }
-
-#if DIM==3
-      for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
-      {
-        double face_error = getFluxError<ZFACE>(a_volu.m_zfaces[iface],
-                                                a_graph, a_volu, a_helm_ptr, a_phi_exac,
-                                                a_killing_me_smalls);
-        a_flux_error[2] = std::max(a_flux_error[2], std::abs(face_error));
-      }
-#endif      
-      
-    }
-    ///
     static
     void
     getWindow( pr_pt& a_lo_coar,
@@ -2382,25 +2346,17 @@ namespace EBCM
 
       pout() << "calling writeWindow" << endl;
       //writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
+      writeWindow(a_file_prefix, string("flx_exac"), flx_exac_ptr);
       writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
-      writeWindow(a_file_prefix, string("flx_exac"), flx_calc_ptr);
       writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
       writeWindow(a_file_prefix, string("lph_calc"), lph_calc_ptr);
       writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
 
-      pout() << "calling writeStuffToFile" << endl;
+      pout() << "not calling writeStuffToFile (file IO/off)" << endl;
       writeStuffToFile(a_file_prefix, phi_exac_ptr, lph_exac_ptr, lph_calc_ptr, lph_anal_ptr, err_calc_ptr);
 
       pout() << "leaving getMaxAbsLphiError" << endl;
       return;
-    }
-    ///
-    static void
-    getMaxAbsTruncation(double                   & a_lphi_err_max,
-                        shared_ptr< ebcm_meta  >   a_meta,
-                        string                     a_file_prefix)
-    {
-      getMaxAbsLphiError(a_lphi_err_max,   a_meta, a_file_prefix);
     }
 
     ///
@@ -2424,11 +2380,14 @@ namespace EBCM
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
       double max_err_fine = -4586;
       double max_err_coar = -4586;
-      getMaxAbsTruncation(max_err_fine, meta_fine, string("fine"));
-      getMaxAbsTruncation(max_err_coar, meta_coar, string("coar"));
-
-      Chombo4::pout() << "run_hoeb_truncation_tests: max_err_coar =" << max_err_coar << endl;
+      getMaxAbsLphiError(max_err_fine, meta_fine, string("fine"));
       Chombo4::pout() << "run_hoeb_truncation_tests: max_err_fine =" << max_err_fine << endl;
+
+      //already wrong.
+      Chombo4::pout() << "run_hoeb_truncation_tests: already wrong. leaving." << endl;
+      return;
+      getMaxAbsLphiError(max_err_coar, meta_coar, string("coar"));
+      Chombo4::pout() << "run_hoeb_truncation_tests: max_err_coar =" << max_err_coar << endl;
       if(max_err_fine > 1.0e-12) //err >= 0  by construction
       {
         double order = (log(max_err_coar/max_err_fine))/log(2.0);
