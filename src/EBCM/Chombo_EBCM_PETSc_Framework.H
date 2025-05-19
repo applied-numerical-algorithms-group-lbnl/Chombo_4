@@ -1042,8 +1042,10 @@ namespace EBCM
       void defineData()
       {
         setNeighborhoodBounds();
-        m_hori_dir = m_locality->m_face_dir;
-        m_vert_dir = 1 - m_hori_dir;  //need something better for 3d but since this is just for debugging, GEFN
+//        m_hori_dir = m_locality->m_face_dir;
+//        m_vert_dir = 1 - m_hori_dir;  //need something better for 3d but since this is just for debugging, GEFN
+        m_hori_dir = 0;
+        m_vert_dir = 1;
         int num_rows = m_hi_iv[m_vert_dir]- m_lo_iv[m_vert_dir] + 1;
         int lo_col   = m_lo_iv[m_hori_dir];
         int hi_col   = m_hi_iv[m_hori_dir];
@@ -1180,11 +1182,11 @@ namespace EBCM
       if(a_killing_me_smalls)
       {
         neig_disp_ptr = shared_ptr<neighbor_data_t>(new neighbor_data_t(a_locality));
-//        Chombo4::pout() << "getSolnRowVec: "
-//                        << " nvol = " << n_rows_volumes       
-//                        << ",ndom = " << n_rows_dom_faces
-//                        << ",ncut = " << n_rows_cut_faces
-//                        << ",ntot = " << n_rows << endl;
+        Chombo4::pout() << "getSolnRowVec: "
+                        << " nvol = " << n_rows_volumes       
+                        << ",ndom = " << n_rows_dom_faces
+                        << ",ncut = " << n_rows_cut_faces
+                        << ",ntot = " << n_rows << endl;
       }
       
       shared_ptr<eigen_mat> soln_vec_p(new eigen_mat(n_rows, 1));
@@ -1285,12 +1287,12 @@ namespace EBCM
       }
       /// begin debug
       static bool s_found_y = false;
-      if((!s_found_y) && (a_face_dir == 1))
+      shared_ptr<eigen_mat> phi_exact_ptr;
+      bool print_stuff = ((!s_found_y) && (a_face_dir == 1));
+      if(print_stuff)
       {
-        shared_ptr<eigen_mat> phi_exact_ptr =
-          getSolutionRowVector(locality,
-                               a_dom_bc, a_eb_bc, a_bc_exact,a_dx,
-                               a_killing_me_smalls);
+        //this prints the neighborhood as well as gets phi_exact
+        phi_exact_ptr = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact,a_dx, true);
         s_found_y = true;
       }
       ///end debug
@@ -1299,29 +1301,40 @@ namespace EBCM
       eigen_mat WM_mat = *WMT_mat_p;
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
-      if(a_killing_me_smalls)
+      if(print_stuff)
       {
-        eigen_mat resid_mat;
-        testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  a_killing_me_smalls);
         Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
-      }
+        eigen_mat resid_mat;
+        testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  print_stuff);
 
+        ///C = (WM)pseudo_inv * Phi.
+        eigen_mat c_mat;
+        multiply( c_mat, WMinv_mat, *phi_exact_ptr);
+        Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
+        Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
+        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+        {
+          auto momind = momit();
+          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
+        }
+      }
       shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
       eigen_mat S_mat_FFS;
       multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
-      if(a_killing_me_smalls)
+      if(print_stuff)
       {
         Chombo4::pout() << "getHelmFDEHStencilSVD: after generating stencil matrix" << endl;
       }
 
       retval = getStencilFromMat(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       
-      if(a_killing_me_smalls)
+      if(print_stuff)
       {
-        Chombo4::pout() << "getHelmFDEHStencilSVD: returning." << endl;
+        Chombo4::pout() << "getHelmFDEHStencilSVD: returning stencil" << endl;
       }
 
       return retval;
