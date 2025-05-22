@@ -44,6 +44,7 @@ namespace EBCM_Exact
       if(!printed_once)
       {
         Chombo4::pout() << "no analytical laplacian available" << endl;
+        printed_once = true;
       }
       return 4586;
     }

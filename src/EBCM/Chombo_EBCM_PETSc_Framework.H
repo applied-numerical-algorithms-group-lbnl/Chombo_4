@@ -1307,9 +1307,11 @@ namespace EBCM
         eigen_mat resid_mat;
         testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  print_stuff);
 
-        ///C = (WM)pseudo_inv * Phi.
+        eigen_mat WPhi_mat;
+        multiply(WPhi_mat, *W_mat_p, *phi_exact_ptr);
+        ///C = (WM)pseudo_inv * W Phi.
         eigen_mat c_mat;
-        multiply( c_mat, WMinv_mat, *phi_exact_ptr);
+        multiply( c_mat, WMinv_mat, WPhi_mat);
         Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
         Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
         for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
@@ -1318,6 +1320,7 @@ namespace EBCM
           unsigned int currentCol = pr_mom_dim::indexOf(momind);
           Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
         }
+        Chombo4::pout()<<   "-------|-------------------|"<< endl;
       }
       shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
       
@@ -2396,9 +2399,9 @@ namespace EBCM
       getMaxAbsLphiError(max_err_fine, meta_fine, string("fine"));
       Chombo4::pout() << "run_hoeb_truncation_tests: max_err_fine =" << max_err_fine << endl;
 
-      //already wrong.
-      Chombo4::pout() << "run_hoeb_truncation_tests: already wrong. leaving." << endl;
-      return;
+      //if already wrong, stop here
+      //Chombo4::pout() << "run_hoeb_truncation_tests: already wrong. leaving." << endl;
+      //return;
       getMaxAbsLphiError(max_err_coar, meta_coar, string("coar"));
       Chombo4::pout() << "run_hoeb_truncation_tests: max_err_coar =" << max_err_coar << endl;
       if(max_err_fine > 1.0e-12) //err >= 0  by construction
