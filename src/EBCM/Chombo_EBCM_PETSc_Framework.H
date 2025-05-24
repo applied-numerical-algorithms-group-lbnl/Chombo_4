@@ -339,7 +339,7 @@ namespace EBCM
             //full  operator
             {
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getLocalStencil(volu, graph);
+                m_oper_ptr->getLocalStencil(volu, graph,  &(*a_phi_ptr));
               double lph_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -632,7 +632,7 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local =
-              m_oper_ptr->getLocalStencil(volu, graph);
+              m_oper_ptr->getLocalStencil(volu, graph, NULL);
             double inhombit = local->m_inhomogeneous_bit;
             inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
             //int local_size = local->size();
@@ -1645,19 +1645,151 @@ namespace EBCM
 
       ///this is the function that the driver code calls
       shared_ptr<local_stencil_t>
-      getLocalStencil(const ebcm_volu & a_volu,
-                      const ebcm_graph& a_graph)
-      {
-        shared_ptr<local_stencil_t> retval =
-          privateVolumeStencil(a_volu,          
-                               m_sten_rad,     
-                               m_weight_power, 
-                               a_graph,       
-                               m_dom_bc,      
-                               m_eb_bc);
+      getLocalStencil(const ebcm_volu   & a_volu,
+                      const ebcm_graph  & a_graph,
+                      ebcm_dou_sca_data * a_exact_ptr) // can be NULL
+      {//begin xfaces
+        shared_ptr<local_stencil_t> retval(new local_stencil_t());
+        bool killing_me_smalls     = false;
+        static bool s_printed_once = false;
+        bool print_now = ((!s_printed_once) && (a_exact_ptr != NULL));
+        {
+          for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
+          {
+            const auto& face =         a_volu.m_xfaces[iface];
+            bool on_volu_exterior = false;
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0, killing_me_smalls);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateVolumeStencil: bogus face in x");
+            }
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               m_sten_rad,     
+                                                               m_weight_power, 
+                                                               a_graph,       
+                                                               m_dom_bc,      
+                                                               m_eb_bc,       
+                                                               0, a_volu.m_dx,
+                                                               *m_bc_exact,
+                                                               NULL,
+                                                               killing_me_smalls);
+            flux *= fluxsign;
+            if(print_now)
+            {
+              double flux_val = 4586;
+              Chombo4::pout() << "getLocalStencil:F(xface["  << iface  << "]) = " << flux_val << endl;
+            }
+            (*retval) += flux;
+          }
+        } //end xface stuff
+        { //begin y faces
+          for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
+          {
+            const auto& face =          a_volu.m_yfaces[iface];
+            bool on_volu_exterior = false;
+            double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1, killing_me_smalls);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateVolumeStencil: bogus face in y");
+            }
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               m_sten_rad,     
+                                                               m_weight_power, 
+                                                               a_graph,       
+                                                               m_dom_bc,      
+                                                               m_eb_bc,       
+                                                               1, a_volu.m_dx,
+                                                               *m_bc_exact,
+                                                               NULL,
+                                                               killing_me_smalls);
+
+                                                               
+            flux *= fluxsign;
+            if(print_now)
+            {
+              double flux_val = 4586;
+              Chombo4::pout() << "getLocalStencil:F(yface["  << iface  << "]) = " << flux_val << endl;
+            }
+            (*retval) += flux;
+          }
+        } // end y faces
+        { // begin zfaces
+          for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
+          {
+            const auto& face =         a_volu.m_zfaces[iface];
+            bool on_volu_exterior = false;
+            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2, killing_me_smalls);
+            if(!on_volu_exterior)
+            {
+              ch_mayday::Error("privateVolumeStencil: bogus face in z");
+            }
+            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
+                                                               m_sten_rad,     
+                                                               m_weight_power, 
+                                                               a_graph,       
+                                                               m_dom_bc,      
+                                                               m_eb_bc,
+                                                               2, a_volu.m_dx,
+                                                               *m_bc_exact,
+                                                               NULL,
+                                                               killing_me_smalls);
+                                                               
+            flux *= fluxsign;
+            if(print_now)
+            {
+              double flux_val = 4586;
+              Chombo4::pout() << "getLocalStencil:F(zface["  << iface  << "]) = " << flux_val << endl;
+            }
+            (*retval) += flux;
+          }
+        } //end z faces
+        { //begin i faces
+          for(int iface = 0; iface < a_volu.m_ifaces.size(); iface++)
+          {
+            const auto& face     = a_volu.m_ifaces[iface];
+            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face,
+                                                                 m_sten_rad,     
+                                                                 m_weight_power, 
+                                                                 a_graph,       
+                                                                 m_dom_bc,      
+                                                                 m_eb_bc,
+                                                                 a_volu.m_dx,
+                                                                 *m_bc_exact,
+                                                                 killing_me_smalls);
+                                                                 
+            if(print_now)
+            {
+              double flux_val = 4586; 
+              Chombo4::pout() << "getLocalStencil:F(ebfac["  << iface  << "]) = " << flux_val << endl;
+            }
+            (*retval) += flux;
+          }
+        } // end i faces
+
+        //now that we have int( f dot n) dA so we have to divide by volume magnitude
+        double volmag = a_volu.m_volmom[pr_itm_i_dim::Zero];
+
+        if(print_now)
+        {
+          Chombo4::pout() << "getLocalStencil:volmag = " << volmag << endl;
+        }
+        (*retval) *= (1./volmag);
+        //now retval = laplacian  so we multiply by beta and add alpha I
+        (*retval) *= m_beta;
+        local_stencil_t ident_term;
+        ident_term.clear();
+        ident_term.m_inhomogeneous_bit = 0;
+        ident_term.m_entries.resize(1);
+        ident_term.m_entries[0].first  = a_volu.m_pt;
+        ident_term.m_entries[0].second = m_alpha;
+
+        (*retval) += ident_term;
+        if(print_now)
+        {
+          s_printed_once = true;
+        }          
         return retval;
       }
-
       ///in theory, just for debugging.  only grabs the last stencil on that side in the case of multiple faces.
       shared_ptr<local_stencil_t>
       getVoluSideFluxStencil(const ebcm_volu  & a_volu,
@@ -1778,133 +1910,9 @@ namespace EBCM
         return flux;
       
       }
-
+    }; 
     private:
-      ///this is where the canal locks are dug in the basement
-      shared_ptr<local_stencil_t>
-      privateVolumeStencil(const ebcm_volu                    & a_volu, 
-                           const int                          & a_stenrad,
-                           const int                          & a_weightpower,
-                           const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-                           const string                       & a_dom_bc,
-                           const string                       & a_eb_bc)
-      {
-        
-        shared_ptr<local_stencil_t> retval(new local_stencil_t());
-        bool killing_me_smalls = false;
-
-        {
-          for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
-          {
-            const auto& face =         a_volu.m_xfaces[iface];
-            bool on_volu_exterior = false;
-            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 0, killing_me_smalls);
-            if(!on_volu_exterior)
-            {
-              ch_mayday::Error("privateVolumeStencil: bogus face in x");
-            }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               0, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
-            flux *= fluxsign;
-            (*retval) += flux;
-          }
-        }
-        {
-          for(int iface = 0; iface < a_volu.m_yfaces.size(); iface++)
-          {
-            const auto& face =          a_volu.m_yfaces[iface];
-            bool on_volu_exterior = false;
-            double fluxsign  = faceSign(on_volu_exterior, a_volu, face, 1, killing_me_smalls);
-            if(!on_volu_exterior)
-            {
-              ch_mayday::Error("privateVolumeStencil: bogus face in y");
-            }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,       
-                                                               1, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
-
-                                                               
-            flux *= fluxsign;
-            (*retval) += flux;
-          }
-        }
-        {
-          for(int iface = 0; iface < a_volu.m_zfaces.size(); iface++)
-          {
-            const auto& face =         a_volu.m_zfaces[iface];
-            bool on_volu_exterior = false;
-            double fluxsign = faceSign(on_volu_exterior, a_volu, face, 2, killing_me_smalls);
-            if(!on_volu_exterior)
-            {
-              ch_mayday::Error("privateVolumeStencil: bogus face in z");
-            }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               a_stenrad,     
-                                                               a_weightpower, 
-                                                               a_graph,       
-                                                               a_dom_bc,      
-                                                               a_eb_bc,
-                                                               2, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
-                                                               
-            flux *= fluxsign;
-            (*retval) += flux;
-          }
-        }
-        {
-          for(int iface = 0; iface < a_volu.m_ifaces.size(); iface++)
-          {
-            const auto& face     = a_volu.m_ifaces[iface];
-            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face,
-                                                                 a_stenrad,     
-                                                                 a_weightpower, 
-                                                                 a_graph,       
-                                                                 a_dom_bc,      
-                                                                 a_eb_bc,
-                                                                 a_volu.m_dx,
-                                                                 *m_bc_exact,
-                                                                 killing_me_smalls);
-                                                                 
-            (*retval) += flux;
-          }
-        }
-
-        //now that we have int( f dot n) dA so we have to divide by volume magnitude
-        double volmag = a_volu.m_volmom[pr_itm_i_dim::Zero];
-
-        (*retval) *= (1./volmag);
-        //now retval = laplacian  so we multiply by beta and add alpha I
-        (*retval) *= m_beta;
-        local_stencil_t ident_term;
-        ident_term.clear();
-        ident_term.m_inhomogeneous_bit = 0;
-        ident_term.m_entries.resize(1);
-        ident_term.m_entries[0].first  = a_volu.m_pt;
-        ident_term.m_entries[0].second = m_alpha;
-
-        (*retval) += ident_term;
-        return retval;
-      }
-
-    }; //end class HelmholtzOp
-    /**
+      /**
        just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
     **/ 
     static void parseFineGridParams(int            & a_nx,
@@ -2378,7 +2386,8 @@ namespace EBCM
     ///
     /**
        test function for example/EBCM/hoeb_truncation
-    **/ 
+    **/
+  public:
     static  void run_hoeb_truncation_tests()
     {
 
