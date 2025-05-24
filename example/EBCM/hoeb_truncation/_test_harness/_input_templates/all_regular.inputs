@@ -4,6 +4,7 @@ main.polynomial_order  = TAYLOR_MAX
 main.weight_power      = WGT_POWER
 main.dom_bc            = "DOMAIN_FACE_BC"
 main.eb_bc             = "CUT_FACE_BC"
+main.sten_rad          = NEIGH_RAD     
 #0 is 0
 # 1 is polynomial you spell out the coeffs, powers
 # 2 is the full polynomial where all cps are 1.
@@ -13,7 +14,6 @@ main.alpha =  0.0
 main.beta =   1.0
 #boundary conditions ("dirichlet" or "neumann" for now.  Case matters.)
 
-main.sten_rad     = 3
 # whether to dump files or not (0 = false, anything else true)
 main.output_hdf5  = 1
 #Chombo_EBCM_PETSc_Framework.H

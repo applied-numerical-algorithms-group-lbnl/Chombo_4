@@ -87,19 +87,18 @@ taylor_P = 2
 while taylor_P <= max_taylor:
     weight_P = 1
     while weight_P <= max_weight:
+      max_neig_rad  = 3
+      neig_rad = 1
+      while neig_rad <= max_neig_rad:
 
         f_inputtemplate = open(inputtemplatename,'r')
         f_batchtemplate = open(batchtemplatename,'r')
         
-        configstr = "_Taylor" + str(taylor_P) + "_Wgt_" + str(weight_P) + "_Np_" + str(num_proc)
+        configstr = "_Tay" + str(taylor_P) + "_Wgt_" + str(weight_P) + "_Np_" + str(num_proc) + "_Nrad_" + str(neig_rad)
         print (configstr);
-
-        print ("changing directory to " + homestr)
-        os.chdir(homestr);
 
         print ("changing directory to " + topstr)
         os.chdir(topstr);
-
         dir_str = configstr
         
         batchfilename = batchfilebase 
@@ -107,7 +106,6 @@ while taylor_P <= max_taylor:
         echostr = "echo \" " + commstr + " \" \n"
         subfile.write(echostr)
         subfile.write(commstr + "\n")
-
 
         if not os.path.exists(dir_str):
             printstr = "making directory " + dir_str
@@ -132,7 +130,8 @@ while taylor_P <= max_taylor:
             t3str = t2str.replace("WGT_POWER",  str(weight_P))
             t4str = t3str.replace("DOMAIN_FACE_BC",  domain_bc)
             t5str = t4str.replace("CUT_FACE_BC",  eb_bc)
-            f_inp.write(t5str)
+            t6str = t5str.replace("NEIGH_RAD",str(neig_rad))
+            f_inp.write(t6str)
         
         f_inp.close()
         
@@ -149,13 +148,18 @@ while taylor_P <= max_taylor:
         f_bat.close()
         f_inputtemplate.close()
         f_batchtemplate.close()
-        
-        weight_P +=  1
-#       end inner scope        
+        neig_rad += 1
+#       end neig_rad loop
+      weight_P +=  1
+#     end weight_p loop
     taylor_P += 1
 #   end outer scope
 
-print("out of loop")
+print("Closing submission file and making it executable")
 subfile.close();
+commstr = "cd " + topstr + "; chmod +x  " + submitstr
+print (commstr)
+os.system(commstr)
+print("Let there be peace on Earth and goodwill among men.")
 
     
