@@ -639,6 +639,53 @@ namespace EBCM_Exact
     private:
     OneDimSineEF();
   };
+
+  ///phi = amp* sin( pi*freq_x x)) * sin(pi*freq_y y) * sin(pi * freq_z * z)
+  template <unsigned int order>
+  class SineProductEF: public BaseExactSolution<order>
+  {
+  public:
+
+    double m_amplitude;
+    vector<int> m_frequency;
+    
+    SineProductEF(double a_amplitude,
+                  vector<int> a_frequency)
+    {
+      m_amplitude =  a_amplitude;
+      m_frequency =  a_frequency;
+    }
+
+    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
+                               RealVect           a_loc) const
+    {
+      //compute the derivatives of each direction separately
+      // and multiply ?
+      double directional_factors[DIM];
+
+      for(int deriv_dir = 0; deriv_dir < DIM; deriv_dir++)
+      {
+        //set amplitude to 1 to avoid double-counting.
+        OneDimSineEF<order> one_dim_sine(deriv_dir, 1.0, m_frequency[deriv_dir]);
+        IndexTM<int, DIM>   one_dim_deriv;
+        one_dim_deriv.setToBasisVector(deriv_dir);
+
+        directional_factors[deriv_dir] = one_dim_sine.getDerivative(one_dim_deriv, a_loc);
+      }
+
+      double retval = m_amplitude;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        retval *= directional_factors[idir];
+      }
+      return retval;
+    }
+    virtual ~SineProductEF()
+    {
+    }
+    private:
+    SineProductEF();
+  };
   ///phi = sum cp x^p  
   template <unsigned int order>
   class PolynomialEF: public BaseExactSolution<order>

@@ -409,21 +409,25 @@ void Point::print() const
 
 std::ostream& operator <<(std::ostream& a_os, const Point& a_pt)
 {
-    a_os << "(" ;
-    for (int dir = 0; dir < DIM; dir++) 
+  a_os << "(" ;
+  for (int dir = 0; dir < DIM; dir++) 
+  {
+    if(a_pt[dir] >= 0)
     {
-        a_os << a_pt[dir];
-        if(a_pt[dir] < 10)
-        {
-          a_os << " ";
-        }
-        if (dir < DIM-1) 
-        {
-            a_os << ",";
-        }
+      a_os << " ";
     }
-    a_os << ")";
-    return a_os;
+    if(a_pt[dir] < 10)
+    {
+      a_os << " ";
+    }
+    a_os << a_pt[dir];
+    if (dir < DIM-1) 
+    {
+      a_os << ",";
+    }
+  }
+  a_os << ")";
+  return a_os;
 }
 
 std::istream& operator >>(std::istream& a_is,  Point& a_pt)

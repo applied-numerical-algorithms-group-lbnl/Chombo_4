@@ -339,7 +339,7 @@ namespace EBCM
             //full  operator
             {
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getLocalStencil(volu, graph,  &(*a_phi_ptr));
+                m_oper_ptr->getLocalStencil(volu, graph,  &phi_fab);
               double lph_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -1647,7 +1647,7 @@ namespace EBCM
       shared_ptr<local_stencil_t>
       getLocalStencil(const ebcm_volu   & a_volu,
                       const ebcm_graph  & a_graph,
-                      ebcm_dou_sca_data * a_exact_ptr) // can be NULL
+                      const pr_fab_t    * a_exact_ptr) // can be NULL
       {//begin xfaces
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         bool killing_me_smalls     = false;
@@ -1673,12 +1673,12 @@ namespace EBCM
                                                                *m_bc_exact,
                                                                NULL,
                                                                killing_me_smalls);
-            flux *= fluxsign;
             if(print_now)
             {
-              double flux_val = 4586;
-              Chombo4::pout() << "getLocalStencil:F(xface["  << iface  << "]) = " << flux_val << endl;
+              double flux_val = flux.apply(*a_exact_ptr);
+              Chombo4::pout() << "getLocalStencil:xf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_xf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
             }
+            flux *= fluxsign;
             (*retval) += flux;
           }
         } //end xface stuff
@@ -1704,12 +1704,13 @@ namespace EBCM
                                                                killing_me_smalls);
 
                                                                
-            flux *= fluxsign;
             if(print_now)
             {
-              double flux_val = 4586;
-              Chombo4::pout() << "getLocalStencil:F(yface["  << iface  << "]) = " << flux_val << endl;
+              double flux_val = flux.apply(*a_exact_ptr);
+              Chombo4::pout() << "getLocalStencil:yf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_yf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
             }
+            
+            flux *= fluxsign;
             (*retval) += flux;
           }
         } // end y faces
@@ -1734,12 +1735,12 @@ namespace EBCM
                                                                NULL,
                                                                killing_me_smalls);
                                                                
-            flux *= fluxsign;
             if(print_now)
             {
-              double flux_val = 4586;
-              Chombo4::pout() << "getLocalStencil:F(zface["  << iface  << "]) = " << flux_val << endl;
+              double flux_val = flux.apply(*a_exact_ptr);
+              Chombo4::pout() << "getLocalStencil:zf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_zf = "  << flux_val<< ", flux_sign = "<< fluxsign << endl;
             }
+            flux *= fluxsign;
             (*retval) += flux;
           }
         } //end z faces
@@ -1759,7 +1760,7 @@ namespace EBCM
                                                                  
             if(print_now)
             {
-              double flux_val = 4586; 
+              double flux_val = flux.apply(*a_exact_ptr);
               Chombo4::pout() << "getLocalStencil:F(ebfac["  << iface  << "]) = " << flux_val << endl;
             }
             (*retval) += flux;
@@ -2148,6 +2149,23 @@ namespace EBCM
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
+      else if(a_exact_flag==4)
+      {
+        ParmParse pp("sine_product");
+        if(!printed_once)
+        {
+          pout() << "Exact solution = Sine Product." << endl;
+        }
+        std::vector<int> frequency;
+        double amplitude;
+        pp.getarr("frequency", frequency, 0, DIM);
+        pp.get("amplitude",amplitude);
+
+        EBCM_Exact::SineProductEF<ebcm_order>* ebcm_poly_ptr
+          = new  EBCM_Exact::SineProductEF<ebcm_order>(amplitude,frequency);
+        
+        retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
+      }
       else
       {
         ch_mayday::Error("getExactSolution: bogus exact flag");
@@ -2167,15 +2185,15 @@ namespace EBCM
     {
       static bool printed = false;
 // lower left
-//      if(!printed)
-//      {
-//        pout() << "displaying LOWER LEFT" << endl;
-//        printed = true;
-//      }      
-//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
-//      pr_pt  hi_coar(D_DECL(3,   3, 0));
-//      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
-//      pr_pt  hi_fine(D_DECL(3,   3, 0));
+      if(!printed)
+      {
+        pout() << "displaying LOWER LEFT" << endl;
+        printed = true;
+      }      
+      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
+      pr_pt  hi_coar(D_DECL(3,   3, 0));
+      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
+      pr_pt  hi_fine(D_DECL(3,   3, 0));
 
 //  upper middle      
 //      if(!printed)
@@ -2189,15 +2207,15 @@ namespace EBCM
 //      pr_pt  hi_fine(D_DECL(17, 31, 0));
 //
 //  upper left
-      if(!printed)
-      {
-        pout() << "displaying TOP LEFT" << endl;
-        printed = true;
-      }
-      pr_pt  lo_coar(D_DECL( 0, 12, 0));
-      pr_pt  hi_coar(D_DECL( 3, 15, 0));
-      pr_pt  lo_fine(D_DECL( 0, 28, 0));
-      pr_pt  hi_fine(D_DECL( 3, 31, 0));
+//      if(!printed)
+//      {
+//        pout() << "displaying TOP LEFT" << endl;
+//        printed = true;
+//      }
+//      pr_pt  lo_coar(D_DECL( 0, 12, 0));
+//      pr_pt  hi_coar(D_DECL( 3, 15, 0));
+//      pr_pt  lo_fine(D_DECL( 0, 28, 0));
+//      pr_pt  hi_fine(D_DECL( 3, 31, 0));
 
 /// middle middle      
 //      if(!printed)

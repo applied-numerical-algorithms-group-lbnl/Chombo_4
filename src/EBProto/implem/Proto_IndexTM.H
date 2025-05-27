@@ -105,6 +105,21 @@ namespace Proto
     {
     }
 
+    /// basisv but sanely?
+    void setToBasisVector(int a_dir)
+    {
+      for(int idir = 0; idir < N; idir++)
+      {
+        if(idir == a_dir)
+        {
+          (*this)[idir]  = 1;
+        }
+        else
+        {
+          (*this)[idir]  = 0;
+        }
+      }
+    }
     ///
     /**
        Destructor.
