@@ -12,6 +12,7 @@ CHOMBO_HDF5_ROOT = $(ANAG_HDF5_DIR)
 CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
 CHOMBO_HDFINCFLAGS=-I$(CHOMBO_HDF5_ROOT)/include
 CHOMBO_HDFLIBFLAGS=-L$(CHOMBO_HDF5_ROOT)/lib -lhdf5 -lz
+AUTODIFF_LOCATION = /home/graves/_autodiff/autodiff
 
 #end mach dependent
 

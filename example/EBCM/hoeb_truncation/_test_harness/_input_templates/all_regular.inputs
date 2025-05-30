@@ -39,7 +39,7 @@ polynomial_exact.coeff_3 = -1.0
 polynomial_exact.power_4 = 4 0 0
 polynomial_exact.coeff_4 = 1.0
 # exact flag== 3 => Sine function
-main.exact_flag        =  3
+#main.exact_flag        =  3
 sine_exact.direction   = 0
 sine_exact.frequency   = 1
 sine_exact.amplitude   = 1.
@@ -49,6 +49,10 @@ getImplicitFunction.radius           = 0.45
 getImplicitFunction.inside           = true
 #getImplicitFunction.which_geom       = "sphere"
 getImplicitFunction.which_geom       = "all_regular"
+#exact_flag==4 => sine product
+main.exact_flag        =  4
+sine_product.frequency   = 1 1 1
+sine_product.amplitude   = 1.
 
 
 

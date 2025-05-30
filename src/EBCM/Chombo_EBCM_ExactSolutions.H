@@ -669,7 +669,7 @@ namespace EBCM_Exact
         OneDimSineEF<order> one_dim_sine(deriv_dir, 1.0, m_frequency[deriv_dir]);
         IndexTM<int, DIM>   one_dim_deriv;
         one_dim_deriv.setToBasisVector(deriv_dir);
-
+        one_dim_deriv *= a_deriv[deriv_dir];
         directional_factors[deriv_dir] = one_dim_sine.getDerivative(one_dim_deriv, a_loc);
       }
 

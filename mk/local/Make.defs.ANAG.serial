@@ -12,6 +12,7 @@ CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
 
 CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)
 CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
+AUTODIFF_LOCATION = /home/graves/_autodiff/autodiff
 #end mach dependent
 
 
