@@ -1,20 +1,20 @@
+#should just use the default installation
+#PROTO_HOME = $(HOME)/_proto/proto
 
-CHOMBO_DEPXX=g++
-CHOMBO_CXX=g++
+CHOMBO_PETSC_DIR =/home/graves/_petsc
+CHOMBO_DEPXX=mpicxx
+CHOMBO_CXX=mpicxx
+AUTODIFF_LOCATION = /usr/local/include/autodiff
+#hdf5 does not compile on this machine without -fpermissive
+CHOMBO_CXXALLFLAGS :=  -fpermissive -I$(ANAG_OPENMPI_INC) -I$(AUTODIFF_LOCATION) -std=c++17 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas
+CHOMBO_CXXDBGFLAGS:= -g -Wall $(CHOMBO_CXXALLFLAGS)
+CHOMBO_CXXOPTFLAGS:= -O3 $(CHOMBO_CXXALLFLAGS)
+CHOMBO_HDF5_ROOT = $(ANAG_HDF5_DIR)
+CHOMBO_LAPACKLIBS =  -lgfortran -lm  -llapack_atlas -lblas -llapack 
+CHOMBO_HDFINCFLAGS=-I$(CHOMBO_HDF5_ROOT)/include
+CHOMBO_HDFLIBFLAGS=-L$(CHOMBO_HDF5_ROOT)/lib -lhdf5 -lz
 
-CHOMBO_CXXALLFLAGS := -std=c++14 -march=native -Wno-unused-but-set-variable -Wno-long-long -Wno-sign-compare -Wno-deprecated -ftemplate-depth-99 -Wno-unused-local-typedefs -Wno-literal-suffix -Wno-invalid-offsetof -Wno-variadic-macros -Wno-unknown-pragmas      
-CHOMBO_CXXDBGFLAGS:=$(CHOMBO_CXXALLFLAGS) -g -pedantic 
-CHOMBO_CXXOPTFLAGS:=$(CHOMBO_CXXALLFLAGS) -O3
-
-CHOMBO_HDFINCFLAGS=-I$(ANAG_HDF5_DIR)/include 
-CHOMBO_HDFLIBFLAGS=-L$(ANAG_HDF5_DIR)/lib -lhdf5_hl -lhdf5 
-CHOMBO_EFENCEFLAGS = -L/usr/lib -lefence
-
-CHOMBO_PETSC_DIR   = $(ANAG_PETSC_DIR)
 CHOMBO_SLEPC_DIR   = /usr/local/anag/pkg/slepc-3.7.4
-AUTODIFF_LOCATION = /home/graves/_autodiff/autodiff
-#end mach dependent
-
 
 
 

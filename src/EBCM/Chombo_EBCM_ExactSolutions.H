@@ -5,6 +5,9 @@ using std::cerr;
 #ifndef __EBCM_ExactSolutions__
 #define __EBCM_ExactSolutions__
 #include "Chombo_EBCM_Basics.H"
+// autodiff include
+#include <autodiff/forward/real.hpp>
+#include <autodiff/forward/real/eigen.hpp>
 namespace EBCM_Exact
 {
   template <unsigned int order>

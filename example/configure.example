@@ -89,7 +89,7 @@ for t in targets:
         f.write('\nCHOMBO_SRC += $(wildcard ../../hoeb_common/*.cpp) \n')
         f.write('\nVPATH +=  ../../hoeb_common/\n')              
 
-    f.write('\nCHOMBO_CPPFLAGS = -std=c++14\n')
+    f.write('\nCHOMBO_CPPFLAGS = -std=c++17\n')
     f.write(mach_dep);
 
     if args.mpi == 'TRUE':
