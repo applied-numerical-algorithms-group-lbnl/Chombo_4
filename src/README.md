@@ -8,4 +8,6 @@
 * EBProto holds the EB extensions to the proto back end.
 * EBTools holds the cut cell infrastructure.
 * LinearAlgebra holds wrappers to both LAPACK and Eigen that do serial linear algebra things.
-* EBCM holds the cut cell merging technology.  As of 2023, still pretty new.
+* EBCM holds the cut cell merging technology. 
+* autodiff is an external library.  autodiff_solutions is an interface to autodiff written by Nate Overton-Katz.
+* proto is an external library written by Chris Bozhart, Phil Colella and Brian van Straalen.  

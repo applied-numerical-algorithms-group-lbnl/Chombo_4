@@ -15,7 +15,7 @@ CHOMBO_SRC += $(wildcard ../../common/*.cpp)
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp) 
 
-VPATH=  ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/LinearAlgebra
+VPATH=  ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/LinearAlgebra $(CHOMBO_HOME)/src/autodiff_solutions
 VPATH += $(CHOMBO_HOME)/src/EBTools
 VPATH += $(AUTODIFF_LOCATION)
 
