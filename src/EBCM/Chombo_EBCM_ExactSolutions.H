@@ -40,6 +40,7 @@ namespace EBCM_Exact
     {
     }
 
+    ///
     virtual double
     getAnalyticalLaplacian(const ebcm_volu&  a_volu)
     {
@@ -47,6 +48,18 @@ namespace EBCM_Exact
       if(!printed_once)
       {
         Chombo4::pout() << "no analytical laplacian available" << endl;
+        printed_once = true;
+      }
+      return 4586;
+    }
+    ///
+    virtual double
+    getAnalyticalPhi(const ebcm_volu&  a_volu)
+    {
+      static bool printed_once = false;
+      if(!printed_once)
+      {
+        Chombo4::pout() << "no analytical phi available" << endl;
         printed_once = true;
       }
       return 4586;
@@ -424,6 +437,23 @@ namespace EBCM_Exact
                                                         a_cut_face.m_norm_mom_y,
                                                         a_cut_face.m_norm_mom_z,
                                                         a_cut_face.m_location);
+
+      return retval;
+    }
+    ///
+    virtual double
+    double getIntGradPhiDotNDAAnal(const ebcm_cut_face     & a_cut_face,
+                                   const ebcm_neighborhood & a_neigh,
+                                   double                    a_dx) const
+    {
+      double retval = 4586;
+      static bool printed_once = false;
+      if(!printed_once)
+      {
+        Chombo4::pout() << "no analytical flux available" << endl;
+        printed_once = true;
+      }
+
 
       return retval;
     }

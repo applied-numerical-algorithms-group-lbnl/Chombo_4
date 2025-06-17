@@ -49,7 +49,71 @@ namespace EBCM
     typedef Chombo4::MayDay                                      ch_mayday;
 
 
+    /// sets *this = a * x + b * y
+    void setToAxBy(double a_acoef,
+                   const FluxLevelData<data_t, ncomp, order>& a_x,
+                   double a_bcoef,
+                   const FluxLevelData<data_t, ncomp, order>& a_y)
+    {
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      //const auto& mpibit = (*m_data);
+      for(int idir = 0; idir < DIM; idir++)
+      {
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& xinput  = *(  a_x.m_data[idir]);
+        const auto& yinput  = *(  a_y.m_data[idir]);
+        const auto& output  = *(this->m_data[idir]);
+        const auto&  x_data = xinput[dit[ibox]];
+        const auto&  y_data = yinput[dit[ibox]];
+        auto&       outdata = output[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt = ProtoCh::getPoint(iv);
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            double x_pt_val = x_data(pt, icomp);
+            double y_pt_val = y_data(pt, icomp);
+            outdata(pt, icomp) = a_acoef*x_pt_val + a_bcoef*y_pt_val;
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+    }
     
+    void getAbsMaxLocationAndValue(pr_pt   a_loc[DIM],
+                                   double  a_val[DIM],
+                                   int     a_ico[DIM]) const
+    {
+      double max_val = -4586;
+      a_loc =  4586*pr_pt::Ones();
+      ch_dit dit =     m_meta->m_grids.dataIterator();
+      //const auto& mpibit = (*m_data);
+      for(int ibox = 0; ibox < dit.size(); ibox++)
+      {
+        const auto& data  = (*this)[dit[ibox]];
+        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+        for(ch_bit bit(grid); bit.ok(); ++bit)
+        {
+          auto  iv = bit();
+          pr_pt pt(D_DECL(iv[0], iv[1], iv[2]));
+          for(int icomp = 0; icomp < ncomp; icomp++)
+          {
+            double loc_val = std::abs(data(pt, icomp));
+            bool new_max = (max_val < loc_val);
+            if(new_max) //anything to get valgrind to shut up
+            {
+              max_val = loc_val;
+              a_loc   = pt;
+              a_ico   = icomp;
+            }
+          } //end loop over components
+        }   //end loop over cells in box
+      }     //end loop over boxes
+      a_val = max_val;
+      
+    }
     FluxLevelData(const shared_ptr<ebcm_meta_t>& a_meta,
                   const int                    & a_ghost)
     {
