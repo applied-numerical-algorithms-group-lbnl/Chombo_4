@@ -59,61 +59,72 @@ namespace EBCM
       //const auto& mpibit = (*m_data);
       for(int idir = 0; idir < DIM; idir++)
       {
-      for(int ibox = 0; ibox < dit.size(); ibox++)
-      {
-        const auto& xinput  = *(  a_x.m_data[idir]);
-        const auto& yinput  = *(  a_y.m_data[idir]);
-        const auto& output  = *(this->m_data[idir]);
-        const auto&  x_data = xinput[dit[ibox]];
-        const auto&  y_data = yinput[dit[ibox]];
-        auto&       outdata = output[dit[ibox]];
-        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
-        for(ch_bit bit(grid); bit.ok(); ++bit)
+        for(int ibox = 0; ibox < dit.size(); ibox++)
         {
-          auto  iv = bit();
-          pr_pt pt = ProtoCh::getPoint(iv);
-          for(int icomp = 0; icomp < ncomp; icomp++)
+          const auto& xinput  = *(  a_x.m_data[idir]);
+          const auto& yinput  = *(  a_y.m_data[idir]);
+          auto&       output  = *(this->m_data[idir]);
+          const auto&  x_data = xinput[dit[ibox]];
+          const auto&  y_data = yinput[dit[ibox]];
+          //auto&       outdata = output[dit[ibox]];
+          auto& out_fab = output[dit[ibox]];
+          const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+          for(ch_bit bit(grid); bit.ok(); ++bit)
           {
-            double x_pt_val = x_data(pt, icomp);
-            double y_pt_val = y_data(pt, icomp);
-            outdata(pt, icomp) = a_acoef*x_pt_val + a_bcoef*y_pt_val;
-          } //end loop over components
-        }   //end loop over cells in box
-      }     //end loop over boxes
-    }
+            auto  iv = bit();
+            pr_pt pt = ProtoCh::getPoint(iv);
+            for(int icomp = 0; icomp < ncomp; icomp++)
+            {
+              double x_pt_val = x_data(pt, icomp);
+              double y_pt_val = y_data(pt, icomp);
+              double out_val = a_acoef*x_pt_val + a_bcoef*y_pt_val;
+              out_fab(pt, icomp) = out_val;
+            } //end loop over components
+          }   //end loop over cells in box
+        }     //end loop over boxes
+      } //end loop over directions
+    } //end function setToAxBy
     
     void getAbsMaxLocationAndValue(pr_pt   a_loc[DIM],
                                    double  a_val[DIM],
                                    int     a_ico[DIM]) const
     {
-      double max_val = -4586;
-      a_loc =  4586*pr_pt::Ones();
-      ch_dit dit =     m_meta->m_grids.dataIterator();
-      //const auto& mpibit = (*m_data);
-      for(int ibox = 0; ibox < dit.size(); ibox++)
+      for(int idir = 0; idir < DIM; idir++)
       {
-        const auto& data  = (*this)[dit[ibox]];
-        const auto& grid  = (m_meta->m_grids)[dit[ibox]];
-        for(ch_bit bit(grid); bit.ok(); ++bit)
+        double max_val =-4586;
+        pr_pt  max_loc = 4586*pr_pt::Ones();
+        int    max_ico = 4586;
+        ch_dit dit =     m_meta->m_grids.dataIterator();
+        //const auto& mpibit = (*m_data);
+        for(int ibox = 0; ibox < dit.size(); ibox++)
         {
-          auto  iv = bit();
-          pr_pt pt(D_DECL(iv[0], iv[1], iv[2]));
-          for(int icomp = 0; icomp < ncomp; icomp++)
+          const auto& data_ptr =  m_data[idir];
+          const auto& data  = (*data_ptr)[dit[ibox]];
+          const auto& grid  = (m_meta->m_grids)[dit[ibox]];
+          for(ch_bit bit(grid); bit.ok(); ++bit)
           {
-            double loc_val = std::abs(data(pt, icomp));
-            bool new_max = (max_val < loc_val);
-            if(new_max) //anything to get valgrind to shut up
+            auto  iv = bit();
+            pr_pt pt(D_DECL(iv[0], iv[1], iv[2]));
+            for(int icomp = 0; icomp < ncomp; icomp++)
             {
-              max_val = loc_val;
-              a_loc   = pt;
-              a_ico   = icomp;
-            }
-          } //end loop over components
-        }   //end loop over cells in box
-      }     //end loop over boxes
-      a_val = max_val;
+              double loc_val = std::abs(data(pt, icomp));
+              bool new_max = (max_val < loc_val);
+              if(new_max) //anything to get valgrind to shut up
+              {
+                max_val = loc_val;
+                max_loc   = pt;
+                max_ico   = icomp;
+              }
+            } //end loop over components
+          }   //end loop over cells in box
+        }     //end loop over boxes
+        a_val[idir] = max_val;
+        a_loc[idir] = max_loc;
+        a_ico[idir] = max_ico;
+      }
       
-    }
+    } //end function getAbsMaxLocationAndValue
+    ///
     FluxLevelData(const shared_ptr<ebcm_meta_t>& a_meta,
                   const int                    & a_ghost)
     {
@@ -188,7 +199,7 @@ namespace EBCM
   private:    //only disallowing weak construction 
     FluxLevelData();
   }; //end class fluxleveldata
-  
+
 } // end namespace ebcm
 
 

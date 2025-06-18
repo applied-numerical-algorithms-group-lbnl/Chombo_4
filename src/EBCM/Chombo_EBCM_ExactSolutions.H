@@ -41,6 +41,15 @@ namespace EBCM_Exact
     }
 
     ///
+    template <CENTERING  cent>
+    double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                                         double                                a_dx) const
+    {
+      Chombo4::pout() << "getIntGradPhiDotNDAAnal found default implementation" << endl;
+      double retval = 4586;
+      return retval;
+    }
+    ///
     virtual double
     getAnalyticalLaplacian(const ebcm_volu&  a_volu)
     {
@@ -278,6 +287,7 @@ namespace EBCM_Exact
       double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, grad_dir);
       return retval;
     }
+
     ///
     double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
                                const ebcm_neighborhood & a_neigh) const
@@ -440,28 +450,12 @@ namespace EBCM_Exact
 
       return retval;
     }
+
     ///
     virtual double
-    double getIntGradPhiDotNDAAnal(const ebcm_cut_face     & a_cut_face,
-                                   const ebcm_neighborhood & a_neigh,
-                                   double                    a_dx) const
-    {
-      double retval = 4586;
-      static bool printed_once = false;
-      if(!printed_once)
-      {
-        Chombo4::pout() << "no analytical flux available" << endl;
-        printed_once = true;
-      }
-
-
-      return retval;
-    }
-
-    ///
-    double getIntGradPhiDotNDACutFace(const ebcm_cut_face     & a_cut_face,
-                                      const ebcm_neighborhood & a_neigh,
-                                      double                    a_dx) const
+    getIntGradPhiDotNDACutFace(const ebcm_cut_face     & a_cut_face,
+                               const ebcm_neighborhood & a_neigh,
+                               double                    a_dx) const
     {
       double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
                                                         a_cut_face.m_norm_mom_y,

@@ -1995,7 +1995,7 @@ namespace EBCM
       for(int iface = 0; iface < a_vec_faces.size();iface++)
       {
         const auto& face = a_vec_faces[iface];
-        double exac_val = a_exac_ptr->getIntGradPhiDotNDAAnal(face, a_dx);              
+        double exac_val = a_exac_ptr->getAnalyticalIntGradPhiDotNDA(face, a_dx);              
         a_fab(face.m_hi.m_pt, 0) = exac_val;
       }
     }
@@ -2093,18 +2093,18 @@ namespace EBCM
             lph_fab(volu.m_cells[ivec], 0) = lph_exac;
 
             {
-              auto& levx = *(a_flx_exac_ptr->m_data[0]);
+              auto& levx = *(a_flx_anal_ptr->m_data[0]);
               auto& xfab = levx[dit[ibox]];
               setVectorIntFluxDAAnal<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
             }
             {
-              auto& levy = *(a_flx_exac_ptr->m_data[1]);
+              auto& levy = *(a_flx_anal_ptr->m_data[1]);
               auto& yfab = levy[dit[ibox]];
               setVectorIntFluxDAAnal<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
             }
 #if DIM==3            
             {
-              auto& levz = *(a_flx_exac_ptr->m_data[2]);
+              auto& levz = *(a_flx_anal_ptr->m_data[2]);
               auto& zfab = levz[dit[ibox]];
               setVectorIntFluxDAAnal<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
             }
@@ -2354,8 +2354,8 @@ namespace EBCM
     }
     ///
     static    void
-    get_max_abs_calc_error( double                   & a_max_error_lphi,
-                            doublwe                    a_max_error_flux[DIM],
+    get_max_abs_calc_error( double                   & a_max_error_lph,
+                            double                     a_max_error_flx[DIM],
                             shared_ptr< ebcm_meta  >   a_meta,
                             string                     a_file_prefix)
     {
@@ -2420,25 +2420,14 @@ namespace EBCM
       double bcoef = -1;
       lph_error_ptr->setToAxBy(acoef, *lph_calc_ptr, bcoef, *lph_exac_ptr);
       flx_error_ptr->setToAxBy(acoef, *flx_calc_ptr, bcoef, *flx_exac_ptr);
-      pr_pt pt_loc;
-      double max_val;
-      int i_co;
-      err_calc_ptr->getAbsMaxLocationAndValue(pt_loc, max_val, i_co);
-      a_max_error_lphi = max_val;
-      for(int idir =  0; idir < DIM; idir++)
-      {
-        a_max_error_flux = max_val;
-      }
-//begin debug      
-//      pout() << "get_max_calc_error: prefix = " << a_file_prefix << ", max_err = "  << max_val << " at " << pt_loc << endl;
-//      writeWindow(a_file_prefix, string("phi_exac"), phi_exac_ptr);
-//      writeWindow(a_file_prefix, string("flx_exac"), flx_exac_ptr);
-//      writeWindow(a_file_prefix, string("flx_calc"), flx_calc_ptr);
-//      writeWindow(a_file_prefix, string("lph_exac"), lph_exac_ptr);
-//      writeWindow(a_file_prefix, string("lph_calc"), lph_calc_ptr);
-//      writeWindow(a_file_prefix, string("err_calc"), err_calc_ptr);
-//
-//end debug 
+      pr_pt pt_loc_lph;
+      int     i_co_lph;
+      lph_error_ptr->getAbsMaxLocationAndValue(pt_loc_lph, a_max_error_lph, i_co_lph);
+
+      pr_pt pt_loc_flx[DIM];
+      int     i_co_flx[DIM];
+      flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
+
       pout() << "leaving get_max_abs_calc_error" << endl;
       return;
     }
@@ -2447,11 +2436,11 @@ namespace EBCM
     /**
        test function for example/EBCM/hoeb_truncation
     **/
-  public:
+ 
     static void
-    get_exact_solution_error( double                   & a_max_error_phi,
-                              double                   & a_max_error_lph,
-                              double                     a_max_error_flux[DIM],
+    get_exact_solution_error( double                   & a_max_err_phi,
+                              double                   & a_max_err_lph,
+                              double                     a_max_err_flx[DIM],
                               shared_ptr< ebcm_meta  >   a_meta,
                               string                     a_file_prefix)
     {
@@ -2500,6 +2489,16 @@ namespace EBCM
       double bcoef = -1;
       phi_error_ptr->setToAxBy(acoef, *phi_exact_ptr, bcoef, *phi_analytical_ptr);
       lph_error_ptr->setToAxBy(acoef, *lph_exact_ptr, bcoef, *lph_analytical_ptr);
+      flx_error_ptr->setToAxBy(acoef, *flx_exact_ptr, bcoef, *flx_analytical_ptr);
+
+      pr_pt pt_loc_lph, pt_loc_phi;
+      int i_co_lph, i_co_phi;
+      lph_error_ptr->getAbsMaxLocationAndValue(pt_loc_lph, a_max_err_lph, i_co_lph);
+      lph_error_ptr->getAbsMaxLocationAndValue(pt_loc_phi, a_max_err_phi, i_co_phi);
+
+      pr_pt pt_loc_flx[DIM];
+      int     i_co_flx[DIM];
+      flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_err_flx, i_co_flx);
 
     }
     ///
@@ -2508,15 +2507,20 @@ namespace EBCM
                                         
       Chombo4::pout() << a_prefix << a_max_err_fine << endl;
       Chombo4::pout() << a_prefix << a_max_err_coar << endl;
-      double order= 4586;
-      if(max_err_fine > 1.0e-12) //err >= 0  by construction
+      double order= -4586;
+      if((a_max_err_fine < 0) || (a_max_err_fine < 0))
+      {
+        Chombo4::pout() << "Confusion reigns.  Negative errors should not come from AbsMax calcs" << endl;
+        return order;
+      }
+      if(a_max_err_fine > 1.0e-12) 
       {
         order = (log(a_max_err_coar/a_max_err_fine))/log(2.0);
         Chombo4::pout() << a_prefix  << order << endl;
       }
       else
       {
-        Chombo4::pout() <<  prefix << "max_err_phi_fine too small to compute order." << endl;
+        Chombo4::pout() <<  a_prefix << "max_err_phi_fine too small to compute order." << endl;
       }
       return  order;
     }
@@ -2531,12 +2535,12 @@ namespace EBCM
       double max_err_flux_coar[DIM];
       get_exact_solution_error(max_err_phi_fine, max_err_lph_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_exact_solution_error(max_err_phi_coar, max_err_lph_coar, max_err_flux_coar, a_meta_coar, string("coar"));
-      double phi_order = compute_and_print_order(string("check_exact_solution:phi:"), max_err_phi_fine, max_err_phi_coar);
-      double lph_order = compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
+      /* double phi_order = */ compute_and_print_order(string("check_exact_solution:phi:"), max_err_phi_fine, max_err_phi_coar);
+      /* double lph_order = */ compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = string("check_exact_solution:flx[") + to_string(idir) + string("]:");
-        double flux_order = compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     }// end function check_exact_solution                 
     static void helmholtz_truncation( shared_ptr< ebcm_meta  > a_meta_fine,
@@ -2547,22 +2551,23 @@ namespace EBCM
       double max_err_flux_coar[DIM];
       double max_err_flux_fine[DIM];
       get_max_abs_calc_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
-      get_max_abs_calc_error(max_err_lphi_coar, max_err_flux_coar, _meta_coar, string("coar"));
-      double lphi_order = compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
+      get_max_abs_calc_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
+      /* double lphi_order = */   compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = string("helmholtz_truncation:flux[") + to_string(idir) + string("]:");
-        double flux_order = compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     } //  end function helmholtz_truncation
     ///this is the thing called from main.
+  public:
     static  void run_hoeb_truncation_tests()
     {
 
       int           nx_fine = 4586;
       double        dx_fine = 4586.;
       ch_probdom domain_fine;
-      ///these two have to be the same for fine and coar      
+
       int maxGrid = 4586;      bool mergeSmallCells = true;   
       parseFineGridParams(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       int    nx_coar = nx_fine/2;
@@ -2573,7 +2578,7 @@ namespace EBCM
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
 
       check_exact_solution( meta_fine, meta_coar);
-      helmholtz_truncation(meta_fine, meta_coar);
+      helmholtz_truncation( meta_fine, meta_coar);
 
     }
   }; //   end petsc_framwork class
