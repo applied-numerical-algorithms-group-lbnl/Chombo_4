@@ -45,7 +45,12 @@ namespace EBCM_Exact
     double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                                          double                                a_dx) const
     {
-      Chombo4::pout() << "getIntGradPhiDotNDAAnal found default implementation" << endl;
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "getIntGradPhiDotNDAAnal found default implementation" << endl;
+        s_printed_once = true;
+      }
       double retval = 4586;
       return retval;
     }
@@ -672,10 +677,88 @@ namespace EBCM_Exact
   class SineProductEF: public BaseExactSolution<order>
   {
   public:
+    typedef    Proto::RealVect         pr_rv;
+    typedef    EBCM::EBCM_Volu<order > ebcm_volu;
 
     double m_amplitude;
     vector<int> m_frequency;
     
+    ///
+    virtual void
+    getFullCellBounds(pr_rv& a_lo, pr_rv& a_hi, const ebcm_volu&  a_volu)
+    {
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        double cent_ind = a_volu.m_pt[idir];
+        a_lo[idir] = (a_volu.m_dx)*(cent_ind);
+        a_hi[idir] = (a_volu.m_dx)*(cent_ind + 1);
+      }
+    }
+
+    /// return full cell value of (1/V)(int(phi) dV)
+    virtual double
+    getAnalyticalPhi(const ebcm_volu&  a_volu)
+    {
+      static const double  s_pi = 4.*atan(1.);
+      static bool printed_once = false;
+      if(!printed_once)
+      {
+        Chombo4::pout() << "found sineproduct analytical phi" << endl;
+        printed_once = true;
+      }
+      pr_rv lo_bound, hi_bound;
+      getFullCellBounds(lo_bound, hi_bound, a_volu);
+      double integral      = m_amplitude; // result is a product
+      double full_cell_vol = 1;
+      
+      for( int idir = 0; idir < DIM; idir++)
+      {
+        full_cell_vol *= a_volu.m_dx;
+        double freq_pi = s_pi*double(m_frequency[idir]);
+        integral *= (-cos(freq_pi*hi_bound[idir]) 
+                     +cos(freq_pi*lo_bound[idir]) )/freq_pi;
+      }
+
+      double average = integral/full_cell_vol;
+      return average;
+    }
+    
+    /// return full cell value of (1/V)(int(lap phi) dV)
+    virtual double
+    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found sineproduct analytical laplacian" << endl;
+        s_printed_once = true;
+      }
+      double phi_val = getAnalyticalPhi(a_volu);
+      static const double  s_pi = 4.*atan(1.);
+      double lap_val = 0; //additive
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        double freq_pi = s_pi*double(m_frequency[idir]);
+        lap_val -= freq_pi*freq_pi*phi_val;
+      }
+      lap_val *= m_amplitude;
+      return lap_val;
+    }
+    
+    ///
+    template <CENTERING  cent>
+    double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                                         double                                a_dx) const
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found sineproduct analytical flux" << endl;
+        s_printed_once = true;
+      }
+      return 4586;
+    }
+    ///
     SineProductEF(double a_amplitude,
                   vector<int> a_frequency)
     {
