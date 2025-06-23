@@ -30,3 +30,4 @@
 * We intend to continue the story by investigating the truncation error of a family of finite volume elliptic operators.
 * This one does use quite a bit of petsc.
 * In progress as of Oct 8, 2024.
+* Still In progress as of June 23, 2025.    Progress has been made and the test runs but a lot of work remains before I reach any sort of understanding.
