@@ -31,6 +31,7 @@ namespace EBCM_Exact
     typedef   Proto::IndexTM<       double,  DIM                > pr_ind_dou_dim;
     typedef   Proto::IndexTM<       double,  DIM-1              > pr_ind_dou_dmo;
     typedef   Proto::RealVect                                     pr_rv;
+    typedef   Proto::Point                                        pr_pt;
     typedef Chombo4::MayDay                                       ch_mayday;
     virtual ~BaseExactSolution()
     {
@@ -40,19 +41,72 @@ namespace EBCM_Exact
     {
     }
 
-    ///
+    ///get full face analytical in grad phi dot n dA.
     template <CENTERING  cent>
     double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                                          double                                a_dx) const
     {
+      int direction = a_ebcm_face.getFaceDir();
+      double retval = 4586.;
+      if(direction == 0)
+      {
+        retval = getAnalytical_IntGPhiX_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+      }
+      else if(direction == 1)
+      {
+        retval = getAnalytical_IntGPhiY_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+      }
+      else if(direction == 2)
+      {
+        retval = getAnalytical_IntGPhiZ_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+      }
+      else
+      {
+        ch_mayday::Error("getAnalyticalIntGradPhiDotNDA:bogus face direction");
+      }
+      return retval;
+    }
+
+    ///
+    virtual 
+    double getAnalytical_IntGPhiX_DA(const pr_pt & a_ebcm_face_hi,
+                                     double        a_dx) const
+    {
       static bool s_printed_once = false;
       if(!s_printed_once)
       {
-        Chombo4::pout() << "getIntGradPhiDotNDAAnal found default implementation" << endl;
+        Chombo4::pout() << "found default analytical flux X" << endl;
         s_printed_once = true;
       }
-      double retval = 4586;
-      return retval;
+      return 4586;
+    }
+
+    ///
+    virtual 
+    double getAnalytical_IntGPhiY_DA(const   pr_pt & a_ebcm_face_hi,
+                                     double          a_dx) const
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found default analytical flux Y" << endl;
+        s_printed_once = true;
+      }
+      return 4586;
+    }
+
+    ///
+    virtual 
+    double getAnalytical_IntGPhiZ_DA(const  pr_pt  & a_ebcm_face_hi,
+                                     double          a_dx) const
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found default analytical flux Z" << endl;
+        s_printed_once = true;
+      }
+      return 4586;
     }
     ///
     virtual double
@@ -678,6 +732,7 @@ namespace EBCM_Exact
   {
   public:
     typedef    Proto::RealVect         pr_rv;
+    typedef    Proto::Point            pr_pt;
     typedef    EBCM::EBCM_Volu<order > ebcm_volu;
 
     double m_amplitude;
@@ -746,14 +801,101 @@ namespace EBCM_Exact
     }
     
     ///
-    template <CENTERING  cent>
-    double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
-                                         double                                a_dx) const
+    virtual 
+    double getAnalytical_IntGPhiX_DA(const pr_pt  & a_ebcm_face_hi,
+                                     double         a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
       {
-        Chombo4::pout() << "found sineproduct analytical flux" << endl;
+        Chombo4::pout() << "found sineproduct analytical flux X" << endl;
+      }
+      double retval = 4586.;
+#if DIM==3
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "3d version of ineproduct analytical flux X goes here" << endl;
+        s_printed_once = true;
+      }
+
+#else
+      
+      double x_c = a_dx*(double(a_ebcm_face_hi[0]) + 0.5);
+      double y_l = a_dx*(double(a_ebcm_face_hi[1])      );
+      double y_h = a_dx*(double(a_ebcm_face_hi[1]) + 1.0);
+      static const double  s_pi = 4.*atan(1.);
+      pr_rv freq_pi;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        freq_pi[idir] = s_pi*double(m_frequency[idir]);
+      }
+      if(m_frequency[1] == 0)
+      {
+        retval = -a_dx*freq_pi[0]*cos(x_c*freq_pi[0]);
+      }
+      else
+      {
+        double factor = -freq_pi[0]/freq_pi[1];
+        retval = factor*cos(x_c*freq_pi[0])*(cos(y_h*freq_pi[1]) - cos(y_l*freq_pi[1]));
+      }
+#endif
+      retval *= m_amplitude;
+      s_printed_once = true;
+      return retval;
+    }
+
+    ///
+    virtual 
+    double getAnalytical_IntGPhiY_DA(const pr_pt & a_ebcm_face_hi,
+                                     double        a_dx) const
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found sineproduct analytical flux y" << endl;
+      }
+      double retval = 4586.;
+#if DIM==3
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "3d version of ineproduct analytical flux Y goes here" << endl;
+        s_printed_once = true;
+      }
+#else
+      
+      double y_c = a_dx*(double(a_ebcm_face_hi[1]) + 0.5);
+      double x_l = a_dx*(double(a_ebcm_face_hi[0])      );
+      double x_h = a_dx*(double(a_ebcm_face_hi[0]) + 1.0);
+      static const double  s_pi = 4.*atan(1.);
+      pr_rv freq_pi;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        freq_pi[idir] = s_pi*double(m_frequency[idir]);
+      }
+      if(m_frequency[0] == 0)
+      {
+        retval = -a_dx*freq_pi[1]*cos(y_c*freq_pi[1]);
+      }
+      else
+      {
+        double factor = -freq_pi[1]/freq_pi[0];
+        retval = factor*cos(y_c*freq_pi[1])*(cos(x_h*freq_pi[0]) - cos(x_l*freq_pi[0]));
+      }
+#endif
+      retval *= m_amplitude;
+      s_printed_once = true;
+      return retval;
+    }
+
+    ///
+    virtual 
+    double getAnalytical_IntGPhiZ_DA(const pr_pt & a_ebcm_face_hi,
+                                     double        a_dx) const
+    {
+      static bool s_printed_once = false;
+      if(!s_printed_once)
+      {
+        Chombo4::pout() << "found the function for sineproduct analytical flux Z (but it is not written yet)" << endl;
         s_printed_once = true;
       }
       return 4586;

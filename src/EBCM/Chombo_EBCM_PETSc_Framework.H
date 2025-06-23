@@ -2491,6 +2491,19 @@ namespace EBCM
       lph_error_ptr->setToAxBy(acoef, *lph_exact_ptr, bcoef, *lph_analytical_ptr);
       flx_error_ptr->setToAxBy(acoef, *flx_exact_ptr, bcoef, *flx_analytical_ptr);
 
+      
+      //begin debug
+      writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      //end debug
+      
       pr_pt pt_loc_lph, pt_loc_phi;
       int i_co_lph, i_co_phi;
       lph_error_ptr->getAbsMaxLocationAndValue(pt_loc_lph, a_max_err_lph, i_co_lph);
