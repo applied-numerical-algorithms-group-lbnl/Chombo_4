@@ -16,8 +16,7 @@
 \title{High order finite volume operators in a cut cell context,
   part 2: truncation error measurements}
 \author{
-   \and D. Devendran    \footnotemark[2]
-   \and D. T. Graves    \footnotemark[1]
+  D. T. Graves    \footnotemark[1]
         }
 
 \maketitle
@@ -33,6 +32,141 @@ family of finite volume elliptic operators.   In part 1
 process to generate these operators and present system matrix
 conditioning data.      Here we present how truncation error varies
 within the family of operators.
+
+\section{Underlying mathematics}
+\label{sec::notation}
+
+\subsection{Embedded boundary description}
+Embedded boundary (EB) grids are formed when one passes an  surface
+through a Cartesian mesh.    For sufficiently complex geometries, these methods
+are very attractive because grid generation is a solved problem
+even for moving grids \cite{MillerTrebotich2012}.
+In the current context, we form the cutting surface as the zero
+surface of a function  of space $I(\xbold)$, $\xbold \in R^D$.
+For smooth ($I$),  moments can be generated to any
+accuracy \cite{Schwartz2015}.
+
+Formally, the underlying description of space
+is given by rectangular control volumes on a Cartesian mesh
+$\Upsilon_\ibold = [(\ibold-\half {\ubold})h, (\ibold+\half
+{\ubold})h], \ibold \in \bigzbold^D$, where $D$ is the dimensionality
+of the problem, $h$ is the mesh spacing, and ${\ubold}$ is the vector
+whose entries are all one (note we use bold font $\ubold = (u_1, \dots, u_d,
+\dots, u_D)$ to indicate a vector quantity).
+Given an irregular domain $\Omega$, we
+obtain control volumes $V_\ibold = \Upsilon_\ibold \bigcap \Omega$ and
+faces $A_{\ibold,d\pm} = A_{\ibold \pm \half \ebold_d}$ which are the
+intersection of the boundary of $\partial V_\ibold$ with the
+coordinate planes $\{{\xbold}:x_d = (i_d \pm \half)h \}$ ($\ebold_d$ is
+the unit vector in the $d$ direction).  We also
+define $A_{B,\ibold}$ to be the intersection of the boundary of the
+irregular domain with the Cartesian control volume: $A_{B,\ibold}
+= \partial \Omega \bigcap \Upsilon_\ibold$. 
+
+\subsection{Notation}
+
+We use the compact notation
+\begin{align*}
+(\xbold - \xbar)^\pbold &= \prod\limits^D_{d=1} (x_d - {\bar x}_d)^{p_d} \\
+\pbold! &= \prod\limits^D_{d = 1} p_d!
+\end{align*}
+Given a $D$-dimensional region of space $\ibold$, 
+and a $D$-dimensional integer vector
+$\pbold$, we define $m_\ibold^\pbold(\xbar)$ to be the $\pbold^{th}$
+moment of $\ibold$ to the point $\xbar$.
+\begin{equation}
+\mcal_\ibold^\pbold(\xbar)  =  \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV^D.
+\label{eqn::volmoment}
+\end{equation}
+This breaks out into three different cases, volumes, coordinate faces
+and irregular faces.
+A coordinate face $f_{12}$  is the area where two
+volumes ($V_1, V_2$) intersect.
+A irregular face $f_V$  is area where the cutting surface
+intersects the volume $V$.
+The volume moment for a particular power $\pbold$  is
+given by
+\begin{equation}
+  \mcal^\pbold_V = \int\limits_{\ibold} (\xbold - \xbar)^\pbold dV
+  \label{eqn::volmom}
+\end{equation}
+The $\pbold^{th}$ coordinate face moment for the area of where volumes $V_1, V2$
+intersect is given by
+\begin{equation}
+  \mcal^\pbold_{f_{12}} = \int\limits_{A(V_1\bigcap V_2)} (\xbold - \xbar)^\pbold dA.
+  \label{eqn::facmom}
+\end{equation}
+The cutting surface of the boundary $G$ is given by  the zero
+surface of the  implicit function ($I(\xbold)= 0$) used in grid generation.
+The $\pbold^{th}$ irregular face moment is given by an integral over
+the intersection of this cutting surface and the Euclidean volume:
+\begin{equation}
+  \mcal^\pbold_V = \int\limits_{A(V \bigcap G)} (\xbold - \xbar)^\pbold dA.
+  \label{eqn::irrmom}
+\end{equation}
+These moments are natural products of the grid generation algorithm
+in \cite{Schwartz2015}.
+
+
+\section{Poisson operator}
+
+Devendran, et al. \cite{Devendran2017} present an algorithm that
+solves Poisson's equation to fourth-order accuracy using embedded
+boundaries.  Generalizing somewhat  the framework they present, we
+present a family of elliptic operators.
+
+Poisson's equation for field $\psi$, given charge $\rho$:
+\begin{equation}
+  \nabla \cdot (\nabla \psi) = \rho
+  \label{eqn::poisson}
+\end{equation}
+If we integrate equation \ref{eqn::poisson} and apply the divergence theorem 
+over control volumes we get
+\begin{equation}
+\int_{V_\ibold} \nabla \cdot (\nabla \psi ) dV = \int_{\partial
+  V_\ibold} \nabla \psi\cdot \nhat  dA = \int_{V_\ibold} \rho dV
+\end{equation}
+Without approximation, we can say that the surface integral can be
+computed by a sum over the faces that comprise the surface of the
+volume.
+\begin{equation}
+\sum_{f: f \in \partial V_\ibold} \nabla \psi \cdot \nhat dA = \int_{V_\ibold} \rho dV
+\end{equation}
+Using equations \ref{eqn::faceavg} and \ref{eqn::volavg}, the discrete
+operator $L_h$ becomes
+\begin{equation}
+L_h(\phi) = \frac{1}{|V_\ibold|}\sum_{f: f \in \partial V_\ibold} <\nabla \psi \cdot \nhat>_f A_f
+\label{eqn::discretePoisson}
+\end{equation}
+Put in terms of fluxes, 
+\begin{equation}
+L_h(\phi) = \frac{1}{|V_\ibold|}\sum_{f: f \in \partial V_\ibold} F_f A_f
+\end{equation}
+where the flux is the integral over the face of the normal gradient
+\begin{equation}
+  F_f = 
+\end{equation }
+A finite volume operator is defined by the algorithm to compute the
+integral of fluxes at each face.
+
+The truncation error $E_T$ of a discrete  operator $L_h$ when applied to an exact
+solution $\phi_e$ is given by
+\begin{equation}
+  E_T = L_h(\phi_e) - L_e(\phi_e)
+\end{equation}
+where L_e is exact operator.    how $L_e$ and $\phi_e$
+There are several orders of accuracy in play:
+\begin{itemize}
+\item{P_E} is the order to which the exact solutions are computed.
+\item The geometric moments must be computed to $P_E$.
+\item The discrete fluxes and so are are computed to $P_C$, the order
+  to which the operator is being computed.
+\item If we take the obvious choice of $P_E = P_C$, the truncation
+  error of the operator will appear too large because the exact
+  solution is not smooth enough.  
+\item  We will be safe and make $P_E = P_C + 3$.
+
+
 
 
 

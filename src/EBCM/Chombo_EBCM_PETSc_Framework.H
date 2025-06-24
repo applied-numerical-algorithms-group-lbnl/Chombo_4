@@ -1286,60 +1286,53 @@ namespace EBCM
         Chombo4::pout() << "getHelmFDEHStencilSVD: after getSystemInfo" << endl;
       }
       /// begin debug
-      static bool s_found_y = false;
-      shared_ptr<eigen_mat> phi_exact_ptr;
-      bool print_stuff = ((!s_found_y) && (a_face_dir == 1));
-      if(print_stuff)
-      {
-        //this prints the neighborhood as well as gets phi_exact
-        phi_exact_ptr = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact,a_dx, true);
-        s_found_y = true;
-      }
+      //static bool s_found_y = false;
+      //shared_ptr<eigen_mat> phi_exact_ptr;
+      //bool print_stuff = ((!s_found_y) && (a_face_dir == 1));
+      //if(print_stuff)
+      //{
+      //  //this prints the neighborhood as well as gets phi_exact
+      //  phi_exact_ptr = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact,a_dx, true);
+      //  s_found_y = true;
+      //}
       ///end debug
       //not using A_mat_p here -- that is the thing to invert if you are inverting the normal equations.
       // this is WM
       eigen_mat WM_mat = *WMT_mat_p;
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
-      if(print_stuff)
-      {
-        Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
-        eigen_mat resid_mat;
-        testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  print_stuff);
-
-        eigen_mat WPhi_mat;
-        multiply(WPhi_mat, *W_mat_p, *phi_exact_ptr);
-        ///C = (WM)pseudo_inv * W Phi.
-        eigen_mat c_mat;
-        multiply( c_mat, WMinv_mat, WPhi_mat);
-        Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
-        Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
-        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
-        {
-          auto momind = momit();
-          unsigned int currentCol = pr_mom_dim::indexOf(momind);
-          Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
-        }
-        Chombo4::pout()<<   "-------|-------------------|"<< endl;
-      }
+      //begin debug
+      //if(print_stuff)
+      //{
+      //  Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
+      //  eigen_mat resid_mat;
+      //  testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  print_stuff);
+      //
+      //  eigen_mat WPhi_mat;
+      //  multiply(WPhi_mat, *W_mat_p, *phi_exact_ptr);
+      //  ///C = (WM)pseudo_inv * W Phi.
+      //  eigen_mat c_mat;
+      //  multiply( c_mat, WMinv_mat, WPhi_mat);
+      //  Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
+      //  Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
+      //  for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      //  {
+      //    auto momind = momit();
+      //    unsigned int currentCol = pr_mom_dim::indexOf(momind);
+      //    Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
+      //  }
+      //  Chombo4::pout()<<   "-------|-------------------|"<< endl;
+      //}
+      //end debug
       shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
       eigen_mat S_mat_FFS;
       multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
-      if(print_stuff)
-      {
-        Chombo4::pout() << "getHelmFDEHStencilSVD: after generating stencil matrix" << endl;
-      }
 
       retval = getStencilFromMat(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       
-      if(print_stuff)
-      {
-        Chombo4::pout() << "getHelmFDEHStencilSVD: returning stencil" << endl;
-      }
-
       return retval;
     } //end function getHelmholtzFDotEhatStencil
 
@@ -2493,15 +2486,15 @@ namespace EBCM
 
       
       //begin debug
-      writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
-      writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
-      writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
-      writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
-      writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
-      writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
-      writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
-      writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
       //end debug
       
       pr_pt pt_loc_lph, pt_loc_phi;
@@ -2529,7 +2522,7 @@ namespace EBCM
       if(a_max_err_fine > 1.0e-12) 
       {
         order = (log(a_max_err_coar/a_max_err_fine))/log(2.0);
-        Chombo4::pout() << a_prefix  << order << endl;
+        Chombo4::pout() << a_prefix  << "_order = "<< order << endl;
       }
       else
       {
