@@ -55,29 +55,35 @@ int main(int a_argc, char* a_argv[])
     pp.get("polynomial_order", order);
     Chombo4::pout() <<  "Running hoeb_truncation for polynomial order = " << order << endl;
 
+    /**
+      Declaration looks like: template <int geo_exac_order, int operator_order>  class PETSc_Framework
+      geo_exac_order is the order of the exact solution and of the geometry generation
+      operator_order is the order of the Helmholtz operator
+      geo_exac_order >= operator_order
+    **/
     if(order == 6)
     {
-      EBCM::PETSc_Framework<6>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<8, 6>::run_hoeb_truncation_tests();
     }
     else if(order == 5)
     {
-      EBCM::PETSc_Framework<5>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<7, 5>::run_hoeb_truncation_tests();
     }
     if(order == 4)
     {
-      EBCM::PETSc_Framework<4>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<6, 4>::run_hoeb_truncation_tests();
     }
     else if(order == 3)
     {
-      EBCM::PETSc_Framework<3>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<5, 3>::run_hoeb_truncation_tests();
     }
     else if(order == 2)
     {
-      EBCM::PETSc_Framework<2>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<4, 2>::run_hoeb_truncation_tests();
     }
     else if(order == 1)
     {
-      EBCM::PETSc_Framework<1>::run_hoeb_truncation_tests();
+      EBCM::PETSc_Framework<3, 1>::run_hoeb_truncation_tests();
     }
     else
     {

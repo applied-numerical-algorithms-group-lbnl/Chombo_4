@@ -32,8 +32,11 @@
 **/
 namespace EBCM
 {
-  
-  template <int ebcm_order>
+   /**
+      geo_exac_order is the order of the exact solution and of the geometry generation
+      operator_order is the order of the Helmholtz operator
+  **/
+  template <int geo_exac_order, int operator_order>
   class PETSc_Framework
   {
   public:
@@ -52,35 +55,35 @@ namespace EBCM
     typedef Chombo4::IntVect                                ch_iv;
     typedef Chombo4::DataIterator                           ch_dit;
 
-    typedef Chombo4::GeometryService<         ebcm_order >  ch_geoserv;
-    typedef  EBCM::Algorithm_Framework<       ebcm_order >  algo_framework;
-    typedef  EBCM::neighborhood<              ebcm_order >  ebcm_neighborhood;
-    typedef  EBCM::neig_dom_face<             ebcm_order >  ebcm_dom_face;
-    typedef  EBCM::neig_cut_face<             ebcm_order >  ebcm_cut_face;
-    typedef  EBCM::MetaDataLevel<             ebcm_order >  ebcm_meta;
-    typedef  EBCM::Algorithm_Framework<       ebcm_order >  ebcm_framework;
-    typedef  EBCM::EBCM_Graph<                ebcm_order >  ebcm_graph;
-    typedef  EBCM::HostLevelData<int,    1,   ebcm_order >  ebcm_int_sca_data;
-    typedef  EBCM::HostLevelData<double, 1,   ebcm_order >  ebcm_dou_sca_data;
-    typedef  EBCM::HostLevelData<int,    DIM, ebcm_order >  ebcm_int_vec_data;
-    typedef  EBCM::HostLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_data;
-    typedef  EBCM::FluxLevelData<int,    1,   ebcm_order >  ebcm_int_sca_flux;
-    typedef  EBCM::FluxLevelData<double, 1,   ebcm_order >  ebcm_dou_sca_flux;
-    typedef  EBCM::FluxLevelData<int,    DIM, ebcm_order >  ebcm_int_vec_flux;
-    typedef  EBCM::FluxLevelData<double, DIM, ebcm_order >  ebcm_dou_vec_flux;
+    typedef Chombo4::GeometryService<         geo_exac_order >  ch_geoserv;
+    typedef  EBCM::Algorithm_Framework<       geo_exac_order >  algo_framework;
+    typedef  EBCM::neighborhood<              geo_exac_order >  ebcm_neighborhood;
+    typedef  EBCM::neig_dom_face<             geo_exac_order >  ebcm_dom_face;
+    typedef  EBCM::neig_cut_face<             geo_exac_order >  ebcm_cut_face;
+    typedef  EBCM::MetaDataLevel<             geo_exac_order >  ebcm_meta;
+    typedef  EBCM::Algorithm_Framework<       geo_exac_order >  ebcm_framework;
+    typedef  EBCM::EBCM_Graph<                geo_exac_order >  ebcm_graph;
+    typedef  EBCM::HostLevelData<int,    1,   geo_exac_order >  ebcm_int_sca_data;
+    typedef  EBCM::HostLevelData<double, 1,   geo_exac_order >  ebcm_dou_sca_data;
+    typedef  EBCM::HostLevelData<int,    DIM, geo_exac_order >  ebcm_int_vec_data;
+    typedef  EBCM::HostLevelData<double, DIM, geo_exac_order >  ebcm_dou_vec_data;
+    typedef  EBCM::FluxLevelData<int,    1,   geo_exac_order >  ebcm_int_sca_flux;
+    typedef  EBCM::FluxLevelData<double, 1,   geo_exac_order >  ebcm_dou_sca_flux;
+    typedef  EBCM::FluxLevelData<int,    DIM, geo_exac_order >  ebcm_int_vec_flux;
+    typedef  EBCM::FluxLevelData<double, DIM, geo_exac_order >  ebcm_dou_vec_flux;
 
-    typedef  EBCM::SubVolumeVector<           ebcm_order >  ebcm_subvol_vec;
-    typedef  EBCM::EBCM_Volu<                 ebcm_order >  ebcm_volu;
+    typedef  EBCM::SubVolumeVector<           geo_exac_order >  ebcm_subvol_vec;
+    typedef  EBCM::EBCM_Volu<                 geo_exac_order >  ebcm_volu;
 
     
-    typedef Proto::IndexedMoments<DIM  ,      ebcm_order >  pr_mom_dim;
-    typedef Proto::IndexedMoments<DIM-1,      ebcm_order >  pr_mom_dmo;
+    typedef Proto::IndexedMoments<DIM  ,      geo_exac_order >  pr_mom_dim;
+    typedef Proto::IndexedMoments<DIM-1,      geo_exac_order >  pr_mom_dmo;
     typedef Proto::IndexTM<double,DIM                    >  pr_itm_r_dim;
     typedef Proto::IndexTM<int   ,DIM                    >  pr_itm_i_dim;
     typedef Proto::IndexTM<double,DIM-1                  >  pr_itm_r_dmo;
     typedef Proto::IndexTM<int   ,DIM-1                  >  pr_itm_i_dmo;
     
-    typedef EBCM_Exact::BaseExactSolution<    ebcm_order >  ebcm_exac;
+    typedef EBCM_Exact::BaseExactSolution<    geo_exac_order >  ebcm_exac;
 
 
 
@@ -250,65 +253,6 @@ namespace EBCM
       }
 
       
-      ///YADF
-      void writeDetails(shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
-                        string   a_identifier) const
-      {
-        bool killing_me_smalls = true; //this is a debugging routine
-        ch_iv lo_coar(D_DECL( 1, 14, 4586));
-        ch_iv hi_coar(D_DECL( 1, 15, 4586));
-        ch_iv lo_fine(D_DECL( 1, 30, 4586));
-        ch_iv hi_fine(D_DECL( 1, 31, 4586));
-        ch_iv lo_disp = lo_fine;
-        ch_iv hi_disp = hi_fine;
-        if(a_identifier == string("coar"))
-        {
-          lo_disp = lo_coar;
-          hi_disp = hi_coar;
-        }
-        ch_box disp_box(lo_disp, hi_disp);
-        int flux_dir = 0;
-        Side::LoHiSide flux_side = Side::Hi;
-        const auto& graphs = *(m_meta_ptr->m_graphs);
-        const auto& grids  =  (m_meta_ptr->m_grids);
-        auto dit = grids.dataIterator();
-        
-        for(int ibox =0; ibox < dit.size(); ibox++)
-        {
-          const auto& valid           =            grids[dit[ibox]];
-          ch_box intersection = valid & disp_box;
-          if(!intersection.isEmpty())
-          {
-            const auto& graph           =           graphs[dit[ibox]];
-            const auto& phi_fab         =     (*a_phi_ptr)[dit[ibox]];
-
-            bool subvol_construction_verbosity = false;
-            ebcm_subvol_vec volvec(graph, intersection,  subvol_construction_verbosity);
-            for(int ivol = 0; ivol < volvec.size(); ivol++)
-            {
-              const auto& volu = volvec[ivol];
-
-              //gets stencil from first face in that direction yadf
-              shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getVoluSideFluxStencil(volu, graph, flux_dir, flux_side, &phi_fab, killing_me_smalls);
-              double inhomog = local->m_inhomogeneous_bit;
-              double flux_val = inhomog;
-              for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
-              {
-                pr_pt      sten_iv  = (local->m_entries)[ivec].first;
-                double     wght     = (local->m_entries)[ivec].second;
-                double     phi_val  = phi_fab(sten_iv, 0);
-                double     flux_incr = phi_val*wght;
-                flux_val += flux_incr;
-              } //end loop over stencil
-              Chombo4::pout() << "writeDetails for " << volu.m_pt 
-                              << ": inhomog = " << inhomog
-                              << ", flux    = " << flux_val
-                              << std::endl;
-            } //end loop over volumes
-          } //end if(intersection exists)
-        } //end loop over boxes
-      }//end function writeDetails
       ///
       void applyOpPrimitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
                              shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
@@ -682,7 +626,7 @@ namespace EBCM
     **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
-    getHelmholtzQMatrix( const EBCM_Face<cent, ebcm_order>  & a_face,
+    getHelmholtzQMatrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
                          shared_ptr<ebcm_neighborhood>        a_locality,
                          const int                          & a_facedir,
                          const double                       & a_dx)
@@ -698,7 +642,7 @@ namespace EBCM
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
 
       //Real area = a_face.m_facmom[pr_itm_i_dmo::Zero];
-      for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
       {
         auto p_mom = momit();
         double matval = 0;
@@ -793,7 +737,7 @@ namespace EBCM
     */
     static local_stencil_t
     getStencilFromMat(const eigen_mat                                & a_matrix,
-                      shared_ptr< EBCM::neighborhood< ebcm_order > > & a_locality,
+                      shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
                       const string                                   & a_dom_bc,
                       const string                                   & a_eb_bc,
                       const ebcm_exac                                & a_bc_exact,
@@ -1256,10 +1200,10 @@ namespace EBCM
     template<CENTERING cent>
     static local_stencil_t
     getHelmFDotEhatStencilUsingSVD(
-      const EBCM_Face<cent, ebcm_order>  & a_face,
+      const EBCM_Face<cent, geo_exac_order>  & a_face,
       const int                          & a_stenrad,
       const int                          & a_weightpower,
-      const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+      const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
       const string                       & a_dom_bc,
       const string                       & a_eb_bc,
       const int                          & a_face_dir,
@@ -1274,9 +1218,9 @@ namespace EBCM
       **/
       local_stencil_t retval;
 
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< EBCM::neighborhood< geo_exac_order > > locality;
       shared_ptr< eigen_mat > A_mat_p, W_mat_p, M_mat_p, WMT_mat_p;
-      EBCM::Algorithm_Framework<ebcm_order>::
+      EBCM::Algorithm_Framework<geo_exac_order>::
         getSystemInfo(A_mat_p, W_mat_p, M_mat_p, WMT_mat_p, locality,
                       a_face, a_graph, a_stenrad, a_weightpower,
                       a_dom_bc, a_eb_bc, false);
@@ -1286,17 +1230,6 @@ namespace EBCM
         Chombo4::pout() << "getHelmFDEHStencilSVD: after getSystemInfo" << endl;
       }
       /// begin debug
-      //static bool s_found_y = false;
-      //shared_ptr<eigen_mat> phi_exact_ptr;
-      //bool print_stuff = ((!s_found_y) && (a_face_dir == 1));
-      //if(print_stuff)
-      //{
-      //  //this prints the neighborhood as well as gets phi_exact
-      //  phi_exact_ptr = getSolutionRowVector(locality, a_dom_bc, a_eb_bc, a_bc_exact,a_dx, true);
-      //  s_found_y = true;
-      //}
-      ///end debug
-      //not using A_mat_p here -- that is the thing to invert if you are inverting the normal equations.
       // this is WM
       eigen_mat WM_mat = *WMT_mat_p;
       WM_mat.transpose();
@@ -1315,7 +1248,7 @@ namespace EBCM
       //  multiply( c_mat, WMinv_mat, WPhi_mat);
       //  Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
       //  Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
-      //  for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+      //  for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
       //  {
       //    auto momind = momit();
       //    unsigned int currentCol = pr_mom_dim::indexOf(momind);
@@ -1336,76 +1269,14 @@ namespace EBCM
       return retval;
     } //end function getHelmholtzFDotEhatStencil
 
-    ///
-    template<CENTERING cent>
-    static local_stencil_t
-    getHelmFDotEhatStencilUsingNormalEquations(
-      const EBCM_Face<cent, ebcm_order>  & a_face,
-      const int                          & a_stenrad,
-      const int                          & a_weightpower,
-      const EBCM::EBCM_Graph<ebcm_order> & a_graph,
-      const string                       & a_dom_bc,
-      const string                       & a_eb_bc,
-      const int                          & a_face_dir,
-      const double                       & a_dx,
-      const ebcm_exac                    & a_bc_exact,
-      const pr_fab_t                     * a_phi_exac_ptr, //can be null
-      bool a_killing_me_smalls)
-    {
-      CH_TIME("PETSc_Framework::getHelmFDotEhatStencilUsingNormalEquations");
-      /** 
-          At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
-      **/
-      local_stencil_t retval;
-
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
-      shared_ptr< eigen_mat > Amat_p, Wmat_p, Mmat_p, WMTmat_p;
-      EBCM::Algorithm_Framework<ebcm_order>::
-        getSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
-                      a_face, a_graph, a_stenrad, a_weightpower,
-                      a_dom_bc, a_eb_bc, false);
-      
-      /**
-         From the document (Lawrence Berkeley National Laboratory Technical Report LBNL-2001537):  
-         Q : Q matrix (Unfortunately, I did not give it a fancy mathy name in the document.
-         It is the one that converts  Taylor coefficients to fluxes).   
-         S : stencil matrix.  
-         P : phi vector.  
-         W : weighting matrix.
-         M : moment matrix.
-         A : system matrix =  ((WM)^T(WM))
-         (S P) = <\nabla \psi> = Q C= (Q ((WM)^T(WM))^{-1} (WM)^T  P) Q A^{-1} WM^T P.
-         S = Q C = (Q ((WM)^T(WM))^{-1} (WM)^T  ) = Q A^{-1} (WM)^T.
-      **/
-      if(a_killing_me_smalls)
-      {
-        Chombo4::pout() << "getHelmFDEHStencil: doing the Taylor dance" << endl;
-      }
-
-
-      eigen_mat Ainvmat = *Amat_p;
-      Ainvmat.invert();
-      shared_ptr<eigen_mat> Qmat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
-      
-      eigen_mat WMTW;
-      multiply( WMTW, *WMTmat_p, *Wmat_p);
-      eigen_mat AinvWMTW;
-      multiply( AinvWMTW, Ainvmat, WMTW);
-      eigen_mat SmatFFS;
-      multiply( SmatFFS, *Qmat_p, AinvWMTW);
-
-      retval = getStencilFromMat(SmatFFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
-
-      return retval;
-    } //end function getHelmFDotEhatStencilUsingNormalEquations
 
     ///
     template<CENTERING cent>
     static local_stencil_t
-    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, ebcm_order>  & a_face,
+    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, geo_exac_order>  & a_face,
                                 const int                          & a_stenrad,
                                 const int                          & a_weightpower,
-                                const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
                                 const string                       & a_dom_bc,
                                 const string                       & a_eb_bc,
                                 const int                          & a_face_dir,
@@ -1477,7 +1348,7 @@ namespace EBCM
        retval(0, curCol) = matval
     **/
     static shared_ptr<eigen_mat>
-    getHelmholtzEBQMatrix( const IrregFace< ebcm_order >      & a_face,
+    getHelmholtzEBQMatrix( const IrregFace< geo_exac_order >      & a_face,
                            shared_ptr<ebcm_neighborhood>        a_locality,
                            const double                       & a_dx)
     {
@@ -1510,7 +1381,7 @@ namespace EBCM
         }
         normal_moment.shift(xbar_face);
 
-        for(MomentIterator<DIM, ebcm_order> momit; momit.ok(); ++momit)
+        for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
         {
           auto momind = momit();
           double matval = 0;
@@ -1539,10 +1410,10 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    getIrregHelmholtzFDotNStencil(const IrregFace<ebcm_order>        & a_face,
+    getIrregHelmholtzFDotNStencil(const IrregFace<geo_exac_order>        & a_face,
                                   const int                          & a_stenrad,
                                   const int                          & a_weightpower,
-                                  const EBCM::EBCM_Graph<ebcm_order> & a_graph,
+                                  const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
                                   const string                       & a_dom_bc,
                                   const string                       & a_eb_bc,
                                   const double                       & a_dx,
@@ -1554,7 +1425,7 @@ namespace EBCM
          There is no stencil for Neumann EBBC but it can have an inhomogeneous value.
       **/
       local_stencil_t retval;
-      shared_ptr< EBCM::neighborhood< ebcm_order > > locality;
+      shared_ptr< EBCM::neighborhood< geo_exac_order > > locality;
       shared_ptr<eigen_mat> Amat_p, Wmat_p, Mmat_p, WMTmat_p;
       algo_framework::getEBSystemInfo(Amat_p, Wmat_p, Mmat_p, WMTmat_p, locality,
                                       a_face, a_graph,
@@ -1784,7 +1655,7 @@ namespace EBCM
         }          
         return retval;
       }
-      ///in theory, just for debugging.  only grabs the last stencil on that side in the case of multiple faces.
+      ///for applyOpPrimitives (used in debugging)
       shared_ptr<local_stencil_t>
       getVoluSideFluxStencil(const ebcm_volu  & a_volu,
                              const ebcm_graph & a_graph,
@@ -1807,7 +1678,7 @@ namespace EBCM
           {
             const auto& face = a_volu.m_xfaces[iface];
             bool on_vol_exterior  = false;
-            double face_sign = EBCM::faceSign<XFACE, ebcm_order>(on_vol_exterior, a_volu, face, 0, false);
+            double face_sign = EBCM::faceSign<XFACE, geo_exac_order>(on_vol_exterior, a_volu, face, 0, false);
             if(! on_vol_exterior)
             {
               ch_mayday::Error("volume not consistent in x");
@@ -1866,7 +1737,7 @@ namespace EBCM
 
       template <CENTERING cent>
       local_stencil_t
-      getFluxStencil(const EBCM_Face<cent, ebcm_order> & a_face,
+      getFluxStencil(const EBCM_Face<cent, geo_exac_order> & a_face,
                      const ebcm_graph                  & a_graph,
                      const double                      & a_dx, 
                      const pr_fab_t                    *  a_phi_exac_ptr, //can be null
@@ -1962,7 +1833,7 @@ namespace EBCM
     template<CENTERING cent>
     static void
     setVectorIntFluxDAExac(pr_fab_t&                                           a_fab,
-                           const vector< EBCM_Face<cent, ebcm_order> >     &   a_vec_faces,
+                           const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
                            int                                                 a_face_dir,
                            double                                              a_dx,
                            shared_ptr< ebcm_exac  >                            a_exac_ptr)
@@ -1979,7 +1850,7 @@ namespace EBCM
     template<CENTERING cent>
     static void
     setVectorIntFluxDAAnal(pr_fab_t&                                           a_fab,
-                           const vector< EBCM_Face<cent, ebcm_order> >     &   a_vec_faces,
+                           const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
                            int                                                 a_face_dir,
                            double                                              a_dx,
                            shared_ptr< ebcm_exac  >                            a_exac_ptr)
@@ -2116,7 +1987,7 @@ namespace EBCM
       if(a_exact_flag == 0)
       {
         if(!printed_once) pout() << "exact solution = Zero" << endl;
-        retval = shared_ptr<ebcm_exac>(new EBCM_Exact::ZeroSolution<ebcm_order>() );
+        retval = shared_ptr<ebcm_exac>(new EBCM_Exact::ZeroSolution<geo_exac_order>() );
       }
       else if(a_exact_flag==1)
       {
@@ -2146,7 +2017,7 @@ namespace EBCM
           entries[iterm] = entry;
           if(!printed_once) pout() << "iterm = " << iterm << ", power = " << entry.first << ", weight = " << entry.second << endl;
         }//end loop over terms
-        EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
+        EBCM_Exact::PolynomialEF<geo_exac_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<geo_exac_order>(entries);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -2162,8 +2033,8 @@ namespace EBCM
           pout() << " (cp = 1/p! for all p <= (max_polynomial_order+1))." << endl;
         }
         ///Land-ho but for moments.
-        typedef  Proto::MomentIterator<DIM ,ebcm_order+1> pr_momit_ho;
-        typedef  Proto::IndexedMoments<DIM ,ebcm_order+1> pr_indmom_ho;
+        typedef  Proto::MomentIterator<DIM ,geo_exac_order+1> pr_momit_ho;
+        typedef  Proto::IndexedMoments<DIM ,geo_exac_order+1> pr_indmom_ho;
         int num_terms = pr_indmom_ho::size();
         entries.resize(num_terms);
         for(pr_momit_ho momit_ho; momit_ho.ok(); ++momit_ho)
@@ -2186,7 +2057,7 @@ namespace EBCM
           }
         }
 
-        EBCM_Exact::PolynomialEF<ebcm_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<ebcm_order>(entries);
+        EBCM_Exact::PolynomialEF<geo_exac_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<geo_exac_order>(entries);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -2204,8 +2075,8 @@ namespace EBCM
         pp.get("direction",direction);
         pp.get("amplitude",amplitude);
 
-        EBCM_Exact::OneDimSineEF<ebcm_order>* ebcm_poly_ptr =
-          new EBCM_Exact::OneDimSineEF<ebcm_order>(direction,
+        EBCM_Exact::OneDimSineEF<geo_exac_order>* ebcm_poly_ptr =
+          new EBCM_Exact::OneDimSineEF<geo_exac_order>(direction,
                                                    amplitude,
                                                    frequency);
         
@@ -2223,8 +2094,8 @@ namespace EBCM
         pp.getarr("frequency", frequency, 0, DIM);
         pp.get("amplitude",amplitude);
 
-        EBCM_Exact::SineProductEF<ebcm_order>* ebcm_poly_ptr
-          = new  EBCM_Exact::SineProductEF<ebcm_order>(amplitude,frequency);
+        EBCM_Exact::SineProductEF<geo_exac_order>* ebcm_poly_ptr
+          = new  EBCM_Exact::SineProductEF<geo_exac_order>(amplitude,frequency);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -2314,7 +2185,7 @@ namespace EBCM
       }
       
       string prefix = a_file_prefix + string("_") + a_data_label;
-      EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+      EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
         writeWindowLevel(&(*a_data), lo_disp, hi_disp, prefix);
 
     }
@@ -2340,7 +2211,7 @@ namespace EBCM
       for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = a_file_prefix + string("_") + a_data_label;
-        EBCM_Debug::DataWindow<double, 1, ebcm_order>::
+        EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
           writeFluxWindowLevel(&(*a_data), lo_disp, hi_disp, idir, prefix);
       }
 
@@ -2400,9 +2271,7 @@ namespace EBCM
       bool homogeneous_only = false;
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
-      ///using stuff I think I actually understand
-//      discreteOp.writeDetails(phi_exac_ptr, a_file_prefix);
-//      return;
+
       discreteOp.applyOpPrimitives(lph_calc_ptr,
                                    phi_exac_ptr,
                                    flx_calc_ptr,
@@ -2545,7 +2414,7 @@ namespace EBCM
       /* double lph_order = */ compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix = string("check_exact_solution:flx[") + to_string(idir) + string("]:");
+        string prefix = string("check_exact_solution:IntFlxDA[") + to_string(idir) + string("]:");
         /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     }// end function check_exact_solution                 
@@ -2561,7 +2430,7 @@ namespace EBCM
       /* double lphi_order = */   compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix = string("helmholtz_truncation:flux[") + to_string(idir) + string("]:");
+        string prefix = string("helmholtz_truncation:IntFluxDA[") + to_string(idir) + string("]:");
         /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     } //  end function helmholtz_truncation
