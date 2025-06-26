@@ -55,13 +55,12 @@ namespace EBCM
     typedef Chombo4::IntVect                                ch_iv;
     typedef Chombo4::DataIterator                           ch_dit;
 
+    typedef  EBCM::Algorithm_Framework<       geo_exac_order, operator_order >  algo_framework;
     typedef Chombo4::GeometryService<         geo_exac_order >  ch_geoserv;
-    typedef  EBCM::Algorithm_Framework<       geo_exac_order >  algo_framework;
     typedef  EBCM::neighborhood<              geo_exac_order >  ebcm_neighborhood;
     typedef  EBCM::neig_dom_face<             geo_exac_order >  ebcm_dom_face;
     typedef  EBCM::neig_cut_face<             geo_exac_order >  ebcm_cut_face;
     typedef  EBCM::MetaDataLevel<             geo_exac_order >  ebcm_meta;
-    typedef  EBCM::Algorithm_Framework<       geo_exac_order >  ebcm_framework;
     typedef  EBCM::EBCM_Graph<                geo_exac_order >  ebcm_graph;
     typedef  EBCM::HostLevelData<int,    1,   geo_exac_order >  ebcm_int_sca_data;
     typedef  EBCM::HostLevelData<double, 1,   geo_exac_order >  ebcm_dou_sca_data;
@@ -76,13 +75,18 @@ namespace EBCM
     typedef  EBCM::EBCM_Volu<                 geo_exac_order >  ebcm_volu;
 
     
-    typedef Proto::IndexedMoments<DIM  ,      geo_exac_order >  pr_mom_dim;
-    typedef Proto::IndexedMoments<DIM-1,      geo_exac_order >  pr_mom_dmo;
-    typedef Proto::IndexTM<double,DIM                    >  pr_itm_r_dim;
-    typedef Proto::IndexTM<int   ,DIM                    >  pr_itm_i_dim;
-    typedef Proto::IndexTM<double,DIM-1                  >  pr_itm_r_dmo;
-    typedef Proto::IndexTM<int   ,DIM-1                  >  pr_itm_i_dmo;
-    
+    typedef Proto::IndexedMoments<DIM  ,      geo_exac_order >  pr_indmom_dim_geo_exac;
+    typedef Proto::IndexedMoments<DIM-1,      geo_exac_order >  pr_indmom_dmo_geo_exac;
+    typedef Proto::IndexedMoments<DIM  ,      operator_order >  pr_indmom_dim_operator;
+    typedef Proto::IndexedMoments<DIM-1,      operator_order >  pr_indmom_dmo_operator;
+    typedef Proto::MomentIterator<DIM  ,      geo_exac_order >  pr_momit_dim_geo_exac;    
+    typedef Proto::MomentIterator<DIM-1,      geo_exac_order >  pr_momit_dmo_geo_exac;    
+    typedef Proto::MomentIterator<DIM  ,      operator_order >  pr_momit_dim_operator;    
+    typedef Proto::MomentIterator<DIM-1,      operator_order >  pr_momit_dmo_operator;    
+    typedef Proto::IndexTM<double,DIM                        >  pr_itm_r_dim;
+    typedef Proto::IndexTM<int   ,DIM                        >  pr_itm_i_dim;
+    typedef Proto::IndexTM<double,DIM-1                      >  pr_itm_r_dmo;
+    typedef Proto::IndexTM<int   ,DIM-1                      >  pr_itm_i_dmo;
     typedef EBCM_Exact::BaseExactSolution<    geo_exac_order >  ebcm_exac;
 
 
@@ -627,22 +631,23 @@ namespace EBCM
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
     getHelmholtzQMatrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
-                         shared_ptr<ebcm_neighborhood>        a_locality,
-                         const int                          & a_facedir,
-                         const double                       & a_dx)
+                         shared_ptr<ebcm_neighborhood>            a_locality,
+                         const int                              & a_facedir,
+                         const double                           & a_dx)
     {
-      pr_mom_dmo facmom =  a_face.m_facmom;
-      pr_mom_dim volmom = ebcm_basics::getVolMomFromFacMom(facmom, a_facedir);
+      pr_indmom_dmo_geo_exac facmom_geo =  a_face.m_facmom;
+      pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_facedir);
+
+
       //double momzero    = facmom[pr_itm_i_dmo::Zero];
 
       pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
       volmom.shift(xbar);
 
-      unsigned int Pcols = pr_mom_dim::size();
+      unsigned int Pcols = pr_indmom_dim_operator::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
 
-      //Real area = a_face.m_facmom[pr_itm_i_dmo::Zero];
-      for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
+      for(pr_momit_dim_operator momit; momit.ok(); ++momit)
       {
         auto p_mom = momit();
         double matval = 0;
@@ -659,7 +664,7 @@ namespace EBCM
           }
           **/
         }
-        unsigned int currentCol = pr_mom_dim::indexOf(p_mom);
+        unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
         (*retval)(0,currentCol) = matval;
       }
     
@@ -986,8 +991,6 @@ namespace EBCM
       void defineData()
       {
         setNeighborhoodBounds();
-//        m_hori_dir = m_locality->m_face_dir;
-//        m_vert_dir = 1 - m_hori_dir;  //need something better for 3d but since this is just for debugging, GEFN
         m_hori_dir = 0;
         m_vert_dir = 1;
         int num_rows = m_hi_iv[m_vert_dir]- m_lo_iv[m_vert_dir] + 1;
@@ -1220,10 +1223,9 @@ namespace EBCM
 
       shared_ptr< EBCM::neighborhood< geo_exac_order > > locality;
       shared_ptr< eigen_mat > A_mat_p, W_mat_p, M_mat_p, WMT_mat_p;
-      EBCM::Algorithm_Framework<geo_exac_order>::
-        getSystemInfo(A_mat_p, W_mat_p, M_mat_p, WMT_mat_p, locality,
-                      a_face, a_graph, a_stenrad, a_weightpower,
-                      a_dom_bc, a_eb_bc, false);
+      algo_framework::getSystemInfo(A_mat_p, W_mat_p, M_mat_p, WMT_mat_p, locality,
+                                    a_face, a_graph, a_stenrad, a_weightpower,
+                                    a_dom_bc, a_eb_bc, false);
       
       if(a_killing_me_smalls)
       {
@@ -1248,10 +1250,10 @@ namespace EBCM
       //  multiply( c_mat, WMinv_mat, WPhi_mat);
       //  Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
       //  Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
-      //  for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
+      //  for(pr_momit_dim_operator momit; momit.ok(); ++momit)
       //  {
       //    auto momind = momit();
-      //    unsigned int currentCol = pr_mom_dim::indexOf(momind);
+      //    unsigned int currentCol = pr_indmom_dim_geo_exac_geo_exac::indexOf(momind);
       //    Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
       //  }
       //  Chombo4::pout()<<   "-------|-------------------|"<< endl;
@@ -1309,7 +1311,7 @@ namespace EBCM
         //static bool s_use_svd = true;;
         /**
            Used to have an option to use svd or normal equations here.
-           svd gets better answers.
+           svd gets much better answers.
          **/
           
         retval = getHelmFDotEhatStencilUsingSVD
@@ -1333,7 +1335,7 @@ namespace EBCM
     /**
        loops through d
        (2) It shifts these moments to xbar from locality
-       (3) resizes output matrix to (1, pr_mom_dim::size())
+       (3) resizes output matrix to (1, pr_indmom_dim_geo_exac_geo_exac::size())
        (4) matrix_value(0, currentCol) = pd*derval/momzero
 
        momzero == the face area. 
@@ -1355,14 +1357,14 @@ namespace EBCM
       CH_TIME("PETSc_Framework::getHelmholtzEBQMatrix");
       
       double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
-      unsigned int Pcols = pr_mom_dim::size();
+      unsigned int Pcols = pr_indmom_dim_operator::size();
       
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
       const pr_itm_r_dim xbar_face = a_locality->getXBarEB(a_face, a_dx);
       retval->setVal(0.); // needed
       for(int idir = 0; idir < DIM; idir++)
       {
-        pr_mom_dim normal_moment;
+        pr_indmom_dim_geo_exac normal_moment;
         if(idir == 0)
         {
           normal_moment = a_face.m_norm_mom_x;
@@ -1381,7 +1383,7 @@ namespace EBCM
         }
         normal_moment.shift(xbar_face);
 
-        for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
+        for(pr_momit_dim_operator momit; momit.ok(); ++momit)
         {
           auto momind = momit();
           double matval = 0;
@@ -1395,7 +1397,7 @@ namespace EBCM
               matval = pd*derval/momzero;
             }
           }
-          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          unsigned int currentCol = pr_indmom_dim_operator::indexOf(momind);
           (*retval)(0,currentCol) += matval;//note: increments
         } //end loop over moments
       }   //end loop over directions
@@ -1815,7 +1817,7 @@ namespace EBCM
       GeometryService<2>::generateGrids(vecgrids, a_domain.domainBox(), a_maxGrid);
 
       int geomGhost = 6;
-      shared_ptr<BaseIF>    impfunc = ebcm_framework::getImplicitFunction();
+      shared_ptr<BaseIF>    impfunc = algo_framework::getImplicitFunction();
       //Chombo4::pout() << "defining geometry in EB land" << endl;
 
       pr_rv origin = pr_rv::Zero();
@@ -2021,46 +2023,6 @@ namespace EBCM
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
-      else if(a_exact_flag==2)
-      {
-        using std::vector;
-        using std::pair;
-        vector<pair<Point, Real> > entries;
-
-        if(!printed_once)
-        {
-          pout() << "Exact solution is a polynomial of all the powers with unity coefficients." << endl;
-          pout() << " (cp = 1/p! for all p <= (max_polynomial_order+1))." << endl;
-        }
-        ///Land-ho but for moments.
-        typedef  Proto::MomentIterator<DIM ,geo_exac_order+1> pr_momit_ho;
-        typedef  Proto::IndexedMoments<DIM ,geo_exac_order+1> pr_indmom_ho;
-        int num_terms = pr_indmom_ho::size();
-        entries.resize(num_terms);
-        for(pr_momit_ho momit_ho; momit_ho.ok(); ++momit_ho)
-        {
-          pr_itm_i_dim power_itm = momit_ho();
-          pr_pt power_pt;
-          for(int idir = 0; idir < DIM; idir++)
-          {
-            power_pt[idir]  = power_itm[idir];
-          }
-          double  d_fact = double(power_itm.factorial());
-          double  coeff = 1./d_fact;  
-          int vec_ind = pr_indmom_ho::indexOf(power_itm);
-          entries[vec_ind].first  = power_pt;
-          entries[vec_ind].second = coeff;
-          if(!printed_once)
-          {
-            pout() << "   power[" << vec_ind << "] = " << power_pt
-                   << ", weight[" << vec_ind << "] = " << coeff  << endl;
-          }
-        }
-
-        EBCM_Exact::PolynomialEF<geo_exac_order>* ebcm_poly_ptr = new EBCM_Exact::PolynomialEF<geo_exac_order>(entries);
-        
-        retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
-      }
       else if(a_exact_flag==3)
       {
         ParmParse pp("sine_exact");
@@ -2128,39 +2090,6 @@ namespace EBCM
       pr_pt  lo_fine(D_DECL(0 ,  0, 0));
       pr_pt  hi_fine(D_DECL(3,   3, 0));
 
-//  upper middle      
-//      if(!printed)
-//      {
-//        pout() << "displaying TOP MIDDLE" << endl;
-//        printed = true;
-//      }
-//      pr_pt  lo_coar(D_DECL( 6, 12, 0));
-//      pr_pt  hi_coar(D_DECL( 9, 15, 0));
-//      pr_pt  lo_fine(D_DECL(14, 28, 0));
-//      pr_pt  hi_fine(D_DECL(17, 31, 0));
-//
-//  upper left
-//      if(!printed)
-//      {
-//        pout() << "displaying TOP LEFT" << endl;
-//        printed = true;
-//      }
-//      pr_pt  lo_coar(D_DECL( 0, 12, 0));
-//      pr_pt  hi_coar(D_DECL( 3, 15, 0));
-//      pr_pt  lo_fine(D_DECL( 0, 28, 0));
-//      pr_pt  hi_fine(D_DECL( 3, 31, 0));
-
-/// middle middle      
-//      if(!printed)
-//      {
-//        pout() << "displaying MIDDLE MIDDLE" << endl;
-//        printed = true;
-//      }
-//      pr_pt  lo_coar(D_DECL( 5, 5 , 0));
-//      pr_pt  hi_coar(D_DECL( 8,  8, 0));
-//      pr_pt  lo_fine(D_DECL(13, 13, 0));
-//      pr_pt  hi_fine(D_DECL(16, 16, 0));
-//      
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
       a_lo_fine = lo_fine;
@@ -2400,7 +2329,8 @@ namespace EBCM
       return  order;
     }
     static void check_exact_solution( shared_ptr< ebcm_meta  > a_meta_fine,
-                                      shared_ptr< ebcm_meta  > a_meta_coar)
+                                      shared_ptr< ebcm_meta  > a_meta_coar,
+                                      bool                     a_killing_me_smalls)
     {
       double max_err_phi_fine = -4586;
       double max_err_phi_coar = -4586;
@@ -2410,16 +2340,25 @@ namespace EBCM
       double max_err_flux_coar[DIM];
       get_exact_solution_error(max_err_phi_fine, max_err_lph_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_exact_solution_error(max_err_phi_coar, max_err_lph_coar, max_err_flux_coar, a_meta_coar, string("coar"));
-      /* double phi_order = */ compute_and_print_order(string("check_exact_solution:phi:"), max_err_phi_fine, max_err_phi_coar);
-      /* double lph_order = */ compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
+      double phi_order = compute_and_print_order(string("check_exact_solution:phi:"), max_err_phi_fine, max_err_phi_coar);
+      double lph_order = compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "check_exact_solution:phi_order = " << phi_order << ", lph_order = " << lph_order << endl;
+      }
       for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = string("check_exact_solution:IntFlxDA[") + to_string(idir) + string("]:");
-        /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        double flux_order =  compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << prefix << flux_order << endl;
+        }
       }
     }// end function check_exact_solution                 
     static void helmholtz_truncation( shared_ptr< ebcm_meta  > a_meta_fine,
-                                      shared_ptr< ebcm_meta  > a_meta_coar)
+                                      shared_ptr< ebcm_meta  > a_meta_coar,
+                                      bool                     a_killing_me_smalls)
     {
       double max_err_lphi_fine = -4586;
       double max_err_lphi_coar = -4586;
@@ -2427,11 +2366,19 @@ namespace EBCM
       double max_err_flux_fine[DIM];
       get_max_abs_calc_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_max_abs_calc_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
-      /* double lphi_order = */   compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
+      double lphi_order =   compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
+      if(a_killing_me_smalls)
+      {
+        Chombo4::pout() << "helmholtz_truncatio lphi_order = " << lphi_order << endl;
+      }
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix = string("helmholtz_truncation:IntFluxDA[") + to_string(idir) + string("]:");
-        /* double flux_order = */ compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        string prefix     = string("helmholtz_truncation:IntFluxDA[") + to_string(idir) + string("]:");
+        double flux_order =  compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
+        if(a_killing_me_smalls)
+        {
+          Chombo4::pout() << "helmholtz_truncation IntFlux["  << idir << "]dA order = " << flux_order << endl;
+        }
       }
     } //  end function helmholtz_truncation
     ///this is the thing called from main.
@@ -2439,6 +2386,12 @@ namespace EBCM
     static  void run_hoeb_truncation_tests()
     {
 
+      Chombo4::pout() << "run_hoeb_truncation_tests:  operator_order = " << operator_order << " and geo_exact_order = " << geo_exac_order << endl;
+      if(geo_exac_order < operator_order)
+      {
+        Chombo4::pout() << "run_hoeb_truncation_tests: This stuff only makes sense if oprator_order <= geo_exact_order.  Returning." << endl;
+        return;
+      }
       int           nx_fine = 4586;
       double        dx_fine = 4586.;
       ch_probdom domain_fine;
@@ -2452,8 +2405,11 @@ namespace EBCM
       shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
 
-      check_exact_solution( meta_fine, meta_coar);
-      helmholtz_truncation( meta_fine, meta_coar);
+      Chombo4::pout() << "run_hoeb_truncation_tests: calling check_exact_solution." << endl;
+      check_exact_solution( meta_fine, meta_coar, false);
+      Chombo4::pout() << "run_hoeb_truncation_tests: calling helmholtz_truncation." << endl;
+      helmholtz_truncation( meta_fine, meta_coar, false);
+      Chombo4::pout() << "run_hoeb_truncation_tests: returning." << endl;
 
     }
   }; //   end petsc_framwork class

@@ -54,32 +54,32 @@ int main(int a_argc, char* a_argv[])
     if(order == 6)
     {
       shared_ptr< EBCM::MetaDataLevel< 6 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<6>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<6,6>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else if(order == 5)
     {
       shared_ptr< EBCM::MetaDataLevel< 5 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<5>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<5,5>::run_hoeb_petsc_tests(ebcm_meta);
     }
     if(order == 4)
     {
       shared_ptr< EBCM::MetaDataLevel< 4 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<4>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<4,4>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else if(order == 3)
     {
       shared_ptr< EBCM::MetaDataLevel< 3 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<3>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<3,3>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else if(order == 2)
     {
       shared_ptr< EBCM::MetaDataLevel< 2 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<2>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<2,2>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else if(order == 1)
     {
       shared_ptr< EBCM::MetaDataLevel< 1 > >             ebcm_meta;      
-      EBCM::Algorithm_Framework<1>::run_hoeb_petsc_tests(ebcm_meta);
+      EBCM::Algorithm_Framework<1,1>::run_hoeb_petsc_tests(ebcm_meta);
     }
     else
     {
