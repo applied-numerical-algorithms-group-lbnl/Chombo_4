@@ -1,7 +1,24 @@
-# Chombo_4
+# Chombo_4  EBCM Current Release Branch
 * Free software courtesy of the Applied Numerical Algorithms Group
 * Lawrence Berkeley National Laboratory
 * Berkeley, California, USA.
+
+## Embedded boundary with cell merging (EBCM) is under current development.
+* This branch will be where the most stable version of this technology resides.
+* dtg_dev will be the relevant development branch.
+* Currently working fine as of 6-27-2025:
+* Meta-data for cell merging (getting all the moments worked out and so on).
+* Data holders for cell merging.
+* PETSc interface.
+* Operator infrastructure works okay. Currently I only have implemented Helmholtz.
+* Several technical documents (included) have been written using this stuf.
+* What I will work on next (in order of appearance):
+* Finish the writeup for the truncation error test.
+* Projection operator so I can have divergence-free fields
+* Advection and incompressible Navier Stokes to follow.
+* Note 11: Hyperbolics is the point of this stuff, as cell merging makes hyperbolic stability much easier.
+* Note 2: Gas dynamics is on hold for now as I have no idea how to do limiting with this stuff.
+
 
 ## Introduction
 * Chombo_4 is a lightweight algorithm development framework used for finite volume calculations.
