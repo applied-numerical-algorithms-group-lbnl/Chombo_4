@@ -55,16 +55,20 @@ namespace EBCM
     typedef    EBCM::EBCM_Graph<                 geo_exac_order >   ebcm_graph;
     typedef    EBCM::neighborhood<               geo_exac_order >   ebcm_neighborhood;
     typedef Chombo4::GeometryService<            geo_exac_order >   ch_geoserv;
-    typedef   Proto::IndexedMoments<DIM  ,       geo_exac_order >   pr_mom_dim;
-    typedef   Proto::IndexedMoments<DIM-1,       geo_exac_order >   pr_mom_dmo;
     typedef    EBCM::neig_dom_face<              geo_exac_order >   ebcm_dom_face;
     typedef    EBCM::neig_cut_face<              geo_exac_order >   ebcm_cut_face;
+    typedef   Proto::IndexedMoments<DIM  ,       geo_exac_order >   pr_mom_dim_exac_geo;
+    typedef   Proto::IndexedMoments<DIM-1,       geo_exac_order >   pr_mom_dmo;
     typedef   Proto::MomentIterator<     DIM  ,  geo_exac_order >   pr_momit_dim;
     typedef   Proto::MomentIterator<     DIM-1,  geo_exac_order >   pr_momit_dmo;
-    typedef   Proto::IndexTM<   int   ,  DIM                >   pr_ind_int_dim;
-    typedef   Proto::IndexTM<   int   ,  DIM-1              >   pr_ind_int_dmo;
-    typedef   Proto::IndexTM<   double,  DIM                >   pr_ind_dou_dim;
-    typedef   Proto::IndexTM<   double,  DIM-1              >   pr_ind_dou_dmo;
+    typedef   Proto::IndexedMoments<     DIM  ,  operator_order >   pr_mom_dim_operator;
+    typedef   Proto::IndexedMoments<     DIM-1,  operator_order >   pr_mom_dmo_operator;
+    typedef   Proto::MomentIterator<     DIM  ,  operator_order >   pr_momit_dim_operator;
+    typedef   Proto::MomentIterator<     DIM-1,  operator_order >   pr_momit_dmo_operator;
+    typedef   Proto::IndexTM<   int   ,  DIM                    >   pr_ind_int_dim;
+    typedef   Proto::IndexTM<   int   ,  DIM-1                  >   pr_ind_int_dmo;
+    typedef   Proto::IndexTM<   double,  DIM                    >   pr_ind_dou_dim;
+    typedef   Proto::IndexTM<   double,  DIM-1                  >   pr_ind_dou_dmo;
 
     class condition_t
     {
@@ -710,7 +714,7 @@ namespace EBCM
     ///
     static inline void
     shiftMomentAndFillRow(eigen_mat         & a_mat,
-                          const pr_mom_dim  & a_moment,
+                          const pr_mom_dim_exac_geo  & a_moment,
                           const pr_rv       & a_distance,
                           const int         & a_currentRow,
                           bool a_print)
@@ -726,8 +730,6 @@ namespace EBCM
         a_moment.print();
       }
 
-      typedef   Proto::IndexedMoments<DIM  , operator_order >   pr_mom_dim_operator;
-      typedef   Proto::MomentIterator<DIM  , operator_order >   pr_momit_dim_operator;
       pr_itm_r_dim itm_dist;
       for(int idir = 0; idir < DIM; idir++)
       {
@@ -767,7 +769,7 @@ namespace EBCM
         for(pr_momit_dim_operator  momit; momit.ok(); ++momit)
         {
           auto momind = momit();
-          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          unsigned int currentCol = pr_mom_dim_operator::indexOf(momind);
           a_mat(a_currentRow, currentCol) = shiftedMom[momind]/volume;
         }
       }
@@ -798,15 +800,15 @@ namespace EBCM
     ///
     static inline void
     fillNeumannDomBCRow(eigen_mat         & a_mat,
-                        const pr_mom_dim  & a_moment,
+                        const pr_mom_dim_exac_geo  & a_moment,
                         const pr_rv       & a_distance,
                         const int         & a_face_dir,
                         const int         & a_currentRow,
                         bool a_print)
     {
       CH_TIME("EBCM::Algorithm_Framework::fillNeumannDomBCRow");
-      typedef   Proto::MomentIterator<     DIM  ,  operator_order >   pr_momit_dim_operator;
-      typedef   Proto::IndexedMoments<DIM  ,       operator_order >   pr_mom_dim_operator;
+
+
       Real face_area = a_moment[pr_ind_int_dim::Zero];
       if(face_area > 1.0e-12)
       {
@@ -826,8 +828,14 @@ namespace EBCM
           itm_dist[idir] = a_distance[idir];
         }
 
-        pr_mom_dim shiftedMom = a_moment;
+        pr_mom_dim_operator shiftedMom;
+        //have to do this via iteration because they have different sizes
+        for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+        {
+          shiftedMom[momit()] = a_moment[momit()];
+        }
         shiftedMom.shift(itm_dist);
+
         if(a_print)
         {
           Chombo4::pout() << "fillNeumannDomBCRow:: shiftedMom =" << endl;
@@ -868,7 +876,7 @@ namespace EBCM
 
     static inline void
     fillDirichletDomBCRow(eigen_mat         & a_mat,
-                          const pr_mom_dim  & a_moment,
+                          const pr_mom_dim_exac_geo  & a_moment,
                           const pr_rv       & a_distance,
                           const int         & a_face_dir,
                           const int         & a_currentRow,
@@ -894,7 +902,12 @@ namespace EBCM
           itm_dist[idir] = a_distance[idir];
         }
 
-        pr_mom_dim shiftedMom = a_moment;
+        //have to do this via iteration because they have different sizes
+        pr_mom_dim_operator shiftedMom;
+        for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+        {
+          shiftedMom[momit()] = a_moment[momit()];
+        }
         shiftedMom.shift(itm_dist);
         if(a_print)
         {
@@ -902,7 +915,7 @@ namespace EBCM
           shiftedMom.print();
         }
 
-        for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+        for(pr_momit_dim_operator momit_dim; momit_dim.ok(); ++momit_dim)
         {
           /// this is p
           pr_ind_int_dim  taylor_power_dim = momit_dim();
@@ -910,7 +923,7 @@ namespace EBCM
 
           auto momind = taylor_power_dim;
           double matval = shiftedMom[momind]/face_area;
-          unsigned int currentCol = pr_mom_dim::indexOf(momind);
+          unsigned int currentCol = pr_mom_dim_operator::indexOf(momind);
           a_mat(a_currentRow, currentCol) = matval;
         }
       }
@@ -949,19 +962,24 @@ namespace EBCM
         itm_dist[idir] = a_distance[idir];
       }
 
-      pr_mom_dim shifted_normal_moments[DIM];
+      //have to do this via iteration because they have different sizes
+      pr_mom_dim_operator shifted_normal_moments[DIM];
       for(int idir = 0;  idir < DIM; idir++)
       {
-        shifted_normal_moments[idir] = a_cut_face.getNormalMoment(idir);
+        pr_mom_dim_exac_geo moments_dir_exac_geo = a_cut_face.getNormalMoment(idir);
+        for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+        {
+          shifted_normal_moments[idir][momit()] = moments_dir_exac_geo[momit()];
+        }
         shifted_normal_moments[idir].shift(itm_dist);
       }
 
       //because this is homogeneous, do not need to divde by area 
       //(so we do not have to check for it being too small)
-      for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
+      for(pr_momit_dim_operator momit_dim; momit_dim.ok(); ++momit_dim)
       {
-        auto momind = momit();
-        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        auto momind = momit_dim();
+        unsigned int currentCol = pr_mom_dim_operator::indexOf(momind);
 
         double momsum = 0;
         for(int idir = 0; idir < DIM; idir ++)
@@ -1006,13 +1024,19 @@ namespace EBCM
         itm_dist[idir] = a_distance[idir];
       }
 
-      pr_mom_dim shifted_moments = a_cut_face.m_ebfmom;
+      //have to do this via iteration because they have different sizes
+      pr_mom_dim_operator shifted_moments;
+      pr_mom_dim_exac_geo    input_moments = a_cut_face.m_ebfmom;
+      for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+      {
+        shifted_moments[momit()] = input_moments[momit()];
+      }
       shifted_moments.shift(itm_dist);
 
-      for(MomentIterator<DIM, geo_exac_order> momit; momit.ok(); ++momit)
+      for(pr_momit_dim_operator  momit; momit.ok(); ++momit)
       {
         auto momind = momit();
-        unsigned int currentCol = pr_mom_dim::indexOf(momind);
+        unsigned int currentCol = pr_mom_dim_operator::indexOf(momind);
 
         double momval =  shifted_moments[momind];
 
@@ -1033,7 +1057,7 @@ namespace EBCM
                     bool a_print)
     {
       CH_TIME("Algorithm_Framework::getMomentMatrix");
-      typedef   Proto::IndexedMoments<DIM  ,       geo_exac_order >   pr_mom_dim_operator;
+      typedef   Proto::IndexedMoments<DIM  ,       geo_exac_order >   pr_mom_dim_exac_geo_operator;
       int nrows_volumes   = a_locality->m_weig_volumes.size();
       int nrows_dom_faces = a_locality->m_weig_dom_faces.size();
       int nrows_cut_faces = a_locality->m_weig_cut_faces.size();
@@ -1079,7 +1103,7 @@ namespace EBCM
           const pr_mom_dmo& facmom = curfac.m_facmom;
           
           ///This is the face mom with all derivatives in a_neigh_dir set to zero.
-          pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
+          pr_mom_dim_exac_geo volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
           auto xbar = a_locality->m_xbar_dom_faces[irow];   //need to know xbar to do x-xbar^p
           //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
           //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
@@ -1100,7 +1124,7 @@ namespace EBCM
           const pr_mom_dmo& facmom = curfac.m_facmom;
           
           ///This is the face mom with all derivatives in a_neigh_dir set to zero.
-          pr_mom_dim volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
+          pr_mom_dim_exac_geo volmomfromfac = ebcm_basics::getVolMomFromFacMom(facmom, curfac.m_direction);
           auto xbar = a_locality->m_xbar_dom_faces[irow];   //need to know xbar to do x-xbar^p
           //auto dist = a_locality->m_dist_dom_faces[irow]; //only used for weight
           //auto weig = a_locality->m_weig_dom_faces[irow]; //only used for weight
