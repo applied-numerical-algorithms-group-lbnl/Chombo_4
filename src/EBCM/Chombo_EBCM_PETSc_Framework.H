@@ -32,9 +32,9 @@
 **/
 namespace EBCM
 {
-   /**
-      geo_exac_order is the order of the exact solution and of the geometry generation
-      operator_order is the order of the Helmholtz operator
+  /**
+     geo_exac_order is the order of the exact solution and of the geometry generation
+     operator_order is the order of the Helmholtz operator
   **/
   template <int geo_exac_order, int operator_order>
   class PETSc_Framework
@@ -627,7 +627,7 @@ namespace EBCM
 
 
     /**
-    **/
+     **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
     getHelmholtzQMatrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
@@ -658,10 +658,10 @@ namespace EBCM
           double  m_p_min_ed = volmom[p_minu_ed];
           matval = pd*m_p_min_ed;
           /**
-          if(area > 1.0e-11)
-          {
-            matval /= area;
-          }
+             if(area > 1.0e-11)
+             {
+             matval /= area;
+             }
           **/
         }
         unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
@@ -800,7 +800,7 @@ namespace EBCM
         /**
            First line is:
            Row Ind Number    DomBC Lo Value    |---i = 0  --|  ...   DomBC Hi Value             
-         **/
+        **/
         Chombo4::pout() << m_befor<< string("Row Ind Number") << m_after;
         Chombo4::pout() << m_befor<< string("DomBC Lo Value") << m_after;
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
@@ -851,8 +851,8 @@ namespace EBCM
       int m_lo_col;
       int m_hi_col;
       /**
-           use rownum = -1 for lo side dom bc
-           use rownum = -2 for hi side dom bc
+         use rownum = -1 for lo side dom bc
+         use rownum = -2 for hi side dom bc
       **/
       int m_row_num;
       int m_row_dir;
@@ -959,7 +959,7 @@ namespace EBCM
     ///
     /**
        This debugging class exists to display a neighbor's worth of data.
-     **/
+    **/
     class
     neighbor_data_t
     {
@@ -1061,7 +1061,7 @@ namespace EBCM
           if(on_hi_side)
             m_dom_bc_hi_trans->setVolumeValue(icol, a_phi_val);
         }
-          ///there is a 3D case here that I do not want to try to figure out
+        ///there is a 3D case here that I do not want to try to figure out
         /**/
       }
       ///
@@ -1196,7 +1196,7 @@ namespace EBCM
         neig_disp_ptr->printPrettily();  //matches very well
       }
       return soln_vec_p;
-   }
+    }
     
 
     ///
@@ -1312,7 +1312,7 @@ namespace EBCM
         /**
            Used to have an option to use svd or normal equations here.
            svd gets much better answers.
-         **/
+        **/
           
         retval = getHelmFDotEhatStencilUsingSVD
           (a_face,
@@ -1517,8 +1517,8 @@ namespace EBCM
       {//begin xfaces
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         bool killing_me_smalls     = false;
-        static bool s_printed_once = false;
-        bool print_now = ((!s_printed_once) && (a_exact_ptr != NULL));
+
+        bool print_now = false ;
         {
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
@@ -1651,10 +1651,6 @@ namespace EBCM
         ident_term.m_entries[0].second = m_alpha;
 
         (*retval) += ident_term;
-        if(print_now)
-        {
-          s_printed_once = true;
-        }          
         return retval;
       }
       ///for applyOpPrimitives (used in debugging)
@@ -1778,8 +1774,8 @@ namespace EBCM
       
       }
     }; 
-    private:
-      /**
+  private:
+    /**
        just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
     **/ 
     static void parseFineGridParams(int            & a_nx,
@@ -1834,45 +1830,45 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static void
-    setVectorIntFluxDAExac(pr_fab_t&                                           a_fab,
-                           const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
-                           int                                                 a_face_dir,
-                           double                                              a_dx,
-                           shared_ptr< ebcm_exac  >                            a_exac_ptr)
+    set_vector_flux_exac(pr_fab_t&                                                 a_fab,
+                         const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
+                         int                                                     a_face_dir,
+                         double                                                  a_dx,
+                         shared_ptr< ebcm_exac  >                                a_exac_ptr)
 
     {
       for(int iface = 0; iface < a_vec_faces.size();iface++)
       {
         const auto& face = a_vec_faces[iface];
-        double exac_val = a_exac_ptr->getIntGradPhiDotNDA(face, a_dx);              
+        double exac_val  = a_exac_ptr->get_exact_gphi_dot_n(face, a_dx);              
         a_fab(face.m_hi.m_pt, 0) = exac_val;
       }
     }
     ///
     template<CENTERING cent>
     static void
-    setVectorIntFluxDAAnal(pr_fab_t&                                           a_fab,
-                           const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
-                           int                                                 a_face_dir,
-                           double                                              a_dx,
-                           shared_ptr< ebcm_exac  >                            a_exac_ptr)
+    set_vector_flux_anal(pr_fab_t&                                               a_fab,
+                         const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
+                         int                                                     a_face_dir,
+                         double                                                  a_dx,
+                         shared_ptr< ebcm_exac  >                                a_exac_ptr)
 
     {
       for(int iface = 0; iface < a_vec_faces.size();iface++)
       {
-        const auto& face = a_vec_faces[iface];
-        double exac_val = a_exac_ptr->getAnalyticalIntGradPhiDotNDA(face, a_dx);              
+        const auto&   face = a_vec_faces[iface];
+        double exac_val = a_exac_ptr->get_analytical_gphi_dot_n(face, a_dx);              
         a_fab(face.m_hi.m_pt, 0) = exac_val;
       }
     }
     ///
     static void
     set_exact_solution( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
-              shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
-              shared_ptr<ebcm_dou_sca_flux> a_flx_exac_ptr,
-              shared_ptr< ebcm_meta  >      a_meta_ptr,
-              shared_ptr< ebcm_exac  >      a_exac_ptr,
-              double a_alpha, double a_beta)
+                        shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
+                        shared_ptr<ebcm_dou_sca_flux> a_flx_exac_ptr,
+                        shared_ptr< ebcm_meta  >      a_meta_ptr,
+                        shared_ptr< ebcm_exac  >      a_exac_ptr,
+                        double a_alpha, double a_beta)
     {
       const auto& graphs = *(a_meta_ptr->m_graphs);
       const auto& grids  =  (a_meta_ptr->m_grids);
@@ -1903,18 +1899,18 @@ namespace EBCM
             {
               auto& levx = *(a_flx_exac_ptr->m_data[0]);
               auto& xfab = levx[dit[ibox]];
-              setVectorIntFluxDAExac<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
             }
             {
               auto& levy = *(a_flx_exac_ptr->m_data[1]);
               auto& yfab = levy[dit[ibox]];
-              setVectorIntFluxDAExac<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
             }
 #if DIM==3            
             {
               auto& levz = *(a_flx_exac_ptr->m_data[2]);
               auto& zfab = levz[dit[ibox]];
-              setVectorIntFluxDAExac<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
             }
 #endif
             
@@ -1925,11 +1921,11 @@ namespace EBCM
     ///
     static void
     set_analytical_solution( shared_ptr<ebcm_dou_sca_data> a_phi_anal_ptr,
-                   shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
-                   shared_ptr<ebcm_dou_sca_flux> a_flx_anal_ptr,
-                   shared_ptr< ebcm_meta  >      a_meta_ptr,
-                   shared_ptr< ebcm_exac  >      a_exac_ptr,
-                   double a_alpha, double a_beta)
+                             shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
+                             shared_ptr<ebcm_dou_sca_flux> a_flx_anal_ptr,
+                             shared_ptr< ebcm_meta  >      a_meta_ptr,
+                             shared_ptr< ebcm_exac  >      a_exac_ptr,
+                             double a_alpha, double a_beta)
     {
       const auto& graphs = *(a_meta_ptr->m_graphs);
       const auto& grids  =  (a_meta_ptr->m_grids);
@@ -1961,18 +1957,18 @@ namespace EBCM
             {
               auto& levx = *(a_flx_anal_ptr->m_data[0]);
               auto& xfab = levx[dit[ibox]];
-              setVectorIntFluxDAAnal<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
             }
             {
               auto& levy = *(a_flx_anal_ptr->m_data[1]);
               auto& yfab = levy[dit[ibox]];
-              setVectorIntFluxDAAnal<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
             }
 #if DIM==3            
             {
               auto& levz = *(a_flx_anal_ptr->m_data[2]);
               auto& zfab = levz[dit[ibox]];
-              setVectorIntFluxDAAnal<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
             }
 #endif
             
@@ -2039,8 +2035,8 @@ namespace EBCM
 
         EBCM_Exact::OneDimSineEF<geo_exac_order>* ebcm_poly_ptr =
           new EBCM_Exact::OneDimSineEF<geo_exac_order>(direction,
-                                                   amplitude,
-                                                   frequency);
+                                                       amplitude,
+                                                       frequency);
         
         retval = shared_ptr<ebcm_exac>( ebcm_poly_ptr);
       }
@@ -2080,15 +2076,26 @@ namespace EBCM
     {
       static bool printed = false;
 // lower left
+//      if(!printed)
+//      {
+//        pout() << "displaying LOWER LEFT of BOTTOM LEFT QUADRANT" << endl;
+//        printed = true;
+//      }      
+//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
+//      pr_pt  hi_coar(D_DECL(3,   3, 0));
+//      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
+//      pr_pt  hi_fine(D_DECL(3,   3, 0));
+//  lower left of upper right 
       if(!printed)
       {
-        pout() << "displaying LOWER LEFT" << endl;
+        pout() << "displaying MIDDLE MIDDLE" << endl;
         printed = true;
-      }      
-      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
-      pr_pt  hi_coar(D_DECL(3,   3, 0));
-      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
-      pr_pt  hi_fine(D_DECL(3,   3, 0));
+      }
+      int start_coar = 8; int start_fine = 16;
+      pr_pt  lo_coar(D_DECL(start_coar - 2, start_coar - 2, 0));
+      pr_pt  hi_coar(D_DECL(start_coar + 2, start_coar + 2, 0));
+      pr_pt  lo_fine(D_DECL(start_fine - 2, start_fine - 2, 0));
+      pr_pt  hi_fine(D_DECL(start_fine + 2, start_fine + 2, 0));
 
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
@@ -2137,7 +2144,8 @@ namespace EBCM
         hi_disp = hi_coar;
       }
 
-      for(int idir = 0; idir < DIM; idir++)
+      //for(int idir = 0; idir < DIM; idir++)
+      int idir = 0;
       {
         string prefix = a_file_prefix + string("_") + a_data_label;
         EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
@@ -2181,9 +2189,9 @@ namespace EBCM
       shared_ptr<ebcm_exac> exact_sol = get_exact_solution(exact_flag);
       shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
       set_exact_solution(phi_exac_ptr,
-               lph_exac_ptr,
-               flx_exac_ptr,
-               a_meta, exact_sol, alpha, beta);
+                         lph_exac_ptr,
+                         flx_exac_ptr,
+                         a_meta, exact_sol, alpha, beta);
       
       shared_ptr<HelmholtzOp> helm_ptr(new HelmholtzOp(alpha, beta, sten_rad,
                                                        weight_power, 
@@ -2219,7 +2227,6 @@ namespace EBCM
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
 
-      pout() << "leaving get_max_abs_calc_error" << endl;
       return;
     }
 
@@ -2266,7 +2273,7 @@ namespace EBCM
 
 
       shared_ptr<ebcm_exac> exact_sol = get_exact_solution(exact_flag);
-      shared_ptr<ebcm_dou_sca_flux> flx_calc_ptr(new ebcm_dou_sca_flux(a_meta, num_ghost));      
+
       set_exact_solution(phi_exact_ptr,
                          lph_exact_ptr,
                          flx_exact_ptr,
@@ -2283,18 +2290,6 @@ namespace EBCM
       flx_error_ptr->setToAxBy(acoef, *flx_exact_ptr, bcoef, *flx_analytical_ptr);
 
       
-      //begin debug
-      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
-      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
-      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
-      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
-      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
-      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
-      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
-      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
-      //end debug
-      
       pr_pt pt_loc_lph, pt_loc_phi;
       int i_co_lph, i_co_phi;
       lph_error_ptr->getAbsMaxLocationAndValue(pt_loc_lph, a_max_err_lph, i_co_lph);
@@ -2303,6 +2298,20 @@ namespace EBCM
       pr_pt pt_loc_flx[DIM];
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_err_flx, i_co_flx);
+      
+      //begin debug
+      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
+      //end debug
+      
 
     }
     ///

@@ -43,8 +43,8 @@ namespace EBCM_Exact
 
     ///get full face analytical in grad phi dot n dA.
     template <CENTERING  cent>
-    double getAnalyticalIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
-                                         double                                a_dx) const
+    double get_analytical_gphi_dot_n(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                                     double                                a_dx) const
     {
       int direction = a_ebcm_face.getFaceDir();
       double retval = 4586.;
@@ -62,8 +62,21 @@ namespace EBCM_Exact
       }
       else
       {
-        ch_mayday::Error("getAnalyticalIntGradPhiDotNDA:bogus face direction");
+        ch_mayday::Error("get_analytical_gphi_dot_n:bogus face direction");
       }
+      double area = a_ebcm_face.m_facmom[pr_ind_int_dmo::Zero];
+      retval /= area;
+      return retval;
+    }
+    ///get full face analytical in grad phi dot n dA.
+    template <CENTERING  cent>
+    double get_exact_gphi_dot_n(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                                double                                a_dx) const
+    {
+      double retval = getIntGradPhiDotNDA(a_ebcm_face, a_dx);
+
+      double area = a_ebcm_face.m_facmom[pr_ind_int_dmo::Zero];
+      retval /= area;
       return retval;
     }
 
@@ -314,23 +327,21 @@ namespace EBCM_Exact
         pr_ind_int_dim  taylor_power_dim = momit_dim();
         
         int pd       =           taylor_power_dim[a_face_dir];
-        if( pd > 0 )
+        if( pd == 1 ) // > 1 has x-x0 = 0
         {
           int   idenom = (taylor_power_dim.factorial());
           double denom = (Real)(idenom);
           ///deriv_power = p-e^d
           pr_ind_int_dim moment_power_dim = taylor_power_dim;
           moment_power_dim[a_face_dir] -= 1;
-          if(moment_power_dim[a_face_dir] == 0) //any higher power x-x0^p = 0
-          {
-            pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
+          pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
           
-            double momen = a_fac_mom[moment_power_dmo];
-            double deriv = getDerivative(taylor_power_dim, a_cent_loc);
-            ///increment = pd  phi^(p-ed) m^p/p!
-            double incre = pd*deriv*momen/denom;
-            retval += incre;
-          }
+          double momen = a_fac_mom[moment_power_dmo];
+          double deriv = getDerivative(taylor_power_dim, a_cent_loc);
+          ///increment = pd  phi^(p-ed) m^p/p!
+          double incre = pd*deriv*momen/denom;
+          retval += incre;
+
         } // end if pd > 0
       }// end loop over moments
       return retval;
