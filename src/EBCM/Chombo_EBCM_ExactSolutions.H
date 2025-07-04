@@ -830,8 +830,16 @@ namespace EBCM_Exact
       }
 
 #else
-      
-      double x_c = a_dx*(double(a_ebcm_face_hi[0]) + 0.5);
+
+      //begin debug
+      int idebug = 16; int jdebug = 16;
+      int istop = 0;
+      if( (idebug == a_ebcm_face_hi[0]) && (jdebug == a_ebcm_face_hi[1]))
+      {
+        istop = 1;
+      }
+      //end debug
+      double x_c = a_dx*(double(a_ebcm_face_hi[0])      );
       double y_l = a_dx*(double(a_ebcm_face_hi[1])      );
       double y_h = a_dx*(double(a_ebcm_face_hi[1]) + 1.0);
       static const double  s_pi = 4.*atan(1.);
@@ -874,7 +882,7 @@ namespace EBCM_Exact
       }
 #else
       
-      double y_c = a_dx*(double(a_ebcm_face_hi[1]) + 0.5);
+      double y_c = a_dx*(double(a_ebcm_face_hi[1])      );
       double x_l = a_dx*(double(a_ebcm_face_hi[0])      );
       double x_h = a_dx*(double(a_ebcm_face_hi[0]) + 1.0);
       static const double  s_pi = 4.*atan(1.);

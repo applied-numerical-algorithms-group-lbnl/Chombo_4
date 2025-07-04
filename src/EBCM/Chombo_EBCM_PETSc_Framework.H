@@ -2318,8 +2318,8 @@ namespace EBCM
     static double compute_and_print_order(string a_prefix, double a_max_err_fine, double a_max_err_coar)
     {
                                         
-      Chombo4::pout() << a_prefix << a_max_err_fine << endl;
-      Chombo4::pout() << a_prefix << a_max_err_coar << endl;
+      Chombo4::pout() << a_prefix << string("_error_fine = ") << a_max_err_fine << endl;
+      Chombo4::pout() << a_prefix << string("_error_coar = ") << a_max_err_coar << endl;
       double order= -4586;
       if((a_max_err_fine < 0) || (a_max_err_fine < 0))
       {
@@ -2357,7 +2357,7 @@ namespace EBCM
       }
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix = string("check_exact_solution:IntFlxDA[") + to_string(idir) + string("]:");
+        string prefix = string("check_exact_solution:GPhi[") + to_string(idir) + string("]:");
         double flux_order =  compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
         if(a_killing_me_smalls)
         {
