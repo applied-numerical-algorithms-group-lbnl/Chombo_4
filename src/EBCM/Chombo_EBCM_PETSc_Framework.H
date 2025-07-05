@@ -13,6 +13,8 @@
   I should use this opportunity to apologize to the world for the many 
   awful choices I have made in this life in relation to file names and organization.  
   I regret all the consternation I have caused.
+  8/5/2025:
+  My function and class name conventions have not been all that awesome (or consistent) either.
 */
 #include "Chombo_EBCM_Graph.H"
 #include "Chombo_EBLevelBoxData.H"
@@ -40,23 +42,36 @@ namespace EBCM
   class PETSc_Framework
   {
   public:
+    typedef  EBCM::Algorithm_Framework<geo_exac_order, operator_order >  algo_framework;
 
-                                                            
-    typedef ::Mat                                           petsc_mat;
-    typedef ::Vec                                           petsc_vec;
-    typedef ::PetscInt                                      petsc_int;
-    typedef ::PetscScalar                                   petsc_sca;
-    typedef Proto::Point                                    pr_pt;
-    typedef Proto::HostBoxData<double, 1>                   pr_fab_t;
-    typedef Proto::Box                                      pr_bx;
-    typedef Chombo4::Box                                    ch_box;
-    typedef Chombo4::DisjointBoxLayout                      ch_dbl;
-    typedef Chombo4::BoxIterator                            ch_bit;
-    typedef Chombo4::IntVect                                ch_iv;
-    typedef Chombo4::DataIterator                           ch_dit;
+    typedef ::Mat                                               petsc_mat;
+    typedef ::Vec                                               petsc_vec;
+    typedef ::PetscInt                                          petsc_int;
+    typedef ::PetscScalar                                       petsc_sca;
 
-    typedef  EBCM::Algorithm_Framework<       geo_exac_order, operator_order >  algo_framework;
+    typedef Proto::Point                                        pr_pt;
+    typedef Proto::HostBoxData<double, 1>                       pr_fab_t;
+    typedef Proto::Box                                          pr_bx;
+    typedef Proto::IndexTM<double,DIM                        >  pr_itm_r_dim;
+    typedef Proto::IndexTM<int   ,DIM                        >  pr_itm_i_dim;
+    typedef Proto::IndexTM<double,DIM-1                      >  pr_itm_r_dmo;
+    typedef Proto::IndexTM<int   ,DIM-1                      >  pr_itm_i_dmo;
+    typedef Proto::IndexedMoments<DIM  ,      geo_exac_order >  pr_indmom_dim_geo_exac;
+    typedef Proto::IndexedMoments<DIM-1,      geo_exac_order >  pr_indmom_dmo_geo_exac;
+    typedef Proto::IndexedMoments<DIM  ,      operator_order >  pr_indmom_dim_operator;
+    typedef Proto::IndexedMoments<DIM-1,      operator_order >  pr_indmom_dmo_operator;
+    typedef Proto::MomentIterator<DIM  ,      geo_exac_order >  pr_momit_dim_geo_exac;    
+    typedef Proto::MomentIterator<DIM-1,      geo_exac_order >  pr_momit_dmo_geo_exac;    
+    typedef Proto::MomentIterator<DIM  ,      operator_order >  pr_momit_dim_operator;    
+    typedef Proto::MomentIterator<DIM-1,      operator_order >  pr_momit_dmo_operator;    
+
     typedef Chombo4::GeometryService<         geo_exac_order >  ch_geoserv;
+    typedef Chombo4::Box                                        ch_box;
+    typedef Chombo4::DisjointBoxLayout                          ch_dbl;
+    typedef Chombo4::BoxIterator                                ch_bit;
+    typedef Chombo4::IntVect                                    ch_iv;
+    typedef Chombo4::DataIterator                               ch_dit;
+    
     typedef  EBCM::neighborhood<              geo_exac_order >  ebcm_neighborhood;
     typedef  EBCM::neig_dom_face<             geo_exac_order >  ebcm_dom_face;
     typedef  EBCM::neig_cut_face<             geo_exac_order >  ebcm_cut_face;
@@ -70,31 +85,10 @@ namespace EBCM
     typedef  EBCM::FluxLevelData<double, 1,   geo_exac_order >  ebcm_dou_sca_flux;
     typedef  EBCM::FluxLevelData<int,    DIM, geo_exac_order >  ebcm_int_vec_flux;
     typedef  EBCM::FluxLevelData<double, DIM, geo_exac_order >  ebcm_dou_vec_flux;
-
     typedef  EBCM::SubVolumeVector<           geo_exac_order >  ebcm_subvol_vec;
     typedef  EBCM::EBCM_Volu<                 geo_exac_order >  ebcm_volu;
-
-    
-    typedef Proto::IndexedMoments<DIM  ,      geo_exac_order >  pr_indmom_dim_geo_exac;
-    typedef Proto::IndexedMoments<DIM-1,      geo_exac_order >  pr_indmom_dmo_geo_exac;
-    typedef Proto::IndexedMoments<DIM  ,      operator_order >  pr_indmom_dim_operator;
-    typedef Proto::IndexedMoments<DIM-1,      operator_order >  pr_indmom_dmo_operator;
-    typedef Proto::MomentIterator<DIM  ,      geo_exac_order >  pr_momit_dim_geo_exac;    
-    typedef Proto::MomentIterator<DIM-1,      geo_exac_order >  pr_momit_dmo_geo_exac;    
-    typedef Proto::MomentIterator<DIM  ,      operator_order >  pr_momit_dim_operator;    
-    typedef Proto::MomentIterator<DIM-1,      operator_order >  pr_momit_dmo_operator;    
-    typedef Proto::IndexTM<double,DIM                        >  pr_itm_r_dim;
-    typedef Proto::IndexTM<int   ,DIM                        >  pr_itm_i_dim;
-    typedef Proto::IndexTM<double,DIM-1                      >  pr_itm_r_dmo;
-    typedef Proto::IndexTM<int   ,DIM-1                      >  pr_itm_i_dmo;
     typedef EBCM_Exact::BaseExactSolution<    geo_exac_order >  ebcm_exac;
 
-
-
-    static int dummy_func()
-    {
-      return 0;
-    }
 
     /// think vofstencil
     class local_stencil_t
@@ -241,11 +235,11 @@ namespace EBCM
         m_ghost        =    a_ghost;
     
         //Chombo4::pout() << "Base_Petsc_Op: creating map of locations in space to matrix row." << endl;
-        createMatrixRowMap();
+        create_matrix_row_map();
         
         //Chombo4::pout() << "Base_Petsc_Op:: creating the matrix" << endl;
 
-        createOperatorPetscMatrix();
+        create_operator_petsc_matrix();
       }
 
 
@@ -323,9 +317,9 @@ namespace EBCM
       } //end function apply_op_primitives
       
       ///
-      void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
-                   shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
-                   bool                          a_homogeneousOnly) 
+      void apply_operator(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
+                          shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                          bool                          a_homogeneousOnly) 
       {
         CH_TIME("PETSc_Framework::applyOp");
         //this stuff makes lph = laplacian
@@ -431,7 +425,7 @@ namespace EBCM
          This makes m_row_map_ptr 
          (operator uses this to map between volumes and petsc matrix rows)
       **/
-      PetscInt createMatrixRowMap()
+      PetscInt create_matrix_row_map()
       {
         CH_TIME("BasePetsc::createMatrixRowMap");
         m_row_map_ptr = shared_ptr<ebcm_int_sca_data>(new ebcm_int_sca_data(m_meta_ptr, m_ghost));
@@ -518,9 +512,9 @@ namespace EBCM
          and 
          m_phi_ptr, m_lph_ptr, vectors to hold petsc copies of solution, rhs.
       **/
-      PetscInt createOperatorPetscMatrix()
+      PetscInt create_operator_petsc_matrix()
       {
-        CH_TIME("Base_Petsc_Op::createOperatorPetscMatrix");
+        CH_TIME("Base_Petsc_Op::create_operator_petsc_matrix");
         // create matrix
 //        PetscInt nnzrow = 0;
 #ifdef CH_MPI
@@ -2154,10 +2148,10 @@ namespace EBCM
     }
     ///
     static    void
-    get_max_abs_calc_error( double                   & a_max_error_lph,
-                            double                     a_max_error_flx[DIM],
-                            shared_ptr< ebcm_meta  >   a_meta,
-                            string                     a_file_prefix)
+    get_helmholtz_truncation_error( double                   & a_max_error_lph,
+                                    double                     a_max_error_flx[DIM],
+                                    shared_ptr< ebcm_meta  >   a_meta,
+                                    string                     a_file_prefix)
     {
       ParmParse pp("main");
       double alpha     = 4586.;
@@ -2205,7 +2199,7 @@ namespace EBCM
 #if 0
       ///using the proper petsc stuff
       bool homogeneous_only = false;
-      discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
+      discreteOp.apply_operator(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
       /**
          Using  this homerolled version because this exposes the fluxes 
@@ -2229,6 +2223,18 @@ namespace EBCM
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
 
+      //begin debug
+      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      //Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
+      //end debug
       return;
     }
 
@@ -2308,14 +2314,14 @@ namespace EBCM
       //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
       //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
       //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
-      writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
-      writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
-      Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
+      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      //Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
       //end debug
       
 
-    }
+    }///end function get_exact_solution_error
     ///
     static double compute_and_print_order(string a_prefix, double a_max_err_fine, double a_max_err_coar)
     {
@@ -2338,7 +2344,7 @@ namespace EBCM
         Chombo4::pout() <<  a_prefix << "max_err_phi_fine too small to compute order." << endl;
       }
       return  order;
-    }
+    }// end function compute_and_print_order
     static void check_exact_solution( shared_ptr< ebcm_meta  > a_meta_fine,
                                       shared_ptr< ebcm_meta  > a_meta_coar,
                                       bool                     a_killing_me_smalls)
@@ -2372,8 +2378,8 @@ namespace EBCM
       double max_err_lphi_coar = -4586;
       double max_err_flux_coar[DIM];
       double max_err_flux_fine[DIM];
-      get_max_abs_calc_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
-      get_max_abs_calc_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
+      get_helmholtz_truncation_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
+      get_helmholtz_truncation_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
       //double lphi_order =
       compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
       for(int idir = 0; idir < DIM; idir++)
