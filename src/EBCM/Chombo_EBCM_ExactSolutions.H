@@ -708,9 +708,9 @@ namespace EBCM_Exact
       }
       double base_trig = 4586;
       if(sin_now)
-         base_trig = sin(s_pi*x_loc*m_frequency);
+        base_trig = sin(s_pi*x_loc*m_frequency);
       else if(cos_now)
-         base_trig = cos(s_pi*x_loc*m_frequency);
+        base_trig = cos(s_pi*x_loc*m_frequency);
       double retval = m_amplitude*trig_factor*base_trig;
 
       return retval;
@@ -733,7 +733,7 @@ namespace EBCM_Exact
     virtual ~OneDimSineEF()
     {
     }
-    private:
+  private:
     OneDimSineEF();
   };
 
@@ -954,7 +954,7 @@ namespace EBCM_Exact
     virtual ~SineProductEF()
     {
     }
-    private:
+  private:
     SineProductEF();
   };
   ///phi = sum cp x^p  

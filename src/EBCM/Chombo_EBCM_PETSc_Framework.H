@@ -259,9 +259,9 @@ namespace EBCM
       
       ///
       void apply_op_primitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
-                             shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
-                             shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
-                             string                        a_identifier) const
+                               shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
+                               shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
+                               string                        a_identifier) const
       {
         CH_TIME("helmholtz::apply_op_primitives");
 
@@ -350,7 +350,7 @@ namespace EBCM
 
       ///
       void chombo_to_petsc(petsc_vec                          & a_petsc_data,
-                         const ebcm_dou_sca_data            & a_chomb_data)
+                           const ebcm_dou_sca_data            & a_chomb_data)
       {
         CH_TIME("BasePetsc::chombo_to_petsc");
         
@@ -383,7 +383,7 @@ namespace EBCM
 
       ///
       void petsc_to_chombo(ebcm_dou_sca_data                  & a_chomb_data,
-                         const petsc_vec                    & a_petsc_data)
+                           const petsc_vec                    & a_petsc_data)
                          
       {
         CH_TIME("BasePetsc::petsc_to_chombo");
@@ -631,9 +631,9 @@ namespace EBCM
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
     get_helmholtz_q_matrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
-                         shared_ptr<ebcm_neighborhood>            a_locality,
-                         const int                              & a_facedir,
-                         const double                           & a_dx)
+                            shared_ptr<ebcm_neighborhood>            a_locality,
+                            const int                              & a_facedir,
+                            const double                           & a_dx)
     {
       pr_indmom_dmo_geo_exac facmom_geo =  a_face.m_facmom;
       pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_facedir);
@@ -675,10 +675,10 @@ namespace EBCM
     ///
     static double
     get_domain_bc_value(const ebcm_dom_face     & a_domain_face,
-                     const string            & a_dom_bc,
-                     const ebcm_exac         & a_bc_exact,
-                     const ebcm_neighborhood & a_neigh,
-                     bool a_killing_me_smalls)
+                        const string            & a_dom_bc,
+                        const ebcm_exac         & a_bc_exact,
+                        const ebcm_neighborhood & a_neigh,
+                        bool a_killing_me_smalls)
     {
       double retval = 4586;
       double area = a_domain_face.m_facmom[pr_itm_i_dmo::Zero];
@@ -710,10 +710,10 @@ namespace EBCM
     ///
     static double
     get_eb_bc_value(const ebcm_cut_face     & a_cut_face,
-                 const string            & a_eb_bc,
-                 const ebcm_exac         & a_bc_exact,
-                 const ebcm_neighborhood & a_neigh,
-                 const double            & a_dx)
+                    const string            & a_eb_bc,
+                    const ebcm_exac         & a_bc_exact,
+                    const ebcm_neighborhood & a_neigh,
+                    const double            & a_dx)
     {
       double retval = 4586;
 
@@ -742,11 +742,11 @@ namespace EBCM
     */
     static local_stencil_t
     get_stencil_from_matrix(const eigen_mat                                & a_matrix,
-                      shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
-                      const string                                   & a_dom_bc,
-                      const string                                   & a_eb_bc,
-                      const ebcm_exac                                & a_bc_exact,
-                      const double                                   & a_dx)
+                            shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
+                            const string                                   & a_dom_bc,
+                            const string                                   & a_eb_bc,
+                            const ebcm_exac                                & a_bc_exact,
+                            const double                                   & a_dx)
                       
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
@@ -1351,8 +1351,8 @@ namespace EBCM
     **/
     static shared_ptr<eigen_mat>
     get_helmholtz_eb_q_matrix( const IrregFace< geo_exac_order >      & a_face,
-                           shared_ptr<ebcm_neighborhood>        a_locality,
-                           const double                       & a_dx)
+                               shared_ptr<ebcm_neighborhood>        a_locality,
+                               const double                       & a_dx)
     {
       CH_TIME("PETSc_Framework::get_helmholtz_eb_q_matrix");
       
@@ -1413,14 +1413,14 @@ namespace EBCM
     */
     static local_stencil_t
     get_irreg_helm_int_gph_dot_n_da(const IrregFace<geo_exac_order>        & a_face,
-                                  const int                          & a_stenrad,
-                                  const int                          & a_weightpower,
-                                  const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                  const string                       & a_dom_bc,
-                                  const string                       & a_eb_bc,
-                                  const double                       & a_dx,
-                                  const ebcm_exac                    & a_bc_exact,
-                                  bool                                 a_killing_me_smalls)
+                                    const int                          & a_stenrad,
+                                    const int                          & a_weightpower,
+                                    const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
+                                    const string                       & a_dom_bc,
+                                    const string                       & a_eb_bc,
+                                    const double                       & a_dx,
+                                    const ebcm_exac                    & a_bc_exact,
+                                    bool                                 a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getIrregHelmholtzFDotNStencil");
       /**
@@ -1512,8 +1512,8 @@ namespace EBCM
       ///this is the function that the driver code calls
       shared_ptr<local_stencil_t>
       get_local_stencil(const ebcm_volu   & a_volu,
-                      const ebcm_graph  & a_graph,
-                      const pr_fab_t    * a_exact_ptr) // can be NULL
+                        const ebcm_graph  & a_graph,
+                        const pr_fab_t    * a_exact_ptr) // can be NULL
       {//begin xfaces
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         bool killing_me_smalls     = false;
@@ -1615,14 +1615,14 @@ namespace EBCM
           {
             const auto& face     = a_volu.m_ifaces[iface];
             local_stencil_t flux = get_irreg_helm_int_gph_dot_n_da(face,
-                                                                 m_sten_rad,     
-                                                                 m_weight_power, 
-                                                                 a_graph,       
-                                                                 m_dom_bc,      
-                                                                 m_eb_bc,
-                                                                 a_volu.m_dx,
-                                                                 *m_bc_exact,
-                                                                 killing_me_smalls);
+                                                                   m_sten_rad,     
+                                                                   m_weight_power, 
+                                                                   a_graph,       
+                                                                   m_dom_bc,      
+                                                                   m_eb_bc,
+                                                                   a_volu.m_dx,
+                                                                   *m_bc_exact,
+                                                                   killing_me_smalls);
                                                                  
             if(print_now)
             {
@@ -1656,11 +1656,11 @@ namespace EBCM
       ///for apply_op_primitives (used in debugging) shared_ptr<local_stencil_t>
       shared_ptr<local_stencil_t>
       get_volu_side_stencil(const ebcm_volu  & a_volu,
-                             const ebcm_graph & a_graph,
-                             const int        & a_idir,
-                             Side::LoHiSide     a_side,
-                             const pr_fab_t   * a_phi_exac_ptr, //can be null
-                             bool               a_killing_me_smalls)
+                            const ebcm_graph & a_graph,
+                            const int        & a_idir,
+                            Side::LoHiSide     a_side,
+                            const pr_fab_t   * a_phi_exac_ptr, //can be null
+                            bool               a_killing_me_smalls)
       {
         double  dx = a_volu.m_dx;
         int isign  = sign(a_side);
@@ -2212,9 +2212,9 @@ namespace EBCM
          and debugging is all about exposure
       **/
       discreteOp.apply_op_primitives(lph_calc_ptr,
-                                   phi_exac_ptr,
-                                   flx_calc_ptr,
-                                   a_file_prefix);
+                                     phi_exac_ptr,
+                                     flx_calc_ptr,
+                                     a_file_prefix);
 #endif
       //settting  error to lph_calc - lph_exac
       double acoef =  1;
