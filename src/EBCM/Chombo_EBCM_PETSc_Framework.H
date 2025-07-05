@@ -250,20 +250,20 @@ namespace EBCM
 
 
       ///
-      void  addInhomogeneousBit(shared_ptr<ebcm_dou_sca_data> a_lph_ptr)
+      void  add_inhomogeneous_bit(shared_ptr<ebcm_dou_sca_data> a_lph_ptr)
       {
-        CH_TIME("PETSc_Framework::addInhomogeneousBit");
+        CH_TIME("PETSc_Framework::add_inhomogeneous_bit");
         (*a_lph_ptr) += (*m_inhomog_bit);
       }
 
       
       ///
-      void applyOpPrimitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
+      void apply_op_primitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
                              shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
                              shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
                              string                        a_identifier) const
       {
-        CH_TIME("helmholtz::applyOpPrimitives");
+        CH_TIME("helmholtz::apply_op_primitives");
 
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
@@ -287,7 +287,7 @@ namespace EBCM
             //full  operator
             {
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getLocalStencil(volu, graph,  &phi_fab);
+                m_oper_ptr->get_local_stencil(volu, graph,  &phi_fab);
               double lph_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -306,7 +306,7 @@ namespace EBCM
               auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->getVoluSideFluxStencil(volu, graph, idir, Side::Hi, NULL, false);
+                m_oper_ptr->get_volu_side_stencil(volu, graph, idir, Side::Hi, NULL, false);
               double flux_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -320,7 +320,7 @@ namespace EBCM
             } //end loop over 
           } //end loop voer volvec
         } //end loop over boxes
-      } //end function applyOpPrimitives
+      } //end function apply_op_primitives
       
       ///
       void applyOp(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
@@ -332,12 +332,12 @@ namespace EBCM
         VecZeroEntries(*m_phi_ptr);
         VecZeroEntries(*m_lph_ptr);
 
-        chomboToPetsc(*m_phi_ptr, *a_phi_ptr            );
+        chombo_to_petsc(*m_phi_ptr, *a_phi_ptr            );
         MatMult(      *m_mat_ptr, *m_phi_ptr, *m_lph_ptr);
-        petscToChombo(*a_lph_ptr, *m_lph_ptr            );
+        petsc_to_chombo(*a_lph_ptr, *m_lph_ptr            );
         if(!a_homogeneousOnly)
         {
-          addInhomogeneousBit(a_lph_ptr);
+          add_inhomogeneous_bit(a_lph_ptr);
         }
       }
 
@@ -349,10 +349,10 @@ namespace EBCM
 
 
       ///
-      void chomboToPetsc(petsc_vec                          & a_petsc_data,
+      void chombo_to_petsc(petsc_vec                          & a_petsc_data,
                          const ebcm_dou_sca_data            & a_chomb_data)
       {
-        CH_TIME("BasePetsc::chomboToPetsc");
+        CH_TIME("BasePetsc::chombo_to_petsc");
         
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
@@ -382,11 +382,11 @@ namespace EBCM
       }
 
       ///
-      void petscToChombo(ebcm_dou_sca_data                  & a_chomb_data,
+      void petsc_to_chombo(ebcm_dou_sca_data                  & a_chomb_data,
                          const petsc_vec                    & a_petsc_data)
                          
       {
-        CH_TIME("BasePetsc::petscToChombo");
+        CH_TIME("BasePetsc::petsc_to_chombo");
         
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
@@ -420,7 +420,7 @@ namespace EBCM
             }
           } //end loop over volumes in box.
         }   //loop over boxes in grid
-      } //end function petscToChombo
+      } //end function petsc_to_chombo
 
     private:
       /// banning weak construction but assignment and copy constructors should work fine.
@@ -580,7 +580,7 @@ namespace EBCM
           {
             const auto& volu = volvec[ivol];
             shared_ptr<local_stencil_t>  local =
-              m_oper_ptr->getLocalStencil(volu, graph, NULL);
+              m_oper_ptr->get_local_stencil(volu, graph, NULL);
             double inhombit = local->m_inhomogeneous_bit;
             inhomog_bit_fab(volu.m_pt, 0)   = inhombit;
             //int local_size = local->size();
@@ -630,7 +630,7 @@ namespace EBCM
      **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
-    getHelmholtzQMatrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
+    get_helmholtz_q_matrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
                          shared_ptr<ebcm_neighborhood>            a_locality,
                          const int                              & a_facedir,
                          const double                           & a_dx)
@@ -669,12 +669,12 @@ namespace EBCM
       }
     
       return retval;
-    }///end function getHelmholtzQMatrix
+    }///end function get_helmholtz_q_matrix
 
 
     ///
     static double
-    getDomainBCValue(const ebcm_dom_face     & a_domain_face,
+    get_domain_bc_value(const ebcm_dom_face     & a_domain_face,
                      const string            & a_dom_bc,
                      const ebcm_exac         & a_bc_exact,
                      const ebcm_neighborhood & a_neigh,
@@ -692,7 +692,7 @@ namespace EBCM
       }
       else
       {
-        pout() << "getDomainBCValue knows not of this dom_bc = " << a_dom_bc << endl;
+        pout() << "get_domain_bc_value knows not of this dom_bc = " << a_dom_bc << endl;
         ch_mayday::Error();
       }
       //we need values not integrals
@@ -702,14 +702,14 @@ namespace EBCM
       }
       if(a_killing_me_smalls)
       {
-        //Chombo4::pout() << "getDomainBCValue: area = " << area << ", dom_bc = " << a_dom_bc << ", bcval = " << retval << endl;
+        //Chombo4::pout() << "get_domain_bc_value: area = " << area << ", dom_bc = " << a_dom_bc << ", bcval = " << retval << endl;
       }
       return retval;
     }//end function getDomBCValue
 
     ///
     static double
-    getEBBCValue(const ebcm_cut_face     & a_cut_face,
+    get_eb_bc_value(const ebcm_cut_face     & a_cut_face,
                  const string            & a_eb_bc,
                  const ebcm_exac         & a_bc_exact,
                  const ebcm_neighborhood & a_neigh,
@@ -727,12 +727,12 @@ namespace EBCM
       }
       else
       {
-        pout() << "getEBBCValue knows not of this eb_bc = " << a_eb_bc << endl;
+        pout() << "get_eb_bc_value knows not of this eb_bc = " << a_eb_bc << endl;
         ch_mayday::Error();
       }
       
       return retval;
-    } //end function getEBBCValue
+    } //end function get_eb_bc_value
 
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
     /**
@@ -741,7 +741,7 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    getStencilFromMat(const eigen_mat                                & a_matrix,
+    get_stencil_from_matrix(const eigen_mat                                & a_matrix,
                       shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
                       const string                                   & a_dom_bc,
                       const string                                   & a_eb_bc,
@@ -770,7 +770,7 @@ namespace EBCM
       {
         double      dom_weig     = a_matrix(0, mat_row);
         const auto& dom_face     = dom_face_vec[idom];
-        double      dom_face_val = getDomainBCValue(dom_face, a_dom_bc, a_bc_exact, *a_locality, false);
+        double      dom_face_val = get_domain_bc_value(dom_face, a_dom_bc, a_bc_exact, *a_locality, false);
         retval.m_inhomogeneous_bit += dom_weig*dom_face_val;
         mat_row++;
       }
@@ -779,13 +779,13 @@ namespace EBCM
       {
         double      cut_weig     = a_matrix(0, mat_row);
         const auto& cut_face     = cut_face_vec[icut];
-        double      cut_face_val = getEBBCValue(cut_face, a_eb_bc,  a_bc_exact, *a_locality, a_dx);
+        double      cut_face_val = get_eb_bc_value(cut_face, a_eb_bc,  a_bc_exact, *a_locality, a_dx);
         retval.m_inhomogeneous_bit += cut_weig*cut_face_val;
         mat_row++;
       }
 
       return retval;
-    } //end function getStencilFromMat
+    } //end function get_stencil_from_matrix
 
     ///diverse debugging display debauchery
     class
@@ -1156,7 +1156,7 @@ namespace EBCM
       for(int irow = 0; irow < n_rows_dom_faces; irow++)
       {
         const ebcm_dom_face& face = (*(a_locality->m_dom_faces ))[irow];
-        double phi_val  = getDomainBCValue(face, a_dom_bc, a_bc_exact, *a_locality, a_killing_me_smalls);
+        double phi_val  = get_domain_bc_value(face, a_dom_bc, a_bc_exact, *a_locality, a_killing_me_smalls);
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
@@ -1202,7 +1202,7 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static local_stencil_t
-    getHelmFDotEhatStencilUsingSVD(
+    get_helm_int_f_dot_n_stencil(
       const EBCM_Face<cent, geo_exac_order>  & a_face,
       const int                          & a_stenrad,
       const int                          & a_weightpower,
@@ -1215,7 +1215,7 @@ namespace EBCM
       const pr_fab_t                     * a_phi_exac_ptr, //can be null
       bool a_killing_me_smalls)
     {
-      CH_TIME("PETSc_Framework::getHelmFDotEhatStencilUsingSVD");
+      CH_TIME("PETSc_Framework::get_helm_int_f_dot_n_stencil");
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
@@ -1259,35 +1259,35 @@ namespace EBCM
       //  Chombo4::pout()<<   "-------|-------------------|"<< endl;
       //}
       //end debug
-      shared_ptr<eigen_mat> Q_mat_p = getHelmholtzQMatrix(a_face, locality, a_face_dir, a_dx);
+      shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
       eigen_mat S_mat_FFS;
       multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
 
-      retval = getStencilFromMat(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+      retval = get_stencil_from_matrix(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       
       return retval;
-    } //end function getHelmholtzFDotEhatStencil
+    } //end function get_helmholtz_int_gphi_da_stencil
 
 
     ///
     template<CENTERING cent>
     static local_stencil_t
-    getHelmholtzFDotEhatStencil(const EBCM_Face<cent, geo_exac_order>  & a_face,
-                                const int                          & a_stenrad,
-                                const int                          & a_weightpower,
-                                const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                const string                       & a_dom_bc,
-                                const string                       & a_eb_bc,
-                                const int                          & a_face_dir,
-                                const double                       & a_dx,
-                                const ebcm_exac                    & a_bc_exact,
-                                const pr_fab_t                     * a_phi_exac_ptr, //can be null
-                                bool a_killing_me_smalls)
+    get_helmholtz_int_gphi_da_stencil(const EBCM_Face<cent, geo_exac_order>  & a_face,
+                                      const int                          & a_stenrad,
+                                      const int                          & a_weightpower,
+                                      const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
+                                      const string                       & a_dom_bc,
+                                      const string                       & a_eb_bc,
+                                      const int                          & a_face_dir,
+                                      const double                       & a_dx,
+                                      const ebcm_exac                    & a_bc_exact,
+                                      const pr_fab_t                     * a_phi_exac_ptr, //can be null
+                                      bool a_killing_me_smalls)
     {
-      CH_TIME("PETSc_Framework::getHelmholtzFDotEhatStencil");
+      CH_TIME("PETSc_Framework::get_helmholtz_int_gphi_da_stencil");
       /** 
           At domain faces, Neumann bcs do not get a stencil but they can have an inhomogeneous value.
       **/
@@ -1314,7 +1314,7 @@ namespace EBCM
            svd gets much better answers.
         **/
           
-        retval = getHelmFDotEhatStencilUsingSVD
+        retval = get_helm_int_f_dot_n_stencil
           (a_face,
            a_stenrad,
            a_weightpower,
@@ -1330,7 +1330,7 @@ namespace EBCM
 
       } //end stencil based face
       return retval;
-    } //end function getHelmholtzFDotEhatStencil
+    } //end function get_helmholtz_int_gphi_da_stencil
     ///
     /**
        loops through d
@@ -1350,11 +1350,11 @@ namespace EBCM
        retval(0, curCol) = matval
     **/
     static shared_ptr<eigen_mat>
-    getHelmholtzEBQMatrix( const IrregFace< geo_exac_order >      & a_face,
+    get_helmholtz_eb_q_matrix( const IrregFace< geo_exac_order >      & a_face,
                            shared_ptr<ebcm_neighborhood>        a_locality,
                            const double                       & a_dx)
     {
-      CH_TIME("PETSc_Framework::getHelmholtzEBQMatrix");
+      CH_TIME("PETSc_Framework::get_helmholtz_eb_q_matrix");
       
       double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
       unsigned int Pcols = pr_indmom_dim_operator::size();
@@ -1403,7 +1403,7 @@ namespace EBCM
       }   //end loop over directions
       return retval;
 
-    } // end function getHelmholtzEBQMatrix
+    } // end function get_helmholtz_eb_q_matrix
     
     ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^face_dir)
     /**
@@ -1412,7 +1412,7 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    getIrregHelmholtzFDotNStencil(const IrregFace<geo_exac_order>        & a_face,
+    get_irreg_helm_int_gph_dot_n_da(const IrregFace<geo_exac_order>        & a_face,
                                   const int                          & a_stenrad,
                                   const int                          & a_weightpower,
                                   const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
@@ -1448,12 +1448,12 @@ namespace EBCM
         eigen_mat Ainvmat = *Amat_p;
         Ainvmat.invert();
       
-        shared_ptr<eigen_mat> Qmat_p = getHelmholtzEBQMatrix(a_face, locality,  a_dx);
+        shared_ptr<eigen_mat> Qmat_p = get_helmholtz_eb_q_matrix(a_face, locality,  a_dx);
         eigen_mat AinvWMTmat;
         multiply( AinvWMTmat, Ainvmat, WMTmat);
         eigen_mat Smat;
         multiply( Smat, *Qmat_p, AinvWMTmat);
-        retval = getStencilFromMat(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+        retval = get_stencil_from_matrix(Smat, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
       }
       return retval;
     }// end function getIrregHelmholtzFDotNStencil
@@ -1511,7 +1511,7 @@ namespace EBCM
 
       ///this is the function that the driver code calls
       shared_ptr<local_stencil_t>
-      getLocalStencil(const ebcm_volu   & a_volu,
+      get_local_stencil(const ebcm_volu   & a_volu,
                       const ebcm_graph  & a_graph,
                       const pr_fab_t    * a_exact_ptr) // can be NULL
       {//begin xfaces
@@ -1529,20 +1529,20 @@ namespace EBCM
             {
               ch_mayday::Error("privateVolumeStencil: bogus face in x");
             }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               m_sten_rad,     
-                                                               m_weight_power, 
-                                                               a_graph,       
-                                                               m_dom_bc,      
-                                                               m_eb_bc,       
-                                                               0, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
+            local_stencil_t flux = get_helmholtz_int_gphi_da_stencil(face,
+                                                                     m_sten_rad,     
+                                                                     m_weight_power, 
+                                                                     a_graph,       
+                                                                     m_dom_bc,      
+                                                                     m_eb_bc,       
+                                                                     0, a_volu.m_dx,
+                                                                     *m_bc_exact,
+                                                                     NULL,
+                                                                     killing_me_smalls);
             if(print_now)
             {
               double flux_val = flux.apply(*a_exact_ptr);
-              Chombo4::pout() << "getLocalStencil:xf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_xf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
+              Chombo4::pout() << "get_local_stencil:xf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_xf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
             }
             flux *= fluxsign;
             (*retval) += flux;
@@ -1558,22 +1558,22 @@ namespace EBCM
             {
               ch_mayday::Error("privateVolumeStencil: bogus face in y");
             }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               m_sten_rad,     
-                                                               m_weight_power, 
-                                                               a_graph,       
-                                                               m_dom_bc,      
-                                                               m_eb_bc,       
-                                                               1, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
+            local_stencil_t flux = get_helmholtz_int_gphi_da_stencil(face,
+                                                                     m_sten_rad,     
+                                                                     m_weight_power, 
+                                                                     a_graph,       
+                                                                     m_dom_bc,      
+                                                                     m_eb_bc,       
+                                                                     1, a_volu.m_dx,
+                                                                     *m_bc_exact,
+                                                                     NULL,
+                                                                     killing_me_smalls);
 
                                                                
             if(print_now)
             {
               double flux_val = flux.apply(*a_exact_ptr);
-              Chombo4::pout() << "getLocalStencil:yf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_yf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
+              Chombo4::pout() << "get_local_stencil:yf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_yf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
             }
             
             flux *= fluxsign;
@@ -1590,21 +1590,21 @@ namespace EBCM
             {
               ch_mayday::Error("privateVolumeStencil: bogus face in z");
             }
-            local_stencil_t flux = getHelmholtzFDotEhatStencil(face,
-                                                               m_sten_rad,     
-                                                               m_weight_power, 
-                                                               a_graph,       
-                                                               m_dom_bc,      
-                                                               m_eb_bc,
-                                                               2, a_volu.m_dx,
-                                                               *m_bc_exact,
-                                                               NULL,
-                                                               killing_me_smalls);
+            local_stencil_t flux = get_helmholtz_int_gphi_da_stencil(face,
+                                                                     m_sten_rad,     
+                                                                     m_weight_power, 
+                                                                     a_graph,       
+                                                                     m_dom_bc,      
+                                                                     m_eb_bc,
+                                                                     2, a_volu.m_dx,
+                                                                     *m_bc_exact,
+                                                                     NULL,
+                                                                     killing_me_smalls);
                                                                
             if(print_now)
             {
               double flux_val = flux.apply(*a_exact_ptr);
-              Chombo4::pout() << "getLocalStencil:zf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_zf = "  << flux_val<< ", flux_sign = "<< fluxsign << endl;
+              Chombo4::pout() << "get_local_stencil:zf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_zf = "  << flux_val<< ", flux_sign = "<< fluxsign << endl;
             }
             flux *= fluxsign;
             (*retval) += flux;
@@ -1614,7 +1614,7 @@ namespace EBCM
           for(int iface = 0; iface < a_volu.m_ifaces.size(); iface++)
           {
             const auto& face     = a_volu.m_ifaces[iface];
-            local_stencil_t flux = getIrregHelmholtzFDotNStencil(face,
+            local_stencil_t flux = get_irreg_helm_int_gph_dot_n_da(face,
                                                                  m_sten_rad,     
                                                                  m_weight_power, 
                                                                  a_graph,       
@@ -1627,7 +1627,7 @@ namespace EBCM
             if(print_now)
             {
               double flux_val = flux.apply(*a_exact_ptr);
-              Chombo4::pout() << "getLocalStencil:F(ebfac["  << iface  << "]) = " << flux_val << endl;
+              Chombo4::pout() << "get_local_stencil:F(ebfac["  << iface  << "]) = " << flux_val << endl;
             }
             (*retval) += flux;
           }
@@ -1638,7 +1638,7 @@ namespace EBCM
 
         if(print_now)
         {
-          Chombo4::pout() << "getLocalStencil:volmag = " << volmag << endl;
+          Chombo4::pout() << "get_local_stencil:volmag = " << volmag << endl;
         }
         (*retval) *= (1./volmag);
         //now retval = laplacian  so we multiply by beta and add alpha I
@@ -1653,9 +1653,9 @@ namespace EBCM
         (*retval) += ident_term;
         return retval;
       }
-      ///for applyOpPrimitives (used in debugging)
+      ///for apply_op_primitives (used in debugging) shared_ptr<local_stencil_t>
       shared_ptr<local_stencil_t>
-      getVoluSideFluxStencil(const ebcm_volu  & a_volu,
+      get_volu_side_stencil(const ebcm_volu  & a_volu,
                              const ebcm_graph & a_graph,
                              const int        & a_idir,
                              Side::LoHiSide     a_side,
@@ -1670,7 +1670,7 @@ namespace EBCM
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "getVoluFluxStencil: getting x flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_stencil: getting x flux stencil " << endl;
           }
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
@@ -1683,7 +1683,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<XFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<XFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
         }
@@ -1691,7 +1691,7 @@ namespace EBCM
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "getVoluFluxStencil: getting y flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_stencil: getting y flux stencil " << endl;
           }
           for(int iface = 0 ;iface < a_volu.m_yfaces.size(); iface++)
           {
@@ -1704,7 +1704,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<YFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<YFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
         }
@@ -1712,7 +1712,7 @@ namespace EBCM
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "getVoluFluxStencil: getting z flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_stencil: getting z flux stencil " << endl;
           }
           for(int iface = 0 ; iface < a_volu.m_zfaces.size(); iface++)
           {
@@ -1725,21 +1725,20 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = getFluxStencil<ZFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<ZFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
             }
           }
-          MayDay::Warning("This diagnostic only written for x and y");
         }
         return retval;
       }
 
       template <CENTERING cent>
       local_stencil_t
-      getFluxStencil(const EBCM_Face<cent, geo_exac_order> & a_face,
-                     const ebcm_graph                  & a_graph,
-                     const double                      & a_dx, 
-                     const pr_fab_t                    *  a_phi_exac_ptr, //can be null
-                     bool a_killing_me_smalls) const
+      get_int_flux_da_stencil(const EBCM_Face<cent, geo_exac_order> & a_face,
+                              const ebcm_graph                  & a_graph,
+                              const double                      & a_dx, 
+                              const pr_fab_t                    *  a_phi_exac_ptr, //can be null
+                              bool a_killing_me_smalls) const
       {
         int face_dir_input = a_face.getFaceDir();
         int face_dir_cent = 4586;
@@ -1757,19 +1756,19 @@ namespace EBCM
         }
         if(face_dir_input != face_dir_cent)
         {
-          ch_mayday::Error("getFluxStencil: confusion reigns");
+          ch_mayday::Error("get_int_flux_da_stencil: confusion reigns");
         }
         int face_dir = face_dir_input;
-        local_stencil_t flux = getHelmholtzFDotEhatStencil(a_face,
-                                                           m_sten_rad,     
-                                                           m_weight_power, 
-                                                           a_graph,       
-                                                           m_dom_bc,      
-                                                           m_eb_bc,       
-                                                           face_dir, a_dx,
-                                                           *m_bc_exact,
-                                                           a_phi_exac_ptr, 
-                                                           a_killing_me_smalls);
+        local_stencil_t flux = get_helmholtz_int_gphi_da_stencil(a_face,
+                                                                 m_sten_rad,     
+                                                                 m_weight_power, 
+                                                                 a_graph,       
+                                                                 m_dom_bc,      
+                                                                 m_eb_bc,       
+                                                                 face_dir, a_dx,
+                                                                 *m_bc_exact,
+                                                                 a_phi_exac_ptr, 
+                                                                 a_killing_me_smalls);
         return flux;
       
       }
@@ -2208,8 +2207,11 @@ namespace EBCM
       bool homogeneous_only = false;
       discreteOp.applyOp(lph_calc_ptr, phi_exac_ptr, homogeneous_only);
 #else
-
-      discreteOp.applyOpPrimitives(lph_calc_ptr,
+      /**
+         Using  this homerolled version because this exposes the fluxes 
+         and debugging is all about exposure
+      **/
+      discreteOp.apply_op_primitives(lph_calc_ptr,
                                    phi_exac_ptr,
                                    flx_calc_ptr,
                                    a_file_prefix);
@@ -2358,11 +2360,8 @@ namespace EBCM
       for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = string("check_exact_solution:GPhi[") + to_string(idir) + string("]:");
-        double flux_order =  compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
-        if(a_killing_me_smalls)
-        {
-          Chombo4::pout() << prefix << flux_order << endl;
-        }
+        ///double flux_order =
+        compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     }// end function check_exact_solution                 
     static void helmholtz_truncation( shared_ptr< ebcm_meta  > a_meta_fine,
@@ -2375,19 +2374,13 @@ namespace EBCM
       double max_err_flux_fine[DIM];
       get_max_abs_calc_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_max_abs_calc_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
-      double lphi_order =   compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
-      if(a_killing_me_smalls)
-      {
-        Chombo4::pout() << "helmholtz_truncatio lphi_order = " << lphi_order << endl;
-      }
+      //double lphi_order =
+      compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix     = string("helmholtz_truncation:IntFluxDA[") + to_string(idir) + string("]:");
-        double flux_order =  compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
-        if(a_killing_me_smalls)
-        {
-          Chombo4::pout() << "helmholtz_truncation IntFlux["  << idir << "]dA order = " << flux_order << endl;
-        }
+        string prefix     = string("helmholtz_truncation:Grad(phi)[") + to_string(idir) + string("]:");
+        //double flux_order =
+        compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     } //  end function helmholtz_truncation
     ///this is the thing called from main.
