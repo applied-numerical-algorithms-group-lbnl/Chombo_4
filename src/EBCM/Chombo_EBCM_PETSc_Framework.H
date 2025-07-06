@@ -300,7 +300,7 @@ namespace EBCM
               auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->get_volu_side_stencil(volu, graph, idir, Side::Hi, NULL, false);
+                m_oper_ptr->get_volu_side_gphi_stencil(volu, graph, idir, Side::Hi, NULL, false);
               double flux_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -1647,24 +1647,28 @@ namespace EBCM
         (*retval) += ident_term;
         return retval;
       }
-      ///for apply_op_primitives (used in debugging) shared_ptr<local_stencil_t>
+      /**
+         For apply_op_primitives (used in debugging).
+         Used only in computing flux (grad phi) for convergence
+         tests so the area needs to be divided out.
+      **/
       shared_ptr<local_stencil_t>
-      get_volu_side_stencil(const ebcm_volu  & a_volu,
-                            const ebcm_graph & a_graph,
-                            const int        & a_idir,
-                            Side::LoHiSide     a_side,
-                            const pr_fab_t   * a_phi_exac_ptr, //can be null
-                            bool               a_killing_me_smalls)
+      get_volu_side_gphi_stencil(const ebcm_volu  & a_volu,
+                                 const ebcm_graph & a_graph,
+                                 const int        & a_idir,
+                                 Side::LoHiSide     a_side,
+                                 const pr_fab_t   * a_phi_exac_ptr, //can be null
+                                 bool               a_killing_me_smalls)
       {
         double  dx = a_volu.m_dx;
+        double  sum_area = 0;
         int isign  = sign(a_side);
-        
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
         if(a_idir == 0)
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "get_volu_side_stencil: getting x flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_gphi_stencil: getting x flux stencil " << endl;
           }
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
@@ -1678,6 +1682,7 @@ namespace EBCM
             if(face_sign*isign > 0)
             {
               *retval = get_int_flux_da_stencil<XFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
         }
@@ -1685,7 +1690,7 @@ namespace EBCM
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "get_volu_side_stencil: getting y flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_gphi_stencil: getting y flux stencil " << endl;
           }
           for(int iface = 0 ;iface < a_volu.m_yfaces.size(); iface++)
           {
@@ -1699,6 +1704,7 @@ namespace EBCM
             if(face_sign*isign > 0)
             {
               *retval = get_int_flux_da_stencil<YFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
         }
@@ -1706,7 +1712,7 @@ namespace EBCM
         {
           if(a_killing_me_smalls)
           {
-            Chombo4::pout() << "get_volu_side_stencil: getting z flux stencil " << endl;
+            Chombo4::pout() << "get_volu_side_gphi_stencil: getting z flux stencil " << endl;
           }
           for(int iface = 0 ; iface < a_volu.m_zfaces.size(); iface++)
           {
@@ -1720,9 +1726,11 @@ namespace EBCM
             if(face_sign*isign > 0)
             {
               *retval = get_int_flux_da_stencil<ZFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
         }
+        *retval *= (1/sum_area);
         return retval;
       }
 
