@@ -133,6 +133,11 @@ namespace EBCM
     IndexedMoments<DIM-1, order> m_facmom;
 
   ///sometimes it is convenient to have the integer facedir
+    int direction() const
+    {
+      return getFaceDir();
+    }
+    ///
     int  getFaceDir() const
     {
       int retval = -4586;

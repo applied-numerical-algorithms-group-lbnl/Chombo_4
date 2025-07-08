@@ -213,17 +213,17 @@ namespace EBCM
       **/
       shared_ptr<ebcm_dou_sca_data> m_inhomog_bit;
       shared_ptr<linear_operator_t> m_oper_ptr;
-      shared_ptr<petsc_mat> m_mat_ptr;
-      shared_ptr<ebcm_meta> m_meta_ptr;
-      shared_ptr<petsc_vec> m_lph_ptr;
-      shared_ptr<petsc_vec> m_phi_ptr;
+      shared_ptr<petsc_mat>         m_mat_ptr;
+      shared_ptr<ebcm_meta>         m_meta_ptr;
+      shared_ptr<petsc_vec>         m_lph_ptr;
+      shared_ptr<petsc_vec>         m_phi_ptr;
       shared_ptr<ebcm_int_sca_data> m_row_map_ptr; 
-      int                   m_ghost;
+      int                           m_ghost;
       //each box in data iterator we get total points
-      std::vector<int>      m_numPtsPerBox;
-      int                   m_numPtsThisProc;
-      int                   m_numPtsAllProcs;
-      int                   m_startPtThisProc;
+      std::vector<int>              m_numPtsPerBox;
+      int                           m_numPtsThisProc;
+      int                           m_numPtsAllProcs;
+      int                           m_startPtThisProc;
       
       PETSc_Interface(const shared_ptr< linear_operator_t  >       & a_oper_ptr,
                       const shared_ptr< ebcm_meta  >               & a_meta_ptr,
@@ -735,12 +735,12 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    get_stencil_from_matrix(const eigen_mat                                & a_matrix,
+    get_stencil_from_matrix(const eigen_mat                                    & a_matrix,
                             shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
-                            const string                                   & a_dom_bc,
-                            const string                                   & a_eb_bc,
-                            const ebcm_exac                                & a_bc_exact,
-                            const double                                   & a_dx)
+                            const string                                       & a_dom_bc,
+                            const string                                       & a_eb_bc,
+                            const ebcm_exac                                    & a_bc_exact,
+                            const double                                       & a_dx)
                       
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
@@ -1106,14 +1106,14 @@ namespace EBCM
 
     **/
     static shared_ptr<eigen_mat>
-    getSolutionRowVector(const shared_ptr<ebcm_neighborhood> & a_locality,
-                         const string                        & a_dom_bc,
-                         const string                        & a_eb_bc,
-                         const ebcm_exac                     & a_bc_exact,
-                         const double                        & a_dx,
-                         bool a_killing_me_smalls)
+    get_solution_row_vector(const shared_ptr<ebcm_neighborhood> & a_locality,
+                            const string                        & a_dom_bc,
+                            const string                        & a_eb_bc,
+                            const ebcm_exac                     & a_bc_exact,
+                            const double                        & a_dx,
+                            bool a_killing_me_smalls)
     {
-      CH_TIME("PETSc_Framework::getSolutionRowVector");
+      CH_TIME("PETSc_Framework::get_solution_row_vector");
       int n_rows_volumes   = a_locality->m_weig_volumes.size();
       int n_rows_dom_faces = a_locality->m_weig_dom_faces.size();
       int n_rows_cut_faces = a_locality->m_weig_cut_faces.size();
@@ -1123,7 +1123,7 @@ namespace EBCM
       if(a_killing_me_smalls)
       {
         neig_disp_ptr = shared_ptr<neighbor_data_t>(new neighbor_data_t(a_locality));
-        Chombo4::pout() << "getSolnRowVec: "
+        Chombo4::pout() << "get_solution_row_vector: "
                         << " nvol = " << n_rows_volumes       
                         << ",ndom = " << n_rows_dom_faces
                         << ",ncut = " << n_rows_cut_faces
@@ -1187,26 +1187,67 @@ namespace EBCM
       }
       if(a_killing_me_smalls)
       {
-        neig_disp_ptr->printPrettily();  //matches very well
+        neig_disp_ptr->printPrettily();  //prints data around face
       }
       return soln_vec_p;
     }
     
+    ///The path to enlightenment includes more diagnostics.
+    template<CENTERING cent>
+    static void print_c_calc_vs_c_exac(
+      const EBCM_Face<cent, geo_exac_order>  & a_face,
+      const ebcm_exac                        & a_bc_exac,
+      const double                           & a_dx,
+      const eigen_mat                        & a_c_mat)
+    {
 
+      pr_rv centloc;
+      auto pt = a_face.m_hi.m_pt;
+      for(int idir = 0; idir < DIM; idir++)
+      {
+        if(idir == a_face.direction())
+        {
+          centloc[idir] = a_dx*(double(pt[idir]));
+        }
+        else
+        {
+          centloc[idir] = a_dx*(double(pt[idir]) + 0.5);
+        }
+      }
+      Chombo4::pout()    << setprecision(8)
+                         << setiosflags(ios::showpoint)
+                         << setiosflags(ios::scientific);
+      Chombo4::pout() << "print_c_calc_vs_c_exac: face = (" << a_face.m_lo.m_pt << "," << a_face.m_hi.m_pt << ")" << endl;
+      Chombo4::pout() << "|---p---|---------Cp(exac)-----|-----------Cp(calc)---|"  <<  endl;
+      for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+      {
+        pr_itm_i_dim mom_power = momit();
+        double rfactorial  = (double)(mom_power.factorial());
+        double deriv       = a_bc_exac.getDerivative(mom_power, centloc);
+        double c_coef_exac = deriv/rfactorial;
+        unsigned int currentCol = pr_indmom_dim_operator::indexOf(mom_power);
+        double c_coef_calc = a_c_mat(currentCol, 0);
+        std::string sign_str_exac(" "); if(c_coef_exac < 0.0) sign_str_exac = std::string("-");
+        std::string sign_str_calc(" "); if(c_coef_calc < 0.0) sign_str_calc = std::string("-");
+        Chombo4::pout() << mom_power    << "   |    " ;
+        Chombo4::pout() << sign_str_exac << std::abs(c_coef_exac)  << "   |    ";
+        Chombo4::pout() << sign_str_calc << std::abs(c_coef_calc)  << "   |    " << endl;
+      }
+    }
     ///
     template<CENTERING cent>
     static local_stencil_t
     get_helm_int_f_dot_n_stencil(
       const EBCM_Face<cent, geo_exac_order>  & a_face,
-      const int                          & a_stenrad,
-      const int                          & a_weightpower,
+      const int                              & a_stenrad,
+      const int                              & a_weightpower,
       const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-      const string                       & a_dom_bc,
-      const string                       & a_eb_bc,
-      const int                          & a_face_dir,
-      const double                       & a_dx,
-      const ebcm_exac                    & a_bc_exact,
-      const pr_fab_t                     * a_phi_exac_ptr, //can be null
+      const string                           & a_dom_bc,
+      const string                           & a_eb_bc,
+      const int                              & a_face_dir,
+      const double                           & a_dx,
+      const ebcm_exac                        & a_bc_exac,
+      const pr_fab_t                         * a_phi_exac_ptr, //can be null
       bool a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::get_helm_int_f_dot_n_stencil");
@@ -1223,7 +1264,7 @@ namespace EBCM
       
       if(a_killing_me_smalls)
       {
-        Chombo4::pout() << "getHelmFDEHStencilSVD: after getSystemInfo" << endl;
+        Chombo4::pout() << "get_helm_int_f_dot_n_stencil: after getSystemInfo" << endl;
       }
       /// begin debug
       // this is WM
@@ -1231,27 +1272,33 @@ namespace EBCM
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       //begin debug
-      //if(print_stuff)
-      //{
-      //  Chombo4::pout() << "getHelmFDEHStencilSVD: after invertUsingSVD" << endl;
-      //  eigen_mat resid_mat;
-      //  testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  print_stuff);
-      //
-      //  eigen_mat WPhi_mat;
-      //  multiply(WPhi_mat, *W_mat_p, *phi_exact_ptr);
-      //  ///C = (WM)pseudo_inv * W Phi.
-      //  eigen_mat c_mat;
-      //  multiply( c_mat, WMinv_mat, WPhi_mat);
-      //  Chombo4::pout() << "getHelmFDEHStencilSVD: C matrix=" << endl;
-      //  Chombo4::pout() << "|--p---|---------Cp---------|"  <<  endl;
-      //  for(pr_momit_dim_operator momit; momit.ok(); ++momit)
-      //  {
-      //    auto momind = momit();
-      //    unsigned int currentCol = pr_indmom_dim_geo_exac_geo_exac::indexOf(momind);
-      //    Chombo4::pout() << momind << "   " << c_mat(currentCol, 0) << endl;
-      //  }
-      //  Chombo4::pout()<<   "-------|-------------------|"<< endl;
-      //}
+      pr_pt deb_pt(D_DECL(8, 8, 8));
+      bool print_stuff = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
+      if(print_stuff)
+      {
+
+        ///I am pretty confident at this point about invertUsingSVD
+        /**
+           Chombo4::pout() << "get_helm_int_f_dot_n_stencil: after invertUsingSVD" << endl;
+           eigen_mat resid_mat;
+           testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  s_print_stuff);
+        **/
+        shared_ptr<eigen_mat> phi_exac_ptr  =
+          get_solution_row_vector(locality,
+                               a_dom_bc,
+                               a_eb_bc,
+                               a_bc_exac,
+                               a_dx,
+                               print_stuff);
+          
+        eigen_mat WPhi_mat;
+        multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
+        ///C = (WM)pseudo_inv * W Phi.
+        eigen_mat c_mat;
+        multiply( c_mat, WMinv_mat, WPhi_mat);
+
+        print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+      }
       //end debug
       shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);
       
@@ -1260,7 +1307,7 @@ namespace EBCM
       eigen_mat S_mat_FFS;
       multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
 
-      retval = get_stencil_from_matrix(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exact, a_dx);
+      retval = get_stencil_from_matrix(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exac, a_dx);
       
       return retval;
     } //end function get_helmholtz_int_gphi_da_stencil
@@ -1270,15 +1317,15 @@ namespace EBCM
     template<CENTERING cent>
     static local_stencil_t
     get_helmholtz_int_gphi_da_stencil(const EBCM_Face<cent, geo_exac_order>  & a_face,
-                                      const int                          & a_stenrad,
-                                      const int                          & a_weightpower,
+                                      const int                              & a_stenrad,
+                                      const int                              & a_weightpower,
                                       const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                      const string                       & a_dom_bc,
-                                      const string                       & a_eb_bc,
-                                      const int                          & a_face_dir,
-                                      const double                       & a_dx,
-                                      const ebcm_exac                    & a_bc_exact,
-                                      const pr_fab_t                     * a_phi_exac_ptr, //can be null
+                                      const string                           & a_dom_bc,
+                                      const string                           & a_eb_bc,
+                                      const int                              & a_face_dir,
+                                      const double                           & a_dx,
+                                      const ebcm_exac                        & a_bc_exact,
+                                      const pr_fab_t                         * a_phi_exac_ptr, //can be null
                                       bool a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::get_helmholtz_int_gphi_da_stencil");
@@ -1407,14 +1454,14 @@ namespace EBCM
     */
     static local_stencil_t
     get_irreg_helm_int_gph_dot_n_da(const IrregFace<geo_exac_order>        & a_face,
-                                    const int                          & a_stenrad,
-                                    const int                          & a_weightpower,
+                                    const int                              & a_stenrad,
+                                    const int                              & a_weightpower,
                                     const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                    const string                       & a_dom_bc,
-                                    const string                       & a_eb_bc,
-                                    const double                       & a_dx,
-                                    const ebcm_exac                    & a_bc_exact,
-                                    bool                                 a_killing_me_smalls)
+                                    const string                           & a_dom_bc,
+                                    const string                           & a_eb_bc,
+                                    const double                           & a_dx,
+                                    const ebcm_exac                        & a_bc_exact,
+                                    bool                                     a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getIrregHelmholtzFDotNStencil");
       /**
@@ -1737,9 +1784,9 @@ namespace EBCM
       template <CENTERING cent>
       local_stencil_t
       get_int_flux_da_stencil(const EBCM_Face<cent, geo_exac_order> & a_face,
-                              const ebcm_graph                  & a_graph,
-                              const double                      & a_dx, 
-                              const pr_fab_t                    *  a_phi_exac_ptr, //can be null
+                              const ebcm_graph                      & a_graph,
+                              const double                          & a_dx, 
+                              const pr_fab_t                        * a_phi_exac_ptr, //can be null
                               bool a_killing_me_smalls) const
       {
         int face_dir_input = a_face.getFaceDir();
@@ -1831,7 +1878,7 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static void
-    set_vector_flux_exac(pr_fab_t&                                                 a_fab,
+    set_vector_flux_exac(pr_fab_t&                                               a_fab,
                          const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
                          int                                                     a_face_dir,
                          double                                                  a_dx,
