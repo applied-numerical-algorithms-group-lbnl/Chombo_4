@@ -1285,11 +1285,11 @@ namespace EBCM
         **/
         shared_ptr<eigen_mat> phi_exac_ptr  =
           get_solution_row_vector(locality,
-                               a_dom_bc,
-                               a_eb_bc,
-                               a_bc_exac,
-                               a_dx,
-                               print_stuff);
+                                  a_dom_bc,
+                                  a_eb_bc,
+                                  a_bc_exac,
+                                  a_dx,
+                                  false);
           
         eigen_mat WPhi_mat;
         multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
