@@ -2392,7 +2392,7 @@ namespace EBCM
       if(a_max_err_fine > 1.0e-12) 
       {
         order = (log(a_max_err_coar/a_max_err_fine))/log(2.0);
-        Chombo4::pout() << a_prefix  << "_order = "<< order << endl;
+        Chombo4::pout() << a_prefix  << "_oper_order = "<< order << endl;
       }
       else
       {
@@ -2412,8 +2412,8 @@ namespace EBCM
       double max_err_flux_coar[DIM];
       get_exact_solution_error(max_err_phi_fine, max_err_lph_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_exact_solution_error(max_err_phi_coar, max_err_lph_coar, max_err_flux_coar, a_meta_coar, string("coar"));
-      double phi_order = compute_and_print_order(string("check_exact_solution:phi:"), max_err_phi_fine, max_err_phi_coar);
-      double lph_order = compute_and_print_order(string("check_exact_solution:lph:"), max_err_lph_fine, max_err_lph_coar);
+      double phi_order = compute_and_print_order(string("check_exact_solution:phi_inp:"), max_err_phi_fine, max_err_phi_coar);
+      double lph_order = compute_and_print_order(string("check_exact_solution:lph_inp:"), max_err_lph_fine, max_err_lph_coar);
       if(a_killing_me_smalls)
       {
         Chombo4::pout() << "check_exact_solution:phi_order = " << phi_order << ", lph_order = " << lph_order << endl;
