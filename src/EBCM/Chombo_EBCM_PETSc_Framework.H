@@ -543,15 +543,15 @@ namespace EBCM
         ierr = MatSetFromOptions( *m_mat_ptr ); CHKERRQ(ierr);
 
         //sets the actual values in *m_mat_ptr
-        ierr = formMatrix();CHKERRQ(ierr);
+        ierr = form_matrix();CHKERRQ(ierr);
         return 0;
       }
 
       ///sets the actual values in *m_mat_ptr
-      PetscInt formMatrix()
+      PetscInt form_matrix()
       {
     
-        CH_TIME("Base_Petsc_Op::formMatrix");
+        CH_TIME("Base_Petsc_Op::form_matrix");
         
         const auto& graphs = *(m_meta_ptr->m_graphs);
         const auto& grids  =  (m_meta_ptr->m_grids);
@@ -615,7 +615,7 @@ namespace EBCM
         ierr = VecAssemblyEnd(  lphVec );  CHKERRQ(ierr);
         
         return 0;
-      } //end function formMatrix
+      } //end function form_matrix
 
     }; //end class petscinterface
 
@@ -1236,6 +1236,33 @@ namespace EBCM
     }
     ///
     template<CENTERING cent>
+    static void
+    compare_gphi_exac_vs_gphi_calc(const eigen_mat                        & a_Q_mat,
+                                   const eigen_mat                        & a_C_mat,
+                                   const EBCM_Face<cent, geo_exac_order>  & a_face,
+                                   const ebcm_exac                        & a_bc_exac,
+                                   const double                           & a_dx)
+    {
+      ///multiplying Q C shoudl give a 1x1 matrix w
+      eigen_mat QC_mat;  
+      multiply( QC_mat, a_Q_mat, a_C_mat);
+      int n_row = QC_mat.m_mat_p->rows(); int n_col = QC_mat.m_mat_p->cols();
+      if((n_row != 1) || (n_col != 1))
+      {
+        Chombo4::pout() << "compare_gphi_exac_vs_gphi_calc: QC n_row = " << n_row << ", n_col = " << n_col << endl;
+      }
+      double momzero     = a_face.m_facmom[pr_itm_i_dmo::Zero];
+      double int_gphi_dA = QC_mat(0, 0); 
+      double gphi_calc = int_gphi_dA/momzero;
+      double gphi_exac = a_bc_exac.get_analytical_gphi_dot_n(a_face, a_dx);
+      Chombo4::pout()    << setprecision(8)
+                         << setiosflags(ios::showpoint)
+                         << setiosflags(ios::scientific);
+      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_exac = " << gphi_exac << endl;
+      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_calc = " << gphi_calc << endl;
+    }
+    ///
+    template<CENTERING cent>
     static local_stencil_t
     get_helm_int_f_dot_n_stencil(
       const EBCM_Face<cent, geo_exac_order>  & a_face,
@@ -1273,15 +1300,15 @@ namespace EBCM
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       //begin debug
       pr_pt deb_pt(D_DECL(8, 8, 8));
-      bool print_stuff = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
-      if(print_stuff)
+      bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
+      shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);
+      if(killing_me_smalls)
       {
 
         ///I am pretty confident at this point about invertUsingSVD
         /**
-           Chombo4::pout() << "get_helm_int_f_dot_n_stencil: after invertUsingSVD" << endl;
            eigen_mat resid_mat;
-           testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  s_print_stuff);
+           testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  killing_me_smalls);
         **/
         shared_ptr<eigen_mat> phi_exac_ptr  =
           get_solution_row_vector(locality,
@@ -1297,10 +1324,13 @@ namespace EBCM
         eigen_mat c_mat;
         multiply( c_mat, WMinv_mat, WPhi_mat);
 
-        print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+        ///these numbers looked excellent for face ((7,7),(8.8))
+        ///print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+
+        /// Q C/area = int(Gphi DA)/area = <Gphi>
+        compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
       }
       //end debug
-      shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);
       
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
@@ -1557,9 +1587,7 @@ namespace EBCM
                         const pr_fab_t    * a_exact_ptr) // can be NULL
       {//begin xfaces
         shared_ptr<local_stencil_t> retval(new local_stencil_t());
-        bool killing_me_smalls     = false;
-
-        bool print_now = false ;
+        bool killing_me_smalls = false ;
         {
           for(int iface = 0; iface < a_volu.m_xfaces.size(); iface++)
           {
@@ -1580,7 +1608,7 @@ namespace EBCM
                                                                      *m_bc_exact,
                                                                      NULL,
                                                                      killing_me_smalls);
-            if(print_now)
+            if(killing_me_smalls)
             {
               double flux_val = flux.apply(*a_exact_ptr);
               Chombo4::pout() << "get_local_stencil:xf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_xf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
@@ -1611,7 +1639,7 @@ namespace EBCM
                                                                      killing_me_smalls);
 
                                                                
-            if(print_now)
+            if(killing_me_smalls)
             {
               double flux_val = flux.apply(*a_exact_ptr);
               Chombo4::pout() << "get_local_stencil:yf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_yf = "  << flux_val << ", flux_sign = "<< fluxsign << endl;
@@ -1642,7 +1670,7 @@ namespace EBCM
                                                                      NULL,
                                                                      killing_me_smalls);
                                                                
-            if(print_now)
+            if(killing_me_smalls)
             {
               double flux_val = flux.apply(*a_exact_ptr);
               Chombo4::pout() << "get_local_stencil:zf = (" << face.m_lo.m_pt << "," << face.m_hi.m_pt << "), F_zf = "  << flux_val<< ", flux_sign = "<< fluxsign << endl;
@@ -1665,7 +1693,7 @@ namespace EBCM
                                                                    *m_bc_exact,
                                                                    killing_me_smalls);
                                                                  
-            if(print_now)
+            if(killing_me_smalls)
             {
               double flux_val = flux.apply(*a_exact_ptr);
               Chombo4::pout() << "get_local_stencil:F(ebfac["  << iface  << "]) = " << flux_val << endl;
@@ -1677,7 +1705,7 @@ namespace EBCM
         //now that we have int( f dot n) dA so we have to divide by volume magnitude
         double volmag = a_volu.m_volmom[pr_itm_i_dim::Zero];
 
-        if(print_now)
+        if(killing_me_smalls)
         {
           Chombo4::pout() << "get_local_stencil:volmag = " << volmag << endl;
         }
@@ -2436,16 +2464,16 @@ namespace EBCM
       get_helmholtz_truncation_error(max_err_lphi_fine, max_err_flux_fine, a_meta_fine, string("fine"));
       get_helmholtz_truncation_error(max_err_lphi_coar, max_err_flux_coar, a_meta_coar, string("coar"));
       //double lphi_order =
-      compute_and_print_order(string("helmholtz_truncation: lph:"), max_err_lphi_fine, max_err_lphi_coar);
+      compute_and_print_order(string("helmholtz_truncation:HOp(phi):"), max_err_lphi_fine, max_err_lphi_coar);
       for(int idir = 0; idir < DIM; idir++)
       {
-        string prefix     = string("helmholtz_truncation:Grad(phi)[") + to_string(idir) + string("]:");
+        string prefix     =   string("helmholtz_truncation:G(phi)[") + to_string(idir) + string("]:");
         //double flux_order =
         compute_and_print_order(prefix, max_err_flux_fine[idir], max_err_flux_coar[idir]);
       }
     } //  end function helmholtz_truncation
-    ///this is the thing called from main.
   public:
+    ///this is the thing called from main.
     static  void run_hoeb_truncation_tests()
     {
 
