@@ -101,19 +101,22 @@ namespace EBCM
       std::vector< std::pair<pr_pt, double> > m_entries;
       double m_inhomogeneous_bit;
       ///
-      const std::pair<pr_pt, double> & operator[](int a_ivec) const
+      const std::pair<pr_pt, double> &
+      operator[](int a_ivec) const
       {
         return m_entries[a_ivec];
       }
 
       ///
-      std::pair<pr_pt, double> &      operator[](int a_ivec) 
+      std::pair<pr_pt, double> &
+      operator[](int a_ivec) 
       {
         return m_entries[a_ivec];
       }
-      
-      double apply(const pr_fab_t&   a_phi_exac) const
-                  
+
+      ///
+      double 
+      apply(const pr_fab_t&   a_phi_exac) const     
       {
         double retval = 0;
         for(int ivec = 0; ivec < m_entries.size(); ivec++)
@@ -632,7 +635,7 @@ namespace EBCM
       pr_indmom_dmo_geo_exac facmom_geo =  a_face.m_facmom;
       pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_facedir);
 
-
+///HERE
       //double momzero    = facmom[pr_itm_i_dmo::Zero];
 
       pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
