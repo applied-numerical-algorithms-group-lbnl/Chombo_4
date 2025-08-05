@@ -29,7 +29,7 @@
    wherein the evil bits of distributed linear algebra are done for us.
    I plan to use this for everything.  Geometric multigrid requires
    more infrastructure than I am willing to write so I will use PETSc
-   for solves and truncation error tests and I will be hooking in
+   for solves and truncation error tests and I plan to hook in
    SLEPc to do the eigenvalue analysis. --dtg
 **/
 namespace EBCM
@@ -649,7 +649,7 @@ namespace EBCM
         auto p_mom = momit();
         double matval = 0;
         int pd = p_mom[a_facedir];
-        if(pd == 1) //pd > 1 means x-xbar^p = 0
+        if(pd > 0) 
         {
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
