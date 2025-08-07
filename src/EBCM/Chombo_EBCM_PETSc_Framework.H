@@ -638,8 +638,6 @@ namespace EBCM
 ///HERE
       //double momzero    = facmom[pr_itm_i_dmo::Zero];
 
-      pr_itm_r_dim xbar = a_locality->getXBar(a_face, a_dx);
-      volmom.shift(xbar);
 
       unsigned int Pcols = pr_indmom_dim_operator::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
@@ -1434,6 +1432,11 @@ namespace EBCM
       unsigned int Pcols = pr_indmom_dim_operator::size();
       
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
+      /**
+         This uses centroids and could be a bad idea.
+         Right now, I am trying to fix the consequences of this
+         on coordinate faces. --dtg 9-7-2025
+      **/
       const pr_itm_r_dim xbar_face = a_locality->getXBarEB(a_face, a_dx);
       retval->setVal(0.); // needed
       for(int idir = 0; idir < DIM; idir++)
