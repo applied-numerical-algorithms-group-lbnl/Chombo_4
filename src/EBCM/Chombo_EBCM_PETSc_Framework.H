@@ -1428,16 +1428,13 @@ namespace EBCM
     {
       CH_TIME("PETSc_Framework::get_helmholtz_eb_q_matrix");
       
-      double momzero    = a_face.m_ebfmom[pr_itm_i_dim::Zero];
       unsigned int Pcols = pr_indmom_dim_operator::size();
       
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
       /**
-         This uses centroids and could be a bad idea.
-         Right now, I am trying to fix the consequences of this
-         on coordinate faces. --dtg 9-7-2025
+         Took out shifting bit here.   It was a bad idea.
+         dtg 9-9-2025.
       **/
-      const pr_itm_r_dim xbar_face = a_locality->getXBarEB(a_face, a_dx);
       retval->setVal(0.); // needed
       for(int idir = 0; idir < DIM; idir++)
       {
@@ -1458,7 +1455,6 @@ namespace EBCM
         { //can only be wetware error.
           ch_mayday::Error("logic error 4586");
         }
-        normal_moment.shift(xbar_face);
 
         for(pr_momit_dim_operator momit; momit.ok(); ++momit)
         {
@@ -1469,13 +1465,13 @@ namespace EBCM
             int pd = momind[idir];
             pr_itm_i_dim derind = momind - pr_itm_i_dim::BASISV(idir);
             Real derval = normal_moment[derind];
-            if(std::abs(momzero) > 1.0e-10)
-            {
-              matval = pd*derval/momzero;
-            }
+            matval = pd*derval; //int gphi dA means no division by momzero
           }
           unsigned int currentCol = pr_indmom_dim_operator::indexOf(momind);
-          (*retval)(0,currentCol) += matval;//note: increments
+          /**
+             Note: This is meant to increment and yes it was initialized to zero.
+          **/
+          (*retval)(0,currentCol) += matval;
         } //end loop over moments
       }   //end loop over directions
       return retval;

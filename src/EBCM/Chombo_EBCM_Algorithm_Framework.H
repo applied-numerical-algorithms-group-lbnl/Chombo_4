@@ -272,7 +272,7 @@ namespace EBCM
     ///
     /**
        Thi interface does not make sense but it maximizes reuse.
-     */
+    */
     template <CENTERING cent>
     static inline void
     getSystemInfo(shared_ptr<eigen_mat>                 &  a_system,
@@ -289,12 +289,15 @@ namespace EBCM
                   bool a_print)
     {
       CH_TIME("EBCM_Framework::getSystemMatrix");
+      int num_unknowns = pr_mom_dim_operator::size();
+
       
       a_locality = shared_ptr<ebcm_neighborhood>
         (new ebcm_neighborhood(a_graph,
-                            a_face.m_lo.m_pt,
-                            a_face.m_hi.m_pt,
-                            a_nghost, a_weight_power, a_print));
+                               a_face.m_lo.m_pt,
+                               a_face.m_hi.m_pt,
+                               a_nghost, a_weight_power,
+                               num_unknowns, a_print));
 
       
       shared_ptr<eigen_mat> Wmat_p = getWeightMatrix(a_locality, a_print);
@@ -339,7 +342,7 @@ namespace EBCM
     /**
        Nonsensical interface maximizes reuse.   News at 11.
        The locality gets defined within is passed out for reuse.
-     **/
+    **/
     static inline void 
     getEBSystemInfo( shared_ptr<eigen_mat>                   & a_system,
                      shared_ptr<eigen_mat>                   & a_Wmat_p,
@@ -354,11 +357,13 @@ namespace EBCM
     {
       CH_TIME("EBCM_Framework::getEBSystemMatrix");
 
+      int num_unknowns = pr_mom_dim_operator::size();
       a_locality = shared_ptr<ebcm_neighborhood>
         (new ebcm_neighborhood(a_graph,
-                            a_face.m_pt,
-                            a_face.m_pt,
-                            a_nghost, a_weight_power, a_print));
+                               a_face.m_pt,
+                               a_face.m_pt,
+                               a_nghost, a_weight_power,
+                               num_unknowns, a_print));
 
       a_Wmat_p = getWeightMatrix(a_locality, a_print);
       a_Mmat_p = getMomentMatrix(a_locality, a_dom_bc, a_eb_bc, a_print);
@@ -558,60 +563,60 @@ namespace EBCM
   
 
   
-  static shared_ptr<pr_baseif> getImplicitFunction()
-  {
-    CH_TIME("EBCM_Framework::getImplicitFunction");
-    shared_ptr<pr_baseif>  retval;
-    ParmParse pp("getImplicitFunction");
-    string which_geom;
-    pp.get("which_geom", which_geom);
-    using Chombo4::pout;
-    if(which_geom == string("sphere"))
+    static shared_ptr<pr_baseif> getImplicitFunction()
     {
-      RealVect center = 0.5*RealVect::Unit();
-      double radius = 0.1;
-      bool inside = false;
-      std::vector<double> centvec;
-      pp.get("radius", radius);
-      pp.get("inside", inside);
-      pp.getarr("center", centvec, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
+      CH_TIME("EBCM_Framework::getImplicitFunction");
+      shared_ptr<pr_baseif>  retval;
+      ParmParse pp("getImplicitFunction");
+      string which_geom;
+      pp.get("which_geom", which_geom);
+      using Chombo4::pout;
+      if(which_geom == string("sphere"))
       {
-        center[idir] = centvec[idir];
+        RealVect center = 0.5*RealVect::Unit();
+        double radius = 0.1;
+        bool inside = false;
+        std::vector<double> centvec;
+        pp.get("radius", radius);
+        pp.get("inside", inside);
+        pp.getarr("center", centvec, 0, DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          center[idir] = centvec[idir];
+        }
+        Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
+        Chombo4::pout() << "sphere implicit function with radius = " << radius << ", center = " << center << ", and inside = " << inside << endl;
+        retval = shared_ptr<BaseIF>(static_cast<BaseIF*>(sphereptr));
       }
-      Proto::SimpleSphereIF* sphereptr = new Proto::SimpleSphereIF(center, radius, inside);
-      Chombo4::pout() << "sphere implicit function with radius = " << radius << ", center = " << center << ", and inside = " << inside << endl;
-      retval = shared_ptr<BaseIF>(static_cast<BaseIF*>(sphereptr));
-    }
-    else if(which_geom == string("all_regular"))
-    {
-      Chombo4::pout() << "all regular geometry" << endl;
-      retval = shared_ptr<BaseIF>(new Proto::AllRegularIF());
-    }
-    else if(which_geom == string("plane"))
-    {
-      using Proto::PlaneIF;
-      Chombo4::pout() << "plane implicit function" << endl;
-      RealVect normal, startPt;
-      vector<double> v_norm, v_start;
-      pp.getarr("geom_normal", v_norm, 0, DIM);
-      pp.getarr("geom_start_pt", v_start, 0, DIM);
-      for(int idir = 0; idir < DIM; idir++)
+      else if(which_geom == string("all_regular"))
       {
-        normal[ idir] = v_norm[ idir];
-        startPt[idir] = v_start[idir];
-        Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
-        Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+        Chombo4::pout() << "all regular geometry" << endl;
+        retval = shared_ptr<BaseIF>(new Proto::AllRegularIF());
       }
-      retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
+      else if(which_geom == string("plane"))
+      {
+        using Proto::PlaneIF;
+        Chombo4::pout() << "plane implicit function" << endl;
+        RealVect normal, startPt;
+        vector<double> v_norm, v_start;
+        pp.getarr("geom_normal", v_norm, 0, DIM);
+        pp.getarr("geom_start_pt", v_start, 0, DIM);
+        for(int idir = 0; idir < DIM; idir++)
+        {
+          normal[ idir] = v_norm[ idir];
+          startPt[idir] = v_start[idir];
+          Chombo4::pout() << "normal ["<< idir << "] = " << normal [idir]  << endl;
+          Chombo4::pout() << "startPt["<< idir << "] = " << startPt[idir]  << endl;
+        }
+        retval = shared_ptr<BaseIF>(new PlaneIF(startPt, normal));
+      }
+      else
+      {
+        Chombo4::pout() << "bogus geometry" << endl;
+        Chombo4::MayDay::Error("Doh!");
+      }
+      return retval;
     }
-    else
-    {
-      Chombo4::pout() << "bogus geometry" << endl;
-      Chombo4::MayDay::Error("Doh!");
-    }
-    return retval;
-  }
   
 
 /****/
@@ -735,7 +740,7 @@ namespace EBCM
       {
         itm_dist[idir] = a_distance[idir];
       }
-                                                       // 
+      // 
       pr_mom_dim_operator shiftedMom;
       //have to do this via iteration because they have different sizes
       for(pr_momit_dim_operator momit; momit.ok(); ++momit)
