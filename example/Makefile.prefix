@@ -15,14 +15,12 @@ CHOMBO_SRC += $(wildcard ../../common/*.cpp)
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBTools/*.cpp) 
 CHOMBO_SRC += $(wildcard $(CHOMBO_HOME)/src/EBProto/*.cpp) 
 
-VPATH=  ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/LinearAlgebra $(CHOMBO_HOME)/src/autodiff_solutions
+VPATH=  ../src  ../../common $(CHOMBO_HOME)/src/BaseTools $(CHOMBO_HOME)/src/BoxTools $(CHOMBO_HOME)/src/LinearAlgebra 
 VPATH += $(CHOMBO_HOME)/src/EBTools
-VPATH += $(AUTODIFF_LOCATION)
 
 CHOMBO_NODIRSRC = $(notdir $(CHOMBO_SRC))
 CHOMBO_NODIROBJ = $(subst .cpp,.o,$(CHOMBO_NODIRSRC))
 CHOMBO_OBJ=$(patsubst %.o,o/%.o,  $(CHOMBO_NODIROBJ))
 
 
-#CHOMBO_LIBS = $(CHOMBO_LAPACKLIBS)
 

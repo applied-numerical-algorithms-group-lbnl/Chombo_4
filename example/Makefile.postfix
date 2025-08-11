@@ -8,7 +8,7 @@ CHOMBO_CPPFLAGS += -I../../common
 CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBTools 
 CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBProto 
 CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/EBCM
-CHOMBO_CPPFLAGS += -I$(CHOMBO_HOME)/src/autodiff_solutions
+
 
 
 #need to use depxx because petsc links with g++

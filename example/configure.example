@@ -143,8 +143,6 @@ for t in targets:
     
 
     f.write(makefile_post)
-    if hoebs in t:
-        f.write('\nCHOMBO_CPPFLAGS += -I../../hoeb_common \n')
  
     os.chdir(top)
     f.close()
