@@ -13,7 +13,6 @@
   I should use this opportunity to apologize to the world for the many 
   awful choices I have made in this life in relation to file names and organization.  
   I regret all the consternation I have caused.
-  8/5/2025:
   My function and class name conventions have not been all that awesome (or consistent) either.
 */
 #include "Chombo_EBCM_Graph.H"
@@ -1299,41 +1298,39 @@ namespace EBCM
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);      
- ///     //begin debug
- ///        // This stuff is broken as of 9-10-2025.   Something about varying ghosts.
- ///        // Not important because this is code used to debug stuff but should be fixed.
- ///     pr_pt deb_pt(D_DECL(8, 8, 8));
- ///     bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
+     //begin debug
+     pr_pt deb_pt(D_DECL(8, 8, 8));
+     bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
 
- ///     if(killing_me_smalls)
- ///     {
- ///
- ///       ///I am pretty confident at this point about invertUsingSVD
- ///       /**
- ///          eigen_mat resid_mat;
- ///          testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  killing_me_smalls);
- ///       **/
- ///       shared_ptr<eigen_mat> phi_exac_ptr  =
- ///         get_solution_row_vector(locality,
- ///                                 a_dom_bc,
- ///                                 a_eb_bc,
- ///                                 a_bc_exac,
- ///                                 a_dx,
- ///                                 false);
- ///         
- ///       eigen_mat WPhi_mat;
- ///       multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
- ///       ///C = (WM)pseudo_inv * W Phi.
- ///       eigen_mat c_mat;
- ///       multiply( c_mat, WMinv_mat, WPhi_mat);
- ///
- ///       ///these numbers looked excellent for face ((7,7),(8.8))
- ///       ///print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
- ///
- ///       /// Q C/area = int(Gphi DA)/area = <Gphi>
- ///       compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
- ///     }
- ///     //end debug
+     if(killing_me_smalls)
+     {
+
+       ///I am pretty confident at this point about invertUsingSVD
+       /**
+          eigen_mat resid_mat;
+          testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  killing_me_smalls);
+       **/
+       shared_ptr<eigen_mat> phi_exac_ptr  =
+         get_solution_row_vector(locality,
+                                 a_dom_bc,
+                                 a_eb_bc,
+                                 a_bc_exac,
+                                 a_dx,
+                                 false);
+         
+       eigen_mat WPhi_mat;
+       multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
+       ///C = (WM)pseudo_inv * W Phi.
+       eigen_mat c_mat;
+       multiply( c_mat, WMinv_mat, WPhi_mat);
+
+       ///Allegedly, we know C and we can see how well we reproduce it.
+       print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+
+       /// Q C/area = int(Gphi DA)/area = <Gphi>
+       compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
+     }
+     //end debug
  
       eigen_mat WMinvW_mat;
       multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
@@ -2317,9 +2314,9 @@ namespace EBCM
       //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
       //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
       //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
-      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
-      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      writeWindow (a_file_prefix, string("gph_exact     "), flx_exac_ptr);
+      writeWindow (a_file_prefix, string("gph_calc      "), flx_calc_ptr);
+      writeWindow (a_file_prefix, string("gph_error     "), flx_error_ptr);
       //Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
       //end debug
       return;
