@@ -33,6 +33,7 @@
 **/
 namespace EBCM
 {
+  ///
   /**
      geo_exac_order is the order of the exact solution and of the geometry generation
      operator_order is the order of the Helmholtz operator
@@ -302,7 +303,7 @@ namespace EBCM
               auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
               shared_ptr<local_stencil_t>  local =
-                m_oper_ptr->get_volu_side_gphi_stencil(volu, graph, idir, Side::Hi, NULL, false);
+                m_oper_ptr->get_volu_side_gphi_stencil(volu, graph, idir, Side::Hi, a_identifier, NULL, false);
               double flux_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
@@ -1274,6 +1275,7 @@ namespace EBCM
       const int                              & a_face_dir,
       const double                           & a_dx,
       const ebcm_exac                        & a_bc_exac,
+      const string                           & a_identifier,
       const pr_fab_t                         * a_phi_exac_ptr, //can be null
       bool a_killing_me_smalls)
     {
@@ -1298,8 +1300,15 @@ namespace EBCM
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);      
-     //begin debug
-     pr_pt deb_pt(D_DECL(8, 8, 8));
+     //begin debug HERE1
+      pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
+      int start_coar, start_fine;
+      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      pr_pt deb_pt(D_DECL(start_coar, start_coar, start_coar));
+      if(a_identifier == string("fine"))
+      {
+       deb_pt = pr_pt(D_DECL(start_fine, start_fine, start_fine));
+      }
      bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
 
      if(killing_me_smalls)
@@ -1355,6 +1364,7 @@ namespace EBCM
                                       const int                              & a_face_dir,
                                       const double                           & a_dx,
                                       const ebcm_exac                        & a_bc_exact,
+                                      const string                           & a_identifier,
                                       const pr_fab_t                         * a_phi_exac_ptr, //can be null
                                       bool a_killing_me_smalls)
     {
@@ -1395,6 +1405,7 @@ namespace EBCM
            a_face_dir,
            a_dx,
            a_bc_exact,
+           a_identifier,
            a_phi_exac_ptr, //can be null
            false);
 
@@ -1492,7 +1503,7 @@ namespace EBCM
                                     const string                           & a_eb_bc,
                                     const double                           & a_dx,
                                     const ebcm_exac                        & a_bc_exact,
-                                    bool                                     a_killing_me_smalls)
+                                    const string                           & a_identifier,                                    bool                                     a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getIrregHelmholtzFDotNStencil");
       /**
@@ -1607,6 +1618,7 @@ namespace EBCM
                                                                      m_eb_bc,       
                                                                      0, a_volu.m_dx,
                                                                      *m_bc_exact,
+                                                                     m_identifier,
                                                                      NULL,
                                                                      killing_me_smalls);
             if(killing_me_smalls)
@@ -1636,6 +1648,7 @@ namespace EBCM
                                                                      m_eb_bc,       
                                                                      1, a_volu.m_dx,
                                                                      *m_bc_exact,
+                                                                     m_identifier,
                                                                      NULL,
                                                                      killing_me_smalls);
 
@@ -1668,6 +1681,7 @@ namespace EBCM
                                                                      m_eb_bc,
                                                                      2, a_volu.m_dx,
                                                                      *m_bc_exact,
+                                                                     m_identifier,
                                                                      NULL,
                                                                      killing_me_smalls);
                                                                
@@ -1692,6 +1706,7 @@ namespace EBCM
                                                                    m_eb_bc,
                                                                    a_volu.m_dx,
                                                                    *m_bc_exact,
+                                                                   m_identifier,
                                                                    killing_me_smalls);
                                                                  
             if(killing_me_smalls)
@@ -1733,6 +1748,7 @@ namespace EBCM
                                  const ebcm_graph & a_graph,
                                  const int        & a_idir,
                                  Side::LoHiSide     a_side,
+                                 const string     & a_identifier,
                                  const pr_fab_t   * a_phi_exac_ptr, //can be null
                                  bool               a_killing_me_smalls)
       {
@@ -1757,7 +1773,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = get_int_flux_da_stencil<XFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<XFACE>(face, a_graph, dx, a_identifier, a_phi_exac_ptr, a_killing_me_smalls);
               sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
@@ -1779,7 +1795,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = get_int_flux_da_stencil<YFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<YFACE>(face, a_graph, dx, a_identifier, a_phi_exac_ptr, a_killing_me_smalls);
               sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
@@ -1801,7 +1817,7 @@ namespace EBCM
             }
             if(face_sign*isign > 0)
             {
-              *retval = get_int_flux_da_stencil<ZFACE>(face, a_graph, dx, a_phi_exac_ptr, a_killing_me_smalls);
+              *retval = get_int_flux_da_stencil<ZFACE>(face, a_graph, dx, a_identifier, a_phi_exac_ptr, a_killing_me_smalls);
               sum_area += face.m_facmom[pr_itm_i_dmo::Zero];        
             }
           }
@@ -1815,8 +1831,9 @@ namespace EBCM
       get_int_flux_da_stencil(const EBCM_Face<cent, geo_exac_order> & a_face,
                               const ebcm_graph                      & a_graph,
                               const double                          & a_dx, 
+                              const string                          & a_identifier,
                               const pr_fab_t                        * a_phi_exac_ptr, //can be null
-                              bool a_killing_me_smalls) const
+                              bool   a_killing_me_smalls) const
       {
         int face_dir_input = a_face.getFaceDir();
         int face_dir_cent = 4586;
@@ -1845,6 +1862,7 @@ namespace EBCM
                                                                  m_eb_bc,       
                                                                  face_dir, a_dx,
                                                                  *m_bc_exact,
+                                                                 a_identifier,
                                                                  a_phi_exac_ptr, 
                                                                  a_killing_me_smalls);
         return flux;
@@ -2149,7 +2167,9 @@ namespace EBCM
     getWindow( pr_pt& a_lo_coar,
                pr_pt& a_hi_coar,
                pr_pt& a_lo_fine,
-               pr_pt& a_hi_fine)
+               pr_pt& a_hi_fine,
+               int  & a_start_coar,
+               int  & a_start_fine)
     {
       static bool printed = false;
 // lower left
@@ -2163,12 +2183,18 @@ namespace EBCM
 //      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
 //      pr_pt  hi_fine(D_DECL(3,   3, 0));
 //  lower left of upper right 
+//      if(!printed)
+//      {
+//        pout() << "displaying MIDDLE MIDDLE" << endl;
+//        printed = true;
+//      }
+//      int start_coar = 8; int start_fine = 16;
       if(!printed)
       {
-        pout() << "displaying MIDDLE MIDDLE" << endl;
+        pout() << "displaying MIDDLE LEFT " << endl;
         printed = true;
       }
-      int start_coar = 8; int start_fine = 16;
+      int start_coar = 4; int start_fine = 8;
       pr_pt  lo_coar(D_DECL(start_coar - 2, start_coar - 2, 0));
       pr_pt  hi_coar(D_DECL(start_coar + 2, start_coar + 2, 0));
       pr_pt  lo_fine(D_DECL(start_fine - 2, start_fine - 2, 0));
@@ -2178,6 +2204,8 @@ namespace EBCM
       a_hi_coar = hi_coar;
       a_lo_fine = lo_fine;
       a_hi_fine = hi_fine;
+      a_start_coar = start_coar;
+      a_start_fine = start_fine;
     }
     ///
     static
@@ -2188,7 +2216,8 @@ namespace EBCM
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
-      getWindow(lo_coar, hi_coar, lo_fine, hi_fine);
+      int start_coar, start_fine;
+      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
       if(a_file_prefix == string("coar"))
@@ -2212,7 +2241,9 @@ namespace EBCM
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
-      getWindow(lo_coar, hi_coar, lo_fine, hi_fine);
+      int start_coar, start_fine;
+      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
       if(a_file_prefix == string("coar"))
@@ -2306,6 +2337,9 @@ namespace EBCM
       pr_pt pt_loc_flx[DIM];
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
+      Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix
+                      << ": max_error_flx = "<< a_max_error_flx 
+                      << ", pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
 
       //begin debug
       //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
@@ -2317,7 +2351,6 @@ namespace EBCM
       writeWindow (a_file_prefix, string("gph_exact     "), flx_exac_ptr);
       writeWindow (a_file_prefix, string("gph_calc      "), flx_calc_ptr);
       writeWindow (a_file_prefix, string("gph_error     "), flx_error_ptr);
-      //Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
       //end debug
       return;
     }
