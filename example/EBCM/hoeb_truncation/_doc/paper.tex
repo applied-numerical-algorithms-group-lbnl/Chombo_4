@@ -168,7 +168,26 @@ There are several orders of accuracy in play:
 
 
 
-
+  Since debugging this test is taking forever and a bunch of things have changed,
+  here are a bunch of things I do not want to forget to document some
+  of the things I have learned as of 9-15-2025.
+  \begin{itemize}
+    \item Solving the normal equations is right out.   As the system
+      matrix gets super stiff (as is documented in an earlier tech
+      report), the accuracy of the solve goes away and you get
+      unpredictable answers.   Switching to using SVD (via Eigen) to
+      get  a pseudoinverse makes this problem completely go away.   
+      Some of the test code has been left in (testing the pseudo
+      inverse and so on) has been left in the code.
+    \item The operator order $P_O$ and the order of the geometry $P_G$
+      can be the same thing but doing this was giving poor answers
+      when I compared against exact Taylor coefficients.  Setting
+      $P_G = P_O + 2$ makes for much better looking answers.
+    \item Moment shifting $(x-{\bar{x}})$  is used in setting up the
+      stencil.  For computing the $Q$ matrix, ${\bar{x}}$ does not
+      apply.    The moments still may need to be shifted but not by
+      the same distance (maybe we need to shift to the face centroid?).
+  \end{itemize}
 
 
 
@@ -176,8 +195,6 @@ There are several orders of accuracy in play:
   CA. Research at LBNL was supported financially by the Office of
   Advanced Scientific Computing Research of the US Department of
   Energy under contract number DE-AC02-05CH11231.}
-\footnotetext[2]{Ford Motor Company, Sunnyvale, CA.}
-
 \renewcommand{\thefootnote}{\fnsymbol{footnote}}\
 \bibliography{references}
 
