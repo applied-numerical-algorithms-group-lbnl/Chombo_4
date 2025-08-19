@@ -647,7 +647,12 @@ namespace EBCM
         auto p_mom = momit();
         double matval = 0;
         int pd = p_mom[a_facedir];
-        if(pd > 0) 
+        /**
+           Say face_dir==0
+           (x_0^p_0 == 0 unless p_0 == 0)
+           it is 1 because we are subtracting off e^x
+         **/
+        if(pd == 1) 
         {
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
@@ -1433,8 +1438,8 @@ namespace EBCM
     **/
     static shared_ptr<eigen_mat>
     get_helmholtz_eb_q_matrix( const IrregFace< geo_exac_order >      & a_face,
-                               shared_ptr<ebcm_neighborhood>        a_locality,
-                               const double                       & a_dx)
+                               shared_ptr<ebcm_neighborhood>            a_locality,
+                               const double                           & a_dx)
     {
       CH_TIME("PETSc_Framework::get_helmholtz_eb_q_matrix");
       
@@ -2252,8 +2257,7 @@ namespace EBCM
         hi_disp = hi_coar;
       }
 
-      //for(int idir = 0; idir < DIM; idir++)
-      int idir = 0;
+      for(int idir = 0; idir < DIM; idir++)
       {
         string prefix = a_file_prefix + string("_") + a_data_label;
         EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
@@ -2337,9 +2341,8 @@ namespace EBCM
       pr_pt pt_loc_flx[DIM];
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
-      Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix
-                      << ": max_error_flx = "<< a_max_error_flx 
-                      << ", pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
+      Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ": max_error_flx = (" << a_max_error_flx[0] << ","<< a_max_error_flx[1]<< ")" <<  endl;
+      Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ", pt_loc_flx    = (" <<      pt_loc_flx[0] << ","<<      pt_loc_flx[1]<< ")" <<  endl;
 
       //begin debug
       //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
