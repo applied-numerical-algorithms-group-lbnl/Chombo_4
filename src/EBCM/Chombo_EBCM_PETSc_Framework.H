@@ -645,7 +645,8 @@ namespace EBCM
       for(pr_momit_dim_operator momit; momit.ok(); ++momit)
       {
         auto p_mom = momit();
-        double matval = 0;
+        unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
+        double matval = 0; // zero initialization important here
         int pd = p_mom[a_facedir];
         /**
            Say face_dir==0
@@ -656,15 +657,8 @@ namespace EBCM
         {
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
-          matval = pd*m_p_min_ed;
-          /**
-             if(area > 1.0e-11)
-             {
-             matval /= area;
-             }
-          **/
+          matval = pd*m_p_min_ed;   //I know pd==1.   
         }
-        unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
         (*retval)(0,currentCol) = matval;
       }
     
