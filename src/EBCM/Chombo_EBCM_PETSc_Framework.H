@@ -678,11 +678,11 @@ namespace EBCM
       double area = a_domain_face.m_facmom[pr_itm_i_dmo::Zero];
       if(     a_dom_bc == string("dirichlet"))
       {
-        retval = a_bc_exact.getIntPhiDADomainFace(a_domain_face, a_neigh, a_killing_me_smalls);
+        retval = a_bc_exact.get_int_phi_da_domain_face(a_domain_face, a_neigh, a_killing_me_smalls);
       }
       else if(a_dom_bc == string("neumann"))
       {
-        retval = a_bc_exact.getIntGradPhiDotNDADomainFace(a_domain_face, a_neigh);
+        retval = a_bc_exact.get_int_grad_phi_dot_n_da_domain_face(a_domain_face, a_neigh);
       }
       else
       {
@@ -713,11 +713,11 @@ namespace EBCM
 
       if(     a_eb_bc == string("dirichlet"))
       {
-        retval = a_bc_exact.getIntPhiDA(a_cut_face, a_neigh);
+        retval = a_bc_exact.get_int_phi_da(a_cut_face, a_neigh);
       }
       else if(a_eb_bc == string("neumann"))
       {
-        retval = a_bc_exact.getIntGradPhiDotNDA(a_cut_face, a_neigh, a_dx);
+        retval = a_bc_exact.get_int_grad_phi_dot_n_da(a_cut_face, a_neigh, a_dx);
       }
       else
       {
@@ -1137,7 +1137,7 @@ namespace EBCM
       for(int irow = 0; irow < n_rows_volumes; irow++)
       {
         const ebcm_volu& volu  =   (*(a_locality->m_volumes ))[irow];
-        double phi_val = a_bc_exact.getCellAveSolution(volu);
+        double phi_val = a_bc_exact.get_cell_ave_solution(volu);
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
@@ -1167,11 +1167,11 @@ namespace EBCM
         double area = face.m_ebfmom[pr_itm_i_dim::Zero];
         if(a_eb_bc == string("neumann"))
         {
-          phi_val = a_bc_exact.getIntGradPhiDotNDACutFace(face, *a_locality, a_dx);
+          phi_val = a_bc_exact.get_int_grad_phi_dot_n_da_cut_face(face, *a_locality, a_dx);
         }
         else if(a_eb_bc == string("dirchlet"))
         {
-          phi_val = a_bc_exact.getIntPhiDACutFace(face, *a_locality);
+          phi_val = a_bc_exact.get_int_phi_da_cut_face(face, *a_locality);
         }
         else
         {
@@ -1223,7 +1223,7 @@ namespace EBCM
       {
         pr_itm_i_dim mom_power = momit();
         double rfactorial  = (double)(mom_power.factorial());
-        double deriv       = a_bc_exac.getDerivative(mom_power, centloc);
+        double deriv       = a_bc_exac.get_derivative(mom_power, centloc);
         double c_coef_exac = deriv/rfactorial;
         unsigned int currentCol = pr_indmom_dim_operator::indexOf(mom_power);
         double c_coef_calc = a_c_mat(currentCol, 0);
@@ -1383,7 +1383,7 @@ namespace EBCM
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
 
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
+        double flux_val = a_bc_exact.get_int_grad_phi_dot_n_da(a_face, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }//end neumann bc
       else
@@ -1521,7 +1521,7 @@ namespace EBCM
         retval = local_stencil_t();
         retval.clear();
         retval.m_inhomogeneous_bit = 0;
-        double flux_val = a_bc_exact.getIntGradPhiDotNDA(a_face, a_dx);
+        double flux_val = a_bc_exact.get_int_grad_phi_dot_n_da(a_face, a_dx);
         retval.m_inhomogeneous_bit += flux_val;
       }
       else
@@ -1983,8 +1983,8 @@ namespace EBCM
           const auto& volu = subvol_vec[ivec];
 
           
-          double phi_exac   = a_exac_ptr->getCellAveSolution( volu);
-          double lap_exac   = a_exac_ptr->getCellAveLaplacian(volu);
+          double phi_exac   = a_exac_ptr->get_cell_ave_solution( volu);
+          double lap_exac   = a_exac_ptr->get_cell_ave_laplacian(volu);
           double lph_exac  = a_alpha*phi_exac + a_beta*lap_exac;
           for(int ivec = 0; ivec < volu.m_cells.size(); ivec++)
           {
@@ -2040,8 +2040,8 @@ namespace EBCM
           const auto& volu = subvol_vec[ivec];
 
           
-          double phi_exac   = a_exac_ptr->getAnalyticalPhi(volu);
-          double lap_exac   = a_exac_ptr->getAnalyticalLaplacian(volu);
+          double phi_exac   = a_exac_ptr->get_analytical_phi(      volu);
+          double lap_exac   = a_exac_ptr->get_analytical_laplacian(volu);
           double lph_exac  = a_alpha*phi_exac + a_beta*lap_exac;
           for(int ivec = 0; ivec < volu.m_cells.size(); ivec++)
           {

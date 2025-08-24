@@ -47,15 +47,15 @@ namespace EBCM_Exact
       double retval = 4586.;
       if(direction == 0)
       {
-        retval = getAnalytical_IntGPhiX_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+        retval = get_analytical_int_gphi_x_da(a_ebcm_face.m_hi.m_pt, a_dx);
       }
       else if(direction == 1)
       {
-        retval = getAnalytical_IntGPhiY_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+        retval = get_analytical_int_gphi_y_da(a_ebcm_face.m_hi.m_pt, a_dx);
       }
       else if(direction == 2)
       {
-        retval = getAnalytical_IntGPhiZ_DA(a_ebcm_face.m_hi.m_pt, a_dx);
+        retval = get_analytical_int_gphi_z_da(a_ebcm_face.m_hi.m_pt, a_dx);
       }
       else
       {
@@ -65,12 +65,12 @@ namespace EBCM_Exact
       retval /= area;
       return retval;
     }
-    ///get full face analytical in grad phi dot n dA.
+    ///get full face analytical int( grad phi dot n )dA.
     template <CENTERING  cent>
     double get_exact_gphi_dot_n(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
                                 double                                a_dx) const
     {
-      double retval = getIntGradPhiDotNDA(a_ebcm_face, a_dx);
+      double retval = get_int_grad_phi_dot_n_da(a_ebcm_face, a_dx);
 
       double area = a_ebcm_face.m_facmom[pr_ind_int_dmo::Zero];
       retval /= area;
@@ -79,8 +79,8 @@ namespace EBCM_Exact
 
     ///
     virtual 
-    double getAnalytical_IntGPhiX_DA(const pr_pt & a_ebcm_face_hi,
-                                     double        a_dx) const
+    double get_analytical_int_gphi_x_da(const pr_pt & a_ebcm_face_hi,
+                                        double        a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -93,8 +93,8 @@ namespace EBCM_Exact
 
     ///
     virtual 
-    double getAnalytical_IntGPhiY_DA(const   pr_pt & a_ebcm_face_hi,
-                                     double          a_dx) const
+    double get_analytical_int_gphi_y_da(const   pr_pt & a_ebcm_face_hi,
+                                        double          a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -107,8 +107,8 @@ namespace EBCM_Exact
 
     ///
     virtual 
-    double getAnalytical_IntGPhiZ_DA(const  pr_pt  & a_ebcm_face_hi,
-                                     double          a_dx) const
+    double get_analytical_int_gphi_z_da(const  pr_pt  & a_ebcm_face_hi,
+                                        double          a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -120,7 +120,7 @@ namespace EBCM_Exact
     }
     ///
     virtual double
-    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    get_analytical_laplacian(const ebcm_volu&  a_volu)
     {
       static bool printed_once = false;
       if(!printed_once)
@@ -132,7 +132,7 @@ namespace EBCM_Exact
     }
     ///
     virtual double
-    getAnalyticalPhi(const ebcm_volu&  a_volu)
+    get_analytical_phi(const ebcm_volu&  a_volu)
     {
       static bool printed_once = false;
       if(!printed_once)
@@ -148,7 +148,7 @@ namespace EBCM_Exact
     /**
        Returns taylor series of laplacian_phi integrated over the volume
     **/
-    double getCellAveLaplacian(const ebcm_volu&  a_volu) const
+    double get_cell_ave_laplacian(const ebcm_volu&  a_volu) const
     {
       double retval = 4586;
       const pr_ind_mom_dim & volmom = a_volu.m_volmom;
@@ -171,7 +171,7 @@ namespace EBCM_Exact
           {
             pr_ind_int_dim lap_power = mom_power;
             lap_power[idir] -= 2;
-            double deriv       = getDerivative(mom_power, centloc);
+            double deriv       = get_derivative(mom_power, centloc);
             double cp          = deriv/rfactorial;
             double factor      = cp*(mom_power[idir])*(mom_power[idir]-1);
 
@@ -186,18 +186,18 @@ namespace EBCM_Exact
       double momzero    = volmom[pr_ind_int_dim::Zero];
       retval /= momzero; //Is cell merging grand or what?
       return retval;
-    } //end function getCellAveLaplacian
+    } //end function get_cell_ave_laplacian
     
     ///
     /**
        Returns |phi|
     **/
-    double getCellAveSolution(const ebcm_volu&  a_volu) const
+    double get_cell_ave_solution(const ebcm_volu&  a_volu) const
     {
       double retval = 4586;
       const pr_ind_mom_dim & volmom = a_volu.m_volmom;
       ///this gets int(phi) dV
-      retval = getIntPhiDV(a_volu);
+      retval = get_int_phi_dv(a_volu);
 
       ///need to div
       double momzero    = volmom[pr_ind_int_dim::Zero];
@@ -209,7 +209,7 @@ namespace EBCM_Exact
     /**
        Returns int( phi dV) 
     **/
-    double getIntPhiDV(const ebcm_volu&  a_volu) const
+    double get_int_phi_dv(const ebcm_volu&  a_volu) const
     {
       double retval = 0; //needs to be zero
       const pr_ind_mom_dim & volmom = a_volu.m_volmom;
@@ -220,7 +220,7 @@ namespace EBCM_Exact
         int   idenom = (power.factorial());
         double denom = (Real)(idenom);
         
-        double deriv = getDerivative(power, centloc);
+        double deriv = get_derivative(power, centloc);
         double momen = volmom[power];
         double incre = deriv*momen/denom;
         retval += incre;
@@ -232,10 +232,10 @@ namespace EBCM_Exact
     /// These functions are necessary for inhomogeneous bcs
 
     ///
-    double getIntPhiDACommonBit(const pr_ind_mom_dmo & a_fac_mom,
-                                const pr_ind_dou_dim & a_cent_loc,
-                                const int            & a_face_dir,
-                                bool a_killing_me_smalls) const
+    double get_int_phi_da_common_bit(const pr_ind_mom_dmo & a_fac_mom,
+                                     const pr_ind_dou_dim & a_cent_loc,
+                                     const int            & a_face_dir,
+                                     bool a_killing_me_smalls) const
     {
       double retval = 0;  //incremental
       for(pr_momit_dmo momit_dmo; momit_dmo.ok(); ++momit_dmo)
@@ -259,7 +259,7 @@ namespace EBCM_Exact
         int   idenom = (taylor_power_dim.factorial());
         double denom = (Real)(idenom);
         // this is phi^(p)
-        double deriv = getDerivative(taylor_power_dim, a_cent_loc);
+        double deriv = get_derivative(taylor_power_dim, a_cent_loc);
         double momen =     a_fac_mom[taylor_power_dmo];
         ///increment = phi^(p) m^p/p!
         double incre = deriv*momen/denom;
@@ -267,7 +267,7 @@ namespace EBCM_Exact
       }
       if(a_killing_me_smalls)
       {
-        //Chombo4::pout() << "getIntPhiDACB: retval = " << retval << endl;
+        //Chombo4::pout() << "get_int_phi_daCB: retval = " << retval << endl;
       }
       return retval;
       
@@ -275,24 +275,24 @@ namespace EBCM_Exact
 
     
     ///  
-    double getIntPhiDA(const ebcm_dom_face     & a_dom_face,
-                       const ebcm_neighborhood & a_neigh) const
+    double get_int_phi_da(const ebcm_dom_face     & a_dom_face,
+                          const ebcm_neighborhood & a_neigh) const
     {
 
       const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
       const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
-      double retval = getIntPhiDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction, false);
+      double retval = get_int_phi_da_common_bit(fac_mom, cent_loc, a_dom_face.m_direction, false);
       return retval;
     }
     ///  
-    double getIntPhiDADomainFace(const ebcm_dom_face     & a_dom_face,
-                                 const ebcm_neighborhood & a_neigh,
-                                 bool a_killing_me_smalls) const
+    double get_int_phi_da_domain_face(const ebcm_dom_face     & a_dom_face,
+                                      const ebcm_neighborhood & a_neigh,
+                                      bool a_killing_me_smalls) const
     {
 
       const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
       const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
-      double retval = getIntPhiDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction, a_killing_me_smalls);
+      double retval = get_int_phi_da_common_bit(fac_mom, cent_loc, a_dom_face.m_direction, a_killing_me_smalls);
       return retval;
     }
 
@@ -313,9 +313,9 @@ namespace EBCM_Exact
     }
     
     ///
-    double getIntGradPhiDotNDACommonBit(const pr_ind_mom_dmo  & a_fac_mom,
-                                        const pr_ind_dou_dim & a_cent_loc,
-                                        const int            & a_face_dir) const
+    double get_int_grad_phi_dot_n_da_common_bit(const pr_ind_mom_dmo  & a_fac_mom,
+                                                const pr_ind_dou_dim & a_cent_loc,
+                                                const int            & a_face_dir) const
     {
       double retval = 0;  //incremental
       for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
@@ -334,7 +334,7 @@ namespace EBCM_Exact
           pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
           
           double momen = a_fac_mom[moment_power_dmo];
-          double deriv = getDerivative(taylor_power_dim, a_cent_loc);
+          double deriv = get_derivative(taylor_power_dim, a_cent_loc);
           ///increment = pd  phi^(p-ed) m^p/p!
           double incre = pd*deriv*momen/denom;
           retval += incre;
@@ -342,56 +342,56 @@ namespace EBCM_Exact
         } // end if pd > 0
       }// end loop over moments
       return retval;
-    } //end function getGradPhiDotNDACommonBit
+    } //end function getGradPhiDotNda_common_bit
     ///
     template <CENTERING  cent>
-    double getIntGradPhiDotNDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
-                               double                                a_dx) const
+    double get_int_grad_phi_dot_n_da(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                                     double                                a_dx) const
     {
       pr_ind_mom_dmo   fac_mom  = a_ebcm_face.m_facmom;
       pr_ind_dou_dim  cent_loc = a_ebcm_face.location(a_dx);
       int grad_dir = a_ebcm_face.getFaceDir();
-      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, grad_dir);
+      double retval = get_int_grad_phi_dot_n_da_common_bit(fac_mom, cent_loc, grad_dir);
       return retval;
     }
 
     ///
-    double getIntGradPhiDotNDA(const ebcm_dom_face     & a_dom_face,
-                               const ebcm_neighborhood & a_neigh) const
+    double get_int_grad_phi_dot_n_da(const ebcm_dom_face     & a_dom_face,
+                                     const ebcm_neighborhood & a_neigh) const
     {
       const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
       const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
 
-      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
+      double retval = get_int_grad_phi_dot_n_da_common_bit(fac_mom, cent_loc, a_dom_face.m_direction);
       return retval;
 
     }
     ///
-    double getIntGradPhiDotNDADomainFace(const ebcm_dom_face     & a_dom_face,
-                                         const ebcm_neighborhood & a_neigh) const
+    double get_int_grad_phi_dot_n_da_domain_face (const ebcm_dom_face     & a_dom_face,
+                                                  const ebcm_neighborhood & a_neigh) const
     {
       const pr_ind_mom_dmo&   fac_mom = a_dom_face.m_facmom;
       const pr_ind_dou_dim&  cent_loc = a_dom_face.m_location;
 
-      double retval = getIntGradPhiDotNDACommonBit(fac_mom, cent_loc, a_dom_face.m_direction);
+      double retval = get_int_grad_phi_dot_n_da_common_bit(fac_mom, cent_loc, a_dom_face.m_direction);
       return retval;
 
     }
     ///
     template <CENTERING  cent>
-    double getIntPhiDA(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
-                       const ebcm_neighborhood             & a_neigh,
-                       double                                a_dx) const
+    double get_int_phi_da(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
+                          const ebcm_neighborhood             & a_neigh,
+                          double                                a_dx) const
     {
       pr_ind_mom_dmo   fac_mom  = a_ebcm_face.m_facmom;
       pr_ind_dou_dim  cent_loc  = a_ebcm_face.location(a_dx);
       int  face_dir = a_ebcm_face.getFaceDir();
-      double retval = getIntPhiDACommonBit(fac_mom, cent_loc, face_dir);
+      double retval = get_int_phi_da_common_bit(fac_mom, cent_loc, face_dir);
       return retval;
     }
     ///
-    double getIrregIntPhiDACommonBit(const pr_ind_mom_dim & a_ebf_mom,
-                                     const pr_ind_dou_dim & a_cent_loc) const
+    double get_irreg_int_phi_da_common_bit(const pr_ind_mom_dim & a_ebf_mom,
+                                           const pr_ind_dou_dim & a_cent_loc) const
     {
       double retval = 0;  //incremental
       for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
@@ -401,7 +401,7 @@ namespace EBCM_Exact
         
         double momen = a_ebf_mom[taylor_power_dim];
         pr_ind_int_dim deriv_power_dim = taylor_power_dim;
-        double deriv = getDerivative(deriv_power_dim, a_cent_loc);
+        double deriv = get_derivative(deriv_power_dim, a_cent_loc);
         int   idenom = (taylor_power_dim.factorial());
         double denom = (Real)(idenom);
           
@@ -410,42 +410,42 @@ namespace EBCM_Exact
         retval += incre;
       }// end loop over moments
       return retval;
-    } //end function getGradPhiDotNDACommonBit
+    } //end function getGradPhiDotNda_common_bit
     ///
-    double getIntPhiDA(const EBCM::IrregFace<order>  & a_irreg_face,
-                       const ebcm_neighborhood       & a_neigh,
-                       double                          a_dx) const
+    double get_int_phi_da(const EBCM::IrregFace<order>  & a_irreg_face,
+                          const ebcm_neighborhood       & a_neigh,
+                          double                          a_dx) const
     {
       pr_ind_mom_dim ebf_mom  = a_irreg_face.m_ebfmom;
       pr_ind_dou_dim cent_loc = a_irreg_face.location(a_dx);
-      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      double retval = get_irreg_int_phi_da_common_bit(ebf_mom, cent_loc);
       return retval;
     }
 
     ///
-    double getIntPhiDA(const ebcm_cut_face     & a_cut_face,
-                       const ebcm_neighborhood & a_neigh) const
+    double get_int_phi_da(const ebcm_cut_face     & a_cut_face,
+                          const ebcm_neighborhood & a_neigh) const
     {
       pr_ind_mom_dim    ebf_mom   =    a_cut_face.m_ebfmom;
       pr_ind_dou_dim    cent_loc  =    a_cut_face.m_location;
-      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      double retval = get_irreg_int_phi_da_common_bit(ebf_mom, cent_loc);
       return retval;
     }
     ///
-    double getIntPhiDACutFace(const ebcm_cut_face     & a_cut_face,
-                              const ebcm_neighborhood & a_neigh) const
+    double get_int_phi_da_cut_face(const ebcm_cut_face     & a_cut_face,
+                                   const ebcm_neighborhood & a_neigh) const
     {
       pr_ind_mom_dim    ebf_mom   =    a_cut_face.m_ebfmom;
       pr_ind_dou_dim    cent_loc  =    a_cut_face.m_location;
-      double retval = getIrregIntPhiDACommonBit(ebf_mom, cent_loc);
+      double retval = get_irreg_int_phi_da_common_bit(ebf_mom, cent_loc);
       return retval;
     }
     
     ///
-    double getIrregIntGradPhiDotNDACommonBit(const pr_ind_mom_dim & a_ebf_norm_mom_x,
-                                             const pr_ind_mom_dim & a_ebf_norm_mom_y,
-                                             const pr_ind_mom_dim & a_ebf_norm_mom_z,
-                                             const pr_ind_dou_dim & a_cent_loc) const
+    double get_irreg_int_grad_phi_dot_n_da_common_bit(const pr_ind_mom_dim & a_ebf_norm_mom_x,
+                                                      const pr_ind_mom_dim & a_ebf_norm_mom_y,
+                                                      const pr_ind_mom_dim & a_ebf_norm_mom_z,
+                                                      const pr_ind_dou_dim & a_cent_loc) const
     {
       double retval = 0;  //incremental
       for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
@@ -478,7 +478,7 @@ namespace EBCM_Exact
             //p - e^d
             pr_ind_int_dim deriv_power_dim = taylor_power_dim;
             deriv_power_dim[grad_dir] -= 1;
-            double deriv = getDerivative(deriv_power_dim, a_cent_loc);
+            double deriv = get_derivative(deriv_power_dim, a_cent_loc);
             int   idenom = (taylor_power_dim.factorial());
             double denom = (Real)(idenom);
           
@@ -490,52 +490,52 @@ namespace EBCM_Exact
       } //end loop over moments
 
       return retval;
-    }// end function getIrregIntGradPhiDotNDACommonBit
+    }// end function get_irreg_int_grad_phi_dot_n_da_common_bit
 
     ///
-    double getIntGradPhiDotNDA(const EBCM::IrregFace<order>  & a_irreg_face,
-                               double                          a_dx) const
+    double get_int_grad_phi_dot_n_da(const EBCM::IrregFace<order>  & a_irreg_face,
+                                     double                          a_dx) const
     {
       pr_ind_dou_dim  cent_loc = a_irreg_face.location(a_dx);
-      double retval = getIrregIntGradPhiDotNDACommonBit(a_irreg_face.m_norm_mom_x,
-                                                        a_irreg_face.m_norm_mom_y,
-                                                        a_irreg_face.m_norm_mom_z,
-                                                        cent_loc);
+      double retval = get_irreg_int_grad_phi_dot_n_da_common_bit(a_irreg_face.m_norm_mom_x,
+                                                                 a_irreg_face.m_norm_mom_y,
+                                                                 a_irreg_face.m_norm_mom_z,
+                                                                 cent_loc);
       return retval;
     }
     
     
     ///
-    double getIntGradPhiDotNDA(const ebcm_cut_face     & a_cut_face,
-                               const ebcm_neighborhood & a_neigh,
-                               double                    a_dx) const
+    double get_int_grad_phi_dot_n_da(const ebcm_cut_face     & a_cut_face,
+                                     const ebcm_neighborhood & a_neigh,
+                                     double                    a_dx) const
     {
-      double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
-                                                        a_cut_face.m_norm_mom_y,
-                                                        a_cut_face.m_norm_mom_z,
-                                                        a_cut_face.m_location);
+      double retval = get_irreg_int_grad_phi_dot_n_da_common_bit(a_cut_face.m_norm_mom_x,
+                                                                 a_cut_face.m_norm_mom_y,
+                                                                 a_cut_face.m_norm_mom_z,
+                                                                 a_cut_face.m_location);
 
       return retval;
     }
 
     ///
     virtual double
-    getIntGradPhiDotNDACutFace(const ebcm_cut_face     & a_cut_face,
-                               const ebcm_neighborhood & a_neigh,
-                               double                    a_dx) const
+    get_int_grad_phi_dot_n_da_cut_face(const ebcm_cut_face     & a_cut_face,
+                                       const ebcm_neighborhood & a_neigh,
+                                       double                    a_dx) const
     {
-      double retval = getIrregIntGradPhiDotNDACommonBit(a_cut_face.m_norm_mom_x,
-                                                        a_cut_face.m_norm_mom_y,
-                                                        a_cut_face.m_norm_mom_z,
-                                                        a_cut_face.m_location);
+      double retval = get_irreg_int_grad_phi_dot_n_da_common_bit(a_cut_face.m_norm_mom_x,
+                                                                 a_cut_face.m_norm_mom_y,
+                                                                 a_cut_face.m_norm_mom_z,
+                                                                 a_cut_face.m_location);
 
       return retval;
     }
 
 
     ///Where all the real work gets done (in the derived class)
-    virtual Real getDerivative(pr_ind_int_dim  a_power,
-                               pr_rv           a_loc) const
+    virtual Real get_derivative(pr_ind_int_dim  a_power,
+                                pr_rv           a_loc) const
     {
       Chombo4::MayDay::Error("EBCM::BaseExact:: not implemented");
     }
@@ -552,12 +552,12 @@ namespace EBCM_Exact
     typedef       Proto::IndexTM<int, DIM>            pr_ind_int_dim;
     typedef       Proto::RealVect                     pr_rv;
     virtual double
-    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    get_analytical_laplacian(const ebcm_volu&  a_volu)
     {
       return 0;
     }
-    virtual Real getDerivative(pr_ind_int_dim  a_power,
-                               pr_rv           a_loc) const
+    virtual Real get_derivative(pr_ind_int_dim  a_power,
+                                pr_rv           a_loc) const
     {
       return 0.;
     }
@@ -585,8 +585,8 @@ namespace EBCM_Exact
     typedef IndexedMoments<DIM  , order>       IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IndexTM<int, DIM>    a_deriv,
-                               RealVect a_loc) const
+    virtual Real get_derivative(IndexTM<int, DIM>    a_deriv,
+                                RealVect a_loc) const
     {
       Real  C     = m_entry.second;  //coefficient
       Point expon = m_entry.first; //exponent
@@ -671,8 +671,8 @@ namespace EBCM_Exact
     {
     }
 
-    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
-                               RealVect           a_loc) const
+    virtual Real get_derivative(IndexTM<int, DIM>  a_deriv,
+                                RealVect           a_loc) const
     {
       //any  derivatives in cross directions  = 0
       for(int idir = 0; idir < DIM; idir++)
@@ -714,7 +714,7 @@ namespace EBCM_Exact
     }
 
     virtual double
-    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    get_analytical_laplacian(const ebcm_volu&  a_volu)
     {
       static const double pi = 4.*atan(1.0);
       double dx = a_volu.m_dx;
@@ -760,7 +760,7 @@ namespace EBCM_Exact
 
     /// return full cell value of (1/V)(int(phi) dV)
     virtual double
-    getAnalyticalPhi(const ebcm_volu&  a_volu)
+    get_analytical_phi(const ebcm_volu&  a_volu)
     {
       static const double  s_pi = 4.*atan(1.);
       static bool printed_once = false;
@@ -788,7 +788,7 @@ namespace EBCM_Exact
     
     /// return full cell value of (1/V)(int(lap phi) dV)
     virtual double
-    getAnalyticalLaplacian(const ebcm_volu&  a_volu)
+    get_analytical_laplacian(const ebcm_volu&  a_volu)
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -796,7 +796,7 @@ namespace EBCM_Exact
         Chombo4::pout() << "found sineproduct analytical laplacian" << endl;
         s_printed_once = true;
       }
-      double phi_val = getAnalyticalPhi(a_volu);
+      double phi_val = get_analytical_phi(a_volu);
       static const double  s_pi = 4.*atan(1.);
       double lap_val = 0; //additive
       for(int idir = 0; idir < DIM; idir++)
@@ -810,8 +810,8 @@ namespace EBCM_Exact
     
     ///
     virtual 
-    double getAnalytical_IntGPhiX_DA(const pr_pt  & a_ebcm_face_hi,
-                                     double         a_dx) const
+    double get_analytical_int_gphi_x_da(const pr_pt  & a_ebcm_face_hi,
+                                        double         a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -862,8 +862,8 @@ namespace EBCM_Exact
 
     ///
     virtual 
-    double getAnalytical_IntGPhiY_DA(const pr_pt & a_ebcm_face_hi,
-                                     double        a_dx) const
+    double get_analytical_int_gphi_y_da(const pr_pt & a_ebcm_face_hi,
+                                        double        a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -905,8 +905,8 @@ namespace EBCM_Exact
 
     ///
     virtual 
-    double getAnalytical_IntGPhiZ_DA(const pr_pt & a_ebcm_face_hi,
-                                     double        a_dx) const
+    double get_analytical_int_gphi_z_da(const pr_pt & a_ebcm_face_hi,
+                                        double        a_dx) const
     {
       static bool s_printed_once = false;
       if(!s_printed_once)
@@ -924,8 +924,8 @@ namespace EBCM_Exact
       m_frequency =  a_frequency;
     }
 
-    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
-                               RealVect           a_loc) const
+    virtual Real get_derivative(IndexTM<int, DIM>  a_deriv,
+                                RealVect           a_loc) const
     {
       //compute the derivatives of each direction separately
       // and multiply ?
@@ -938,7 +938,7 @@ namespace EBCM_Exact
         IndexTM<int, DIM>   one_dim_deriv;
         one_dim_deriv.setToBasisVector(deriv_dir);
         one_dim_deriv *= a_deriv[deriv_dir];
-        directional_factors[deriv_dir] = one_dim_sine.getDerivative(one_dim_deriv, a_loc);
+        directional_factors[deriv_dir] = one_dim_sine.get_derivative(one_dim_deriv, a_loc);
       }
 
       double retval = m_amplitude;
@@ -964,14 +964,14 @@ namespace EBCM_Exact
     typedef IndexedMoments<DIM  , order>       IndMomDIM;
     typedef HostIrregData<CELL,IndMomDIM , 1>  VoluData;
   
-    virtual Real getDerivative(IndexTM<int, DIM>  a_deriv,
-                               RealVect a_loc) const
+    virtual Real get_derivative(IndexTM<int, DIM>  a_deriv,
+                                RealVect a_loc) const
     {
       Real retval = 0;
       for(int ient = 0; ient < m_entries.size(); ient++)
       {
         MonomialEF<order> mono(m_entries[ient]);
-        Real monoval = mono.getDerivative(a_deriv, a_loc);
+        Real monoval = mono.get_derivative(a_deriv, a_loc);
         retval += monoval;
       }
       return retval;
