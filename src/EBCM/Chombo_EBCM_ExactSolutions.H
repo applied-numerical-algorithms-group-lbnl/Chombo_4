@@ -324,7 +324,7 @@ namespace EBCM_Exact
         pr_ind_int_dim  taylor_power_dim = momit_dim();
         
         int pd       =           taylor_power_dim[a_face_dir];
-        if( pd == 1 ) // > 1 has x-x0 = 0
+        if( pd >= 1 ) 
         {
           int   idenom = (taylor_power_dim.factorial());
           double denom = (Real)(idenom);
@@ -342,7 +342,7 @@ namespace EBCM_Exact
         } // end if pd > 0
       }// end loop over moments
       return retval;
-    } //end function getGradPhiDotNda_common_bit
+    } //end function get_int_grad_phi_dot_n_da_common_bit
     ///
     template <CENTERING  cent>
     double get_int_grad_phi_dot_n_da(const EBCM::EBCM_Face<cent, order>  & a_ebcm_face,
