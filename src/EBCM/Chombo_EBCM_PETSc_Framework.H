@@ -257,7 +257,7 @@ namespace EBCM
       ///
       void apply_op_primitives(shared_ptr<ebcm_dou_sca_data> a_lph_ptr,
                                shared_ptr<ebcm_dou_sca_data> a_phi_ptr,
-                               shared_ptr<ebcm_dou_sca_flux> a_flx_ptr,
+                               shared_ptr<ebcm_dou_sca_flux> a_gph_ptr,
                                string                        a_identifier) const
       {
         CH_TIME("helmholtz::apply_op_primitives");
@@ -299,21 +299,24 @@ namespace EBCM
             //fluxes 
             for(int idir = 0; idir < DIM; idir++)
             {
-              auto      & flx_mpi        =     (*a_flx_ptr).m_data[idir];
-              auto      & flx_fab        =       (*flx_mpi)[dit[ibox]];
+              auto      & gph_mpi        =     (*a_gph_ptr).m_data[idir];
+              auto      & gph_fab        =       (*gph_mpi)[dit[ibox]];
               //gets stencil from first face in that direction
+              ///area already divided out
               shared_ptr<local_stencil_t>  local =
                 m_oper_ptr->get_volu_side_gphi_stencil(volu, graph, idir, Side::Hi, a_identifier, NULL, false);
-              double flux_val = local->m_inhomogeneous_bit;
+              
+              double gph_val = local->m_inhomogeneous_bit;
               for(int ivec = 0; ivec < local->m_entries.size(); ivec++)
               {
                 pr_pt      sten_iv  = (local->m_entries)[ivec].first;
                 double     wght     = (local->m_entries)[ivec].second;
                 double     phi_val  = phi_fab(sten_iv, 0);
-                double     flux_incr = phi_val*wght;
-                flux_val += flux_incr;
+                double     gph_incr = phi_val*wght;
+                gph_val += gph_incr;
               } //end loop over stencil
-              flx_fab(volu.m_pt, 0) = flux_val;
+              
+              gph_fab(volu.m_pt, 0) = gph_val;
             } //end loop over 
           } //end loop voer volvec
         } //end loop over boxes
@@ -1302,7 +1305,7 @@ namespace EBCM
      //begin debug HERE1
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
       int start_coar, start_fine;
-      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
       pr_pt deb_pt(D_DECL(start_coar, start_coar, start_coar));
       if(a_identifier == string("fine"))
       {
@@ -1333,7 +1336,8 @@ namespace EBCM
        multiply( c_mat, WMinv_mat, WPhi_mat);
 
        ///Allegedly, we know C and we can see how well we reproduce it.
-       print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+       ///this works pretty well 8-25-2025
+       //print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
 
        /// Q C/area = int(Gphi DA)/area = <Gphi>
        compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
@@ -2163,7 +2167,7 @@ namespace EBCM
     ///
     static
     void
-    getWindow( pr_pt& a_lo_coar,
+    get_window( pr_pt& a_lo_coar,
                pr_pt& a_hi_coar,
                pr_pt& a_lo_fine,
                pr_pt& a_hi_fine,
@@ -2188,17 +2192,29 @@ namespace EBCM
 //        printed = true;
 //      }
 //      int start_coar = 8; int start_fine = 16;
+//      if(!printed)
+//      {
+//        pout() << "displaying MIDDLE LEFT " << endl;
+//        printed = true;
+//      }
+//      int start_coar = 4; int start_fine = 8;
+//      pr_pt  lo_coar(D_DECL(start_coar - 2, start_coar - 2, 0));
+//      pr_pt  hi_coar(D_DECL(start_coar + 2, start_coar + 2, 0));
+//      pr_pt  lo_fine(D_DECL(start_fine - 2, start_fine - 2, 0));
+//      pr_pt  hi_fine(D_DECL(start_fine + 2, start_fine + 2, 0));
+//
+      ///single point
       if(!printed)
       {
-        pout() << "displaying MIDDLE LEFT " << endl;
+        pout() << "displaying single point box" << endl;
         printed = true;
-      }
-      int start_coar = 4; int start_fine = 8;
-      pr_pt  lo_coar(D_DECL(start_coar - 2, start_coar - 2, 0));
-      pr_pt  hi_coar(D_DECL(start_coar + 2, start_coar + 2, 0));
-      pr_pt  lo_fine(D_DECL(start_fine - 2, start_fine - 2, 0));
-      pr_pt  hi_fine(D_DECL(start_fine + 2, start_fine + 2, 0));
-
+      }      
+      int start_coar = 6; int start_fine = 12;
+      pr_pt  lo_coar(D_DECL(start_coar , start_coar , 0));
+      pr_pt  hi_coar(D_DECL(start_coar , start_coar , 0));
+      pr_pt  lo_fine(D_DECL(start_fine , start_fine , 0));
+      pr_pt  hi_fine(D_DECL(start_fine , start_fine , 0));
+      
       a_lo_coar = lo_coar;
       a_hi_coar = hi_coar;
       a_lo_fine = lo_fine;
@@ -2209,14 +2225,14 @@ namespace EBCM
     ///
     static
     void
-    writeWindow (string                         a_file_prefix,
+    write_window (string                         a_file_prefix,
                  string                         a_data_label,
                  shared_ptr<ebcm_dou_sca_data>  a_data)
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
       int start_coar, start_fine;
-      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
       if(a_file_prefix == string("coar"))
@@ -2227,21 +2243,21 @@ namespace EBCM
       
       string prefix = a_file_prefix + string("_") + a_data_label;
       EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
-        writeWindowLevel(&(*a_data), lo_disp, hi_disp, prefix);
+        write_windowLevel(&(*a_data), lo_disp, hi_disp, prefix);
 
     }
 
     ///
     static
     void
-    writeWindow (string                         a_file_prefix,
+    write_window (string                         a_file_prefix,
                  string                         a_data_label,
                  shared_ptr<ebcm_dou_sca_flux>  a_data)
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
       int start_coar, start_fine;
-      getWindow(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
 
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
@@ -2339,15 +2355,15 @@ namespace EBCM
       Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ", pt_loc_flx    = (" <<      pt_loc_flx[0] << ","<<      pt_loc_flx[1]<< ")" <<  endl;
 
       //begin debug
-      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
-      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
-      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
-      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
-      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
-      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      writeWindow (a_file_prefix, string("gph_exact     "), flx_exac_ptr);
-      writeWindow (a_file_prefix, string("gph_calc      "), flx_calc_ptr);
-      writeWindow (a_file_prefix, string("gph_error     "), flx_error_ptr);
+      //write_window (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      //write_window (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      //write_window (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      //write_window (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      //write_window (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      //write_window (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      write_window (a_file_prefix, string("gph_exact     "), flx_exac_ptr);
+      write_window (a_file_prefix, string("gph_calc      "), flx_calc_ptr);
+      write_window (a_file_prefix, string("gph_error     "), flx_error_ptr);
       //end debug
       return;
     }
@@ -2422,15 +2438,15 @@ namespace EBCM
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_err_flx, i_co_flx);
       
       //begin debug
-      //writeWindow (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
-      //writeWindow (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
-      //writeWindow (a_file_prefix, string("phi_error     "), phi_error_ptr);
-      //writeWindow (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
-      //writeWindow (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
-      //writeWindow (a_file_prefix, string("lph_error     "), lph_error_ptr);
-      //writeWindow (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
-      //writeWindow (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
-      //writeWindow (a_file_prefix, string("flx_error     "), flx_error_ptr);
+      //write_window (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
+      //write_window (a_file_prefix, string("phi_exact     "), phi_exact_ptr);
+      //write_window (a_file_prefix, string("phi_error     "), phi_error_ptr);
+      //write_window (a_file_prefix, string("lph_analytical"), lph_analytical_ptr);
+      //write_window (a_file_prefix, string("lph_exact     "), lph_exact_ptr);
+      //write_window (a_file_prefix, string("lph_error     "), lph_error_ptr);
+      //write_window (a_file_prefix, string("flx_analytical"), flx_analytical_ptr);
+      //write_window (a_file_prefix, string("flx_exact     "), flx_exact_ptr);
+      //write_window (a_file_prefix, string("flx_error     "), flx_error_ptr);
       //Chombo4::pout() << "get_exact_solution_error"<< a_file_prefix << ": pt_loc_flx = (" << pt_loc_flx[0] << ","<< pt_loc_flx[1]<< ")" <<  endl;
       //end debug
       
