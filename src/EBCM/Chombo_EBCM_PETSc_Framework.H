@@ -349,8 +349,9 @@ namespace EBCM
 
 
       ///
-      void chombo_to_petsc(petsc_vec                          & a_petsc_data,
-                           const ebcm_dou_sca_data            & a_chomb_data)
+      void chombo_to_petsc(
+        petsc_vec                          & a_petsc_data,
+        const ebcm_dou_sca_data            & a_chomb_data)
       {
         CH_TIME("BasePetsc::chombo_to_petsc");
         
@@ -382,8 +383,9 @@ namespace EBCM
       }
 
       ///
-      void petsc_to_chombo(ebcm_dou_sca_data                  & a_chomb_data,
-                           const petsc_vec                    & a_petsc_data)
+      void petsc_to_chombo(
+        ebcm_dou_sca_data                  & a_chomb_data,
+        const petsc_vec                    & a_petsc_data)
                          
       {
         CH_TIME("BasePetsc::petsc_to_chombo");
@@ -630,16 +632,14 @@ namespace EBCM
      **/
     template <CENTERING cent>
     static shared_ptr<eigen_mat>
-    get_helmholtz_q_matrix( const EBCM_Face<cent, geo_exac_order>  & a_face,
-                            shared_ptr<ebcm_neighborhood>            a_locality,
-                            const int                              & a_facedir,
-                            const double                           & a_dx)
+    get_helmholtz_q_matrix(
+      const EBCM_Face<cent, geo_exac_order>  & a_face,
+      shared_ptr<ebcm_neighborhood>            a_locality,
+      const int                              & a_facedir,
+      const double                           & a_dx)
     {
       pr_indmom_dmo_geo_exac facmom_geo =  a_face.m_facmom;
       pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_facedir);
-
-///HERE
-      //double momzero    = facmom[pr_itm_i_dmo::Zero];
 
 
       unsigned int Pcols = pr_indmom_dim_operator::size();
@@ -651,12 +651,8 @@ namespace EBCM
         unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
         double matval = 0; // zero initialization important here
         int pd = p_mom[a_facedir];
-        /**
-           Say face_dir==0
-           (x_0^p_0 == 0 unless p_0 == 0)
-           it is 1 because we are subtracting off e^x
-         **/
-        if(pd == 1) 
+
+        if(pd >= 1) 
         {
           pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
           double  m_p_min_ed = volmom[p_minu_ed];
@@ -671,11 +667,12 @@ namespace EBCM
 
     ///
     static double
-    get_domain_bc_value(const ebcm_dom_face     & a_domain_face,
-                        const string            & a_dom_bc,
-                        const ebcm_exac         & a_bc_exact,
-                        const ebcm_neighborhood & a_neigh,
-                        bool a_killing_me_smalls)
+    get_domain_bc_value(
+      const ebcm_dom_face     & a_domain_face,
+      const string            & a_dom_bc,
+      const ebcm_exac         & a_bc_exact,
+      const ebcm_neighborhood & a_neigh,
+      bool a_killing_me_smalls)
     {
       double retval = 4586;
       double area = a_domain_face.m_facmom[pr_itm_i_dmo::Zero];
@@ -706,11 +703,12 @@ namespace EBCM
 
     ///
     static double
-    get_eb_bc_value(const ebcm_cut_face     & a_cut_face,
-                    const string            & a_eb_bc,
-                    const ebcm_exac         & a_bc_exact,
-                    const ebcm_neighborhood & a_neigh,
-                    const double            & a_dx)
+    get_eb_bc_value(
+      const ebcm_cut_face     & a_cut_face,
+      const string            & a_eb_bc,
+      const ebcm_exac         & a_bc_exact,
+      const ebcm_neighborhood & a_neigh,
+      const double            & a_dx)
     {
       double retval = 4586;
 
@@ -738,12 +736,13 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    get_stencil_from_matrix(const eigen_mat                                    & a_matrix,
-                            shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
-                            const string                                       & a_dom_bc,
-                            const string                                       & a_eb_bc,
-                            const ebcm_exac                                    & a_bc_exact,
-                            const double                                       & a_dx)
+    get_stencil_from_matrix(
+      const eigen_mat                                    & a_matrix,
+      shared_ptr< EBCM::neighborhood< geo_exac_order > > & a_locality,
+      const string                                       & a_dom_bc,
+      const string                                       & a_eb_bc,
+      const ebcm_exac                                    & a_bc_exact,
+      const double                                       & a_dx)
                       
     {
       int nrows_volumes   = a_locality->m_weig_volumes.size();
@@ -792,7 +791,7 @@ namespace EBCM
       row_data_t();
     public:
       ///
-      void printPrettyHeader() const 
+      void print_pretty_header() const 
       {
         /**
            First line is:
@@ -814,7 +813,7 @@ namespace EBCM
         Chombo4::pout() << endl;
       }
 
-      void printIfSet(pair<double, bool> a_data) const
+      void print_if_set(pair<double, bool> a_data) const
       {
         bool value_set = a_data.second;
         Chombo4::pout() << m_befor;
@@ -829,17 +828,17 @@ namespace EBCM
         Chombo4::pout() << m_after;
       }
       ///
-      void printPrettily() const
+      void print_prettily() const
       {
         string row_str = m_row_str;
         Chombo4::pout() << m_befor << row_str << m_after;
-        printIfSet(m_dom_bc_lo);
+        print_if_set(m_dom_bc_lo);
         for(int icol = m_lo_col ; icol <= m_hi_col; icol++)
         {
           int ivec = icol - m_lo_col;
-          printIfSet(m_vol_data[ivec]);
+          print_if_set(m_vol_data[ivec]);
         }
-        printIfSet(m_dom_bc_hi);
+        print_if_set(m_dom_bc_hi);
         Chombo4::pout() << endl;
         
       }
@@ -920,7 +919,7 @@ namespace EBCM
         }
       }
       ///
-      void setVolumeValue(int a_icol, double a_phi_val)
+      void set_volume_value(int a_icol, double a_phi_val)
       {
         int ivec = a_icol - m_lo_col;
         if((ivec < 0) || (ivec ==  m_vol_data.size()))
@@ -932,7 +931,7 @@ namespace EBCM
         m_vol_data[ivec].second = true;
       }
       ///
-      void setDomFaceValue(bool a_on_lo_side, bool a_on_hi_side,  double a_phi_val)
+      void set_domain_face_value(bool a_on_lo_side, bool a_on_hi_side,  double a_phi_val)
       {
         if(a_on_lo_side)
         {
@@ -946,7 +945,7 @@ namespace EBCM
         }
       }
       ///
-      void setCutFaceValue(int a_icol, double a_phi_val)
+      void set_cut_face_value(int a_icol, double a_phi_val)
       {
         //not currently at issue
       }
@@ -955,7 +954,7 @@ namespace EBCM
     };
     ///
     /**
-       This debugging class exists to display a neighbor's worth of data.
+       This debugging class exists to display a neighborhood's  data.
     **/
     class
     neighbor_data_t
@@ -970,7 +969,7 @@ namespace EBCM
       shared_ptr<       row_data_t>   m_dom_bc_hi_trans;
       int m_hori_dir, m_vert_dir;  //for display.  setting horizontal to be neigh face direction
       ch_iv m_lo_iv, m_hi_iv;      //bounds of vof points in the neighborhood
-      void setNeighborhoodBounds()
+      void set_neighborhood_bounds()
       {
         m_lo_iv = 4586*IntVect::Unit;
         m_hi_iv =-4586*IntVect::Unit;
@@ -985,9 +984,9 @@ namespace EBCM
           }
         }
       }
-      void defineData()
+      void define_data()
       {
-        setNeighborhoodBounds();
+        set_neighborhood_bounds();
         m_hori_dir = 0;
         m_vert_dir = 1;
         int num_rows = m_hi_iv[m_vert_dir]- m_lo_iv[m_vert_dir] + 1;
@@ -1007,7 +1006,7 @@ namespace EBCM
 
       shared_ptr<ebcm_neighborhood>  m_locality;
       /// index refers to m_locality->m_volumes
-      void setVolumeValue( int a_ivol,  double a_phi_val)
+      void set_volume_value( int a_ivol,  double a_phi_val)
       {
         const auto& volumes = *m_locality->m_volumes;
         const auto& volu = volumes[a_ivol];
@@ -1017,22 +1016,22 @@ namespace EBCM
         {
           Chombo4::MayDay::Error("not that many rows");
         }
-        m_row_data[irow]->setVolumeValue(icol, a_phi_val);
+        m_row_data[irow]->set_volume_value(icol, a_phi_val);
       }
 
       ///index refers to m_locality->m_cut_faces
-      void setCutFaceValue(int a_icut,  double a_phi_val)
+      void set_cut_face_value(int a_icut,  double a_phi_val)
       {
         const auto& cut_faces = *m_locality->m_cut_faces;
         const auto& cut_face  = cut_faces[a_icut];
         int icol = cut_face.m_pt[m_hori_dir] - m_lo_iv[m_hori_dir];
         int irow = cut_face.m_pt[m_vert_dir] - m_lo_iv[m_vert_dir];
-        m_row_data[irow]->setCutFaceValue(icol, a_phi_val);
+        m_row_data[irow]->set_cut_face_value(icol, a_phi_val);
         ///not debugging this right now so I will dodge displaying these.
       }
 
       ///index refers to m_locality->m_dom_faces
-      void setDomFaceValue(const ebcm_dom_face& a_face,  double a_phi_val)
+      void set_domain_face_value(const ebcm_dom_face& a_face,  double a_phi_val)
       {
         ch_iv lo_iv = a_face.m_lo.m_pt;
         ch_iv hi_iv = a_face.m_hi.m_pt;
@@ -1044,9 +1043,9 @@ namespace EBCM
           bool on_hi_side = (lo_iv[m_hori_dir] == m_hi_iv[m_hori_dir]);
           if(!(on_lo_side || on_hi_side))
           {
-            Chombo4::pout() << "confusion reigns as setDomFaceValue domains do not match" << endl;
+            Chombo4::pout() << "confusion reigns as set_domain_face_value domains do not match" << endl;
           }
-          m_row_data[irow]->setDomFaceValue(on_lo_side, on_hi_side, a_phi_val);
+          m_row_data[irow]->set_domain_face_value(on_lo_side, on_hi_side, a_phi_val);
         }
         else if(a_face.m_direction == m_vert_dir)
         {
@@ -1054,9 +1053,9 @@ namespace EBCM
           bool on_hi_side = (lo_iv[m_vert_dir] == m_hi_iv[m_vert_dir]);
           int  icol = lo_iv[m_hori_dir] - m_lo_iv[m_hori_dir];
           if(on_lo_side)
-            m_dom_bc_lo_trans->setVolumeValue(icol, a_phi_val);
+            m_dom_bc_lo_trans->set_volume_value(icol, a_phi_val);
           if(on_hi_side)
-            m_dom_bc_hi_trans->setVolumeValue(icol, a_phi_val);
+            m_dom_bc_hi_trans->set_volume_value(icol, a_phi_val);
         }
         ///there is a 3D case here that I do not want to try to figure out
         /**/
@@ -1065,11 +1064,11 @@ namespace EBCM
       neighbor_data_t(const shared_ptr<ebcm_neighborhood> & a_locality)
       {
         m_locality       = a_locality;
-        defineData();
+        define_data();
       }
 
       ///
-      void printPrettily() const
+      void print_prettily() const
       {
         Chombo4::pout()    << setprecision(8)
                            << setiosflags(ios::showpoint)
@@ -1081,18 +1080,18 @@ namespace EBCM
           << facelo << " and " << facehi << endl;
         if(m_row_data.size() > 0)
         {
-          m_row_data[0]->printPrettyHeader();
+          m_row_data[0]->print_pretty_header();
         }
 
-        m_dom_bc_hi_trans->printPrettily();
+        m_dom_bc_hi_trans->print_prettily();
         int high_row = m_row_data.size() - 1;
         for(int irow = high_row; irow >= 0; irow--)
         {
-          m_row_data[irow]->printPrettily();
+          m_row_data[irow]->print_prettily();
         }
-        m_dom_bc_lo_trans->printPrettily();
+        m_dom_bc_lo_trans->print_prettily();
 
-      }//end function printPrettily
+      }//end function print_prettily
     }; //end class neighbor_data_t
     ///
     /**
@@ -1144,7 +1143,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setVolumeValue(irow,  phi_val);
+          neig_disp_ptr->set_volume_value(irow,  phi_val);
         }
         irow_global++;
       }
@@ -1157,7 +1156,7 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setDomFaceValue(face,  phi_val);
+          neig_disp_ptr->set_domain_face_value(face,  phi_val);
         }
         irow_global++;
       }
@@ -1184,13 +1183,13 @@ namespace EBCM
         (*soln_vec_p)(irow_global,0) = phi_val;
         if(a_killing_me_smalls)
         {
-          neig_disp_ptr->setCutFaceValue(irow, phi_val);
+          neig_disp_ptr->set_cut_face_value(irow, phi_val);
         }
         irow_global++;
       }
       if(a_killing_me_smalls)
       {
-        neig_disp_ptr->printPrettily();  //prints data around face
+        neig_disp_ptr->print_prettily();  //prints data around face
       }
       return soln_vec_p;
     }
@@ -1240,11 +1239,12 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static void
-    compare_gphi_exac_vs_gphi_calc(const eigen_mat                        & a_Q_mat,
-                                   const eigen_mat                        & a_C_mat,
-                                   const EBCM_Face<cent, geo_exac_order>  & a_face,
-                                   const ebcm_exac                        & a_bc_exac,
-                                   const double                           & a_dx)
+    compare_gphi_exac_vs_gphi_calc(
+      const eigen_mat                        & a_Q_mat,
+      const eigen_mat                        & a_C_mat,
+      const EBCM_Face<cent, geo_exac_order>  & a_face,
+      const ebcm_exac                        & a_bc_exac,
+      const double                           & a_dx)
     {
       ///multiplying Q C shoudl give a 1x1 matrix w
       eigen_mat QC_mat;  
@@ -1302,53 +1302,53 @@ namespace EBCM
       WM_mat.transpose();
       eigen_mat WMinv_mat = WM_mat.getSVDPseudoInverse(a_killing_me_smalls);
       shared_ptr<eigen_mat> Q_mat_p = get_helmholtz_q_matrix(a_face, locality, a_face_dir, a_dx);      
-     //begin debug HERE1
+      eigen_mat WMinvW_mat;
+      multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
+      eigen_mat S_mat_FFS;
+      multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
+
+      //begin debug 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
       int start_coar, start_fine;
       get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
       pr_pt deb_pt(D_DECL(start_coar, start_coar, start_coar));
       if(a_identifier == string("fine"))
       {
-       deb_pt = pr_pt(D_DECL(start_fine, start_fine, start_fine));
+        deb_pt = pr_pt(D_DECL(start_fine, start_fine, start_fine));
       }
-     bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
+      bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
 
-     if(killing_me_smalls)
-     {
+      if(killing_me_smalls)
+      {
 
-       ///I am pretty confident at this point about invertUsingSVD
-       /**
-          eigen_mat resid_mat;
-          testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  killing_me_smalls);
-       **/
-       shared_ptr<eigen_mat> phi_exac_ptr  =
-         get_solution_row_vector(locality,
-                                 a_dom_bc,
-                                 a_eb_bc,
-                                 a_bc_exac,
-                                 a_dx,
-                                 false);
+        ///I am pretty confident at this point about invertUsingSVD
+        /**
+           eigen_mat resid_mat;
+           testPseudoInverse(resid_mat, WM_mat, WMinv_mat,  killing_me_smalls);
+        **/
+        shared_ptr<eigen_mat> phi_exac_ptr  =
+          get_solution_row_vector(locality,
+                                  a_dom_bc,
+                                  a_eb_bc,
+                                  a_bc_exac,
+                                  a_dx,
+                                  false);
          
-       eigen_mat WPhi_mat;
-       multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
-       ///C = (WM)pseudo_inv * W Phi.
-       eigen_mat c_mat;
-       multiply( c_mat, WMinv_mat, WPhi_mat);
+        eigen_mat WPhi_mat;
+        multiply(WPhi_mat, *W_mat_p, *phi_exac_ptr);
+        ///C = (WM)pseudo_inv * W Phi.
+        eigen_mat c_mat;
+        multiply( c_mat, WMinv_mat, WPhi_mat);
 
-       ///Allegedly, we know C and we can see how well we reproduce it.
-       ///this works pretty well 8-25-2025
-       //print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
+        ///Allegedly, we know C and we can see how well we reproduce it.
+        ///this works pretty well 8-25-2025
+        //print_c_calc_vs_c_exac<cent>(a_face, a_bc_exac, a_dx, c_mat);
 
-       /// Q C/area = int(Gphi DA)/area = <Gphi>
-       compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
-     }
-     //end debug
+        /// Q C/area = int(Gphi DA)/area = <Gphi>
+        compare_gphi_exac_vs_gphi_calc(*Q_mat_p, c_mat, a_face, a_bc_exac, a_dx);
+      }
+      //end debug
  
-      eigen_mat WMinvW_mat;
-      multiply( WMinvW_mat, WMinv_mat, *W_mat_p);
-      eigen_mat S_mat_FFS;
-      multiply( S_mat_FFS, *Q_mat_p, WMinvW_mat);
-
       retval = get_stencil_from_matrix(S_mat_FFS, locality, a_dom_bc, a_eb_bc, a_bc_exac, a_dx);
       
       return retval;
@@ -1358,18 +1358,19 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static local_stencil_t
-    get_helmholtz_int_gphi_da_stencil(const EBCM_Face<cent, geo_exac_order>  & a_face,
-                                      const int                              & a_stenrad,
-                                      const int                              & a_weightpower,
-                                      const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                      const string                           & a_dom_bc,
-                                      const string                           & a_eb_bc,
-                                      const int                              & a_face_dir,
-                                      const double                           & a_dx,
-                                      const ebcm_exac                        & a_bc_exact,
-                                      const string                           & a_identifier,
-                                      const pr_fab_t                         * a_phi_exac_ptr, //can be null
-                                      bool a_killing_me_smalls)
+    get_helmholtz_int_gphi_da_stencil(
+      const EBCM_Face<cent, geo_exac_order>  & a_face,
+      const int                              & a_stenrad,
+      const int                              & a_weightpower,
+      const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
+      const string                           & a_dom_bc,
+      const string                           & a_eb_bc,
+      const int                              & a_face_dir,
+      const double                           & a_dx,
+      const ebcm_exac                        & a_bc_exact,
+      const string                           & a_identifier,
+      const pr_fab_t                         * a_phi_exac_ptr, //can be null
+      bool a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::get_helmholtz_int_gphi_da_stencil");
       /** 
@@ -1435,9 +1436,10 @@ namespace EBCM
        retval(0, curCol) = matval
     **/
     static shared_ptr<eigen_mat>
-    get_helmholtz_eb_q_matrix( const IrregFace< geo_exac_order >      & a_face,
-                               shared_ptr<ebcm_neighborhood>            a_locality,
-                               const double                           & a_dx)
+    get_helmholtz_eb_q_matrix(
+      const IrregFace< geo_exac_order >      & a_face,
+      shared_ptr<ebcm_neighborhood>            a_locality,
+      const double                           & a_dx)
     {
       CH_TIME("PETSc_Framework::get_helmholtz_eb_q_matrix");
       
@@ -1498,15 +1500,16 @@ namespace EBCM
        \int (\grad \phi) \cdot (\ehat^d) dA = A_f < \frac{\partial \phi}{\partial x_d} >
     */
     static local_stencil_t
-    get_irreg_helm_int_gph_dot_n_da(const IrregFace<geo_exac_order>        & a_face,
-                                    const int                              & a_stenrad,
-                                    const int                              & a_weightpower,
-                                    const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
-                                    const string                           & a_dom_bc,
-                                    const string                           & a_eb_bc,
-                                    const double                           & a_dx,
-                                    const ebcm_exac                        & a_bc_exact,
-                                    const string                           & a_identifier,                                    bool                                     a_killing_me_smalls)
+    get_irreg_helm_int_gph_dot_n_da(
+      const IrregFace<geo_exac_order>        & a_face,
+      const int                              & a_stenrad,
+      const int                              & a_weightpower,
+      const EBCM::EBCM_Graph<geo_exac_order> & a_graph,
+      const string                           & a_dom_bc,
+      const string                           & a_eb_bc,
+      const double                           & a_dx,
+      const ebcm_exac                        & a_bc_exact,
+      const string                           & a_identifier,                                    bool                                     a_killing_me_smalls)
     {
       CH_TIME("PETSc_Framework::getIrregHelmholtzFDotNStencil");
       /**
@@ -1574,13 +1577,14 @@ namespace EBCM
          weight_power = goes to neighborhood to weight vofs.
          meta         = ebcm's very data intensive meta data
       **/
-      HelmholtzOp(const double                                 & a_alpha,
-                  const double                                 & a_beta,
-                  const int                                    & a_sten_rad,
-                  const int                                    & a_weight_power,
-                  const shared_ptr< ebcm_meta  >               & a_meta_ptr,
-                  shared_ptr<ebcm_exac> a_bc_exact,
-                  string a_dom_bc, string a_eb_bc, int a_ghost, string a_identifier)
+      HelmholtzOp(
+        const double                                 & a_alpha,
+        const double                                 & a_beta,
+        const int                                    & a_sten_rad,
+        const int                                    & a_weight_power,
+        const shared_ptr< ebcm_meta  >               & a_meta_ptr,
+        shared_ptr<ebcm_exac> a_bc_exact,
+        string a_dom_bc, string a_eb_bc, int a_ghost, string a_identifier)
       {
         
         m_alpha        = a_alpha;       
@@ -1747,13 +1751,14 @@ namespace EBCM
          tests so the area needs to be divided out.
       **/
       shared_ptr<local_stencil_t>
-      get_volu_side_gphi_stencil(const ebcm_volu  & a_volu,
-                                 const ebcm_graph & a_graph,
-                                 const int        & a_idir,
-                                 Side::LoHiSide     a_side,
-                                 const string     & a_identifier,
-                                 const pr_fab_t   * a_phi_exac_ptr, //can be null
-                                 bool               a_killing_me_smalls)
+      get_volu_side_gphi_stencil(
+        const ebcm_volu  & a_volu,
+        const ebcm_graph & a_graph,
+        const int        & a_idir,
+        Side::LoHiSide     a_side,
+        const string     & a_identifier,
+        const pr_fab_t   * a_phi_exac_ptr, //can be null
+        bool               a_killing_me_smalls)
       {
         double  dx = a_volu.m_dx;
         double  sum_area = 0;
@@ -1831,12 +1836,13 @@ namespace EBCM
 
       template <CENTERING cent>
       local_stencil_t
-      get_int_flux_da_stencil(const EBCM_Face<cent, geo_exac_order> & a_face,
-                              const ebcm_graph                      & a_graph,
-                              const double                          & a_dx, 
-                              const string                          & a_identifier,
-                              const pr_fab_t                        * a_phi_exac_ptr, //can be null
-                              bool   a_killing_me_smalls) const
+      get_int_flux_da_stencil(
+        const EBCM_Face<cent, geo_exac_order> & a_face,
+        const ebcm_graph                      & a_graph,
+        const double                          & a_dx, 
+        const string                          & a_identifier,
+        const pr_fab_t                        * a_phi_exac_ptr, //can be null
+        bool   a_killing_me_smalls) const
       {
         int face_dir_input = a_face.getFaceDir();
         int face_dir_cent = 4586;
@@ -1876,13 +1882,14 @@ namespace EBCM
     /**
        just parse stuff.  This decouples geometry generation with parmparse, allowing me to make varying refinements.
     **/ 
-    static void parseFineGridParams(int            & a_nx,
-                                    double         & a_dx,
-                                    ch_probdom     & a_domain,
-                                    int            & a_maxGrid,
-                                    bool           & a_mergeSmallCells)
+    static void parse_fine_grid_params(
+      int            & a_nx,
+      double         & a_dx,
+      ch_probdom     & a_domain,
+      int            & a_maxGrid,
+      bool           & a_mergeSmallCells)
     {
-      ParmParse pp("parseFineGridParams");
+      ParmParse pp("parse_fine_grid_params");
 
       pp.get("nx"             , a_nx);
       pp.get("maxGrid"        , a_maxGrid);
@@ -1900,11 +1907,12 @@ namespace EBCM
     **/ 
     static
     shared_ptr< ebcm_meta  >
-    makeGeometryAtSpecificNX( const int            & a_nx,
-                              const double         & a_dx,
-                              const ch_probdom     & a_domain,
-                              const int            & a_maxGrid,
-                              const bool           & a_mergeSmallCells)
+    make_geometry_at_specific_nx(
+      const int            & a_nx,
+      const double         & a_dx,
+      const ch_probdom     & a_domain,
+      const int            & a_maxGrid,
+      const bool           & a_mergeSmallCells)
     {
       vector<ch_dbl> vecgrids;
       //Chombo4::pout() << "making grids" << endl;
@@ -1928,11 +1936,12 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static void
-    set_vector_flux_exac(pr_fab_t&                                               a_fab,
-                         const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
-                         int                                                     a_face_dir,
-                         double                                                  a_dx,
-                         shared_ptr< ebcm_exac  >                                a_exac_ptr)
+    set_vector_flux_exac(
+      pr_fab_t&                                               a_fab,
+      const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
+      int                                                     a_face_dir,
+      double                                                  a_dx,
+      shared_ptr< ebcm_exac  >                                a_exac_ptr)
 
     {
       for(int iface = 0; iface < a_vec_faces.size();iface++)
@@ -1945,11 +1954,12 @@ namespace EBCM
     ///
     template<CENTERING cent>
     static void
-    set_vector_flux_anal(pr_fab_t&                                               a_fab,
-                         const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
-                         int                                                     a_face_dir,
-                         double                                                  a_dx,
-                         shared_ptr< ebcm_exac  >                                a_exac_ptr)
+    set_vector_flux_anal(
+      pr_fab_t&                                               a_fab,
+      const vector< EBCM_Face<cent, geo_exac_order> >     &   a_vec_faces,
+      int                                                     a_face_dir,
+      double                                                  a_dx,
+      shared_ptr< ebcm_exac  >                                a_exac_ptr)
 
     {
       for(int iface = 0; iface < a_vec_faces.size();iface++)
@@ -1961,12 +1971,13 @@ namespace EBCM
     }
     ///
     static void
-    set_exact_solution( shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
-                        shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
-                        shared_ptr<ebcm_dou_sca_flux> a_flx_exac_ptr,
-                        shared_ptr< ebcm_meta  >      a_meta_ptr,
-                        shared_ptr< ebcm_exac  >      a_exac_ptr,
-                        double a_alpha, double a_beta)
+    set_exact_solution(
+      shared_ptr<ebcm_dou_sca_data> a_phi_exac_ptr,
+      shared_ptr<ebcm_dou_sca_data> a_lph_exac_ptr,
+      shared_ptr<ebcm_dou_sca_flux> a_flx_exac_ptr,
+      shared_ptr< ebcm_meta  >      a_meta_ptr,
+      shared_ptr< ebcm_exac  >      a_exac_ptr,
+      double a_alpha, double a_beta)
     {
       const auto& graphs = *(a_meta_ptr->m_graphs);
       const auto& grids  =  (a_meta_ptr->m_grids);
@@ -1997,18 +2008,18 @@ namespace EBCM
             {
               auto& levx = *(a_flx_exac_ptr->m_data[0]);
               auto& xfab = levx[dit[ibox]];
-              set_vector_flux_exac<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
             }
             {
               auto& levy = *(a_flx_exac_ptr->m_data[1]);
               auto& yfab = levy[dit[ibox]];
-              set_vector_flux_exac<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
             }
 #if DIM==3            
             {
               auto& levz = *(a_flx_exac_ptr->m_data[2]);
               auto& zfab = levz[dit[ibox]];
-              set_vector_flux_exac<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_anal<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
             }
 #endif
             
@@ -2018,12 +2029,13 @@ namespace EBCM
     } // end function set_exact_solution
     ///
     static void
-    set_analytical_solution( shared_ptr<ebcm_dou_sca_data> a_phi_anal_ptr,
-                             shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
-                             shared_ptr<ebcm_dou_sca_flux> a_flx_anal_ptr,
-                             shared_ptr< ebcm_meta  >      a_meta_ptr,
-                             shared_ptr< ebcm_exac  >      a_exac_ptr,
-                             double a_alpha, double a_beta)
+    set_analytical_solution(
+      shared_ptr<ebcm_dou_sca_data> a_phi_anal_ptr,
+      shared_ptr<ebcm_dou_sca_data> a_lph_anal_ptr,
+      shared_ptr<ebcm_dou_sca_flux> a_flx_anal_ptr,
+      shared_ptr< ebcm_meta  >      a_meta_ptr,
+      shared_ptr< ebcm_exac  >      a_exac_ptr,
+      double a_alpha, double a_beta)
     {
       const auto& graphs = *(a_meta_ptr->m_graphs);
       const auto& grids  =  (a_meta_ptr->m_grids);
@@ -2168,11 +2180,11 @@ namespace EBCM
     static
     void
     get_window( pr_pt& a_lo_coar,
-               pr_pt& a_hi_coar,
-               pr_pt& a_lo_fine,
-               pr_pt& a_hi_fine,
-               int  & a_start_coar,
-               int  & a_start_fine)
+                pr_pt& a_hi_coar,
+                pr_pt& a_lo_fine,
+                pr_pt& a_hi_fine,
+                int  & a_start_coar,
+                int  & a_start_fine)
     {
       static bool printed = false;
 // lower left
@@ -2226,8 +2238,8 @@ namespace EBCM
     static
     void
     write_window (string                         a_file_prefix,
-                 string                         a_data_label,
-                 shared_ptr<ebcm_dou_sca_data>  a_data)
+                  string                         a_data_label,
+                  shared_ptr<ebcm_dou_sca_data>  a_data)
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
@@ -2251,8 +2263,8 @@ namespace EBCM
     static
     void
     write_window (string                         a_file_prefix,
-                 string                         a_data_label,
-                 shared_ptr<ebcm_dou_sca_flux>  a_data)
+                  string                         a_data_label,
+                  shared_ptr<ebcm_dou_sca_flux>  a_data)
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
@@ -2277,10 +2289,11 @@ namespace EBCM
     }
     ///
     static    void
-    get_helmholtz_truncation_error( double                   & a_max_error_lph,
-                                    double                     a_max_error_flx[DIM],
-                                    shared_ptr< ebcm_meta  >   a_meta,
-                                    string                     a_file_prefix)
+    get_helmholtz_truncation_error(
+      double                   & a_max_error_lph,
+      double                     a_max_error_flx[DIM],
+      shared_ptr< ebcm_meta  >   a_meta,
+      string                     a_file_prefix)
     {
       ParmParse pp("main");
       double alpha     = 4586.;
@@ -2374,11 +2387,12 @@ namespace EBCM
     **/
  
     static void
-    get_exact_solution_error( double                   & a_max_err_phi,
-                              double                   & a_max_err_lph,
-                              double                     a_max_err_flx[DIM],
-                              shared_ptr< ebcm_meta  >   a_meta,
-                              string                     a_file_prefix)
+    get_exact_solution_error(
+      double                   & a_max_err_phi,
+      double                   & a_max_err_lph,
+      double                     a_max_err_flx[DIM],
+      shared_ptr< ebcm_meta  >   a_meta,
+      string                     a_file_prefix)
     {
       ParmParse pp("main");
       double alpha     = 4586.;
@@ -2535,13 +2549,13 @@ namespace EBCM
       ch_probdom domain_fine;
 
       int maxGrid = 4586;      bool mergeSmallCells = true;   
-      parseFineGridParams(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      parse_fine_grid_params(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
       int    nx_coar = nx_fine/2;
       double dx_coar = dx_fine*2.;
       ch_probdom domain_coar = domain_fine;
       domain_coar.coarsen(2);
-      shared_ptr< ebcm_meta  > meta_fine = makeGeometryAtSpecificNX(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
-      shared_ptr< ebcm_meta  > meta_coar = makeGeometryAtSpecificNX(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
+      shared_ptr< ebcm_meta  > meta_fine = make_geometry_at_specific_nx(nx_fine, dx_fine, domain_fine, maxGrid, mergeSmallCells);
+      shared_ptr< ebcm_meta  > meta_coar = make_geometry_at_specific_nx(nx_coar, dx_coar, domain_coar, maxGrid, mergeSmallCells);
 
       Chombo4::pout() << "run_hoeb_truncation_tests: calling check_exact_solution." << endl;
       check_exact_solution( meta_fine, meta_coar, false);

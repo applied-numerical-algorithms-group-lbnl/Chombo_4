@@ -17,9 +17,9 @@ main.beta =   1.0
 # whether to dump files or not (0 = false, anything else true)
 main.output_hdf5  = 1
 #Chombo_EBCM_PETSc_Framework.H
-parseFineGridParams.nx                = 32
-parseFineGridParams.maxGrid           = 32
-parseFineGridParams.mergeSmallCells   = true
+parse_fine_grid_params.nx                = 32
+parse_fine_grid_params.maxGrid           = 32
+parse_fine_grid_params.mergeSmallCells   = true
 
 # exact flag== 2 => cp = 1/p! for all p <= max_poly+1, = 0 o.w.
 #main.exact_flag        = 2
