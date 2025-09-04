@@ -1261,8 +1261,8 @@ namespace EBCM
       Chombo4::pout()    << setprecision(8)
                          << setiosflags(ios::showpoint)
                          << setiosflags(ios::scientific);
-      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_exac = " << gphi_exac << endl;
-      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_calc = " << gphi_calc << endl;
+      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_exac( " << a_face.m_lo.m_pt << "," << a_face.m_hi.m_pt << ")= " << gphi_exac << endl;
+      Chombo4::pout()    << "compare_gphi_exac_vs_gphi_calc: gphi_calc( " << a_face.m_lo.m_pt << "," << a_face.m_hi.m_pt << ")= " << gphi_calc << endl;
     }
     ///
     template<CENTERING cent>
@@ -1316,7 +1316,7 @@ namespace EBCM
       {
         deb_pt = pr_pt(D_DECL(start_fine, start_fine, start_fine));
       }
-      bool killing_me_smalls = ((a_face.m_hi.m_pt == deb_pt) && (a_face_dir == 0));
+      bool killing_me_smalls = ((a_face.m_lo.m_pt == deb_pt) && (a_face_dir == 0));
 
       if(killing_me_smalls)
       {
