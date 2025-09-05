@@ -2011,18 +2011,18 @@ namespace EBCM
             {
               auto& levx = *(a_flx_exac_ptr->m_data[0]);
               auto& xfab = levx[dit[ibox]];
-              set_vector_flux_anal<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<XFACE>(xfab, volu.m_xfaces, 0, volu.m_dx,  a_exac_ptr);
             }
             {
               auto& levy = *(a_flx_exac_ptr->m_data[1]);
               auto& yfab = levy[dit[ibox]];
-              set_vector_flux_anal<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<YFACE>(yfab, volu.m_yfaces, 1, volu.m_dx,  a_exac_ptr);
             }
 #if DIM==3            
             {
               auto& levz = *(a_flx_exac_ptr->m_data[2]);
               auto& zfab = levz[dit[ibox]];
-              set_vector_flux_anal<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
+              set_vector_flux_exac<ZFACE>(zfab, volu.m_zfaces, 2, volu.m_dx,  a_exac_ptr);
             }
 #endif
             
