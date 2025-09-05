@@ -1309,12 +1309,15 @@ namespace EBCM
 
       //begin debug 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
-      int start_coar, start_fine;
-      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
-      pr_pt deb_pt(D_DECL(start_coar, start_coar, start_coar));
+      int start_i_coar, start_i_fine;
+      int start_j_coar, start_j_fine;
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine,
+                 start_i_coar, start_i_fine,
+                 start_j_coar, start_j_fine);
+      pr_pt deb_pt(D_DECL(start_i_coar, start_j_coar, 0));
       if(a_identifier == string("fine"))
       {
-        deb_pt = pr_pt(D_DECL(start_fine, start_fine, start_fine));
+        deb_pt = pr_pt(D_DECL(start_i_fine, start_j_fine, 0));
       }
       bool killing_me_smalls = ((a_face.m_lo.m_pt == deb_pt) && (a_face_dir == 0));
 
@@ -2176,63 +2179,40 @@ namespace EBCM
       return retval;
     }
 
-    ///
+    ///  The window bounds are for area display.  The integers are for single point stuff.
     static
     void
-    get_window( pr_pt& a_lo_coar,
-                pr_pt& a_hi_coar,
-                pr_pt& a_lo_fine,
-                pr_pt& a_hi_fine,
-                int  & a_start_coar,
-                int  & a_start_fine)
+    get_window( pr_pt& a_lo_wind_coar,
+                pr_pt& a_hi_wind_coar,
+                pr_pt& a_lo_wind_fine,
+                pr_pt& a_hi_wind_fine,
+                int  & a_i_start_coar,
+                int  & a_i_start_fine,
+                int  & a_j_start_coar,
+                int  & a_j_start_fine)
     {
       static bool printed = false;
-// lower left
-//      if(!printed)
-//      {
-//        pout() << "displaying LOWER LEFT of BOTTOM LEFT QUADRANT" << endl;
-//        printed = true;
-//      }      
-//      pr_pt  lo_coar(D_DECL(0 ,  0, 0));
-//      pr_pt  hi_coar(D_DECL(3,   3, 0));
-//      pr_pt  lo_fine(D_DECL(0 ,  0, 0));
-//      pr_pt  hi_fine(D_DECL(3,   3, 0));
-//  lower left of upper right 
-//      if(!printed)
-//      {
-//        pout() << "displaying MIDDLE MIDDLE" << endl;
-//        printed = true;
-//      }
-//      int start_coar = 8; int start_fine = 16;
-//      if(!printed)
-//      {
-//        pout() << "displaying MIDDLE LEFT " << endl;
-//        printed = true;
-//      }
-//      int start_coar = 4; int start_fine = 8;
-//      pr_pt  lo_coar(D_DECL(start_coar - 2, start_coar - 2, 0));
-//      pr_pt  hi_coar(D_DECL(start_coar + 2, start_coar + 2, 0));
-//      pr_pt  lo_fine(D_DECL(start_fine - 2, start_fine - 2, 0));
-//      pr_pt  hi_fine(D_DECL(start_fine + 2, start_fine + 2, 0));
-//
       ///single point
       if(!printed)
       {
         pout() << "displaying single point box" << endl;
         printed = true;
-      }      
-      int start_coar = 6; int start_fine = 12;
-      pr_pt  lo_coar(D_DECL(start_coar , start_coar , 0));
-      pr_pt  hi_coar(D_DECL(start_coar , start_coar , 0));
-      pr_pt  lo_fine(D_DECL(start_fine , start_fine , 0));
-      pr_pt  hi_fine(D_DECL(start_fine , start_fine , 0));
+      }
+      int start_i_fine = 14; int start_j_fine = 15;
+      int start_i_coar = 7;  int start_j_coar = 7; 
+      pr_pt  lo_wind_coar(D_DECL(start_i_coar , start_j_coar , 0));
+      pr_pt  hi_wind_coar(D_DECL(start_i_coar , start_j_coar , 0));
+      pr_pt  lo_wind_fine(D_DECL(start_i_fine , start_j_fine , 0));
+      pr_pt  hi_wind_fine(D_DECL(start_i_fine , start_j_fine , 0));
       
-      a_lo_coar = lo_coar;
-      a_hi_coar = hi_coar;
-      a_lo_fine = lo_fine;
-      a_hi_fine = hi_fine;
-      a_start_coar = start_coar;
-      a_start_fine = start_fine;
+      a_lo_wind_coar = lo_wind_coar;
+      a_hi_wind_coar = hi_wind_coar;
+      a_lo_wind_fine = lo_wind_fine;
+      a_hi_wind_fine = hi_wind_fine;
+      a_i_start_coar = start_i_coar;
+      a_i_start_fine = start_i_fine;
+      a_j_start_coar = start_j_coar;
+      a_j_start_fine = start_j_fine;
     }
     ///
     static
@@ -2243,8 +2223,11 @@ namespace EBCM
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
-      int start_coar, start_fine;
-      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      int start_i_coar, start_i_fine;
+      int start_j_coar, start_j_fine;
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine,
+                 start_i_coar, start_i_fine,
+                 start_j_coar, start_j_fine);
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
       if(a_file_prefix == string("coar"))
@@ -2268,8 +2251,11 @@ namespace EBCM
     {
 
       pr_pt lo_coar, hi_coar, lo_fine, hi_fine;
-      int start_coar, start_fine;
-      get_window(lo_coar, hi_coar, lo_fine, hi_fine, start_coar, start_fine);
+      int start_i_coar, start_i_fine;
+      int start_j_coar, start_j_fine;
+      get_window(lo_coar, hi_coar, lo_fine, hi_fine,
+                 start_i_coar, start_i_fine,
+                 start_j_coar, start_j_fine);
 
       pr_pt lo_disp = lo_fine;
       pr_pt hi_disp = hi_fine;
@@ -2279,7 +2265,8 @@ namespace EBCM
         hi_disp = hi_coar;
       }
 
-      for(int idir = 0; idir < DIM; idir++)
+      //for(int idir = 0; idir < DIM; idir++)
+      int idir = 0; ///only looking at x flux right now
       {
         string prefix = a_file_prefix + string("_") + a_data_label;
         EBCM_Debug::DataWindow<double, 1, geo_exac_order>::
@@ -2365,7 +2352,7 @@ namespace EBCM
       int     i_co_flx[DIM];
       flx_error_ptr->getAbsMaxLocationAndValue(pt_loc_flx, a_max_error_flx, i_co_flx);
       Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ": max_error_flx = (" << a_max_error_flx[0] << ","<< a_max_error_flx[1]<< ")" <<  endl;
-      Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ", pt_loc_flx    = (" <<      pt_loc_flx[0] << ","<<      pt_loc_flx[1]<< ")" <<  endl;
+      Chombo4::pout() << "get_helmholtz_error"<< a_file_prefix << ", max_flx_hi_pt = (" <<      pt_loc_flx[0] << ","<<      pt_loc_flx[1]<< ")" <<  endl;
 
       //begin debug
       //write_window (a_file_prefix, string("phi_analytical"), phi_analytical_ptr);
