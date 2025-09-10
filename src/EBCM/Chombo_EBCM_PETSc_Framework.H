@@ -649,7 +649,7 @@ namespace EBCM
       {
         /// this is p
         pr_itm_i_dmo  taylor_power_dmo = momit_dmo();
-        //we are adding one to one of thecomps
+        //we are adding one to one of the components
         if(taylor_power_dmo.sum() < operator_order)
         {
           pr_itm_i_dim  taylor_power_dim;

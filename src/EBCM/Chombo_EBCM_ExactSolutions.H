@@ -318,28 +318,33 @@ namespace EBCM_Exact
                                                 const int            & a_face_dir) const
     {
       double retval = 0;  //incremental
-      for(pr_momit_dim momit_dim; momit_dim.ok(); ++momit_dim)
+      for(pr_momit_dmo momit_dmo; momit_dmo.ok(); ++momit_dmo)
       {
         ///taylor_power =  p
-        pr_ind_int_dim  taylor_power_dim = momit_dim();
-        
-        int pd       =           taylor_power_dim[a_face_dir];
-        if( pd >= 1 ) 
+        pr_ind_int_dmo  taylor_power_dmo = momit_dmo();
+        pr_ind_int_dim  taylor_power_dim;
+        int dmo_index = 0;
+        for(int idir = 0; idir < DIM; idir++)
         {
-          int   idenom = (taylor_power_dim.factorial());
-          double denom = (Real)(idenom);
-          ///deriv_power = p-e^d
-          pr_ind_int_dim moment_power_dim = taylor_power_dim;
-          moment_power_dim[a_face_dir] -= 1;
-          pr_ind_int_dmo moment_power_dmo = getDMOPower(moment_power_dim, a_face_dir);
-          
-          double momen = a_fac_mom[moment_power_dmo];
-          double deriv = get_derivative(taylor_power_dim, a_cent_loc);
-          ///increment = pd  phi^(p-ed) m^p/p!
-          double incre = pd*deriv*momen/denom;
-          retval += incre;
+          if(idir == a_face_dir)
+          {
+            //only taylor power where p-ed = 0
+            taylor_power_dim[idir] = 0;
+          }
+          else
+          {
+            taylor_power_dim[idir] = taylor_power_dmo[dmo_index];
+            dmo_index++;
+          }
+        }
+        int   idenom = (taylor_power_dim.factorial());
+        double denom = (Real)(idenom);
+        double momen = a_fac_mom[taylor_power_dmo];
+        double deriv = get_derivative(taylor_power_dim, a_cent_loc);
 
-        } // end if pd > 0
+        double incre = deriv*momen/denom;
+        retval += incre;
+
       }// end loop over moments
       return retval;
     } //end function get_int_grad_phi_dot_n_da_common_bit
