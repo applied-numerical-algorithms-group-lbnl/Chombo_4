@@ -635,30 +635,47 @@ namespace EBCM
     get_helmholtz_q_matrix(
       const EBCM_Face<cent, geo_exac_order>  & a_face,
       shared_ptr<ebcm_neighborhood>            a_locality,
-      const int                              & a_facedir,
+      const int                              & a_face_dir,
       const double                           & a_dx)
     {
       pr_indmom_dmo_geo_exac facmom_geo =  a_face.m_facmom;
-      pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_facedir);
+      pr_indmom_dim_geo_exac volmom = ebcm_basics::getVolMomFromFacMom(facmom_geo, a_face_dir);
 
 
       unsigned int Pcols = pr_indmom_dim_operator::size();
       shared_ptr<eigen_mat> retval(new eigen_mat(1, Pcols));
-
-      for(pr_momit_dim_operator momit; momit.ok(); ++momit)
+      retval->setVal(0.);
+      for(pr_momit_dmo_operator momit_dmo; momit_dmo.ok(); ++momit_dmo)
       {
-        auto p_mom = momit();
-        unsigned int currentCol = pr_indmom_dim_operator::indexOf(p_mom);
-        double matval = 0; // zero initialization important here
-        int pd = p_mom[a_facedir];
-
-        if(pd >= 1) 
+        /// this is p
+        pr_itm_i_dmo  taylor_power_dmo = momit_dmo();
+        //we are adding one to one of thecomps
+        if(taylor_power_dmo.sum() < operator_order)
         {
-          pr_itm_i_dim p_minu_ed = p_mom - pr_itm_i_dim::BASISV(a_facedir);
+          pr_itm_i_dim  taylor_power_dim;
+          int dmo_index = 0;
+          for(int idir = 0; idir < DIM; idir++)
+          {
+            if(idir == a_face_dir)
+            {
+              //only taylor power where p-ed = 0
+              taylor_power_dim[idir] = 1;
+            }
+            else
+            {
+              taylor_power_dim[idir] = taylor_power_dmo[dmo_index];
+              dmo_index++;
+            }
+          }
+          unsigned int currentCol = pr_indmom_dim_operator::indexOf(taylor_power_dim);
+          int pd = taylor_power_dim[a_face_dir];
+          CH_assert(pd == 1);
+          pr_itm_i_dim p_minu_ed = taylor_power_dim;  p_minu_ed[a_face_dir] = 0;
+        
           double  m_p_min_ed = volmom[p_minu_ed];
-          matval = pd*m_p_min_ed;   //I know pd==1.   
+          double matval = pd*m_p_min_ed;   //I know pd==1.   This looks better.
+          (*retval)(0,currentCol) = matval;
         }
-        (*retval)(0,currentCol) = matval;
       }
     
       return retval;
@@ -729,7 +746,7 @@ namespace EBCM
       return retval;
     } //end function get_eb_bc_value
 
-    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^facedir)
+    ///Returns a local stencil for \int (\grad \phi) \cdot (\ehat^face_dir)
     /**
        Get stencil for integrated gradient in a  coordinate direction. 
        This is the same as the average gradient * face area.
