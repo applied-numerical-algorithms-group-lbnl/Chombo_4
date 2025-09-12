@@ -296,21 +296,6 @@ namespace EBCM_Exact
       return retval;
     }
 
-    /// 
-    pr_ind_int_dmo  getDMOPower(pr_ind_int_dim taylor_power_dim,int a_face_dir) const
-    {
-      pr_ind_int_dmo taylor_power_dmo;
-      int i_dmo = 0;
-      for(int i_dim =0; i_dim < DIM; i_dim++)
-      {
-        if(i_dim != a_face_dir)
-        {
-          taylor_power_dmo[i_dmo] = taylor_power_dim[i_dim];
-          i_dmo++;
-        }
-      }
-      return taylor_power_dmo;
-    }
     
     ///
     double get_int_grad_phi_dot_n_da_common_bit(const pr_ind_mom_dmo  & a_fac_mom,
@@ -329,7 +314,7 @@ namespace EBCM_Exact
           if(idir == a_face_dir)
           {
             //only taylor power where p-ed = 0
-            taylor_power_dim[idir] = 0;
+            taylor_power_dim[idir] = 1;
           }
           else
           {
@@ -337,7 +322,7 @@ namespace EBCM_Exact
             dmo_index++;
           }
         }
-        int   idenom = (taylor_power_dim.factorial());
+        int   idenom = (taylor_power_dmo.factorial());
         double denom = (Real)(idenom);
         double momen = a_fac_mom[taylor_power_dmo];
         double deriv = get_derivative(taylor_power_dim, a_cent_loc);
